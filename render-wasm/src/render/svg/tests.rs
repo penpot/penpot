@@ -3714,3 +3714,75 @@ fn raster_export_of_child_paints_inherited_group_fill() {
     assert_eq!(inherited_png, raster_png(&own, uid(2)));
     assert_ne!(inherited_png, raster_png(&bare, uid(2)));
 }
+
+#[test]
+fn exports_vertical_text_as_glyph_outlines() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_text(
+        &mut pool,
+        id,
+        (0.0, 0.0, 240.0, 560.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0, 63, 255),
+    );
+    let shape = pool.get_mut(&id).expect("text shape");
+    if let crate::shapes::Type::Text(content) = &mut shape.shape_type {
+        for paragraph in content.paragraphs_mut() {
+            paragraph.set_writing_mode(crate::shapes::WritingMode::VerticalRl);
+        }
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        !svg.contains("<text"),
+        "vertical glyphs must not go through cmap-rebuilt <text>: {svg}"
+    );
+    assert!(
+        svg.contains("<path"),
+        "vertical glyphs export as outlines: {svg}"
+    );
+    assert!(
+        svg.to_ascii_lowercase().contains("fill=\"#003fff\""),
+        "outlines keep the text fill: {svg}"
+    );
+    assert!(
+        !super::writing_svg(),
+        "the export flag resets once the document is written"
+    );
+}
+
+#[test]
+fn exports_the_stroke_of_vertical_text_as_stroked_outlines() {
+    for kind in [StrokeKind::Center, StrokeKind::Inner, StrokeKind::Outer] {
+        let mut pool = ShapesPool::new();
+        let id = uid(1);
+        add_solid_text(
+            &mut pool,
+            id,
+            (0.0, 0.0, 240.0, 560.0),
+            "HOLA",
+            200.0,
+            skia::Color::from_rgb(0, 63, 255),
+        );
+        let shape = pool.get_mut(&id).expect("text shape");
+        if let crate::shapes::Type::Text(content) = &mut shape.shape_type {
+            for paragraph in content.paragraphs_mut() {
+                paragraph.set_writing_mode(crate::shapes::WritingMode::VerticalRl);
+            }
+        }
+        shape.add_stroke(solid_stroke(kind, 4.0, skia::Color::from_rgb(200, 0, 0)));
+
+        let svg = render(&pool, id).to_ascii_lowercase();
+        assert!(
+            svg.contains("stroke=\"#c80000\""),
+            "{kind:?}: the stroke must stay a stroke, not a second fill: {svg}"
+        );
+        assert_eq!(
+            svg.matches("fill=\"#c80000\"").count(),
+            0,
+            "{kind:?}: the stroke colour must not fill the glyphs: {svg}"
+        );
+    }
+}

@@ -4,7 +4,7 @@ use skia_safe::Canvas;
 
 use crate::error::Result;
 use crate::render::text;
-use crate::shapes::{Fill, ImageFill, Shape, SolidColor, Stroke, StrokeKind, Type};
+use crate::shapes::{text_vertical, Fill, ImageFill, Shape, SolidColor, Stroke, StrokeKind, Type};
 use crate::uuid::Uuid;
 
 use super::document::SvgLayerCanvas;
@@ -325,6 +325,21 @@ fn paint_text_glyph_silhouette(canvas: &Canvas, shape: &Shape) -> Result<()> {
     let Type::Text(text_content) = &shape.shape_type else {
         return Ok(());
     };
+    // The vertical pass paints span fills; clips and luminance masks need an
+    // opaque black silhouette.
+    let mut silhouette = skia_safe::Paint::default();
+    silhouette.set_color(skia_safe::Color::BLACK);
+    silhouette.set_anti_alias(true);
+    if text_vertical::paint_text_vertical_with(
+        canvas,
+        text_content,
+        &shape.selrect(),
+        shape.vertical_align(),
+        &silhouette,
+        text_vertical::GlyphOutput::Outlines,
+    ) {
+        return Ok(());
+    }
     let text_content = text_content.new_bounds(shape.selrect());
     let mut mask_builders = text_content.paragraph_builder_group_opaque();
     text::render_overlay_emoji(canvas, shape, &mut mask_builders, None, None, None, None)?;
@@ -339,6 +354,21 @@ fn paint_text_stroke_opaque(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> 
     let Type::Text(text_content) = &shape.shape_type else {
         return Ok(());
     };
+    if text_content.is_vertical() {
+        // One cached layout serves every stroke paint.
+        let (stroke_paints, _) = text::get_text_stroke_paints(stroke, &shape.selrect(), false);
+        for paint in &stroke_paints {
+            text_vertical::paint_text_vertical_with(
+                canvas,
+                text_content,
+                &shape.selrect(),
+                shape.vertical_align(),
+                paint,
+                text_vertical::GlyphOutput::Outlines,
+            );
+        }
+        return Ok(());
+    }
     let text_content = text_content.new_bounds(shape.selrect());
     let stroke_blur_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
     let (mut stroke_paragraphs, _) = text::stroke_paragraph_builder_group_from_text(

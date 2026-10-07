@@ -95,7 +95,11 @@ impl FontStore {
         is_emoji: bool,
         is_fallback: bool,
     ) -> Result<()> {
+        let alias = format!("{}", family);
         if self.has_family(&family, is_emoji) {
+            if is_fallback {
+                self.fallback_fonts.insert(alias);
+            }
             return Ok(());
         }
 
@@ -106,7 +110,6 @@ impl FontStore {
                 "Failed to create typeface".to_string(),
             ))?;
 
-        let alias = format!("{}", family);
         let font_name = if is_emoji {
             DEFAULT_EMOJI_FONT
         } else {
@@ -121,6 +124,15 @@ impl FontStore {
         }
 
         Ok(())
+    }
+
+    /// Upgrade an already-uploaded family to take part in character fallback.
+    /// Font bytes are cached apart from a face's role, so a family may arrive
+    /// as a document font and later be requested as a fallback.
+    pub fn mark_as_fallback(&mut self, family: &FontFamily) {
+        if self.has_family(family, false) {
+            self.fallback_fonts.insert(format!("{}", family));
+        }
     }
 
     pub fn has_family(&self, family: &FontFamily, is_emoji: bool) -> bool {
@@ -308,5 +320,20 @@ mod tests {
         let css = store.font_face_css_for_aliases(&aliases);
 
         assert!(css.is_empty());
+    }
+
+    const TEST_FONT: &[u8] = include_bytes!("../fonts/sourcesanspro-regular.ttf");
+
+    #[test]
+    fn uploaded_family_can_be_upgraded_to_fallback() {
+        let mut store = FontStore::try_new().unwrap();
+        let family = FontFamily::new(Uuid::nil(), 400, FontStyle::Normal);
+        let alias = format!("{}", family);
+
+        store.add(family, TEST_FONT, false, false).unwrap();
+        assert!(!store.get_fallback().contains(&alias));
+
+        store.mark_as_fallback(&family);
+        assert!(store.get_fallback().contains(&alias));
     }
 }

@@ -15,7 +15,10 @@ mod corners;
 mod fills;
 mod fonts;
 mod frames;
+mod gpos_vpal;
 mod groups;
+pub mod japanese;
+pub mod kinsoku;
 mod layouts;
 pub mod modifiers;
 mod paths;
@@ -27,7 +30,10 @@ mod strokes;
 mod svg_attrs;
 mod svgraw;
 mod text;
+mod text_horizontal;
+mod text_japanese;
 pub mod text_paths;
+pub mod text_vertical;
 mod transform;
 
 pub use blend::*;
@@ -49,6 +55,8 @@ pub use strokes::*;
 pub use svg_attrs::*;
 pub use svgraw::*;
 pub use text::*;
+pub(crate) use text_horizontal::*;
+pub use text_japanese::*;
 pub use transform::*;
 
 use crate::math::{self, Bounds, Matrix, Point};
@@ -434,6 +442,7 @@ impl Shape {
 
     pub fn set_vertical_align(&mut self, align: VerticalAlign) {
         self.vertical_align = align;
+        self.invalidate_extrect();
     }
 
     pub fn vertical_align(&self) -> VerticalAlign {
@@ -1526,7 +1535,8 @@ impl Shape {
     pub fn clear_text(&mut self) {
         self.invalidate_extrect();
         if let Type::Text(old_text_content) = &self.shape_type {
-            let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
+            let mut new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
+            new_text_content.set_line_adjustment(old_text_content.line_adjustment());
             self.shape_type = Type::Text(new_text_content);
         }
     }

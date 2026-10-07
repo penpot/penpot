@@ -22,14 +22,16 @@ use skia_safe::{
 };
 
 use std::borrow::Cow;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 
-use super::FontFamily;
+use super::text_horizontal::*;
+use super::text_japanese::*;
+use super::{FontFamily, FontStyle};
 use crate::math::Point;
-use crate::shapes::{self, merge_fills, Shape, Type, VerticalAlign};
+use crate::shapes::{self, kinsoku, merge_fills, Shape, Type, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
 
@@ -249,6 +251,57 @@ struct CachedExtrect {
     bottom: f32,
 }
 
+/// Vertical layout with the content version and box it was laid out for.
+#[derive(Clone)]
+struct VerticalLayoutCache {
+    version: u64,
+    rect: Rect,
+    layout: Rc<super::text_vertical::VerticalLayout>,
+}
+
+impl std::fmt::Debug for VerticalLayoutCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("VerticalLayoutCache")
+            .field("version", &self.version)
+            .field("rect", &self.rect)
+            .finish_non_exhaustive()
+    }
+}
+
+/// Horizontal paragraph plans with the content version they were built for.
+#[derive(Clone)]
+struct HorizontalPlansCache {
+    version: u64,
+    plans: Rc<Vec<HorizontalParagraphPlan>>,
+}
+
+/// Line adjustment of one horizontal Japanese paragraph at the layout width,
+/// per span: the sheds that squeeze its lines and the letter-spacing that
+/// justifies them.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct HorizontalAdjustment {
+    sheds: Vec<Vec<(usize, f32)>>,
+    spacing: Vec<Vec<(usize, f32)>>,
+}
+
+/// Per paragraph; `None` for paragraphs laid out by Skia alone.
+type HorizontalAdjustments = Rc<Vec<Option<HorizontalAdjustment>>>;
+
+#[derive(Debug, Clone)]
+struct LineAdjustmentCache {
+    version: u64,
+    width: f32,
+    adjustments: HorizontalAdjustments,
+}
+
+impl std::fmt::Debug for HorizontalPlansCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HorizontalPlansCache")
+            .field("version", &self.version)
+            .finish_non_exhaustive()
+    }
+}
+
 #[derive(Debug)]
 pub struct TextContentLayout {
     pub paragraph_builders: Vec<ParagraphBuilderGroup>,
@@ -256,6 +309,12 @@ pub struct TextContentLayout {
     /// can paint without rebuilding Skia layout. Cleared builders on clone are OK.
     pub paragraphs: Rc<Vec<Vec<skia::textlayout::Paragraph>>>,
     cached_extrect: Cell<Option<CachedExtrect>>,
+    /// Last vertical layout, shared across clones like `paragraphs`.
+    vertical: RefCell<Option<VerticalLayoutCache>>,
+    /// Last horizontal paragraph plans, shared across clones.
+    horizontal: RefCell<Option<HorizontalPlansCache>>,
+    /// Last Japanese line adjustment, shared across clones.
+    line_adjustment: RefCell<Option<LineAdjustmentCache>>,
 }
 
 impl Default for TextContentLayout {
@@ -270,6 +329,9 @@ impl Clone for TextContentLayout {
             paragraph_builders: vec![],
             paragraphs: Rc::clone(&self.paragraphs),
             cached_extrect: Cell::new(self.cached_extrect.get()),
+            vertical: RefCell::new(self.vertical.borrow().clone()),
+            horizontal: RefCell::new(self.horizontal.borrow().clone()),
+            line_adjustment: RefCell::new(self.line_adjustment.borrow().clone()),
         }
     }
 }
@@ -286,6 +348,9 @@ impl TextContentLayout {
             paragraph_builders: vec![],
             paragraphs: Rc::new(Vec::new()),
             cached_extrect: Cell::new(None),
+            vertical: RefCell::new(None),
+            horizontal: RefCell::new(None),
+            line_adjustment: RefCell::new(None),
         }
     }
 
@@ -416,6 +481,8 @@ pub struct TextContent {
     pub paragraphs: Vec<Paragraph>,
     pub bounds: Rect,
     pub grow_type: GrowType,
+    /// How over-long lines are fitted, for the whole shape.
+    line_adjustment: LineAdjustment,
     pub size: TextContentSize,
     pub layout: TextContentLayout,
     content_version: u64,
@@ -443,6 +510,7 @@ impl TextContent {
             paragraphs: Vec::new(),
             bounds,
             grow_type,
+            line_adjustment: LineAdjustment::default(),
             size: TextContentSize::default(),
             layout: TextContentLayout::new(),
             content_version: 0,
@@ -459,6 +527,7 @@ impl TextContent {
             paragraphs,
             bounds,
             grow_type,
+            line_adjustment: self.line_adjustment,
             size: TextContentSize::new_with_size(bounds.width(), bounds.height()),
             layout: TextContentLayout::new(),
             content_version: 0,
@@ -538,11 +607,15 @@ impl TextContent {
         &self.paragraphs
     }
 
-    pub fn has_non_ascii(&self) -> bool {
+    /// True when some span holds an emoji: an emoji code point, or an emoji
+    /// presentation selector or keycap mark (`©️`, `#️⃣`). Color emoji need an
+    /// overlay above strokes.
+    pub fn has_emoji(&self) -> bool {
         self.paragraphs
             .iter()
             .flat_map(|p| p.children())
-            .any(|span| !span.text.is_ascii())
+            .flat_map(|span| span.text.chars())
+            .any(|c| super::text_vertical::is_emoji_char(c) || matches!(c, '\u{FE0F}' | '\u{20E3}'))
     }
 
     pub fn paragraphs_mut(&mut self) -> &mut Vec<Paragraph> {
@@ -558,8 +631,198 @@ impl TextContent {
         self.size.normalized_line_height
     }
 
+    /// Vertical layout for the box `rect`: its height is the column-wrap
+    /// budget and span paints resolve against it. Cached until the content or
+    /// the box changes; clones share it.
+    pub fn vertical_layout(&self, rect: &Rect) -> Rc<super::text_vertical::VerticalLayout> {
+        if let Some(entry) = self.layout.vertical.borrow().as_ref() {
+            if entry.version == self.content_version && entry.rect == *rect {
+                return Rc::clone(&entry.layout);
+            }
+        }
+        let layout = Rc::new(super::text_vertical::layout_for_rect(self, rect));
+        *self.layout.vertical.borrow_mut() = Some(VerticalLayoutCache {
+            version: self.content_version,
+            rect: *rect,
+            layout: Rc::clone(&layout),
+        });
+        layout
+    }
+
+    /// True when a horizontal paragraph gets its lines adjusted here rather
+    /// than by Skia: Japanese text that squeezes or is justified.
+    fn adjusts_lines(&self, paragraph: &Paragraph, plan: &HorizontalParagraphPlan) -> bool {
+        uses_japanese_layout(paragraph, &plan.texts)
+            && (self.line_adjustment == LineAdjustment::PushInFirst
+                || paragraph.text_align() == skia::textlayout::TextAlign::Justify)
+    }
+
+    /// Squeeze sheds and justify spacing of each horizontal Japanese
+    /// paragraph at the layout width (see `horizontal_squeeze_sheds` and
+    /// `horizontal_justify_spacing`), cached until the content or the width
+    /// changes. `None` when no paragraph needs them.
+    fn horizontal_line_adjustments(&self) -> Option<HorizontalAdjustments> {
+        if self.is_vertical() || self.grow_type() == GrowType::AutoWidth {
+            return None;
+        }
+        let plans = self.horizontal_plans();
+        let adjusted: Vec<bool> = self
+            .paragraphs
+            .iter()
+            .zip(plans.iter())
+            .map(|(paragraph, plan)| self.adjusts_lines(paragraph, plan))
+            .collect();
+        if !adjusted.contains(&true) {
+            return None;
+        }
+        let width = self.get_width(self.bounds().width());
+        if let Some(entry) = self.layout.line_adjustment.borrow().as_ref() {
+            if entry.version == self.content_version && entry.width == width {
+                return Some(Rc::clone(&entry.adjustments));
+            }
+        }
+        let adjustments: HorizontalAdjustments = Rc::new(
+            self.paragraphs
+                .iter()
+                .zip(plans.iter())
+                .zip(&adjusted)
+                .map(|((paragraph, plan), adjusted)| {
+                    adjusted.then(|| self.adjust_horizontal_lines(paragraph, plan, width))
+                })
+                .collect(),
+        );
+        *self.layout.line_adjustment.borrow_mut() = Some(LineAdjustmentCache {
+            version: self.content_version,
+            width,
+            adjustments: Rc::clone(&adjustments),
+        });
+        Some(adjustments)
+    }
+
+    fn adjust_horizontal_lines(
+        &self,
+        paragraph: &Paragraph,
+        plan: &HorizontalParagraphPlan,
+        width: f32,
+    ) -> HorizontalAdjustment {
+        let lay_out = |extra_sheds: &[Vec<(usize, f32)>]| {
+            let mut laid_out = self
+                .horizontal_measure_builder(paragraph, plan, extra_sheds)
+                .build();
+            laid_out.layout(width);
+            laid_out
+        };
+        let (sheds, laid_out) = if self.line_adjustment == LineAdjustment::PushInFirst {
+            horizontal_squeeze_sheds(paragraph, plan, width, &lay_out)
+        } else {
+            let sheds = vec![Vec::new(); plan.texts.len()];
+            let laid_out = lay_out(&sheds);
+            (sheds, laid_out)
+        };
+        let spacing = if paragraph.text_align() == skia::textlayout::TextAlign::Justify {
+            horizontal_justify_spacing(&laid_out, plan, width)
+        } else {
+            vec![Vec::new(); plan.texts.len()]
+        };
+        HorizontalAdjustment { sheds, spacing }
+    }
+
+    /// Left-aligned builder of one paragraph with plain fills, its plan's
+    /// sheds plus `extra_sheds`, for measuring line adjustment.
+    fn horizontal_measure_builder(
+        &self,
+        paragraph: &Paragraph,
+        plan: &HorizontalParagraphPlan,
+        extra_sheds: &[Vec<(usize, f32)>],
+    ) -> ParagraphBuilder {
+        let fonts = get_font_collection();
+        let fallback_fonts = get_fallback_fonts();
+        let mut paragraph_style = paragraph.paragraph_to_style();
+        paragraph_style.set_apply_rounding_hack(false);
+        paragraph_style.set_text_align(skia::textlayout::TextAlign::Left);
+        let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+        for (span_index, ((span, text), sheds)) in paragraph
+            .children()
+            .iter()
+            .zip(&plan.texts)
+            .zip(&plan.sheds)
+            .enumerate()
+        {
+            let combined: Vec<(usize, f32)> = sheds
+                .iter()
+                .chain(extra_sheds.get(span_index).into_iter().flatten())
+                .copied()
+                .collect();
+            let text_style = span.to_style_with_paint(
+                &self.bounds(),
+                fallback_fonts,
+                false,
+                paragraph.line_height(),
+                None,
+            );
+            builder.push_style(&text_style);
+            add_horizontal_span(
+                &mut builder,
+                span,
+                text,
+                &combined,
+                &plan.ruby_spacing.adjustments[span_index],
+                &text_style,
+                fonts,
+            );
+        }
+        builder
+    }
+
+    /// Horizontal passes of every paragraph (kinsoku texts, offsets, aki
+    /// sheds, ruby spacing), cached until the content changes; clones share
+    /// them. A font load bumps the content version, which ruby spacing needs.
+    pub(crate) fn horizontal_plans(&self) -> Rc<Vec<HorizontalParagraphPlan>> {
+        if let Some(entry) = self.layout.horizontal.borrow().as_ref() {
+            if entry.version == self.content_version {
+                return Rc::clone(&entry.plans);
+            }
+        }
+        let plans: Rc<Vec<HorizontalParagraphPlan>> = Rc::new(
+            self.paragraphs
+                .iter()
+                .map(HorizontalParagraphPlan::new)
+                .collect(),
+        );
+        *self.layout.horizontal.borrow_mut() = Some(HorizontalPlansCache {
+            version: self.content_version,
+            plans: Rc::clone(&plans),
+        });
+        plans
+    }
+
+    /// Writing mode applies to the whole shape: the first paragraph sets it.
+    pub fn is_vertical(&self) -> bool {
+        self.paragraphs
+            .first()
+            .is_some_and(|p| p.writing_mode() == WritingMode::VerticalRl)
+    }
+
+    /// Vertical writing paints from its own layout, not the cached
+    /// horizontal paragraphs. Horizontal ruby, warichu and emphasis marks
+    /// paint from the cached paragraphs like the base text.
+    pub fn can_paint_from_layout_cache(&self) -> bool {
+        !self.is_vertical()
+    }
+
     pub fn grow_type(&self) -> GrowType {
         self.grow_type
+    }
+
+    pub fn line_adjustment(&self) -> LineAdjustment {
+        self.line_adjustment
+    }
+
+    pub fn set_line_adjustment(&mut self, line_adjustment: LineAdjustment) {
+        if self.line_adjustment != line_adjustment {
+            self.line_adjustment = line_adjustment;
+            self.content_version = self.content_version.wrapping_add(1);
+        }
     }
 
     pub fn set_grow_type(&mut self, grow_type: GrowType) {
@@ -638,6 +901,11 @@ impl TextContent {
         // AutoWidth paragraphs are laid out with f32::MAX, so line metrics
         // (line.left) reflect alignment within that huge width and are
         // unusable for tight bounds.  Fall back to content_rect.
+        // Vertical writing takes its bounds from content_rect; the
+        // skparagraph line metrics below describe an unused horizontal layout.
+        if self.is_vertical() {
+            return self.vertical_extrect(selrect, valign);
+        }
         if self.grow_type() == GrowType::AutoWidth {
             return self.content_rect(selrect, valign);
         }
@@ -720,7 +988,34 @@ impl TextContent {
         bounds
     }
 
+    /// Content rect of vertical text grown to the laid-out column block, which
+    /// overflows a fixed shape that is too narrow for its columns.
+    fn vertical_extrect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
+        let mut rect = self.content_rect(selrect, valign);
+        let layout = self.vertical_layout(selrect);
+        let left = selrect.left()
+            + super::text_vertical::block_axis_offset(selrect.width(), layout.width, valign);
+        rect.join(Rect::from_xywh(
+            left,
+            selrect.top(),
+            layout.width,
+            layout.height,
+        ));
+        rect
+    }
+
     pub fn content_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
+        // Vertical content anchors to the shape's right edge and always
+        // aligns to the top; vertical-align does not apply.
+        if self.is_vertical() {
+            let (width, height) = if self.grow_type() == GrowType::AutoWidth {
+                (self.size.width, self.size.height)
+            } else {
+                (selrect.width(), selrect.height())
+            };
+            return Rect::from_xywh(selrect.right() - width, selrect.y(), width, height);
+        }
+
         let x = selrect.x();
         let mut y = selrect.y();
 
@@ -752,10 +1047,31 @@ impl TextContent {
         self.bounds = Rect::from_ltrb(p1.x, p1.y, p2.x, p2.y);
     }
 
+    /// Caret position for a selrect-local point. Vertical text wraps its
+    /// columns at the `selrect` height, as painting does; stored bounds can
+    /// be taller than a fixed shape.
     pub fn get_caret_position_from_shape_coords(
         &self,
         point: &Point,
+        selrect: &Rect,
+        vertical_align: VerticalAlign,
     ) -> Option<TextPositionWithAffinity> {
+        // Vertical writing: resolve through the vertical pass. The content
+        // block is right-anchored.
+        if self.is_vertical() {
+            let layout = self.vertical_layout(selrect);
+            let cx = point.x
+                - super::text_vertical::block_axis_offset(
+                    selrect.width(),
+                    layout.width,
+                    vertical_align,
+                );
+            let (paragraph, offset) = super::text_vertical::caret_from_point(&layout, cx, point.y)?;
+            return Some(TextPositionWithAffinity::new_downstream_affinity(
+                paragraph, offset,
+            ));
+        }
+
         let mut offset_y = 0.0;
         let layout_paragraphs = self.layout.paragraphs.iter().flatten();
 
@@ -778,12 +1094,24 @@ impl TextContent {
                 // the paragraph's top-left. For multi-paragraph or wrapped text, each
                 // paragraph has its own origin; subtract start_y so we pass paragraph-local coords.
                 let para_pt = Point::new(point.x, point.y - start_y);
+                if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
+                    if let Some(original_position) =
+                        horizontal_warichu_hit_test(paragraph, layout_paragraph, para_pt)
+                    {
+                        return Some(TextPositionWithAffinity::new_downstream_affinity(
+                            paragraph_index,
+                            original_position,
+                        ));
+                    }
+                }
                 let position_with_affinity =
                     layout_paragraph.get_glyph_position_at_coordinate((para_pt.x, para_pt.y));
-                if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
-                    // Skia reports UTF-16 code units, the model counts characters.
-                    let offset =
-                        paragraph.utf16_offset_to_char(position_with_affinity.position as usize);
+                if let Some(plan) = self.horizontal_plans().get(paragraph_index) {
+                    // Skia reports builder-text UTF-16 offsets (transformed and
+                    // kinsoku-shifted); the model counts source characters.
+                    let offset = plan
+                        .offsets
+                        .builder_to_source(position_with_affinity.position as usize);
 
                     return Some(TextPositionWithAffinity::new(
                         position_with_affinity,
@@ -821,9 +1149,11 @@ impl TextContent {
         point: &Point,
         view_matrix: &Matrix,
         shape_matrix: &Matrix,
+        selrect: &Rect,
+        vertical_align: VerticalAlign,
     ) -> Option<TextPositionWithAffinity> {
         let shape_rel_point = Shape::get_relative_point(point, view_matrix, shape_matrix)?;
-        self.get_caret_position_from_shape_coords(&shape_rel_point)
+        self.get_caret_position_from_shape_coords(&shape_rel_point, selrect, vertical_align)
     }
 
     /// Builds the ParagraphBuilders necessary to render
@@ -907,15 +1237,62 @@ impl TextContent {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
         let mut paragraph_group = Vec::new();
+        let plans = self.horizontal_plans();
+        let adjustments = align_override
+            .is_none()
+            .then(|| self.horizontal_line_adjustments())
+            .flatten();
 
-        for paragraph in self.paragraphs() {
+        for (paragraph_index, (paragraph, plan)) in
+            self.paragraphs().iter().zip(plans.iter()).enumerate()
+        {
+            let adjustment = adjustments
+                .as_ref()
+                .and_then(|adjustments| adjustments.get(paragraph_index))
+                .and_then(Option::as_ref);
             let mut paragraph_style = paragraph.paragraph_to_style();
+            if self.adjusts_lines(paragraph, plan) {
+                // Line adjustment gives characters runs of their own; rounding
+                // each run up would wrap the adjusted lines. The measuring
+                // pass shares this style so both break alike.
+                paragraph_style.set_apply_rounding_hack(false);
+            }
             if let Some(align) = align_override {
                 paragraph_style.set_text_align(align);
+            } else if adjustment.is_some()
+                && paragraph.text_align() == skia::textlayout::TextAlign::Justify
+            {
+                // The justify spacing already fills the lines.
+                paragraph_style.set_text_align(skia::textlayout::TextAlign::Left);
             }
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
-            for span in paragraph.children() {
+            for (span_index, (((span, text), plan_sheds), ruby_extra)) in paragraph
+                .children()
+                .iter()
+                .zip(&plan.texts)
+                .zip(&plan.sheds)
+                .zip(&plan.ruby_spacing.adjustments)
+                .enumerate()
+            {
+                let squeeze = adjustment.and_then(|adjustment| adjustment.sheds.get(span_index));
+                let justify = adjustment.and_then(|adjustment| adjustment.spacing.get(span_index));
+                let combined_sheds: Vec<(usize, f32)>;
+                let sheds: &[(usize, f32)] = match squeeze {
+                    Some(squeeze) if !squeeze.is_empty() => {
+                        combined_sheds = plan_sheds.iter().chain(squeeze).copied().collect();
+                        &combined_sheds
+                    }
+                    _ => plan_sheds,
+                };
+                let combined: Vec<(usize, f32)>;
+                let extra: &[(usize, f32)] = match justify {
+                    Some(justify) if !justify.is_empty() => {
+                        combined = ruby_extra.iter().chain(justify).copied().collect();
+                        &combined
+                    }
+                    _ => ruby_extra,
+                };
                 let text_style = if let Some((layer, image_id)) = opaque_image_layer {
                     let mut style = span.to_style(
                         &self.bounds(),
@@ -973,12 +1350,11 @@ impl TextContent {
                         fill_layer,
                     )
                 };
-                let text: String = span.apply_text_transform();
                 if !text.is_empty() {
                     has_text = true;
                 }
                 builder.push_style(&text_style);
-                add_text_with_tabs(&mut builder, &text, span.font_size);
+                add_horizontal_span(&mut builder, span, text, sheds, extra, &text_style, fonts);
             }
             if !has_text {
                 builder.add_text(" ");
@@ -1189,21 +1565,51 @@ impl TextContent {
 
         self.size.set_size(selrect.width(), selrect.height());
 
-        match self.grow_type() {
-            GrowType::AutoHeight => {
-                let result = self.text_layout_auto_height();
-                self.layout_width = Some(result.2.width);
-                self.set_layout_from_result(result, selrect.width(), selrect.height());
+        if self.is_vertical() {
+            // Vertical writing takes sizes from the vertical pass, so the
+            // horizontal skparagraph layout is skipped. Empty paragraph slots
+            // mark the layout as done. Auto-width fits both axes without
+            // wrapping. Auto-height wraps at the shape height and grows width
+            // as columns advance right-to-left. Fixed keeps both dimensions.
+            self.layout.set(
+                Vec::new(),
+                (0..self.paragraphs.len().max(1))
+                    .map(|_| Vec::new())
+                    .collect(),
+            );
+            self.layout_width = Some(selrect.width());
+            match self.grow_type() {
+                GrowType::AutoWidth => {
+                    let layout = self.vertical_layout(&selrect);
+                    self.size.width = layout.width.ceil().max(DEFAULT_TEXT_CONTENT_SIZE);
+                    self.size.height = layout.height.ceil().max(DEFAULT_TEXT_CONTENT_SIZE);
+                    self.size.max_width = self.size.width;
+                }
+                GrowType::AutoHeight => {
+                    let layout = self.vertical_layout(&selrect);
+                    self.size.width = layout.width.ceil().max(DEFAULT_TEXT_CONTENT_SIZE);
+                    self.size.height = selrect.height();
+                    self.size.max_width = self.size.width;
+                }
+                GrowType::Fixed => {}
             }
-            GrowType::AutoWidth => {
-                let result = self.text_layout_auto_width();
-                self.layout_width = Some(result.2.width);
-                self.set_layout_from_result(result, selrect.width(), selrect.height());
-            }
-            GrowType::Fixed => {
-                let result = self.text_layout_fixed();
-                self.layout_width = Some(result.2.width);
-                self.set_layout_from_result(result, selrect.width(), selrect.height());
+        } else {
+            match self.grow_type() {
+                GrowType::AutoHeight => {
+                    let result = self.text_layout_auto_height();
+                    self.layout_width = Some(result.2.width);
+                    self.set_layout_from_result(result, selrect.width(), selrect.height());
+                }
+                GrowType::AutoWidth => {
+                    let result = self.text_layout_auto_width();
+                    self.layout_width = Some(result.2.width);
+                    self.set_layout_from_result(result, selrect.width(), selrect.height());
+                }
+                GrowType::Fixed => {
+                    let result = self.text_layout_fixed();
+                    self.layout_width = Some(result.2.width);
+                    self.set_layout_from_result(result, selrect.width(), selrect.height());
+                }
             }
         }
 
@@ -1315,6 +1721,19 @@ impl TextContent {
 
         let result = matrix.map_point((x_pos, y_pos));
 
+        // Vertical writing: hit-test against the laid-out cells (absolute
+        // coordinates, right-anchored to the selrect).
+        if self.is_vertical() {
+            let layout = self.vertical_layout(&shape.selrect);
+            return super::text_vertical::intersects(
+                &layout,
+                &shape.selrect,
+                shape.vertical_align(),
+                result.x,
+                result.y,
+            );
+        }
+
         // Change coords to content space
         let x_pos = result.x - rect.x();
         let y_pos = result.y - rect.y();
@@ -1346,6 +1765,7 @@ impl Default for TextContent {
             paragraphs: vec![],
             bounds: Rect::default(),
             grow_type: GrowType::Fixed,
+            line_adjustment: LineAdjustment::default(),
             size: TextContentSize::default(),
             layout: TextContentLayout::new(),
             content_version: 0,
@@ -1375,6 +1795,8 @@ pub struct Paragraph {
     text_direction: TextDirection,
     text_decoration: Option<TextDecoration>,
     text_transform: Option<TextTransform>,
+    writing_mode: WritingMode,
+    text_orientation: TextOrientation,
     line_height: f32,
     letter_spacing: f32,
     children: Vec<TextSpan>,
@@ -1387,6 +1809,8 @@ impl Default for Paragraph {
             text_direction: TextDirection::LTR,
             text_decoration: None,
             text_transform: None,
+            writing_mode: WritingMode::default(),
+            text_orientation: TextOrientation::default(),
             line_height: 1.0,
             letter_spacing: 0.0,
             children: vec![],
@@ -1410,10 +1834,28 @@ impl Paragraph {
             text_direction,
             text_decoration,
             text_transform,
+            writing_mode: WritingMode::default(),
+            text_orientation: TextOrientation::default(),
             line_height,
             letter_spacing,
             children,
         }
+    }
+
+    pub fn writing_mode(&self) -> WritingMode {
+        self.writing_mode
+    }
+
+    pub fn set_writing_mode(&mut self, writing_mode: WritingMode) {
+        self.writing_mode = writing_mode;
+    }
+
+    pub fn text_orientation(&self) -> TextOrientation {
+        self.text_orientation
+    }
+
+    pub fn set_text_orientation(&mut self, text_orientation: TextOrientation) {
+        self.text_orientation = text_orientation;
     }
 
     pub fn children(&self) -> &[TextSpan] {
@@ -1428,13 +1870,6 @@ impl Paragraph {
         for (span_index, span) in self.children.iter_mut().enumerate() {
             span.set_position(index, span_index as u32);
         }
-    }
-
-    fn char_count(&self) -> usize {
-        self.children
-            .iter()
-            .map(|span| span.text.chars().count())
-            .sum()
     }
 
     /// Translate a character offset into the UTF-16 offset Skia indexes by.
@@ -1454,21 +1889,6 @@ impl Paragraph {
             remaining -= take;
         }
         utf16
-    }
-
-    /// Translate a UTF-16 offset coming from Skia into a character offset.
-    /// An offset inside a character rounds up, so it never splits a glyph.
-    pub fn utf16_offset_to_char(&self, utf16_offset: usize) -> usize {
-        let (mut low, mut high) = (0, self.char_count());
-        while low < high {
-            let middle = (low + high) / 2;
-            if self.char_offset_to_utf16(middle) < utf16_offset {
-                low = middle + 1;
-            } else {
-                high = middle;
-            }
-        }
-        low
     }
 
     fn text(&self) -> String {
@@ -1528,6 +1948,15 @@ impl Paragraph {
         self.text_transform
     }
 
+    /// Span texts as fed to the paragraph builders (text-transform applied,
+    /// Japanese spacing normalized, kinsoku break suppressions inserted),
+    /// plus the map from original to builder-text UTF-16 offsets. Consumers
+    /// of laid-out offsets must translate through the map. Only paragraphs
+    /// with Japanese text or ruby are transformed.
+    pub fn layout_span_texts(&self) -> (Vec<String>, kinsoku::OffsetMap) {
+        layout_span_texts(self)
+    }
+
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
 
@@ -1548,28 +1977,6 @@ impl Paragraph {
     }
 }
 
-/// Capitalize the first letter of each word, preserving all original whitespace.
-/// Matches CSS `text-transform: capitalize` behavior: a "word" starts after
-/// any non-letter character (whitespace, punctuation, digits, symbols).
-fn capitalize_words(text: &str) -> String {
-    let mut result = String::with_capacity(text.len());
-    let mut capitalize_next = true;
-    for c in text.chars() {
-        if c.is_alphabetic() {
-            if capitalize_next {
-                result.extend(c.to_uppercase());
-            } else {
-                result.push(c);
-            }
-            capitalize_next = false;
-        } else {
-            result.push(c);
-            capitalize_next = true;
-        }
-    }
-    result
-}
-
 /// Add `text`, pushing every '\t' as a one em wide placeholder.
 pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size: f32) {
     let tab = PlaceholderStyle::new(
@@ -1588,25 +1995,96 @@ pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size:
     }
 }
 
-/// Filter control characters below U+0020, preserving tabs and line breaks.
-/// Browser-dependent: Firefox drops them, others replace with space.
-fn process_ignored_chars(text: &str, browser: u8) -> String {
-    text.chars()
-        .filter_map(|c| {
-            if c == '\t' || c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
-                return Some(c);
-            }
-            if c < '\u{0020}' {
-                if browser == Browser::Firefox as u8 {
-                    None
-                } else {
-                    Some(' ')
-                }
-            } else {
-                Some(c)
-            }
+/// Text after browser filtering and CSS text-transform, plus the source
+/// UTF-16 range behind each output scalar. One source scalar can yield
+/// several (`ß` uppercases to `SS`); the ranges let vertical layout wrap and
+/// export those glyphs as one source unit.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AppliedTextTransform {
+    pub text: String,
+    pub(crate) source_ranges: Vec<(std::ops::Range<usize>, std::ops::Range<usize>)>,
+}
+
+impl AppliedTextTransform {
+    pub fn source_utf16_range(
+        &self,
+        transformed: std::ops::Range<usize>,
+    ) -> std::ops::Range<usize> {
+        // Output ranges are contiguous and ascending: skip to the first one
+        // that ends past `transformed.start`.
+        let first = self
+            .source_ranges
+            .partition_point(|(output, _)| output.end <= transformed.start);
+        let mut ranges = self.source_ranges[first..]
+            .iter()
+            .take_while(|(output, _)| output.start < transformed.end)
+            .filter(|(output, _)| output.end > transformed.start)
+            .map(|(_, source)| source.clone());
+        let Some(first) = ranges.next() else {
+            return 0..0;
+        };
+        ranges.fold(first, |range, source| {
+            range.start.min(source.start)..range.end.max(source.end)
         })
-        .collect()
+    }
+}
+
+fn apply_text_transform_with_source_ranges(
+    text: &str,
+    browser: u8,
+    transform: Option<TextTransform>,
+) -> AppliedTextTransform {
+    let mut output = String::with_capacity(text.len());
+    let mut source_ranges = Vec::new();
+    let mut source_utf16 = 0usize;
+    let mut output_utf16 = 0usize;
+    let mut capitalize_next = true;
+
+    for source_char in text.chars() {
+        let source_start = source_utf16;
+        source_utf16 += source_char.len_utf16();
+
+        // Control characters below U+0020 are filtered (Firefox drops them,
+        // other browsers show a space); tabs and line breaks are kept.
+        let processed = if matches!(source_char, '\t' | '\n' | '\r' | '\u{2028}' | '\u{2029}')
+            || source_char >= '\u{0020}'
+        {
+            Some(source_char)
+        } else if browser == Browser::Firefox as u8 {
+            None
+        } else {
+            Some(' ')
+        };
+        let Some(processed) = processed else {
+            continue;
+        };
+
+        let transformed: String = match transform {
+            Some(TextTransform::Uppercase) => processed.to_uppercase().collect(),
+            Some(TextTransform::Lowercase) => processed.to_lowercase().collect(),
+            Some(TextTransform::Capitalize) if processed.is_alphabetic() && capitalize_next => {
+                capitalize_next = false;
+                processed.to_uppercase().collect()
+            }
+            Some(TextTransform::Capitalize) => {
+                capitalize_next = !processed.is_alphabetic();
+                processed.to_string()
+            }
+            None => processed.to_string(),
+        };
+
+        for transformed_char in transformed.chars() {
+            let transformed_start = output_utf16;
+            output_utf16 += transformed_char.len_utf16();
+            source_ranges.push((transformed_start..output_utf16, source_start..source_utf16));
+            output.push(transformed_char);
+        }
+    }
+
+    AppliedTextTransform {
+        text: output,
+        source_ranges,
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -1621,9 +2099,54 @@ pub struct TextSpan {
     pub text_decoration: Option<TextDecoration>,
     pub text_transform: Option<TextTransform>,
     pub text_direction: TextDirection,
+    pub text_orientation: TextOrientation,
+    pub text_combine_upright: TextCombineUpright,
+    /// Emphasis mark (圏点 / bouten) applied to each base character.
+    pub text_emphasis: TextEmphasis,
+    /// Ruby (furigana) annotation for this span; empty means no ruby.
+    pub ruby: String,
+    pub ruby_size: RubySize,
+    pub ruby_align: RubyAlign,
+    pub ruby_overhang: RubyOverhang,
+    pub ruby_side: RubySide,
+    /// Warichu (割注): two half-size lines stacked in one column position.
+    pub warichu: bool,
+    pub font_features: FontFeatures,
+    pub annotation_clearance: AnnotationClearance,
     pub fills: Vec<shapes::Fill>,
     pub paragraph_position: u32,
     pub span_position: u32,
+}
+
+impl Default for TextSpan {
+    fn default() -> Self {
+        Self {
+            text: String::default(),
+            font_family: FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            font_size: 14.0,
+            line_height: 1.2,
+            letter_spacing: 0.0,
+            font_weight: 400,
+            font_variant_id: Uuid::nil(),
+            text_decoration: None,
+            text_transform: None,
+            text_direction: TextDirection::LTR,
+            text_orientation: TextOrientation::default(),
+            text_combine_upright: TextCombineUpright::default(),
+            text_emphasis: TextEmphasis::default(),
+            ruby: String::default(),
+            ruby_size: RubySize::default(),
+            ruby_align: RubyAlign::default(),
+            ruby_overhang: RubyOverhang::default(),
+            ruby_side: RubySide::default(),
+            warichu: false,
+            font_features: FontFeatures::default(),
+            annotation_clearance: AnnotationClearance::default(),
+            fills: vec![],
+            paragraph_position: u32::MAX,
+            span_position: u32::MAX,
+        }
+    }
 }
 
 impl TextSpan {
@@ -1662,8 +2185,7 @@ impl TextSpan {
             font_weight,
             font_variant_id,
             fills,
-            paragraph_position: u32::MAX,
-            span_position: u32::MAX,
+            ..Self::default()
         }
     }
 
@@ -1674,6 +2196,60 @@ impl TextSpan {
     pub fn set_position(&mut self, paragraph: u32, span: u32) {
         self.paragraph_position = paragraph;
         self.span_position = span;
+    }
+
+    /// Ruby annotation text, without surrounding whitespace.
+    pub fn ruby_text(&self) -> &str {
+        self.ruby.trim()
+    }
+
+    /// True when the span shows a reading. A warichu span shows none: the
+    /// note replaces the base text, so a reading has nothing to annotate.
+    pub fn has_ruby(&self) -> bool {
+        !self.warichu && !self.ruby_text().is_empty()
+    }
+
+    pub fn ruby_font_size(&self) -> f32 {
+        self.font_size * self.ruby_size.scale()
+    }
+
+    /// Warichu needs at least two characters to fill its two sub-lines.
+    pub fn is_warichu(&self) -> bool {
+        self.warichu && self.text.chars().count() >= 2
+    }
+
+    /// Room, in em of the span, that automatic annotation clearance adds to
+    /// the line height: the ruby at its size plus the emphasis marks. `None`
+    /// keeps the set line height, so annotations sit in the line gap.
+    pub fn annotation_room_em(&self) -> f32 {
+        if !self.annotation_clearance.is_auto() {
+            return 0.0;
+        }
+        let ruby = if self.has_ruby() {
+            self.ruby_size.scale()
+        } else {
+            0.0
+        };
+        let emphasis = if self.text_emphasis.is_none() {
+            0.0
+        } else {
+            super::text_japanese::EMPHASIS_FONT_SCALE
+        };
+        ruby + emphasis
+    }
+
+    /// Automatic clearance stacks emphasis marks outside an over-side ruby.
+    pub fn stacks_emphasis_outside_ruby(&self) -> bool {
+        self.annotation_clearance.is_auto() && self.has_ruby() && self.ruby_side == RubySide::Over
+    }
+
+    /// Cross-axis offset of the emphasis marks past a stacked ruby layer.
+    pub fn emphasis_ruby_offset(&self) -> f32 {
+        if self.stacks_emphasis_outside_ruby() {
+            self.ruby_font_size()
+        } else {
+            0.0
+        }
     }
 
     pub fn to_style(
@@ -1719,7 +2295,8 @@ impl TextSpan {
             merge_fills(&self.fills, *content_bounds)
         };
 
-        let max_line_height = f32::max(paragraph_line_height, self.line_height);
+        let max_line_height =
+            f32::max(paragraph_line_height, self.line_height) + self.annotation_room_em();
         style.set_height(max_line_height);
         style.set_height_override(true);
         style.set_foreground_paint(&paint);
@@ -1741,6 +2318,11 @@ impl TextSpan {
         style.set_font_families(&font_families);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
+        match self.font_features {
+            FontFeatures::None => {}
+            FontFeatures::Palt => style.add_font_feature("palt", 1),
+            FontFeatures::Vpal => style.add_font_feature("vpal", 1),
+        }
         style.set_half_leading(true);
 
         style
@@ -1784,13 +2366,20 @@ impl TextSpan {
     }
 
     pub fn transform_text(&self, text: &str) -> String {
-        let text = process_ignored_chars(text, crate::globals::current_browser());
-        match self.text_transform {
-            Some(TextTransform::Uppercase) => text.to_uppercase(),
-            Some(TextTransform::Lowercase) => text.to_lowercase(),
-            Some(TextTransform::Capitalize) => capitalize_words(&text),
-            None => text,
-        }
+        apply_text_transform_with_source_ranges(
+            text,
+            crate::globals::current_browser(),
+            self.text_transform,
+        )
+        .text
+    }
+
+    pub fn apply_text_transform_with_source_ranges(&self) -> AppliedTextTransform {
+        apply_text_transform_with_source_ranges(
+            &self.text,
+            crate::globals::current_browser(),
+            self.text_transform,
+        )
     }
 
     pub fn apply_text_transform(&self) -> String {
@@ -1825,6 +2414,7 @@ pub struct PositionData {
 #[derive(Debug)]
 pub struct ParagraphLayout {
     pub paragraph: skia::textlayout::Paragraph,
+    pub source_paragraph: usize,
     pub x: f32,
     pub y: f32,
     pub decorations: Vec<TextDecorationSegment>,
@@ -1836,7 +2426,7 @@ pub struct TextLayoutData {
     pub paragraphs: Vec<ParagraphLayout>,
 }
 
-fn direction_to_int(direction: TextDirection) -> u32 {
+pub(crate) fn direction_to_int(direction: TextDirection) -> u32 {
     match direction {
         TextDirection::RTL => 0,
         TextDirection::LTR => 1,
@@ -1857,6 +2447,7 @@ pub fn calculate_text_layout_data(
     let mut position_data: Vec<PositionData> = Vec::new();
     let mut previous_line_height = text_content.normalized_line_height();
     let text_paragraphs = text_content.paragraphs();
+    let plans = text_content.horizontal_plans();
 
     // 1. Build + layout each paragraph once, recording heights as we go.
     let mut paragraph_heights: Vec<f32> = Vec::new();
@@ -1896,12 +2487,14 @@ pub fn calculate_text_layout_data(
         for skia_paragraph in group_paragraphs.into_iter() {
             let decorations = text_paragraphs
                 .get(i)
-                .map(|text_paragraph| {
-                    decoration_segments(&skia_paragraph, text_paragraph, x, y_accum)
+                .zip(plans.get(i))
+                .map(|(text_paragraph, plan)| {
+                    decoration_segments(&skia_paragraph, text_paragraph, &plan.offsets, x, y_accum)
                 })
                 .unwrap_or_default();
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
+                source_paragraph: i,
                 x,
                 y: y_accum,
                 decorations,
@@ -1912,57 +2505,19 @@ pub fn calculate_text_layout_data(
 
     // Calculate position data from paragraph_layouts
     if !skip_position_data {
-        for (paragraph_index, para_layout) in paragraph_layouts.iter().enumerate() {
-            let current_y = para_layout.y;
-            let text_paragraph = text_paragraphs.get(paragraph_index);
-            if let Some(text_para) = text_paragraph {
-                let mut span_ranges: Vec<(usize, usize, usize)> = vec![];
-                let mut cur = 0;
-                for (span_index, span) in text_para.children().iter().enumerate() {
-                    let text: String = span.apply_text_transform();
-                    let text_len = text.encode_utf16().count();
-                    span_ranges.push((cur, cur + text_len, span_index));
-                    cur += text_len;
-                }
-                for (start, end, span_index) in span_ranges {
-                    let rects = para_layout.paragraph.get_rects_for_range(
-                        start..end,
-                        RectHeightStyle::Tight,
-                        RectWidthStyle::Tight,
-                    );
-
-                    for textbox in rects {
-                        let direction = textbox.direct;
-                        let mut rect = textbox.rect;
-                        let cy = rect.top + rect.height() / 2.0;
-
-                        // Get byte positions from Skia's transformed text layout
-                        let start_pos = para_layout
-                            .paragraph
-                            .get_glyph_position_at_coordinate((rect.left + 0.1, cy))
-                            .position as usize
-                            - start;
-
-                        let end_pos = para_layout
-                            .paragraph
-                            .get_glyph_position_at_coordinate((rect.right - 0.1, cy))
-                            .position as usize
-                            - start;
-
-                        rect.offset((x, current_y));
-                        position_data.push(PositionData {
-                            paragraph: paragraph_index as u32,
-                            span: span_index as u32,
-                            start_pos: start_pos as u32,
-                            end_pos: end_pos as u32,
-                            x: rect.x(),
-                            y: rect.y(),
-                            width: rect.width(),
-                            height: rect.height(),
-                            direction: direction_to_int(direction),
-                        });
-                    }
-                }
+        for para_layout in &paragraph_layouts {
+            let paragraph_index = para_layout.source_paragraph;
+            if let (Some(text_para), Some(plan)) = (
+                text_paragraphs.get(paragraph_index),
+                plans.get(paragraph_index),
+            ) {
+                let entries = HorizontalPositionEntries {
+                    paragraph_index,
+                    paragraph: text_para,
+                    offsets: &plan.offsets,
+                    layout: para_layout,
+                };
+                position_data.extend(entries.collect());
             }
         }
     }
@@ -1973,11 +2528,152 @@ pub fn calculate_text_layout_data(
     }
 }
 
+/// Position data of one laid-out horizontal paragraph: strips of the spans
+/// outside warichu, one strip per warichu sub-line, and one box per
+/// emphasis mark.
+struct HorizontalPositionEntries<'a> {
+    paragraph_index: usize,
+    paragraph: &'a Paragraph,
+    /// Ranges in builder-text (kinsoku-shifted) space; the map translates
+    /// exported positions back to span offsets.
+    offsets: &'a HorizontalOffsets,
+    layout: &'a ParagraphLayout,
+}
+
+impl HorizontalPositionEntries<'_> {
+    fn collect(&self) -> Vec<PositionData> {
+        let mut entries = Vec::new();
+        // Tabs are placeholders too; this keys warichu boxes by span.
+        let warichu_rects = super::text_horizontal::horizontal_warichu_placeholders(
+            self.paragraph,
+            &self.layout.paragraph,
+        );
+        for range in &self.offsets.ranges {
+            if range.warichu {
+                let rect = warichu_rects
+                    .iter()
+                    .find(|(span, _)| *span == range.span)
+                    .map(|(_, rect)| *rect);
+                if let Some(rect) = rect {
+                    entries.extend(self.warichu_entries(range, rect));
+                }
+            } else {
+                entries.extend(self.span_entries(range));
+            }
+        }
+        for placement in
+            horizontal_emphasis_placements(self.paragraph, self.offsets, &self.layout.paragraph)
+        {
+            if let Some(span) = self.paragraph.children().get(placement.span) {
+                entries.push(self.entry(
+                    placement.span,
+                    placement.range.clone(),
+                    horizontal_emphasis_mark_box(span, &placement),
+                    super::text_vertical::DIRECTION_EMPHASIS_MARK,
+                ));
+            }
+        }
+        entries
+    }
+
+    /// An entry for `range` of `span`, with `rect` in the laid-out paragraph.
+    fn entry(
+        &self,
+        span: usize,
+        range: std::ops::Range<usize>,
+        mut rect: Rect,
+        direction: u32,
+    ) -> PositionData {
+        rect.offset((self.layout.x, self.layout.y));
+        PositionData {
+            paragraph: self.paragraph_index as u32,
+            span: span as u32,
+            start_pos: range.start as u32,
+            end_pos: range.end as u32,
+            x: rect.x(),
+            y: rect.y(),
+            width: rect.width(),
+            height: rect.height(),
+            direction,
+        }
+    }
+
+    /// One strip per warichu sub-line: the top half of the placeholder holds
+    /// the first line, the bottom half the second.
+    fn warichu_entries(&self, range: &HorizontalSpanRange, rect: Rect) -> Vec<PositionData> {
+        let Some(span) = self.paragraph.children().get(range.span) else {
+            return Vec::new();
+        };
+        let text = span.apply_text_transform();
+        let split = warichu_text_lines(&text).0.encode_utf16().count();
+        let end = range.source_end - range.source_start;
+        let half = rect.height() / 2.0;
+        let ltr = direction_to_int(TextDirection::LTR);
+        let top = Rect::from_xywh(rect.x(), rect.y(), rect.width(), half);
+        let bottom = Rect::from_xywh(rect.x(), rect.y() + half, rect.width(), half);
+        vec![
+            self.entry(range.span, 0..split, top, ltr),
+            self.entry(range.span, split..end, bottom, ltr),
+        ]
+    }
+
+    /// One strip per laid-out rect of a span, with its source offsets read
+    /// from the glyphs at the rect's edges.
+    fn span_entries(&self, range: &HorizontalSpanRange) -> Vec<PositionData> {
+        let laid_out = &self.layout.paragraph;
+        let to_span_offset = |builder_position: usize| {
+            let within = builder_position
+                .saturating_sub(range.builder_start)
+                .min(range.builder_end - range.builder_start);
+            self.offsets
+                .offset_map
+                .to_original(range.shifted_start + within)
+                - range.source_start
+        };
+        laid_out
+            .get_rects_for_range(
+                range.builder_start..range.builder_end,
+                RectHeightStyle::Tight,
+                RectWidthStyle::Tight,
+            )
+            .into_iter()
+            .map(|textbox| {
+                let rect = textbox.rect;
+                let cy = rect.top + rect.height() / 2.0;
+                let position_at =
+                    |x: f32| laid_out.get_glyph_position_at_coordinate((x, cy)).position as usize;
+                let start_pos = to_span_offset(position_at(rect.left + 0.1));
+                let end_pos = to_span_offset(position_at(rect.right - 0.1));
+                self.entry(
+                    range.span,
+                    start_pos..end_pos,
+                    rect,
+                    direction_to_int(textbox.direct),
+                )
+            })
+            .collect()
+    }
+}
+
 pub fn calculate_position_data(
     shape: &Shape,
     text_content: &TextContent,
     skip_position_data: bool,
 ) -> Vec<PositionData> {
+    // Vertical writing generates position data from the vertical cells and
+    // needs no horizontal layout.
+    if text_content.is_vertical() {
+        if skip_position_data {
+            return Vec::new();
+        }
+        let layout = text_content.vertical_layout(&shape.selrect);
+        return super::text_vertical::position_data(
+            &layout,
+            &shape.selrect,
+            shape.vertical_align(),
+        );
+    }
+
     let mut text_content = text_content.clone();
     text_content.update_layout(shape.selrect);
 
@@ -1995,6 +2691,19 @@ pub fn calculate_position_data(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_warichu_span_shows_no_ruby_and_reserves_no_room_for_it() {
+        let span = TextSpan {
+            text: "割注".to_string(),
+            ruby: "よみ".to_string(),
+            warichu: true,
+            annotation_clearance: AnnotationClearance::Auto,
+            ..TextSpan::default()
+        };
+        assert!(!span.has_ruby());
+        assert_eq!(span.annotation_room_em(), 0.0);
+    }
 
     #[test]
     fn vertical_align_top_keeps_the_content_at_the_origin() {
@@ -2029,100 +2738,107 @@ mod tests {
         );
     }
 
+    fn capitalize(text: &str) -> String {
+        apply_text_transform_with_source_ranges(
+            text,
+            Browser::Chrome as u8,
+            Some(TextTransform::Capitalize),
+        )
+        .text
+    }
+
+    fn filter_ignored_chars(text: &str, browser: u8) -> String {
+        apply_text_transform_with_source_ranges(text, browser, None).text
+    }
+
     #[test]
     fn capitalize_basic_words() {
-        assert_eq!(capitalize_words("hello world"), "Hello World");
+        assert_eq!(capitalize("hello world"), "Hello World");
     }
 
     #[test]
     fn capitalize_preserves_leading_whitespace() {
-        assert_eq!(capitalize_words(" hello"), " Hello");
+        assert_eq!(capitalize(" hello"), " Hello");
     }
 
     #[test]
     fn capitalize_preserves_trailing_whitespace() {
-        assert_eq!(capitalize_words("hello "), "Hello ");
+        assert_eq!(capitalize("hello "), "Hello ");
     }
 
     #[test]
     fn capitalize_preserves_multiple_spaces() {
-        assert_eq!(capitalize_words("hello  world"), "Hello  World");
+        assert_eq!(capitalize("hello  world"), "Hello  World");
     }
 
     #[test]
     fn capitalize_whitespace_only() {
-        assert_eq!(capitalize_words(" "), " ");
-        assert_eq!(capitalize_words("  "), "  ");
+        assert_eq!(capitalize(" "), " ");
+        assert_eq!(capitalize("  "), "  ");
     }
 
     #[test]
     fn capitalize_empty_string() {
-        assert_eq!(capitalize_words(""), "");
+        assert_eq!(capitalize(""), "");
     }
 
     #[test]
     fn capitalize_single_char() {
-        assert_eq!(capitalize_words("a"), "A");
+        assert_eq!(capitalize("a"), "A");
     }
 
     #[test]
     fn capitalize_already_uppercase() {
-        assert_eq!(capitalize_words("HELLO WORLD"), "HELLO WORLD");
+        assert_eq!(capitalize("HELLO WORLD"), "HELLO WORLD");
     }
 
     #[test]
     fn capitalize_preserves_tabs_and_newlines() {
-        assert_eq!(capitalize_words("hello\tworld"), "Hello\tWorld");
-        assert_eq!(capitalize_words("hello\nworld"), "Hello\nWorld");
+        assert_eq!(capitalize("hello\tworld"), "Hello\tWorld");
+        assert_eq!(capitalize("hello\nworld"), "Hello\nWorld");
     }
 
     #[test]
     fn capitalize_after_punctuation() {
-        assert_eq!(capitalize_words("(readonly)"), "(Readonly)");
-        assert_eq!(capitalize_words("hello-world"), "Hello-World");
-        assert_eq!(capitalize_words("one/two/three"), "One/Two/Three");
+        assert_eq!(capitalize("(readonly)"), "(Readonly)");
+        assert_eq!(capitalize("hello-world"), "Hello-World");
+        assert_eq!(capitalize("one/two/three"), "One/Two/Three");
     }
 
     #[test]
     fn capitalize_after_digits() {
-        assert_eq!(capitalize_words("item1name"), "Item1Name");
+        assert_eq!(capitalize("item1name"), "Item1Name");
     }
 
     #[test]
-    fn process_ignored_chars_preserves_spaces() {
-        assert_eq!(process_ignored_chars("hello world", 0), "hello world");
+    fn ignored_chars_preserves_spaces() {
+        assert_eq!(filter_ignored_chars("hello world", 0), "hello world");
     }
 
     #[test]
-    fn process_ignored_chars_preserves_line_breaks() {
-        assert_eq!(process_ignored_chars("hello\nworld", 0), "hello\nworld");
-        assert_eq!(process_ignored_chars("hello\rworld", 0), "hello\rworld");
+    fn ignored_chars_preserves_line_breaks() {
+        assert_eq!(filter_ignored_chars("hello\nworld", 0), "hello\nworld");
+        assert_eq!(filter_ignored_chars("hello\rworld", 0), "hello\rworld");
     }
 
     #[test]
-    fn process_ignored_chars_preserves_tabs() {
-        assert_eq!(process_ignored_chars("hello\tworld", 0), "hello\tworld");
+    fn ignored_chars_preserves_tabs() {
+        assert_eq!(filter_ignored_chars("hello\tworld", 0), "hello\tworld");
         assert_eq!(
-            process_ignored_chars("hello\tworld", Browser::Firefox as u8),
+            filter_ignored_chars("hello\tworld", Browser::Firefox as u8),
             "hello\tworld"
         );
     }
 
     #[test]
-    fn process_ignored_chars_replaces_control_chars_chrome() {
+    fn ignored_chars_replaces_control_chars_chrome() {
         // U+0001 (SOH) should become space in non-Firefox
-        assert_eq!(
-            process_ignored_chars("a\x01b", Browser::Chrome as u8),
-            "a b"
-        );
+        assert_eq!(filter_ignored_chars("a\x01b", Browser::Chrome as u8), "a b");
     }
 
     #[test]
-    fn process_ignored_chars_removes_control_chars_firefox() {
-        assert_eq!(
-            process_ignored_chars("a\x01b", Browser::Firefox as u8),
-            "ab"
-        );
+    fn ignored_chars_removes_control_chars_firefox() {
+        assert_eq!(filter_ignored_chars("a\x01b", Browser::Firefox as u8), "ab");
     }
 
     fn test_paragraph(texts: &[&str]) -> Paragraph {
@@ -2161,7 +2877,11 @@ mod tests {
         let para = test_paragraph(&["Añadir"]);
         for offset in 0..=6 {
             assert_eq!(para.char_offset_to_utf16(offset), offset);
-            assert_eq!(para.utf16_offset_to_char(offset), offset);
+            assert_eq!(
+                HorizontalOffsets::new(&para).source_to_builder(offset),
+                offset
+            );
+            assert_eq!(horizontal_builder_to_source(&para, offset), offset);
         }
     }
 
@@ -2174,16 +2894,16 @@ mod tests {
         assert_eq!(para.char_offset_to_utf16(2), 3);
         assert_eq!(para.char_offset_to_utf16(3), 4);
 
-        assert_eq!(para.utf16_offset_to_char(0), 0);
-        assert_eq!(para.utf16_offset_to_char(1), 1);
-        assert_eq!(para.utf16_offset_to_char(3), 2);
-        assert_eq!(para.utf16_offset_to_char(4), 3);
+        assert_eq!(horizontal_builder_to_source(&para, 0), 0);
+        assert_eq!(horizontal_builder_to_source(&para, 1), 1);
+        assert_eq!(horizontal_builder_to_source(&para, 3), 2);
+        assert_eq!(horizontal_builder_to_source(&para, 4), 3);
     }
 
     #[test]
-    fn utf16_offset_inside_a_surrogate_pair_rounds_to_a_char_boundary() {
+    fn builder_offset_inside_a_surrogate_pair_rounds_to_a_char_boundary() {
         let para = test_paragraph(&["a😀b"]);
-        assert_eq!(para.utf16_offset_to_char(2), 2);
+        assert_eq!(horizontal_builder_to_source(&para, 2), 2);
     }
 
     #[test]
@@ -2195,7 +2915,10 @@ mod tests {
         assert_eq!(para.char_offset_to_utf16(4), 4);
         assert_eq!(para.char_offset_to_utf16(6), 7);
         assert_eq!(para.char_offset_to_utf16(5), 6);
-        assert_eq!(para.utf16_offset_to_char(7), 6);
+        assert_eq!(HorizontalOffsets::new(&para).source_to_builder(4), 4);
+        assert_eq!(HorizontalOffsets::new(&para).source_to_builder(5), 6);
+        assert_eq!(HorizontalOffsets::new(&para).source_to_builder(6), 7);
+        assert_eq!(horizontal_builder_to_source(&para, 7), 6);
     }
 
     #[test]
@@ -2217,6 +2940,18 @@ mod tests {
         let para = test_paragraph(&["A👍", "🏽B"]);
         assert_eq!(para.next_grapheme_offset(1), 3);
         assert_eq!(para.prev_grapheme_offset(3), 1);
+    }
+
+    #[test]
+    fn builder_range_covers_the_whole_glyph() {
+        let para = test_paragraph(&["a😀b"]);
+        let len_at = |offset| {
+            HorizontalOffsets::new(&para).source_to_builder(offset + 1)
+                - HorizontalOffsets::new(&para).source_to_builder(offset)
+        };
+        assert_eq!(len_at(0), 1);
+        assert_eq!(len_at(1), 2);
+        assert_eq!(len_at(2), 1);
     }
 
     fn sample_text_content() -> TextContent {
@@ -2423,5 +3158,21 @@ mod tests {
         layout.paragraphs = Rc::new(vec![vec![]]);
         layout.clear();
         assert!(layout.needs_update());
+    }
+
+    #[test]
+    fn transformed_text_maps_expanded_scalars_to_their_source_range() {
+        let transformed = apply_text_transform_with_source_ranges(
+            "AßB",
+            Browser::Chrome as u8,
+            Some(TextTransform::Uppercase),
+        );
+
+        assert_eq!(transformed.text, "ASSB");
+        assert_eq!(transformed.source_utf16_range(0..1), 0..1);
+        assert_eq!(transformed.source_utf16_range(1..2), 1..2);
+        assert_eq!(transformed.source_utf16_range(2..3), 1..2);
+        assert_eq!(transformed.source_utf16_range(1..3), 1..2);
+        assert_eq!(transformed.source_utf16_range(3..4), 2..3);
     }
 }

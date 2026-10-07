@@ -31,6 +31,7 @@
    [app.common.types.path.impl :as path.impl]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
@@ -56,7 +57,7 @@
    [app.util.dom :as dom]
    [app.util.functions :as fns]
    [app.util.globals :as ug]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.modules :as mod]
    [app.util.text.content :as tc]
    [app.util.timers :as timers]
@@ -110,7 +111,6 @@
 ;; the next `tiles-complete` arrives.
 (defonce ^:private snapshot-capture-in-flight? (atom false))
 
-
 (defn initialized?
   "True when the WASM render context is safe for normal application calls.
   False while missing/lost or while `reload-renderer!` is reconstructing it.
@@ -122,7 +122,6 @@
   (wasm/ready?))
 
 (declare sync-workspace-local-viewport!)
-
 
 (defn set-transition-image-from-background!
   "Sets `transition-image*` to a data URL representing a solid background color."
@@ -339,7 +338,7 @@
 
 ;; forward declare helpers so render can call them
 (declare request-render)
-(declare set-shape-vertical-align fonts-from-text-content)
+(declare set-shape-vertical-align set-shape-line-adjustment fonts-from-text-content)
 (declare reload-renderer!)
 (declare request-render-preserving-target)
 (declare render-pending?)
@@ -428,7 +427,9 @@
         needs-render?
         (do
           (when (= ev TEXT_EDITOR_EVENT_STYLES_CHANGED)
-            (let [current-styles (text-editor/text-editor-get-current-styles)
+            (let [current-styles (merge
+                                  (text-editor/text-editor-get-current-styles)
+                                  (text-editor/text-editor-get-current-japanese-styles))
                   shape-id (text-editor/text-editor-get-active-shape-id)]
               ;; Keep the caret color matching the text at the caret position.
               (text-editor/text-editor-apply-caret-color (:fills current-styles))
@@ -553,7 +554,6 @@
   []
   (when (initialized?)
     (h/call wasm/internal-module "_render_preview")))
-
 
 (defonce pending-render (atom false))
 (defonce shapes-loading? (atom false))
@@ -757,6 +757,7 @@
     (h/call wasm/internal-module "_clear_shape_text")
 
     (set-shape-vertical-align (get content :vertical-align))
+    (set-shape-line-adjustment (get content :line-adjustment))
 
     (let [fonts          (f/get-content-fonts content)
           fallback-fonts (fonts-from-text-content content false)
@@ -1098,6 +1099,12 @@
   [vertical-align]
   (h/call wasm/internal-module "_set_shape_vertical_align" (sr/translate-vertical-align vertical-align)))
 
+(defn set-shape-line-adjustment
+  "How the text shape fits lines slightly too long (`jl/enum-values`)."
+  [line-adjustment]
+  (h/call wasm/internal-module "_set_shape_line_adjustment"
+          (sr/translate-japanese-enum :line-adjustment line-adjustment)))
+
 (defn set-shape-opacity
   [opacity]
   (h/call wasm/internal-module "_set_shape_opacity" (or opacity 1)))
@@ -1358,6 +1365,13 @@
   [shadows]
   (props/set-shape-shadows shadows))
 
+(defn- fallback-font-set
+  "Emoji and Noto faces covering `emoji?` and the scripts in `langs`."
+  [emoji? langs]
+  (-> #{}
+      (cond-> ^boolean emoji? (cfnt/add-emoji-font))
+      (cfnt/add-noto-fonts (cfnt/resolve-ambiguous-cjk langs @i18n/locale))))
+
 (defn fonts-from-text-content [content fallback-fonts-only?]
   (let [paragraph-set (first (get content :children))
         paragraphs    (get paragraph-set :children)
@@ -1374,9 +1388,10 @@
                    emoji?
                    langs)
 
-            (let [text   (apply str (map :text spans))
-                  emoji? (if emoji? emoji? (cfnt/contains-emoji? text))
-                  langs  (cfnt/collect-used-languages langs text)]
+            (let [text          (apply str (map :text spans))
+                  fallback-text (apply str (map #(str (:text %) (:ruby %)) spans))
+                  emoji?        (if emoji? emoji? (cfnt/contains-emoji? fallback-text))
+                  langs         (cfnt/collect-used-languages langs fallback-text)]
 
               ;; FIXME: this should probably be somewhere else
               (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
@@ -1385,13 +1400,46 @@
                      emoji?
                      langs))))
 
-        (let [updated-fonts
-              (-> #{}
-                  (cond-> ^boolean emoji? (cfnt/add-emoji-font))
-                  (cfnt/add-noto-fonts langs))
+        (let [updated-fonts  (fallback-font-set emoji? langs)
               fallback-fonts (filter #(get % :is-fallback) updated-fonts)]
 
           (if fallback-fonts-only? updated-fonts fallback-fonts))))))
+
+;; Fallback faces a composition waits on, so preview updates do not queue more relayouts.
+(defonce ^:private composition-pending-faces (atom #{}))
+
+(defn load-composition-fonts!
+  "Fetch the fallback faces (emoji, Noto, ...) that `text` needs and relayout
+  `shape-id` once they are stored. For text that lives only in WASM, such as
+  an IME composition preview; committed content loads its faces through
+  `set-shape-text-content`."
+  [shape-id text]
+  (let [emoji?  (cfnt/contains-emoji? text)
+        langs   (cfnt/collect-used-languages #{} text)
+        waiting @composition-pending-faces
+        fonts   (into []
+                      (comp (filter :is-fallback)
+                            (map (fn [font] [font (f/make-font-data font)]))
+                            (remove (fn [[_ font-data]]
+                                      (or (f/font-ready? font-data)
+                                          (contains? waiting (f/font-data-key font-data))))))
+                      (fallback-font-set emoji? langs))
+        faces   (into #{} (map (comp f/font-data-key second)) fonts)]
+    (when (seq faces)
+      (swap! composition-pending-faces into faces)
+      (->> (rx/merge f/font-stored-stream f/font-storage-failed-stream)
+           (rx/filter faces)
+           (rx/scan disj faces)
+           (rx/filter empty?)
+           (rx/take 1)
+           (rx/subs! (fn [_]
+                       (swap! composition-pending-faces #(reduce disj % faces))
+                       (f/force-update-text-layout shape-id)
+                       (request-render-preserving-target "composition-fonts"))))
+      (->> (rx/from (f/store-fonts (map first fonts)))
+           (rx/merge-map (fn [{:keys [callback]}]
+                           (if (fn? callback) (callback) (rx/empty))))
+           (rx/subs! noop-fn noop-fn)))))
 
 (defn set-shape-grow-type
   [grow-type]
@@ -1893,7 +1941,6 @@
                                      (request-render "images-loaded")))))))))))]
          (process-next-chunk 0 [] [] empty-text-font-state))))))
 
-
 ;; This is a version of process-pending that doesn't have sideffects
 ;; with like request render or update layout.
 (defn- process-pending-no-sideffects
@@ -2099,7 +2146,6 @@
           offset  (mem/alloc->offset-32 size)
           heapu32 (mem/get-heap-u32)
           heapf32 (mem/get-heap-f32)]
-
 
       (reduce (fn [offset {:keys [type parent id index value]}]
                 (-> offset
@@ -2343,7 +2389,9 @@
     (text-editor-wasm?)
     (bit-or 2r00000000000000000000000000000100)
     (contains? cf/flags :render-wasm-info)
-    (bit-or 2r00000000000000000000000000001000)))
+    (bit-or 2r00000000000000000000000000001000)
+    (dbg/enabled? :wasm-text-grid)
+    (bit-or 2r00000000000000000000000000010000)))
 
 (defn set-render-options!
   "Updates WASM render options with a new DPR value."
@@ -2823,6 +2871,110 @@
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
 
+(def ^:private POSITION-DATA-VERTICAL 2)
+(def ^:private POSITION-DATA-RUBY 3)
+(def ^:private POSITION-DATA-EMPHASIS-MARK 4)
+
+(defn- emphasis-mark-entry
+  "Position-data entry for one emphasis mark (圏点): the geometry is the
+   mark's em box, centred where the canvas paints it."
+  [element {:keys [x y width height]}]
+  (when-let [mark (jl/emphasis-mark-char (get element :text-emphasis))]
+    (d/patch-object
+     (txt/get-default-text-attrs)
+     (d/without-nils
+      {:x x
+       :y (+ y height)
+       :width width
+       :height height
+       :direction "ltr"
+       :emphasis-mark true
+       :font-id (get element :font-id)
+       :font-family (get element :font-family)
+       :font-size (dm/str width "px")
+       :font-weight (get element :font-weight)
+       :font-style (get element :font-style)
+       :fills (get element :fills)
+       :text mark}))))
+
+(defn- ruby-strip-entry
+  "Position-data entry for a ruby annotation strip: the offsets index the
+   span's ruby string and the geometry is the exact gutter placement the
+   canvas paints."
+  [element {:keys [start-pos end-pos x y width height]}]
+  (when-let [ruby (jl/visible-ruby element)]
+    (let [text      (subs ruby
+                          (min start-pos (count ruby))
+                          (min end-pos (count ruby)))
+          font-size (js/parseFloat (get element :font-size))]
+      (when (seq text)
+        (d/patch-object
+         (txt/get-default-text-attrs)
+         (d/without-nils
+          {:x x
+           :y (+ y height)
+           :width width
+           :height height
+           :direction "ltr"
+           :writing-mode "vertical-rl"
+           :text-orientation "upright"
+           :font-id (get element :font-id)
+           :font-family (get element :font-family)
+           :font-size (when-not (js/isNaN font-size)
+                        (dm/str (* (jl/ruby-font-scale (:ruby-size element)) font-size) "px"))
+           :font-weight (get element :font-weight)
+           :font-style (get element :font-style)
+           :ruby-size (get element :ruby-size)
+           :ruby-align (get element :ruby-align)
+           :ruby-overhang (get element :ruby-overhang)
+           :ruby-side (get element :ruby-side)
+           :fills (get element :fills)
+           :text text}))))))
+
+(defn- text-strip-entry
+  "Position-data entry for a strip of base text. Be aware that for RTL texts
+   `start-pos` can be greater than `end-pos`."
+  [paragraph element {:keys [start-pos end-pos direction x y width height]}]
+  (when-let [element-text (:text element)]
+    (let [vertical? (= direction POSITION-DATA-VERTICAL)
+          ruby      (jl/visible-ruby element)]
+      (d/patch-object
+       (txt/get-default-text-attrs)
+       (d/without-nils
+        {:x x
+         :y (+ y height)
+         :width width
+         :height height
+         :direction       (dr/translate-direction direction)
+         ;; The SVG renderer draws vertical strips with CSS writing-mode.
+         :writing-mode    (when vertical? "vertical-rl")
+         ;; Glyph orientation is stored on the span or its paragraph.
+         :text-orientation (when vertical?
+                             (not-empty (or (get element :text-orientation)
+                                            (get paragraph :text-orientation))))
+         :font-id         (get element :font-id)
+         :font-family     (get element :font-family)
+         :font-size       (dm/str (get element :font-size) "px")
+         :font-weight     (get element :font-weight)
+         :text-transform  (get element :text-transform)
+         :text-decoration (get element :text-decoration)
+         :text-combine-upright (get element :text-combine-upright)
+         :font-features   (let [features (get element :font-features)]
+                            (when (and (seq features) (not= "none" features))
+                              features))
+         ;; Each warichu sub-line has its own entry, drawn at half size.
+         :warichu         (when (= "warichu" (get element :warichu)) "warichu")
+         ;; Horizontal data has no ruby strip; the base entry carries ruby for SVG export.
+         :ruby            (when (and (not vertical?) (seq element-text)) ruby)
+         :ruby-size       (get element :ruby-size)
+         :ruby-align      (get element :ruby-align)
+         :ruby-overhang   (get element :ruby-overhang)
+         :ruby-side       (get element :ruby-side)
+         :letter-spacing  (dm/str (get element :letter-spacing) "px")
+         :font-style      (get element :font-style)
+         :fills           (get element :fills)
+         :text            (subs element-text start-pos end-pos)})))))
+
 (defn calculate-position-data
   [shape]
   (when (initialized?)
@@ -2850,35 +3002,15 @@
 
       (into []
             (keep
-             (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
-               (let [element (-> content :children
-                                 (get 0) :children ;; paragraph-set
-                                 (get paragraph) :children ;; paragraph
-                                 (get span))
-                     element-text (:text element)]
-
-                 ;; Add comprehensive nil-safety checks
-                 ;; Be aware that for RTL texts `start-pos` can be greatert han `end-pos`
-                 (when (and element element-text)
-                   (let [text (subs element-text start-pos end-pos)]
-                     (d/patch-object
-                      (txt/get-default-text-attrs)
-                      (d/without-nils
-                       {:x x
-                        :y (+ y height)
-                        :width width
-                        :height height
-                        :direction       (dr/translate-direction direction)
-                        :font-id         (get element :font-id)
-                        :font-family     (get element :font-family)
-                        :font-size       (dm/str (get element :font-size) "px")
-                        :font-weight     (get element :font-weight)
-                        :text-transform  (get element :text-transform)
-                        :text-decoration (get element :text-decoration)
-                        :letter-spacing  (dm/str (get element :letter-spacing) "px")
-                        :font-style      (get element :font-style)
-                        :fills           (get element :fills)
-                        :text            text})))))))
+             (fn [{:keys [paragraph span direction] :as entry}]
+               (let [paragraph-node (-> content :children
+                                        (get 0) :children ;; paragraph-set
+                                        (get paragraph))
+                     element        (-> paragraph-node :children (get span))]
+                 (condp = direction
+                   POSITION-DATA-RUBY          (ruby-strip-entry element entry)
+                   POSITION-DATA-EMPHASIS-MARK (emphasis-mark-entry element entry)
+                   (text-strip-entry paragraph-node element entry)))))
             result))))
 
 (defn apply-canvas-blur
@@ -3008,5 +3140,3 @@
    viewport mount. Idempotent: the `delay` caches its in-flight promise."
   []
   @module)
-
-

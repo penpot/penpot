@@ -3,7 +3,7 @@ use skia_safe::{self as skia, Canvas, Paint, RRect};
 use crate::error::Result;
 use crate::shapes::{
     circle_segments_local, merge_fills, radius_to_sigma, rect_segments_local, stroke_to_path,
-    BlurType, Fill, Frame, Path, Rect, Shape, Stroke, StrokeKind, StrokeStyle, Type,
+    BlurType, Fill, Frame, Path, Rect, Shape, Stroke, StrokeKind, StrokeStyle, TextContent, Type,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -56,6 +56,46 @@ impl<'a> VectorRenderer<'a> {
             return None;
         }
         shape.image_filter(1.)
+    }
+
+    /// Vertical text: shadows, fill and strokes painted from one layout.
+    fn draw_vertical_text(
+        &mut self,
+        shape: &Shape,
+        text_content: &TextContent,
+        blur_filter: Option<&skia::ImageFilter>,
+    ) {
+        use crate::shapes::text_vertical;
+
+        let bounds = text_content.bounds();
+        let vertical_align = shape.vertical_align();
+        let layout = text_content.vertical_layout(&bounds);
+        let output = crate::render::svg::vertical_glyph_output();
+
+        for shadow in &shape.drop_shadow_paints() {
+            text_vertical::paint_drop_shadow(
+                self.canvas,
+                &layout,
+                &bounds,
+                vertical_align,
+                shadow,
+                output,
+            );
+        }
+        text::paint_vertical_fill(self.canvas, shape, &layout, &bounds, blur_filter, output);
+        let selrect = shape.selrect();
+        for stroke in shape.visible_strokes().rev() {
+            text_vertical::paint_stroke(
+                self.canvas,
+                &layout,
+                &bounds,
+                vertical_align,
+                stroke,
+                &selrect,
+                blur_filter,
+                output,
+            );
+        }
     }
 }
 
@@ -182,8 +222,14 @@ impl ShapeRenderer for VectorRenderer<'_> {
         };
 
         let text_content = text_content.new_bounds(shape.selrect());
-        let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
         let blur_filter = self.layer_blur_filter(shape);
+
+        if text_content.is_vertical() {
+            self.draw_vertical_text(shape, &text_content, blur_filter.as_ref());
+            return Ok(());
+        }
+
+        let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
         // silhouettes (mirrors GPU `render_text_shadows`).
