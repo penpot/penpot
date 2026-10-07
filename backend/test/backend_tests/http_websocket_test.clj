@@ -6,7 +6,9 @@
 
 (ns backend-tests.http-websocket-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.websocket :as ws]
    [app.msgbus :as mbus]
@@ -742,3 +744,109 @@
                                   :id link-id}))]
       (t/is (some? link-id))
       (t/is (empty? events)))))
+
+;; --- PERIODIC REVALIDATION
+;;
+;; The announcement path is the primary mechanism. This interval is the
+;; safety net for access changes that fire no command here, such as
+;; Nitrate transferring the ownership of an organization, or rows
+;; deleted straight over SQL.
+
+(t/deftest revalidation-interval-defaults-to-five-minutes
+  (t/is (= (ct/duration {:minutes 5}) ws/default-revalidation-interval))
+  (t/testing "the default is a code constant, not a config.clj default"
+    (t/is (not (contains? cf/default :subscription-revalidation-interval)))))
+
+(t/deftest revalidation-is-configurable
+  (with-redefs [cf/get (fn [k default] (if (= :subscription-revalidation-interval k)
+                                         (ct/duration {:seconds 30})
+                                         default))]
+    (t/is (= (ct/duration {:seconds 30}) (ws/revalidation-interval)))))
+
+(t/deftest interval-recheck-drops-a-subscription-without-any-announcement
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (with-redefs [cf/get (fn [k default]
+                           (if (= :subscription-revalidation-interval k)
+                             (ct/duration {:millis 150})
+                             default))]
+      (with-clean-registry
+        (fn []
+          (let [conn (-> (open-registered-connection (:id editor))
+                         (subscribe :subscribe-file {:file-id (:id file)}))
+                out (:output conn)]
+
+            (t/testing "the subscription is live at first"
+              (t/is (some? (subscribed-file conn))))
+
+            ;; No command runs and no announcement is published: access is
+            ;; taken away the way an external change would take it.
+            (th/command! {::th/type :delete-team-member
+                          ::rpc/profile-id (:id owner)
+                          :team-id (:id team)
+                          :member-id (:id editor)})
+
+            (t/testing "the interval re-check drops it anyway"
+              (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
+
+            (t/testing "and nothing reaches the client afterwards"
+              (mbus/pub! (::mbus/msgbus th/*system*)
+                         :topic (:id file)
+                         :message {:type :file-change :file-id (:id file) :revn 9})
+              (t/is (nil? (poll-msg! out :file-change
+                                     revocation-timeout-ms))))))))))
+
+(t/deftest interval-recheck-keeps-a-subscription-that-still-holds
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (with-redefs [cf/get (fn [k default]
+                           (if (= :subscription-revalidation-interval k)
+                             (ct/duration {:millis 150})
+                             default))]
+      (with-clean-registry
+        (fn []
+          (let [conn (-> (open-registered-connection (:id editor))
+                         (subscribe :subscribe-file {:file-id (:id file)}))
+                out (:output conn)]
+
+            (t/testing "a downgrade to viewer still allows reading"
+              (t/is (th/success? (th/command! {::th/type :update-team-member-role
+                                               ::rpc/profile-id (:id owner)
+                                               :team-id (:id team)
+                                               :member-id (:id editor)
+                                               :role :viewer}))))
+
+            ;; Wait for at least two interval ticks, so a re-check that
+            ;; wrongly closed the subscription would have run.
+            (Thread/sleep 500)
+
+            (t/testing "the subscription survives the interval"
+              (t/is (some? (subscribed-file conn))))
+
+            (t/testing "and traffic still flows"
+              (mbus/pub! (::mbus/msgbus th/*system*)
+                         :topic (:id file)
+                         :message {:type :file-change :file-id (:id file) :revn 3})
+              (t/is (some? (poll-msg! out :file-change
+                                      revocation-timeout-ms))))))))))
+
+(t/deftest interval-recheck-covers-the-team-subscription-too
+  (let [{:keys [editor team]} (editor-in-team! 1 2)]
+
+    (with-redefs [cf/get (fn [k default]
+                           (if (= :subscription-revalidation-interval k)
+                             (ct/duration {:millis 150})
+                             default))]
+      (with-clean-registry
+        (fn []
+          (let [conn (-> (open-registered-connection (:id editor))
+                         (subscribe :subscribe-team {:team-id (:id team)}))]
+
+            (t/is (some? (subscribed-team conn)))
+
+            (th/command! {::th/type :leave-team
+                          ::rpc/profile-id (:id editor)
+                          :id (:id team)})
+
+            (t/testing "the team subscription is dropped by the interval"
+              (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))))))))

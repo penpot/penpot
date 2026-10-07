@@ -253,6 +253,10 @@
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
     [:auth-token-cookie-max-age-absolute {:optional true} ::ct/duration]
 
+    ;; How often a websocket subscription re-checks that its access still
+    ;; holds. The default lives in `app.http.websocket`, not here.
+    [:subscription-revalidation-interval {:optional true} ::ct/duration]
+
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
     [:email-verify-threshold {:optional true} ::ct/duration]
 
