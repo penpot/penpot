@@ -34,6 +34,13 @@ on this side: the row of the job, its cancel and its result are the backend's.
 - Deploy: the compose service is one `penpot-exporter` (the same image, `CMD ["node", "app.js"]`); scale by replicas, K is per process. Nginx has no `/api/export` route anymore: the frontend talks to the backend's RPC only (`create-export-assets-job`), and downloads ride `/assets/by-id/?share-id=`/auth of the job resource.
 - Useful beats while debugging: the boot log names `:workers K`; each poller logs `running job`/`job settled`; the runner logs `export job settled` with `:outcome`, and a cancel logs `job cancelled by backend` on the watchdog.
 
+## The new tree (refactor in progress)
+
+- New code grows under `exporter.*`, in parallel to the legacy `app.*` tree: `exporter.main` will replace `app.core` once every piece is ported; do not extend `app.*`.
+- Lifecycle is `exporter.utils.system`: async-aware Integrant-style init/halt (`init-key`/`halt-key` multimethods, `ref`s, `weavejester.dependency` ordering, `^:async` + `cljs.core/await`, no promesa chains); tests are `^:async deftest` with `await` directly in the body.
+- First ported service is `exporter.browser` (whole `app.browser` at once): the running instance is the raw pool, the public API takes it first (`exec` fails fast on a nil pool), the browser factory is injected through config for hermetic tests, and the new tree carries no promesa.
+- Async test vars prove their chain only when really awaited: a test passing with 0 assertions means the chain broke upstream.
+
 ## Render details
 
 - Headless engines (wasm/Skia) lease one render worker for the whole run (`rd/with-scope`); browser renders go one DOM page per partition of 50.
