@@ -1057,7 +1057,7 @@
                    conflicts  (:conflicts merge-summary)
                    ;; an excluded conflict is resolved: the exclusion IS the
                    ;; recorded choice, so it lands on the target side
-                   ;; (`bm/compute-changes`, `pp:vcs:ds-no-silent-winner`)
+                   ;; (`bm/compute-changes`: one side keeping its value is a recorded choice, never a silent win)
                    resolved?  (fn [c] (or (contains? excluded (:key c))
                                           (bm/conflict-resolved? c (get resolutions (:id c)))))
                    unresolved (remove resolved? conflicts)

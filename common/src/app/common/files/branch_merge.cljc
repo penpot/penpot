@@ -1873,8 +1873,8 @@
 
   An excluded entity is treated as resolved to the TARGET side: no change
   is emitted for it and the target keeps its own value. That is the
-  recorded choice, not a silent win for one side (see
-  `pp:vcs:ds-no-silent-winner`): the user deselected the change, so the
+  recorded choice, not a silent win for one side: the user deselected
+  the change, so the
   result is exactly what the target has, and a conflicting entity lands
   there whatever `resolutions` says. Excluding an added shape cascades to
   every shape the source places under it (its added descendants and any
