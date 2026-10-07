@@ -11,7 +11,6 @@
   business in devenv; this harness pins the shapes the worker owns."
   (:require
    ["node:fs/promises" :as fsp]
-   ["node:path" :as path]
    ["undici" :as http]
    [app.common.exceptions :as ex]
    [app.common.transit :as transit]
@@ -26,8 +25,6 @@
    [promesa.core :as p]))
 
 ;; ---- THE MANAGEMENT FAKE
-
-(def ^:private original-fetch api/fetch)
 
 (def ^:private calls
   "One entry per management call: [method, body]."
@@ -72,8 +69,6 @@
     (fn [] (set! api/fetch original))))
 
 ;; ---- THE RD FAKE
-
-(def ^:private original-render rd/render)
 
 (defn- fake-render
   "Installs a fake renderer that writes one file of `content` per
@@ -334,7 +329,6 @@
           sid      (uuid/next)
           params   (export-params)
           stages   (volatile! [])
-          port     (atom 0)
           fetch-restore (fake-fetch
                          (fn [method body]
                            (when (= "report-job-progress" method)
@@ -361,7 +355,6 @@
           sid           (uuid/next)
           params        (export-params)
           stages        (volatile! [])
-          terminated    (atom 0)
           fetch-restore      (fake-fetch
                               (fn [method body]
                                 (when (= "report-job-progress" method)

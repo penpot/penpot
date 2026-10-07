@@ -12,7 +12,6 @@
    ["node:fs/promises" :as fsp]
    ["node:path" :as path]
    ["undici" :as http]
-   [app.common.exceptions :as ex]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
    [app.config :as cf]

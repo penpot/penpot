@@ -23,7 +23,6 @@
   (:require
    ["ioredis" :as redis]
    [app.common.logging :as l]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.consumer.api :as api]
    [app.consumer.config :as ccfg]
