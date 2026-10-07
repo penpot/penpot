@@ -71,6 +71,28 @@
   (t/is (= (export-with-name (str (:object-id export)))
            (de/normalize-export (assoc export :name "")))))
 
+(t/deftest initialize-export-status-shows-a-fresh-job-as-queued
+  ;; the creation answers the row status ("pending"): nobody works on
+  ;; the job yet, so the widget names it queued until the first
+  ;; milestone moves it to running
+  (let [state (ptk/update (#'de/initialize-export-status
+                           [export] nil {:id (uuid/next) :status "pending"})
+                          {})]
+    (t/is (= "queued" (get-in state [:export :status])))
+    (t/is (true? (get-in state [:export :in-progress])))
+    (t/is (= 0 (get-in state [:export :progress])))))
+
+(t/deftest add-milestone-without-figures-keeps-the-figures
+  ;; the first breath of the worker (:preparing) carries no counters:
+  ;; it moves the widget to running without blanking the figures
+  (let [before {:export {:in-progress true :status "queued"
+                         :progress 2 :total 5}}
+        after  (ptk/update (#'de/add-milestone {:stage :preparing :counters {}})
+                           before)]
+    (t/is (= "running" (get-in after [:export :status])))
+    (t/is (= 2 (get-in after [:export :progress])))
+    (t/is (= 5 (get-in after [:export :total])))))
+
 (t/deftest request-simple-export-runs-one-assets-job
   (t/async done
     (let [export    (export-with-name "")

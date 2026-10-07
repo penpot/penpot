@@ -246,11 +246,18 @@
                                (not cancelling?))
         total             (or (:total state) (count items))
         complete?         (= progress total)
+        ;; The figure the detail names: a percentage when the worker
+        ;; said how much there is, nothing when it has not said yet
+        ;; (queued, or a milestone without counters).
+        percent           (when (and (number? progress)
+                                     (number? total)
+                                     (pos? total))
+                            (js/Math.round (* 100 (/ progress total))))
         circ              (* 2 Math/PI 12)
         pct               (if (zero? total) circ (- circ (* circ (/ progress total))))
 
         pwidth
-        (if error?
+        (if (or error? (zero? total))
           280
           (/ (* progress 280) total))
 
@@ -338,16 +345,22 @@
             [:button {:class (stl/css :retry-btn)
                       :on-click cancel-export}
              (tr "workspace.options.cancel-export")]
-            [:span {:class (stl/css :progress)}
-             (dm/str progress " / " total)]]
+            (when (some? percent)
+              [:span {:class (stl/css :progress)}
+               (dm/str percent "%")])]
 
-           ;; A counter for work that is being abandoned says nothing useful.
-           (or cancelling? cancelled?)
+           ;; A counter for work that is waiting, going away, or gone
+           ;; says nothing useful.
+           (or queued? cancelling? cancelled?)
            nil
 
-           :else
+           ;; The running figure, once the worker said how much there is.
+           (some? percent)
            [:span {:class (stl/css :progress)}
-            (dm/str progress " / " total)])]
+            (dm/str percent "%")]
+
+           :else
+           nil)]
 
         [:button {:class (stl/css :progress-close-button)
                   :on-click toggle-detail-visibility}

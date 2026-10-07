@@ -154,7 +154,9 @@
 (defn- initialize-export-status
   "The state a just created job starts at: the widget shows it queued,
   with no figures yet — the counter comes with the first milestone the
-  worker publishes, and counts itself down from the items meanwhile."
+  worker publishes, and counts itself down from the items meanwhile.
+  The creation answers the row status (`pending`): the widget names it
+  queued, because nobody works on the job yet."
   [exports cmd {:keys [id status]}]
   (ptk/reify ::initialize-export-status
     ptk/UpdateEvent
@@ -169,7 +171,7 @@
                             :last-update (ct/now)
                             :cmd cmd
                             :job-id id
-                            :status status}))))
+                            :status (if (= "pending" status) "queued" status)}))))
 
 (defn- counter-of
   "The figures of one milestone: `objects` counts the shapes and
@@ -181,8 +183,11 @@
 
 (defn- add-milestone
   "One beat of the job into the widget: what has landed and what is
-  coming, named by the stage the run is in. A milestone that arrives
-  once the widget settled from a cancel or an error is ignored."
+  coming, named by the stage the run is in. The status moves to running
+  on the first beat, figures or not. A milestone without figures (the
+  first breath of the worker) names the stage but keeps the figures the
+  widget already holds. A milestone that arrives once the widget
+  settled from a cancel or an error is ignored."
   [payload]
   (let [figures (counter-of (:counters payload))]
     (ptk/reify ::add-milestone
@@ -190,13 +195,15 @@
       (update [_ state]
         (if-not (get-in state [:export :in-progress])
           state
-          (update state :export assoc
-                  :status "running"
-                  :stage (:stage payload)
-                  :last-update (ct/now)
-                  :progress (:current figures)
-                  :total (or (:total figures)
-                             (get-in state [:export :total]))))))))
+          (-> (update state :export assoc
+                      :status "running"
+                      :stage (:stage payload)
+                      :last-update (ct/now))
+              (cond-> (some? figures)
+                (update :export assoc
+                        :progress (:current figures)
+                        :total (or (:total figures)
+                                   (get-in state [:export :total]))))))))))
 
 (defn- add-outcome
   "The last row of the job as the end of the widget. A completed job

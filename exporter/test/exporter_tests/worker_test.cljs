@@ -256,9 +256,9 @@
           respond!  (fake-fetch! (answer-with params sid stages))
           restore!  (fake-render! "rendered!")]
       (p/let [_ (worker/process! (run-claim job-id))]
-        (t/testing "the run went by claim, session, beats, settle"
-          (t/is (= ["claim-job" "create-job-session"
-                    "report-job-progress" "report-job-progress" "report-job-progress"
+        (t/testing "the run went by claim, first breath, session, beats, settle"
+          (t/is (= ["claim-job" "report-job-progress" "create-job-session"
+                    "report-job-progress" "report-job-progress"
                     "complete-job"]
                    (steps-of))))
         (t/testing "the settle carried the real artifact, named and typed"

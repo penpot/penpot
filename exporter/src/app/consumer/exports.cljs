@@ -360,15 +360,19 @@
                     ;; registered a terminate callback for this job
                     (jobs/mark-cancelled job-id))]
     (p/catch
-     (p/let [session' (api/create-job-session job-id)
+     (p/let [beats    (start-beats! job-id stop-cmd!)
+             beats!   (:beat! beats)
+             _        (reset! stop-watchdog! (with-watchdog! beats! (:last beats)))
+             ;; the first breath right after the claim, before the
+             ;; session roundtrip: the widget moves from queued to
+             ;; exporting on it, and a cancel that landed meanwhile
+             ;; raises here instead of after wasted work
+             _        (check-beat! (beats! :preparing {} :force? true))
+             session' (api/create-job-session job-id)
              _        (reset! session session')
              token    (:session-token session')
              _        (l/info :hint "render session minted"
                               :job-id (str job-id))
-             beats    (start-beats! job-id stop-cmd!)
-             beats!   (:beat! beats)
-             _        (reset! stop-watchdog! (with-watchdog! beats! (:last beats)))
-             _        (check-beat! (beats! :preparing {} :force? true))
              plan      (make-plan job-id token params)
              resource  (run-prepared! beats! cancelled plan)
              _        (@stop-watchdog!)
