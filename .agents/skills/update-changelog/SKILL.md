@@ -99,13 +99,18 @@ query is needed.
 
 **Breaking changes override everything:** an issue with the `breaking change`
 label goes under `### :boom: Breaking changes & Deprecations`, no matter its
-issue type. This is the only label-based rule — it is an explicit exception
-to the "never by labels" principle above. The `:boom:` subsection goes first
-in the version, before `:rocket:` (matching the existing precedent).
+issue type. This and `release highlight` below are the only label-based
+rules — explicit exceptions to the "never by labels" principle above. The
+`:boom:` subsection goes first in the version, before `:rocket:` (matching
+the existing precedent).
 
-**Preserve highlighted entries:** if an entry already sits under
-`### :rocket: Epics and highlights`, keep it there when refreshing. Do not
-move it down just because its type would place it under `:sparkles:`.
+**Highlights come from the `release highlight` label:** an issue with that
+label also gets an entry under `### :rocket: Epics and highlights`, on top of
+its regular entry (usually `:sparkles:`). In the section being refreshed,
+`:rocket:` lists exactly the labelled issues: never pick highlights yourself
+and never keep an unlabelled entry there. Product decides the highlights by
+labelling issues on GitHub, so a regeneration cannot undo that choice. Older
+version sections are left as they are.
 
 **Community attribution:** if the issue or its fix PR has the
 `community contribution` label, add `(by @<github_username>)` on the entry
@@ -207,7 +212,10 @@ not trust cached data):
 6. **Issue type changed to `Task`** → remove the entry.
 7. **Breaking change misplaced** (issue has the `breaking change` label but
    sits in another section) → move the entry to `:boom:`.
-8. **Missing valid issues** (closed, non-excluded, unreferenced anywhere) →
+8. **Highlight out of sync** (`:rocket:` entry without the `release
+   highlight` label, or a labelled issue missing from `:rocket:`) → remove
+   the `:rocket:` entry or add it (step 7b). The regular entry stays.
+9. **Missing valid issues** (closed, non-excluded, unreferenced anywhere) →
    add them to the current section per step 5.
 
 ### 7. Build the description text
@@ -225,14 +233,22 @@ behavior:
 Insert the new version section right after the `# CHANGELOG` header with the
 `edit` tool and enough context for a unique match.
 
-### 7b. Propose and populate `:rocket: Epics and highlights`
+### 7b. Populate `:rocket: Epics and highlights` from the label
 
-Create the subsection if missing (place it before `### :sparkles:`) and pick
-2–5 of the most impactful/user-visible `:sparkles:` entries: new visible
-features, big capabilities, items that make self-hosted users want to update.
-`frontend/src/app/main/ui/releases/v2_<MINOR>.cljs` slide titles are optional
-hints (they may not exist for every version). Every `:rocket:` entry MUST
-carry issue AND PR references; never remove entries from a prior run.
+List the milestone issues that pass step 2 exclusions and carry the
+`release highlight` label:
+
+```bash
+python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog" \
+  | python3 -c "import sys,json; [print(i['number'], i['title']) for i in json.load(sys.stdin) if 'release highlight' in i['labels']]"
+```
+
+Create the subsection if missing (place it before `### :sparkles:`) with one
+entry per labelled issue, same text and references as its regular entry.
+Every `:rocket:` entry MUST carry issue AND PR references. If no issue is
+labelled, leave `:rocket:` out and tell the user: the highlights are
+product's call, not the agent's. To change them, add or remove the label on
+GitHub and re-run; never edit `:rocket:` by hand.
 
 ### 8. Cross-reference milestone PRs against the changelog
 
@@ -264,6 +280,8 @@ pairing is misleading and a human must judge intent):
 3. `:boom:` entry whose issue lacks the `breaking change` label. These stay
    listed in the report **and** in the changelog: either label the issue or
    move the entry to its regular section.
+4. `:rocket:` out of sync with the `release highlight` label. Step 6
+   pre-flight should have fixed it: if it shows up, re-run the workflow.
 
 **Highlight gaps are warnings, not anomalies:** missing `:rocket:` on a
 released X.Y.0 (patches never carry highlights); `:rocket:` entry without
@@ -277,7 +295,7 @@ pre-flight. If one shows up in the report, re-run the workflow.
 - **Issue = changelog unit**, PR = implementation detail inline.
 - **Latest version first**, below the `# CHANGELOG` header.
 - **Issue Type decides the section — exclusively**, except `breaking change`
-  label → `:boom:` first.
+  label → `:boom:` first, and `release highlight` label → also `:rocket:`.
 - **User-facing descriptions** in imperative mood.
 - **Community attribution** uses the PR author, placed before the issue link.
 - **Only closed issues**; **Rejected** project status excludes.
