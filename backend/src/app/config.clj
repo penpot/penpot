@@ -432,13 +432,6 @@
   (or (c/get config :file-clean-delay)
       (ct/duration {:days 2})))
 
-(defn- join-path-segments
-  [segments]
-  (let [path (->> segments (map str) (str/join "/"))]
-    (->> (str/split path #"/")
-         (remove str/blank?)
-         (str/join "/"))))
-
 (defn join-uri
   "Join path segments onto a base URI, preserving a potential subpath
   (same semantics as the frontend config). The base is normalized with
@@ -447,8 +440,7 @@
   [base & segments]
   (assert (not (some #(str/starts-with? % "/") segments))
           "URI segments must be relative (no leading slash)")
-  (str (u/join (u/ensure-path-slash base)
-               (join-path-segments segments))))
+  (str (apply u/join (u/ensure-path-slash base) segments)))
 
 (defn get-public-uri
   "Canonical public URI builder: `join-uri` over the configured
