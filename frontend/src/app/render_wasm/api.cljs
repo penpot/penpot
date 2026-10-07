@@ -276,8 +276,6 @@
 (def text-editor-select-paragraph text-editor/text-editor-select-paragraph)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
 
-(def dpr
-  (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
 
 (defn get-dpr
   "Returns the current device pixel ratio. Use instead of `dpr` wherever
@@ -1132,7 +1130,7 @@
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
 
 (defn clear-shape-fills!
-  "Clear the fills of the currently-selected shape (call `use-shape!` first).
+  "Clear the fills of the currently-selected shape (call `use-shape` first).
   Equivalent to `set-shape-fills` with an empty collection."
   []
   (when (initialized?)
@@ -1590,7 +1588,7 @@
    `skip-fills-strokes?` is true, fill/stroke records were already in the batch;
    only image fetches remain.
 
-   Always `use-shape!` first: after a multi-shape batch the WASM current shape is
+   Always `use-shape` first: after a multi-shape batch the WASM current shape is
    the last record in the chunk, not this shape."
   [shape skip-layout? & {:keys [skip-fills-strokes?] :or {skip-fills-strokes? false}}]
   (let [id      (dm/get-prop shape :id)
@@ -1645,7 +1643,7 @@
     {:thumbnails [] :full [] :font-face-keys #{} :pending-font-face-keys #{}}
     (do
       (perf/begin-measure "set-object")
-      (let [prepared (serialize-shape/serialize-shape! shape)
+      (let [prepared (serialize-shape/serialize-shape shape)
             result (set-object-host-attrs prepared false)]
         (perf/end-measure "set-object")
         result))))
@@ -1813,7 +1811,7 @@
         end-index (min total (+ start-index BATCH_MAX_SHAPES))
         chunk     (into [] (subvec (if (vector? shapes) shapes (vec shapes))
                                    start-index end-index))
-        prepared  (serialize-shape/serialize-shapes-batch!
+        prepared  (serialize-shape/serialize-shapes-batch
                    chunk
                    {:include-layout? true
                     :include-fills-strokes? true})]
@@ -1962,7 +1960,7 @@
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
   [shapes render-callback on-shapes-ready]
-  (let [prepared     (serialize-shape/serialize-shapes-batch!
+  (let [prepared     (serialize-shape/serialize-shapes-batch
                       shapes
                       {:include-layout? true
                        :include-fills-strokes? true})
@@ -2336,13 +2334,6 @@
    (fn [resolve _reject]
      (timers/raf (fn [] (resolve nil))))))
 
-(def ^:private default-context-options
-  #js {:antialias false
-       :depth true
-       :stencil true
-       :alpha true
-       "preserveDrawingBuffer" true})
-
 (defn resize-viewbox
   "Resizes the WASM viewbox. No-ops unless the GL context is live
   (`wasm/live?`), so callers cannot hit `_resize_viewbox` during
@@ -2377,53 +2368,18 @@
   (when (wasm/live?)
     (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr)))
 
-(def ^:private max-surface-size
-  ;; Must match `gpu_state::MAX_SURFACE_SIZE`.
-  8192)
-
-(defn- clamp-physical-size
-  "Clamp physical pixel dimensions before assigning `canvas.width/height`.
-  Rust `resize` applies the same cap and syncs the effective DPR from the
-  real drawing buffer."
-  [w h]
-  (let [w     (mth/max 1 w)
-        h     (mth/max 1 h)
-        scale (mth/min 1 (/ max-surface-size w) (/ max-surface-size h))]
-    [(mth/max 1 (mth/floor (* scale w)))
-     (mth/max 1 (mth/floor (* scale h)))]))
-
 (defn resize-offscreen-canvas!
   "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
   update the WASM render surfaces accordingly (via `_resize_viewbox`). The
   design state (shape pool) is preserved so `set-objects` is not needed again."
   [canvas new-physical-w new-physical-h]
   (when (wasm/live?)
-    (let [dpr (get-dpr)
-          [pw ph] (clamp-physical-size new-physical-w new-physical-h)]
+    (let [dpr     (get-dpr)
+          [pw ph] (webgl/clamp-physical-size new-physical-w new-physical-h)]
       (set! (.-width canvas) pw)
       (set! (.-height canvas) ph)
       (set-render-options! dpr)
       (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))))
-
-(defn- wasm-set-param-from-route-params-if-present
-  [param-name]
-  (when-let [value (wasm-get-numeric-value param-name)]
-    (let [setter-name (str/concat "_set_" (name param-name))]
-      (h/call wasm/internal-module setter-name value))))
-
-(defn- canvas-css-size
-  "Return canvas size in CSS pixels.
-
-  - For DOM canvases: use `clientWidth/clientHeight`.
-  - For OffscreenCanvas: fall back to `width/height` (physical px) converted by DPR."
-  [canvas dpr]
-  (let [cw (.-clientWidth ^js canvas)
-        ch (.-clientHeight ^js canvas)]
-    (if (and (number? cw) (pos? cw)
-             (number? ch) (pos? ch))
-      [cw ch]
-      [(/ (.-width ^js canvas) dpr)
-       (/ (.-height ^js canvas) dpr)])))
 
 (defn resize-canvas!
   "Sizes the canvas drawing buffer, the WASM render surface and the DPR from a
@@ -2436,10 +2392,10 @@
    (resize-canvas! canvas (get-dpr)))
   ([canvas new-dpr]
    (when (wasm/live?)
-     (let [[css-w css-h] (canvas-css-size canvas new-dpr)
-           css-w         (mth/max 1 css-w)
-           css-h         (mth/max 1 css-h)
-           [phys-w phys-h] (clamp-physical-size
+     (let [[css-w css-h]   (webgl/canvas-css-size canvas new-dpr)
+           css-w           (mth/max 1 css-w)
+           css-h           (mth/max 1 css-h)
+           [phys-w phys-h] (webgl/clamp-physical-size
                             (mth/floor (* css-w new-dpr))
                             (mth/floor (* css-h new-dpr)))]
        (set! (.-width ^js canvas) phys-w)
@@ -2503,45 +2459,40 @@
   [canvas]
   (if-not (wasm/module-ready?)
     false
-    (let [gl      (unchecked-get wasm/internal-module "GL")
-          flags   (debug-flags)
+    (let [flags      (debug-flags)
           context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
-          context (.getContext ^js canvas context-id default-context-options)
-          context-init? (not (nil? context))
-          browser (sr/translate-browser cf/browser)
-          dpr     (get-dpr)
-          [css-w css-h] (canvas-css-size canvas dpr)
+          browser    (sr/translate-browser cf/browser)
+          dpr        (get-dpr)
+          [css-w css-h] (webgl/canvas-css-size canvas dpr)
           ;; Avoid 0×0 Skia/GL surfaces (crashes on some browsers).
-          css-w (mth/max 1 css-w)
-          css-h (mth/max 1 css-h)
+          css-w      (mth/max 1 css-w)
+          css-h      (mth/max 1 css-h)
+          params     {:antialias_threshold              (wasm-get-numeric-value :antialias_threshold)
+                      :viewport_interest_area_threshold (wasm-get-numeric-value :viewport_interest_area_threshold)
+                      :max_blocking_time_ms             (wasm-get-numeric-value :max_blocking_time_ms)
+                      :node_batch_threshold             (wasm-get-numeric-value :node_batch_threshold)
+                      :blur_downscale_threshold         (wasm-get-numeric-value :blur_downscale_threshold)}
+          result     (webgl/init-context canvas {:module     wasm/internal-module
+                                                 :context-id context-id
+                                                 :css-width  css-w
+                                                 :css-height css-h
+                                                 :dpr        dpr
+                                                 :flags      flags
+                                                 :browser    browser
+                                                 :params     params})
+          context-init? (some? result)
           can-listen? (fn? (.-addEventListener ^js canvas))]
-      (when-not (nil? context)
-        (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
-          (.makeContextCurrent ^js gl handle)
+      (when result
+        (let [{:keys [context handle]} result]
           (set! wasm/gl-context-handle handle)
           (set! wasm/gl-context context)
 
-          ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
-          (.getExtension context "WEBGL_debug_renderer_info")
-
-          ;; Initialize Wasm Render Engine
-          (h/call wasm/internal-module "_init" css-w css-h)
-          (h/call wasm/internal-module "_set_render_options" flags dpr)
-
-          ;; Configurable parameters.
-          (wasm-set-param-from-route-params-if-present :antialias_threshold)
-          (wasm-set-param-from-route-params-if-present :viewport_interest_area_threshold)
-          (wasm-set-param-from-route-params-if-present :max_blocking_time_ms)
-          (wasm-set-param-from-route-params-if-present :node_batch_threshold)
-          (wasm-set-param-from-route-params-if-present :blur_downscale_threshold)
-
-          ;; Set browser after `_init`; mark live before sizing so the
+          ;; `init-context` already ran `_init` through `_set_browser` in
+          ;; order. Publish the handles, then mark live before sizing so the
           ;; guarded `resize-*` helpers can run (they require `wasm/live?`,
           ;; which is true here even while `reloading?` still blocks app callers).
-          (h/call wasm/internal-module "_set_browser" browser)
-
-          ;; Add event listeners for WebGL context lost
           (set! wasm/canvas canvas)
+          ;; Add event listeners for WebGL context lost
           (when can-listen?
             (.addEventListener canvas "webglcontextlost" webgl-context-lost-listener)
             (.addEventListener canvas "webglcontextrestored" webgl-context-restored-listener))
@@ -2587,19 +2538,18 @@
 
      ;; Ensure the WebGL context is properly disposed so browsers do not keep
      ;; accumulating active contexts between page switches.
-     (when-let [gl (unchecked-get wasm/internal-module "GL")]
-       (when-let [handle wasm/gl-context-handle]
-         (try
-           ;; For hard teardown we can explicitly lose browser context.
-           ;; For reload->reinit flows we skip this because immediate context
-           ;; recreation may fail on some browsers/GPUs while context is lost.
-           (when lose-browser-context?
-             (when-let [ctx wasm/gl-context]
-               (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
-                 (.loseContext ^js lose-ext))))
-           (.deleteContext ^js gl handle)
-           (catch :default dispose-error
-             (.error js/console dispose-error)))))
+     (when-let [handle wasm/gl-context-handle]
+       (try
+         ;; For hard teardown we can explicitly lose browser context.
+         ;; For reload->reinit flows we skip this because immediate context
+         ;; recreation may fail on some browsers/GPUs while context is lost.
+         (when lose-browser-context?
+           (when-let [ctx wasm/gl-context]
+             (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
+               (.loseContext ^js lose-ext))))
+         (webgl/delete-context! wasm/internal-module handle)
+         (catch :default dispose-error
+           (.error js/console dispose-error))))
 
      (wasm-gesture/reset-after-wasm-reload!)
      (wasm/reset-context-state!)

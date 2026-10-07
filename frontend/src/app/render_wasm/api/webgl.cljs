@@ -5,11 +5,141 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.render-wasm.api.webgl
-  "WebGL utilities for pixel capture and rendering"
+  "WebGL context creation and utilities for pixel capture and rendering"
   (:require
    [app.common.logging :as log]
+   [app.common.math :as mth]
+   [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.wasm :as wasm]
    [promesa.core :as p]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Context
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def default-context-options
+  "Shared WebGL2 context attributes"
+  #js {:antialias false
+       :depth true
+       :stencil true
+       :alpha true
+       :preserveDrawingBuffer true})
+
+(def ^:const ^:private max-surface-size
+  ;; Must match `gpu_state::MAX_SURFACE_SIZE`.
+  8192)
+
+(defn canvas-css-size
+  "Return canvas size in CSS pixels.
+
+  - For DOM canvases: use `clientWidth/clientHeight`.
+  - For OffscreenCanvas: fall back to `width/height` (physical px) converted by DPR."
+  [canvas dpr]
+  (let [cw (.-clientWidth ^js canvas)
+        ch (.-clientHeight ^js canvas)]
+    (if (and (number? cw) (pos? cw)
+             (number? ch) (pos? ch))
+      [cw ch]
+      [(/ (.-width ^js canvas) dpr)
+       (/ (.-height ^js canvas) dpr)])))
+
+(defn clamp-physical-size
+  "Clamp physical pixel dimensions before assigning `canvas.width/height`.
+  Rust `resize` applies the same cap and syncs the effective DPR from the
+  real drawing buffer."
+  [w h]
+  (let [w     (mth/max 1 w)
+        h     (mth/max 1 h)
+        scale (mth/min 1 (/ max-surface-size w) (/ max-surface-size h))]
+    [(mth/max 1 (mth/floor (* scale w)))
+     (mth/max 1 (mth/floor (* scale h)))]))
+
+(defn delete-context!
+  "Deletes an Emscripten GL context by handle.Never throws."
+  [module handle]
+  (when (some? handle)
+    (try
+      ;; We look the method up by string key bc dot access would let `:advanced`
+      ;; builds rename the Emscripten method
+      (let [gl             (unchecked-get module "GL")
+            delete-context (unchecked-get gl "deleteContext")]
+        (when (fn? delete-context)
+          (.call ^js delete-context gl handle)))
+      (catch :default _))))
+
+(defn release-context!
+  "Releases renderer state and a WebGL context owned by the caller.
+  `handle` may be nil if Emscripten registration failed. Each release is
+  attempted even when an earlier one throws; cleanup must preserve the
+  original initialization failure. Writes no global lifecycle state."
+  [module context handle]
+  (when (some? handle)
+    (try
+      (h/call module "_clean_up")
+      (catch :default _)))
+  (try
+    (when-let [ext (.getExtension ^js context "WEBGL_lose_context")]
+      (.loseContext ^js ext))
+    (catch :default _))
+  (delete-context! module handle))
+
+(defn init-context
+  "Create a WebGL2 context on `canvas` and run the WASM renderer init sequence.
+
+  Expects all values resolved by the caller. Writes no `wasm/` atoms and installs
+  no listeners.
+
+  - `opts` has keys `module`, `context-id`, `css-width`, `css-height`, `dpr`,
+     `flags`, `browser`, and `params`.
+  - `module` is the Emscripten module object holding `GL`, `_init`,
+    `_set_render_options`, and `_set_browser`. `context-id` is `\"webgl2\"`
+    (or `\"fail\"` to force the debug failure path).
+  - `css-width` and `css-height` are CSS pixel sizes already probed and clamped
+    to at least 1.
+  - `params` maps tunable keywords to values (which pass to `_set_*` unchecked):
+      - `:antialias_threshold`
+      - `:viewport_interest_area_threshold`
+      - `:max_blocking_time_ms`
+      - `:node_batch_threshold`
+      - `:blur_downscale_threshold`
+
+  Returns `{:context :handle}` or nil when `getContext` returns nil.
+  On failure, releases acquired resources before rethrowing. On success,
+  ownership transfers to the caller."
+  [canvas {:keys [module context-id css-width css-height dpr flags browser params]}]
+  (let [gl      (unchecked-get module "GL")
+        context (.getContext ^js canvas context-id default-context-options)]
+    (when-not (nil? context)
+      (let [handle (volatile! nil)]
+        (try
+          (vreset! handle (.registerContext ^js gl context #js {"majorVersion" 2}))
+          (.makeContextCurrent ^js gl @handle)
+
+          ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
+          (.getExtension context "WEBGL_debug_renderer_info")
+
+          ;; Initialize Wasm Render Engine
+          (h/call module "_init" css-width css-height)
+          (h/call module "_set_render_options" flags dpr)
+
+          ;; Configurable parameters, fixed order to match the editor path.
+          (when-let [value (:antialias_threshold params)]
+            (h/call module "_set_antialias_threshold" value))
+          (when-let [value (:viewport_interest_area_threshold params)]
+            (h/call module "_set_viewport_interest_area_threshold" value))
+          (when-let [value (:max_blocking_time_ms params)]
+            (h/call module "_set_max_blocking_time_ms" value))
+          (when-let [value (:node_batch_threshold params)]
+            (h/call module "_set_node_batch_threshold" value))
+          (when-let [value (:blur_downscale_threshold params)]
+            (h/call module "_set_blur_downscale_threshold" value))
+
+          (h/call module "_set_browser" browser)
+          {:context context
+           :handle  @handle}
+          (catch :default cause
+            (release-context! module context @handle)
+            (throw cause)))))))
 
 (defn get-webgl-context
   "Gets the WebGL context from the WASM module"
@@ -22,6 +152,10 @@
         (let [current-ctx (.-currentContext ^js gl-obj)]
           (when current-ctx
             (.-GLctx ^js current-ctx)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Bitmap rendering
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-webgl-texture-from-image
   "Creates a WebGL texture from an HTMLImageElement or ImageBitmap and returns the texture object"
