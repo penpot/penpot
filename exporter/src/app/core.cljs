@@ -40,7 +40,7 @@
               :image-cache-size (cf/get :wasm-worker-image-cache-size))
       (p/do
         (bwr/init)
-        (job.utils/init)
+        (job.utils/clean-orphans)
         (wasm.pool/init)
         (worker/start)))))
 
