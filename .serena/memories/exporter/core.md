@@ -17,6 +17,8 @@ on this side: the row of the job, its cancel and its result are the backend's.
 
 ## The worker anatomy
 
+- The queue wake-up contract (key shape, the two-item payload, mark-then-push, the claim-back rule) is the backend's public surface now: `mem:backend/core`, "The wake-up contract of a worker queue". This process was its first external consumer; read it before writing another.
+
 - Main thread boots pools + K pollers (`core.cljs`): browser pool, wasm pool, temp-file cleaner (`jobs.utils/init`), then `consumer.worker/start!`. Shutdown: browser → wasm pool → pollers → done (the pollers own their connections; the pools unwind while an export is still in flight).
 - K pollers (`app.consumer.worker`): one Redis connection per poller (connection = slot + backpressure), BLPOP on `penpot.worker.queue:<tenant>:exporter`, payload `[job-id scheduled-at]` JSON; corrupt payload warns and drops, dead Redis delays 1s and retries. `K = PENPOT_EXPORTER_WORKER_CONCURRENCY` default 2, floor 1; replicas × K is the total concurrency. Pools size themselves to K (`browser` and `wasm.pool` read `ccfg/concurrency`); there is no independent pool-max config anymore, only `:wasm-worker-pool-min`.
 - Management client (`app.consumer.api`): claim/progress/create-job-session/complete-job (JSON and multipart via undici FormData)/fail-job, POST to `<internal-uri>/api/management/methods/<method>` with `X-Shared-Key: exporter <key>` (key = `PENPOT_EXPORTER_SHARED_KEY` or HKDF-derived from the secret); transit bodies, non-2xx errors carry `:status` and the error body.

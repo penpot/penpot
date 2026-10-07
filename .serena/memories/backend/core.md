@@ -73,6 +73,48 @@ Every background job is a job-def: a plain `(defn execute-X [cfg params] ...)` i
 - `heartbeat` uses named options `[cfg & {:keys [job-id progress] :as options}]` and returns the number of durable writes, so 0 means there was nothing to write: no job context, or the throttle did not allow it. A write that finds the job no longer active (terminal or gone) raises an `:interrupt` (`code :job-interrupted`, carrying the job id and the status it found) through the shared `jobs/check-active` instead of counting zero, so a task in course stops at its next beat; the interrupt is internal and never reaches HTTP (the management progress report answers `:skip` for it). The job id falls back to `::jobs/job-id` on the cfg and then to the runner-bound `*job-id*`. The `modified_at` touch is throttled to ~1s and the progress event to ~200ms, so the check fires at most once per second with no extra query (the read of the row happens only when a write already found nothing). A progress report is a milestone (`schema:progress`): a required `:stage` keyword plus an optional `:counters` map of `scope -> {:current, :total?}`, and no other key. Counters are non-negative, a `total` is positive and never lower than its `current`, and stage and counter keys are names of at most 64 characters. A milestone without counters is valid (a point of the run with no units to count), the stage vocabulary belongs to the worker and not to the substrate, and a client must degrade for a stage it does not know. Read a stored payload back with `jobs/decode-progress`: the database holds the keywords as strings. The 1s beat (down from 60s, so a cancelled heavy job is seen as gone at its next beat) costs one `modified_at` touch per beating job per second: cheap while the only heavy beater runs alone on its queue, revisit if concurrent beating jobs ever grow.
 - `job.error` conforms to `app.jobs/schema:job-error` (`type` and `code` keywords, `hint` text, extra details allowed). Read it back with `jobs/decode-job-error`; a plain `db/decode-json-pgobject` leaves the keywords as strings. `complete` takes named options and an optional `resource-id`, which is only ever set, never replaced: it reads the row locked inside its own transaction and applies the rules in a fixed order, skipping a job that is no longer completable before refusing one for its resource, so the answer is a function of the row and not of the order two callers arrive in.
 
+## The wake-up contract of a worker queue (public surface)
+
+What an out-of-JVM process needs to learn about work WITHOUT reading the
+dispatcher's guts. Verified against `app.worker/queue-key`,
+`encode-payload` (`app.worker.dispatcher`) and the runner's local
+`decode-payload`; a change there is a change of this contract.
+
+- The key: `penpot.worker.queue:<tenant>:<queue>` (`app.worker/queue-key`).
+  `job.queue` stores the bare name, so the prefix is composed at use. The
+  tenant prefix keeps instances sharing one Redis from handing each other
+  jobs.
+- The payload: a JSON array of exactly two items, `["<job-id>",
+  "<scheduled-at>"]`, the instant formatted by `ct/format-inst`. Fewer
+  than two is not a payload; the runner's decoder reads exactly those
+  two and drops and logs anything it cannot parse as uuid + instant.
+- Dispatcher order: the rows are marked `scheduled` FIRST, pushed LAST
+  (RPUSH). A crash between the two leaves `scheduled` rows that
+  `reschedule-lost-jobs` re-queues; the reverse order would leave a
+  duplicate payload nothing deduplicates.
+- The `scheduled-at` in the payload must be handed back AS-IS on `claim-job`:
+  the claim demands an exact match and answers `{:action :skip :status ...}`
+  for a stale payload. That is what makes a claim idempotent and what turns
+  the queue into a mere notification: a pop that is not confirmed by a claim
+  is not work.
+- The queue is not the truth: the management API is (`claim-job`,
+  `report-job-progress`, `complete-job`, `fail-job` in
+  `app/rpc/management/jobs.clj`), shared-key authenticated by the route
+  resolver. Everything a consumer decides about a job goes through it.
+- The queue has NO owner: anyone with Redis access can BLPOP it. Operational
+  rule that follows: do NOT wire a JVM runner for a queue an external
+  process consumes — the dispatcher hands each payload to whoever pops, so
+  both would start taking the same jobs.
+- Cancellation travels the beats: `report-job-progress` answers
+  `{:action :skip}` once the row stopped being active — the only signal that
+  distinguishes "cancelled" from "network down". Same mechanism as the
+  internal `heartbeat` `:interrupt` (see the heartbeat note above); do not
+  build a second channel.
+- Not part of this contract: `app.jobs/request`/`reply` (the ephemeral lane;
+  in retirement, `P1/F5/T16`). A comment in `app/jobs.clj` (2026-09-17) saying
+  that lane "waits for a producer" predates that decision and must not guide
+  anything here.
+
 For worker dispatch, cron, retry semantics (`ex/raise :type ::wrk/retry` with `:delay`/`:strategy`), deduplication, job events, and queue internals: `mem:backend/subtleties`.
 
 ## Jobs metrics
