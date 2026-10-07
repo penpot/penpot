@@ -14,8 +14,9 @@ export async function createPluginManager(
   manifest: Manifest,
   onCloseCallback: () => void,
   onReloadModal: (code: string) => void,
+  signal?: AbortSignal,
 ) {
-  let code = await loadManifestCode(manifest);
+  let code = '';
 
   let loaded = false;
   let destroyed = false;
@@ -61,6 +62,7 @@ export async function createPluginManager(
   const closePlugin = () => {
     if (destroyed) return;
     destroyed = true;
+    signal?.removeEventListener('abort', closePlugin);
     removeAllEventListeners();
     destroyListener(listenerId);
     destroyListener(logoutId);
@@ -148,7 +150,24 @@ export async function createPluginManager(
     context.removeListener(listenerId);
   };
 
+  signal?.addEventListener('abort', closePlugin, { once: true });
+  try {
+    if (signal?.aborted) {
+      closePlugin();
+    } else {
+      code = await loadManifestCode(manifest);
+    }
+  } catch (error) {
+    if (!destroyed) {
+      closePlugin();
+      throw error;
+    }
+  }
+
   return {
+    get destroyed() {
+      return destroyed;
+    },
     close: closePlugin,
     destroyListener,
     openModal,

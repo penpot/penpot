@@ -52,15 +52,23 @@ function makeManifest(
 
 function makeHostFixture() {
   const listenerTypes: string[] = [];
-  const listeners = new Map<symbol, string>();
+  const listeners = new Map<
+    symbol,
+    { type: string; callback: (...args: unknown[]) => unknown }
+  >();
+  const shapes: object[] = [];
   // Inline code (empty host + non-URL code) resolves without network, so no
   // fetch mock is needed. UI/modal APIs are never touched by the probe code.
-  const createRectangle = vi.fn(() => ({ type: 'rectangle-marker' }));
+  const createRectangle = vi.fn(() => {
+    const shape = { type: 'rectangle-marker' };
+    shapes.push(shape);
+    return shape;
+  });
   const selection: object[] = [{ id: 'shape-1' }];
   const context = {
-    addListener: (type: string, _callback: (...args: unknown[]) => unknown) => {
+    addListener: (type: string, callback: (...args: unknown[]) => unknown) => {
       const id = Symbol(type);
-      listeners.set(id, type);
+      listeners.set(id, { type, callback });
       listenerTypes.push(type);
       return id;
     },
@@ -68,13 +76,21 @@ function makeHostFixture() {
       listeners.delete(id);
     },
     theme: 'dark',
+    management: { workspace: { status: 'ready' } },
     createRectangle,
     selection,
     // Host-only member: present on the raw context but NOT part of the
     // public penpot API. Plugin code must never see it (see B-2 below).
     __internalSecret: 'host-internal',
   } as unknown as Context;
-  return { context, listeners, listenerTypes, createRectangle, selection };
+  return {
+    context,
+    listeners,
+    listenerTypes,
+    createRectangle,
+    selection,
+    shapes,
+  };
 }
 
 function lastCompartmentGlobalThis(): Record<string, unknown> {
@@ -182,7 +198,7 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
       const fixture = makeHostFixture();
       setContextBuilder(() => fixture.context);
       const manifest = {
-        ...makeManifest('plugin.js', []),
+        ...makeManifest('plugin.js', ['content:read', 'content:write']),
         host: 'https://plugins.test/',
         scope: 'global' as const,
       };
@@ -207,9 +223,10 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
         if (order === 'after') await replacement();
         finishFetch({
           ok: true,
-          text: async () => 'globalThis.marker = "cancelled";',
+          text: async () => 'penpot.createRectangle();',
         });
         await cancelled;
+        expect(fixture.shapes).toEqual([]);
         if (order === 'before') {
           expect(getPlugins()).toHaveLength(0);
           expect(fixture.listeners.size).toBe(0);
@@ -224,6 +241,74 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
       }
     },
   );
+
+  it('cancels a workspace load when another load replaces the same plugin', async () => {
+    const fixture = makeHostFixture();
+    setContextBuilder(() => fixture.context);
+    const manifest = {
+      ...makeManifest('plugin.js', ['content:read', 'content:write']),
+      host: 'https://plugins.test/',
+    };
+    let finishFetch!: (response: object) => void;
+    vi.stubGlobal(
+      'fetch',
+      () =>
+        new Promise((resolve) => {
+          finishFetch = resolve;
+        }),
+    );
+    try {
+      const cancelled = loadPlugin(manifest);
+      await loadPlugin({
+        ...manifest,
+        host: '',
+        code: 'globalThis.marker = "replacement";',
+      });
+      finishFetch({ ok: true, text: async () => 'penpot.createRectangle();' });
+      await cancelled;
+      expect(fixture.shapes).toEqual([]);
+      expect(getPlugins()).toHaveLength(1);
+      expect(lastCompartmentGlobalThis()['marker']).toBe('replacement');
+    } finally {
+      for (const plugin of [...getPlugins()]) plugin.plugin.close();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('ignores a fetch failure after a load has been cancelled', async () => {
+    const fixture = makeHostFixture();
+    setContextBuilder(() => fixture.context);
+    const manifest = {
+      ...makeManifest('plugin.js', []),
+      host: 'https://plugins.test/',
+      scope: 'global' as const,
+    };
+    let failFetch!: (error: Error) => void;
+    vi.stubGlobal(
+      'fetch',
+      () =>
+        new Promise((_resolve, reject) => {
+          failFetch = reject;
+        }),
+    );
+    try {
+      const cancelled = loadPlugin(manifest);
+      ɵunloadPlugin(manifest.pluginId);
+      await loadPlugin({
+        ...manifest,
+        host: '',
+        code: 'globalThis.marker = "replacement";',
+      });
+      failFetch(new Error('Cancelled fetch failed'));
+      await cancelled;
+      expect(getPlugins()).toHaveLength(1);
+      expect(lastCompartmentGlobalThis()['marker']).toBe('replacement');
+      expect(fixture.listeners.size).toBe(3);
+    } finally {
+      ɵunloadPlugin(manifest.pluginId);
+      vi.unstubAllGlobals();
+    }
+  });
 
   it('allows retrying a global plugin after a failed load', async () => {
     const fixture = makeHostFixture();
@@ -314,5 +399,95 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
     expect(getPlugins()).toHaveLength(0);
     expect(globals['penpotMgmt']).toBeUndefined();
     expect(listeners.size).toBe(0);
+  });
+
+  it('cancels a global load at logout before it can execute in another session', async () => {
+    const fixture = makeHostFixture();
+    setContextBuilder(() => fixture.context);
+    const manifest = {
+      ...makeManifest('plugin.js', ['content:read', 'content:write']),
+      pluginId: 'logout-plugin',
+      host: 'https://plugins.test/',
+      scope: 'global' as const,
+    };
+    let finishFetch!: (response: object) => void;
+    vi.stubGlobal(
+      'fetch',
+      () =>
+        new Promise((resolve) => {
+          finishFetch = resolve;
+        }),
+    );
+    try {
+      const cancelled = loadPlugin(manifest);
+      for (const listener of [...fixture.listeners.values()]) {
+        if (listener.type === 'logout') listener.callback();
+      }
+      await loadPlugin({
+        ...manifest,
+        host: '',
+        code: 'globalThis.marker = "new-session";',
+      });
+      finishFetch({ ok: true, text: async () => 'penpot.createRectangle();' });
+      await cancelled;
+      expect(fixture.shapes).toEqual([]);
+      expect(getPlugins()).toHaveLength(1);
+      expect(lastCompartmentGlobalThis()['marker']).toBe('new-session');
+      expect(fixture.listeners.size).toBe(3);
+    } finally {
+      ɵunloadPlugin(manifest.pluginId);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('cleans up a failed fetch and allows loading the plugin again', async () => {
+    const fixture = makeHostFixture();
+    setContextBuilder(() => fixture.context);
+    const manifest = {
+      ...makeManifest('plugin.js', []),
+      pluginId: 'failed-fetch-plugin',
+      host: 'https://plugins.test/',
+      scope: 'global' as const,
+    };
+    vi.stubGlobal('fetch', () => Promise.reject(new Error('Fetch failed')));
+    try {
+      await expect(loadPlugin(manifest)).rejects.toThrow('Fetch failed');
+      expect(getPlugins()).toHaveLength(0);
+      expect(fixture.listeners.size).toBe(0);
+      await loadPlugin({
+        ...manifest,
+        host: '',
+        code: 'globalThis.marker = "retry";',
+      });
+      expect(lastCompartmentGlobalThis()['marker']).toBe('retry');
+    } finally {
+      ɵunloadPlugin(manifest.pluginId);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not register a global plugin that closes during startup and permits reopening', async () => {
+    const fixture = makeHostFixture();
+    setContextBuilder(() => fixture.context);
+    const manifest = {
+      ...makeManifest('penpot.closePlugin();', [
+        'content:read',
+        'content:write',
+      ]),
+      pluginId: 'self-closing-plugin',
+      scope: 'global' as const,
+    };
+    try {
+      await loadPlugin(manifest);
+      expect(getPlugins()).toHaveLength(0);
+      expect(fixture.listeners.size).toBe(0);
+      await loadPlugin({ ...manifest, code: 'penpot.createRectangle();' });
+      expect(fixture.shapes).toEqual([{ type: 'rectangle-marker' }]);
+      expect(getPlugins()).toHaveLength(1);
+    } finally {
+      ɵunloadPlugin(manifest.pluginId);
+    }
+    expect(getPlugins()).toHaveLength(0);
+    expect(fixture.listeners.size).toBe(0);
   });
 });

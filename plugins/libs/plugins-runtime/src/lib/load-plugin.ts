@@ -4,8 +4,10 @@ import { loadManifest } from './parse-manifest.js';
 import { Manifest } from './models/manifest.model.js';
 import { createPlugin } from './create-plugin.js';
 
-let plugins: Awaited<ReturnType<typeof createPlugin>>[] = [];
-const pendingPlugins = new Map<Manifest['pluginId'], symbol>();
+type Plugin = NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
+
+let plugins: Plugin[] = [];
+const pendingPlugins = new Map<Manifest['pluginId'], AbortController>();
 
 export type ContextBuilder = (id: string) => Context;
 
@@ -50,7 +52,7 @@ export const loadPlugin = async function (
   closeCallback?: () => void,
   apiExtensions?: object,
 ) {
-  const loadId = Symbol();
+  const load = new AbortController();
   try {
     const context = contextBuilder && contextBuilder(manifest.pluginId);
 
@@ -86,13 +88,17 @@ export const loadPlugin = async function (
     // `createSandbox`'s proxy handler applies `ses.safeReturn` to values
     // crossing into the sandbox. Compartment isolation and intrinsics
     // hardening are performed by createSandbox, not here.
-    pendingPlugins.set(manifest.pluginId, loadId);
-    let plugin: Awaited<ReturnType<typeof createPlugin>> | undefined =
-      undefined;
+    pendingPlugins.get(manifest.pluginId)?.abort();
+    pendingPlugins.set(manifest.pluginId, load);
+    let plugin: Plugin | undefined = undefined;
     plugin = await createPlugin(
       context,
       manifest,
       () => {
+        load.abort();
+        if (pendingPlugins.get(manifest.pluginId) === load) {
+          pendingPlugins.delete(manifest.pluginId);
+        }
         plugins = plugins.filter((api) => api !== plugin);
 
         if (closeCallback) {
@@ -100,9 +106,10 @@ export const loadPlugin = async function (
         }
       },
       apiExtensions,
+      load.signal,
     );
-    if (pendingPlugins.get(manifest.pluginId) !== loadId) {
-      plugin.plugin.close();
+    if (!plugin || load.signal.aborted) {
+      plugin?.plugin.close();
       return;
     }
     plugins.push(plugin);
@@ -110,7 +117,7 @@ export const loadPlugin = async function (
     if (manifest.scope !== 'global') closeAllPlugins();
     throw error;
   } finally {
-    if (pendingPlugins.get(manifest.pluginId) === loadId) {
+    if (pendingPlugins.get(manifest.pluginId) === load) {
       pendingPlugins.delete(manifest.pluginId);
     }
   }
@@ -130,7 +137,7 @@ export const ɵloadPluginByUrl = async function (manifestUrl: string) {
 };
 
 export const ɵunloadPlugin = function (id: Manifest['pluginId']) {
-  pendingPlugins.delete(id);
+  pendingPlugins.get(id)?.abort();
   const plugin = plugins.find((plugin) => plugin.manifest.pluginId === id);
 
   if (plugin) {
