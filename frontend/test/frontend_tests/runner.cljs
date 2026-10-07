@@ -94,6 +94,7 @@
    [frontend-tests.render-wasm.text-editor-content-range-test]
    [frontend-tests.render-wasm.text-paste-test]
    [frontend-tests.render-wasm.webgl-test]
+   [frontend-tests.render-wasm.texts-test]
    [frontend-tests.router-test]
    [frontend-tests.svg-fills-test]
    [frontend-tests.svg-filters-test]
@@ -115,6 +116,7 @@
    [frontend-tests.ui.comment-input-ime-test]
    [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
+   [frontend-tests.ui.css-cursors-test]
    [frontend-tests.ui.drawarea-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.ui.error-boundary-test]
@@ -250,6 +252,7 @@
    'frontend-tests.render-wasm.text-editor-content-range-test
    'frontend-tests.render-wasm.text-paste-test
    'frontend-tests.render-wasm.webgl-test
+   'frontend-tests.render-wasm.texts-test
    'frontend-tests.browser-history-test
    'frontend-tests.router-test
    'frontend-tests.svg-fills-test
@@ -271,6 +274,7 @@
    'frontend-tests.ui.comment-input-ime-test
    'frontend-tests.ui.comments-clustering-test
    'frontend-tests.ui.comments-position-modifier-test
+   'frontend-tests.ui.css-cursors-test
    'frontend-tests.ui.drawarea-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.error-boundary-test
