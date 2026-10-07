@@ -145,3 +145,155 @@
         (t/is (nil?
                ((get-method ws/handle-message :pointer-update)
                 cfg empty-wsp msg)))))))
+
+;; --- SUBSCRIPTION REVOCATION
+;;
+;; GHSA-m53j-2766-6jqw: a websocket subscription checks read permission
+;; once, at subscribe time. Once the connection is subscribed to the
+;; message-bus topic it keeps receiving live content for the rest of its
+;; life, even after access is revoked.
+
+(def ^:private revocation-timeout-ms
+  "How long to wait for a message that should never arrive. Long enough
+  to absorb the round trip through redis, short enough to keep the test
+  fast."
+  500)
+
+(defn- poll-msg!
+  "Drains `ch` for up to `ms`, returning the first message whose `:type`
+  is `type`, or nil when none arrives.
+
+  Draining rather than reading a single message matters for the negative
+  assertions: a live subscription also carries presence traffic, so
+  \"no `:file-change` arrived\" is the property under test, not \"the
+  channel stayed empty\"."
+  [ch type ms]
+  (let [result (promise)
+        deadline (+ (System/currentTimeMillis) ms)]
+    (sp/go
+      (loop []
+        (let [remain (- deadline (System/currentTimeMillis))]
+          (when (pos? remain)
+            (let [[msg _] (sp/alts! [ch (sp/timeout-chan remain)])]
+              (if (= type (:type msg))
+                (deliver result msg)
+                (recur)))))))
+    (deref result (inc ms) nil)))
+
+(defn- open-subscription!
+  "Runs `handler` for `profile-id` against a live system, returning the
+  output channel that receives whatever the subscription forwards."
+  [handler profile-id params]
+  (let [output-ch (sp/chan :buf (sp/dropping-buffer 64))
+        state     (atom {})
+        wsp       (make-wsp profile-id state output-ch)]
+    ((get-method ws/handle-message handler) th/*system* wsp params)
+    output-ch))
+
+(defn- publisher!
+  "Returns a fn that publishes `message` on `topic` through the system
+  msgbus, the same path `send-notifications!` uses."
+  []
+  (let [msgbus (::mbus/msgbus th/*system*)]
+    (fn [topic message]
+      (mbus/pub! msgbus :topic topic :message message))))
+
+(t/deftest revoked-member-stops-receiving-file-changes
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)})
+          file-id (:id file)
+          publish (publisher!)
+          change  {:type :file-change
+                   :file-id file-id
+                   :revn 1
+                   :changes [{:type :add :id (uuid/next)}]}
+          out     (open-subscription! :subscribe-file (:id editor)
+                                      {:file-id file-id})]
+
+      (t/testing "member receives file changes before revocation"
+        (publish file-id change)
+        (t/is (some? (poll-msg! out :file-change revocation-timeout-ms))))
+
+      (t/testing "owner removes the member from the team"
+        (let [result (th/command! {::th/type :delete-team-member
+                                   ::rpc/profile-id (:id owner)
+                                   :team-id (:id team)
+                                   :member-id (:id editor)})]
+          (t/is (th/success? result))))
+
+      (t/testing "revoked member stops receiving file changes"
+        (publish file-id (assoc change :revn 2))
+        (t/is (nil? (poll-msg! out :file-change revocation-timeout-ms)))))))
+
+(t/deftest revoked-member-stops-receiving-library-changes
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [team-id (:id team)
+          publish (publisher!)
+          change  {:type :library-change
+                   :team-id team-id
+                   :file-id (uuid/next)
+                   :revn 1
+                   :changes [{:type :add :id (uuid/next)}]}
+          out     (open-subscription! :subscribe-team (:id editor)
+                                      {:team-id team-id})]
+
+      (t/testing "member receives library changes before revocation"
+        (publish team-id change)
+        (t/is (some? (poll-msg! out :library-change revocation-timeout-ms))))
+
+      (t/testing "member leaves the team"
+        (let [result (th/command! {::th/type :leave-team
+                                   ::rpc/profile-id (:id editor)
+                                   :id team-id})]
+          (t/is (th/success? result))))
+
+      (t/testing "revoked member stops receiving library changes"
+        (publish team-id (assoc change :revn 2))
+        (t/is (nil? (poll-msg! out :library-change revocation-timeout-ms)))))))
+
+(t/deftest role-downgrade-keeps-revocation-irrelevant
+  "A role change that does not remove read access must not be treated as
+  a revocation: `:viewer` can still read, so the subscription stays."
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)})
+          file-id (:id file)
+          publish (publisher!)
+          change  {:type :file-change :file-id file-id :revn 1 :changes []}
+          out     (open-subscription! :subscribe-file (:id editor)
+                                      {:file-id file-id})]
+
+      (t/testing "editor is downgraded to viewer"
+        (let [result (th/command! {::th/type :update-team-member-role
+                                   ::rpc/profile-id (:id owner)
+                                   :team-id (:id team)
+                                   :member-id (:id editor)
+                                   :role :viewer})]
+          (t/is (th/success? result))))
+
+      (t/testing "viewer keeps receiving file changes"
+        (publish file-id change)
+        (t/is (some? (poll-msg! out :file-change revocation-timeout-ms)))))))
