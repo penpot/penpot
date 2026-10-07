@@ -230,6 +230,50 @@
                 (l/warn :hint "error on job cancel callback" :job-id k :cause cause))))
           result)))))
 
+(defn register!
+  "The runtime record of a job this process runs. The local cancel arm
+  reads it (`mark-cancelled`), so the in-flight render of a claimed job
+  is terminable without the jobs substrate: the row is the backend's
+  business, this record is only what a terminate needs."
+  [job-id & {:keys [total]}]
+  (swap! registry assoc (str job-id)
+         {:job {:id job-id :state "running" :total total}
+          :cancelled? false}))
+
+(defn mark-cancelled
+  "Signals one job of this process as cancelled: raises the cancel flag
+  (the check between objects sees it), arms the shared-array signal (the
+  wasm worker sees it inside a render) and runs the cancel callbacks
+  (the terminate of the render worker). The durable row is already
+  terminal in the backend; no store write, no publish happens here.
+
+  A job this process does not own, or a settled one, is a no-op."
+  [job-id]
+  (let [k  (str job-id)
+        rt (get @registry k)]
+    (when-let [rt (and rt (:job rt))]
+      (when-not (terminal? rt)
+        (swap! registry update k (fn [rt] (some-> rt (assoc :cancelled? true))))
+        (when-let [signal (:cancel-signal rt)]
+          (js/Atomics.store signal 0 1))
+        (doseq [f (:cancel-fns rt)]
+          (try
+            (f)
+            (catch :default cause
+              (l/warn :hint "error on job cancel callback" :job-id k :cause cause))))
+        true))))
+
+(defn mark-cancelled!
+  "Marks a job of this process as cancelled and runs its cancel
+  callbacks (what terminates the render worker a hard-cancel needs) —
+  without touching the shared store.
+
+  It is the local arm of the manual `jobs/cancel-local!` has: the jobs
+  substrate marks the row `cancelled` in the backend, and the worker's
+  own records only need to know, so the in-flight render dies."
+  [job-id]
+  (cancel-local! job-id))
+
 (defn cancel!
   "Cancels a job. One this process does not own is broadcast over the cancel
   topic, so whoever runs it acts on it. Idempotent."

@@ -11,6 +11,8 @@
    [app.browser :as bwr]
    [app.common.logging :as l]
    [app.config :as cf]
+   [app.consumer.config :as ccfg]
+   [app.consumer.worker :as worker]
    [app.http :as http]
    [app.jobs :as jobs]
    [app.jobs.utils :as job.utils]
@@ -18,14 +20,26 @@
    [app.wasm :as wasm]
    [app.wasm.pool :as wasm.pool]
    [app.wasm.worker :as wasm.worker]
+   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 (enable-console-print!)
 (l/setup! {:app :info})
 
+(defn- roles-log
+  []
+  (->> (ccfg/roles)
+       (map name)
+       (str/join ",")))
+
 (defn start
   "Render workers run this same bundle, so the thread decides what gets booted:
-  the http server and its pools, or one render worker."
+  the http server and its pools, or one render worker.
+
+  In the main thread the roles of the process decide the rest: `http`
+  boots the server and its pools exactly as always, `worker` boots the
+  consumer of the backend queue, and both can coexist during the
+  transition (the engines and the pools are shared)."
   [& _]
   (if-not ^boolean wt/isMainThread
     (wasm.worker/main)
@@ -33,6 +47,7 @@
       (l/info :msg "initializing"
               :public-uri (str (cf/get :public-uri))
               :internal-uri (str (cf/get-internal-uri))
+              :roles (roles-log)
               :version (:full cf/version))
       (l/info :msg "headless wasm export available"
               :wasm-dir wasm/artifact-dir
@@ -44,7 +59,13 @@
         (jobs/init)
         (job.utils/init)
         (wasm.pool/init)
-        (http/init)))))
+        (when (ccfg/worker-enabled?)
+          (worker/start!))
+        (when (contains? (ccfg/roles) :http)
+          (http/init))
+        ;; With no role at all, the process boots into a no-op: the log
+        ;; above is the only surface of that mistake, and honest.
+        nil))))
 
 (def main start)
 
@@ -78,8 +99,13 @@
       (p/do
         (shutdown-step "browser-pool" bwr/stop)
         (shutdown-step "wasm-worker-pool" wasm.pool/stop)
+        ;; the worker's pollers are inside their redis connections; ending
+        ;; redis first would leave the pops on broken connections
+        (when (ccfg/worker-enabled?)
+          (shutdown-step "consumer-worker" worker/stop!))
         (shutdown-step "redis" redis/stop)
-        (shutdown-step "http" http/stop)
+        (when (contains? (ccfg/roles) :http)
+          (shutdown-step "http" http/stop))
         (done)))))
 
 (.on proc/default "uncaughtException"

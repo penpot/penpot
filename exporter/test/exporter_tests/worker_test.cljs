@@ -252,3 +252,73 @@
         (respond!)
         (restore!)
         (done)))))
+
+;; ---- THE CANCEL
+
+(t/deftest cancel-runs-the-cancel-port
+  ;; the beat the backend refuses (a skip) is the cancel arriving: the
+  ;; port runs exactly once, the local flag says cancelled and the
+  ;; runner unwinds; the settle below is the backend's own row, not a
+  ;; new answer of this worker
+  (t/async done
+    (let [job-id   (uuid/next)
+          sid      (uuid/next)
+          params   (export-params)
+          stages   (volatile! [])
+          port     (atom 0)
+          respond! (fake-fetch!
+                    (fn [method body]
+                      (when (= "report-job-progress" method)
+                        (vswap! stages conj (get-in body [:progress :stage])))
+                      (case method
+                        "claim-job"          {:action :run :name "export-assets" :params params}
+                        "create-job-session" {:session-id sid :session-token "session-token"}
+                        "report-job-progress" {:action :skip}
+                        {:action :run})))]
+      (p/let [_ (worker/process! (run-claim job-id))]
+        (t/testing "the settle of a cancelled job was a fail the backend answers skip"
+          (t/is (= "fail-job" (last (steps-of))))
+          (let [fail (call-of "fail-job")]
+            (t/is (= :job-cancelled (get-in fail [:error :code])))))
+        (respond!)
+        (done)))))
+
+(t/deftest cancel-kills-the-mid-skia-render
+  ;; the watchdog is what makes the cancel seen while the thread renders;
+  ;; the port it fires is the one renderer.wasm/with-scope registered,
+  ;; which terminates the worker
+  (t/async done
+    (let [job-id        (uuid/next)
+          sid           (uuid/next)
+          params        (export-params)
+          stages        (volatile! [])
+          terminated    (atom 0)
+          mark!         (atom nil)
+          respond!      (fake-fetch!
+                         (fn [method body]
+                           (when (= "report-job-progress" method)
+                             (vswap! stages conj (get-in body [:progress :stage])))
+                           (case method
+                             "claim-job"          {:action :run :name "export-assets" :params params}
+                             "create-job-session" {:session-id sid :session-token "session-token"}
+                             ;; the first beat runs, everything else skips:
+                             ;; the cancel lands right after the claim
+                             "report-job-progress" (if (empty? @stages)
+                                                     {:action :run}
+                                                     {:action :skip})
+                             {:action :run})))
+          render-restore (let [original rd/render]
+                           (set! rd/render
+                                 (fn [_params _on-object]
+                                   ;; never resolves: the render only ends
+                                   ;; when its thread is terminated, and the
+                                   ;; registry entry the with-scope registered
+                                   ;; does not exist in this fake
+                                   (p/delay 30000)))
+                           (fn [] (set! rd/render original)))]
+      (p/let [_ (worker/process! (run-claim job-id))]
+        (t/testing "the run ended in a fail job, not a complete"
+          (t/is (= "fail-job" (last (steps-of)))))
+        (render-restore)
+        (respond!)
+        (done)))))
