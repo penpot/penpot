@@ -9,23 +9,18 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as text-editor]
-   [app.render-wasm.text-paste :as text-paste]
-   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
-   [app.util.text.clipboard :as text-clipboard]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -63,97 +58,19 @@
     "Home" "End" "PageUp" "PageDown"
     "Enter" "Backspace" "Delete" "Escape" "Tab"})
 
-(defn- caret-position
-  "Collapsed caret as {:para :offset} from the WASM selection, or nil."
-  []
-  (when-let [{:keys [focus-para focus-offset]} (text-editor/text-editor-get-selection)]
-    {:para focus-para :offset focus-offset}))
-
-(defn- typed-range
-  "Normalized range covering the text inserted between `before` and `after`, or nil."
-  [before after]
-  (when (and before after)
-    (if (or (< (:para before) (:para after))
-            (and (= (:para before) (:para after))
-                 (<= (:offset before) (:offset after))))
-      {:start-para (:para before) :start-offset (:offset before)
-       :end-para   (:para after)  :end-offset   (:offset after)}
-      {:start-para (:para after)  :start-offset (:offset after)
-       :end-para   (:para before) :end-offset   (:offset before)})))
-
-(defn- commit-restyled-content
-  "Save `content` restyled after an insertion, renaming the shape after its text."
-  [shape-id content]
-  (let [text (txt/content->text content)
-        name (when (not= text "") (txt/generate-shape-name text))]
-    (st/emit! (dwt/v2-update-text-shape-content
-               shape-id content
-               :update-name? true
-               :name name))))
-
 (defn- sync-with-pending-caret-styles!
-  "Commit an insertion that consumed a pending caret style: sync the new text,
-   then restyle the just-typed `range` into its own span. `before` is the
+  "Commit an insertion that consumed a pending caret style. `before` is the
    pre-insert caret."
   [shape-id before]
-  (let [range (typed-range before (caret-position))]
-    ;; Sync first so the cached content stays index-aligned with WASM.
-    (text-editor/text-editor-sync-content)
-    (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
-      (commit-restyled-content shape-id content)
-      (sync-wasm-text-editor-content!))))
+  (when-let [event (dwt/v3-apply-pending-caret-styles shape-id before)]
+    (st/emit! event)))
 
-;; Bigger HTML is pasted as plain text rather than walked.
-(def ^:private max-paste-html-length 1000000)
-
-(defn- clipboard->fragment
-  "The paste fragment for `data`: its HTML when allowed and it has text, else its
-  plain text. Either way it is unstyled, so it adopts the caret style."
-  [^js data html-paste?]
-  (let [html (when html-paste? (.getData data "text/html"))]
-    (or (when (< 0 (count html) max-paste-html-length)
-          (some-> (text-clipboard/html->fragment html)
-                  (text-clipboard/without-overrides)))
-        (text-clipboard/text->fragment (.getData data "text/plain")))))
-
-(defn- selection-start
-  "Start of the WASM selection as {:para :offset}: where pasted text goes."
-  []
-  (when-let [{:keys [anchor-para anchor-offset focus-para focus-offset]}
-             (text-editor/text-editor-get-selection)]
-    (if (or (< anchor-para focus-para)
-            (and (= anchor-para focus-para) (<= anchor-offset focus-offset)))
-      {:para anchor-para :offset anchor-offset}
-      {:para focus-para :offset focus-offset})))
-
-(defn- paste-fragment
-  "Insert the text of `fragment`, then restyle it with the fragment overrides or,
-  when it has none, with the pending caret style."
-  [fragment]
-  (let [shape-id (text-editor/text-editor-get-active-shape-id)
-        start    (selection-start)
-        styled?  (text-paste/styled? fragment)
-        pending? (some? (text-editor/get-pending-caret-styles shape-id))]
-    (when styled?
-      (text-editor/clear-pending-caret-styles!))
-    (text-editor/text-editor-insert-text (text-paste/fragment->text fragment))
-    (cond
-      (nil? start)
-      (sync-wasm-text-editor-content!)
-
-      styled?
-      (do
-        ;; Sync first so the cached content stays index-aligned with WASM.
-        (text-editor/text-editor-sync-content)
-        (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start)]
-          (commit-restyled-content shape-id content)
-          (sync-wasm-text-editor-content!)))
-
-      pending?
-      (sync-with-pending-caret-styles! shape-id start)
-
-      :else
-      (sync-wasm-text-editor-content!))))
+(defn- write-clipboard-items
+  "Write `items` (mime type -> string) to the DataTransfer of a copy or cut event.
+  Windows apps prefer text/html, or they may paste the editor's empty `<br>`."
+  [^js data items]
+  (doseq [[mime value] items]
+    (.setData data mime value)))
 
 (defn- reset-input-node
   "Empties the contenteditable capture surface and restores a collapsed caret
@@ -331,11 +248,9 @@
         (mf/use-fn
          (fn [^js event]
            (dom/prevent-default event)
-           (when-let [fragment (some-> (.-clipboardData event)
-                                       (clipboard->fragment
-                                        (features/active-feature? @st/state "text-editor-wasm/v1-html-paste")))]
-             (paste-fragment fragment)
-             (wasm.api/request-render-preserving-target "text-paste"))
+           (when-let [data (.-clipboardData event)]
+             (st/emit! (dwt/v3-paste (.getData data "text/html")
+                                     (.getData data "text/plain"))))
            (reset-input-node (mf/ref-val contenteditable-ref))))
 
         on-copy
@@ -343,30 +258,19 @@
          (fn [^js event]
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
-             (when (text-editor/text-editor-has-selection?)
-               (let [text (or (text-editor/text-editor-export-selection) "")
-                     html (clipboard/plain-text->html text)
-                     data (.-clipboardData event)]
-                 ;; text/html matters on Windows: many apps prefer CF_HTML, and
-                 ;; without it they can pick up the empty contenteditable `<br>`.
-                 (.setData data "text/plain" text)
-                 (.setData data "text/html" html))))))
+             (when-let [items (dwt/editor-selection-clipboard-data @st/state)]
+               (write-clipboard-items (.-clipboardData event) items)))))
 
         on-cut
         (mf/use-fn
          (fn [^js event]
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
-             (when (text-editor/text-editor-has-selection?)
-               (let [text (or (text-editor/text-editor-export-selection) "")
-                     html (clipboard/plain-text->html text)
-                     data (.-clipboardData event)]
-                 (.setData data "text/plain" text)
-                 (.setData data "text/html" html)
-                 (when (seq text)
-                   (text-editor/text-editor-delete-backward)
-                   (sync-wasm-text-editor-content!)
-                   (wasm.api/request-render-preserving-target "text-cut"))))
+             (when-let [items (dwt/editor-selection-clipboard-data @st/state)]
+               (write-clipboard-items (.-clipboardData event) items)
+               (text-editor/text-editor-delete-backward)
+               (sync-wasm-text-editor-content!)
+               (wasm.api/request-render-preserving-target "text-cut"))
              (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-key-down
@@ -515,7 +419,7 @@
                  (let [shape-id        (text-editor/text-editor-get-active-shape-id)
                        ;; The inserted character adopts a pending caret style, if any.
                        pending-styles? (some? (text-editor/get-pending-caret-styles shape-id))
-                       before          (when pending-styles? (caret-position))]
+                       before          (when pending-styles? (text-editor/caret-position))]
                    (text-editor/text-editor-insert-text data)
                    (if pending-styles?
                      (sync-with-pending-caret-styles! shape-id before)

@@ -670,6 +670,26 @@
     {:start-para focus-para :start-offset focus-offset
      :end-para anchor-para :end-offset anchor-offset}))
 
+(defn caret-position
+  "Collapsed caret as {:para :offset} from the WASM selection, or nil."
+  []
+  (when-let [{:keys [focus-para focus-offset]} (text-editor-get-selection)]
+    {:para focus-para :offset focus-offset}))
+
+(defn selection-start
+  "Start of the WASM selection as {:para :offset}: where inserted text goes."
+  []
+  (when-let [selection (text-editor-get-selection)]
+    (let [{:keys [start-para start-offset]} (normalize-selection selection)]
+      {:para start-para :offset start-offset})))
+
+(defn typed-range
+  "Normalized range covering the text inserted between `before` and `after`, or nil."
+  [before after]
+  (when (and before after)
+    (normalize-selection {:anchor-para (:para before) :anchor-offset (:offset before)
+                          :focus-para (:para after) :focus-offset (:offset after)})))
+
 (defn apply-attrs-to-paragraph
   "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."
   [para sel-start sel-end styles]
@@ -771,6 +791,52 @@
                              (range (count paragraphs))
                              paragraphs)]
     (assoc content :children [(assoc paragraph-set :children new-paragraphs)])))
+
+(defn- slice-paragraph
+  "`para` with only the text in [start, end), cutting the spans at both ends.
+  With no text left it keeps its first span, empty, for the style."
+  [para start end]
+  (let [spans (loop [spans (:children para)
+                     pos   0
+                     acc   []]
+                (if (empty? spans)
+                  acc
+                  (let [span     (first spans)
+                        text     (:text span)
+                        span-end (+ pos (count text))
+                        ol-start (max pos start)
+                        ol-end   (min span-end end)]
+                    (recur (rest spans) span-end
+                           (cond-> acc
+                             (< ol-start ol-end)
+                             (conj (assoc span :text (subs text (- ol-start pos) (- ol-end pos)))))))))]
+    (assoc para :children (if (seq spans)
+                            spans
+                            [(assoc (first (:children para)) :text "")]))))
+
+(defn content-range
+  "The part of `content` inside the char range, with its paragraph and span styles."
+  [content {:keys [start-para start-offset end-para end-offset]}]
+  (let [paragraph-set (first (:children content))
+        paragraphs    (->> (:children paragraph-set)
+                           (map-indexed vector)
+                           (keep (fn [[idx para]]
+                                   (when (<= start-para idx end-para)
+                                     (slice-paragraph para
+                                                      (if (= idx start-para) start-offset 0)
+                                                      (if (= idx end-para) end-offset (para-char-count para))))))
+                           (vec))]
+    (assoc content :children [(assoc paragraph-set :children paragraphs)])))
+
+(defn selection-content
+  "The content of the editor selection in `shape-id`, or nil when it is collapsed."
+  [shape-id]
+  (when-let [selection (text-editor-get-selection)]
+    (let [{:keys [start-para start-offset end-para end-offset] :as range}
+          (normalize-selection selection)]
+      (when-let [content (get-cached-content shape-id)]
+        (when-not (and (= start-para end-para) (= start-offset end-offset))
+          (content-range content range))))))
 
 (defn- clean-styles
   "Drop nil-valued attrs (unlike the DOM path, our merge would keep them and fail
