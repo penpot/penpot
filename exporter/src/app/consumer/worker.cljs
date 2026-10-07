@@ -103,6 +103,14 @@
                    (p/delay reconnect-delay-ms)))
          (p/fmap (fn [_] (p/recur))))))
 
+(defn- redis-host
+  "The host of `:redis-uri`, for the boot log. Host only: a URI can
+  carry credentials and those never reach a log line."
+  []
+  (try
+    (.-host (js/URL. (cf/get :redis-uri)))
+    (catch :default _ "?")))
+
 ;; ---- THE START
 
 (defn start!
@@ -112,6 +120,12 @@
   []
   (let [key (queue-key)
         k   (ccfg/concurrency)]
+    ;; Where this process points, said once at boot: a worker that
+    ;; cannot reach its backends fails every turn with a network error,
+    ;; and the curing question is always "where was it looking".
+    ;; Host only, never credentials.
+    (l/info :hint "worker started" :pollers k :queue key
+            :redis-host (redis-host) :backend (str (cf/get-internal-uri)))
     (doseq [i (range k)]
       (let [conn (connect!)]
         (swap! pollers assoc i conn)
