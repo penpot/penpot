@@ -7,10 +7,11 @@ high-coverage support reference, never the base.
 ## Workflow
 
 - Canonicalize with `node ./scripts/translations.js sync -l <locale>` from `frontend/`: sorts entries, syncs `#:` comments from `en`, deletes keys missing in `en`.
+- `sync` never ADDS a key missing in the locale: it only syncs comments (for keys that already exist) and drops keys absent from `en`. A key added to `en` alone stays missing in `es` and its text silently falls back to English. Every new key is born in `en` AND `es` in the same change; compare the `msgid` sets to check (`comm -23 <(grep '^msgid ' en.po | sort -u) <(grep '^msgid ' es.po | sort -u)` must be empty).
 - `sync` copies ALL comment flags from `en`, including `#, fuzzy`. Translated entries must NOT stay fuzzy: strip the flag after translating (mirror `es.po`, which keeps fuzzy only on genuinely untranslated entries). Fuzzy entries are excluded from `msgfmt --statistics` translated counts.
 - Canonical files carry NO `#~` obsolete blocks (`en`/`es` have zero). Drop them; `sync` does not resurrect them.
-- Definition of done: `msgfmt --check <locale>.po` exit 0 and `msgfmt --statistics` shows 0 fuzzy, 0 untranslated.
-- `rehash` scans `frontend/src` AND `common/src` for `(tr "key"` occurrences (any line counts, including `;;` comments) and refreshes `#:` refs in `en`, marking unreferenced keys `#, unused`.
+- Definition of done: `msgfmt --check <locale>.po` exit 0, `msgfmt --statistics` shows 0 fuzzy, 0 untranslated, and the locale's `msgid` set is identical to `en.po`'s (no key missing, none extra).
+- `rehash` scans `frontend/src` AND `common/src` for `(tr "key"` occurrences (any line counts, including `;;` comments) and refreshes `#:` refs in `en`, marking unreferenced keys `#, unused`. The refs in `en` are broadly stale, so a repo-wide `rehash` rewrites hundreds of lines (measured: ~487 on `en` alone): it is a maintenance action on its own, never a step to run inside a change that only adds or edits a key.
 - Dynamic keys are invisible to `rehash`: eliminate them instead of
   declaring them. Preference order: literal `(tr "key")` args only;
   never put a branch inside `tr`, hoist it out (`(if cond (tr "a") (tr "b"))`);
