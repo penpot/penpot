@@ -1170,11 +1170,31 @@
         (rx/of (dwm/upload-media-workspace params))))))
 
 (defn copy-link-to-clipboard
+  "Copy a link to the clipboard. When one or more boards are part of the
+  current selection, the link deep-links to those boards through their
+  ids (`board-id` route param), which are stable across renames and
+  reordering. Otherwise it falls back to the current location."
   []
   (ptk/reify ::copy-link-to-clipboard
     ptk/WatchEvent
-    (watch [_ _ _]
-      (clipboard/to-clipboard (rt/get-current-href)))))
+    (watch [_ state _]
+      (let [objects   (dsh/lookup-page-objects state)
+            board-ids (into (d/ordered-set)
+                            (keep (fn [id]
+                                    (let [shape (get objects id)]
+                                      (cond
+                                        (cfh/frame-shape? shape) id
+                                        (some? shape)            (:frame-id shape)))))
+                            (dsh/lookup-selected state))
+            board-ids (disj board-ids uuid/zero)
+
+            link      (or (when (seq board-ids)
+                            (rt/resolve-uri (:router state)
+                                            (rt/lookup-name state)
+                                            (-> (rt/get-params state)
+                                                (assoc :board-id (mapv str board-ids)))))
+                          (rt/get-current-href))]
+        (clipboard/to-clipboard link)))))
 
 (defn copy-id-to-clipboard
   [id]
