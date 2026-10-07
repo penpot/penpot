@@ -39,40 +39,26 @@ jobs:
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
 
-      # START: Setup Node and PNPM enabling cache
+      # No dependency cache here: a deploy must not restore a cache that
+      # other workflows can write to.
       - name: Setup pnpm + Node.js
-        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
           working-directory: plugins
           runtime: node@24.21.0
           install: false
 
-      - name: Get pnpm store path
-        id: pnpm-store
-        working-directory: ./plugins
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
-        with:
-          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('plugins/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-      # END: Setup Node and PNPM enabling cache
-
       - name: Install deps
         working-directory: ./plugins
         shell: bash
         run: |
-          pnpm install --no-frozen-lockfile;
+          pnpm install --frozen-lockfile;
           pnpm add -D -w wrangler@latest;
 
       - name: Build docs

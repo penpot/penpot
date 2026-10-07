@@ -27,7 +27,7 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest create-team-invitations
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
           profile3 (th/create-profile* 3 {:is-active true :is-muted true})
@@ -106,7 +106,7 @@
           (t/is (= :member-is-muted (:code edata))))))))
 
 (t/deftest create-and-update-team-invitations-include-organization-props
-  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
                audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (let [owner      (th/create-profile* 101 {:is-active true})
           invitee    (th/create-profile* 102 {:is-active true})
@@ -167,7 +167,7 @@
         (t/is (false? (get-in create-plain [:props :invitee-already-organization-member])))))))
 
 (t/deftest create-team-invitations-blacklisted-domain
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           team     (th/create-team* 1 {:profile-id (:id profile1)})
           data     {::th/type :create-team-invitations
@@ -207,7 +207,7 @@
           (t/is (= 1 (:call-count @mock))))))))
 
 (t/deftest create-team-invitations-with-request-access
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1  (th/create-profile* 1 {:is-active true})
           requester (th/create-profile* 2 {:is-active true :email "requester@example.com"})
 
@@ -244,7 +244,7 @@
 
 
 (t/deftest create-team-invitations-with-request-access-2
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1   (th/create-profile* 1 {:is-active true})
           requester  (th/create-profile* 2 {:is-active true
                                             :email "requester@example.com"})
@@ -307,7 +307,7 @@
 
 
 (t/deftest invitation-tokens
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
 
@@ -619,7 +619,7 @@
         (t/is (not-any? #(= "accept-organization-invitation" (:name %)) events))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
           profile3 (th/create-profile* 3 {:is-active true :is-muted true})
@@ -850,7 +850,7 @@
         (t/is (= 1 (count result)))
         (t/is (= (:default-team-id profile1) (get-in result [0 :id])))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     ;; run permanent deletion (should be noop)
     (let [result (th/run-task! :objects-gc {})]
@@ -918,7 +918,7 @@
       #_(th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     (let [rows (th/db-exec! ["select * from team where id = ?" (:id team)])]
       (t/is (= 1 (count rows)))
@@ -929,7 +929,7 @@
         (t/is (= 7 (:processed result)))))))
 
 (t/deftest create-team-access-request
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner      (th/create-profile* 1 {:is-active true :email "owner@bar.com"})
           requester  (th/create-profile* 3 {:is-active true :email "requester@bar.com"})
           team       (th/create-team* 1 {:profile-id (:id owner)})
@@ -976,7 +976,7 @@
 
 
 (t/deftest create-team-access-request-owner-muted
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner       (th/create-profile* 1 {:is-active true :is-muted true :email "owner@bar.com"})
           requester   (th/create-profile* 2 {:is-active true :email "requester@bar.com"})
           team        (th/create-team* 1 {:profile-id (:id owner)})
@@ -995,7 +995,7 @@
 
 
 (t/deftest create-team-access-request-requester-muted
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner       (th/create-profile* 1 {:is-active true :email "owner@bar.com"})
           requester   (th/create-profile* 2 {:is-active true :is-muted true :email "requester@bar.com"})
           team        (th/create-team* 1 {:profile-id (:id owner)})
@@ -1021,7 +1021,7 @@
 
 
 (t/deftest create-team-access-request-owner-bounce
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner       (th/create-profile* 1 {:is-active true :email "owner@bar.com"})
           requester   (th/create-profile* 2 {:is-active true :email "requester@bar.com"})
           team        (th/create-team* 1 {:profile-id (:id owner)})
@@ -1049,7 +1049,7 @@
         (t/is (= "private" (:email edata)))))))
 
 (t/deftest create-team-access-request-requester-bounce
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner       (th/create-profile* 1 {:is-active true :email "owner@bar.com"})
           requester   (th/create-profile* 2 {:is-active true :email "requester@bar.com"})
           team        (th/create-team* 1 {:profile-id (:id owner)})
@@ -1106,7 +1106,7 @@
       (t/is (th/success? out)))))
 
 (t/deftest create-team-invitations-email-cooldown
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           team     (th/create-team* 1 {:profile-id (:id profile1)})
 
@@ -1240,7 +1240,7 @@
 ;; --- T7-F-01: Role ceiling in team invitations ---
 
 (t/deftest admin-cannot-create-invitation-with-owner-role
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner   (th/create-profile* 1 {:is-active true})
           admin   (th/create-profile* 2 {:is-active true})
           team    (th/create-team* 1 {:profile-id (:id owner)})]
@@ -1264,7 +1264,7 @@
         (t/is (= 0 (:call-count @mock)))))))
 
 (t/deftest admin-cannot-create-invitation-with-owner-role-invitations-format
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner   (th/create-profile* 1 {:is-active true})
           admin   (th/create-profile* 2 {:is-active true})
           team    (th/create-team* 1 {:profile-id (:id owner)})]
@@ -1287,7 +1287,7 @@
         (t/is (= 0 (:call-count @mock)))))))
 
 (t/deftest admin-cannot-update-invitation-role-to-owner
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner   (th/create-profile* 1 {:is-active true})
           admin   (th/create-profile* 2 {:is-active true})
           team    (th/create-team* 1 {:profile-id (:id owner)})]
@@ -1321,7 +1321,7 @@
         (t/is (th/ex-of-code? (:error out) :cant-promote-to-owner))))))
 
 (t/deftest owner-can-create-invitation-with-owner-role
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner   (th/create-profile* 1 {:is-active true})
           team    (th/create-team* 1 {:profile-id (:id owner)})]
 
@@ -1439,3 +1439,315 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest leaver-loses-file-access
+  ;; GHSA-v9r9-h77c-55m2: leaving the team must revoke the file and
+  ;; project roles granted in that team.
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)})]
+
+      (t/testing "editor can rename and read summary before leaving"
+        (let [out (th/command! {::th/type :rename-file
+                                ::rpc/profile-id (:id editor)
+                                :id (:id file)
+                                :name "renamed"})]
+          (t/is (th/success? out)))
+        (let [out (th/command! {::th/type :get-file-summary
+                                ::rpc/profile-id (:id editor)
+                                :id (:id file)})]
+          (t/is (th/success? out))))
+
+      (t/testing "leave team"
+        (let [out (th/command! {::th/type :leave-team
+                                ::rpc/profile-id (:id editor)
+                                :id (:id team)})]
+          (t/is (th/success? out))))
+
+      (t/testing "renaming after leaving fails with not-found"
+        (let [out   (th/command! {::th/type :rename-file
+                                  ::rpc/profile-id (:id editor)
+                                  :id (:id file)
+                                  :name "renamed-again"})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found))))
+
+      (t/testing "file summary after leaving fails with not-found"
+        (let [out   (th/command! {::th/type :get-file-summary
+                                  ::rpc/profile-id (:id editor)
+                                  :id (:id file)})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found))))
+
+      (t/testing "get-file after leaving fails with not-found"
+        (let [out   (th/command! {::th/type :get-file
+                                  ::rpc/profile-id (:id editor)
+                                  :id (:id file)
+                                  :components-v2 true})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found)))))))
+
+(t/deftest removed-member-loses-file-access
+  ;; Same as above through the expulsion path.
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)})]
+
+      (t/testing "remove member"
+        (let [out (th/command! {::th/type :delete-team-member
+                                ::rpc/profile-id (:id owner)
+                                :team-id (:id team)
+                                :member-id (:id editor)})]
+          (t/is (th/success? out))))
+
+      (t/testing "renaming after removal fails with not-found"
+        (let [out   (th/command! {::th/type :rename-file
+                                  ::rpc/profile-id (:id editor)
+                                  :id (:id file)
+                                  :name "renamed-again"})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found))))
+
+      (t/testing "file summary after removal fails with not-found"
+        (let [out   (th/command! {::th/type :get-file-summary
+                                  ::rpc/profile-id (:id editor)
+                                  :id (:id file)})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found)))))))
+
+(t/deftest orphan-file-role-without-team-membership-grants-nothing
+  ;; Defense in depth: a file role row without a live team membership
+  ;; (leftover from before the leave-team cleanup) grants no access.
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        stranger (th/create-profile* 2 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})]
+
+    ;; Plant an orphan file role for a profile that was never a member.
+    (th/create-file-role* {:file-id (:id file)
+                           :profile-id (:id stranger)
+                           :role :editor})
+
+    (t/testing "orphan file role cannot rename"
+      (let [out   (th/command! {::th/type :rename-file
+                                ::rpc/profile-id (:id stranger)
+                                :id (:id file)
+                                :name "renamed"})
+            error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-of-type? error :not-found))))
+
+    (t/testing "orphan file role cannot read summary"
+      (let [out   (th/command! {::th/type :get-file-summary
+                                ::rpc/profile-id (:id stranger)
+                                :id (:id file)})
+            error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-of-type? error :not-found))))))
+
+(t/deftest leaver-loses-project-access
+  ;; Same revocation at project level (covers sql:project-permissions).
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})]
+
+      (t/testing "leave team"
+        (let [out (th/command! {::th/type :leave-team
+                                ::rpc/profile-id (:id editor)
+                                :id (:id team)})]
+          (t/is (th/success? out))))
+
+      (t/testing "get-project after leaving fails with not-found"
+        (let [out   (th/command! {::th/type :get-project
+                                  ::rpc/profile-id (:id editor)
+                                  :id (:id project)})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found))))
+
+      (t/testing "rename-project after leaving fails with not-found"
+        (let [out   (th/command! {::th/type :rename-project
+                                  ::rpc/profile-id (:id editor)
+                                  :id (:id project)
+                                  :name "renamed"})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found)))))))
+
+(t/deftest leaver-vanishes-from-search
+  ;; The old team's files are no longer searchable by the leaver.
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)
+                                      :name "searchable-file"})]
+
+      (t/testing "member finds the file before leaving"
+        (let [out (th/command! {::th/type :search-files
+                                ::rpc/profile-id (:id editor)
+                                :team-id (:id team)
+                                :search-term "searchable"})]
+          (t/is (th/success? out))
+          (t/is (= (:id file) (-> out :result first :id)))))
+
+      (t/testing "leave team"
+        (let [out (th/command! {::th/type :leave-team
+                                ::rpc/profile-id (:id editor)
+                                :id (:id team)})]
+          (t/is (th/success? out))))
+
+      (t/testing "search on the old team fails with not-found"
+        (let [out   (th/command! {::th/type :search-files
+                                  ::rpc/profile-id (:id editor)
+                                  :team-id (:id team)
+                                  :search-term "searchable"})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found)))))))
+
+(t/deftest pins-are-cleaned-on-leave
+  ;; The project pin (team-project-profile-rel) goes with the leaver.
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})]
+
+      (t/testing "pin the project"
+        (let [out (th/command! {::th/type :update-project-pin
+                                ::rpc/profile-id (:id editor)
+                                :id (:id project)
+                                :team-id (:id team)
+                                :is-pinned true})]
+          (t/is (th/success? out)))
+        (t/is (= 1 (count (th/db-query :team-project-profile-rel
+                                       {:team-id (:id team)
+                                        :profile-id (:id editor)})))))
+
+      (t/testing "leave team removes the pin row"
+        (let [out (th/command! {::th/type :leave-team
+                                ::rpc/profile-id (:id editor)
+                                :id (:id team)})]
+          (t/is (th/success? out)))
+        (t/is (= 0 (count (th/db-query :team-project-profile-rel
+                                       {:team-id (:id team)
+                                        :profile-id (:id editor)}))))))))
+
+(t/deftest leaving-one-team-keeps-other-team-access
+  ;; Deletes are scoped by team: leaving A keeps B's files usable.
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        team-a  (th/create-team* 1 {:profile-id (:id owner)})
+        team-b  (th/create-team* 2 {:profile-id (:id owner)})]
+
+    (th/create-team-role* {:team-id (:id team-a)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (th/create-team-role* {:team-id (:id team-b)
+                           :profile-id (:id editor)
+                           :role :editor})
+
+    (let [project-a (th/create-project* 1 {:profile-id (:id editor)
+                                           :team-id (:id team-a)})
+          file-a    (th/create-file* 1 {:profile-id (:id editor)
+                                        :project-id (:id project-a)})
+          project-b (th/create-project* 2 {:profile-id (:id editor)
+                                           :team-id (:id team-b)})
+          file-b    (th/create-file* 2 {:profile-id (:id editor)
+                                        :project-id (:id project-b)})]
+
+      (t/testing "leave team A"
+        (let [out (th/command! {::th/type :leave-team
+                                ::rpc/profile-id (:id editor)
+                                :id (:id team-a)})]
+          (t/is (th/success? out))))
+
+      (t/testing "team A file is gone"
+        (let [out   (th/command! {::th/type :rename-file
+                                  ::rpc/profile-id (:id editor)
+                                  :id (:id file-a)
+                                  :name "renamed"})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :not-found))))
+
+      (t/testing "team B file still works"
+        (let [out (th/command! {::th/type :rename-file
+                                ::rpc/profile-id (:id editor)
+                                :id (:id file-b)
+                                :name "renamed"})]
+          (t/is (th/success? out)))))))
+
+(t/deftest orphan-project-role-grants-nothing-and-lists-nothing
+  ;; Mirror of the file orphan test at project level, including the
+  ;; get-all-projects listing (covers the F1 guard).
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        stranger (th/create-profile* 2 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})]
+
+    ;; Plant an orphan project role for a profile that was never a member.
+    (th/create-project-role* {:project-id (:id project)
+                              :profile-id (:id stranger)
+                              :role :editor})
+
+    (t/testing "orphan project role cannot read the project"
+      (let [out   (th/command! {::th/type :get-project
+                                ::rpc/profile-id (:id stranger)
+                                :id (:id project)})
+            error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-of-type? error :not-found))))
+
+    (t/testing "orphan project is not listed"
+      (let [out (th/command! {::th/type :get-all-projects
+                              ::rpc/profile-id (:id stranger)})]
+        (t/is (th/success? out))
+        (t/is (nil? (some #(= (:id project) (:id %)) (:result out))))))))

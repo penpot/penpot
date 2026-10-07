@@ -115,11 +115,14 @@
         shape-changes
         (reduce-kv
          (fn [changes container refs]
-           (let [shape-ids  (map :shape-id refs)
+           (let [;; Each shape keeps only the attributes it already had the
+                 ;; token on, so the rename never applies the token to new
+                 ;; attributes (e.g. a stroke-width token on a single side).
+                 attributes-by-shape (update-vals (group-by :shape-id refs)
+                                                  #(into #{} (map :attribute) %))
                  ;; Find the correct token to apply (new or alias)
-                 token      (or (some #(when (= (:name (:token %)) new-token-name) %) tokens-with-sets)
-                                (some #(when (= (:name (:token %)) old-token-name) %) tokens-with-sets))
-                 attributes (set (map :attribute refs))]
+                 token               (or (some #(when (= (:name (:token %)) new-token-name) %) tokens-with-sets)
+                                         (some #(when (= (:name (:token %)) old-token-name) %) tokens-with-sets))]
              (if token
                ;; Create a new independent changes so we can call `with-file-data` after `with-container`
                ;; otherwise it causes probelms looking up for objects
@@ -127,10 +130,11 @@
                      (-> (pcb/empty-changes)
                          (pcb/with-container container)
                          (pcb/with-file-data file-data)
-                         (pcb/update-shapes shape-ids
+                         (pcb/update-shapes (keys attributes-by-shape)
                                             (fn [shape]
-                                              (update shape :applied-tokens
-                                                      #(merge % (cft/attributes-map attributes (:token token)))))
+                                              (let [attributes (get attributes-by-shape (:id shape))]
+                                                (update shape :applied-tokens
+                                                        #(merge % (cft/attributes-map attributes (:token token))))))
                                             {:ignore-touched true}))]
                  (pcb/concat-changes changes container-changes))
                changes)))

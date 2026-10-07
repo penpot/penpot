@@ -10,9 +10,12 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.transit :as t]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.jobs :as jobs]
+   [app.nitrate :as nitrate]
    [app.setup :as-alias setup]
    [integrant.core :as ig]
    [promesa.exec :as px]))
@@ -69,14 +72,60 @@
                  :resp-body (:body resp))
         false))))
 
+(def ^:private event-names-for-nitrate
+  #{"accept-organization-invitation"
+    "accept-team-invitation"
+    "accept-team-invitation-from"
+    "add-member-to-organization"
+    "add-team-to-organization"
+    "cancel-organization-invitation"
+    "change-organization-advanced-permission"
+    "create-file"
+    "create-organization"
+    "create-organization-invitation"
+    "create-project"
+    "create-team"
+    "create-team-access-request"
+    "create-team-invitation"
+    "create-team-invitations"
+    "create-webhook"
+    "delete-font"
+    "delete-organization"
+    "delete-project"
+    "delete-team"
+    "delete-team-invitation"
+    "delete-team-member"
+    "leave-team"
+    "move-project"
+    "move-team-to-organization"
+    "organization-sso-auth-failed"
+    "organization-sso-auth-started"
+    "organization-sso-auth-succeeded"
+    "permanently-delete-team-files"
+    "remove-organization-team"
+    "remove-team-from-organization"
+    "rename-organization"
+    "rename-project"
+    "restore-deleted-team-files"
+    "update-organization-invitation"
+    "update-organization-permissions"
+    "update-team-invitation"
+    "update-team-invitation-role"
+    "update-team-member-role"
+    "update-team-photo"
+    "verify-token"})
+
+(defn- send-to-nitrate!
+  [cfg rows]
+  (when-let [events (->> rows
+                         (filterv #(contains? event-names-for-nitrate (:name %)))
+                         (not-empty))]
+    (nitrate/call cfg :ingest-audit-log {:events events})))
+
 (defn- mark-archived!
   [{:keys [::db/conn]} rows]
   (let [ids (db/create-array conn "uuid" (map :id rows))]
     (db/exec-one! conn ["update audit_log set archived_at=now() where id = ANY(?)" ids])))
-
-(def ^:private xf:create-event
-  (comp (map decode-row)
-        (map row->event)))
 
 (def ^:private sql:get-audit-log-chunk
   "SELECT *
@@ -96,46 +145,74 @@
   [{:keys [::uri] :as cfg}]
   (db/tx-run! cfg (fn [cfg]
                     (when-let [rows (get-event-rows cfg)]
-                      (let [events (into [] xf:create-event rows)]
+                      (let [decoded (mapv decode-row rows)
+                            events  (mapv row->event decoded)]
                         (l/trc :hint "archive events chunk" :uri uri :events (count events))
-                        (when (send! cfg events)
-                          (mark-archived! cfg rows)
-                          (count events)))))))
 
-(def ^:private schema:handler-params
+                        (when (contains? cf/flags :admin-console)
+                          (send-to-nitrate! cfg decoded))
+
+                        ;; When :nexus is off, treat Nexus as skipped
+                        ;; success so nitrate-only still marks the chunk.
+                        ;; REPL :enabled true with neither send flag also marks
+                        ;; with no outbound send — always set at least one flag.
+                        (let [nexus-ok? (if (contains? cf/flags :nexus)
+                                          (send! cfg events)
+                                          true)]
+                          (when nexus-ok?
+                            (mark-archived! cfg rows)
+                            (count events))))))))
+
+(declare execute-audit-log-archive)
+
+(def schema:audit-log-archive-params
+  "Optional overrides for the repl invocation defaults."
   [:map
    ::db/pool
    ::setup/shared-keys
-   ::http/client])
+   ::http/client
+   [:app.nitrate/client {:optional true} [:maybe :map]]
+   [:enabled {:optional true} :boolean]
+   [:uri {:optional true} ::sm/uri]])
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (sm/valid? schema:handler-params params) "valid params expected for handler"))
-
-(defmethod ig/init-key ::handler
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [params]
-    ;; NOTE: this let allows overwrite default configured values from
-    ;; the repl, when manually invoking the task.
-    (let [enabled (or (contains? cf/flags :audit-log-archive)
-                      (:enabled params false))
+  {::jobs/name      :audit-log-archive
+   ::jobs/schema    schema:audit-log-archive-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-audit-log-archive cfg params))
+   ::jobs/decoder   (sm/decoder schema:audit-log-archive-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-archive-params)})
 
-          uri     (cf/get :audit-log-archive-uri)
-          uri     (or uri (:uri params))
-          cfg     (assoc cfg ::uri uri)]
-
-      (when (and enabled (not uri))
-        (ex/raise :type :internal
-                  :code :task-not-configured
-                  :hint "archive task not configured, missing uri"))
-
-      (when enabled
-        (loop [total 0]
-          (if-let [n (archive-events! cfg)]
-            (do
-              (px/sleep 100)
-              (recur (+ total ^long n)))
-
-            (when (pos? total)
-              (l/dbg :hint "events archived" :total total))))))))
-
+(defn execute-audit-log-archive
+  "Plain job handler: archive the accumulated audit events in chunks
+  (heartbeat per iteration: the sent chunk batches can be long)."
+  [cfg params]
+  ;; NOTE: this let allows overwrite default configured values from
+  ;; the repl, when manually invoking the task. Prefer setting a send
+  ;; flag (:admin-console and/or :nexus); :enabled alone
+  ;; marks chunks without shipping.
+  (let [enabled (or (contains? cf/flags :nexus)
+                    (contains? cf/flags :admin-console)
+                    (:enabled params false))
+        uri     (cf/get :audit-log-archive-uri)
+        uri     (or uri (:uri params))
+        ;; Normalize to an uri object; params may carry a plain string
+        ;; on direct invocations (validation only applies on submit!).
+        uri     (u/uri uri)
+        cfg     (assoc cfg ::uri uri)]
+    (when (and (contains? cf/flags :nexus)
+               (not uri))
+      (ex/raise :type :internal
+                :code :task-not-configured
+                :hint "archive task not configured, missing uri"))
+    (when enabled
+      (loop [total 0]
+        (if-let [n (archive-events! cfg)]
+          (do
+            (jobs/heartbeat cfg)
+            (px/sleep 100)
+            (recur (+ total ^long n)))
+          (when (pos? total)
+            (l/dbg :hint "events archived" :total total)))))))

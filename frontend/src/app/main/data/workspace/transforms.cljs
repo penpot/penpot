@@ -839,14 +839,30 @@
 
              exclude-frames
              (into #{}
-                   (filter (partial cfh/frame-shape? objects))
-                   (cfh/selected-with-children objects selected))
+                   (comp (mapcat #(cfh/get-children-ids-with-self objects %))
+                         (filter (partial cfh/frame-shape? objects)))
+                   selected)
 
              exclude-frames-siblings
              (into exclude-frames
                    (comp (mapcat (partial cfh/get-siblings-ids objects))
                          (filter (partial ctl/any-layout-immediate-child-id? objects)))
                    selected)
+
+             ;; Frame lookups per pointer move only test frames that can be a target
+             frames
+             (ctst/get-frames objects)
+
+             with-target-frames
+             (fn [excluded]
+               (vary-meta objects assoc ::ctst/index-frames
+                          (into [] (remove #(contains? excluded (:id %))) frames)))
+
+             target-objects
+             (with-target-frames exclude-frames)
+
+             target-objects-siblings
+             (with-target-frames exclude-frames-siblings)
 
              position (->> ms/mouse-position
                            (rx/map #(gpt/to-vec from-position %)))
@@ -891,8 +907,9 @@
                       (rx/map
                        (fn [[move-vector mod?]]
                          (let [position         (gpt/add from-position move-vector)
-                               exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
-                               target-frame     (ctst/top-nested-frame objects position exclude-frames)
+                               target-frame     (if mod?
+                                                  (ctst/top-nested-frame target-objects position)
+                                                  (ctst/top-nested-frame target-objects-siblings position))
                                [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries parent-validation-cache)
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)

@@ -21,7 +21,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -234,55 +233,78 @@
          (map #(get objects %))
          (reduce get-ignore-tree nil))))
 
+(defn- cached-transform
+  [transforms]
+  (let [cache (js/Map.)]
+    (fn [shape]
+      (let [id     (dm/get-prop shape :id)
+            cached (.get cache id)]
+        (if (and (some? cached) (identical? shape (aget cached 0)))
+          (aget cached 1)
+          (let [result (gsh/apply-transform shape (get transforms id))]
+            (.set cache id #js [shape result])
+            result))))))
+
 (defn calculate-ignore-tree-wasm
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
-  [transforms objects]
+  ([transforms objects]
+   (calculate-ignore-tree-wasm transforms objects (cached-transform transforms)))
+  ([transforms objects transform]
+   (let [order (into {} (map-indexed (fn [i id] [id i])) (keys transforms))
 
-  (letfn [(get-ignore-tree
-            ([ignore-tree shape]
-             (let [shape-id (dm/get-prop shape :id)
-                   transformed-shape (gsh/apply-transform shape (get transforms shape-id))
+         component-shape
+         (fn [shape parent parent-component]
+           (cond
+             (cfh/root? shape) nil
+             (ctk/instance-root? shape) shape
+             (and (ctk/instance-head? shape) (not (ctk/in-component-copy? parent))) shape
+             :else parent-component))
 
-                   root
-                   (if (:component-root shape)
-                     shape
-                     (ctn/get-component-shape objects shape {:allow-main? true}))
+         walk
+         (fn walk [ignore-tree shape component latest]
+           (let [index  (get order (dm/get-prop shape :id))
+                 latest (if (and (some? index) (or (nil? latest) (> index (nth latest 0))))
+                          (if (some? component)
+                            [index component (transform component)]
+                            latest)
+                          latest)
+                 ignore-tree
+                 (if (and (some? latest) (ctk/in-component-copy? shape))
+                   (let [[_ root transformed-root] latest]
+                     (assoc ignore-tree
+                            (dm/get-prop shape :id)
+                            (check-delta shape root (transform shape) transformed-root)))
+                   ignore-tree)]
+             (reduce (fn [ignore-tree child]
+                       (walk ignore-tree child (component-shape child shape component) latest))
+                     ignore-tree
+                     (map (d/getf objects) (:shapes shape)))))
 
-                   transformed-root
-                   (if (:component-root shape)
-                     transformed-shape
-                     (gsh/apply-transform root (get transforms (:id root))))]
+         under-transform (volatile! {})
 
-               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
-
-            ([ignore-tree shape root transformed-root]
-             (let [shape-id (dm/get-prop shape :id)
-                   transformed-shape (gsh/apply-transform shape (get transforms shape-id))]
-               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
-
-            ([ignore-tree shape transformed-shape root transformed-root]
-             (let [shape-id (dm/get-prop shape :id)
-
-                   ignore-tree
-                   (cond-> ignore-tree
-                     (and (some? root) (ctk/in-component-copy? shape))
-                     (assoc
-                      shape-id
-                      (check-delta shape root transformed-shape transformed-root)))
-
-                   set-child
-                   (fn [ignore-tree child]
-                     (get-ignore-tree ignore-tree child root transformed-root))]
-
-               (->> (:shapes shape)
-                    (map (d/getf objects))
-                    (reduce set-child ignore-tree)))))]
-
-    ;; we check twice because we want only to search parents of components but once the
-    ;; tree is traversed we only want to process the objects in components
-    (->> (keys transforms)
-         (map #(get objects %))
-         (reduce get-ignore-tree nil))))
+         under-transform?
+         (fn under-transform? [id]
+           (let [parent-id (dm/get-in objects [id :parent-id])]
+             (cond
+               (or (nil? parent-id) (= parent-id id)) false
+               (contains? order parent-id) true
+               :else
+               (let [cached (get @under-transform parent-id ::none)]
+                 (if (= cached ::none)
+                   (let [result (under-transform? parent-id)]
+                     (vswap! under-transform assoc parent-id result)
+                     result)
+                   cached)))))]
+     (->> (keys transforms)
+          (remove under-transform?)
+          (keep #(get objects %))
+          (reduce (fn [ignore-tree shape]
+                    (let [parent (get objects (:parent-id shape))]
+                      (walk ignore-tree
+                            shape
+                            (component-shape shape parent (ctn/get-component-shape objects parent {:allow-main? true}))
+                            nil)))
+                  nil)))))
 
 (defn assoc-position-data
   [shape position-data old-shape]
@@ -704,6 +726,21 @@
         (vreset! cache (translate-selrect computed (- tx) (- ty)))
         computed))))
 
+(defn- without-inherited-transforms
+  "Drops the entries that repeat their parent's transform. Only for WASM, which applies it to
+  the subtree; the UI looks transforms up per shape. WASM does not expand into bool operands
+  nor masks, so those are kept."
+  [objects modifiers]
+  (let [transforms (into {} modifiers)]
+    (into []
+          (remove (fn [[id transform]]
+                    (let [parent (get objects (dm/get-in objects [id :parent-id]))]
+                      (and (= transform (get transforms (:id parent)))
+                           (not (cfh/bool-shape? parent))
+                           (not (and (cfh/mask-shape? parent)
+                                     (= id (first (:shapes parent)))))))))
+          modifiers)))
+
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis
@@ -762,7 +799,9 @@
                   (let [propagated (wasm.api/propagate-modifiers geometry-entries snap-pixel? snap-ignore-axis)]
                     (if (seq propagated) propagated root-modifiers)))]
             (when wasm-ready?
-              (wasm.api/set-modifiers modifiers))
+              (wasm.api/set-modifiers
+               (cond->> modifiers
+                 translation? (without-inherited-transforms (dsh/lookup-page-objects state)))))
             (let [ids     (into [] xf:map-key geometry-entries)
                   selrect (when wasm-ready?
                             (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
@@ -867,8 +906,11 @@
                   :else
                   (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel? snap-ignore-axis)))
 
+                transform-shape
+                (cached-transform transforms)
+
                 ignore-tree
-                (calculate-ignore-tree-wasm transforms objects)
+                (calculate-ignore-tree-wasm transforms objects transform-shape)
 
                 options
                 (-> params
@@ -885,22 +927,23 @@
                 ids
                 (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
 
+                options
+                (cond-> options
+                  translation?
+                  (assoc :resize-ids
+                         (into []
+                               (remove (fn [id]
+                                         (let [parent-id (dm/get-in objects [id :parent-id])]
+                                           (and (contains? ids parent-id)
+                                                (= (get transforms id)
+                                                   (get transforms parent-id))))))
+                               ids)))
+
                 update-shape
                 (fn [shape]
-                  (let [shape-id  (dm/get-prop shape :id)
-                        transform (get transforms shape-id)
-                        modifiers (dm/get-in modif-tree [shape-id :modifiers])]
-                    (-> shape
-                        (gsh/apply-transform transform)
-                        (ctm/apply-structure-modifiers modifiers))))
-
-                bool-ids
-                (into #{}
-                      (comp
-                       (mapcat (partial cfh/get-parents-with-self objects))
-                       (filter cfh/bool-shape?)
-                       (map :id))
-                      ids)
+                  (-> shape
+                      (transform-shape)
+                      (ctm/apply-structure-modifiers (dm/get-in modif-tree [(dm/get-prop shape :id) :modifiers]))))
 
                 undo-id (js/Symbol)]
 
@@ -912,16 +955,7 @@
               (clear-local-transform)
               (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
               (ptk/event ::dwcm/move-frame-comment-threads transforms)
-              (dwsh/update-shapes ids update-shape options)
-
-              ;; The update to the bool path needs to be in a different operation because it
-              ;; needs to have the updated children info.
-              ;; `update-layout? false`: recalculating a bool path can never change
-              ;; `:hidden`, and the layout check would recompute the whole boolean
-              ;; path in WASM once per bool shape just to find that out.
-              (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options
-                                                                         :with-objects? true
-                                                                         :update-layout? false)))
+              (dwsh/update-shapes ids update-shape options))
 
              (if undo-transation?
                (rx/of (dwu/commit-undo-transaction undo-id))

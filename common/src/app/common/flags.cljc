@@ -60,8 +60,8 @@
 (def varia
   "Rest of the flags"
   #{:audit-log
-    :audit-log-archive
-    :audit-log-gc
+    ;; Enables shipping audit_log chunks to Nexus.
+    :nexus
     :audit-log-logger
     :auto-file-snapshot
     ;; enables the `/api/doc` endpoint that lists all the rpc methods available.
@@ -84,6 +84,10 @@
     :demo-users
     ;; disabled by default. When enabled, it displays a warning that this is a test instance and data will be deleted periodically.
     :demo-warning
+    ;; disabled by default. When enabled, server errors are persisted
+    ;; on the database (server-error-report) and notified to mattermost
+    ;; (only when the webhook url is also configured).
+    :error-reporting
     ;; Activates the schema validation during update file.
     :file-schema-validation
     ;; Reports the schema validation errors internally.

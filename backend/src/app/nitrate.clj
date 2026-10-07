@@ -7,6 +7,7 @@
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.json :as json]
@@ -16,7 +17,6 @@
    [app.common.time :as ct]
    [app.common.types.organization :as cto
     :refer [schema:nitrate-sso]]
-   [app.common.uri :as u]
    [app.config :as cf]
    [app.http.client :as http]
    [app.http.session :as session]
@@ -31,31 +31,17 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- join-path-segments
-  "Build a single relative path from Nitrate URI segments, normalizing slashes."
-  [segments]
-  (let [path (->> segments (map str) (str/join "/"))]
-    (->> (str/split path #"/")
-         (remove str/blank?)
-         (str/join "/"))))
-
-(defn- join-base-uri
-  "Join path segments to a base URI."
-  [base-uri & segments]
-  (u/join (u/ensure-path-slash base-uri)
-          (join-path-segments segments)))
-
 (defn- generate-nitrate-uri
   "Joins relative path segments to the Nitrate backend URI.
    Segments must not start with `/`"
   [& segments]
-  (apply join-base-uri (cf/get :admin-console-uri) segments))
+  (apply cf/join-uri (cf/get :admin-console-uri) segments))
 
 (defn- generate-public-uri
   "Joins relative path segments to the public backend URI.
    Segments must not start with `/`"
   [& segments]
-  (apply join-base-uri (cf/get :public-uri) segments))
+  (apply cf/get-public-uri segments))
 
 (defn- request-builder
   [cfg method uri shared-key profile-id request-params]
@@ -496,6 +482,29 @@
                       schema:redeem-result
                       (assoc params :throw-on-error? true)))
 
+(def ^:private audit-event-keys
+  [:id :name :type :profile-id :props :context
+   :created-at :tracked-at :source :ip-addr])
+
+(defn- ->audit-event
+  [event]
+  (-> (select-keys event audit-event-keys)
+      (d/without-nils)))
+
+(defn- ingest-audit-log-api
+  "POST a batch of audit events to Admin Console `/api/audit-log`.
+  Expects HTTP 204; returns nil on success. 4xx raises when
+  `:throw-on-error?` is set."
+  [cfg {:keys [events] :as params}]
+  (let [request-params {:events (mapv ->audit-event events)}
+        params (assoc params
+                      :request-params request-params
+                      :throw-on-error? true)]
+    (request-to-nitrate cfg :post
+                        (generate-nitrate-uri "api/audit-log")
+                        nil
+                        params)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -505,28 +514,29 @@
   (when (contains? cf/flags :admin-console)
     (when (nil? (cf/get :admin-console-uri))
       (l/warn :hint "admin console is not configured; nitrate calls will fail until the setup is complete"))
-    {:get-team-organization                 (partial get-team-organization-api cfg)
-     :get-teams-organizations               (partial get-teams-organizations-api cfg)
-     :set-team-organization                 (partial set-team-organization-api cfg)
-     :get-organization-membership           (partial get-organization-membership-api cfg)
-     :get-organization-membership-by-team   (partial get-organization-membership-by-team-api cfg)
-     :get-organization-summary              (partial get-organization-summary-api cfg)
-     :get-owned-organizations               (partial get-owned-organizations-api cfg)
-     :get-owned-organizations-summary       (partial get-owned-organizations-summary-api cfg)
-     :get-organization-members              (partial get-organization-members-api cfg)
-     :cleanup-deleted-penpot-user  (partial cleanup-deleted-penpot-user-api cfg)
-     :add-profile-to-organization           (partial add-profile-to-organization-api cfg)
-     :remove-profile-from-organization      (partial remove-profile-from-organization-api cfg)
-     :get-organization-permissions          (partial get-organization-permissions-api cfg)
-     :get-organization-sso-by-team          (partial get-organization-sso-by-team-api cfg)
-     :get-organization-sso                  (partial get-organization-sso-api cfg)
-     :delete-team                  (partial delete-team-api cfg)
-     :remove-team-from-organization         (partial remove-team-from-organization-api cfg)
-     :get-subscription             (partial get-subscription-api cfg)
-     :get-subscription-warning     (partial get-subscription-warning-api cfg)
-     :connectivity                 (partial get-connectivity-api cfg)
-     :get-identity                 (partial get-identity-api cfg)
-     :redeem-activation-code       (partial redeem-activation-code-api cfg)}))
+    {:get-team-organization               (partial get-team-organization-api cfg)
+     :get-teams-organizations             (partial get-teams-organizations-api cfg)
+     :set-team-organization               (partial set-team-organization-api cfg)
+     :get-organization-membership         (partial get-organization-membership-api cfg)
+     :get-organization-membership-by-team (partial get-organization-membership-by-team-api cfg)
+     :get-organization-summary            (partial get-organization-summary-api cfg)
+     :get-owned-organizations             (partial get-owned-organizations-api cfg)
+     :get-owned-organizations-summary     (partial get-owned-organizations-summary-api cfg)
+     :get-organization-members            (partial get-organization-members-api cfg)
+     :cleanup-deleted-penpot-user         (partial cleanup-deleted-penpot-user-api cfg)
+     :add-profile-to-organization         (partial add-profile-to-organization-api cfg)
+     :remove-profile-from-organization    (partial remove-profile-from-organization-api cfg)
+     :get-organization-permissions        (partial get-organization-permissions-api cfg)
+     :get-organization-sso-by-team        (partial get-organization-sso-by-team-api cfg)
+     :get-organization-sso                (partial get-organization-sso-api cfg)
+     :delete-team                         (partial delete-team-api cfg)
+     :remove-team-from-organization       (partial remove-team-from-organization-api cfg)
+     :get-subscription                    (partial get-subscription-api cfg)
+     :get-subscription-warning            (partial get-subscription-warning-api cfg)
+     :connectivity                        (partial get-connectivity-api cfg)
+     :get-identity                        (partial get-identity-api cfg)
+     :redeem-activation-code              (partial redeem-activation-code-api cfg)
+     :ingest-audit-log                    (partial ingest-audit-log-api cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS

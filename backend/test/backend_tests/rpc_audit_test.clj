@@ -524,6 +524,58 @@
                     (case name "x-frontend-version" "  ")))]
     (t/is (nil? (get-client-version request)))))
 
+(t/deftest get-client-initiator-from-x-client
+  (let [request (fn [client]
+                  (reify yetti.request/IRequest
+                    (get-header [_ name]
+                      (case name "x-client" client))))]
+    (t/is (= "app" (audit/get-client-initiator (request nil))))
+    (t/is (= "app" (audit/get-client-initiator (request "penpot-frontend/2.19.0"))))
+    (t/is (= "admin-console" (audit/get-client-initiator (request "penpot-admin-console/2.19.0"))))
+    (t/is (= "admin-console" (audit/get-client-initiator (request "penpot-nitrate/2.19.0"))))
+    (t/is (= "admin-console" (audit/get-client-initiator (request "Penpot-Admin-Console/2.19.0"))))
+    (t/is (= "app" (audit/get-client-initiator (request "something-else/1.0"))))))
+
+(t/deftest push-events-assigns-initiator-from-x-client
+  (with-redefs [app.config/flags #{:audit-log}]
+    (let [prof   (th/create-profile* 1 {:is-active true})
+          params {::th/type :push-audit-events
+                  ::rpc/profile-id (:id prof)
+                  :events [{:name "navigate"
+                            :props {:route "dashboard"}
+                            :context {:engine "blink"
+                                      :initiator "fake-client-value"}
+                            :type "action"
+                            :timestamp (ct/now)}]}
+          params (with-meta params
+                   {:app.http/request
+                    (th/make-dummy-request
+                     :headers {"x-client" "penpot-admin-console/2.19.0"})})
+          out    (th/command! params)]
+      (t/is (nil? (:error out)))
+      (let [[row] (->> (th/db-exec! ["select * from audit_log"])
+                       (mapv decode-row))]
+        ;; The server overwrites whatever initiator the client sends.
+        (t/is (= "admin-console" (-> row :context :initiator)))))))
+
+(t/deftest push-events-initiator-defaults-to-app
+  (with-redefs [app.config/flags #{:audit-log}]
+    (let [prof   (th/create-profile* 1 {:is-active true})
+          params {::th/type :push-audit-events
+                  ::rpc/profile-id (:id prof)
+                  :events [{:name "navigate"
+                            :props {:route "dashboard"}
+                            :context {:engine "blink"}
+                            :type "action"
+                            :timestamp (ct/now)}]}
+          params (with-meta params
+                   {:app.http/request (th/make-dummy-request)})
+          out    (th/command! params)]
+      (t/is (nil? (:error out)))
+      (let [[row] (->> (th/db-exec! ["select * from audit_log"])
+                       (mapv decode-row))]
+        (t/is (= "app" (-> row :context :initiator)))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INSERT DEFAULTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -16,6 +16,7 @@
 - **plugins-runtime**: Removed the premature deep-hardening of the host plugin context, which froze shared host functions (including `Function.prototype`) before SES override taming, causing `TypeError: Cannot assign to read only property 'toString'` on later host-side function extension. Related to #11001.
 - **plugins-runtime**: The plugin modal no longer shows two resize grips in Firefox. Firefox now shows only its native grip. Closes #11795.
 - **plugins-runtime**: Fixed the `fontFamilies` token property mapping so `Shape.applyToken(token, ["fontFamilies"])` resolves to the canonical `:font-family` attribute and applied-token readback exposes the documented `fontFamilies` key instead of the undocumented singular `fontFamily`. Closes #11405.
+- **plugins-runtime**: Opening a plugin no longer drops running background plugins (`allowBackground`, such as the MCP plugin) from the runtime registry. They kept running, but their UI messages were no longer delivered to the plugin and they could no longer be unloaded, so MCP tasks timed out after another plugin was opened.
 
 ## 1.5.0 (2026-07-08)
 

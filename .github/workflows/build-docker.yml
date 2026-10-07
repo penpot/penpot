@@ -70,6 +70,9 @@ env:
   # missing (e.g. if runners ever move to separate machines).
   BUNDLE_CACHE: /var/tmp/penpot-bundle-cache
 
+permissions:
+  contents: read
+
 jobs:
   # ── 1. Resolve the build key and check the whole set at once ───────────
   prepare:
@@ -78,6 +81,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
+      ref_slug: ${{ steps.vars.outputs.ref_slug }}
       bundle_version: ${{ steps.vars.outputs.bundle_version }}
       sha: ${{ steps.vars.outputs.sha }}
       short_sha: ${{ steps.vars.outputs.short_sha }}
@@ -86,7 +90,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -97,7 +101,10 @@ jobs:
         env:
           GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
+          # A git ref accepts characters that a Docker tag does not.
+          REF_SLUG=$(printf '%s' "$GH_REF" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-100)
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
+          echo "ref_slug=$REF_SLUG" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
           echo "short_sha=$(git rev-parse --short=12 HEAD)" >> $GITHUB_OUTPUT
           echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
@@ -181,7 +188,7 @@ jobs:
           echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}-${{ matrix.image }}" >> $GITHUB_ENV
 
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.sha != '' && inputs.sha || inputs.gh_ref }}
@@ -297,13 +304,13 @@ jobs:
       - name: Point branch tags to the new build key
         env:
           DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-          GH_REF: ${{ needs.prepare.outputs.gh_ref }}
+          REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
         run: |
           set -e
           for image in $ALL_IMAGES; do
             docker buildx imagetools create \
-              -t "${DOCKER_REGISTRY}/${image}:${GH_REF}" \
+              -t "${DOCKER_REGISTRY}/${image}:${REF_SLUG}" \
               "${DOCKER_REGISTRY}/${image}:sha-${SHORT_SHA}"
           done
 
@@ -322,7 +329,7 @@ jobs:
 
       - name: Write step summary
         env:
-          GH_REF: ${{ needs.prepare.outputs.gh_ref }}
+          REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
           BUNDLE_VERSION: ${{ needs.prepare.outputs.bundle_version }}
           COMMIT_TITLE: ${{ needs.prepare.outputs.commit_title }}
@@ -334,7 +341,7 @@ jobs:
             echo "- Commit: [\`${SHORT_SHA}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHORT_SHA}) — ${COMMIT_TITLE}"
             echo "- Built at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
             echo ""
-            echo "All \`:${GH_REF}\` tags now point to \`sha-${SHORT_SHA}\`."
+            echo "All \`:${REF_SLUG}\` tags now point to \`sha-${SHORT_SHA}\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── 3b. Skip path: make sure THIS ref's tags point to the existing
@@ -366,19 +373,19 @@ jobs:
       - name: Point branch tags to the existing build key
         env:
           DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-          GH_REF: ${{ needs.prepare.outputs.gh_ref }}
+          REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
         run: |
           set -e
           for image in $ALL_IMAGES; do
             docker buildx imagetools create \
-              -t "${DOCKER_REGISTRY}/${image}:${GH_REF}" \
+              -t "${DOCKER_REGISTRY}/${image}:${REF_SLUG}" \
               "${DOCKER_REGISTRY}/${image}:sha-${SHORT_SHA}"
           done
 
       - name: Write step summary
         env:
-          GH_REF: ${{ needs.prepare.outputs.gh_ref }}
+          REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
           BUNDLE_VERSION: ${{ needs.prepare.outputs.bundle_version }}
           COMMIT_TITLE: ${{ needs.prepare.outputs.commit_title }}
@@ -390,7 +397,7 @@ jobs:
             echo "- Commit: [\`${SHORT_SHA}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHORT_SHA}) — ${COMMIT_TITLE}"
             echo "- Checked at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
             echo ""
-            echo "All \`:${GH_REF}\` tags now point to \`sha-${SHORT_SHA}\`."
+            echo "All \`:${REF_SLUG}\` tags now point to \`sha-${SHORT_SHA}\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── 4. Single failure notification for the whole workflow ─────────────

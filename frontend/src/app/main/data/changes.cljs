@@ -133,14 +133,14 @@
 
         (if (and (not ignore-wasm?) (features/active-feature? state "render-wasm/v1"))
           ;; Update the wasm model
-          (let [shape-changes (volatile! {})
+          (let [shape-changes (js/Map.)
 
                 state
                 (binding [cts/*shape-changes* shape-changes]
                   (update-in state [:files file-id :data] apply-changes))]
 
             (let [objects (dm/get-in state [:files file-id :data :pages-index (:current-page-id state) :objects])]
-              (wasm.shape/process-shape-changes! objects @shape-changes))
+              (wasm.shape/process-shape-changes! objects (es6-iterator-seq (.entries shape-changes))))
 
             state)
 

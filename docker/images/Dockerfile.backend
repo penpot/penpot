@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev AS build
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:61dc022a1908439c478ed4b00e883fe8a7a03540fac23a8aed61352e28e6ae07 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -53,7 +53,7 @@ RUN set -eux; \
        --output /opt/jre;
 
 
-FROM dhi.io/debian-base:trixie-debian13-dev AS image
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:61dc022a1908439c478ed4b00e883fe8a7a03540fac23a8aed61352e28e6ae07 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \

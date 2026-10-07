@@ -1,0 +1,329 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
+(ns backend-tests.worker-dispatcher-test
+  (:require
+   [app.common.json :as json]
+   [app.common.time :as ct]
+   [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.db :as db]
+   [app.jobs :as jobs]
+   [app.main :as main]
+   [app.metrics :as-alias mtx]
+   [app.metrics.definition :as-alias mdef]
+   [app.redis :as rds]
+   [app.worker :as wrk]
+   [app.worker.dispatcher :as wdisp]
+   [backend-tests.helpers :as th]
+   [clojure.string :as str]
+   [clojure.test :as t]
+   [integrant.core :as ig])
+  (:import
+   io.prometheus.client.Collector$MetricFamilySamples
+   io.prometheus.client.Collector$MetricFamilySamples$Sample
+   io.prometheus.client.Counter
+   io.prometheus.client.Counter$Child))
+
+(t/use-fixtures :once th/state-init)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- mk-cfg
+  []
+  {::db/pool     th/*pool*
+   ::rds/client  (get th/*system* :app.redis/client)
+   ::mtx/metrics (get th/*system* :app.metrics/metrics)
+   ::wrk/tenant  (cf/get :tenant)
+   ::batch-size  100
+   ::lease       (cf/get-jobs-lease)
+   ::timeout     (ct/duration "10s")})
+
+(defn- make-metrics []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:jobs-dispatcher-timing])}))
+
+(defn- make-orphan-metrics []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:jobs-orphaned :jobs-completed
+                                       :jobs-total-timing])}))
+
+(defn- counter-value [metrics id labels]
+  (let [collector (mtx/get-collector metrics id)
+        instance  (::mdef/instance collector)
+        child     (.labels ^Counter instance (into-array String labels))]
+    (.get ^Counter$Child child)))
+
+(defn- histogram-sample-count [metrics labels]
+  (->> (enumeration-seq
+        (.metricFamilySamples ^io.prometheus.client.CollectorRegistry
+         (mtx/get-registry metrics)))
+       (mapcat (fn [^Collector$MetricFamilySamples family]
+                 (.samples family)))
+       (filter (fn [^Collector$MetricFamilySamples$Sample sample]
+                 (and (str/ends-with? (.-name sample) "_count")
+                      (= labels (vec (.-labelValues sample))))))
+       (map (fn [^Collector$MetricFamilySamples$Sample sample]
+              (long (.-value sample))))
+       (reduce + 0)))
+
+(defn- mk-job
+  [{:keys [name queue status scheduled-at modified-at tenant]
+    :or   {name "test-job"
+           queue "test"
+           tenant (cf/get :tenant)
+           status "new"
+           scheduled-at (ct/now)
+           modified-at (ct/now)}}]
+  (let [id (uuid/next)]
+    (th/db-insert! :job {:id            id
+                         :name          name
+                         :tenant        tenant
+                         :queue         queue
+                         :params        (db/json {})
+                         :priority      100
+                         :max-retries   3
+                         :retry-num     0
+                         :status        status
+                         :scheduled-at  scheduled-at
+                         :created-at    (ct/now)
+                         :modified-at   modified-at})
+    id))
+
+(defn- get-row
+  [id]
+  (-> (th/db-get :job {:id id} :status :modified-at :scheduled-at :error)
+      (update :error jobs/decode-job-error)
+      (assoc :events (->> (th/db-exec! ["SELECT kind, payload FROM job_event
+                                         WHERE job_id = ? ORDER BY id" id])
+                          (mapv (fn [{:keys [kind payload]}]
+                                  {:kind kind
+                                   :payload (db/decode-json-pgobject payload)}))))))
+
+(defn- queue-key
+  [queue-name]
+  (wrk/queue-key (cf/get :tenant) queue-name))
+
+(defn- test-fixture [next]
+  (th/database-reset
+   (fn []
+     ;; clear the redis hand-off list so tests don't see stale payloads
+     (let [conn (rds/connect (mk-cfg))]
+       (try
+         (rds/del conn (queue-key "test"))
+         (finally
+           (rds/close conn)))
+       (next)))))
+
+(t/use-fixtures :each test-fixture)
+
+(defn- drain-queue
+  [queue-name]
+  (let [conn (rds/connect (mk-cfg))]
+    (try
+      (let [cmd (.-cmd conn)
+            res (.lrange ^io.lettuce.core.api.sync.RedisCommands
+                 cmd (queue-key queue-name) 0 -1)]
+        (vec res))
+      (finally
+        (rds/del conn (queue-key queue-name))
+        (rds/close conn)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TESTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest dispatcher-claims-due-jobs-and-pushes-json-payload
+  (let [cfg  (mk-cfg)
+        id   (mk-job {})
+        _    (wdisp/run-batch cfg)
+        row  (get-row id)
+        key  (queue-key "test")]
+
+    (t/testing "claimed job is marked scheduled"
+      (t/is (= "scheduled" (:status row))))
+
+    (t/testing "payload is plain JSON [uuid, iso-8601]"
+      (let [payloads (drain-queue "test")]
+        (t/is (= 1 (count payloads)))
+        (let [[job-id scheduled-at :as payload] (json/decode (first payloads))]
+          (t/is (string? job-id))
+          (t/is (= (str id) job-id))
+          (t/is (string? scheduled-at))
+          (t/testing "round-trip: inst-ms are equal after ct/inst"
+            (let [expected  (:scheduled-at row)
+                  actual    (ct/inst scheduled-at)]
+              (t/is (= (inst-ms expected) (inst-ms actual))))))))))
+
+(t/deftest dispatcher-claims-retry-jobs-too
+  (let [cfg (mk-cfg)
+        id  (mk-job {:status "retry"})]
+    (wdisp/run-batch cfg)
+    (t/is (= "scheduled" (:status (get-row id))))))
+
+(t/deftest dispatcher-does-not-claim-future-or-terminal-jobs
+  (let [cfg     (mk-cfg)
+        future  (mk-job {:scheduled-at (ct/plus (ct/now)
+                                                (ct/duration {:minutes 10}))})
+        running (mk-job {:status "running"})]
+    (wdisp/run-batch cfg)
+    (t/is (= "new" (:status (get-row future))))
+    (t/is (= "running" (:status (get-row running))))))
+
+(t/deftest dispatcher-reschedules-lost-scheduled-jobs
+  (let [cfg      (mk-cfg)
+        lost-id  (mk-job {:status     "scheduled"
+                          :scheduled-at (ct/minus (ct/now)
+                                                  (ct/duration {:minutes 6}))})
+        fresh-id (mk-job {:status "scheduled"})]
+    (wdisp/run-batch cfg)
+    (let [lost  (get-row lost-id)
+          fresh (get-row fresh-id)]
+      ;; the lost job is rescheduled to 'new' and claimed again in the
+      ;; same batch, so it ends as 'scheduled' with a recent scheduled_at
+      (t/is (= "scheduled" (:status lost)))
+      (t/is (> (inst-ms (:scheduled-at lost))
+               (inst-ms (ct/minus (ct/now)
+                                  (ct/duration {:minutes 5})))))
+      (t/testing "the rescheduled job was pushed again to the queue"
+        (t/is (= 1 (count (drain-queue "test"))))
+        (t/is (= "scheduled" (:status fresh)))))))
+
+(t/deftest dispatcher-marks-stale-running-jobs-as-aborted-by-lease
+  (let [cfg    (mk-cfg)
+        stale  (mk-job {:status     "running"
+                        :modified-at (ct/minus (ct/now)
+                                               (ct/plus (cf/get-jobs-lease)
+                                                        (ct/duration {:minutes 1})))})
+        fresh  (mk-job {:status "running"})]
+    (wdisp/run-batch cfg)
+    (let [stale-row (get-row stale)]
+      (t/is (= "aborted" (:status stale-row)))
+      (t/testing "the error is the structured one, decoded back to keywords"
+        (t/is (= jobs/orphan-error (:error stale-row))))
+      (t/testing "the sweep stores the end event with the aborted outcome"
+        (t/is (= [{:kind "end" :payload {:outcome "aborted"}}]
+                 (:events stale-row))))
+      (t/testing "an aborted job is terminal: it is never retried nor reclaimed"
+        (t/is (zero? (jobs/retry-job cfg
+                                     (:id stale-row)
+                                     1 (ct/now) jobs/orphan-error :backoff)))))
+
+    (t/testing "recent running job is not touched"
+      (t/is (= "running" (:status (get-row fresh)))))))
+
+(t/deftest dispatcher-orphan-sweep-records-orphan-and-terminal-metrics
+  (let [metrics (make-orphan-metrics)
+        cfg     (assoc (mk-cfg) ::mtx/metrics metrics)
+        _       (mk-job {:status     "running"
+                         :modified-at (ct/minus (ct/now)
+                                                (ct/plus (cf/get-jobs-lease)
+                                                         (ct/duration {:minutes 1})))})]
+    (wdisp/run-batch cfg)
+    (t/is (= 1.0 (counter-value metrics :jobs-orphaned ["test"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-completed
+                                ["test-job" "test" "aborted"])))))
+
+(t/deftest dispatcher-batch-without-pending-jobs-signals-wait
+  (let [cfg (mk-cfg)]
+    (t/is (= ::wdisp/wait (wdisp/run-batch cfg)))))
+
+(t/deftest dispatcher-failed-mark-leaves-no-orphan-payload
+  ;; Mark runs before push: when the mark fails, the push never runs, so
+  ;; a rolled-back batch must leave neither a marked row nor a payload.
+  (let [cfg   (assoc (mk-cfg) ::wdisp/timeout (ct/duration {:millis 10}))
+        id    (mk-job {})
+        orig  @#'wdisp/mark-as-scheduled
+        calls (atom 0)]
+    (alter-var-root #'wdisp/mark-as-scheduled
+                    (constantly (fn [& args]
+                                  (when (= 1 (swap! calls inc))
+                                    (throw (ex-info "boom" {})))
+                                  (apply orig args))))
+    (try
+      (wdisp/run-batch cfg)
+      (t/testing "failed mark rolls back with no payload pushed"
+        (t/is (= "new" (:status (get-row id))))
+        (t/is (empty? (drain-queue "test"))))
+      (finally
+        (alter-var-root #'wdisp/mark-as-scheduled (constantly orig))))
+    (t/testing "next batch delivers exactly once"
+      (wdisp/run-batch cfg)
+      (t/is (= "scheduled" (:status (get-row id))))
+      (t/is (= 1 (count (drain-queue "test")))))))
+
+(t/deftest dispatcher-records-one-redis-failure
+  (let [metrics (make-metrics)
+        cfg     (assoc (mk-cfg) ::mtx/metrics metrics
+                       ::wdisp/timeout (ct/duration {:millis 10}))
+        _       (mk-job {})]
+    (with-redefs [rds/rpush (fn [& _] (throw (ex-info "redis down" {})))]
+      (wdisp/run-batch cfg))
+    (t/is (= 1 (histogram-sample-count metrics ["execution" "failed"])))
+    (t/is (= 0 (histogram-sample-count metrics ["dispatch" "failed"])))))
+
+(t/deftest dispatcher-push-failure-rolls-back-without-throwing
+  (let [cfg  (assoc (mk-cfg) ::wdisp/timeout (ct/duration {:millis 10}))
+        id   (mk-job {})
+        orig @#'rds/rpush]
+    (alter-var-root #'rds/rpush
+                    (constantly (fn [& _] (throw (ex-info "redis down" {})))))
+    (try
+      ;; run-batch catches the failure (sleep path) instead of throwing;
+      ;; a throw would error this test by itself
+      (wdisp/run-batch cfg)
+      (t/testing "failed push rolls back the batch"
+        (t/is (= "new" (:status (get-row id))))
+        (t/is (empty? (drain-queue "test"))))
+      (finally
+        (alter-var-root #'rds/rpush (constantly orig))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TENANT ISOLATION
+;; A batch is this tenant's: it must not read, claim or kill the rows of
+;; another instance sharing the same database.
+
+(t/deftest dispatcher-does-not-claim-another-tenants-jobs
+  (let [cfg     (mk-cfg)
+        foreign (mk-job {:tenant "other-tenant"})]
+    (wdisp/run-batch cfg)
+    (t/testing "the other tenant's job is not claimed"
+      (t/is (= "new" (:status (get-row foreign)))))
+    (t/testing "and nothing was pushed to this tenant's Redis list"
+      (t/is (empty? (drain-queue "test"))))))
+
+(t/deftest dispatcher-does-not-reschedule-another-tenants-lost-jobs
+  (let [cfg     (mk-cfg)
+        foreign (mk-job {:status      "scheduled"
+                         :tenant      "other-tenant"
+                         :scheduled-at (ct/minus (ct/now)
+                                                 (ct/duration {:minutes 6}))})]
+    (wdisp/run-batch cfg)
+    (t/testing "the other tenant's scheduled job keeps its status and its date"
+      (let [row (get-row foreign)]
+        (t/is (= "scheduled" (:status row)))
+        (t/is (< (inst-ms (:scheduled-at row))
+                 (inst-ms (ct/minus (ct/now)
+                                    (ct/duration {:minutes 5})))))))))
+
+(t/deftest dispatcher-does-not-orphan-another-tenants-running-jobs
+  (let [cfg     (mk-cfg)
+        ;; older than any lease: this tenant's sweep would kill it
+        foreign (mk-job {:status      "running"
+                         :tenant      "other-tenant"
+                         :modified-at (ct/minus (ct/now)
+                                                (ct/plus (cf/get-jobs-lease)
+                                                         (ct/duration {:minutes 1})))})]
+    (wdisp/run-batch cfg)
+    (t/testing "the other tenant's running job is still running"
+      (let [row (get-row foreign)]
+        (t/is (= "running" (:status row)))
+        (t/is (nil? (:error row)))
+        (t/is (= [] (:events row)))))))

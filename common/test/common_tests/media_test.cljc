@@ -9,6 +9,13 @@
    [app.common.media :as media]
    [clojure.test :as t]))
 
+(t/deftest test-storage-object-types
+  (t/testing "covers every image and font type the system stores"
+    (t/is (every? #(contains? media/storage-object-types %) media/image-types))
+    (t/is (every? #(contains? media/storage-object-types %) media/font-types))
+    (t/is (contains? media/storage-object-types "image/svg+xml"))
+    (t/is (contains? media/storage-object-types "application/octet-stream"))))
+
 (t/deftest test-parse-font-weight
   (t/testing "matches weight tokens with proper boundaries"
     (t/is (= 700 (media/parse-font-weight "Roboto-Bold")))

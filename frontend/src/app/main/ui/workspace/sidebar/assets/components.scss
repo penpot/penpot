@@ -69,6 +69,10 @@
 .component-item-list {
   display: grid;
   grid-template-columns: auto 1fr auto;
+
+  // The thumbnail renders deferred; reserve its height so rows keep their
+  // size on mount and the saved sidebar scroll lands on the same item.
+  grid-template-rows: $sz-40;
   align-items: center;
   column-gap: var(--sp-s);
   padding: var(--sp-xxs);

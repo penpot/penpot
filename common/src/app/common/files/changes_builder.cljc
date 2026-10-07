@@ -187,7 +187,8 @@
   (assert (check-changes changes)
           "expected valid changes")
 
-  (if-let [file-data (::file-data (meta changes))]
+  (if-let [file-data (and (not (::skip-local? (meta changes)))
+                          (::file-data (meta changes)))]
     (let [library-data  (::library-data (meta changes))
           index         (::applied-changes-count (meta changes))
           redo-changes  (:redo-changes changes)
@@ -205,6 +206,11 @@
                  ::library-data new-library-data
                  ::applied-changes-count (count redo-changes)))
     changes))
+
+(defn skip-local
+  "Stop applying changes to the builder objects."
+  [changes skip?]
+  (vary-meta changes assoc ::skip-local? skip?))
 
 (defn- without-changes-local
   "Append changes through `f` without applying them to the mounted page's

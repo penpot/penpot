@@ -40,13 +40,23 @@ but also the supporting Penpot MCP Plugin
 
 ## Usage
 
-To use the Penpot MCP server, you must
+> [!IMPORTANT]
+> **These instructions are for local MCP server usage only!**
+>
+> The instructions below are for users who want to run the server locally,
+> allowing the server to have access to local files, which can be 
+> relevant for development/coding tasks.
+> 
+> If you need to work only on designs, the centrally hosted **remote MCP server**
+> should be considered instead. 
+> Please refer to the [MCP usage instructions in the help center](https://help.penpot.app/mcp/).
+
+To run the Penpot MCP server locally, you must
  * run the MCP server and connect your AI client to it,
  * run the web server providing the Penpot MCP plugin, and
  * open the Penpot MCP plugin in Penpot and connect it to the MCP server. 
 
 Follow the steps below to enable the integration.
-
 
 ### Prerequisites
 
@@ -133,7 +143,7 @@ This bootstrap command will:
 4. Load the plugin using the development URL (`http://localhost:4400/manifest.json` by default)
 5. Open the plugin UI
 6. In the plugin UI, click "Connect to MCP server".
-   The connection status should change from "Not connected" to "Connected to MCP server".
+   The connection status should change from "Not connected" to "Connected".
    (Check the browser's developer console for WebSocket connection logs.
    Check the MCP server terminal for WebSocket connection messages.)
 
@@ -161,15 +171,15 @@ This bootstrap command will:
 >     (If you are using a standard commercial model, it almost certainly supports vision already.)
 
 By default, the server provides a Streamable HTTP endpoint at `http://localhost:4401/mcp`.
+Simply configure the client to connect the MCP server by providing the respective URL.
 
 The legacy `/sse` and `/messages` endpoints are no longer supported.
 Clients using the legacy SSE transport must switch to Streamable HTTP at `/mcp`.
 
 You can change the port by setting the `PENPOT_MCP_SERVER_PORT` environment variable
 before starting the server. This endpoint can be used directly by MCP clients that support Streamable HTTP.
-Simply configure the client to connect the MCP server by providing the respective URL.
 
-#### Configuring your client
+#### Automatically configuring your client
 
 You can configure your client with the [add-mcp](https://github.com/neon-solutions/add-mcp) helper.
 Simply call 
@@ -227,6 +237,24 @@ After updating the configuration file, restart Claude Desktop completely for the
 
 After the restart, you should see the MCP server listed when clicking on the "Search and tools" icon at the bottom
 of the prompt input area.
+
+### Working with Multiple Files
+
+Connect the files you want to use:
+
+* Open each file in a separate Penpot tab, run the plugin, and connect it to the same MCP server.
+* Each connection has its own short session ID, shown in the plugin UI with a **Copy** button.
+* Multiple tabs can connect to the same file. Connecting or disconnecting one tab does not disconnect the others.
+
+Choose a session for your agent:
+
+* With exactly one connected session, the server selects it automatically when the agent omits the session ID.
+* With several connected sessions, the server lists them and asks the agent to have you select one.
+* You can also copy an ID from the plugin and include it in your prompt, for example:
+  "Use Penpot session `o37vgcqsvt` and list the pages in that file."
+
+For integrated remote MCP connection controls and session behavior, see the
+[Help Center guide](../docs/mcp/index.md#working-with-multiple-files).
 
 ## Repository Structure
 
@@ -286,22 +314,33 @@ The Penpot MCP server can be configured using environment variables.
 |-------------------------------------------|-----------------------------------------------------------------------------------------|--------------|
 | `PENPOT_MCP_PLUGIN_SERVER_HOST`           | Address on which the plugin web server listens (single address or comma-separated list) | (local only) |
 
-## Beyond Local Execution
+## The Server's Modes of Operation
 
-The above instructions describe how to run the MCP server and plugin server locally.
+The above instructions describe how to run the MCP server and plugin server locally,
+for a single user – its simplest mode of operation.
 
-The Penpot MCP server can also support multiple remote users simultaneously
-in [multi-user mode](docs/multi-user-mode.md).
+The server supports additional modes of operation, which are intended for
+non-local usage (and which are relevant to hosted deployments only).
+Some of the aforementioned configuration options control these modes.
 
-To run the server remotely (even for a single user),
-you may set the following environment variables to configure the two servers
-(MCP server & plugin server) appropriately:
- * `PENPOT_MCP_REMOTE_MODE=true`: This ensures that the MCP server is operating
-   in remote mode, with local file system access disabled.
- * `PENPOT_MCP_SERVER_HOST` and `PENPOT_MCP_PLUGIN_SERVER_HOST`:
-   Set these according to your requirements for remote connectivity.
-   To bind all interfaces, use `0.0.0.0` (use caution in untrusted networks).
+* **remote mode**:  
+  In remote mode, the server is not assumed to be accessed by a local user on the same machine,
+  with corresponding limitations being enforced (tools offering local file system access are restricted/disabled).
 
+* **multi-user mode**:  
+  In multi-user mode, the server can be accessed by multiple users simultaneously.
+  This mode always implies *remote mode*.
+  User tokens are passed to the server both when connecting an MCP client and when establishing
+  plugin connections, associating each connection with the respective user and allowing tasks to be routed to the correct Penpot instance.
+  This mode is intended for hosted deployments using the integrated version of the Penpot MCP plugin, 
+  which automatically sends the user token to the server when establishing WebSocket connections.
+  It is enabled by running the server with the `--multi-user` flag.
+
+* **multi-instance mode**:  
+  In multi-instance mode, multiple instances of the MCP server can be run in parallel (load balancing).
+  This can result in connections from the same user being owned by different server instances,
+  making it necessary to dispatch tasks to the correct instance. This is handled through Redis,
+  and the mode is thus enabled by setting the environment variable providing the Redis connection URI.
 
 ## Development
 
@@ -312,7 +351,8 @@ you may set the following environment variables to configure the two servers
   - Ensure that at least the major, minor and patch components of the version are always up-to-date.
   - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API) 
     indicates incompatibility, resulting in the display of a warning message in the plugin UI.
-* Packaging and publishing: 
-  1. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)
-  2. Create npm package: `bash scripts/pack` (creates `penpot-mcp-<version>.tgz` for publishing)
-  3. Publish to npm: `npm publish penpot-mcp-<version>.tgz --access public`
+* Packaging and publishing:
+  1. Ensure that the API type data is up-to-date (see above).
+  2. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)
+  3. Create npm package: `bash scripts/pack` (creates `penpot-mcp-<version>.tgz` for publishing)
+  4. Publish to npm: `npm publish penpot-mcp-<version>.tgz --access public`

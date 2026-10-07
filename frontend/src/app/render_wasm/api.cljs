@@ -51,6 +51,7 @@
    [app.render-wasm.performance :as perf]
    [app.render-wasm.rulers-state :as rulers-state]
    [app.render-wasm.text-editor :as text-editor]
+   [app.render-wasm.text-paste :as text-paste]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.functions :as fns]
@@ -804,6 +805,18 @@
       (text-editor/clear-pending-caret-styles!)
       (request-render "apply-pending-caret-styles")
       result)))
+
+(defn apply-paste-styles
+  "Restyle the text just pasted at `start` with the overrides of `fragment`;
+   returns {:shape-id :content}, or nil when the shape has no cached content."
+  [shape-id fragment start]
+  (when-let [content (text-editor/get-cached-content shape-id)]
+    (let [content (text-paste/apply-fragment-styles content fragment start)]
+      (wselect/use-shape shape-id)
+      (set-shape-text-content shape-id content)
+      (request-render "apply-paste-styles")
+      {:shape-id shape-id
+       :content  content})))
 
 (defn set-parent-id
   [id]

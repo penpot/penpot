@@ -50,18 +50,16 @@ impl State {
                     .to_string(),
             ));
         }
-        self.saved_shapes = Some(self.shapes.clone());
-        self.shapes = ShapesPool::new();
+        self.saved_shapes = Some(std::mem::take(&mut self.shapes));
         Ok(())
     }
 
     // Disposes of the temporary shapes pool restoring the normal pool
     // Will panic if a there is no temporary pool.
     pub fn end_temp_objects(&mut self) -> Result<()> {
-        self.shapes = self.saved_shapes.clone().ok_or(Error::CriticalError(
+        self.shapes = self.saved_shapes.take().ok_or(Error::CriticalError(
             "Tried to end temp objects but not content to be restored is present".to_string(),
         ))?;
-        self.saved_shapes = None;
         Ok(())
     }
 

@@ -262,6 +262,20 @@
                         (assoc :layout-padding (merge-layout-padding values shape-values)))]
     (promote-simple-layout-padding-type merged-values)))
 
+(def ^:private content-attrs-cache (js/WeakMap.))
+
+(defn- get-content-attrs
+  "Moving a text keeps its `:content`, so the attrs read from it are cached by content."
+  [{:keys [content] :as shape} attrs]
+  (if (some? content)
+    (let [[cached-attrs cached] (.get content-attrs-cache content)]
+      (if (identical? cached-attrs attrs)
+        cached
+        (let [result (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)]
+          (.set content-attrs-cache content [attrs result])
+          result)))
+    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)))
+
 (defn get-attrs*
   "Given a group of attributes that we want to extract and the shapes to extract them from
   returns a list of tuples [id, values] with the extracted properties for the shapes that
@@ -359,7 +373,7 @@
               (let [shape-attrs (select-keys shape attrs)
 
                     content-attrs
-                    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)
+                    (get-content-attrs shape attrs)
 
                     new-values
                     (-> values

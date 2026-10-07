@@ -28,6 +28,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   test-backend:
     if: ${{ !github.event.pull_request.draft }}
@@ -60,7 +63,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -77,6 +80,10 @@ jobs:
       - name: Tests
         working-directory: ./backend
         env:
+          # `clojure.core/assert` is elided at compile time, so without this
+          # flag the precondition asserts do not exist in the compiled code
+          # and the suite silently stops checking them.
+          PENPOT_FLAGS: "enable-backend-asserts"
           PENPOT_TEST_DATABASE_URI: "postgresql://postgres/penpot_test"
           PENPOT_TEST_DATABASE_USERNAME: penpot_test
           PENPOT_TEST_DATABASE_PASSWORD: penpot_test

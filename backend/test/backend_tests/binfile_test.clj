@@ -180,6 +180,7 @@
     (let [result (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
                      (assoc ::bfc/input output)
                      (v3/import-files!))
           file-id  (first (:file-ids result))
@@ -213,6 +214,7 @@
         result (-> th/*system*
                    (assoc ::bfc/project-id (:default-project-id profile))
                    (assoc ::bfc/profile-id (:id profile))
+                   (assoc ::bfc/team-id (:default-team-id profile))
                    (assoc ::bfc/input input)
                    (v3/import-files!))]
     (bfc/get-file th/*system* (first (:file-ids result)))))
@@ -267,6 +269,7 @@
     (let [result (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
                      (assoc ::bfc/input output)
                      (v3/import-files!))]
       (t/is (map? result))
@@ -300,6 +303,7 @@
     (let [result   (-> th/*system*
                        (assoc ::bfc/project-id (:default-project-id profile))
                        (assoc ::bfc/profile-id (:id profile))
+                       (assoc ::bfc/team-id (:default-team-id profile))
                        (assoc ::bfc/input output)
                        (v3/import-files!))
           imported (bfc/get-file th/*system* (first (:file-ids result)))]
@@ -1962,6 +1966,7 @@
     (let [cfg (-> th/*system*
                   (assoc ::bfc/project-id (:default-project-id profile))
                   (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/team-id (:default-team-id profile))
                   (assoc ::bfc/input output)
                   (assoc ::bfc/import-max-zip-entries 1))
           out (try
@@ -1980,7 +1985,7 @@
   (let [storage (-> (:app.storage/storage th/*system*)
                     (stt/configure-storage-backend))
 
-        sobject (sto/put-object! storage {::sto/content (sto/content "media-bytes")
+        sobject (sto/put-object! storage {::sto/content (sto/content "<svg xmlns=\"http://www.w3.org/2000/svg\"/>")
                                           :content-type "image/svg+xml"
                                           :bucket "file-media-object"})
 
@@ -2018,6 +2023,7 @@
     (let [cfg (-> th/*system*
                   (assoc ::bfc/project-id (:default-project-id profile))
                   (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/team-id (:default-team-id profile))
                   (assoc ::bfc/input output)
                   (assoc ::bfc/import-max-binary-entry-size 1))
           out (try
@@ -2106,6 +2112,7 @@
       (let [cfg (-> th/*system*
                     (assoc ::bfc/project-id (:default-project-id profile))
                     (assoc ::bfc/profile-id (:id profile))
+                    (assoc ::bfc/team-id (:default-team-id profile))
                     (assoc ::bfc/input bombed))
             out (try-import-files! cfg)]
         (t/is (= :validation (:type out)))
@@ -2147,11 +2154,19 @@
     (let [cfg (-> th/*system*
                   (assoc ::bfc/project-id (:default-project-id profile))
                   (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/team-id (:default-team-id profile))
                   (assoc ::bfc/input output)
                   (assoc ::bfc/import-max-text-total-size 100))
           out (try-import-files! cfg)]
       (t/is (= :validation (:type out)))
       (t/is (= :max-file-size-reached (:code out))))))
+
+(t/deftest default-text-total-budget-fits-giant-legit-files
+  ;; A real-world giant export held ~437 MiB of JSON across ~178k
+  ;; KB-sized entries without tripping any per-entry cap. The default
+  ;; cumulative budget must clear that scale, or such files cannot be
+  ;; imported out of the box.
+  (t/is (>= bfc/default-max-text-total-size (* 1024 1024 450))))
 
 (defn- text-entries-sizes
   "Returns the decompressed sizes of every `.json` entry in the zip at
@@ -2194,6 +2209,7 @@
       (let [cfg (-> th/*system*
                     (assoc ::bfc/project-id (:default-project-id profile))
                     (assoc ::bfc/profile-id (:id profile))
+                    (assoc ::bfc/team-id (:default-team-id profile))
                     (assoc ::bfc/input exported)
                     (assoc ::bfc/import-max-text-total-size budget))
             out (try-import-files! cfg)]
@@ -2381,6 +2397,7 @@
     (let [result (:file-ids (-> th/*system*
                                 (assoc ::bfc/project-id (:default-project-id profile))
                                 (assoc ::bfc/profile-id (:id profile))
+                                (assoc ::bfc/team-id (:default-team-id profile))
                                 (assoc ::bfc/input output)
                                 (v3/import-files!)))
           files  (map #(bfc/get-file th/*system* %) result)
@@ -2459,6 +2476,7 @@
     (let [result  (:file-ids (-> th/*system*
                                  (assoc ::bfc/project-id (:default-project-id profile))
                                  (assoc ::bfc/profile-id (:id profile))
+                                 (assoc ::bfc/team-id (:default-team-id profile))
                                  (assoc ::bfc/input output)
                                  (v3/import-files!)))
           mobjs   (db/query th/*system* :file-media-object

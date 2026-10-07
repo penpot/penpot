@@ -472,6 +472,8 @@ pub(crate) struct RenderState {
     /// GPU crops from `Backbuffer` or tile atlas keyed by shape id. Filled on full-frame completion; during
     /// drag, entries for the moved top-level selection are ensured here
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    /// Extrect of each moved shape at the previous interactive frame; reset per gesture.
+    pub moving_extrects: HashMap<Uuid, Rect>,
     /// Whether we've already forced a GPU flush+submit before a tile-atlas
     /// snapshot this render. The first snapshot of a pass can otherwise capture
     /// a tile before its text glyph uploads complete (blank first/center tile).
@@ -674,6 +676,7 @@ impl RenderState {
             interactive_target_seeded: false,
             preserve_target_during_render: false,
             backbuffer_crop_cache: HashMap::default(),
+            moving_extrects: HashMap::default(),
             tile_atlas_flushed: false,
             drop_shadows_ops_warmed: false,
             drop_shadow_filter_cache: shadows::DropShadowFilterCache::new(),
@@ -986,7 +989,12 @@ impl RenderState {
     }
 
     pub fn set_background_color(&mut self, color: skia::Color) {
+        if self.background_color == color {
+            return;
+        }
         self.background_color = color;
+        // Tiles bake the background in; old atlas pixels would show on pan/zoom.
+        self.surfaces.atlas.clear();
     }
 
     pub fn set_preview_mode(&mut self, enabled: bool) {
@@ -1202,7 +1210,9 @@ impl RenderState {
         // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
         // while still preventing stale pixels from surviving across full-quality renders.
         if !self.cache_cleared_this_render {
-            self.surfaces.clear_cache(self.background_color);
+            if self.options.is_debug_visible() {
+                self.surfaces.clear_cache(self.background_color);
+            }
             self.cache_cleared_this_render = true;
         }
         let tile_rect = self.get_current_aligned_tile_bounds()?;
@@ -1220,7 +1230,7 @@ impl RenderState {
             &self.tile_viewbox,
             &current_tile,
             &tile_rect,
-            false,
+            !self.options.is_debug_visible(),
             self.render_area,
             self.get_scale(),
             self.viewbox.area,
@@ -2333,10 +2343,7 @@ impl RenderState {
                     .is_none_or(|s| s.width() < win_w || s.height() < win_h);
                 if needs_alloc {
                     scratch_surface = get_gpu_state()
-                        .create_surface_with_isize(
-                            "drag_crop_scratch".to_string(),
-                            skia::ISize::new(win_w, win_h),
-                        )
+                        .create_surface_with_isize(skia::ISize::new(win_w, win_h))
                         .ok();
                 }
                 let Some(scratch) = scratch_surface.as_mut() else {
@@ -2512,11 +2519,13 @@ impl RenderState {
             s.canvas().scale((scale, scale));
         });
 
-        self.surfaces.resize_cache_from_viewbox(
-            &self.viewbox,
-            &self.cached_viewbox,
-            self.options.dpr_viewport_interest_area_threshold,
-        )?;
+        if self.options.is_debug_visible() {
+            self.surfaces.resize_cache_from_viewbox(
+                &self.viewbox,
+                &self.cached_viewbox,
+                self.options.dpr_viewport_interest_area_threshold,
+            )?;
+        }
 
         // FIXME - review debug
         // debug::render_debug_tiles_for_viewbox(self);
@@ -4319,11 +4328,16 @@ impl RenderState {
                     if !is_empty || self.current_tile_had_shapes {
                         if self.options.is_interactive_transform() {
                             // During drag, avoid snapshot-based caching. Draw Current directly
-                            // into Target (and Cache) to reduce stalls.
+                            // into Target (and Cache, for the debug views) to reduce stalls.
+                            let draw_on_cache = if self.options.is_debug_visible() {
+                                surfaces::DrawOnCache::Yes
+                            } else {
+                                surfaces::DrawOnCache::No
+                            };
                             self.surfaces.draw_current_tile_into_backbuffer(
                                 &tile_rect,
                                 self.background_color,
-                                surfaces::DrawOnCache::Yes,
+                                draw_on_cache,
                             );
                         } else {
                             self.apply_render_to_final_canvas()?;
@@ -4534,7 +4548,8 @@ impl RenderState {
         //
         // We intentionally skip this when there is NO modifier so that plain
         // zoom / pan tile-index rebuilds do NOT invalidate valid atlas content.
-        if tree.get_modifier(&shape.id).is_some() {
+        // Once per gesture: later frames only move away from pixels already cleared.
+        if tree.get_modifier(&shape.id).is_some() && !self.moving_extrects.contains_key(&shape.id) {
             if let Some(raw_shape) = tree.get_raw(&shape.id) {
                 let old_extrect = raw_shape.extrect(tree, 1.0);
                 self.surfaces
@@ -4810,12 +4825,40 @@ impl RenderState {
         }
 
         if self.options.is_interactive_transform() {
-            self.update_tiles_shapes(ids, tree)?;
+            self.update_moving_tiles(ids, tree);
         } else {
             let ancestors = all_with_ancestors(ids, tree, false);
             self.update_tiles_shapes(&ancestors, tree)?;
         }
         Ok(())
+    }
+
+    /// Evicts each moved shape's previous-frame ∪ current coverage. Tiles it left
+    /// before the previous frame were already repainted without it.
+    fn update_moving_tiles(&mut self, ids: &[Uuid], tree: ShapesPoolRef) {
+        let mut next = HashMap::with_capacity(ids.len());
+        for id in ids {
+            let Some(shape) = tree.get(id) else {
+                continue;
+            };
+            let prev_extrect = self.moving_extrects.get(id).copied();
+            self.invalidate_shape_and_update_tiles(shape, tree, prev_extrect);
+            let extrect = self.get_cached_extrect(shape, tree, 1.0);
+            next.insert(*id, extrect);
+        }
+        // Shapes that stopped moving (e.g. flex siblings no longer reflowed) leave their
+        // last position behind and return to one painted without them; dropping them also
+        // restarts their coverage if they re-enter.
+        let previous = std::mem::replace(&mut self.moving_extrects, next);
+        for (id, rect) in previous {
+            if !self.moving_extrects.contains_key(&id) {
+                self.surfaces.invalidate_cached_tiles_intersecting(rect);
+                if let Some(shape) = tree.get(&id) {
+                    let extrect = self.get_cached_extrect(shape, tree, 1.0);
+                    self.surfaces.invalidate_cached_tiles_intersecting(extrect);
+                }
+            }
+        }
     }
 
     pub fn get_scale(&self) -> f32 {

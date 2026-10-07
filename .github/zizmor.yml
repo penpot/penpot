@@ -1,59 +1,30 @@
 # zizmor configuration — https://docs.zizmor.sh/configuration/
 #
-# Every audit is enforced for every workflow. The per-file ignores below are
-# the findings that already existed when this check was introduced: each one
-# is a pending clean-up, not an accepted risk. New workflows are checked
-# with no exceptions. Remove a file from a list in the same PR that fixes it,
-# and the whole rule entry once its list is empty.
+# Every audit is enforced for every workflow. New workflows are checked with
+# no exceptions. The entries below are the only remaining ones, and each is
+# marked as either a pending clean-up or an accepted risk with its reason.
+# Remove a file from a list in the same PR that fixes it, and the whole rule
+# entry once its list is empty.
 rules:
-  # Avoid installing packages ad hoc inside `run:`.
+  # Accepted: wrangler is added with `pnpm add wrangler@latest` before each
+  # deploy instead of being a dependency of the plugins workspace. Only used
+  # to publish to Cloudflare; not worth adding to the workspace.
   adhoc-packages:
     ignore:
       - plugins-deploy-api-doc.yml
       - plugins-deploy-package.yml
       - plugins-deploy-styles-doc.yml
-  # Avoid restoring caches in release/publish workflows.
-  cache-poisoning:
-    ignore:
-      - plugins-deploy-api-doc.yml
-      - plugins-deploy-styles-doc.yml
-  # Review `pull_request_target` usage.
+  # Accepted: auto-label.yml needs pull_request_target so the GitHub App
+  # secrets are available for PRs from forks. It never checks out or runs
+  # PR code, it only reads ids from the event payload.
   dangerous-triggers:
-    ignore:
-      - auto-label.yml
-      - commit-checker.yml
-  # Declare least-privilege `permissions:` per workflow/job.
-  excessive-permissions:
-    ignore:
-      - auto-label.yml
-      - build-adhoc.yml
-      - build-bundle.yml
-      - build-develop.yml
-      - build-docker-admin-console.yml
-      - build-docker-devenv.yml
-      - build-docker.yml
-      - build-staging.yml
-      - build-tag.yml
-      - build-tmp-tokens.yml
-      - commit-checker.yml
-      - plugins-deploy-packages.yml
-      - tests-backend.yml
-      - tests-common.yml
-      - tests-e2e.yml
-      - tests-exporter.yml
-      - tests-frontend.yml
-      - tests-library.yml
-      - tests-mcp.yml
-      - tests-plugins.yml
-      - tests-wasm.yml
-  # Scope GitHub App tokens.
-  github-app:
     ignore:
       - auto-label.yml
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true
-  # Pin container images to a digest.
+  # Accepted: penpotapp/devenv is our own image, built and pushed by
+  # build-docker-devenv.yml, so the floating tag is intentional.
   unpinned-images:
     ignore:
       - plugins-deploy-package.yml

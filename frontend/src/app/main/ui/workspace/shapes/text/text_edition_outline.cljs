@@ -25,18 +25,11 @@
           ;; finalize-only), so measure the live WASM text for the growing axes:
           ;; width grows on auto-width, height on auto-width/auto-height.
           grow-type (:grow-type shape)
-          {live-x :x live-width :width live-height :height} (wasm.api/get-text-dimensions (:id shape))
+          {live-width :width live-height :height} (wasm.api/get-text-dimensions (:id shape))
           sr-width  (if (= grow-type :auto-width) live-width (:width selrect))
-          sr-height (if (= grow-type :fixed) (:height selrect) live-height)
-          ;; Rtl auto-width text is anchored on its right edge, so use the origin
-          ;; wasm reports. A zero measurement means it has no layout yet.
-          sr-x      (if (and (= grow-type :auto-width)
-                             (some? live-x)
-                             (pos? live-width))
-                      live-x
-                      (:x selrect))]
+          sr-height (if (= grow-type :fixed) (:height selrect) live-height)]
       [:rect.main.viewport-selrect
-       {:x sr-x
+       {:x (:x selrect)
         :y (:y selrect)
         :width sr-width
         :height sr-height

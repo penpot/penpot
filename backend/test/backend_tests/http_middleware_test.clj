@@ -412,25 +412,25 @@
                                           :auth-token-cookie-max-age idle
                                           :auth-token-cookie-max-age-absolute absolute
                                           default)))]
-      (let [expanded (ig/expand-key :app.http.session.tasks/gc {})]
+      (let [expanded (ig/expand-key :app.http.session/job-def {})]
         (t/is (= idle
-                 (get-in expanded [:app.http.session.tasks/gc
+                 (get-in expanded [:app.http.session/job-def
                                    :app.http.session.tasks/max-age]))
               "task max-age should carry the configured idle window")
         (t/is (= absolute
-                 (get-in expanded [:app.http.session.tasks/gc
+                 (get-in expanded [:app.http.session/job-def
                                    :app.http.session.tasks/max-age-absolute]))
               "task max-age-absolute should carry the configured absolute cap")))
     (with-redefs [cf/get (fn
                            ([_k] nil)
                            ([_k default] default))]
-      (let [expanded (ig/expand-key :app.http.session.tasks/gc {})]
+      (let [expanded (ig/expand-key :app.http.session/job-def {})]
         (t/is (= session/default-cookie-max-age
-                 (get-in expanded [:app.http.session.tasks/gc
+                 (get-in expanded [:app.http.session/job-def
                                    :app.http.session.tasks/max-age]))
               "task max-age should fall back to the default idle window")
         (t/is (= session/default-cookie-max-age-absolute
-                 (get-in expanded [:app.http.session.tasks/gc
+                 (get-in expanded [:app.http.session/job-def
                                    :app.http.session.tasks/max-age-absolute]))
               "task max-age-absolute should fall back to the default absolute cap")))))
 
@@ -439,15 +439,15 @@
         params {:app.db/pool pool
                 :app.http.session.tasks/max-age (ct/duration {:days 7})
                 :app.http.session.tasks/max-age-absolute (ct/duration {:days 30})}]
-    (t/is (nil? (ig/assert-key :app.http.session.tasks/gc params))
+    (t/is (nil? (ig/assert-key :app.http.session/job-def params))
           "absolute cap above the idle window should pass")
-    (t/is (nil? (ig/assert-key :app.http.session.tasks/gc
+    (t/is (nil? (ig/assert-key :app.http.session/job-def
                                (assoc params
                                       :app.http.session.tasks/max-age-absolute
                                       (ct/duration {:days 7}))))
           "absolute cap equal to the idle window should pass")
     (t/is (thrown? IllegalArgumentException
-                   (ig/assert-key :app.http.session.tasks/gc
+                   (ig/assert-key :app.http.session/job-def
                                   (assoc params
                                          :app.http.session.tasks/max-age-absolute
                                          (ct/duration {:days 3}))))
