@@ -192,6 +192,44 @@ test("plugin reads the current file for each connection metadata request", () =>
     ]);
 });
 
+test("plugin without penpotMgmt derives metadata from the open file", () => {
+    let onMessage!: (message: any) => void;
+    const messages: any[] = [];
+    const penpot = {
+        currentFile: { id: "file-1", name: "Design" } as { id: string; name: string } | null,
+        currentUser: { sessionId: "tab-1" },
+        theme: "dark",
+        ui: {
+            open() {},
+            onMessage: (handler: (message: any) => void) => {
+                onMessage = handler;
+            },
+            sendMessage: (message: any) => messages.push(JSON.parse(JSON.stringify(message))),
+        },
+        on() {},
+    };
+    runInNewContext(compile("plugin.ts"), {
+        exports: {},
+        penpot,
+        mcp: undefined,
+        require: () => ({ ExecuteCodeTaskHandler: class {} }),
+    });
+    onMessage({ type: "connection-metadata-request", sessionId: "first" });
+    penpot.currentFile = null;
+    onMessage({ type: "context-request" });
+    assert.deepEqual(messages, [
+        {
+            type: "initialize",
+            penpotUserSessionId: "tab-1",
+            session: { sessionId: "first", fileId: "file-1", fileName: "Design", workspaceState: "ready" },
+        },
+        {
+            type: "context-update",
+            context: { fileId: null, fileName: null, workspaceState: "none" },
+        },
+    ]);
+});
+
 test("integrated connections reuse the short session ID across reconnects", async () => {
     const ui = pluginUi();
     ui.message({ type: "mcp-mode", integratedRemoteMcp: true });

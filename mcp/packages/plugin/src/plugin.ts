@@ -10,6 +10,12 @@ import type { PluginConnectionInit } from "../../common/src";
 const isIntegratedRemoteMcp = !!mcp;
 
 /**
+ * the management API, which Penpot only exposes to plugins running with global scope;
+ * null otherwise (e.g. in Penpot versions without global plugins)
+ */
+const management = typeof penpotMgmt === "undefined" ? null : penpotMgmt;
+
+/**
  * Extracts the major.minor.patch prefix from a version string.
  *
  * @param version - a version string starting with major.minor.patch
@@ -66,7 +72,7 @@ penpot.ui.onMessage<
             });
         }
     } else if (typeof message === "object" && message.type === "connection-metadata-request") {
-        const workspace = penpotMgmt.workspace;
+        const workspace = currentWorkspace();
         if (message.sessionId) {
             const initialization: PluginConnectionInit & { penpotUserSessionId?: string } = {
                 type: "initialize",
@@ -92,9 +98,26 @@ penpot.ui.onMessage<
     }
 });
 
+/**
+ * Provides the workspace metadata of this tab.
+ * Without the management API, the metadata is derived from the open file.
+ */
+function currentWorkspace(): NonNullable<typeof penpotMgmt>["workspace"] {
+    if (management) {
+        return management.workspace;
+    }
+    const file = penpot.currentFile;
+    return {
+        status: file ? "ready" : "none",
+        fileId: file?.id ?? null,
+        fileName: file?.name ?? null,
+        teamId: null,
+    };
+}
+
 /** Sends the current workspace metadata without replacing the connection. */
 function sendWorkspaceContext(): void {
-    const workspace = penpotMgmt.workspace;
+    const workspace = currentWorkspace();
     penpot.ui.sendMessage({
         type: "context-update",
         context: {
@@ -105,7 +128,7 @@ function sendWorkspaceContext(): void {
     });
 }
 
-penpotMgmt.on("workspacechange", sendWorkspaceContext);
+management?.on("workspacechange", sendWorkspaceContext);
 
 /**
  * Handles plugin task requests received from the MCP server via WebSocket.

@@ -441,6 +441,8 @@ Create a file with `await penpotMgmt.createFile({ projectId: project.id, name: "
 Both creation methods require `content:write` and return metadata without changing the current view.
 To edit the new file, call `await penpotMgmt.openFile(file.id, { teamId: file.teamId })` and reacquire file, page and shape objects.
 You navigate to different design files only when your task explicitly requires it/you are instructed to do so.
+If `penpotMgmt` is `null`, file management is unavailable and only the file that is open in Penpot can be used;
+ask the user to open another file if needed.
 
 --
 You have hereby read the 'Penpot High-Level Overview' and need not use a tool to read it again.
