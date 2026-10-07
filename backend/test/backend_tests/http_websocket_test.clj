@@ -198,6 +198,92 @@
     (fn [topic message]
       (mbus/pub! msgbus :topic topic :message message))))
 
+;; --- CONNECTION REGISTRY
+
+(defn- with-clean-registry
+  "Runs `f` against an empty connection registry, restoring the previous
+  contents afterwards so tests cannot leak connections into each other."
+  [f]
+  (let [saved @ws/state]
+    (reset! ws/state {:connections {} :by-profile {}})
+    (try (f)
+         (finally (reset! ws/state saved)))))
+
+(t/deftest registry-indexes-connections-by-profile
+  (let [profile-a (uuid/next)
+        profile-b (uuid/next)
+        conn-a    (uuid/next)
+        conn-b    (uuid/next)
+        conn-c    (uuid/next)]
+
+    (with-clean-registry
+      (fn []
+        (t/testing "a profile with no connections has an empty index"
+          (t/is (= #{} (ws/connections-for-profile profile-a))))
+
+        (ws/register-connection conn-a {::ws/profile-id profile-a})
+        (ws/register-connection conn-b {::ws/profile-id profile-a})
+        (ws/register-connection conn-c {::ws/profile-id profile-b})
+
+        (t/testing "connections are indexed under their profile"
+          (t/is (= #{conn-a conn-b} (ws/connections-for-profile profile-a)))
+          (t/is (= #{conn-c} (ws/connections-for-profile profile-b))))
+
+        (t/testing "connections are retrievable by id"
+          (t/is (= profile-a (::ws/profile-id (ws/get-connection conn-a))))
+          (t/is (nil? (ws/get-connection (uuid/next)))))
+
+        (t/testing "unregistering removes it from both the map and the index"
+          (ws/unregister-connection conn-b)
+          (t/is (= #{conn-a} (ws/connections-for-profile profile-a)))
+          (t/is (nil? (ws/get-connection conn-b))))
+
+        (t/testing "a profile whose last connection left is dropped from the index"
+          (ws/unregister-connection conn-a)
+          (t/is (= #{} (ws/connections-for-profile profile-a)))
+          (t/is (not (contains? (:by-profile @ws/state) profile-a)))
+          (t/is (= #{conn-c} (ws/connections-for-profile profile-b))))
+
+        (t/testing "unregistering an unknown connection is a no-op"
+          (ws/unregister-connection (uuid/next))
+          (t/is (= #{conn-c} (ws/connections-for-profile profile-b)))
+          (t/is (= conn-c (-> (:connections @ws/state) keys first))))))))
+
+(t/deftest close-file-subscription-drops-only-the-matching-file
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})
+        other    (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})
+        output   (sp/chan :buf (sp/dropping-buffer 64))
+        ws-state (atom {::ws/file-subscription
+                        {:file-id (:id file)
+                         :channel (sp/chan :buf (sp/dropping-buffer 64))
+                         :topic (:id file)}})
+        wsp      (assoc (make-wsp (:id profile) ws-state output)
+                        ::ws/state ws-state)]
+
+    (t/testing "closing a file the connection is not subscribed to does nothing"
+      (with-redefs [mbus/pub!  (fn [& _] (throw ::unexpected-publish))
+                    mbus/purge! (fn [& _] (throw ::unexpected-purge))]
+        (t/is (nil? (ws/close-file-subscription th/*system* wsp (:id other))))
+        (t/is (some? (::ws/file-subscription @ws-state)))))
+
+    (t/testing "closing the subscribed file purges the bus"
+      (let [purged (atom [])]
+        (with-redefs [mbus/purge! (fn [_ chans] (swap! purged conj chans))]
+          (ws/close-file-subscription th/*system* wsp (:id file))
+          (t/is (= 1 (count @purged))))))
+
+    (t/testing "the relay channel is closed so the go-loop stops"
+      (let [sub-ch (-> @ws-state ::ws/file-subscription :channel)]
+        (t/is (some? sub-ch))
+        (t/is (nil? (sp/poll! sub-ch)))
+        (t/is (true? (sp/closed? sub-ch)))))
+
+    (t/testing "closing twice is safe"
+      (t/is (nil? (ws/close-file-subscription th/*system* wsp (:id file)))))))
+
 (t/deftest revoked-member-stops-receiving-file-changes
   (let [owner   (th/create-profile* 1 {:is-active true})
         editor  (th/create-profile* 2 {:is-active true})

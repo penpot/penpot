@@ -37,31 +37,84 @@
 ;; WEBSOCKET HOOKS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def state (atom {}))
+(def state
+  "Registry of the websocket connections held by this backend instance.
+
+  Holds `:connections` (connection id -> connection data) and
+  `:by-profile` (profile id -> set of connection ids). Both live in the
+  same atom so a single `swap!` keeps them consistent, and so the
+  profile index never has to be rebuilt by scanning every connection.
+
+  NOTE: the registry is local to one backend instance, unlike the
+  message bus, which is shared. Code that must reach connections
+  regardless of which instance owns them has to go through the bus."
+  (atom {:connections {}
+         :by-profile {}}))
+
+(defn register-connection
+  "Adds `wsp` to the registry under `id`, indexing it by its profile."
+  [id wsp]
+  (let [profile-id (::profile-id wsp)]
+    (swap! state
+           (fn [st]
+             (-> st
+                 (assoc-in [:connections id] wsp)
+                 (cond-> profile-id
+                   (update-in [:by-profile profile-id]
+                              (fnil conj #{}) id)))))))
+
+(defn unregister-connection
+  "Removes the connection `id` from the registry and from the profile
+  index."
+  [id]
+  (swap! state
+         (fn [{:keys [connections] :as st}]
+           (let [owner   (::profile-id (get connections id))
+                 indexed (get-in st [:by-profile owner])
+                 indexed (if (set? indexed) (disj indexed id) indexed)]
+             (cond-> (assoc st :connections (dissoc connections id))
+               (and owner (seq indexed))
+               (assoc-in [:by-profile owner] indexed)
+               (and owner (empty? indexed))
+               (update :by-profile dissoc owner))))))
+
+(defn get-connection
+  "Returns the connection data registered under `id`, or nil."
+  [id]
+  (get-in @state [:connections id]))
+
+(defn connections-for-profile
+  "Returns the set of connection ids currently held by `profile-id`."
+  [profile-id]
+  (get-in @state [:by-profile profile-id] #{}))
 
 ;; REPL HELPERS
 
 (defn repl-get-connections-for-file
   [file-id]
-  (->> (vals @state)
+  (->> (vals (:connections @state))
        (filter #(= file-id (-> % ::ws/state deref ::file-subscription :file-id)))
        (map ::ws/id)))
 
 (defn repl-get-connections-for-team
   [team-id]
-  (->> (vals @state)
+  (->> (vals (:connections @state))
        (filter #(= team-id (-> % ::ws/state deref ::team-subscription :team-id)))
        (map ::ws/id)))
 
+(defn repl-get-connections-for-profile
+  [profile-id]
+  (connections-for-profile profile-id))
+
 (defn repl-close-connection
   [id]
-  (when-let [{:keys [::ws/close-ch] :as wsp} (get @state id)]
+  (when-let [{:keys [::ws/close-ch]} (get-connection id)]
     (sp/put! close-ch [8899 "closed from server"])
     (sp/close! close-ch)))
 
 (defn repl-get-connection-info
   [id]
-  (when-let [wsp (get @state id)]
+  (when-let [wsp (get-connection id)]
     (let [subs (some-> wsp ::ws/state deref)]
       {:id               id
        :created-at       (::created-at wsp)
@@ -220,21 +273,34 @@
                    :profile-id profile-id}]
       (mbus/pub! (::mbus/msgbus cfg) :topic file-id :message message))))
 
-(defmethod handle-message :unsubscribe-file
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id ::profile-id]} {:keys [file-id] :as params}]
-  (l/trace :fn "handle-message" :event "unsubscribe-file" :file-id file-id :conn-id id)
+(defn close-file-subscription
+  "Tears down the file subscription held by the connection `wsp`, if it
+  is subscribed to `file-id`.
 
-  (let [subs    (::file-subscription @state)
-        message {:type :leave-file
-                 :file-id file-id
-                 :session-id session-id
-                 :profile-id profile-id}]
+  Announces the departure so the remaining participants drop the
+  presence of this session, closes the relay channel (which in turn
+  stops the `:subscribe-file` go-loop, because `take!` on a closed
+  channel returns nil) and removes the subscription from the bus.
 
+  Does nothing when the connection is subscribed to a different file,
+  so it is safe to call for a subscription that is already gone."
+  [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} file-id]
+  (let [subs (::file-subscription @state)]
     (when (= (:file-id subs) file-id)
-      (mbus/pub! msgbus :topic file-id :message message)
+      (mbus/pub! msgbus
+                 :topic file-id
+                 :message {:type :leave-file
+                           :file-id file-id
+                           :session-id session-id
+                           :profile-id profile-id})
       (let [ch (:channel subs)]
         (sp/close! ch)
         (mbus/purge! msgbus [ch])))))
+
+(defmethod handle-message :unsubscribe-file
+  [cfg {:keys [::ws/id] :as wsp} {:keys [file-id] :as params}]
+  (l/trace :fn "handle-message" :event "unsubscribe-file" :file-id file-id :conn-id id)
+  (close-file-subscription cfg wsp file-id))
 
 (defmethod handle-message :keepalive
   [_ _ _]
@@ -273,7 +339,7 @@
   [{:keys [::mtx/metrics]} {:keys [::ws/id] :as wsp}]
   (let [created-at (ct/now)]
     (l/trace :fn "on-connect" :conn-id id)
-    (swap! state assoc id wsp)
+    (register-connection id wsp)
     (mtx/run! metrics
               :id :websocket-active-connections
               :inc 1)
@@ -281,7 +347,7 @@
     (assoc wsp ::ws/on-disconnect
            (fn []
              (l/trace :fn "on-disconnect" :conn-id id)
-             (swap! state dissoc id)
+             (unregister-connection id)
              (mtx/run! metrics :id :websocket-active-connections :dec 1)
              (mtx/run! metrics
                        :id :websocket-session-timing
