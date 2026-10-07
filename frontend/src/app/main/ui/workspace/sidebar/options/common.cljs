@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.common
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.util.dom :as dom]
@@ -25,6 +26,20 @@
       [:div {:class [class (stl/css :advanced-options-wrapper)]
              :ref ref}
        children])))
+
+(defn radio-selected
+  "Value to select in a radio group for an attribute value: its name, or
+  `default` when unset. Mixed (`:multiple`) values select nothing."
+  ([value]
+   (radio-selected value ""))
+  ([value default]
+   (cond
+     (= value :multiple) ""
+     (or (nil? value)
+         (and (string? value) (empty? value))) default
+     (keyword? value) (d/name value)
+     (string? value) value
+     :else (str value))))
 
 (defn emit-value-or-token [value emit-value-fn ids attrs]
   (if (or (string? value)
