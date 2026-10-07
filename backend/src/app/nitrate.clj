@@ -275,7 +275,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/teams/"
-                       team-id
+                       (str team-id "/")
                        "users/"
                        profile-id)
                       schema:profile-organization params))
