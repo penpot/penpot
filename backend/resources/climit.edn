@@ -53,6 +53,12 @@
  :import-binfile/by-profile
  {:permits 1 :queue 2}
 
+ :create-import-binfile-job/global
+ {:permits 4}
+
+ :create-import-binfile-job/by-profile
+ {:permits 1 :queue 2}
+
  :profile-plugin-ops/global
  {:permits 4}
 

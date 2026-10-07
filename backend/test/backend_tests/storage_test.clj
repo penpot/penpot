@@ -113,6 +113,44 @@
                                           :content-type "text/plain"})]
     (t/is (not= (:id object1) (:id object2)))))
 
+(t/deftest job-resource-objects-require-an-owner
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")]
+
+    (t/testing "an object of this bucket cannot be stored without its owner"
+      (t/is (thrown? Throwable
+                     (sto/put-object! storage {::sto/content content
+                                               :bucket sto/job-resource-bucket
+                                               :content-type "text/plain"}))))
+
+    (t/testing "and storing it with an owner still works"
+      (t/is (some? (sto/put-object! storage {::sto/content content
+                                             :bucket sto/job-resource-bucket
+                                             :profile-id (uuid/next)
+                                             :content-type "text/plain"}))))))
+
+(t/deftest job-resource-objects-are-not-deduplicated
+  ;; An object in this bucket belongs to one profile: sharing a blob
+  ;; between two owners would serve one user's artifact to another.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/now)
+                                          :bucket sto/job-resource-bucket
+                                          :profile-id (uuid/next)
+                                          :content-type "text/plain"})
+        object2 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/now)
+                                          :bucket sto/job-resource-bucket
+                                          :profile-id (uuid/next)
+                                          :content-type "text/plain"})]
+    (t/is (not= (:id object1) (:id object2)))))
+
 (t/deftest put-and-retrieve-expired-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
@@ -1271,6 +1309,7 @@
         job-id  (uuid/next)
         object  (sto/put-object! storage {::sto/content (sto/content "content")
                                           :content-type "text/plain"
+                                          :profile-id (uuid/next)
                                           :bucket sto/job-resource-bucket})]
 
     ;; the object is created with the job-resource bucket in metadata
@@ -1319,6 +1358,7 @@
     ;; a touched object with no referencing job row at all is deleted too
     (let [object (sto/put-object! storage {::sto/content (sto/content "content")
                                            :content-type "text/plain"
+                                           :profile-id (uuid/next)
                                            :bucket sto/job-resource-bucket})]
       (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
       (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]

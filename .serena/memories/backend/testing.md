@@ -13,3 +13,20 @@ JVM `clojure.test` (kaocha runner) under `backend/test/backend_tests/`.
 - Regression run: `clojure -M:dev:test` to ensure no regressions in related functional areas.
 - If you need to filter output, tee to a temp file first: `clojure -M:dev:test 2>&1 | tee /tmp/penpot-test-output.txt`.
 - RPC test helpers `command!`/`management-command!` split the data map: qualified keys become server params, unqualified keys become request body params. To inject request-level context (headers, `:app.http/auth-key-id`, ip), pass a map under `:app.http/request` metadata; non-map `IRequest` stubs fall back to a dummy request.
+- The test system is `main/system-config` + `main/worker-config` with the
+  components that must not run in the background dropped: HTTP, the srepl,
+  cron, the dispatcher and **every** `[<profile> :app.worker/runner]`
+  (`helpers/remove-job-runners`). A live runner of any queue races the tests
+  that drive the loop by hand (`wdisp/run-batch` + `@#'wrkr/run-worker-loop`):
+  it takes the job the test just dispatched and completes it behind the test's
+  back, so the test's own assertions read a state it did not produce. Do not
+  re-add a runner by editing that list by hand; the removal matches by key
+  shape on purpose.
+- `system-config` and `worker-config` are `def`s: their `(cf/get ...)` calls
+  are evaluated when the namespace loads, against the real environment, while
+  test code calling `cf/get` at run time sees the `penpot-test`-prefixed
+  config. The two can disagree — in the devenv `:tenant` is `devenv-ws0` for
+  the defs and `default` inside a test — so a component built from
+  `worker-config` can talk to a different Redis key prefix than a cfg the test
+  builds itself. The symptom is a component that silently does nothing
+  locally and races in CI (which sets no `PENPOT_TENANT`).

@@ -13,6 +13,8 @@
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
+   [app.main.data.imports :as imp]
+   [app.main.data.jobs :as dj]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
@@ -29,7 +31,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.worker :as mw]
+   [app.main.ui.jobs.progress :as jp]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -108,44 +110,20 @@
           (if (= (:file-id entry) (:file-id message))
             (let [status (case (:status message)
                            :progress :import-progress
-                           :finish :import-success
-                           :error :import-error)]
-              (-> entry
-                  (assoc :progress (:progress message))
-                  (assoc :status status)
-                  (assoc :error (:error message))
-                  (d/without-nils)))
+                           :started  :import-progress
+                           :queued   :import-queued
+                           :finish   :import-success
+                           :error    :import-error)]
+              ;; a message only carries what it knows: anything it does
+              ;; not bring (a stale milestone, an old error) is dropped
+              ;; instead of lingering on the row
+              (cond-> (assoc entry :status status)
+                (contains? message :progress) (assoc :progress (:progress message))
+                (not (contains? message :progress)) (dissoc :progress)
+                (contains? message :error) (assoc :error (:error message))
+                (not (contains? message :error)) (dissoc :error)))
             entry))
         entries))
-
-(defn- parse-progress-message
-  [message]
-  (case (:type message)
-    :upload-data
-    (tr "dashboard.import.progress.upload-data" (:current message) (:total message))
-
-    :upload-media
-    (tr "dashboard.import.progress.upload-media" (:file message))
-
-    :process-page
-    (tr "dashboard.import.progress.process-page" (:file message))
-
-    :process-colors
-    (tr "dashboard.import.progress.process-colors")
-
-    :process-typographies
-    (tr "dashboard.import.progress.process-typographies")
-
-    :process-media
-    (tr "dashboard.import.progress.process-media")
-
-    :process-components
-    (tr "dashboard.import.progress.process-components")
-
-    :process-deleted-components
-    (tr "dashboard.import.progress.process-components")
-
-    ""))
 
 (defn- has-status-analyze?
   [item]
@@ -180,40 +158,32 @@
 
 (defn- analyze-entries
   [state entries]
-  (let [features (get @st/state :features)]
-    (->> (mw/ask-many!
-          {:cmd :analyze-import
-           :files entries
-           :features features})
-         (rx/mapcat #(rx/delay emit-delay (rx/of %)))
-         (rx/filter some?)
-         (rx/subs!
-          (fn [message]
-            (when (some? (:error message))
-              (st/emit! (ev/event {::ev/name "import-files-error"
-                                   :error (:error message)})))
-            (swap! state update-with-analyze-result message))))))
+  (->> (imp/analyze entries)
+       (rx/mapcat #(rx/delay emit-delay (rx/of %)))
+       (rx/filter some?)
+       (rx/subs!
+        (fn [message]
+          (when (some? (:error message))
+            (st/emit! (ev/event {::ev/name "import-files-error"
+                                 :error (:error message)})))
+          (swap! state update-with-analyze-result message)))))
 
 (defn- import-files
-  [state library-resolution-data* project-id entries]
+  [state library-resolution-data* project-id entries on-job]
   (st/emit! (ev/event {::ev/name "import-files"
                        :num-files (count entries)}))
 
-  (let [features (get @st/state :features)]
-    (->> (mw/ask-many!
-          {:cmd :import-files
-           :project-id project-id
-           :files entries
-           :features features})
-         (rx/filter some?)
-         (rx/subs!
-          (fn [message]
-            ;; Capture library-resolution data if present (same for all
-            ;; entries from the same zip, so first one wins)
-            (if-let [resolution  (-> (:libraries-resolution message)
-                                     (not-empty))]
-              (reset! library-resolution-data* resolution)
-              (swap! state update-entry-status message)))))))
+  (->> (imp/import-files {:project-id project-id
+                          :entries    entries
+                          :on-job     on-job})
+       (rx/filter some?)
+       (rx/subs!
+        (fn [message]
+          ;; the resolution of the libraries of every package arrives once,
+          ;; when all of them are over
+          (if-let [resolution (-> (:libraries-resolution message) (not-empty))]
+            (reset! library-resolution-data* resolution)
+            (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
   {::mf/memo true
@@ -224,6 +194,7 @@
         format          (:type entry)
 
         loading?        (or (= :analyze status)
+                            (= :import-queued status)
                             (= :import-progress status)
                             (and is-progress (= :import-ready status)))
         analyze-error?  (= :analyze-error status)
@@ -336,24 +307,27 @@
        [:> text* {:class (stl/css :error-message)
                   :as "span"
                   :typography t/body-small}
-        ;; backend-provided error key, dynamic by design
-        #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
+        ;; the message is user-facing text already (a hint or a translated
+        ;; label), never a key
         (if (some? (:error entry))
-          (tr (:error entry))
+          (:error entry)
           (tr "dashboard.import.analyze-error"))]
 
        import-error?
        [:> text* {:class (stl/css :error-message)
                   :as "span"
                   :typography t/body-small}
-        ;; backend-provided error key, dynamic by design
-        #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
         (if (some? (:error entry))
-          (tr (:error entry))
+          (:error entry)
           (tr "labels.error"))]
 
+       (and (= :import-queued status) (not import-success?))
+       [:div {:class (stl/css :progress-message)}
+        (tr "jobs.queued")]
+
        (and (not import-success?) (some? progress))
-       [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
+       [:div {:class (stl/css :progress-message)}
+        (jp/milestone-text progress :file? true)])
 
      ;; This is legacy code, will be removed when legacy-zip format is removed
      [:div {:class (stl/css :linked-libraries)}
@@ -577,7 +551,7 @@
   {::mf/private true}
   [{:keys [entries template status errors? import-success-total auto-linked-count
            edition on-edit on-change on-delete
-           on-cancel on-continue on-accept pending-analysis?]}]
+           on-cancel on-cancel-import on-continue on-accept pending-analysis?]}]
   [:*
    [:div {:class (stl/css :modal-content)}
     (when (and (= :analyze status) errors?)
@@ -639,13 +613,7 @@
 
     (when (some? template)
       [:> import-entry* {:entry (assoc template :status status)
-                         :can-be-deleted false}])
-
-    (when (= :import-progress status)
-      [:div {:class (stl/css :status-message)
-             :role "status"
-             :aria-live "polite"}
-       (tr "labels.uploading-file")])]
+                         :can-be-deleted false}])]
 
    [:div {:class (stl/css :modal-footer)}
     [:div {:class (stl/css :action-buttons)}
@@ -664,11 +632,16 @@
         (tr "labels.continue")]
 
        :import-progress
-       [:> button* {:class (stl/css :accept-btn)
-                    :variant "primary"
-                    :disabled true
-                    :on-click on-accept}
-        (tr "labels.accept")]
+       [:*
+        [:> button* {:class (stl/css :cancel-button)
+                     :variant "secondary"
+                     :on-click on-cancel-import}
+         (tr "labels.cancel")]
+        [:> button* {:class (stl/css :accept-btn)
+                     :variant "primary"
+                     :disabled true
+                     :on-click on-accept}
+         (tr "labels.accept")]]
 
        (:import-success :import-error)
        [:> button* {:class (stl/css :accept-btn)
@@ -749,6 +722,13 @@
         status*     (mf/use-state :analyze)
         status      (deref status*)
 
+        ;; Jobs created while importing, to cancel them on demand, and
+        ;; the subscription to their messages, to stop listening.
+        jobs*       (mf/use-state #{})
+        jobs        (deref jobs*)
+        sub*        (mf/use-state nil)
+        sub         (deref sub*)
+
         edition*    (mf/use-state nil)
         edition     (deref edition*)
 
@@ -795,8 +775,10 @@
          (mf/deps entries)
          (fn []
            (let [entries (filterv has-status-ready? entries)]
+             (reset! jobs* #{})
              (reset! status* :import-progress)
-             (import-files state* resolution* project-id entries))))
+             (reset! sub* (import-files state* resolution* project-id entries
+                                        #(swap! jobs* conj %))))))
 
         continue-template
         (mf/use-fn
@@ -841,13 +823,33 @@
          (fn [file-id]
            (swap! state* remove-entry file-id)))
 
+        on-cancel-import
+        (mf/use-fn
+         (mf/deps jobs sub)
+         (fn [event]
+           (dom/prevent-default event)
+           ;; stop listening first, so no late message repaints the
+           ;; entries of a dialog that is going away
+           (when (some? sub)
+             (rx/dispose! sub))
+           ;; a job may have just finished on its own: failures are
+           ;; ignored and an empty run cancels nothing
+           (run! dj/cancel-job jobs)
+           (reset! jobs* #{})
+           (reset! sub* nil)
+           (st/emit! (modal/hide))))
+
         on-cancel
         (mf/use-fn
-         (mf/deps edition)
+         (mf/deps edition status on-cancel-import)
          (fn [event]
            (when (nil? edition)
-             (dom/prevent-default event)
-             (st/emit! (modal/hide)))))
+             (if (= :import-progress status)
+               ;; closing mid-import stops the jobs, like Cancel
+               (on-cancel-import event)
+               (do
+                 (dom/prevent-default event)
+                 (st/emit! (modal/hide)))))))
 
         on-continue
         (mf/use-fn
@@ -1013,6 +1015,7 @@
           :on-change on-entry-change
           :on-delete on-entry-delete
           :on-cancel on-cancel
+          :on-cancel-import on-cancel-import
           :on-continue on-continue
           :on-accept on-accept
           :pending-analysis? pending-analysis?}]

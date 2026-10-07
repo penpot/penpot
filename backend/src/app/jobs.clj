@@ -9,9 +9,11 @@
 
   Every job is defined as a job-def map returned by the `ig/init-key` of its
   module: {::name, ::schema, ::handler, ::decoder, ::validator} — decoder and
-  validator are precompiled at init time. The registry of job-defs is plain
-  integrant wiring (::jobs/defs); submit, dispatch and management consume it
-  by reference.
+  validator are precompiled at init time. A job-def may also carry the
+  optional metadata {::family, ::resource-role}, which the consumers of the
+  job (quotes, storage helpers) read from the registry: the substrate never
+  reads them. The registry of job-defs is plain integrant wiring (::jobs/defs);
+  submit, dispatch and management consume it by reference.
 
   Two execution modes are provided:
   - `submit` (durable): validates + JSON-encodes params and inserts a row
@@ -27,8 +29,10 @@
   on its loop, otherwise the dispatcher marks it `aborted` (a system-side
   terminal state, like `cancelled` but set by the dispatcher instead of
   a user: never retried, kept for triage and reported with an error
-  log) while its side effects continue. `heartbeat` also accepts an
-  optional `progress` report, which is stored as a `progress` row of
+  log) while its side effects continue. A beat that finds the job no
+  longer active raises an `:interrupt`, an internal signal that the task
+  should stop the work in course, never an error. `heartbeat` also accepts
+  an optional `progress` report, which is stored as a `progress` row of
   `job_event`: progress is durable history, not a mutable column, and
   needs no Redis.
 
@@ -37,7 +41,7 @@
   follow the job without polling the database.
 
   Reserved ledger columns (`profile_id`, `error`, `result`, `resource_id`,
-  `expires_at`) are only written by `submit` (profile and resource
+  `expires_at`) are only written by `submit` (profile, resource and expiry
   references) and by the terminal writers; `submit` never infers them from
   `params`."
   (:require
@@ -82,14 +86,20 @@
   whether to schedule again. A handler has no use for the counter, and
   the attempt number would lie anyway: the `noop` retry strategy runs
   again without incrementing it, so a durable \"which execution is this\"
-  number would need a second counter that nothing bounds."
+  number would need a second counter that nothing bounds.
+
+  `profile-id` is the owner of a user-facing job and nil for an internal
+  one. It travels here so a handler can revalidate permissions and check
+  who owns the resource it is working on without a second query."
   [:map {:closed true
          :title "job-context"}
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:label [:maybe ::sm/text]]
    ;; technical reference kept for garbage collection
-   [:resource-id [:maybe ::sm/uuid]]])
+   [:resource-id [:maybe ::sm/uuid]]
+   ;; owner of a user-facing job; nil for an internal job
+   [:profile-id [:maybe ::sm/uuid]]])
 
 (def check-context
   "Validate a handler context; raises with the malli explanation when it
@@ -97,7 +107,7 @@
   (sm/check-fn schema:context))
 
 (defn make-context
-  "Build the handler context from a job row: exactly the four keys a
+  "Build the handler context from a job row: exactly the five keys a
   handler may see, and nothing else. The result is a plain map, not the
   database row, and it is not modified afterwards.
 
@@ -107,7 +117,8 @@
   (check-context {:id          (:id job)
                   :name        (:name job)
                   :label       (if (str/blank? (:label job)) nil (:label job))
-                  :resource-id (:resource-id job)}))
+                  :resource-id (:resource-id job)
+                  :profile-id  (:profile-id job)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB DEFINITIONS (registry)
@@ -123,6 +134,12 @@
 (def ^:private schema:job-def
   [:map {:title "job-def"}
    [::name schema:job-name]
+   ;; Optional metadata of the job family, read from the registry by the
+   ;; consumers that need it (quotes, storage helpers, a future job
+   ;; listing). `app.jobs` itself never reads them: they are not part of
+   ;; the execution contract.
+   [::family {:optional true} ::sm/keyword]
+   [::resource-role {:optional true} ::sm/keyword]
    [::schema any?]
    ;; every handler is [context params]. A job-def already closes over its
    ;; own dependencies, so nothing else is handed to it: a handler cannot
@@ -211,9 +228,9 @@
 
 (def ^:private sql:insert-new-job
   "insert into job (id, name, tenant, params, queue, label, priority,
-                    max_retries, profile_id, resource_id, created_at,
-                    modified_at, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    max_retries, profile_id, resource_id, expires_at,
+                    created_at, modified_at, scheduled_at)
+   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    returning id")
 
 ;; `tenant` is part of the match, not an extra: without it this DELETE
@@ -243,7 +260,11 @@
    [::profile-id {:optional true} ::sm/uuid]
    ;; Technical reference (storage object) kept for garbage collection. It
    ;; is a column, never part of `params`, and it is never inferred from it.
-   [::resource-id {:optional true} ::sm/uuid]])
+   [::resource-id {:optional true} ::sm/uuid]
+   ;; Retention of the job: when it is set, the jobs GC deletes the row
+   ;; (and reclaims its resource) once the instant has passed. User-facing
+   ;; jobs set it at creation; internal jobs leave it nil.
+   [::expires-at {:optional true} ::ct/inst]])
 
 (def check-options
   (sm/check-fn schema:options))
@@ -264,13 +285,17 @@
   encodes them as plain JSON and inserts a row into the `job` table.
   Fire-and-forget: returns the job id immediately.
 
+  The optional ledger columns (`::profile-id`, `::resource-id` and
+  `::expires-at`) are validated and stored as columns; nothing is inferred
+  from `params`.
+
   NOTE: the dedupe DELETE and the INSERT run atomically: joined to
   the caller's transaction when the cfg provides `::db/conn`, wrapped
   in their own transaction otherwise. Concurrent cross-backend
   submissions can, in rare race conditions, produce duplicated 'new'
   rows (accepted risk, see prod-infra documentation)."
   [cfg {:keys [::params ::name ::delay ::queue ::priority ::max-retries
-               ::dedupe ::label ::profile-id ::resource-id]
+               ::dedupe ::label ::profile-id ::resource-id ::expires-at]
         :or   {delay 0 queue :default priority 100 max-retries 3 label ""}
         :as   options}]
 
@@ -322,7 +347,7 @@
                                 :replace (or deleted 0))
                          (db/exec-one! conn [sql:insert-new-job id job-name tenant payload queue
                                              label priority max-retries
-                                             profile-id resource-id
+                                             profile-id resource-id expires-at
                                              now now scheduled-at])))]
     ;; Both statements always run inside db/tx-run!: joined to the
     ;; caller's transaction when the cfg provides a connection,
@@ -348,7 +373,10 @@
 
 (defn- decode-row
   [row]
-  (decode-json-col row :params))
+  (-> row
+      (decode-json-col :params)
+      (decode-json-col :result)
+      (decode-json-col :error)))
 
 (defn get-job
   "Retrieve the job row (with the raw JSON params decoded to a plain map)."
@@ -387,52 +415,93 @@
 (def ^:private known-retry-reasons
   #{"backoff" "noop"})
 
-(def ^:private max-stage-length 250)
+(def ^:private max-progress-key-length
+  "Longest accepted `:stage` or counter key. They name a vocabulary, they
+  are not a place for data, so the cap only keeps a runaway key out of the
+  log."
+  64)
+
+(def schema:progress-counter
+  "Counter of one scope of a job: `current` is how many units are done and
+  `total` how many there are, when the worker knows it."
+  [:map {:closed true
+         :title "job-progress-counter"}
+   [:current ::sm/int]
+   [:total {:optional true} ::sm/int]])
 
 (def schema:progress
-  "Progress report of a job: `current` is mandatory, `total` and `stage` are
-  optional, and no other key is accepted. `stage` is a short human label,
-  not a place for exception messages or params."
+  "Progress milestone of a job: the activity in course and the counters of
+  the scopes around it, each one under its own key.
+
+  `:stage` is a stable keyword the client resolves (a translation, an
+  icon...), never a display string, and `:counters` is open on purpose: a
+  worker reports the scopes it knows and names the counter of the activity
+  after its own stage, so a client can render `counters[stage]` without a
+  table of equivalences. Neither is a place for names, params or exception
+  text: the payload is keywords and integers only."
   [:map {:closed true
          :title "job-progress"}
-   [:current ::sm/int]
-   [:total {:optional true} ::sm/int]
-   [:stage {:optional true} ::sm/text]])
+   [:stage    ::sm/keyword]
+   [:counters {:optional true} [:map-of ::sm/keyword schema:progress-counter]]])
 
 (def check-progress
-  "Validate a progress report against its schema."
+  "Validate the shape of a progress milestone."
   (sm/check-fn schema:progress))
 
+(defn- check-counter
+  "Check the range rules of one counter: a non-negative `current` and a
+  positive `total` never lower than its `current`."
+  [key counter]
+  (when (neg? (:current counter))
+    (ex/raise :type :validation
+              :code :invalid-progress
+              :hint "progress counter current must not be negative"
+              :counter key
+              :progress counter))
+  (when-let [total (:total counter)]
+    (when (or (not (pos? total))
+              (> (:current counter) total))
+      (ex/raise :type :validation
+                :code :invalid-progress
+                :hint "progress counter total must be positive and not lower than current"
+                :counter key
+                :progress counter))))
+
 (defn validate-progress
-  "Check the range rules a schema cannot express: non-negative `current`,
-  positive `total`, `current` never greater than `total` and a short
-  `stage`."
+  "Check what the schema cannot express: non-negative counters, a positive
+  total never lower than its `current`, and stage and counter keys short
+  enough to be a name and not a payload."
   [progress]
   (let [progress (check-progress progress)]
-    (when (neg? (:current progress))
-      (ex/raise :type :validation
-                :code :invalid-progress
-                :hint "progress current must not be negative"
-                :progress progress))
-    (when-let [total (:total progress)]
-      (when (or (not (pos? total))
-                (> (:current progress) total))
+    (doseq [key (cons (:stage progress) (keys (:counters progress)))]
+      (when (> (count (name key)) max-progress-key-length)
         (ex/raise :type :validation
                   :code :invalid-progress
-                  :hint "progress total must be positive and not lower than current"
+                  :hint (str "progress key must not be longer than "
+                             max-progress-key-length " characters")
+                  :key key
                   :progress progress)))
-    (when (and (:stage progress)
-               (> (count (:stage progress)) max-stage-length))
-      (ex/raise :type :validation
-                :code :invalid-progress
-                :hint (str "progress stage must not be longer than "
-                           max-stage-length " characters")
-                :progress progress))
+    (doseq [[key counter] (:counters progress)]
+      (check-counter key counter))
     progress))
+
+(defn decode-progress
+  "Read back a stored progress payload as a Clojure map: `:stage` and the
+  counter keys come back as the strings the database holds, so they are
+  keywordized here, and a payload that is already a map is returned as is."
+  [progress]
+  (when (some? progress)
+    (-> (cond-> progress
+          (db/pgobject? progress)
+          (db/decode-json-pgobject))
+        (d/update-when :stage keyword)
+        (d/update-when :counters
+                       (fn [counters]
+                         (into {} (map (fn [[k v]] [(keyword k) v])) counters))))))
 
 (def ^:private event-payload-keys
   {"start"    #{:attempt}
-   "progress" #{:current :total :stage}
+   "progress" #{:stage :counters}
    "retry"    #{:attempt :reason}
    "end"      #{:outcome}})
 
@@ -490,7 +559,7 @@
                        :payload    payload
                        :created-at created-at}))
 
-(defn insert-event
+(defn- insert-event
   "Insert a `job_event` row, then count it and notify after the commit.
 
   Must be called inside a transaction that owns the job row. When the job
@@ -501,7 +570,11 @@
   The counter also runs after the commit, so a rolled back transaction
   never inflates it."
   [{:keys [::mbus/msgbus] :as cfg} job-id kind payload]
-  (let [payload    (validate-event-payload kind payload)
+  (assert (db/connection-map? cfg)
+          "expected cfg with valid connection: insert-event must run inside a transaction")
+  (assert (some? db/*after-commit-context*)
+          "expected transaction context: insert-event must run inside a transaction")
+  (let [payload     (validate-event-payload kind payload)
         connectable (db/get-connectable cfg)
         profile-id (:profile-id (db/exec-one! connectable [sql:job-event-owner job-id]))]
     (when (and profile-id
@@ -543,8 +616,14 @@
 ;; HEARTBEAT / PROGRESS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private heartbeat-interval (ct/duration {:seconds 60}))
-(def ^:private progress-interval (ct/duration {:seconds 1}))
+(def ^:private heartbeat-interval
+  ;; one second, down from a minute: a heavy job that was cancelled must
+  ;; be seen as gone at its next beat. The price is one `modified_at`
+  ;; touch per beating job per second (60x the old rate): cheap while the
+  ;; only heavy beater runs alone on its queue, revisit if concurrent
+  ;; beating jobs ever grow.
+  (ct/duration {:seconds 1}))
+(def ^:private progress-interval (ct/duration {:millis 200}))
 
 (def ^:private prune-threshold 10000)
 (def ^:private prune-window (ct/duration {:hours 1}))
@@ -597,6 +676,12 @@
   (swap! heartbeats dissoc job-id)
   (swap! progresses dissoc job-id))
 
+(def ^:private active-statuses
+  "The statuses of a job that is still on its way. It mirrors the filter
+  of the heartbeat and progress writes below: a row outside this set is no
+  longer active and nothing can report to it."
+  #{"new" "scheduled" "running" "retry"})
+
 (def ^:private sql:touch-heartbeat
   "UPDATE job
       SET modified_at = ?
@@ -632,6 +717,27 @@
                     1)
                   0))))
 
+(defn check-active
+  "Raise an `:interrupt` when the job is no longer active.
+
+  A job is active while its status is one of `active-statuses`; a row
+  that already reached a terminal state, or that no longer exists, is
+  not. The status is read from the row, because a write can only tell
+  that it matched no row, not why.
+
+  The interrupt is an internal signal, not an error: the caller is a task
+  that must stop the work in course. `heartbeat` calls this when one of
+  its writes finds the job gone, and a caller can also ask explicitly,
+  which is what the binfile adapter does before and after its run."
+  [cfg job-id]
+  (let [job (get-job cfg job-id)]
+    (when-not (and (some? job) (contains? active-statuses (:status job)))
+      (ex/raise :type :interrupt
+                :code :job-interrupted
+                :hint "the job is no longer active"
+                :job-id job-id
+                :status (or (:status job) "gone")))))
+
 (defn heartbeat
   "Keep a running job alive and, optionally, report its progress.
 
@@ -642,14 +748,18 @@
   - `:progress` optional progress report (see `schema:progress`).
   - `::force?`  internal: skips only the progress throttle.
 
-  Returns the number of durable writes performed, so 0 means the job is
-  terminal, has no job context, or the throttle did not allow a write.
+  Returns the number of durable writes performed, so 0 means there was
+  nothing to write: no job context, or the throttle did not allow it. A
+  write that finds the job no longer active raises an `:interrupt` (see
+  `check-active`) instead of counting zero, so a task in course stops at
+  its next beat.
 
-  The `modified_at` touch is throttled to ~60s and the progress event to
-  ~1s: external workers report progress as sparse milestones, while
-  handlers may beat on every iteration. Both writes go through the
-  connection pool (`::db/pool` on the cfg), never the caller transaction,
-  so a beat survives a rollback of the surrounding work.
+  Both writes go through the connection pool (`::db/pool` on the cfg),
+  never the caller transaction, so a beat survives a rollback of the
+  surrounding work: the `modified_at` touch is throttled to ~1s while
+  progress events go out at up to ~200ms, so the user sees movement
+  without hammering the row. External workers report progress as sparse
+  milestones, while handlers may beat on every iteration.
 
   Like every other function here the cfg is a cfg: a bare pool or
   connection is a caller bug and is not accommodated.
@@ -662,7 +772,7 @@
   forced path used by the management API propagates it so the external
   worker can retry."
   [cfg & {:keys [job-id progress] :as options}]
-  (let [job-id  (or job-id (get cfg ::job-id) *job-id*)
+  (let [job-id   (or job-id (get cfg ::job-id) *job-id*)
         ;; a malformed report is a caller bug: never swallow it
         progress (some-> progress validate-progress)]
     (when (uuid? job-id)
@@ -671,20 +781,31 @@
             force?      (boolean (::force? options))
             writes      (volatile! 0)]
         (when (should-write? heartbeats job-id now heartbeat-interval)
-          (vswap! writes + (touch-job connectable job-id now)))
+          (let [n (touch-job connectable job-id now)]
+            ;; the touch is conditional on the row still being active: a
+            ;; write that matched no row is what raises the interrupt
+            (when (zero? n)
+              (check-active cfg job-id))
+            (vswap! writes + n)))
         (when (and (some? progress)
                    (or force?
                        (should-write? progresses job-id now progress-interval)))
-          (let [store #(report-progress cfg job-id progress)]
-            (if force?
-              (vswap! writes + (store))
-              (try
-                (vswap! writes + (store))
-                (catch Throwable cause
-                  (l/err :hint "unable to persist job progress"
-                         :tenant (cf/get :tenant)
-                         :job-id (str job-id)
-                         :cause cause))))))
+          (let [store #(report-progress cfg job-id progress)
+                n     (if force?
+                        (store)
+                        (try
+                          (store)
+                          (catch Throwable cause
+                            (l/err :hint "unable to persist job progress"
+                                   :tenant (cf/get :tenant)
+                                   :job-id (str job-id)
+                                   :cause cause)
+                            0)))]
+            ;; the raise stays outside the catch above: an interrupt is
+            ;; not a transient failure and must not be swallowed with it
+            (when (zero? n)
+              (check-active cfg job-id))
+            (vswap! writes + n)))
         (int @writes)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -976,14 +1097,17 @@
   "UPDATE job
       SET status='cancelled', modified_at=?
     WHERE id=?
-      AND status IN ('new','scheduled','retry')
+      AND status IN ('new','scheduled','retry','running')
     RETURNING id")
 
 (defn cancel
-  "Cancel a pending job (new/scheduled/retry) and record the `end` event.
+  "Cancel a pending or running job (new/scheduled/retry/running) and
+  record the `end` event.
 
-  A running or terminal job is left untouched and writes no event. Returns
-  the number of affected rows."
+  A running job stops at its next heartbeat: the beat finds no active
+  row and raises an `:interrupt`, which the runner treats as a normal
+  stop while the handler rolls back. A terminal job is left untouched
+  and writes no event. Returns the number of affected rows."
   [cfg job-id]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
   (let [job     (get-job cfg job-id)
