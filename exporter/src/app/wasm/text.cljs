@@ -16,7 +16,8 @@
 
 (defn set-shape-text!
   "Serializes a text shape's content into the current WASM shape. Mirrors the
-  editor's sequence: clear -> vertical-align -> append each paragraph -> layout.
+  editor's sequence: clear -> vertical-align and line adjustment -> append each
+  paragraph -> layout.
   Byte writing and font resolution are the shared
   `text-content/write-shape-text!` defaults; the exporter has no fonts DB, so
   it injects no variant normalization."
@@ -25,6 +26,8 @@
     (h/call wasm/internal-module "_clear_shape_text")
     (h/call wasm/internal-module "_set_shape_vertical_align"
             (sr/translate-vertical-align (get content :vertical-align)))
+    (h/call wasm/internal-module "_set_shape_line_adjustment"
+            (sr/translate-japanese-enum :line-adjustment (get content :line-adjustment)))
     (let [paragraph-set (first (get content :children))
           paragraphs    (get paragraph-set :children)]
       (doseq [paragraph paragraphs]
