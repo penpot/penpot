@@ -7,17 +7,15 @@
 (ns app.consumer.exports
   "The runner of the `:export-assets` job.
 
-  Takes the params the job-def froze and transplant the legacy export
-  machinery into the jobs substrate: the name transducers and
-  partitioning of `app.handlers.export-shapes`, and the pdf assembly
-  its `export-frames` twin does, dress the same run the old `/api/export`
-  served. What changes around them is the frame: the session minted
-  through `create-job-session` renders as the user, the milestone
-  vocabulary of the progress contract dresses the beats (`:preparing`,
+  Runs one export end to end: the render plan of
+  `app.consumer.plan` (the name transducers and the partitioning that
+  the export surfaces always kept), the pdf assembly of the frames
+  run, the beats shaped by the progress contract (`:preparing`,
   `:rendering`, `:packaging`, with the `objects` and `pages` counters
-  of every partition), and the settle is one `complete-job` multipart
-  call that stores the artifact and closes the session in the same
-  step.
+  of every partition) and one settle: a `complete-job` multipart call
+  that stores the artifact and closes the session the backend minted
+  in the same step. The render runs as the job's owner through the
+  session `create-job-session` opened.
 
   Cancellation arrives through the beats: a `skip` answer from
   `report-job-progress` says the job can no longer hear the worker
@@ -34,7 +32,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.consumer.api :as api]
-   [app.handlers.export-shapes :as shapes]
+   [app.consumer.plan :as plan]
    [app.handlers.resources :as rsc]
    [app.jobs :as jobs]
    [app.jobs.utils :as job.utils]
@@ -143,7 +141,7 @@
   [token {:keys [exports force-multiple name skip-children is-wasm]}]
   (let [items     (normalize-items exports)
         frames?   (boolean (every? frame-item? items))
-        prepared  (shapes/prepare-exports items token is-wasm)
+        prepared  (plan/prepare-exports items token is-wasm)
         single?   (and (not frames?)
                        (not (true? force-multiple))
                        (= 1 (count prepared))
@@ -155,7 +153,7 @@
     {:frames?       frames?
      :single?       single?
      :prepared      prepared
-     :total         (shapes/count-objects prepared)
+     :total         (plan/count-objects prepared)
      :skip-children skip-children
      :is-wasm       (boolean is-wasm)
      :counter-kind  (if frames? :pages :objects)
@@ -230,7 +228,7 @@
                            (counter counter-kind @rendered total))
                    (rsc/add-to-zip zip path
                                    (str/replace filename
-                                                shapes/sanitize-file-regex
+                                                plan/sanitize-file-regex
                                                 "_")))]
     (p/let [beat-one (beats! :rendering (counter counter-kind 0 total) :force? true)
             _        (check-beat! beat-one)

@@ -1,99 +1,55 @@
 # Exporter
 
-Node service that renders shapes and files to bitmap, SVG and PDF. Wasm exports
-are **jobs**: created over HTTP, admitted by a scheduler with bounded
-concurrency, and persisted in Redis so their state can be queried and cancelled.
-The legacy entry point, which is what the browser backend still goes through,
-runs the export as soon as it is asked for, with no admission control.
+Node process that renders shapes, frames and files to bitmap, SVG and PDF. It
+is a **consumer**: it polls the backend's `:exporter` job queue on Redis and
+drives each export through the backend's management API — claim, report the
+milestones, and settle (`complete-job` multipart with the artifact, or
+`fail-job` on error). There is no HTTP surface of its own and nothing is
+persisted on this side: the row of the job, its cancel button and its result
+all live in the backend.
 
-## HTTP API
+## How a job runs
 
-Mounted under `/api/export` (the router matches on the path *after* that prefix,
-so it also works when the process is hit directly on `/`).
+1. The backend dispatcher pushes `[job-id, scheduled-at]` (JSON) into
+   `penpot.worker.queue:<tenant>:exporter`.
+2. One of the `K` pollers pops it and owns that connection for the whole run:
+   the blocking pop is both the semaphore of the slot and the backpressure, so
+   the process never runs more exports than pollers. `K` is
+   `PENPOT_EXPORTER_WORKER_CONCURRENCY` (default 2, and the browser and wasm
+   pools size themselves to the same figure).
+3. The poller claims the job over the management API and, on `:run`, mints a
+   render session (`create-job-session`) through which every asset fetch
+   happens as the owner of the job.
+4. The milestones are reported as beats (`:preparing`, `:rendering`,
+   `:packaging`, with the `objects` and `pages` counters). A watchdog re-sends
+   the last one every second, whatever the run is doing.
+5. It settles with `complete-job` (the artifact rides multipart, the session
+   is closed in the same step) or `fail-job`. The settle never rejects: a
+   worker that cannot talk leaves the row to the backend's lease GC.
 
-| Method   | Path            | Description                                        |
-|----------|-----------------|----------------------------------------------------|
-| `POST`   | `/`             | Legacy command multiplex; runs unscheduled         |
-| `POST`   | `/jobs`         | Create an export job                               |
-| `GET`    | `/jobs/{id}`    | Job record                                         |
-| `DELETE` | `/jobs/{id}`    | Request cancellation                               |
+## Cancellation
 
-Job states: `queued` -> `running` -> `ended` | `error` | `cancelled`. The last
-three are terminal.
-
-## Redis layout
-
-Every key is namespaced with `penpot.exporter.` plus the tenant
-(`PENPOT_TENANT`, `default` in code but set to the workspace name in devenv,
-e.g. `devenv-ws0`).
-
-```
-penpot.exporter.{tenant}.job.{job-id}  hash    field: data (transit blob of the
-                                               whole record)
-penpot.exporter.{tenant}.job-cancel    pubsub  payload: the job id, one line
-```
-
-There is no index: the keyspace is one self-expiring hash per job and nothing
-else. Each hash carries the same TTL as the exported file
-(`PENPOT_EXPORTER_JOB_TTL`, default 3600s), refreshed on every write and never
-after the job settles.
-
-## Inspecting Redis
-
-Redis is not published on the host, so `redis-cli` from your machine gets
-connection refused. Run it **inside the devenv container**, against the `valkey`
-host on database 0:
-
-```bash
-redis-cli -h valkey -n 0
-```
-
-`redis-cli -u "$PENPOT_REDIS_URI"` does the same and follows whatever the env is
-set to (`redis://valkey/0` in devenv).
-
-Keys carry the tenant, which in devenv is the **workspace name**
-(`$PENPOT_TENANT`, e.g. `devenv-ws0`), not `default`. From the prompt:
-
-```
-# every job record
-KEYS penpot.exporter.devenv-ws0.job.*
-
-# the whole record, transit-json in the `data` field
-HGET penpot.exporter.devenv-ws0.job.<job-id> data
-
-# seconds left before the record expires
-TTL penpot.exporter.devenv-ws0.job.<job-id>
-
-# watch cancellations as they are published (blocks the connection)
-SUBSCRIBE penpot.exporter.devenv-ws0.job-cancel
-
-# drop one record
-DEL penpot.exporter.devenv-ws0.job.<job-id>
-```
-
-`KEYS` is fine here -- the keyspace is a handful of job hashes. On a real
-deployment use `SCAN 0 MATCH penpot.exporter.<tenant>.job.* COUNT 100` instead.
-Do not `FLUSHDB`: the backend shares this database.
-
-The backend debug UI also renders these records: `/dbg` has an *Export jobs*
-section, with a `?job-id=` filter.
+A cancellation reaches the worker through the beats: a `skip` answer means the
+backend no longer listens (the row is terminal), so the runner stops between
+units of work; mid-Skia the watchdog terminates the leased render worker. The
+row was already `cancelled` by the backend's `cancel-job`.
 
 ## Configuration
 
-| Variable                              | Default | Description                          |
-|---------------------------------------|---------|--------------------------------------|
-| `PENPOT_REDIS_URI`                    | `redis://redis/0` | Job store and cancel topic |
-| `PENPOT_TENANT`                       | `default` | Key and topic prefix               |
-| `PENPOT_EXPORTER_JOB_TTL`             | `3600`  | Lifetime of a job record, in seconds  |
-| `PENPOT_EXPORTER_MAX_CONCURRENT_JOBS` | `4`     | Admission limit                       |
-| `PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE`| `2`     | Per-profile admission limit           |
-| `PENPOT_EXPORTER_QUEUE_MAX`           | `64`    | Queue cap; over it, `429 :queue-full` |
-| `PENPOT_WASM_WORKER_POOL_MAX`         | `2`     | Headless render worker threads; min 1 |
-| `PENPOT_WASM_WORKER_POOL_MIN`         | `1`     | Workers kept warm; clamped to the max |
-| `PENPOT_WASM_WORKER_IDLE_TIMEOUT`     | `300`   | Silence before a worker is terminated, in seconds |
-| `PENPOT_WASM_WORKER_IMAGE_CACHE_SIZE` | `134217728` | Per-worker image cache budget, in bytes |
+| Variable                                 | Default | Description                                        |
+|------------------------------------------|---------|----------------------------------------------------|
+| `PENPOT_PUBLIC_URI`                      | —       | The frontend the assets render through             |
+| `PENPOT_INTERNAL_URI`                    | `public-uri` | Same network's frontend; the management API too |
+| `PENPOT_REDIS_URI`                       | `redis://redis/0` | The queue and the rest of redis           |
+| `PENPOT_TENANT`                          | `default` | Queue prefix (workspace name in devenv)          |
+| `PENPOT_EXPORTER_SHARED_KEY`             | —       | The shared key; derived from the secret otherwise   |
+| `PENPOT_EXPORTER_JOB_TTL`                | `3600`  | Lifetime of the temp files a job owns, in seconds  |
+| `PENPOT_EXPORTER_WORKER_CONCURRENCY`     | `2`     | `K`: pollers, running exports, pool sizes          |
+| `PENPOT_WASM_WORKER_POOL_MIN`            | `1`     | Render workers kept warm; clamped to the max       |
+| `PENPOT_WASM_WORKER_IDLE_TIMEOUT`        | `300`   | Silence before a worker is terminated, in seconds  |
+| `PENPOT_WASM_WORKER_IMAGE_CACHE_SIZE`    | `134217728` | Per-worker image cache budget, in bytes        |
 
-A headless job leases one render worker for its whole run, so it is admitted
-only when a worker is free: `PENPOT_WASM_WORKER_POOL_MAX` is the real limit for
-them, and `PENPOT_EXPORTER_MAX_CONCURRENT_JOBS` bounds the browser ones
-alongside.
+## Inspecting the backend
+
+Nothing about a job is stored here: `get-job` in the backend answers the full
+row, and its `app.debug`/admin surfaces render the same records.

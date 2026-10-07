@@ -24,21 +24,12 @@
   {:public-uri "http://localhost:3449"
    ;; :internal-uri nil ;; internal-uri cannot be nil
    :tenant "default"
-   :host "localhost"
-   :http-server-port 6061
-   :http-server-host "0.0.0.0"
    :tempdir "/tmp/penpot"
    :redis-uri "redis://redis/0"
-   :exporter-max-concurrent-jobs 4
-   :exporter-max-jobs-per-profile 2
-   :exporter-queue-max 64
    :exporter-job-ttl 3600
-   ;; the roles this instance serves: by default the consumer of the
-   ;; backend jobs queue; `http` keeps the legacy surfaces alive until
-   ;; the deletion task takes them away
-   :exporter-roles "worker"
+   ;; how many export jobs run at once: every poller owns one Redis
+   ;; connection, and the pools size themselves to the same number
    :exporter-worker-concurrency 2
-   :wasm-worker-pool-max 2
    :wasm-worker-pool-min 1
    :wasm-worker-idle-timeout 300
    :wasm-worker-image-cache-size (* 128 1024 1024)})
@@ -49,7 +40,6 @@
    [:public-uri {:optional true} ::sm/uri]
    [:internal-uri {:optional true} ::sm/uri]
    [:exporter-shared-key {:optional true} :string]
-   [:host {:optional true} :string]
    [:tenant {:optional true} :string]
    [:flags {:optional true} [::sm/set :keyword]]
    [:redis-uri {:optional true} :string]

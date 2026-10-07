@@ -11,7 +11,7 @@
    ["playwright" :as pw]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.config :as cf]
+   [app.consumer.config :as ccfg]
    [app.util.object :as obj]
    [promesa.core :as p]))
 
@@ -155,8 +155,8 @@
 
 (defn init
   []
-  (let [opts #js {:max (cf/get :browser-pool-max 5)
-                  :min (cf/get :browser-pool-min 0)
+  (let [opts #js {:max (max 1 (ccfg/concurrency))
+                  :min 0
                   :testOnBorrow true
                   :evictionRunIntervalMillis 5000
                   :numTestsPerEvictionRun 5

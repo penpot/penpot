@@ -148,11 +148,6 @@ http {
             proxy_pass $PENPOT_BACKEND_URI/link-preview$is_args$args;
         }
 
-        location /api/export {
-            proxy_set_header Host $proxy_host;
-            proxy_pass $PENPOT_EXPORTER_URI;
-        }
-
         location /api {
             proxy_set_header Host $proxy_host;
             proxy_pass $PENPOT_BACKEND_URI/api;

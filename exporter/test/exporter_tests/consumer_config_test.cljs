@@ -5,29 +5,11 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns exporter-tests.consumer-config-test
-  "The worker side of the config: the roles a process serves and how
-  many pollers a worker owns."
+  "The consumer side of the config: how many jobs run at once and
+  which queue they come from."
   (:require
    [app.consumer.config :as ccfg]
-   [cljs.test :as t :include-macros true]
-   [cuerdas.core :as str]))
-
-(t/deftest roles-parse-the-env-list
-  (t/testing "the default serves the worker role only: the exporter is
-             a consumer's process, no surface needs preserving"
-    (t/is (= #{:worker} (ccfg/roles nil)))
-    (t/is (= #{:worker} (ccfg/roles))))
-  (t/is (= #{:http} (ccfg/roles "http")))
-  (t/is (= #{:http :worker} (ccfg/roles "http,worker")))
-  (t/is (= #{:http :worker} (ccfg/roles "http, worker")))
-  (t/testing "the parser does not invent roles from noise"
-    (t/is (= #{} (ccfg/roles "")))
-    (t/is (= #{:worker} (ccfg/roles ",worker")))))
-
-(t/deftest worker-enabled-reads-the-roles
-  (t/is (true? (ccfg/worker-enabled? #{:http :worker})))
-  (t/is (true? (ccfg/worker-enabled? #{:worker})))
-  (t/is (false? (ccfg/worker-enabled? #{:http}))))
+   [cljs.test :as t :include-macros true]))
 
 (t/deftest concurrency-is-at-least-one
   (t/testing "the configured value is taken as given"

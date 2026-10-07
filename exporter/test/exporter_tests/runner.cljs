@@ -12,10 +12,9 @@
    [clojure.tools.cli :refer [parse-opts]]
    [exporter-tests.api-test]
    [exporter-tests.consumer-config-test]
-   [exporter-tests.export-shapes-test]
+   [exporter-tests.consumer-plan-test]
    [exporter-tests.jobs-test]
    [exporter-tests.renderer-svg-test]
-   [exporter-tests.scheduler-test]
    [exporter-tests.shell-test]
    [exporter-tests.wasm-pool-test]
    [exporter-tests.worker-test]
@@ -31,13 +30,12 @@
                  (println (str "UNHANDLED-REJECTION: " reason))))
 
 (def test-namespaces
-  ['exporter-tests.export-shapes-test
+  ['exporter-tests.consumer-plan-test
    'exporter-tests.jobs-test
    'exporter-tests.api-test
    'exporter-tests.worker-test
    'exporter-tests.consumer-config-test
    'exporter-tests.renderer-svg-test
-   'exporter-tests.scheduler-test
    'exporter-tests.shell-test
    'exporter-tests.wasm-pool-test])
 

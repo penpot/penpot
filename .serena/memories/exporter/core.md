@@ -1,47 +1,49 @@
 # Exporter Architecture and Workflow
 
-`exporter/`: CLJS/Node headless export service. Depends on `common/`; uses Playwright plus export JS/CLJS deps for SVG/PDF/assets.
+`exporter/`: CLJS/Node **worker process** that consumes the backend's
+`:exporter` job queue and renders shapes, frames and files to bitmap, SVG and
+PDF. Depends on `common/`; uses Playwright plus export JS/CLJS deps for
+SVG/PDF/assets. There is no HTTP surface of its own and nothing is persisted
+on this side: the row of the job, its cancel and its result are the backend's.
 
 ## Layout and commands
 
 - Source: `exporter/src/`; config: `deps.edn`, `shadow-cljs.edn`, `package.json`; runtime helpers/assets: `vendor/`, `scripts/`.
-- From `exporter/`: setup `./scripts/setup`; watch `pnpm run watch` or `pnpm run watch:app`; production build `pnpm run build`; test bundle `pnpm run build:test`; tests `pnpm run test` or `pnpm run test:quiet`; lint `pnpm run lint:clj`; format check/fix `pnpm run check-fmt:clj` / `pnpm run fmt:clj`.
+- From `exporter/`: setup `./scripts/setup`; watch `pnpm run watch` or `pnpm run watch:app`; production build `pnpm run build`; test bundle `pnpm run build:test`; tests `pnpm run test` or `pnpm run test:quiet`; lint `pnpm run lint:clj`; format check/fix `pnpm run check-fmt:clj` / `pnpm run fmt:clj`. `./scripts/ci exporter` in the repo root is green (test-quiet defaults `PENPOT_SECRET_KEY` like `test` does).
 - Because exporter consumes `common/`, shared file/shape/model changes may need exporter verification even when the immediate change is not under `exporter/`.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Exporter test conventions and CI: `mem:exporter/testing`.
-- Promise chains in the exporter (management client, auth) follow promesa's two API families; arg orders, what each fn must return, the `->>` preference and the async-test silent-green trap: `mem:clojure/promesa` — read before touching promise code.
+- Promise chains in the exporter (management client, runner) follow promesa's two API families; arg orders, what each fn must return, the `->>` preference and the async-test silent-green trap: `mem:clojure/promesa` — read before touching promise code.
 
-## HTTP and browser pool (legacy surface, doomed)
+## The worker anatomy
 
-- POST body limit is about 60 MB. Exporter supports `application/transit+json`; request params merge query params and body params.
-- Map response bodies are Transit JSON and force HTTP 200; nil 200 bodies become 204.
-- Auth token comes from cookie `auth-token`, then uploads use Bearer auth plus the management shared key.
-- Each export job gets a fresh Playwright browser context. On success, the context closes and the browser returns to the pool; on error, the browser is destroyed instead of reused.
-- Borrow validates browser connection. Pool acquire timeout is about 10s; font loading timeout logs a warning and continues after about 15s.
-- The `http` role needs `PENPOT_EXPORTER_ROLES=http`. Default is gone once the HTTP deletion task lands; the scheduler config keys (`PENPOT_EXPORTER_MAX_CONCURRENT_JOBS` and friends) belong to this surface.
-
-## Worker (consumer of the jobs substrate)
-
-- Roles: `PENPOT_EXPORTER_ROLES` selects `http` and/or `worker`; **default is `worker`** (consumer-only process, no HTTP server to preserve): `app.consumer.config`, all accessors read live config.
-- `worker` boots K pollers (`app.consumer.worker`): one Redis connection per poller (connection = slot + backpressure), BLPOP on `penpot.worker.queue:<tenant>:exporter`, payload `[job-id scheduled-at]` JSON; corrupt payload warns and drops, dead Redis delays 1s and retries. `K = PENPOT_EXPORTER_WORKER_CONCURRENCY` default 2, floor 1; replicas × K is the total concurrency. Pollers start after pools in `core.cljs` and stop before redis in the shutdown.
+- Main thread boots pools + K pollers (`core.cljs`): browser pool, wasm pool, temp-file cleaner (`jobs.utils/init`), then `consumer.worker/start!`. Shutdown: browser → wasm pool → pollers → done (the pollers own their connections; the pools unwind while an export is still in flight).
+- K pollers (`app.consumer.worker`): one Redis connection per poller (connection = slot + backpressure), BLPOP on `penpot.worker.queue:<tenant>:exporter`, payload `[job-id scheduled-at]` JSON; corrupt payload warns and drops, dead Redis delays 1s and retries. `K = PENPOT_EXPORTER_WORKER_CONCURRENCY` default 2, floor 1; replicas × K is the total concurrency. Pools size themselves to K (`browser` and `wasm.pool` read `ccfg/concurrency`); there is no independent pool-max config anymore, only `:wasm-worker-pool-min`.
 - Management client (`app.consumer.api`): claim/progress/create-job-session/complete-job (JSON and multipart via undici FormData)/fail-job, POST to `<internal-uri>/api/management/methods/<method>` with `X-Shared-Key: exporter <key>` (key = `PENPOT_EXPORTER_SHARED_KEY` or HKDF-derived from the secret); transit bodies, non-2xx errors carry `:status` and the error body.
-- Runner (`app.consumer.exports`, `run-export!`): mints a render session (`create-job-session`), plans via `make-plan` (single → artifact of its type; multi → zip; frames → pdf via pdfunite), settles via `complete-job-with-artifact` multipart or `fail-job`; the settle never rejects.
+- Runner (`app.consumer.exports`, `run-export!`): mints a render session (`create-job-session`), plans via `make-plan` (single → artifact of its type; multi → zip; frames → pdf via pdfunite), settles via `complete-job-with-artifact` multipart or `fail-job`; the settle never rejects. `app.consumer.plan` holds the render-plan pieces (name transducers, partition of 50, grouping by `[scale type]`).
 - Beats: per-object milestones `:preparing/:rendering/:packaging` with `objects`/`pages` counters, throttled at 250ms; a watchdog repeats the last milestone every 1s.
-- Cancellation: a `skip` answer on any beat means the row is terminal (cancelled, aborted, settled). The runner raises `:job-cancelled` between units of work; mid-Skia the watchdog fires the local port once (`jobs/mark-cancelled`: flag + SharedArrayBuffer + terminate callbacks registered by `renderer.wasm/with-scope`), killing the leased worker thread. The runner owns the local registry entry via `jobs/register!` and releases it on settle.
-- The legacy job machinery (`app.jobs`, scheduler, store) only serves the `http` surfaces plus the local cancel arm; the worker reuses pools and `job.utils/track!/release!` for temp files.
-
-## Export batching and async behavior
-
-- `prepare-exports` groups entries by `[scale type]` and partitions groups into chunks of 50. Each partition uses file/page/share/name from its first item, so be careful if entries might cross those boundaries.
-- Single-export response is used only when multiple export is not forced and there is exactly one prepared export containing exactly one object.
-- Multi-object export can run async: when `wait` is false it returns a resource immediately and publishes progress/end/error to Redis by profile topic; when `wait` is true it waits for upload and returns the uploaded resource.
-- Frame export returns a resource immediately and publishes Redis updates; it does not follow the same `wait` option path.
-- ZIP entry names are sanitized and duplicates receive numeric suffixes.
+- Cancellation: a `skip` answer on any beat means the row is terminal (cancelled, aborted, settled). The runner raises `:job-cancelled` between units of work; mid-Skia the watchdog fires the local port once (`jobs/mark-cancelled`: flag + terminal local record + SharedArrayBuffer + terminate callbacks registered by `renderer.wasm/with-scope`), killing the leased worker thread. The runner owns the local registry entry via `jobs/register!` and releases it on settle.
+- `app.jobs` is the **local cancel arm only**: a runtime registry keyed by job-id (`register!`, `mark-cancelled`, `cancel-signal`, `on-cancel`, `cancelled?`, `release!`). `mark-cancelled` marks the local record terminal BEFORE the callbacks run and returns true/nil (marked-now / no-op for unowned or settled). No redis writes.
+- Temp files: `app.jobs.utils/track!`/`release!` per job id; a boot-time clean drops what a previous process left (aged `:exporter-job-ttl`). After the deletion there is no redis-side store, cancel topic or abandoned-job sweep: an unclaimed-in-time row goes `aborted` by the backend's own lease GC.
 
 ## Render details
 
+- Headless engines (wasm/Skia) lease one render worker for the whole run (`rd/with-scope`); browser renders go one DOM page per partition of 50.
+- Each export gets a fresh Playwright browser context. On success the context closes and the browser returns to the pool; on error the browser is destroyed instead of reused. Borrow validates the connection; pool acquire timeout about 10s; font loading timeout logs a warning and continues after about 15s.
 - Bitmap export differs for WASM vs non-WASM render paths: WASM forces Playwright `deviceScaleFactor` to 1 and passes scale through the render URL; non-WASM uses `deviceScaleFactor = scale`.
 - WebP is produced by taking a PNG screenshot and converting it with ImageMagick.
 - SVG export rasterizes text foreignObjects to PNG, converts through PPM/color masks/potrace, and reassembles SVG paths. It also replaces non-breaking spaces for SVG compatibility and drops empty defs/paths.
 - PDF export injects `@page` sizing through raw browser `evaluate` JavaScript; that code cannot rely on CLJS runtime helpers.
-- Temporary resources schedule local deletion, then uploads POST to `/api/management/methods/upload-tempfile` with `X-Shared-Key: exporter <management-key>` and Bearer auth.
+- ZIP entry names are sanitized (`plan/sanitize-file-regex`) and duplicates receive numeric suffixes.
+
+## On the render engines (do not lose in refactors)
+
+- The wasm engines run on worker threads; the Skia wasm bundle needs
+  `../render-wasm/build export` to generate `src/app/wasm/shared.js` before
+  compiling.
+- A render thread cannot read a flag: the cancel reaches it through the
+  SharedArrayBuffer signal, and a render that never answers is killed by the
+  terminate watchdog of `app.wasm.pool` (the same mechanism a hard cancel
+  rides on).
+- `core.cljs` decides what boots by thread: the main thread consumes the
+  queue, a render worker (`wasm.worker/main`) renders.

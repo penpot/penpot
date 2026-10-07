@@ -5,49 +5,17 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.consumer.config
-  "The roles of the exporter process.
-
-  `PENPOT_EXPORTER_ROLES` names the roles the process serves: `http`
-  serves the surfaces the exporter used to serve (gone once the
-  deletion task lands), `worker` consumes the backend `:exporter`
-  queue. The default is `worker`: the exporter is a consumer's process,
-  and no surface of it needs to be preserved. The worker pieces never
-  read these values at import time: each accessor reads the live
-  configuration, so a long-lived process can be restarted with another
-  role without code changes."
+  "The knobs of the consumer: how many jobs run at once and which
+  queue they come from. Read live, so a long-lived process obeys a
+  configuration change on the next poll."
   (:require
    [app.config :as cf]
-   [cljs.core :as c]
-   [cuerdas.core :as str]))
+   [cljs.core :as c]))
 
 (def queue-name
   "The queue this worker consumes: the one the `:export-assets` job-def
   routes its jobs to through `::jobs/queue-name`."
   "exporter")
-
-(defn- scan-roles
-  [spec]
-  (->> (if (string? spec)
-         (str/split spec ",")
-         spec)
-       (map str/trim)
-       (remove str/blank?)
-       (map keyword)
-       (into #{})))
-
-(defn roles
-  "The set of roles this instance serves, as keywords."
-  ([] (roles (cf/get :exporter-roles)))
-  ([spec]
-   (if (nil? spec)
-     #{:worker}
-     (scan-roles spec))))
-
-(defn worker-enabled?
-  "True when this instance also consumes the exporter queue."
-  ([] (contains? (roles) :worker))
-  ([roles]
-   (contains? roles :worker)))
 
 (defn concurrency
   "K pollers: each one owns its Redis connection, and the blocking
