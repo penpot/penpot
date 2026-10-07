@@ -902,15 +902,11 @@ export interface PenpotMgmt {
  * Represents the context of Penpot, providing access to various Penpot functionalities and data.
  */
 export interface Context {
-  readonly management?: Pick<
-    PenpotMgmt,
-    | 'workspace'
-    | 'openFile'
-    | 'listProjects'
-    | 'listFiles'
-    | 'createProject'
-    | 'createFile'
-  >;
+  /**
+   * Backs `penpotMgmt`. Its events go through the plugin listener registry,
+   * so `on` and `off` are not part of it.
+   */
+  readonly management?: Omit<PenpotMgmt, 'on' | 'off'>;
   /**
    * Returns the current penpot version.
    */

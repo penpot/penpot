@@ -8,8 +8,6 @@ interface McpOptions {
 
 declare global {
     const mcp: undefined | McpOptions;
-    /** management API; only exposed to plugins running with global scope */
-    const penpotMgmt: undefined | null | import("../../../../plugins/libs/plugin-types").PenpotMgmt;
 }
 
 export {};

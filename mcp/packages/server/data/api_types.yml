@@ -5302,15 +5302,7 @@ Context:
 
     ```
     interface Context {
-        management?: Pick<
-            PenpotMgmt,
-            "workspace"
-            | "openFile"
-            | "listProjects"
-            | "listFiles"
-            | "createProject"
-            | "createFile",
-        >;
+        management?: Omit<PenpotMgmt, "on" | "off">;
         version: string;
         root: Shape | null;
         currentFile: File | null;
@@ -5384,16 +5376,11 @@ Context:
     Properties:
       management: |-
         ```
-        readonly management?: Pick<
-            PenpotMgmt,
-            "workspace"
-            | "openFile"
-            | "listProjects"
-            | "listFiles"
-            | "createProject"
-            | "createFile",
-        >
+        readonly management?: Omit<PenpotMgmt, "on" | "off">
         ```
+
+        Backs `penpotMgmt`. Its events go through the plugin listener registry,
+        so `on` and `off` are not part of it.
       version: |-
         ```
         readonly version: string

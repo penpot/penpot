@@ -216,7 +216,7 @@ describe('plugin-loader', () => {
         pluginId: 'background-plugin',
         allowBackground: true,
       },
-    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
 
     vi.mocked(createPlugin).mockResolvedValue(backgroundPluginApi);
     await loadPlugin(manifest);

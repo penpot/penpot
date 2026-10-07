@@ -2,6 +2,7 @@ import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 import { formatTaskError } from "./ErrorUtils";
 import type { PluginConnectionInit } from "../../common/src";
+import type { WorkspaceContext } from "@penpot/plugin-types";
 
 /**
  * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
@@ -102,7 +103,7 @@ penpot.ui.onMessage<
  * Provides the workspace metadata of this tab.
  * Without the management API, the metadata is derived from the open file.
  */
-function currentWorkspace(): NonNullable<typeof penpotMgmt>["workspace"] {
+function currentWorkspace(): WorkspaceContext {
     if (management) {
         return management.workspace;
     }
