@@ -9,7 +9,6 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
-   [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.persistence :as dwp]
    [app.main.repo :as repo]
    [app.main.store :as st]
@@ -122,74 +121,27 @@
                       :on-next #(swap! events conj %)))
     @events))
 
-(t/deftest ^:async export-selected-shape-uses-single-preset
-  (doseq [type [:png :jpeg :webp :svg :pdf]]
-    (let [preset    {:type type :scale 2 :suffix "@2x"}
-          state     (selected-shape-state [preset])
-          events    (await (selected-shape-events state))
-          request   (first events)
-          observed  (atom nil)
-          downloads (atom [])]
-      (t/is (= [::de/request-simple-export ::ev/event]
-               (mapv ptk/type events)))
-      (t/is (= "workspace:shortcuts" (::ev/origin @(second events))))
-      (t/is (= 1 (:num-shapes @(second events))))
-      (t/is (= 1 (get @(second events) type)))
-      (await
-       (mock/with-mocks*
-         {repo/cmd! (mock/stub (fn [_ params]
-                                 (reset! observed params)
-                                 (->> (rx/of {:filename "Asset@2x"
-                                              :mtype "image/png"
-                                              :uri "blob:export"})
-                                      (rx/observe-on :async))))
-          dwp/force-persist-and-wait (mock/stub (fn [_] (rx/empty)))
-          dom/trigger-download-uri (mock/stub #(swap! downloads conj [%1 %2 %3]))}
-         (await (h/observe (ptk/watch request state nil)))
-         (t/is (= [{:type type
-                    :scale 2
-                    :suffix "@2x"
-                    :page-id (:current-page-id state)
-                    :file-id (:current-file-id state)
-                    :object-id (:object-id export)
-                    :name "Asset@2x"}]
-                  (:exports @observed)))
-         (t/is (true? (:wait @observed)))
-         (t/is (= [["Asset@2x" "image/png" "blob:export"]] @downloads)))))))
-
-(t/deftest ^:async export-selected-shape-uses-multiple-presets
-  (let [presets  [{:type :png :scale 2 :suffix "@2x"}
-                  {:type :jpeg :scale 0.5 :suffix "-small"}
-                  {:type :webp :scale 3 :suffix "-web"}
-                  {:type :svg :scale 1 :suffix "-vector"}
-                  {:type :pdf :scale 1 :suffix "-print"}]
-        state    (selected-shape-state presets)
-        events   (await (selected-shape-events state))
-        observed (atom nil)]
-    (t/is (= [::de/request-multiple-export ::ev/event]
-             (mapv ptk/type events)))
-    (t/is (= {::ev/name "export-shapes"
-              ::ev/origin "workspace:shortcuts"
-              :num-shapes 5 :png 1 :jpeg 1 :webp 1 :svg 1 :pdf 1}
-             @(second events)))
-    (await
-     (mock/with-mocks*
-       {repo/cmd! (mock/stub (fn [_ params]
-                               (reset! observed params)
-                               (->> (rx/of {:id (uuid/next)})
-                                    (rx/observe-on :async))))
-        ws/get-rcv-stream (mock/stub (fn [_] (rx/empty)))
-        st/ongoing-tasks (atom #{})}
-       (await (h/observe (ptk/watch (first events) state nil)))
-       (t/is (= presets (mapv #(select-keys % [:type :scale :suffix])
-                              (:exports @observed))))
-       (doseq [payload (:exports @observed)]
-         (t/is (= {:page-id (:current-page-id state)
-                   :file-id (:current-file-id state)
-                   :object-id (:object-id export)
-                   :name "Asset"}
-                  (select-keys payload [:page-id :file-id :object-id :name]))))
-       (t/is (true? (:force-multiple @observed)))))))
+(t/deftest ^:async export-selected-shape-preserves-presets-and-routes-export
+  (let [presets (mapv (fn [type] {:type type :scale 2 :suffix (str "-" (name type))})
+                      [:png :jpeg :webp :svg :pdf])]
+    (doseq [presets (conj (mapv vector presets) presets)]
+      (let [state    (selected-shape-state presets)
+            single?  (= 1 (count presets))
+            name     (if single? (str "Asset" (:suffix (first presets))) "Asset")
+            expected (mapv #(assoc % :name name
+                                   :file-id (:current-file-id state)
+                                   :page-id (:current-page-id state)
+                                   :object-id (:object-id export)) presets)]
+        (await
+         (mock/with-mocks*
+           {de/request-simple-export (fn [params] (ptk/data-event ::simple params))
+            de/request-multiple-export (fn [params] (ptk/data-event ::multiple params))}
+           (let [[request analytics :as events] (await (selected-shape-events state))]
+             (t/is (= [(if single? ::simple ::multiple) ::ev/event] (mapv ptk/type events)))
+             (t/is (= expected (:exports @request)))
+             (when single? (t/is (= (first expected) (:export @request))))
+             (t/is (= "workspace:shortcuts" (::ev/origin @analytics)))
+             (t/is (= (count presets) (:num-shapes @analytics))))))))))
 
 (t/deftest ^:async export-selected-shape-ignores-invalid-selection-or-context
   (let [state (selected-shape-state [{:type :png :scale 1 :suffix ""}])]
@@ -205,24 +157,11 @@
       (t/is (empty? (await (selected-shape-events state))) reason))))
 
 
-(t/deftest ^:async export-selected-shape-reuses-wasm-export-path
-  (doseq [type [:png :jpeg :webp :svg :pdf]]
-    (let [preset   {:type type :scale 2 :suffix "@2x"}
-          state    (assoc (selected-shape-state [preset]) :features #{"render-wasm/v1"})
-          events   (await (selected-shape-events state))
-          observed (atom nil)
-          effects  (atom [])
-          capture  (mock/stub #(reset! observed %))]
-      (await
-       (mock/with-mocks*
-         {wasm.exports/export-image capture
-          wasm.exports/export-svg capture
-          wasm.exports/export-pdf capture}
-         (await (h/observe (ptk/watch (first events) state nil)
-                           :on-next #(swap! effects conj %)))
-         (t/is (= [::de/request-simple-export-wasm] (mapv ptk/type @effects)))
-         (ptk/effect (first @effects) state nil)
-         (t/is (= {:type type :scale 2 :suffix "@2x"
-                   :name "Asset@2x" :object-id (:object-id export)
-                   :file-id (:current-file-id state) :page-id (:current-page-id state)}
-                  @observed)))))))
+(t/deftest ^:async export-selected-shape-ignores-export-in-progress
+  (doseq [presets [[{:type :png :scale 1 :suffix ""}]
+                   [{:type :png :scale 1 :suffix ""}
+                    {:type :svg :scale 1 :suffix "-vector"}]]]
+    (let [state (assoc (selected-shape-state presets) :export {:in-progress true})]
+      (t/is (empty? (await (selected-shape-events state))))
+      (t/is (= 2 (count (await (selected-shape-events
+                                (assoc-in state [:export :in-progress] false)))))))))

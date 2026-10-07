@@ -434,7 +434,8 @@
             shape    (when (= 1 (count selected))
                        (dsh/lookup-shape state (first selected)))
             presets  (:exports shape)]
-        (if (and file-id page-id (seq presets))
+        (if (and file-id page-id (seq presets)
+                 (not (get-in state [:export :in-progress])))
           (let [suffix   (:suffix (first presets))
                 name     (cond-> (:name shape)
                            (and (= 1 (count presets)) (some? suffix))
