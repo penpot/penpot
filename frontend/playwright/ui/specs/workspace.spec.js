@@ -171,8 +171,8 @@ test("Selection size badge shows dimensions for path shapes", async ({ page }) =
   // Workaround: hover viewport first to avoid nil mouse position crash
   await workspacePage.viewport.hover();
 
-  // Draw a path with two segments; a single straight segment shows
-  // endpoint controls instead of the size badge
+  // Draw a path with two segments; a single straight segment places
+  // the size badge along the line instead
   await workspacePage.pathButton.click();
   await workspacePage.clickAt(779, 163);
   await workspacePage.clickAt(951, 258);
@@ -189,7 +189,7 @@ test("Selection size badge shows dimensions for path shapes", async ({ page }) =
   await expect(badgeText).toHaveText(/\d+\.?\d* x \d+\.?\d*/);
 });
 
-test("Selection size badge is hidden for straight line paths", async ({
+test("Selection size badge runs along straight line paths", async ({
   page,
 }) => {
   const workspacePage = new WasmWorkspacePage(page);
@@ -204,7 +204,7 @@ test("Selection size badge is hidden for straight line paths", async ({
   // Workaround: hover viewport first to avoid nil mouse position crash
   await workspacePage.viewport.hover();
 
-  // Draw a path with a single straight segment
+  // Draw a path with a single straight segment, going down to the right
   await workspacePage.pathButton.click();
   await workspacePage.clickAt(779, 163);
   await workspacePage.clickAt(951, 258);
@@ -216,7 +216,16 @@ test("Selection size badge is hidden for straight line paths", async ({
   await page.keyboard.press("Escape");
 
   await expect(page.locator(".line-controls")).toBeVisible();
-  await expect(page.locator(".selection-size-badge")).toHaveCount(0);
+
+  // A straight line shows its length, with two decimals at most
+  const badge = page.locator(".selection-size-badge");
+  await expect(badge.locator("text")).toHaveText(/^\d+(\.\d{1,2})?$/);
+
+  // The badge follows the line angle, about 29 degrees
+  const transform = await badge.getAttribute("transform");
+  const rotation = Number(transform.match(/rotate\(([^)]+)\)/)[1]);
+  expect(rotation).toBeGreaterThan(20);
+  expect(rotation).toBeLessThan(40);
 });
 
 test("User makes a group", async ({ page }) => {
