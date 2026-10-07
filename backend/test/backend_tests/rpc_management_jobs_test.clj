@@ -11,10 +11,13 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.session :as session]
    [app.jobs :as jobs]
    [app.metrics :as-alias mtx]
+   [app.setup :as-alias setup]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
 
@@ -32,7 +35,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- mk-job
-  [{:keys [name status params scheduled-at]
+  [{:keys [name status params scheduled-at profile-id]
     :or   {name "media-process"
            status "new"
            params {:x 1}
@@ -47,9 +50,10 @@
                          :max-retries   3
                          :retry-num     0
                          :status        status
+                         :profile-id    profile-id
                          :scheduled-at  scheduled-at
                          :created-at    (ct/now)
-                         :modified-at   (ct/now)})
+                         :modified-at    (ct/now)})
     id))
 
 (defn- get-row
@@ -79,6 +83,21 @@
 (defn- mgmt
   [type params]
   (th/management-command! (assoc params ::th/type type)))
+
+(defn- mk-profile
+  ([] (mk-profile 1))
+  ([i]
+   ;; the created profile is inactive until the email is verified, and
+   ;; a session can only be minted for an owner the login would accept
+   (th/create-profile* i {:is-active true})))
+
+(defn- get-session-row
+  [id]
+  (th/db-get :http-session-v2 {:id id}))
+
+(defn- decode-token
+  [token]
+  (session/decode-token {::setup/props (get th/*system* :app.setup/props)} token))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TESTS
@@ -421,3 +440,110 @@
                                :attempt 3})]
         (t/is (nil? (:error out)))
         (t/is (= 3 (:attempt (jobs/decode-job-error (:error (get-row job-id))))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CREATE-JOB-SESSION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest create-job-session-mints-a-session-of-the-owner
+  (let [profile (mk-profile)
+        job-id  (mk-job {:status     "running"
+                         :profile-id (:id profile)})
+        out     (mgmt :create-job-session {:job-id job-id})
+        result  (:result out)]
+
+    (t/is (nil? (:error out)))
+
+    (t/testing "the answer is a real session of the job owner"
+      (t/is (uuid? (:session-id result)))
+      (t/is (string? (:session-token result)))
+      (let [row (get-session-row (:session-id result))]
+        (t/is (some? row))
+        (t/is (= (:id profile) (:profile-id row)))))
+
+    (t/testing "the token verifies and names the session and its owner"
+      (let [claims (decode-token (:session-token result))]
+        (t/is (some? claims))
+        (t/is (= (:session-id result) (:sid claims)))
+        (t/is (= (:id profile) (:uid claims)))
+        ;; the short :exp of a job session: at most an hour by default,
+        ;; never the absolute max-age of a login session
+        (t/is (pos? (- (inst-ms (:exp claims)) (inst-ms (ct/now)))))
+        (t/is (pos? (compare (ct/plus (ct/now) (ct/duration {:hours 1}))
+                             (:exp claims))))))))
+
+(t/deftest create-job-session-honours-the-configured-ttl
+  (with-mocks [mock {:target 'app.config/get-job-session-ttl
+                     :return (ct/duration {:minutes 5})}]
+    (let [profile (mk-profile)
+          job-id  (mk-job {:status     "running"
+                           :profile-id (:id profile)})
+          out     (mgmt :create-job-session {:job-id job-id})
+          claims  (decode-token (get-in out [:result :session-token]))]
+      (t/is (nil? (:error out)))
+      (t/is (pos? (- (inst-ms (:exp claims)) (inst-ms (ct/now)))))
+      (t/is (pos? (compare (ct/plus (ct/now) (ct/duration {:minutes 5}))
+                           (:exp claims)))))))
+
+(t/deftest create-job-session-mints-a-fresh-session-every-call
+  ;; every call is self-contained: a worker retry never waits on a
+  ;; session that a settle may already have closed
+  (let [profile (mk-profile)
+        job-id  (mk-job {:status     "running"
+                         :profile-id (:id profile)})
+        first   (mgmt :create-job-session {:job-id job-id})
+        second  (mgmt :create-job-session {:job-id job-id})]
+    (t/is (nil? (:error first)))
+    (t/is (nil? (:error second)))
+    (t/is (not= (get-in first [:result :session-id])
+                (get-in second [:result :session-id])))))
+
+(t/deftest create-job-session-refuses-a-job-that-is-not-running
+  (let [profile (mk-profile)]
+    (doseq [status ["new" "scheduled" "completed" "failed" "cancelled" "aborted"]]
+      (let [job-id (mk-job {:status status :profile-id (:id profile)})
+            out    (mgmt :create-job-session {:job-id job-id})]
+        (t/is (some? (:error out)))
+        (t/is (= :validation (th/ex-type (:error out))))
+        (t/is (= :invalid-job-state (th/ex-code (:error out))))
+        (t/testing "and no session was minted"
+          (t/is (zero? (count (th/db-exec! ["SELECT id FROM http_session_v2"])))))))))
+
+(t/deftest create-job-session-refuses-an-unknown-job
+  (let [out (mgmt :create-job-session {:job-id (uuid/next)})]
+    (t/is (some? (:error out)))
+    (t/is (= :not-found (th/ex-type (:error out))))
+    (t/is (= :job-not-found (th/ex-code (:error out))))))
+
+(t/deftest create-job-session-refuses-a-job-without-owner
+  (let [job-id (mk-job {:status "running"})
+        out    (mgmt :create-job-session {:job-id job-id})]
+    (t/is (some? (:error out)))
+    (t/is (= :validation (th/ex-type (:error out))))
+    (t/is (= :job-without-profile (th/ex-code (:error out))))))
+
+(t/deftest create-job-session-refuses-an-owner-the-login-would-refuse
+  (let [profile (mk-profile)
+        job-id  (mk-job {:status     "running"
+                         :profile-id (:id profile)})]
+
+    (t/testing "a blocked owner is a restriction, not a fault"
+      (th/db-update! :profile {:is-blocked true} {:id (:id profile)})
+      (let [out (mgmt :create-job-session {:job-id job-id})]
+        (t/is (= :restriction (th/ex-type (:error out))))
+        (t/is (= :profile-blocked (th/ex-code (:error out))))))
+
+    (t/testing "an inactive owner is refused like the login does"
+      (th/db-update! :profile {:is-blocked false :is-active false} {:id (:id profile)})
+      (let [out (mgmt :create-job-session {:job-id job-id})]
+        (t/is (= :validation (th/ex-type (:error out))))
+        (t/is (= :profile-not-active (th/ex-code (:error out)))))))
+
+  (t/testing "a deleted owner does not exist"
+    (let [profile (mk-profile 2)
+          job-id  (mk-job {:status     "running"
+                           :profile-id (:id profile)})]
+      (th/db-update! :profile {:deleted-at (ct/now)} {:id (:id profile)})
+      (let [out (mgmt :create-job-session {:job-id job-id})]
+        (t/is (= :not-found (th/ex-type (:error out))))
+        (t/is (= :profile-not-found (th/ex-code (:error out))))))))
