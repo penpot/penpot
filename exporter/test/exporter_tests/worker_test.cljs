@@ -76,18 +76,22 @@
 
 (defn- fake-render!
   "Installs a fake renderer that writes one file of `content` per
-  object and calls back with it. Returns the restore thunk."
-  [content]
-  (let [original rd/render]
-    (set! rd/render
-          (fn [_params on-object]
-            (p/let [rendered-path (sh/tempfile :prefix "penpot.render."
-                                               :suffix ".png")
-                    _             (fsp/writeFile rendered-path content)]
-              (on-object {:path     rendered-path
-                          :filename "rendered.png"})
-              (p/resolved nil))))
-    (fn [] (set! rd/render original))))
+  object and calls back with it. When `captured` is an atom, it also
+  keeps the params of the last render. Returns the restore thunk."
+  ([content] (fake-render! content nil))
+  ([content captured]
+   (let [original rd/render]
+     (set! rd/render
+           (fn [params on-object]
+             (when (some? captured)
+               (reset! captured params))
+             (p/let [rendered-path (sh/tempfile :prefix "penpot.render."
+                                                :suffix ".png")
+                     _             (fsp/writeFile rendered-path content)]
+               (on-object {:path     rendered-path
+                           :filename "rendered.png"})
+               (p/resolved nil))))
+     (fn [] (set! rd/render original)))))
 
 (defn- fake-render-fail!
   "A renderer that always fails: the failure path of the run."
@@ -161,6 +165,42 @@
 
   (t/testing "a corrupt payload is dropped, not thrown at the loop"
     (t/is (nil? (worker/read-payload! "{not a payload")))))
+
+(t/deftest process-hands-the-renderer-uuids-not-claim-strings
+  ;; the claim carries the job row JSON: every id a string. The render
+  ;; spec wants uuid objects (and a nil job-id never renders), so the
+  ;; run parses them before the first render.
+  (t/async done
+    (let [job-id   (uuid/next)
+          sid      (uuid/next)
+          share-id (uuid/next)
+          params   {:exports [{:file-id   (str (uuid/next))
+                               :page-id   (str (uuid/next))
+                               :object-id (str (uuid/next))
+                               :share-id  (str share-id)
+                               :type      "png"
+                               :name      "test shape"
+                               :suffix    ""
+                               :scale     1}]
+                    :name "the export"}
+          stages   (volatile! [])
+          captured (atom nil)
+          respond! (fake-fetch! (answer-with params sid stages))
+          restore! (fake-render! "rendered!" captured)]
+      (p/let [_ (worker/process! {:job-id      (str job-id)
+                                  :scheduled-at "2026-10-07T09:00:00Z"})]
+        (let [render-params @captured]
+          (t/testing "every id arrived as a uuid object"
+            (t/is (uuid? (:file-id render-params)))
+            (t/is (uuid? (:page-id render-params)))
+            (t/is (uuid? (:share-id render-params)))
+            (t/is (= share-id (:share-id render-params)))
+            (t/is (uuid? (-> render-params :objects first :id))))
+          (t/testing "and the job-id traveled with the render"
+            (t/is (= job-id (:job-id render-params)))))
+        (respond!)
+        (restore!)
+        (done)))))
 
 (t/deftest poll-once-awaits-what-it-claims
   (t/async done

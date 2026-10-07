@@ -31,6 +31,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.uuid :as uuid]
    [app.consumer.api :as api]
    [app.consumer.plan :as plan]
    [app.handlers.resources :as rsc]
@@ -121,24 +122,37 @@
   [item]
   (nil? (:type item)))
 
+(defn- ->uuid
+  "One id of the claim into what the renderer wants: the claim carries
+  the job row JSON, every id a string, while the render spec only
+  takes uuid objects. Values that already are uuids (tests, callers in
+  process) pass through."
+  [v]
+  (if (string? v) (uuid/uuid v) v))
+
 (defn- normalize-items
   "The items the claim delivered are the plain JSON the job row holds:
   the type arrives as text and the renderer dispatches on the keywords
-  the legacy surface received. The frames items are pages, not typed
+  the legacy surface received; every id arrives as text and the render
+  spec only takes uuid objects. The frames items are pages, not typed
   shapes: they name the pdf of a page each."
   [items]
   (->> items
        (mapv (fn [item]
                (cond-> item
-                 (string? (:type item)) (update :type keyword)
-                 (nil? (:type item))    (assoc :type :pdf :scale 1 :suffix ""))))))
+                 (string? (:type item))      (update :type keyword)
+                 (string? (:file-id item))   (update :file-id ->uuid)
+                 (string? (:page-id item))   (update :page-id ->uuid)
+                 (string? (:object-id item)) (update :object-id ->uuid)
+                 (string? (:share-id item))  (update :share-id ->uuid)
+                 (nil? (:type item))         (assoc :type :pdf :scale 1 :suffix ""))))))
 
 (defn- make-plan
   "The render plan the legacy handlers prepare: the same transducers of
   names and partition size they served the old surface with, the same
   `single?` rule (one prepared export with one object, not forced),
   and the artifact the whole run fills."
-  [token {:keys [exports force-multiple name skip-children is-wasm]}]
+  [job-id token {:keys [exports force-multiple name skip-children is-wasm]}]
   (let [items     (normalize-items exports)
         frames?   (boolean (every? frame-item? items))
         prepared  (plan/prepare-exports items token is-wasm)
@@ -152,6 +166,7 @@
                     :else   :zip)]
     {:frames?       frames?
      :single?       single?
+     :job-id        (->uuid job-id)
      :prepared      prepared
      :total         (plan/count-objects prepared)
      :skip-children skip-children
@@ -342,7 +357,7 @@
              beats!   (:beat! beats)
              stop!    (with-watchdog! beats! (:last beats))
              _        (check-beat! (beats! :preparing {} :force? true))
-             plan      (make-plan token params)
+             plan      (make-plan job-id token params)
              resource  (run-prepared! beats! cancelled plan)
              _         (stop!)
              artifact  {:path     (str (:path resource))

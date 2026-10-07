@@ -65,14 +65,16 @@
                         group)))
 
           (build-render [[part1 :as part]]
-            {:file-id (:file-id part1)
-             :page-id (:page-id part1)
-             :share-id (:share-id part1)
-             :name    (:name part1)
-             :token   token
-             :type    (:type part1)
-             :scale   (:scale part1)
-             :objects (mapv part-entry->object part)})
+            (cond-> {:file-id (:file-id part1)
+                     :page-id (:page-id part1)
+                     :name    (:name part1)
+                     :token   token
+                     :type    (:type part1)
+                     :scale   (:scale part1)
+                     :objects (mapv part-entry->object part)}
+              ;; a nil share-id is not an absent one for the render
+              ;; spec: only name it when the item came through one
+              (some? (:share-id part1)) (assoc :share-id (:share-id part1))))
 
           (part-entry->object [entry]
             {:id (:object-id entry)
