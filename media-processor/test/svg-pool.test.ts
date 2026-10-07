@@ -129,6 +129,67 @@ describe("svg pool: worker failure", () => {
     expect(err.errorBody.code).toBe("svg-worker-exited");
     expect(created).toHaveLength(2);
   });
+
+  it("rejects a malformed worker message instead of crashing", async () => {
+    installFakeFactory();
+    configureSvgPool({ workers: 1, maxOldGenerationSizeMb: 512, timeout: 1000 });
+
+    const job = runInSvgPool("<svg/>");
+    created[0].reply(null);
+
+    const err = await rejection(job);
+    expect(err.statusCode).toBe(503);
+    expect(err.errorBody.code).toBe("svg-worker-failed");
+    expect(created).toHaveLength(2);
+  });
+
+  it("rejects a non-object worker message instead of crashing", async () => {
+    installFakeFactory();
+    configureSvgPool({ workers: 1, maxOldGenerationSizeMb: 512, timeout: 1000 });
+
+    const job = runInSvgPool("<svg/>");
+    created[0].reply(42);
+
+    const err = await rejection(job);
+    expect(err.statusCode).toBe(503);
+    expect(err.errorBody.code).toBe("svg-worker-failed");
+  });
+});
+
+describe("svg pool: spawn failure cap", () => {
+  it("stops respawning after repeated spawn failures and degrades", async () => {
+    created = [];
+    setSvgWorkerFactory(() => {
+      const worker = new FakeWorker();
+      created.push(worker);
+      // Fail asynchronously, like a worker that cannot load its entry point.
+      queueMicrotask(() => worker.emit("error", new Error("spawn failed")));
+      return worker as unknown as SvgWorker;
+    });
+    configureSvgPool({ workers: 1, maxOldGenerationSizeMb: 512, timeout: 1000 });
+
+    // Let the spawn -> error -> respawn cascade settle.
+    for (let i = 0; i < 30; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    expect(created.length).toBeLessThanOrEqual(6);
+
+    const err = await rejection(runInSvgPool("<svg/>"));
+    expect(err.statusCode).toBe(503);
+    expect(err.errorBody.code).toBe("svg-pool-degraded");
+  });
+});
+
+describe("svg pool: disabled", () => {
+  it("rejects queued work when the pool has no workers", async () => {
+    installFakeFactory();
+    configureSvgPool({ workers: 0, maxOldGenerationSizeMb: 512, timeout: 1000 });
+
+    const err = await rejection(runInSvgPool("<svg/>"));
+    expect(err.statusCode).toBe(503);
+    expect(err.errorBody.code).toBe("svg-pool-disabled");
+  });
 });
 
 describe("svg pool: timeout", () => {

@@ -5,6 +5,11 @@ import type { AppError } from "./types.js";
 
 const logger = createLogger("svg-pool");
 
+// A worker that fails before it ever answers (a missing bundle, a broken loader)
+// must not respawn forever. After this many consecutive spawn failures the slot
+// is dropped; with no workers left the pool is degraded and answers 503.
+const MAX_SPAWN_FAILURES = 5;
+
 /**
  * The slice of `worker_threads.Worker` the pool uses. Keeping it narrow lets
  * tests inject a fake worker and exercise the queue, the timeout and the
@@ -42,11 +47,13 @@ interface PoolState {
   workers: PooledWorker[];
   queue: Job[];
   stopped: boolean;
+  degraded: boolean;
 }
 
 type SvgWorkerResult = { ok: true; clean: string } | { ok: false; statusCode: number; body: AppError };
 
 let state: PoolState | null = null;
+let spawnFailures = 0;
 let createWorker: () => SvgWorker = defaultWorkerFactory;
 
 function workerUrl(): URL {
@@ -77,7 +84,8 @@ export function configureSvgPool(options: SvgPoolOptions): void {
   if (state !== null) {
     throw new Error("svg pool is already configured");
   }
-  state = { options, workers: [], queue: [], stopped: false };
+  spawnFailures = 0;
+  state = { options, workers: [], queue: [], stopped: false, degraded: false };
   for (let i = 0; i < options.workers; i++) {
     state.workers.push(spawnWorker());
   }
@@ -93,6 +101,12 @@ export function runInSvgPool(svg: string): Promise<string> {
   if (current === null || current.stopped) {
     return Promise.reject(stoppedError());
   }
+  if (current.options.workers <= 0) {
+    return Promise.reject(disabledError());
+  }
+  if (current.degraded) {
+    return Promise.reject(degradedError());
+  }
   return new Promise<string>((resolve, reject) => {
     current.queue.push({ svg, resolve, reject, timer: null });
     dispatch();
@@ -106,11 +120,10 @@ export async function shutdownSvgPool(): Promise<void> {
     return;
   }
   current.stopped = true;
+  spawnFailures = 0;
   state = null;
 
-  for (const job of current.queue.splice(0)) {
-    job.reject(stoppedError());
-  }
+  rejectQueue(current, stoppedError());
 
   const workers = current.workers;
   current.workers = [];
@@ -139,7 +152,7 @@ function spawnWorker(): PooledWorker {
 
 function dispatch(): void {
   const current = state;
-  if (current === null || current.stopped) {
+  if (current === null || current.stopped || current.degraded) {
     return;
   }
   while (current.queue.length > 0) {
@@ -158,6 +171,15 @@ function dispatch(): void {
 }
 
 function onMessage(pooled: PooledWorker, value: unknown): void {
+  if (!isWorkerResult(value)) {
+    logger.error("svg worker sent a malformed message");
+    failWorker(pooled, new ProcessingError(503, { type: "internal", code: "svg-worker-failed" }), true);
+    return;
+  }
+
+  // A well-formed answer proves the worker loaded, so the spawn streak is over.
+  spawnFailures = 0;
+
   const job = pooled.job;
   if (job === null) {
     return;
@@ -165,21 +187,20 @@ function onMessage(pooled: PooledWorker, value: unknown): void {
   clearJobTimer(job);
   pooled.job = null;
 
-  const result = value as SvgWorkerResult;
-  if (result.ok) {
-    job.resolve(result.clean);
+  if (value.ok) {
+    job.resolve(value.clean);
   } else {
-    if (result.body.code === "svg-sanitization-failed") {
+    if (value.body.code === "svg-sanitization-failed") {
       logger.error("svg worker reported an unexpected sanitization failure");
     }
-    job.reject(new ProcessingError(result.statusCode, result.body));
+    job.reject(new ProcessingError(value.statusCode, value.body));
   }
   dispatch();
 }
 
 function onWorkerError(pooled: PooledWorker, err: Error): void {
   logger.error({ err }, "svg worker error");
-  failWorker(pooled, new ProcessingError(503, { type: "internal", code: "svg-worker-failed" }));
+  failWorker(pooled, new ProcessingError(503, { type: "internal", code: "svg-worker-failed" }), true);
 }
 
 function onWorkerExit(pooled: PooledWorker, code: number): void {
@@ -187,11 +208,16 @@ function onWorkerExit(pooled: PooledWorker, code: number): void {
     return;
   }
   logger.error({ code }, "svg worker exited unexpectedly");
-  failWorker(pooled, new ProcessingError(503, { type: "internal", code: "svg-worker-exited" }));
+  failWorker(pooled, new ProcessingError(503, { type: "internal", code: "svg-worker-exited" }), true);
 }
 
-/** Reject the worker's in-flight job (if any) and replace the worker. */
-function failWorker(pooled: PooledWorker, err: ProcessingError): void {
+/**
+ * Reject the worker's in-flight job (if any) and replace the worker. When the
+ * failure is a spawn failure and the streak passes `MAX_SPAWN_FAILURES`, the
+ * slot is dropped instead of respawned; a pool left with no workers is degraded
+ * and answers 503 for every request.
+ */
+function failWorker(pooled: PooledWorker, err: ProcessingError, spawnFailure = false): void {
   if (pooled.terminating) {
     return;
   }
@@ -207,13 +233,52 @@ function failWorker(pooled: PooledWorker, err: ProcessingError): void {
   void pooled.worker.terminate().catch(() => 0);
 
   const current = state;
-  if (current !== null && !current.stopped) {
-    const index = current.workers.indexOf(pooled);
-    if (index !== -1) {
-      current.workers[index] = spawnWorker();
-    }
-    dispatch();
+  if (current === null || current.stopped) {
+    return;
   }
+
+  if (spawnFailure) {
+    spawnFailures++;
+  }
+
+  const index = current.workers.indexOf(pooled);
+  if (spawnFailure && spawnFailures > MAX_SPAWN_FAILURES) {
+    if (index !== -1) {
+      current.workers.splice(index, 1);
+    }
+    if (current.workers.length === 0) {
+      current.degraded = true;
+      logger.error("svg pool degraded: no worker could be started");
+      rejectQueue(current, degradedError());
+    }
+    return;
+  }
+
+  if (index !== -1) {
+    current.workers[index] = spawnWorker();
+  }
+  dispatch();
+}
+
+function rejectQueue(current: PoolState, err: ProcessingError): void {
+  for (const job of current.queue.splice(0)) {
+    clearJobTimer(job);
+    job.reject(err);
+  }
+}
+
+function isWorkerResult(value: unknown): value is SvgWorkerResult {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const result = value as { ok?: unknown; clean?: unknown; statusCode?: unknown; body?: unknown };
+  if (result.ok === true) {
+    return typeof result.clean === "string";
+  }
+  if (result.ok === false) {
+    return typeof result.statusCode === "number" && typeof result.body === "object" && result.body !== null;
+  }
+  return false;
 }
 
 function clearJobTimer(job: Job): void {
@@ -225,4 +290,12 @@ function clearJobTimer(job: Job): void {
 
 function stoppedError(): ProcessingError {
   return new ProcessingError(503, { type: "internal", code: "svg-pool-stopped" });
+}
+
+function degradedError(): ProcessingError {
+  return new ProcessingError(503, { type: "internal", code: "svg-pool-degraded" });
+}
+
+function disabledError(): ProcessingError {
+  return new ProcessingError(503, { type: "internal", code: "svg-pool-disabled" });
 }

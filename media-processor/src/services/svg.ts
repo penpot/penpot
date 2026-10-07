@@ -84,7 +84,7 @@ export function sanitizeSvgSync(svg: string): string {
     // is not the user's file being invalid: report it as a service failure and
     // keep the technical detail out of the hint. Inside a worker this is not
     // logged: the pool logs it on the main thread when the result comes back,
-    // so a worker never initializes the (transport-spawning) logger.
+    // so the worker never touches the logger.
     if (isMainThread) {
       logger.error({ err }, "unexpected svg sanitization failure");
     }

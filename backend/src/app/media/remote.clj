@@ -230,7 +230,7 @@
       ;; misconfigured proxy or a future endpoint change must not let a non-SVG
       ;; body be stored as `image/svg+xml`.
       (let [cleaned (str/trim (slurp body :encoding "UTF-8"))]
-        (when-not (str/starts-with? cleaned "<svg")
+        (when-not (re-find #"(?i)^<svg" cleaned)
           (ex/raise :type :internal
                     :code :invalid-sanitized-svg
                     :hint "media-processor returned a non-SVG response"))

@@ -25,6 +25,7 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
+   [cuerdas.core :as str]
    [datoteka.io :as io])
   (:import
    java.io.OutputStream))
@@ -137,7 +138,9 @@
                   (when (> size max-size)
                     (ex/raise :type :restriction
                               :code :svg-too-large
-                              :hint (str "the svg size " size " is greater than the maximum " max-size)))
+                              :hint (str/ffmt "the svg size % is greater than the maximum %"
+                                              size
+                                              max-size)))
                   (let [sanitized (media/sanitize-svg cfg content)
                         temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
                     (spit (str temp-path) sanitized)

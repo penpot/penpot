@@ -97,6 +97,12 @@ media-processor/
   pool maps that to a 503 and respawns it. A stuck job is terminated by a timeout
   and its worker respawned. Worst-case memory is roughly workers ×
   maxOldGenerationSizeMb.
+- A worker that fails before it ever answers is respawned at most
+  `MAX_SPAWN_FAILURES` (5) consecutive times; after that the slot is dropped and
+  a pool left with no workers is degraded (`svg-pool-degraded`), so a broken
+  worker cannot spin in a spawn→fail→respawn loop for the life of the process.
+  The streak resets as soon as a worker answers. A malformed worker message is
+  treated as a worker failure (`svg-worker-failed`), never trusted.
 - DOMPurify is given `USE_PROFILES: {svg: true, svgFilters: true}` and
   `NAMESPACE: "http://www.w3.org/2000/svg"`, so it parses the document as XML/SVG
   the way a browser parses a standalone `.svg`. Its default allowlist fails closed
@@ -119,7 +125,9 @@ media-processor/
   the same cap (`:media-svg-max-file-size`, `mem:backend/media-sanitization`) so
   both modes behave the same; keep the two knobs aligned.
 - Errors: `400 invalid-svg-file` (not a well-formed SVG), `413 svg-too-large`,
-  `503 svg-sanitization-failed` / `svg-timeout` / `svg-worker-failed`.
+  and 503 `svg-sanitization-failed` (internal failure), `svg-timeout`,
+  `svg-worker-failed` / `svg-worker-exited` (broken worker), `svg-pool-degraded`
+  (no worker could start) and `svg-pool-stopped` (shutdown).
 - Tests: `svg.test.ts` (service corpus, route, and the exact multipart the JVM
   backend builds) and `svg-pool.test.ts` (queue, timeout, failure/respawn with a
   fake worker). The contract test pins the wire format but does not run the JVM
