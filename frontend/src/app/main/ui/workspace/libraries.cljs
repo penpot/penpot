@@ -108,29 +108,26 @@
      :token-themes token-themes}))
 
 (defn sort-linked-libraries
-  "Given the linked libraries of a file and a map of library id to the
-  set of library ids it uses, return the libraries ordered as a tree:
-  each library is followed by the libraries nested under it, marked
-  with `:nested?` and `:parent-name`.
+  "Given the linked libraries of a file, each with a `:connected-to`
+  collection of the ids of the files that use it, return the libraries
+  ordered as a tree: each library is followed by the libraries nested
+  under it, marked with `:nested?` and `:parent-name`.
 
   Direct libraries (`:is-indirect` false) and libraries not used by
   any other linked library are roots. Every library is returned
   exactly once, at any depth and even when the dependencies form a
   cycle."
-  [libraries dependencies]
+  [libraries]
   (let [by-id        (d/index-by :id libraries)
         sort-by-name (partial sort-by (comp str/lower :name))
 
         parents
         (d/update-vals by-id
-                       (fn [{:keys [id]}]
+                       (fn [{:keys [id connected-to]}]
                          (into #{}
-                               (keep (fn [[parent-id library-ids]]
-                                       (when (and (not= parent-id id)
-                                                  (contains? by-id parent-id)
-                                                  (contains? library-ids id))
-                                         parent-id)))
-                               dependencies)))
+                               (filter #(and (not= % id)
+                                             (contains? by-id %)))
+                               connected-to)))
 
         root?
         (fn [{:keys [id is-indirect]}]
@@ -729,10 +726,10 @@
                 (keep (fn [[k v]] (when (contains? v library-id) k))))))
 
         linked-libraries
-        (mf/with-memo [linked-libraries find-connected-to dependencies]
-          (-> (->> (vals linked-libraries)
-                   (map #(assoc % :connected-to (find-connected-to (:id %)))))
-              (sort-linked-libraries dependencies)))
+        (mf/with-memo [linked-libraries find-connected-to]
+          (->> (vals linked-libraries)
+               (map #(assoc % :connected-to (find-connected-to (:id %))))
+               (sort-linked-libraries)))
 
         linked-libraries-ids
         (mf/with-memo [linked-libraries]
