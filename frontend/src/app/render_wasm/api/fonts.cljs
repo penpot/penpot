@@ -282,6 +282,17 @@
   (or (contains? @failed-font-data-keys (font-data-key font-data))
       (font-stored? font-data (:emoji? font-data))))
 
+(defn- mark-font-as-fallback!
+  [font-data]
+  (let [id-buffer (uuid/get-u32 (:wasm-id font-data))]
+    (h/call wasm/internal-module "_mark_font_as_fallback"
+            (aget id-buffer 0)
+            (aget id-buffer 1)
+            (aget id-buffer 2)
+            (aget id-buffer 3)
+            (:weight font-data)
+            (:style font-data))))
+
 (defn- store-font-id
   [font-data asset-id emoji? fallback?]
   (if asset-id
@@ -299,6 +310,8 @@
         (do
           (store-font-url font-data uri)
           (clear-font-storage-failure! font-data)
+          (when fallback?
+            (mark-font-as-fallback! font-data))
           (tm/schedule #(rx/push! font-stored-stream (font-data-key font-data))))
         (fetch-font font-data uri emoji? fallback?)))
     ;; Report missing font assets asynchronously.
