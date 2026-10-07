@@ -173,6 +173,7 @@
    [frontend-tests.ui.stroke-menu-test]
    [frontend-tests.ui.team-container-test]
    [frontend-tests.ui.text-attrs-multiple-test]
+   [frontend-tests.ui.text-options-test]
    [frontend-tests.ui.viewport-top-bar-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
@@ -380,6 +381,7 @@
    'frontend-tests.ui.stroke-menu-test
    'frontend-tests.ui.team-container-test
    'frontend-tests.ui.text-attrs-multiple-test
+   'frontend-tests.ui.text-options-test
    'frontend-tests.ui.viewport-top-bar-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test
