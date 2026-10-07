@@ -16,9 +16,12 @@
    [exporter-tests.consumer-plan-test]
    [exporter-tests.jobs-test]
    [exporter-tests.main-test]
+   [exporter-tests.renderer-browser-test]
    [exporter-tests.renderer-svg-test]
+   [exporter-tests.renderer-wasm-test]
    [exporter-tests.shell-test]
    [exporter-tests.system-test]
+   [exporter-tests.wasm-pool-service-test]
    [exporter-tests.wasm-pool-test]
    [exporter-tests.worker-test]
    [goog.object :as gobj]))
@@ -40,9 +43,12 @@
    'exporter-tests.api-test
    'exporter-tests.worker-test
    'exporter-tests.consumer-config-test
+   'exporter-tests.renderer-browser-test
    'exporter-tests.renderer-svg-test
+   'exporter-tests.renderer-wasm-test
    'exporter-tests.shell-test
    'exporter-tests.system-test
+   'exporter-tests.wasm-pool-service-test
    'exporter-tests.wasm-pool-test])
 
 (assert (every? find-ns-obj test-namespaces)
