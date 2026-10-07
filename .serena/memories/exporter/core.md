@@ -26,6 +26,12 @@ on this side: the row of the job, its cancel and its result are the backend's.
 - `app.jobs` is the **local cancel arm only**: a runtime registry keyed by job-id (`register!`, `mark-cancelled`, `cancel-signal`, `on-cancel`, `cancelled?`, `release!`). `mark-cancelled` marks the local record terminal BEFORE the callbacks run and returns true/nil (marked-now / no-op for unowned or settled). No redis writes.
 - Temp files: `app.jobs.utils/track!`/`release!` per job id; a boot-time clean drops what a previous process left (aged `:exporter-job-ttl`). After the deletion there is no redis-side store, cancel topic or abandoned-job sweep: an unclaimed-in-time row goes `aborted` by the backend's own lease GC.
 
+## Running it (devenv and deploy)
+
+- Devenv: the tmux `exporter` window (`./scripts/watch` + `wait-and-start.sh`) IS the worker now — no separate window, no role env. It needs the backend and valkey of the devenv up; `watch:app` rebuilds with the same shadow build the `main` build uses.
+- Deploy: the compose service is one `penpot-exporter` (the same image, `CMD ["node", "app.js"]`); scale by replicas, K is per process. Nginx has no `/api/export` route anymore: the frontend talks to the backend's RPC only (`create-export-assets-job`), and downloads ride `/assets/by-id/?share-id=`/auth of the job resource.
+- Useful beats while debugging: the boot log names `:workers K`; each poller logs `running job`/`job settled`; the runner logs `export job settled` with `:outcome`, and a cancel logs `job cancelled by backend` on the watchdog.
+
 ## Render details
 
 - Headless engines (wasm/Skia) lease one render worker for the whole run (`rd/with-scope`); browser renders go one DOM page per partition of 50.
