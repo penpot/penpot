@@ -226,7 +226,15 @@
                                                 :mtype    "image/svg+xml"})
         body (:body resp)]
     (try
-      (assoc params :content (slurp body :encoding "UTF-8"))
+      ;; Defense in depth: the service guarantees an `<svg` root, but a
+      ;; misconfigured proxy or a future endpoint change must not let a non-SVG
+      ;; body be stored as `image/svg+xml`.
+      (let [cleaned (str/trim (slurp body :encoding "UTF-8"))]
+        (when-not (str/starts-with? cleaned "<svg")
+          (ex/raise :type :internal
+                    :code :invalid-sanitized-svg
+                    :hint "media-processor returned a non-SVG response"))
+        (assoc params :content cleaned))
       (finally
         (.close body)))))
 

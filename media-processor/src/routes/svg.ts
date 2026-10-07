@@ -27,7 +27,7 @@ export function createSvgRoutes(): IRouter {
         }
 
         res.locals.opMeta = `size=${req.file!.size}`;
-        const clean = sanitizeSvg((await getFileBuffer(req.file!)).toString("utf8"));
+        const clean = await sanitizeSvg((await getFileBuffer(req.file!)).toString("utf8"));
 
         res.setHeader("Content-Type", "image/svg+xml");
         res.send(Buffer.from(clean, "utf8"));

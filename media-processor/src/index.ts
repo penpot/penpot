@@ -13,6 +13,7 @@ import { loggingMiddleware } from "./middleware/logging.js";
 import { configureImageLimits } from "./services/image.js";
 import { configureFontLimits } from "./services/font.js";
 import { configureSvgLimits } from "./services/svg.js";
+import { configureSvgPool, shutdownSvgPool } from "./svg-pool.js";
 import { configureUploadLimits } from "./upload.js";
 import sharp from "sharp";
 
@@ -43,6 +44,12 @@ configureFontLimits({
 
 configureSvgLimits({ maxSize: config.svgMaxSize });
 
+configureSvgPool({
+  workers: config.svgWorkers,
+  maxOldGenerationSizeMb: config.svgWorkerMaxOldMb,
+  timeout: config.svgTimeout,
+});
+
 configureUploadLimits({ maxFileSize: config.maxFileSize, memoryThreshold: config.memoryThreshold });
 
 const queueMiddleware = createQueueMiddleware(config.maxConcurrentRequests);
@@ -60,5 +67,13 @@ app.listen(config.port, config.host, () => {
   logActiveTransports(logger);
   logger.info(`media-processor listening on ${config.host}:${config.port}`);
 });
+
+// Terminate the SVG workers on shutdown so in-flight sanitizations fail fast
+// instead of keeping the pool's timers alive until the process dies.
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.on(signal, () => {
+    void shutdownSvgPool().finally(() => process.exit(0));
+  });
+}
 
 export { app };

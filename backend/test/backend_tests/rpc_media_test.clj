@@ -1238,6 +1238,51 @@
               (t/is (= served stored))
               (t/is (= 1 (:call-count @mock))))))))))
 
+(def ^:private big-upload-svg
+  (str "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\">"
+       (apply str (repeat 90000 "<rect width=\"1\" height=\"1\"/>"))
+       "</svg>"))
+
+(t/deftest upload-svg-over-cap-is-rejected
+  (t/testing "an SVG over the svg cap is rejected on upload"
+    (let [prof (th/create-profile* 1)
+          file (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+          path (write-svg-tempfile big-upload-svg)
+          out  (th/command! {::th/type :upload-file-media-object
+                             ::rpc/profile-id (:id prof)
+                             :file-id (:id file)
+                             :is-local true
+                             :name "big.svg"
+                             :content {:filename "big.svg"
+                                       :path path
+                                       :mtype "image/svg+xml"
+                                       :size (alength (.getBytes big-upload-svg "UTF-8"))}})]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :restriction))
+      (t/is (th/ex-of-code? (:error out) :svg-too-large)))))
+
+(t/deftest upload-svg-over-cap-with-lying-size-is-rejected
+  (t/testing "the real size is checked even when the declared size lies"
+    (let [prof (th/create-profile* 1)
+          file (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+          path (write-svg-tempfile big-upload-svg)
+          out  (th/command! {::th/type :upload-file-media-object
+                             ::rpc/profile-id (:id prof)
+                             :file-id (:id file)
+                             :is-local true
+                             :name "big.svg"
+                             :content {:filename "big.svg"
+                                       :path path
+                                       :mtype "image/svg+xml"
+                                       :size 10}})]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :restriction))
+      (t/is (th/ex-of-code? (:error out) :svg-too-large)))))
+
 (t/deftest upload-file-media-object-rejects-client-id
   (let [prof  (th/create-profile* 1)
         file  (th/create-file* 1 {:profile-id (:id prof)

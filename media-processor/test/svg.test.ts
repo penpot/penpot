@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import request from "supertest";
 import express from "express";
-import { sanitizeSvg, configureSvgLimits } from "../src/services/svg.js";
+import { sanitizeSvg, sanitizeSvgSync, configureSvgLimits } from "../src/services/svg.js";
 import { createSvgRoutes } from "../src/routes/svg.js";
 import { errorHandler, ProcessingError } from "../src/middleware/error-handler.js";
 import { timeoutMiddleware } from "../src/middleware/timeout.js";
@@ -10,7 +10,7 @@ import { createQueueMiddleware } from "../src/middleware/queue.js";
 import { configureUploadLimits } from "../src/upload.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const DEFAULT_MAX_SIZE = 30 * 1024 * 1024;
+const DEFAULT_MAX_SIZE = 2 * 1024 * 1024;
 
 function svg(inner: string, attrs = `xmlns="${SVG_NS}" width="100" height="100"`): string {
   return `<svg ${attrs}>${inner}</svg>`;
@@ -105,7 +105,7 @@ const MALICIOUS: Array<{ name: string; svg: string; forbidden: RegExp }> = [
 
 describe("sanitizeSvg: removes dangerous content", () => {
   it.each(MALICIOUS)("removes $name", ({ svg: dirty, forbidden }) => {
-    const clean = sanitizeSvg(dirty);
+    const clean = sanitizeSvgSync(dirty);
     expect(clean).toMatch(/^<svg[\s/>]/i);
     expect(clean).not.toMatch(forbidden);
     expectNoDangerousOutput(clean);
@@ -130,7 +130,7 @@ describe("sanitizeSvg: keeps legitimate SVG", () => {
         `<text x="1" y="9"><tspan>hi</tspan></text>`,
       `xmlns="${SVG_NS}" viewBox="0 0 10 10"`
     );
-    const clean = sanitizeSvg(dirty);
+    const clean = sanitizeSvgSync(dirty);
     expect(clean).toMatch(/^<svg[\s/>]/i);
     expect(clean).toContain("<linearGradient");
     expect(clean).toContain("<stop");
@@ -143,17 +143,17 @@ describe("sanitizeSvg: keeps legitimate SVG", () => {
   });
 
   it("keeps a safe relative/absolute href", () => {
-    const clean = sanitizeSvg(svg(`<image href="https://example.com/a.png" width="5" height="5"/>`));
+    const clean = sanitizeSvgSync(svg(`<image href="https://example.com/a.png" width="5" height="5"/>`));
     expect(clean).toContain('href="https://example.com/a.png"');
   });
 
   it("accepts a document with a leading UTF-8 BOM", () => {
-    const clean = sanitizeSvg(`\uFEFF${svg(`<rect width="5" height="5"/>`)}`);
+    const clean = sanitizeSvgSync(`\uFEFF${svg(`<rect width="5" height="5"/>`)}`);
     expect(clean).toMatch(/^<svg[\s/>]/i);
   });
 
   it("accepts a document with an XML declaration and leading whitespace", () => {
-    const clean = sanitizeSvg(
+    const clean = sanitizeSvgSync(
       `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="${SVG_NS}"><rect width="5" height="5"/></svg>`
     );
     expect(clean).toMatch(/^<svg[\s/>]/i);
@@ -162,14 +162,14 @@ describe("sanitizeSvg: keeps legitimate SVG", () => {
 
   it("accepts a document with a DOCTYPE", () => {
     const dirty = `<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">${svg(`<rect width="5" height="5"/>`)}`;
-    const clean = sanitizeSvg(dirty);
+    const clean = sanitizeSvgSync(dirty);
     expect(clean).toMatch(/^<svg[\s/>]/i);
     expect(clean).toContain("<rect");
   });
 
   it("does not resolve entities declared in a DOCTYPE internal subset", () => {
     const dirty = `<!DOCTYPE svg [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>${svg(`<rect width="5" height="5"/>`)}`;
-    const clean = sanitizeSvg(dirty);
+    const clean = sanitizeSvgSync(dirty);
     expect(clean).not.toContain("passwd");
     expect(clean).not.toContain("&xxe;");
   });
@@ -190,7 +190,7 @@ describe("sanitizeSvg: rejects invalid input", () => {
   ];
 
   it.each(INVALID)("rejects $name with invalid-svg-file", ({ svg: dirty }) => {
-    expectProcessingError(() => sanitizeSvg(dirty), 400, "invalid-svg-file");
+    expectProcessingError(() => sanitizeSvgSync(dirty), 400, "invalid-svg-file");
   });
 });
 
@@ -204,20 +204,73 @@ describe("sanitizeSvg: limits and stability", () => {
   it("rejects an input larger than the configured maximum", () => {
     configureSvgLimits({ maxSize: 100 });
     const big = svg(`<rect width="5" height="5"/>${"<!-- pad -->".repeat(20)}`);
-    expectProcessingError(() => sanitizeSvg(big), 413, "svg-too-large");
+    expectProcessingError(() => sanitizeSvgSync(big), 413, "svg-too-large");
   });
 
   it("stays stable over many consecutive calls", () => {
     const dirty = svg(`<rect width="5" height="5"/>`);
     for (let i = 0; i < 150; i++) {
-      expect(sanitizeSvg(dirty)).toMatch(/^<svg[\s/>]/i);
+      expect(sanitizeSvgSync(dirty)).toMatch(/^<svg[\s/>]/i);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sanitizeSvg: async wrapper and internal failures
+// ---------------------------------------------------------------------------
+
+describe("sanitizeSvg: async wrapper", () => {
+  it("runs inline when no pool is configured", async () => {
+    const clean = await sanitizeSvg(svg(`<script>alert("xss")</script><rect width="5" height="5"/>`));
+    expect(clean).toMatch(/^<svg[\s/>]/i);
+    expect(clean).not.toMatch(/<script/i);
+  });
+});
+
+describe("sanitizeSvgSync: internal failures", () => {
+  it("maps an unexpected failure to 503 svg-sanitization-failed", () => {
+    // A Uint8Array passes the byte-length check and then breaks `stripProlog`
+    // (it has no `.replace`), which is not a ProcessingError.
+    const err = captureError(() => sanitizeSvgSync(new Uint8Array([60, 115]) as unknown as string));
+    expect(err).toBeInstanceOf(ProcessingError);
+    const processingError = err as ProcessingError;
+    expect(processingError.statusCode).toBe(503);
+    expect(processingError.errorBody.code).toBe("svg-sanitization-failed");
+    expect(processingError.errorBody.hint ?? "").not.toContain("replace");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sanitizeSvg: cross-mode corpus
+// ---------------------------------------------------------------------------
+
+describe("sanitizeSvgSync: corpus decisions", () => {
+  it("keeps a data: URI in an image href (pins the cross-mode behavior)", () => {
+    const dirty = svg(`<image href="data:image/png;base64,iVBORw0KGgo=" width="5" height="5"/>`);
+    const clean = sanitizeSvgSync(dirty);
+    // Observed with DOMPurify 3.4.x and the svg profile: data: URIs survive.
+    expect(clean).toContain("data:image/png;base64");
   });
 });
 
 // ---------------------------------------------------------------------------
 // POST /api/svg/sanitize
 // ---------------------------------------------------------------------------
+
+// Build the multipart body exactly like the JVM backend does in
+// `app.media.remote/build-multipart-stream`: field `file`, filename `file`,
+// the part content type as the declared mtype, and the `----PenpotBoundary<ms>`
+// boundary. This pins the wire contract from the service side.
+function backendMultipartBody(boundary: string, svgText: string): string {
+  return (
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="file"; filename="file"\r\n` +
+    `Content-Type: image/svg+xml\r\n` +
+    `\r\n` +
+    svgText +
+    `\r\n--${boundary}--\r\n`
+  );
+}
 
 function createTestApp() {
   const app = express();
@@ -301,5 +354,36 @@ describe("POST /api/svg/sanitize", () => {
     } finally {
       configureSvgLimits({ maxSize: DEFAULT_MAX_SIZE });
     }
+  });
+
+  it("accepts the multipart body the JVM backend builds", async () => {
+    const boundary = `----PenpotBoundary${Date.now()}`;
+    const body = backendMultipartBody(boundary, svg(`<script>alert("xss")</script><rect width="5" height="5"/>`));
+
+    const res = await request(app)
+      .post("/api/svg/sanitize")
+      .set("x-shared-key", "test-key")
+      .set("Content-Type", `multipart/form-data; boundary=${boundary}`)
+      .send(Buffer.from(body, "utf8"));
+
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toContain("image/svg+xml");
+    const out = Buffer.isBuffer(res.body) ? res.body.toString("utf8") : res.text;
+    expect(out).toMatch(/^<svg[\s/>]/i);
+    expect(out).not.toMatch(/<script/i);
+  });
+
+  it("returns the JSON error shape the JVM backend translates", async () => {
+    const boundary = `----PenpotBoundary${Date.now()}`;
+    const body = backendMultipartBody(boundary, "this is not an svg");
+
+    const res = await request(app)
+      .post("/api/svg/sanitize")
+      .set("x-shared-key", "test-key")
+      .set("Content-Type", `multipart/form-data; boundary=${boundary}`)
+      .send(Buffer.from(body, "utf8"));
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(expect.objectContaining({ type: "validation", code: "invalid-svg-file" }));
   });
 });

@@ -27,6 +27,8 @@ media-processor/
 │   ├── upload.ts             # Multer configuration, getFileBuffer helper
 │   ├── upload-storage.ts     # Hybrid storage engine (memory < threshold, disk >= threshold)
 │   ├── logger.ts             # Pino logger setup
+│   ├── svg-pool.ts           # worker_threads pool for SVG sanitization
+│   ├── svg-worker.ts         # worker entry point (runs sanitizeSvgSync)
 │   ├── middleware/
 │   │   ├── auth.ts           # Timing-safe shared key authentication
 │   │   ├── error-handler.ts  # ProcessingError class, centralized error handling
@@ -57,7 +59,8 @@ media-processor/
 
 ### Resource Limits
 - Image: max pixels, max width/height enforced before processing
-- SVG: max input size enforced before parsing (default 30MB, `PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE`); an oversized input is rejected with 413, never truncated
+- SVG: max input size enforced before parsing (default 2MB, `PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE`); an oversized input is rejected with 413, never truncated
+- SVG workers: `PENPOT_MEDIA_PROCESSOR_SVG_WORKERS` (default 2; 0 runs inline), `PENPOT_MEDIA_PROCESSOR_SVG_WORKER_MAX_OLD_MB` (default 512, per-worker V8 old-generation cap) and `PENPOT_MEDIA_PROCESSOR_SVG_TIMEOUT` (default 30000 ms)
 - Font: prlimit wraps FontForge processes with memory (AS) and CPU time limits
 - Concurrency: p-queue limits concurrent requests (default 10)
 - Upload: hybrid storage — memory for files < 10MB, disk for larger; configurable via `PENPOT_MEDIA_PROCESSOR_MEMORY_THRESHOLD`
@@ -82,6 +85,18 @@ media-processor/
 - `POST /api/svg/sanitize` (multipart field `file`) returns the sanitized SVG
   bytes with `Content-Type: image/svg+xml`; it is the remote backend of
   `app.media/sanitize-svg` in the JVM.
+- The route never runs the sanitizer on the main thread: `sanitizeSvg` delegates
+  to a pool of `worker_threads` workers (`svg-pool.ts` / `svg-worker.ts`), so a
+  heavy SVG cannot block the service's event loop (`/api/health` included).
+  `sanitizeSvgSync` is the CPU-bound core and stays synchronous. With
+  `PENPOT_MEDIA_PROCESSOR_SVG_WORKERS=0` the pool is disabled and the sanitizer
+  runs inline (tests and an escape hatch).
+- The pool is created at boot, queues when every worker is busy, and applies
+  `resourceLimits: { maxOldGenerationSizeMb }` per worker: a worker that runs out
+  of memory dies with an error instead of the kernel killing the process, and the
+  pool maps that to a 503 and respawns it. A stuck job is terminated by a timeout
+  and its worker respawned. Worst-case memory is roughly workers ×
+  maxOldGenerationSizeMb.
 - DOMPurify is given `USE_PROFILES: {svg: true, svgFilters: true}` and
   `NAMESPACE: "http://www.w3.org/2000/svg"`, so it parses the document as XML/SVG
   the way a browser parses a standalone `.svg`. Its default allowlist fails closed
@@ -95,7 +110,20 @@ media-processor/
   bails on them; stripping the DOCTYPE also keeps its entities undeclared). An
   input that does not produce an `<svg` root is rejected with 400
   `invalid-svg-file`.
-- Errors: `400 invalid-svg-file` (not a well-formed SVG), `413 svg-too-large`.
+- Error mapping: a parse/validation failure is 400 `invalid-svg-file`; anything
+  else (a bug, an OOM, a DOMPurify regression) is logged and reported as 503
+  `svg-sanitization-failed`, never as an invalid file.
+- The 2MB cap is deliberately lower than the backend's `:media-max-file-size`
+  (30MiB): the jsdom parse cost and memory do not scale with bytes the way
+  sharp's does, so a large SVG is a denial-of-service vector. The backend enforces
+  the same cap (`:media-svg-max-file-size`, `mem:backend/media-sanitization`) so
+  both modes behave the same; keep the two knobs aligned.
+- Errors: `400 invalid-svg-file` (not a well-formed SVG), `413 svg-too-large`,
+  `503 svg-sanitization-failed` / `svg-timeout` / `svg-worker-failed`.
+- Tests: `svg.test.ts` (service corpus, route, and the exact multipart the JVM
+  backend builds) and `svg-pool.test.ts` (queue, timeout, failure/respawn with a
+  fake worker). The contract test pins the wire format but does not run the JVM
+  against a live service — that gap is known and accepted.
 
 ## Commands
 

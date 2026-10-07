@@ -662,3 +662,15 @@
       (with-redefs [cf/flags #{:remote-media-processing}
                     cf/get (th/config-get-mock config-mock)]
         (t/is (= "<svg/>REMOTE" (media/sanitize-svg (mk-system) "<svg/>")))))))
+
+(t/deftest sanitize-svg-rejects-non-svg-response
+  (t/testing "a 2xx response that is not an SVG is rejected"
+    (with-mocks [mock {:target 'app.media.remote/service-request
+                       :return {:status 200
+                                :body (ByteArrayInputStream. (.getBytes "<html>nope</html>" "UTF-8"))}}]
+      (with-redefs [cf/get (th/config-get-mock config-mock)]
+        (let [err (ex/try! (media.remote/process (mk-system)
+                                                 {:cmd :sanitize-svg :content "<svg/>"}))]
+          (t/is (ex/error? err))
+          (t/is (= :internal (:type (ex-data err))))
+          (t/is (= :invalid-sanitized-svg (:code (ex-data err)))))))))

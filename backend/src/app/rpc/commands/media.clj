@@ -129,11 +129,19 @@
   (let [path  (:path info)
         mtype (:mtype info)
         path  (if (= mtype "image/svg+xml")
-                (let [content   (slurp path)
-                      sanitized (media/sanitize-svg cfg content)
-                      temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
-                  (spit (str temp-path) sanitized)
-                  temp-path)
+                (let [content  (slurp path)
+                      size     (alength (.getBytes ^String content "UTF-8"))
+                      max-size (cf/get :media-svg-max-file-size)]
+                  ;; The declared size is checked earlier; this is the real
+                  ;; one, so a client cannot smuggle a bigger SVG past the cap.
+                  (when (> size max-size)
+                    (ex/raise :type :restriction
+                              :code :svg-too-large
+                              :hint (str "the svg size " size " is greater than the maximum " max-size)))
+                  (let [sanitized (media/sanitize-svg cfg content)
+                        temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
+                    (spit (str temp-path) sanitized)
+                    temp-path))
                 path)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)

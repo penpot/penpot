@@ -1024,10 +1024,22 @@
   path: the local filter, or DOMPurify in media-processor when remote
   media processing is enabled (`app.media/sanitize-svg`).
 
+  SVG has its own, lower size cap (`:media-svg-max-file-size`), the same
+  the upload path and media-processor apply, so a package cannot smuggle
+  an SVG too large for the sanitizer. Over the cap raises `:svg-too-large`.
+
   Raises a `:validation` exception when the SVG cannot be parsed, the
   same error the upload path reports."
   [system object ^bytes raw]
   (when (svg-object? object)
+    (let [max-size (cf/get :media-svg-max-file-size)
+          size     (alength raw)]
+      (when (> size max-size)
+        (ex/raise :type :restriction
+                  :code :svg-too-large
+                  :hint (str/ffmt "the imported svg size % is greater than the maximum %"
+                                  size
+                                  max-size))))
     (let [sanitized (media/sanitize-svg system (String. ^bytes raw "UTF-8"))
           bytes     (.getBytes ^String sanitized "UTF-8")]
       {:bytes bytes

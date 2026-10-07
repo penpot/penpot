@@ -10,6 +10,7 @@
    [app.config :as cf]
    [app.media :as media]
    [app.media.svg :as svg]
+   [app.media.validation :as media.v]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]))
@@ -220,6 +221,19 @@
         (t/is (ex/error? err))
         (t/is (= :validation (:type (ex-data err))))
         (t/is (= :invalid-svg-file (:code (ex-data err))))))))
+
+(t/deftest validate-media-size-svg-cap
+  (t/testing "SVG uses its own cap and code; other types use the general cap"
+    (let [cap (cf/get :media-svg-max-file-size)]
+      (t/is (pos? cap))
+      (let [err (ex/try! (media.v/validate-media-size! {:mtype "image/svg+xml" :size (inc cap)}))]
+        (t/is (ex/error? err))
+        (t/is (= :restriction (:type (ex-data err))))
+        (t/is (= :svg-too-large (:code (ex-data err)))))
+      (t/is (= {:mtype "image/svg+xml" :size cap}
+               (media.v/validate-media-size! {:mtype "image/svg+xml" :size cap})))
+      (t/is (= {:mtype "image/jpeg" :size (inc cap)}
+               (media.v/validate-media-size! {:mtype "image/jpeg" :size (inc cap)}))))))
 
 (t/deftest info-invalid-image
   (t/testing "info on invalid image raises error"

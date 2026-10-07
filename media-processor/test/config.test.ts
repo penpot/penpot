@@ -20,6 +20,10 @@ describe("loadConfig", () => {
     expect(config.requestTimeout).toBe(180000);
     expect(config.maxFileSize).toBe(367001600);
     expect(config.memoryThreshold).toBe(10485760);
+    expect(config.svgMaxSize).toBe(2097152);
+    expect(config.svgWorkers).toBe(2);
+    expect(config.svgWorkerMaxOldMb).toBe(512);
+    expect(config.svgTimeout).toBe(30000);
   });
 
   it("accepts valid config with all fields set", () => {
@@ -98,6 +102,22 @@ describe("loadConfig", () => {
 
   it("rejects fractional image max height", () => {
     process.env.PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_HEIGHT = "100.5";
+    expect(() => loadConfig()).toThrow();
+  });
+
+  it("rejects negative svg max size", () => {
+    process.env.PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE = "-1";
+    expect(() => loadConfig()).toThrow();
+  });
+
+  it("accepts svg workers=0 (inline mode)", () => {
+    process.env.PENPOT_MEDIA_PROCESSOR_SVG_WORKERS = "0";
+    const config = loadConfig();
+    expect(config.svgWorkers).toBe(0);
+  });
+
+  it("rejects negative svg worker heap", () => {
+    process.env.PENPOT_MEDIA_PROCESSOR_SVG_WORKER_MAX_OLD_MB = "-1";
     expect(() => loadConfig()).toThrow();
   });
 

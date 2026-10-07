@@ -12,7 +12,10 @@ const envSchema = z.object({
   PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_PIXELS: z.coerce.number().int().positive().default(128_000_000),
   PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_WIDTH: z.coerce.number().int().positive().default(16384),
   PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_HEIGHT: z.coerce.number().int().positive().default(16384),
-  PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE: z.coerce.number().int().positive().default(31457280), // 30 MB
+  PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE: z.coerce.number().int().positive().default(2097152), // 2 MB — see mem:media-processor/core
+  PENPOT_MEDIA_PROCESSOR_SVG_WORKERS: z.coerce.number().int().nonnegative().default(2), // 0 = run inline (tests/escape hatch)
+  PENPOT_MEDIA_PROCESSOR_SVG_WORKER_MAX_OLD_MB: z.coerce.number().int().positive().default(512),
+  PENPOT_MEDIA_PROCESSOR_SVG_TIMEOUT: z.coerce.number().int().positive().default(30000),
   PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_MEM: z.coerce.number().int().positive().default(512),
   PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_CPU_TIME: z.coerce.number().int().positive().default(30),
   PENPOT_MEDIA_PROCESSOR_FONT_TIMEOUT: z.coerce.number().int().positive().default(120000),
@@ -53,6 +56,9 @@ export function loadConfig(): AppConfig {
     imageMaxWidth: parsed.PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_WIDTH,
     imageMaxHeight: parsed.PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_HEIGHT,
     svgMaxSize: parsed.PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE,
+    svgWorkers: parsed.PENPOT_MEDIA_PROCESSOR_SVG_WORKERS,
+    svgWorkerMaxOldMb: parsed.PENPOT_MEDIA_PROCESSOR_SVG_WORKER_MAX_OLD_MB,
+    svgTimeout: parsed.PENPOT_MEDIA_PROCESSOR_SVG_TIMEOUT,
     fontProcessMem: parsed.PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_MEM,
     fontProcessCpuTime: parsed.PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_CPU_TIME,
     fontTimeout: parsed.PENPOT_MEDIA_PROCESSOR_FONT_TIMEOUT,

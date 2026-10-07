@@ -118,6 +118,18 @@
                             (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml" :bucket "file-media-object"}
                                                        (utf8bytes "<svg><not-closed>"))))))
 
+(t/deftest sanitize-imported-svg-rejects-over-cap
+  (t/testing "an imported SVG over the cap is rejected before parsing"
+    (let [raw (byte-array (inc (cf/get :media-svg-max-file-size)))
+          err (try
+                (bfc/sanitize-imported-svg th/*system*
+                                           {:content-type "image/svg+xml" :bucket "file-media-object"}
+                                           raw)
+                nil
+                (catch clojure.lang.ExceptionInfo e (ex-data e)))]
+      (t/is (= :restriction (:type err)))
+      (t/is (= :svg-too-large (:code err))))))
+
 (t/deftest sanitize-imported-svg-routes-through-media-processor
   (t/testing "with remote media processing on, the import sanitizes through the service"
     (let [served "<svg xmlns=\"http://www.w3.org/2000/svg\"><circle r=\"4\"/></svg>"]
@@ -433,14 +445,18 @@
     (t/is (= [(:id file)]
              (mapv :id (th/db-query :file {:project-id (:default-project-id profile)}))))))
 
-(def ^:private large-clean-svg
-  (let [pad (apply str (repeat 110000 "<!--0123456789ABCDEF-->"))]
+;; Small on purpose: the test lowers `bfc/temp-file-threshold` with
+;; `with-redefs` to reach the tempfile branch, because the SVG size cap (2MiB)
+;; is now the same as the real threshold and an SVG cannot exceed it.
+(def ^:private tempfile-branch-svg
+  (let [pad (apply str (repeat 100 "<!--0123456789ABCDEF-->"))]
     (str "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\">" pad "<circle r=\"20\"/></svg>")))
 
 (t/deftest import-binfile-v1-roundtrips-large-svg
   (t/testing "objects over the tempfile threshold (tempfile branch) import fine"
-    (t/is (> (alength (utf8bytes large-clean-svg)) bfc/temp-file-threshold))
     (let [profile       (th/create-profile* 5)
-          [file _seed]   (seed-file-with-svg-media profile 5 large-clean-svg "image/svg+xml")
-          [served _stored] (export-import-v1 profile file)]
-      (t/is (str/includes? served "circle")))))
+          [file _seed]   (seed-file-with-svg-media profile 5 tempfile-branch-svg "image/svg+xml")]
+      (with-redefs [bfc/temp-file-threshold 1024]
+        (t/is (> (alength (utf8bytes tempfile-branch-svg)) bfc/temp-file-threshold))
+        (let [[served _stored] (export-import-v1 profile file)]
+          (t/is (str/includes? served "circle")))))))
