@@ -11,7 +11,7 @@
   by any feature that needs to upload large binary blobs:
 
     1. create-upload-session  – obtain a session-id
-    2. upload-chunk           – upload each slice (max-parallel-chunk-uploads in-flight)
+    2. upload-chunk           – upload each slice, one at a time
     3. caller-specific step   – e.g. assemble-file-media-object or import-binfile
 
   `upload-blob-chunked` drives steps 1 and 2 and emits the completed
@@ -24,18 +24,13 @@
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]))
 
-(def ^:private max-parallel-chunk-uploads
-  "Maximum number of chunk upload requests that may be in-flight at the
-  same time within a single chunked upload session."
-  2)
-
 (defn upload-blob-chunked
   "Uploads `blob` via the three-step chunked session API.
 
   Steps performed:
     1. Creates an upload session  (`create-upload-session`).
-    2. Slices `blob` and uploads every chunk  (`upload-chunk`),
-       with at most `max-parallel-chunk-uploads` concurrent requests.
+    2. Slices `blob` and uploads every chunk  (`upload-chunk`), one at a
+       time so the progress of the file is a straight line.
 
   Returns an observable that emits exactly one map:
     `{:session-id <uuid>}`
@@ -72,6 +67,6 @@
                                                  (on-progress {:current (swap! uploaded inc)
                                                                :total total-chunks})))))))))]
               (->> (rx/from chunk-uploads)
-                   (rx/merge-all max-parallel-chunk-uploads)
+                   (rx/concat-all)
                    (rx/last)
                    (rx/map (fn [_] {:session-id session-id})))))))))

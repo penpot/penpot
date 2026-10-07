@@ -150,9 +150,8 @@
     (http/restore-fetch! orig)
 
     (t/testing "every uploaded chunk is reported with uploaded/total"
-      ;; Chunks upload two at a time, so completion order is not
-      ;; guaranteed: compare the reported currents as a set.
+      ;; chunks upload one at a time, so they are reported in order
       (t/is (= [{:current 1 :total 3}
                 {:current 2 :total 3}
                 {:current 3 :total 3}]
-               (sort-by :current @seen))))))
+               @seen)))))

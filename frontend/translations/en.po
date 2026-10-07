@@ -2636,7 +2636,7 @@ msgstr "Processing the typographies"
 
 #: src/app/main/ui/jobs/progress.cljs:33
 msgid "jobs.progress.stage.upload"
-msgstr "Uploading the package"
+msgstr "Uploading file…"
 
 #: src/app/main/ui/jobs/progress.cljs:33
 msgid "jobs.progress.stage.unknown"
