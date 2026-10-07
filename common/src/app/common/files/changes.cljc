@@ -438,7 +438,12 @@
     [:map {:title "SetTokensSource"}
      [:type [:= :set-tokens-source]]
      [:file-id ::sm/uuid]
-     [:library-id [:maybe ::sm/uuid]]]]])
+     [:library-id [:maybe ::sm/uuid]]]]
+
+   [:set-japanese-layout
+    [:map {:title "SetJapaneseLayout"}
+     [:type [:= :set-japanese-layout]]
+     [:enabled ::sm/boolean]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -1091,6 +1096,10 @@
 (defmethod process-change :set-tokens-source
   [data {:keys [library-id]}]
   (cfo/set-tokens-source data library-id))
+
+(defmethod process-change :set-japanese-layout
+  [data {:keys [enabled]}]
+  (ctf/set-japanese-layout-enabled data enabled))
 
 ;; === Operations
 
