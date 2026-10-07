@@ -3,18 +3,158 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, vertical_align_offset,
-        Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind,
-        TextContent, TextDecorationSegment,
+        add_horizontal_span, calculate_text_layout_data, set_paint_fill, text_vertical,
+        vertical_align_offset, HorizontalOffsets, Paragraph as TextParagraph,
+        ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
+        TextDecorationSegment,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
 use skia_safe::{
     self as skia,
     canvas::SaveLayerRec,
-    textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration},
+    textlayout::{ParagraphBuilder, RectHeightStyle, RectWidthStyle, StyleMetrics, TextDecoration},
     Canvas, ImageFilter, Paint,
 };
+use text_vertical::GlyphOutput;
+
+/// Vertical text: shadows, fill, strokes and the debug grid, all painted from
+/// one layout. Rebinds the content to the selrect: stored text bounds
+/// describe the measured content and can be taller than a fixed shape, whose
+/// height is the column-wrap budget.
+pub fn render_vertical_text(
+    state: &mut RenderState,
+    shape: &Shape,
+    text_content: &TextContent,
+    fills_surface_id: SurfaceId,
+    strokes_surface_id: SurfaceId,
+    skip_effects: bool,
+) -> Result<()> {
+    let blur_filter = (!skip_effects).then(|| shape.image_filter(1.0)).flatten();
+    let bounds = shape.selrect();
+    let vertical_align = shape.vertical_align();
+    let layout = text_content.vertical_layout(&bounds);
+
+    let skip_shadows = skip_effects || state.should_skip_drop_shadows();
+    if !skip_shadows {
+        let mut drop_shadows = shape.drop_shadow_paints();
+        if let Some(inherited_shadows) = state.get_inherited_drop_shadows() {
+            drop_shadows.extend(inherited_shadows);
+        }
+        if !drop_shadows.is_empty() {
+            let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
+            for shadow in &drop_shadows {
+                text_vertical::paint_drop_shadow(
+                    canvas,
+                    &layout,
+                    &bounds,
+                    vertical_align,
+                    shadow,
+                    GlyphOutput::Text,
+                );
+            }
+        }
+    }
+
+    render_to_surface(
+        state,
+        shape,
+        fills_surface_id,
+        blur_filter.as_ref(),
+        0.0,
+        |canvas| {
+            paint_vertical_fill(
+                canvas,
+                shape,
+                &layout,
+                &bounds,
+                blur_filter.as_ref(),
+                GlyphOutput::Text,
+            )
+        },
+    )?;
+
+    let strokes: Vec<&Stroke> = shape.visible_strokes().rev().collect();
+    if !strokes.is_empty() {
+        let selrect = shape.selrect();
+        let canvas = state.surfaces.canvas_and_mark_dirty(strokes_surface_id);
+        for stroke in strokes {
+            text_vertical::paint_stroke(
+                canvas,
+                &layout,
+                &bounds,
+                vertical_align,
+                stroke,
+                &selrect,
+                blur_filter.as_ref(),
+                GlyphOutput::Text,
+            );
+        }
+    }
+
+    if state.options.is_text_grid_visible() {
+        let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
+        text_vertical::paint_grid(canvas, &layout, &bounds, vertical_align);
+    }
+
+    Ok(())
+}
+
+/// Paint a viewport-only debug grid over SkParagraph horizontal text: blue
+/// line boxes, green per-scalar tight rects from SkParagraph, amber
+/// baselines. Matches the vertical text grid and shows horizontal annotation
+/// anchors.
+pub fn paint_horizontal_grid(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {
+    let mut builders = text_content.paragraph_builder_group_from_text(None);
+    let layout = calculate_text_layout_data(shape, text_content, &mut builders, true);
+
+    let mut line_paint = Paint::default();
+    line_paint.set_anti_alias(true);
+    line_paint.set_style(skia::PaintStyle::Stroke);
+    line_paint.set_stroke_width(1.0);
+    line_paint.set_color(skia::Color::from_argb(0xAA, 0x2F, 0x80, 0xED));
+
+    let mut glyph_paint = Paint::default();
+    glyph_paint.set_anti_alias(true);
+    glyph_paint.set_style(skia::PaintStyle::Stroke);
+    glyph_paint.set_stroke_width(1.0);
+    glyph_paint.set_color(skia::Color::from_argb(0x99, 0x27, 0xAE, 0x60));
+
+    let mut baseline_paint = Paint::default();
+    baseline_paint.set_anti_alias(true);
+    baseline_paint.set_stroke_width(1.0);
+    baseline_paint.set_color(skia::Color::from_argb(0xCC, 0xEB, 0x57, 0x57));
+
+    for paragraph in &layout.paragraphs {
+        for line in paragraph.paragraph.get_line_metrics() {
+            let baseline = line.baseline as f32;
+            let top = paragraph.y + baseline - line.ascent as f32;
+            let left = paragraph.x + line.left as f32;
+            let width = line.width as f32;
+            canvas.draw_rect(
+                Rect::from_xywh(left, top, width, line.height as f32),
+                &line_paint,
+            );
+            canvas.draw_line(
+                (left, paragraph.y + baseline),
+                (left + width, paragraph.y + baseline),
+                &baseline_paint,
+            );
+
+            for offset in line.start_index..line.end_index {
+                for textbox in paragraph.paragraph.get_rects_for_range(
+                    offset..offset + 1,
+                    RectHeightStyle::Tight,
+                    RectWidthStyle::Tight,
+                ) {
+                    let mut rect = textbox.rect;
+                    rect.offset((paragraph.x, paragraph.y));
+                    canvas.draw_rect(rect, &glyph_paint);
+                }
+            }
+        }
+    }
+}
 
 pub fn stroke_paragraph_builder_group_from_text(
     text_content: &TextContent,
@@ -28,19 +168,24 @@ pub fn stroke_paragraph_builder_group_from_text(
     let remove_stroke_alpha = use_shadow.unwrap_or(false) && !stroke.is_transparent();
     let mut group_layer_opacity: Option<f32> = None;
 
-    for paragraph in text_content.paragraphs() {
+    let plans = text_content.horizontal_plans();
+    for (paragraph, plan) in text_content.paragraphs().iter().zip(plans.iter()) {
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
-        for span in paragraph.children().iter() {
+        for (((span, text), sheds), extra) in paragraph
+            .children()
+            .iter()
+            .zip(&plan.texts)
+            .zip(&plan.sheds)
+            .zip(&plan.ruby_spacing.adjustments)
+        {
             let (stroke_paints, stroke_layer_opacity) =
                 get_text_stroke_paints(stroke, bounds, remove_stroke_alpha);
 
             if group_layer_opacity.is_none() {
                 group_layer_opacity = stroke_layer_opacity;
             }
-
-            let text: String = span.apply_text_transform();
 
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
@@ -56,7 +201,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                     paragraph.line_height(),
                 );
                 builder.push_style(&stroke_style);
-                add_text_with_tabs(builder, &text, span.font_size);
+                add_horizontal_span(builder, span, text, sheds, extra, &stroke_style, fonts);
             }
         }
 
@@ -70,7 +215,7 @@ pub fn stroke_paragraph_builder_group_from_text(
     (paragraph_group, group_layer_opacity)
 }
 
-fn get_text_stroke_paints(
+pub(crate) fn get_text_stroke_paints(
     stroke: &Stroke,
     bounds: &Rect,
     remove_stroke_alpha: bool,
@@ -189,6 +334,71 @@ pub fn render_with_bounds_outset_overlay_emoji(
     )
 }
 
+/// Run `paint` on `target_surface`. With a blur, it paints into a filter
+/// surface sized to the blurred text bounds (grown by `stroke_bounds_outset`)
+/// when those bounds are usable.
+fn render_to_surface(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    target_surface: SurfaceId,
+    blur: Option<&ImageFilter>,
+    stroke_bounds_outset: f32,
+    mut paint: impl FnMut(&Canvas),
+) -> Result<()> {
+    if let Some(blur_filter) = blur {
+        let mut text_bounds = shape
+            .get_text_content()
+            .calculate_bounds(shape, false)
+            .to_rect();
+        if stroke_bounds_outset > 0.0 {
+            text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
+        }
+        let bounds = blur_filter.compute_fast_bounds(text_bounds);
+        if bounds.is_finite()
+            && bounds.width() > 0.0
+            && bounds.height() > 0.0
+            && filters::render_with_filter_surface(
+                render_state,
+                bounds,
+                target_surface,
+                |state, temp_surface| {
+                    paint(state.surfaces.canvas(temp_surface));
+                    Ok(())
+                },
+            )?
+        {
+            return Ok(());
+        }
+    }
+    paint(render_state.surfaces.canvas_and_mark_dirty(target_surface));
+    Ok(())
+}
+
+/// Fill pass of vertical text: `layout` painted inside the shape's layer
+/// blur.
+pub fn paint_vertical_fill(
+    canvas: &Canvas,
+    shape: &Shape,
+    layout: &text_vertical::VerticalLayout,
+    bounds: &Rect,
+    blur: Option<&ImageFilter>,
+    output: GlyphOutput,
+) {
+    if let Some(blur_filter) = blur {
+        let mut blur_paint = Paint::default();
+        blur_paint.set_image_filter(blur_filter.clone());
+        canvas.save_layer(
+            &SaveLayerRec::default()
+                .bounds(&shape.layer_bounds())
+                .paint(&blur_paint),
+        );
+    }
+    text_vertical::paint_layout(canvas, layout, bounds, shape.vertical_align(), output);
+    if blur.is_some() {
+        canvas.restore();
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn render_with_bounds_outset_inner(
     render_state: Option<&mut RenderState>,
@@ -204,55 +414,25 @@ fn render_with_bounds_outset_inner(
     overlay_emoji: bool,
 ) -> Result<()> {
     if let Some(render_state) = render_state {
-        let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
-
-        if let Some(blur_filter) = blur {
-            let mut text_bounds = shape
-                .get_text_content()
-                .calculate_bounds(shape, false)
-                .to_rect();
-            if stroke_bounds_outset > 0.0 {
-                text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
-            }
-            let bounds = blur_filter.compute_fast_bounds(text_bounds);
-            if bounds.is_finite() && bounds.width() > 0.0 && bounds.height() > 0.0 {
-                let blur_filter_clone = blur_filter.clone();
-                if filters::render_with_filter_surface(
-                    render_state,
-                    bounds,
-                    target_surface,
-                    |state, temp_surface| {
-                        let temp_canvas = state.surfaces.canvas(temp_surface);
-                        render_text_on_canvas(
-                            temp_canvas,
-                            shape,
-                            paragraph_builders,
-                            shadow,
-                            Some(&blur_filter_clone),
-                            fill_inset,
-                            layer_opacity,
-                            false,
-                        );
-                        Ok(())
-                    },
-                )? {
-                    return Ok(());
-                }
-            }
-        }
-
-        let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
-        render_text_on_canvas(
-            canvas,
+        return render_to_surface(
+            render_state,
             shape,
-            paragraph_builders,
-            shadow,
+            surface_id.unwrap_or(SurfaceId::Fills),
             blur,
-            fill_inset,
-            layer_opacity,
-            false,
+            stroke_bounds_outset,
+            |canvas| {
+                render_text_on_canvas(
+                    canvas,
+                    shape,
+                    paragraph_builders,
+                    shadow,
+                    blur,
+                    fill_inset,
+                    layer_opacity,
+                    false,
+                )
+            },
         );
-        return Ok(());
     }
 
     if let Some(canvas) = canvas {
@@ -332,6 +512,9 @@ pub fn try_paint_from_layout_cache(
     layout_cache_rotation_only: bool,
 ) -> Result<bool> {
     let text_content = shape.get_text_content();
+    if !text_content.can_paint_from_layout_cache() {
+        return Ok(false);
+    }
     let cache_usable = if layout_cache_rotation_only {
         text_content.layout_cache_versions_match()
     } else {
@@ -382,15 +565,44 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
     let vertical_offset =
         vertical_align_offset(selrect.height(), total_text_height, shape.vertical_align());
 
+    let plans = text_content.horizontal_plans();
     let mut y_accum = base_y + vertical_offset;
     for (index, group) in paragraphs.iter().enumerate() {
         let Some(paragraph) = group.first() else {
             continue;
         };
         paragraph.paint(canvas, (x, y_accum));
-        if draw_decorations {
-            if let Some(text_paragraph) = text_content.paragraphs().get(index) {
-                for deco in decoration_segments(paragraph, text_paragraph, x, y_accum) {
+        if let (Some(text_paragraph), Some(plan)) =
+            (text_content.paragraphs().get(index), plans.get(index))
+        {
+            crate::shapes::paint_horizontal_warichu(
+                canvas,
+                text_paragraph,
+                plan,
+                paragraph,
+                x,
+                y_accum,
+            );
+            crate::shapes::paint_horizontal_emphasis(
+                canvas,
+                text_paragraph,
+                plan,
+                paragraph,
+                x,
+                y_accum,
+            );
+            crate::shapes::paint_horizontal_ruby(
+                canvas,
+                text_content,
+                index,
+                paragraph,
+                x,
+                y_accum,
+            );
+            if draw_decorations {
+                for deco in
+                    decoration_segments(paragraph, text_paragraph, &plan.offsets, x, y_accum)
+                {
                     draw_decoration_segment(canvas, &deco);
                 }
             }
@@ -523,15 +735,62 @@ fn paint_text_with_emoji_overlay(
     overlay_emoji: bool,
 ) {
     let text_content = shape.get_text_content();
+
+    // Vertical writing paints through the vertical pass. Stored text bounds
+    // describe the measured content and can be taller than a fixed shape, so
+    // the selrect is the column-wrap budget.
+    if crate::shapes::text_vertical::paint_text_vertical(
+        canvas,
+        text_content,
+        &shape.selrect(),
+        shape.vertical_align(),
+        crate::render::svg::vertical_glyph_output(),
+    ) {
+        return;
+    }
+
     let mut layout_info =
         calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
+    let plans = text_content.horizontal_plans();
 
     for para in &mut layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
 
+        if let (Some(source_paragraph), Some(plan)) = (
+            text_content.paragraphs().get(para.source_paragraph),
+            plans.get(para.source_paragraph),
+        ) {
+            crate::shapes::paint_horizontal_warichu(
+                canvas,
+                source_paragraph,
+                plan,
+                &para.paragraph,
+                para.x,
+                para.y,
+            );
+            crate::shapes::paint_horizontal_emphasis(
+                canvas,
+                source_paragraph,
+                plan,
+                &para.paragraph,
+                para.x,
+                para.y,
+            );
+        }
+
         if overlay_emoji {
             paint_emoji_overlay(canvas, para);
         }
+
+        // Like warichu and emphasis, ruby takes the paint of this pass.
+        crate::shapes::paint_horizontal_ruby(
+            canvas,
+            text_content,
+            para.source_paragraph,
+            &para.paragraph,
+            para.x,
+            para.y,
+        );
 
         for deco in &para.decorations {
             draw_decoration_segment(canvas, deco);
@@ -1080,22 +1339,27 @@ fn draw_decoration_segment(canvas: &Canvas, deco: &TextDecorationSegment) {
 type LineDecoration<'a> = (usize, usize, TextDecoration, &'a StyleMetrics<'a>);
 
 /// UTF-16 ranges of the spans that ask for a decoration we draw.
-fn decorated_span_ranges(text_paragraph: &TextParagraph) -> Vec<(usize, usize, TextDecoration)> {
-    let mut ranges = Vec::new();
-    let mut offset = 0;
-    for span in text_paragraph.children() {
-        let len = span.apply_text_transform().encode_utf16().count();
-        match span.text_decoration {
+/// Builder-text range of every underlined or struck span. Warichu spans
+/// collapse to a placeholder and get no bar.
+fn decorated_span_ranges(
+    text_paragraph: &TextParagraph,
+    offsets: &HorizontalOffsets,
+) -> Vec<(usize, usize, TextDecoration)> {
+    text_paragraph
+        .children()
+        .iter()
+        .zip(&offsets.ranges)
+        .filter_map(|(span, range)| match span.text_decoration {
             Some(kind)
-                if kind == TextDecoration::UNDERLINE || kind == TextDecoration::LINE_THROUGH =>
+                if !range.warichu
+                    && (kind == TextDecoration::UNDERLINE
+                        || kind == TextDecoration::LINE_THROUGH) =>
             {
-                ranges.push((offset, offset + len, kind))
+                Some((range.builder_start, range.builder_end, kind))
             }
-            _ => {}
-        }
-        offset += len;
-    }
-    ranges
+            _ => None,
+        })
+        .collect()
 }
 
 /// Style run covering `offset`; runs are keyed by their start index.
@@ -1118,10 +1382,11 @@ fn style_metric_at<'a>(
 pub fn decoration_segments(
     skia_paragraph: &skia::textlayout::Paragraph,
     text_paragraph: &TextParagraph,
+    offsets: &HorizontalOffsets,
     x: f32,
     y_accum: f32,
 ) -> Vec<TextDecorationSegment> {
-    let decorated = decorated_span_ranges(text_paragraph);
+    let decorated = decorated_span_ranges(text_paragraph, offsets);
     if decorated.is_empty() {
         return Vec::new();
     }
@@ -1280,7 +1545,7 @@ mod tests {
         ]);
 
         assert_eq!(
-            decorated_span_ranges(&para),
+            decorated_span_ranges(&para, &HorizontalOffsets::new(&para)),
             vec![
                 (6, 11, TextDecoration::UNDERLINE),
                 (18, 24, TextDecoration::LINE_THROUGH),
@@ -1302,11 +1567,41 @@ mod tests {
 
         // The emoji takes two UTF-16 units and `ß` uppercases to `SS`.
         assert_eq!(
-            decorated_span_ranges(&para),
+            decorated_span_ranges(&para, &HorizontalOffsets::new(&para)),
             vec![
                 (2, 9, TextDecoration::UNDERLINE),
                 (9, 10, TextDecoration::UNDERLINE),
             ]
+        );
+    }
+
+    #[test]
+    fn decorated_ranges_follow_inserted_kinsoku_characters() {
+        // A word joiner goes before 。, so the next span starts one unit later.
+        let para = paragraph(vec![
+            span("あ。", None, None),
+            span("い", Some(TextDecoration::UNDERLINE), None),
+        ]);
+
+        assert_eq!(
+            decorated_span_ranges(&para, &HorizontalOffsets::new(&para)),
+            vec![(3, 4, TextDecoration::UNDERLINE)]
+        );
+    }
+
+    #[test]
+    fn decorated_ranges_skip_warichu_placeholders() {
+        let mut note = span("割注入り", None, None);
+        note.warichu = true;
+        let para = paragraph(vec![
+            note,
+            span("い", Some(TextDecoration::UNDERLINE), None),
+        ]);
+
+        // The warichu span collapses to a three-unit placeholder.
+        assert_eq!(
+            decorated_span_ranges(&para, &HorizontalOffsets::new(&para)),
+            vec![(3, 4, TextDecoration::UNDERLINE)]
         );
     }
 
@@ -1317,6 +1612,6 @@ mod tests {
             span("none", Some(TextDecoration::NO_DECORATION), None),
         ]);
 
-        assert!(decorated_span_ranges(&para).is_empty());
+        assert!(decorated_span_ranges(&para, &HorizontalOffsets::new(&para)).is_empty());
     }
 }

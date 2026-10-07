@@ -104,6 +104,12 @@
     ;; Show viewbox.
     :wasm-viewbox
 
+    ;; Draw the jlreq-style character-frame grid over Japanese vertical text.
+    :wasm-text-grid
+
+    ;; Show browser composition bounds and the WASM/DOM carets during text input.
+    :ime
+
     ;; Makes the GL context to fail on initialization.
     :wasm-gl-context-init-error
 

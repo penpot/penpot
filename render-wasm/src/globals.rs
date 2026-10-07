@@ -184,7 +184,7 @@ fn resources_init_headless() {
 }
 
 /// Initializes DesignState.
-fn design_init() {
+pub(crate) fn design_init() {
     unsafe {
         let design_state = State::new();
         DESIGN_STATE = Box::into_raw(Box::new(design_state));

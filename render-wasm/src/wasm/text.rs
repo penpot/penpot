@@ -12,6 +12,9 @@ use crate::{with_current_shape, with_current_shape_mut, with_state};
 use crate::error::Error;
 
 pub mod helpers;
+mod japanese_layout;
+
+pub use japanese_layout::*;
 
 const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
@@ -103,6 +106,10 @@ pub struct RawParagraphData {
     text_direction: RawTextDirection,
     text_decoration: RawTextDecoration,
     text_transform: RawTextTransform,
+    writing_mode: u8,
+    text_orientation: u8,
+    // Padding for the CLJS writer's 4-byte-aligned layout; always zero.
+    _padding: [u8; 2],
     line_height: f32,
     letter_spacing: f32,
 }
@@ -131,6 +138,18 @@ pub struct RawTextSpan {
     text_decoration: RawTextDecoration,
     text_transform: RawTextTransform,
     text_direction: RawTextDirection,
+    text_orientation: u8,
+    text_combine_upright: u8,
+    text_emphasis: u8,
+    warichu: u8,
+    font_features: u8,
+    annotation_clearance: u8,
+    ruby_size: u8,
+    ruby_align: u8,
+    ruby_overhang: u8,
+    ruby_side: u8,
+    // Padding for the CLJS writer's 4-byte-aligned layout; always zero.
+    _padding: [u8; 2],
     font_size: f32,
     line_height: f32,
     letter_spacing: f32,
@@ -139,6 +158,7 @@ pub struct RawTextSpan {
     font_family: [u8; 4],
     font_variant_id: [u32; 4], // TODO: maybe add RawUUID type
     text_length: u32,
+    ruby_length: u32,
     fill_count: u32,
     fills: [RawFillData; MAX_TEXT_FILLS],
 }
@@ -177,7 +197,7 @@ impl From<RawTextSpan> for shapes::TextSpan {
             .map(|fill| fill.into())
             .collect();
 
-        Self::new(
+        let mut span = Self::new(
             text,
             font_family,
             value.font_size,
@@ -189,7 +209,18 @@ impl From<RawTextSpan> for shapes::TextSpan {
             value.font_weight,
             uuid_from_u32(value.font_variant_id),
             fills,
-        )
+        );
+        span.text_orientation = RawTextOrientation::from(value.text_orientation).into();
+        span.text_combine_upright = RawTextCombineUpright::from(value.text_combine_upright).into();
+        span.text_emphasis = RawTextEmphasis::from(value.text_emphasis).into();
+        span.warichu = RawWarichu::from(value.warichu).into();
+        span.font_features = RawFontFeatures::from(value.font_features).into();
+        span.annotation_clearance = RawAnnotationClearance::from(value.annotation_clearance).into();
+        span.ruby_size = RawRubySize::from(value.ruby_size).into();
+        span.ruby_align = RawRubyAlign::from(value.ruby_align).into();
+        span.ruby_overhang = RawRubyOverhang::from(value.ruby_overhang).into();
+        span.ruby_side = RawRubySide::from(value.ruby_side).into();
+        span
     }
 }
 
@@ -230,21 +261,31 @@ impl From<RawParagraph> for shapes::Paragraph {
     fn from(value: RawParagraph) -> Self {
         let mut spans = vec![];
 
+        // Layout: [<all span texts> <all span ruby texts>]. Annotation blobs
+        // begin after all base text.
         let mut offset = 0;
+        let mut ruby_offset: usize = value.spans.iter().map(|s| s.text_length as usize).sum();
         for raw_span in value.spans.into_iter() {
             let delta = raw_span.text_length as usize;
-            let text_buffer = &value.text_buffer[offset..offset + delta];
-
+            let text_buffer = value.text_buffer.get(offset..offset + delta).unwrap_or(&[]);
+            let ruby_delta = raw_span.ruby_length as usize;
+            let ruby_buffer = value
+                .text_buffer
+                .get(ruby_offset..ruby_offset + ruby_delta)
+                .unwrap_or(&[]);
             let mut span = shapes::TextSpan::from(raw_span);
             if !text_buffer.is_empty() {
                 span.set_text(String::from_utf8_lossy(text_buffer).to_string());
             }
-
+            if !ruby_buffer.is_empty() {
+                span.ruby = String::from_utf8_lossy(ruby_buffer).to_string();
+            }
             spans.push(span);
             offset += delta;
+            ruby_offset += ruby_delta;
         }
 
-        shapes::Paragraph::new(
+        let mut paragraph = shapes::Paragraph::new(
             value.attrs.text_align.into(),
             value.attrs.text_direction.into(),
             value.attrs.text_decoration.into(),
@@ -252,7 +293,11 @@ impl From<RawParagraph> for shapes::Paragraph {
             value.attrs.line_height,
             value.attrs.letter_spacing,
             spans,
-        )
+        );
+        paragraph.set_writing_mode(RawWritingMode::from(value.attrs.writing_mode).into());
+        paragraph
+            .set_text_orientation(RawTextOrientation::from(value.attrs.text_orientation).into());
+        paragraph
     }
 }
 
@@ -317,6 +362,15 @@ pub extern "C" fn set_shape_grow_type(grow_type: u8) {
         }
         // Don't throw error if the object is not text.
         // On swap component opperations is convenient.
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_line_adjustment(line_adjustment: u8) {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        if let Type::Text(text_content) = &mut shape.shape_type {
+            text_content.set_line_adjustment(RawLineAdjustment::from(line_adjustment).into());
+        }
     });
 }
 
@@ -444,4 +498,119 @@ pub extern "C" fn calculate_position_data() -> *mut u8 {
         }
     });
     mem::write_vec(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{
+        AnnotationClearance, FontFeatures, RubyAlign, RubyOverhang, RubySide, RubySize,
+    };
+
+    /// The CLJS writer (texts.cljs) writes PARAGRAPH-ATTR-U8-SIZE (16)
+    /// attr bytes after the u32 span count, and SPAN-ATTR-U8-SIZE (80)
+    /// attr bytes before the fills block. These sizes must match the struct
+    /// layouts.
+    #[test]
+    fn raw_struct_sizes_match_cljs_writer() {
+        const PARAGRAPH_ATTR_U8_SIZE: usize = 16;
+        const SPAN_ATTR_U8_SIZE: usize = 80;
+        assert_eq!(RAW_PARAGRAPH_DATA_SIZE, 4 + PARAGRAPH_ATTR_U8_SIZE);
+        assert_eq!(
+            RAW_SPAN_DATA_SIZE,
+            SPAN_ATTR_U8_SIZE + MAX_TEXT_FILLS * std::mem::size_of::<RawFillData>()
+        );
+    }
+
+    #[test]
+    fn raw_text_combine_upright_counts_deserialize() {
+        // Byte 5 of the span attr block; the counted digits variants map
+        // onto their max run length.
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[5] = RawTextCombineUpright::Digits2 as u8;
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+        assert_eq!(span.text_combine_upright.digits_max(), Some(2));
+
+        bytes[5] = RawTextCombineUpright::Digits3 as u8;
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+        assert_eq!(span.text_combine_upright.digits_max(), Some(3));
+
+        bytes[5] = RawTextCombineUpright::Digits as u8;
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+        assert_eq!(span.text_combine_upright.digits_max(), Some(4));
+    }
+
+    #[test]
+    fn raw_font_features_deserializes_from_reserved_span_byte() {
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[8] = RawFontFeatures::Vpal as u8;
+
+        let raw = RawTextSpan::from(bytes);
+        let span = shapes::TextSpan::from(raw);
+
+        assert_eq!(span.font_features, FontFeatures::Vpal);
+    }
+
+    #[test]
+    fn raw_annotation_clearance_deserializes_from_reserved_span_byte() {
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[9] = RawAnnotationClearance::Auto as u8;
+
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+
+        assert_eq!(span.annotation_clearance, AnnotationClearance::Auto);
+    }
+
+    #[test]
+    fn raw_ruby_customization_deserializes_from_span_bytes() {
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[10] = RawRubySize::Quarter as u8;
+        bytes[11] = RawRubyAlign::SpaceBetween as u8;
+        bytes[12] = RawRubyOverhang::None as u8;
+        bytes[13] = RawRubySide::Under as u8;
+
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+
+        assert_eq!(span.ruby_size, RubySize::Quarter);
+        assert_eq!(span.ruby_align, RubyAlign::SpaceBetween);
+        assert_eq!(span.ruby_overhang, RubyOverhang::None);
+        assert_eq!(span.ruby_side, RubySide::Under);
+    }
+
+    #[test]
+    fn out_of_range_japanese_span_bytes_fall_back_to_defaults() {
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[4..14].fill(0xFF);
+
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+
+        assert_eq!(span.text_orientation, shapes::TextOrientation::Mixed);
+        assert_eq!(span.text_combine_upright, shapes::TextCombineUpright::None);
+        assert_eq!(span.text_emphasis, shapes::TextEmphasis::None);
+        assert!(!span.warichu);
+        assert_eq!(span.font_features, FontFeatures::None);
+        assert_eq!(span.annotation_clearance, AnnotationClearance::None);
+        assert_eq!(span.ruby_size, RubySize::Half);
+        assert_eq!(span.ruby_align, RubyAlign::SpaceAround);
+        assert_eq!(span.ruby_overhang, RubyOverhang::Auto);
+        assert_eq!(span.ruby_side, RubySide::Over);
+    }
+
+    #[test]
+    fn out_of_range_paragraph_writing_bytes_fall_back_to_defaults() {
+        let mut bytes = [0u8; RAW_PARAGRAPH_DATA_SIZE];
+        bytes[8] = 0xFF;
+        bytes[9] = 0xFF;
+
+        let attrs = RawParagraphData::from(bytes);
+
+        assert_eq!(
+            shapes::WritingMode::from(RawWritingMode::from(attrs.writing_mode)),
+            shapes::WritingMode::HorizontalTb
+        );
+        assert_eq!(
+            shapes::TextOrientation::from(RawTextOrientation::from(attrs.text_orientation)),
+            shapes::TextOrientation::Mixed
+        );
+    }
 }
