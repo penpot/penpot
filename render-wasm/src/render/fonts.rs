@@ -33,7 +33,12 @@ pub struct FontStore {
 
 impl FontStore {
     pub fn try_new() -> Result<Self> {
-        let font_mgr = FontMgr::new();
+        // custom_empty: FreeType-backed manager with no system scan. FontMgr::new()
+        // calls SkFontMgr_NewSystem, which on wasm tries to opendir font paths and
+        // aborts when Emscripten is built with -sFILESYSTEM=0 (exporter + browser).
+        let font_mgr = FontMgr::custom_empty().ok_or(Error::CriticalError(
+            "Failed to create empty FontMgr".to_string(),
+        ))?;
         let font_provider = load_default_provider(&font_mgr);
         let mut font_collection = skia::textlayout::FontCollection::new();
         font_collection.set_default_font_manager(FontMgr::from(font_provider.clone()), None);
@@ -47,7 +52,7 @@ impl FontStore {
         let debug_font = skia::Font::new(debug_typeface, 12.0);
 
         let ui_typeface = font_mgr
-            .new_from_data(UI_FONT_BYTES, None)
+            .new_from_data(skia::Data::new_copy(UI_FONT_BYTES), None)
             .ok_or(Error::CriticalError("Failed to load UI font".to_string()))?;
         let ui_font = skia::Font::new(ui_typeface, 12.0);
 
@@ -96,7 +101,7 @@ impl FontStore {
 
         let typeface = self
             .font_mgr
-            .new_from_data(font_data, None)
+            .new_from_data(skia::Data::new_copy(font_data), None)
             .ok_or(Error::CriticalError(
                 "Failed to create typeface".to_string(),
             ))?;
@@ -265,7 +270,7 @@ fn load_default_provider(font_mgr: &FontMgr) -> skia::textlayout::TypefaceFontPr
 
     let family = FontFamily::new(default_font_uuid(), 400, FontStyle::Normal);
     let font = font_mgr
-        .new_from_data(DEFAULT_FONT_BYTES, None)
+        .new_from_data(skia::Data::new_copy(DEFAULT_FONT_BYTES), None)
         .expect("Failed to load font");
     font_provider.register_typeface(font, family.alias().as_str());
 

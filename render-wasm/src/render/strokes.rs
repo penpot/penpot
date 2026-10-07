@@ -439,7 +439,7 @@ fn expand_side_patterns(
             line_pb.detach()
         };
 
-        let mut outline = skia::Path::default();
+        let mut outline = skia::PathBuilder::new();
         if skia::path_utils::fill_path_with_paint(
             &line_path,
             &stamp_paint,
@@ -447,7 +447,7 @@ fn expand_side_patterns(
             None,
             None,
         ) {
-            pb.add_path(&outline);
+            pb.add_path(&outline.detach(), None);
             expanded = true;
         }
     }

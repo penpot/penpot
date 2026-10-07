@@ -68,7 +68,7 @@ impl TextPaths {
                 let Some(glyph_path) = font.get_path(*glyph) else {
                     continue;
                 };
-                builder.add_path(&glyph_path.with_offset(run_origin + *position));
+                builder.add_path(&glyph_path.with_offset(run_origin + *position), None);
                 has_glyphs = true;
             }
 

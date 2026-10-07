@@ -20,7 +20,7 @@ fi
 export BUILD_NAME="${BUILD_NAME:-render-wasm}"
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
 export CARGO_TARGET_DIR=${CARGO_TARGET_DIR:-"target/$RENDER_TARGET"};
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.93.1/skia-binaries-319323662b1685a112f5-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp-pdf-simd.tar.gz"}
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp-pdf-simd.tar.gz"}
 
 # 256 MB of initial heap to perform less
 # initial calls to memory grow.
