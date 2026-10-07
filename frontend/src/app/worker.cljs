@@ -12,7 +12,6 @@
    [app.common.types.objects-map]
    [app.util.object :as obj]
    [app.worker.impl :as impl]
-   [app.worker.import]
    [app.worker.index]
    [app.worker.messages :as wm]
    [app.worker.thumbnails]

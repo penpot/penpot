@@ -1351,6 +1351,43 @@
        :shape-id (:shape-id fill)
        :index (:index fill)})))
 
+(defn shape-colors
+  [shape file-id libraries]
+  (let [applied-tokens (:applied-tokens shape)
+        applied-fill   (get applied-tokens :fill)
+        applied-stroke (get applied-tokens :stroke-color)
+        fills          (:fills shape)
+        strokes        (:strokes shape)
+        shadows        (:shadow shape)
+        shape-id       (:id shape)
+
+        fills* (map-indexed
+                (fn [index fill]
+                  (cond-> (assoc fill :shape-id shape-id :index index)
+                    (and (zero? index) applied-fill)
+                    (assoc :has-token-applied true
+                           :token-name applied-fill)))
+                fills)
+
+        strokes* (map-indexed
+                  (fn [index stroke]
+                    (cond-> (assoc stroke :shape-id shape-id :index index)
+                      (and (zero? index) applied-stroke)
+                      (assoc :has-token-applied true
+                             :token-name applied-stroke)))
+                  strokes)
+
+        shadows* (map-indexed #(assoc %2 :shape-id shape-id :index %1) shadows)]
+    (if (= :text (:type shape))
+      (-> []
+          (into (keep #(stroke->color-att % file-id libraries)) strokes*)
+          (into (map #(shadow->color-attr % file-id libraries)) shadows*)
+          (into (extract-text-colors shape file-id libraries)))
+      (-> []
+          (into (keep #(fill->color-att % file-id libraries)) fills*)
+          (into (keep #(stroke->color-att % file-id libraries)) strokes*)
+          (into (map #(shadow->color-attr % file-id libraries)) shadows*)))))
+
 (defn extract-all-colors
   "Extracts color information from a list of shapes, including fills, strokes, and shadows.
      If a shape has applied tokens of type :fill or :stroke-color, the first fill or stroke
@@ -1366,41 +1403,4 @@
      Returns:
      A vector of color attribute maps with metadata for each shape."
   [shapes file-id libraries]
-  (reduce
-   (fn [result shape]
-     (let [applied-tokens (:applied-tokens shape)
-           applied-fill   (get applied-tokens :fill)
-           applied-stroke (get applied-tokens :stroke-color)
-           fills          (:fills shape)
-           strokes        (:strokes shape)
-           shadows        (:shadow shape)
-           shape-id       (:id shape)
-
-           fills* (map-indexed
-                   (fn [index fill]
-                     (cond-> (assoc fill :shape-id shape-id :index index)
-                       (and (zero? index) applied-fill)
-                       (assoc :has-token-applied true
-                              :token-name applied-fill)))
-                   fills)
-
-           strokes* (map-indexed
-                     (fn [index stroke]
-                       (cond-> (assoc stroke :shape-id shape-id :index index)
-                         (and (zero? index) applied-stroke)
-                         (assoc :has-token-applied true
-                                :token-name applied-stroke)))
-                     strokes)
-
-           shadows* (map-indexed #(assoc %2 :shape-id shape-id :index %1) shadows)]
-       (if (= :text (:type shape))
-         (-> result
-             (into (keep #(stroke->color-att % file-id libraries)) strokes*)
-             (into (map #(shadow->color-attr % file-id libraries)) shadows*)
-             (into (extract-text-colors shape file-id libraries)))
-         (-> result
-             (into (keep #(fill->color-att % file-id libraries)) fills*)
-             (into (keep #(stroke->color-att % file-id libraries)) strokes*)
-             (into (map #(shadow->color-attr % file-id libraries)) shadows*)))))
-   []
-   shapes))
+  (into [] (mapcat #(shape-colors % file-id libraries)) shapes))

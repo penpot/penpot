@@ -30,6 +30,13 @@
 - `objects-gc` removes deleted domain rows and touches their storage object IDs.
 - Use `::db/reuse-conn true` with `sto/resolve` inside a database transaction.
 
+## GC Cost Model
+
+- `sto/touch-object!` is one `UPDATE storage_object SET touched_at`: DB-only, never touches S3/FS backend content.
+- Physical FK cascades are avoided by convention; domain deletion is logical (`deleted_at`) everywhere. GC removes small objects first, then parents, then grandparents (see `deletion-proc-vars` order in `app.tasks.objects-gc`). Per-row delete cost is small and bounded.
+- `objects-gc` sweeps in chunks of 100 (`::chunk-size`, overridable per job params); `storage-gc-deleted` in chunks of 25. Each chunk is one transaction: cursor fetch + single-row deletes/updates + commit.
+- Consequence: per-chunk cost is DB-only and bounded, so these sweeps cannot outrun the 30-minute jobs lease in practice (would need millions of pending rows in one proc). Per-chunk `heartbeat` where present is belt-and-braces, not load-bearing.
+
 ## Connection Reuse Details
 
 ### `app.storage/resolve` patterns:
@@ -54,8 +61,7 @@
 
 ### Key Warning (from function notes):
 
-The improved note in `import-storage-objects` and `handle-persistence` warns:
-**Do not reuse the main database connection for storage operations within a transaction.** The storage upload process can fail mid-operation, leaving orphaned objects on the backend. If the outer transaction aborts, pending storage objects become unreconciliable because the storage subsystem registers its pending state in separate transactions.
+The improved note in `import-storage-objects` and `handle-persistence` warns: **Do not reuse the main database connection for storage operations within a transaction.** The storage upload process can fail mid-operation, leaving orphaned objects on the backend. If the outer transaction aborts, pending storage objects become unreconciliable because the storage subsystem registers its pending state in separate transactions.
 
 ### Rule of Thumb for `sto/put-object!`:
 
@@ -66,14 +72,12 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - Deduplication requires `::sto/deduplicate?`, a content hash, and bucket metadata.
 - The lookup matches hash, bucket, backend, and `deleted_at IS NULL`.
 - The lookup only considers rows with `status='valid'`; pending rows are invisible.
-- A hit whose blob is missing is repaired in place: the same row/id is kept,
-  and `put-object!` rewrites the blob under that id. This heals all existing
-  references to the object. If the rewrite fails, the row is left live and
-  valid for a later retry.
+- A hit whose blob is missing is repaired in place: the same row/id is kept, and `put-object!` rewrites the blob under that id. This heals all existing references to the object. If the rewrite fails, the row is left live and valid for a later retry.
 - The lookup does not include file ID, profile ID, team ID, or organization ID.
 - Objects can therefore share content across users and files within one bucket.
 - Deleted objects are not reused.
 - `tempfile` objects never use deduplication, even when the caller requests it.
+- `job-resource` objects never use deduplication either, whatever the caller asks: the object belongs to one profile, and a shared blob would serve the artifact of one user to the job of another. `put-object!` excludes the bucket from the dedupable set, so the invariant does not depend on call sites.
 - Use `sto/wrap-with-hash` when the caller already calculated the content hash.
 
 ## Bucket Rules
@@ -91,12 +95,13 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 | `file-data` | Encoded file data when `file-data-backend` is `storage`. Reference metadata has `storage-ref-id`, `file-id`, and the `file_data` row ID. | Yes | Authentication required | Reference scan. |
 | `file-data-fragment` | Compatibility value for file-data fragments. The current backend has no dedicated producer for this bucket. | No current write semantics | Public | No touched-object collector case. |
 | `file-change` | Compatibility value for file changes. Current snapshots store data in `file_data`, not this bucket. | No current write semantics | Authentication required | No touched-object collector case. |
+| `job-resource` | Storage objects owned by job rows (`job.resource_id`), written by `app.jobs.storage`. | No | Authentication required, owner-scoped | jobs-GC touch → reference scan. |
 
-- The valid bucket set lives in `app.storage/valid-buckets`.
+- The valid bucket set is `app.storage.schema/metadata-buckets` (derived from `bucket-requirements`, where a new bucket and its required metadata keys are one entry); `app.storage/valid-buckets` aliases it.
 - `file-media-object` is the default bucket for old rows without bucket metadata.
 - Do not assign a new bucket without adding its access and cleanup behavior.
 - The touched-object collector raises an internal error for an unknown bucket.
-- It supports `file-media-object`, `team-font-variant`, `file-object-thumbnail`, `file-thumbnail`, `profile`, `file-data`, `tempfile`, `upload-session`, and `organization`.
+- It supports `file-media-object`, `team-font-variant`, `file-object-thumbnail`, `file-thumbnail`, `profile`, `file-data`, `tempfile`, `upload-session`, `job-resource`, and `organization`.
 - It does not support `file-data-fragment` or `file-change`.
 
 ## Access Rules
@@ -104,6 +109,7 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - `app.http.assets` decides direct object authentication from the bucket.
 - Public buckets are `file-media-object`, `file-object-thumbnail`, `team-font-variant`, `file-data-fragment`, and `organization`.
 - Other valid buckets require a session or access-token profile ID.
+- `tempfile` and `job-resource` are owner-scoped: the request must come from the profile stored in the object metadata, and a mismatch answers 404 (counted as `unauthorized`). A missing owner is tolerated only in `tempfile`, where legacy objects predate the metadata; `job-resource` always carries one, so an object without it is never served.
 - File-media routes also require file read permission.
 - Non-public direct responses set `content-disposition: attachment`.
 - FS responses use `x-accel-redirect` for the configured asset path.
@@ -130,6 +136,8 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - Logical storage operations (`app.storage`, `::mtx/metrics` required by the schema):
   - `penpot_storage_operations_total{op,bucket,backend}` — `put`, `repair`, `get-data`, `get-bytes`, `del`, `touch`, `exists`. All ops are success-only: `put`/`repair` emit after the backend write, `get-*` after the backend fetch opens, `touch`/`del` only when a row actually changed. `touch-object!`/`del-object!` take the object id (UUID) only — no object overload. Labels come from the updated row itself via `UPDATE ... RETURNING id, backend, metadata` (no extra `SELECT`); with no row matched they emit nothing. `del-object!` only matches live rows (`deleted_at IS NULL`): a repeated del returns `false` and emits nothing. Post-open stream read errors stay counted as attempts. `del` only marks `deleted_at`; physical deletion is a GC concern. `exists` is emitted per deduplication-hit probe, always paired with a `hit`/`repair` outcome (never on probe failure), not per user-facing existence check.
   - `penpot_storage_dedup_total{result,bucket}` — `hit`, `miss`, `repair`, `skip`.
+- Storage GC poison (`app.storage.gc-touched`, `::mtx/metrics` required in the handler cfg):
+  - `penpot_storage_gc_poison_total` — touched rows whose metadata fails to decode. Each one is logged at error level and deferred exactly one day instead of aborting the chunk. No labels; incremented once per row per scan.
 - Asset serving (`app.http.assets`, `::mtx/metrics` required in the handler cfg):
   - `penpot_storage_asset_requests_total{route,backend,bucket,result}` — `route` is `by-id`, `by-file-media-id`, or `thumbnail`; `result` is `served` (<400), `not-found` (404), `unauthorized` (401/403), or `error` (everything else, including a nil/non-number status: every serve path must set `::yres/status`). Serve-path exceptions are counted by `serve-object-measured` and then rethrown. Permission-denied file-media requests and tempfile ownership mismatches both answer HTTP 404 (to avoid leaking existence) but are counted as `unauthorized`. Malformed UUIDs raise before any emission point and are never counted. Counts backend requests that trigger a browser GET to the object store (one per cache miss), so it is a proxy for object GETs, not an exact count.
 - The physical and logical counters intentionally overlap in coverage but differ in meaning; do not sum them.

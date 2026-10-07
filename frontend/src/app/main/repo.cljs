@@ -159,6 +159,7 @@
    {:stream? true}
 
    :export-binfile {:response-type :blob}
+
    :retrieve-list-of-builtin-templates {:query-params :all}})
 
 (defn- send!

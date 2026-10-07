@@ -24,6 +24,9 @@ on:
     paths:
       - 'mcp/**'
 
+permissions:
+  contents: read
+
 jobs:
   test-mcp:
     if: ${{ !github.event.pull_request.draft }}
@@ -33,7 +36,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup
         working-directory: ./mcp

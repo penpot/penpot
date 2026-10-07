@@ -13,6 +13,21 @@ on:
         description: 'Tag to release'
         type: string
         required: true
+    secrets:
+      AWS_REGION:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+      DOCKER_REGISTRY:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      MATTERMOST_WEBHOOK:
+        required: false
+      PUB_DOCKER_PASSWORD:
+        required: false
+      PUB_DOCKER_USERNAME:
+        required: false
 
 permissions:
   contents: write
@@ -26,18 +41,21 @@ jobs:
     steps:
       - name: Extract some useful variables
         id: vars
+        env:
+          GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
-          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
 
       # --- Publicly release the docker images ---
       - name: Configure ECR credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           aws-access-key-id: ${{ secrets.DOCKER_USERNAME }}
           aws-secret-access-key: ${{ secrets.DOCKER_PASSWORD }}
@@ -92,14 +110,19 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       # --- Create GitHub release ---
+      # Updates the release if it already exists, so re-running is safe.
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.vars.outputs.gh_ref }}
-          name: ${{ steps.vars.outputs.gh_ref }}
-          body: ${{ steps.extract_release_notes.outputs.release_notes }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.vars.outputs.gh_ref }}
+          NOTES: ${{ steps.extract_release_notes.outputs.release_notes }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes "$NOTES"
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes "$NOTES"
+          fi
 
       - name: Notify Mattermost
         if: failure()

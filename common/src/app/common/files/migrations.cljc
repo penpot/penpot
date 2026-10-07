@@ -2132,6 +2132,25 @@
         (update :pages-index d/update-vals repair-container)
         (d/update-when :components d/update-vals repair-container))))
 
+(defmethod migrate-data "0030-remove-stroke-per-side-attr"
+  ;; Individual stroke widths shipped with a `:stroke-per-side` boolean on every
+  ;; stroke, telling the renderer and the CSS generator whether the four side
+  ;; widths were meaningful. Comparing the sides answers that on its own, so
+  ;; the attribute was dropped from the closed stroke schema and the toggle
+  ;; became ephemeral editor state. Files written while it was still persisted
+  ;; fail validation with an `:malli.core/extra-key` error; drop the attribute
+  ;; and keep the side widths, which hold the real design data.
+  [data _]
+  (letfn [(repair-shape [shape]
+            (d/update-when shape :strokes d/update-vals #(dissoc % :stroke-per-side)))
+
+          (repair-container [container]
+            (d/update-when container :objects d/update-vals repair-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals repair-container)
+        (d/update-when :components d/update-vals repair-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2218,4 +2237,5 @@
          "0026-fix-svg-raw-shapes-uuids"
          "0027-separate-tokens-status"
          "0028-normalize-constrained-values"
-         "0029-move-background-blur-out-of-blur"]))
+         "0029-move-background-blur-out-of-blur"
+         "0030-remove-stroke-per-side-attr"]))

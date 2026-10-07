@@ -96,12 +96,11 @@
   "Convert the log record into a report object and persist it on the database"
   [{:keys [::db/pool]} {:keys [::l/id] :as record}]
   (try
-    (let [uri    (cf/get :public-uri)
-          report (-> record log-record->report d/without-nils)]
+    (let [report (-> record log-record->report d/without-nils)]
       (l/dbg :hint "registering error on database"
              :id (str id)
              :src "logging"
-             :uri (str uri "/dbg/error/" id))
+             :uri (cf/get-public-uri "dbg/error/" (str id)))
       (persist-on-database! pool id 3 report))
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
@@ -139,12 +138,11 @@
   "Convert the log record into a report object and persist it on the database"
   [{:keys [::db/pool]} {:keys [id] :as event}]
   (try
-    (let [uri    (cf/get :public-uri)
-          report (-> event audit-event->report d/without-nils)]
+    (let [report (-> event audit-event->report d/without-nils)]
       (l/dbg :hint "registering error on database"
              :id (str id)
              :src "audit-log"
-             :uri (str uri "/dbg/error/" id))
+             :uri (cf/get-public-uri "dbg/error/" (str id)))
       (persist-on-database! pool id 4 report))
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
@@ -172,18 +170,17 @@
      :value            (pp/pprint-str result :length 50)
      :tenant           (cf/get :tenant)
      :version          (:full cf/version)
-     :href             (str (cf/get :public-uri))}))
+     :href             (cf/get-public-uri)}))
 
 (defn- handle-rlimit-event
   "Convert the log record into a report object and persist it on the database"
   [{:keys [::db/pool]} {:keys [::rlimit/id] :as event}]
   (try
-    (let [uri    (cf/get :public-uri)
-          report (-> event rlimit-event->report d/without-nils)]
+    (let [report (-> event rlimit-event->report d/without-nils)]
       (l/dbg :hint "registering rate limit rejection"
              :id (str id)
              :src "rlimit"
-             :uri (str uri "/dbg/error/" id))
+             :uri (cf/get-public-uri "dbg/error/" (str id)))
       (persist-on-database! pool id 5 report))
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
@@ -194,48 +191,50 @@
 
 (defmethod ig/init-key ::reporter
   [_ cfg]
-  (let [input  (sp/chan :buf (sp/sliding-buffer 256))
-        thread (px/thread
-                 {:name "penpot/reporter/database"}
-                 (l/info :hint "initializing database error persistence")
-                 (try
-                   (loop []
-                     (when-let [item (sp/take! input)]
-                       (cond
-                         (::l/id item)
-                         (handle-log-record cfg item)
+  (when (contains? cf/flags :error-reporting)
+    (let [input  (sp/chan :buf (sp/sliding-buffer 256))
+          thread (px/thread
+                   {:name "penpot/reporter/database"}
+                   (l/info :hint "initializing database error persistence")
+                   (try
+                     (loop []
+                       (when-let [item (sp/take! input)]
+                         (when @enabled
+                           (cond
+                             (::l/id item)
+                             (handle-log-record cfg item)
 
-                         (::rlimit/id item)
-                         (handle-rlimit-event cfg item)
+                             (::rlimit/id item)
+                             (handle-rlimit-event cfg item)
 
-                         (-> item meta ::audit/event)
-                         (handle-audit-event cfg item)
+                             (-> item meta ::audit/event)
+                             (handle-audit-event cfg item)
 
-                         :else
-                         (l/warn :hint "received unexpected item" :item item))
+                             :else
+                             (l/warn :hint "received unexpected item" :item item)))
 
-                       (recur)))
+                         (recur)))
 
-                   (catch InterruptedException _
-                     (l/debug :hint "reporter interrupted"))
-                   (catch Throwable cause
-                     (l/error :hint "unexpected error" :cause cause))
-                   (finally
-                     (l/info :hint "reporter terminated"))))]
+                     (catch InterruptedException _
+                       (l/debug :hint "reporter interrupted"))
+                     (catch Throwable cause
+                       (l/error :hint "unexpected error" :cause cause))
+                     (finally
+                       (l/info :hint "reporter terminated"))))]
 
-    (add-watch l/log-record ::reporter
-               (fn [_ _ _ record]
-                 (when (= :error (::l/level record))
-                   (sp/put! input record))))
+      (add-watch l/log-record ::reporter
+                 (fn [_ _ _ record]
+                   (when (= :error (::l/level record))
+                     (sp/put! input record))))
 
-    {::input input
-     ::thread thread}))
+      {::input input
+       ::thread thread})))
 
 (defmethod ig/halt-key! ::reporter
   [_ {:keys [::input ::thread]}]
   (remove-watch l/log-record ::reporter)
-  (sp/close! input)
-  (px/interrupt! thread))
+  (some-> input sp/close!)
+  (some-> thread px/interrupt!))
 
 (defn emit
   "Emit an event/report into the database reporter"

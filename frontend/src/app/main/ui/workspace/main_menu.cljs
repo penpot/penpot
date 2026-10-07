@@ -806,7 +806,7 @@
                                                                :submenu-item true
                                                                :disabled (not can-open?))
                                     :on-key-down on-key-down}
-            [:span {:class (stl/css :item-name)} name]
+            [:span {:class (stl/css :item-name :plugin-name) :title name} name]
             (when-not can-open?
               [:span {:title (tr "workspace.plugins.error.need-editor")}
                [:> icon* {:icon-id i/help

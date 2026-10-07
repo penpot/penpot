@@ -319,37 +319,50 @@ impl ShapesPoolImpl {
             })
             .collect();
 
-        let mut descendants_idxs: Vec<usize> = Vec::new();
         for (root_idx, matrix) in root_pairs {
-            for descendant_idx in self.collect_all_descendants(root_idx) {
-                if let std::collections::hash_map::Entry::Vacant(e) =
-                    modifiers_with_idx.entry(descendant_idx)
-                {
-                    e.insert(matrix);
-                    descendants_idxs.push(descendant_idx);
-                }
+            for descendant_idx in self.collect_inheriting_descendants(root_idx, &modifiers_with_idx)
+            {
+                modifiers_with_idx.insert(descendant_idx, matrix);
             }
         }
 
         self.modifiers = modifiers_with_idx;
 
-        for descendant_idx in descendants_idxs {
-            self.modified_shape_cache
-                .insert(descendant_idx, OnceCell::new());
+        for &idx in self.modifiers.keys() {
+            self.modified_shape_cache.insert(idx, OnceCell::new());
         }
 
-        // Compute ancestors before consuming `ids` so we can move it into
-        // `modifier_uuids` without a clone.
-        let all_ids = shapes::all_with_ancestors(&ids, self, true);
+        // Snapped translations arrive propagated to every descendant. Keep only the shapes
+        // that move relative to their parent, so tiles are rebuilt per moved subtree.
+        let roots: Vec<Uuid> = ids
+            .into_iter()
+            .filter(|uuid| !self.moves_with_parent(uuid))
+            .collect();
 
-        for uuid in all_ids {
+        for uuid in shapes::all_with_ancestors(&roots, self, true) {
             if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
                 self.modified_shape_cache.insert(idx, OnceCell::new());
             }
         }
 
         // rebuild_modifier_tiles doesn't process every descendant individually.
-        self.modifier_uuids = ids;
+        self.modifier_uuids = roots;
+    }
+
+    fn moves_with_parent(&self, id: &Uuid) -> bool {
+        let Some(&idx) = self.uuid_to_idx.get(id) else {
+            return false;
+        };
+        let Some(&parent_idx) = self.shapes[idx]
+            .parent_id
+            .as_ref()
+            .and_then(|parent_id| self.uuid_to_idx.get(parent_id))
+        else {
+            return false;
+        };
+        self.modifiers
+            .get(&parent_idx)
+            .is_some_and(|parent| self.modifiers.get(&idx) == Some(parent))
     }
 
     pub fn set_structure(&mut self, structure: HashMap<Uuid, Vec<StructureEntry>>) {
@@ -473,7 +486,13 @@ impl ShapesPoolImpl {
         }
     }
 
-    fn collect_all_descendants(&self, idx: usize) -> Vec<usize> {
+    /// Descendants of `idx` without a modifier of their own, stopping at the subtrees of
+    /// those that have one: they inherit from their nearest ancestor with a modifier.
+    fn collect_inheriting_descendants(
+        &self,
+        idx: usize,
+        modifiers: &HashMap<usize, skia::Matrix>,
+    ) -> Vec<usize> {
         let mut result = Vec::new();
         let mut queue: VecDeque<&Uuid> = VecDeque::new();
         let shape = &self.shapes[idx];
@@ -482,6 +501,9 @@ impl ShapesPoolImpl {
         }
         while let Some(child_id) = queue.pop_front() {
             if let Some(&child_idx) = self.uuid_to_idx.get(child_id) {
+                if modifiers.contains_key(&child_idx) {
+                    continue;
+                }
                 result.push(child_idx);
                 let child_shape = &self.shapes[child_idx];
                 for grandchild_id in child_shape.children_ids_iter(false) {

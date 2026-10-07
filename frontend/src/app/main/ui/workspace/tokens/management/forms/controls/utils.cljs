@@ -125,3 +125,30 @@
   [error token-name]
   (let [translated-string (tr "errors.tokens.name-collision" token-name)]
     (= error translated-string)))
+
+(defn- referenced-token-name
+  "Name of the token `reference` points to, when `reference` is exactly
+  one `{name}` reference."
+  [reference]
+  (when (string? reference)
+    (let [reference (str/trim reference)
+          names     (cto/find-token-value-references reference)
+          name      (first names)]
+      (when (and (= 1 (count names))
+                 (= reference (str "{" name "}")))
+        name))))
+
+(defn referenced-token-value
+  "Composite value of the `token-type` token that `reference` points to,
+  following chained references. Nil when the chain does not end in a
+  `token-type` token with a composite value."
+  [tokens reference token-type]
+  (loop [reference reference
+         visited   #{}]
+    (when-let [name (referenced-token-name reference)]
+      (let [{:keys [type value]} (get tokens name)]
+        (when (and (= token-type type)
+                   (not (contains? visited name)))
+          (if (string? value)
+            (recur value (conj visited name))
+            value))))))

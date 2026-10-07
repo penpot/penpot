@@ -9,7 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.path-names :as cpn]
+   [app.common.types.text :as txt]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -17,6 +19,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.texts-events :as dwte]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -243,6 +246,66 @@
                                     :selected-full selected-full
                                     :is-read-only is-read-only}]))])]))
 
+;; Kept apart from `typographies-section*` so that selection, shape and
+;; editor changes only re-render this button, not the typography list.
+(mf/defc add-typography-button*
+  {::mf/private true}
+  [{:keys [file-id]}]
+  (let [selected      (mf/deref refs/selected-shapes)
+        objects       (mf/deref refs/workspace-page-objects)
+        text-shapes   (mf/with-memo [selected objects]
+                        (into []
+                              (comp (keep (d/getf objects))
+                                    (filter cfh/text-shape?))
+                              selected))
+        many-texts?   (> (count text-shapes) 1)
+        shape         (when-not many-texts? (first text-shapes))
+        shape-id      (:id shape)
+
+        ;; The v2 editor instance is mutable, so its per-shape state is
+        ;; included only to re-render when the editor styles change.
+        editor-ref    (mf/with-memo [shape-id]
+                        (l/derived (fn [state]
+                                     (when shape-id
+                                       [(dwte/editor-text-options state shape-id)
+                                        (dm/get-in state [:workspace-v2-editor-state shape-id])]))
+                                   st/state =))
+        editor-data   (mf/deref editor-ref)
+        loaded-fonts  (mf/deref fonts/fontsdb)
+
+        values        (mf/with-memo [shape editor-data]
+                        (when shape
+                          (dwt/current-text-values
+                           (assoc (first editor-data)
+                                  :shape shape
+                                  :attrs txt/text-node-attrs))))
+        font-id       (:font-id values)
+        font-missing? (and (some? font-id)
+                           (not (d/seek (partial = :multiple) (vals values)))
+                           (not (contains? loaded-fonts font-id)))
+
+        on-click
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [_]
+           (st/emit! (dw/set-assets-section-open file-id :typographies true))
+           (st/emit! (dwte/add-typography file-id))))]
+
+    [:> icon-button* {:variant "ghost"
+                      :aria-label (cond
+                                    many-texts?
+                                    (tr "workspace.assets.typography.multiple-texts-selected")
+
+                                    font-missing?
+                                    (tr "workspace.options.font-not-available"
+                                        (:font-family values))
+
+                                    :else
+                                    (tr "workspace.assets.typography.add-typography"))
+                      :on-click on-click
+                      :disabled (or many-texts? font-missing?)
+                      :icon i/add}]))
+
 (mf/defc typographies-section*
   [{:keys [file file-id typographies open-status-ref selected
            is-local is-open is-force-open is-reverse-sort
@@ -273,13 +336,6 @@
                                    (l/derived open-status-ref)))
 
         open-groups          (mf/deref open-groups-ref)
-
-        add-typography
-        (mf/use-fn
-         (mf/deps file-id)
-         (fn [_]
-           (st/emit! (dw/set-assets-section-open file-id :typographies true))
-           (st/emit! (dwte/add-typography file-id))))
 
         handle-change
         (mf/use-fn
@@ -427,10 +483,7 @@
       (when is-local
         [:> cmm/asset-section-block* {:role :title-button}
          (when-not read-only?
-           [:> icon-button* {:variant "ghost"
-                             :aria-label (tr "workspace.assets.typography.add-typography")
-                             :on-click add-typography
-                             :icon i/add}])])
+           [:> add-typography-button* {:file-id file-id}])])
 
       [:> cmm/asset-section-block* {:role :content}
        [:& typographies-group {:file-id file-id

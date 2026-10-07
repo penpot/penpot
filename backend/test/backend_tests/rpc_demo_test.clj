@@ -9,8 +9,8 @@
    [app.auth :as auth]
    [app.common.time :as ct]
    [app.config :as cf]
+   [app.jobs :as jobs]
    [app.rpc.commands.profile :as profile]
-   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -80,8 +80,8 @@
 (t/deftest create-demo-profile-uses-global-delay-by-default
   (with-redefs [cf/flags (conj cf/flags :demo-users)]
     (let [captured (atom nil)]
-      (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/delay]}]
-                                  (reset! captured {:task task :delay delay}))]
+      (with-redefs [jobs/submit (fn [_cfg {:keys [::jobs/name ::jobs/delay]}]
+                                  (reset! captured {:task name :delay delay}))]
         (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile})]
           (t/is (nil? error))
           (t/is (some? (:email result)))
@@ -91,8 +91,8 @@
 (t/deftest create-demo-profile-accepts-short-expires-in
   (with-redefs [cf/flags (conj cf/flags :demo-users)]
     (let [captured (atom nil)]
-      (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/delay]}]
-                                  (reset! captured {:task task :delay delay}))]
+      (with-redefs [jobs/submit (fn [_cfg {:keys [::jobs/name ::jobs/delay]}]
+                                  (reset! captured {:task name :delay delay}))]
         (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
                                                    :expires-in "10m"})]
           (t/is (nil? error))
@@ -119,5 +119,38 @@
   (with-redefs [cf/flags (conj cf/flags :demo-users)]
     (let [{:keys [error]} (th/command! {::th/type :create-demo-profile
                                         :expires-in "yes"})]
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :params-validation)))))
+
+(t/deftest create-demo-profile-stores-wasm-renderer-when-requested
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
+                                               :renderer :wasm})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (= :wasm (get-in decoded [:props :renderer])))))))
+
+(t/deftest create-demo-profile-stores-svg-renderer-when-requested
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
+                                               :renderer :svg})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (= :svg (get-in decoded [:props :renderer])))))))
+
+(t/deftest create-demo-profile-omits-renderer-by-default
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (false? (contains? (:props decoded) :renderer)))))))
+
+(t/deftest create-demo-profile-rejects-unknown-renderer
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error]} (th/command! {::th/type :create-demo-profile
+                                        :renderer :canvas})]
       (t/is (th/ex-of-type? error :validation))
       (t/is (th/ex-of-code? error :params-validation)))))

@@ -623,6 +623,8 @@
 
 (t/deftest test-filter-telemetry-context-strips-pii-keys
   ;; Session-linking and access-token fields must be removed.
+  ;; The initiator survives: it only says which app sent the event
+  ;; ("app", "admin-console") and carries no personal data.
   (let [filter-telemetry-context (ns-resolve 'app.loggers.audit 'filter-telemetry-context)
         ctx {:browser              "Firefox"
              :session              "abc-session-id"
@@ -633,10 +635,10 @@
              :access-token-type    "api-key"}
         result (:context (filter-telemetry-context {:source "frontend" :context ctx}))]
     (t/is (= "Firefox" (:browser result)))
+    (t/is (= "app" (:initiator result)))
     (t/is (not (contains? result :session)))
     (t/is (not (contains? result :external-session-id)))
     (t/is (not (contains? result :file-stats)))
-    (t/is (not (contains? result :initiator)))
     (t/is (not (contains? result :access-token-id)))
     (t/is (not (contains? result :access-token-type)))))
 
@@ -753,6 +755,34 @@
     ;; Strings are stripped
     (t/is (not (contains? (:props result) :route)))
     (t/is (not (contains? (:props result) :label)))))
+
+(t/deftest test-filter-telemetry-props-accept-organization-invitation
+  ;; The shadow row of accept-organization-invitation keeps the ids, the boolean
+  ;; and the count, and drops every text prop, the raw email among them. The
+  ;; full row and the Nexus archive still carry all of them, and there is no
+  ;; context key to fall back on: `safe-backend-context-keys` has no
+  ;; `:event-origin`, that one belongs to the browser.
+  (let [ftp (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        profile-id (uuid/next)
+        organization-id (uuid/next)
+        result (ftp {:source "backend"
+                     :name "accept-organization-invitation"
+                     :type "action"
+                     :props {:profile-id profile-id
+                             :invited-by profile-id
+                             :organization-id organization-id
+                             :team-id (uuid/next)
+                             :belongs-to-team-on-add true
+                             :organization-member-count-before 3
+                             :organization-member-add-source "team-invitation"
+                             :profile-email "invitee@example.com"}})]
+    (t/is (= profile-id (get-in result [:props :profile-id])))
+    (t/is (= profile-id (get-in result [:props :invited-by])))
+    (t/is (= organization-id (get-in result [:props :organization-id])))
+    (t/is (true? (get-in result [:props :belongs-to-team-on-add])))
+    (t/is (= 3 (get-in result [:props :organization-member-count-before])))
+    (t/is (not (contains? (:props result) :profile-email)))
+    (t/is (not (contains? (:props result) :organization-member-add-source)))))
 
 (t/deftest test-filter-telemetry-props-organization-sso-failure-keeps-reason
   (let [ftp             (ns-resolve 'app.loggers.audit 'filter-telemetry-props)

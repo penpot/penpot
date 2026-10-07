@@ -75,22 +75,27 @@
 
 (defn- prepare-events
   [{:keys [::rpc/request-at ::rpc/profile-id events] :as params}]
-  (let [request (-> params meta ::http/request)
-        ip-addr (inet/parse-request request)
-        xform   (comp
-                 (map (fn [event]
-                        {:id (uuid/next)
-                         :type (:type event)
-                         :name (:name event)
-                         :props (:props event)
-                         :context (:context event)
-                         :profile-id profile-id
-                         :ip-addr ip-addr
-                         :source "frontend"
-                         :tracked-at (:timestamp event)
-                         :created-at request-at}))
-                 (map (fn [item]
-                        (with-meta item {::audit/event true}))))]
+  (let [request   (-> params meta ::http/request)
+        ip-addr   (inet/parse-request request)
+        initiator (audit/get-client-initiator request)
+        xform     (comp
+                   (map (fn [event]
+                          {:id (uuid/next)
+                           :type (:type event)
+                           :name (:name event)
+                           :props (:props event)
+                           ;; The initiator always comes from the
+                           ;; server (x-client header); anything the
+                           ;; client sends is overwritten.
+                           :context (assoc (:context event)
+                                           :initiator initiator)
+                           :profile-id profile-id
+                           :ip-addr ip-addr
+                           :source "frontend"
+                           :tracked-at (:timestamp event)
+                           :created-at request-at}))
+                   (map (fn [item]
+                          (with-meta item {::audit/event true}))))]
 
     (sequence xform events)))
 

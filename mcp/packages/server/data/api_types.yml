@@ -86,12 +86,13 @@ Penpot:
         distributeVertical(shapes: Shape[]): void;
         flatten(shapes: Shape[]): Path[];
         createVariantFromComponents(shapes: Board[]): VariantContainer;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
     Hierarchy
 
-    * Omit<Context, "addListener" | "removeListener">
+    * Omit<Context, "addListener" | "removeListener" | "management">
       + Penpot
   members:
     Properties:
@@ -880,6 +881,27 @@ Penpot:
         Returns VariantContainer
 
         The variant container created
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the layout settles, the promise is rejected. Defaults to
+          30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the layout is updated. It is
+        rejected with an Error, both on timeout and on an invalid timeout value.
 ActiveUser:
   overview: |-
     Interface ActiveUser
@@ -1118,9 +1140,9 @@ Board:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -1185,6 +1207,7 @@ Board:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -1533,9 +1556,9 @@ Board:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -2175,6 +2198,27 @@ Board:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 VariantContainer:
   overview: |-
     Interface VariantContainer
@@ -2271,9 +2315,9 @@ VariantContainer:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -2338,6 +2382,7 @@ VariantContainer:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -2689,9 +2734,9 @@ VariantContainer:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -3331,6 +3376,27 @@ VariantContainer:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 Boolean:
   overview: |-
     Interface Boolean
@@ -3414,9 +3480,9 @@ Boolean:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -3481,6 +3547,7 @@ Boolean:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -3786,9 +3853,9 @@ Boolean:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -4375,6 +4442,27 @@ Boolean:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 CloseOverlay:
   overview: |-
     Interface CloseOverlay
@@ -4742,9 +4830,9 @@ CommonLayout:
         rightPadding: number;
         bottomPadding: number;
         leftPadding: number;
-        horizontalSizing: "fill"
-        | "auto"
-        | "fix";
+        paddingType: "simple"
+        | "multiple";
+        horizontalSizing: "fill" | "auto" | "fix";
         verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
     }
@@ -4873,6 +4961,16 @@ CommonLayout:
         ```
 
         The `leftPadding` property specifies the padding at the left of the container.
+      paddingType: |-
+        ```
+        paddingType: "simple" | "multiple"
+        ```
+
+        The `paddingType` property specifies how the four padding values are applied.
+        It can be one of the following values:
+
+        * 'simple': the vertical and horizontal paddings are mirrored across both sides.
+        * 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
       horizontalSizing: |-
         ```
         horizontalSizing: "fill" | "auto" | "fix"
@@ -4904,6 +5002,297 @@ CommonLayout:
         The `remove` method removes the layout.
 
         Returns void
+WorkspaceContext:
+  overview: |-
+    Interface WorkspaceContext
+    ==========================
+
+    Current workspace of this browser tab.
+
+    ```
+    interface WorkspaceContext {
+        status: "none" | "loading" | "ready";
+        fileId: string | null;
+        fileName: string | null;
+        teamId: string | null;
+    }
+    ```
+
+    Referenced by: EventsMap, PenpotMgmt
+  members:
+    Properties:
+      status: |-
+        ```
+        readonly status: "none" | "loading" | "ready"
+        ```
+      fileId: |-
+        ```
+        readonly fileId: string | null
+        ```
+      fileName: |-
+        ```
+        readonly fileName: string | null
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string | null
+        ```
+ProjectSummary:
+  overview: |-
+    Interface ProjectSummary
+    ========================
+
+    Metadata snapshot of an accessible, non-deleted project.
+
+    ```
+    interface ProjectSummary {
+        id: string;
+        teamId: string;
+        name: string;
+        isDefault: boolean;
+        fileCount: number;
+    }
+    ```
+
+    Referenced by: PenpotMgmt
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string
+        ```
+      name: |-
+        ```
+        readonly name: string
+        ```
+      isDefault: |-
+        ```
+        readonly isDefault: boolean
+        ```
+
+        Whether this is the team's Drafts project.
+      fileCount: |-
+        ```
+        readonly fileCount: number
+        ```
+FileSummary:
+  overview: |-
+    Interface FileSummary
+    =====================
+
+    Metadata snapshot of an accessible, non-deleted file.
+
+    ```
+    interface FileSummary {
+        id: string;
+        teamId: string;
+        projectId: string;
+        name: string;
+        modifiedAt: string;
+    }
+    ```
+
+    Referenced by: PenpotMgmt
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string
+        ```
+      projectId: |-
+        ```
+        readonly projectId: string
+        ```
+      name: |-
+        ```
+        readonly name: string
+        ```
+      modifiedAt: |-
+        ```
+        readonly modifiedAt: string
+        ```
+
+        Last modification time as an ISO 8601 string in UTC.
+PenpotMgmt:
+  overview: |-
+    Interface PenpotMgmt
+    ====================
+
+    Application management API exposed as `penpotMgmt` to global plugins.
+
+    * Discovery and navigation require `content:read`; creation requires `content:write`.
+    * Available in the dashboard and file workspaces.
+    * Use this API to discover, create and open files; file operations on `penpot` require a ready workspace.
+    * Reacquire file, page and shape objects after changing files.
+
+    ```
+    interface PenpotMgmt {
+        workspace: WorkspaceContext;
+        listProjects(options?: { teamId?: string }): Promise<ProjectSummary[]>;
+        listFiles(options: { projectId: string }): Promise<FileSummary[]>;
+        createProject(options: { name: string; teamId?: string }): Promise<ProjectSummary>;
+        createFile(options: { name: string; projectId: string }): Promise<FileSummary>;
+        openFile(fileId: string, options?: { teamId?: string }): Promise<void>;
+        on(
+            type: "workspacechange",
+            callback: (workspace: WorkspaceContext) => void,
+        ): symbol;
+        off(listenerId: symbol): void;
+    }
+    ```
+
+    Referenced by: Context
+  members:
+    Properties:
+      workspace: |-
+        ```
+        readonly workspace: WorkspaceContext
+        ```
+
+        Current workspace availability and metadata; usable for file operations when status is `ready`.
+    Methods:
+      listProjects: |-
+        ```
+        listProjects(options?: { teamId?: string }): Promise<ProjectSummary[]>
+        ```
+
+        Lists accessible, non-deleted projects as metadata snapshots.
+
+        * `teamId` defaults to the current team.
+        * Queries the backend without opening a file or changing navigation.
+        * Rejects invalid identifiers and backend access errors.
+
+        Parameters
+
+        * options: { teamId?: string }
+
+        Returns Promise<ProjectSummary[]>
+
+        Example
+        ```
+        const projects = await penpotMgmt.listProjects();
+        ```
+      listFiles: |-
+        ```
+        listFiles(options: { projectId: string }): Promise<FileSummary[]>
+        ```
+
+        Lists accessible, non-deleted files in the specified project as metadata snapshots.
+
+        * Requires an explicit `projectId`.
+        * Queries the backend without opening a file or changing navigation.
+        * Rejects invalid identifiers and backend access errors.
+
+        Parameters
+
+        * options: { projectId: string }
+
+        Returns Promise<FileSummary[]>
+
+        Example
+        ```
+        const files = await penpotMgmt.listFiles({ projectId: project.id });
+        ```
+      createProject: |-
+        ```
+        createProject(options: { name: string; teamId?: string }): Promise<ProjectSummary>
+        ```
+
+        Creates a project and returns its metadata snapshot. Requires `content:write`.
+
+        * `teamId` defaults to the current team.
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not change navigation or open a file.
+        * Rejects invalid input, backend access errors and quota errors.
+
+        Parameters
+
+        * options: { name: string; teamId?: string }
+
+        Returns Promise<ProjectSummary>
+
+        Example
+        ```
+        const project = await penpotMgmt.createProject({ name: 'Design system' });
+        ```
+      createFile: |-
+        ```
+        createFile(options: { name: string; projectId: string }): Promise<FileSummary>
+        ```
+
+        Creates a file with an initial page and returns its metadata snapshot. Requires `content:write`.
+
+        * Requires an explicit `projectId`.
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not open the file or change navigation. Use `openFile` to edit it.
+        * Rejects invalid input, backend access errors and quota errors.
+
+        Parameters
+
+        * options: { name: string; projectId: string }
+
+        Returns Promise<FileSummary>
+
+        Example
+        ```
+        const file = await penpotMgmt.createFile({ projectId: project.id, name: 'Login' });
+        await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+        ```
+      openFile: |-
+        ```
+        openFile(fileId: string, options?: { teamId?: string }): Promise<void>
+        ```
+
+        Opens a file in this tab and resolves once its workspace and page are ready.
+
+        * `teamId` defaults to the current team.
+        * Rejects invalid identifiers, failed or superseded navigation, and waits exceeding 30 seconds.
+
+        Parameters
+
+        * fileId: string
+        * options: { teamId?: string }
+
+        Returns Promise<void>
+
+        Example
+        ```
+        await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+        ```
+      on: |-
+        ```
+        on(
+            type: "workspacechange",
+            callback: (workspace: WorkspaceContext) => void,
+        ): symbol
+        ```
+
+        Subscribes to workspace availability and metadata changes.
+
+        Parameters
+
+        * type: "workspacechange"
+        * callback: (workspace: WorkspaceContext) => void
+
+        Returns symbol
+      off: |-
+        ```
+        off(listenerId: symbol): void
+        ```
+
+        Parameters
+
+        * listenerId: symbol
+
+        Returns void
 Context:
   overview: |-
     Interface Context
@@ -4913,6 +5302,7 @@ Context:
 
     ```
     interface Context {
+        management?: Omit<PenpotMgmt, "on" | "off">;
         version: string;
         root: Shape | null;
         currentFile: File | null;
@@ -4979,10 +5369,18 @@ Context:
         distributeVertical(shapes: Shape[]): void;
         flatten(shapes: Shape[]): Path[];
         createVariantFromComponents(shapes: Board[]): VariantContainer;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
   members:
     Properties:
+      management: |-
+        ```
+        readonly management?: Omit<PenpotMgmt, "on" | "off">
+        ```
+
+        Backs `penpotMgmt`. Its events go through the plugin listener registry,
+        so `on` and `off` are not part of it.
       version: |-
         ```
         readonly version: string
@@ -5666,6 +6064,27 @@ Context:
         Returns VariantContainer
 
         The variant container created
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the layout settles, the promise is rejected. Defaults to
+          30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the layout is updated. It is
+        rejected with an Error, both on timeout and on an invalid timeout value.
 ContextGeometryUtils:
   overview: |-
     Interface ContextGeometryUtils
@@ -6074,9 +6493,9 @@ Ellipse:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -6141,6 +6560,7 @@ Ellipse:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -6418,9 +6838,9 @@ Ellipse:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -6952,6 +7372,27 @@ Ellipse:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 EventsMap:
   overview: |-
     Interface EventsMap
@@ -6967,6 +7408,8 @@ EventsMap:
 
     ```
     interface EventsMap {
+        workspacechange: WorkspaceContext;
+        logout: void;
         pagechange: Page;
         filechange: File;
         selectionchange: string[];
@@ -6980,6 +7423,14 @@ EventsMap:
     Referenced by: Context, Penpot
   members:
     Properties:
+      workspacechange: |-
+        ```
+        readonly workspacechange: WorkspaceContext
+        ```
+      logout: |-
+        ```
+        readonly logout: void
+        ```
       pagechange: |-
         ```
         readonly pagechange: Page
@@ -7086,7 +7537,11 @@ File:
         pages: Page[];
         export(
             exportType: "penpot" | "zip",
-            libraryExportType?: "all" | "merge" | "detach",
+            libraryExportType?:
+                | "include-libraries"
+                | "merge-libraries"
+                | "detach-libraries"
+                | "link-later",
         ): Promise<Uint8Array<ArrayBufferLike>>;
         findVersions(criteria?: { createdBy: User }): Promise<FileVersion[]>;
         saveVersion(label: string): Promise<FileVersion>;
@@ -7137,7 +7592,11 @@ File:
         ```
         export(
             exportType: "penpot" | "zip",
-            libraryExportType?: "all" | "merge" | "detach",
+            libraryExportType?:
+                | "include-libraries"
+                | "merge-libraries"
+                | "detach-libraries"
+                | "link-later",
         ): Promise<Uint8Array<ArrayBufferLike>>
         ```
 
@@ -7146,13 +7605,13 @@ File:
         Parameters
 
         * exportType: "penpot" | "zip"
-        * libraryExportType: "all" | "merge" | "detach"
+        * libraryExportType: "include-libraries" | "merge-libraries" | "detach-libraries" | "link-later"
 
         Returns Promise<Uint8Array<ArrayBufferLike>>
 
         Example
         ```
-        const exportedData = await file.export('penpot', 'all');
+        const exportedData = await file.export('penpot', 'include-libraries');
         ```
       findVersions: |-
         ```
@@ -7578,9 +8037,9 @@ FlexLayout:
         rightPadding: number;
         bottomPadding: number;
         leftPadding: number;
-        horizontalSizing: "fill"
-        | "auto"
-        | "fix";
+        paddingType: "simple"
+        | "multiple";
+        horizontalSizing: "fill" | "auto" | "fix";
         verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
         dir: "row" | "row-reverse" | "column" | "column-reverse";
@@ -7713,6 +8172,16 @@ FlexLayout:
         ```
 
         The `leftPadding` property specifies the padding at the left of the container.
+      paddingType: |-
+        ```
+        paddingType: "simple" | "multiple"
+        ```
+
+        The `paddingType` property specifies how the four padding values are applied.
+        It can be one of the following values:
+
+        * 'simple': the vertical and horizontal paddings are mirrored across both sides.
+        * 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
       horizontalSizing: |-
         ```
         horizontalSizing: "fill" | "auto" | "fix"
@@ -8136,9 +8605,9 @@ GridLayout:
         rightPadding: number;
         bottomPadding: number;
         leftPadding: number;
-        horizontalSizing: "fill"
-        | "auto"
-        | "fix";
+        paddingType: "simple"
+        | "multiple";
+        horizontalSizing: "fill" | "auto" | "fix";
         verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
         dir: "row" | "column";
@@ -8280,6 +8749,16 @@ GridLayout:
         ```
 
         The `leftPadding` property specifies the padding at the left of the container.
+      paddingType: |-
+        ```
+        paddingType: "simple" | "multiple"
+        ```
+
+        The `paddingType` property specifies how the four padding values are applied.
+        It can be one of the following values:
+
+        * 'simple': the vertical and horizontal paddings are mirrored across both sides.
+        * 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
       horizontalSizing: |-
         ```
         horizontalSizing: "fill" | "auto" | "fix"
@@ -8622,9 +9101,9 @@ Group:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -8689,6 +9168,7 @@ Group:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -8970,9 +9450,9 @@ Group:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -9570,6 +10050,27 @@ Group:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 GuideColumn:
   overview: |-
     Interface GuideColumn
@@ -9903,9 +10404,9 @@ Image:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -9970,6 +10471,7 @@ Image:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -10247,9 +10749,9 @@ Image:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -10781,6 +11283,27 @@ Image:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 Interaction:
   overview: |-
     Interface Interaction
@@ -10917,6 +11440,7 @@ LayoutChildProperties:
         rightMargin: number;
         bottomMargin: number;
         leftMargin: number;
+        marginType: "simple" | "multiple";
         maxWidth: number | null;
         maxHeight: number | null;
         minWidth: number | null;
@@ -11015,6 +11539,16 @@ LayoutChildProperties:
 
         Sets the left margin of the child element.
         This is the space to the left of the element.
+      marginType: |-
+        ```
+        marginType: "simple" | "multiple"
+        ```
+
+        The `marginType` property specifies how the four margin values are applied.
+        It can be one of the following values:
+
+        * 'simple': the vertical and horizontal margins are mirrored across both sides.
+        * 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
       maxWidth: |-
         ```
         maxWidth: number | null
@@ -12950,9 +13484,9 @@ Page:
                 nameLike?: string;
                 type?:
                     | "boolean"
-                    | "path"
                     | "ellipse"
                     | "image"
+                    | "path"
                     | "text"
                     | "group"
                     | "board"
@@ -13066,9 +13600,9 @@ Page:
                 nameLike?: string;
                 type?:
                     | "boolean"
-                    | "path"
                     | "ellipse"
                     | "image"
+                    | "path"
                     | "text"
                     | "group"
                     | "board"
@@ -13088,9 +13622,9 @@ Page:
               nameLike?: string;  
               type?:  
                   | "boolean"  
-                  | "path"  
                   | "ellipse"  
                   | "image"  
+                  | "path"  
                   | "text"  
                   | "group"  
                   | "board"  
@@ -13432,9 +13966,9 @@ Path:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -13499,6 +14033,7 @@ Path:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -13798,9 +14333,9 @@ Path:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -14346,6 +14881,27 @@ Path:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 PathCommand:
   overview: |-
     Interface PathCommand
@@ -14791,9 +15347,9 @@ Rectangle:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -14858,6 +15414,7 @@ Rectangle:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -15135,9 +15692,9 @@ Rectangle:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -15669,6 +16226,27 @@ Rectangle:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 RulerGuide:
   overview: |-
     Interface RulerGuide
@@ -15869,9 +16447,9 @@ ShapeBase:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -15936,6 +16514,7 @@ ShapeBase:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -16212,9 +16791,9 @@ ShapeBase:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -16746,6 +17325,27 @@ ShapeBase:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 Slide:
   overview: |-
     Interface Slide
@@ -16756,7 +17356,7 @@ Slide:
     ```
     interface Slide {
         type: "slide";
-        way: "in" | "out";
+        way: "out" | "in";
         direction: "left" | "right" | "up" | "down";
         duration: number;
         offsetEffect?: boolean;
@@ -16775,7 +17375,7 @@ Slide:
         Type of the animation.
       way: |-
         ```
-        readonly way: "in" | "out"
+        readonly way: "out" | "in"
         ```
 
         Indicate if the slide will be either in-to-out `in` or out-to-in `out`.
@@ -16824,6 +17424,7 @@ Stroke:
         strokeCapStart?: StrokeCap;
         strokeCapEnd?: StrokeCap;
         strokeColorGradient?: Gradient;
+        strokeImage?: ImageData;
     }
     ```
 
@@ -16891,6 +17492,12 @@ Stroke:
         ```
 
         The optional gradient stroke defined by a Gradient object.
+      strokeImage: |-
+        ```
+        strokeImage?: ImageData
+        ```
+
+        The optional image stroke defined by an ImageData object.
 SvgRaw:
   overview: |-
     Interface SvgRaw
@@ -16967,9 +17574,9 @@ SvgRaw:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -17034,6 +17641,7 @@ SvgRaw:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
         type: "svg-raw";
     }
     ```
@@ -17304,9 +17912,9 @@ SvgRaw:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -17844,6 +18452,27 @@ SvgRaw:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 Text:
   overview: |-
     Interface Text
@@ -17920,9 +18549,9 @@ Text:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -17987,6 +18616,7 @@ Text:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
         type: "text";
         characters: string;
         growType: "fixed" | "auto-width" | "auto-height";
@@ -18275,9 +18905,9 @@ Text:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -18917,6 +19547,27 @@ Text:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
       getRange: |-
         ```
         getRange(start: number, end: number): TextRange
@@ -22066,6 +22717,7 @@ TokenCatalog:
 
     ```
     interface TokenCatalog {
+        isEditableTokens: boolean;
         themes: TokenTheme[];
         sets: TokenSet[];
         addTheme(group: { group: string; name: string }): TokenTheme;
@@ -22078,6 +22730,15 @@ TokenCatalog:
     Referenced by: Library
   members:
     Properties:
+      isEditableTokens: |-
+        ```
+        readonly isEditableTokens: boolean
+        ```
+
+        Returns true if the tokens can be edited (it can't
+        if the tokens of the file are in an external library).
+        Note that even in this case, Themes and Sets status still
+        can be changed and tokens can be applied to shapes.
       themes: |-
         ```
         readonly themes: TokenTheme[]
@@ -22884,7 +23545,7 @@ ImageData:
     }
     ```
 
-    Referenced by: Color, Context, Fill, LibraryColor, Penpot
+    Referenced by: Color, Context, Fill, LibraryColor, Penpot, Stroke
   members:
     Properties:
       name: |-

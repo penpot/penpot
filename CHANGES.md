@@ -47,6 +47,29 @@
 - Export multiple fills to SVG [#11466](https://github.com/penpot/penpot/issues/11466) (PR: [#11467](https://github.com/penpot/penpot/pull/11467))
 - Add Penpot-specific board size presets (file thumbnail, template cover, plugin icon/cover) [#11561](https://github.com/penpot/penpot/issues/11561) (PR: [#11565](https://github.com/penpot/penpot/pull/11565))
 
+## 2.18.3
+
+### :bug: Bugs fixed
+
+- Fix binfile import storing unsanitized SVG and missing obfuscated SVG content-types [#12104](https://github.com/penpot/penpot/issues/12104) (PR: [#12105](https://github.com/penpot/penpot/pull/12105))
+- Fix removed team members keeping file access after leaving the team [#12106](https://github.com/penpot/penpot/issues/12106) (PR: [#12097](https://github.com/penpot/penpot/pull/12097))
+
+## 2.18.2
+
+### :bug: Bugs fixed
+
+- Fix workspace showing an internal error when syncing components or dragging in the color picker [#11933](https://github.com/penpot/penpot/issues/11933) (PR: [#11941](https://github.com/penpot/penpot/pull/11941))
+- Fix SVG sanitizer keeping namespace-prefixed script elements when uploading SVG files [#12071](https://github.com/penpot/penpot/issues/12071) (PR: [#12073](https://github.com/penpot/penpot/pull/12073))
+
+## 2.18.1
+
+### :bug: Bugs fixed
+
+- Fix workspace freezing with a stack overflow when opening the context menu on a shape that isn't on the current page [#11882](https://github.com/penpot/penpot/issues/11882) (PR: [#11891](https://github.com/penpot/penpot/pull/11891))
+- Fix workspace showing repeated error toasts when a third-party script injected into the page throws [#11813](https://github.com/penpot/penpot/issues/11813) (PR: [#11816](https://github.com/penpot/penpot/pull/11816))
+- Fix register flow from workspace URL not working [#11753](https://github.com/penpot/penpot/issues/11753) (PR: [#11756](https://github.com/penpot/penpot/pull/11756))
+- Fix empty response when exporting bin using API (by @filipsajdak) [#7649](https://github.com/penpot/penpot/issues/7649) (PR: [#10341](https://github.com/penpot/penpot/pull/10341))
+
 ## 2.18.0
 
 ### :rocket: Epics and highlights
@@ -285,6 +308,7 @@
 - Use hard reload for render engine switching in the workspace menu [#10441](https://github.com/penpot/penpot/issues/10441) (PR: [#10444](https://github.com/penpot/penpot/pull/10444))
 - Rotate size badge when shape is rotated [#10386](https://github.com/penpot/penpot/issues/10386) (PR: [#10393](https://github.com/penpot/penpot/pull/10393))
 - Add separate internal URI for exporter to handle Docker deployments where internal and public URIs differ [#10627](https://github.com/penpot/penpot/issues/10627) (PR: [#10630](https://github.com/penpot/penpot/pull/10630))
+- Make throwValidationErrors default to true for v2 manifest plugins [#10401](https://github.com/penpot/penpot/issues/10401) (PR: [#10433](https://github.com/penpot/penpot/pull/10433))
 
 ### :bug: Bugs fixed
 
@@ -392,6 +416,14 @@
 - Fix text shape position-data to include required fills in WASM and DOM calculation paths [#10646](https://github.com/penpot/penpot/issues/10646) (PR: [#10650](https://github.com/penpot/penpot/pull/10650))
 - Log expired OIDC tokens as auth failures instead of server errors [#10635](https://github.com/penpot/penpot/issues/10635) (PR: [#10636](https://github.com/penpot/penpot/pull/10636))
 - Return 400 instead of 500 when ImageMagick rejects invalid uploaded images [#10642](https://github.com/penpot/penpot/issues/10642) (PR: [#10643](https://github.com/penpot/penpot/pull/10643))
+- Fix Plugin API board.guides setting and clearing throwing malli invalid-schema error (by @filipsajdak) [#9773](https://github.com/penpot/penpot/issues/9773) (PR: [#10503](https://github.com/penpot/penpot/pull/10503))
+- Fix Plugin API rejecting open-overlay and toggle-overlay interactions when position is not set (by @mvanhorn) [#10201](https://github.com/penpot/penpot/issues/10201) (PR: [#10503](https://github.com/penpot/penpot/pull/10503))
+- Fix Plugin API close-overlay interaction requiring animation field (by @mvanhorn) [#10202](https://github.com/penpot/penpot/issues/10202) (PR: [#10503](https://github.com/penpot/penpot/pull/10503))
+- Fix boards hidden from View Mode reappearing when adding prototype interactions (by @jeffrey701) [#10289](https://github.com/penpot/penpot/issues/10289) (PR: [#9695](https://github.com/penpot/penpot/pull/9695))
+- Fix Plugin API PenpotUtils.createVariantContainer assigning variant properties to wrong components [#10506](https://github.com/penpot/penpot/issues/10506) (PR: [#10562](https://github.com/penpot/penpot/pull/10562))
+- Fix mask inside flex layout shifting position or size when child image visibility changes [#10537](https://github.com/penpot/penpot/issues/10537) (PR: [#10697](https://github.com/penpot/penpot/pull/10697))
+- Fix path ends selector missing arrow icons and incorrect divider colors [#10593](https://github.com/penpot/penpot/issues/10593) (PR: [#10631](https://github.com/penpot/penpot/pull/10631))
+- Fix webhook form prefilling hardcoded metadata URI default [#10722](https://github.com/penpot/penpot/issues/10722) (PR: [#10723](https://github.com/penpot/penpot/pull/10723))
 
 ## 2.16.2
 

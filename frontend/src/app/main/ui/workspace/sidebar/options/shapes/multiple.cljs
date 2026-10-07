@@ -262,6 +262,20 @@
                         (assoc :layout-padding (merge-layout-padding values shape-values)))]
     (promote-simple-layout-padding-type merged-values)))
 
+(def ^:private content-attrs-cache (js/WeakMap.))
+
+(defn- get-content-attrs
+  "Moving a text keeps its `:content`, so the attrs read from it are cached by content."
+  [{:keys [content] :as shape} attrs]
+  (if (some? content)
+    (let [[cached-attrs cached] (.get content-attrs-cache content)]
+      (if (identical? cached-attrs attrs)
+        cached
+        (let [result (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)]
+          (.set content-attrs-cache content [attrs result])
+          result)))
+    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)))
+
 (defn get-attrs*
   "Given a group of attributes that we want to extract and the shapes to extract them from
   returns a list of tuples [id, values] with the extracted properties for the shapes that
@@ -282,6 +296,11 @@
         (memoize (fn [type]
                    (into [] (comp (mapcat tt/shape-attr->token-attrs) (distinct))
                          (type->editable-attrs type))))
+
+        ;; The `:text` read mode reads values from `attrs`, not from the
+        ;; editable attrs, so its token attrs must come from `attrs` too.
+        text-token-attrs
+        (into [] (comp (mapcat tt/shape-attr->token-attrs) (distinct)) attrs)
 
         merge-attrs
         (fn [v1 v2]
@@ -311,8 +330,9 @@
 
         merge-token-values
         (fn [acc token-attrs applied-tokens]
-          "Merges token values across all token attributes derived from the shape's
-           editable attributes."
+          "Merges token values across all `token-attrs`. Callers derive them from
+           the attributes the shape's read mode reads: the editable attributes for
+           `:shape`, the whole group attributes for `:text`."
           (let [no-tokens? (empty? applied-tokens)
                 stable     (deref stable-token-acc)]
             (if (and no-tokens?
@@ -353,14 +373,14 @@
               (let [shape-attrs (select-keys shape attrs)
 
                     content-attrs
-                    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)
+                    (get-content-attrs shape attrs)
 
                     new-values
                     (-> values
                         (merge-attrs shape-attrs)
                         (merge-attrs content-attrs))
 
-                    new-token-acc (merge-token-values token-acc (type->token-attrs type) applied-tokens)]
+                    new-token-acc (merge-token-values token-acc text-token-attrs applied-tokens)]
                 [(conj ids id)
                  new-values
                  new-token-acc])

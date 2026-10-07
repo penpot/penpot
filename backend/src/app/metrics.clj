@@ -7,6 +7,7 @@
 (ns app.metrics
   (:refer-clojure :exclude [run!])
   (:require
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.metrics.definition :as-alias mdef]
@@ -158,6 +159,25 @@
     (do
       (swap! warned-hints conj hint)
       (l/wrn :hint hint :cause cause))))
+
+(defn instance
+  "Resolve the metrics instance from a cfg; raises when it is absent.
+
+  The shared resolver: a module that records metrics takes a cfg and
+  calls this, so no caller has to know where the instance lives or
+  capture it beforehand. That matters most inside an
+  `app.db/after-commit` callback, which closes over whatever it was
+  given and cannot read the cfg again later.
+
+  Raises on purpose. A cfg without metrics is a wiring bug, and it must
+  surface where the metric is recorded rather than disappear: a caller
+  that resolved this at the top of a write and dropped the value is
+  precisely the pattern this replaces."
+  [cfg]
+  (or (::metrics cfg)
+      (ex/raise :type :assertion
+                :code :missing-metrics
+                :hint "missing ::mtx/metrics on the provided cfg")))
 
 (defn run!
   "Record a metric.

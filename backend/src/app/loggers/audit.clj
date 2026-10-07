@@ -13,19 +13,20 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.email :as email]
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
+   [app.jobs :as jobs]
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
    [app.util.inet :as inet]
    [app.util.services :as-alias sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]
    [yetti.request :as yreq]))
 
@@ -54,6 +55,7 @@
 
 (def ^:private safe-frontend-context-keys
   #{:version
+    :initiator
     :locale
     :browser
     :browser-version
@@ -157,6 +159,24 @@
     (when-not (or (= origin "null")
                   (str/blank? origin))
       (str/prune origin 100))))
+
+(def ^:private client-initiators
+  {"penpot-frontend" "app"
+   "penpot-admin-console" "admin-console"
+   ;; TODO: legacy value sent by older admin-console releases, remove
+   ;; it once they are all redeployed.
+   "penpot-nitrate" "admin-console"})
+
+(defn get-client-initiator
+  "Resolve the event initiator from the `x-client` request header.
+  Never trusts client-sent context: missing or unknown values fall
+  back to \"app\"."
+  [request]
+  (let [product (some-> (yreq/get-header request "x-client")
+                        (str/split #"/" 2)
+                        (first)
+                        (str/lower))]
+    (get client-initiators product "app")))
 
 ;; --- SPECS
 
@@ -276,19 +296,24 @@
                           :else               label)
           dedupe?       (boolean (and batch-key batch-timeout))]
 
-      (wrk/submit! (-> cfg
-                       (assoc ::wrk/task :process-webhook-event)
-                       (assoc ::wrk/queue :webhooks)
-                       (assoc ::wrk/max-retries 0)
-                       (assoc ::wrk/delay (or batch-timeout 0))
-                       (assoc ::wrk/dedupe dedupe?)
-                       (assoc ::wrk/label label)
-                       (assoc ::wrk/params (-> event
-                                               (d/without-qualified)
-                                               (dissoc :source)
-                                               (dissoc :context)
-                                               (dissoc :ip-addr)
-                                               (dissoc :type)))))))
+      (jobs/submit cfg
+                   {::jobs/name :process-webhook-event
+                    ::jobs/queue :webhooks
+                    ::jobs/max-retries 0
+                    ::jobs/delay (or batch-timeout 0)
+                    ::jobs/dedupe dedupe?
+                    ::jobs/label label
+                    ;; The event travels as an opaque transit blob:
+                    ;; transit preserves the instant/UUID/set types
+                    ;; that plain JSON props cannot carry.
+                    ::jobs/params {:event-blob
+                                   (t/encode-str
+                                    (-> event
+                                        (d/without-qualified)
+                                        (dissoc :source)
+                                        (dissoc :context)
+                                        (dissoc :ip-addr)
+                                        (dissoc :type)))}})))
   event)
 
 (defn submit*
@@ -350,14 +375,44 @@
                   {})]
     (assoc params :context context)))
 
+(defn- coerce-profile-id
+  "Normalize a hand-written `::audit/profile-id` override to a uuid.
+
+  `schema:event` requires a uuid and `submit*` swallows the validation
+  error, so a value that is not a uuid loses the event instead of
+  failing loudly. Commands read the override from places that are not
+  typed by us (token claims, stringly-typed drivers), so a string has
+  to be accepted. Anything that cannot become a uuid is discarded, and
+  the event falls back to the caller, which is always a valid uuid."
+  [v]
+  (let [coerced (cond
+                  ;; Fast path: the override comes straight from a `profile`
+                  ;; row in almost every command, so it is already a uuid.
+                  (uuid? v)
+                  v
+
+                  (string? v)
+                  (uuid/parse* v)
+
+                  :else
+                  nil)]
+    (when (and (nil? coerced) (some? v))
+      (l/error :hint "ignoring unusable ::audit/profile-id"
+               :profile-id v))
+
+    coerced))
+
 (defn prepare-rpc-event
   [cfg mdata params result]
   (let [resultm      (meta result)
         request      (-> params meta ::http/request)
-        profile-id   (or (::profile-id resultm)
-                         (some-> (:profile-id result)
-                                 (cond-> (string? (:profile-id result))
-                                   uuid/parse*))
+        ;; SECURITY: the event belongs to whoever made the request. The only
+        ;; sanctioned override is the `::audit/profile-id` metadata, set
+        ;; explicitly by the command. Never derive it from the response:
+        ;; results can carry a `:profile-id` that belongs to somebody else
+        ;; (the owner of an error report, the inviter of an invitation, ...)
+        ;; and that silently misattributes the action.
+        profile-id   (or (coerce-profile-id (::profile-id resultm))
                          (::rpc/profile-id params)
                          uuid/zero)
 

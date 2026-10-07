@@ -83,6 +83,7 @@ describe('createPlugin', () => {
       manifest,
       expect.any(Function),
       expect.any(Function),
+      undefined,
     );
     expect(createSandbox).toHaveBeenCalledWith(mockPluginManager, undefined);
     expect(mockSandbox.evaluate).toHaveBeenCalled();

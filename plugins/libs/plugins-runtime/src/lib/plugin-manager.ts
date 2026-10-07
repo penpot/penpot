@@ -14,8 +14,9 @@ export async function createPluginManager(
   manifest: Manifest,
   onCloseCallback: () => void,
   onReloadModal: (code: string) => void,
+  signal?: AbortSignal,
 ) {
-  let code = await loadManifestCode(manifest);
+  let code = '';
 
   let loaded = false;
   let destroyed = false;
@@ -40,11 +41,10 @@ export async function createPluginManager(
     modal?.setTheme(theme);
   });
 
-  const listenerId: symbol = context.addListener('finish', () => {
-    closePlugin();
-
-    context?.removeListener(listenerId);
+  const listenerId = context.addListener('finish', () => {
+    if (manifest.scope !== 'global') closePlugin();
   });
+  const logoutId = context.addListener('logout', () => closePlugin());
 
   let listeners: symbol[] = [];
 
@@ -60,7 +60,12 @@ export async function createPluginManager(
   };
 
   const closePlugin = () => {
+    if (destroyed) return;
+    destroyed = true;
+    signal?.removeEventListener('abort', closePlugin);
     removeAllEventListeners();
+    destroyListener(listenerId);
+    destroyListener(logoutId);
 
     timeouts.forEach(clearTimeout);
     timeouts.clear();
@@ -73,8 +78,6 @@ export async function createPluginManager(
       modal.remove();
       modal = null;
     }
-
-    destroyed = true;
 
     onCloseCallback();
   };
@@ -147,7 +150,24 @@ export async function createPluginManager(
     context.removeListener(listenerId);
   };
 
+  signal?.addEventListener('abort', closePlugin, { once: true });
+  try {
+    if (signal?.aborted) {
+      closePlugin();
+    } else {
+      code = await loadManifestCode(manifest);
+    }
+  } catch (error) {
+    if (!destroyed) {
+      closePlugin();
+      throw error;
+    }
+  }
+
   return {
+    get destroyed() {
+      return destroyed;
+    },
     close: closePlugin,
     destroyListener,
     openModal,

@@ -7,13 +7,14 @@
 (ns app.rpc.quotes
   "Penpot resource usage quotes."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.worker :as wrk]
+   [app.jobs :as jobs]
    [cuerdas.core :as str]))
 
 (defmulti check-quote ::id)
@@ -73,39 +74,39 @@
                       (run! (partial check cfg) others)))))))
 
 (defn- send-notification!
-  [{:keys [::db/conn] :as params}]
+  [cfg]
   (l/warn :hint "max quote reached"
-          :target (::target params)
-          :profile-id (some-> params ::profile-id str)
-          :team-id (some-> params ::team-id str)
-          :project-id (some-> params ::project-id str)
-          :file-id (some-> params ::file-id str)
-          :quote (::quote params)
-          :total (::total params)
-          :incr  (::inc params 1))
+          :target (::target cfg)
+          :profile-id (some-> cfg ::profile-id str)
+          :team-id (some-> cfg ::team-id str)
+          :project-id (some-> cfg ::project-id str)
+          :file-id (some-> cfg ::file-id str)
+          :quote (::quote cfg)
+          :total (::total cfg)
+          :incr  (::inc cfg 1))
 
   (when-let [admins (seq (cf/get :admins))]
-    (let [subject (str/istr "[quotes:notification]: max quote reached ~(::target params)")
-          content (str/istr "- Param: profile-id '~(::profile-id params)}'\n"
-                            "- Param: team-id '~(::team-id params)'\n"
-                            "- Param: project-id '~(::project-id params)'\n"
-                            "- Param: file-id '~(::file-id params)'\n"
-                            "- Quote ID: '~(::target params)'\n"
-                            "- Max: ~(::quote params)\n"
-                            "- Total: ~(::total params) (INCR ~(::incr params 1))\n")]
-      (wrk/submit! {::db/conn conn
-                    ::wrk/task :sendmail
-                    ::wrk/delay (ct/duration "30s")
-                    ::wrk/max-retries 4
-                    ::wrk/priority 200
-                    ::wrk/dedupe true
-                    ::wrk/label "quotes-notification"
-                    ::wrk/params {:to (vec admins)
-                                  :subject subject
-                                  :body content}}))))
+    (let [subject (str/istr "[quotes:notification]: max quote reached ~(::target cfg)")
+          content (str/istr "- Param: profile-id '~(::profile-id cfg)}'\n"
+                            "- Param: team-id '~(::team-id cfg)'\n"
+                            "- Param: project-id '~(::project-id cfg)'\n"
+                            "- Param: file-id '~(::file-id cfg)'\n"
+                            "- Quote ID: '~(::target cfg)'\n"
+                            "- Max: ~(::quote cfg)\n"
+                            "- Total: ~(::total cfg) (INCR ~(::incr cfg 1))\n")]
+      (jobs/submit cfg
+                   {::jobs/name :sendmail
+                    ::jobs/delay (ct/duration "30s")
+                    ::jobs/max-retries 4
+                    ::jobs/priority 200
+                    ::jobs/dedupe true
+                    ::jobs/label "quotes-notification"
+                    ::jobs/params {:to (vec admins)
+                                   :subject subject
+                                   :body content}}))))
 
 (defn- generic-check!
-  [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as params}]
+  [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as cfg}]
   (let [quote (->> (db/exec! conn quote-sql)
                    (map :quote)
                    (reduce max (- Integer/MAX_VALUE)))
@@ -114,7 +115,7 @@
 
     (when (> (+ total incr) quote)
       (if (contains? cf/flags :soft-quotes)
-        (send-notification! (assoc params ::quote quote ::total total))
+        (send-notification! (assoc cfg ::quote quote ::total total))
         (ex/raise :type :restriction
                   :code :max-quote-reached
                   :target target
@@ -170,9 +171,9 @@
     WHERE profile_id = ?")
 
 (defmethod check-quote ::teams-per-profile
-  [{:keys [::profile-id ::target] :as quote}]
-  (assert (valid-teams-per-profile-quote? quote) "invalid quote parameters")
-  (-> quote
+  [{:keys [::profile-id ::target] :as cfg}]
+  (assert (valid-teams-per-profile-quote? cfg) "invalid quote parameters")
+  (-> cfg
       (assoc ::default (cf/get :quotes-teams-per-profile Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
       (assoc ::count-sql [sql:get-teams-per-profile profile-id])
@@ -194,10 +195,10 @@
     WHERE profile_id = ?")
 
 (defmethod check-quote ::access-tokens-per-profile
-  [{:keys [::profile-id ::target] :as quote}]
-  (assert (valid-access-tokens-per-profile-quote? quote) "invalid quote parameters")
+  [{:keys [::profile-id ::target] :as cfg}]
+  (assert (valid-access-tokens-per-profile-quote? cfg) "invalid quote parameters")
 
-  (-> quote
+  (-> cfg
       (assoc ::default (cf/get :quotes-access-tokens-per-profile Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
       (assoc ::count-sql [sql:get-access-tokens-per-profile profile-id])
@@ -222,10 +223,10 @@
       AND p.deleted_at IS NULL")
 
 (defmethod check-quote ::projects-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (assert (valid-projects-per-team-quote? quote) "invalid quote parameters")
+  [{:keys [::profile-id ::team-id ::target] :as cfg}]
+  (assert (valid-projects-per-team-quote? cfg) "invalid quote parameters")
 
-  (-> quote
+  (-> cfg
       (assoc ::default (cf/get :quotes-projects-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-projects-per-team team-id])
@@ -249,10 +250,10 @@
      WHERE v.team_id = ?")
 
 (defmethod check-quote ::font-variants-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (assert (valid-font-variant-per-team-quote? quote) "invalid quote parameters")
+  [{:keys [::profile-id ::team-id ::target] :as cfg}]
+  (assert (valid-font-variant-per-team-quote? cfg) "invalid quote parameters")
 
-  (-> quote
+  (-> cfg
       (assoc ::default (cf/get :quotes-font-variants-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-font-variants-per-team team-id])
@@ -277,10 +278,10 @@
     WHERE team_id = ?")
 
 (defmethod check-quote ::invitations-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (assert (valid-invitations-per-team-quote? quote) "invalid quote parameters")
+  [{:keys [::profile-id ::team-id ::target] :as cfg}]
+  (assert (valid-invitations-per-team-quote? cfg) "invalid quote parameters")
 
-  (-> quote
+  (-> cfg
       (assoc ::default (cf/get :quotes-invitations-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-invitations-per-team team-id])
@@ -311,10 +312,10 @@
 ;; effective members plus ongoing valid invitations.
 
 (defmethod check-quote ::profiles-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (assert (valid-profiles-per-team-quote? quote) "invalid quote parameters")
+  [{:keys [::profile-id ::team-id ::target] :as cfg}]
+  (assert (valid-profiles-per-team-quote? cfg) "invalid quote parameters")
 
-  (-> quote
+  (-> cfg
       (assoc ::default (cf/get :quotes-profiles-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-profiles-per-team team-id team-id])
@@ -340,10 +341,10 @@
       AND f.deleted_at IS NULL")
 
 (defmethod check-quote ::files-per-project
-  [{:keys [::profile-id ::project-id ::team-id ::target] :as quote}]
-  (assert (valid-files-per-project-quote? quote) "invalid quote parameters")
+  [{:keys [::profile-id ::project-id ::team-id ::target] :as cfg}]
+  (assert (valid-files-per-project-quote? cfg) "invalid quote parameters")
 
-  (-> quote
+  (-> cfg
       (assoc ::default (cf/get :quotes-files-per-project Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-3 target project-id profile-id team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-files-per-project project-id])
@@ -368,10 +369,10 @@
     WHERE ct.file_id = ?")
 
 (defmethod check-quote ::comment-threads-per-file
-  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as quote}]
-  (assert (valid-comment-threads-per-file-quote? quote) "invalid quote parameters")
+  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as cfg}]
+  (assert (valid-comment-threads-per-file-quote? cfg) "invalid quote parameters")
 
-  (-> quote
+  (-> cfg
       (assoc ::default (cf/get :quotes-comment-threads-per-file Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-4 target file-id profile-id project-id
                           profile-id team-id profile-id profile-id])
@@ -398,9 +399,9 @@
     WHERE ct.file_id = ?")
 
 (defmethod check-quote ::comments-per-file
-  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as quote}]
-  (assert (valid-comments-per-file-quote? quote) "invalid quote parameters")
-  (-> quote
+  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as cfg}]
+  (assert (valid-comments-per-file-quote? cfg) "invalid quote parameters")
+  (-> cfg
       (assoc ::default (cf/get :quotes-comments-per-file Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-4 target file-id profile-id project-id
                           profile-id team-id profile-id profile-id])
@@ -430,9 +431,9 @@
       AND fc.data IS NOT NULL")
 
 (defmethod check-quote ::snapshots-per-file
-  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as quote}]
-  (assert (valid-snapshots-per-file-quote? quote) "invalid quote parameters")
-  (-> quote
+  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as cfg}]
+  (assert (valid-snapshots-per-file-quote? cfg) "invalid quote parameters")
+  (-> cfg
       (assoc ::default (cf/get :quotes-snapshots-per-file Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-4 target file-id profile-id project-id
                           profile-id team-id profile-id profile-id])
@@ -463,9 +464,9 @@
       AND fc.data IS NOT NULL")
 
 (defmethod check-quote ::snapshots-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (assert (valid-snapshots-per-team-quote? quote) "invalid quote parameters")
-  (-> quote
+  [{:keys [::profile-id ::team-id ::target] :as cfg}]
+  (assert (valid-snapshots-per-team-quote? cfg) "invalid quote parameters")
+  (-> cfg
       (assoc ::default (cf/get :quotes-snapshots-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-snapshots-per-team team-id])
@@ -489,9 +490,9 @@
     WHERE tar.team_id = ?")
 
 (defmethod check-quote ::team-access-requests-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (assert (valid-team-access-requests-per-team-quote? quote) "invalid quote parameters")
-  (-> quote
+  [{:keys [::profile-id ::team-id ::target] :as cfg}]
+  (assert (valid-team-access-requests-per-team-quote? cfg) "invalid quote parameters")
+  (-> cfg
       (assoc ::default (cf/get :quotes-team-access-requests-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-team-access-requests-per-team team-id])
@@ -514,9 +515,9 @@
     WHERE tar.requester_id = ?")
 
 (defmethod check-quote ::team-access-requests-per-requester
-  [{:keys [::profile-id ::target] :as quote}]
-  (assert (valid-team-access-requests-per-requester-quote? quote) "invalid quote parameters")
-  (-> quote
+  [{:keys [::profile-id ::target] :as cfg}]
+  (assert (valid-team-access-requests-per-requester-quote? cfg) "invalid quote parameters")
+  (-> cfg
       (assoc ::default (cf/get :quotes-team-access-requests-per-requester Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
       (assoc ::count-sql [sql:get-team-access-requests-per-requester profile-id])
@@ -539,9 +540,9 @@
       AND deleted_at IS NULL")
 
 (defmethod check-quote ::upload-sessions-per-profile
-  [{:keys [::profile-id ::target] :as quote}]
-  (assert (valid-upload-sessions-per-profile-quote? quote) "invalid quote parameters")
-  (-> quote
+  [{:keys [::profile-id ::target] :as cfg}]
+  (assert (valid-upload-sessions-per-profile-quote? cfg) "invalid quote parameters")
+  (-> cfg
       (assoc ::default (cf/get :quotes-upload-sessions-per-profile Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
       (assoc ::count-sql [sql:get-upload-sessions-per-profile profile-id])
@@ -607,15 +608,70 @@
     WHERE so.deleted_at IS NULL")
 
 (defmethod check-quote ::media-storage-bytes-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (assert (valid-media-storage-bytes-per-team-quote? quote) "invalid quote parameters")
-  (-> quote
+  [{:keys [::profile-id ::team-id ::target] :as cfg}]
+  (assert (valid-media-storage-bytes-per-team-quote? cfg) "invalid quote parameters")
+  (-> cfg
       (assoc ::default (cf/get :quotes-media-storage-bytes-per-team
                                (* 20 1024 1024 1024)))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-media-storage-bytes-per-team
                           team-id team-id team-id team-id team-id team-id])
       (generic-check!)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; QUOTE: BINFILES JOBS PER PROFILE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:jobs-per-profile
+  [:map [::profile-id ::sm/uuid]])
+
+(def ^:private valid-jobs-per-profile-quote?
+  (sm/lazy-validator schema:jobs-per-profile))
+
+;; Only the jobs that are still on their way count: a terminal job is not
+;; pending work anymore, and the jobs GC removes it. The tenant filters
+;; like every other query of the substrate: instances share one database
+;; and one profile can have work in more than one of them.
+(def ^:private
+  sql:get-jobs-per-profile
+  "SELECT count(*) AS total
+     FROM job
+    WHERE tenant = ?
+      AND profile_id = ?
+      AND status IN ('new', 'scheduled', 'running', 'retry')
+      AND name = ANY(?)")
+
+(defn- names-of-family
+  "The registered names of a family of jobs. The quote counts what the
+  registry knows, so a new job of the family is covered without touching
+  this file."
+  [cfg family]
+  (->> (jobs/get-defs cfg)
+       (vals)
+       (filter #(= family (::jobs/family %)))
+       (map #(d/name (::jobs/name %)))
+       (vec)))
+
+(defn- check-jobs-quote
+  [cfg family config-key]
+  (let [{:keys [::db/conn ::profile-id ::target]} cfg]
+    (assert (valid-jobs-per-profile-quote? cfg) "invalid quote parameters")
+    (-> cfg
+        (assoc ::default (cf/get config-key Integer/MAX_VALUE))
+        (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
+        (assoc ::count-sql [sql:get-jobs-per-profile
+                            (cf/get :tenant)
+                            profile-id
+                            (db/create-array conn "text" (names-of-family cfg family))])
+        (generic-check!))))
+
+(defmethod check-quote ::export-jobs-per-profile
+  [cfg]
+  (check-jobs-quote cfg :export :quotes-export-jobs-per-profile))
+
+(defmethod check-quote ::import-jobs-per-profile
+  [cfg]
+  (check-jobs-quote cfg :import :quotes-import-jobs-per-profile))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: DEFAULT

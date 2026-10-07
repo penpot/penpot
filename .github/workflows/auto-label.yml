@@ -1,25 +1,42 @@
 name: Auto Label and Add to Project
 
+# pull_request_target is required so the GitHub App secrets are available
+# for PRs from forks. It is safe here: the job never checks out or runs PR
+# code, it only reads ids from the event payload.
 on:
   issues:
     types: [opened]
   pull_request_target:
     types: [opened]
 
+permissions: {}
+
 jobs:
   triage:
+    # The Renovate Dependency Dashboard and Renovate's GitHub Actions PRs do
+    # not need triage. Other Renovate PRs (base images, Node.js, pnpm) do.
+    if: >-
+      !(github.event_name == 'issues'
+        && github.event.issue.user.login == 'penpot-renovate[bot]')
+      && !(github.event_name == 'pull_request_target'
+           && github.event.pull_request.user.login == 'penpot-renovate[bot]'
+           && github.event.pull_request.head.ref == 'renovate-github-actions')
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token
         id: triage-app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.TRIAGE_APP_ID }}
+          client-id: ${{ secrets.TRIAGE_APP_CLIENT_ID }}
           private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
-          owner: penpot
+          # No owner/repositories: the token is scoped to this repository.
+          # Organization permissions (the project board) still apply.
+          permission-issues: write
+          permission-pull-requests: write
+          permission-organization-projects: write
 
       - name: Process Issue or PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ steps.triage-app-token.outputs.token }}
           script: |
