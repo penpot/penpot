@@ -42,7 +42,7 @@
         (bwr/init)
         (job.utils/init)
         (wasm.pool/init)
-        (worker/start!)))))
+        (worker/start)))))
 
 (def main start)
 
@@ -79,7 +79,7 @@
         ;; the pollers own their connections and may sit in a blocking
         ;; pop for the whole poll timeout; draining the pools first lets
         ;; the exports in flight unwind against their own resources
-        (shutdown-step "consumer-worker" worker/stop!)
+        (shutdown-step "consumer-worker" worker/stop)
         (done)))))
 
 (.on proc/default "uncaughtException"

@@ -12,7 +12,7 @@
    [cljs.test :as t :include-macros true]
    [promesa.core :as p]))
 
-(defn- stub-pool!
+(defn- stub-pool
   "Installs a pool whose acquire/release/destroy only count calls."
   []
   (let [calls (atom {:acquired 0 :released 0 :destroyed 0})]
@@ -24,7 +24,7 @@
 
 (t/deftest releases-the-worker-when-the-body-succeeds
   (t/async done
-    (let [calls (stub-pool!)]
+    (let [calls (stub-pool)]
       (p/let [result (pool/with-worker (fn [_] (p/resolved :ok)))]
         (t/is (= :ok result))
         (t/is (= 1 (:acquired @calls)))
@@ -36,7 +36,7 @@
 (t/deftest gives-the-worker-back-when-the-body-throws-synchronously
   (t/testing "a raise out of the scope body must not leave the worker borrowed"
     (t/async done
-      (let [calls (stub-pool!)]
+      (let [calls (stub-pool)]
         (->> (pool/with-worker (fn [_] (throw (ex-info "cancelled" {}))))
              (p/hmap (fn [_ cause]
                        (t/is (some? cause))

@@ -40,7 +40,7 @@
           ;; Between objects the worker sees the flag; inside a render only
           ;; terminating the thread stops it. Cleared on the way out so a later
           ;; cancel cannot terminate a worker that is by then somebody else's.
-          (jobs/on-cancel job-id (fn [] (pool/terminate! @live))))
+          (jobs/on-cancel job-id (fn [] (pool/terminate @live))))
         (->> (p/do (f (fn [params on-object]
                         (chain #(pool/render-on worker params on-object opts)))))
              (p/fnly (fn [_ _] (vreset! live nil))))))))

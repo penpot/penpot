@@ -38,17 +38,17 @@
                 :webp (p/let [png-path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix ".png")]
                         ;; playwright only supports jpg and png, we need to convert it afterwards
                         (bw/screenshot node {:omit-background? true :type :png :path png-path})
-                        (sh/run-cmd! "convert" png-path "-quality" "100" (str "WEBP:" path))))
+                        (sh/run-cmd "convert" png-path "-quality" "100" (str "WEBP:" path))))
               (on-object (assoc object :path path))))
 
           (render [uri page]
             (l/info :uri uri)
             (p/do
               ;; navigate to the page and perform basic setup
-              (bw/nav! page (str uri))
+              (bw/nav page (str uri))
               (bw/sleep page 1000) ; the good old fix with sleep
               (bw/wait-for-fonts page)
-              (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
+              (bw/eval page (js* "() => document.body.style.background = 'transparent'"))
 
               ;; take the screnshot of requested objects, one by one
               (p/run (partial render-object page) objects)
@@ -64,4 +64,4 @@
                        (u/ensure-path-slash)
                        (u/join "render.html")
                        (assoc :query (u/map->query-string params)))]
-      (bw/exec! (prepare-options uri) (partial render uri)))))
+      (bw/exec (prepare-options uri) (partial render uri)))))

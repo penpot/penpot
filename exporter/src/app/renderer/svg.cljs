@@ -128,13 +128,13 @@
   (letfn [(convert-to-ppm [pngpath]
             (let [ppmpath (str/concat pngpath "origin.ppm")]
               (l/trace :fn :convert-to-ppm :path ppmpath)
-              (-> (sh/run-cmd! "convert" pngpath ppmpath)
+              (-> (sh/run-cmd "convert" pngpath ppmpath)
                   (p/then (constantly ppmpath)))))
 
           (trace-color-mask [pbmpath]
             (l/trace :fn :trace-color-mask :pbmpath pbmpath)
             (let [svgpath (str/concat pbmpath ".svg")]
-              (-> (sh/run-cmd! "potrace" "--flat" "-b" "svg" pbmpath "-o" svgpath)
+              (-> (sh/run-cmd "potrace" "--flat" "-b" "svg" pbmpath "-o" svgpath)
                   (p/then (constantly svgpath)))))
 
           (generate-color-layer [ppmpath color]
@@ -144,9 +144,9 @@
                         :hint (str "invalid hex color: " color)))
             (l/trace :fn :generate-color-layer :ppmpath ppmpath :color color)
             (let [pbmpath (str/concat ppmpath ".mask-" (subs color 1) ".pbm")]
-              (-> (sh/run-cmd! "ppmcolormask" color ppmpath)
+              (-> (sh/run-cmd "ppmcolormask" color ppmpath)
                   (p/then (fn [stdout]
-                            (-> (sh/write-file! pbmpath stdout)
+                            (-> (sh/write-file pbmpath stdout)
                                 (p/then (constantly pbmpath)))))
                   (p/then trace-color-mask)
                   (p/then sh/read-file)
@@ -236,7 +236,7 @@
             (l/trace :fn :trace-node)
             (p/let [pngpath (sh/tempfile :prefix "penpot.tmp.render.svg.parse."
                                          :suffix ".origin.png")
-                    _       (sh/write-file! pngpath data)
+                    _       (sh/write-file pngpath data)
                     ppmpath (convert-to-ppm pngpath)
                     svgdata (convert-to-svg ppmpath node)]
               (-> node
@@ -258,7 +258,7 @@
           (extract-single-node [[shot node]]
             (l/trace :fn :extract-single-node)
 
-            (p/let [attrs (bw/eval! node extract-element-attrs)]
+            (p/let [attrs (bw/eval node extract-element-attrs)]
               {:id      (unchecked-get attrs "id")
                :x       (unchecked-get attrs "x")
                :y       (unchecked-get attrs "y")
@@ -269,7 +269,7 @@
                :data   shot}))
 
           (resolve-text-node [page node]
-            (p/let [attrs (bw/eval! node extract-element-attrs)
+            (p/let [attrs (bw/eval node extract-element-attrs)
                     id (unchecked-get attrs "id")
                     text-node (bw/select page (str "#screenshot-text-" id " foreignObject"))
                     shot (bw/screenshot text-node {:omit-background? true :type "png"})]
@@ -290,7 +290,7 @@
           (extract-svg [page {:keys [id] :as object}]
             (let [node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)
-              (bw/eval! node (fn [elem] (.-outerHTML ^js elem)))))
+              (bw/eval node (fn [elem] (.-outerHTML ^js elem)))))
 
           (prepare-options [uri]
             #js {:screen #js {:width bw/default-viewport-width
@@ -327,7 +327,7 @@
                 ;; (cljs.pprint/pprint (xml->clj result))
                 ;; (println "-------")
 
-                (sh/write-file! path result)
+                (sh/write-file path result)
                 (on-object (assoc object :path path))
                 path)))
 
@@ -335,7 +335,7 @@
             (l/info :uri uri)
             (p/do
               ;; navigate to the page and perform basic setup
-              (bw/nav! page (str uri))
+              (bw/nav page (str uri))
               (bw/sleep page 1000) ; the good old fix with sleep
               (bw/wait-for-fonts page)
 
@@ -352,5 +352,5 @@
                        (u/ensure-path-slash)
                        (u/join "render.html")
                        (assoc :query (u/map->query-string params)))]
-      (bw/exec! (prepare-options uri)
-                (partial render uri)))))
+      (bw/exec (prepare-options uri)
+               (partial render uri)))))

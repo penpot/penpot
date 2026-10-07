@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.browser
+  (:refer-clojure :exclude [eval])
   (:require
    ["generic-pool" :as gp]
    ["generic-pool/lib/errors.js" :as gpe]
@@ -38,8 +39,8 @@
               :name name
               :value token}]))
 
-(defn nav!
-  ([page url] (nav! page url nil))
+(defn nav
+  ([page url] (nav page url nil))
   ([page url {:keys [wait-until timeout] :or {wait-until "networkidle" timeout 20000}}]
    (.goto ^js page (str url) #js {:waitUntil wait-until :timeout timeout})))
 
@@ -89,15 +90,15 @@
   ([frame {:keys [full-page? omit-background? type quality path]
            :or {type "png" full-page? false omit-background? false quality 95}}]
    (let [options (-> (obj/new)
-                     (obj/set! "type" (name type))
-                     (obj/set! "omitBackground" omit-background?)
-                     (cond-> path (obj/set! "path" path))
-                     (cond-> (= "jpeg" type) (obj/set! "quality" quality))
-                     (cond-> full-page?      (-> (obj/set! "fullPage" true)
-                                                 (obj/set! "clip" nil))))]
+                     (obj/set "type" (name type))
+                     (obj/set "omitBackground" omit-background?)
+                     (cond-> path (obj/set "path" path))
+                     (cond-> (= "jpeg" type) (obj/set "quality" quality))
+                     (cond-> full-page?      (-> (obj/set "fullPage" true)
+                                                 (obj/set "clip" nil))))]
      (.screenshot ^js frame options))))
 
-(defn emulate-media!
+(defn emulate-media
   [page {:keys [media]}]
   (.emulateMedia ^js page #js {:media media})
   page)
@@ -112,7 +113,7 @@
                        :pageRanges page-ranges
                        :printBackground true
                        :preferCSSPageSize true})))
-(defn eval!
+(defn eval
   [frame f]
   (.evaluate ^js frame f))
 
@@ -189,7 +190,7 @@
               :cause cause)
     (p/rejected cause)))
 
-(defn exec!
+(defn exec
   [config handle]
   (letfn [(handle-browser [browser]
             (p/let [id      (unchecked-get browser "__id")

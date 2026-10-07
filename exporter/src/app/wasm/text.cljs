@@ -14,7 +14,7 @@
    [app.common.render-wasm.text-content :as tc]
    [app.common.render-wasm.wasm :as wasm]))
 
-(defn set-shape-text!
+(defn set-shape-text
   "Serializes a text shape's content into the current WASM shape. Mirrors the
   editor's sequence: clear -> vertical-align -> append each paragraph -> layout.
   Byte writing and font resolution are the shared

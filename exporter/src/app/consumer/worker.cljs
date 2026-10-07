@@ -40,7 +40,7 @@
   []
   (ccfg/queue-key))
 
-(defn- connect!
+(defn- connect
   "One Redis connection of one poller. ioredis reconnects on its own
   strategy, so a fallen Redis comes back with this process doing
   nothing but wait (and the failed pop comes right after)."
@@ -49,7 +49,7 @@
 
 ;; ---- THE QUEUE
 
-(defn read-payload!
+(defn read-payload
   "The JSON payload of the dispatcher: `job-id` and the `scheduled-at`
   of the row when it was pushed. Anything else is a corrupt payload:
   none, and the caller drops it."
@@ -62,7 +62,7 @@
               :payload (str payload) :cause cause)
       nil)))
 
-(defn process!
+(defn process
   "One payload of the queue: claim the job, and when the backend gives
   it to this poller, run the export to its settle. `skip` means
   something else won it (or it is gone): the payload is dropped, with
@@ -74,30 +74,30 @@
               :name (:name answer) :status (:status answer))
       (p/do
         (l/info :hint "running job" :job-id (str job-id) :name (:name answer))
-        (exports/run-export! {:job-id job-id} (:params answer))
+        (exports/run-export {:job-id job-id} (:params answer))
         (l/info :hint "job settled" :job-id (str job-id))))))
 
 ;; ---- THE POLLER
 
-(defn poll-once!
+(defn poll-once
   "One turn: pop the queue, claim what came, and wait for the settle.
   An empty pop and a dropped payload both resolve; a claimed job is
   awaited the whole run."
   [conn key on-payload]
   (p/let [answer  (.blpop ^js conn key poll-timeout-s)
           payload (second answer)
-          claim   (when (some? payload) (read-payload! payload))
+          claim   (when (some? payload) (read-payload payload))
           settled (when (some? claim) (on-payload claim))]
     settled))
 
-(defn- poll-loop!
+(defn- poll-loop
   "The wait of one poller, turn after turn, for the life of the
   process. A failed turn (Redis down, a bug) is logged, never allowed
   to end the loop; a delay keeps the retry from spinning while the
   connection rebuilds."
   [conn key on-payload]
   (p/loop []
-    (->> (poll-once! conn key on-payload)
+    (->> (poll-once conn key on-payload)
          (p/merr (fn [cause]
                    (l/error :hint "poller turn failed" :key key :cause cause)
                    (p/delay reconnect-delay-ms)))
@@ -113,7 +113,7 @@
 
 ;; ---- THE START
 
-(defn start!
+(defn start
   "Launches `K` pollers, one connection each. The worker cleans the
   temp files a previous process left behind at the same moment: a
   crashed worker owns nothing of its crash."
@@ -127,12 +127,12 @@
     (l/info :hint "worker started" :pollers k :queue key
             :redis-host (redis-host) :backend (str (cf/get-internal-uri)))
     (doseq [i (range k)]
-      (let [conn (connect!)]
+      (let [conn (connect)]
         (swap! pollers assoc i conn)
         (l/info :hint "poller started" :id i :key key)
-        (poll-loop! conn key process!)))))
+        (poll-loop conn key process)))))
 
-(defn stop!
+(defn stop
   "Ends the pollers, closing their connections. The job that got orphan
   in a settle goes one row further to the next poller; no state hides
   in this process."

@@ -47,7 +47,7 @@
 
 ;; ---- PROGRESS AND CANCEL (the milestones of the contract)
 
-(defn- start-beats!
+(defn- start-beats
   "The reporter of one run's beats.
 
   The beat reports the stage and the counters and asks the backend to
@@ -85,29 +85,29 @@
                                             :cause cause)
                                     (p/resolved {:action :run})))
                           (p/fmap check)))
-        beats!     (fn [stage counters & {:keys [force?]}]
-                     (let [now   (js/Date.now)
-                           now?  (or force?
-                                     (>= (- now @last-beat) report-throttle-ms))]
-                       (if now?
-                         (do (reset! last-beat now)
-                             (reset! last {:stage stage :counters counters})
-                             (report stage counters))
-                         (p/resolved {:action :run :throttled? true}))))]
-    {:beat! beats! :last last}))
+        beat     (fn [stage counters & {:keys [force?]}]
+                   (let [now   (js/Date.now)
+                         now?  (or force?
+                                   (>= (- now @last-beat) report-throttle-ms))]
+                     (if now?
+                       (do (reset! last-beat now)
+                           (reset! last {:stage stage :counters counters})
+                           (report stage counters))
+                       (p/resolved {:action :run :throttled? true}))))]
+    {:beat beat :last last}))
 
 ;; ---- THE WATCHDOG
 
-(defn- with-watchdog!
+(defn- with-watchdog
   "The forced beats of one run: one every `watchdog-interval-ms`, and
   they repeat the last report the run made, so a cancellation that
   lands mid-render (no object landing, no unit of work ending) is seen
-  within that interval. `stop!` clears it once the run settles."
-  [beats! last]
+  within that interval. `stop` clears it once the run settles."
+  [beat last]
   (let [timer (js/setInterval
-               #(beats! (:stage @last) (:counters @last) :force? true)
+               #(beat (:stage @last) (:counters @last) :force? true)
                watchdog-interval-ms)]
-    (fn stop! [] (js/clearInterval timer))))
+    (fn stop [] (js/clearInterval timer))))
 
 (defn- counter
   "One counter of the vocabulary: `kind` is `objects` or `pages`."
@@ -177,7 +177,7 @@
 
 ;; ---- THE CANCEL CHECK
 
-(defn- check-cancelled!
+(defn- check-cancelled
   "The local arm of the cancel: the watchdog's terminate already died
   the in-flight thread; the units of work that follow check the flag
   and unwind without rendering anything else. The backend's row is
@@ -190,7 +190,7 @@
 
 ;; ---- THE RUNNERS
 
-(defn- check-beat!
+(defn- check-beat
   "A forced beat after a unit of work: a `skip` there is a cancelled
   job, the same exception the legacy surfaces raised, so everything
   below unwinds."
@@ -201,34 +201,34 @@
               :hint "export job was cancelled"))
   answer)
 
-(defn- run-single!
+(defn- run-single
   "One render, one object: the artifact IS the object, moved into the
   resource path the multipart settle will name."
-  [beats! plan]
+  [beat plan]
   (let [{:keys [job-id resource counter-kind]} plan
         export   (-> plan :prepared first)
         object   (atom nil)]
-    (job.utils/track! job-id (:path resource))
-    (p/let [beat-one (beats! :rendering (counter counter-kind 0 1) :force? true)
-            _        (check-beat! beat-one)
+    (job.utils/track job-id (:path resource))
+    (p/let [beat-one (beat :rendering (counter counter-kind 0 1) :force? true)
+            _        (check-beat beat-one)
             _        (rd/render (assoc export
                                        :job-id        job-id
                                        :skip-children (:skip-children plan))
                                 (fn [obj]
                                   (reset! object obj)
-                                  (job.utils/track! job-id (:path obj))))
-            _        (sh/move! (:path @object) (:path resource))
-            beat-end (beats! :packaging (counter counter-kind 1 1) :force? true)
-            _        (check-beat! beat-end)]
+                                  (job.utils/track job-id (:path obj))))
+            _        (sh/move (:path @object) (:path resource))
+            beat-end (beat :packaging (counter counter-kind 1 1) :force? true)
+            _        (check-beat beat-end)]
       resource)))
 
-(defn- run-multiple!
+(defn- run-multiple
   "The multi-object render: every prepared export renders with the same
   on-object callback, appending each object to the zip as it lands, and
   the progress counts what has landed so far. Any zipping error
   surfaces after the renders, so the failures of the writer do not
   compete with the ones of the render."
-  [beats! cancelled plan]
+  [beat cancelled plan]
   (let [{:keys [job-id resource prepared total counter-kind]} plan
         failure  (volatile! nil)
         rendered (volatile! 0)
@@ -236,17 +236,17 @@
                                  :on-error (fn [cause] (vreset! failure cause))
                                  :on-progress (fn [_] nil))
         append   (fn [{:keys [filename path]}]
-                   (check-cancelled! cancelled)
-                   (job.utils/track! job-id path)
+                   (check-cancelled cancelled)
+                   (job.utils/track job-id path)
                    (vswap! rendered inc)
-                   (beats! :rendering
-                           (counter counter-kind @rendered total))
+                   (beat :rendering
+                         (counter counter-kind @rendered total))
                    (rsc/add-to-zip zip path
                                    (str/replace filename
                                                 plan/sanitize-file-regex
                                                 "_")))]
-    (p/let [beat-one (beats! :rendering (counter counter-kind 0 total) :force? true)
-            _        (check-beat! beat-one)
+    (p/let [beat-one (beat :rendering (counter counter-kind 0 total) :force? true)
+            _        (check-beat beat-one)
             _        (rd/with-scope prepared
                        (fn [scoped-render]
                          (p/all (map (fn [export]
@@ -258,37 +258,37 @@
                        (p/rejected cause)
                        (rsc/close-zip zip))
             _        (do error)
-            beat-end (beats! :packaging (counter counter-kind total total) :force? true)
-            _        (check-beat! beat-end)]
+            beat-end (beat :packaging (counter counter-kind total total) :force? true)
+            _        (check-beat beat-end)]
       resource)))
 
-(defn- join-pdf!
+(defn- join-pdf
   "The pages render one file per page; `pdfunite` stitches one pdf out
   of them all, the way the legacy export did."
   [job-id file-id paths]
-  (let [path   (job.utils/track! job-id
-                                 (sh/tempfile :prefix (str/concat "penpot.pdfunite." file-id ".")
-                                              :suffix ".pdf"))]
-    (p/let [_ (sh/run-cmd! "pdfunite" (into [] (concat (vec paths) [path])))]
+  (let [path   (job.utils/track job-id
+                                (sh/tempfile :prefix (str/concat "penpot.pdfunite." file-id ".")
+                                             :suffix ".pdf"))]
+    (p/let [_ (sh/run-cmd "pdfunite" (into [] (concat (vec paths) [path])))]
       path)))
 
-(defn- run-frames!
+(defn- run-frames
   "The frames render: a file per page, joined into the pdf of the file
   once every page has landed."
-  [beats! cancelled plan]
+  [beat cancelled plan]
   (let [{:keys [job-id resource prepared total]} plan
         file-id   (-> prepared first :file-id)
         paths     (volatile! [])
         rendered  (volatile! 0)
         on-object (fn [{:keys [path]}]
-                    (check-cancelled! cancelled)
-                    (job.utils/track! job-id path)
+                    (check-cancelled cancelled)
+                    (job.utils/track job-id path)
                     (vswap! paths conj path)
                     (vswap! rendered inc)
-                    (beats! :rendering
-                            (counter :pages @rendered total)))]
-    (p/let [beat-one (beats! :rendering (counter :pages 0 total) :force? true)
-            _        (check-beat! beat-one)
+                    (beat :rendering
+                          (counter :pages @rendered total)))]
+    (p/let [beat-one (beat :rendering (counter :pages 0 total) :force? true)
+            _        (check-beat beat-one)
             _        (rd/with-scope prepared
                        (fn [scoped-render]
                          (p/all (map (fn [export]
@@ -297,18 +297,18 @@
                                                :is-wasm (:is-wasm plan))
                                         on-object))
                                      prepared))))
-            joined   (join-pdf! job-id file-id @paths)
-            _        (sh/move! joined (:path resource))
-            beat-end (beats! :packaging (counter :pages total total) :force? true)
-            _        (check-beat! beat-end)]
+            joined   (join-pdf job-id file-id @paths)
+            _        (sh/move joined (:path resource))
+            beat-end (beat :packaging (counter :pages total total) :force? true)
+            _        (check-beat beat-end)]
       resource)))
 
-(defn- run-prepared!
-  [beats! cancelled plan]
+(defn- run-prepared
+  [beat cancelled plan]
   (cond
-    (:single? plan) (run-single!  beats! plan)
-    (:frames? plan) (run-frames! beats! cancelled plan)
-    :else           (run-multiple! beats! cancelled plan)))
+    (:single? plan) (run-single  beat plan)
+    (:frames? plan) (run-frames beat cancelled plan)
+    :else           (run-multiple beat cancelled plan)))
 
 ;; ---- THE SETTLE
 
@@ -329,21 +329,21 @@
   [cause]
   (= :job-cancelled (:code (ex-data cause))))
 
-(defn- settle-failure!
+(defn- settle-failure
   "Settles the job as failed, after releasing the temp files the run
   owns. The settle never rejects: if the failure cannot reach the
   backend, the row keeps running until the lease GC turns it `aborted`,
   which is the honest state for a worker that cannot talk."
   [job-id session cause]
   (p/do
-    (job.utils/release! job-id)
+    (job.utils/release job-id)
     (->> (api/fail-job job-id (failure-report cause)
                        :session-id (some-> @session :session-id))
          (p/merr (fn [settle-cause]
                    (l/warn :hint "unable to settle the failed job"
                            :job-id job-id :cause settle-cause))))))
 
-(defn run-export!
+(defn run-export
   [{:keys [job-id]} params]
   (let [session        (atom nil)
         cancelled      (atom false)
@@ -351,46 +351,46 @@
         ;; stopper travels in this atom: a run that ends badly stops
         ;; beating too, or its interval would knock on a dead job
         ;; forever, one HTTP call a second that only ever answers skip
-        stop-watchdog! (atom nil)
-        _              (jobs/register! job-id)
-        stop-cmd! (fn []
-                    (reset! cancelled true)
-                    ;; the hard-cancel of the render the run holds: the
-                    ;; `renderer.wasm/with-scope` of the in-flight render
-                    ;; registered a terminate callback for this job
-                    (jobs/mark-cancelled job-id))]
+        stop-watchdog (atom nil)
+        _              (jobs/register job-id)
+        stop-cmd (fn []
+                   (reset! cancelled true)
+                   ;; the hard-cancel of the render the run holds: the
+                   ;; `renderer.wasm/with-scope` of the in-flight render
+                   ;; registered a terminate callback for this job
+                   (jobs/mark-cancelled job-id))]
     (p/catch
-     (p/let [beats    (start-beats! job-id stop-cmd!)
-             beats!   (:beat! beats)
-             _        (reset! stop-watchdog! (with-watchdog! beats! (:last beats)))
+     (p/let [beats    (start-beats job-id stop-cmd)
+             beat   (:beat beats)
+             _        (reset! stop-watchdog (with-watchdog beat (:last beats)))
              ;; the first breath right after the claim, before the
              ;; session roundtrip: the widget moves from queued to
              ;; exporting on it, and a cancel that landed meanwhile
              ;; raises here instead of after wasted work
-             _        (check-beat! (beats! :preparing {} :force? true))
+             _        (check-beat (beat :preparing {} :force? true))
              session' (api/create-job-session job-id)
              _        (reset! session session')
              token    (:session-token session')
              _        (l/info :hint "render session minted"
                               :job-id (str job-id))
              plan      (make-plan job-id token params)
-             resource  (run-prepared! beats! cancelled plan)
-             _        (@stop-watchdog!)
+             resource  (run-prepared beat cancelled plan)
+             _        (@stop-watchdog)
              artifact  {:path     (str (:path resource))
                         :filename (:filename resource)
                         :mtype    (:mtype resource)}
              _         (api/complete-job-with-artifact
                         {:job-id job-id :session-id (:session-id session')}
                         artifact)
-             _         (job.utils/release! job-id)
+             _         (job.utils/release job-id)
              _         (l/info :hint "export job settled" :job-id (str job-id)
                                :outcome "completed")]
        nil)
      (fn [cause]
-       (when-let [stop @stop-watchdog!] (stop))
+       (when-let [stop @stop-watchdog] (stop))
        (if (cancelled? cause)
          (l/info :hint "export job cancelled" :job-id (str job-id))
          (l/error :hint "export job failed" :job-id (str job-id) :cause cause))
-       (settle-failure! job-id session cause)))))
+       (settle-failure job-id session cause)))))
 
 

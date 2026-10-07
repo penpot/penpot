@@ -50,7 +50,7 @@
           (when (= m method) body))
         @calls))
 
-(defn- fake-fetch!
+(defn- fake-fetch
   "Installs a management http fake: `respond` answers with the `:action`
   envelope per [method, body] (the multipart arrives as a FormData
   instance). Every call lands in `calls` before the answer. Returns the
@@ -75,11 +75,11 @@
 
 (def ^:private original-render rd/render)
 
-(defn- fake-render!
+(defn- fake-render
   "Installs a fake renderer that writes one file of `content` per
   object and calls back with it. When `captured` is an atom, it also
   keeps the params of the last render. Returns the restore thunk."
-  ([content] (fake-render! content nil))
+  ([content] (fake-render content nil))
   ([content captured]
    (let [original rd/render]
      (set! rd/render
@@ -94,7 +94,7 @@
                (p/resolved nil))))
      (fn [] (set! rd/render original)))))
 
-(defn- fake-render-fail!
+(defn- fake-render-fail
   "A renderer that always fails: the failure path of the run."
   []
   (let [original rd/render]
@@ -104,7 +104,7 @@
 
 ;; ---- THE QUEUE FAKE
 
-(defn- fake-conn!
+(defn- fake-conn
   "A fake ioredis connection: `blpop` pops one payload from the queue
   the atom holds, or nil."
   [queue]
@@ -150,7 +150,7 @@
       {:action :run})))
 
 (defn- run-claim
-  "The claim payload of one call of `process!`."
+  "The claim payload of one call of `process`."
   [job-id]
   {:job-id      job-id
    :scheduled-at "2026-10-07T09:00:00Z"})
@@ -160,12 +160,12 @@
     (let [job-id (uuid/next)]
       (t/is (= {:job-id       (str job-id)
                 :scheduled-at "2026-10-07T09:00:00Z"}
-               (worker/read-payload! (encoded-claim job-id
-                                                    "2026-10-07T09:00:00Z"))))))
+               (worker/read-payload (encoded-claim job-id
+                                                   "2026-10-07T09:00:00Z"))))))
 
 
   (t/testing "a corrupt payload is dropped, not thrown at the loop"
-    (t/is (nil? (worker/read-payload! "{not a payload")))))
+    (t/is (nil? (worker/read-payload "{not a payload")))))
 
 (t/deftest process-hands-the-renderer-uuids-not-claim-strings
   ;; the claim carries the job row JSON: every id a string. The render
@@ -186,10 +186,10 @@
                     :name "the export"}
           stages   (volatile! [])
           captured (atom nil)
-          respond! (fake-fetch! (answer-with params sid stages))
-          restore! (fake-render! "rendered!" captured)]
-      (p/let [_ (worker/process! {:job-id      (str job-id)
-                                  :scheduled-at "2026-10-07T09:00:00Z"})]
+          fetch-restore (fake-fetch (answer-with params sid stages))
+          render-restore (fake-render "rendered!" captured)]
+      (p/let [_ (worker/process {:job-id      (str job-id)
+                                 :scheduled-at "2026-10-07T09:00:00Z"})]
         (let [render-params @captured]
           (t/testing "every id arrived as a uuid object"
             (t/is (uuid? (:file-id render-params)))
@@ -199,52 +199,52 @@
             (t/is (uuid? (-> render-params :objects first :id))))
           (t/testing "and the job-id traveled with the render"
             (t/is (= job-id (:job-id render-params)))))
-        (respond!)
-        (restore!)
+        (fetch-restore)
+        (render-restore)
         (done)))))
 
 (t/deftest poll-once-awaits-what-it-claims
   (t/async done
     (let [queue   (atom [(encoded-claim (uuid/next) "2026-10-07T09:00:00Z")])
-          conn    (fake-conn! queue)
+          conn    (fake-conn queue)
           handled (atom [])]
-      (p/let [_ (worker/poll-once! conn
-                                   "the.queue.key"
-                                   (fn [claim] (swap! handled conj claim)))]
+      (p/let [_ (worker/poll-once conn
+                                  "the.queue.key"
+                                  (fn [claim] (swap! handled conj claim)))]
         (t/is (= 1 (count @handled)))
         (done)))))
 
 (t/deftest poll-once-drops-empty-pops-and-corrupt-payloads
   (t/async done
     (let [queue (atom ["{corrupt"])
-          conn  (fake-conn! queue)]
-      (p/let [_ (worker/poll-once! conn
-                                   "the.queue.key"
-                                   (fn [_claim]
-                                     (t/is false "corrupt must not be handled")))
-              _ (worker/poll-once! conn
-                                   "the.queue.key"
-                                   (fn [_claim]
-                                     (t/is false "a corrupt pop has nothing to handle")))]
+          conn  (fake-conn queue)]
+      (p/let [_ (worker/poll-once conn
+                                  "the.queue.key"
+                                  (fn [_claim]
+                                    (t/is false "corrupt must not be handled")))
+              _ (worker/poll-once conn
+                                  "the.queue.key"
+                                  (fn [_claim]
+                                    (t/is false "a corrupt pop has nothing to handle")))]
         (t/is (empty? @queue))
         (done)))))
 
 (t/deftest process-drops-a-claim-the-worker-never-won
   (t/async done
-    (let [respond!    (fake-fetch!
-                       (fn [method _body]
-                         (case method
-                           "claim-job"  {:action :skip :status "cancelled"}
-                           {:action :run})))
-          render!     (fake-render! "should never render")]
-      (p/let [settled (worker/process!
+    (let [fetch-restore    (fake-fetch
+                            (fn [method _body]
+                              (case method
+                                "claim-job"  {:action :skip :status "cancelled"}
+                                {:action :run})))
+          render-restore     (fake-render "should never render")]
+      (p/let [settled (worker/process
                        {:job-id      (uuid/next)
                         :scheduled-at "2026-10-07T09:00:00Z"})]
         (t/testing "only the claim traveled: no session, no report, no render"
           (t/is (= ["claim-job"] (steps-of)))
           (t/is (nil? settled)))
-        (respond!)
-        (render!)
+        (fetch-restore)
+        (render-restore)
         (done)))))
 
 (t/deftest process-runs-the-claimed-export-to-a-multipart-settle
@@ -253,9 +253,9 @@
           sid       (uuid/next)
           params    (export-params)
           stages    (volatile! [])
-          respond!  (fake-fetch! (answer-with params sid stages))
-          restore!  (fake-render! "rendered!")]
-      (p/let [_ (worker/process! (run-claim job-id))]
+          fetch-restore  (fake-fetch (answer-with params sid stages))
+          render-restore  (fake-render "rendered!")]
+      (p/let [_ (worker/process (run-claim job-id))]
         (t/testing "the run went by claim, first breath, session, beats, settle"
           (t/is (= ["claim-job" "report-job-progress" "create-job-session"
                     "report-job-progress" "report-job-progress"
@@ -269,8 +269,8 @@
             (t/is (= "image/png" (.get fd "mtype")))))
         (t/testing "the beats painted the vocabulary in order"
           (t/is (= [:preparing :rendering :packaging] @stages)))
-        (respond!)
-        (restore!)
+        (fetch-restore)
+        (render-restore)
         (done)))))
 
 (t/deftest cancelled-is-a-normal-ending-not-a-failure
@@ -291,14 +291,14 @@
           sid      (uuid/next)
           params   (export-params)
           stages   (volatile! [])
-          respond! (fake-fetch! (answer-with params sid stages))
-          restore! (fake-render-fail!)]
-      (p/let [_ (worker/process! (run-claim job-id))
+          fetch-restore (fake-fetch (answer-with params sid stages))
+          render-restore (fake-render-fail)]
+      (p/let [_ (worker/process (run-claim job-id))
               _ (p/delay 1400)]
         (t/testing "no beat traveled after the fail settle"
           (t/is (= "fail-job" (last (steps-of)))))
-        (respond!)
-        (restore!)
+        (fetch-restore)
+        (render-restore)
         (done)))))
 
 (t/deftest process-settles-a-failed-export-with-fail-job
@@ -307,9 +307,9 @@
           sid       (uuid/next)
           params    (export-params)
           stages    (volatile! [])
-          respond!  (fake-fetch! (answer-with params sid stages))
-          restore!  (fake-render-fail!)]
-      (p/let [_ (worker/process! (run-claim job-id))]
+          fetch-restore  (fake-fetch (answer-with params sid stages))
+          render-restore  (fake-render-fail)]
+      (p/let [_ (worker/process (run-claim job-id))]
         (t/testing "the settle was a fail, not a complete"
           (t/is (= "fail-job" (last (steps-of)))))
         (t/testing "the failure is the shape the backend stores"
@@ -318,8 +318,8 @@
             (t/is (= :export-failed (get-in fail [:error :code])))
             (t/is (= "render boom" (get-in fail [:error :hint])))
             (t/is (= sid (:session-id fail)))))
-        (respond!)
-        (restore!)
+        (fetch-restore)
+        (render-restore)
         (done)))))
 
 ;; ---- THE CANCEL
@@ -335,21 +335,21 @@
           params   (export-params)
           stages   (volatile! [])
           port     (atom 0)
-          respond! (fake-fetch!
-                    (fn [method body]
-                      (when (= "report-job-progress" method)
-                        (vswap! stages conj (get-in body [:progress :stage])))
-                      (case method
-                        "claim-job"          {:action :run :name "export-assets" :params params}
-                        "create-job-session" {:session-id sid :session-token "session-token"}
-                        "report-job-progress" {:action :skip}
-                        {:action :run})))]
-      (p/let [_ (worker/process! (run-claim job-id))]
+          fetch-restore (fake-fetch
+                         (fn [method body]
+                           (when (= "report-job-progress" method)
+                             (vswap! stages conj (get-in body [:progress :stage])))
+                           (case method
+                             "claim-job"          {:action :run :name "export-assets" :params params}
+                             "create-job-session" {:session-id sid :session-token "session-token"}
+                             "report-job-progress" {:action :skip}
+                             {:action :run})))]
+      (p/let [_ (worker/process (run-claim job-id))]
         (t/testing "the settle of a cancelled job was a fail the backend answers skip"
           (t/is (= "fail-job" (last (steps-of))))
           (let [fail (call-of "fail-job")]
             (t/is (= :job-cancelled (get-in fail [:error :code])))))
-        (respond!)
+        (fetch-restore)
         (done)))))
 
 (t/deftest cancel-kills-the-mid-skia-render
@@ -362,20 +362,19 @@
           params        (export-params)
           stages        (volatile! [])
           terminated    (atom 0)
-          mark!         (atom nil)
-          respond!      (fake-fetch!
-                         (fn [method body]
-                           (when (= "report-job-progress" method)
-                             (vswap! stages conj (get-in body [:progress :stage])))
-                           (case method
-                             "claim-job"          {:action :run :name "export-assets" :params params}
-                             "create-job-session" {:session-id sid :session-token "session-token"}
-                             ;; the first beat runs, everything else skips:
-                             ;; the cancel lands right after the claim
-                             "report-job-progress" (if (empty? @stages)
-                                                     {:action :run}
-                                                     {:action :skip})
-                             {:action :run})))
+          fetch-restore      (fake-fetch
+                              (fn [method body]
+                                (when (= "report-job-progress" method)
+                                  (vswap! stages conj (get-in body [:progress :stage])))
+                                (case method
+                                  "claim-job"          {:action :run :name "export-assets" :params params}
+                                  "create-job-session" {:session-id sid :session-token "session-token"}
+                                  ;; the first beat runs, everything else skips:
+                                  ;; the cancel lands right after the claim
+                                  "report-job-progress" (if (empty? @stages)
+                                                          {:action :run}
+                                                          {:action :skip})
+                                  {:action :run})))
           render-restore (let [original rd/render]
                            (set! rd/render
                                  (fn [_params _on-object]
@@ -385,9 +384,9 @@
                                    ;; does not exist in this fake
                                    (p/delay 30000)))
                            (fn [] (set! rd/render original)))]
-      (p/let [_ (worker/process! (run-claim job-id))]
+      (p/let [_ (worker/process (run-claim job-id))]
         (t/testing "the run ended in a fail job, not a complete"
           (t/is (= "fail-job" (last (steps-of)))))
         (render-restore)
-        (respond!)
+        (fetch-restore)
         (done)))))

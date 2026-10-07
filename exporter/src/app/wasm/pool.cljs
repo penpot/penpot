@@ -231,7 +231,7 @@
                           :hint "export job was cancelled"))
     (run-on-worker worker params cancel-buffer on-object)))
 
-(defn terminate!
+(defn terminate
   [^js worker]
   (when worker
     (unchecked-set worker "__alive" false)

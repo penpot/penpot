@@ -41,11 +41,11 @@
   (p/resolved #js {:status 403
                    :text   (constantly (p/resolved "{}"))}))
 
-(defn- install-fetch!
+(defn- install-fetch
   "Put a fake in place and return the thunk that puts the original
   back. The thunk belongs at the end of the promise chain's `p/do`, so
   the fake covers the whole async run."
-  ([] (install-fetch! fake-fetch))
+  ([] (install-fetch fake-fetch))
   ([the-fake]
    (set! api/fetch the-fake)
    (reset! calls [])
@@ -78,13 +78,13 @@
   "Run `thunk`, then put the original fetch back, then say the test is
   finished: the rest never waits on the assertions, so a broken chain
   reports a failure, never a hang."
-  [thunk restore! done]
-  (p/do thunk (restore!) (done)))
+  [thunk restore-fetch done]
+  (p/do thunk (restore-fetch) (done)))
 
 (t/deftest claim-job-posts-the-claim-of-one-poller
   (t/async done
     (let [job-id   (uuid/next)
-          restore! (install-fetch!)]
+          restore-fetch (install-fetch)]
       (with-restore-and-done
         (p/fmap (fn [_]
                   (t/is (str/ends-with? (last-uri) "/api/management/methods/claim-job"))
@@ -92,20 +92,20 @@
                   (t/is (= {:job-id job-id :scheduled-at "2026-10-07T00:00:00Z"}
                            (decode-body))))
                 (api/claim-job job-id "2026-10-07T00:00:00Z"))
-        restore!
+        restore-fetch
         done))))
 
 (t/deftest json-calls-declare-the-transit-content-type
   ;; without it the backend never parses the body as transit and
   ;; validates an empty map (every key a `missing-key`)
   (t/async done
-    (let [restore! (install-fetch!)]
+    (let [restore-fetch (install-fetch)]
       (with-restore-and-done
         (p/fmap (fn [_]
                   (t/is (= "application/transit+json"
                            (fetch-header "Content-Type"))))
                 (api/claim-job (uuid/next) "2026-10-07T00:00:00Z"))
-        restore!
+        restore-fetch
         done))))
 
 (t/deftest report-job-progress-posts-the-beat
@@ -113,13 +113,13 @@
     (let [job-id   (uuid/next)
           progress {:stage :rendering
                     :counters {:objects {:current 1 :total 2}}}
-          restore! (install-fetch!)]
+          restore-fetch (install-fetch)]
       (with-restore-and-done
         (p/fmap (fn [_]
                   (t/is (str/ends-with? (last-uri) "/api/management/methods/report-job-progress"))
                   (t/is (= {:job-id job-id :progress progress} (decode-body))))
                 (api/report-job-progress job-id progress))
-        restore!
+        restore-fetch
         done))))
 
 (t/deftest fail-job-carries-the-error-and-the-session
@@ -127,7 +127,7 @@
     (let [job-id   (uuid/next)
           sid      (uuid/next)
           error    {:type :internal :code :processing-error :hint "boom"}
-          restore! (install-fetch!)]
+          restore-fetch (install-fetch)]
       (with-restore-and-done
         (p/mcat (fn [_]
                   (p/fmap (fn [_]
@@ -135,14 +135,14 @@
                                      (decode-body))))
                           (api/fail-job job-id error :session-id sid)))
                 (api/fail-job job-id error))
-        restore!
+        restore-fetch
         done))))
 
 (t/deftest complete-job-posts-the-plain-result
   (t/async done
     (let [job-id   (uuid/next)
           sid      (uuid/next)
-          restore! (install-fetch!)]
+          restore-fetch (install-fetch)]
       (with-restore-and-done
         (p/mcat (fn [_]
                   (p/fmap (fn [_]
@@ -150,7 +150,7 @@
                                      (decode-body))))
                           (api/complete-job job-id {:total 1} {:session-id sid})))
                 (api/complete-job job-id {:total 1}))
-        restore!
+        restore-fetch
         done))))
 
 (t/deftest complete-job-with-artifact-rides-multipart
@@ -158,7 +158,7 @@
     (let [job-id   (uuid/next)
           sid      (uuid/next)
           tmpfile  (path/join sh/tmpdir (str "test-artifact." (uuid/next)))
-          restore! (install-fetch!)]
+          restore-fetch (install-fetch)]
       (with-restore-and-done
         (p/mcat (fn [_]
                   (p/fmap (fn [_]
@@ -176,12 +176,12 @@
                             :mtype    "application/zip"})))
                 (->> (fsp/writeFile tmpfile "the export bytes")
                      (p/fmap (fn [_] nil))))
-        restore!
+        restore-fetch
         done))))
 
 (t/deftest a-failed-management-answer-is-the-failure-of-the-call
   (t/async done
-    (let [restore! (install-fetch! failure-fetch)]
+    (let [restore-fetch (install-fetch failure-fetch)]
       (with-restore-and-done
         (p/catch (fn [error]
                    (let [data (ex-data error)]
@@ -189,5 +189,5 @@
                      (t/is (= :failed-management-request (:code data)))
                      (t/is (= 403 (:status data)))))
                  (api/claim-job (uuid/next) "2026-10-07T00:00:00Z"))
-        restore!
+        restore-fetch
         done))))

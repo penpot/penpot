@@ -23,7 +23,7 @@
    [app.wasm.render :as render]
    [promesa.core :as p]))
 
-(defn- post!
+(defn- post
   [message]
   (.postMessage ^js wt/parentPort message))
 
@@ -41,13 +41,13 @@
                    (assoc :cancelled? (cancelled-fn (unchecked-get data "cancel"))))]
     (->> (render/render params
                         (fn [object]
-                          (post! #js {:type "object" :payload (t/encode-str object)})))
-         (p/fmap (fn [_] (post! #js {:type "done"})))
+                          (post #js {:type "object" :payload (t/encode-str object)})))
+         (p/fmap (fn [_] (post #js {:type "done"})))
          (p/merr (fn [cause]
                    (l/warn :hint "render worker: request failed" :cause cause)
-                   (post! #js {:type "error"
-                               :message (or (ex-message cause) (str cause))
-                               :code (some-> cause ex-data :code name)})
+                   (post #js {:type "error"
+                              :message (or (ex-message cause) (str cause))
+                              :code (some-> cause ex-data :code name)})
                    (p/resolved nil))))))
 
 (defn- on-message
@@ -67,5 +67,5 @@
 (defn main
   [& _]
   @listening
-  (post! #js {:type "ready"})
+  (post #js {:type "ready"})
   (l/info :hint "render worker ready"))

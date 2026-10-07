@@ -64,13 +64,13 @@
   (swap! registry update (str job-id)
          (fn [rt] (some-> rt (update :cancel-fns (fnil conj []) f)))))
 
-(defn release!
+(defn release
   "Drops the local runtime entry once the job settled. The row stays in
   the backend until it is read once more or expires."
   [job-id]
   (swap! registry dissoc (str job-id)))
 
-(defn register!
+(defn register
   "The runtime record of a job this process runs. The local cancel arm
   reads it (`mark-cancelled`), so the in-flight render of a claimed job
   is terminable without the jobs substrate: the row is the backend's
@@ -80,7 +80,7 @@
          {:job {:id job-id :state "running" :total total}
           :cancelled? false}))
 
-(defn- check-cancel-callback!
+(defn- check-cancel-callback
   [job-id f]
   (try
     (f)
@@ -110,5 +110,5 @@
           (when-let [signal (:cancel-signal (get @registry k))]
             (js/Atomics.store signal 0 1))
           (doseq [f callbacks]
-            (check-cancel-callback! job-id f)))
+            (check-cancel-callback job-id f)))
         true))))

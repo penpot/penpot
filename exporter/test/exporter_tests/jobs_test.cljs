@@ -13,16 +13,16 @@
    [app.jobs :as jobs]
    [cljs.test :as t :include-macros true]))
 
-(defn- register!
+(defn- register
   []
   (let [job-id (uuid/next)]
-    (jobs/register! job-id)
+    (jobs/register job-id)
     job-id))
 
 (t/deftest mark-cancelled-runs-the-cancel-pieces-once
   (t/testing "the signal arms, the callbacks run, and a second mark is a no-op"
     (t/async done
-      (let [job-id (register!)
+      (let [job-id (register)
             seen   (atom [])]
         (jobs/on-cancel job-id (fn [] (swap! seen conj :first)))
         (jobs/on-cancel job-id (fn [] (swap! seen conj :second)))
@@ -46,7 +46,7 @@
   ;; terminate of the worker is what a hard-cancel is for, and the pieces
   ;; below it must not race the writer
   (t/async done
-    (let [job-id (register!)
+    (let [job-id (register)
           seen   (atom ::not-called)]
       (jobs/on-cancel job-id (fn [] (reset! seen (jobs/cancelled? job-id))))
       (jobs/mark-cancelled job-id)
@@ -57,7 +57,7 @@
   (t/testing "a job cancelled before its render leased a worker is
               already stoppable for the render that comes next"
     (t/async done
-      (let [job-id (register!)]
+      (let [job-id (register)]
         (jobs/mark-cancelled job-id)
         (let [^js signal (jobs/cancel-signal job-id)]
           (t/is (some? signal))
@@ -68,10 +68,10 @@
   (t/testing "a late cancel for a settled job changes nothing, and
               release drops every piece"
     (t/async done
-      (let [job-id (register!)
+      (let [job-id (register)
             seen   (atom ::not-called)]
         (jobs/on-cancel job-id (fn [] (reset! seen :callback-ran)))
-        (jobs/release! job-id)
+        (jobs/release job-id)
 
         (t/is (nil? (jobs/mark-cancelled job-id)))
         (t/is (= ::not-called @seen))
