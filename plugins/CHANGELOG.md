@@ -2,7 +2,7 @@
 
 ### 🚀 Features
 
-- **plugin-types, plugins-runtime:** Added `penpotMgmt.createProject` and `penpotMgmt.createFile` to create projects and files from the dashboard or workspace with `content:write` permission.
+- **plugin-types, plugins-runtime:** `penpotMgmt` returns `Team`, `Project` and `ProjectFile` objects. Assigning `name` renames teams, projects and files, `project.pinned` pins a project and `file.shared` shares a file as a team library; `createProject`, `createFile`, `moveTo`, `duplicate` and `remove` live on the objects. Added `penpotMgmt.listTeams`, `penpotMgmt.createTeam`, `team.remove` and `penpotMgmt.getFile`, and the `manage:projects`, `manage:teams` and `manage:delete` permissions.
 - **plugins-runtime, plugin-types**: Added global plugins (`scope: "global"`) that remain active across dashboard and workspace navigation until closed or logged out, with `penpotMgmt` for project and file discovery, file navigation and workspace events. Global scope adds the `allow:global` permission, which users must accept when installing the plugin.
 - **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
 - **plugin-types**: Added `waitForLayoutUpdate` to wait until pending layout updates have finished. It rejects when the optional timeout elapses, defaulting to 30 seconds so a wait never hangs.
@@ -12,6 +12,7 @@
 ### 🩹 Fixes
 
 - **plugin-runtime:** Cancel plugin loads before they execute after unloading or logout, and allow reopening plugins that close during startup.
+- **plugins-runtime**: `library.connectLibrary()` now resolves once the library's assets are loaded; it used to resolve with an empty library the first time. `library.connected` and `library.availableLibraries()` ignore files opened earlier in the same tab, which used to show up as connected and be left out of the available libraries.
 - **plugins-runtime**: An interaction obtained from `Shape.interactions` now keeps addressing that interaction instead of the position it held when the array was read. Removing every interaction of a shape from a single read removes all of them rather than leaving some behind, and writing through a held interaction after an earlier one is removed no longer lands on a different interaction.
 - **plugins-runtime**: `Shape.removeInteraction()` now rejects an interaction belonging to a different shape with a validation error, instead of removing whichever interaction sat at the same position on the target shape.
 - **plugins-runtime**: Writing `trigger`, `delay` or `action` on an interaction the shape no longer has now raises a validation error. The write used to be sent to the workspace with no position to apply it at, where it failed out of the plugin's reach: nothing was written and nothing was reported.

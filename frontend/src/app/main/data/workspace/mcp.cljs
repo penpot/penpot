@@ -43,7 +43,8 @@
      "library:read" "library:write"
      "comment:read" "comment:write"
      "content:write" "content:read"
-     "allow:global"}})
+     "allow:global"
+     "manage:projects" "manage:teams" "manage:delete"}})
 
 (defonce interval-sub
   (atom nil))
