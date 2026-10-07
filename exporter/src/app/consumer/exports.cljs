@@ -322,6 +322,13 @@
      :code (or (:code data) :export-failed)
      :hint (or (:hint data) (ex-message cause) "export failed")}))
 
+(defn cancelled?
+  "Whether `cause` ends a run the user asked to end: a cancelled
+  export is a normal ending, reported and logged as one, never as a
+  failure with a trace."
+  [cause]
+  (= :job-cancelled (:code (ex-data cause))))
+
 (defn- settle-failure!
   "Settles the job as failed, after releasing the temp files the run
   owns. The settle never rejects: if the failure cannot reach the
@@ -338,9 +345,14 @@
 
 (defn run-export!
   [{:keys [job-id]} params]
-  (let [session   (atom nil)
-        cancelled (atom false)
-        _         (jobs/register! job-id)
+  (let [session        (atom nil)
+        cancelled      (atom false)
+        ;; the watchdog outlives the scope that starts it, so its
+        ;; stopper travels in this atom: a run that ends badly stops
+        ;; beating too, or its interval would knock on a dead job
+        ;; forever, one HTTP call a second that only ever answers skip
+        stop-watchdog! (atom nil)
+        _              (jobs/register! job-id)
         stop-cmd! (fn []
                     (reset! cancelled true)
                     ;; the hard-cancel of the render the run holds: the
@@ -355,11 +367,11 @@
                               :job-id (str job-id))
              beats    (start-beats! job-id stop-cmd!)
              beats!   (:beat! beats)
-             stop!    (with-watchdog! beats! (:last beats))
+             _        (reset! stop-watchdog! (with-watchdog! beats! (:last beats)))
              _        (check-beat! (beats! :preparing {} :force? true))
              plan      (make-plan job-id token params)
              resource  (run-prepared! beats! cancelled plan)
-             _         (stop!)
+             _        (@stop-watchdog!)
              artifact  {:path     (str (:path resource))
                         :filename (:filename resource)
                         :mtype    (:mtype resource)}
@@ -371,7 +383,10 @@
                                :outcome "completed")]
        nil)
      (fn [cause]
-       (l/error :hint "export job failed" :job-id (str job-id) :cause cause)
+       (when-let [stop @stop-watchdog!] (stop))
+       (if (cancelled? cause)
+         (l/info :hint "export job cancelled" :job-id (str job-id))
+         (l/error :hint "export job failed" :job-id (str job-id) :cause cause))
        (settle-failure! job-id session cause)))))
 
 

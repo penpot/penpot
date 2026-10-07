@@ -13,6 +13,7 @@
    ["node:fs/promises" :as fsp]
    ["node:path" :as path]
    ["undici" :as http]
+   [app.common.exceptions :as ex]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
    [app.consumer.api :as api]
@@ -268,6 +269,34 @@
             (t/is (= "image/png" (.get fd "mtype")))))
         (t/testing "the beats painted the vocabulary in order"
           (t/is (= [:preparing :rendering :packaging] @stages)))
+        (respond!)
+        (restore!)
+        (done)))))
+
+(t/deftest cancelled-is-a-normal-ending-not-a-failure
+  (t/testing "the cooperative cancel classifies as cancelled"
+    (t/is (true? (exports/cancelled?
+                  (ex/error :type :internal
+                            :code :job-cancelled
+                            :hint "export job was cancelled")))))
+  (t/testing "anything else is a failure"
+    (t/is (false? (exports/cancelled? (ex-info "render boom" {}))))))
+
+(t/deftest a-failed-run-stops-beating-after-the-settle
+  ;; the watchdog interval belongs to the run: if the failure path
+  ;; does not clear it, it beats on a dead job forever — one HTTP call
+  ;; a second that only ever answers skip
+  (t/async done
+    (let [job-id   (uuid/next)
+          sid      (uuid/next)
+          params   (export-params)
+          stages   (volatile! [])
+          respond! (fake-fetch! (answer-with params sid stages))
+          restore! (fake-render-fail!)]
+      (p/let [_ (worker/process! (run-claim job-id))
+              _ (p/delay 1400)]
+        (t/testing "no beat traveled after the fail settle"
+          (t/is (= "fail-job" (last (steps-of)))))
         (respond!)
         (restore!)
         (done)))))
