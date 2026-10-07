@@ -541,6 +541,32 @@
   [file-data f & args]
   (d/update-when file-data :tokens-status #(apply f % args)))
 
+(defn absorb-tokens-lib
+  "Copy the tokens-lib of the library into the file, replacing the
+   previous one if any, and unset the tokens-source, so the file becomes
+   its own tokens source.
+
+   The tokens-status of the file is preserved. If the file has none, the
+   one of the library is copied along with the tokens-lib.
+
+   If the library has no tokens-lib, only the tokens-source is unset, and
+   the file keeps its own tokens-lib and tokens-status. If there is no
+   library-data, there is nothing to absorb and the file is returned
+   unchanged."
+  [file-data library-data]
+  (if (nil? library-data)
+    file-data
+    (let [tokens-lib (get-tokens-lib library-data)]
+      (if (nil? tokens-lib)
+        (set-tokens-source file-data nil)
+        (let [tokens-status (or (get-tokens-status file-data)
+                                (get-tokens-status library-data))]
+          (cond-> (-> file-data
+                      (set-tokens-source nil)
+                      (assoc :tokens-lib tokens-lib))
+            (some? tokens-status)
+            (assoc :tokens-status tokens-status)))))))
+
 ;; Tokens status with tokens lib
 
 (defn- calculate-active-sets
