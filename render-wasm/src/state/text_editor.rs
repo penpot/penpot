@@ -913,6 +913,11 @@ impl TextEditorState {
             CursorDirection::LineAfter => {
                 text_helpers::move_cursor_down(&focus, paragraphs, text_content)
             }
+            CursorDirection::LineStart if word_boundary => TextPositionWithAffinity::empty(),
+            CursorDirection::LineEnd if word_boundary => text_helpers::move_cursor_line_end(
+                &TextPositionWithAffinity::new_downstream_affinity(paragraphs.len() - 1, 0),
+                paragraphs,
+            ),
             CursorDirection::LineStart => text_helpers::move_cursor_line_start(&focus, paragraphs),
             CursorDirection::LineEnd => text_helpers::move_cursor_line_end(&focus, paragraphs),
         };
