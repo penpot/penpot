@@ -136,7 +136,7 @@
       [:> search-bar* {:on-change on-search-term-change-2
                        :on-clear on-search-clear-click
                        :value filter-term
-                       :placeholder (tr "shortcuts.title")
+                       :placeholder (tr "shortcuts.search")
                        :icon-id i/search
                        :auto-focus true}]]
 

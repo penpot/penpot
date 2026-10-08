@@ -1045,7 +1045,7 @@ msgstr "You're going to restore all your projects and files. This may take a whi
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "Restore all projects and files"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Restore All"
 
@@ -1633,7 +1633,7 @@ msgstr "Something wrong has happened with the web worker."
 msgid "errors.invalid-color"
 msgstr "Invalid color"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Invalid data"
 
@@ -2139,15 +2139,23 @@ msgstr "An error has occurred"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
 msgid "import-shortcuts.apply"
-msgstr "Apply"
+msgstr "Import"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
 msgid "import-shortcuts.diff-modal-text"
-msgstr "The following shortcuts will be changed by the imported configuration."
+msgstr "These shortcuts will change:"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:98
 msgid "import-shortcuts.diff-modal-title"
 msgstr "Import shortcuts"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113
+msgid "import-shortcuts.imported"
+msgstr "Imported"
+
+#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462
+msgid "import-shortcuts.invalid-file"
+msgstr "This file is not a valid shortcuts export."
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:148
 msgid "import-shortcuts.no-changes"
@@ -2952,7 +2960,7 @@ msgstr "Hide"
 msgid "labels.hide-resolved-comments"
 msgstr "Hide resolved comments"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Import"
 
@@ -4694,20 +4702,20 @@ msgid "profile.recovery.go-to-login"
 msgstr "Go to login"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:109, src/app/main/ui/settings/restore_shortcuts_modal.cljs:100
-msgid "restore-shortcuts.acction"
-msgstr "Acction"
+msgid "restore-shortcuts.action"
+msgstr "Action"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
 msgid "restore-shortcuts.modal-text"
-msgstr "The following shortcuts will be restored to their default values."
+msgstr "These shortcuts will be reset to default:"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
 msgid "restore-shortcuts.modal-title"
-msgstr "Restore to default configuration"
+msgstr "Reset all shortcuts to default"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
 msgid "restore-shortcuts.restore"
-msgstr "Restore"
+msgstr "Reset"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:425
 msgid "settings.detach"
@@ -4901,21 +4909,25 @@ msgstr "Text"
 msgid "shortcuts.duplicate"
 msgstr "Duplicate"
 
+#: src/app/main/ui/shortcuts.cljs:589
+msgid "shortcuts.edit"
+msgstr "Edit %s"
+
 #: src/app/main/ui/shortcuts.cljs:645
 msgid "shortcuts.edit-modal.conflict"
-msgstr "Combination assigned to \"%s\". Saving will remove it there."
+msgstr "Already assigned to \"%s\". Saving will move it to this action."
 
 #: src/app/main/ui/shortcuts.cljs:636
 msgid "shortcuts.edit-modal.reset-pending"
-msgstr "If you save, this shortcut will return to the original value:"
+msgstr "Saving will reset this shortcut to default:"
 
 #: src/app/main/ui/shortcuts.cljs:647
 msgid "shortcuts.edit-modal.success"
-msgstr "This key combination is available and can be assigned without conflicts."
+msgstr "Shortcut available."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
 msgid "shortcuts.edit-on-settings"
-msgstr "Customize on settings"
+msgstr "Customize shortcuts"
 
 #: src/app/main/data/workspace/grid_layout/shortcuts.cljs:37, src/app/main/data/workspace/path/shortcuts.cljs:175, src/app/main/data/workspace/shortcuts.cljs:177
 msgid "shortcuts.escape"
@@ -4947,11 +4959,11 @@ msgstr "Flip vertically"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
 msgid "shortcuts.font-size-dec"
-msgstr "Decrement font size"
+msgstr "Decrease font size"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
 msgid "shortcuts.font-size-inc"
-msgstr "Increment font size"
+msgstr "Increase font size"
 
 #: src/app/main/data/dashboard/shortcuts.cljs:29
 msgid "shortcuts.go-to-drafts"
@@ -4999,7 +5011,7 @@ msgstr "Join nodes"
 
 #: src/app/main/ui/shortcuts.cljs:624
 msgid "shortcuts.key-combo"
-msgstr "Press the key combination"
+msgstr "Press the new keys"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
@@ -5067,19 +5079,19 @@ msgstr "Next board"
 
 #: src/app/main/ui/settings/shortcuts.cljs:510
 msgid "shortcuts.no-disabled"
-msgstr "There are not disabled shortcuts"
+msgstr "No disabled shortcuts."
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
 msgid "shortcuts.no-personalized"
-msgstr "Head to All to start customizing your shortcuts."
+msgstr "No custom shortcuts yet. Customize one from the All tab."
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
 msgid "shortcuts.no-shortcuts"
-msgstr "There are no shortcuts that match your search"
+msgstr "No shortcuts match your search."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
 msgid "shortcuts.not-found"
-msgstr "No shortcuts found"
+msgstr "No shortcuts match your search."
 
 #: src/app/main/data/workspace/shortcuts.cljs:848
 msgid "shortcuts.opacity-0"
@@ -5155,7 +5167,7 @@ msgstr " or "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
 msgid "shortcuts.overwritten-by"
-msgstr "This shortcut has been reassigned to %s"
+msgstr "Reassigned to \"%s\""
 
 #: src/app/main/ui/settings/shortcuts.cljs:468
 msgid "shortcuts.page"
@@ -5175,7 +5187,7 @@ msgstr "Paste and replace"
 
 #: src/app/main/ui/settings/shortcuts.cljs:296, src/app/main/ui/settings/shortcuts.cljs:523
 msgid "shortcuts.personalized"
-msgstr "Personalized"
+msgstr "Custom"
 
 #: src/app/main/data/workspace/shortcuts.cljs:832
 msgid "shortcuts.plugins"
@@ -5203,6 +5215,10 @@ msgstr "Rename"
 msgid "shortcuts.reset"
 msgstr "Reset to default"
 
+#: src/app/main/ui/settings/shortcuts.cljs:53
+msgid "shortcuts.reset-all"
+msgstr "Reset all"
+
 #: src/app/main/data/viewer/shortcuts.cljs:48, src/app/main/data/workspace/grid_layout/shortcuts.cljs:69, src/app/main/data/workspace/path/shortcuts.cljs:220, src/app/main/data/workspace/shortcuts.cljs:704
 msgid "shortcuts.reset-zoom"
 msgstr "Reset zoom"
@@ -5210,6 +5226,10 @@ msgstr "Reset zoom"
 #: src/app/main/data/workspace/shortcuts.cljs:474
 msgid "shortcuts.scale"
 msgstr "Scale"
+
+#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+msgid "shortcuts.search"
+msgstr "Search shortcuts"
 
 # SECTIONS
 #: src/app/main/ui/shortcuts.cljs:126, src/app/main/ui/shortcuts.cljs:298
@@ -5319,7 +5339,7 @@ msgstr "Shapes"
 
 #: src/app/main/ui/shortcuts.cljs:143
 msgid "shortcuts.subsection.text-editor"
-msgstr "Texts"
+msgstr "Text"
 
 #: src/app/main/ui/shortcuts.cljs:144
 msgid "shortcuts.subsection.tools"
@@ -5337,7 +5357,7 @@ msgstr "Zoom"
 msgid "shortcuts.thumbnail-set"
 msgstr "Set thumbnails"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "Keyboard shortcuts"
 
