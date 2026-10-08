@@ -11,6 +11,7 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [exporter-tests.api-test]
+   [exporter-tests.browser-scope-test]
    [exporter-tests.browser-test]
    [exporter-tests.consumer-config-test]
    [exporter-tests.consumer-plan-test]
@@ -24,6 +25,7 @@
    [exporter-tests.system-test]
    [exporter-tests.wasm-pool-service-test]
    [exporter-tests.wasm-pool-test]
+   [exporter-tests.wasm-scope-test]
    [exporter-tests.worker-test]
    [goog.object :as gobj]))
 
@@ -37,7 +39,8 @@
                  (println (str "UNHANDLED-REJECTION: " reason))))
 
 (def test-namespaces
-  ['exporter-tests.browser-test
+  ['exporter-tests.browser-scope-test
+   'exporter-tests.browser-test
    'exporter-tests.consumer-plan-test
    'exporter-tests.jobs-test
    'exporter-tests.main-test
@@ -51,7 +54,8 @@
    'exporter-tests.shell-test
    'exporter-tests.system-test
    'exporter-tests.wasm-pool-service-test
-   'exporter-tests.wasm-pool-test])
+   'exporter-tests.wasm-pool-test
+   'exporter-tests.wasm-scope-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")

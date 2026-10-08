@@ -62,12 +62,12 @@
                       :validate (fn [_] true)}
                  #js {:max 1 :min 0}))
 
-(defn- test-sys
+(defn- test-cfg
   [pool]
-  {:browser-pool pool
-   :base-uri     (cf/get-internal-uri)
-   :public-uri   (cf/get :public-uri)
-   :svgo?        false})
+  {:exporter.browser/pool pool
+   :base-uri              (cf/get-internal-uri)
+   :public-uri            (cf/get :public-uri)
+   :svgo?                 false})
 
 (defn- never-cancelled
   []
@@ -77,7 +77,7 @@
   [calls raise-on-call]
   (let [seen (atom 0)]
     (fn []
-      (swap! calls conj :check)
+      (swap! calls conj :check-cancelled)
       (when (= raise-on-call (swap! seen inc))
         (throw (ex-info "export job was cancelled"
                         {:type :internal
@@ -109,7 +109,7 @@
           page    (stub-page calls (stub-locator calls (fn [_] nil)))
           pool    (test-pool calls page)
           {:keys [seen fn]} (collect-on-object)]
-      (await (render/render (test-sys pool) (test-params :png ["a" "b"]) fn (never-cancelled)))
+      (await (render/render (test-cfg pool) (test-params :png ["a" "b"]) fn (never-cancelled)))
       (t/is (= 2 (count @seen)))
       (t/is (every? #(str/ends-with? (:path %) ".png") @seen))
       (t/is (= ["a" "b"] (mapv :id @seen)))
@@ -128,7 +128,7 @@
           page    (stub-page calls (stub-locator calls (fn [_] nil)))
           pool    (test-pool calls page)
           {:keys [seen fn]} (collect-on-object)]
-      (await (render/render (test-sys pool) (test-params :pdf ["a" "b"]) fn (never-cancelled)))
+      (await (render/render (test-cfg pool) (test-params :pdf ["a" "b"]) fn (never-cancelled)))
       (t/is (= 2 (count @seen)))
       (t/is (every? #(str/ends-with? (:path %) ".pdf") @seen))
       (t/testing "one navigation per object"
@@ -142,9 +142,9 @@
     (let [calls (atom [])
           page  (stub-page calls (stub-locator calls (fn [_] nil)))
           pool  (test-pool calls page)
-          sys   (test-sys pool)]
+          cfg   (test-cfg pool)]
       (try
-        (await (render/render sys (test-params :png ["a"])
+        (await (render/render cfg (test-params :png ["a"])
                               (fn [_] (swap! calls conj :object))
                               (raising-check calls 1)))
         (t/is false "render should have rejected a cancelled render")
@@ -162,10 +162,10 @@
           pool    (test-pool calls page)
           ;; entry check is the first call, then one per object:
           ;; the cancel lands as the second object comes up
-          sys     (test-sys pool)
+          cfg     (test-cfg pool)
           {:keys [seen fn]} (collect-on-object)]
       (try
-        (await (render/render sys (test-params :pdf ["a" "b"]) fn (raising-check calls 3)))
+        (await (render/render cfg (test-params :pdf ["a" "b"]) fn (raising-check calls 3)))
         (t/is false "render should have rejected a cancelled batch")
         (catch :default cause
           (t/is (= :job-cancelled (-> cause ex-data :code)))
@@ -182,7 +182,7 @@
           page    (stub-page calls locator)
           pool    (test-pool calls page)
           {:keys [seen fn]} (collect-on-object)
-          _       (await (render/render (test-sys pool) (test-params :svg ["a"]) fn (never-cancelled)))
+          _       (await (render/render (test-cfg pool) (test-params :svg ["a"]) fn (never-cancelled)))
           path    (:path (first @seen))
           content (await (sh/read-file path))]
       (t/is (= 1 (count @seen)))

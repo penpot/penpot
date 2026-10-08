@@ -7,31 +7,32 @@
 (ns exporter.renderer
   "Common renderer interface, validated with malli from day one.
 
-  One entry point: `render` takes `sys` plus a task map
-  (`:exports`, `:on-object`, `:check-cancelled`) and fires the whole
-  batch at once, dispatching each export to the browser or the
-  headless driver by its `:is-wasm` flag. A single export is a batch
-  of one. The headless ones share one leased worker (serialized on
-  it); the browser ones check out their own browser each (bounded by
-  the pool). Rendered objects travel through `on-object`, so the
-  batch itself resolves a vector of nils.
+  One entry point: `render` takes `cfg` plus a task map
+  (`:exports`, `:on-object`, `:check-cancelled`), validates it, and
+  fires the whole batch at once — the browser exports through
+  `exporter.browser.scope`, the wasm ones through one leased
+  worker in `exporter.wasm.scope`. A single export is a batch of one.
+  Rendered objects travel through `on-object`; the batch itself
+  resolves nil once every export landed.
 
-  `sys` is task-free infrastructure with process lifetime — the
-  browser pool and render uris, the wasm pool instance, flags — what
-  could one day come straight from the running system map. The task
+  `cfg` is task-free infrastructure with process lifetime: the pool
+  services under their system keys (`:exporter.browser/pool`,
+  `:exporter.wasm.pool/pool`) plus the static render config
+  (`:base-uri`, `:public-uri`, `:svgo?`) — a view over the running
+  system map that each domain reads with its own keys. The task
   map holds everything per-task: the `exports` data plus the two
   injected indirections, `on-object` (the per-object collector) and
-  `check-cancelled` (the zero-arg cancel check raising
+  `check-cancelled` (the zero-arg check-cancelled raising
   `:job-cancelled`). One closed schema validates the whole task, so a
   bad batch — or a non-fn injection — never touches a pool. Each
-  driver takes the same `[sys params on-object check]` shape and
+  driver takes the same `[cfg params on-object check-cancelled]` shape and
   implements cancel internally: cooperative checkpoints on the
   browser, checkpoints plus a mid-render abort of its own leased
   worker on wasm."
   (:require
    [app.common.schema :as sm]
-   [exporter.renderer.browser :as browser]
-   [exporter.renderer.wasm :as wasm]))
+   [exporter.browser.scope :as bscope]
+   [exporter.wasm.scope :as scope]))
 
 (def schema:type
   [:enum :png :jpeg :webp :pdf :svg])
@@ -70,28 +71,29 @@
 (def ^:private check-task
   (sm/check-fn schema:task :hint "invalid render task"))
 
-(defn headless?
+(defn wasm?
   "Whether `params` renders with render-wasm rather than a browser."
   [{:keys [is-wasm]}]
   (boolean is-wasm))
 
 (defn ^:async render
-  "Renders every export, firing them all at once. The whole task is
-  validated before anything is leased, so a bad task never touches a
-  pool. Rejects on the first failure."
-  [sys & {:as task}]
-  (let [{:keys [exports on-object check-cancelled] :as task}
-        (check-task task)
-
-        do-render
-        (fn [wasm-render]
-          (js/Promise.all
-           (mapv (fn [params]
-                   (if (and (headless? params) (fn? wasm-render))
-                     (wasm-render params on-object)
-                     (browser/render sys params on-object check-cancelled)))
-                 exports)))]
-
-    (if (some headless? exports)
-      (await (wasm/with-scope sys (assoc task :on-scope do-render)))
-      (await (do-render nil)))))
+  "Renders every export, firing them all at once: the browser ones
+  through their own scope, the wasm ones through one leased
+  worker. The whole task is validated before anything is leased, so a
+  bad task never touches a pool. Rejects on the first failure."
+  [cfg & {:as task}]
+  (let [{:keys [exports on-object check-cancelled]} (check-task task)
+        cfg           (assoc cfg
+                             ::on-object on-object
+                             ::check-cancelled check-cancelled)
+        wasm-exports    (filterv wasm? exports)
+        browser-exports (remove wasm? exports)]
+    (await (js/Promise.all
+            (cond-> []
+              (seq browser-exports)
+              (conj (bscope/run cfg browser-exports))
+              (seq wasm-exports)
+              (conj (scope/run cfg
+                               (fn [render-fn]
+                                 (js/Promise.all (mapv render-fn wasm-exports))))))))
+    nil))

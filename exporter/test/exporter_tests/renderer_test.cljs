@@ -6,7 +6,7 @@
 
 (ns exporter-tests.renderer-test
   "The renderer facade: malli validation and dispatch to the browser
-  or headless drivers, against a stub browser pool and a stub wasm
+  or wasm drivers, against a stub browser pool and a stub wasm
   pool."
   (:require
    ["generic-pool" :as gp]
@@ -87,16 +87,16 @@
 (defn- stub-check
   [calls]
   (fn []
-    (swap! calls conj :check)))
+    (swap! calls conj :check-cancelled)))
 
-(defn- test-sys
+(defn- test-cfg
   [calls]
   (let [worker (stub-worker calls)]
-    {:browser-pool (stub-browser-pool calls)
-     :base-uri     (cf/get-internal-uri)
-     :public-uri   (cf/get :public-uri)
-     :svgo?        false
-     :wasm-pool    {:pool (stub-wasm-pool calls worker) :timeout-ms 5000}}))
+    {:exporter.browser/pool    (stub-browser-pool calls)
+     :base-uri                 (cf/get-internal-uri)
+     :public-uri               (cf/get :public-uri)
+     :svgo?                    false
+     :exporter.wasm.pool/pool {:pool (stub-wasm-pool calls worker) :timeout-ms 5000}}))
 
 (defn- never-cancelled
   [calls]
@@ -112,16 +112,16 @@
           :objects [{:id "a" :name "a" :suffix ".png" :filename "a.png"}]}
          opts))
 
-(t/deftest headless-reads-the-wasm-flag
-  (t/is (true? (renderer/headless? {:is-wasm true :type :png})))
-  (t/is (false? (renderer/headless? {:type :png})))
-  (t/is (false? (renderer/headless? {:is-wasm false :type :png}))))
+(t/deftest wasm-reads-the-wasm-flag
+  (t/is (true? (renderer/wasm? {:is-wasm true :type :png})))
+  (t/is (false? (renderer/wasm? {:type :png})))
+  (t/is (false? (renderer/wasm? {:is-wasm false :type :png}))))
 
 (t/deftest ^:async render-routes-bitmaps-to-the-browser
   (try
     (let [calls (atom [])
           seen  (atom [])]
-      (await (renderer/render (test-sys calls)
+      (await (renderer/render (test-cfg calls)
                               :exports [(test-params :png nil)]
                               :on-object (fn [object] (swap! seen conj object) nil)
                               :check-cancelled (never-cancelled calls)))
@@ -131,18 +131,18 @@
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async render-routes-headless-to-the-worker
+(t/deftest ^:async render-routes-wasm-to-the-worker
   (try
     (let [calls  (atom [])
           job-id (uuid/next)
           seen   (atom [])]
-      (await (renderer/render (test-sys calls)
+      (await (renderer/render (test-cfg calls)
                               :exports [(test-params :png {:is-wasm true :job-id job-id})]
                               :on-object (fn [object] (swap! seen conj object) nil)
                               :check-cancelled (never-cancelled calls)))
       (t/is (= [{:id "w1" :path "/tmp/w1.png"}] @seen))
       (t/is (some #{[:post "render"]} @calls))
-      (t/is (some #{:check} @calls))
+      (t/is (some #{:check-cancelled} @calls))
       (t/is (not-any? #(and (vector? %) (= :goto (first %))) @calls)))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
@@ -151,7 +151,7 @@
   (try
     (let [calls (atom [])]
       (try
-        (await (renderer/render (test-sys calls)
+        (await (renderer/render (test-cfg calls)
                                 :exports [(dissoc (test-params :png nil) :objects)]
                                 :on-object (fn [_] nil)
                                 :check-cancelled (never-cancelled calls)))
@@ -165,7 +165,7 @@
   (try
     (let [calls (atom [])]
       (try
-        (await (renderer/render (test-sys calls)
+        (await (renderer/render (test-cfg calls)
                                 :exports [(test-params :png nil)]
                                 :on-object :not-a-fn
                                 :check-cancelled (never-cancelled calls)))
@@ -175,30 +175,30 @@
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async render-shares-one-worker-across-headless-renders
+(t/deftest ^:async render-shares-one-worker-across-wasm-renders
   (try
     (let [calls  (atom [])
           job-id (uuid/next)
-          sys    (test-sys calls)
+          cfg    (test-cfg calls)
           seen   (atom [])]
-      (await (renderer/render sys
-                              :exports [(test-params :png {:is-wasm true :job-id job-id})
-                                        (test-params :png {:is-wasm true :job-id job-id})
-                                        (test-params :png {:job-id job-id})]
-                              :on-object (fn [object] (swap! seen conj object) nil)
-                              :check-cancelled (never-cancelled calls)))
+      (t/is (nil? (await (renderer/render cfg
+                                          :exports [(test-params :png {:is-wasm true :job-id job-id})
+                                                    (test-params :png {:is-wasm true :job-id job-id})
+                                                    (test-params :png {:job-id job-id})]
+                                          :on-object (fn [object] (swap! seen conj object) nil)
+                                          :check-cancelled (never-cancelled calls)))))
       (t/is (= 1 (count (filter #{:acquire} @calls))))
       (t/is (= 1 (count (filter #{:release} @calls))))
       (t/is (= 3 (count @seen))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async render-without-headless-renders-directly
+(t/deftest ^:async render-without-wasm-renders-directly
   (try
     (let [calls (atom [])
-          sys   (test-sys calls)
+          cfg   (test-cfg calls)
           seen  (atom [])]
-      (await (renderer/render sys
+      (await (renderer/render cfg
                               :exports [(test-params :png nil)]
                               :on-object (fn [object] (swap! seen conj object) nil)
                               :check-cancelled (never-cancelled calls)))
@@ -211,9 +211,9 @@
   (try
     (let [calls  (atom [])
           job-id (uuid/next)
-          sys    (test-sys calls)]
+          cfg    (test-cfg calls)]
       (try
-        (await (renderer/render sys
+        (await (renderer/render cfg
                                 :exports [(test-params :png {:is-wasm true :job-id job-id})
                                           (dissoc (test-params :png nil) :objects)]
                                 :on-object (fn [_] nil)
@@ -230,7 +230,7 @@
   (try
     (let [calls (atom [])]
       (try
-        (await (renderer/render (test-sys calls)
+        (await (renderer/render (test-cfg calls)
                                 :exports [(test-params :png nil)]
                                 :on-objec (fn [_] nil)
                                 :check-cancelled (never-cancelled calls)))

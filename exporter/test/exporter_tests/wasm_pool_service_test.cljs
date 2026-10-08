@@ -6,11 +6,10 @@
 
 (ns exporter-tests.wasm-pool-service-test
   "The wasm worker pool service: lifecycle through the system, the
-  lend protocol, the render protocol, and the creation handshake,
-  against fake workers."
+  lend protocol analogy to a transaction (return on success, destroy
+  on failure), and the creation handshake, against fake workers."
   (:require
    ["node:events" :as events]
-   [app.common.transit :as transit]
    [cljs.test :as t :include-macros true]
    [exporter.utils.system :as system]
    [exporter.wasm.pool :as pool]))
@@ -33,15 +32,6 @@
   (fn []
     (swap! calls conj :create)
     (js/Promise.resolve (fake-worker calls behavior))))
-
-(defn- render-behavior
-  [payload]
-  (fn [^js emitter _msg]
-    (js/setTimeout
-     (fn []
-       (.emit emitter "message" #js {:type "object" :payload (transit/encode-str payload)})
-       (.emit emitter "message" #js {:type "done"}))
-     0)))
 
 (defn- silent-behavior
   [_emitter _msg])
@@ -67,74 +57,68 @@
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async with-worker-lends-and-reclaims
+(t/deftest ^:async run-lends-and-reclaims
   (try
     (let [calls  (atom [])
           sys    (await (system/init (test-config calls silent-behavior 5000)))
           pool   (pool-of sys)
           seen   (atom nil)
-          result (await (pool/with-worker pool (fn [worker] (reset! seen worker) :used)))]
+          result (await (pool/run pool (fn [cfg] (reset! seen cfg) :used)))]
       (t/is (= :used result))
-      (t/is (some? (unchecked-get @seen "__id")))
+      (t/is (some? (unchecked-get (:exporter.wasm.pool/worker @seen) "__id")))
       (t/testing "a second use reuses the returned worker: nothing is created again"
-        (await (pool/with-worker pool (fn [_] :again)))
+        (await (pool/run pool (fn [_] :again)))
         (t/is (= 1 (count (filter #{:create} @calls)))))
       (await (system/halt sys)))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async render-on-delivers-objects-and-done
+(t/deftest ^:async run-reads-the-pool-from-cfg
   (try
-    (let [calls (atom [])
-          sys   (await (system/init (test-config calls
-                                                 (render-behavior {:id "o1" :path "/tmp/o1.png"})
-                                                 5000)))
-          seen  (atom [])]
-      (t/is (nil? (await (pool/with-worker (pool-of sys)
-                           (fn [worker]
-                             (pool/render-on worker
-                                             {}
-                                             (fn [object] (swap! seen conj object))
-                                             {:timeout-ms 5000}))))))
-      (t/is (= [{:id "o1" :path "/tmp/o1.png"}] @seen))
+    (let [calls  (atom [])
+          sys    (await (system/init (test-config calls silent-behavior 5000)))
+          seen   (atom nil)
+          result (await (pool/run sys
+                                  (fn [cfg] (reset! seen cfg) :used)))]
+      (t/is (= :used result))
+      (t/is (some? (unchecked-get (:exporter.wasm.pool/worker @seen) "__id")))
       (await (system/halt sys)))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async render-on-rejects-cancelled-upfront
+(t/deftest ^:async run-threads-extra-args-to-the-body
+  (try
+    (let [calls (atom [])
+          sys   (await (system/init (test-config calls silent-behavior 5000)))]
+      (t/is (= [:a :b] (await (pool/run (pool-of sys)
+                                        (fn [_ x y] [x y])
+                                        :a :b))))
+      (await (system/halt sys)))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async run-rejects-cfg-without-pool
+  (try
+    (try
+      (await (pool/run {:timeout-ms 5000} (fn [_] :used)))
+      (t/is false "run should have rejected a cfg without pool")
+      (catch :default cause
+        (t/is (= :invalid-pool-cfg (-> cause ex-data :code)))))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async run-destroys-the-worker-on-body-failure
   (try
     (let [calls (atom [])
           sys   (await (system/init (test-config calls silent-behavior 5000)))]
       (try
-        (await (pool/with-worker (pool-of sys)
-                 (fn [worker]
-                   (pool/render-on worker
-                                   {}
-                                   (fn [_])
-                                   {:check-cancelled (fn []
-                                                       (throw (ex-info "export job was cancelled"
-                                                                       {:code :job-cancelled})))
-                                    :timeout-ms 5000}))))
-        (t/is false "render-on should have rejected a cancelled render")
+        (await (pool/run (pool-of sys)
+                         (fn [_] (throw (ex-info "body broke" {})))))
+        (t/is false "run should have rejected a failed body")
         (catch :default cause
-          (t/is (= :job-cancelled (-> cause ex-data :code)))
-          (t/is (not-any? #(and (vector? %) (= :post (first %))) @calls))))
-      (await (system/halt sys)))
-    (catch :default cause
-      (t/is false (str "unexpected failure: " (ex-message cause))))))
-
-(t/deftest ^:async silent-worker-times-out-and-is-terminated
-  (try
-    (let [calls (atom [])
-          sys   (await (system/init (test-config calls silent-behavior 50)))]
-      (try
-        (await (pool/with-worker (pool-of sys)
-                 (fn [worker]
-                   (pool/render-on worker {} (fn [_]) {:timeout-ms 50}))))
-        (t/is false "render-on should have rejected a silent worker")
-        (catch :default cause
-          (t/is (= :render-timeout (-> cause ex-data :code)))
-          (t/is (some #{:terminate} @calls))))
+          (t/is (= "body broke" (ex-message cause)))
+          (t/is (some #{:terminate} @calls))
+          (t/is (not-any? #{:release} @calls))))
       (await (system/halt sys)))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))

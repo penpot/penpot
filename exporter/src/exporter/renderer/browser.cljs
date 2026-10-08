@@ -12,9 +12,9 @@
   with each object carrying its `:path`. `on-object` may return a
   plain value or a promise; it is always awaited.
 
-  `sys` is task-free infrastructure: the `:browser-pool`, the
+  `cfg` is task-free infrastructure: the `:exporter.browser/pool`, the
   render `:base-uri` and `:public-uri`, and the `:svgo?` flag. The
-  per-task injections (`on-object`, `check`) ride positional. There
+  per-task injections (`on-object`, `check-cancelled`) ride positional. There
   are no promesa chains in this namespace."
   (:require
    ["@penpot/svgo" :as svgo]
@@ -34,14 +34,18 @@
 
 (l/set-level! :trace)
 
-(defn- check-cancelled
-  "Cooperative checkpoint over the injected zero-arg check. This
+(defn- raise-if-cancelled
+  "Cooperative checkpoint over the injected zero-arg check-cancelled. This
   backend never blocks indefinitely (every step yields), so
-  yielding-point checks are the whole cancel story here; a nil check
-  wires no cancel."
-  [check]
-  (when check
-    (check)))
+  yielding-point checks are the whole cancel story here. The check-cancelled is
+  mandatory: without one it raises `:check-cancelled-missing` instead
+  of running unprotected."
+  [check-cancelled]
+  (if (fn? check-cancelled)
+    (check-cancelled)
+    (throw (ex/error :type :assertion
+                     :code :check-cancelled-missing
+                     :hint "browser render needs a zero-arg check-cancelled"))))
 
 (defn- prepare-options
   [uri token scale]
@@ -91,15 +95,15 @@
   nil)
 
 (defn- ^:async render-bitmap
-  [sys {:keys [file-id page-id share-id token scale type objects skip-children]} on-object]
+  [cfg {:keys [file-id page-id share-id token scale type objects skip-children]} on-object]
   (let [query {:file-id      file-id
                :page-id      page-id
                :share-id     share-id
                :object-id    (mapv :id objects)
                :route        "objects"
                :skip-children skip-children}
-        uri   (render-uri (:base-uri sys) query)]
-    (await (browser/exec (:browser-pool sys)
+        uri   (render-uri (:base-uri cfg) query)]
+    (await (browser/exec (:exporter.browser/pool cfg)
                          (prepare-options uri token scale)
                          (fn [page] (render-bitmap-page uri page type objects on-object))))))
 
@@ -151,20 +155,20 @@
       (await (on-object (assoc object :path path))))))
 
 (defn- ^:async render-pdf-page
-  [base-uri page params objects on-object check]
+  [base-uri page params objects on-object check-cancelled]
   (doseq [object objects]
-    (check-cancelled check)
+    (raise-if-cancelled check-cancelled)
     (await (render-pdf-object page base-uri params object on-object)))
   nil)
 
 (defn- ^:async render-pdf
-  [sys {:keys [token scale] :as params} on-object check]
-  (let [base-uri (-> (:base-uri sys)
+  [cfg {:keys [token scale] :as params} on-object check-cancelled]
+  (let [base-uri (-> (:base-uri cfg)
                      (u/ensure-path-slash))]
-    (await (browser/exec (:browser-pool sys)
+    (await (browser/exec (:exporter.browser/pool cfg)
                          (prepare-options base-uri token scale)
                          (fn [page]
-                           (render-pdf-page base-uri page params (:objects params) on-object check))))))
+                           (render-pdf-page base-uri page params (:objects params) on-object check-cancelled))))))
 
 ;; --- SVG
 
@@ -440,7 +444,7 @@
   (str/replace content "&nbsp;" "&#160;"))
 
 (defn- ^:async render-svg-object
-  [sys page type object on-object]
+  [cfg page type object on-object]
   (let [path (await (sh/tempfile :prefix "penpot.tmp.render.svg." :suffix (mime/get-extension type)))
         node (browser/select page (str/concat "#screenshot-" (:id object)))]
     (await (browser/wait-for node))
@@ -449,56 +453,56 @@
           result  (replace-text-nodes xmldata txtdata)
           result  (sanitize-svg-content result)
 
-          result  (if (:svgo? sys)
+          result  (if (:svgo? cfg)
                     (svgo/optimize result svgo/defaultOptions)
                     result)
 
-          result  (replace-internal-uris result (:base-uri sys) (:public-uri sys))]
+          result  (replace-internal-uris result (:base-uri cfg) (:public-uri cfg))]
       (await (sh/write-file path result))
       (await (on-object (assoc object :path path))))))
 
 (defn- ^:async render-svg-page
-  [sys uri page type objects on-object]
+  [cfg uri page type objects on-object]
   (l/info :uri uri)
   ;; navigate to the page and perform basic setup
   (await (browser/nav page (str uri)))
   (await (browser/sleep page 1000)) ; the good old fix with sleep
   (await (browser/wait-for-fonts page))
   ;; take the screnshot of requested objects, one by one
-  (await (js/Promise.all (mapv (fn [object] (render-svg-object sys page type object on-object))
+  (await (js/Promise.all (mapv (fn [object] (render-svg-object cfg page type object on-object))
                                objects)))
   nil)
 
 (defn- ^:async render-svg
-  [sys {:keys [file-id page-id share-id token scale type objects]} on-object]
+  [cfg {:keys [file-id page-id share-id token scale type objects]} on-object]
   (let [query {:file-id      file-id
                :page-id      page-id
                :share-id     share-id
                :render-embed true
                :object-id    (mapv :id objects)
                :route        "objects"}
-        uri   (render-uri (:base-uri sys) query)]
-    (await (browser/exec (:browser-pool sys)
+        uri   (render-uri (:base-uri cfg) query)]
+    (await (browser/exec (:exporter.browser/pool cfg)
                          (prepare-options uri token scale)
-                         (fn [page] (render-svg-page sys uri page type objects on-object))))))
+                         (fn [page] (render-svg-page cfg uri page type objects on-object))))))
 
 (defn ^:async render
   "Renders one partition of objects through a browser page: bitmap
   (png, jpeg, webp), pdf or svg depending on the type in `params`.
-  Same shape as `exporter.renderer.wasm/render`: `sys` is task-free
-  infrastructure (pools, uris, flags), while `on-object` and `check`
+  Same shape as `exporter.renderer.wasm/render`: `cfg` is task-free
+  infrastructure (pools, uris, flags), while `on-object` and `check-cancelled`
   ride positional as the per-task injections — the per-object
-  collector and the zero-arg cancel check raising `:job-cancelled`.
-  The check runs here at fail-fast entry plus the sequential pdf
-  loop; the concurrent flows rely on the entry check and the caller's
+  collector and the zero-arg check-cancelled raising `:job-cancelled`.
+  The check-cancelled runs here at fail-fast entry plus the sequential pdf
+  loop; the concurrent flows rely on the entry check-cancelled and the caller's
   `on-object`. Calls `on-object` with each object carrying its
   `:path`, awaiting it every time, and resolves nil."
-  [sys {:keys [type] :as params} on-object check]
-  (check-cancelled check)
+  [cfg {:keys [type] :as params} on-object check-cancelled]
+  (raise-if-cancelled check-cancelled)
   (case type
-    (:png :jpeg :webp) (await (render-bitmap sys params on-object))
-    :pdf (await (render-pdf sys params on-object check))
-    :svg (await (render-svg sys params on-object))
+    (:png :jpeg :webp) (await (render-bitmap cfg params on-object))
+    :pdf (await (render-pdf cfg params on-object check-cancelled))
+    :svg (await (render-svg cfg params on-object))
     (ex/raise :type :validation
               :code :unknown-render-type
               :hint (str "unknown render type: " type))))

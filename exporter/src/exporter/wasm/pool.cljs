@@ -31,7 +31,6 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.transit :as t]
    [exporter.utils.system :as system]))
 
 (l/set-level! :info)
@@ -148,106 +147,40 @@
     (l/info :hint "finalizing render worker pool")
     (drain-pool pool)))
 
-(defn ^:async with-worker
-  "Acquires one worker for the whole of `f`, a fn of that worker. On
-  failure the worker is destroyed instead of reused: the module may be
-  aborted or mid-write, and a terminated worker cannot come back."
-  [pool f]
-  (let [worker (await (.acquire ^js pool))]
-    (try
-      (let [result (await (f worker))]
-        (await (.release ^js pool worker))
-        result)
-      (catch :default cause
-        (try
-          (await (.destroy ^js pool worker))
-          (catch :default cause'
-            (l/warn :hint "render worker destroy failed"
-                    :cause cause')))
-        (throw cause)))))
+(defn- pool?
+  "A raw generic-pool: anything lendable through acquire and release."
+  [x]
+  (and (some? x)
+       (fn? (unchecked-get x "acquire"))
+       (fn? (unchecked-get x "release"))))
 
-(defn- render-on-worker
-  "Settles when the worker reports the render finished, failed, or the
-  thread went away. That last case matters: a terminated worker (how a
-  cancel stops a render mid-Skia) emits `exit` and never `error`, and a
-  promise left pending there would keep its pool slot borrowed for the
-  life of the process."
-  [^js worker params cancel-buffer on-object timeout-ms]
-  (js/Promise.
-   (fn [resolve reject]
-     (let [timer (volatile! nil)]
-       (letfn [(disarm []
-                 (when-let [t @timer]
-                   (js/clearTimeout t)
-                   (vreset! timer nil)))
-
-               (rearm []
-                 (disarm)
-                 (vreset! timer (js/setTimeout
-                                 (fn []
-                                   (l/error :hint "render worker went silent, terminating"
-                                            :worker-id (unchecked-get worker "__id"))
-                                   (cleanup)
-                                   ;; Terminating is what frees the pool slot:
-                                   ;; the `exit` it raises has no listener left.
-                                   (unchecked-set worker "__alive" false)
-                                   (.terminate ^js worker)
-                                   (reject (ex/error :type :internal
-                                                     :code :render-timeout
-                                                     :hint "render worker stopped responding")))
-                                 timeout-ms)))
-
-               (cleanup []
-                 (disarm)
-                 (.off worker "message" on-message)
-                 (.off worker "error" on-error)
-                 (.off worker "exit" on-exit))
-
-               (on-error [cause]
-                 (cleanup)
-                 (reject cause))
-
-               (on-exit [code]
-                 (cleanup)
-                 (reject (ex/error :type :internal
-                                   :code :worker-exited
-                                   :hint (str "render worker exited with code " code))))
-
-               (on-message [data]
-                 (rearm)
-                 (case (unchecked-get data "type")
-                   ;; A failure while the main thread handles the object
-                   ;; (moving the file, appending to the zip) has to end
-                   ;; the render too, or nothing ever settles this promise.
-                   "object" (try
-                              (on-object (t/decode-str (unchecked-get data "payload")))
-                              (catch :default cause
-                                (cleanup)
-                                (reject cause)))
-                   "done"   (do (cleanup) (resolve nil))
-                   "error"  (do (cleanup)
-                                (reject (ex/error :type :internal
-                                                  :code (or (some-> (unchecked-get data "code") keyword)
-                                                            :wasm-render-error)
-                                                  :hint (unchecked-get data "message"))))
-                   nil))]
-
-         (.on worker "message" on-message)
-         (.once worker "error" on-error)
-         (.once worker "exit" on-exit)
-         (rearm)
-         (.postMessage worker #js {:type "render"
-                                   :params (t/encode-str params)
-                                   :cancel cancel-buffer}))))))
-
-(defn ^:async render-on
-  "Renders `params` on an already acquired worker. The check runs
-  before posting: a render whose turn comes up cancelled rejects
-  without touching the worker."
-  [worker params on-object {:keys [cancel-buffer check-cancelled timeout-ms]}]
-  (when check-cancelled
-    (check-cancelled))
-  (await (render-on-worker worker params cancel-buffer on-object timeout-ms)))
+(defn ^:async run
+  "Lends one worker: resolves the pool from `cfg` (the `::pool`
+  service instance, or a raw pool), acquires a worker, applies `f` to
+  the cfg carrying it under `::worker` plus any extra `args`, and
+  returns the worker — or destroys it when `f` fails, the way a failed
+  transaction rolls back instead of returning its connection: a failed
+  worker may be aborted or mid-write, and a terminated worker cannot
+  come back."
+  [cfg f & args]
+  (let [cfg  (if (pool? cfg) {::pool {:pool cfg}} cfg)
+        pool (:pool (::pool cfg))]
+    (when-not (pool? pool)
+      (throw (ex/error :type :assertion
+                       :code :invalid-pool-cfg
+                       :hint "no pool in cfg")))
+    (let [worker (await (.acquire ^js pool))]
+      (try
+        (let [result (await (apply f (assoc cfg ::worker worker) args))]
+          (await (.release ^js pool worker))
+          result)
+        (catch :default cause
+          (try
+            (await (.destroy ^js pool worker))
+            (catch :default cause'
+              (l/warn :hint "render worker destroy failed"
+                      :cause cause')))
+          (throw cause))))))
 
 (defn terminate
   [worker]
