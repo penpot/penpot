@@ -28,7 +28,7 @@ Which mutations announce: `delete-team-member`, `leave-team`, `update-team-membe
 - `take!` is the proven relay path here. `msgbus.clj` does use `sp/alts!` over data channels in production, so there is no general defect — but the relay keeps the simple blocking take plus an independent scheduled task instead.
 - `ct/diff a b` returns **b − a** (`Duration/between`), so "time until a future instant" is `(inst-ms (ct/diff (ct/now) future))`.
 - `ct/duration` unit keywords are singular: `{:millis 150}`, `{:minutes 5}`, never `:milliseconds`/`:days`.
-- `still-authorized?` takes the predicate itself: `(boolean (authorized?))`. Calling `(boolean pred)` on the closure is always true and silently disables the interval — this exact bug shipped once and no test caught it until the resubscribe-counting test existed.
+- `still-authorized?` takes the check itself: `(boolean (check-access))`. Calling `(boolean pred)` on the closure is always true and silently disables the interval — this exact bug shipped once and no test caught it until the resubscribe-counting test existed. Naming rule here: no `?` for the action that queries and can fail (`check-access`), `?` only for the safe yes/no answer (`still-authorized?`).
 
 ## Tests
 

@@ -162,7 +162,7 @@
   (cf/get :subscription-revalidation-interval default-revalidation-interval))
 
 (defn- still-authorized?
-  "Runs the `authorized?` permission predicate, reporting instead of
+  "Runs the `check-access` permission check, reporting instead of
   throwing when the lookup itself fails.
 
   A transient database error must not close a subscription that is still
@@ -170,9 +170,9 @@
   that fail open, deliberately: the announcement path (`watch-revocations`
   below) also logs and moves on when a re-check throws. An interrupt is
   not a lookup failure and is rethrown."
-  [authorized?]
+  [check-access]
   (try
-    (boolean (authorized?))
+    (boolean (check-access))
     (catch InterruptedException cause
       (throw cause))
     (catch Throwable cause
@@ -241,17 +241,17 @@
 
 (defn- start-relay
   "Forwards `channel` into the client output channel of `wsp`, and keeps
-  a re-check of `authorized?` running on the interval. When access no
+  a re-check of `check-access` running on the interval. When access no
   longer holds, `close!` tears the subscription down, which closes the
   channel and ends the loop.
 
   `on-forward` runs for every forwarded message, which is how the file
   relay announces presence."
-  [{:keys [::ws/output-ch] :as wsp} channel authorized? close! on-forward]
+  [{:keys [::ws/output-ch] :as wsp} channel check-access close! on-forward]
   (schedule-revalidation #(not (sp/closed? channel))
                          (inst-ms (revalidation-interval))
                          (fn []
-                           (when-not (still-authorized? authorized?)
+                           (when-not (still-authorized? check-access)
                              (l/info :hint
                                      "closing websocket subscription on re-check"
                                      :profile-id (::profile-id wsp))
