@@ -673,6 +673,58 @@ msgstr "Connect selected libraries"
 msgid "dashboard.import.file-name-label"
 msgstr "File name"
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.title"
+msgstr "Import file"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.label"
+msgstr "Import steps"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.check"
+msgstr "Check"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.upload"
+msgstr "Upload"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.import"
+msgstr "Import"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.check.title"
+msgstr "Checking your files..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.check.message"
+msgstr "Making sure each file can be imported. This only takes a moment."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.ready.title"
+msgstr "Files ready"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.ready.message"
+msgstr "Your files can be imported. Continue to upload them."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.upload.title"
+msgstr "Uploading your files..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.upload.message"
+msgstr "Sending your files. Keep this dialog open until the upload ends."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.title"
+msgstr "Importing your files..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.message"
+msgstr "Creating the files in your project. This may take a moment."
+
 #: src/app/main/ui/dashboard/import.cljs:619
 msgid "dashboard.import.import-error.check-error"
 msgstr "We couldn't verify this file."
@@ -2640,7 +2692,7 @@ msgstr "Uploading file…"
 
 #: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
 msgid "jobs.queued"
-msgstr "Queued"
+msgstr "Waiting job slot"
 
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"

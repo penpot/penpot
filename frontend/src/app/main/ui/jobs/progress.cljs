@@ -42,12 +42,21 @@
       (str current "/" total)
       (str current))))
 
+(defn upload-pct
+  "The whole percentage of the file already uploaded. The chunked upload
+  knows how many chunks the file has and which one is in course, so
+  this is the only counter the client can trust as a percentage."
+  [{:keys [counters]}]
+  (let [{:keys [current total]} (get counters :upload)]
+    (when (and (some? current) (some? total) (pos? total))
+      (js/Math.round (* 100 (/ current total))))))
+
 (defn- upload-label
   "The upload of a file counts chunks, not units of work, so it is written
   as the percentage of the file already sent instead of a counter."
-  [{:keys [current total]}]
-  (when (and (some? current) (some? total) (pos? total))
-    (str "(" (js/Math.round (* 100 (/ current total))) "%)")))
+  [milestone]
+  (when-some [pct (upload-pct milestone)]
+    (str "(" pct "%)")))
 
 (defn milestone-text
   "The text of a milestone: the stage in course and its counter, and with
@@ -58,7 +67,7 @@
   (when-some [stage (:stage milestone)]
     (let [counters (:counters milestone)
           own      (if (= :upload stage)
-                     (upload-label (get counters :upload))
+                     (upload-label milestone)
                      (counter-label (get counters stage)))]
       (str (stage-label stage)
            (when (some? own)

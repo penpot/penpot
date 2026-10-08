@@ -672,6 +672,16 @@ msgstr[1] "%s bibliotecas fueron vinculadas automáticamente por nombre."
 msgid "dashboard.import.bad-url"
 msgstr "La importación ha fallado. La URL de la plantilla es incorrecta"
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.check.message"
+msgstr ""
+"Estamos comprobando que cada archivo se puede importar. Solo tardará un "
+"momento."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.check.title"
+msgstr "Comprobando tus archivos..."
+
 #: src/app/main/ui/dashboard/import.cljs:733
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirmar vínculos de biblioteca"
@@ -718,6 +728,14 @@ msgstr[1] "%s ficheros se han importado correctamente."
 msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.message"
+msgstr "Creando los archivos en tu proyecto. Puede tardar un momento."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.title"
+msgstr "Importando tus archivos..."
+
 #: src/app/main/ui/dashboard/import.cljs:710
 msgid "dashboard.import.next-file"
 msgstr "Siguiente archivo"
@@ -725,6 +743,14 @@ msgstr "Siguiente archivo"
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "No tienes permisos para importar en este equipo"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.ready.message"
+msgstr "Tus archivos se pueden importar. Continúa con la subida."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.ready.title"
+msgstr "Archivos listos"
 
 #: src/app/main/ui/dashboard/import.cljs:443
 msgid "dashboard.import.resolve-libraries"
@@ -743,6 +769,22 @@ msgstr "conectar a"
 #: src/app/main/ui/dashboard/import.cljs:453
 msgid "dashboard.import.resolve-libraries.original-library"
 msgstr "biblioteca original"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.check"
+msgstr "Comprobación"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.import"
+msgstr "Importación"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.label"
+msgstr "Pasos de la importación"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.upload"
+msgstr "Subida"
 
 #: src/app/main/ui/dashboard/import.cljs:521
 msgid "dashboard.import.summary.linked"
@@ -763,6 +805,20 @@ msgstr "Ninguna biblioteca seleccionada"
 #: src/app/main/ui/dashboard/import.cljs:534
 msgid "dashboard.import.summary.original"
 msgstr "Original"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.title"
+msgstr "Importar archivo"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.upload.message"
+msgstr ""
+"Enviando tus archivos. Mantén este diálogo abierto hasta que termine la "
+"subida."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.upload.title"
+msgstr "Subiendo tus archivos..."
 
 #: src/app/main/ui/dashboard/team.cljs:881
 msgid "dashboard.invitation-modal.delete"
@@ -2683,7 +2739,7 @@ msgstr "Subiendo archivo…"
 
 #: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
 msgid "jobs.queued"
-msgstr "En cola"
+msgstr "Esperando hueco para el job"
 
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"

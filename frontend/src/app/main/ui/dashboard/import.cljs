@@ -29,7 +29,6 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.jobs.progress :as jp]
    [app.util.dom :as dom]
@@ -52,6 +51,7 @@
      (let [entries (->> entries
                         (mapv (fn [file]
                                 {:name (.-name file)
+                                 :size (.-size file)
                                  :uri  (wapi/create-uri file)}))
                         (not-empty))]
        (when entries
@@ -202,16 +202,14 @@
         import-error?   (= :import-error status)
         import-ready?   (= :import-ready status)
 
-        level (cond
-                import-success? :success
-                import-ready?   :success
-                import-error?   :error
-                analyze-error?  :error
-                loading?        nil
-                :else           :default)
-
         is-shared?      (:shared entry)
         progress        (:progress entry)
+        upload?         (= :upload (:stage progress))
+        bar-pct         (jp/upload-pct progress)
+        size-text       (imp/format-file-size (:size entry))
+        subtitle        (if (some? size-text)
+                          (str size-text " " (imp/entry-extension entry))
+                          (imp/entry-extension entry))
 
         file-id         (:file-id entry)
         editing?        (and (some? file-id) (= edition file-id))
@@ -256,37 +254,33 @@
                    :error    (or import-error? analyze-error?)
                    :editable (and import-ready? (not editing?)))}
 
-     [:div {:class (stl/css :file-name)}
-      (when loading? [:> loader* {:width 26 :title (tr "labels.loading")}])
+     [:div {:class (stl/css :file-main)}
+      [:div {:class (stl/css :file-icon)
+             :aria-hidden "true"}
+       [:> icon* {:icon-id i/folder :size "m"}]]
 
-      (if editing?
-        [:div {:class (stl/css :file-name-edit)}
-         [:input {:type "text"
-                  :auto-focus true
-                  :class (stl/css :file-name-input)
-                  :aria-label (tr "dashboard.import.file-name-label")
-                  :default-value (:name entry)
-                  :on-key-press on-edit-key-press
-                  :on-blur on-edit-blur}]]
+      [:div {:class (stl/css :file-meta)}
+       (if editing?
+         [:div {:class (stl/css :file-name-edit)}
+          [:input {:type "text"
+                   :auto-focus true
+                   :class (stl/css :file-name-input)
+                   :aria-label (tr "dashboard.import.file-name-label")
+                   :default-value (:name entry)
+                   :on-key-press on-edit-key-press
+                   :on-blur on-edit-blur}]]
 
-        [:div {:class (stl/css :file-name-label)}
-         (if loading?
-           [:> text* {:class (stl/css :file-name-label)
-                      :as "span"
-                      :typography t/body-medium}
-            (:name entry)
-            (when ^boolean is-shared?
-              [:> icon* {:icon-id i/library :class (stl/css :file-label-icon)}])]
-           [:> context-notification*
-            {:level level
-             :appearance :ghost
-             :class (stl/css :file-name-notification)}
-            [:> text* {:class (stl/css :file-name-label)
-                       :as "span"
-                       :typography t/body-medium}
-             (:name entry)
-             (when ^boolean is-shared?
-               [:> icon* {:icon-id i/library :class (stl/css :file-label-icon)}])]])])
+         [:*
+          [:> text* {:class (stl/css :file-name-label)
+                     :as "span"
+                     :typography t/body-medium}
+           (:name entry)
+           (when ^boolean is-shared?
+             [:> icon* {:icon-id i/library :class (stl/css :file-label-icon)}])]
+          [:> text* {:class (stl/css :file-subtitle)
+                     :as "span"
+                     :typography t/body-small}
+           subtitle]])]
 
       (when ^boolean (or editable? can-be-deleted)
         [:div {:class (stl/css :edit-entry-buttons)}
@@ -302,32 +296,49 @@
                              :icon-size "s"
                              :aria-label (tr "labels.delete")
                              :icon i/delete}])])]
-     (cond
-       analyze-error?
-       [:> text* {:class (stl/css :error-message)
-                  :as "span"
-                  :typography t/body-small}
-        ;; the message is user-facing text already (a hint or a translated
-        ;; label), never a key
-        (if (some? (:error entry))
-          (:error entry)
-          (tr "dashboard.import.analyze-error"))]
+     [:div {:class (stl/css :file-status)}
+      (cond
+        analyze-error?
+        [:> text* {:class (stl/css :error-message)
+                   :as "span"
+                   :typography t/body-small}
+         ;; the message is user-facing text already (a hint or a translated
+         ;; label), never a key
+         (if (some? (:error entry))
+           (:error entry)
+           (tr "dashboard.import.analyze-error"))]
 
-       import-error?
-       [:> text* {:class (stl/css :error-message)
-                  :as "span"
-                  :typography t/body-small}
-        (if (some? (:error entry))
-          (:error entry)
-          (tr "labels.error"))]
+        import-error?
+        [:> text* {:class (stl/css :error-message)
+                   :as "span"
+                   :typography t/body-small}
+         (if (some? (:error entry))
+           (:error entry)
+           (tr "labels.error"))]
 
-       (and (= :import-queued status) (not import-success?))
-       [:div {:class (stl/css :progress-message)}
-        (tr "jobs.queued")]
-
-       (and (not import-success?) (some? progress))
-       [:div {:class (stl/css :progress-message)}
-        (jp/milestone-text progress :file? true)])
+        (and (not import-success?)
+             (or (= :import-queued status) (= :import-progress status)))
+        ;; the client cannot know a global index and a global total of
+        ;; operations, so the bar is always the animated one: it starts
+        ;; moving at the queued label and keeps moving through every
+        ;; milestone of the job
+        (let [status-text (if (= :import-queued status)
+                            (tr "jobs.queued")
+                            (when (some? progress)
+                              (jp/milestone-text progress :file? true)))]
+          [:div {:class (stl/css :upload-progress)}
+           [:div {:class (stl/css-case :progress-bar true
+                                       :determinate upload?)
+                  :role "progressbar"
+                  :aria-valuemin 0
+                  :aria-valuemax 100
+                  :aria-valuenow (when upload? bar-pct)}
+            [:div {:class (stl/css :progress-fill)
+                   :style (when upload?
+                            #js {:width (str bar-pct "%")})}]]
+           (when (some? status-text)
+             [:div {:class (stl/css :progress-message)}
+              status-text])]))]
 
      ;; This is legacy code, will be removed when legacy-zip format is removed
      [:div {:class (stl/css :linked-libraries)}
@@ -547,13 +558,75 @@
 
 ;; ── Stage components ────────────────────────────────────────────────
 
+(mf/defc import-steps*
+  {::mf/private true}
+  [{:keys [step]}]
+  (let [order   [:check :upload :import]
+        label   {:check  (tr "dashboard.import.steps.check")
+                 :upload (tr "dashboard.import.steps.upload")
+                 :import (tr "dashboard.import.steps.import")}
+        current (count (take-while #(not= % step) order))]
+    [:ol {:class (stl/css :import-steps)
+          :aria-label (tr "dashboard.import.steps.label")}
+     (for [[idx id] (d/enumerate order)]
+       (let [done?   (< idx current)
+             active? (= idx current)]
+         [:li {:key (name id)
+               :class (stl/css-case :import-step true
+                                    :done done?
+                                    :active active?)
+               :aria-current (when active? "step")}
+          [:span {:class (stl/css :step-marker)
+                  :aria-hidden "true"}
+           (if done?
+             [:> icon* {:icon-id i/status-tick :size "s"}]
+             (str (inc idx)))]
+          [:> text* {:as "span"
+                     :typography t/body-medium
+                     :class (stl/css :step-label)}
+           (get label id)]
+          (when (< idx 2)
+            [:span {:class (stl/css :step-line) :aria-hidden "true"}])]))]))
+
+(mf/defc import-phase-header*
+  {::mf/private true}
+  [{:keys [status step]}]
+  (let [[title desc]
+        (cond
+          (= :analyze status)
+          [(tr "dashboard.import.check.title") (tr "dashboard.import.check.message")]
+
+          (= :import-ready status)
+          [(tr "dashboard.import.ready.title") (tr "dashboard.import.ready.message")]
+
+          (and (= :import-progress status) (= :upload step))
+          [(tr "dashboard.import.upload.title") (tr "dashboard.import.upload.message")]
+
+          (and (= :import-progress status) (= :import step))
+          [(tr "dashboard.import.importing.title") (tr "dashboard.import.importing.message")]
+
+          :else
+          [nil nil])]
+    (when (some? title)
+      [:div {:class (stl/css :phase-header)}
+       [:> heading* {:level 3
+                     :typography t/headline-medium
+                     :class (stl/css :phase-title)}
+        title]
+       [:> text* {:as "p"
+                  :typography t/body-medium
+                  :class (stl/css :phase-message)}
+        desc]])))
+
 (mf/defc import-files-stage*
   {::mf/private true}
-  [{:keys [entries template status errors? import-success-total auto-linked-count
+  [{:keys [entries template status step errors? import-success-total auto-linked-count
            edition on-edit on-change on-delete
            on-cancel on-cancel-import on-continue on-accept pending-analysis?]}]
   [:*
+   [:> import-steps* {:step step}]
    [:div {:class (stl/css :modal-content)}
+    [:> import-phase-header* {:status status :step step}]
     (when (and (= :analyze status) errors?)
       [:> context-notification*
        {:level :warning
@@ -576,7 +649,8 @@
         :class (stl/css :context-notification-error)}
        (tr "dashboard.import.import-error.disclaimer")])
 
-    (if (or (= :import-error status) (and (= :analyze status) errors?))
+    (cond
+      (or (= :import-error status) (and (= :analyze status) errors?))
       [:div {:class (stl/css :import-error-disclaimer)}
        [:div (tr "dashboard.import.import-error.message1")]
        [:ul {:class (stl/css :import-error-list)}
@@ -600,6 +674,12 @@
                   (tr "dashboard.import.import-error.unknown-error"))])]))]
        [:div (tr "dashboard.import.import-error.message2")]]
 
+      (imp/awaiting-analysis? status errors?)
+      ;; while checking, the phase header carries the message: no rows,
+      ;; no spinners
+      nil
+
+      :else
       (for [entry entries]
         [:> import-entry* {:edition edition
                            :key (dm/str (:uri entry) "/" (:file-id entry))
@@ -611,7 +691,8 @@
                            :on-delete on-delete
                            :can-be-deleted (> (count entries) 1)}]))
 
-    (when (some? template)
+    (when (and (some? template)
+               (not (imp/awaiting-analysis? status errors?)))
       [:> import-entry* {:entry (assoc template :status status)
                          :can-be-deleted false}])]
 
@@ -994,7 +1075,7 @@
        [:> heading* {:level 2
                      :typography t/headline-large
                      :class (stl/css :modal-title)}
-        (tr "dashboard.import")]
+        (tr "dashboard.import.title")]
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "labels.close")
                          :on-click on-cancel
@@ -1007,6 +1088,7 @@
          {:entries entries
           :template template
           :status status
+          :step (imp/import-step status entries)
           :errors? errors?
           :import-success-total import-success-total
           :auto-linked-count auto-linked-count
@@ -1021,23 +1103,27 @@
           :pending-analysis? pending-analysis?}]
 
         :library-resolution
-        [:> import-library-resolution-stage*
-         {:current-unresolved-file current-unresolved-file
-          :selection selection
-          :on-select manage-on-select
-          :on-disconnect manage-on-disconnect
-          :visited visited
-          :last-file? last-unresolved-file?
-          :on-wizard-prev on-wizard-prev
-          :on-wizard-next on-wizard-next
-          :on-wizard-skip on-wizard-skip}]
+        [:*
+         [:> import-steps* {:step :import}]
+         [:> import-library-resolution-stage*
+          {:current-unresolved-file current-unresolved-file
+           :selection selection
+           :on-select manage-on-select
+           :on-disconnect manage-on-disconnect
+           :visited visited
+           :last-file? last-unresolved-file?
+           :on-wizard-prev on-wizard-prev
+           :on-wizard-next on-wizard-next
+           :on-wizard-skip on-wizard-skip}]]
 
         :library-summary
-        [:> import-library-summary-stage*
-         {:resolution resolution
-          :selection selection
-          :visited visited
-          :on-summary-back on-summary-back
-          :on-confirm-library-links on-confirm-library-links}]
+        [:*
+         [:> import-steps* {:step :import}]
+         [:> import-library-summary-stage*
+          {:resolution resolution
+           :selection selection
+           :visited visited
+           :on-summary-back on-summary-back
+           :on-confirm-library-links on-confirm-library-links}]]
 
         nil)]]))

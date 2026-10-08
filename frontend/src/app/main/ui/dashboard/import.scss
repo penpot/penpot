@@ -34,7 +34,7 @@
   background-color: var(--color-background-primary);
   border: $b-2 solid var(--color-background-quaternary);
   min-block-size: $sz-192;
-  inline-size: px2rem(640);
+  inline-size: px2rem(720);
   max-block-size: px2rem(800);
 }
 
@@ -56,6 +56,101 @@
 
 .modal-title {
   color: var(--color-foreground-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+// ################################
+//     WIZARD STEPS
+// ################################
+
+.import-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.import-step {
+  --step-fg-color: var(--color-foreground-secondary);
+  --step-marker-border: var(--color-foreground-secondary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  flex-shrink: 0;
+
+  &:not(:last-child) {
+    flex: 1 1 auto;
+  }
+
+  &.active {
+    --step-fg-color: var(--color-foreground-primary);
+    --step-marker-border: var(--color-accent-primary);
+  }
+
+  &.done {
+    --step-fg-color: var(--color-foreground-secondary);
+    --step-marker-border: var(--color-accent-primary);
+  }
+}
+
+.step-marker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-24;
+  inline-size: $sz-24;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: $b-1 solid var(--step-marker-border);
+  color: var(--step-marker-border);
+  font-size: px2rem(12);
+  font-weight: 500;
+
+  svg {
+    block-size: $sz-16;
+    inline-size: $sz-16;
+  }
+}
+
+.step-label {
+  color: var(--step-fg-color);
+  white-space: nowrap;
+}
+
+.step-line {
+  flex: 1 1 auto;
+  block-size: $b-1;
+  min-inline-size: $sz-32;
+  margin-inline: var(--sp-m);
+  background-color: var(--color-background-quaternary);
+}
+
+.import-step.active .step-line,
+.import-step.done .step-line {
+  background-color: var(--color-background-quaternary);
+}
+
+// ################################
+//     PHASE HEADER
+// ################################
+
+.phase-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.phase-title {
+  color: var(--color-foreground-primary);
+}
+
+.phase-message {
+  color: var(--color-foreground-secondary);
+  margin: 0;
 }
 
 .modal-close-btn {
@@ -153,6 +248,83 @@
   color: var(--file-entry-fg-color);
 }
 
+.file-main {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-m);
+}
+
+.file-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: px2rem(40);
+  inline-size: px2rem(40);
+  flex-shrink: 0;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+}
+
+.file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.file-subtitle {
+  color: var(--color-foreground-secondary);
+}
+
+.file-status {
+  padding-inline-start: calc(px2rem(40) + var(--sp-m));
+}
+
+.upload-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.progress-bar {
+  block-size: px2rem(4);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  overflow: hidden;
+}
+
+.progress-fill {
+  block-size: 100%;
+  border-radius: $br-8;
+  background-color: var(--color-accent-primary);
+
+  // the client cannot know a global percentage of the import work, so
+  // the fill slides through the bar until the entry reaches its
+  // outcome; the upload stage is the exception, its chunk counter is
+  // real and the inline width style drives the fill then. The rule is
+  // written as physical `width` on purpose: the determinate fill gets
+  // its width from an inline style, and a logical `inline-size` here
+  // would map after the cascade and win over it.
+  width: 40%;
+  animation: progress-slide 1.2s ease-in-out infinite;
+
+  .determinate & {
+    animation: none;
+  }
+}
+
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
 .edit-entry-buttons {
   display: flex;
   align-items: center;
@@ -175,7 +347,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-m);
-  flex-grow: 1;
+  color: var(--color-foreground-primary);
 }
 
 .file-label-icon {
@@ -212,10 +384,6 @@
 
 .context-notification-error {
   --context-notification-bg-color: var(--color-background-primary);
-}
-
-.file-name-notification {
-  flex-grow: 1;
 }
 
 .import-error-disclaimer {
