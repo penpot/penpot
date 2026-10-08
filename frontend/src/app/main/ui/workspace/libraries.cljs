@@ -489,9 +489,10 @@
            (tr "common.publish")])]
 
        (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
-         (let [disabled?   (some #(contains? linked-libraries-ids %) connected-to)
-               has-tokens? (and (has-tokens? library)
-                                (contains? cf/flags :token-import-from-library))]
+         (let [disabled?          (some #(contains? linked-libraries-ids %) connected-to)
+               can-import-tokens? (and (has-tokens? library)
+                                       (cfo/editable-tokens? local-library)
+                                       (contains? cf/flags :token-import-from-library))]
            [:div {:class (stl/css :section-list-item-legacy)
                   :key (dm/str id)
                   :data-testid "library-item"}
@@ -508,7 +509,7 @@
                     [:span ")"]])])]]
 
             [:div {:class (stl/css :library-actions)}
-             (when ^boolean has-tokens?
+             (when ^boolean can-import-tokens?
                [:> icon-button*
                 {:type "button"
                  :aria-label (tr "workspace.tokens.import-tokens")
@@ -865,9 +866,10 @@
                        :title-class (stl/css :connected-libraries-title)}]
        (if (seq linked-libraries)
          (for [{:keys [id name data connected-to nested? parent-name] :as library} linked-libraries]
-           (let [disabled?   (some #(contains? linked-libraries-ids %) connected-to)
-                 has-tokens? (and (has-tokens? library)
-                                  (contains? cf/flags :token-import-from-library))]
+           (let [disabled?          (some #(contains? linked-libraries-ids %) connected-to)
+                 can-import-tokens? (and (has-tokens? library)
+                                         (cfo/editable-tokens? local-library)
+                                         (contains? cf/flags :token-import-from-library))]
              [:div {:class (stl/css-case :section-list-item true
                                          :section-list-item-nested nested?)
                     :key (dm/str id)
@@ -893,7 +895,7 @@
                                 :data-library-id (dm/str id)
                                 :on-click set-as-tokens-source}
                     (tr "workspace.libraries.set-as-tokens-source")])
-                 (when ^boolean has-tokens?
+                 (when ^boolean can-import-tokens?
                    [:> icon-button*
                     {:type "button"
                      :aria-label (tr "workspace.tokens.import-tokens")

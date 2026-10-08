@@ -11,7 +11,6 @@
    [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.schema :as sm]
-   [app.common.types.file :as ctf]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -489,14 +488,20 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
+          (not (u/editable-tokens-status? file-id))
+          (u/not-valid plugin-id :active "Cannot change active themes or sets of an external library")
+
           :else
-          (st/emit! (dwtl/set-enabled-token-set id value))))}  ;; This can be done even with tokens in an external library
+          (st/emit! (dwtl/set-enabled-token-set id value))))}
 
      :toggleActive
      (fn []
        (cond
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
+
+         (not (u/editable-tokens-status? file-id))
+         (u/not-valid plugin-id :toggleActive "Cannot change active themes or sets of an external library")
 
          :else
          (st/emit! (dwtl/toggle-token-set id))))
@@ -714,6 +719,9 @@
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
+         (not (u/editable-tokens-status? file-id))
+         (u/not-valid plugin-id :active "Cannot change active themes or sets of an external library")
+
          :else
          (st/emit! (dwtl/set-token-theme-active id value))))}
 
@@ -722,6 +730,9 @@
       (cond
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
+
+        (not (u/editable-tokens-status? file-id))
+        (u/not-valid plugin-id :toggleActive "Cannot change active themes or sets of an external library")
 
         :else
         (st/emit! (dwtl/toggle-token-theme-active id))))
@@ -816,8 +827,7 @@
      :enumerable false
      :get
      (fn []
-       (let [file (u/locate-file file-id)]
-         (cfo/editable-tokens? (ctf/file-data file))))}
+       (u/editable-tokens? file-id))}
 
     :themes
     {:this true

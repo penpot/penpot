@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
@@ -21,6 +22,7 @@
    [app.main.data.plugins :as dp]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.variants :as dwv]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
@@ -1219,6 +1221,37 @@
      (fn []
        (let [libraries (get @st/state :files)]
          (apply array (->> libraries keys (map (partial library-proxy plugin-id))))))}
+
+    :tokensSource
+    {:get
+     (fn []
+       (let [file-id   (:current-file-id @st/state)
+             file-data (ctf/file-data (u/locate-file file-id))]
+         (library-proxy plugin-id (cfo/get-effective-tokens-source file-data))))
+     :set
+     (fn [value]
+       (let [file-id      (:current-file-id @st/state)
+             library-id   (when (library-proxy? value) (obj/get value "$id"))
+             library      (some-> library-id u/locate-file)
+             library-data (some-> library ctf/file-data)
+             file-data    (ctf/file-data (u/locate-file file-id))]
+         (cond
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :tokensSource "Plugin doesn't have 'content:write' permission")
+
+           (not (library-proxy? value))
+           (u/not-valid plugin-id :tokensSource value)
+
+           (nil? library)
+           (u/not-valid plugin-id :tokensSource "Library is not connected")
+
+           (and (not= library-id file-id)
+                (not (cfo/tokens-provider? library-data)))
+           (u/not-valid plugin-id :tokensSource "Library must have its own tokens")
+
+           (not (cfo/effective-tokens-source? file-data library-id))
+           (st/emit! (-> (dwtl/set-tokens-source library-id)
+                         (se/add-event plugin-id))))))}
 
     :availableLibraries
     (fn []

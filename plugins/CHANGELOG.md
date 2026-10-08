@@ -2,6 +2,7 @@
 
 ### 🚀 Features
 
+- **plugin-types:** Added `LibraryContext.tokensSource` to read or set the current file's token source to a connected library, or restore local tokens.
 - **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
 - **plugin-types**: Added `waitForLayoutUpdate` to wait until pending layout updates have finished. It rejects when the optional timeout elapses, defaulting to 30 seconds so a wait never hangs.
 - **plugin-types**: Added `waitForLayoutUpdate` to the `Shape` interface to wait until the pending layout updates of a shape and its children have finished

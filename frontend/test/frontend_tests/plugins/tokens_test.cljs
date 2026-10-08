@@ -16,15 +16,20 @@
    [app.common.uuid :as uuid]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.library :as library]
    [app.plugins.register :as r]
    [app.plugins.tokens :as ptok]
    [app.plugins.utils :as u]
    [cljs.test :as t :include-macros true]
+   [clojure.datafy :refer [datafy]]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
+   [frontend-tests.tokens.helpers.state :as tohs]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
@@ -34,6 +39,335 @@
    :after thw/teardown-wasm-mocks!})
 
 (def ^:private get-resolved-value @#'ptok/get-resolved-value)
+
+(defn- token-source-file
+  [file-label]
+  (let [set-id (uuid/next)]
+    (ctht/sample-file-with-tokens
+     :file-id file-label
+     :lib-fn #(-> %
+                  (ctob/add-set (ctob/make-token-set :id set-id :name "Core"))
+                  (ctob/add-theme (ctob/make-token-theme :name "Light"
+                                                         :group "Mode"
+                                                         :sets #{"Core"}))
+                  (ctob/add-token set-id (ctob/make-token :name "color.primary"
+                                                          :type :color
+                                                          :value "#FF0000")))
+     :status-fn #(ctos/set-tokens-status % #{} #{set-id}))))
+
+(defn- with-active-theme
+  "The tokens status of `file` with its first visible theme activated."
+  [file]
+  (let [tokens-lib (ctht/get-tokens-lib file)
+        theme-id   (:id (first (remove ctob/hidden-theme? (ctob/get-themes tokens-lib))))]
+    (cfo/activate-theme (ctht/get-tokens-status file) tokens-lib theme-id)))
+
+(defn- tokens-unchanged?
+  "True when the token attributes of `file` in the store are the original ones."
+  [store file]
+  (let [attrs [:tokens-lib :tokens-status :tokens-source]]
+    (= (select-keys (:data file) attrs)
+       (select-keys (get-in @store [:files (:id file) :data]) attrs))))
+
+(defn- record-not-valid
+  "A `u/not-valid` stub that collects each call into `errors`."
+  [errors]
+  (mock/stub (fn [plugin-id code value] (swap! errors conj [plugin-id code value]))))
+
+(t/deftest ^:async library-tokens-source-switches-to-connected-library
+  (let [file         (token-source-file :local)
+        source       (token-source-file :source)
+        store        (ths/setup-store file {:libraries [source]})
+        ^js context  (library/library-subcontext (str uuid/zero))
+        source-proxy (library/library-proxy (str uuid/zero) (:id source))]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (t/is (= (str (:id file)) (.. context -tokensSource -id)))
+       (set! (.-tokensSource context) source-proxy)
+       (await (async/wait-for #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
+                              "library token source"))
+       (t/is (= (str (:id source)) (.. context -tokensSource -id)))
+       (t/is (= (datafy (ctht/get-tokens-status source))
+                (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
+       (t/is (= (ctht/get-tokens-lib source) (u/locate-tokens-lib (:id file))))
+       (t/is (false? (.. context -local -tokens -isEditableTokens)))
+       (t/is (= (ctht/get-tokens-lib file)
+                (get-in @store [:files (:id file) :data :tokens-lib])))
+       (t/is (tokens-unchanged? store source))))))
+
+(t/deftest ^:async library-tokens-source-restores-local-tokens
+  (let [source      (token-source-file :source)
+        file        (-> (token-source-file :local)
+                        (assoc-in [:data :tokens-source] (:id source))
+                        (assoc-in [:data :tokens-status] (with-active-theme source)))
+        store       (ths/setup-store file {:libraries [source]})
+        ^js context (library/library-subcontext (str uuid/zero))]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (set! (.-tokensSource context) (.-local context))
+       (await (async/wait-for #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
+                              "local token source"))
+       (let [^js catalog (.. context -local -tokens)]
+         (t/is (= (str (:id file)) (.. context -tokensSource -id)))
+         (t/is (true? (.-isEditableTokens catalog)))
+         (t/is (= (ctht/get-tokens-lib file) (u/locate-tokens-lib (:id file))))
+         (t/is (= #{} (ctos/get-active-set-ids (get-in @store [:files (:id file) :data :tokens-status]))))
+         (t/is (not-any? #(.-active ^js %) (.-themes catalog))))))))
+
+(t/deftest ^:async library-tokens-source-supports-undo-and-redo
+  (let [file         (token-source-file :local)
+        source       (token-source-file :source)
+        store        (ths/setup-store file {:libraries [source]})
+        ^js context  (library/library-subcontext (str uuid/zero))
+        source-proxy (library/library-proxy (str uuid/zero) (:id source))]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (st/emit! (tohs/watch-undo-stack))
+       (set! (.-tokensSource context) source-proxy)
+       (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
+                              "token source undo entry"))
+       (st/emit! dwu/undo)
+       (await (async/wait-for #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
+                              "undo token source"))
+       (t/is (= (datafy (ctht/get-tokens-status file))
+                (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
+       (st/emit! dwu/redo)
+       (await (async/wait-for #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
+                              "redo token source"))
+       (t/is (= (datafy (ctht/get-tokens-status source))
+                (datafy (get-in @store [:files (:id file) :data :tokens-status]))))))))
+
+(t/deftest ^:async library-tokens-source-keeps-status-when-source-is-unchanged
+  (let [source       (token-source-file :source)
+        file         (-> (token-source-file :local)
+                         (assoc-in [:data :tokens-source] (:id source)))
+        store        (ths/setup-store file {:libraries [source]})
+        ^js context  (library/library-subcontext (str uuid/zero))
+        source-proxy (library/library-proxy (str uuid/zero) (:id source))]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (set! (.-tokensSource context) source-proxy)
+       (await (async/settle))
+       (t/is (tokens-unchanged? store file))))))
+
+(t/deftest ^:async library-tokens-source-rejects-invalid-libraries
+  (let [file        (token-source-file :local)
+        empty-lib   (ctht/sample-file-with-tokens :file-id :empty)
+        indirect    (-> (token-source-file :indirect)
+                        (assoc-in [:data :tokens-source] (uuid/next)))
+        store       (ths/setup-store file {:libraries [empty-lib indirect]})
+        plugin-id   (str uuid/zero)
+        ^js context (library/library-subcontext plugin-id)
+        errors      (atom [])]
+    (await
+     (mock/with-mocks* {st/state store
+                        st/stream (ptk/input-stream store)
+                        u/not-valid (record-not-valid errors)}
+       (doseq [[label value message]
+               [["not a library" "invalid" "invalid"]
+                ["not connected" (library/library-proxy plugin-id (uuid/next)) "Library is not connected"]
+                ["without own tokens" (library/library-proxy plugin-id (:id empty-lib)) "Library must have its own tokens"]
+                ["with another tokens source" (library/library-proxy plugin-id (:id indirect)) "Library must have its own tokens"]]]
+         (t/testing label
+           (reset! errors [])
+           (set! (.-tokensSource context) value)
+           (t/is (= [[plugin-id :tokensSource message]] @errors))))
+       (await (async/settle))
+       (t/is (tokens-unchanged? store file))))))
+
+(t/deftest ^:async external-catalogs-reject-tokens-changes
+  (let [source    (token-source-file :source)
+        other     (token-source-file :other)
+        file      (-> (token-source-file :local)
+                      (assoc-in [:data :tokens-source] (:id source)))
+        store     (ths/setup-store file {:libraries [source other]})
+        plugin-id (str uuid/zero)]
+    (swap! store assoc-in [:plugins :flags plugin-id :throw-validation-errors] true)
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (doseq [[catalog-label ^js catalog]
+               [["local catalog" (.. (library/library-subcontext plugin-id) -local -tokens)]
+                ["source catalog" (.. (library/library-subcontext plugin-id) -tokensSource -tokens)]
+                ["other connected catalog" (.-tokens (library/library-proxy plugin-id (:id other)))]]]
+         (t/testing catalog-label
+           (let [^js token-set (aget (.-sets catalog) 0)
+                 ^js token     (aget (.-tokens token-set) 0)
+                 ^js theme     (aget (.-themes catalog) 0)]
+             (t/is (false? (.-isEditableTokens catalog)))
+             (doseq [[label mutate]
+                     [["create set" #(.addSet catalog #js {:name "New"})]
+                      ["rename set" #(set! (.-name token-set) "Renamed")]
+                      ["duplicate set" #(.duplicate token-set)]
+                      ["remove set" #(.remove token-set)]
+                      ["create token" #(.addToken token-set #js {:name "color.new" :type "color" :value "#00FF00"})]
+                      ["rename token" #(set! (.-name token) "color.renamed")]
+                      ["change token value" #(set! (.-value token) "#00FF00")]
+                      ["change token description" #(set! (.-description token) "New description")]
+                      ["duplicate token" #(.duplicate token)]
+                      ["remove token" #(.remove token)]
+                      ["create theme" #(.addTheme catalog #js {:name "Dark" :group "Mode"})]
+                      ["rename theme" #(set! (.-name theme) "Dark")]
+                      ["change theme group" #(set! (.-group theme) "Other")]
+                      ["add set to theme" #(.addSet theme token-set)]
+                      ["remove set from theme" #(.removeSet theme token-set)]
+                      ["duplicate theme" #(.duplicate theme)]
+                      ["remove theme" #(.remove theme)]]]
+               (t/testing label
+                 (t/is (thrown-with-msg? js/Error #"Cannot modify tokens in an external library"
+                                         (mutate)))
+                 (await (async/settle))
+                 (t/is (tokens-unchanged? store file))
+                 (t/is (tokens-unchanged? store source))
+                 (t/is (tokens-unchanged? store other)))))))))))
+
+(t/deftest ^:async external-catalogs-reject-status-changes
+  (let [source    (token-source-file :source)
+        other     (token-source-file :other)
+        file      (-> (token-source-file :local)
+                      (assoc-in [:data :tokens-source] (:id source))
+                      (assoc-in [:data :tokens-status] (with-active-theme source)))
+        store     (ths/setup-store file {:libraries [source other]})
+        plugin-id (str uuid/zero)
+        message   "Cannot change active themes or sets of an external library"
+        errors    (atom [])]
+    (await
+     (mock/with-mocks* {st/state store
+                        st/stream (ptk/input-stream store)
+                        u/not-valid (record-not-valid errors)}
+       (let [^js context (library/library-subcontext plugin-id)]
+         (t/is (true? (.-active ^js (aget (.. context -local -tokens -themes) 0))))
+         (doseq [[catalog-label ^js catalog]
+                 [["source catalog" (.. context -tokensSource -tokens)]
+                  ["other connected catalog" (.-tokens (library/library-proxy plugin-id (:id other)))]]]
+           (t/testing catalog-label
+             (let [^js token-set (aget (.-sets catalog) 0)
+                   ^js theme     (aget (.-themes catalog) 0)]
+               (t/testing "reports the status of its own file"
+                 (t/is (true? (.-active token-set)))
+                 (t/is (false? (.-active theme))))
+               (reset! errors [])
+               (set! (.-active token-set) false)
+               (.toggleActive token-set)
+               (set! (.-active theme) true)
+               (.toggleActive theme)
+               (await (async/settle))
+               (t/is (= [[plugin-id :active message]
+                         [plugin-id :toggleActive message]
+                         [plugin-id :active message]
+                         [plugin-id :toggleActive message]]
+                        @errors))
+               (t/is (tokens-unchanged? store file))
+               (t/is (tokens-unchanged? store source))
+               (t/is (tokens-unchanged? store other))))))))))
+
+(t/deftest ^:async external-token-source-allows-set-activation
+  (let [source     (token-source-file :source)
+        file       (-> (token-source-file :local)
+                       (assoc-in [:data :tokens-source] (:id source))
+                       (assoc-in [:data :tokens-status] (ctht/get-tokens-status source)))
+        store      (ths/setup-store file {:libraries [source]})]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (let [^js catalog   (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+             ^js token-set (aget (.-sets catalog) 0)]
+         (t/is (true? (.-active token-set)))
+         (set! (.-active token-set) false)
+         (await (async/wait-for #(false? (.-active token-set)) "deactivate set"))
+         (.toggleActive token-set)
+         (await (async/wait-for #(true? (.-active token-set)) "toggle set"))
+         (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
+         (t/is (tokens-unchanged? store source)))))))
+
+(t/deftest ^:async external-token-source-allows-theme-activation
+  (let [source     (token-source-file :source)
+        file       (-> (token-source-file :local)
+                       (assoc-in [:data :tokens-source] (:id source))
+                       (assoc-in [:data :tokens-status] (ctht/get-tokens-status source)))
+        store      (ths/setup-store file {:libraries [source]})]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (let [^js catalog (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+             ^js theme   (aget (.-themes catalog) 0)]
+         (t/is (false? (.-active theme)))
+         (set! (.-active theme) true)
+         (await (async/wait-for #(true? (.-active theme)) "activate theme"))
+         (.toggleActive theme)
+         (await (async/wait-for #(false? (.-active theme)) "toggle theme"))
+         (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
+         (t/is (tokens-unchanged? store source)))))))
+
+(t/deftest ^:async external-token-source-theme-toggle-supports-undo
+  (let [source (token-source-file :source)
+        status (with-active-theme source)
+        file   (-> (token-source-file :local)
+                   (assoc-in [:data :tokens-source] (:id source))
+                   (assoc-in [:data :tokens-status] status))
+        store  (ths/setup-store file {:libraries [source]})]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (let [^js catalog (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+             ^js theme   (aget (.-themes catalog) 0)]
+         (st/emit! (tohs/watch-undo-stack))
+         (.toggleActive theme)
+         (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
+                                "theme toggle undo entry"))
+         (t/is (false? (.-active theme)))
+         (st/emit! dwu/undo)
+         (await (async/wait-for #(= (datafy status)
+                                    (datafy (get-in @store [:files (:id file) :data :tokens-status])))
+                                "undo external theme toggle"))
+         (t/is (tokens-unchanged? store source)))))))
+
+(t/deftest ^:async external-token-source-allows-applying-tokens-to-shapes
+  (let [source     (token-source-file :source)
+        file       (-> (token-source-file :local)
+                       (assoc-in [:data :tokens-source] (:id source))
+                       (assoc-in [:data :tokens-status] (ctht/get-tokens-status source))
+                       (ctho/add-rect :rect1)
+                       (ctho/add-rect :rect2)
+                       (ctho/add-rect :rect3))
+        store      (ths/setup-store file {:libraries [source]})
+        page-id    (cthf/current-page-id file)]
+    (swap! store assoc-in [:workspace-local :selected] #{(cthi/id :rect3)})
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (let [^js context   (api/create-context (str uuid/zero))
+             ^js page      (.-currentPage context)
+             ^js catalog   (.. context -library -local -tokens)
+             ^js token-set (aget (.-sets catalog) 0)
+             ^js token     (aget (.-tokens token-set) 0)
+             ^js rect1     (.getShapeById page (str (cthi/id :rect1)))
+             ^js rect2     (.getShapeById page (str (cthi/id :rect2)))]
+         (.applyToken rect1 token #js ["fill"])
+         (.applyToShapes token #js [rect2] #js ["fill"])
+         (.applyToSelected token #js ["fill"])
+         (doseq [label [:rect1 :rect2 :rect3]]
+           (let [shape-path [:files (:id file) :data :pages-index page-id :objects (cthi/id label)]]
+             (await (async/wait-for #(= "color.primary" (get-in @store (conj shape-path :applied-tokens :fill)))
+                                    (str "apply external token to " label)))
+             (await (async/wait-for #(= "#ff0000" (get-in @store (conj shape-path :fills 0 :fill-color)))
+                                    (str "resolve external token on " label)))))
+         (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
+         (t/is (= (datafy (ctht/get-tokens-status file))
+                  (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
+         (t/is (tokens-unchanged? store source)))))))
+
+(t/deftest ^:async library-tokens-source-requires-content-write-permission
+  (let [file         (token-source-file :local)
+        source       (token-source-file :source)
+        plugin-id    "read-only-plugin"
+        store        (ths/setup-store file {:libraries [source]})
+        ^js context  (library/library-subcontext plugin-id)
+        source-proxy (library/library-proxy plugin-id (:id source))
+        errors       (atom [])]
+    (await
+     (mock/with-mocks* {st/state store
+                        st/stream (ptk/input-stream store)
+                        u/not-valid (record-not-valid errors)}
+       (set! (.-tokensSource context) source-proxy)
+       (t/is (= [[plugin-id :tokensSource "Plugin doesn't have 'content:write' permission"]] @errors))
+       (await (async/settle))
+       (t/is (tokens-unchanged? store file))))))
 
 ;; Regression coverage for issue #9162.
 ;;
@@ -807,4 +1141,3 @@
         (.addSet catalog #js {"name" "NewSet"})
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :addSet "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
-
