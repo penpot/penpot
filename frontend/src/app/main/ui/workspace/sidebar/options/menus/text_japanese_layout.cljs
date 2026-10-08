@@ -506,6 +506,7 @@
       (when ^boolean vertical?
         [:> text-combine-upright-count-options* common-props])
       [:> font-features-options* common-props]
+      [:> line-adjustment-option* common-props]
       ;; Emphasis marks (圏点 / bouten) apply to the selected characters.
       (when ^boolean text-selection-active
         [:> span-select-option* (mf/spread-props common-props
