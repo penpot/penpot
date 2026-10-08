@@ -1751,3 +1751,27 @@
                               ::rpc/profile-id (:id stranger)})]
         (t/is (th/success? out))
         (t/is (nil? (some #(= (:id project) (:id %)) (:result out))))))))
+
+(t/deftest create-team-invitations-link-base-follows-trusted-origins
+  (let [owner (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id owner)})
+        cases [{:origin "https://alt.example.com"
+                :email "trusted@example.com"
+                :expected "https://alt.example.com"}
+               {:origin "https://evil.example.com"
+                :email "untrusted@example.com"
+                :expected "http://localhost:3449"}]]
+    (doseq [{:keys [origin email expected]} cases]
+      (with-mocks [mock {:target 'app.email/send! :return nil}]
+        (with-redefs [cf/config (assoc cf/config
+                                       :public-uri "http://localhost:3449"
+                                       :trusted-origins #{"https://alt.example.com"})]
+          (let [data {::th/type :create-team-invitations
+                      ::rpc/profile-id (:id owner)
+                      :team-id (:id team)
+                      :role :editor
+                      :emails [email]}
+                out  (th/command-through-middleware! data {:headers {"origin" origin}})
+                sent (-> @mock :call-args-list first first)]
+            (t/is (th/success? out) origin)
+            (t/is (= expected (:public-uri sent)) origin)))))))
