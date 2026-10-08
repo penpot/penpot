@@ -618,6 +618,25 @@
                                     :default-team-id default-team-id}))
               default-team-id))))))))
 
+(defn- submit-membership-event
+  "Emits an audit event for a new team membership, so the event stream carries
+  every membership add, including the ones that only happen as a side effect of
+  another command (team creation, invitation accepted without email roundtrip,
+  duplicated team)."
+  [cfg {:keys [profile-id team-id] :as params}]
+  (when (contains? cf/flags :audit-log)
+    (audit/submit cfg
+                  {:name "add-team-member"
+                   :type "action"
+                   :profile-id profile-id
+                   :props (d/without-nils
+                           {:team-id team-id
+                            :member-id profile-id
+                            :role (:role params)
+                            :is-owner (boolean (:is-owner params))
+                            :is-admin (boolean (:is-admin params))
+                            :can-edit (boolean (:can-edit params))})})))
+
 (defn add-profile-to-team!
   ([cfg params]
    (add-profile-to-team! cfg params nil))
@@ -631,7 +650,13 @@
               (some? (:organization-id membership)) ;; the team do belong to an organization
               (not (:is-member membership)))        ;; the user is not a member of the organization yet
          (initialize-user-in-organization cfg profile-id (:organization-id membership)))))
-   (db/insert! conn :team-profile-rel (assoc params :id (uuid/next)) options)))
+   (let [options (merge options {::db/return-keys [:id]})
+         result  (db/insert! conn :team-profile-rel (assoc params :id (uuid/next)) options)]
+     ;; Only emit when a row was actually inserted: with `on-conflict-do-nothing`
+     ;; an existing membership returns nil and must not be reported twice.
+     (when (some? result)
+       (submit-membership-event cfg params))
+     result)))
 
 (defn create-team
   "This is a complete team creation process, it creates the team

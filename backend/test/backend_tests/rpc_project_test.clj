@@ -274,3 +274,16 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest create-project-audit-event-carries-its-id
+  ;; The command returns the new project but did not emit its id, so a consumer
+  ;; could not key a local projection.
+  (let [profile (th/create-profile* 1)
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        out     (th/command! {::th/type :create-project
+                              ::rpc/profile-id (:id profile)
+                              :team-id (:id team)
+                              :name "test project"})]
+    (t/is (th/success? out))
+    (t/is (= (get-in out [:result :id])
+             (get-in (meta (:result out)) [:app.loggers.audit/props :id])))))

@@ -68,27 +68,28 @@
     (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
                         ::quotes/profile-id profile-id
                         ::quotes/team-id    team-id
-                        ::quotes/incr       (:size content)}))
+                        ::quotes/incr       (:size content)})
 
-  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 ;; We get the minimal file for proper checking if
-                 ;; file is not already deleted
-                 (let [_      (files/get-minimal-file conn file-id)
-                       mobj   (create-file-media-object cfg params)]
+    (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                   ;; We get the minimal file for proper checking if
+                   ;; file is not already deleted
+                   (let [_      (files/get-minimal-file conn file-id)
+                         mobj   (create-file-media-object cfg params)]
 
-                   (db/update! conn :file
-                               {:modified-at (ct/now)
-                                :has-media-trimmed false}
-                               {:id file-id}
-                               {::db/return-keys false})
+                     (db/update! conn :file
+                                 {:modified-at (ct/now)
+                                  :has-media-trimmed false}
+                                 {:id file-id}
+                                 {::db/return-keys false})
 
-                   (with-meta mobj
-                     {::audit/replace-props
-                      {:name (:name params)
-                       :file-id file-id
-                       :is-local (:is-local params)
-                       :size (:size content)
-                       :mtype (:mtype content)}})))))
+                     (with-meta mobj
+                       {::audit/replace-props
+                        {:name (:name params)
+                         :file-id file-id
+                         :team-id team-id
+                         :is-local (:is-local params)
+                         :size (:size content)
+                         :mtype (:mtype content)}}))))))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for

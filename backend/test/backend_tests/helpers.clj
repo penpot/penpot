@@ -481,6 +481,20 @@
     (let [params (prepare-rpc-params data)]
       (try-on! (method-fn params)))))
 
+(defn command-raw!
+  "Like `command!`, but returns the raw result without unwrapping it, so a test
+  can read the result metadata (for example the audit props a command sets on a
+  nil result). The HTTP layer unwraps it the same way in production."
+  [{:keys [::type] :as data}]
+  (let [[_ method-fn] (get-in *system* [:app.rpc/methods type])]
+    (when-not method-fn
+      (ex/raise :type :assertion
+                :code :rpc-method-not-found
+                :hint (str/ffmt "rpc method '%' not found" (name type))))
+
+    (let [params (prepare-rpc-params data)]
+      (method-fn params))))
+
 (defn management-command!
   [{:keys [::type] :as data}]
   (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
