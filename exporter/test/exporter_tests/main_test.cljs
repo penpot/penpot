@@ -52,9 +52,11 @@
                                             (js/Promise.resolve #js {}))}
    :exporter/renderer     {:exporter.browser/pool (system/ref :exporter.browser/pool)
                            :exporter.wasm/pool    (system/ref :exporter.wasm/pool)
+                           :exporter/tmpdir      (system/ref :exporter/tmpdir)
                            :base-uri              "http://internal/"
                            :public-uri            "http://public/"
-                           :svgo?                 false}})
+                           :svgo?                 false}
+   :exporter/tmpdir      {}})
 
 (defn- pool-of
   []
@@ -121,6 +123,8 @@
       (t/is (some? (pool-of)))
       (t/testing "the renderer boots as a render fn over the resolved pools"
         (t/is (fn? (:exporter/renderer @main/system))))
+      (t/testing "the temp area boots before anything that writes to it"
+        (t/is (string? (:tmpdir (:exporter/tmpdir @main/system)))))
       (t/testing "the wasm pool rides the same lifecycle"
         (t/is (some? (:pool (wasm-pool-of))))
         (t/is (= 300000 (:timeout-ms (wasm-pool-of)))))

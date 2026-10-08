@@ -24,6 +24,7 @@
    [exporter.consumer :as-alias consumer]
    [exporter.consumer.config :as ccfg]
    [exporter.consumer.worker]
+   [exporter.tmpdir]
    [exporter.utils.system :as system]
    [exporter.wasm :as-alias wasm]
    [exporter.wasm.pool]))
@@ -41,12 +42,16 @@
    ::wasm/pool
    {:max (ccfg/concurrency)}
 
+   :exporter/tmpdir
+   {}
+
    :exporter/renderer
-   {::browser/pool (system/ref :exporter.browser/pool)
-    ::wasm/pool    (system/ref :exporter.wasm/pool)
-    :base-uri      (cf/get-internal-uri)
-    :public-uri    (cf/get :public-uri)
-    :svgo?         (contains? cf/flags :exporter-svgo)}
+   {::browser/pool  (system/ref :exporter.browser/pool)
+    ::wasm/pool     (system/ref :exporter.wasm/pool)
+    :exporter/tmpdir (system/ref :exporter/tmpdir)
+    :base-uri       (cf/get-internal-uri)
+    :public-uri     (cf/get :public-uri)
+    :svgo?          (contains? cf/flags :exporter-svgo)}
 
    ::consumer/worker
    {:renderer    (system/ref :exporter/renderer)
