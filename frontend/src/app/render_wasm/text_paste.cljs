@@ -126,3 +126,55 @@
               (update-in content [:children 0 :children (+ (:para start) idx)] restyle attrs))
             content
             (rest (map-indexed vector fragment)))))
+
+;; --- Gradients of text copied in Penpot
+
+(defn- move-gradient
+  "`gradient`, in fractions of the `from` box, in fractions of the `to` box, with its
+  points at the same pixel offset from the span origin."
+  [gradient from to]
+  (let [{w0 :width h0 :height} (:box from)
+        {w1 :width h1 :height} (:box to)
+        {x0 :x y0 :y}          (:origin from)
+        {x1 :x y1 :y}          (:origin to)
+        move-x                 #(/ (+ x1 (- (* % w0) x0)) w1)
+        move-y                 #(/ (+ y1 (- (* % h0) y0)) h1)]
+    (cond-> (-> gradient
+                (update :start-x move-x)
+                (update :start-y move-y)
+                (update :end-x move-x)
+                (update :end-y move-y))
+      ;; A radial width is scaled by the box aspect ratio when drawn.
+      (= :radial (:type gradient))
+      (update :width #(/ (* % w0 h1) (* h0 w1))))))
+
+(defn- move-fills
+  [span from to]
+  (update span :fills
+          (fn [fills]
+            (mapv #(cond-> %
+                     (some? (:fill-color-gradient %))
+                     (update :fill-color-gradient move-gradient from to))
+                  fills))))
+
+(defn- sized?
+  [{:keys [width height]}]
+  (and (pos? width) (pos? height)))
+
+(defn move-gradients
+  "`content` with the gradients of `pasted` (the content inserted at `start`) moved
+  from the `source` geometry to the `target` one (see `text-editor/content-geometry`)."
+  [content pasted start source target]
+  (let [entries (map vector
+                     (flatten (text-editor/span-ranges pasted start))
+                     (flatten (:origins source))
+                     (flatten (:origins target)))]
+    (reduce (fn [content [range from to]]
+              (if (and (some? from) (some? to) (sized? (:box source)) (sized? (:box target)))
+                (text-editor/apply-styles-over-range
+                 content range
+                 #(move-fills % {:box (:box source) :origin from} {:box (:box target) :origin to}))
+                content))
+            content
+            entries)))
+

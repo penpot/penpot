@@ -838,6 +838,66 @@
         (when-not (and (= start-para end-para) (= start-offset end-offset))
           (content-range content range))))))
 
+(defn span-ranges
+  "The char range of every span of `content`, a slice that starts at `start`
+  (`{:para :offset}`) in its shape: one vector of ranges per paragraph."
+  [content {:keys [para offset]}]
+  (into []
+        (map-indexed
+         (fn [idx paragraph]
+           (let [para-idx (+ para idx)
+                 spans    (:children paragraph)
+                 starts   (reductions + (if (zero? idx) offset 0) (map (comp count :text) spans))]
+             (mapv (fn [span span-start]
+                     {:start-para para-idx
+                      :start-offset span-start
+                      :end-para para-idx
+                      :end-offset (+ span-start (count (:text span)))})
+                   spans
+                   starts))))
+        (-> content :children first :children)))
+
+(defn- range-origin
+  "Where the text in `range` starts in the edited shape, shape-local, with the size
+  of the box its fills are laid over: {:x :y :box-width :box-height}, or nil."
+  [{:keys [start-para start-offset end-para end-offset]}]
+  (when (wasm/ready?)
+    (let [byte-offset (mem/alloc 16)
+          f32-offset  (mem/->offset-32 byte-offset)
+          heap        (mem/get-heap-f32)
+          has-text?   (h/call wasm/internal-module "_text_editor_get_range_origin"
+                              start-para start-offset end-para end-offset byte-offset)
+          result      (when has-text?
+                        {:x          (aget heap f32-offset)
+                         :y          (aget heap (+ f32-offset 1))
+                         :box-width  (aget heap (+ f32-offset 2))
+                         :box-height (aget heap (+ f32-offset 3))})]
+      (mem/free)
+      result)))
+
+(defn- box-relative-fill?
+  [fill]
+  (or (some? (:fill-color-gradient fill))
+      (some? (:fill-image fill))))
+
+(defn content-geometry
+  "Where the gradient or image spans of `content`, a slice starting at `start`, begin
+  in the edited shape, with its box size; nil when it has none."
+  [content start]
+  (let [ranges  (span-ranges content start)
+        origins (mapv (fn [paragraph paragraph-ranges]
+                        (mapv (fn [span range]
+                                (when (some box-relative-fill? (:fills span))
+                                  (range-origin range)))
+                              (:children paragraph)
+                              paragraph-ranges))
+                      (-> content :children first :children)
+                      ranges)]
+    (when-let [{:keys [box-width box-height]} (some identity (flatten origins))]
+      {:box     {:width box-width :height box-height}
+       :origins (mapv (partial mapv #(some-> % (select-keys [:x :y])))
+                      origins)})))
+
 (defn- clean-styles
   "Drop nil-valued attrs (unlike the DOM path, our merge would keep them and fail
    the backend schema); a per-span fn is passed through untouched. A nil

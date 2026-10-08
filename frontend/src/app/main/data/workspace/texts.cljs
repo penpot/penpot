@@ -1563,13 +1563,17 @@
              (wasm.text-editor/text-editor-has-selection?))
     (let [text (wasm.text-editor/text-editor-export-selection)]
       (when (seq text)
-        (let [content (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
-                        (-> (wasm.text-editor/text-editor-get-active-shape-id)
-                            (wasm.text-editor/selection-content)))
-              payload (when (some? content)
-                        (text-clipboard/payload->html content
-                                                      (:current-file-id state)
-                                                      (:current-team-id state)))]
+        (let [content  (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
+                         (-> (wasm.text-editor/text-editor-get-active-shape-id)
+                             (wasm.text-editor/selection-content)))
+              geometry (when (some? content)
+                         (wasm.text-editor/content-geometry content
+                                                            (wasm.text-editor/selection-start)))
+              payload  (when (some? content)
+                         (text-clipboard/payload->html content
+                                                       (:current-file-id state)
+                                                       (:current-team-id state)
+                                                       geometry))]
           {"text/plain" text
            "text/html"  (clipboard/plain-text->html text payload)})))))
 
@@ -1651,8 +1655,11 @@
 
 (defn- penpot-paste
   [state payload]
-  {:penpot?  true
-   :fragment (text-paste/content->fragment (payload-content state payload))})
+  (let [content (payload-content state payload)]
+    {:penpot?  true
+     :content  content
+     :geometry (:geometry payload)
+     :fragment (text-paste/content->fragment content)}))
 
 (defn- clipboard->paste
   "What to paste for clipboard `html` and `text`, or nil: text and text shapes copied
@@ -1676,10 +1683,41 @@
         {:penpot? false
          :fragment fragment}))))
 
+(defn- target-geometry
+  "Where the gradient spans of `pasted`, inserted at `start`, begin in `shape` with
+   `content`, laid over the box it gets when the editor closes; nil when none."
+  [{:keys [grow-type]} content pasted start]
+  (when-let [{:keys [box] :as geometry} (wasm.text-editor/content-geometry pasted start)]
+    (if (= :fixed grow-type)
+      geometry
+      ;; Auto-sized boxes only fit their text when the editor closes, which drops
+      ;; the vertical-align offset the origins have now.
+      (let [{:keys [width height]} (wasm.api/get-text-dimensions)
+            offset (case (some-> (:vertical-align content) name)
+                     "center" (/ (- (:height box) height) 2)
+                     "bottom" (- (:height box) height)
+                     0)]
+        {:box     {:width  (if (= :auto-width grow-type) width (:width box))
+                   :height height}
+         :origins (mapv (partial mapv #(some-> % (update :y - offset)))
+                        (:origins geometry))}))))
+
+(defn- move-pasted-gradients
+  "`content`, the shape's after restyling the paste, with the pasted gradients
+   keeping their place on their spans. Pushes the result to WASM."
+  [shape content {:keys [geometry] :as paste} start]
+  (let [pasted (:content paste)
+        target (when (some? geometry) (target-geometry shape content pasted start))]
+    (if (some? target)
+      (let [content (text-paste/move-gradients content pasted start geometry target)]
+        (wasm.api/set-shape-text-content (:id shape) content)
+        content)
+      content)))
+
 (defn- insert-fragment
   "Insert the text of `fragment` at the caret and restyle it: with its own styles
    or overrides, else with the pending caret style. Returns the event saving it."
-  [{:keys [fragment penpot?]}]
+  [state {:keys [fragment penpot?] :as paste}]
   (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
         start    (wasm.text-editor/selection-start)
         styled?  (or penpot? (text-paste/styled? fragment))
@@ -1696,7 +1734,8 @@
         ;; Sync first so the cached content stays index-aligned with WASM.
         (wasm.text-editor/text-editor-sync-content)
         (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start penpot?)]
-          (v3-update-editor-content shape-id content)
+          (let [shape (dsh/lookup-shape state shape-id)]
+            (v3-update-editor-content shape-id (move-pasted-gradients shape content paste start)))
           (v3-sync-editor-content)))
 
       pending?
@@ -1713,7 +1752,7 @@
     (watch [_ state _]
       (if-let [paste (when (wasm.text-editor/text-editor-has-focus?)
                        (clipboard->paste state html text))]
-        (let [event (insert-fragment paste)]
+        (let [event (insert-fragment state paste)]
           (wasm.api/request-render-preserving-target "text-paste")
           (if (some? event) (rx/of event) (rx/empty)))
         (rx/empty)))))
