@@ -76,14 +76,16 @@
       (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "create-project")
+        (insert-audit-row! (:id prof) "create-organization-attribute")
         (insert-audit-row! (:id prof) "unrelated-event")
         (th/run-task! :audit-log-archive {:uri archive-uri})
         (t/is (:called? @nitrate-mock))
         (t/is (:called? @http-mock))
         (let [[_ _ params] (:call-args @nitrate-mock)]
-          (t/is (= ["create-project"] (mapv :name (:events params)))))
+          (t/is (= #{"create-project" "create-organization-attribute"}
+                   (into #{} (map :name) (:events params)))))
         (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
-          (t/is (= 2 (count rows))))))))
+          (t/is (= 3 (count rows))))))))
 
 (t/deftest archive-events-skips-nitrate-when-no-matching-names
   (let [prof (th/create-profile* 1 {:is-active true})]
