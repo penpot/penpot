@@ -10,9 +10,11 @@
    [app.common.types.text.japanese-layout :as jl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.ui.ds.controls.select :as select]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.text.html-text :as html-text]
    [app.main.ui.shapes.text.styles :as text-styles]
    [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
+   [app.main.ui.workspace.sidebar.options.menus.text :as text-menu]
    [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
    [app.util.text.writing-mode :as wm]
    [cljs.test :as t :include-macros true]
@@ -246,3 +248,115 @@
       (t/is (not (str/includes? (markup) "vertical-rl"))))
     (with-redefs [wm/vertical-layout-active? (constantly true)]
       (t/is (str/includes? (markup) "writing-mode:vertical-rl")))))
+
+(defn- alignment-markup
+  ([component writing-mode wasm-enabled]
+   (alignment-markup component writing-mode wasm-enabled {}))
+  ([component writing-mode wasm-enabled values]
+   ;; Server rendering has no DOM container for tooltip portals.
+   (with-redefs [wm/vertical-layout-active? (constantly wasm-enabled)
+                 hooks/use-portal-container (fn ([] nil) ([_] nil))]
+     (rds/renderToStaticMarkup
+      (mf/element component #js {:values (assoc values :writing-mode writing-mode)
+                                 :on-change identity})))))
+
+(defn- alignment-labels
+  [markup]
+  (mapv second (re-seq #"aria-label=\"([^\"]+)\"" markup)))
+
+(defn- alignment-icons
+  [markup]
+  (mapv second (re-seq #"href=\"#icon-([^\"]+)\"" markup)))
+
+(t/deftest vertical-paragraph-alignment-shows-top-middle-bottom-and-vertical-justify
+  (let [markup (alignment-markup text-menu/text-align-options* "vertical-rl" true)]
+    (t/is (= ["text-align-top" "text-align-middle" "text-align-bottom" "text-justify-vertical"]
+             (alignment-icons markup)))
+    (t/is (= ["workspace.options.text-options.align-top"
+              "workspace.options.text-options.align-middle"
+              "workspace.options.text-options.align-bottom"
+              "workspace.options.text-options.text-align-justify"]
+             (alignment-labels markup)))
+    (t/is (= ["left" "center" "right" "justify"]
+             (mapv second (re-seq #"value=\"([^\"]+)\"" markup))))))
+
+(t/deftest vertical-column-block-alignment-shows-right-center-and-left
+  (let [markup (alignment-markup text-menu/vertical-align* "vertical-rl" true)]
+    (t/is (= ["text-right" "text-horizontal-center" "text-left"]
+             (alignment-icons markup)))
+    (t/is (= ["workspace.options.text-options.text-align-right"
+              "workspace.options.text-options.text-align-center"
+              "workspace.options.text-options.text-align-left"]
+             (alignment-labels markup)))
+    (t/is (= ["top" "center" "bottom"]
+             (mapv second (re-seq #"value=\"([^\"]+)\"" markup))))))
+
+(t/deftest horizontal-and-mixed-writing-modes-use-horizontal-alignment-controls
+  (doseq [writing-mode [nil "horizontal-tb" :multiple]]
+    (let [paragraph (alignment-markup text-menu/text-align-options* writing-mode true)
+          block     (alignment-markup text-menu/vertical-align* writing-mode true)]
+      (t/is (= ["text-align-left" "text-align-center" "text-align-right" "text-justify"]
+               (alignment-icons paragraph)))
+      (t/is (= ["text-top" "text-middle" "text-bottom"] (alignment-icons block))))))
+
+(t/deftest svg-renderer-keeps-horizontal-alignment-for-stored-vertical-text
+  (let [paragraph (alignment-markup text-menu/text-align-options* "vertical-rl" false)
+        block     (alignment-markup text-menu/vertical-align* "vertical-rl" false)]
+    (t/is (= ["text-align-left" "text-align-center" "text-align-right" "text-justify"]
+             (alignment-icons paragraph)))
+    (t/is (= ["text-top" "text-middle" "text-bottom"] (alignment-icons block)))
+    (t/is (= "workspace.options.text-options.text-align-left" (first (alignment-labels paragraph))))
+    (t/is (= "workspace.options.text-options.align-top" (first (alignment-labels block))))))
+
+
+(t/deftest vertical-text-growth-controls-show-the-physical-growth-direction
+  (let [markup (alignment-markup text-menu/grow-options* "vertical-rl" true)]
+    (t/is (= ["text-fixed" "text-auto-width-vertical" "text-auto-height-vertical"]
+             (alignment-icons markup)))
+    (t/is (= ["workspace.options.text-options.grow-fixed"
+              "workspace.options.text-options.grow-auto-height"
+              "workspace.options.text-options.grow-auto-width"]
+             (alignment-labels markup)))
+    (t/is (= ["fixed" "auto-width" "auto-height"]
+             (mapv second (re-seq #"value=\"([^\"]+)\"" markup))))))
+
+(t/deftest horizontal-and-svg-text-growth-controls-keep-horizontal-directions
+  (doseq [[writing-mode wasm-enabled] [[nil true]
+                                       ["horizontal-tb" true]
+                                       [:multiple true]
+                                       ["vertical-rl" false]]]
+    (let [markup (alignment-markup text-menu/grow-options* writing-mode wasm-enabled)]
+      (t/is (= ["text-fixed" "text-auto-width" "text-auto-height"]
+               (alignment-icons markup)))
+      (t/is (= ["workspace.options.text-options.grow-fixed"
+                "workspace.options.text-options.grow-auto-width"
+                "workspace.options.text-options.grow-auto-height"]
+               (alignment-labels markup))))))
+
+
+(t/deftest japanese-layout-controls-include-line-adjustment
+  (let [markup (alignment-markup tjl/japanese-layout-options* "vertical-rl" true)]
+    (t/is (str/includes? markup "workspace.options.text-options.line-adjustment"))))
+
+
+(t/deftest vertical-text-hides-ltr-and-rtl-controls
+  (t/is (empty? (alignment-markup text-menu/text-direction-options* "vertical-rl" true))))
+
+(t/deftest horizontal-and-svg-text-show-ltr-and-rtl-controls
+  (doseq [[writing-mode wasm-enabled] [[nil true]
+                                       ["horizontal-tb" true]
+                                       [:multiple true]
+                                       ["vertical-rl" false]]]
+    (let [markup (alignment-markup text-menu/text-direction-options* writing-mode wasm-enabled)]
+      (t/is (= ["text-ltr" "text-rtl"] (alignment-icons markup))))))
+
+(t/deftest hiding-direction-controls-preserves-the-stored-direction
+  (let [values {:text-direction "rtl"}
+        render #(alignment-markup text-menu/text-direction-options* % true values)]
+    (t/is (str/includes? (re-find #"<input[^>]*id=\"rtl-text-direction\"[^>]*>"
+                                  (render "horizontal-tb"))
+                         "checked=\"\""))
+    (t/is (empty? (render "vertical-rl")))
+    (t/is (str/includes? (re-find #"<input[^>]*id=\"rtl-text-direction\"[^>]*>"
+                                  (render "horizontal-tb"))
+                         "checked=\"\""))))
