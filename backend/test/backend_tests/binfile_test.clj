@@ -180,6 +180,7 @@
     (let [result (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
                      (assoc ::bfc/input output)
                      (v3/import-files!))
           file-id  (first (:file-ids result))
@@ -213,6 +214,7 @@
         result (-> th/*system*
                    (assoc ::bfc/project-id (:default-project-id profile))
                    (assoc ::bfc/profile-id (:id profile))
+                   (assoc ::bfc/team-id (:default-team-id profile))
                    (assoc ::bfc/input input)
                    (v3/import-files!))]
     (bfc/get-file th/*system* (first (:file-ids result)))))
@@ -267,6 +269,7 @@
     (let [result (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
                      (assoc ::bfc/input output)
                      (v3/import-files!))]
       (t/is (map? result))
@@ -300,6 +303,7 @@
     (let [result   (-> th/*system*
                        (assoc ::bfc/project-id (:default-project-id profile))
                        (assoc ::bfc/profile-id (:id profile))
+                       (assoc ::bfc/team-id (:default-team-id profile))
                        (assoc ::bfc/input output)
                        (v3/import-files!))
           imported (bfc/get-file th/*system* (first (:file-ids result)))]
@@ -2388,6 +2392,7 @@
     (let [result (:file-ids (-> th/*system*
                                 (assoc ::bfc/project-id (:default-project-id profile))
                                 (assoc ::bfc/profile-id (:id profile))
+                                (assoc ::bfc/team-id (:default-team-id profile))
                                 (assoc ::bfc/input output)
                                 (v3/import-files!)))
           files  (map #(bfc/get-file th/*system* %) result)
@@ -2466,6 +2471,7 @@
     (let [result  (:file-ids (-> th/*system*
                                  (assoc ::bfc/project-id (:default-project-id profile))
                                  (assoc ::bfc/profile-id (:id profile))
+                                 (assoc ::bfc/team-id (:default-team-id profile))
                                  (assoc ::bfc/input output)
                                  (v3/import-files!)))
           mobjs   (db/query th/*system* :file-media-object
