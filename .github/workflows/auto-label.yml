@@ -13,8 +13,14 @@ permissions: {}
 
 jobs:
   triage:
-    # Dependabot PRs are labelled by dependabot.yml and do not need triage.
-    if: github.actor != 'dependabot[bot]'
+    # The Renovate Dependency Dashboard and Renovate's GitHub Actions PRs do
+    # not need triage. Other Renovate PRs (base images, Node.js, pnpm) do.
+    if: >-
+      !(github.event_name == 'issues'
+        && github.event.issue.user.login == 'penpot-renovate[bot]')
+      && !(github.event_name == 'pull_request_target'
+           && github.event.pull_request.user.login == 'penpot-renovate[bot]'
+           && github.event.pull_request.head.ref == 'renovate-github-actions')
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token

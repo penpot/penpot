@@ -80,6 +80,10 @@ jobs:
       - name: Tests
         working-directory: ./backend
         env:
+          # `clojure.core/assert` is elided at compile time, so without this
+          # flag the precondition asserts do not exist in the compiled code
+          # and the suite silently stops checking them.
+          PENPOT_FLAGS: "enable-backend-asserts"
           PENPOT_TEST_DATABASE_URI: "postgresql://postgres/penpot_test"
           PENPOT_TEST_DATABASE_USERNAME: penpot_test
           PENPOT_TEST_DATABASE_PASSWORD: penpot_test
