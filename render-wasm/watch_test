@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 _SCRIPT_DIR=$(dirname $0);
 
-export SKIA_BINARIES_URL="https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-x86_64-unknown-linux-gnu-gl-svg-textlayout-binary-cache-webp-pdf.tar.gz"
+case "$(uname -m)" in
+  aarch64|arm64) _ARCH="aarch64" ;;
+  *) _ARCH="x86_64" ;;
+esac
+
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-${_ARCH}-unknown-linux-gnu-gl-svg-textlayout-binary-cache-webp-pdf.tar.gz"}
+export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"${_ARCH}-unknown-linux-gnu"};
 
 pushd $_SCRIPT_DIR;
 cargo watch -x "test --bin render_wasm -- --show-output"
