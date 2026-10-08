@@ -530,7 +530,7 @@
   [:map
    ::mbus/msgbus
    ::db/pool
-   :app.nitrate/client])
+   [:app.nitrate/client {:optional true} [:maybe :map]]])
 
 (defmethod ig/assert-key ::revocation-watcher
   [_ params]

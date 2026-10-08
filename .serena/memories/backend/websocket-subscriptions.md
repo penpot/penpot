@@ -34,6 +34,8 @@ Which mutations announce: `delete-team-member`, `leave-team`, `update-team-membe
 
 `backend/test/backend_tests/http_websocket_test.clj` drives the real Redis-backed msgbus, so the revocation tests are end-to-end: register the connection in the real registry, run the real command, wait for the subscription to drop, then assert no content arrives. A connection built without `register-connection` is invisible to the watcher, so the watcher-based tests must go through `open-registered-connection`. Interval tests shorten the config via `with-redefs` on `cf/get` rather than waiting minutes. `with-clean-registry` runs as an `:each` fixture, so no test can leak a live relay loop into the next one. `captured-events` forwards the keyword args through to the real `mbus/pub!` — rebuilding them positionally publishes to the topic `:message` with a `nil` payload and silently untests every other notice. Interval tests take access away with a direct row delete, never with a command: a command announces, so the test would pass even with the interval removed. The resubscribe-counting test is the one that proves finished relays stop polling.
 
+`revocation-watcher-schema-resolves-every-ref` covers the `::revocation-watcher` params schema, which no other test compiles. It existed broken for a while: the three injected keys were written as bare keywords, which is a valid malli *property* position and not a key, so the schema raised `:malli.core/invalid-schema` — invisible unless `PENPOT_FLAGS=enable-backend-asserts` was set, and a crash of the whole system build rather than one test (see `mem:backend/testing` on the flag).
+
 ## See also
 
 - `mem:backend/auth-permissions-product-domains` for the permission predicates and the not-found semantics that the re-checks reuse.

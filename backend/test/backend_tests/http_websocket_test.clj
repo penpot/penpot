@@ -6,6 +6,7 @@
 
 (ns backend-tests.http-websocket-test
   (:require
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -1081,6 +1082,29 @@
 
       (t/testing "the file subscription on the other team survives"
         (t/is (some? (subscribed-file conn)))))))
+
+;; The revocation watcher is the only integrant key here, so it is the
+;; only one that compiles this schema at boot: a ref with no registered
+;; schema crashes the boot with :malli.core/invalid-schema instead of
+;; asserting. The test system builds the component, but assert-key only
+;; runs its check with *assert* set, so pin the compilation here.
+(t/deftest revocation-watcher-schema-resolves-every-ref
+  (t/testing "the schema compiles"
+    (t/is (sm/schema? (sm/schema @#'ws/schema:revocation-watcher))))
+
+  (t/testing "every ref the key injects is registered"
+    (t/is (= #{::db/pool ::mbus/msgbus}
+             (disj (set (sm/keys @#'ws/schema:revocation-watcher))
+                   :app.nitrate/client))))
+  (t/testing "the nitrate client is optional, so a nil one passes"
+    (t/is (sm/valid? @#'ws/schema:revocation-watcher
+                     {::db/pool (:app.db/pool th/*system*)
+                      ::mbus/msgbus (:app.msgbus/msgbus th/*system*)})))
+  (t/testing "a non-map nitrate client is rejected"
+    (t/is (not (sm/valid? @#'ws/schema:revocation-watcher
+                          {::db/pool (:app.db/pool th/*system*)
+                           ::mbus/msgbus (:app.msgbus/msgbus th/*system*)
+                           :app.nitrate/client "not-a-client"})))))
 
 (t/deftest organization-owner-keeps-read-only-access
   (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
