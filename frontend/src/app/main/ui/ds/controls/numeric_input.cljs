@@ -245,6 +245,11 @@
         is-token-applied? (and (some? token-applied-name)
                                (not= :multiple token-applied-name))
 
+        scrubbable?     (and (some? value)
+                             (not disabled)
+                             (not is-multiple?)
+                             (not is-token-applied?))
+
         focused-id*     (mf/use-state nil)
         focused-id      (deref focused-id*)
 
@@ -572,9 +577,9 @@
 
         on-scrub-pointer-down
         (mf/use-fn
-         (mf/deps disabled is-open is-multiple? ref min max nillable default is-token-applied?)
+         (mf/deps is-open ref min max nillable default scrubbable?)
          (fn [event]
-           (when-not (or disabled is-open is-multiple?  is-token-applied?)
+           (when (and (not is-open) scrubbable?)
              (let [has-token (some? (deref token-applied-name*))]
                (when-not has-token
                  (let [client-x  (.-clientX event)
@@ -587,9 +592,9 @@
 
         on-scrub-pointer-move
         (mf/use-fn
-         (mf/deps apply-value update-input step min max on-change-start is-token-applied?)
+         (mf/deps apply-value update-input step min max on-change-start scrubbable?)
          (fn [event]
-           (when-not is-token-applied?
+           (when scrubbable?
              (let [state (mf/ref-val drag-state*)]
                (when (or (= state :maybe-dragging) (= state :dragging))
                  (let [client-x (.-clientX event)
@@ -857,8 +862,7 @@
     (mf/with-effect [handle-unmount] handle-unmount)
 
     [:div {:class [class (stl/css-case :input-wrapper true
-                                       :resizable (and (not is-token-applied?)
-                                                       (not disabled)))]
+                                       :scrubbable scrubbable?)]
            :ref wrapper-ref
            :on-pointer-down on-scrub-pointer-down
            :on-pointer-move on-scrub-pointer-move
