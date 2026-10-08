@@ -61,7 +61,7 @@
     (swap! state
            (fn [st]
              (-> st
-                 (assoc-in [:connections id] wsp)
+                 (update :connections assoc id wsp)
                  (cond-> profile-id
                    (update-in [:by-profile profile-id]
                               (fnil conj #{}) id)))))))
@@ -76,7 +76,7 @@
                  indexed (disj (get-in st [:by-profile owner] #{}) id)]
              (cond-> (assoc st :connections (dissoc connections id))
                (and owner (seq indexed))
-               (assoc-in [:by-profile owner] indexed)
+               (update :by-profile assoc owner indexed)
                (and owner (empty? indexed))
                (update :by-profile dissoc owner))))))
 
@@ -242,12 +242,12 @@
 (defn- start-relay
   "Forwards `channel` into the client output channel of `wsp`, and keeps
   a re-check of `check-access` running on the interval. When access no
-  longer holds, `close!` tears the subscription down, which closes the
+  longer holds, `close-fn` tears the subscription down, which closes the
   channel and ends the loop.
 
   `on-forward` runs for every forwarded message, which is how the file
   relay announces presence."
-  [{:keys [::ws/output-ch] :as wsp} channel check-access close! on-forward]
+  [{:keys [::ws/output-ch] :as wsp} channel check-access close-fn on-forward]
   (schedule-revalidation #(not (sp/closed? channel))
                          (inst-ms (revalidation-interval))
                          (fn []
@@ -255,7 +255,7 @@
                              (l/info :hint
                                      "closing websocket subscription on re-check"
                                      :profile-id (::profile-id wsp))
-                             (close!))))
+                             (close-fn))))
   (sp/go-loop []
     ;; nil means the channel was closed, which means the subscription
     ;; is gone and the relay ends.
