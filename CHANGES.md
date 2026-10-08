@@ -74,6 +74,7 @@
 - Fix thumbnails failing on older Chromium browsers and each thumbnail rendering several times [#11878](https://github.com/penpot/penpot/issues/11878) (PR: [#11879](https://github.com/penpot/penpot/pull/11879))
 - Fix internal error when opening the libraries modal [#11943](https://github.com/penpot/penpot/issues/11943) (PR: [#11946](https://github.com/penpot/penpot/pull/11946))
 - Fix Plugin API `connectLibrary` linking unpublished files as libraries [#12001](https://github.com/penpot/penpot/issues/12001) (PR: [#12002](https://github.com/penpot/penpot/pull/12002))
+- Fix theme selector showing a permission message to editors when the tokens source is a library [#12177](https://github.com/penpot/penpot/issues/12177)
 
 ### :sparkles: New features & Enhancements
 
