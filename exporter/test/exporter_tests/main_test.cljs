@@ -13,7 +13,8 @@
    [app.consumer.config :as ccfg]
    [cljs.test :as t :include-macros true]
    [exporter.browser :as browser]
-   [exporter.main :as main]))
+   [exporter.main :as main]
+   [exporter.utils.system :as system]))
 
 (t/deftest new-tree-loads
   (t/testing "exporter.main resolves once required"
@@ -89,7 +90,15 @@
     (t/is (= {:max (ccfg/concurrency)}
              (:exporter.browser/pool main/system-config)))
     (t/is (= {:max (ccfg/concurrency)}
-             (:exporter.wasm.pool/pool main/system-config)))))
+             (:exporter.wasm.pool/pool main/system-config))))
+  (t/testing "the queue consumer renders through a view of the running pools"
+    (let [worker (:exporter.consumer/worker main/system-config)]
+      (t/is (= (ccfg/concurrency) (:concurrency worker)))
+      (t/is (= (ccfg/queue-key) (:queue-key worker)))
+      (t/is (= {:exporter.browser/pool   (system/ref :exporter.browser/pool)
+                :exporter.wasm.pool/pool (system/ref :exporter.wasm.pool/pool)}
+               (select-keys (:render worker)
+                            [:exporter.browser/pool :exporter.wasm.pool/pool]))))))
 
 ;; NOTE: no test boots the production wiring: the wasm pool warms one
 ;; worker eagerly (min 1), and in this process the worker script would

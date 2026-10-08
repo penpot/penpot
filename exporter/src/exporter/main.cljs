@@ -19,8 +19,9 @@
    [app.config :as cf]
    [app.consumer.config :as ccfg]
    ;; Loaded for their init-key/halt-key methods, which is what makes
-   ;; the pools part of the system below.
+   ;; the pools and the queue consumer part of the system below.
    [exporter.browser]
+   [exporter.consumer.worker]
    [exporter.utils.system :as system]
    [exporter.wasm.pool]))
 
@@ -28,9 +29,18 @@
 
 (def system-config
   "The production wiring. Env-derived values are read here, at the
-  wiring layer; the components themselves take plain data."
-  {:exporter.browser/pool   {:max (ccfg/concurrency)}
-   :exporter.wasm.pool/pool {:max (ccfg/concurrency)}})
+  wiring layer; the components themselves take plain data. The worker
+  renders through a view of the running pools, resolved by refs, plus
+  the static render config."
+  {:exporter.browser/pool    {:max (ccfg/concurrency)}
+   :exporter.wasm.pool/pool  {:max (ccfg/concurrency)}
+   :exporter.consumer/worker {:concurrency (ccfg/concurrency)
+                              :queue-key   (ccfg/queue-key)
+                              :render      {:exporter.browser/pool   (system/ref :exporter.browser/pool)
+                                            :exporter.wasm.pool/pool (system/ref :exporter.wasm.pool/pool)
+                                            :base-uri                (cf/get-internal-uri)
+                                            :public-uri              (cf/get :public-uri)
+                                            :svgo?                   (contains? cf/flags :exporter-svgo)}}})
 
 ;; The running system map, or nil when nothing is started.
 ;; Counterpart of the backend's `app.system/system` var.
