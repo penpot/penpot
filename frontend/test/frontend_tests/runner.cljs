@@ -5,6 +5,7 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
+   [frontend-tests.browser-history-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
@@ -106,6 +107,7 @@
    [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.drawarea-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
+   [frontend-tests.ui.error-boundary-test]
    [frontend-tests.ui.gradient-handlers-test]
    [frontend-tests.ui.history-test]
    [frontend-tests.ui.inspect-geometry-test]
@@ -224,6 +226,7 @@
    'frontend-tests.render-wasm.serialization-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
+   'frontend-tests.browser-history-test
    'frontend-tests.router-test
    'frontend-tests.svg-fills-test
    'frontend-tests.svg-filters-test
@@ -245,6 +248,7 @@
    'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.drawarea-test
    'frontend-tests.ui.ds-controls-numeric-input-test
+   'frontend-tests.ui.error-boundary-test
    'frontend-tests.ui.gradient-handlers-test
    'frontend-tests.ui.history-test
    'frontend-tests.ui.inspect-geometry-test
