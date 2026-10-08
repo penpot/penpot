@@ -247,3 +247,29 @@
 
       (t/is (nil? errors'))
       (t/is (= #{(thi/id :root1) (thi/id :root2)} (set (:shapes variant1')))))))
+
+(t/deftest repair-parent-not-found
+  (t/testing "detect and repair shapes whose parent does not exist"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (ths/add-sample-shape :shape1)
+                      (ths/add-sample-shape :shape2)
+                      (ths/update-shape :shape1 :parent-id (uuid/next))
+                      (ths/update-shape :shape2 :parent-id (uuid/next))
+                      (ths/update-shape-by-id uuid/zero :shapes []))
+
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
+          errors' (cfv/validate-file file' {})
+
+          shape1' (ths/get-shape file' :shape1 :page-label :page1)
+          shape2' (ths/get-shape file' :shape2 :page-label :page1)
+          root'   (ths/get-shape-by-id file' uuid/zero :page-label :page1)]
+
+      (t/is (= #{:parent-not-found} (into #{} (map :code) errors)))
+      (t/is (= #{(thi/id :shape1) (thi/id :shape2)} (into #{} (map :shape-id) errors)))
+
+      (t/is (nil? errors'))
+      (t/is (= uuid/zero (:parent-id shape1')))
+      (t/is (= uuid/zero (:parent-id shape2')))
+      (t/is (= #{(thi/id :shape1) (thi/id :shape2)} (set (:shapes root')))))))
