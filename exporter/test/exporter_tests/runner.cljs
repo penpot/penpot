@@ -18,6 +18,7 @@
    [exporter-tests.main-test]
    [exporter-tests.renderer-browser-test]
    [exporter-tests.renderer-svg-test]
+   [exporter-tests.renderer-test]
    [exporter-tests.renderer-wasm-test]
    [exporter-tests.shell-test]
    [exporter-tests.system-test]
@@ -45,6 +46,7 @@
    'exporter-tests.consumer-config-test
    'exporter-tests.renderer-browser-test
    'exporter-tests.renderer-svg-test
+   'exporter-tests.renderer-test
    'exporter-tests.renderer-wasm-test
    'exporter-tests.shell-test
    'exporter-tests.system-test

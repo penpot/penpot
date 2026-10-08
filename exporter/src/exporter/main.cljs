@@ -18,17 +18,19 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.consumer.config :as ccfg]
-   ;; Loaded for its init-key/halt-key methods, which is what makes the
-   ;; browser pool part of the system below.
+   ;; Loaded for their init-key/halt-key methods, which is what makes
+   ;; the pools part of the system below.
    [exporter.browser]
-   [exporter.utils.system :as system]))
+   [exporter.utils.system :as system]
+   [exporter.wasm.pool]))
 
 (l/setup! {:exporter :info})
 
 (def system-config
   "The production wiring. Env-derived values are read here, at the
   wiring layer; the components themselves take plain data."
-  {:exporter.browser/pool {:max (ccfg/concurrency)}})
+  {:exporter.browser/pool   {:max (ccfg/concurrency)}
+   :exporter.wasm.pool/pool {:max (ccfg/concurrency)}})
 
 ;; The running system map, or nil when nothing is started.
 ;; Counterpart of the backend's `app.system/system` var.

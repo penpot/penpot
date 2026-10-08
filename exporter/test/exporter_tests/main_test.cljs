@@ -10,6 +10,7 @@
   (:require
    ["node:process" :as proc]
    [app.common.logging :as l]
+   [app.consumer.config :as ccfg]
    [cljs.test :as t :include-macros true]
    [exporter.browser :as browser]
    [exporter.main :as main]))
@@ -39,14 +40,23 @@
 
 (defn- fake-config
   [calls]
-  {:exporter.browser/pool {:max            1
-                           :create-browser (fn []
-                                             (swap! calls conj :create-browser)
-                                             (js/Promise.resolve (stub-browser calls)))}})
+  {:exporter.browser/pool   {:max            1
+                             :create-browser (fn []
+                                               (swap! calls conj :create-browser)
+                                               (js/Promise.resolve (stub-browser calls)))}
+   :exporter.wasm.pool/pool {:max           1
+                             :min           0
+                             :create-worker (fn []
+                                              (swap! calls conj :create-worker)
+                                              (js/Promise.resolve #js {}))}})
 
 (defn- pool-of
   []
   (:exporter.browser/pool @main/system))
+
+(defn- wasm-pool-of
+  []
+  (:exporter.wasm.pool/pool @main/system))
 
 (t/deftest ^:async install-process-handlers-registers-handlers
   (try
@@ -74,22 +84,27 @@
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async hot-reload-start-boots-production-wiring
-  (try
-    ;; No browser launches: the pool starts empty (min 0) and nothing
-    ;; checks one out, so this boots the real config with no Chromium.
-    (let [started (js/Promise. (fn [resolve _] (main/on-after-load (fn [] (resolve :done)))))]
-      (t/is (= :done (await started))))
-    (t/is (some? (pool-of)))
-    (t/is (= :stopped (await (main/stop))))
-    (catch :default cause
-      (t/is false (str "unexpected failure: " (ex-message cause))))))
+(t/deftest production-wiring-declares-both-pools
+  (t/testing "the wiring names the browser and the wasm pools, sized to the worker concurrency"
+    (t/is (= {:max (ccfg/concurrency)}
+             (:exporter.browser/pool main/system-config)))
+    (t/is (= {:max (ccfg/concurrency)}
+             (:exporter.wasm.pool/pool main/system-config)))))
+
+;; NOTE: no test boots the production wiring: the wasm pool warms one
+;; worker eagerly (min 1), and in this process the worker script would
+;; be the test bundle itself. The hook path stays covered through the
+;; fake configs below; the production map above is data, asserted
+;; without booting it.
 
 (t/deftest ^:async start-boots-and-stop-halts
   (try
     (let [calls (atom [])]
       (t/is (= :started (await (main/start-custom (fake-config calls)))))
       (t/is (some? (pool-of)))
+      (t/testing "the wasm pool rides the same lifecycle"
+        (t/is (some? (:pool (wasm-pool-of))))
+        (t/is (= 300000 (:timeout-ms (wasm-pool-of)))))
       (await (browser/exec (pool-of) {} (fn [_] :ok)))
       (t/is (= :stopped (await (main/stop))))
       (t/is (nil? @main/system))
