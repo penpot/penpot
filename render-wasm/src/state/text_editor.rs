@@ -887,6 +887,23 @@ impl TextEditorState {
             return false;
         }
 
+        // With a range selected, Left/Right collapse to that edge and stop.
+        // Extending (Shift) keeps the normal move-from-focus path below.
+        if self.selection.is_selection() && !extend_selection {
+            let edge = match direction {
+                CursorDirection::Backward => Some(self.selection.start()),
+                CursorDirection::Forward => Some(self.selection.end()),
+                _ => None,
+            };
+            if let Some(caret) = edge {
+                self.selection.set_caret(caret);
+                self.update_styles(text_content);
+                self.reset_blink();
+                self.push_event(TextEditorEvent::SelectionChanged);
+                return true;
+            }
+        }
+
         let focus = self.selection.focus;
 
         // Get the text direction of the span at the current cursor position
@@ -993,6 +1010,21 @@ mod tests {
         content
     }
 
+    fn content(text: &str) -> TextContent {
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), GrowType::Fixed);
+        content.add_paragraph(Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![span(text, 14.0, Fill::Solid(SolidColor(Color::BLACK)))],
+        ));
+        content
+    }
+
     fn drain_events(editor: &mut TextEditorState) -> Vec<TextEditorEvent> {
         let mut events = Vec::new();
         loop {
@@ -1003,6 +1035,10 @@ mod tests {
             events.push(ev);
         }
         events
+    }
+
+    fn pos(offset: usize) -> TextPositionWithAffinity {
+        TextPositionWithAffinity::new_downstream_affinity(0, offset)
     }
 
     #[test]
@@ -1070,5 +1106,83 @@ mod tests {
             editor.current_styles.fills,
             vec![Fill::Solid(SolidColor(Color::RED))]
         );
+    }
+
+    #[test]
+    fn move_backward_with_selection_collapses_to_start() {
+        // "Third paragraph" — select "aph" at the end, then Left.
+        let content = content("Third paragraph");
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(pos(12));
+        editor.selection.extend_to(pos(15));
+
+        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 12);
+    }
+
+    #[test]
+    fn move_forward_with_selection_collapses_to_end() {
+        // Caret between "parag" and "raph", Shift+Left twice selects "ag", then Right.
+        let content = content("Third paragraph");
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(pos(11));
+        editor.selection.extend_to(pos(9));
+
+        editor.move_cursor(&content, CursorDirection::Forward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 11);
+    }
+
+    #[test]
+    fn move_backward_with_full_selection_collapses_to_document_start() {
+        let content = content("Hello");
+        let mut editor = TextEditorState::new();
+        editor.select_all(&content);
+
+        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 0);
+    }
+
+    #[test]
+    fn move_forward_with_full_selection_collapses_to_document_end() {
+        let content = content("Hello");
+        let mut editor = TextEditorState::new();
+        editor.select_all(&content);
+
+        editor.move_cursor(&content, CursorDirection::Forward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 5);
+    }
+
+    #[test]
+    fn move_backward_while_extending_still_moves_from_focus() {
+        let content = content("Third paragraph");
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(pos(15));
+        editor.selection.extend_to(pos(12));
+
+        editor.move_cursor(&content, CursorDirection::Backward, false, true);
+
+        assert!(editor.selection.is_selection());
+        assert_eq!(editor.selection.anchor.offset, 15);
+        assert_eq!(editor.selection.focus.offset, 11);
+    }
+
+    #[test]
+    fn move_backward_with_collapsed_caret_still_moves() {
+        let content = content("Hello");
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(pos(3));
+
+        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 2);
     }
 }
