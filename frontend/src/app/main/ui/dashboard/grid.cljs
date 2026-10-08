@@ -23,6 +23,7 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.dashboard.file-menu :refer [file-menu* file-menu-items*]]
@@ -293,22 +294,35 @@
 
         library-view? (= origin :libraries)
 
+        on-open-new-tab
+        (mf/use-fn
+         (mf/deps file-id can-restore)
+         (fn []
+           (when-not can-restore
+             (st/emit! (dcm/go-to-workspace :file-id file-id ::rt/new-window true)))))
+
         on-select
         (mf/use-fn
-         (mf/deps selected? selected-num)
+         (mf/deps selected? selected-num on-open-new-tab)
          (fn [event]
-           (when (or (not selected?) (> selected-num 1))
-             (dom/stop-propagation event)
-             (let [shift? (kbd/shift? event)]
-               (when-not shift?
-                 (st/emit! (dd/clear-selected-files)))
-               (st/emit! (dd/toggle-file-select file))))))
+           (if (kbd/mod? event)
+             (do
+               (dom/stop-propagation event)
+               (on-open-new-tab))
+             (when (or (not selected?) (> selected-num 1))
+               (dom/stop-propagation event)
+               (let [shift? (kbd/shift? event)]
+                 (when-not shift?
+                   (st/emit! (dd/clear-selected-files)))
+                 (st/emit! (dd/toggle-file-select file)))))))
 
         on-navigate
         (mf/use-fn
          (mf/deps file-id can-restore)
          (fn [event]
-           (when-not can-restore
+           ;; A Ctrl/Cmd double click has already opened the file in new
+           ;; tabs through on-select; the current tab stays where it is.
+           (when-not (or can-restore (kbd/mod? event))
              (let [menu-icon (mf/ref-val menu-ref)
                    target    (dom/get-target event)]
                (when-not (dom/child? target menu-icon)
