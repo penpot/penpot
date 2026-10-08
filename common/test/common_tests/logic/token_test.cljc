@@ -177,7 +177,60 @@
       (t/is (= (ctos/get-active-theme-ids file-tokens-status)
                (ctos/get-active-theme-ids undo-tokens-status)))
       (t/is (= (ctos/get-active-set-ids file-tokens-status)
-               (ctos/get-active-set-ids undo-tokens-status))))))
+               (ctos/get-active-set-ids undo-tokens-status)))))
+
+  (t/testing "if the library is the same file, themes and sets of the previous source are deactivated"
+    (let [set-id (uuid/next)
+          external-set-id (uuid/next)
+          external-theme-id (uuid/next)
+          library-id (uuid/next)
+          file (-> (tht/sample-file-with-tokens
+                    :file-id :file1
+                    :lib-fn #(-> %
+                                 (ctob/add-set (ctob/make-token-set :id set-id
+                                                                    :name "one set")))
+                    :status-fn #(ctos/set-tokens-status % #{external-theme-id}
+                                                        #{set-id external-set-id}))
+                   (assoc-in [:data :tokens-source] library-id))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (ctf/file-data file))
+                      (clt/generate-set-tokens-source file))
+          redo (thf/apply-changes file changes)
+          undo (thf/apply-undo-changes redo changes)
+          file-tokens-status (tht/get-tokens-status file)
+          redo-tokens-source (tht/get-tokens-source redo)
+          redo-tokens-status (tht/get-tokens-status redo)
+          undo-tokens-source (tht/get-tokens-source undo)
+          undo-tokens-status (tht/get-tokens-status undo)]
+
+      ;; Redo: only the themes and sets of the file's own lib stay active
+      (t/is (nil? redo-tokens-source))
+      (t/is (= #{} (ctos/get-active-theme-ids redo-tokens-status)))
+      (t/is (= #{set-id} (ctos/get-active-set-ids redo-tokens-status)))
+
+      ;; Undo: source and status restored to the original state
+      (t/is (= library-id undo-tokens-source))
+      (t/is (= (ctos/get-active-theme-ids file-tokens-status)
+               (ctos/get-active-theme-ids undo-tokens-status)))
+      (t/is (= (ctos/get-active-set-ids file-tokens-status)
+               (ctos/get-active-set-ids undo-tokens-status)))))
+
+  (t/testing "if the library is the same file and it has no own tokens lib, the tokens status is cleared"
+    (let [set-id (uuid/next)
+          file (-> (thf/sample-file :file1)
+                   (update :data dissoc :tokens-lib)
+                   (assoc-in [:data :tokens-source] (uuid/next))
+                   (assoc-in [:data :tokens-status] (ctos/set-tokens-status (ctos/make-tokens-status)
+                                                                            #{} #{set-id})))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (ctf/file-data file))
+                      (clt/generate-set-tokens-source file))
+          redo (thf/apply-changes file changes)
+          redo-tokens-status (tht/get-tokens-status redo)]
+
+      (t/is (nil? (tht/get-tokens-source redo)))
+      (t/is (= #{} (ctos/get-active-theme-ids redo-tokens-status)))
+      (t/is (= #{} (ctos/get-active-set-ids redo-tokens-status))))))
 
 ;; Tokens lib
 
