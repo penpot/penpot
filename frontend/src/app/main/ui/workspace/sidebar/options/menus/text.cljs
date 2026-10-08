@@ -40,6 +40,7 @@
    [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.ui :as txu]
+   [app.util.text.writing-mode :as wm]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
@@ -56,24 +57,32 @@
 
 (mf/defc text-align-options*
   [{:keys [values on-change on-blur]}]
-  (let [options
-        (mf/with-memo []
+  (let [vertical? (and (wm/vertical-layout-active?)
+                       (tjl/vertical-japanese-layout? values))
+        options
+        (mf/with-memo [vertical?]
           [{:value "left"
             :id    "text-align-left"
-            :label (tr "workspace.options.text-options.text-align-left")
-            :icon  i/text-align-left}
+            :label (if vertical?
+                     (tr "workspace.options.text-options.align-top")
+                     (tr "workspace.options.text-options.text-align-left"))
+            :icon  (if vertical? i/text-align-top i/text-align-left)}
            {:value "center"
             :id    "text-align-center"
-            :label (tr "workspace.options.text-options.text-align-center")
-            :icon  i/text-align-center}
+            :label (if vertical?
+                     (tr "workspace.options.text-options.align-middle")
+                     (tr "workspace.options.text-options.text-align-center"))
+            :icon  (if vertical? i/text-align-middle i/text-align-center)}
            {:value "right"
             :id    "text-align-right"
-            :label (tr "workspace.options.text-options.text-align-right")
-            :icon  i/text-align-right}
+            :label (if vertical?
+                     (tr "workspace.options.text-options.align-bottom")
+                     (tr "workspace.options.text-options.text-align-right"))
+            :icon  (if vertical? i/text-align-bottom i/text-align-right)}
            {:value "justify"
             :id    "text-align-justify"
             :label (tr "workspace.options.text-options.text-align-justify")
-            :icon  i/text-justify}])
+            :icon  (if vertical? i/text-justify-vertical i/text-justify)}])
 
         handle-change
         (mf/use-fn
@@ -90,7 +99,9 @@
 
 (mf/defc text-direction-options*
   [{:keys [values on-change on-blur]}]
-  (let [direction (radio-selected (:text-direction values))
+  (let [vertical? (and (wm/vertical-layout-active?)
+                       (tjl/vertical-japanese-layout? values))
+        direction (radio-selected (:text-direction values))
         options
         (mf/with-memo []
           [{:value "ltr"
@@ -109,29 +120,38 @@
            (on-change {:text-direction (if (= value direction) "none" value)})
            (when (some? on-blur) (on-blur))))]
 
-    [:div {:class (stl/css :text-direction-options)}
-     [:> radio-buttons* {:selected  direction
-                         :on-change handle-change
-                         :name      "text-direction-options"
-                         :options   options}]]))
+    (when-not vertical?
+      [:div {:class (stl/css :text-direction-options)}
+       [:> radio-buttons* {:selected  direction
+                           :on-change handle-change
+                           :name      "text-direction-options"
+                           :options   options}]])))
 
 (mf/defc vertical-align*
   [{:keys [values on-change on-blur]}]
-  (let [vertical-align (radio-selected (:vertical-align values) "top")
+  (let [vertical? (and (wm/vertical-layout-active?)
+                       (tjl/vertical-japanese-layout? values))
+        vertical-align (radio-selected (:vertical-align values) "top")
         options
-        (mf/with-memo []
+        (mf/with-memo [vertical?]
           [{:value "top"
             :id    "vertical-text-align-top"
-            :label (tr "workspace.options.text-options.align-top")
-            :icon  i/text-top}
+            :label (if vertical?
+                     (tr "workspace.options.text-options.text-align-right")
+                     (tr "workspace.options.text-options.align-top"))
+            :icon  (if vertical? i/text-right i/text-top)}
            {:value "center"
             :id    "vertical-text-align-center"
-            :label (tr "workspace.options.text-options.align-middle")
-            :icon  i/text-middle}
+            :label (if vertical?
+                     (tr "workspace.options.text-options.text-align-center")
+                     (tr "workspace.options.text-options.align-middle"))
+            :icon  (if vertical? i/text-horizontal-center i/text-middle)}
            {:value "bottom"
             :id    "vertical-text-align-bottom"
-            :label (tr "workspace.options.text-options.align-bottom")
-            :icon  i/text-bottom}])
+            :label (if vertical?
+                     (tr "workspace.options.text-options.text-align-left")
+                     (tr "workspace.options.text-options.align-bottom"))
+            :icon  (if vertical? i/text-left i/text-bottom)}])
 
         handle-change
         (mf/use-fn
@@ -148,23 +168,29 @@
 
 (mf/defc grow-options*
   [{:keys [ids values on-blur]}]
-  (let [grow-type       (:grow-type values)
+  (let [vertical?       (and (wm/vertical-layout-active?)
+                             (tjl/vertical-japanese-layout? values))
+        grow-type       (:grow-type values)
         selected        (radio-selected grow-type)
         editor-instance (mf/deref refs/workspace-editor)
         options
-        (mf/with-memo []
+        (mf/with-memo [vertical?]
           [{:value "fixed"
             :id    "text-fixed-grow"
             :label (tr "workspace.options.text-options.grow-fixed")
             :icon  i/text-fixed}
            {:value "auto-width"
             :id    "text-auto-width-grow"
-            :label (tr "workspace.options.text-options.grow-auto-width")
-            :icon  i/text-auto-width}
+            :label (if vertical?
+                     (tr "workspace.options.text-options.grow-auto-height")
+                     (tr "workspace.options.text-options.grow-auto-width"))
+            :icon  (if vertical? i/text-auto-width-vertical i/text-auto-width)}
            {:value "auto-height"
             :id    "text-auto-height-grow"
-            :label (tr "workspace.options.text-options.grow-auto-height")
-            :icon  i/text-auto-height}])
+            :label (if vertical?
+                     (tr "workspace.options.text-options.grow-auto-width")
+                     (tr "workspace.options.text-options.grow-auto-height"))
+            :icon  (if vertical? i/text-auto-height-vertical i/text-auto-height)}])
 
         handle-change
         (mf/use-fn
@@ -650,9 +676,6 @@
                             :data-testid "text-align-options-button"
                             :on-click    toggle-more-options
                             :icon        i/menu}]]
-
-         (when japanese-layout-config-enabled?
-           [:> tjl/line-adjustment-option* common-props])
 
          (when more-options-open?
            [:div {:class (stl/css :text-decoration-options)}
