@@ -286,11 +286,28 @@
   (boolean
    (dm/get-in @st/state [:plugins :flags plugin-id :natural-child-ordering])))
 
-(defn check-editable-tokens
+(defn- current-file?
+  [file-id]
+  (= file-id (:current-file-id @st/state)))
+
+(defn editable-tokens?
+  "True when the tokens catalog of `file-id` can be modified: it belongs to
+   the current file and the file is its own tokens source."
   [file-id]
   (let [file (locate-file file-id)]
-    (when-not (cfo/editable-tokens? (ctf/file-data file))
-      (throw (js/Error. (dm/str "[PENPOT PLUGIN] Cannot modify tokens in an external library"))))))
+    (and (current-file? file-id)
+         (cfo/editable-tokens? (ctf/file-data file)))))
+
+(defn check-editable-tokens
+  [file-id]
+  (when-not (editable-tokens? file-id)
+    (throw (js/Error. (dm/str "[PENPOT PLUGIN] Cannot modify tokens in an external library")))))
+
+(defn editable-tokens-status?
+  "True when the tokens catalog of `file-id` belongs to the current file,
+   the only file whose active themes and sets a plugin can change."
+  [file-id]
+  (current-file? file-id))
 
 (defn throw-validation-errors?
   [plugin-id]
