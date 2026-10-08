@@ -15,7 +15,9 @@
   of every partition) and one settle: a `complete-job` multipart call
   that stores the artifact and closes the session the backend minted
   in the same step. The render runs as the job's owner through the
-  session `create-job-session` opened.
+  session `create-job-session` opened. The batch renders through the
+  injected render fn (`:exporter/renderer` once wired): this namespace
+  never calls the facade directly.
 
   Cancellation arrives through the beats: a `skip` answer from
   `report-job-progress` says the job can no longer hear the worker
@@ -39,8 +41,7 @@
    [cuerdas.core :as str]
    [exporter.consumer.api :as api]
    [exporter.consumer.plan :as plan]
-   [exporter.jobs :as jobs]
-   [exporter.renderer :as renderer]))
+   [exporter.jobs :as jobs]))
 
 (def ^:private report-throttle-ms 250)
 (def ^:private watchdog-interval-ms 1000)
@@ -189,21 +190,20 @@
 (defn- ^:async run-single
   "One render, one object: the artifact IS the object, moved into the
   resource path the multipart settle will name."
-  [cfg beat plan check-cancelled]
+  [render beat plan check-cancelled]
   (let [{:keys [job-id resource counter-kind]} plan
         export   (-> plan :prepared first)
         object   (atom nil)]
     (job.utils/track job-id (:path resource))
     (check-beat (await (beat :rendering (counter counter-kind 0 1) :force? true)))
-    (await (renderer/render cfg
-                            :exports [(assoc export
+    (await (render {:exports         [(assoc export
                                              :job-id job-id
                                              :skip-children (:skip-children plan))]
-                            :on-object (fn [obj]
-                                         (reset! object obj)
-                                         (job.utils/track job-id (:path obj))
-                                         nil)
-                            :check-cancelled check-cancelled))
+                    :on-object       (fn [obj]
+                                       (reset! object obj)
+                                       (job.utils/track job-id (:path obj))
+                                       nil)
+                    :check-cancelled check-cancelled}))
     (await (sh/move (:path @object) (:path resource)))
     (check-beat (await (beat :packaging (counter counter-kind 1 1) :force? true)))
     resource))
@@ -214,7 +214,7 @@
   lands, and the progress counts what has landed so far. Any zipping
   error surfaces after the renders, so the failures of the writer do
   not compete with the ones of the render."
-  [cfg beat plan check-cancelled]
+  [render beat plan check-cancelled]
   (let [{:keys [job-id resource prepared total counter-kind]} plan
         failure  (volatile! nil)
         rendered (volatile! 0)
@@ -233,10 +233,9 @@
                                                 "_"))
                    nil)]
     (check-beat (await (beat :rendering (counter counter-kind 0 total) :force? true)))
-    (await (renderer/render cfg
-                            :exports (mapv #(assoc % :job-id job-id) prepared)
-                            :on-object append
-                            :check-cancelled check-cancelled))
+    (await (render {:exports         (mapv #(assoc % :job-id job-id) prepared)
+                    :on-object       append
+                    :check-cancelled check-cancelled}))
     (when-let [cause @failure]
       (throw cause))
     (await (rsc/close-zip zip))
@@ -256,7 +255,7 @@
 (defn- ^:async run-frames
   "The frames render: a file per page, joined into the pdf of the file
   once every page has landed."
-  [cfg beat plan check-cancelled]
+  [render beat plan check-cancelled]
   (let [{:keys [job-id resource prepared total]} plan
         file-id   (-> prepared first :file-id)
         paths     (volatile! [])
@@ -270,23 +269,22 @@
                           (counter :pages @rendered total))
                     nil)]
     (check-beat (await (beat :rendering (counter :pages 0 total) :force? true)))
-    (await (renderer/render cfg
-                            :exports (mapv #(assoc % :job-id job-id
+    (await (render {:exports         (mapv #(assoc % :job-id job-id
                                                    :is-wasm (:is-wasm plan))
                                            prepared)
-                            :on-object on-object
-                            :check-cancelled check-cancelled))
+                    :on-object       on-object
+                    :check-cancelled check-cancelled}))
     (let [joined (await (join-pdf job-id file-id @paths))]
       (await (sh/move joined (:path resource)))
       (check-beat (await (beat :packaging (counter :pages total total) :force? true)))
       resource)))
 
 (defn- run-prepared
-  [cfg beat check-cancelled plan]
+  [render beat check-cancelled plan]
   (cond
-    (:single? plan) (run-single cfg beat plan check-cancelled)
-    (:frames? plan) (run-frames cfg beat plan check-cancelled)
-    :else           (run-multiple cfg beat plan check-cancelled)))
+    (:single? plan) (run-single render beat plan check-cancelled)
+    (:frames? plan) (run-frames render beat plan check-cancelled)
+    :else           (run-multiple render beat plan check-cancelled)))
 
 ;; ---- THE SETTLE
 
@@ -324,10 +322,11 @@
 
 (defn ^:async run-export
   "Runs one claimed export to its settle: first breath, render
-  session, plan, render batch, multipart complete. `cfg` is the render
-  config (a view over the running system); the claim names the job and
-  `params` carries the frozen job params."
-  [cfg {:keys [job-id]} params]
+  session, plan, render batch, multipart complete. `render` is the
+  injected render fn (one task map per batch: `:exports`, `:on-object`,
+  `:check-cancelled`); the claim names the job and `params` carries
+  the frozen job params."
+  [render {:keys [job-id]} params]
   (let [session         (atom nil)
         stop-watchdog   (atom nil)
         _               (jobs/register job-id)
@@ -346,7 +345,7 @@
         (l/info :hint "render session minted"
                 :job-id (str job-id))
         (let [plan     (make-plan job-id (:session-token session') params)
-              resource (await (run-prepared cfg beat check-cancelled plan))]
+              resource (await (run-prepared render beat check-cancelled plan))]
           ;; the watchdog outlives the render, so the run stops it on
           ;; the way out: a run that ends badly stops beating too, or
           ;; its interval would knock on a dead job forever, one HTTP

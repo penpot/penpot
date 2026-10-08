@@ -9,11 +9,12 @@
   makes, and the handoff to the runner, over a fake redis connection
   and a fake management http."
   (:require
+   ["node:fs/promises" :as fsp]
+   ["undici" :as http]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as cstr]
-   [exporter.consumer :as consumer]
    [exporter.consumer.api :as api]
    [exporter.consumer.worker :as worker]))
 
@@ -30,7 +31,9 @@
     (set! api/fetch
           (fn [uri request]
             (let [method (last (cstr/split (str uri) "/"))
-                  body   (transit/decode-str (.-body request))]
+                  body   (if (instance? http/FormData (.-body request))
+                           (.-body request)
+                           (transit/decode-str (.-body request)))]
               (swap! calls conj [method body])
               (js/Promise.resolve #js {:status 200
                                        :text   (constantly
@@ -58,8 +61,7 @@
 (defn- test-cfg
   [extra]
   (merge {:concurrency 1
-          :queue-key   "the.queue.key"
-          :render      {}}
+          :queue-key   "the.queue.key"}
          extra))
 
 (t/deftest read-decodes-the-dispatcher-payload
@@ -119,36 +121,51 @@
       (finally
         (restore-fetch)))))
 
-(t/deftest ^:async process-hands-the-claim-to-the-runner
+(t/deftest ^:async process-renders-the-claim-through-the-injected-renderer
+  ;; the whole vertical slice over fakes: the claim, the runner, the
+  ;; injected render fn and the multipart settle
   (let [restore-fetch (fake-fetch
                        (fn [method _body]
                          (case method
-                           "claim-job" {:action :run
-                                        :name   "export-assets"
-                                        :params {:exports [] :name "x"}}
+                           "claim-job"          {:action :run
+                                                 :name   "export-assets"
+                                                 :params {:exports [{:file-id   (str (uuid/next))
+                                                                     :page-id   (str (uuid/next))
+                                                                     :object-id (str (uuid/next))
+                                                                     :type      "png"
+                                                                     :name      "test shape"
+                                                                     :suffix    ""
+                                                                     :scale     1}]
+                                                          :name    "the export"}}
+                           "create-job-session" {:session-id   (uuid/next)
+                                                 :session-token "session-token"}
                            {:action :run})))
         ran           (atom nil)
-        restore-run   (let [original consumer/run-export]
-                        (set! consumer/run-export
-                              (fn [cfg claim params]
-                                (reset! ran [cfg claim params])
-                                (js/Promise.resolve nil)))
-                        (fn [] (set! consumer/run-export original)))
-        render        {:some "render-cfg"}]
+        render        (fn [{:keys [exports on-object]}]
+                        (reset! ran exports)
+                        (js/Promise.
+                         (fn [resolve reject]
+                           (-> (.then (fsp/writeFile "/tmp/penpot-worker-render.png" "rendered!")
+                                      (fn [_]
+                                        (on-object {:path     "/tmp/penpot-worker-render.png"
+                                                    :filename "rendered.png"})))
+                               (.then (fn [_] (resolve nil)) reject)))))]
     (try
       (let [job-id (uuid/next)]
-        (await (worker/process (test-cfg {:render render})
+        (await (worker/process (test-cfg {:renderer render})
                                {:job-id      (str job-id)
                                 :scheduled-at "2026-10-07T09:00:00Z"}))
-        (t/testing "the runner got the render view, the job and the params"
-          (t/is (= render (nth @ran 0)))
-          (t/is (= {:job-id (str job-id)} (nth @ran 1)))
-          (t/is (= {:exports [] :name "x"} (nth @ran 2)))))
+        (t/testing "the one shape rendered with uuids and the job stamped"
+          (t/is (= 1 (count @ran)))
+          (let [export (first @ran)]
+            (t/is (uuid? (:file-id export)))
+            (t/is (= job-id (:job-id export)))))
+        (t/testing "the run settled as a complete"
+          (t/is (= "complete-job" (last (mapv first @calls))))))
       (catch :default cause
         (t/is false (str "unexpected failure: " (ex-message cause))))
       (finally
-        (restore-fetch)
-        (restore-run)))))
+        (restore-fetch)))))
 
 (t/deftest ^:async start-opens-one-connection-per-poller-and-stop-quits-them
   (try

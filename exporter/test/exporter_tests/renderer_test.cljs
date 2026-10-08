@@ -96,7 +96,7 @@
      :base-uri                 (cf/get-internal-uri)
      :public-uri               (cf/get :public-uri)
      :svgo?                    false
-     :exporter.wasm.pool/pool {:pool (stub-wasm-pool calls worker) :timeout-ms 5000}}))
+     :exporter.wasm/pool {:pool (stub-wasm-pool calls worker) :timeout-ms 5000}}))
 
 (defn- never-cancelled
   [calls]
@@ -121,10 +121,10 @@
   (try
     (let [calls (atom [])
           seen  (atom [])]
-      (await (renderer/render (test-cfg calls)
-                              :exports [(test-params :png nil)]
-                              :on-object (fn [object] (swap! seen conj object) nil)
-                              :check-cancelled (never-cancelled calls)))
+      (await ((renderer/render-fn (test-cfg calls))
+              {:exports [(test-params :png nil)]
+               :on-object (fn [object] (swap! seen conj object) nil)
+               :check-cancelled (never-cancelled calls)}))
       (t/is (= ["a"] (mapv :id @seen)))
       (t/is (some #(and (vector? %) (= :goto (first %))) @calls))
       (t/is (not-any? #(and (vector? %) (= :post (first %))) @calls)))
@@ -136,10 +136,10 @@
     (let [calls  (atom [])
           job-id (uuid/next)
           seen   (atom [])]
-      (await (renderer/render (test-cfg calls)
-                              :exports [(test-params :png {:is-wasm true :job-id job-id})]
-                              :on-object (fn [object] (swap! seen conj object) nil)
-                              :check-cancelled (never-cancelled calls)))
+      (await ((renderer/render-fn (test-cfg calls))
+              {:exports [(test-params :png {:is-wasm true :job-id job-id})]
+               :on-object (fn [object] (swap! seen conj object) nil)
+               :check-cancelled (never-cancelled calls)}))
       (t/is (= [{:id "w1" :path "/tmp/w1.png"}] @seen))
       (t/is (some #{[:post "render"]} @calls))
       (t/is (some #{:check-cancelled} @calls))
@@ -151,10 +151,10 @@
   (try
     (let [calls (atom [])]
       (try
-        (await (renderer/render (test-cfg calls)
-                                :exports [(dissoc (test-params :png nil) :objects)]
-                                :on-object (fn [_] nil)
-                                :check-cancelled (never-cancelled calls)))
+        (await ((renderer/render-fn (test-cfg calls))
+                {:exports [(dissoc (test-params :png nil) :objects)]
+                 :on-object (fn [_] nil)
+                 :check-cancelled (never-cancelled calls)}))
         (t/is false "render should have rejected params without objects")
         (catch :default cause
           (t/is (= :data-validation (-> cause ex-data :code))))))
@@ -165,10 +165,10 @@
   (try
     (let [calls (atom [])]
       (try
-        (await (renderer/render (test-cfg calls)
-                                :exports [(test-params :png nil)]
-                                :on-object :not-a-fn
-                                :check-cancelled (never-cancelled calls)))
+        (await ((renderer/render-fn (test-cfg calls))
+                {:exports [(test-params :png nil)]
+                 :on-object :not-a-fn
+                 :check-cancelled (never-cancelled calls)}))
         (t/is false "render should have rejected a non-fn on-object")
         (catch :default cause
           (t/is (= :data-validation (-> cause ex-data :code))))))
@@ -181,12 +181,12 @@
           job-id (uuid/next)
           cfg    (test-cfg calls)
           seen   (atom [])]
-      (t/is (nil? (await (renderer/render cfg
-                                          :exports [(test-params :png {:is-wasm true :job-id job-id})
-                                                    (test-params :png {:is-wasm true :job-id job-id})
-                                                    (test-params :png {:job-id job-id})]
-                                          :on-object (fn [object] (swap! seen conj object) nil)
-                                          :check-cancelled (never-cancelled calls)))))
+      (t/is (nil? (await ((renderer/render-fn cfg)
+                          {:exports [(test-params :png {:is-wasm true :job-id job-id})
+                                     (test-params :png {:is-wasm true :job-id job-id})
+                                     (test-params :png {:job-id job-id})]
+                           :on-object (fn [object] (swap! seen conj object) nil)
+                           :check-cancelled (never-cancelled calls)}))))
       (t/is (= 1 (count (filter #{:acquire} @calls))))
       (t/is (= 1 (count (filter #{:release} @calls))))
       (t/is (= 3 (count @seen))))
@@ -198,10 +198,10 @@
     (let [calls (atom [])
           cfg   (test-cfg calls)
           seen  (atom [])]
-      (await (renderer/render cfg
-                              :exports [(test-params :png nil)]
-                              :on-object (fn [object] (swap! seen conj object) nil)
-                              :check-cancelled (never-cancelled calls)))
+      (await ((renderer/render-fn cfg)
+              {:exports [(test-params :png nil)]
+               :on-object (fn [object] (swap! seen conj object) nil)
+               :check-cancelled (never-cancelled calls)}))
       (t/is (= ["a"] (mapv :id @seen)))
       (t/is (not-any? #{:acquire} @calls)))
     (catch :default cause
@@ -213,11 +213,11 @@
           job-id (uuid/next)
           cfg    (test-cfg calls)]
       (try
-        (await (renderer/render cfg
-                                :exports [(test-params :png {:is-wasm true :job-id job-id})
-                                          (dissoc (test-params :png nil) :objects)]
-                                :on-object (fn [_] nil)
-                                :check-cancelled (never-cancelled calls)))
+        (await ((renderer/render-fn cfg)
+                {:exports [(test-params :png {:is-wasm true :job-id job-id})
+                           (dissoc (test-params :png nil) :objects)]
+                 :on-object (fn [_] nil)
+                 :check-cancelled (never-cancelled calls)}))
         (t/is false "render should have rejected the bad batch")
         (catch :default cause
           (t/is (= :data-validation (-> cause ex-data :code)))
@@ -230,10 +230,10 @@
   (try
     (let [calls (atom [])]
       (try
-        (await (renderer/render (test-cfg calls)
-                                :exports [(test-params :png nil)]
-                                :on-objec (fn [_] nil)
-                                :check-cancelled (never-cancelled calls)))
+        (await ((renderer/render-fn (test-cfg calls))
+                {:exports [(test-params :png nil)]
+                 :on-objec (fn [_] nil)
+                 :check-cancelled (never-cancelled calls)}))
         (t/is false "render should have rejected the misspelled key")
         (catch :default cause
           (t/is (= :data-validation (-> cause ex-data :code)))

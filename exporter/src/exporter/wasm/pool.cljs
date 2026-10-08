@@ -31,7 +31,8 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [exporter.utils.system :as system]))
+   [exporter.utils.system :as system]
+   [exporter.wasm :as-alias wasm]))
 
 (l/set-level! :info)
 
@@ -118,7 +119,7 @@
          :destroy  destroy-instance
          :validate validate-instance}))
 
-(defmethod system/init-key ::pool
+(defmethod system/init-key ::wasm/pool
   [_ cfg]
   (let [opts          (merge defaults (d/without-nils cfg))
         max-workers   (:max opts)
@@ -141,7 +142,7 @@
   (await (.clear ^js pool))
   nil)
 
-(defmethod system/halt-key ::pool
+(defmethod system/halt-key ::wasm/pool
   [_ instance]
   (when-let [pool (:pool instance)]
     (l/info :hint "finalizing render worker pool")
@@ -155,7 +156,7 @@
        (fn? (unchecked-get x "release"))))
 
 (defn ^:async run
-  "Lends one worker: resolves the pool from `cfg` (the `::pool`
+  "Lends one worker: resolves the pool from `cfg` (the `::wasm/pool`
   service instance, or a raw pool), acquires a worker, applies `f` to
   the cfg carrying it under `::worker` plus any extra `args`, and
   returns the worker — or destroys it when `f` fails, the way a failed
@@ -163,8 +164,8 @@
   worker may be aborted or mid-write, and a terminated worker cannot
   come back."
   [cfg f & args]
-  (let [cfg  (if (pool? cfg) {::pool {:pool cfg}} cfg)
-        pool (:pool (::pool cfg))]
+  (let [cfg  (if (pool? cfg) {::wasm/pool {:pool cfg}} cfg)
+        pool (:pool (::wasm/pool cfg))]
     (when-not (pool? pool)
       (throw (ex/error :type :assertion
                        :code :invalid-pool-cfg

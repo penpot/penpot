@@ -26,8 +26,9 @@
 
   The worker is a system component (`:exporter.consumer/worker`): its
   config carries the queue knobs (`:concurrency`, `:queue-key`, the
-  `:connect` factory) and the `:render` view the runner renders
-  through. There are no promesa chains in this namespace."
+  `:connect` factory) and the `:renderer` it renders through (the
+  `:exporter/renderer` service, injected by ref). There are no promesa
+  chains in this namespace."
   (:require
    ["ioredis" :as redis]
    [app.common.logging :as l]
@@ -70,7 +71,7 @@
               :name (:name answer) :status (:status answer))
       (do
         (l/info :hint "running job" :job-id (str job-id) :name (:name answer))
-        (await (consumer/run-export (:render cfg) {:job-id job-id} (:params answer)))
+        (await (consumer/run-export (:renderer cfg) {:job-id job-id} (:params answer)))
         (l/info :hint "job settled" :job-id (str job-id))
         nil))))
 
@@ -140,10 +141,10 @@
             (mapv (fn [conn] (.quit ^js conn)) @(:conns handle))))
     nil))
 
-(defmethod system/init-key :exporter.consumer/worker
+(defmethod system/init-key ::consumer/worker
   [_ cfg]
   (start cfg))
 
-(defmethod system/halt-key :exporter.consumer/worker
+(defmethod system/halt-key ::consumer/worker
   [_ handle]
   (stop handle))

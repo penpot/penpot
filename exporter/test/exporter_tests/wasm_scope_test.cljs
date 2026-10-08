@@ -60,7 +60,7 @@
   ([calls worker on-object cancelled?]
    (test-cfg calls worker on-object cancelled? nil))
   ([calls worker on-object cancelled? watch-interval]
-   (cond-> {:exporter.wasm.pool/pool {:pool (stub-pool calls worker) :timeout-ms 5000}
+   (cond-> {:exporter.wasm/pool {:pool (stub-pool calls worker) :timeout-ms 5000}
             :exporter.renderer/on-object on-object
             :exporter.renderer/check-cancelled (stub-check calls cancelled?)}
      watch-interval (assoc :exporter.wasm.scope/watch-interval watch-interval))))
@@ -160,7 +160,7 @@
     (try
       (await (scope/render-on {:exporter.renderer/on-object (fn [_] nil)
                                :exporter.renderer/check-cancelled (fn [] nil)
-                               :exporter.wasm.pool/pool {:pool nil :timeout-ms 50}}
+                               :exporter.wasm/pool {:pool nil :timeout-ms 50}}
                               (test-params)))
       (t/is false "render-on should have rejected a missing lease")
       (catch :default cause
@@ -174,7 +174,7 @@
       (await (scope/render-on {:exporter.wasm.pool/worker #js {}
                                :exporter.renderer/on-object (fn [_] nil)
                                :exporter.renderer/check-cancelled (fn [] nil)
-                               :exporter.wasm.pool/pool {:pool nil}}
+                               :exporter.wasm/pool {:pool nil}}
                               (test-params)))
       (t/is false "render-on should have rejected a missing timeout")
       (catch :default cause
@@ -188,7 +188,7 @@
     (let [calls  (atom [])
           worker (stub-worker calls silent-behavior)
           cfg    (-> (test-cfg calls worker (fn [_] nil) (atom false))
-                     (assoc-in [:exporter.wasm.pool/pool :timeout-ms] 50))]
+                     (assoc-in [:exporter.wasm/pool :timeout-ms] 50))]
       (try
         (await (scope/run cfg (fn [render-fn] (render-fn (test-params)))))
         (t/is false "run should have rejected a silent worker")

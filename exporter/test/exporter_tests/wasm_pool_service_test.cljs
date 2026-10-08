@@ -38,21 +38,21 @@
 
 (defn- test-config
   [calls behavior timeout-ms]
-  {:exporter.wasm.pool/pool {:max           1
-                             :min           0
-                             :timeout-ms    timeout-ms
-                             :create-worker (fake-create-worker calls behavior)}})
+  {:exporter.wasm/pool {:max           1
+                        :min           0
+                        :timeout-ms    timeout-ms
+                        :create-worker (fake-create-worker calls behavior)}})
 
 (defn- pool-of
   [sys]
-  (:pool (:exporter.wasm.pool/pool sys)))
+  (:pool (:exporter.wasm/pool sys)))
 
 (t/deftest ^:async pool-starts-and-stops-through-the-system
   (try
     (let [calls (atom [])
           sys   (await (system/init (test-config calls silent-behavior 5000)))]
-      (t/is (some? (:exporter.wasm.pool/pool sys)))
-      (t/is (= 5000 (:timeout-ms (:exporter.wasm.pool/pool sys))))
+      (t/is (some? (:exporter.wasm/pool sys)))
+      (t/is (= 5000 (:timeout-ms (:exporter.wasm/pool sys))))
       (t/is (nil? (await (system/halt sys)))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))

@@ -9,38 +9,49 @@
   `app.main`: a `system-config` map wired with refs, and `start`,
   `stop` and `restart` managing the running system.
 
-  This namespace will replace `app.core` once every piece of `app.*`
-  has been ported over. Until then the shadow build still boots
-  `app.core`; switching the entry point comes last."
+  Render workers run this same bundle, so the thread decides what gets
+  booted: one legacy render worker (`app.wasm.worker`, engines stay
+  untouched), or the system of the main thread. Without the guard a
+  warmed pool worker would boot pools and pollers of its own and never
+  post its `ready` handshake."
   (:require
    ["node:process" :as proc]
    ["node:worker_threads" :as wt]
    [app.common.logging :as l]
    [app.config :as cf]
-   ;; Loaded for their init-key/halt-key methods, which is what makes
-   ;; the pools and the queue consumer part of the system below.
-   [exporter.browser]
+   [app.wasm.worker :as wasm.worker]
+   [exporter.browser :as browser]
+   [exporter.consumer :as-alias consumer]
    [exporter.consumer.config :as ccfg]
    [exporter.consumer.worker]
    [exporter.utils.system :as system]
+   [exporter.wasm :as-alias wasm]
    [exporter.wasm.pool]))
 
 (l/setup! {:exporter :info})
 
 (def system-config
   "The production wiring. Env-derived values are read here, at the
-  wiring layer; the components themselves take plain data. The worker
-  renders through a view of the running pools, resolved by refs, plus
-  the static render config."
-  {:exporter.browser/pool    {:max (ccfg/concurrency)}
-   :exporter.wasm.pool/pool  {:max (ccfg/concurrency)}
-   :exporter.consumer/worker {:concurrency (ccfg/concurrency)
-                              :queue-key   (ccfg/queue-key)
-                              :render      {:exporter.browser/pool   (system/ref :exporter.browser/pool)
-                                            :exporter.wasm.pool/pool (system/ref :exporter.wasm.pool/pool)
-                                            :base-uri                (cf/get-internal-uri)
-                                            :public-uri              (cf/get :public-uri)
-                                            :svgo?                   (contains? cf/flags :exporter-svgo)}}})
+  wiring layer; the components themselves take plain data. The render
+  service owns the render config (pools by ref plus the static
+  config); the worker only names the renderer it renders through."
+  {::browser/pool
+   {:max (ccfg/concurrency)}
+
+   ::wasm/pool
+   {:max (ccfg/concurrency)}
+
+   :exporter/renderer
+   {::browser/pool (system/ref :exporter.browser/pool)
+    ::wasm/pool    (system/ref :exporter.wasm/pool)
+    :base-uri      (cf/get-internal-uri)
+    :public-uri    (cf/get :public-uri)
+    :svgo?         (contains? cf/flags :exporter-svgo)}
+
+   ::consumer/worker
+   {:renderer    (system/ref :exporter/renderer)
+    :concurrency (ccfg/concurrency)
+    :queue-key   (ccfg/queue-key)}})
 
 ;; The running system map, or nil when nothing is started.
 ;; Counterpart of the backend's `app.system/system` var.
@@ -84,13 +95,20 @@
       (.on proc/default "SIGINT" (fn [] (proc/exit 0))))))
 
 (defn ^:async start
-  "Boot the production wiring. Resolves to `:started`."
+  "Boot the production wiring. Resolves to `:started`. On a render
+  worker thread boots the render worker instead: it runs this same
+  bundle and owns no pools or pollers."
   []
   (install-process-handlers)
-  (l/info :msg "starting exporter"
-          :workers (ccfg/concurrency)
-          :version (:full cf/version))
-  (await (start-custom system-config)))
+  (if ^boolean wt/isMainThread
+    (do
+      (l/info :msg "starting exporter"
+              :workers (ccfg/concurrency)
+              :version (:full cf/version))
+      (await (start-custom system-config)))
+    (do
+      (wasm.worker/main)
+      :started)))
 
 (defn ^:async stop
   "Halt the running system, if any. Resolves to `:stopped`."

@@ -110,7 +110,7 @@
   timeout must never degrade silently into the default silence budget."
   [cfg params]
   (let [worker     (::pool/worker cfg)
-        timeout-ms (or (:timeout-ms (:exporter.wasm.pool/pool cfg))
+        timeout-ms (or (:timeout-ms (:exporter.wasm/pool cfg))
                        (throw (ex/error :type :assertion
                                         :code :timeout-ms-missing
                                         :hint "render-on needs :timeout-ms in cfg")))]

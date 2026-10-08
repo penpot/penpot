@@ -17,7 +17,7 @@
 
   `cfg` is task-free infrastructure with process lifetime: the pool
   services under their system keys (`:exporter.browser/pool`,
-  `:exporter.wasm.pool/pool`) plus the static render config
+  `:exporter.wasm/pool`) plus the static render config
   (`:base-uri`, `:public-uri`, `:svgo?`) — a view over the running
   system map that each domain reads with its own keys. The task
   map holds everything per-task: the `exports` data plus the two
@@ -28,10 +28,17 @@
   driver takes the same `[cfg params on-object check-cancelled]` shape and
   implements cancel internally: cooperative checkpoints on the
   browser, checkpoints plus a mid-render abort of its own leased
-  worker on wasm."
+  worker on wasm.
+
+  The renderer is also a system service (`:exporter/renderer`): its
+  config value carries the pools as refs plus the static config, and
+  its running instance is the render fn with that config closed over,
+  which is what the consumer renders through — the consumer never
+  calls this namespace directly."
   (:require
    [app.common.schema :as sm]
    [exporter.browser.scope :as bscope]
+   [exporter.utils.system :as system]
    [exporter.wasm.scope :as scope]))
 
 (def schema:type
@@ -79,21 +86,36 @@
 (defn ^:async render
   "Renders every export, firing them all at once: the browser ones
   through their own scope, the wasm ones through one leased
-  worker. The whole task is validated before anything is leased, so a
-  bad task never touches a pool. Rejects on the first failure."
-  [cfg & {:as task}]
-  (let [{:keys [exports on-object check-cancelled]} (check-task task)
-        cfg           (assoc cfg
-                             ::on-object on-object
-                             ::check-cancelled check-cancelled)
-        wasm-exports    (filterv wasm? exports)
-        browser-exports (remove wasm? exports)]
+  worker. Assumes a valid task — validation lives one level up, at
+  the service entry, so through here a bad task never touches a pool
+  because it never arrives. Rejects on the first failure."
+  [cfg {:keys [exports on-object check-cancelled]}]
+  (let [cfg      (assoc cfg
+                        ::on-object on-object
+                        ::check-cancelled check-cancelled)
+        wexports (filter wasm? exports)
+        bexports (remove wasm? exports)]
     (await (js/Promise.all
             (cond-> []
-              (seq browser-exports)
-              (conj (bscope/run cfg browser-exports))
-              (seq wasm-exports)
+              (seq bexports)
+              (conj (bscope/run cfg bexports))
+              (seq wexports)
               (conj (scope/run cfg
                                (fn [render-fn]
-                                 (js/Promise.all (mapv render-fn wasm-exports))))))))
+                                 (js/Promise.all (map render-fn wexports))))))))
     nil))
+
+(defn render-fn
+  "The render entry of one running system: validates the task map and
+  dispatches it through the facade with `cfg` closed over, resolving
+  nil once every export landed. The single boundary where a bad batch
+  is rejected before anything is leased — and the dependency the
+  consumer renders through, so the consumer never calls the facade
+  directly."
+  [cfg]
+  (fn [task]
+    (render cfg (check-task task))))
+
+(defmethod system/init-key :exporter/renderer
+  [_ cfg]
+  (render-fn cfg))

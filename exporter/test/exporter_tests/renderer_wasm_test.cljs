@@ -54,7 +54,7 @@
 
 (defn- test-cfg
   [calls worker]
-  {:exporter.wasm.pool/pool {:pool (stub-pool calls worker) :timeout-ms 5000}})
+  {:exporter.wasm/pool {:pool (stub-pool calls worker) :timeout-ms 5000}})
 
 (defn- test-params
   []

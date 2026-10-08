@@ -19,8 +19,7 @@
    [cuerdas.core :as cstr]
    [exporter.consumer :as consumer]
    [exporter.consumer.api :as api]
-   [exporter.jobs :as jobs]
-   [exporter.renderer :as renderer]))
+   [exporter.jobs :as jobs]))
 
 ;; ---- THE MANAGEMENT FAKE
 
@@ -63,38 +62,31 @@
 ;; ---- THE RENDER STUB
 
 (defn- stub-render
-  "A renderer stub in place of the facade: writes one file of
-  `content` per object of every export and calls back with it. When
-  `captured` is an atom, it also keeps the last task it received."
+  "A render fn in place of the service: writes one file of `content`
+  per export and calls back with it. When `captured` is an atom, it
+  also keeps the last batch it received."
   ([content] (stub-render content nil))
   ([content captured]
-   (let [original renderer/render]
-     (set! renderer/render
-           (fn [_cfg & {:as task}]
-             (when (some? captured)
-               (reset! captured task))
-             (js/Promise.
-              (fn [resolve reject]
-                (let [writes (mapv (fn [_]
-                                     (let [path (sh/tempfile :prefix "penpot.render."
-                                                             :suffix ".png")]
-                                       (.then (fsp/writeFile path content)
-                                              (fn [_]
-                                                ((:on-object task)
-                                                 {:path     path
-                                                  :filename "rendered.png"})))))
-                                   (:exports task))]
-                  (-> (js/Promise.all (clj->js writes))
-                      (.then (fn [_] (resolve nil)) reject)))))))
-     (fn [] (set! renderer/render original)))))
+   (fn [{:keys [exports on-object] :as task}]
+     (when (some? captured)
+       (reset! captured task))
+     (js/Promise.
+      (fn [resolve reject]
+        (let [writes (mapv (fn [_]
+                             (let [path (sh/tempfile :prefix "penpot.render."
+                                                     :suffix ".png")]
+                               (.then (fsp/writeFile path content)
+                                      (fn [_]
+                                        (on-object {:path     path
+                                                    :filename "rendered.png"})))))
+                           exports)]
+          (-> (js/Promise.all (clj->js writes))
+              (.then (fn [_] (resolve nil)) reject))))))))
 
 (defn- stub-render-fail
   []
-  (let [original renderer/render]
-    (set! renderer/render
-          (fn [_cfg & _task]
-            (js/Promise.reject (ex-info "render boom" {}))))
-    (fn [] (set! renderer/render original))))
+  (fn [& _]
+    (js/Promise.reject (ex-info "render boom" {}))))
 
 ;; ---- THE FIXTURE
 
@@ -129,9 +121,9 @@
                           (case method
                             "create-job-session" {:session-id sid :session-token "session-token"}
                             {:action :run})))
-        restore-render (stub-render "rendered!")]
+        render         (stub-render "rendered!")]
     (try
-      (await (consumer/run-export {} {:job-id job-id} (export-params)))
+      (await (consumer/run-export render {:job-id job-id} (export-params)))
       (t/testing "the run went by first breath, session, beats, settle"
         (t/is (= ["report-job-progress" "create-job-session"
                   "report-job-progress" "report-job-progress"
@@ -150,18 +142,17 @@
       (catch :default cause
         (t/is false (str "unexpected failure: " (ex-message cause))))
       (finally
-        (restore-fetch)
-        (restore-render)))))
+        (restore-fetch)))))
 
 (t/deftest ^:async run-hands-the-renderer-uuids-not-claim-strings
   (let [restore-fetch  (fake-fetch (answer-with (uuid/next) (volatile! [])))
         captured       (atom nil)
-        restore-render (stub-render "rendered!" captured)
+        render         (stub-render "rendered!" captured)
         job-id         (uuid/next)
         share-id       (uuid/next)]
     (try
       (await (consumer/run-export
-              {}
+              render
               {:job-id job-id}
               {:exports [{:file-id   (str (uuid/next))
                           :page-id   (str (uuid/next))
@@ -187,16 +178,15 @@
       (catch :default cause
         (t/is false (str "unexpected failure: " (ex-message cause))))
       (finally
-        (restore-fetch)
-        (restore-render)))))
+        (restore-fetch)))))
 
 (t/deftest ^:async run-packs-two-shapes-as-zip
   (let [restore-fetch  (fake-fetch (answer-with (uuid/next) (volatile! [])))
-        restore-render (stub-render "rendered!")
+        render         (stub-render "rendered!")
         job-id         (uuid/next)]
     (try
       (await (consumer/run-export
-              {}
+              render
               {:job-id job-id}
               {:exports [{:file-id   (str (uuid/next))
                           :page-id   (str (uuid/next))
@@ -220,15 +210,14 @@
       (catch :default cause
         (t/is false (str "unexpected failure: " (ex-message cause))))
       (finally
-        (restore-fetch)
-        (restore-render)))))
+        (restore-fetch)))))
 
 (t/deftest ^:async a-failed-run-settles-fail-job-and-stops-beating
   (let [restore-fetch  (fake-fetch (answer-with (uuid/next) (volatile! [])))
-        restore-render (stub-render-fail)
+        render         (stub-render-fail)
         job-id         (uuid/next)]
     (try
-      (await (consumer/run-export {} {:job-id job-id} (export-params)))
+      (await (consumer/run-export render {:job-id job-id} (export-params)))
       (await (js/Promise. (fn [resolve] (js/setTimeout resolve 1400))))
       (t/testing "the settle was a fail, not a complete"
         (t/is (= "fail-job" (last (steps-of)))))
@@ -240,8 +229,7 @@
       (catch :default cause
         (t/is false (str "unexpected failure: " (ex-message cause))))
       (finally
-        (restore-fetch)
-        (restore-render)))))
+        (restore-fetch)))))
 
 (t/deftest ^:async cancel-before-the-render-settles-cancelled
   (let [restore-fetch (fake-fetch
@@ -251,10 +239,10 @@
                                                  :session-token "session-token"}
                            "report-job-progress" {:action :skip}
                            {:action :run})))
-        restore-render (stub-render "should never render")
+        render         (stub-render "should never render")
         job-id         (uuid/next)]
     (try
-      (await (consumer/run-export {} {:job-id job-id} (export-params)))
+      (await (consumer/run-export render {:job-id job-id} (export-params)))
       (t/testing "the settle of a cancelled job was a fail the backend answers skip"
         (t/is (= "fail-job" (last (steps-of))))
         (let [fail (call-of "fail-job")]
@@ -262,5 +250,4 @@
       (catch :default cause
         (t/is false (str "unexpected failure: " (ex-message cause))))
       (finally
-        (restore-fetch)
-        (restore-render)))))
+        (restore-fetch)))))

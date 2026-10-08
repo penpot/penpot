@@ -41,15 +41,20 @@
 
 (defn- fake-config
   [calls]
-  {:exporter.browser/pool   {:max            1
-                             :create-browser (fn []
-                                               (swap! calls conj :create-browser)
-                                               (js/Promise.resolve (stub-browser calls)))}
-   :exporter.wasm.pool/pool {:max           1
-                             :min           0
-                             :create-worker (fn []
-                                              (swap! calls conj :create-worker)
-                                              (js/Promise.resolve #js {}))}})
+  {:exporter.browser/pool {:max            1
+                           :create-browser (fn []
+                                             (swap! calls conj :create-browser)
+                                             (js/Promise.resolve (stub-browser calls)))}
+   :exporter.wasm/pool    {:max           1
+                           :min           0
+                           :create-worker (fn []
+                                            (swap! calls conj :create-worker)
+                                            (js/Promise.resolve #js {}))}
+   :exporter/renderer     {:exporter.browser/pool (system/ref :exporter.browser/pool)
+                           :exporter.wasm/pool    (system/ref :exporter.wasm/pool)
+                           :base-uri              "http://internal/"
+                           :public-uri            "http://public/"
+                           :svgo?                 false}})
 
 (defn- pool-of
   []
@@ -57,7 +62,7 @@
 
 (defn- wasm-pool-of
   []
-  (:exporter.wasm.pool/pool @main/system))
+  (:exporter.wasm/pool @main/system))
 
 (t/deftest ^:async install-process-handlers-registers-handlers
   (try
@@ -90,15 +95,18 @@
     (t/is (= {:max (ccfg/concurrency)}
              (:exporter.browser/pool main/system-config)))
     (t/is (= {:max (ccfg/concurrency)}
-             (:exporter.wasm.pool/pool main/system-config))))
-  (t/testing "the queue consumer renders through a view of the running pools"
+             (:exporter.wasm/pool main/system-config))))
+  (t/testing "the renderer owns the render config, pools by ref"
+    (let [renderer (:exporter/renderer main/system-config)]
+      (t/is (= {:exporter.browser/pool (system/ref :exporter.browser/pool)
+                :exporter.wasm/pool    (system/ref :exporter.wasm/pool)}
+               (select-keys renderer
+                            [:exporter.browser/pool :exporter.wasm/pool])))))
+  (t/testing "the queue consumer names the renderer it renders through"
     (let [worker (:exporter.consumer/worker main/system-config)]
       (t/is (= (ccfg/concurrency) (:concurrency worker)))
       (t/is (= (ccfg/queue-key) (:queue-key worker)))
-      (t/is (= {:exporter.browser/pool   (system/ref :exporter.browser/pool)
-                :exporter.wasm.pool/pool (system/ref :exporter.wasm.pool/pool)}
-               (select-keys (:render worker)
-                            [:exporter.browser/pool :exporter.wasm.pool/pool]))))))
+      (t/is (= (system/ref :exporter/renderer) (:renderer worker))))))
 
 ;; NOTE: no test boots the production wiring: the wasm pool warms one
 ;; worker eagerly (min 1), and in this process the worker script would
@@ -111,6 +119,8 @@
     (let [calls (atom [])]
       (t/is (= :started (await (main/start-custom (fake-config calls)))))
       (t/is (some? (pool-of)))
+      (t/testing "the renderer boots as a render fn over the resolved pools"
+        (t/is (fn? (:exporter/renderer @main/system))))
       (t/testing "the wasm pool rides the same lifecycle"
         (t/is (some? (:pool (wasm-pool-of))))
         (t/is (= 300000 (:timeout-ms (wasm-pool-of)))))
