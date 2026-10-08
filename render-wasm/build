@@ -41,4 +41,7 @@ setup
 build
 copy_target_artifacts
 
+build
+copy_target_artifacts
+
 popd > /dev/null
