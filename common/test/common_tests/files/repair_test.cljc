@@ -228,3 +228,22 @@
       (t/is (nil? errors'))
       (t/is (= "Group / Subgroup" (:path comp1')))
       (t/is (= "Component" (:name comp1'))))))
+
+(t/deftest repair-child-not-in-parent
+  (t/testing "detect and repair shapes whose parent exists but does not list them"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                      (ths/update-shape :variant1 :shapes []))
+
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
+          errors' (cfv/validate-file file' {})
+
+          variant1' (ths/get-shape file' :variant1 :page-label :page1)]
+
+      (t/is (= #{:child-not-in-parent} (into #{} (map :code) errors)))
+      (t/is (= #{(thi/id :root1) (thi/id :root2)} (into #{} (map :shape-id) errors)))
+
+      (t/is (nil? errors'))
+      (t/is (= #{(thi/id :root1) (thi/id :root2)} (set (:shapes variant1')))))))

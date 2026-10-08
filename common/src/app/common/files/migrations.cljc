@@ -2179,6 +2179,44 @@
         (update :pages-index d/update-vals repair-container)
         (d/update-when :components d/update-vals repair-container))))
 
+;; A shape can point to an existing parent that does not list it in its
+;; `:shapes`. Such shapes are unreachable from the root, and operations
+;; that walk the tree through `:shapes` miss them; e.g. deleting a variant
+;; also deleted its container, which looked empty, and left the other
+;; variants pointing to a deleted parent. Add them back to their parent.
+(defmethod migrate-data "0032-fix-children-not-in-parent"
+  [data _]
+  (letfn [(get-unlisted-children [objects]
+            ;; Returns a {parent-id -> [child-id]} map
+            (let [listed (reduce-kv (fn [result id shape]
+                                      (if-let [shapes (not-empty (:shapes shape))]
+                                        (assoc result id (set shapes))
+                                        result))
+                                    {}
+                                    objects)]
+              (reduce-kv (fn [result id shape]
+                           (let [parent-id (:parent-id shape)]
+                             (if (and (not (cfh/root? shape))
+                                      (contains? objects parent-id)
+                                      (not (contains? (get listed parent-id) id)))
+                               (update result parent-id (fnil conj []) id)
+                               result)))
+                         {}
+                         objects)))
+
+          (fix-objects [objects]
+            (reduce-kv (fn [objects parent-id child-ids]
+                         (update-in objects [parent-id :shapes] (fnil into []) child-ids))
+                       objects
+                       (get-unlisted-children objects)))
+
+          (update-container [container]
+            (d/update-when container :objects fix-objects))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2267,4 +2305,5 @@
          "0028-normalize-constrained-values"
          "0029-move-background-blur-out-of-blur"
          "0030-remove-stroke-per-side-attr"
-         "0031-migrate-stroke-width-token-attr"]))
+         "0031-migrate-stroke-width-token-attr"
+         "0032-fix-children-not-in-parent"]))
