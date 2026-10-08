@@ -257,6 +257,21 @@ describe('Fills & strokes', () => {
       expect(r.strokes[0].strokeWidthLeft).toBeCloseTo(6, 0);
     });
 
+    test('a literal side width preserves the other uniform widths', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [
+        { strokeColor: '#000000', strokeWidthTop: 9, strokeWidth: 5 },
+      ];
+
+      const stroke = r.strokes[0];
+      expect(stroke.strokeWidthType).toBe('multiple');
+      expect(stroke.strokeWidth).toBe(9);
+      expect(stroke.strokeWidthTop).toBe(9);
+      expect(stroke.strokeWidthRight).toBe(5);
+      expect(stroke.strokeWidthBottom).toBe(5);
+      expect(stroke.strokeWidthLeft).toBe(5);
+    });
+
     test('dashed stroke style is preserved', (ctx) => {
       const r = rect(ctx);
       r.strokes = [

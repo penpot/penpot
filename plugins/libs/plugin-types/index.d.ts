@@ -4164,8 +4164,8 @@ export interface Slide {
 }
 
 /**
- * Represents stroke properties in Penpot. You can add a stroke to any shape except for groups.
- * This interface includes properties for defining the color, style, width, alignment, and caps of a stroke.
+ * Stroke properties for any shape except groups.
+ * Literals apply strokeWidth before top/right/bottom/left widths.
  */
 export interface Stroke {
   /**
@@ -4190,27 +4190,31 @@ export interface Stroke {
    */
   strokeStyle?: 'solid' | 'dotted' | 'dashed' | 'mixed' | 'none' | 'svg';
   /**
-   * The optional width of the stroke.
+   * Reads the top width. Setting it selects simple mode and sets all four sides.
    */
   strokeWidth?: number;
   /**
-   * The optional width of the top side of the stroke. Only applies to boards
-   * and rectangles; setting it on another shape type raises a validation error.
+   * Computed width mode: simple when all four effective widths match, multiple otherwise.
+   */
+  readonly strokeWidthType?: 'simple' | 'multiple';
+  /**
+   * Top side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
    */
   strokeWidthTop?: number;
   /**
-   * The optional width of the right side of the stroke. Only applies to boards
-   * and rectangles; setting it on another shape type raises a validation error.
+   * Right side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
    */
   strokeWidthRight?: number;
   /**
-   * The optional width of the bottom side of the stroke. Only applies to boards
-   * and rectangles; setting it on another shape type raises a validation error.
+   * Bottom side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
    */
   strokeWidthBottom?: number;
   /**
-   * The optional width of the left side of the stroke. Only applies to boards
-   * and rectangles; setting it on another shape type raises a validation error.
+   * Left side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
    */
   strokeWidthLeft?: number;
   /**

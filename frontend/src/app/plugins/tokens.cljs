@@ -80,15 +80,12 @@
     (get map:token-attr-plugin->token-attr k k)))
 
 (def ^:private stroke-width-alias
-  "Plugin-facing uniform stroke width property. Expands to the four per-side
-  attributes when a token is applied."
+  "Uniform stroke width alias that expands to all four side token attributes."
   :stroke-width)
 
 (defn expand-token-attrs
-  "Normalize plugin-side token attribute references to canonical keywords and
-  expand the uniform `:stroke-width` alias to the four per-side attributes, so
-  a token applied to the uniform width is stored per side (matching the design
-  tab). Attributes already in canonical form pass through."
+  "Resolves token attributes to internal keywords and expands `:stroke-width`
+  to all four side attributes."
   [attrs]
   (let [attrs (into #{} (map token-attr-plugin->token-attr) attrs)]
     (if (contains? attrs stroke-width-alias)
@@ -104,8 +101,7 @@
                       [:stroke-width-top :stroke-width-right
                        :stroke-width-bottom :stroke-width-left])]
     (cond-> value
-      ;; Keep the uniform property readable: synthesize `strokeWidth` only when
-      ;; every side carries the same token.
+      ;; Exposes `strokeWidth` when all four sides share the same token.
       (and (every? some? per-side)
            (apply = per-side))
       (assoc :stroke-width (first per-side)))))

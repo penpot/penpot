@@ -143,6 +143,69 @@ describe('Value objects', () => {
       expect(stroke.strokeWidthLeft).toBeCloseTo(5, 0);
     });
 
+    test('stroke literals apply uniform width before side widths', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [
+        {
+          strokeColor: '#000000',
+          strokeWidthLeft: 8,
+          strokeWidthBottom: 8,
+          strokeWidthRight: 8,
+          strokeWidthTop: 8,
+          strokeWidth: 1,
+        },
+      ];
+      const stroke = r.strokes[0];
+      expect(stroke.strokeWidthType).toBe('simple');
+      expect(stroke.strokeWidth).toBe(8);
+      expect(stroke.strokeWidthTop).toBe(8);
+      expect(stroke.strokeWidthRight).toBe(8);
+      expect(stroke.strokeWidthBottom).toBe(8);
+      expect(stroke.strokeWidthLeft).toBe(8);
+
+      stroke.strokeWidthRight = 12;
+      expect(stroke.strokeWidthType).toBe('multiple');
+      expect(stroke.strokeWidthTop).toBe(8);
+      stroke.strokeWidth = 3;
+      expect(stroke.strokeWidthType).toBe('simple');
+      expect(stroke.strokeWidthRight).toBe(3);
+    });
+
+    test('a top width change preserves the other uniform sides', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
+      r.strokes[0].strokeWidthTop = 8;
+
+      const stroke = r.strokes[0];
+      expect(stroke.strokeWidthType).toBe('multiple');
+      expect(stroke.strokeWidth).toBe(8);
+      expect(stroke.strokeWidthTop).toBe(8);
+      expect(stroke.strokeWidthRight).toBe(1);
+      expect(stroke.strokeWidthBottom).toBe(1);
+      expect(stroke.strokeWidthLeft).toBe(1);
+    });
+
+    test('side setters return to simple mode when all widths match', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
+
+      r.strokes[0].strokeWidthTop = 8;
+      expect(r.strokes[0].strokeWidthType).toBe('multiple');
+      r.strokes[0].strokeWidthRight = 8;
+      expect(r.strokes[0].strokeWidthType).toBe('multiple');
+      r.strokes[0].strokeWidthBottom = 8;
+      expect(r.strokes[0].strokeWidthType).toBe('multiple');
+      r.strokes[0].strokeWidthLeft = 8;
+
+      const stroke = r.strokes[0];
+      expect(stroke.strokeWidthType).toBe('simple');
+      expect(stroke.strokeWidth).toBe(8);
+      expect(stroke.strokeWidthTop).toBe(8);
+      expect(stroke.strokeWidthRight).toBe(8);
+      expect(stroke.strokeWidthBottom).toBe(8);
+      expect(stroke.strokeWidthLeft).toBe(8);
+    });
+
     test('a uniform stroke reads the same width on every side', (ctx) => {
       const r = rect(ctx);
       r.strokes = [{ strokeColor: '#000000', strokeWidth: 6 }];

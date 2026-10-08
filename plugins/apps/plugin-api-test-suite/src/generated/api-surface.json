@@ -476,7 +476,8 @@
       "strokeWidthBottom",
       "strokeWidthLeft",
       "strokeWidthRight",
-      "strokeWidthTop"
+      "strokeWidthTop",
+      "strokeWidthType"
     ],
     "SvgRaw": ["type"],
     "Text": [
@@ -7832,6 +7833,12 @@
       "strokeWidth": {
         "decl": "Stroke",
         "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthType": {
+        "decl": "Stroke",
+        "kind": "get",
         "type": null,
         "array": false
       },

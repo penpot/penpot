@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.stroke :as cts]
    [app.plugins.image-data :refer [create-image-data]]
    [app.util.object :as obj]))
 
@@ -223,6 +224,7 @@
           :strokeOpacity stroke-opacity
           :strokeStyle (format-key stroke-style)
           :strokeWidth stroke-width
+          :strokeWidthType (format-key (cts/width-type stroke))
           :strokeWidthTop stroke-width-top
           :strokeWidthRight stroke-width-right
           :strokeWidthBottom stroke-width-bottom

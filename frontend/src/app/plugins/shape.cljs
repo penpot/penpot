@@ -31,6 +31,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.stroke :as types.stroke]
    [app.common.types.text :as txt]
    [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
@@ -274,21 +275,27 @@
       (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))
 
 (defn commit-strokes!
-  [plugin-id ^js self value]
-  (let [id    (obj/get self "$id")
-        value (parser/parse-strokes value)]
-    (cond
-      (not (sm/validate [:vector cts/schema:stroke] value))
-      (u/not-valid plugin-id :strokes value)
+  ([plugin-id self value]
+   (commit-strokes! plugin-id self value nil))
+  ([plugin-id ^js self value options]
+   (let [id    (obj/get self "$id")
+         value (parser/parse-strokes value)]
+     (cond
+       (not (sm/validate [:vector cts/schema:stroke] value))
+       (u/not-valid plugin-id :strokes value)
 
-      (not (r/check-permission plugin-id "content:write"))
-      (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
+       (not (r/check-permission plugin-id "content:write"))
+       (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
 
-      (not (u/page-active? (obj/get self "$page")))
-      (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
+       (not (u/page-active? (obj/get self "$page")))
+       (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
 
-      :else
-      (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
+       (and (not (ctt/per-side-stroke-shape? (:type (u/proxy->shape self))))
+            (some #(= :multiple (types.stroke/width-type %)) value))
+       (u/not-valid plugin-id :strokes "Per-side stroke widths require a board or rectangle")
+
+       :else
+       (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value) options))))))
 
 (defn commit-shadows!
   [plugin-id ^js self value]
@@ -996,7 +1003,7 @@
                    (let [shape (u/proxy->shape self)]
                      (strokes/format-strokes
                       (:strokes shape)
-                      #(commit-strokes! plugin-id self %)
+                      #(commit-strokes! plugin-id self %1 %2)
                       {:per-side-allowed? (ctt/per-side-stroke-shape? (:type shape))
                        :not-valid (fn [code value] (u/not-valid plugin-id code value))})))
             :set (fn [self value] (commit-strokes! plugin-id self value))}
