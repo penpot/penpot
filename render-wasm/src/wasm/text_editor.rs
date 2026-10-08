@@ -208,8 +208,7 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
         let point = Point::new(x, y);
         get_text_editor_state().start_pointer_selection();
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            get_text_editor_state().set_caret_from_position(&position);
-            get_text_editor_state().update_styles(text_content);
+            get_text_editor_state().place_caret_from_position(text_content, &position);
         }
     });
 }
@@ -332,7 +331,7 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
         };
 
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            get_text_editor_state().set_caret_from_position(&position);
+            get_text_editor_state().place_caret_from_position(text_content, &position);
         }
     });
 }
@@ -359,7 +358,7 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
         if let Some(position) =
             text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
         {
-            get_text_editor_state().set_caret_from_position(&position);
+            get_text_editor_state().place_caret_from_position(text_content, &position);
         }
     });
 }

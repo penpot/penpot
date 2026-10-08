@@ -566,6 +566,16 @@ impl TextEditorState {
         self.push_event(TextEditorEvent::SelectionChanged);
     }
 
+    /// Places the caret and refreshes `current_styles` (emits `StylesChanged`).
+    pub fn place_caret_from_position(
+        &mut self,
+        text_content: &TextContent,
+        position: &TextPositionWithAffinity,
+    ) {
+        self.set_caret_from_position(position);
+        self.update_styles(text_content);
+    }
+
     pub fn extend_selection_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.extend_to(*position);
         self.reset_blink();
@@ -939,4 +949,126 @@ impl Default for TextEditorState {
 
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::math::Rect;
+    use crate::shapes::{
+        Fill, FontFamily, FontStyle, GrowType, Paragraph, SolidColor, TextAlign, TextSpan,
+    };
+    use skia_safe::Color;
+
+    fn span(text: &str, font_size: f32, fill: Fill) -> TextSpan {
+        TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            font_size,
+            1.2,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![fill],
+        )
+    }
+
+    fn hello_world_content() -> TextContent {
+        let black = Fill::Solid(SolidColor(Color::BLACK));
+        let red = Fill::Solid(SolidColor(Color::RED));
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), GrowType::Fixed);
+        content.add_paragraph(Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![span("Hello ", 24.0, black), span("world", 40.0, red)],
+        ));
+        content
+    }
+
+    fn drain_events(editor: &mut TextEditorState) -> Vec<TextEditorEvent> {
+        let mut events = Vec::new();
+        loop {
+            let ev = editor.poll_event();
+            if ev == TextEditorEvent::None {
+                break;
+            }
+            events.push(ev);
+        }
+        events
+    }
+
+    #[test]
+    fn set_caret_from_position_alone_does_not_emit_styles_changed() {
+        let content = hello_world_content();
+        let mut editor = TextEditorState::new();
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 1),
+        );
+        drain_events(&mut editor);
+
+        editor.set_caret_from_position(&TextPositionWithAffinity::new_downstream_affinity(0, 8));
+        let events = drain_events(&mut editor);
+
+        assert!(!events.contains(&TextEditorEvent::StylesChanged));
+        assert_eq!(editor.current_styles.font_size.value(), &Some(24.0));
+    }
+
+    #[test]
+    fn place_caret_from_position_syncs_styles_and_emits_styles_changed() {
+        let content = hello_world_content();
+        let mut editor = TextEditorState::new();
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 1),
+        );
+        drain_events(&mut editor);
+        assert_eq!(editor.current_styles.font_size.value(), &Some(24.0));
+
+        // Offset 8 is inside the second span ("world").
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 8),
+        );
+        let events = drain_events(&mut editor);
+
+        assert!(events.contains(&TextEditorEvent::StylesChanged));
+        assert_eq!(editor.current_styles.font_size.value(), &Some(40.0));
+        assert_eq!(
+            editor.current_styles.fills,
+            vec![Fill::Solid(SolidColor(Color::RED))]
+        );
+    }
+
+    #[test]
+    fn place_caret_from_position_clears_mixed_selection_styles() {
+        let content = hello_world_content();
+        let mut editor = TextEditorState::new();
+        editor.select_all(&content);
+        assert!(editor.current_styles.font_size.is_multiple());
+        assert!(editor.current_styles.fills_are_multiple);
+        drain_events(&mut editor);
+
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 8),
+        );
+        let events = drain_events(&mut editor);
+
+        assert!(events.contains(&TextEditorEvent::StylesChanged));
+        assert_eq!(editor.current_styles.font_size.value(), &Some(40.0));
+        assert!(!editor.current_styles.fills_are_multiple);
+        assert_eq!(
+            editor.current_styles.fills,
+            vec![Fill::Solid(SolidColor(Color::RED))]
+        );
+    }
 }
