@@ -9,6 +9,7 @@
    [app.common.math :as m]
    [app.common.test-helpers.files :as cthf]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
@@ -254,10 +255,48 @@
 
           (t/testing " - strokes"
             (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
-            (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#fabada" :stroke-opacity 1 :stroke-width 5}]))
+            (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#fabada" :stroke-opacity 1 :stroke-width 5
+                                                                 :stroke-width-top 5 :stroke-width-right 5 :stroke-width-bottom 5 :stroke-width-left 5}]))
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeColor")) "#fabada"))
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeOpacity")) 1))
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidth")) 5)))
+
+          (t/testing " - strokes per-side widths"
+            (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeWidth 5}])
+            (t/is (= 5 (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidthTop")))
+                  "a uniform stroke reads the global width on every side")
+            (obj/set! (aget (.-strokes shape) 0) "strokeWidthRight" 9)
+            (t/is (= 9 (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidthRight"))))
+            (t/is (= 5 (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidthTop"))))
+            (t/is (= 9 (get-in @store (conj (get-shape-path :strokes) 0 :stroke-width-right)))
+                  "the edited side is stored")
+            (t/is (= 5 (get-in @store (conj (get-shape-path :strokes) 0 :stroke-width-top)))
+                  "the untouched sides keep their uniform width"))
+
+          (t/testing " - UI toggles preserve equal side widths and their computed mode"
+            (set! (.-strokes shape)
+                  #js [#js {:strokeColor "#fabada" :strokeWidth 1
+                            :strokeWidthTop 8 :strokeWidthRight 8
+                            :strokeWidthBottom 8 :strokeWidthLeft 8}])
+            (t/is (not (contains? (get-in @store (conj (get-shape-path :strokes) 0)) :stroke-width-type)))
+            (t/is (= 8 (get-in @store (conj (get-shape-path :strokes) 0 :stroke-width))))
+            (ptk/emit! store (dwc/toggle-stroke-per-side [(aget shape "$id")] 0))
+            (t/is (true? (get-in @store [:workspace-local :stroke-per-side [[(aget shape "$id")] 0]])))
+            (t/is (= "simple" (aget (aget (.-strokes shape) 0) "strokeWidthType")))
+            (ptk/emit! store (dwc/toggle-stroke-per-side [(aget shape "$id")] 0))
+            (t/is (= "simple" (aget (aget (.-strokes shape) 0) "strokeWidthType")))
+            (t/is (false? (get-in @store [:workspace-local :stroke-per-side [[(aget shape "$id")] 0]])))
+            (t/is (= [8 8 8 8]
+                     (mapv (get-in @store (conj (get-shape-path :strokes) 0))
+                           [:stroke-width-top :stroke-width-right :stroke-width-bottom :stroke-width-left]))))
+
+          (t/testing " - per-side widths rejected on unsupported shapes"
+            (let [^js ellipse (.createEllipse context)]
+              (set! (.-strokes ellipse) #js [#js {:strokeColor "#fabada" :strokeWidth 1}])
+              (t/is (thrown? js/Error
+                             (obj/set! (aget (.-strokes ellipse) 0) "strokeWidthTop" 4)))
+              (t/is (thrown? js/Error
+                             (set! (.-strokes ellipse) #js [#js {:strokeColor "#fabada" :strokeWidthTop 4}])))))
 
           (t/testing " - fills per-element property mutation (bug #8357)"
             (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
@@ -287,13 +326,15 @@
           (t/testing " - strokes per-element property mutation (bug #8357)"
             (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
             (obj/set! (aget (.-strokes shape) 0) "strokeColor" "#0000ff")
-            (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#0000ff" :stroke-opacity 1 :stroke-width 5}])))
+            (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#0000ff" :stroke-opacity 1 :stroke-width 5
+                                                                 :stroke-width-top 5 :stroke-width-right 5 :stroke-width-bottom 5 :stroke-width-left 5}])))
 
           (t/testing " - strokes gradient assignment replaces solid color (bug #8357)"
             (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
             (obj/set! (aget (.-strokes shape) 0) "strokeColorGradient" (gradient))
             (t/is (= (get-in @store (get-shape-path :strokes))
-                     [{:stroke-opacity 1 :stroke-width 5 :stroke-color-gradient parsed-gradient}])))
+                     [{:stroke-opacity 1 :stroke-width 5
+                       :stroke-width-top 5 :stroke-width-right 5 :stroke-width-bottom 5 :stroke-width-left 5 :stroke-color-gradient parsed-gradient}])))
 
           (t/testing " - strokes nested gradient mutation (bug #8357)"
             (set! (.-strokes shape) #js [#js {:strokeColorGradient (gradient) :strokeOpacity 1 :strokeWidth 5}])
@@ -304,6 +345,7 @@
               (t/is (= (get-in @store (get-shape-path :strokes))
                        [{:stroke-opacity 1
                          :stroke-width 5
+                         :stroke-width-top 5 :stroke-width-right 5 :stroke-width-bottom 5 :stroke-width-left 5
                          :stroke-color-gradient (-> parsed-gradient
                                                     (assoc :end-y 0.75)
                                                     (assoc-in [:stops 1 :opacity] 0.25))}])))))

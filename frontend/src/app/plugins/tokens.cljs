@@ -79,15 +79,38 @@
   (let [k (cond-> k (string? k) keyword)]
     (get map:token-attr-plugin->token-attr k k)))
 
+(def ^:private stroke-width-alias
+  "Uniform stroke width alias that expands to all four side token attributes."
+  :stroke-width)
+
+(defn expand-token-attrs
+  "Resolves token attributes to internal keywords and expands `:stroke-width`
+  to all four side attributes."
+  [attrs]
+  (let [attrs (into #{} (map token-attr-plugin->token-attr) attrs)]
+    (if (contains? attrs stroke-width-alias)
+      (into (disj attrs stroke-width-alias) cto/per-side-stroke-width-keys)
+      attrs)))
+
 (defn applied-tokens-plugin->applied-tokens
   [value]
-  (into {}
-        (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
-        value))
+  (let [value    (into {}
+                       (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
+                       value)
+        per-side (map #(get value %)
+                      [:stroke-width-top :stroke-width-right
+                       :stroke-width-bottom :stroke-width-left])]
+    (cond-> value
+      ;; Exposes `strokeWidth` when all four sides share the same token.
+      (and (every? some? per-side)
+           (apply = per-side))
+      (assoc :stroke-width (first per-side)))))
 
 (defn token-attr?
   [attr]
-  (cto/token-attr? (token-attr-plugin->token-attr attr)))
+  (let [attr (token-attr-plugin->token-attr attr)]
+    (or (= attr stroke-width-alias)
+        (cto/token-attr? attr))))
 
 (defn- token-name-schema
   [file-id set-id token]
@@ -180,7 +203,7 @@
         :else
         (st/emit!
          (-> (dwta/toggle-token {:token token
-                                 :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
+                                 :attrs (expand-token-attrs attrs)
                                  :shape-ids shape-ids
                                  :expand-with-children false})
              (se/add-event plugin-id)))))))
