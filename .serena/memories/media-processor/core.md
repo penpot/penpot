@@ -62,7 +62,7 @@ media-processor/
 - SVG: max input size enforced before parsing (default 2MB, `PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE`); an oversized input is rejected with 413, never truncated
 - SVG workers: `PENPOT_MEDIA_PROCESSOR_SVG_WORKERS` (default 2; 0 runs inline), `PENPOT_MEDIA_PROCESSOR_SVG_WORKER_MAX_OLD_MB` (default 512, per-worker V8 old-generation cap) and `PENPOT_MEDIA_PROCESSOR_SVG_TIMEOUT` (default 30000 ms)
 - Font: prlimit wraps FontForge processes with memory (AS) and CPU time limits
-- Concurrency: p-queue limits concurrent requests (default 10)
+- Concurrency: p-queue limits concurrent requests (default 10). Image and font share one queue; SVG has **its own**, so an SVG request waiting for a free worker does not hold a queue slot that image or font requests need. The app wiring lives in `app.ts` (`createApp`), kept apart from `index.ts` so tests can build the real app.
 - Upload: hybrid storage — memory for files < 10MB, disk for larger; configurable via `PENPOT_MEDIA_PROCESSOR_MEMORY_THRESHOLD`
 - Max file size: configurable (default 350MB)
 
