@@ -478,3 +478,32 @@
                               :content "member comment"
                               :frame-id uuid/zero})]
         (t/is (th/success? out))))))
+
+(t/deftest comment-audit-events-carry-team-id
+  ;; Comment events carry the file id, so the resolver could find the team; the
+  ;; command already has the file with its team id and sets it without a join.
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-teams-per-profile 200})}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          team    (th/create-team* 1 {:profile-id (:id profile)})
+          project (th/create-project* 1 {:team-id (:id team)
+                                         :profile-id (:id profile)})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:id project)})
+          page-id (get-in file [:data :pages 0])
+          thread  (th/command! {::th/type :create-comment-thread
+                                ::rpc/profile-id (:id profile)
+                                :file-id (:id file)
+                                :page-id page-id
+                                :position (gpt/point 0)
+                                :content "hello"
+                                :frame-id uuid/zero})
+          comment (th/command! {::th/type :create-comment
+                                ::rpc/profile-id (:id profile)
+                                :thread-id (get-in thread [:result :id])
+                                :content "comment"})]
+      (t/is (= (:id team)
+               (get-in (meta (:result thread)) [:app.loggers.audit/props :team-id])))
+      (t/is (= (:id team)
+               (get-in (meta (:result comment)) [:app.loggers.audit/props :team-id]))))))

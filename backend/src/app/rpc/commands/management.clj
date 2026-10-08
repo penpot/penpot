@@ -142,12 +142,22 @@
         (when (uuid? profile-id)
           (teams/create-project-role conn profile-id (:id project) :owner))
 
+        ;; The new entities are created by internal calls, so they carry no
+        ;; event of their own; emit one per entity for a local projection.
+        (audit/submit-create-event cfg params "create-project"
+                                   {:id (:id project)
+                                    :team-id (:team-id project)})
+
         (doseq [file-id files]
           (let [params (-> params
                            (dissoc :name)
                            (assoc :file-id file-id)
-                           (assoc :reset-shared-flag false))]
-            (duplicate-file cfg params)))
+                           (assoc :reset-shared-flag false))
+                file   (duplicate-file cfg params)]
+            (audit/submit-create-event cfg params "create-file"
+                                       {:id (:id file)
+                                        :project-id (:project-id file)
+                                        :team-id (:team-id project)})))
 
         project))))
 
@@ -444,8 +454,9 @@
                               {:id project-id}
                               {::db/return-keys false})
 
-                  (let [props (audit/clean-props params)]
-                    (doseq [file-id result]
+                  (let [props (assoc (audit/clean-props params)
+                                     :team-id (:id team))]
+                    (doseq [file-id (:file-ids result)]
                       (let [props (assoc props :id file-id)
                             event (-> (audit/event-from-rpc-params params)
                                       (assoc :profile-id profile-id)

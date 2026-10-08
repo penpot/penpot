@@ -22,7 +22,8 @@
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io]))
+   [datoteka.io :as io]
+   [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -666,3 +667,49 @@
       (t/is (vector? result))
       (t/is (= 1 (count result)))
       (t/is (= "test" (:id (first result)))))))
+
+(t/deftest clone-template-audit-events-carry-team-id
+  ;; The per-file `create-file` events are built by hand, so they do not pass
+  ;; through the generic resolver: the command must copy the team id itself.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [prof    (th/create-profile* 1 {:is-active true})
+          team    (th/create-team* 1 {:profile-id (:id prof)})
+          project (th/create-project* 1 {:profile-id (:id prof)
+                                         :team-id (:id team)})
+          out     (th/command! {::th/type :clone-template
+                                ::rpc/profile-id (:id prof)
+                                :project-id (:id project)
+                                :template-id "test"})]
+      (t/is (th/success? out))
+      (th/consume-sse (:result out))
+      (let [events (->> (:call-args-list @audit-mock)
+                        (map second)
+                        (filter #(= "create-file" (:name %))))]
+        (t/is (seq events))
+        (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events))))))
+
+(t/deftest duplicate-project-audit-events-carry-entity-ids
+  ;; The duplicated project and files are created by internal calls, so the
+  ;; command emits one create event per entity for a local projection.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [profile (th/create-profile* 1 {:is-active true})
+            team    (th/create-team* 52 {:profile-id (:id profile)})
+            project (th/create-project* 52 {:profile-id (:id profile)
+                                            :team-id (:id team)})
+            _file   (th/create-file* 52 {:profile-id (:id profile)
+                                         :project-id (:id project)})
+            out     (th/command! {::th/type :duplicate-project
+                                  ::rpc/profile-id (:id profile)
+                                  :project-id (:id project)
+                                  :name "copy"})
+            events  (->> (:call-args-list @audit-mock)
+                         (map second)
+                         (filter #(contains? #{"create-project" "create-file"} (:name %))))]
+        (t/is (th/success? out))
+        (t/is (some #(and (= "create-project" (:name %))
+                          (= (get-in out [:result :id]) (get-in % [:props :id]))
+                          (= (:id team) (get-in % [:props :team-id])))
+                    events))
+        (t/is (some #(= "create-file" (:name %)) events))
+        (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events))))))

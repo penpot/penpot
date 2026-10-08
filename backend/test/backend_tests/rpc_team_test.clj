@@ -1751,3 +1751,43 @@
                               ::rpc/profile-id (:id stranger)})]
         (t/is (th/success? out))
         (t/is (nil? (some #(= (:id project) (:id %)) (:result out))))))))
+
+(t/deftest create-team-emits-add-team-member-audit-event
+  ;; Team creation adds the owner through add-profile-to-team!, which used to
+  ;; leave no membership event.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [owner  (th/create-profile* 1 {:is-active true})
+            team   (th/create-team* 21 {:profile-id (:id owner)})
+            events (->> (:call-args-list @audit-mock)
+                        (map second)
+                        (filter #(= "add-team-member" (:name %)))
+                        (filter #(= (:id team) (get-in % [:props :team-id]))))]
+        (t/is (= 1 (count events)))
+        (t/is (= (:id owner) (get-in (first events) [:props :member-id])))
+        (t/is (true? (get-in (first events) [:props :is-owner])))))))
+
+(t/deftest add-team-member-event-skipped-when-membership-exists
+  ;; Adding an existing member with on-conflict-do-nothing inserts nothing and
+  ;; must not report a membership that already exists.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [owner (th/create-profile* 1 {:is-active true})
+            team  (th/create-team* 22 {:profile-id (:id owner)})]
+        (th/reset-mock! audit-mock)
+        (db/tx-run! th/*system*
+                    (fn [cfg]
+                      (teams/add-profile-to-team! cfg
+                                                  {:team-id (:id team)
+                                                   :profile-id (:id owner)}
+                                                  {::db/on-conflict-do-nothing? true})))
+        (t/is (empty? (:call-args-list @audit-mock)))))))
+
+(t/deftest no-add-team-member-event-without-audit-log
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [owner  (th/create-profile* 1 {:is-active true})
+          _team  (th/create-team* 23 {:profile-id (:id owner)})
+          events (->> (:call-args-list @audit-mock)
+                      (map second)
+                      (filter #(= "add-team-member" (:name %))))]
+      (t/is (empty? events)))))

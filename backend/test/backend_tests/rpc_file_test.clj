@@ -2782,3 +2782,36 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest delete-file-audit-event-carries-team-id
+  ;; The event already carries the project id, so the resolver could find the
+  ;; team; the command has the team row and sets the id without a lookup.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:profile-id (:id profile)
+                                       :team-id (:id team)})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id project)})
+        wrapped (th/command-raw! {::th/type :delete-file
+                                  ::rpc/profile-id (:id profile)
+                                  :id (:id file)})]
+    (t/is (= (:id team)
+             (get-in (meta wrapped) [:app.loggers.audit/props :team-id])))))
+
+(t/deftest create-file-audit-event-carries-its-id
+  ;; The command returns the new file but did not emit its id, so a consumer
+  ;; could not key a local projection.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:profile-id (:id profile)
+                                       :team-id (:id team)})
+        out     (th/command! {::th/type :create-file
+                              ::rpc/profile-id (:id profile)
+                              :project-id (:id project)
+                              :name "foobar"
+                              :is-shared false})]
+    (t/is (th/success? out))
+    (t/is (= (get-in out [:result :id])
+             (get-in (meta (:result out)) [:app.loggers.audit/props :id])))
+    (t/is (= (:id team)
+             (get-in (meta (:result out)) [:app.loggers.audit/props :team-id])))))

@@ -14,10 +14,12 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http.client :as http]
+   [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as webhooks]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :refer [check-read-permissions!] :as t]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.util.services :as sv]
    [cuerdas.core :as str]))
@@ -137,7 +139,8 @@
   (let [whook (-> (db/get pool :webhook {:id id}) (decode-row))]
     (check-webhook-edition-permissions! pool profile-id (:team-id whook))
     (validate-webhook! cfg whook params)
-    (update-webhook! cfg whook params)))
+    (rph/with-meta (update-webhook! cfg whook params)
+      {::audit/props {:team-id (:team-id whook)}})))
 
 (def ^:private schema:delete-webhook
   [:map {:title "delete-webhook"}
@@ -151,7 +154,8 @@
   (let [whook (-> (db/get conn :webhook {:id id}) decode-row)]
     (check-webhook-edition-permissions! conn profile-id (:team-id whook))
     (db/delete! conn :webhook {:id id})
-    nil))
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:team-id (:team-id whook)}})))
 
 ;; --- Query: Webhooks
 

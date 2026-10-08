@@ -486,7 +486,7 @@
     (let [params (assoc params ::file file)
           thread (db/tx-run! cfg create-comment-thread params)]
 
-      (vary-meta thread assoc ::audit/props thread))))
+      (vary-meta thread assoc ::audit/props (assoc thread :team-id team-id)))))
 
 (defn- create-comment-thread
   [{:keys [::db/conn] :as cfg}
@@ -650,7 +650,7 @@
 
       (send-comment-emails! conn profile comment thread file)
 
-      (vary-meta comment assoc ::audit/props comment))))
+      (vary-meta comment assoc ::audit/props (assoc comment :team-id team-id)))))
 
 ;; --- COMMAND: Update Comment
 
