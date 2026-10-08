@@ -10,9 +10,9 @@
   (:require
    ["node:process" :as proc]
    [app.common.logging :as l]
-   [app.consumer.config :as ccfg]
    [cljs.test :as t :include-macros true]
    [exporter.browser :as browser]
+   [exporter.consumer.config :as ccfg]
    [exporter.main :as main]
    [exporter.utils.system :as system]))
 

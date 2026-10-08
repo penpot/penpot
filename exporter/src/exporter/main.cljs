@@ -17,10 +17,10 @@
    ["node:worker_threads" :as wt]
    [app.common.logging :as l]
    [app.config :as cf]
-   [app.consumer.config :as ccfg]
    ;; Loaded for their init-key/halt-key methods, which is what makes
    ;; the pools and the queue consumer part of the system below.
    [exporter.browser]
+   [exporter.consumer.config :as ccfg]
    [exporter.consumer.worker]
    [exporter.utils.system :as system]
    [exporter.wasm.pool]))

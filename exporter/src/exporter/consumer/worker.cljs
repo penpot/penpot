@@ -32,10 +32,10 @@
    ["ioredis" :as redis]
    [app.common.logging :as l]
    [app.config :as cf]
-   [app.consumer.api :as api]
-   [app.consumer.config :as ccfg]
    [app.jobs.utils :as job.utils]
    [exporter.consumer :as consumer]
+   [exporter.consumer.api :as api]
+   [exporter.consumer.config :as ccfg]
    [exporter.utils.system :as system]))
 
 (def ^:private poll-timeout-s 5)

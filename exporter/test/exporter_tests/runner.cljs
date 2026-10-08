@@ -13,10 +13,12 @@
    [exporter-tests.api-test]
    [exporter-tests.browser-scope-test]
    [exporter-tests.browser-test]
+   [exporter-tests.consumer-api-test]
    [exporter-tests.consumer-config-test]
    [exporter-tests.consumer-plan-test]
    [exporter-tests.consumer-test]
    [exporter-tests.consumer-worker-test]
+   [exporter-tests.exporter-consumer-config-test]
    [exporter-tests.exporter-consumer-plan-test]
    [exporter-tests.exporter-jobs-test]
    [exporter-tests.jobs-test]
@@ -45,9 +47,11 @@
 (def test-namespaces
   ['exporter-tests.browser-scope-test
    'exporter-tests.browser-test
+   'exporter-tests.consumer-api-test
    'exporter-tests.consumer-plan-test
    'exporter-tests.consumer-test
    'exporter-tests.consumer-worker-test
+   'exporter-tests.exporter-consumer-config-test
    'exporter-tests.exporter-consumer-plan-test
    'exporter-tests.exporter-jobs-test
    'exporter-tests.jobs-test

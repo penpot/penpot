@@ -14,11 +14,11 @@
    ["undici" :as http]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
-   [app.consumer.api :as api]
    [app.util.shell :as sh]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as cstr]
    [exporter.consumer :as consumer]
+   [exporter.consumer.api :as api]
    [exporter.jobs :as jobs]
    [exporter.renderer :as renderer]))
 

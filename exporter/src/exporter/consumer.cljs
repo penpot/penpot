@@ -33,11 +33,11 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
-   [app.consumer.api :as api]
    [app.handlers.resources :as rsc]
    [app.jobs.utils :as job.utils]
    [app.util.shell :as sh]
    [cuerdas.core :as str]
+   [exporter.consumer.api :as api]
    [exporter.consumer.plan :as plan]
    [exporter.jobs :as jobs]
    [exporter.renderer :as renderer]))
