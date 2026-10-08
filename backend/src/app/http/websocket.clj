@@ -380,9 +380,10 @@
     (start-relay wsp fch
                  #(files/has-read-permissions? cfg profile-id file-id)
                  #(close-file-subscription cfg wsp file-id)
-                 (fn [message]
-                   (when (contains? #{:join-file :leave-file :disconnect}
-                                    (:type message))
+                 (fn [{:keys [type]}]
+                   (when (or (= :join-file type)
+                             (= :leave-file type)
+                             (= :disconnect type))
                      (mbus/pub! (::mbus/msgbus cfg)
                                 :topic file-id
                                 :message {:type :presence
