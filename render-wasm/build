@@ -24,14 +24,14 @@ case "$_RENDER_TARGET" in
         ;;
 esac
 
-set -e
+set -e -o pipefail
 
 EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
 
 pushd "$_SCRIPT_DIR" > /dev/null
 
 export RENDER_TARGET="$_RENDER_TARGET"
-. ./_build_env "$_RENDER_TARGET"
+. ./_build_env "$_RENDER_TARGET" "${@:2}"
 . ./_build_lock
 
 acquire_build_lock
@@ -45,5 +45,8 @@ else
     command -v pnpm >/dev/null || { echo "Prepare pnpm and renderer dependencies first" >&2; exit 1; };
     test -d node_modules/esbuild || { echo "Run pnpm install in render-wasm before benchmarking" >&2; exit 1; };
 fi
+
+build
+copy_target_artifacts
 
 popd > /dev/null
