@@ -266,6 +266,17 @@ impl ShapesPoolImpl {
         })
     }
 
+    /// Drop both the base bounds and any transformed snapshot after a direct edit.
+    pub fn invalidate_shape_extrect(&mut self, id: &Uuid) {
+        let Some(idx) = self.uuid_to_idx.get(id).copied() else {
+            return;
+        };
+        self.shapes[idx].invalidate_extrect();
+        if let Some(cell) = self.modified_shape_cache.get_mut(&idx) {
+            *cell = OnceCell::new();
+        }
+    }
+
     /// Drops the extrect cache of every ancestor whose extrect is affected by this shape
     /// stopping at the first ancestor that clips.
     pub fn invalidate_ancestors_extrect(&mut self, id: &Uuid) {

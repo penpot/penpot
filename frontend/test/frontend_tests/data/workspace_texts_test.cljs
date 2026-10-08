@@ -8,12 +8,14 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.drawing.common :as drawing]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
@@ -21,6 +23,7 @@
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.ui.shapes.text.styles :as text.styles]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
+   [app.util.text.geometry :as text.geom]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
@@ -43,6 +46,81 @@
         content   (text-content "horizontal-tb")]
     (t/is (= {:width 100 :height 360}
              (dwwt/resolve-text-size selrect :auto-height content dimension)))))
+
+(t/deftest vertical-auto-grow-keeps-the-block-anchor
+  (doseq [[align expected-x] [["top" -90] ["center" -40] ["bottom" 10]]]
+    (let [shape (cts/setup-shape
+                 {:type :text :x 10 :y 20 :width 100 :height 200
+                  :grow-type :auto-height
+                  :content (assoc (text-content "vertical-rl") :vertical-align align)})
+          resized (with-redefs [dwwt/get-wasm-text-new-size
+                                (fn ([_] {:width 200 :height 200})
+                                  ([_ _] {:width 200 :height 200}))]
+                    (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+                      (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
+      (t/is (= expected-x (:x resized)) align)
+      (t/is (= 200 (:height resized)) align))))
+
+(t/deftest live-vertical-bounds-grow-left-and-keep-the-wrap-height
+  (let [selrect {:x 10 :y 20 :width 100 :height 200}
+        content (text-content "vertical-rl")]
+    (t/is (= {:x -130 :y 20 :width 240 :height 200}
+             (text.geom/live-rect selrect :auto-height content {:width 240 :height 360})))
+    (t/is (= {:x -130 :y 20 :width 240 :height 360}
+             (text.geom/live-rect selrect :auto-width content {:width 240 :height 360})))
+    (t/is (= selrect (text.geom/live-rect selrect :fixed content {:width 240 :height 360})))
+    (t/is (= selrect (text.geom/live-rect selrect :auto-width content nil)))))
+
+(t/deftest live-horizontal-bounds-grow-down-and-keep-the-wrap-width
+  (let [selrect {:x 10 :y 20 :width 100 :height 200}
+        content (text-content "horizontal-tb")]
+    (t/is (= {:x 10 :y 20 :width 100 :height 360}
+             (text.geom/live-rect selrect :auto-height content {:width 240 :height 360})))
+    (t/is (= {:x 10 :y 20 :width 240 :height 360}
+             (text.geom/live-rect selrect :auto-width content {:width 240 :height 360})))))
+
+(t/deftest vertical-auto-grow-keeps-the-anchor-after-rotation
+  (let [base (cts/setup-shape
+              {:type :text :x 10 :y 20 :width 100 :height 200
+               :grow-type :auto-height :content (text-content "vertical-rl")})
+        shape (gsh/transform-shape base (ctm/rotation-modifiers base (gpt/point 60 120) 45))
+        resized (with-redefs [dwwt/get-wasm-text-new-size
+                              (fn ([_] {:width 200 :height 200})
+                                ([_ _] {:width 200 :height 200}))]
+                  (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+                    (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
+    (t/is (gpt/almost-zero? (gpt/subtract (nth (:points shape) 1) (nth (:points resized) 1))))))
+
+(t/deftest clicking-vertical-text-anchors-its-right-edge-at-the-click
+  (with-redefs [cts/wasm-enabled? true]
+    (let [shape (drawing/click-draw-text
+                 (cts/setup-shape {:type :text :x 100 :y 50 :width 1 :height 1
+                                   :content (text-content "vertical-rl")}))]
+      (t/is (= 100 (+ (:x shape) (:width shape))))
+      (t/is (= 50 (:y shape)))
+      (t/is (= [4 17] [(:width shape) (:height shape)]))
+      (t/is (= :auto-width (:grow-type shape))))))
+
+(t/deftest clicking-horizontal-text-keeps-its-left-edge-at-the-click
+  (let [shape (drawing/click-draw-text
+               (cts/setup-shape {:type :text :x 100 :y 50 :width 1 :height 1
+                                 :content (text-content "horizontal-tb")}))]
+    (t/is (= 100 (:x shape)))
+    (t/is (= 50 (:y shape)))
+    (t/is (= [4 17] [(:width shape) (:height shape)]))))
+
+(t/deftest horizontal-auto-grow-keeps-the-block-anchor
+  (doseq [[align expected-y] [["top" 20] ["center" -60] ["bottom" -140]]]
+    (let [shape (cts/setup-shape
+                 {:type :text :x 10 :y 20 :width 100 :height 200
+                  :grow-type :auto-height
+                  :content (assoc (text-content "horizontal-tb") :vertical-align align)})
+          resized (with-redefs [dwwt/get-wasm-text-new-size
+                                (fn ([_] {:width 100 :height 360})
+                                  ([_ _] {:width 100 :height 360}))]
+                    (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+                      (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
+      (t/is (= expected-y (:y resized)) align))))
 
 (t/deftest vertical-grow-type-resize-axes-are-remapped
   (t/is (= :auto-height

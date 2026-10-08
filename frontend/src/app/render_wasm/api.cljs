@@ -60,6 +60,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.modules :as mod]
    [app.util.text.content :as tc]
+   [app.util.text.geometry :as text.geom]
    [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -1705,13 +1706,11 @@
 (defn- text-selrect-stale?
   "Check if the WASM-measured dimensions of an auto-grow text shape differ
    from its stored selrect (same 0.1px tolerance as the classic renderer)."
-  [{:keys [id selrect grow-type]}]
-  (when-let [{:keys [width height]} (get-text-dimensions id)]
-    (case grow-type
-      :auto-width  (or (not (mth/close? width (:width selrect) 0.1))
-                       (not (mth/close? height (:height selrect) 0.1)))
-      :auto-height (not (mth/close? height (:height selrect) 0.1))
-      false)))
+  [{:keys [id selrect grow-type content]}]
+  (when-let [dimension (get-text-dimensions id)]
+    (let [{:keys [width height]} (text.geom/resolve-size selrect grow-type content dimension)]
+      (or (not (mth/close? width (:width selrect) 0.1))
+          (not (mth/close? height (:height selrect) 0.1))))))
 
 (defonce ^:private pending-stale-selrect-ids (atom #{}))
 (defonce ^:private stale-selrect-sync-token (atom 0))

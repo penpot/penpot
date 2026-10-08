@@ -13,6 +13,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.render-wasm.api :as wasm.api]
+   [app.util.text.geometry :as text.geom]
    [rumext.v2 :as mf]))
 
 (mf/defc text-edition-outline*
@@ -21,18 +22,25 @@
     (let [selrect-transform (mf/deref refs/workspace-selrect)
           [selrect transform] (dsh/get-selrect selrect-transform shape)
 
-          ;; While editing, the committed selrect lags the text (geometry is
-          ;; finalize-only), so measure the live WASM text for the growing axes:
-          ;; width grows on auto-width, height on auto-width/auto-height.
-          grow-type (:grow-type shape)
-          {live-width :width live-height :height} (wasm.api/get-text-dimensions (:id shape))
-          sr-width  (if (= grow-type :auto-width) live-width (:width selrect))
-          sr-height (if (= grow-type :fixed) (:height selrect) live-height)]
+          ;; IME previews never enter the store. Subscribe here so only the
+          ;; outline updates; re-rendering the capture surface aborts real IMEs.
+          dimension* (mf/use-state nil)
+          dimension  (or @dimension* (wasm.api/get-text-dimensions (:id shape)))
+          {:keys [x y width height]}
+          (text.geom/live-rect selrect (:grow-type shape) (:content shape) dimension)]
+      (mf/use-effect
+       (mf/deps (:id shape))
+       (fn []
+         (let [update-bounds! (fn [_]
+                                (reset! dimension* (wasm.api/get-text-dimensions (:id shape))))]
+           (.addEventListener js/document "penpot:wasm:render" update-bounds!)
+           (update-bounds! nil)
+           #(.removeEventListener js/document "penpot:wasm:render" update-bounds!))))
       [:rect.main.viewport-selrect
-       {:x (:x selrect)
-        :y (:y selrect)
-        :width sr-width
-        :height sr-height
+       {:x x
+        :y y
+        :width width
+        :height height
         :transform transform
         :style {:stroke "var(--color-accent-tertiary)"
                 :stroke-width (/ 1 zoom)

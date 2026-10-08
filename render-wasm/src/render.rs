@@ -4918,10 +4918,6 @@ impl RenderState {
         (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
     }
 
-    pub fn mark_touched(&mut self, uuid: Uuid) {
-        self.mark_touched_with_prev(uuid, None);
-    }
-
     pub fn mark_touched_with_prev(&mut self, uuid: Uuid, prev_extrect: Option<Rect>) {
         if self.touched_ids.insert(uuid) {
             if let Some(rect) = prev_extrect.filter(|r| !r.is_empty()) {

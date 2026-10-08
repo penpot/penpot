@@ -48,8 +48,13 @@ pub fn modifier_changes_text_layout(base: &Shape, modifier: &Matrix) -> bool {
     let after = before.transform(modifier);
     match text_content.grow_type() {
         GrowType::AutoWidth => !crate::math::is_close_to(before.height(), after.height()),
-        GrowType::AutoHeight | GrowType::Fixed => {
+        GrowType::AutoHeight if text_content.is_vertical() => {
+            !crate::math::is_close_to(before.height(), after.height())
+        }
+        GrowType::AutoHeight => !crate::math::is_close_to(before.width(), after.width()),
+        GrowType::Fixed => {
             !crate::math::is_close_to(before.width(), after.width())
+                || !crate::math::is_close_to(before.height(), after.height())
         }
     }
 }
@@ -488,6 +493,7 @@ pub struct TextContent {
     content_version: u64,
     layout_version: u64,
     layout_width: Option<f32>,
+    layout_height: Option<f32>,
     /// Canvas origin used when absolute fill shaders (image/gradient) were baked
     /// into cached Skia paragraphs. Kept across move clones so paint can
     /// translate glyphs + shaders together. See `cached_layout_paint_offset`.
@@ -516,6 +522,7 @@ impl TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_height: None,
             layout_paint_origin: None,
         }
     }
@@ -533,6 +540,7 @@ impl TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_height: None,
             layout_paint_origin: None,
         }
     }
@@ -1005,15 +1013,16 @@ impl TextContent {
     }
 
     pub fn content_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
-        // Vertical content anchors to the shape's right edge and always
-        // aligns to the top; vertical-align does not apply.
+        // Auto-grow bounds follow the same block anchor as the vertical paint.
         if self.is_vertical() {
-            let (width, height) = if self.grow_type() == GrowType::AutoWidth {
-                (self.size.width, self.size.height)
-            } else {
-                (selrect.width(), selrect.height())
+            let (width, height) = match self.grow_type() {
+                GrowType::AutoWidth => (self.size.width, self.size.height),
+                GrowType::AutoHeight => (self.size.width, selrect.height()),
+                GrowType::Fixed => (selrect.width(), selrect.height()),
             };
-            return Rect::from_xywh(selrect.right() - width, selrect.y(), width, height);
+            let x = selrect.x()
+                + super::text_vertical::block_axis_offset(selrect.width(), width, valign);
+            return Rect::from_xywh(x, selrect.y(), width, height);
         }
 
         let x = selrect.x();
@@ -1537,6 +1546,7 @@ impl TextContent {
 
     pub fn force_next_layout_update(&mut self) {
         self.layout_width = None;
+        self.layout_height = None;
         self.layout_paint_origin = None;
         self.layout.cached_extrect.set(None);
         // Bump the content version so update_layout can't early-return: auto-width
@@ -1550,11 +1560,19 @@ impl TextContent {
         // match the container we are laying out for.
         self.set_xywh(selrect.x(), selrect.y(), selrect.width(), selrect.height());
 
-        // Auto-width ignores selrect width so get-text-dimensions can reuse the cached layout.
-        let layout_matches_container = self.grow_type() == GrowType::AutoWidth
-            || self
-                .layout_width
-                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON);
+        // Vertical columns wrap by height, horizontal lines by width.
+        let width_matches = self
+            .layout_width
+            .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON);
+        let height_matches = self
+            .layout_height
+            .is_some_and(|h| (h - selrect.height()).abs() < f32::EPSILON);
+        let layout_matches_container = match self.grow_type() {
+            GrowType::AutoWidth => true,
+            GrowType::AutoHeight if self.is_vertical() => height_matches,
+            GrowType::AutoHeight => width_matches,
+            GrowType::Fixed => width_matches && height_matches,
+        };
 
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
@@ -1564,6 +1582,7 @@ impl TextContent {
         }
 
         self.size.set_size(selrect.width(), selrect.height());
+        self.layout_height = Some(selrect.height());
 
         if self.is_vertical() {
             // Vertical writing takes sizes from the vertical pass, so the
@@ -1613,11 +1632,15 @@ impl TextContent {
             }
         }
 
-        if self.is_empty() {
+        if self.is_empty() && self.grow_type() != GrowType::Fixed {
             let (placeholder_width, placeholder_height) = self.placeholder_dimensions(selrect);
-            self.size.width = placeholder_width;
-            self.size.height = placeholder_height;
-            self.size.max_width = placeholder_width;
+            if self.grow_type() == GrowType::AutoWidth || self.is_vertical() {
+                self.size.width = placeholder_width;
+                self.size.max_width = placeholder_width;
+            }
+            if self.grow_type() == GrowType::AutoWidth || !self.is_vertical() {
+                self.size.height = placeholder_height;
+            }
         }
 
         self.layout_version = self.content_version;
@@ -1655,6 +1678,18 @@ impl TextContent {
     /// If that fails we fall back to the previous WASM size or the incoming
     /// selrect dimensions.
     fn placeholder_dimensions(&self, selrect: Rect) -> (f32, f32) {
+        if self.is_vertical() {
+            let layout = self.vertical_layout(&selrect);
+            let font_size = self
+                .paragraphs
+                .first()
+                .and_then(|p| p.children().first())
+                .map_or(14.0, |s| s.font_size);
+            return (
+                layout.width.ceil().max(DEFAULT_TEXT_CONTENT_SIZE),
+                font_size,
+            );
+        }
         if let Some(paragraph) = self.paragraphs.first() {
             if let Some(span) = paragraph.children().first() {
                 let fonts = get_font_collection();
@@ -1771,6 +1806,7 @@ impl Default for TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_height: None,
             layout_paint_origin: None,
         }
     }
@@ -2692,6 +2728,67 @@ pub fn calculate_position_data(
 mod tests {
     use super::*;
 
+    fn vertical_content(text: &str, grow_type: GrowType) -> TextContent {
+        let mut content = TextContent::new(Rect::from_xywh(10.0, 20.0, 100.0, 200.0), grow_type);
+        let mut paragraph = test_paragraph(&[text]);
+        paragraph.set_writing_mode(WritingMode::VerticalRl);
+        paragraph.children_mut()[0].font_size = 20.0;
+        content.add_paragraph(paragraph);
+        content
+    }
+
+    #[test]
+    fn vertical_auto_height_reflows_when_only_height_changes() {
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let mut content = vertical_content("あいうえおかきくけこ", GrowType::AutoHeight);
+        let tall = content.update_layout(Rect::from_xywh(10.0, 20.0, 100.0, 240.0));
+        let short = content.update_layout(Rect::from_xywh(10.0, 20.0, 100.0, 60.0));
+        assert!(short.width > tall.width);
+        assert_eq!(short.height, 60.0);
+        let restored = content.update_layout(Rect::from_xywh(10.0, 20.0, 100.0, 240.0));
+        assert_eq!(restored.width, tall.width);
+    }
+
+    #[test]
+    fn vertical_height_modifier_requires_layout() {
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let content = vertical_content("あいうえお", GrowType::AutoHeight);
+        let shape = text_shape_with_cached_layout(content);
+        assert!(modifier_changes_text_layout(
+            &shape,
+            &Matrix::scale((1.0, 0.5))
+        ));
+    }
+
+    #[test]
+    fn empty_auto_height_preserves_the_wrap_budget() {
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let mut vertical = vertical_content("", GrowType::AutoHeight);
+        let size = vertical.update_layout(Rect::from_xywh(10.0, 20.0, 100.0, 200.0));
+        assert_eq!(size.height, 200.0);
+        assert!(size.width >= 20.0);
+        let mut horizontal = vertical_content("", GrowType::AutoHeight);
+        horizontal.paragraphs_mut()[0].set_writing_mode(WritingMode::HorizontalTb);
+        let size = horizontal.update_layout(Rect::from_xywh(10.0, 20.0, 100.0, 200.0));
+        assert_eq!(size.width, 100.0);
+    }
+
+    #[test]
+    fn empty_fixed_text_preserves_its_container() {
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let mut content = vertical_content("", GrowType::Fixed);
+        let size = content.update_layout(Rect::from_xywh(10.0, 20.0, 100.0, 200.0));
+        assert_eq!((size.width, size.height), (100.0, 200.0));
+    }
+
     #[test]
     fn a_warichu_span_shows_no_ruby_and_reserves_no_room_for_it() {
         let span = TextSpan {
@@ -3013,6 +3110,9 @@ mod tests {
 
     #[test]
     fn has_usable_paint_layout_false_when_rotated_and_resized() {
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
         let mut content = sample_text_content();
         content.layout.paragraphs = Rc::new(vec![vec![]]);
         content.layout_width = Some(200.0);

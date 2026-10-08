@@ -395,6 +395,21 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
 // TEXT OPERATIONS
 // ============================================================================
 
+fn text_content_for_edit(state: &mut State, shape_id: Uuid) -> Option<&mut TextContent> {
+    if !matches!(state.shapes.get_raw(&shape_id)?.shape_type, Type::Text(_)) {
+        return None;
+    }
+    // Capture old tile coverage before changing the preview, then drop the
+    // shape snapshot and bounds so new glyphs and erased previews get indexed.
+    state.touch_shape(shape_id);
+    state.shapes.invalidate_shape_extrect(&shape_id);
+    let shape = state.shapes.get_mut(&shape_id)?;
+    match &mut shape.shape_type {
+        Type::Text(content) => Some(content),
+        _ => None,
+    }
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn text_editor_composition_start() -> Result<()> {
@@ -423,11 +438,7 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
             return Ok(());
         };
 
-        let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return Ok(());
-        };
-
-        let Type::Text(text_content) = &mut shape.shape_type else {
+        let Some(text_content) = text_content_for_edit(state, shape_id) else {
             return Ok(());
         };
 
@@ -456,8 +467,6 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
         get_text_editor_state().push_event(crate::state::TextEditorEvent::ContentChanged);
         get_text_editor_state().push_event(crate::state::TextEditorEvent::NeedsLayout);
 
-        get_render_state().mark_touched(shape_id);
-
         get_text_editor_state().composition.end();
     });
 
@@ -483,11 +492,7 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
             return Ok(());
         };
 
-        let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return Ok(());
-        };
-
-        let Type::Text(text_content) = &mut shape.shape_type else {
+        let Some(text_content) = text_content_for_edit(state, shape_id) else {
             return Ok(());
         };
 
@@ -511,8 +516,6 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
         get_text_editor_state().reset_blink();
         get_text_editor_state().push_event(crate::state::TextEditorEvent::ContentChanged);
         get_text_editor_state().push_event(crate::state::TextEditorEvent::NeedsLayout);
-
-        get_render_state().mark_touched(shape_id);
     });
 
     crate::mem::free_bytes()?;
@@ -567,11 +570,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
             return Ok(());
         };
 
-        let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return Ok(());
-        };
-
-        let Type::Text(text_content) = &mut shape.shape_type else {
+        let Some(text_content) = text_content_for_edit(state, shape_id) else {
             return Ok(());
         };
 
@@ -601,8 +600,6 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
         get_text_editor_state().reset_blink();
         get_text_editor_state().push_event(TextEditorEvent::ContentChanged);
         get_text_editor_state().push_event(TextEditorEvent::NeedsLayout);
-
-        get_render_state().mark_touched(shape_id);
     });
 
     crate::mem::free_bytes()?;
@@ -620,16 +617,11 @@ pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
             return;
         };
 
-        let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return;
-        };
-
-        let Type::Text(text_content) = &mut shape.shape_type else {
+        let Some(text_content) = text_content_for_edit(state, shape_id) else {
             return;
         };
 
         get_text_editor_state().delete_backward(text_content, word_boundary);
-        get_render_state().mark_touched(shape_id);
     });
 }
 
@@ -644,16 +636,11 @@ pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
             return;
         };
 
-        let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return;
-        };
-
-        let Type::Text(text_content) = &mut shape.shape_type else {
+        let Some(text_content) = text_content_for_edit(state, shape_id) else {
             return;
         };
 
         get_text_editor_state().delete_forward(text_content, word_boundary);
-        get_render_state().mark_touched(shape_id);
     });
 }
 
@@ -668,16 +655,11 @@ pub extern "C" fn text_editor_insert_paragraph() {
             return;
         };
 
-        let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return;
-        };
-
-        let Type::Text(text_content) = &mut shape.shape_type else {
+        let Some(text_content) = text_content_for_edit(state, shape_id) else {
             return;
         };
 
         get_text_editor_state().insert_paragraph(text_content);
-        get_render_state().mark_touched(shape_id);
     });
 }
 
@@ -1133,4 +1115,135 @@ pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
         }
         true
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{Group, GrowType, Paragraph, TextDirection, TextSpan, WritingMode};
+    use crate::tiles;
+
+    fn preview_state(grow_type: GrowType, writing_mode: WritingMode) -> (State, Uuid) {
+        let id = Uuid::new_v4();
+        let mut state = State::new();
+        let shape = state.shapes.add_shape(id);
+        shape.set_selrect(250.0, 250.0, 274.0, 310.0);
+        let mut content = TextContent::new(shape.selrect(), grow_type);
+        let span = TextSpan {
+            text: "あ".to_string(),
+            font_size: 20.0,
+            ..TextSpan::default()
+        };
+        let mut paragraph = Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![span],
+        );
+        paragraph.set_writing_mode(writing_mode);
+        content.add_paragraph(paragraph);
+        content.update_layout(shape.selrect());
+        shape.set_shape_type(Type::Text(content));
+        (state, id)
+    }
+
+    fn replace_preview(state: &mut State, id: Uuid, editor: &mut TextEditorState, text: &str) {
+        let content = text_content_for_edit(state, id).expect("text shape");
+        editor.composition.update(text);
+        let selection = editor.composition.get_selection(&editor.selection);
+        text_helpers::delete_selection_range(content, &selection);
+        let cursor = selection.start();
+        editor.composition.start = Some(cursor);
+        let caret =
+            text_helpers::insert_text_with_newlines(content, &cursor, text).unwrap_or(cursor);
+        editor.selection.set_caret(caret);
+        content.layout.clear();
+        update_text_layout_if_needed(state, id);
+    }
+
+    #[test]
+    fn composition_preview_reindexes_tiles_as_text_grows_and_shrinks() {
+        let mut resources = crate::render::RenderResources::try_new_headless().expect("resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let long_preview = "あいうえおかきくけこさしすせそたちつてとなにぬねの".repeat(4);
+        for grow_type in [GrowType::AutoWidth, GrowType::AutoHeight] {
+            for writing_mode in [WritingMode::HorizontalTb, WritingMode::VerticalRl] {
+                let (mut state, id) = preview_state(grow_type, writing_mode);
+                let original = state.shapes.get(&id).unwrap().extrect(&state.shapes, 1.0);
+                let mut editor = TextEditorState::new();
+                editor.composition.start();
+                for text in [long_preview.as_str(), "日本語", ""] {
+                    replace_preview(&mut state, id, &mut editor, text);
+                    let shape = state.shapes.get(&id).unwrap();
+                    let mut uncached = shape.clone();
+                    uncached.invalidate_extrect();
+                    let expected = uncached.extrect(&state.shapes, 1.0);
+                    let actual = shape.extrect(&state.shapes, 1.0);
+                    assert_eq!(
+                        actual, expected,
+                        "{grow_type:?} {writing_mode:?} preview {text}"
+                    );
+                    let current_tiles = tiles::get_tiles_for_rect(actual, tiles::TILE_SIZE);
+                    let original_tiles = tiles::get_tiles_for_rect(original, tiles::TILE_SIZE);
+                    if text.chars().count() > 20 {
+                        assert_ne!(current_tiles, original_tiles, "preview reaches new tiles");
+                    } else if text.is_empty() {
+                        assert_eq!(
+                            current_tiles, original_tiles,
+                            "cancellation restores coverage"
+                        );
+                    }
+                }
+                assert_eq!(
+                    state.shapes.get(&id).unwrap().extrect(&state.shapes, 1.0),
+                    original
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn composition_preview_updates_cached_group_bounds() {
+        let mut resources = crate::render::RenderResources::try_new_headless().expect("resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let (mut state, id) = preview_state(GrowType::AutoWidth, WritingMode::HorizontalTb);
+        let parent_id = Uuid::new_v4();
+        let parent = state.shapes.add_shape(parent_id);
+        parent.set_shape_type(Type::Group(Group::default()));
+        parent.clip_content = false;
+        parent.children.push(id);
+        state.shapes.get_mut(&id).unwrap().set_parent(parent_id);
+        let original = state
+            .shapes
+            .get(&parent_id)
+            .unwrap()
+            .extrect(&state.shapes, 1.0);
+        let mut editor = TextEditorState::new();
+        editor.composition.start();
+        replace_preview(&mut state, id, &mut editor, "あいうえおかきくけこ");
+        let parent = state.shapes.get(&parent_id).unwrap();
+        assert!(parent.extrect(&state.shapes, 1.0).right() > original.right());
+    }
+
+    #[test]
+    fn composition_preview_updates_modified_shape_snapshot() {
+        let mut resources = crate::render::RenderResources::try_new_headless().expect("resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let (mut state, id) = preview_state(GrowType::AutoWidth, WritingMode::HorizontalTb);
+        state
+            .shapes
+            .set_modifiers(std::collections::HashMap::from([(
+                id,
+                Matrix::translate((20.0, 30.0)),
+            )]));
+        let original = state.shapes.get(&id).unwrap().extrect(&state.shapes, 1.0);
+        let mut editor = TextEditorState::new();
+        editor.composition.start();
+        replace_preview(&mut state, id, &mut editor, "あいうえおかきくけこ");
+        let shape = state.shapes.get(&id).unwrap();
+        assert!(shape.extrect(&state.shapes, 1.0).right() > original.right());
+    }
 }
