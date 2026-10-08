@@ -18,6 +18,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as mw]
+   [app.util.text.writing-mode :as wm]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -45,6 +46,15 @@
         (assoc :selrect selrect)
         (assoc :points (grc/rect->points selrect))
         (assoc :grow-type :fixed))))
+
+(defn click-draw-text
+  "Place the start of an auto-width text at the clicked point."
+  [shape]
+  (-> shape
+      (assoc :height 17 :width 4 :grow-type :auto-width :selrect nil :points nil)
+      (cts/setup-shape)
+      (cond-> (wm/vertical-text-content? (:content shape))
+        (gsh/transform-shape (ctm/move-modifiers -4 0)))))
 
 (defn clear-drawing
   ([] (clear-drawing nil))
@@ -103,8 +113,7 @@
                    (click-draw-path)
 
                    (and click-draw? text?)
-                   (-> (assoc :height 17 :width 4 :grow-type :auto-width)
-                       (cts/setup-shape))
+                   (click-draw-text)
 
                    :always
                    (dissoc :initialized? :click-draw?))]
