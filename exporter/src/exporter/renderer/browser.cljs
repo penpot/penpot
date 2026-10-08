@@ -12,9 +12,10 @@
   with each object carrying its `:path`. `on-object` may return a
   plain value or a promise; it is always awaited.
 
-  `ctx` carries the environment the job params do not freeze: the
-  `:browser-pool`, the render `:base-uri` and `:public-uri`, and the
-  `:svgo?` flag. There are no promesa chains in this namespace."
+  `sys` is task-free infrastructure: the `:browser-pool`, the
+  render `:base-uri` and `:public-uri`, and the `:svgo?` flag. The
+  per-task injections (`on-object`, `check`) ride positional. There
+  are no promesa chains in this namespace."
   (:require
    ["@penpot/svgo" :as svgo]
    ["xml-js" :as xml]
@@ -32,6 +33,15 @@
    [exporter.renderer.svg-gradient :as svg-gradient]))
 
 (l/set-level! :trace)
+
+(defn- check-cancelled
+  "Cooperative checkpoint over the injected zero-arg check. This
+  backend never blocks indefinitely (every step yields), so
+  yielding-point checks are the whole cancel story here; a nil check
+  wires no cancel."
+  [check]
+  (when check
+    (check)))
 
 (defn- prepare-options
   [uri token scale]
@@ -81,15 +91,15 @@
   nil)
 
 (defn- ^:async render-bitmap
-  [ctx {:keys [file-id page-id share-id token scale type objects skip-children]} on-object]
+  [sys {:keys [file-id page-id share-id token scale type objects skip-children]} on-object]
   (let [query {:file-id      file-id
                :page-id      page-id
                :share-id     share-id
                :object-id    (mapv :id objects)
                :route        "objects"
                :skip-children skip-children}
-        uri   (render-uri (:base-uri ctx) query)]
-    (await (browser/exec (:browser-pool ctx)
+        uri   (render-uri (:base-uri sys) query)]
+    (await (browser/exec (:browser-pool sys)
                          (prepare-options uri token scale)
                          (fn [page] (render-bitmap-page uri page type objects on-object))))))
 
@@ -141,19 +151,20 @@
       (await (on-object (assoc object :path path))))))
 
 (defn- ^:async render-pdf-page
-  [base-uri page params objects on-object]
+  [base-uri page params objects on-object check]
   (doseq [object objects]
+    (check-cancelled check)
     (await (render-pdf-object page base-uri params object on-object)))
   nil)
 
 (defn- ^:async render-pdf
-  [ctx {:keys [token scale] :as params} on-object]
-  (let [base-uri (-> (:base-uri ctx)
+  [sys {:keys [token scale] :as params} on-object check]
+  (let [base-uri (-> (:base-uri sys)
                      (u/ensure-path-slash))]
-    (await (browser/exec (:browser-pool ctx)
+    (await (browser/exec (:browser-pool sys)
                          (prepare-options base-uri token scale)
                          (fn [page]
-                           (render-pdf-page base-uri page params (:objects params) on-object))))))
+                           (render-pdf-page base-uri page params (:objects params) on-object check))))))
 
 ;; --- SVG
 
@@ -429,7 +440,7 @@
   (str/replace content "&nbsp;" "&#160;"))
 
 (defn- ^:async render-svg-object
-  [ctx page type object on-object]
+  [sys page type object on-object]
   (let [path (await (sh/tempfile :prefix "penpot.tmp.render.svg." :suffix (mime/get-extension type)))
         node (browser/select page (str/concat "#screenshot-" (:id object)))]
     (await (browser/wait-for node))
@@ -438,49 +449,56 @@
           result  (replace-text-nodes xmldata txtdata)
           result  (sanitize-svg-content result)
 
-          result  (if (:svgo? ctx)
+          result  (if (:svgo? sys)
                     (svgo/optimize result svgo/defaultOptions)
                     result)
 
-          result  (replace-internal-uris result (:base-uri ctx) (:public-uri ctx))]
+          result  (replace-internal-uris result (:base-uri sys) (:public-uri sys))]
       (await (sh/write-file path result))
       (await (on-object (assoc object :path path))))))
 
 (defn- ^:async render-svg-page
-  [ctx uri page type objects on-object]
+  [sys uri page type objects on-object]
   (l/info :uri uri)
   ;; navigate to the page and perform basic setup
   (await (browser/nav page (str uri)))
   (await (browser/sleep page 1000)) ; the good old fix with sleep
   (await (browser/wait-for-fonts page))
   ;; take the screnshot of requested objects, one by one
-  (await (js/Promise.all (mapv (fn [object] (render-svg-object ctx page type object on-object))
+  (await (js/Promise.all (mapv (fn [object] (render-svg-object sys page type object on-object))
                                objects)))
   nil)
 
 (defn- ^:async render-svg
-  [ctx {:keys [file-id page-id share-id token scale type objects]} on-object]
+  [sys {:keys [file-id page-id share-id token scale type objects]} on-object]
   (let [query {:file-id      file-id
                :page-id      page-id
                :share-id     share-id
                :render-embed true
                :object-id    (mapv :id objects)
                :route        "objects"}
-        uri   (render-uri (:base-uri ctx) query)]
-    (await (browser/exec (:browser-pool ctx)
+        uri   (render-uri (:base-uri sys) query)]
+    (await (browser/exec (:browser-pool sys)
                          (prepare-options uri token scale)
-                         (fn [page] (render-svg-page ctx uri page type objects on-object))))))
+                         (fn [page] (render-svg-page sys uri page type objects on-object))))))
 
 (defn ^:async render
   "Renders one partition of objects through a browser page: bitmap
   (png, jpeg, webp), pdf or svg depending on the type in `params`.
-  Calls `on-object` with each object carrying its `:path`, awaiting it
-  every time, and resolves nil."
-  [ctx {:keys [type] :as params} on-object]
+  Same shape as `exporter.renderer.wasm/render`: `sys` is task-free
+  infrastructure (pools, uris, flags), while `on-object` and `check`
+  ride positional as the per-task injections — the per-object
+  collector and the zero-arg cancel check raising `:job-cancelled`.
+  The check runs here at fail-fast entry plus the sequential pdf
+  loop; the concurrent flows rely on the entry check and the caller's
+  `on-object`. Calls `on-object` with each object carrying its
+  `:path`, awaiting it every time, and resolves nil."
+  [sys {:keys [type] :as params} on-object check]
+  (check-cancelled check)
   (case type
-    (:png :jpeg :webp) (await (render-bitmap ctx params on-object))
-    :pdf (await (render-pdf ctx params on-object))
-    :svg (await (render-svg ctx params on-object))
+    (:png :jpeg :webp) (await (render-bitmap sys params on-object))
+    :pdf (await (render-pdf sys params on-object check))
+    :svg (await (render-svg sys params on-object))
     (ex/raise :type :validation
               :code :unknown-render-type
               :hint (str "unknown render type: " type))))

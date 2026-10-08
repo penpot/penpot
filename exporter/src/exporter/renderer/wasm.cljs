@@ -8,18 +8,21 @@
   "Main-thread side of the headless renderer.
 
   Renders run on pooled workers because Skia calls are synchronous and
-  would block the event loop for every other export. Each job keeps one
-  worker for all its renders, sharing its caches and pool slot.
+  would block the event loop for every other export. Each batch keeps
+  one worker for all its renders, sharing its caches and pool slot.
 
-  The worker pool arrives as the instance map the pool service owns
-  (`{:pool :timeout-ms}`); the cancel source arrives as plain fns, so
-  production wires the jobs registry and tests wire atoms:
-
-  ```clojure
-  {:cancel-signal (fn [job-id] ...)
-   :cancelled?    (fn [job-id] ...)
-   :on-cancel     (fn [job-id f] ...)}
-  ```"
+  `sys` is task-free infrastructure (the wasm pool instance, the
+  `{:pool :timeout-ms}` map the pool service owns — hence unwrapping
+  one level to reach the raw pool). The lease map holds the rest:
+  `on-scope`, a fn receiving the leased 2-arg render fn and firing
+  every headless export through it, and `check-cancelled`, the
+  zero-arg cancel check raising `:job-cancelled` once the job ended.
+  Cancel is fully driver-owned: the check runs before each render,
+  and a watchdog interval polls it mid-render — on cancel the leased
+  worker aborts (shared signal flipped, thread terminated) and the
+  render rejects. The buffer the worker polls is born in the lease
+  itself; nobody outside knows what it is. A nil check arms no
+  interval and wires no cancel."
   (:require
    [app.common.logging :as l]
    [exporter.wasm.pool :as pool]))
@@ -35,36 +38,51 @@
         result))))
 
 (defn ^:async with-scope
-  "Runs `f`, a fn of a 2-arg render fn. Every render goes to the same
-  worker, one at a time, so the cancel check runs as each render's turn
-  comes up. Without a `job-id` nothing is wired for cancel."
-  [wpool cancel-source job-id f]
-  (let [{:keys [cancel-signal cancelled? on-cancel]} cancel-source]
-    (await
-     (pool/with-worker (:pool wpool)
-       (fn [worker]
-         ((^:async fn []
-            (let [chain  (serializer)
-                  live   (volatile! worker)
-                  signal (when job-id (cancel-signal job-id))
-                  opts   {:cancel-buffer (some-> signal (.-buffer))
-                          :cancelled?    (when job-id (fn [] (cancelled? job-id)))
-                          :timeout-ms    (:timeout-ms wpool)}]
-              (when job-id
-                ;; Between objects the worker sees the flag; inside a
-                ;; render only terminating the thread stops it. Cleared
-                ;; on the way out so a later cancel cannot terminate a
-                ;; worker that is by then somebody else's.
-                (on-cancel job-id (fn [] (pool/terminate @live))))
-              (try
-                (await (f (fn [params on-object]
-                            (chain (fn [] (pool/render-on worker params on-object opts))))))
-                (finally
-                  (vreset! live nil)))))))))))
+  "Leases one worker for the batch: `on-scope` fires every headless
+  export through the leased render fn, one at a time on the same
+  worker, so the check runs as each render's turn comes up. The
+  interval dies with the lease; a truly stuck thread is backstopped
+  by the pool's own silence watchdog."
+  [sys {:keys [check-cancelled on-scope watch-interval] :or {watch-interval 1000}}]
+  (await
+   (pool/with-worker (:pool (:wasm-pool sys))
+     (fn [worker]
+       ((^:async fn []
+          (let [chain  (serializer)
+                live   (volatile! worker)
+                signal (js/Int32Array. (js/SharedArrayBuffer. 4))
+                timer  (volatile! nil)
+                opts   {:cancel-buffer (.-buffer signal)
+                        :check-cancelled check-cancelled
+                        :timeout-ms    (:timeout-ms (:wasm-pool sys))}]
+            (vreset! timer
+                     (when check-cancelled
+                       (js/setInterval
+                        (fn []
+                          (try
+                            (check-cancelled)
+                            (catch :default _cause
+                              ;; One-shot: the lease is doomed anyway.
+                              ;; Between objects the worker sees the
+                              ;; flag; inside a render only terminating
+                              ;; the thread stops it.
+                              (some-> @timer js/clearInterval)
+                              (js/Atomics.store signal 0 1)
+                              (some-> @live pool/terminate))))
+                        watch-interval)))
+            (try
+              (await (on-scope (fn [params on-object]
+                                 (chain (fn [] (pool/render-on worker params on-object opts))))))
+              (finally
+                (some-> @timer js/clearInterval)
+                (vreset! live nil))))))))))
 
 (defn ^:async render
-  [wpool cancel-source params on-object]
-  (let [job-id (:job-id params)]
-    (l/info :hint "render" :type (:type params) :backend "wasm")
-    (await (with-scope wpool cancel-source job-id
-             (fn [render*] (render* params on-object))))))
+  "Same shape as `exporter.renderer.browser/render`: one export as a
+  batch of one."
+  [sys params on-object check]
+  (l/info :hint "render" :type (:type params) :backend "wasm")
+  (await (with-scope sys {:exports [params]
+                          :on-object on-object
+                          :check-cancelled check
+                          :on-scope (fn [render-wasm] (render-wasm params on-object))})))

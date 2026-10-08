@@ -62,12 +62,27 @@
                       :validate (fn [_] true)}
                  #js {:max 1 :min 0}))
 
-(defn- test-ctx
+(defn- test-sys
   [pool]
   {:browser-pool pool
    :base-uri     (cf/get-internal-uri)
    :public-uri   (cf/get :public-uri)
    :svgo?        false})
+
+(defn- never-cancelled
+  []
+  (fn [] nil))
+
+(defn- raising-check
+  [calls raise-on-call]
+  (let [seen (atom 0)]
+    (fn []
+      (swap! calls conj :check)
+      (when (= raise-on-call (swap! seen inc))
+        (throw (ex-info "export job was cancelled"
+                        {:type :internal
+                         :code :job-cancelled
+                         :hint "export job was cancelled"}))))))
 
 (defn- test-object
   [id]
@@ -94,7 +109,7 @@
           page    (stub-page calls (stub-locator calls (fn [_] nil)))
           pool    (test-pool calls page)
           {:keys [seen fn]} (collect-on-object)]
-      (await (render/render (test-ctx pool) (test-params :png ["a" "b"]) fn))
+      (await (render/render (test-sys pool) (test-params :png ["a" "b"]) fn (never-cancelled)))
       (t/is (= 2 (count @seen)))
       (t/is (every? #(str/ends-with? (:path %) ".png") @seen))
       (t/is (= ["a" "b"] (mapv :id @seen)))
@@ -113,12 +128,49 @@
           page    (stub-page calls (stub-locator calls (fn [_] nil)))
           pool    (test-pool calls page)
           {:keys [seen fn]} (collect-on-object)]
-      (await (render/render (test-ctx pool) (test-params :pdf ["a" "b"]) fn))
+      (await (render/render (test-sys pool) (test-params :pdf ["a" "b"]) fn (never-cancelled)))
       (t/is (= 2 (count @seen)))
       (t/is (every? #(str/ends-with? (:path %) ".pdf") @seen))
       (t/testing "one navigation per object"
         (t/is (= 2 (count (filter #(and (vector? %) (= :goto (first %))) @calls)))))
       (t/is (= 2 (count (filter #(and (vector? %) (= :pdf (first %))) @calls)))))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async cancelled-render-rejects-before-navigating
+  (try
+    (let [calls (atom [])
+          page  (stub-page calls (stub-locator calls (fn [_] nil)))
+          pool  (test-pool calls page)
+          sys   (test-sys pool)]
+      (try
+        (await (render/render sys (test-params :png ["a"])
+                              (fn [_] (swap! calls conj :object))
+                              (raising-check calls 1)))
+        (t/is false "render should have rejected a cancelled render")
+        (catch :default cause
+          (t/is (= :job-cancelled (-> cause ex-data :code)))
+          (t/is (not-any? #(and (vector? %) (= :goto (first %))) @calls))
+          (t/is (not-any? #{:object} @calls)))))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async cancel-mid-batch-stops-the-pdf-loop
+  (try
+    (let [calls   (atom [])
+          page    (stub-page calls (stub-locator calls (fn [_] nil)))
+          pool    (test-pool calls page)
+          ;; entry check is the first call, then one per object:
+          ;; the cancel lands as the second object comes up
+          sys     (test-sys pool)
+          {:keys [seen fn]} (collect-on-object)]
+      (try
+        (await (render/render sys (test-params :pdf ["a" "b"]) fn (raising-check calls 3)))
+        (t/is false "render should have rejected a cancelled batch")
+        (catch :default cause
+          (t/is (= :job-cancelled (-> cause ex-data :code)))
+          (t/is (= ["a"] (mapv :id @seen)))
+          (t/is (= 1 (count (filter #(and (vector? %) (= :goto (first %))) @calls)))))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
@@ -130,7 +182,7 @@
           page    (stub-page calls locator)
           pool    (test-pool calls page)
           {:keys [seen fn]} (collect-on-object)
-          _       (await (render/render (test-ctx pool) (test-params :svg ["a"]) fn))
+          _       (await (render/render (test-sys pool) (test-params :svg ["a"]) fn (never-cancelled)))
           path    (:path (first @seen))
           content (await (sh/read-file path))]
       (t/is (= 1 (count @seen)))

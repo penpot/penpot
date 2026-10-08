@@ -84,21 +84,23 @@
        :release (fn [_] (swap! calls conj :release) (js/Promise.resolve nil))
        :destroy (fn [_] (swap! calls conj :destroy) (js/Promise.resolve nil))})
 
-(defn- stub-cancel-source
+(defn- stub-check
   [calls]
-  {:cancel-signal (fn [job-id] (swap! calls conj [:cancel-signal job-id]) nil)
-   :cancelled?    (fn [job-id] (swap! calls conj [:cancelled?-asked job-id]) false)
-   :on-cancel     (fn [job-id f] (swap! calls conj [:on-cancel job-id f]) nil)})
+  (fn []
+    (swap! calls conj :check)))
 
-(defn- test-env
+(defn- test-sys
   [calls]
   (let [worker (stub-worker calls)]
-    {:browser-pool  (stub-browser-pool calls)
-     :base-uri      (cf/get-internal-uri)
-     :public-uri    (cf/get :public-uri)
-     :svgo?         false
-     :wasm-pool     {:pool (stub-wasm-pool calls worker) :timeout-ms 5000}
-     :cancel-source (stub-cancel-source calls)}))
+    {:browser-pool (stub-browser-pool calls)
+     :base-uri     (cf/get-internal-uri)
+     :public-uri   (cf/get :public-uri)
+     :svgo?        false
+     :wasm-pool    {:pool (stub-wasm-pool calls worker) :timeout-ms 5000}}))
+
+(defn- never-cancelled
+  [calls]
+  (stub-check calls))
 
 (defn- test-params
   [type opts]
@@ -119,9 +121,10 @@
   (try
     (let [calls (atom [])
           seen  (atom [])]
-      (await (renderer/render (test-env calls)
-                              (test-params :png nil)
-                              (fn [object] (swap! seen conj object) nil)))
+      (await (renderer/render (test-sys calls)
+                              :exports [(test-params :png nil)]
+                              :on-object (fn [object] (swap! seen conj object) nil)
+                              :check-cancelled (never-cancelled calls)))
       (t/is (= ["a"] (mapv :id @seen)))
       (t/is (some #(and (vector? %) (= :goto (first %))) @calls))
       (t/is (not-any? #(and (vector? %) (= :post (first %))) @calls)))
@@ -133,12 +136,13 @@
     (let [calls  (atom [])
           job-id (uuid/next)
           seen   (atom [])]
-      (await (renderer/render (test-env calls)
-                              (test-params :png {:is-wasm true :job-id job-id})
-                              (fn [object] (swap! seen conj object) nil)))
+      (await (renderer/render (test-sys calls)
+                              :exports [(test-params :png {:is-wasm true :job-id job-id})]
+                              :on-object (fn [object] (swap! seen conj object) nil)
+                              :check-cancelled (never-cancelled calls)))
       (t/is (= [{:id "w1" :path "/tmp/w1.png"}] @seen))
       (t/is (some #{[:post "render"]} @calls))
-      (t/is (some #{[:cancel-signal job-id]} @calls))
+      (t/is (some #{:check} @calls))
       (t/is (not-any? #(and (vector? %) (= :goto (first %))) @calls)))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
@@ -147,9 +151,10 @@
   (try
     (let [calls (atom [])]
       (try
-        (await (renderer/render (test-env calls)
-                                (dissoc (test-params :png nil) :objects)
-                                (fn [_] nil)))
+        (await (renderer/render (test-sys calls)
+                                :exports [(dissoc (test-params :png nil) :objects)]
+                                :on-object (fn [_] nil)
+                                :check-cancelled (never-cancelled calls)))
         (t/is false "render should have rejected params without objects")
         (catch :default cause
           (t/is (= :data-validation (-> cause ex-data :code))))))
@@ -160,47 +165,78 @@
   (try
     (let [calls (atom [])]
       (try
-        (await (renderer/render (test-env calls) (test-params :png nil) :not-a-fn))
+        (await (renderer/render (test-sys calls)
+                                :exports [(test-params :png nil)]
+                                :on-object :not-a-fn
+                                :check-cancelled (never-cancelled calls)))
         (t/is false "render should have rejected a non-fn on-object")
         (catch :default cause
           (t/is (= :data-validation (-> cause ex-data :code))))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async with-scope-shares-one-worker-across-headless-renders
+(t/deftest ^:async render-shares-one-worker-across-headless-renders
   (try
     (let [calls  (atom [])
           job-id (uuid/next)
-          env    (test-env calls)
+          sys    (test-sys calls)
           seen   (atom [])]
-      (await (renderer/with-scope env
-               [(test-params :png {:is-wasm true :job-id job-id})
-                (test-params :png {:is-wasm true :job-id job-id})
-                (test-params :png {:job-id job-id})]
-               (^:async fn [render*]
-                 (await (render* (test-params :png {:is-wasm true :job-id job-id})
-                                 (fn [object] (swap! seen conj object) nil)))
-                 (await (render* (test-params :png {:is-wasm true :job-id job-id})
-                                 (fn [object] (swap! seen conj object) nil)))
-                 (await (render* (test-params :png {:job-id job-id})
-                                 (fn [object] (swap! seen conj object) nil))))))
+      (await (renderer/render sys
+                              :exports [(test-params :png {:is-wasm true :job-id job-id})
+                                        (test-params :png {:is-wasm true :job-id job-id})
+                                        (test-params :png {:job-id job-id})]
+                              :on-object (fn [object] (swap! seen conj object) nil)
+                              :check-cancelled (never-cancelled calls)))
       (t/is (= 1 (count (filter #{:acquire} @calls))))
       (t/is (= 1 (count (filter #{:release} @calls))))
       (t/is (= 3 (count @seen))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async with-scope-without-headless-renders-directly
+(t/deftest ^:async render-without-headless-renders-directly
   (try
     (let [calls (atom [])
-          env   (test-env calls)
+          sys   (test-sys calls)
           seen  (atom [])]
-      (await (renderer/with-scope env
-               [(test-params :png nil)]
-               (fn [render*]
-                 (render* (test-params :png nil)
-                          (fn [object] (swap! seen conj object) nil)))))
+      (await (renderer/render sys
+                              :exports [(test-params :png nil)]
+                              :on-object (fn [object] (swap! seen conj object) nil)
+                              :check-cancelled (never-cancelled calls)))
       (t/is (= ["a"] (mapv :id @seen)))
       (t/is (not-any? #{:acquire} @calls)))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async render-validates-before-leasing
+  (try
+    (let [calls  (atom [])
+          job-id (uuid/next)
+          sys    (test-sys calls)]
+      (try
+        (await (renderer/render sys
+                                :exports [(test-params :png {:is-wasm true :job-id job-id})
+                                          (dissoc (test-params :png nil) :objects)]
+                                :on-object (fn [_] nil)
+                                :check-cancelled (never-cancelled calls)))
+        (t/is false "render should have rejected the bad batch")
+        (catch :default cause
+          (t/is (= :data-validation (-> cause ex-data :code)))
+          (t/testing "no worker was leased for a batch that never renders"
+            (t/is (not-any? #{:acquire} @calls))))))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async render-rejects-unknown-task-keys
+  (try
+    (let [calls (atom [])]
+      (try
+        (await (renderer/render (test-sys calls)
+                                :exports [(test-params :png nil)]
+                                :on-objec (fn [_] nil)
+                                :check-cancelled (never-cancelled calls)))
+        (t/is false "render should have rejected the misspelled key")
+        (catch :default cause
+          (t/is (= :data-validation (-> cause ex-data :code)))
+          (t/is (not-any? #(and (vector? %) (= :goto (first %))) @calls)))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))

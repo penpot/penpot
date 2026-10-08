@@ -241,13 +241,13 @@
                                    :cancel cancel-buffer}))))))
 
 (defn ^:async render-on
-  "Renders `params` on an already acquired worker."
-  [worker params on-object {:keys [cancel-buffer cancelled? timeout-ms]}]
-  (if (and cancelled? (cancelled?))
-    (throw (ex/error :type :internal
-                     :code :job-cancelled
-                     :hint "export job was cancelled"))
-    (await (render-on-worker worker params cancel-buffer on-object timeout-ms))))
+  "Renders `params` on an already acquired worker. The check runs
+  before posting: a render whose turn comes up cancelled rejects
+  without touching the worker."
+  [worker params on-object {:keys [cancel-buffer check-cancelled timeout-ms]}]
+  (when check-cancelled
+    (check-cancelled))
+  (await (render-on-worker worker params cancel-buffer on-object timeout-ms)))
 
 (defn terminate
   [worker]

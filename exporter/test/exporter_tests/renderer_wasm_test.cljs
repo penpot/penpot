@@ -6,8 +6,8 @@
 
 (ns exporter-tests.renderer-wasm-test
   "The wasm renderer driver: leased workers, sequential renders,
-  failure isolation and cancel wiring, against a stub pool, stub
-  workers and an injected cancel source."
+  failure isolation and driver-owned cancel, against a stub pool,
+  stub workers and an injected zero-arg check."
   (:require
    ["node:events" :as events]
    [app.common.transit :as transit]
@@ -43,21 +43,23 @@
        :release (fn [_] (swap! calls conj :release) (js/Promise.resolve nil))
        :destroy (fn [_] (swap! calls conj :destroy) (js/Promise.resolve nil))})
 
-(defn- stub-cancel-source
+(defn- stub-check
   [calls cancelled?]
-  {:cancel-signal (fn [job-id] (swap! calls conj [:cancel-signal job-id]) nil)
-   :cancelled?    (fn [job-id] (swap! calls conj [:cancelled?-asked job-id]) @cancelled?)
-   :on-cancel     (fn [job-id f] (swap! calls conj [:on-cancel job-id f]) nil)})
+  (fn []
+    (swap! calls conj :check)
+    (when @cancelled?
+      (throw (ex-info "export job was cancelled"
+                      {:type :internal
+                       :code :job-cancelled
+                       :hint "export job was cancelled"})))))
 
-(defn- test-instance
+(defn- test-sys
   [calls worker]
-  {:pool       (stub-pool calls worker)
-   :timeout-ms 5000})
+  {:wasm-pool {:pool (stub-pool calls worker) :timeout-ms 5000}})
 
 (defn- test-params
-  [job-id]
-  {:job-id  job-id
-   :type    :png
+  []
+  {:type    :png
    :objects [{:id "o1"}]})
 
 (defn- posted?
@@ -66,44 +68,36 @@
 
 (t/deftest ^:async with-scope-runs-renders-on-the-leased-worker
   (try
-    (let [calls (atom [])
+    (let [calls  (atom [])
           worker (stub-worker calls (render-behavior {:id "o1" :path "/tmp/o1.png"}))
-          seen (atom [])]
-      (await (render/with-scope (test-instance calls worker)
-               (stub-cancel-source calls (atom false))
-               :job-1
-               (^:async fn [render*]
-                 (await (render* (test-params :job-1)
-                                 (fn [object] (swap! seen conj object) nil)))
-                 (await (render* (test-params :job-1)
-                                 (fn [object] (swap! seen conj object) nil))))))
+          seen   (atom [])]
+      (await (render/with-scope (test-sys calls worker)
+               {:check-cancelled (stub-check calls (atom false))
+                :on-scope (^:async fn [render*]
+                            (await (render* (test-params)
+                                            (fn [object] (swap! seen conj object) nil)))
+                            (await (render* (test-params)
+                                            (fn [object] (swap! seen conj object) nil))))}))
       (t/is (= [{:id "o1" :path "/tmp/o1.png"}
                 {:id "o1" :path "/tmp/o1.png"}]
                @seen))
       (t/is (= 1 (count (filter #{:release} @calls))))
-      (t/testing "the job was wired for cancel exactly once"
-        (t/is (= [[:cancel-signal :job-1]
-                  [:cancelled?-asked :job-1]
-                  [:cancelled?-asked :job-1]]
-                 (filter #(and (vector? %) (not (contains? #{:post :on-cancel} (first %))))
-                         @calls)))
-        (let [registrations (filter #(and (vector? %) (= :on-cancel (first %))) @calls)]
-          (t/is (= 1 (count registrations)))
-          (t/is (= :job-1 (second (first registrations)))))))
+      (t/testing "the check runs as each render's turn comes up"
+        (t/is (= 2 (count (filter #{:check} @calls)))))
+      (t/testing "a quiet lease leaves its worker alone"
+        (t/is (not-any? #{:terminate} @calls))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
 (t/deftest ^:async cancelled-render-rejects-before-posting
   (try
     (let [calls (atom [])
-          worker (stub-worker calls (render-behavior {:id "o1"}))
-          cancelled (atom true)]
+          worker (stub-worker calls (render-behavior {:id "o1"}))]
       (try
-        (await (render/with-scope (test-instance calls worker)
-                 (stub-cancel-source calls cancelled)
-                 :job-1
-                 (fn [render*]
-                   (render* (test-params :job-1) (fn [_] nil)))))
+        (await (render/with-scope (test-sys calls worker)
+                 {:check-cancelled (stub-check calls (atom true))
+                  :on-scope (fn [render*]
+                              (render* (test-params) (fn [_] nil)))}))
         (t/is false "with-scope should have rejected a cancelled render")
         (catch :default cause
           (t/is (= :job-cancelled (-> cause ex-data :code)))
@@ -111,70 +105,70 @@
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async cancel-terminates-the-leased-worker
+(t/deftest ^:async cancel-aborts-the-leased-worker-mid-render
   (try
-    (let [calls (atom [])
-          worker (stub-worker calls (fn [_ _]))
-          handlers (atom [])]
+    (let [calls     (atom [])
+          worker    (stub-worker calls (fn [_ _]))
+          cancelled (atom false)]
       (try
-        (await (render/with-scope (test-instance calls worker)
-                 {:cancel-signal (fn [_] nil)
-                  :cancelled? (fn [_] false)
-                  :on-cancel (fn [_ f] (swap! handlers conj f) nil)}
-                 :job-1
-                 (fn [render*]
-                   (let [pending (render* (test-params :job-1) (fn [_] nil))]
-                     ;; the cancel lands mid-render, once
-                     ;; the worker is listening
-                     (js/setTimeout (fn [] ((first @handlers))) 10)
-                     pending))))
-        (t/is false "with-scope should have rejected a terminated render")
+        (await (render/with-scope (test-sys calls worker)
+                 {:check-cancelled (stub-check calls cancelled)
+                  :watch-interval 20
+                  :on-scope (fn [render*]
+                              ;; the cancel lands mid-render, once
+                              ;; the worker is listening
+                              (js/setTimeout #(reset! cancelled true) 10)
+                              (render* (test-params) (fn [_] nil)))}))
+        (t/is false "with-scope should have rejected an aborted render")
         (catch :default cause
           (t/is (= :worker-exited (-> cause ex-data :code)))
           (t/is (some #{:terminate} @calls)))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async render-takes-the-job-id-from-params
+(t/deftest ^:async render-leases-and-releases-for-one-render
   (try
-    (let [calls (atom [])
-          worker (stub-worker calls (render-behavior {:id "o1"}))]
-      (await (render/render (test-instance calls worker)
-                            (stub-cancel-source calls (atom false))
-                            (test-params :job-9)
-                            (fn [_] nil)))
-      (t/is (some #{[:cancel-signal :job-9]} @calls)))
+    (let [calls  (atom [])
+          worker (stub-worker calls (render-behavior {:id "o1"}))
+          seen   (atom [])]
+      (await (render/render (test-sys calls worker)
+                            (test-params)
+                            (fn [object] (swap! seen conj object) nil)
+                            (stub-check calls (atom false))))
+      (t/is (= [{:id "o1"}] @seen))
+      (t/is (= 1 (count (filter #{:release} @calls)))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
-(t/deftest ^:async render-without-job-id-wires-no-cancel
+(t/deftest ^:async render-without-check-wires-no-cancel
   (try
-    (let [calls (atom [])
-          worker (stub-worker calls (render-behavior {:id "o1"}))]
-      (await (render/render (test-instance calls worker)
-                            (stub-cancel-source calls (atom false))
-                            (dissoc (test-params :job-9) :job-id)
-                            (fn [_] nil)))
-      (t/is (not-any? #(and (vector? %) (not= :post (first %))) @calls)))
+    (let [calls  (atom [])
+          worker (stub-worker calls (render-behavior {:id "o1"}))
+          seen   (atom [])]
+      (await (render/render (test-sys calls worker)
+                            (test-params)
+                            (fn [object] (swap! seen conj object) nil)
+                            nil))
+      (t/is (= [{:id "o1"}] @seen))
+      (t/is (not-any? #{:terminate} @calls)))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
 (t/deftest ^:async failed-render-does-not-break-the-chain
   (try
-    (let [calls (atom [])
+    (let [calls  (atom [])
           worker (stub-worker calls (render-behavior {:id "o1"}))
-          seen (atom [])]
-      (await (render/with-scope (test-instance calls worker)
-               (stub-cancel-source calls (atom false))
-               :job-1
-               (^:async fn [render*]
-                 (try
-                   (await (render* (test-params :job-1)
-                                   (fn [_] (throw (ex-info "on-object broke" {})))))
-                   (catch :default _cause
-                     (swap! calls conj :first-failed)))
-                 (await (render* (test-params :job-1)
-                                 (fn [object] (swap! seen conj object) nil))))))
+          seen   (atom [])]
+      (await (render/with-scope (test-sys calls worker)
+               {:check-cancelled (stub-check calls (atom false))
+                :on-scope (^:async fn [render*]
+                            (try
+                              (await (render* (test-params)
+                                              (fn [_] (throw (ex-info "on-object broke" {})))))
+                              (catch :default _cause
+                                (swap! calls conj :first-failed)))
+                            (await (render* (test-params)
+                                            (fn [object] (swap! seen conj object) nil))))}))
       (t/is (some #{:first-failed} @calls))
       (t/is (= [{:id "o1"}] @seen)))
     (catch :default cause

@@ -111,7 +111,9 @@
                    (pool/render-on worker
                                    {}
                                    (fn [_])
-                                   {:cancelled? (constantly true)
+                                   {:check-cancelled (fn []
+                                                       (throw (ex-info "export job was cancelled"
+                                                                       {:code :job-cancelled})))
                                     :timeout-ms 5000}))))
         (t/is false "render-on should have rejected a cancelled render")
         (catch :default cause
