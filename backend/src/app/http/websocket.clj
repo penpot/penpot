@@ -26,7 +26,6 @@
    [app.rpc.notifications :as notifications]
    [app.util.websocket :as ws]
    [integrant.core :as ig]
-   [promesa.exec :as px]
    [promesa.exec.csp :as sp]
    [yetti.websocket :as yws]))
 
@@ -223,46 +222,48 @@
         (swap! state dissoc ::team-subscription)))))
 
 
-(defn- schedule-revalidation
-  "Rearms `task` every `interval-ms` while `alive?` holds.
-
-  Kept independent of the relay loop on purpose: a re-check driven by
-  the same loop would be pushed away by a steady stream of messages, so
-  a busy file would never be re-checked at all. The closed channel is
-  what ends `alive?`, because every way a subscription can end closes
-  it."
-  [alive? interval-ms task]
-  (when (alive?)
-    (px/schedule interval-ms
-                 (fn []
-                   (when (alive?)
-                     (task)
-                     (schedule-revalidation alive? interval-ms task))))))
-
 (defn- start-relay
   "Forwards `channel` into the client output channel of `wsp`, and keeps
-  a re-check of `check-access` running on the interval. When access no
+  a re-check of `check-access` running on a fixed cadence. When access no
   longer holds, `close-fn` tears the subscription down, which closes the
   channel and ends the loop.
+
+  The loop waits on the subscription channel and a one-shot tick channel
+  together, with priority on the tick: when both hold something, the tick
+  wins, so a steady stream of messages can never push the re-check away.
+  A single tick channel covers a whole cadence and message turns reuse
+  it, so busy files don't churn timers; the cadence holds under load
+  because nothing moves the tick. Closing the channel ends the loop
+  either way, because a take on a closed channel is always ready
+  with nil.
 
   `on-forward` runs for every forwarded message, which is how the file
   relay announces presence."
   [{:keys [::ws/output-ch] :as wsp} channel check-access close-fn on-forward]
-  (schedule-revalidation #(not (sp/closed? channel))
-                         (inst-ms (revalidation-interval))
-                         (fn []
-                           (when-not (still-authorized? check-access)
-                             (l/info :hint
-                                     "closing websocket subscription on re-check"
-                                     :profile-id (::profile-id wsp))
-                             (close-fn))))
-  (sp/go-loop []
-    ;; nil means the channel was closed, which means the subscription
-    ;; is gone and the relay ends.
-    (when-let [message (sp/take! channel)]
-      (sp/put! output-ch message)
-      (when on-forward (on-forward message))
-      (recur))))
+  (let [interval-ms (inst-ms (revalidation-interval))]
+    (sp/go-loop [tick-ch (sp/timeout-chan interval-ms)]
+      (let [[message port] (sp/alts! [tick-ch channel] :priority true)]
+        (cond
+          (identical? port tick-ch)
+          (do
+            (when-not (still-authorized? check-access)
+              (l/info :hint
+                      "closing websocket subscription on re-check"
+                      :profile-id (::profile-id wsp))
+              (close-fn))
+            (when-not (sp/closed? channel)
+              (recur (sp/timeout-chan interval-ms))))
+
+          (nil? message)
+          ;; The channel was closed, which means the subscription is gone
+          ;; and the relay ends.
+          nil
+
+          :else
+          (do
+            (sp/put! output-ch message)
+            (when on-forward (on-forward message))
+            (recur tick-ch)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBSOCKET HANDLER
