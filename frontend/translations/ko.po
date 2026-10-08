@@ -789,7 +789,7 @@ msgstr "모든 프로젝트와 파일을 복원하려 합니다. 시간이 다�
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "모든 프로젝트 및 파일 복원"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "모두 복원"
 
@@ -1209,7 +1209,7 @@ msgstr "웹 워커에서 문제가 발생했습니다."
 msgid "errors.invalid-color"
 msgstr "유효하지 않은 컬러"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "유효하지 않은 데이터"
 
@@ -1973,7 +1973,7 @@ msgstr "숨기기"
 msgid "labels.hide-resolved-comments"
 msgstr "해결된 댓글 숨기기"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "가져오기"
 
@@ -3706,7 +3706,7 @@ msgstr "확대/축소"
 msgid "shortcuts.thumbnail-set"
 msgstr "썸네일 설정"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "키보드 단축키"
 
