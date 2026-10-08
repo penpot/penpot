@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+set -ex
 
 case "$(uname -m)" in
   aarch64|arm64) _ARCH="aarch64" ;;
@@ -13,6 +13,8 @@ _SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 pushd "$_SCRIPT_DIR" > /dev/null
 
 . ./_build_env frontend
+
+node --test scripts/cargo-build.test.cjs || exit $?
 
 setup
 cargo test --bin render_wasm -- --show-output
