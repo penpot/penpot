@@ -96,6 +96,14 @@
 (def ^:private auto-scroll-max-speed 18)
 (def ^:private auto-scroll-stale-ms 500)
 
+;; Speeds are given in pixels per frame at 60 Hz and scaled by the real time
+;; between frames, so the scroll goes as fast on a 120 Hz screen.
+(def ^:private auto-scroll-frame-ms (/ 1000 60))
+(def ^:private auto-scroll-max-frame-ms 100)
+
+;; State of the current drag: the scroll container, found once when the drag
+;; starts, the scroll speed, the pending animation frame and when the pointer
+;; was last seen over the list.
 (defonce ^:private auto-scroll-state (atom nil))
 
 (defn- scrollable-ancestor
@@ -109,57 +117,91 @@
           node
           (recur (.-parentElement ^js node)))))))
 
-(defn auto-scroll-speed
+(defn- auto-scroll-speed
   "Pixels to scroll on each frame given the pointer position, negative
-  upwards. Zero when the pointer is outside the edge zones."
+  upwards. Zero when the pointer is outside the edge zones. The zones take
+  at most a quarter of the container each, so the middle half of a short
+  list never scrolls."
   [{:keys [top bottom]} pointer-y]
-  (let [top-distance    (- pointer-y top)
+  (let [zone            (mth/min auto-scroll-zone-size (/ (- bottom top) 4))
+        top-distance    (- pointer-y top)
         bottom-distance (- bottom pointer-y)
         ramp            (fn [distance]
-                          (-> (- auto-scroll-zone-size distance)
-                              (/ auto-scroll-zone-size)
+                          (-> (- zone distance)
+                              (/ zone)
                               (* auto-scroll-max-speed)
                               (mth/ceil)))]
     (cond
       (or (neg? top-distance) (neg? bottom-distance)) 0
-      (< top-distance auto-scroll-zone-size)          (- (ramp top-distance))
-      (< bottom-distance auto-scroll-zone-size)       (ramp bottom-distance)
+      (< top-distance zone)                           (- (ramp top-distance))
+      (< bottom-distance zone)                        (ramp bottom-distance)
       :else                                           0)))
 
 (defn- stop-auto-scroll!
+  "Stops the scroll loop, keeping the scroll container for the rest of the
+  drag."
   []
-  (when-let [state @auto-scroll-state]
-    (ts/cancel-af! (:frame state))
-    (reset! auto-scroll-state nil)))
+  (some-> (:frame @auto-scroll-state) ts/cancel-af!)
+  (swap! auto-scroll-state dissoc :frame :last-frame-at :offset))
+
+(defn- end-auto-scroll!
+  []
+  (stop-auto-scroll!)
+  (reset! auto-scroll-state nil))
+
+(defn- start-auto-scroll!
+  "Remembers the scroll container of the dragged `node`. A loop left over
+  from a previous drag whose end was lost is stopped first."
+  [node]
+  (stop-auto-scroll!)
+  (reset! auto-scroll-state {:element (scrollable-ancestor node)}))
 
 (defn- auto-scroll-tick
-  []
-  (let [{:keys [element speed updated-at]} @auto-scroll-state]
+  [timestamp]
+  (let [{:keys [element speed updated-at last-frame-at offset]} @auto-scroll-state]
     ;; The stale check stops the loop if the drag ended without us being
     ;; notified, for example when a dragend event is lost.
     (if (or (nil? element)
-            (> (- (inst-ms (js/Date.)) updated-at) auto-scroll-stale-ms))
-      (stop-auto-scroll!)
-      (do
-        (dom/scroll-by! element 0 speed)
-        (swap! auto-scroll-state assoc :frame (ts/raf auto-scroll-tick))))))
+            (> (- timestamp updated-at) auto-scroll-stale-ms))
+      (end-auto-scroll!)
+      (let [;; Capped so a late frame does not make the list jump.
+            elapsed (if (some? last-frame-at)
+                      (mth/min (- timestamp last-frame-at) auto-scroll-max-frame-ms)
+                      auto-scroll-frame-ms)
+            ;; Keep the fraction of a pixel for the next frame, otherwise
+            ;; slow speeds would be lost on fast screens.
+            offset  (+ (or offset 0) (* speed (/ elapsed auto-scroll-frame-ms)))
+            step    (js/Math.trunc offset)]
+        (when-not (zero? step)
+          (dom/scroll-by! element 0 step))
+        (swap! auto-scroll-state assoc
+               :offset (- offset step)
+               :last-frame-at timestamp
+               :frame (ts/raf auto-scroll-tick))))))
 
 (defn- update-auto-scroll!
   "Starts, updates or stops the auto scroll of the container of `node`
   depending on how close the pointer is to its edges."
   [node pointer-y]
-  (let [element (scrollable-ancestor node)
-        speed   (when (some? element)
-                  (auto-scroll-speed (dom/get-bounding-rect element) pointer-y))]
-    (if (or (nil? speed) (zero? speed))
+  (let [element (:element @auto-scroll-state)
+        ;; The drag may have started outside this list, or the loop ended
+        ;; on the stale check: find the container of `node` again.
+        element (if (dom/child? node element)
+                  element
+                  (scrollable-ancestor node))
+        speed   (if (some? element)
+                  (auto-scroll-speed (dom/get-bounding-rect element) pointer-y)
+                  0)]
+    (swap! auto-scroll-state assoc
+           :element element
+           :speed speed
+           :updated-at (js/performance.now))
+    (cond
+      (zero? speed)
       (stop-auto-scroll!)
-      (let [running? (some? @auto-scroll-state)]
-        (swap! auto-scroll-state assoc
-               :element element
-               :speed speed
-               :updated-at (inst-ms (js/Date.)))
-        (when-not running?
-          (swap! auto-scroll-state assoc :frame (ts/raf auto-scroll-tick)))))))
+
+      (nil? (:frame @auto-scroll-state))
+      (swap! auto-scroll-state assoc :frame (ts/raf auto-scroll-tick)))))
 
 (defn use-sortable
   [& {:keys [data-type data on-drop on-drag on-hold disabled detect-center? draggable?]
@@ -197,6 +239,7 @@
               (dnd/set-data! event data-type data)
               (dnd/set-drag-image! event (dnd/invisible-image))
               (dnd/set-allowed-effect! event "move")
+              (start-auto-scroll! (mf/ref-val ref))
               (when (fn? on-drag)
                 (on-drag data)))))
 
@@ -237,7 +280,7 @@
           ;; (dnd/trace event data "drop")
           (let [side (dnd/drop-side event detect-center?)
                 drop-data (dnd/get-data event data-type)]
-            (stop-auto-scroll!)
+            (end-auto-scroll!)
             (cleanup)
             (rx/push! global-drag-end nil)
             (when (fn? on-drop)
@@ -247,7 +290,7 @@
         (fn [event]
           (dom/stop-propagation event)
           ;; (dnd/trace event data "drag-end")
-          (stop-auto-scroll!)
+          (end-auto-scroll!)
           (rx/push! global-drag-end nil)
           (cleanup))
 
