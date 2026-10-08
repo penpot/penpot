@@ -715,6 +715,7 @@
   (when (and before after)
     (normalize-selection {:anchor-para (:para before) :anchor-offset (:offset before)
                           :focus-para (:para after) :focus-offset (:offset after)})))
+
 (defn- para-char-count
   [para]
   (apply + (map (fn [span] (count (:text span))) (:children para))))

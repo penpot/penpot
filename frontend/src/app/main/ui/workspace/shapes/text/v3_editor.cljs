@@ -23,6 +23,7 @@
    [app.render-wasm.text-editor :as text-editor]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
+   [app.util.text.geometry :as text.geom]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -380,34 +381,33 @@
                                  (font-family-from-font-id (:font-id font))) fallback-fonts)
 
         [{:keys [x y width height ime-width ime-left]} transform]
-        (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
+        (let [dimension (wasm.api/get-text-dimensions shape-id)
               selrect-transform (mf/deref refs/workspace-selrect)
               vbox (mf/deref refs/vbox)
               [selrect transform] (dsh/get-selrect selrect-transform shape)
-              selrect-height (:height selrect)
-              selrect-width (:width selrect)
-              max-width (max width selrect-width)
-              max-height (max height selrect-height)
-              ;; During auto-width editing the shape width is trimmed to the content, so an
-              ;; empty text box ends up only a few pixels wide. That is not enough room for
-              ;; the caret and the contenteditable overlay may fail to receive input when it
-              ;; is that small. Expand the overlay by one viewport width for auto-width texts
-              ;; (mirroring the v2 editor) so typing works and the caret is not clipped.
+              live-rect (text.geom/live-rect selrect (:grow-type shape) (:content shape) dimension)
+              ;; Reserve room for composition without changing the capture DOM
+              ;; mid-IME. Vertical columns grow leftward; their inline axis is y.
+              auto-width? (= (:grow-type shape) :auto-width)
+              auto-grow? (not= (:grow-type shape) :fixed)
               viewport-width (or (:width vbox) 0)
-              overlay-width (if (= (:grow-type shape) :auto-width)
-                              (+ max-width viewport-width)
-                              max-width)
+              viewport-height (or (:height vbox) 0)
+              left (min (:x selrect) (:x live-rect))
+              top (min (:y selrect) (:y live-rect))
+              right (max (+ (:x selrect) (:width selrect))
+                         (+ (:x live-rect) (:width live-rect)))
+              bottom (max (+ (:y selrect) (:height selrect))
+                          (+ (:y live-rect) (:height live-rect)))
+              x (if (and vertical? auto-grow?) (- left viewport-width) left)
+              overlay-width (+ (- right x) (if (and (not vertical?) auto-width?) viewport-width 0))
+              overlay-height (+ (- bottom top)
+                                (if (if vertical? auto-width? auto-grow?) viewport-height 0))
               ime-padding (ime-overlay-padding vertical? viewport-width)
-              valign (-> shape :content :vertical-align)
-              y (:y selrect)
-              y (case valign
-                  "bottom" (+ y (- selrect-height height))
-                  "center" (+ y (/ (- selrect-height height) 2))
-                  y)]
+              y top]
           ;; Widen the foreignObject (not the clip) toward the IME anchor, or
           ;; the browser scrolls to reveal the caret and cancels the offset.
           [(assoc selrect
-                  :y y :width overlay-width :height max-height
+                  :x x :y y :width overlay-width :height overlay-height
                   :ime-width (+ overlay-width (:right ime-padding))
                   :ime-left (:left ime-padding))
            transform])
