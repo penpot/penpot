@@ -30,7 +30,7 @@ test.describe("Shortcuts Settings Page", () => {
       "aria-selected",
       "true",
     );
-    const personalizedPlacehonder = page.getByText(/Head to All to start/i);
+    const personalizedPlacehonder = page.getByText(/No custom shortcuts yet/i);
     await expect(personalizedPlacehonder).toBeVisible();
 
     await shortcutsPage.clickTab("Disabled");

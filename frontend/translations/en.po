@@ -4927,7 +4927,7 @@ msgstr "Shortcut available."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
 msgid "shortcuts.edit-on-settings"
-msgstr "Customize in Settings"
+msgstr "Customize shortcuts"
 
 #: src/app/main/data/workspace/grid_layout/shortcuts.cljs:37, src/app/main/data/workspace/path/shortcuts.cljs:175, src/app/main/data/workspace/shortcuts.cljs:177
 msgid "shortcuts.escape"
@@ -5083,7 +5083,7 @@ msgstr "No disabled shortcuts."
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
 msgid "shortcuts.no-personalized"
-msgstr "Head to All to start customizing your shortcuts."
+msgstr "No custom shortcuts yet. Customize one from the All tab."
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
 msgid "shortcuts.no-shortcuts"
