@@ -16,7 +16,6 @@
    [app.common.geom.point :as gpt]
    [app.common.render-wasm.api.select :as wselect]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.text.japanese-layout :as jl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.modifiers :as dwm]
@@ -25,6 +24,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.api.fonts :as wasm.fonts]
+   [app.util.text.geometry :as text.geom]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -35,25 +35,7 @@
   auto-height keeps the physical height as its wrap budget and grows width."
   [selrect grow-type content dimension]
   (when (or (= :fixed grow-type) (some? dimension))
-    (let [vertical? (jl/vertical-text-content? content)]
-      {:width  (cond
-                 (= :fixed grow-type)
-                 (:width selrect)
-
-                 (and (= :auto-height grow-type) (not vertical?))
-                 (:width selrect)
-
-                 :else
-                 (:width dimension))
-       :height (cond
-                 (= :fixed grow-type)
-                 (:height selrect)
-
-                 (and (= :auto-height grow-type) vertical?)
-                 (:height selrect)
-
-                 :else
-                 (:height dimension))})))
+    (text.geom/resolve-size selrect grow-type content dimension)))
 
 (defn get-wasm-text-new-size
   "Computes the new {width, height} for a text shape from WASM text layout.
@@ -83,12 +65,12 @@
   ([shape]
    (resize-wasm-text-modifiers shape (:content shape)))
 
-  ([{:keys [id points selrect] :as shape} content]
+  ([{:keys [id selrect] :as shape} content]
    (when-let [new-size (get-wasm-text-new-size shape content)]
      (let [width-scale  (/ (:width new-size) (:width selrect))
            height-scale (/ (:height new-size) (:height selrect))
            resize-v     (gpt/point width-scale height-scale)
-           origin       (first points)]
+           origin       (text.geom/resize-origin (assoc shape :content content))]
        {id
         {:modifiers
          (ctm/resize-modifiers
