@@ -130,6 +130,18 @@ export function logActiveTransports(log: pino.Logger): void {
   }
 }
 
-export function createLogger(name: string) {
-  return logger.child({ name });
+// Returns a lazy proxy: `logger.child({ name })` (and therefore the pino
+// instance with its transport threads) is only created on the first log call.
+// This keeps importing a module cheap — notably inside a worker thread, where
+// an eager `createLogger` would spawn the transport workers of the main
+// process logger in every SVG worker.
+export function createLogger(name: string): pino.Logger {
+  let child: pino.Logger | null = null;
+  return new Proxy({} as pino.Logger, {
+    get(_, prop) {
+      child ??= logger.child({ name });
+      const value = (child as unknown as Record<string | symbol, unknown>)[prop];
+      return typeof value === "function" ? value.bind(child) : value;
+    },
+  });
 }

@@ -1097,7 +1097,7 @@
                               raw   (with-open [istream (cond-> (zip-entry-stream input (get-zip-entry input path))
                                                           limit (size-limiting-stream limit (atom 0) path))]
                                       (io/read istream))]
-                          (bfc/sanitize-imported-svg object raw)))
+                          (bfc/sanitize-imported-svg cfg object raw)))
               content (if-let [{:keys [bytes hash]} clean]
                         (-> (sto/content bytes)
                             (sto/wrap-with-hash hash))

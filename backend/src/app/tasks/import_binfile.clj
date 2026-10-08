@@ -12,11 +12,13 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.db :as db]
+   [app.http.client :as http.client]
    [app.jobs :as jobs]
    [app.jobs.storage :as js]
    [app.metrics :as mtx]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
+   [app.setup :as-alias setup]
    [app.storage :as sto]
    [datoteka.fs :as fs]
    [integrant.core :as ig]))
@@ -112,7 +114,11 @@
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
   (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided")
-  (assert (mtx/metrics? (::mtx/metrics params)) "expected valid metrics"))
+  (assert (mtx/metrics? (::mtx/metrics params)) "expected valid metrics")
+  ;; The import sanitizes SVGs through `app.media`, which talks to
+  ;; media-processor when remote media processing is enabled.
+  (assert (http.client/client? (::http.client/client params)) "expected a valid http client")
+  (assert (map? (::setup/shared-keys params)) "expected shared keys to be provided"))
 
 (defmethod ig/init-key ::job-def
   [_ cfg]

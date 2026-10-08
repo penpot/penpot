@@ -37,6 +37,17 @@
     (media.remote/process system params)
     (media.local/process system params)))
 
+(defn sanitize-svg
+  "Sanitize SVG `content` (a UTF-8 string) with the active media backend:
+   the local ad-hoc filter, or DOMPurify in media-processor when remote
+   media processing is enabled. Returns the sanitized SVG as text.
+
+   When the remote backend is up but the service fails, the exception
+   propagates: the upload or import fails instead of silently falling back
+   to the weaker local filter."
+  [system content]
+  (:content (run system {:cmd :sanitize-svg :content content})))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMAGE HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
