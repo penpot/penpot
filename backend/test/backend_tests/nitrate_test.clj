@@ -29,6 +29,15 @@
               "http://ac.example/admin-console/api/teams/team-id/users/profile-id"]
              ["nested organization membership path"
               ["api/organizations/" "organization-id/" "members/" "profile-id"]
-              "http://ac.example/admin-console/api/organizations/organization-id/members/profile-id"]]]
+              "http://ac.example/admin-console/api/organizations/organization-id/members/profile-id"]
+             ["organization action path"
+              ["api/organizations/" "organization-id/" "add-team"]
+              "http://ac.example/admin-console/api/organizations/organization-id/add-team"]
+             ["user action path"
+              ["api/users/" "profile-id/" "cleanup-after-deletion"]
+              "http://ac.example/admin-console/api/users/profile-id/cleanup-after-deletion"]
+             ["team action path"
+              ["api/teams/" "team-id/" "sso"]
+              "http://ac.example/admin-console/api/teams/team-id/sso"]]]
       (t/testing label
         (t/is (= expected (apply generate-nitrate-uri segments)))))))
