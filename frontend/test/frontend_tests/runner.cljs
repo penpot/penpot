@@ -9,6 +9,7 @@
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.composable-tests.completion-contract-test]
    [frontend-tests.copy-as-svg-test]
+   [frontend-tests.data.changes-test]
    [frontend-tests.data.comments-filters-test]
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.event-test]
@@ -167,6 +168,7 @@
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.composable-tests.completion-contract-test
    'frontend-tests.copy-as-svg-test
+   'frontend-tests.data.changes-test
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.event-test
