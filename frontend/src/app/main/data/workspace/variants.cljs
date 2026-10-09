@@ -792,40 +792,23 @@
         ;; Gone from objects → no-op (do not switch a closed-over stale shape).
         (if-let [shape (get objects (:id shape))]
           (let [libraries    (dsh/lookup-libraries state)
-                component-id (:component-id shape)
-                component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
-            ;; If the value is already val, do nothing
-            (if (not= val (dm/get-in component [:variant-properties pos :value]))
-              (let [variant-id             (:variant-id component)
-                    component-file-data    (dm/get-in libraries [(:component-file shape) :data])
-                    component-page-objects (-> (dsh/get-page component-file-data (:main-instance-page component))
-                                               (get :objects))
-                    variant-comps          (cfv/find-variant-components component-file-data component-page-objects variant-id)
-                    target-props           (-> (:variant-properties component)
-                                               (update pos assoc :value val))
-                    valid-comps            (->> variant-comps
-                                                (remove #(= (:id %) component-id))
-                                                (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
-                                                (reverse))
-                    nearest-comp           (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
-                    shape-parents          (cfh/get-parents-with-self objects (:parent-id shape))
-                    nearest-comp-children  (cfh/get-children-with-self component-page-objects (:main-instance-id nearest-comp))
-                    comps-nesting-loop?    (seq? (cfh/components-nesting-loop? nearest-comp-children shape-parents))
+                nearest-comp (clv/find-switch-target libraries shape pos val)
 
-                    {:keys [on-error]
-                     :or {on-error rx/throw}} (meta params)]
-
-                ;; If there is no nearest-comp, do nothing
-                (if nearest-comp
-                  (if comps-nesting-loop?
-                    (do
-                      (on-error)
-                      (rx/empty))
-                    (rx/of
-                     (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true swap-opts)
-                     (ev/event (-> {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}
-                                   (merge (meta it))))))
-                  (rx/empty)))
+                {:keys [on-error]
+                 :or {on-error rx/throw}} (meta params)]
+            ;; Nothing to do when the value is already val or no variant has it
+            (if nearest-comp
+              (if (clv/swap-nesting-loop? objects
+                                          shape
+                                          (dm/get-in libraries [(:component-file shape) :data])
+                                          (:id nearest-comp))
+                (do
+                  (on-error)
+                  (rx/empty))
+                (rx/of
+                 (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true swap-opts)
+                 (ev/event (-> {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}
+                               (merge (meta it))))))
               (rx/empty)))
           (rx/empty))))))
 
