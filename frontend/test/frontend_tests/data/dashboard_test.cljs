@@ -19,6 +19,24 @@
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
+(t/deftest ^:async duplicated-project-has-a-file-count-and-is-unpinned
+  (let [id       (uuid/next)
+        copy-id  (uuid/next)
+        team-id  (uuid/next)
+        copied   {:id copy-id :team-id team-id :name "Copy"}
+        state    {:projects {id {:id id :name "Source" :count 9 :is-pinned true}}}
+        result   (atom state)]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [cmd _]
+                             (->> (rx/of (case cmd
+                                           :duplicate-project copied
+                                           :get-project-files [{:id (uuid/next)} {:id (uuid/next)}]))
+                                  (rx/observe-on :async))))}
+       (await (async/observe (ptk/watch (dd/duplicate-project {:id id :name "Source"}) state (rx/empty))
+                             :on-next #(swap! result (partial ptk/update %))))))
+    (t/is (= (assoc copied :count 2 :is-pinned false) (get-in @result [:projects copy-id])))))
+
 (t/deftest moving-current-team-into-sso-organization-redirects
   (t/async done
     (let [team-id      (uuid/next)

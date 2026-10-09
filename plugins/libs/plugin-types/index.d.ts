@@ -791,6 +791,8 @@ export interface WorkspaceContext {
  *
  * Values are a snapshot taken when the team was listed; changes made through
  * this object update it.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
  */
 export interface Team {
   readonly id: string;
@@ -811,6 +813,10 @@ export interface Team {
    * ```
    */
   listProjects(): Promise<Project[]>;
+  /** Lists projects still recoverable from Trash. Requires `content:read`. */
+  listDeletedProjects(): Promise<Project[]>;
+  /** Lists files still recoverable from Trash. Requires `content:read`. */
+  listDeletedFiles(): Promise<ProjectFile[]>;
   /**
    * Creates a project in the team. Requires `manage:projects`.
    *
@@ -823,11 +829,6 @@ export interface Team {
    * ```
    */
   createProject(options: { name: string }): Promise<Project>;
-  /**
-   * Deletes the team with its projects and files. Requires `manage:delete`.
-   * Rejects deleting the current team and the user's personal team.
-   */
-  remove(): Promise<void>;
 }
 
 /**
@@ -835,13 +836,15 @@ export interface Team {
  *
  * Values are a snapshot taken when the project was listed; changes made through
  * this object update it.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
  */
 export interface Project {
   readonly id: string;
   readonly teamId: string;
   /** Whether this is the team's Drafts project. */
   readonly isDefault: boolean;
-  /** Number of files in the project when it was listed. */
+  /** Number of files when the project was listed; file operations do not update it. */
   readonly fileCount: number;
   /**
    * The project name. Assigning renames the project; requires `manage:projects`.
@@ -859,6 +862,14 @@ export interface Project {
    * ```
    */
   listFiles(): Promise<ProjectFile[]>;
+  /** Lists the project's files still recoverable from Trash. Requires `content:read`. */
+  listDeletedFiles(): Promise<ProjectFile[]>;
+  /**
+   * Restores the project through its files using the dashboard's Trash operation.
+   * Requires `manage:projects` and team edit access. Does not require `manage:delete`.
+   * Rejects if the project has no recoverable files, including empty projects.
+   */
+  restore(): Promise<void>;
   /**
    * Creates a file with an initial page in the project. Requires `content:write`.
    *
@@ -880,7 +891,10 @@ export interface Project {
   duplicate(options?: { name?: string }): Promise<Project>;
   /** Moves the project to another team. Requires `manage:teams`. */
   moveTo(team: Team): Promise<void>;
-  /** Deletes the project and its files. Requires `manage:delete`. */
+  /**
+   * Moves the project and its files to Trash. Requires `manage:delete`.
+   * They can be restored during the retention period. Cannot permanently delete.
+   */
   remove(): Promise<void>;
 }
 
@@ -890,6 +904,8 @@ export interface Project {
  * Values are a snapshot taken when the file was listed; changes made through
  * this object update it. To read or edit its content, `open` it and use
  * `penpot.currentFile`.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
  */
 export interface ProjectFile {
   readonly id: string;
@@ -914,7 +930,16 @@ export interface ProjectFile {
    * ready. Requires `content:read`.
    */
   open(): Promise<void>;
-  /** Moves the file to another project of the same team. Requires `content:write`. */
+  /**
+   * Restores the file using the dashboard's Trash operation, including its parent
+   * project if deleted. Requires `content:write` and team edit access.
+   * Rejects if the file no longer exists. Does not require `manage:delete`.
+   */
+  restore(): Promise<void>;
+  /**
+   * Moves the file to another project of the same team. Requires `content:write`.
+   * Rejects a destination that currently belongs to another team.
+   */
   moveTo(project: Project): Promise<void>;
   /**
    * Duplicates the file in its project. Requires `content:write`.
@@ -922,7 +947,10 @@ export interface ProjectFile {
    * `name` defaults to the name the backend chooses.
    */
   duplicate(options?: { name?: string }): Promise<ProjectFile>;
-  /** Deletes the file. Requires `manage:delete`. */
+  /**
+   * Moves the file to Trash. Requires `manage:delete`.
+   * It can be restored during the retention period. Cannot permanently delete.
+   */
   remove(): Promise<void>;
 }
 
@@ -972,6 +1000,16 @@ export interface PenpotMgmt {
    * ```
    */
   listProjects(options?: { teamId?: string }): Promise<Project[]>;
+  /**
+   * Lists projects still recoverable from Trash. Requires `content:read`.
+   * `teamId` defaults to the current team. Use `Project.restore` to recover them.
+   */
+  listDeletedProjects(options?: { teamId?: string }): Promise<Project[]>;
+  /**
+   * Lists files still recoverable from Trash. Requires `content:read`.
+   * `teamId` defaults to the current team. Use `ProjectFile.restore` to recover them.
+   */
+  listDeletedFiles(options?: { teamId?: string }): Promise<ProjectFile[]>;
   /**
    * Loads a file by id, open or not. Requires `content:read`.
    *
