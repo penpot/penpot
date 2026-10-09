@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.composable-tests.comp.nodes
+(ns app.common.test-helpers.composable.comp.nodes
   "Component-specific operation nodes for the test model.
 
    These are the `IOperation` implementations whose subject is Penpot component
    behaviour: they wrap component/shape operations and drive the real production
    change pipeline. This namespace sits behind the `comp` boundary precisely
    because it is about components; the generic engine in
-   `frontend-tests.composable-tests.core` has no domain terms. See
+   `app.common.test-helpers.composable.core` has no domain terms. See
    `mem:frontend/composable-component-tests`.
 
    Nodes deliberately call the production change pipeline directly
@@ -26,6 +26,7 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
@@ -33,13 +34,52 @@
    [app.common.logic.variants :as clv]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
-   [app.common.types.modifiers :as ctm]
-   [frontend-tests.composable-tests.core :as tm]))
+   [app.common.types.modifiers :as ctm]))
+
+;; ---------------------------------------------------------------------------
+;; Operation kinds and the production changes of user operations
+;;
+;; Every component node declares its kind, which tells a runner how to treat
+;; it:
+;;   :assembly       builds the configuration with test helpers; no sync, no
+;;                   undo group, and it records no changes.
+;;   :user           a user action the app commits. It stores the production
+;;                   changes it applied with `record-changes` (nil when it
+;;                   changed nothing). The pure runner
+;;                   (`app.common.test-helpers.composable.comp.runner`) takes
+;;                   them to sync the file and to build its undo stack.
+;;   :undo           reverts the latest user action; needs a runner's undo
+;;                   stack.
+;;   :frontend-only  its production result needs frontend code; the pure
+;;                   runner rejects it.
+;; The pure runner checks that a :user node recorded its changes and that
+;; no other kind did.
+;; ---------------------------------------------------------------------------
+
+(defprotocol IComponentOperation
+  (op-kind [op]
+    "How a runner treats `op`: :assembly, :user, :undo or :frontend-only."))
+
+(defn record-changes
+  "Store `changes`, the production changes a user operation applied (nil when
+   it changed nothing), in `situation` for the runner to take."
+  [situation changes]
+  (assoc situation ::changes changes))
+
+(defn take-changes
+  "The changes recorded by the last operation and the situation without them,
+   as `[recorded? changes situation]`. `recorded?` is false when the operation
+   did not call `record-changes`."
+  [situation]
+  [(contains? situation ::changes)
+   (::changes situation)
+   (dissoc situation ::changes)])
 
 ;; ---------------------------------------------------------------------------
 ;; Properties — an OPEN, extensible vocabulary of "what about a shape can change"
@@ -77,6 +117,9 @@
                     {:property property}))))
 
 (defrecord ChangeProperty [target property value]
+  IComponentOperation
+  (op-kind [_] :user)
+
   tm/IOperation
   (apply-to [this situation]
     ;; Goes through the production change path, exactly like tho/update-color,
@@ -96,6 +139,7 @@
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
+          (record-changes changes)
           (tm/record-application this {:target target :property property :value value})))))
 
 (defn change-property
@@ -142,9 +186,13 @@
 ;; what these operations exist to exercise. The synchronous `apply-to` fallback
 ;; below performs the geometrically equivalent transform through the production
 ;; math, but cannot classify placement (that code is frontend-only), so cases
-;; using these operations are meant to run through the interpreter.
+;; using these operations are meant to run through the interpreter. The pure
+;; runner rejects them.
 
 (defrecord Rotate [target angle]
+  IComponentOperation
+  (op-kind [_] :frontend-only)
+
   tm/IOperation
   (apply-to [this situation]
     (let [the-file (tm/file situation)
@@ -164,6 +212,7 @@
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
+          (record-changes changes)
           (tm/record-application this {:target target :angle angle})))))
 
 (defn rotate
@@ -175,6 +224,9 @@
   (tm/assign-id (->Rotate target angle)))
 
 (defrecord ChangeHeight [target value]
+  IComponentOperation
+  (op-kind [_] :frontend-only)
+
   tm/IOperation
   (apply-to [this situation]
     (let [the-file (tm/file situation)
@@ -194,6 +246,7 @@
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
+          (record-changes changes)
           (tm/record-application this {:target target :value value})))))
 
 (defn change-height
@@ -388,6 +441,9 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord CreateComponent [name color]
+  IComponentOperation
+  (op-kind [_] :assembly)
+
   tm/IOperation
   (apply-to [this situation]
     ;; fresh, name-scoped labels so several lineages don't clash
@@ -496,6 +552,9 @@
         (tm/record-application op {:component name :level level :outer outer-id}))))
 
 (defrecord MakeNestedComponent [name]
+  IComponentOperation
+  (op-kind [_] :assembly)
+
   tm/IOperation
   (apply-to [this situation]
     ;; nest a COPY of the lineage's own current component. Seek the FIXED deepest
@@ -526,6 +585,9 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord InstantiateCopy [name]
+  IComponentOperation
+  (op-kind [_] :assembly)
+
   tm/IOperation
   (apply-to [this situation]
     (let [the-file   (tm/file situation)
@@ -564,6 +626,9 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord ResetCopyInstance [name]
+  IComponentOperation
+  (op-kind [_] :user)
+
   tm/IOperation
   (apply-to [this situation]
     ;; Production reset path (generate-reset-component), validation OFF — mirrors
@@ -584,6 +649,7 @@
           file'     (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
+          (record-changes changes)
           (tm/record-application this {:component name :reset copy-id})))))
 
 (defn reset-copy-instance
@@ -592,14 +658,22 @@
   [name]
   (tm/assign-id (->ResetCopyInstance name)))
 
+(defn- libraries
+  "The situation's files by id, as the production code expects them: the
+   current file and any auxiliary (library) files."
+  [situation]
+  (let [the-file (tm/file situation)]
+    (assoc (tm/aux-files situation) (:id the-file) the-file)))
+
 ;; ---------------------------------------------------------------------------
 ;; swap-component — replace a nested subinstance head with an instance of a
 ;; different component (the general "Swap component" action), in place.
 ;;
 ;; Targets lineage `name`'s nesting level `level` (its `nesting-data[level]
 ;; .nested-head`) and swaps it for lineage `target`'s component
-;; (`:main-component-id`). Drives the production `generate-component-swap`
-;; (validation off). The `apply-to` below is the pure realisation; the frontend
+;; (`:main-component-id`). Drives the production `generate-component-swap-in-place`
+;; (validation off), the changes the `component-swap` event commits. The
+;; `apply-to` below is the pure realisation; the frontend
 ;; interpreter instead dispatches the real `dwl/component-swap` event, so the
 ;; watcher auto-propagates the swap. keep-touched? defaults
 ;; false (the general swap discards overrides; variant-switch would pass true).
@@ -611,29 +685,29 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord SwapComponent [name level target keep-touched?]
+  IComponentOperation
+  (op-kind [_] :user)
+
   tm/IOperation
   (apply-to [this situation]
     (let [the-file    (tm/file situation)
           page        (thf/current-page the-file)
-          objects     (:objects page)
           nested-head (:nested-head (lineage-nesting situation name level))
-          shape       (get objects nested-head)
+          shape       (get (:objects page) nested-head)
           target-id   (lineage-component-id situation target)
-          libraries   {(:id the-file) the-file}
-          orig-shapes (when keep-touched?
-                        (cfh/get-children-with-self objects nested-head))
-          [new-shape _parents changes]
-          (cll/generate-component-swap (pcb/empty-changes)
-                                       objects shape (:data the-file) page libraries
-                                       target-id 0 nil {} (boolean keep-touched?))
-          [changes _] (if keep-touched?
-                        (clv/generate-keep-touched changes new-shape shape orig-shapes
-                                                   page libraries (:data the-file))
-                        [changes nil])
+          [new-shape changes _]
+          (clv/generate-component-swap-in-place (pcb/empty-changes nil (:id page))
+                                                page
+                                                (libraries situation)
+                                                (:data the-file)
+                                                shape
+                                                target-id
+                                                (boolean keep-touched?))
           file'       (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           ;; record the swapped-in head id on the level (its parent is unchanged)
           (tm/with-file file')
+          (record-changes changes)
           (update-component-obj
            name
            (fn [o] (assoc-in o [:nesting-data level :swapped-head] (:id new-shape))))
@@ -658,14 +732,14 @@
 ;; it routes through the SAME `generate-component-swap` as `swap-component` and
 ;; the watcher auto-propagates it across nesting levels exactly like a swap.
 ;;
-;; OP SPLIT: only the SWITCH is a real workspace event (`variant-switch` has no
-;; pure generator to call directly), so `SwitchVariant` is an EVENT-op: its
-;; `apply-to` throws, and the frontend interpreter realises it by dispatching the
-;; event. The container build and the variant nesting are SYNC-ops (test-helper
-;; assembly + the shared nesting helper), applied via `apply-to` against the live
-;; store file; they record the variant-set in vars. Event-ops do NOT run
-;; `apply-to` (only sync-ops do), but the switch needs no bookkeeping: the
-;; asserter re-resolves heads via the swap-stable :nested-head-parent
+;; OP SPLIT: the SWITCH is a user action. The frontend interpreter dispatches
+;; the real `variants-switch` event; its pure `apply-to` builds the same changes
+;; with the production `find-switch-target` and
+;; `generate-component-swap-in-place`. The container build and the variant
+;; nesting are SYNC-ops (test-helper assembly + the shared nesting helper),
+;; applied via `apply-to` against the live store file; they record the
+;; variant-set in vars. The switch needs no bookkeeping: the asserter
+;; re-resolves heads via the swap-stable :nested-head-parent
 ;; (`nested-head-of`/`level-rect`), exactly as case L does for swaps.
 ;;
 ;; Member SELECTOR: `make-variant-container` assigns each member an EXPLICIT property
@@ -732,6 +806,9 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord MakeVariantContainer [name members]
+  IComponentOperation
+  (op-kind [_] :assembly)
+
   tm/IOperation
   (apply-to [this situation]
     ;; Build the set exactly as the variant test-helpers' `add-variant` do (the
@@ -809,6 +886,9 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord MakeNestedComponentWithVariant [name set-name value]
+  IComponentOperation
+  (op-kind [_] :assembly)
+
   tm/IOperation
   (apply-to [this situation]
     (let [member   (variant-member situation set-name value)
@@ -839,11 +919,12 @@
 ;; switch-variant — switch a variant copy head to a sibling member
 ;;
 ;; The variant-switch action: switch the variant copy head bound to `target` to the
-;; sibling member whose selector property (pos 0) has `value`. FRONTEND-only:
-;; dispatches the production `variants-switch`, which DISCOVERS the sibling by value
-;; within the variant container and routes through `component-swap` with
-;; keep-touched? true — so the watcher auto-propagates it across nesting levels
-;; exactly like case L's swap. A switch REPLACES the head in place; the head's
+;; sibling member whose selector property (pos 0) has `value`. The production
+;; switch DISCOVERS the sibling by value within the variant container and swaps
+;; with keep-touched? true, so sync propagates it across nesting levels exactly
+;; like case L's swap. On the frontend it is the `variants-switch` event. The
+;; event's follow-ups (token propagation, WASM text resize, layout update) are
+;; frontend code and the pure `apply-to` does not run them. A switch REPLACES the head in place; the head's
 ;; :parent is unchanged, so assertions re-resolve parent -> current head -> rect.
 ;;
 ;; `target` is the head to switch, resolved by the standard `target-shape-id` (role
@@ -853,13 +934,43 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord SwitchVariant [target value]
+  IComponentOperation
+  (op-kind [_] :user)
+
   tm/IOperation
-  (apply-to [_ _]
-    (throw (ex-info (str "switch-variant is an EVENT-op with no pure `apply-to` realisation: "
-                         "it is the real `variants-switch` workspace event (which discovers the "
-                         "sibling via the variant container), dispatched by the frontend "
-                         "interpreter. See the VARIANT operations note above.")
-                    {:type ::switch-variant-is-event-op}))))
+  (apply-to [this situation]
+    (let [the-file  (tm/file situation)
+          page      (thf/current-page the-file)
+          objects   (:objects page)
+          libraries (libraries situation)
+          shape     (get objects (tm/target-shape-id situation target))
+          component (clv/find-switch-target libraries shape 0 value)]
+      (cond
+        ;; the value is already `value`, or no sibling has it: nothing happens
+        (nil? component)
+        (-> situation
+            (record-changes nil)
+            (tm/record-application this {:target-component nil}))
+
+        (clv/swap-nesting-loop? objects
+                                shape
+                                (get-in libraries [(:component-file shape) :data])
+                                (:id component))
+        (throw (ex-info "switch-variant: the switch would nest a component inside itself"
+                        {:type ::switch-nesting-loop
+                         :shape (:id shape)
+                         :component (:id component)}))
+
+        :else
+        (let [ldata         (get-in libraries [(:component-file shape) :data])
+              [_ changes _] (clv/generate-component-swap-in-place
+                             (pcb/empty-changes nil (:id page))
+                             page libraries ldata shape (:id component) true)
+              file'         (thf/apply-changes the-file changes :validate? false)]
+          (-> situation
+              (tm/with-file file')
+              (record-changes changes)
+              (tm/record-application this {:target-component (:id component)})))))))
 
 (defn switch-variant
   "Switch the variant copy head bound to `target` to the sibling member whose
@@ -867,7 +978,7 @@
    machinery (which discovers the sibling within the container). Propagates across
    nesting exactly like case L's swap. `target` is resolved like any operation target
    (role | label | (situation -> id) fn, e.g. `nested-head-of`), so the op is
-   structure-agnostic. FRONTEND-only."
+   structure-agnostic."
   [target value]
   (tm/assign-id (->SwitchVariant target value)))
 
@@ -900,6 +1011,9 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord SyncFromLibrary []
+  IComponentOperation
+  (op-kind [_] :user)
+
   tm/IOperation
   (apply-to [this situation]
     (let [the-file  (tm/file situation)
@@ -919,6 +1033,7 @@
           file'     (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
+          (record-changes changes)
           (tm/record-application this {:library-id library-id})))))
 
 (defn sync-from-library
@@ -938,18 +1053,21 @@
 ;; inverse changes. "Test undo everywhere" = append this node after any case; the
 ;; post-undo assertion is an ordinary condition about the resulting state.
 ;;
-;; A pure `apply-to` realisation is NOT built: it would require every node to
-;; stash its produced change value (the engine `:undo-changes`) into its record
-;; so this node could apply the inverse — a retrofit across all nodes that no
-;; case needs. It therefore throws loudly rather than pretending.
+;; The pure runner (`app.common.test-helpers.composable.comp.runner`) realises
+;; it from the changes that user operations record (`record-changes`). A bare
+;; `apply-to` has no undo stack to read, so it throws loudly rather than
+;; pretending.
 ;; ---------------------------------------------------------------------------
 
 (defrecord Undo []
+  IComponentOperation
+  (op-kind [_] :undo)
+
   tm/IOperation
   (apply-to [_ _]
-    (throw (ex-info (str "Undo is an EVENT-op with no pure `apply-to` realisation (change "
-                         "values are not stashed per-node). It is realised by the frontend "
-                         "interpreter via the real undo event.")
+    (throw (ex-info (str "Undo has no `apply-to` realisation: it needs an undo stack. "
+                         "Run it through the pure runner (comp.runner) or the frontend "
+                         "interpreter.")
                     {:type ::undo-is-event-op}))))
 
 (defn undo
@@ -963,10 +1081,10 @@
 ;; add-child — add a new shape into a (main) component, structurally
 ;;
 ;; This is STRUCTURAL modification (changes the tree shape), as opposed to
-;; change-attr (attribute modification). It mirrors the established
-;; comp-sync-test "add shape" pattern: create a free shape on the page, then
-;; relocate it INTO the target parent via the production `generate-relocate`
-;; path. Propagation then materializes a corresponding child in copies.
+;; change-attr (attribute modification). It builds the new shape under the
+;; target parent with `prepare-add-shape`, the same changes the frontend
+;; `add-shape` event commits, so one undo removes it whole. Propagation then
+;; materializes a corresponding child in copies.
 ;;
 ;; `parent` is the binding name of the shape to add the new child under (e.g.
 ;; :main-root). `new-label` is the label assigned to the created shape, so a
@@ -974,26 +1092,30 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord AddChild [parent new-label shape-params]
+  IComponentOperation
+  (op-kind [_] :user)
+
   tm/IOperation
   (apply-to [this situation]
-    (let [the-file   (tm/file situation)
+    (let [the-file    (tm/file situation)
           ;; strict-presence on the parent (it must exist before we add under it)
-          parent-id  (tm/resolve-shape-id situation parent)
-          ;; 1) create the free shape on the page (registers `new-label`)
-          file-1     (ths/add-sample-shape the-file new-label (or shape-params {}))
-          page       (thf/current-page file-1)
-          new-id     (thi/id new-label)
-          ;; 2) relocate it into the parent through the production change path
-          changes    (cls/generate-relocate
-                      (-> (pcb/empty-changes nil)
-                          (pcb/with-page-id (:id page))
-                          (pcb/with-objects (:objects page)))
-                      parent-id        ; parent-id
-                      0                ; to-index
-                      #{new-id})       ; ids to move
-          file'      (thf/apply-changes file-1 changes)]
+          parent-id   (tm/resolve-shape-id situation parent)
+          page        (thf/current-page the-file)
+          objects     (:objects page)
+          parent-obj  (get objects parent-id)
+          ;; registers `new-label`
+          shape       (-> (ths/sample-shape new-label (or shape-params {}))
+                          (assoc :parent-id parent-id
+                                 :frame-id  (if (cfh/frame-shape? parent-obj)
+                                              parent-id
+                                              (:frame-id parent-obj))))
+          [_ changes] (cfsh/prepare-add-shape (pcb/empty-changes nil (:id page))
+                                              shape
+                                              objects)
+          file'       (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
+          (record-changes changes)
           (tm/record-application this {:parent parent :new-label new-label})))))
 
 (defn add-child
@@ -1017,6 +1139,9 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord RemoveChild [target]
+  IComponentOperation
+  (op-kind [_] :user)
+
   tm/IOperation
   (apply-to [this situation]
     (let [the-file  (tm/file situation)
@@ -1033,6 +1158,7 @@
           file'     (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
+          (record-changes changes)
           (tm/record-application this {:target target})))))
 
 (defn remove-child
@@ -1056,6 +1182,9 @@
 ;; ---------------------------------------------------------------------------
 
 (defrecord MoveChild [target parent to-index]
+  IComponentOperation
+  (op-kind [_] :user)
+
   tm/IOperation
   (apply-to [this situation]
     (let [the-file  (tm/file situation)
@@ -1072,6 +1201,7 @@
           file'     (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
+          (record-changes changes)
           (tm/record-application this {:target target :parent parent :to-index to-index})))))
 
 (defn move-child
