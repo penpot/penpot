@@ -966,7 +966,7 @@ msgstr "即將還原您所有的專案與檔案，這可能需要一些時間。
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "還原所有專案與檔案"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "全部還原"
 
@@ -1515,7 +1515,7 @@ msgstr "Web Worker 發生錯誤。"
 msgid "errors.invalid-color"
 msgstr "色彩無效"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "資料無效"
 
@@ -2774,7 +2774,7 @@ msgstr "隱藏"
 msgid "labels.hide-resolved-comments"
 msgstr "隱藏已解決的留言"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "匯入"
 
@@ -4408,7 +4408,7 @@ msgid "profile.recovery.go-to-login"
 msgstr "前往登入"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:109, src/app/main/ui/settings/restore_shortcuts_modal.cljs:100
-msgid "restore-shortcuts.acction"
+msgid "restore-shortcuts.action"
 msgstr "操作"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
@@ -5049,7 +5049,7 @@ msgstr "縮放"
 msgid "shortcuts.thumbnail-set"
 msgstr "設定縮圖"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "鍵盤快速鍵"
 

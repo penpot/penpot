@@ -36,6 +36,9 @@
 (def path-preview-dasharray 4)
 (def path-snap-stroke-width 1)
 
+;; Stand-in for shapes that reach the editor without content.
+(def ^:private empty-content (path/content nil))
+
 (def accent-color "var(--color-accent-tertiary)")
 (def secondary-color "var(--color-accent-quaternary)")
 (def black-color "var(--app-black)")
@@ -502,7 +505,7 @@
             (some? drag-handler))
 
         base-content
-        (get shape :content)
+        (or (get shape :content) empty-content)
 
         ;; Cache segment midpoints used by insertion previews.
         insertion-mid-points

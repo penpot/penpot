@@ -25,6 +25,7 @@ use std::borrow::Cow;
 use std::cell::Cell;
 use std::collections::HashSet;
 use std::rc::Rc;
+use unicode_segmentation::UnicodeSegmentation;
 
 use super::FontFamily;
 use crate::math::Point;
@@ -1470,10 +1471,37 @@ impl Paragraph {
         low
     }
 
-    /// UTF-16 length of the character at `char_offset`, so a caret range covers
-    /// the whole glyph.
-    pub fn char_utf16_len_at(&self, char_offset: usize) -> usize {
-        self.char_offset_to_utf16(char_offset + 1) - self.char_offset_to_utf16(char_offset)
+    fn text(&self) -> String {
+        self.children
+            .iter()
+            .map(|span| span.text.as_str())
+            .collect()
+    }
+
+    /// Char offset of the grapheme boundary before `char_offset`, so emojis
+    /// made of several chars are one step.
+    pub fn prev_grapheme_offset(&self, char_offset: usize) -> usize {
+        let mut boundary = 0;
+        for grapheme in self.text().graphemes(true) {
+            let next = boundary + grapheme.chars().count();
+            if next >= char_offset {
+                break;
+            }
+            boundary = next;
+        }
+        boundary
+    }
+
+    /// Char offset of the grapheme boundary after `char_offset`.
+    pub fn next_grapheme_offset(&self, char_offset: usize) -> usize {
+        let mut boundary = 0;
+        for grapheme in self.text().graphemes(true) {
+            boundary += grapheme.chars().count();
+            if boundary > char_offset {
+                break;
+            }
+        }
+        boundary
     }
 
     pub fn line_height(&self) -> f32 {
@@ -2166,16 +2194,29 @@ mod tests {
 
         assert_eq!(para.char_offset_to_utf16(4), 4);
         assert_eq!(para.char_offset_to_utf16(6), 7);
-        assert_eq!(para.char_utf16_len_at(4), 2);
+        assert_eq!(para.char_offset_to_utf16(5), 6);
         assert_eq!(para.utf16_offset_to_char(7), 6);
     }
 
     #[test]
-    fn char_utf16_len_at_covers_the_whole_glyph() {
-        let para = test_paragraph(&["a😀b"]);
-        assert_eq!(para.char_utf16_len_at(0), 1);
-        assert_eq!(para.char_utf16_len_at(1), 2);
-        assert_eq!(para.char_utf16_len_at(2), 1);
+    fn grapheme_offsets_cross_whole_emojis() {
+        let para = test_paragraph(&["A👍🏽👨\u{200d}👩\u{200d}👧e\u{301}"]);
+        let boundaries = [0, 1, 3, 8, 10];
+        for pair in boundaries.windows(2) {
+            assert_eq!(para.next_grapheme_offset(pair[0]), pair[1]);
+            assert_eq!(para.prev_grapheme_offset(pair[1]), pair[0]);
+        }
+        assert_eq!(para.next_grapheme_offset(2), 3);
+        assert_eq!(para.prev_grapheme_offset(2), 1);
+        assert_eq!(para.next_grapheme_offset(10), 10);
+        assert_eq!(para.prev_grapheme_offset(0), 0);
+    }
+
+    #[test]
+    fn grapheme_offsets_cross_an_emoji_split_across_spans() {
+        let para = test_paragraph(&["A👍", "🏽B"]);
+        assert_eq!(para.next_grapheme_offset(1), 3);
+        assert_eq!(para.prev_grapheme_offset(3), 1);
     }
 
     fn sample_text_content() -> TextContent {

@@ -33,6 +33,39 @@ function unique(prefix: string): string {
   return `${prefix}-${runTag}-${counter}`;
 }
 
+async function rectangleWithStrokeTokens(ctx: TestContext) {
+  const set = activeSet(ctx, unique('stroke-set'));
+  const width = set.addToken({
+    type: 'borderWidth',
+    name: unique('border.width'),
+    value: '4',
+  });
+  const color = set.addToken({
+    type: 'color',
+    name: unique('border.color'),
+    value: '#112233',
+  });
+  const rect = ctx.penpot.createRectangle();
+  ctx.board.appendChild(rect);
+  rect.strokes = [
+    { strokeColor: '#000000', strokeWidth: 1 },
+    { strokeColor: '#ffffff', strokeWidth: 2 },
+  ];
+  rect.applyToken(width, ['strokeWidth']);
+  await waitFor(() => rect.tokens.strokeWidth === width.name);
+  rect.applyToken(color, ['strokeColor']);
+  await waitFor(() => rect.tokens.strokeColor === color.name);
+  expect(rect.tokens).toEqual({
+    strokeColor: color.name,
+    strokeWidth: width.name,
+    strokeWidthTop: width.name,
+    strokeWidthRight: width.name,
+    strokeWidthBottom: width.name,
+    strokeWidthLeft: width.name,
+  });
+  return { rect, width, color };
+}
+
 /** Token application and theme/set wiring update the store asynchronously. */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -383,6 +416,102 @@ describe('Tokens', () => {
       await waitFor(() => Object.keys(b.tokens).includes('columnGap'));
       expect(Object.keys(b.tokens)).toContain('columnGap');
       expect(Object.keys(b.tokens)).toContain('paddingLeft');
+    });
+
+    test('applyToken accepts the uniform strokeWidth property', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+
+      rect.applyToken(token, ['strokeWidth']);
+
+      await waitFor(() => Object.keys(rect.tokens).length > 0);
+      const keys = Object.keys(rect.tokens);
+      expect(keys).toContain('strokeWidthTop');
+      expect(keys).toContain('strokeWidthRight');
+      expect(keys).toContain('strokeWidthBottom');
+      expect(keys).toContain('strokeWidthLeft');
+    });
+
+    test('applyToken binds a single per-side stroke width property', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+
+      rect.applyToken(token, ['strokeWidthTop']);
+
+      await waitFor(() => Object.keys(rect.tokens).includes('strokeWidthTop'));
+      const keys = Object.keys(rect.tokens);
+      expect(keys).toContain('strokeWidthTop');
+      expect(keys).not.toContain('strokeWidthRight');
+    });
+
+    for (const side of [
+      'strokeWidthTop',
+      'strokeWidthRight',
+      'strokeWidthBottom',
+      'strokeWidthLeft',
+    ] as const) {
+      test(`${side} edits preserve unrelated stroke tokens`, async (ctx) => {
+        const { rect } = await rectangleWithStrokeTokens(ctx);
+        const expected: Partial<typeof rect.tokens> = { ...rect.tokens };
+        delete expected[side];
+        delete expected.strokeWidth;
+
+        rect.strokes[0][side] = 8;
+        await ctx.penpot.waitForLayoutUpdate();
+
+        expect(rect.strokes[0][side]).toBe(8);
+        expect(rect.tokens).toEqual(expected);
+      });
+    }
+
+    test('uniform stroke width edits preserve the color token', async (ctx) => {
+      const { rect, color } = await rectangleWithStrokeTokens(ctx);
+      rect.strokes[0].strokeWidth = 8;
+      await ctx.penpot.waitForLayoutUpdate();
+
+      expect(rect.tokens).toEqual({ strokeColor: color.name });
+      expect(rect.strokes[0].strokeWidthType).toBe('simple');
+      expect(rect.strokes[0].strokeWidthTop).toBe(8);
+      expect(rect.strokes[0].strokeWidthRight).toBe(8);
+      expect(rect.strokes[0].strokeWidthBottom).toBe(8);
+      expect(rect.strokes[0].strokeWidthLeft).toBe(8);
+    });
+
+    test('stroke color edits preserve the width tokens', async (ctx) => {
+      const { rect } = await rectangleWithStrokeTokens(ctx);
+      const expected: Partial<typeof rect.tokens> = { ...rect.tokens };
+      delete expected.strokeColor;
+      rect.strokes[0].strokeColor = '#ff0000';
+      await ctx.penpot.waitForLayoutUpdate();
+
+      expect(rect.strokes[0].strokeColor).toBe('#ff0000');
+      expect(rect.tokens).toEqual(expected);
+    });
+
+    test('later stroke edits preserve the first stroke tokens', async (ctx) => {
+      const { rect } = await rectangleWithStrokeTokens(ctx);
+      const expected = { ...rect.tokens };
+      rect.strokes[1].strokeWidthTop = 8;
+      rect.strokes[1].strokeColor = '#ff0000';
+      await ctx.penpot.waitForLayoutUpdate();
+
+      expect(rect.strokes[1].strokeWidthTop).toBe(8);
+      expect(rect.strokes[1].strokeColor).toBe('#ff0000');
+      expect(rect.strokes[0].strokeWidthTop).toBe(4);
+      expect(rect.strokes[0].strokeColor).toBe('#112233');
+      expect(rect.tokens).toEqual(expected);
     });
 
     test('duplicate and remove a token', (ctx) => {

@@ -8,6 +8,7 @@ use crate::shapes::{
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
+use super::children_paint_order;
 use super::shape_renderer::ShapeRenderer;
 use super::text;
 use super::RenderResources;
@@ -934,7 +935,7 @@ fn render_frame(
     }
 
     // Children (absolute coords, no frame transform).
-    let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+    let children = children_paint_order(tree, element);
     let child_opts = opts.for_children_of(element);
     for child_id in &children {
         render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
@@ -988,7 +989,7 @@ fn render_container_drop_shadows(
             renderer.draw_fills(element, &element.fills)?;
         }
 
-        let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+        let children = children_paint_order(tree, element);
         let child_opts = opts.for_children_of(element);
         for child_id in &children {
             render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;

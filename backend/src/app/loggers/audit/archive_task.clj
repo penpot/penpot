@@ -11,6 +11,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
@@ -80,8 +81,10 @@
     "add-team-to-organization"
     "cancel-organization-invitation"
     "change-organization-advanced-permission"
+    "create-export-binfile-job"
     "create-file"
     "create-organization"
+    "create-organization-attribute"
     "create-organization-invitation"
     "create-project"
     "create-team"
@@ -89,8 +92,10 @@
     "create-team-invitation"
     "create-team-invitations"
     "create-webhook"
+    "delete-file"
     "delete-font"
     "delete-organization"
+    "delete-organization-member"
     "delete-project"
     "delete-team"
     "delete-team-invitation"
@@ -107,6 +112,8 @@
     "rename-organization"
     "rename-project"
     "restore-deleted-team-files"
+    "success-activate-organization-sso"
+    "success-apply-organization-sso-changes"
     "update-organization-invitation"
     "update-organization-permissions"
     "update-team-invitation"
@@ -115,12 +122,96 @@
     "update-team-photo"
     "verify-token"})
 
+;; Props id key -> email prop filled from profile.email (nitrate path only).
+;; Some producers store ids as UUID strings (e.g. :user-who-send-invitation).
+(def ^:private id->email-prop
+  {:profile-id                 :profile-email
+   :user-id                    :user-email
+   :member-id                  :member-email
+   :user-who-send-invitation   :user-who-send-invitation-email})
+
+(defn- collect-team-ids-needing-name
+  [events]
+  (into #{}
+        (comp (map :props)
+              (keep (fn [props]
+                      (when-let [team-id (and (not (contains? props :team-name))
+                                              (uuid/coerce (:team-id props)))]
+                        team-id))))
+        events))
+
+(defn- collect-profile-ids-needing-email
+  [events]
+  (into #{}
+        (mapcat (fn [{:keys [props]}]
+                  (keep (fn [[id-key email-key]]
+                          (when-not (contains? props email-key)
+                            (uuid/coerce (get props id-key))))
+                        id->email-prop)))
+        events))
+
+(defn- load-team-names
+  [conn ids]
+  (if (seq ids)
+    (let [arr  (db/create-array conn "uuid" ids)
+          rows (db/exec! conn ["SELECT id, name FROM team WHERE id = ANY(?)" arr])]
+      (into {} (map (juxt :id :name) rows)))
+    {}))
+
+(defn- load-profile-emails
+  [conn ids]
+  (if (seq ids)
+    (let [arr  (db/create-array conn "uuid" ids)
+          rows (db/exec! conn ["SELECT id, email FROM profile WHERE id = ANY(?)" arr])]
+      (into {} (map (juxt :id :email) rows)))
+    {}))
+
+(defn- maybe-assoc-team-name
+  [event team-names]
+  (let [props (:props event)]
+    (if-let [team-name (and (not (contains? props :team-name))
+                            (when-let [team-id (uuid/coerce (:team-id props))]
+                              (get team-names team-id)))]
+      (assoc-in event [:props :team-name] team-name)
+      event)))
+
+(defn- maybe-assoc-emails
+  [event emails]
+  (update event :props
+          (fn [props]
+            (reduce-kv (fn [props id-key email-key]
+                         (if-let [email (and (not (contains? props email-key))
+                                             (when-let [id (uuid/coerce (get props id-key))]
+                                               (get emails id)))]
+                           (assoc props email-key email)
+                           props))
+                       props
+                       id->email-prop))))
+
+(defn- enrich-events-for-nitrate
+  "Enrich allowlisted events before nitrate ingest:
+  1. Fill missing :team-name from team id (including soft-deleted).
+  2. Fill missing emails from matching id keys (including soft-deleted
+     profiles): :profile-email, :user-email, :member-email,
+     :user-who-send-invitation-email."
+  [{:keys [::db/conn]} events]
+  (let [team-ids    (collect-team-ids-needing-name events)
+        profile-ids (collect-profile-ids-needing-email events)
+        team-names  (load-team-names conn team-ids)
+        emails      (load-profile-emails conn profile-ids)]
+    (mapv (fn [event]
+            (-> event
+                (maybe-assoc-team-name team-names)
+                (maybe-assoc-emails emails)))
+          events)))
+
 (defn- send-to-nitrate!
   [cfg rows]
   (when-let [events (->> rows
                          (filterv #(contains? event-names-for-nitrate (:name %)))
                          (not-empty))]
-    (nitrate/call cfg :ingest-audit-log {:events events})))
+    (nitrate/call cfg :ingest-audit-log
+                  {:events (enrich-events-for-nitrate cfg events)})))
 
 (defn- mark-archived!
   [{:keys [::db/conn]} rows]

@@ -17,6 +17,7 @@
    [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.http :as http]
+   [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
@@ -810,6 +811,20 @@
     ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest delete-file-audit-includes-team-id
+  ;; Assert result metadata directly: wrap-audit is inactive in the
+  ;; default test flags, so mocking audit/submit would never see this.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        result  (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (#'files/delete-file cfg {:id (:id file)
+                                                        :profile-id (:id profile)})))
+        props   (::audit/props (meta result))]
+    (t/is (= (:default-team-id profile) (:team-id props)))
+    (t/is (= (:project-id file) (:project-id props)))))
 
 (t/deftest permissions-checks-set-file-shared
   (let [profile1 (th/create-profile* 1)

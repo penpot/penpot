@@ -586,7 +586,7 @@
           :key command-translate}
      [:button {:on-click start-editing
                :disabled is-editing
-               :aria-label (dm/str "Edit " command-translate)
+               :aria-label (tr "shortcuts.edit" command-translate)
                :class (stl/css-case :shortcut-button-editable true
                                     :shortcut-button-editing is-editing)}
       [:span {:class (stl/css :command-name)

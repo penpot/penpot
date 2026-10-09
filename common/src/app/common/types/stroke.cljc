@@ -25,11 +25,8 @@
    :stroke-width 1})
 
 (defn materialize-stroke-side-widths
-  "Given a stroke (or nil) and the set of edited side keys, returns the stroke
-  with the four per-side width keys concretized: edited sides take `value`,
-  the rest keep their current per-side width, falling back to `:stroke-width`
-  (0 when `stroke` is nil). `:stroke-width` mirrors the top side so legacy
-  consumers that only read it see the top value."
+  "Sets edited widths and fills missing sides from `:stroke-width` (default 0).
+  Keeps `:stroke-width` equal to the top width."
   [stroke edited-keys value]
   (let [base-width (or (:stroke-width stroke) 0)
         current    (or stroke default-stroke)
@@ -42,3 +39,29 @@
                     {}
                     ctt/per-side-stroke-width-keys)]
     (merge current side-attrs {:stroke-width (get side-attrs :stroke-width-top)})))
+
+(defn set-width-to-all-sides
+  "Sets every side and `:stroke-width` to `value`."
+  [stroke value]
+  (materialize-stroke-side-widths stroke ctt/per-side-stroke-width-keys value))
+
+(defn set-width-to-single-side
+  "Sets one side and preserves the other widths.
+  Keeps `:stroke-width` equal to the top width."
+  [stroke attr value]
+  (materialize-stroke-side-widths (or stroke default-stroke) #{attr} value))
+
+(defn side-width
+  "Returns the side width, falling back to `:stroke-width` when unset."
+  [stroke attr]
+  (d/nilv (get stroke attr) (:stroke-width stroke)))
+
+(defn width-type
+  "Returns simple when all effective side widths match, multiple otherwise."
+  [stroke]
+  (if (= (side-width stroke :stroke-width-top)
+         (side-width stroke :stroke-width-right)
+         (side-width stroke :stroke-width-bottom)
+         (side-width stroke :stroke-width-left))
+    :simple
+    :multiple))

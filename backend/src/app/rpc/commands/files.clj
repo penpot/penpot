@@ -1121,7 +1121,8 @@
                          :profile-id profile-id})
 
     (rph/with-meta (rph/wrap)
-      {::audit/props {:project-id (:project-id file)
+      {::audit/props {:team-id (:id team)
+                      :project-id (:project-id file)
                       :name (:name file)
                       :created-at (:created-at file)
                       :modified-at (:modified-at file)}})))

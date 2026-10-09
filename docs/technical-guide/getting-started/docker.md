@@ -98,6 +98,10 @@ or
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile --skip-tutorial --skip-walkthrough
 ```
 
+**NOTE:** profiles created with this command have no verified email. If the
+`disable-email-verification` flag is set, inviting these users to a team adds them to it
+directly, without sending any invitation email, so SMTP is not required for this flow.
+Check the [Configuration][1] section for more detail.
 
 **NOTE:** the exact container name depends on your docker version and platform.
 For example it could be <code class="language-bash">penpot-penpot-backend-1</code> or <code class="language-bash">penpot_penpot-backend-1</code>.
@@ -312,6 +316,52 @@ server {
 ```
 
 For full documentation, go to the [official website][2]
+
+#### Serve Penpot from a subpath with NGINX
+
+First, set the complete public URL in `docker-compose.yaml`:
+
+```yaml
+PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+```
+
+Then route the subpath to the Penpot frontend and remove the prefix before
+forwarding the request:
+
+```nginx
+server {
+  listen 443 ssl;
+  server_name mycompany.com;
+
+  client_max_body_size 367001600;
+
+  # Configure TLS and logs following your organization's practices.
+  ssl_certificate /path/to/fullchain;
+  ssl_certificate_key /path/to/privkey;
+
+  location = /penpot {
+    return 301 /penpot/;
+  }
+
+  location /penpot/ {
+    rewrite ^/penpot/(.*)$ /$1 break;
+
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Scheme $scheme;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_redirect off;
+    proxy_pass http://localhost:9001;
+  }
+}
+```
+
+This single location also covers the API and WebSocket endpoints because NGINX
+forwards them after removing `/penpot`. Keep the trailing slash in
+`PENPOT_PUBLIC_URI`.
 
 ### Example with CADDY SERVER
 

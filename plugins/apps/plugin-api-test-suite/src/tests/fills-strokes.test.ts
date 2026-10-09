@@ -226,6 +226,52 @@ describe('Fills & strokes', () => {
       expect(stroke.strokeCapEnd).toBe('triangle-arrow');
     });
 
+    test('per-side widths survive an unrelated write', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [
+        {
+          strokeColor: '#000000',
+          strokeWidth: 1,
+          strokeWidthTop: 2,
+          strokeWidthRight: 3,
+          strokeWidthBottom: 4,
+          strokeWidthLeft: 5,
+        },
+      ];
+      const stroke = r.strokes[0];
+      stroke.strokeColor = '#ff0000';
+
+      const updated = r.strokes[0];
+      expect(updated.strokeColor).toBe('#ff0000');
+      expect(updated.strokeWidthTop).toBeCloseTo(2, 0);
+      expect(updated.strokeWidthRight).toBeCloseTo(3, 0);
+      expect(updated.strokeWidthBottom).toBeCloseTo(4, 0);
+      expect(updated.strokeWidthLeft).toBeCloseTo(5, 0);
+    });
+
+    test('a literal without per-side keys reads uniform', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 6 }];
+      expect(r.strokes[0].strokeWidth).toBeCloseTo(6, 0);
+      expect(r.strokes[0].strokeWidthTop).toBeCloseTo(6, 0);
+      expect(r.strokes[0].strokeWidthLeft).toBeCloseTo(6, 0);
+    });
+
+    test('a literal side width preserves the other uniform widths', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [
+        { strokeColor: '#000000', strokeWidthTop: 9, strokeWidth: 5 },
+      ];
+
+      const stroke = r.strokes[0];
+      expect(stroke.strokeWidthType).toBe('multiple');
+      expect(stroke.strokeWidth).toBe(9);
+      expect(stroke.strokeWidthTop).toBe(9);
+      expect(stroke.strokeWidthRight).toBe(5);
+      expect(stroke.strokeWidthBottom).toBe(5);
+      expect(stroke.strokeWidthLeft).toBe(5);
+    });
+
     test('dashed stroke style is preserved', (ctx) => {
       const r = rect(ctx);
       r.strokes = [

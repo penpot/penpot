@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+
+export RUST_VERSION=1.99.0
 export VERSION_TAG=${VERSION:-develop};
 export RENDER_TARGET="${RENDER_TARGET:-${1:-frontend}}";
 
@@ -20,11 +22,13 @@ fi
 export BUILD_NAME="${BUILD_NAME:-render-wasm}"
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
 export CARGO_TARGET_DIR=${CARGO_TARGET_DIR:-"target/$RENDER_TARGET"};
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp-pdf-simd.tar.gz"}
+# Skia prebuild with wasm SIMD and Wasm EH/SjLj (-ljmp-wasm). Must match
+# EMCC_CFLAGS below. Override with SKIA_BINARIES_URL when needed.
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp-pdf-simd-ljmp-wasm.tar.gz"}
 
-# Let rustc emit wasm SIMD for our Rust code (autovec / core::arch::wasm32).
-# Skia SIMD still comes from the -simd prebuild + -msimd128 in EMCC_CFLAGS.
-# Gate on the emscripten target so native `./test` is unaffected.
+# Emscripten only: rustc wasm SIMD (native `./test` unchanged). Wasm
+# setjmp/longjmp comes from EMCC_CFLAGS (-sSUPPORT_LONGJMP=wasm), which emcc
+# appends on compile and link.
 if [ "$CARGO_BUILD_TARGET" = "wasm32-unknown-emscripten" ]; then
     export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=+simd128"
 fi
@@ -46,12 +50,14 @@ export EM_MEMORY_GROWTH_GEOMETRIC_STEP="0.8"
 # Default: dlmalloc
 export EM_MALLOC="dlmalloc"
 
-# -msimd128: allow wasm SIMD in the linked module. Skia prebuilts must be
-# built with the same flag (penpot/skia-binaries, WASM_SIMD=1) for Skia/skcms
-# kernels to actually contain v128 ops; engines do not autovec scalar wasm.
+# -msimd128: wasm SIMD in the linked module (Skia -simd prebuild must match).
+# -fwasm-exceptions / SUPPORT_LONGJMP=wasm: native Wasm EH and setjmp/longjmp
+# (Skia -ljmp-wasm prebuild must match).
 export EMCC_CFLAGS="--no-entry \
     --js-library src/js/wapi.js \
     -msimd128 \
+    -fwasm-exceptions \
+    -sSUPPORT_LONGJMP=wasm \
     -sMALLOC=$EM_MALLOC \
     -sINVOKE_RUN=0 \
     -sALLOW_TABLE_GROWTH=0 \
@@ -64,7 +70,6 @@ export EMCC_CFLAGS="--no-entry \
     -sEXPORTED_RUNTIME_METHODS=GL,UTF8ToString,stringToUTF8,HEAPU8,HEAP32,HEAPU32,HEAPF32 \
     -sENVIRONMENT=web,worker,node \
     -sMODULARIZE=1 \
-    -sDISABLE_EXCEPTION_CATCHING=1 \
     -sFILESYSTEM=0 \
     -sEXPORT_ES6=1";
 
@@ -112,7 +117,15 @@ function clean {
     cargo clean;
 }
 
+function setup_rust {
+    # Setup default rust version
+    rustup default $RUST_VERSION
+    rustup target add wasm32-unknown-emscripten
+    rustup component add clippy rustfmt --toolchain $RUST_VERSION
+}
+
 function setup {
+    setup_rust
     pnpm install;
 }
 
