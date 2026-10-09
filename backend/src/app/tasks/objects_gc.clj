@@ -10,11 +10,25 @@
   (:require
    [app.common.logging :as l]
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.loggers.audit :as audit]
    [app.storage :as sto]
    [app.tasks.delete-object :as dobj]
    [integrant.core :as ig]))
+
+(defn- submit-hard-delete-event
+  "Emits a hard-delete audit event for a batch of rows just purged by this
+  task, so a projection of the audit stream can drop its local rows. Runs
+  inside the caller transaction, next to the deletes."
+  [cfg event-name ids]
+  (when (contains? cf/flags :audit-log)
+    (audit/submit cfg
+                  {:name event-name
+                   :type "command"
+                   :props {:ids (vec ids)}
+                   :context {:triggered-by "objects-gc"}})))
 
 (def ^:private sql:get-upload-sessions
   "SELECT us.id
@@ -100,20 +114,22 @@
 
 (defn- delete-teams!
   [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-teams timestamp chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [id photo-id deleted-at]}]
-                 (l/trc :obj "team"
-                        :id (str id)
-                        :deleted-at (ct/format-inst deleted-at))
+  (let [ids (->> (db/plan conn [sql:get-teams timestamp chunk-size] {:fetch-size 5})
+                 (reduce (fn [ids {:keys [id photo-id deleted-at]}]
+                           (l/trc :obj "team"
+                                  :id (str id)
+                                  :deleted-at (ct/format-inst deleted-at))
 
-                 ;; Mark as deleted the storage object
-                 (some->> photo-id (sto/touch-object! storage))
+                           ;; Mark as deleted the storage object
+                           (some->> photo-id (sto/touch-object! storage))
 
-                 ;; And finally, permanently delete the team.
-                 (let [affected (-> (db/delete! conn :team {:id id})
-                                    (db/get-update-count))]
-                   (+ total affected)))
-               0)))
+                           ;; And finally, permanently delete the team.
+                           (db/delete! conn :team {:id id})
+                           (conj ids id))
+                         []))]
+    (when (seq ids)
+      (submit-hard-delete-event cfg "hard-delete-team" ids))
+    (count ids)))
 
 (def ^:private sql:get-fonts
   "SELECT id, team_id, deleted_at, woff1_file_id, woff2_file_id, otf_file_id, ttf_file_id
@@ -157,17 +173,19 @@
 
 (defn- delete-projects!
   [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-projects timestamp chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [id team-id deleted-at]}]
-                 (l/trc :obj "project"
-                        :id (str id)
-                        :team-id (str team-id)
-                        :deleted-at (ct/format-inst deleted-at))
+  (let [ids (->> (db/plan conn [sql:get-projects timestamp chunk-size] {:fetch-size 5})
+                 (reduce (fn [ids {:keys [id team-id deleted-at]}]
+                           (l/trc :obj "project"
+                                  :id (str id)
+                                  :team-id (str team-id)
+                                  :deleted-at (ct/format-inst deleted-at))
 
-                 (let [affected (-> (db/delete! conn :project {:id id})
-                                    (db/get-update-count))]
-                   (+ total affected)))
-               0)))
+                           (db/delete! conn :project {:id id})
+                           (conj ids id))
+                         []))]
+    (when (seq ids)
+      (submit-hard-delete-event cfg "hard-delete-project" ids))
+    (count ids)))
 
 (def ^:private sql:get-files
   "SELECT f.id,
@@ -183,17 +201,19 @@
 
 (defn- delete-files!
   [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-files timestamp chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [id deleted-at project-id] :as file}]
-                 (l/trc :obj "file"
-                        :id (str id)
-                        :project-id (str project-id)
-                        :deleted-at (ct/format-inst deleted-at))
+  (let [ids (->> (db/plan conn [sql:get-files timestamp chunk-size] {:fetch-size 5})
+                 (reduce (fn [ids {:keys [id deleted-at project-id] :as file}]
+                           (l/trc :obj "file"
+                                  :id (str id)
+                                  :project-id (str project-id)
+                                  :deleted-at (ct/format-inst deleted-at))
 
-                 (let [affected (-> (db/delete! conn :file {:id id})
-                                    (db/get-update-count))]
-                   (+ total affected)))
-               0)))
+                           (db/delete! conn :file {:id id})
+                           (conj ids id))
+                         []))]
+    (when (seq ids)
+      (submit-hard-delete-event cfg "hard-delete-file" ids))
+    (count ids)))
 
 (def ^:private sql:get-file-thumbnails
   "SELECT file_id, revn, media_id, deleted_at

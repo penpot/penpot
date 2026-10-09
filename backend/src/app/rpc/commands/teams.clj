@@ -28,6 +28,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
@@ -563,7 +564,9 @@
         team     (db/tx-run! cfg create-team params)]
 
     (with-meta team
-      {::audit/props {:id (:id team)}})))
+      {::audit/props {:id (:id team)
+                      :created-at (:created-at team)
+                      :modified-at (:modified-at team)}})))
 
 
 (defn create-default-organization-team
@@ -618,6 +621,25 @@
                                     :default-team-id default-team-id}))
               default-team-id))))))))
 
+(defn- submit-membership-event
+  "Emits an audit event for a new team membership, so the event stream carries
+  every membership add, including the ones that only happen as a side effect of
+  another command (team creation, invitation accepted without email roundtrip,
+  duplicated team)."
+  [cfg {:keys [profile-id team-id] :as params}]
+  (when (contains? cf/flags :audit-log)
+    (audit/submit cfg
+                  {:name "add-team-member"
+                   :type "action"
+                   :profile-id profile-id
+                   :props (d/without-nils
+                           {:team-id team-id
+                            :member-id profile-id
+                            :role (:role params)
+                            :is-owner (boolean (:is-owner params))
+                            :is-admin (boolean (:is-admin params))
+                            :can-edit (boolean (:can-edit params))})})))
+
 (defn add-profile-to-team!
   ([cfg params]
    (add-profile-to-team! cfg params nil))
@@ -631,7 +653,13 @@
               (some? (:organization-id membership)) ;; the team do belong to an organization
               (not (:is-member membership)))        ;; the user is not a member of the organization yet
          (initialize-user-in-organization cfg profile-id (:organization-id membership)))))
-   (db/insert! conn :team-profile-rel (assoc params :id (uuid/next)) options)))
+   (let [options (merge options {::db/return-keys [:id]})
+         result  (db/insert! conn :team-profile-rel (assoc params :id (uuid/next)) options)]
+     ;; Only emit when a row was actually inserted: with `on-conflict-do-nothing`
+     ;; an existing membership returns nil and must not be reported twice.
+     (when (some? result)
+       (submit-membership-event cfg params))
+     result)))
 
 (defn create-team
   "This is a complete team creation process, it creates the team
@@ -894,8 +922,14 @@
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]
-  (delete-team cfg {:team-id id :profile-id profile-id})
-  nil)
+  (let [team (delete-team cfg {:team-id id :profile-id profile-id})]
+    ;; The client keeps receiving nil; the audit event carries the deleted row.
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:id (:id team)
+                      :name (:name team)
+                      :created-at (:created-at team)
+                      :modified-at (:modified-at team)
+                      :deleted-at (:deleted-at team)}})))
 
 ;; --- Mutation: Team Update Role
 
@@ -962,7 +996,13 @@
   {::doc/added "1.17"
    ::sm/params schema:update-team-member-role}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (db/tx-run! cfg update-team-member-role (assoc params :profile-id profile-id)))
+  (db/tx-run! cfg update-team-member-role (assoc params :profile-id profile-id))
+  ;; The client keeps receiving nil; when ownership moves, the audit event
+  ;; names the demoted member so a projection can keep a single owner.
+  (rph/with-meta (rph/wrap)
+    (if (= :owner (:role params))
+      {::audit/props {:prev-owner-id profile-id}}
+      {})))
 
 ;; --- Mutation: Delete Team Member
 

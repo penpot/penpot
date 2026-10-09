@@ -9,14 +9,39 @@
   (:require
    [app.common.logging :as l]
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.loggers.audit :as audit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.storage :as sto]
    [integrant.core :as ig]))
 
 (def ^:dynamic *team-deletion* false)
+
+(def ^:dynamic *cascade*
+  "Accumulates the ids marked deleted by the current cascade execution,
+  grouped by entity. Bound by the task entry point; nil on direct calls
+  (e.g. objects-gc, whose purges are announced by their own procs)."
+  nil)
+
+(defn- record
+  [kind id]
+  (when (some? *cascade*)
+    (swap! *cascade* update kind conj id)))
+
+(defn- top-exists?
+  "The cascade marks blindly, so an unknown top id would report phantom
+  rows. Every queue submission and SREPL call names a real row; only
+  check, never change behavior: a missing row just skips the run."
+  [{:keys [::db/conn]} {:keys [object id]}]
+  (let [object (when (some? object) (keyword (name object)))]
+    (if (contains? #{:team :project :file :profile} object)
+      (some? (db/get* conn object {:id id}
+                      {::db/remove-deleted false
+                       ::sql/columns [:id]}))
+      true)))
 
 (defmulti delete-object
   (fn [_ props] (:object props)))
@@ -88,7 +113,9 @@
     (db/update! conn :file-tagged-object-thumbnail
                 {:deleted-at deleted-at}
                 {:file-id id}
-                {::db/return-keys false})))
+                {::db/return-keys false})
+
+    (record :files id)))
 
 (defmethod delete-object :project
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
@@ -105,7 +132,9 @@
                          {::db/columns [:id :deleted-at]})]
     (delete-object cfg (assoc file
                               :object :file
-                              :deleted-at deleted-at))))
+                              :deleted-at deleted-at)))
+
+  (record :projects id))
 
 (defmethod delete-object :team
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
@@ -127,7 +156,9 @@
                               {::db/columns [:id :deleted-at]})]
       (delete-object cfg (assoc project
                                 :object :project
-                                :deleted-at deleted-at)))))
+                                :deleted-at deleted-at))))
+
+  (record :teams id))
 
 (defmethod delete-object :profile
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
@@ -156,4 +187,20 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (db/tx-run! cfg delete-object props)))
+    (db/tx-run! cfg
+                (fn [cfg]
+                  (when (top-exists? cfg props)
+                    (binding [*cascade* (atom {:teams [] :projects [] :files []})]
+                      (delete-object cfg props)
+                      (let [{:keys [teams projects files]} @*cascade*]
+                        (when (and (contains? cf/flags :audit-log)
+                                   (or (seq teams) (seq projects) (seq files)))
+                          (audit/submit cfg {:name "cascade-deleted"
+                                             :type "command"
+                                             :props {:object (:object props)
+                                                     :id (:id props)
+                                                     :deleted-at (:deleted-at props)
+                                                     :team-ids teams
+                                                     :project-ids projects
+                                                     :file-ids files}
+                                             :context {:triggered-by "delete-object"}})))))))))

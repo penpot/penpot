@@ -654,6 +654,59 @@
            (:profile-id (prepare-event nil {:some-data "value"})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PREPARE-RPC-EVENT TEAM-ID ENRICHMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest prepare-rpc-event-enriches-team-id-from-project-id
+  ;; An event that carries a project id resolves its team locally, so the
+  ;; downstream consumers do not need to join production tables.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 10 {:profile-id (:id profile)})
+        project (th/create-project* 10 {:profile-id (:id profile)
+                                        :team-id (:id team)})
+        result  (with-meta {} {::audit/props {:project-id (:id project)}})
+        event   (prepare-event (:id profile) result)]
+    (t/is (= (:id team) (get-in event [:props :team-id])))))
+
+(t/deftest prepare-rpc-event-enriches-team-id-from-file-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 11 {:profile-id (:id profile)})
+        project (th/create-project* 11 {:profile-id (:id profile)
+                                        :team-id (:id team)})
+        file    (th/create-file* 11 {:profile-id (:id profile)
+                                     :project-id (:id project)})
+        result  (with-meta {} {::audit/props {:file-id (:id file)}})
+        event   (prepare-event (:id profile) result)]
+    (t/is (= (:id team) (get-in event [:props :team-id])))))
+
+(t/deftest prepare-rpc-event-keeps-existing-team-id
+  ;; The resolver never overwrites a team id the command already set.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 12 {:profile-id (:id profile)})
+        project (th/create-project* 12 {:profile-id (:id profile)
+                                        :team-id (:id team)})
+        result  (with-meta {} {::audit/props {:team-id (:id team)
+                                              :project-id (:id project)}})
+        event   (prepare-event (:id profile) result)]
+    (t/is (= (:id team) (get-in event [:props :team-id])))))
+
+(t/deftest prepare-rpc-event-does-not-resolve-without-project-or-file
+  ;; Read commands put the entity id under `:id`; enriching those would add a
+  ;; query to every read event, so the resolver must leave them untouched.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        result  (with-meta {} {::audit/props {:id (uuid/next)}})
+        event   (prepare-event (:id profile) result)]
+    (t/is (not (contains? (:props event) :team-id)))))
+
+(t/deftest prepare-rpc-event-resolves-default-team-id
+  ;; The resolver adds the team id whenever it can resolve it, including the
+  ;; personal (default) team.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        result  (with-meta {} {::audit/props {:project-id (:default-project-id profile)}})
+        event   (prepare-event (:id profile) result)]
+    (t/is (= (:default-team-id profile) (get-in event [:props :team-id])))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PREPARE-RPC-EVENT PROFILE-ID COERCION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

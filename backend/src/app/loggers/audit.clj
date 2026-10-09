@@ -396,6 +396,35 @@
 
     coerced))
 
+(def ^:private sql:team-id-by-project
+  "SELECT id FROM team
+    WHERE id = (SELECT team_id FROM project WHERE id = ?)")
+
+(def ^:private sql:team-id-by-file
+  "SELECT t.id FROM team AS t
+     JOIN project AS p ON (p.team_id = t.id)
+     JOIN file AS f ON (f.project_id = p.id)
+    WHERE f.id = ?")
+
+(defn- enrich-team-id
+  "Adds the team id to the event props when it is missing and can be resolved
+  locally, so consumers do not have to join production tables. Only events that
+  already carry a project or file id are considered: read commands put the
+  entity id under `:id`, and resolving those would add a query to every read."
+  [cfg props]
+  (if (or (:team-id props)
+          (and (nil? (:project-id props))
+               (nil? (:file-id props))))
+    props
+    (let [project-id (:project-id props)
+          file-id    (:file-id props)
+          team-id    (or (when (some? project-id)
+                           (:id (db/exec-one! cfg [sql:team-id-by-project project-id])))
+                         (when (some? file-id)
+                           (:id (db/exec-one! cfg [sql:team-id-by-file file-id]))))]
+      (cond-> props
+        (some? team-id) (assoc :team-id team-id)))))
+
 (defn prepare-rpc-event
   [cfg mdata params result]
   (let [resultm      (meta result)
@@ -413,6 +442,10 @@
         props        (-> (or (::replace-props resultm)
                              (merge params (::props resultm)))
                          (clean-props))
+
+        ;; Resolve the team locally when the event carries a project or file
+        ;; id, so the consumers do not need to join production tables.
+        props        (enrich-team-id cfg props)
 
         context      (-> (::context resultm)
                          (merge (prepare-context-from-request request))
@@ -484,6 +517,19 @@
                   (update :source d/nilv "backend")
                   (d/without-nils))]
     (submit* cfg event)))
+
+(defn submit-create-event
+  "Emits a `create-*` audit event for an entity created as a side effect of a
+  bulk operation (import, duplicate, clone). Those entities get no event from
+  their own command, so a local projection cannot key them otherwise. The
+  event is built by hand and does not pass through `prepare-rpc-event`, so its
+  props are passed as-is minus nils."
+  [cfg params event-name props]
+  (when (contains? cf/flags :audit-log)
+    (submit cfg
+            (-> (event-from-rpc-params params)
+                (assoc :name event-name)
+                (assoc :props (d/without-nils props))))))
 
 (defn insert
   "Submit audit event to the collector, intended to be used only from
