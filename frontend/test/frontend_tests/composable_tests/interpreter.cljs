@@ -245,7 +245,7 @@
                             (map (fn [[lib-id lib]] [lib-id (assoc lib :library-of (:id file))]))
                             aux))))))
 
-(defn- current-file
+(defn current-file
   "Read the live workspace file out of the global store."
   []
   (let [st @st/state]
@@ -380,23 +380,25 @@
   (set! st/state (:state original-store))
   (set! st/stream (:stream original-store)))
 
+(defn install!
+  "Install `situation` in the global store and start the watchers the workspace
+   starts, replacing the previous variant's. Restores the global store first (a
+   preceding namespace may have swapped it). Returns the situation."
+  [situation]
+  (restore-global-store!)
+  (st/emit! (install-situation-event situation)
+            (dw/finalize-edit-watchers)
+            (dw/initialize-edit-watchers)
+            (dwl/watch-library-changes))
+  situation)
+
 (defn- run-variant
   "Set up one variant on the global store and run its ops. `setup` returns a
-   situation (file + roles). Restores the global store (a preceding namespace may
-   have swapped it), installs the file + starts the watcher, then folds the ops.
-   Calls `k` with the final situation."
+   situation (file + roles). Calls `k` with the final situation."
   [setup ops k]
   ;; fresh label space per variant (mirrors the pure `tm/run-all`)
   (cthi/reset-idmap!)
-  (restore-global-store!)
-  (let [situation (setup)]
-    (st/emit! (install-situation-event situation))
-    ;; The same watchers the workspace starts; re-emitting them replaces the
-    ;; previous variant's.
-    (st/emit! (dw/finalize-edit-watchers)
-              (dw/initialize-edit-watchers)
-              (dwl/watch-library-changes))
-    (run-ops situation ops k)))
+  (run-ops (install! (setup)) ops k))
 
 ;; --------------------------------------------------------------------------
 ;; (3) Test-facing check
