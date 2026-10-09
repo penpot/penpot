@@ -23,7 +23,6 @@ async function openEditorAndSelectAll(workspace) {
   await workspace.page.keyboard.press("ControlOrMeta+a");
 }
 
-
 test("Typography at a collapsed caret only styles newly typed text", async ({
   page,
 }) => {
@@ -64,6 +63,146 @@ test("Typography at a collapsed caret only styles newly typed text", async ({
   await page.keyboard.press("Shift+ArrowRight");
   await page.keyboard.press("Shift+ArrowRight");
   await expect(fontSize).toHaveValue(originalSize);
+});
+
+test.describe("BUG 12247 - Font picker marks the applied family", () => {
+  let workspace;
+  let fontFamily;
+  let search;
+  let rows;
+  let recent;
+  const tick = 'use[href="#icon-tick"]';
+
+  function fontRow(container, name) {
+    return container.filter({
+      has: workspace.page
+        .getByText(name, { exact: true })
+        .or(workspace.page.getByRole("img", { name, exact: true })),
+    });
+  }
+
+  test.beforeEach(async ({ page }) => {
+    workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
+    await workspace.mockGoogleFont(
+      "roboto",
+      "render-wasm/assets/ebgaramond.ttf",
+    );
+    await workspace.mockGoogleFont(
+      "robotocondensed",
+      "render-wasm/assets/ebgaramond.ttf",
+    );
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+    await workspace.clickLeafLayer("Lorem ipsum");
+
+    fontFamily = workspace.rightSidebar.getByTitle("Font Family");
+    search = page.getByPlaceholder("Search font");
+    // Separate the virtualized catalog from Recent, which can repeat a family.
+    rows = page
+      .locator('[class*="__fonts-list"]')
+      .locator('[class$="__font-item"], [class*="__font-item "]');
+    recent = page
+      .locator("section")
+      .locator('[class$="__font-item"], [class*="__font-item "]');
+    await expect(fontFamily).toContainText("Source Sans Pro");
+  });
+
+  test("Searching highlights the first result without applying it or adding undo", async ({
+    page,
+  }) => {
+    // A known preceding edit makes an extra search-induced undo entry observable.
+    const fontSize = workspace.textEditor.fontSize;
+    const originalSize = await fontSize.inputValue();
+    await workspace.textEditor.changeFontSize(Number(originalSize) + 10);
+    await expect(fontSize).toHaveValue(String(Number(originalSize) + 10));
+    await fontFamily.click();
+    await search.pressSequentially("roboto");
+
+    const roboto = fontRow(rows, "Roboto");
+    await expect(roboto).toHaveClass(/_selected(?:\s|$)/);
+    await expect(rows.locator(tick)).toHaveCount(0);
+    await expect(fontFamily).toContainText("Source Sans Pro");
+
+    await search.press("Escape");
+    await expect(search).toBeHidden();
+    await page.keyboard.press("ControlOrMeta+z");
+    await expect(fontSize).toHaveValue(originalSize);
+    await expect(fontFamily).toContainText("Source Sans Pro");
+  });
+
+  test("Only the applied family is checked after filtering, no matches and clearing", async () => {
+    await fontFamily.click();
+    await search.fill("source");
+    const source = fontRow(rows, "Source Sans Pro");
+    await expect(source.locator(tick)).toHaveCount(1);
+    await expect(rows.locator(tick)).toHaveCount(1);
+
+    await search.fill("zzzz-no-font-matches");
+    await expect(rows).toHaveCount(0);
+    await expect(recent.locator(tick)).toHaveCount(0);
+    await expect(fontFamily).toContainText("Source Sans Pro");
+
+    await search.fill("");
+    await expect(fontFamily).toContainText("Source Sans Pro");
+    // Reopening scrolls the virtualized catalog back to the applied family.
+    await search.press("Escape");
+    await fontFamily.click();
+    await expect(source.locator(tick)).toHaveCount(1);
+    await expect(rows.locator(tick)).toHaveCount(1);
+    await expect(fontFamily).toContainText("Source Sans Pro");
+  });
+
+  test("Enter applies the highlighted first result and Recent checks only the applied family", async () => {
+    await fontFamily.click();
+    await search.fill("roboto");
+    await expect(fontRow(rows, "Roboto")).toHaveClass(/_selected(?:\s|$)/);
+    await expect(rows.locator(tick)).toHaveCount(0);
+    await search.press("Enter");
+    await expect(search).toBeHidden();
+    await expect(fontFamily).toContainText("Roboto");
+
+    // Applying each family populates Recent through the existing close handler.
+    await fontFamily.click();
+    await search.fill("Source Sans Pro");
+    await search.press("Enter");
+    await expect(fontFamily).toContainText("Source Sans Pro");
+    await fontFamily.click();
+    await expect(fontRow(recent, "Source Sans Pro").locator(tick)).toHaveCount(
+      1,
+    );
+    await expect(fontRow(recent, "Roboto").locator(tick)).toHaveCount(0);
+
+    await search.fill("roboto");
+    await expect(fontRow(recent, "Roboto")).toHaveClass(/_selected(?:\s|$)/);
+    await expect(recent.locator(tick)).toHaveCount(0);
+    await expect(rows.locator(tick)).toHaveCount(0);
+    await expect(fontFamily).toContainText("Source Sans Pro");
+  });
+
+  test("Arrow keys still apply fonts immediately and move the check with them", async () => {
+    await fontFamily.click();
+    await search.fill("roboto");
+    await search.press("ArrowDown");
+    await expect(fontFamily).toHaveText("Roboto");
+    await expect(fontRow(rows, "Roboto").locator(tick)).toHaveCount(1);
+
+    await search.press("ArrowDown");
+    await expect(fontFamily).toHaveText("Roboto Condensed");
+    await expect(fontRow(rows, "Roboto Condensed").locator(tick)).toHaveCount(
+      1,
+    );
+    await expect(fontRow(rows, "Roboto").locator(tick)).toHaveCount(0);
+
+    await search.press("ArrowUp");
+    await expect(fontFamily).toHaveText("Roboto");
+    await expect(fontRow(rows, "Roboto").locator(tick)).toHaveCount(1);
+    await expect(rows.locator(tick)).toHaveCount(1);
+    await search.press("Enter");
+    await expect(search).toBeHidden();
+    await expect(fontFamily).toHaveText("Roboto");
+  });
 });
 
 test.describe("BUG 10502 - Mixed families and variants", () => {
@@ -217,8 +356,6 @@ test.describe("BUG 11083 - Changing typography must not quit the editor", () => 
     await workspace.waitForSelectedShapeName("hello");
   });
 });
-
-
 
 test("BUG 10467 - Auto-width text captures every typed character", async ({
   page,
