@@ -28,6 +28,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
@@ -563,7 +564,9 @@
         team     (db/tx-run! cfg create-team params)]
 
     (with-meta team
-      {::audit/props {:id (:id team)}})))
+      {::audit/props {:id (:id team)
+                      :created-at (:created-at team)
+                      :modified-at (:modified-at team)}})))
 
 
 (defn create-default-organization-team
@@ -919,8 +922,14 @@
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]
-  (delete-team cfg {:team-id id :profile-id profile-id})
-  nil)
+  (let [team (delete-team cfg {:team-id id :profile-id profile-id})]
+    ;; The client keeps receiving nil; the audit event carries the deleted row.
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:id (:id team)
+                      :name (:name team)
+                      :created-at (:created-at team)
+                      :modified-at (:modified-at team)
+                      :deleted-at (:deleted-at team)}})))
 
 ;; --- Mutation: Team Update Role
 

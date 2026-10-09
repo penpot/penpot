@@ -540,7 +540,8 @@
   {::doc/added "1.0"
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (let [teams      (get-owned-teams conn profile-id)
+  (let [profile    (db/get conn :profile {:id profile-id})
+        teams      (get-owned-teams conn profile-id)
         deleted-at (ct/now)]
 
     ;; If we found owned teams with participants, we don't allow
@@ -581,6 +582,12 @@
     (session/invalidate-all cfg profile-id)
 
     (-> (rph/wrap nil)
+        (rph/with-meta {::audit/props {:id (:id profile)
+                                       :email (:email profile)
+                                       :fullname (:fullname profile)
+                                       :created-at (:created-at profile)
+                                       :modified-at (:modified-at profile)
+                                       :deleted-at deleted-at}})
         (rph/with-transform (session/delete-fn cfg)))))
 
 (def sql:get-subscription-editors
