@@ -757,7 +757,7 @@
                    :type "action"
                    :props {:id team-id}
                    :context {:triggered-by "srepl"
-                             :cause "explicit call to delete-profile!"}
+                             :cause "explicit call to delete-team!"}
                    :tracked-at tnow})
 
     (wrk/invoke! (-> sys/system
@@ -812,6 +812,8 @@
     (audit/insert sys/system
                   {:name "delete-profile"
                    :type "action"
+                   :profile-id profile-id
+                   :props {:id profile-id}
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-profile!"}
                    :tracked-at tnow})
