@@ -746,6 +746,28 @@
       (select-keys plugin-data [namespace])
       (or plugin-data {}))))
 
+;; --- COMMAND QUERY: get-file-tokens
+
+(def ^:private schema:get-file-tokens
+  [:map {:title "get-file-tokens"}
+   [:file-id ::sm/uuid]])
+
+(sv/defmethod ::get-file-tokens
+  "Return the design tokens of a file as a DTCG document, or nil when
+   the file has none. Active themes and sets come from the file's
+   tokens status. Cheap alternative to `get-file` when only the tokens
+   are needed."
+  {::doc/added "2.20"
+   ::sm/params schema:get-file-tokens
+   ::sm/result [:maybe [:map-of :string :any]]}
+  [cfg {:keys [::rpc/profile-id file-id]}]
+  (bfc/check-file-exists cfg file-id)
+  (check-read-permissions! cfg profile-id file-id)
+  (let [{:keys [data]} (bfc/get-file cfg file-id)]
+    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+      (when-let [tokens-lib (cfo/get-tokens-lib data)]
+        (ctob/export-dtcg-json tokens-lib (cfo/get-tokens-status data))))))
+
 
 ;; --- COMMAND QUERY: get-file-libraries
 

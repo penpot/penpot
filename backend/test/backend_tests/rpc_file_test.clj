@@ -2929,3 +2929,68 @@
     (t/is (not (nil? (:error out))))
     (let [edata (-> out :error ex-data)]
       (t/is (= :not-found (:type edata))))))
+
+(t/deftest get-file-tokens-without-tokens
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})
+        out     (th/command! {::th/type :get-file-tokens
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)})]
+    (t/is (nil? (:error out)))
+    (t/is (nil? (:result out)))))
+
+(t/deftest get-file-tokens-with-tokens
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared  false})
+        set-id   (uuid/next)
+        token-id (uuid/next)]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :set-token-set
+       :id set-id
+       :attrs {:id set-id :name "brand-core"}}
+      {:type :set-token
+       :set-id set-id
+       :token-id token-id
+       :attrs {:id token-id
+               :name "color.primary-base"
+               :type :color
+               :value "#ff0000"}}])
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 1
+     :changes
+     [{:type :set-tokens-status
+       :theme-ids #{}
+       :set-ids #{set-id}}])
+
+    (let [out (th/command! {::th/type :get-file-tokens
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)})
+          dtcg (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (= "#ff0000" (get-in dtcg ["brand-core" "color" "primary-base" "$value"])))
+      (t/is (= "color" (get-in dtcg ["brand-core" "color" "primary-base" "$type"])))
+      (t/is (= ["brand-core"] (get-in dtcg ["$metadata" "tokenSetOrder"])))
+      (t/is (= #{"brand-core"} (set (get-in dtcg ["$metadata" "activeSets"])))))))
+
+(t/deftest get-file-tokens-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :get-file-tokens
+                            ::rpc/profile-id (:id other)
+                            :file-id (:id file)})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :not-found))))
