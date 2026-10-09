@@ -860,6 +860,5 @@
                              (:id copy2-root-child2)
                              {:component-id [(thi/id :component1) (thi/id :wrong-comp3)]}}}}}}]
 
-      (thf/dump-file file') ;; Uncomment to debug
       (t/is (= expected-diff diff)))))
 
