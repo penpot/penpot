@@ -26,7 +26,6 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
-   [app.common.types.shape.layout :as ctsl]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -1037,29 +1036,6 @@
           (rx/of (dwt.wasm/render-thumbnail file-id page-id root-id :persist? true)))
         (rx/of (update-component-thumbnail-sync state component-id file-id "component"))))))
 
-(defn- find-shape-index
-  [objects id shape-id]
-  (let [object (get objects id)]
-    (when object
-      (let [shapes (:shapes object)]
-        (or (->> shapes
-                 (map-indexed (fn [index shape] [shape index]))
-                 (filter #(= shape-id (first %)))
-                 first
-                 second)
-            0)))))
-
-(defn component-swap-nesting-loop?
-  [objects shape library-data component-id]
-  (let [component (ctkl/get-component library-data component-id true)
-        page      (ctf/get-component-page library-data component)
-        root      (ctf/get-component-root library-data component)]
-    (and page
-         root
-         (cfh/components-nesting-loop?
-          (cfh/get-children-with-self (:objects page) (:id root))
-          (cfh/get-parents-with-self objects (:parent-id shape))))))
-
 (defn component-swap
   "Swaps a component with another one"
   [shape file-id id-new-component keep-touched?]
@@ -1072,29 +1048,16 @@
       ;; in the grid creating new rows/columns to make space
       (let [libraries   (dsh/lookup-libraries state)
             page        (dsh/lookup-page state)
-            objects     (:objects page)
-            parent      (get objects (:parent-id shape))
-
             ldata       (dsh/lookup-file-data state file-id)
-            orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
-
-            ;; If the target parent is a grid layout we need to pass the target cell
-            target-cell (when (ctsl/grid-layout? parent)
-                          (ctsl/get-cell-by-shape-id parent (:id shape)))
-
-            index (find-shape-index objects (:parent-id shape) (:id shape))
-
-            ;; Store the properties that need to be maintained when the component is swapped
-            keep-props-values (select-keys shape ctk/swap-keep-attrs)
 
             undo-id (js/Symbol)
             undo-group (uuid/next)
 
-            [new-shape all-parents changes]
+            [new-shape changes update-layout-ids]
             (-> (pcb/empty-changes it (:id page))
                 (pcb/set-undo-group undo-group)
-                (cll/generate-component-swap objects shape ldata page libraries id-new-component
-                                             index target-cell keep-props-values keep-touched?))
+                (clv/generate-component-swap-in-place page libraries ldata shape
+                                                      id-new-component keep-touched?))
 
             updated-objects  (pcb/get-objects changes)
             new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
@@ -1106,11 +1069,7 @@
                                               id))))
                                   (vec))
 
-            [changes parents-of-swapped]
-            (if keep-touched?
-              (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-              [changes []])
-            update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
+            update-layout-ids (concat update-layout-ids new-children-ids)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)

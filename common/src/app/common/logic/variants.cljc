@@ -8,8 +8,10 @@
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
 
@@ -241,3 +243,73 @@
          orig-touched)]
     [changes parents-of-swapped]))
 
+(defn- shape-index
+  "Position of `shape-id` among the children of `parent-id`; 0 when it is not
+   among them, nil when the parent does not exist."
+  [objects parent-id shape-id]
+  (when-let [parent (get objects parent-id)]
+    (or (d/index-of (:shapes parent) shape-id) 0)))
+
+(defn generate-component-swap-in-place
+  "Swap the copy head `shape` of `page` for a copy of the component
+   `component-id` of library data `ldata`. The new head takes the old one's
+   place: its index in the parent, its grid cell and its `swap-keep-attrs`.
+   With `keep-touched?`, the old head's overrides are carried over (the
+   variant switch flavour). Returns `[new-shape changes updated-parent-ids]`,
+   where the parent ids need a layout update."
+  [changes page libraries ldata shape component-id keep-touched?]
+  (let [objects     (:objects page)
+        parent      (get objects (:parent-id shape))
+        orig-shapes (when keep-touched?
+                      (cfh/get-children-with-self objects (:id shape)))
+        target-cell (when (ctsl/grid-layout? parent)
+                      (ctsl/get-cell-by-shape-id parent (:id shape)))
+        index       (shape-index objects (:parent-id shape) (:id shape))
+        keep-props  (select-keys shape ctk/swap-keep-attrs)
+
+        [new-shape all-parents changes]
+        (cll/generate-component-swap changes objects shape ldata page libraries component-id
+                                     index target-cell keep-props keep-touched?)
+
+        [changes parents-of-swapped]
+        (if keep-touched?
+          (generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
+          [changes []])]
+    [new-shape changes (concat all-parents parents-of-swapped)]))
+
+(defn find-switch-target
+  "The variant component that the variant copy head `shape` switches to when
+   its property at position `pos` takes the value `val`: among the other
+   variants with that value, the one whose properties are nearest to the
+   current ones. Nil when the property already has that value or no variant
+   has it."
+  [libraries shape pos val]
+  (let [component-id (:component-id shape)
+        component    (ctf/get-component libraries (:component-file shape) component-id
+                                        :include-deleted? false)]
+    (when (not= val (get-in component [:variant-properties pos :value]))
+      (let [ldata         (get-in libraries [(:component-file shape) :data])
+            objects       (-> (ctf/get-component-page ldata component) :objects)
+            target-props  (-> (:variant-properties component)
+                              (update pos assoc :value val))
+            candidates    (->> (cfv/find-variant-components ldata objects (:variant-id component))
+                               (remove #(= (:id %) component-id))
+                               (filter #(= (get-in % [:variant-properties pos :value]) val))
+                               (reverse))]
+        (when (seq candidates)
+          (apply min-key #(ctv/distance target-props (:variant-properties %)) candidates))))))
+
+(defn swap-nesting-loop?
+  "Whether swapping, or switching, the copy head `shape` of `objects` for a
+   copy of the component `component-id` of library data `ldata` would nest a
+   component inside itself."
+  [objects shape ldata component-id]
+  (let [component (ctkl/get-component ldata component-id true)
+        page      (ctf/get-component-page ldata component)
+        root      (ctf/get-component-root ldata component)]
+    (boolean
+     (and page
+          root
+          (cfh/components-nesting-loop?
+           (cfh/get-children-with-self (:objects page) (:id root))
+           (cfh/get-parents-with-self objects (:parent-id shape)))))))
