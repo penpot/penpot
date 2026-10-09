@@ -229,6 +229,11 @@
                (finish-tasks! (map tasks-by-id @remaining))
                (reset! remaining #{})))))))))
 
+(defn pending
+  "The work pending right now, as `{id -> {kind -> #{task-id}}}`."
+  []
+  (.getValue ^js pending-shapes))
+
 (defn settled
   "Observable that emits once every id in `ids` has drained from the pending
   map, then completes. A nil `ids` waits for every pending id; an empty one has
