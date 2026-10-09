@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Usage: ./watch [frontend|export]
+# Usage: ./watch [frontend|export] [extra cargo params...]
 
 set -e
 
@@ -9,19 +9,26 @@ pushd "$_SCRIPT_DIR" > /dev/null
 
 _RENDER_TARGET=${1:-${RENDER_TARGET:-frontend}}
 export RENDER_TARGET="$_RENDER_TARGET"
-. ./_build_env "$_RENDER_TARGET" "${@:2}"
+_BUILD_COMMAND=("$_SCRIPT_DIR/build" "$RENDER_TARGET" "${@:2}")
 
 # The initial build uses the protected build entry point. Its lock is released
 # before cargo watch starts waiting for source changes.
-"$_SCRIPT_DIR/build" "$RENDER_TARGET" $CARGO_PARAMS
+"${_BUILD_COMMAND[@]}"
+
+# cargo watch runs shell commands; single-quote each original argument for sh.
+_WATCH_BUILD_COMMAND=""
+for _arg in "${_BUILD_COMMAND[@]}"; do
+    _arg=${_arg//\'/\'\\\'\'}
+    _WATCH_BUILD_COMMAND+=" '$_arg'"
+done
 
 set -x
 
 cargo watch \
       --why \
+      --postpone \
       -i "_tmp*" \
-      -x "build $CARGO_PARAMS" \
-      -s "\"$_SCRIPT_DIR/build\" \"$RENDER_TARGET\" $CARGO_PARAMS" \
+      -s "$_WATCH_BUILD_COMMAND" \
       -s "echo 'DONE\n'";
 
 popd > /dev/null
