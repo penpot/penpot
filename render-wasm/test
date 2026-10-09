@@ -9,6 +9,7 @@ pushd $_SCRIPT_DIR;
 
 . ./_build_env
 
+setup
 cargo test --bin render_wasm -- --show-output
 
 # Exit with the same status code as cargo test
