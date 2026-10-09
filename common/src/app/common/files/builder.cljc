@@ -16,6 +16,7 @@
    [app.common.files.helpers :as cph]
    [app.common.files.migrations :as fmig]
    [app.common.geom.shapes :as gsh]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.time :as dt]
@@ -102,7 +103,8 @@
                      (str/capital (d/name type)))))
 
     :always
-    (update :name unique-name state)))
+    (-> (update :name unique-name state)
+        (update :name cpn/clean-path))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
