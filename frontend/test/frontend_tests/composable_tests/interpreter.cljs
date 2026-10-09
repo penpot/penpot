@@ -16,8 +16,10 @@
      2. an ASYNC interpreter that drives a sequence of operations through the REAL
         app: it installs the situation's file into the global store, starts the
         real component-change watcher, then for each operation dispatches its
-        event(s) and AWAITS settlement (so the app's AUTOMATIC propagation — not a
-        manual sync — is what runs), re-reading the file from the store after each.
+        event(s) and AWAITS all pending work it caused (`await-step`: the
+        watcher's sync wait and layout/text reflow, so the app's AUTOMATIC
+        propagation — not a manual sync — is what runs), re-reading the file
+        from the store after each. A step that does not settle in time fails.
      3. `check` — the test-facing entry: takes {:setup :operation} + an OPTIONAL
         asserter; enumerates the operation and runs each variant; assertions may
         be inline (`Test` ops) and/or in the asserter.
@@ -42,9 +44,9 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
-   [app.main.data.changes :as dch]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
@@ -52,6 +54,7 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.reflow :as pwrf]
    [beicon.v2.core :as rx]
    [cljs.test :as t]
    [frontend-tests.helpers.mock :as mock]
@@ -215,15 +218,8 @@
 ;; (2) Async interpreter
 ;; --------------------------------------------------------------------------
 
-(def ^:private settle-debounce-ms
-  "Resolve a step once the store's commit stream has been idle this long. This
-   captures the edit commit AND the watcher's follow-up sync commit, without a
-   fixed total delay. (Provisional: a fully deterministic per-op stopper would
-   await that op's specific component-changed/sync; debounce-idle is robust enough
-   for now.)"
-  60)
-
-(def ^:private settle-timeout-ms 2000)
+;; Longest a step may take to settle; a step that takes longer fails.
+(def ^:private step-timeout-ms 2000)
 
 (defn- install-situation-event
   "An UpdateEvent installing the situation's files into the (global) store: the
@@ -251,19 +247,26 @@
   (let [st @st/state]
     (get-in st [:files (:current-file-id st)])))
 
-(defn- await-settle
-  "Dispatch `events` into the global store, then call `k` once the commit stream
-   has gone idle (debounced). A hard timeout guarantees progress."
-  [events k]
-  (let [stream  (ptk/input-stream st/state)
-        commits (->> stream (rx/filter dch/commit?))
-        ;; resolve on first idle gap after a commit, or on timeout
-        settled (->> commits
-                     (rx/debounce settle-debounce-ms)
-                     (rx/take 1)
-                     (rx/timeout settle-timeout-ms (rx/of :settle/timeout)))]
-    (rx/subscribe settled (fn [_] (k)))
-    (doseq [e events] (st/emit! e))))
+(defn await-step
+  "Emit `events` into the global store and return a promise that resolves with
+   `:settled` once every pending work has drained: component sync (the
+   watcher's wait for each commit and the sync it starts) and layout and text
+   reflow, as tracked by `app.main.data.workspace.reflow`. It waits the way the
+   plugin `waitForLayoutUpdate` does. When `timeout-ms` (default
+   `step-timeout-ms`) passes first, it resolves with `{:timeout pending}`, the
+   work still pending then. Relies on every producer opening its pending work
+   synchronously while the events are processed."
+  ([events] (await-step events step-timeout-ms))
+  ([events timeout-ms]
+   (doseq [e events] (st/emit! e))
+   (-> (pwrf/wait-for-layout-update nil timeout-ms)
+       (.then (constantly :settled))
+       (.catch (fn [_] {:timeout (wrf/pending)})))))
+
+(defn- describe-pending
+  "The pending work map with the ids replaced by their test labels, if any."
+  [pending]
+  (update-keys pending #(or (cthi/label %) %)))
 
 (defn- record-op
   "Record an operation's application onto the situation (after its effect settled),
@@ -333,34 +336,30 @@
     (st/emit! (install-file-event (tm/file situation)))
     situation))
 
-(defn- op-grace-ms
-  "Extra wait AFTER an event-op has settled, before proceeding. Always zero:
-   the `rx/timer` and `rp/cmd!` calls that `SyncFromLibrary` schedules are
-   mocked (see `check`) so they fire instantly and succeed."
-  [_op]
-  0)
-
 (defn- run-ops
   "Async fold over `ops` (concrete operation units, in order — plain ops and/or
    one-of RecordedChoice wrappers). Threads the situation. A SYNCHRONOUS op
    (`sync-op?` — file-transforming or an inline `Test`) is applied synchronously
-   via `apply-to`; every other op dispatches its real workspace event(s) and awaits
-   settlement (plus a per-op grace period, see `op-grace-ms`). The file is re-read
-   from the store after each. Calls `k` with the final situation."
+   via `apply-to`; every other op dispatches its real workspace event(s) and
+   awaits all pending work (`await-step`). The file is re-read from the store
+   after each. Calls `k` with the final situation, or with nil when a step did
+   not settle in time; that step fails the test, naming the work still
+   pending."
   [situation ops k]
   (if (empty? ops)
     (k situation)
     (let [op (first ops)]
       (if (sync-op? op)
         (run-ops (run-sync-op situation op) (rest ops) k)
-        (await-settle
-         (op-events op situation)
-         (fn []
-           (let [continue #(run-ops (record-op situation op) (rest ops) k)
-                 grace    (op-grace-ms op)]
-             (if (pos? grace)
-               (js/setTimeout continue grace)
-               (continue)))))))))
+        (.then (await-step (op-events op situation))
+               (fn [result]
+                 (if (= :settled result)
+                   (run-ops (record-op situation op) (rest ops) k)
+                   (do
+                     (t/is false (str "Step did not settle in " step-timeout-ms "ms: "
+                                      (pr-str (type (if (tm/recorded-choice? op) (tm/choice-of op) op)))
+                                      "; pending: " (pr-str (describe-pending (:timeout result)))))
+                     (k nil)))))))))
 
 (defonce ^:private original-store
   ;; Captured at namespace-LOAD time — i.e. before any test in the run executes.
@@ -383,11 +382,14 @@
 (defn install!
   "Install `situation` in the global store and start the watchers the workspace
    starts, replacing the previous variant's. Restores the global store first (a
-   preceding namespace may have swapped it). Returns the situation."
+   preceding namespace may have swapped it) and forgets any pending work left
+   over, so a step that timed out earlier cannot hold up this variant's steps.
+   Stopping the previous layout watcher clears it too, but on the first install
+   of a run there is none. Returns the situation."
   [situation]
   (restore-global-store!)
+  (wrf/reset-pending!)
   (st/emit! (install-situation-event situation)
-            (dw/finalize-edit-watchers)
             (dw/initialize-edit-watchers)
             (dwl/watch-library-changes))
   situation)
@@ -439,7 +441,7 @@
                       ;; variant is a Sequence (or a single op).
                       (tm/sequence-ops (first vs))
                       (fn [situation]
-                        (when asserter
+                        (when (and asserter situation)
                           (t/testing (str "operations:\n  " (tm/describe-applied situation))
                             (asserter situation)))
                         (run-next (rest vs))))))]
