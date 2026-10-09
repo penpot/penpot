@@ -187,6 +187,23 @@
        ;; evaluates to a promise, so the body must settle one.
        (await (async/settle))))))
 
+(t/deftest ^:async generate-report-bounds-a-huge-exception-message
+  ;; A message can embed a whole payload (a serialized file) and reach
+  ;; megabytes. The report must keep a bounded head in both the context and
+  ;; the trace, so the audit event built from it can never bloat.
+  (await
+   (mock/with-mocks*
+     {st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+      rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")}
+     (let [huge   (apply str (repeat 200000 "z"))
+           report (errors/generate-report (js/Error. huge))]
+       (t/is (string? report))
+       (t/is (< (count report) 50000))
+       (t/is (not (str/includes? report (subs huge 0 1500))))
+       ;; Trailing settle: the body is synchronous, but `with-mocks*`
+       ;; evaluates to a promise, so the body must settle one.
+       (await (async/settle))))))
+
 (t/deftest ^:async connectivity-handlers-report-governed-compact-audit-events
   ;; Scenario: a network failure and an offline status through the global
   ;; handler. Each is reported as a governed compact audit event plus its
