@@ -1,0 +1,95 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
+
+(ns app.common.tokenscript.token-types
+  "Token type registry.
+
+  Token type schemas (`:type \"token\"`) describe structured token values
+  (typography, shadow, ...) and may carry a tokenscript validation script
+  that receives `{input}` and returns `true` or an error code string.
+  Validation execution lives in `app.common.tokenscript.validation`.
+
+  Registry shape: the common registry plus
+  `:validation {lower-type {:script .. :ast ..}}`."
+  (:require
+   [app.common.tokenscript.ast :as ast]
+   [app.common.tokenscript.errors :as err]
+   [app.common.tokenscript.parser :as parser]
+   [app.common.tokenscript.registry :as reg]
+   [clojure.string :as str]
+   [clojure.walk :as walk]))
+
+(def valid-schema-types ["number" "string" "token" "object" "list"])
+
+(def empty-registry
+  (assoc reg/empty-registry :validation {}))
+
+(defn spec-name
+  [spec]
+  (str/lower-case (:name spec)))
+
+(defn- normalize-spec
+  [uri spec]
+  (let [spec (walk/keywordize-keys spec)]
+    (when-not (and (map? spec) (string? (:name spec)) (= "token" (:type spec)))
+      (err/raise :config/invalid-specification
+                 {:data {:kind "token" :uri uri :error "expected a map with :name and :type \"token\""}}))
+    spec))
+
+(defn- parse-validation
+  [script]
+  (try
+    {:script script :ast (:ast (parser/parse script))}
+    (catch #?(:clj Throwable :cljs :default) _
+      {:script script :ast nil})))
+
+(defn register-validation
+  "Registers a validation script for `token-type`. `validation` is the
+  script string or a map with a `:script` key."
+  [registry token-type validation]
+  (let [script (if (string? validation) validation (:script validation))]
+    (assoc-in registry [:validation (str/lower-case token-type)] (parse-validation script))))
+
+(defn register
+  "Registers a token type specification under `uri`."
+  [registry uri spec]
+  (let [spec (normalize-spec uri spec)
+        registry (reg/add-spec registry uri spec (spec-name spec))]
+    (if-let [validation (:validation spec)]
+      (register-validation registry (:name spec) validation)
+      registry)))
+
+(defn spec
+  [registry uri]
+  (reg/spec registry uri))
+
+(defn spec-by-type
+  [registry type]
+  (reg/spec-by-name registry (str/lower-case type)))
+
+(defn validation
+  "Validation entry (`{:script :ast}`) for a token type."
+  [registry token-type]
+  (get (:validation registry) (str/lower-case token-type)))
+
+(defn validation-script
+  [registry token-type]
+  (:script (validation registry token-type)))
+
+(defn- error-types-of
+  [registry token-type]
+  (when-let [tree (:ast (validation registry token-type))]
+    (->> (ast/filter-nodes tree #(= :return (:node %)))
+         (keep (fn [{:keys [expr]}] (when (= :string (:node expr)) (:value expr))))
+         (vec))))
+
+(defn validation-error-types
+  "Error code strings returned by the validation scripts, for one token
+  type or for all registered types."
+  ([registry]
+   (vec (distinct (mapcat #(error-types-of registry %) (keys (:validation registry))))))
+  ([registry token-type]
+   (or (error-types-of registry token-type) [])))

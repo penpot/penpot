@@ -86,6 +86,12 @@
    [common-tests.text-test]
    [common-tests.time-test]
    [common-tests.token-test]
+   [common-tests.tokenscript.compliance-test]
+   [common-tests.tokenscript.interpreter-test]
+   [common-tests.tokenscript.lexer-test]
+   [common-tests.tokenscript.parser-test]
+   [common-tests.tokenscript.processor-test]
+   [common-tests.tokenscript.symbols-test]
    [common-tests.types-shape-tree-test]
    [common-tests.types.absorb-assets-test]
    [common-tests.types.color-test]
@@ -188,6 +194,12 @@
    'common-tests.text-test
    'common-tests.time-test
    'common-tests.token-test
+   'common-tests.tokenscript.compliance-test
+   'common-tests.tokenscript.interpreter-test
+   'common-tests.tokenscript.lexer-test
+   'common-tests.tokenscript.parser-test
+   'common-tests.tokenscript.processor-test
+   'common-tests.tokenscript.symbols-test
    'common-tests.types-shape-tree-test
    'common-tests.types.absorb-assets-test
    'common-tests.types.color-test
