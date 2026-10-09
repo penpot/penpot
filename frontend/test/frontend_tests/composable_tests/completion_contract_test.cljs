@@ -13,7 +13,10 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.setups :as setup]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -172,3 +175,17 @@
   (t/is (empty? (wrf/pending)))
   (t/is (= :settled (await (ftm/await-step [(fill-main-child red)]))))
   (t/is (= red (fill-of :copy-child))))
+
+(t/deftest skipped-optional-keeps-the-undo-baseline
+  ;; The end-of-variant round trip undoes back to the last file install. A
+  ;; skipped optional installs nothing, so the baseline stays at the setup,
+  ;; before the edit, where the undo index is -1.
+  (t/async done
+    (let [later (n/change-property :copy-instance :fills red)]
+      (ftm/check done
+                 {:setup     setup/simple-component-with-labeled-copy
+                  :operation (tm/in-sequence [(n/change-property :main-instance :fills red)
+                                              (tm/optional later)])}
+                 (fn [situation]
+                   (when-not (tm/applied? situation later)
+                     (t/is (= -1 (:depth (uc/baseline situation))))))))))

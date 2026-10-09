@@ -48,7 +48,9 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwtx]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -133,12 +135,23 @@
    node uses, but wrapped in the real workspace event (so it commits to the store
    and the watcher auto-propagates):
      ChangeProperty  -> update-shapes   (generate-update-shapes; n/set-property)
+     EditText        -> v2-update-text-shape-content (n/edit-text-content)
+     MoveShape       -> update-position (sidebar, page coordinates)
      MoveChild       -> relocate-shapes (generate-relocate, existing shape)
      AddChild        -> add-shape       (create a shape under the parent)
      RemoveChild     -> delete-shapes   (generate-delete-shapes)
+     Detach          -> detach-component (generate-detach-component)
+     UpdateMain      -> update-component-sync (generate-sync-shape-inverse)
+     DeleteComponent -> delete-component (generate-delete-shapes on the main)
+     RestoreComponent -> restore-component (generate-restore-component)
+     Duplicate       -> duplicate-shapes (generate-duplicate-changes)
+     NestCopy        -> relocate-shapes  (generate-relocate into a main)
+     SwapShape       -> component-swap   (any copy head)
+     MoveToCell      -> update-shapes on the grid board (n/move-to-cell-fn)
      SyncFromLibrary -> sync-file       (the cross-file library-update action, H)
      Undo            -> dwu/undo         (reverse the previous operation(s), I)
      Redo            -> dwu/redo         (apply the undone operation(s) again)
+     UndoBeforeSync  -> update-shapes + dwu/undo, emitted together
    (In-file propagation is automatic — the watcher — so no propagate op exists.)"
   [op situation]
   (cond
@@ -150,6 +163,20 @@
       [(dwsh/update-shapes #{(tm/target-shape-id situation target)}
                            (fn [shape] (n/set-property shape property value)))])
 
+    (instance? n/EditText op)
+    ;; The commit the text editor makes when the edit ends (on blur), SVG
+    ;; renderer path.
+    (let [{:keys [target edit value]} op
+          id                     (tm/target-shape-id situation target)
+          shape                  (tm/shape-by-id situation id)
+          {:keys [content name]} (n/text-edit-commit shape edit value)]
+      [(dwtx/v2-update-text-shape-content id content
+                                          :update-name? (some? name)
+                                          :name name
+                                          :finalize? true
+                                          :save-undo? true
+                                          :original-content (:content shape))])
+
     (instance? n/Rotate op)
     ;; The real sidebar rotation event, absolute mode: rotates the shape (and its
     ;; whole subtree) around its center. Its apply-modifiers step runs the
@@ -157,6 +184,13 @@
     ;; which is part of what a case using `rotate` exercises.
     (let [{:keys [target angle]} op]
       [(dwt/increase-rotation [(tm/target-shape-id situation target)] angle)])
+
+    (instance? n/MoveShape op)
+    ;; The real sidebar position event, in page coordinates.
+    (let [{:keys [target dx dy]} op
+          id                     (tm/target-shape-id situation target)
+          {:keys [x y]}          (:selrect (tm/shape-by-id situation id))]
+      [(dwt/update-position id {:x (+ x dx) :y (+ y dy)} {:absolute? true})])
 
     (instance? n/ChangeHeight op)
     ;; The real sidebar dimension event.
@@ -175,6 +209,20 @@
           target-id (n/lineage-component-id situation target)]
       [(dwl/component-swap shape file-id target-id (boolean keep-touched?))])
 
+    (instance? n/SwapShape op)
+    (let [{:keys [target to keep-touched?]} op]
+      [(dwl/component-swap (tm/shape-by-id situation (tm/target-shape-id situation target))
+                           (:id (tm/file situation))
+                           (n/swap-target-id situation to)
+                           (boolean keep-touched?))])
+
+    (instance? n/MoveToCell op)
+    ;; The board's new cells, as the commit of a canvas drop into the cell.
+    (let [{:keys [board child row column]} op]
+      [(dwsh/update-shapes #{(tm/target-shape-id situation board)}
+                           (n/move-to-cell-fn (tm/target-shape-id situation child) row column)
+                           {:with-objects? true})])
+
     (instance? n/SwitchVariant op)
     ;; The variant-switch action: switch the resolved variant copy head to the
     ;; sibling member whose selector property (pos 0) has `value`, via the REAL
@@ -187,6 +235,31 @@
           head-id (tm/target-shape-id situation target)
           shape   (tm/shape-by-id situation head-id)]
       [(dwv/variants-switch {:shapes [shape] :pos 0 :val value})])
+
+    (instance? n/Detach op)
+    [(dwl/detach-component (tm/target-shape-id situation (:target op)))]
+
+    (instance? n/UpdateMain op)
+    [(dwl/update-component-sync (tm/target-shape-id situation (:target op))
+                                (:id (tm/file situation)))]
+
+    (instance? n/DeleteComponent op)
+    (let [root (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))]
+      [(dwl/delete-component {:id (:component-id root)})])
+
+    (instance? n/Duplicate op)
+    [(dws/duplicate-shapes #{(tm/target-shape-id situation (:target op))}
+                           :change-selection? false)]
+
+    (instance? n/NestCopy op)
+    (let [parent-id (tm/target-shape-id situation (:into op))]
+      [(dwsh/relocate-shapes #{(tm/target-shape-id situation (:copy op))}
+                             parent-id
+                             (n/nest-target-index situation parent-id))])
+
+    (instance? n/RestoreComponent op)
+    [(dwl/restore-component (:id (tm/file situation))
+                            (n/deleted-component-id situation (:deletion op)))]
 
     (instance? n/MoveChild op)
     (let [{:keys [target parent to-index]} op]
@@ -209,9 +282,18 @@
       [(dwl/sync-file file-id library-id)])
 
     (instance? n/Undo op)
-    ;; Reverse the previous operation(s) via the real undo event. The workspace
-    ;; undo stack was maintained automatically by the prior ops' commits.
-    [dwu/undo]
+    ;; Reverse the previous operation(s) via the real undo event, once per
+    ;; operation to undo. The workspace undo stack was maintained automatically
+    ;; by the prior ops' commits.
+    (vec (repeat (:times op) dwu/undo))
+
+    (instance? n/UndoBeforeSync op)
+    ;; The edit and the undo go out together, so the undo commits before the
+    ;; watcher inspects the edit's commit.
+    (let [{:keys [target property value]} op]
+      [(dwsh/update-shapes #{(tm/target-shape-id situation target)}
+                           (fn [shape] (n/set-property shape property value)))
+       dwu/undo])
 
     (instance? n/Redo op)
     ;; Apply again the latest undone operation(s) via the real redo event.
@@ -277,25 +359,45 @@
   [pending]
   (update-keys pending #(or (cthi/label %) %)))
 
+(defn- unwrap
+  "The concrete operation of an op unit: the op chosen by a RecordedChoice,
+   through nested choices (e.g. an optional one-of)."
+  [op]
+  (if (tm/recorded-choice? op) (recur (tm/choice-of op)) op))
+
+(defn- record-choices
+  "Record in `situation` each choice on the way from the op unit `op` to its
+   concrete op, outermost first, as nested `RecordedChoice`s' own `apply-to`
+   does. Returns the situation."
+  [situation op]
+  (if (tm/recorded-choice? op)
+    (recur (tm/record-choice situation op) (tm/choice-of op))
+    situation))
+
 (defn- record-op
   "Record an operation's application onto the situation (after its effect settled),
-   re-reading the file from the store. For a RecordedChoice (one-of), record the
-   choice under the one-of identity (so the asserter's `get-choice` works) and
-   then the chosen op's application, in the order `RecordedChoice`'s own
-   `apply-to` uses."
+   re-reading the file from the store. The record is the op's own fields, plus
+   its `n/applied-result` when it has one. For a RecordedChoice (one-of), record
+   the choices first, under their one-of identities (so the asserter's
+   `get-choice` works), and then the chosen op's application, in the order
+   `RecordedChoice`'s own `apply-to` uses."
   [situation op]
-  (let [situation      (tm/with-file situation (current-file))
-        [situation op] (if (tm/recorded-choice? op)
-                         [(tm/record-choice situation op) (tm/choice-of op)]
-                         [situation op])]
-    (tm/record-application situation op (dissoc (into {} op) ::tm/id))))
+  (let [before    (tm/file situation)
+        situation (-> situation
+                      (tm/with-file (current-file))
+                      (record-choices op))
+        op        (unwrap op)
+        record    (cond-> (dissoc (into {} op) ::tm/id)
+                    (satisfies? n/IAppliedResult op)
+                    (merge (n/applied-result op before (tm/file situation))))]
+    (tm/record-application situation op record)))
 
 (defn- op-events
   "The workspace events to dispatch for an op unit (a plain op or a one-of's
    RecordedChoice — for the latter, the chosen op's events). `situation` provides
    cross-file context to ops that need it."
   [op situation]
-  (op->events (if (tm/recorded-choice? op) (tm/choice-of op) op) situation))
+  (op->events (unwrap op) situation))
 
 (defn- install-file-event
   "An UpdateEvent that replaces the current file in the (global) store with `file`
@@ -309,11 +411,6 @@
           (assoc :current-file-id (:id file)
                  :current-page-id (cthf/current-page-id file))
           (assoc-in [:files (:id file)] file)))))
-
-(defn- unwrap
-  "The concrete operation of an op unit (the chosen op of a RecordedChoice)."
-  [op]
-  (if (tm/recorded-choice? op) (tm/choice-of op) op))
 
 ;; --------------------------------------------------------------------------
 ;; Undo/redo round trip (see `app.common.test-helpers.composable.comp.undo-check`)
@@ -437,7 +534,8 @@
         ;; A user operation, but the real reset event transitively reads browser
         ;; globals (CSS vars), so it cannot run headless; the shared apply-to runs
         ;; the production reset generator with validation off.
-        (instance? n/ResetCopyInstance op))))
+        (instance? n/ResetCopyInstance op)
+        (instance? n/ResetOverrides op))))
 
 (defn- run-sync-op
   "Apply a synchronous (`sync-op?`) operation: run its shared `apply-to` against a
@@ -450,9 +548,12 @@
   (let [situation (tm/with-file situation (current-file))
         situation (tm/apply-to op situation)]
     (st/emit! (install-file-event (tm/file situation)))
+    ;; a file install is the round trip's new baseline; a skipped optional
+    ;; and an inline test install nothing new
     (cond-> situation
       (and (::undo-check? situation)
-           (not (instance? tm/Test (unwrap op))))
+           (not (instance? tm/Test (unwrap op)))
+           (not (instance? tm/Skip (unwrap op))))
       (mark-baseline))))
 
 (defn- run-ops
@@ -518,19 +619,41 @@
   (set! st/state (:state original-store))
   (set! st/stream (:stream original-store)))
 
+(defn- headless-text-measurement
+  "Stands in for the DOM text measurement, which needs a browser. A text whose
+   content changes stays pending until the renderer starts measuring it (see
+   `app.main.data.workspace.texts`); this starts and ends that measurement
+   for each text a `:text/reflow` names, leaving its geometry and
+   `:position-data` as they are. Replaces itself when started again."
+  []
+  (ptk/reify ::headless-text-measurement
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> stream
+           (rx/filter (ptk/type? :text/reflow))
+           (rx/map deref)
+           ;; after the text watcher opened its wait for the measurement
+           (rx/observe-on :async)
+           (rx/tap (fn [{:keys [ids]}]
+                     (wrf/finish! (wrf/start! :text-measure ids))))
+           (rx/ignore)
+           (rx/take-until (rx/filter (ptk/type? ::headless-text-measurement) stream))))))
+
 (defn install!
   "Install `situation` in the global store and start the watchers the workspace
-   starts, replacing the previous variant's. Restores the global store first (a
-   preceding namespace may have swapped it) and forgets any pending work left
-   over, so a step that timed out earlier cannot hold up this variant's steps.
-   Stopping the previous layout watcher clears it too, but on the first install
-   of a run there is none. Returns the situation."
+   starts, replacing the previous variant's, plus the headless stand-in for
+   the DOM text measurement. Restores the global store first (a preceding
+   namespace may have swapped it) and forgets any pending work left over, so a
+   step that timed out earlier cannot hold up this variant's steps. Stopping
+   the previous layout watcher clears it too, but on the first install of a run
+   there is none. Returns the situation."
   [situation]
   (restore-global-store!)
   (wrf/reset-pending!)
   (st/emit! (install-situation-event situation)
             (dw/initialize-edit-watchers)
-            (dwl/watch-library-changes))
+            (dwl/watch-library-changes)
+            (headless-text-measurement))
   situation)
 
 (defn- run-variant

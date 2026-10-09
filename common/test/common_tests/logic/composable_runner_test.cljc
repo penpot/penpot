@@ -460,3 +460,13 @@
     (t/testing "a mark must pin its failures"
       (t/is (thrown? #?(:clj Exception :cljs :default)
                      (verdict [(dissoc known :fails)]))))))
+
+(t/deftest known-failure-holds-only-the-pinned-value
+  (let [reports (fn [actual]
+                  (let [types (atom [])]
+                    (binding [t/report #(swap! types conj (:type %))]
+                      (tm/known-failure "F0" :right :wrong actual))
+                    @types))]
+    (t/is (= [:pass] (reports :wrong)))
+    (t/is (= [:fail] (reports :right)))
+    (t/is (= [:fail] (reports :other)))))

@@ -15,7 +15,7 @@
        until none is left. The frontend component watcher does the same, one
        pass per sync commit.
      - Undo and redo. A user operation and the syncs it caused form one undo
-       group. `n/undo` reverts the latest group and `n/redo` applies again the
+       group. `n/undo` reverts the latest groups and `n/redo` applies again the
        latest reverted one; neither syncs, as in the frontend, where an undo
        or redo commit only bumps the component's `:modified-at`. A user
        operation that pushes a group empties the redo stack.
@@ -168,9 +168,15 @@
   (move-group situation ::redo-stack ::undo-stack :redo-changes seq))
 
 (defn- run-undo
+  "Undo the latest `(:times op)` groups, one at a time."
   [situation op]
-  (let [[situation group] (undo-group situation)]
-    (tm/record-application situation op {:undone (count group)})))
+  (let [[situation undone]
+        (reduce (fn [[situation undone] _]
+                  (let [[situation group] (undo-group situation)]
+                    [situation (+ undone (count group))]))
+                [situation 0]
+                (range (:times op)))]
+    (tm/record-application situation op {:undone undone})))
 
 (defn- run-redo
   [situation op]

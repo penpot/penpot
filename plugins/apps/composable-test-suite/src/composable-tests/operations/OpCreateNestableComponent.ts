@@ -26,9 +26,20 @@ const NESTED_COMPONENT_NAME = "OuterComponentRoot";
  * given instance via the content-creation strategy.
  */
 class RolesNestableComponent extends RoleBundle {
-    readonly remoteInstance = new Role<Board>("remote-instance");
-    readonly mainInstance = new Role<Board>("main-instance");
-    readonly copyInstance = new Role<Board>("copy-instance");
+    readonly remoteInstance: Role<Board>;
+    readonly mainInstance: Role<Board>;
+    readonly copyInstance: Role<Board>;
+
+    /**
+     * @param prefix - prepended to the role names, so several lineages can be
+     *     bound in one situation (roles are bound by name)
+     */
+    constructor(prefix: string) {
+        super();
+        this.remoteInstance = new Role<Board>(`${prefix}remote-instance`);
+        this.mainInstance = new Role<Board>(`${prefix}main-instance`);
+        this.copyInstance = new Role<Board>(`${prefix}copy-instance`);
+    }
 }
 
 /**
@@ -131,16 +142,22 @@ class OpMakeNestedComponent extends Operation {
  * (e.g. as the target of a variant switch) without knowing how nesting is stored.
  */
 export class OpCreateNestableComponent<TContentCreator extends ContentCreationStrategy> extends Operation {
-    readonly roles = new RolesNestableComponent();
+    readonly roles: RolesNestableComponent;
 
     /** Private key under which this lineage's (mutable) nesting data is stored. */
     private readonly nestingDataKey = new DataKey<NestingData>("nesting-data");
 
     /**
      * @param contentCreator - creates and locates the component's content
+     * @param name - names the lineage when a situation holds more than one; its
+     *     roles are bound under names prefixed with it
      */
-    constructor(public readonly contentCreator: TContentCreator) {
+    constructor(
+        public readonly contentCreator: TContentCreator,
+        name: string = ""
+    ) {
         super();
+        this.roles = new RolesNestableComponent(name === "" ? "" : `${name}-`);
     }
 
     async applyTo(situation: Situation): Promise<void> {
