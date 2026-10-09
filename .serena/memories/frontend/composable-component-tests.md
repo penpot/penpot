@@ -123,13 +123,21 @@ nestings do not propagate between each other.
 
 **Interpreter:** installs the situation's files into the global `st/state` (aux files tagged
 `:library-of`), starts the production watchers the app starts — `dw/initialize-edit-watchers`
-(undo stack, layout, text reflow, WASM text measurement; stopped by `dw/finalize-edit-watchers`)
-and `dwl/watch-library-changes` (component + token watchers) — then maps
+(undo stack, layout, text reflow, WASM text measurement; stopped by `dw/finalize-edit-watchers`,
+replaced when started again) and `dwl/watch-library-changes` (component + token watchers;
+replaced when started again) — then maps
 event-ops to REAL workspace events (`dwsh/update-shapes`, `dwl/component-swap`,
 `dwv/variants-switch`, `dwt/increase-rotation` — which runs the `check-delta` placement
 classification — `dwt/update-dimensions`, `dwu/undo`, `dwl/sync-file`, …) and runs sync-ops'
-`apply-to` against the live store file; awaits settlement (idle-gap heuristic + per-op grace) and
-re-reads `:file` each step so the shared accessors keep working.
+`apply-to` against the live store file; each event step goes through `ftm/await-step`, which
+resolves once `wrf/settled nil` (the watcher's `:sync-file` wait, opened for EVERY local commit,
+plus the sync and layout/text reflow it starts) or reports `{:timeout pending}` after 2s; a
+timed-out step fails the test and skips the asserter. Contract: producers must open their
+pending work synchronously while the events are processed (Potok processes sub-events
+synchronously); an async hop without a pending task makes steps resolve early. Tests:
+`frontend-tests.composable-tests.completion-contract-test` (slowed-down sync via a mocked
+`dwl/sync-file`), `frontend-tests.data.workspace-sync-barrier-test`. Re-reads `:file` each step
+so the shared accessors keep working.
 STORE-SWAP IMMUNITY: other test namespaces `set!` `st/state`/`st/stream` and never restore, while
 the `app.main.refs` lenses stay bound to the ORIGINAL atoms — propagation then dies silently. The
 interpreter captures the atoms at namespace-load time and re-`set!`s them per variant.
