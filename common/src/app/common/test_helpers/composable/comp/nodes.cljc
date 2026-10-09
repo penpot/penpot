@@ -40,7 +40,9 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
-   [app.common.types.modifiers :as ctm]))
+   [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]))
 
 ;; ---------------------------------------------------------------------------
 ;; Operation kinds and the production changes of user operations
@@ -74,6 +76,13 @@
    it changed nothing), in `situation` for the runner to take."
   [situation changes]
   (assoc situation ::changes changes))
+
+(defprotocol IAppliedResult
+  (applied-result [op file-before file-after]
+    "A map of what `op` did that its accessors need, read from the file before
+     and after it. Both runners record it with the op's application: the pure
+     node in `apply-to`, the frontend interpreter after the op's event
+     settles."))
 
 (defn take-changes
   "The changes recorded by the last operation and the situation without them,
@@ -179,6 +188,79 @@
 (def ^{:doc "Alias of `applied-property`."} applied-attr applied-property)
 
 ;; ---------------------------------------------------------------------------
+;; edit-text — edit the content of a text shape
+;;
+;; An edit of the first span of a text, either its characters (`:text`) or its
+;; font size (`:font-size`), as the text editor commits it when the edit ends:
+;; a new `:content`, and a new name when the text still has the name generated
+;; from its old content, written through `generate-update-shapes`. On a copy
+;; the content touches `:content-group` plus the text subgroup of the change
+;; (`:text-content-text` or `:text-content-attribute`). The frontend
+;; interpreter commits the same edit through the real
+;; `v2-update-text-shape-content` event, as the editor does on blur.
+;; ---------------------------------------------------------------------------
+
+(def ^:private first-span [:content :children 0 :children 0 :children 0])
+
+(defn- generated-name
+  "The name the text editor gives a text after its `content`."
+  [content]
+  (txt/generate-shape-name (txt/content->text content)))
+
+(defn text-edit-commit
+  "What the text editor commits when the `edit` (`:text` or `:font-size`) of
+   the first span of `shape` becomes `value`: `:content`, and `:name` when the
+   editor renames the shape after its text, which it does when the shape still
+   has the name generated from its old content. Public so the frontend
+   interpreter commits the same edit."
+  [shape edit value]
+  (when-not (contains? #{:text :font-size} edit)
+    (throw (ex-info (str "text-edit-commit: unsupported edit " (pr-str edit)
+                         " (supported: :text, :font-size)")
+                    {:edit edit})))
+  (let [content (assoc-in (:content shape) (conj (subvec first-span 1) edit) value)]
+    (cond-> {:content content}
+      (= (:name shape) (generated-name (:content shape)))
+      (assoc :name (generated-name content)))))
+
+(defn edit-text-content
+  "`shape` after the text editor's commit of `text-edit-commit`."
+  [shape edit value]
+  (merge shape (text-edit-commit shape edit value)))
+
+(defn text-span-value
+  "The `edit` (`:text` or `:font-size`) of `shape`'s first span."
+  [shape edit]
+  (get-in shape (conj first-span edit)))
+
+(defrecord EditText [target edit value]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{shape-id}
+                                               #(edit-text-content % edit value)
+                                               (:objects page)
+                                               {})
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :edit edit :value value})))))
+
+(defn edit-text
+  "Constructor for the text edit operation: set the `edit` (`:text` or
+   `:font-size`) of the first span of the text bound to `target` to `value`.
+   On the frontend it dispatches the real `v2-update-text-shape-content`."
+  [target edit value]
+  (tm/assign-id (->EditText target edit value)))
+
+;; ---------------------------------------------------------------------------
 ;; Geometry operations
 ;;
 ;; Unlike `change-property` (a raw attribute write), geometric changes must go
@@ -252,6 +334,33 @@
           (record-changes changes)
           (tm/record-application this {:target target :value value})))))
 
+(defrecord MoveShape [target dx dy]
+  IComponentOperation
+  (op-kind [_] :frontend-only)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{shape-id}
+                                               #(gsh/move % (gpt/point dx dy))
+                                               (:objects page)
+                                               {})
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :dx dx :dy dy})))))
+
+(defn move-shape
+  "Constructor for the move operation: move the shape named by `target` by
+   (`dx`, `dy`). On the frontend this dispatches the real sidebar
+   `dwt/update-position` event."
+  [target dx dy]
+  (tm/assign-id (->MoveShape target dx dy)))
+
 (defn change-height
   "Constructor for the height-change operation: resize the shape named by `target`
    to height `value` (width unchanged). On the frontend this dispatches the real
@@ -266,6 +375,13 @@
   (applied-value [node] (:value node))
   (has-property-of [node shape]
     (mth/close? (:value node) (:height shape))))
+
+(extend-type EditText
+  IPropertyCheck
+  (applied-property [node] (:edit node))
+  (applied-value [node] (:value node))
+  (has-property-of [node shape]
+    (= (:value node) (text-span-value shape (:edit node)))))
 
 ;; ===========================================================================
 ;; Synchronisation-scenario building blocks
@@ -343,6 +459,7 @@
 ;;                         (advances to the new OUTER component on make-nested-component)
 ;;   :remote-head/:remote-rect - the fixed deepest origin (NEVER re-pointed)
 ;;   :main-head/:main-rect      - the current main (advances inward on make-nested-component)
+;;   :size               - the size `create-component` gave the root (nil: minimal)
 ;;   :nesting-count
 ;;   :nesting-data       - vector, one entry per nesting level i, each:
 ;;       {:main-head <id of that level's outer main>
@@ -407,10 +524,56 @@
   [name]
   (fn [s] (:copy-rect (get-component-obj s name))))
 
+(defn copy-head-of
+  "Target: lineage `name`'s current copy head (from the latest instantiate-copy)."
+  [name]
+  (fn [s] (:copy-head (get-component-obj s name))))
+
+(defn main-head-of
+  "Target: lineage `name`'s current main head."
+  [name]
+  (fn [s] (:main-head (get-component-obj s name))))
+
+(defn nested-head-in
+  "Target: the nested copy head directly inside lineage `name`'s current copy
+   head (the copy of a level-0 nesting). Found through its parent, so it
+   still names the head after a swap or switch replaced it in place."
+  [name]
+  (fn [s]
+    (let [objects (:objects (thf/current-page (tm/file s)))
+          head    ((copy-head-of name) s)]
+      (->> (cfh/get-immediate-children objects head)
+           (filter :component-id)
+           (first)
+           (:id)))))
+
+(defn corresponding-shape-id
+  "The id of the shape in `head-id`'s subtree (the head included) whose
+   :shape-ref chain passes through `target-id`: its image in that copy."
+  [situation head-id target-id]
+  (self-or-descendant-corresponding-to (:objects (thf/current-page (tm/file situation)))
+                                       head-id
+                                       target-id))
+
 (defn lineage-copy-rect
   "The id of lineage `name`'s current copy rect (for assertions)."
   [situation name]
   (:copy-rect (get-component-obj situation name)))
+
+(defn lineage-nth-copy-rect
+  "The id of the rect of lineage `name`'s `i`-th copy, in instantiation order."
+  [situation name i]
+  (get-in (get-component-obj situation name) [:copies i :copy-rect]))
+
+(defn nth-copy-rect-of
+  "Target: the rect of lineage `name`'s `i`-th copy, in instantiation order."
+  [name i]
+  (fn [s] (lineage-nth-copy-rect s name i)))
+
+(defn nth-copy-head-of
+  "Target: the head of lineage `name`'s `i`-th copy, in instantiation order."
+  [name i]
+  (fn [s] (get-in (get-component-obj s name) [:copies i :copy-head])))
 
 (defn level-rect
   "The id of the rect currently at lineage `name`'s nesting level `level`,
@@ -443,7 +606,7 @@
 ;; create-component — the starting operation: a component with a rect child
 ;; ---------------------------------------------------------------------------
 
-(defrecord CreateComponent [name color]
+(defrecord CreateComponent [name color size]
   IComponentOperation
   (op-kind [_] :assembly)
 
@@ -455,9 +618,13 @@
           comp-label  (keyword (str "sync-" name "-component"))
           file'       (-> (tm/file situation)
                           (tho/add-simple-component comp-label head-label rect-label
+                                                    :root-params
+                                                    (when size {:width size :height size})
                                                     :child-params
-                                                    {:fills (ths/sample-fills-color
-                                                             :fill-color color)}))
+                                                    (cond-> {:fills (ths/sample-fills-color
+                                                                     :fill-color color)}
+                                                      size (assoc :width (/ size 2)
+                                                                  :height (/ size 2)))))
           head-id     (thi/id head-label)
           rect-id     (thi/id rect-label)
           comp-id     (thi/id comp-label)]
@@ -468,6 +635,7 @@
                              {:main-component-id comp-id
                               :remote-head head-id :remote-rect rect-id
                               :main-head   head-id :main-rect   rect-id
+                              :size size
                               :nesting-count 0
                               :nesting-data []})
           (tm/record-application this {:component name :id comp-id})))))
@@ -476,9 +644,12 @@
   "Starting operation: create a component lineage named `name` (root frame + one
    rect child of fill `color`) and track it as a component OBJECT. Sets
    remote==main head+rect, :main-component-id, nesting-count 0. Begin a scenario
-   with this; create more lineages (e.g. swap targets) with further calls."
-  [name color]
-  (tm/assign-id (->CreateComponent name color)))
+   with this; create more lineages (e.g. swap targets) with further calls.
+   `:size` gives the root that width and height, and the rect half of it
+   (nesting gives the outer frames that size too); without it they all have
+   the minimal default size."
+  [name color & {:keys [size]}]
+  (tm/assign-id (->CreateComponent name color size)))
 
 ;; ---------------------------------------------------------------------------
 ;; make-nested-component — wrap the tracked component in a NEW OUTER component
@@ -522,8 +693,10 @@
         outer-frame  (keyword (str "sync-" name "-outer-" level))
         inner-copy   (keyword (str "sync-" name "-innercopy-" level))
         outer-comp   (keyword (str "sync-" name "-outercomp-" level))
+        size         (:size obj)
         file'        (-> the-file
-                         (tho/add-frame outer-frame {:name "OuterFrame"})
+                         (tho/add-frame outer-frame (cond-> {:name "OuterFrame"}
+                                                      size (assoc :width size :height size)))
                          (instantiate-inner-fn outer-frame inner-copy)
                          (thc/make-component outer-comp outer-frame))
         objects      (:objects (thf/current-page file'))
@@ -661,12 +834,339 @@
   [name]
   (tm/assign-id (->ResetCopyInstance name)))
 
+;; ---------------------------------------------------------------------------
+;; reset — reset the overrides of any copy head
+;;
+;; The "Reset overrides" action on the copy head bound to `target`, a nested
+;; head included. Same production path as `reset-copy-instance`
+;; (`generate-reset-component`), which is tied to a lineage's latest copy; the
+;; frontend interpreter runs it as a file install for the same reason.
+;; ---------------------------------------------------------------------------
+
+(defrecord ResetOverrides [target]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file  (tm/file situation)
+          shape-id  (tm/target-shape-id situation target)
+          page      (thf/current-page the-file)
+          changes   (-> (pcb/empty-changes)
+                        (cll/generate-reset-component the-file
+                                                      {(:id the-file) the-file}
+                                                      (ctn/make-container page :page)
+                                                      shape-id))
+          file'     (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :reset shape-id})))))
+
+(defn reset
+  "Reset the overrides of the copy head bound to `target` (a role, a label or
+   a `(situation -> id)` fn)."
+  [target]
+  (tm/assign-id (->ResetOverrides target)))
+
 (defn- libraries
   "The situation's files by id, as the production code expects them: the
    current file and any auxiliary (library) files."
   [situation]
   (let [the-file (tm/file situation)]
     (assoc (tm/aux-files situation) (:id the-file) the-file)))
+
+;; ---------------------------------------------------------------------------
+;; detach — break the link between a copy and its component
+;;
+;; The "Detach instance" action on the copy head bound to `target`. Drives the
+;; production `generate-detach-component`, the changes the frontend
+;; `detach-component` event commits. The copy's shapes lose their component
+;; links and touched groups; its first-level nested copies stay copies, one
+;; nesting level up, and inherit the touched groups of the shapes they
+;; referenced (see `mem:common/component-sync-contract`).
+;; ---------------------------------------------------------------------------
+
+(defrecord Detach [target]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          changes  (cll/generate-detach-component (pcb/empty-changes)
+                                                  shape-id
+                                                  (:data the-file)
+                                                  (:id page)
+                                                  (libraries situation))
+          file'    (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :detached shape-id})))))
+
+(defn detach
+  "Constructor for the detach operation: detach the copy head bound to
+   `target` (a role, a label or a `(situation -> id)` fn, e.g.
+   `copy-head-of`) from its component. On the frontend it dispatches the real
+   `detach-component` event."
+  [target]
+  (tm/assign-id (->Detach target)))
+
+;; ---------------------------------------------------------------------------
+;; update-main — push a copy's overrides to its main
+;;
+;; The "Update main component" action on the copy head bound to `target`.
+;; Drives the production `generate-sync-shape-inverse`, the changes the
+;; frontend `update-component` event commits (in two commits, the copy's and
+;; the main's, which it tells apart by `:local-change?`; one changes here).
+;; The main then differs from its other copies, so the runner syncs them.
+;; ---------------------------------------------------------------------------
+
+(defn- strip-local-change
+  [changes]
+  (let [strip (partial mapv #(dissoc % :local-change?))]
+    (-> changes
+        (update :redo-changes strip)
+        (update :undo-changes strip))))
+
+(defrecord UpdateMain [target]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file  (tm/file situation)
+          shape-id  (tm/target-shape-id situation target)
+          page      (thf/current-page the-file)
+          container (ctn/make-container page :page)
+          changes   (-> (pcb/empty-changes)
+                        (pcb/with-container container)
+                        (cll/generate-sync-shape-inverse (:data the-file)
+                                                         (libraries situation)
+                                                         container
+                                                         shape-id)
+                        (strip-local-change))
+          file'     (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes (when (seq (:redo-changes changes)) changes))
+          (tm/record-application this {:target target :updated shape-id})))))
+
+(defn update-main
+  "Constructor for the update-main operation: push the overrides of the copy
+   head bound to `target` (a role, a label or a `(situation -> id)` fn, e.g.
+   `nth-copy-head-of`) to its main. On the frontend it dispatches the real
+   `update-component-sync` event."
+  [target]
+  (tm/assign-id (->UpdateMain target)))
+
+;; ---------------------------------------------------------------------------
+;; delete-component / restore-component
+;;
+;; Deleting a component deletes its main; the component stays in the file,
+;; marked deleted, and its copies keep their data. Restoring it brings the
+;; main back. `delete-component` drives `generate-delete-shapes` on the main
+;; root, the changes the frontend `delete-component` event commits;
+;; `restore-component` drives `generate-restore-component`, as the
+;; frontend `restore-component` event does. The restore node asks the delete
+;; node which component it deleted.
+;; ---------------------------------------------------------------------------
+
+(defrecord DeleteComponent [target]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file      (tm/file situation)
+          root-id       (tm/target-shape-id situation target)
+          page          (thf/current-page the-file)
+          component-id  (:component-id (get (:objects page) root-id))
+          [_ changes]   (cls/generate-delete-shapes (pcb/empty-changes nil (:id page))
+                                                    (:data the-file)
+                                                    page
+                                                    (:objects page)
+                                                    #{root-id}
+                                                    {})
+          file'         (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :component-id component-id})))))
+
+(defn delete-component
+  "Constructor for the delete-component operation: delete the component whose
+   main root is bound to `target` (a role, a label or a `(situation -> id)`
+   fn). On the frontend it dispatches the real `delete-component` event."
+  [target]
+  (tm/assign-id (->DeleteComponent target)))
+
+(defn- target-id
+  "The shape id `target` names, whether or not the shape still exists."
+  [situation target]
+  (cond
+    (fn? target)                    (target situation)
+    (tm/has-role? situation target) (get-in situation [:roles target])
+    :else                           (thi/id target)))
+
+(defn deleted-component-id
+  "The id of the component that the `delete-component` node `node` deleted:
+   the one whose main root is the node's target. Read from the file, so it
+   holds in both runners."
+  [situation node]
+  (let [root-id (target-id situation (:target node))]
+    (or (->> (get-in (tm/file situation) [:data :components])
+             (vals)
+             (d/seek #(= root-id (:main-instance-id %)))
+             (:id))
+        (throw (ex-info "deleted-component-id: no component has that main root"
+                        {:type ::no-component
+                         :root root-id})))))
+
+(defrecord RestoreComponent [deletion]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file     (tm/file situation)
+          data         (:data the-file)
+          component-id (deleted-component-id situation deletion)
+          component    (get-in data [:components component-id])
+          page         (get-in data [:pages-index (:main-instance-page component)])
+          changes      (cll/generate-restore-component (pcb/empty-changes)
+                                                       data
+                                                       component-id
+                                                       (:id the-file)
+                                                       page
+                                                       (:objects page))
+          file'        (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:component-id component-id})))))
+
+(defn restore-component
+  "Constructor for the restore-component operation: restore the component
+   that the `delete-component` node `deletion` deleted. On the frontend it
+   dispatches the real `restore-component` event."
+  [deletion]
+  (tm/assign-id (->RestoreComponent deletion)))
+
+;; ---------------------------------------------------------------------------
+;; duplicate — duplicate a shape in place
+;;
+;; The "Duplicate" action on the shape bound to `target`, with no offset.
+;; Drives the production `generate-duplicate-changes`, the changes the
+;; frontend `duplicate-shapes` event commits. The new subtree's head is read
+;; from the file (the new shape whose parent existed before), so
+;; `duplicate-head-of` works in both runners.
+;; ---------------------------------------------------------------------------
+
+(defn- new-subtree-head
+  "The id of the shape in `page-after` that is not in `page-before` but whose
+   parent is: the head of the one subtree added between them."
+  [page-before page-after]
+  (let [before (:objects page-before)]
+    (->> (vals (:objects page-after))
+         (filter #(and (not (contains? before (:id %)))
+                       (contains? before (:parent-id %))))
+         (map :id)
+         (first))))
+
+(defrecord Duplicate [target]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  IAppliedResult
+  (applied-result [_ file-before file-after]
+    {:new-head (new-subtree-head (thf/current-page file-before)
+                                 (thf/current-page file-after))})
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          objects  (:objects page)
+          changes  (-> (pcb/empty-changes nil)
+                       (cll/generate-duplicate-changes objects
+                                                       page
+                                                       #{shape-id}
+                                                       (gpt/point 0 0)
+                                                       (libraries situation)
+                                                       (:data the-file)
+                                                       (:id the-file))
+                       (cll/generate-duplicate-changes-update-indices objects #{shape-id}))
+          file'    (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this (merge {:target target}
+                                             (applied-result this the-file file')))))))
+
+(defn duplicate
+  "Constructor for the duplicate operation: duplicate the shape bound to
+   `target` (a role, a label or a `(situation -> id)` fn) in place. On the
+   frontend it dispatches the real `duplicate-shapes` event."
+  [target]
+  (tm/assign-id (->Duplicate target)))
+
+(defn duplicate-head-of
+  "Target: the head of the subtree that the `duplicate` node `node` added."
+  [node]
+  (fn [s] (:new-head (tm/node-data s node))))
+
+;; ---------------------------------------------------------------------------
+;; nest-copy — move an existing copy into a main
+;;
+;; Nests a copy in a component by moving it there: the copy head bound to
+;; `copy` is relocated, as the last child, under the shape bound to `into`
+;; (e.g. another lineage's main head). Drives the production
+;; `generate-relocate`, the changes the frontend `relocate-shapes` event
+;; commits (dragging the copy into the main in the layers panel). Unlike
+;; `make-nested-component`, an assembly step, it is a user action, so the
+;; copies of the receiving main sync and the step goes through undo.
+;; ---------------------------------------------------------------------------
+
+(defn nest-target-index
+  "The index `nest-copy` moves a copy to under the shape `parent-id`: after
+   its last child."
+  [situation parent-id]
+  (count (:shapes (tm/shape-by-id situation parent-id))))
+
+(defrecord NestCopy [copy into]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file  (tm/file situation)
+          copy-id   (tm/target-shape-id situation copy)
+          parent-id (tm/target-shape-id situation into)
+          page      (thf/current-page the-file)
+          changes   (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                               (pcb/with-page-id (:id page))
+                                               (pcb/with-objects (:objects page)))
+                                           parent-id
+                                           (nest-target-index situation parent-id)
+                                           #{copy-id})
+          file'     (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:copy copy :into into})))))
+
+(defn nest-copy
+  "Constructor for the nest-copy operation: move the copy head bound to `copy`
+   under the shape bound to `into`, as its last child (both a role, a label
+   or a `(situation -> id)` fn). On the frontend it dispatches the real
+   `relocate-shapes` event."
+  [copy into]
+  (tm/assign-id (->NestCopy copy into)))
 
 ;; ---------------------------------------------------------------------------
 ;; swap-component — replace a nested subinstance head with an instance of a
@@ -723,6 +1223,101 @@
    the swapped instance's overrides (true = the variant-switch flavour)."
   [name level target & {:keys [keep-touched?] :or {keep-touched? false}}]
   (tm/assign-id (->SwapComponent name level target keep-touched?)))
+
+;; ---------------------------------------------------------------------------
+;; swap-shape — swap any copy head for another lineage's component
+;;
+;; The general Swap-component action on the copy head bound to `target` (a
+;; role, a label or a `(situation -> id)` fn, e.g. a copy's nested head found
+;; with `corresponding-shape-id`), replacing it with an instance of lineage
+;; `to`'s component. Same production path as `swap-component`
+;; (`generate-component-swap-in-place`; frontend `component-swap`), which is
+;; tied to a lineage's main-side nested heads. The swap keeps the head's id,
+;; so a target that named it keeps naming the new head.
+;; ---------------------------------------------------------------------------
+
+(defn swap-target-id
+  "The component id `swap-shape`'s `to` names: a lineage name (a string) or a
+   component label (a keyword)."
+  [situation to]
+  (if (keyword? to)
+    (thi/id to)
+    (lineage-component-id situation to)))
+
+(defrecord SwapShape [target to keep-touched?]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file      (tm/file situation)
+          page          (thf/current-page the-file)
+          shape         (get (:objects page) (tm/target-shape-id situation target))
+          [_ changes _] (clv/generate-component-swap-in-place (pcb/empty-changes nil (:id page))
+                                                              page
+                                                              (libraries situation)
+                                                              (:data the-file)
+                                                              shape
+                                                              (swap-target-id situation to)
+                                                              (boolean keep-touched?))
+          file'         (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :to to :keep-touched? keep-touched?})))))
+
+(defn swap-shape
+  "Swap the copy head bound to `target` for the component `to` names, a
+   lineage name or a component label (the general Swap-component action).
+   `keep-touched?` (default false) keeps the head's overrides."
+  [target to & {:keys [keep-touched?] :or {keep-touched? false}}]
+  (tm/assign-id (->SwapShape target to keep-touched?)))
+
+;; ---------------------------------------------------------------------------
+;; move-to-cell — move a child of a grid board to another cell
+;;
+;; Drops the child bound to `child` into the cell at `row`, `column` of its
+;; grid board `board`: the board's cells change, as the commit of a canvas
+;; drop does (the modifiers end in a new `:layout-grid-cells`). Both runners
+;; write it with `update-shapes` on the board (`move-to-cell-fn`).
+;; ---------------------------------------------------------------------------
+
+(defn move-to-cell-fn
+  "The update of a grid board that moves its child `child-id` to the cell at
+   `row`, `column`. Public so the frontend interpreter makes the same update."
+  [child-id row column]
+  (fn [board objects]
+    (-> board
+        (ctl/free-cell-shapes [child-id])
+        (ctl/push-into-cell [child-id] row column)
+        (ctl/assign-cells objects))))
+
+(defrecord MoveToCell [board child row column]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          board-id (tm/target-shape-id situation board)
+          child-id (tm/target-shape-id situation child)
+          page     (thf/current-page the-file)
+          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{board-id}
+                                               (move-to-cell-fn child-id row column)
+                                               (:objects page)
+                                               {:with-objects? true})
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:board board :child child :row row :column column})))))
+
+(defn move-to-cell
+  "Constructor for the grid cell move: move the child bound to `child` to the
+   cell at `row`, `column` of the grid board bound to `board`."
+  [board child row column]
+  (tm/assign-id (->MoveToCell board child row column)))
 
 ;; ===========================================================================
 ;; VARIANT operations (case M) — the variant-switch flavour of the swap sweep.
@@ -808,7 +1403,7 @@
 ;; under `name` (variant-id + per-member component labels/ids).
 ;; ---------------------------------------------------------------------------
 
-(defrecord MakeVariantContainer [name members]
+(defrecord MakeVariantContainer [name members size]
   IComponentOperation
   (op-kind [_] :assembly)
 
@@ -838,13 +1433,15 @@
                              ;; member root as a child of the container, with variant id/name
                              ;; (mirrors add-variant's `add-sample-shape :type :frame ...`)
                              (ths/add-sample-shape root-label
-                                                   :type :frame
-                                                   :parent-label container-label
-                                                   :variant-id variant-id
-                                                   :variant-name value)
+                                                   (cond-> {:type :frame
+                                                            :parent-label container-label
+                                                            :variant-id variant-id
+                                                            :variant-name value}
+                                                     size (assoc :width size :height size)))
                              (ths/add-sample-shape rect-label
-                                                   :parent-label root-label
-                                                   :fills (ths/sample-fills-color :fill-color color))
+                                                   (cond-> {:parent-label root-label
+                                                            :fills (ths/sample-fills-color :fill-color color)}
+                                                     size (assoc :width (/ size 2) :height (/ size 2))))
                              ;; make it a component, then stamp variant metadata ON THE COMPONENT
                              (thc/make-component comp-label root-label)
                              (thc/update-component
@@ -874,9 +1471,10 @@
    each with the shared variant-id and an EXPLICIT selector value. `members` is a
    vector of [value color]. Members are addressed by `value` in
    `make-nested-component-with-variant` / `switch-variant`; `color` distinguishes
-   them for the asserter."
-  [name members]
-  (tm/assign-id (->MakeVariantContainer name members)))
+   them for the asserter. `:size` gives each member root that width and height,
+   and its rect half of it, as in `create-component`."
+  [name members & {:keys [size]}]
+  (tm/assign-id (->MakeVariantContainer name members size)))
 
 ;; ---------------------------------------------------------------------------
 ;; make-nested-component-with-variant — nest a chosen VARIANT, deeply
@@ -1062,7 +1660,7 @@
 ;; pretending.
 ;; ---------------------------------------------------------------------------
 
-(defrecord Undo []
+(defrecord Undo [times]
   IComponentOperation
   (op-kind [_] :undo)
 
@@ -1074,10 +1672,12 @@
                     {:type ::undo-is-event-op}))))
 
 (defn undo
-  "Constructor for the undo node (case I). Takes no parameters; on the frontend it
-   dispatches the real undo, reversing the immediately preceding operation(s)."
-  []
-  (tm/assign-id (->Undo)))
+  "Constructor for the undo node (case I): undo the latest `times` (default 1)
+   user operations, each with the syncs it caused. On the frontend it
+   dispatches the real undo `times` times."
+  ([] (undo 1))
+  ([times]
+   (tm/assign-id (->Undo times))))
 
 ;; ---------------------------------------------------------------------------
 ;; redo — apply again the latest undone operation(s)
@@ -1103,6 +1703,32 @@
    dispatches the real redo, applying again the latest undone operation(s)."
   []
   (tm/assign-id (->Redo)))
+
+;; ---------------------------------------------------------------------------
+;; undo-before-sync — undo an edit before its sync runs
+;;
+;; Changes `property` of the shape bound to `target` and undoes it at once, in
+;; one step, so the undo commits while the component watcher still holds the
+;; edit's sync (it inspects commits in batches, a timer turn later). Only the
+;; frontend has that window, so the node is frontend-only.
+;; ---------------------------------------------------------------------------
+
+(defrecord UndoBeforeSync [target property value]
+  IComponentOperation
+  (op-kind [_] :frontend-only)
+
+  tm/IOperation
+  (apply-to [_ _]
+    (throw (ex-info (str "UndoBeforeSync has no `apply-to` realisation: only the "
+                         "frontend interpreter has a pending sync to undo before.")
+                    {:type ::undo-before-sync-is-frontend-only}))))
+
+(defn undo-before-sync
+  "Constructor for the undo-before-sync node: change `property` of the shape
+   bound to `target` to `value` and undo it while its sync is still pending.
+   The frontend interpreter dispatches the edit and the real undo together."
+  [target property value]
+  (tm/assign-id (->UndoBeforeSync target property value)))
 
 
 ;; ---------------------------------------------------------------------------

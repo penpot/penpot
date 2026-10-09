@@ -6,6 +6,9 @@ import { createTestCaseVariantSwitchPropagates } from "./cases/caseVariantSwitch
 import { createTestCaseCopySubheadDeletePreservesSlots } from "./cases/caseCopySubheadDeletePreservesSlots.ts";
 import { createTestCaseMainReorderKeepsCopySlots } from "./cases/caseMainReorderKeepsCopySlots.ts";
 import { createTestCaseMainChildMovedOutLeavesCopy } from "./cases/caseMainChildMovedOutLeavesCopy.ts";
+import { createTestCaseDetachKeepsNestedCopiesLinked } from "./cases/caseDetachKeepsNestedCopiesLinked.ts";
+import { createTestCaseCopySwapSurvivesMainChanges } from "./cases/caseCopySwapSurvivesMainChanges.ts";
+import { createTestCaseResetOfNestedSwapKeepsTopCopyOverrides } from "./cases/caseResetOfNestedSwapKeepsTopCopyOverrides.ts";
 
 /**
  * All composable test cases currently defined. A factory (not a constant): each
@@ -21,5 +24,8 @@ export function allCases(): readonly TestCase[] {
         createTestCaseCopySubheadDeletePreservesSlots(),
         createTestCaseMainReorderKeepsCopySlots(),
         createTestCaseMainChildMovedOutLeavesCopy(),
+        createTestCaseDetachKeepsNestedCopiesLinked(),
+        createTestCaseCopySwapSurvivesMainChanges(),
+        createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(),
     ];
 }

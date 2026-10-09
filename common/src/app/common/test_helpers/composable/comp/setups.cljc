@@ -22,6 +22,7 @@
    child and :copy-instance is the copy's child (this makes a test read like
    `(has-attr? change-attr (copy-instance situation))`)."
   (:require
+   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
@@ -29,7 +30,8 @@
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.test-helpers.shapes :as ths]))
+   [app.common.test-helpers.shapes :as ths]
+   [app.common.types.shape.layout :as ctl]))
 
 (defn simple-component-with-copy
   "A situation with a simple component (root + one child) and one clean copy.
@@ -68,6 +70,155 @@
                              :main-root     :main-root
                              :copy-root     :copy-root})))
 
+(defn simple-component-with-copies-on-two-pages
+  "Like `simple-component-with-labeled-copy`, plus a second copy on another
+   page. The main and the first copy live on the current page `:page1`; the
+   second copy on `:page2`. Labels: :main-root :main-child :copy-root
+   :copy-child :copy2-root :copy2-child. Roles as in the labeled setup, plus
+   :other-page-copy-instance -> :copy2-child (read it with
+   `other-page-copy-instance`, since it is not on the current page)."
+  []
+  (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                 (tho/add-simple-component-with-copy
+                  :component1 :main-root :main-child :copy-root
+                  :main-child-params {:fills (ths/sample-fills-color :fill-color "#abcdef")}
+                  :copy-root-params  {:children-labels [:copy-child]})
+                 (thf/add-sample-page :page2)
+                 (thc/instantiate-component :component1 :copy2-root
+                                            :children-labels [:copy2-child])
+                 (thf/switch-to-page :page1))]
+    (tm/make-situation file {:main-instance            :main-child
+                             :copy-instance            :copy-child
+                             :main-root                :main-root
+                             :copy-root                :copy-root
+                             :other-page-copy-instance :copy2-child})))
+
+(defn other-page-copy-instance
+  "The copy child on the other page (role :other-page-copy-instance), live."
+  [situation]
+  (tm/role-shape-in-file situation :other-page-copy-instance))
+
+(defn simple-text-component-with-copy
+  "A component whose root (100x100) holds one text, \"hello world\", and a
+   clean copy. Labels: :main-root :main-text :copy-root :copy-text. Roles:
+   :main-instance -> the main text, :copy-instance -> the copy text, plus
+   :main-root and :copy-root."
+  []
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-frame-with-text :main-root :main-text "hello world"
+                                          :frame-params {:width 100 :height 100}
+                                          ;; the name a new text gets from its content
+                                          :child-params {:name "hello world"})
+                 (thc/make-component :component1 :main-root)
+                 (thc/instantiate-component :component1 :copy-root
+                                            :children-labels [:copy-text]))]
+    (tm/make-situation file {:main-instance :main-text
+                             :copy-instance :copy-text
+                             :main-root     :main-root
+                             :copy-root     :copy-root})))
+
+(defn- place-in-columns
+  "The grid board `board` with a row and three columns, holding the shapes of
+   `labels` in its first columns, in order."
+  [board labels]
+  (let [board (-> board
+                  (ctl/add-grid-row {:type :flex :value 1})
+                  (ctl/add-grid-column {:type :flex :value 1})
+                  (ctl/add-grid-column {:type :flex :value 1})
+                  (ctl/add-grid-column {:type :flex :value 1}))
+        cells (reduce (fn [cells [column label]]
+                        (let [[id _] (d/seek #(= column (:column (val %))) cells)]
+                          (assoc-in cells [id :shapes] [(thi/id label)])))
+                      (:layout-grid-cells board)
+                      (map vector (iterate inc 1) labels))]
+    (assoc board :layout-grid-cells cells)))
+
+(defn grid-component-with-copy
+  "A component whose main is a grid board (one row, three columns, 300x100)
+   holding two copies of an `:item` component in its first two columns, the
+   third free, and a copy of it. A second component, `:other`, has a red rect
+   (a swap target). Labels: :grid-root :child1 :child2 (main side),
+   :grid-copy :copy-child1 :copy-child2 (copy side), :item, :other. Roles:
+   :main-root, :copy-root, :main-child -> :child1, :copy-child -> :copy-child1."
+  []
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :item :item-root :item-rect
+                                              :root-params {:width 100 :height 100}
+                                              :child-params {:width 50 :height 50})
+                    (tho/add-simple-component :other :other-root :other-rect
+                                              :root-params {:width 100 :height 100}
+                                              :child-params {:width 50 :height 50
+                                                             :fills (ths/sample-fills-color
+                                                                     :fill-color "#ff0000")})
+                    (ths/add-sample-shape :grid-root
+                                          :type :frame
+                                          :width 300
+                                          :height 100
+                                          :layout :grid
+                                          :layout-grid-dir :row
+                                          :layout-grid-rows []
+                                          :layout-grid-columns []
+                                          :layout-grid-cells {})
+                    (thc/instantiate-component :item :child1 :parent-label :grid-root)
+                    (thc/instantiate-component :item :child2 :parent-label :grid-root))
+        board   (place-in-columns (ths/get-shape file :grid-root) [:child1 :child2])
+        file    (-> file
+                    (ths/update-shape :grid-root :layout-grid-rows (:layout-grid-rows board))
+                    (ths/update-shape :grid-root :layout-grid-columns (:layout-grid-columns board))
+                    (ths/update-shape :grid-root :layout-grid-cells (:layout-grid-cells board))
+                    (thc/make-component :grid :grid-root)
+                    (thc/instantiate-component :grid :grid-copy))
+        objects (:objects (thf/current-page file))]
+    ;; the copy's children are the copies of the main's, by :shape-ref
+    (doseq [[main-label copy-label] [[:child1 :copy-child1] [:child2 :copy-child2]]]
+      (thi/set-id! copy-label
+                   (->> (get-in objects [(thi/id :grid-copy) :shapes])
+                        (d/seek #(= (thi/id main-label) (get-in objects [% :shape-ref]))))))
+    (tm/make-situation file {:main-root  :grid-root
+                             :copy-root  :grid-copy
+                             :main-child :child1
+                             :copy-child :copy-child1})))
+
+(defn component-with-sibling-instances
+  "A component whose main (300x100) holds three copies of an `:icon`
+   component side by side, and a copy of it. With `:grid` layout the main is a
+   one-row, three-column grid with each copy in its own cell. Labels: :row-root
+   :sub1 :sub2 :sub3 (main side), :row-copy :copy-sub1 :copy-sub2 :copy-sub3
+   (copy side, matched by :shape-ref). Roles: :main-root, :copy-root."
+  ([] (component-with-sibling-instances :none))
+  ([layout]
+   (let [grid?   (= :grid layout)
+         subs    [:sub1 :sub2 :sub3]
+         file    (-> (thf/sample-file :file1)
+                     (tho/add-simple-component :icon :icon-root :icon-rect
+                                               :root-params {:width 24 :height 24}
+                                               :child-params {:width 24 :height 24})
+                     (ths/add-sample-shape :row-root
+                                           (cond-> {:type :frame :width 300 :height 100}
+                                             grid? (assoc :layout :grid
+                                                          :layout-grid-dir :row
+                                                          :layout-grid-rows []
+                                                          :layout-grid-columns []
+                                                          :layout-grid-cells {}))))
+         file    (reduce #(thc/instantiate-component %1 :icon %2 :parent-label :row-root) file subs)
+         file    (cond-> file
+                   grid?
+                   (as-> f (let [board (place-in-columns (ths/get-shape f :row-root) subs)]
+                             (-> f
+                                 (ths/update-shape :row-root :layout-grid-rows (:layout-grid-rows board))
+                                 (ths/update-shape :row-root :layout-grid-columns (:layout-grid-columns board))
+                                 (ths/update-shape :row-root :layout-grid-cells (:layout-grid-cells board))))))
+         file    (-> file
+                     (thc/make-component :row :row-root)
+                     (thc/instantiate-component :row :row-copy))
+         objects (:objects (thf/current-page file))]
+     (doseq [[main-label copy-label] (map vector subs [:copy-sub1 :copy-sub2 :copy-sub3])]
+       (thi/set-id! copy-label
+                    (->> (get-in objects [(thi/id :row-copy) :shapes])
+                         (d/seek #(= (thi/id main-label) (get-in objects [% :shape-ref]))))))
+     (tm/make-situation file {:main-root :row-root
+                              :copy-root :row-copy}))))
+
 (defn main-instance
   "The main child shape of the configuration (role :main-instance), live."
   [situation]
@@ -87,6 +238,17 @@
   "The copy root shape (role :copy-root), live."
   [situation]
   (tm/role-shape situation :copy-root))
+
+(defn misaligned-sub-heads
+  "The indices of the copy root's children whose :shape-ref is not the main
+   root's child at the same index (positional alignment)."
+  [situation]
+  (let [main (:shapes (main-root situation))
+        copy (:shapes (copy-root situation))
+        ref  #(:shape-ref (tm/shape-by-id situation %))]
+    (->> (map vector (range) copy main)
+         (remove (fn [[_ c m]] (= m (ref c))))
+         (mapv first))))
 
 
 (defn component-with-many-children

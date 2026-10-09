@@ -63,8 +63,65 @@
 (t/deftest case-o-variant-switch-keeps-override-only-where-mains-agree
   (t/async done (ftm/check done (cases/variant-switch-keeps-override-only-where-mains-agree))))
 
+(t/deftest case-q-detach-keeps-nested-copies-linked
+  (t/async done (ftm/check done (cases/detach-keeps-nested-copies-linked))))
+
+(t/deftest case-r-update-main-reaches-other-copies
+  (t/async done (ftm/check done (cases/update-main-reaches-other-copies))))
+
+(t/deftest case-s-deleted-component-copies-sync-again-after-restore
+  (t/async done (ftm/check done (cases/deleted-component-copies-sync-again-after-restore))))
+
+(t/deftest case-t-duplicated-copy-keeps-overrides-and-link
+  (t/async done (ftm/check done (cases/duplicated-copy-keeps-overrides-and-link))))
+
+(t/deftest case-u-nested-copy-reaches-copies-of-the-receiving-main
+  (t/async done (ftm/check done (cases/nested-copy-reaches-copies-of-the-receiving-main))))
+
+(t/deftest case-v-new-edit-after-undo-clears-redo
+  (t/async done (ftm/check done (cases/new-edit-after-undo-clears-redo))))
+
+(t/deftest case-w-undo-several-steps-over-nested-cascades
+  (t/async done (ftm/check done (cases/undo-several-steps-over-nested-cascades))))
+
+(t/deftest case-x-undo-before-sync-leaves-copies-unchanged
+  (t/async done (ftm/check done (cases/undo-before-sync-leaves-copies-unchanged))))
+
+(t/deftest case-y-text-override-merges-with-main-text-change
+  (t/async done (ftm/check done (cases/text-override-merges-with-main-text-change))))
+
 (t/deftest case-n-geometry-sync-with-rotated-instances
   (t/async done (ftm/check done (cases/geometry-sync-with-rotated-instances))))
 
 (t/deftest case-touched-copy-child-survives-main-rotation
   (t/async done (ftm/check done (cases/touched-copy-child-survives-main-rotation))))
+
+(t/deftest case-z-main-child-move-reaches-copies
+  (t/async done (ftm/check done (cases/main-child-move-reaches-copies))))
+
+(t/deftest case-aa-copy-swap-survives-main-changes
+  (t/async done (ftm/check done (cases/copy-swap-survives-main-changes))))
+
+(t/deftest case-ab-reset-of-nested-swap-keeps-top-copy-overrides
+  (t/async done (ftm/check done (cases/reset-of-nested-swap-keeps-top-copy-overrides))))
+
+(t/deftest case-ac-second-variant-switch-keeps-root-overrides
+  (t/async done (ftm/check done (cases/second-variant-switch-keeps-root-overrides))))
+
+(t/deftest case-ad-update-main-pushes-a-swapped-child
+  (t/async done (ftm/check done (cases/update-main-pushes-a-swapped-child))))
+
+(t/deftest case-ae-detached-or-duplicated-swapped-copy-follows-its-component
+  (t/async done (ftm/check done (cases/detached-or-duplicated-swapped-copy-follows-its-component))))
+
+(t/deftest case-af-grid-cell-move-reaches-a-swapped-copy-child
+  (t/async done (ftm/check done (cases/grid-cell-move-reaches-a-swapped-copy-child))))
+
+(t/deftest case-ag-main-reorder-keeps-copy-sub-heads-aligned
+  (t/async done (ftm/check done (cases/main-reorder-keeps-copy-sub-heads-aligned))))
+
+(t/deftest case-ah-copy-sub-head-delete-keeps-others-aligned
+  (t/async done (ftm/check done (cases/copy-sub-head-delete-keeps-others-aligned))))
+
+(t/deftest case-ai-copy-sub-head-delete-and-reflow-keeps-others-aligned
+  (t/async done (ftm/check done (cases/copy-sub-head-delete-and-reflow-keeps-others-aligned))))

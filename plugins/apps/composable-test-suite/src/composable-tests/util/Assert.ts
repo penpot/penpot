@@ -30,4 +30,28 @@ export class Assert {
             throw new AssertionError(`expected ${render(expected)} but was ${render(actual)}`);
         }
     }
+
+    /**
+     * Asserts a strict expected failure for `bug` (its row in the component
+     * stabilization plan's suspected bugs): `expected` is the value that should
+     * hold, but while the bug is open `actual` must be exactly `pinned`, the
+     * wrong value the bug gives. Any other value fails, `expected` included, so
+     * the pin goes only with the fix.
+     */
+    static knownFailure<T>(
+        bug: string,
+        actual: T,
+        expected: T,
+        pinned: T,
+        equals: (a: T, b: T) => boolean,
+        render: (v: T) => string = String
+    ): void {
+        if (!equals(actual, pinned)) {
+            const fixed = equals(actual, expected) ? ". The expected value now holds: drop the pin in the fix" : "";
+            throw new AssertionError(
+                `known failure ${bug}: expected ${render(expected)}, pinned to the bug's ` +
+                    `${render(pinned)}, but was ${render(actual)}${fixed}`
+            );
+        }
+    }
 }
