@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.composable-tests.comp.setups
+(ns app.common.test-helpers.composable.comp.setups
   "Component-specific setups for the test model: named functions that build an
    in-memory file value for a particular component configuration. They are the
    subject-specific counterpart to the generic engine; a 'simple component with
@@ -25,11 +25,11 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.test-helpers.shapes :as ths]
-   [frontend-tests.composable-tests.core :as tm]))
+   [app.common.test-helpers.shapes :as ths]))
 
 (defn simple-component-with-copy
   "A situation with a simple component (root + one child) and one clean copy.
