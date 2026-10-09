@@ -460,10 +460,13 @@
                              :active-set-ids active-set-ids)))
 
 (defn ensure-tokens-lib
-  "Ensure file-data has a :tokens-lib or :tokens-source, and also a :tokens-status, creating them if necessary."
+  "Ensure file-data has a :tokens-lib or an external :tokens-source, and also a :tokens-status,
+   creating them if necessary."
   [file-data]
   (cond-> file-data
-    (nil? (:tokens-source file-data))
+    (let [tokens-source (:tokens-source file-data)]
+      (or (nil? tokens-source)
+          (= tokens-source (:id file-data))))
     (update :tokens-lib #(or % (ctob/make-tokens-lib)))
 
     :always
@@ -488,9 +491,12 @@
   (or (:tokens-source file-data) (:id file-data)))
 
 (defn set-tokens-source
+  "Set the tokens source of the file. Setting it to nil or to the file itself
+   removes the attribute, so the file uses its own tokens-lib."
   [file-data tokens-source]
   (assert (or (nil? tokens-source) (uuid? tokens-source)) "expected nil or valid uuid")
-  (if (nil? tokens-source)
+  (if (or (nil? tokens-source)
+          (= tokens-source (:id file-data)))
     (dissoc file-data :tokens-source)
     (assoc file-data :tokens-source tokens-source)))
 

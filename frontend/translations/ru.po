@@ -827,7 +827,7 @@ msgstr ""
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "Восстановить все проекты и файлы"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Восстановить все"
 
@@ -1259,7 +1259,7 @@ msgstr "Произошла ошибка в работе веб-воркера."
 msgid "errors.invalid-color"
 msgstr "Неверный цвет"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Неверные данные"
 
@@ -2039,7 +2039,7 @@ msgstr "Скрыть"
 msgid "labels.hide-resolved-comments"
 msgstr "Скрыть решённые комментарии"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Импорт"
 
@@ -3717,7 +3717,7 @@ msgstr "Увеличение"
 msgid "shortcuts.thumbnail-set"
 msgstr "Установить миниатюры"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "Горячие клавиши"
 

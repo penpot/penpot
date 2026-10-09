@@ -1020,7 +1020,7 @@ msgstr ""
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "Tüm projeleri ve dosyaları geri yükle"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Tümünü Geri Yükle"
 
@@ -1602,7 +1602,7 @@ msgstr "Web çalıştırıcısında bir sorun oluştu."
 msgid "errors.invalid-color"
 msgstr "Geçersiz renk"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Geçersiz veri"
 
@@ -2918,7 +2918,7 @@ msgstr "Gizle"
 msgid "labels.hide-resolved-comments"
 msgstr "Çözülen yorumları gizle"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "İçe aktar"
 
@@ -4667,7 +4667,7 @@ msgid "profile.recovery.go-to-login"
 msgstr "Oturum açmaya git"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:109, src/app/main/ui/settings/restore_shortcuts_modal.cljs:100
-msgid "restore-shortcuts.acction"
+msgid "restore-shortcuts.action"
 msgstr "Eylem"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
@@ -5312,7 +5312,7 @@ msgstr "Yakınlaştır"
 msgid "shortcuts.thumbnail-set"
 msgstr "Küçük resimleri ayarla"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "Klavye kısayolları"
 

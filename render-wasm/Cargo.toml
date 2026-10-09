@@ -35,6 +35,7 @@ skia-safe = { version = "0.153.3", default-features = false, features = [
   "pdf",
 ] }
 thiserror = "2.0.18"
+unicode-segmentation = "1.12.0"
 uuid = { version = "1.11.0", features = ["v4", "js"] }
 
 [dev-dependencies]

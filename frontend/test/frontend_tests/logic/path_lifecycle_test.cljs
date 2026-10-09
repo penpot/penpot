@@ -25,6 +25,7 @@
    [app.main.data.workspace.path.streams :as path.streams]
    [app.main.data.workspace.path.tools :as path.tools]
    [app.main.data.workspace.path.undo :as path.undo]
+   [app.main.data.workspace.shortcuts :as wsc]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
@@ -138,22 +139,23 @@
 
 (defn- run-handle-drawing-end
   "Runs the draw-ending flow and passes its events to `callback`."
-  [restart? callback]
-  (let [state     (pth/drawing-path-state)
-        stream    (rx/subject)
-        emissions (atom [])]
-    (->> (ptk/watch (path.drawing/handle-drawing) state stream)
-         (rx/subs! #(swap! emissions conj %)))
-    (rx/push! stream (ptk/data-event ::path.drawing/end-edition
-                                     {:restart? restart?}))
-    ;; Wait for the asynchronous drawing-end event.
-    (js/setTimeout
-     (fn []
-       (let [end-event     (last @emissions)
-             end-emissions (atom [])]
-         (->> (ptk/watch end-event state stream)
-              (rx/subs! #(swap! end-emissions conj %)))
-         (callback @end-emissions))))))
+  ([restart? callback]
+   (run-handle-drawing-end (pth/drawing-path-state) restart? callback))
+  ([state restart? callback]
+   (let [stream    (rx/subject)
+         emissions (atom [])]
+     (->> (ptk/watch (path.drawing/handle-drawing) state stream)
+          (rx/subs! #(swap! emissions conj %)))
+     (rx/push! stream (ptk/data-event ::path.drawing/end-edition
+                                      {:restart? restart?}))
+     ;; Wait for the asynchronous drawing-end event.
+     (js/setTimeout
+      (fn []
+        (let [end-event     (last @emissions)
+              end-emissions (atom [])]
+          (->> (ptk/watch end-event state stream)
+               (rx/subs! #(swap! end-emissions conj %)))
+          (callback @end-emissions)))))))
 
 (t/deftest escape-ending-new-path-draw-does-not-reenter-edition
   (t/async
@@ -181,6 +183,43 @@
                  ::path.drawing/start-created-path-edition]
                 (mapv ptk/type emissions)))
        (done)))))
+
+(t/deftest finishing-new-path-draw-in-move-mode-reenters-edition-in-move-mode
+  (t/async
+    done
+    (let [state (pth/drawing-path-state)
+          id    (get-in state [:workspace-drawing :object :id])
+          state (assoc-in state [:workspace-local :edit-path id :edit-mode] :move)]
+      (run-handle-drawing-end
+       state
+       true
+       (fn [emissions]
+         (let [edition-emissions (atom [])]
+           (->> (ptk/watch (last emissions) state nil)
+                (rx/subs! #(swap! edition-emissions conj %)))
+           (let [change-mode (last @edition-emissions)
+                 edited      {:workspace-local {:edition id
+                                                :edit-path {id {:edit-mode :draw}}}}]
+             (t/is (= ::path.drawing/change-edit-mode (ptk/type change-mode)))
+             (t/is (= :move (get-in (ptk/update change-mode edited)
+                                    [:workspace-local :edit-path id :edit-mode])))))
+         (done))))))
+
+(t/deftest move-mode-while-creating-path-finishes-it
+  (let [id        (random-uuid)
+        state     {:workspace-local
+                   {:edit-path {id {:edit-mode :draw
+                                    :last-point (gpt/point 10 10)}}}
+                   :workspace-drawing {:tool :path
+                                       :object {:id id :type :path}}}
+        event     (path.drawing/change-edit-mode :move)
+        state'    (ptk/update event state)
+        emissions (atom [])]
+    (t/is (= :move (get-in state' [:workspace-local :edit-path id :edit-mode])))
+    (->> (ptk/watch event state' nil)
+         (rx/subs! #(swap! emissions conj %)))
+    (t/is (= [::path.common/finish-path]
+             (mapv ptk/type @emissions)))))
 
 (t/deftest ending-a-draw-collapses-the-nodes-drawn-on-top-of-each-other
   (t/async
@@ -236,6 +275,12 @@
     ;; Finishing creates the shape and clears its pending segment.
     (t/is (= [::path.common/finish-path]
              (mapv ptk/type @emissions)))))
+
+(t/deftest deselect-all-shortcut-replaces-the-grid-layout-toggle
+  (let [deselect-all (:deselect-all path.shortcuts/shortcuts)
+        grid-toggle  (:toggle-layout-grid wsc/shortcuts)]
+    (t/is (= (:command grid-toggle) (:command deselect-all)))
+    (t/is (true? (:overwrite deselect-all)))))
 
 (t/deftest escape-without-pending-segment-interrupts-edition
   (let [id        (random-uuid)

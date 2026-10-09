@@ -106,11 +106,11 @@
           [:thead
            [:tr {:class (stl/css :shortcuts-list-header)}
             [:th {:class (stl/css :shortcut-header-name)}
-             (tr "restore-shortcuts.acction")]
+             (tr "restore-shortcuts.action")]
             [:th {:class (stl/css :shortcut-header-command)}
              (tr "labels.current")]
             [:th {:class (stl/css :shortcut-header-command)}
-             (tr "labels.import")]]]
+             (tr "import-shortcuts.imported")]]]
           [:tbody {:class (stl/css :shortcuts-list-body)}
            (let [last-ctx* (volatile! nil)]
              (for [entry diff-entries]

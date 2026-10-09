@@ -72,6 +72,27 @@
   (doseq [[mime value] items]
     (.setData data mime value)))
 
+(defn- collapse-input-caret
+  "Replaces the browser selection with a collapsed caret at the end of `node`."
+  [^js node]
+  (when-let [sel (.getSelection js/window)]
+    (let [range (.createRange js/document)]
+      (.selectNodeContents range node)
+      (.collapse range false)
+      (.removeAllRanges sel)
+      (.addRange sel range))))
+
+(defn- ensure-input-caret
+  "Collapses the browser selection into the capture surface when it leaves it:
+  such a selection is not editable, so typed keys would fire no `input`."
+  [^js node]
+  (when (some? node)
+    (let [sel (.getSelection js/window)]
+      (when-not (and (some? sel)
+                     (.contains node (.-anchorNode sel))
+                     (.contains node (.-focusNode sel)))
+        (collapse-input-caret node)))))
+
 (defn- reset-input-node
   "Empties the contenteditable capture surface and restores a collapsed caret
   inside it.
@@ -87,12 +108,7 @@
     (set! (.-textContent node) "")
     (when (not= (.-activeElement js/document) node)
       (.focus node))
-    (when-let [sel (.getSelection js/window)]
-      (let [range (.createRange js/document)]
-        (.selectNodeContents range node)
-        (.collapse range true)
-        (.removeAllRanges sel)
-        (.addRange sel range)))))
+    (collapse-input-caret node)))
 
 (defn- keep-input-alive
   "Keeps the capture surface able to receive further input WITHOUT clearing it.
@@ -372,8 +388,10 @@
                    (text-editor/text-editor-move-cursor 5 ctrl? shift?)
                    (wasm.api/render-text-editor-overlay!))
 
-                 ;; Let contenteditable handle text input via on-input
-                 :else nil)))))
+                 ;; Let contenteditable handle text input via on-input, which
+                 ;; needs an editable browser selection.
+                 :else
+                 (ensure-input-caret (mf/ref-val contenteditable-ref)))))))
 
         ;; Native `beforeinput` listener (see the use-effect that registers it).
         ;; We use the native event, not React's synthetic `onBeforeInput`, because
@@ -490,6 +508,7 @@
                  (triple-click? native-event)
                  (do
                    (wasm.api/text-editor-select-paragraph off-pt)
+                   (ensure-input-caret (mf/ref-val contenteditable-ref))
                    (wasm.api/render-text-editor-overlay!))
 
                  ;; `dblclick` selects the word right after. Shift+click still goes
@@ -509,6 +528,7 @@
            (let [native-event (dom/event->native-event event)
                  off-pt (dom/get-offset-position native-event)]
              (wasm.api/text-editor-select-word-boundary off-pt)
+             (ensure-input-caret (mf/ref-val contenteditable-ref))
              (wasm.api/render-text-editor-overlay!))))
 
         on-context-menu
