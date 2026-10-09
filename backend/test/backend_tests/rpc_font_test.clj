@@ -76,11 +76,11 @@
     (when (uuid? session-id)
       (doseq [[idx chunk-data] (map-indexed vector chunks)]
         (let [mfile (make-chunk-mfile chunk-data mtype)
-              out   (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           idx
-                                  :content         mfile})]
+              out   (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           idx
+                                            :content         mfile})]
           (t/is (nil? (:error out))))))
     session-id))
 
@@ -438,11 +438,11 @@
       ;; Upload all real chunks except the last one (omit it so the session is incomplete)
       (doseq [[idx chunk-data] (map-indexed vector (butlast chunks))]
         (let [mfile (make-chunk-mfile chunk-data "font/ttf")
-              out   (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           idx
-                                  :content         mfile})]
+              out   (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           idx
+                                            :content         mfile})]
           (t/is (nil? (:error out)))))
 
       (let [out (th/command! {::th/type    :create-font-variant

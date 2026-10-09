@@ -57,6 +57,7 @@
   {::doc/added "1.17"
    ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
    ::sm/params schema:upload-file-media-object
+   ::rpc/multipart-only-params [:content]
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
@@ -370,6 +371,7 @@
 (sv/defmethod ::upload-chunk
   {::doc/added "2.17"
    ::sm/params schema:upload-chunk
+   ::rpc/multipart-only-params [:content]
    ::sm/result schema:upload-chunk-result}
   [{:keys [::db/pool] :as cfg}
    {:keys [::rpc/profile-id session-id index content] :as _params}]

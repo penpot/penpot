@@ -122,7 +122,11 @@
           {::yres/status 400 ::yres/body data}))
 
       :else
-      {::yres/status 400 ::yres/body data})))
+      (let [explain (ex/explain data)]
+        {::yres/status 400
+         ::yres/body   (-> data
+                           (dissoc ::sm/explain)
+                           (cond-> explain (assoc :explain explain)))}))))
 
 (defmethod handle-error :assertion
   [error request parent-cause]

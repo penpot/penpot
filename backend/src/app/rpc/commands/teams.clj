@@ -1031,7 +1031,8 @@
 
 (sv/defmethod ::update-team-photo
   {::doc/added "1.17"
-   ::sm/params schema:update-team-photo}
+   ::sm/params schema:update-team-photo
+   ::rpc/multipart-only-params [:file]}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
 

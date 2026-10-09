@@ -41,6 +41,50 @@
     (t/is (false? (validator params-with-file-id))
           "params with file-id should be rejected")))
 
+(t/deftest import-binfile-schema-accepts-path-object
+  ;; Documents the schema hole: a server-side Path object in :file passes
+  ;; validation on shape alone. The multipart guard in the handler (not the
+  ;; schema) is what rejects client-forged paths.
+  (let [schema @#'binfile/schema:import-binfile
+        validator (sm/lazy-validator schema)]
+    (t/is (true? (validator {:name "pwned"
+                             :project-id (uuid/random)
+                             :version 3
+                             :file {:filename "evil.zip"
+                                    :size 123
+                                    :path (fs/path "/etc/passwd")}})))))
+
+(t/deftest import-binfile-rejects-forged-file-without-multipart
+  ;; Path-traversal PoC at command level: a transit body like
+  ;; {"~:file": {"~:path": ["~#path", "/etc/passwd"]}} decodes to this exact
+  ;; map. Without a multipart request it must fail at params validation,
+  ;; before any file is read.
+  (let [prof (th/create-profile* 1)
+        out  (th/command! {::th/type :import-binfile
+                           ::rpc/profile-id (:id prof)
+                           :name "pwned"
+                           :version 3
+                           :project-id (:default-project-id prof)
+                           :file {:filename "evil.zip"
+                                  :size 123
+                                  :path (fs/path "/etc/passwd")}})]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest import-binfile-rejects-forged-file-with-forged-flag
+  ;; The multipart flag is server-side: smuggling it in the body must not
+  ;; bypass the guard (prepare-rpc-params overwrites it from the request).
+  (let [prof (th/create-profile* 1)
+        out  (th/command! {::th/type :import-binfile
+                           ::rpc/profile-id (:id prof)
+                           :app.rpc/is-multipart true
+                           :name "pwned"
+                           :version 3
+                           :project-id (:default-project-id prof)
+                           :file {:filename "evil.zip"
+                                  :size 123
+                                  :path (fs/path "/etc/passwd")}})]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
 (t/deftest import-binfile-schema-rejects-unsupported-version
   ;; T1-N2-03: version parameter should be restricted to supported values (1 or 3)
   (let [schema @#'binfile/schema:import-binfile

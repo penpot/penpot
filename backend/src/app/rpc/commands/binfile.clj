@@ -162,6 +162,7 @@
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile
+   ::rpc/multipart-only-params [:file]
    ::climit/id [[:import-binfile/by-profile ::rpc/profile-id]
                 [:import-binfile/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version upload-id] :as params}]
