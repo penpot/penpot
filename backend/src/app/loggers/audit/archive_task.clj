@@ -82,6 +82,7 @@
     "change-organization-advanced-permission"
     "create-file"
     "create-organization"
+    "create-organization-attribute"
     "create-organization-invitation"
     "create-project"
     "create-team"
