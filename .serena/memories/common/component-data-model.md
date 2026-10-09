@@ -20,6 +20,8 @@ Variant masters are main instances and component roots. Their descendants may th
 
 `:touched` is a set of override-group keywords such as `:geometry-group`, `:fill-group`, and `:text-content-group`. It means a copy diverged from its master for attrs in that sync group.
 
+The intended per-operation rules (which writes touch, what sync, reset, update-main, detach and switch do to touched groups) are in `mem:common/component-sync-contract`.
+
 `sync-attrs` in `app.common.types.component` maps attrs to groups. `set-touched-group` is the legitimate setter; the central `set-shape-attr` path calls it only for copies and only when ignore flags allow it.
 
 Masters are not normally touched through `set-shape-attr`, but touched flags can appear on master shapes through cloning/duplication paths. `add-touched-from-ref-chain` in `app.common.logic.variants` unions touched flags from ancestors into the copy being processed, so upstream/master touched state can affect downstream switch behavior.
