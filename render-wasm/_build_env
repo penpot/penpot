@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+
+export RUST_VERSION=1.91.0
 export VERSION_TAG=${VERSION:-develop};
 
 if [ "$NODE_ENV" = "production" ];  then
@@ -67,6 +69,9 @@ function clean {
 }
 
 function setup {
+    # Setup default rust version
+    rustup default $RUST_VERSION
+    rustup target add wasm32-unknown-emscripten
     pnpm install;
 }
 
