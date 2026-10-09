@@ -45,7 +45,7 @@
 ;; A guard against a sync cascade that never settles.
 (def ^:private max-sync-passes 100)
 
-(defn- changed-components
+(defn changed-components
   "Ids of the components whose main `changes` modified, judged against
    `old-data`, the file data before `changes` applied."
   [old-data changes]
@@ -68,33 +68,21 @@
     (thf/validate-file! file (libraries situation file))
     situation))
 
-(defn- component-sync-changes
-  "The changes that sync the copies of `component-id` in `file`, as the
-   frontend `sync-file` event builds them for a local component."
-  [situation file component-id]
-  (let [file-id (:id file)]
-    (cll/generate-sync-file-changes (pcb/empty-changes)
-                                    nil
-                                    :components
-                                    file-id
-                                    component-id
-                                    file-id
-                                    (libraries situation file)
-                                    file-id)))
-
-(defn- sync-file
-  "Sync `situation`'s file, starting from the components that `changes`
-   modified (judged against `old-data`), until no component is left to sync,
-   and validate the result. Returns `[situation syncs]`, with `syncs` the
-   applied sync changes in order."
-  [situation old-data changes]
-  (loop [file    (tm/file situation)
-         pending (vec (changed-components old-data changes))
+(defn sync-cascade
+  "Sync the copies of `component-ids` in `file`, then those of the components
+   each sync changed, until none is left, as the frontend `sync-file` event
+   builds the changes for a local component; the frontend watcher runs one
+   pass per sync commit. `libraries` are the other files by id. Returns
+   `{:file :syncs :passes}`, with `syncs` the sync changes that changed
+   something, in order."
+  [file libraries component-ids]
+  (loop [file    file
+         pending (vec component-ids)
          syncs   []
          passes  0]
     (cond
       (empty? pending)
-      [(validate-settled! (tm/with-file situation file)) syncs]
+      {:file file :syncs syncs :passes passes}
 
       (>= passes max-sync-passes)
       (throw (ex-info "Component sync did not settle"
@@ -103,15 +91,32 @@
                        :passes passes}))
 
       :else
-      (let [component-id (first pending)
-            sync         (component-sync-changes situation file component-id)
-            file'        (thf/apply-changes file sync :validate? false)
-            more         (->> (changed-components (:data file) sync)
-                              (remove (set pending)))]
+      (let [file-id (:id file)
+            sync    (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                    nil
+                                                    :components
+                                                    file-id
+                                                    (first pending)
+                                                    file-id
+                                                    (assoc libraries file-id file)
+                                                    file-id)
+            file'   (thf/apply-changes file sync :validate? false)
+            more    (->> (changed-components (:data file) sync)
+                         (remove (set pending)))]
         (recur file'
                (into (subvec pending 1) more)
                (cond-> syncs (seq (:redo-changes sync)) (conj sync))
                (inc passes))))))
+
+(defn- sync-file
+  "Sync `situation`'s file, starting from the components that `changes`
+   modified (judged against `old-data`), and validate the result. Returns
+   `[situation syncs]`, with `syncs` the applied sync changes in order."
+  [situation old-data changes]
+  (let [{:keys [file syncs]} (sync-cascade (tm/file situation)
+                                           (tm/aux-files situation)
+                                           (changed-components old-data changes))]
+    [(validate-settled! (tm/with-file situation file)) syncs]))
 
 (defn- push-undo-group
   "Add `group`, the changes of one user operation and its syncs in order, to

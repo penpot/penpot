@@ -99,8 +99,8 @@ Two pure runners (no store, JVM + CLJS):
   situation's files) once settled: after the sync fixpoint and after an undo group; never
   between cascade passes, where an outer copy still points at the component its main dropped
   (`:component-id-mismatch`), nor with `{:sync? false}`. Assembly ops (create/instantiate/nest/variant
-  container): no sync, no undo group. `ResetCopyInstance` is a user op here (sync + undo),
-  unlike the interpreter (file install). `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`/`MoveShape`
+  container): no sync, no undo group. `n/reset` (`reset-copy-instance` resets a lineage's latest copy) is a user op here (sync +
+  undo), unlike the interpreter (file install). `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`/`MoveShape`
   are `:frontend-only` and throw `::runner/frontend-only` (the placement step is frontend code). Swap and switch nodes use the production
   `clv/generate-component-swap-in-place` (+ `clv/find-switch-target` for switch), the same code the
   frontend events call. Not modelled: the `:modified-at` bump, and the swap/switch event follow-ups
@@ -143,8 +143,10 @@ Two pure runners (no store, JVM + CLJS):
 - `n/create-component` builds 0.01-sized frames unless given `:size`. The transform math
   writes float noise into those sizes, so frontend syncs emit reflows whose commits lose
   their undo group (F43) at timing-dependent points (`initialize-shape-layout` buffers
-  `:layout/update` in 100 ms windows): undo pins over such reflows can be nondeterministic.
+  `:layout/update` in 100 ms windows): undo pins over such reflows are nondeterministic.
   New cases that are not about geometry pass `:size` (nesting sizes the outer frames too).
+  F43 lives in case AJ only (frontend only, round trip off): it pins the value one undo
+  leaves, which does not depend on how many entries the reflow makes.
 - Case assertions a known bug breaks use `tm/known-failure bug expected pinned actual`: a
   strict expected failure at assertion level (passes only while `actual` is the pinned wrong
   value). The undo-check marks cover only round-trip failures.
@@ -153,8 +155,11 @@ Two pure runners (no store, JVM + CLJS):
   setup `simple-text-component-with-copy` (text named after its content).
 - The interpreter unwraps nested choices (`(tm/optional (tm/one-of …))`); `(optional
   (in-sequence …))` is still not flattened.
+- Depth sweeps: `depth-sweep` in `cases.cljc`, a one-of over skip,
+  `(n/make-nested-component name)` and `(n/make-nested-component name 2)`; asserters read
+  `n/nesting-depth`. Two independent nesting optionals run depth 1 twice.
 - General target-based nodes: `n/swap-shape target to` (`to` a lineage name or a component label), `n/move-to-cell board child row column`, `n/reset target` (a file install
-  in the interpreter, like `reset-copy-instance`). `n/nested-head-in name` finds a copy's nested
+  in the interpreter). `n/swap-component name level to` is `swap-shape` on `n/nested-head-of`. `n/nested-head-in name` (and the general `n/nested-head-under parent-target`) finds a copy's nested
   head through its parent, so it survives swaps and switches (they keep the head id anyway).
   Careful: `n/lineage-component-id` is the OUTER component after nesting.
 - `n/undo-before-sync` (frontend-only) emits an edit and `dwu/undo` in one step, so the undo
@@ -163,7 +168,7 @@ Two pure runners (no store, JVM + CLJS):
   before running the next one (`thi/id` then points at the new run's shapes). Case letters B..Z, then AA..;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance
 geometry, on the #10109 fix branch until merged; O: switch of an overridden copy, mains
-agreeing or not; Q: detach at depth 0..2, nested copies stay linked; R: update-main at depth 0..2 with two copies; S: delete/restore with a copy on another page; T: duplicate a copy at depth 0..2; U: move a copy into a main with a copy; V: new edit after undo empties redo; W: `(n/undo 3)` over nested cascades; X: undo before the edit's sync, frontend only; Y: text override × main text change, per subgroup; Z: main child move, frontend only; AA..AE: swap outcomes asserted on values, not slot storage, so they survive the Phase 2b swap model; AF: grid cell move vs a swapped copy child, setup `grid-component-with-copy`; AG/AH/AI: ports of the plugin's slot-alignment cases, setup `component-with-sibling-instances`, check `setup/misaligned-sub-heads`) are the flagship pattern — read them before
+agreeing or not; Q: detach at depth 0..2, nested copies stay linked; R: update-main at depth 0..2 with two copies; S: delete/restore with a copy on another page; T: duplicate a copy at depth 0..2; U: move a copy into a main with a copy; V: new edit after undo empties redo; W: `(n/undo 3)` over nested cascades; X: undo before the edit's sync, frontend only; AJ: F43, one undo after a nested sync reverts only the reflow, frontend only; Y: text override × main text change, per subgroup; Z: main child move, frontend only; AA..AE: swap outcomes asserted on values, not slot storage, so they survive the Phase 2b swap model; AF: grid cell move vs a swapped copy child, setup `grid-component-with-copy`; AG/AH/AI: ports of the plugin's slot-alignment cases, setup `component-with-sibling-instances`, check `setup/misaligned-sub-heads`) are the flagship pattern — read them before
 writing a new sweep.
 
 **Scenario lineage model** (behind the sweeps): scenario ops track named component lineages as
@@ -250,7 +255,7 @@ Distinguishing abstractions (the OOP articulation of the shared principles):
 - `OpDetach`/`OpSwap`/`OpReset` wait for pending propagation before acting (a script could
   otherwise act inside the sync window, which no user can). `swapComponent` keeps touched (F33).
   The suite pins published `@penpot/plugin-types` 1.4.2, which lacks `resetOverrides` (typed cast).
-- Known bugs: `Assert.knownFailure(bug, actual, expected, pinned, equals)`, the counterpart of
+- Known bugs: `Assert.knownFailure(bug, expected, pinned, actual, equals)` (same order as `tm/known-failure`), the counterpart of
   `tm/known-failure`.
 - Panel checkboxes carry stable DOM ids (case identifier / `Identifier-N` composites) for remote
   control via Playwright; recipe in the README.

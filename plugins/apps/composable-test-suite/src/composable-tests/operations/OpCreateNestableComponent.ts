@@ -1,4 +1,4 @@
-import { Board, Shape } from "@penpot/plugin-types";
+import { Board, LibraryComponent, Shape } from "@penpot/plugin-types";
 import { Situation } from "../core/Situation";
 import { Operation } from "../core/Operation";
 import { Role } from "../core/Role";
@@ -243,5 +243,17 @@ export class OpCreateNestableComponent<TContentCreator extends ContentCreationSt
             throw new Error(`no copy at level ${level} (have ${copies.length})`);
         }
         return copy;
+    }
+
+    /**
+     * @param situation - the situation
+     * @return the component of the current main instance (the outermost one once nested)
+     */
+    getMainComponent(situation: Situation): LibraryComponent {
+        const component = situation.get(this.roles.mainInstance).component();
+        if (component === null) {
+            throw new Error("the main instance has no component");
+        }
+        return component;
     }
 }

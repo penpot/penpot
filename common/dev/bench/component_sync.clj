@@ -16,12 +16,12 @@
    Run from `common/` with `scripts/bench-components` (`record` writes the
    baseline, `compare`, the default, checks against it)."
   (:require
-   [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -54,35 +54,6 @@
   [file changes]
   (thf/apply-changes file changes :validate? false))
 
-(defn- changed-components
-  "Ids of the components whose main `changes` modified, judged against
-   `old-data`, the file data before them."
-  [old-data changes]
-  (into #{} (mapcat (partial ch/components-changed old-data)) (:redo-changes changes)))
-
-(defn- sync-cascade
-  "Sync the copies of `component-ids` in `file`, then those of the components
-   each sync changed, until none is left. `libraries` are the other files.
-   Returns `[file passes]`."
-  [file libraries component-ids]
-  (loop [file    file
-         pending (vec component-ids)
-         passes  0]
-    (if (empty? pending)
-      [file passes]
-      (let [file-id (:id file)
-            changes (cll/generate-sync-file-changes (pcb/empty-changes)
-                                                    nil
-                                                    :components
-                                                    file-id
-                                                    (first pending)
-                                                    file-id
-                                                    (assoc libraries file-id file)
-                                                    file-id)
-            file'   (apply-changes file changes)
-            more    (remove (set pending) (changed-components (:data file) changes))]
-        (recur file' (into (subvec pending 1) more) (inc passes))))))
-
 (defn- edit
   "`file` after `f` changed the shape `label` through the production path,
    and the ids of the components that changed."
@@ -93,7 +64,14 @@
                                             f
                                             (:objects page)
                                             {})]
-    [(apply-changes file changes) (changed-components (:data file) changes)]))
+    [(apply-changes file changes) (r/changed-components (:data file) changes)]))
+
+(defn- sync-cascade
+  "`[file passes]` after syncing the copies of `component-ids` in `file` to
+   a fixpoint (see `r/sync-cascade`)."
+  [file libraries component-ids]
+  (let [{:keys [file passes]} (r/sync-cascade file libraries component-ids)]
+    [file passes]))
 
 (defn- red
   [shape]
@@ -196,7 +174,7 @@
                                        page libs (:data file) shape (:id target) true)]
                     (sync-cascade (apply-changes file changes)
                                   {}
-                                  (changed-components (:data file) changes))))]
+                                  (r/changed-components (:data file) changes))))]
     {:key      :variant-switch-into-copies
      :describe "a variant copy in a main switches; 100 copies of the main sync"
      :run      switch

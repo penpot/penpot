@@ -1,4 +1,3 @@
-import { LibraryComponent } from "@penpot/plugin-types";
 import { TestCase } from "../test-suite/TestCase.ts";
 import { Situation } from "../core/Situation";
 import { Color } from "../model/Color";
@@ -17,17 +16,6 @@ const BASELINE = new Color("#aaaaaa");
 const RED = new Color("#ff0000"); // the component the copy swaps to
 const GREEN = new Color("#00ff00"); // the component the main swaps to
 const BLUE = new Color("#0000ff"); // remote edit
-
-/** The main component of a nestable component's configuration. */
-function componentOf(op: OpCreateNestableComponent<ContentCreationStrategyRectangle>) {
-    return (s: Situation): LibraryComponent => {
-        const component = s.get(op.roles.mainInstance).component();
-        if (component === null) {
-            throw new Error("the main instance has no component");
-        }
-        return component;
-    };
-}
 
 /**
  * Case AA — a copy's swap survives changes to the main.
@@ -63,9 +51,17 @@ export function createTestCaseCopySwapSurvivesMainChanges(): TestCase {
             opCreateGreen,
             opCreateComponent.createOpInstantiate(),
             opCreateComponent.createOpMakeNested(),
-            new OpSwap(copyNested, componentOf(opCreateRed), "the copy's nested copy for the red component"),
+            new OpSwap(
+                copyNested,
+                (s) => opCreateRed.getMainComponent(s),
+                "the copy's nested copy for the red component"
+            ),
             new OpOptional(
-                new OpSwap(mainNested, componentOf(opCreateGreen), "the main's nested copy for the green component")
+                new OpSwap(
+                    mainNested,
+                    (s) => opCreateGreen.getMainComponent(s),
+                    "the main's nested copy for the green component"
+                )
             ),
             new OpOptional(
                 new OpChangeProperty(
@@ -78,7 +74,7 @@ export function createTestCaseCopySwapSurvivesMainChanges(): TestCase {
             new OpAssert("the copy's nested copy keeps its swap", (s) => {
                 const head = copyNested(s);
                 Assert.that(
-                    head.component()?.id === componentOf(opCreateRed)(s).id,
+                    head.component()?.id === opCreateRed.getMainComponent(s).id,
                     "the nested copy is a red instance"
                 );
                 fillColor.assertEqual(fillColor.read(opCreateComponent.contentCreator.getRectangle(head)), RED);
