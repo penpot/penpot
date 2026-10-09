@@ -43,6 +43,7 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.changes :as dch]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwth]
@@ -361,36 +362,6 @@
                (js/setTimeout continue grace)
                (continue)))))))))
 
-(defn- watch-undo-stack
-  "Maintain the workspace UNDO STACK in the (global) store, mirroring the
-   production subscription in `app.main.data.workspace/initialize-workspace`:
-   for every local commit with `save-undo?` and non-empty `:undo-changes`, dispatch
-   `dwu/append-undo`. We start this in the harness because the minimal store setup
-   does not run the full `initialize-workspace` (which is where the real app wires
-   it). Re-emitting this event stops any previous instance (so re-install per
-   variant does not stack watchers)."
-  []
-  (ptk/reify ::watch-undo-stack
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [stopper-s (->> stream (rx/filter (ptk/type? ::watch-undo-stack)))]
-        (->> stream
-             (rx/filter dch/commit?)
-             (rx/map deref)
-             (rx/filter #(= :local (:source %)))
-             (rx/mapcat
-              (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
-                (if (and save-undo? (seq undo-changes))
-                  (rx/of (dwu/append-undo
-                          {:undo-changes undo-changes
-                           :redo-changes redo-changes
-                           :undo-group undo-group
-                           :tags tags
-                           :selected-before selected-before}
-                          stack-undo?))
-                  (rx/empty))))
-             (rx/take-until stopper-s))))))
-
 (defonce ^:private original-store
   ;; Captured at namespace-LOAD time — i.e. before any test in the run executes.
   ;; Several test namespaces (the plugins suite) `set!` st/state / st/stream to
@@ -420,8 +391,11 @@
   (restore-global-store!)
   (let [situation (setup)]
     (st/emit! (install-situation-event situation))
-    (st/emit! (dwl/watch-component-changes))
-    (st/emit! (watch-undo-stack))
+    ;; The same watchers the workspace starts; re-emitting them replaces the
+    ;; previous variant's.
+    (st/emit! (dw/finalize-edit-watchers)
+              (dw/initialize-edit-watchers)
+              (dwl/watch-library-changes))
     (run-ops situation ops k)))
 
 ;; --------------------------------------------------------------------------
