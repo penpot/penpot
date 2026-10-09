@@ -75,7 +75,7 @@
        (not-empty)))
 
 (def ^:private xf:map-page-id
-  (map :page-id))
+  (keep :page-id))
 
 (def ^:private wasm-structural-change-types
   #{:add-obj :mov-objects})
