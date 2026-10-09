@@ -122,7 +122,9 @@ cross-level propagation requires progressively NESTED levels (one variant + plai
 nestings do not propagate between each other.
 
 **Interpreter:** installs the situation's files into the global `st/state` (aux files tagged
-`:library-of`), starts the real `watch-component-changes` (+ harness `watch-undo-stack`), maps
+`:library-of`), starts the production watchers the app starts — `dw/initialize-edit-watchers`
+(undo stack, layout, text reflow, WASM text measurement; stopped by `dw/finalize-edit-watchers`)
+and `dwl/watch-library-changes` (component + token watchers) — then maps
 event-ops to REAL workspace events (`dwsh/update-shapes`, `dwl/component-swap`,
 `dwv/variants-switch`, `dwt/increase-rotation` — which runs the `check-delta` placement
 classification — `dwt/update-dimensions`, `dwu/undo`, `dwl/sync-file`, …) and runs sync-ops'
@@ -137,10 +139,11 @@ Running (frontend): `cd frontend && pnpm run build:test`, then
 `node target/tests/test.js --focus frontend-tests.composable-tests.comp.sync-test`
 (var-level focus for one case).
 
-**Fidelity warning:** the harness drives a MINIMALLY-ASSEMBLED app — only some
-`initialize-workspace` subscriptions are wired. Risk = SILENT UNDER-WIRING (e.g. undo needs the
-harness `watch-undo-stack`). When a case needs app behaviour beyond a raw edit, check for an
-unwired subscription and verify by PROBING store state, not by trusting a green assertion.
+**Fidelity warning:** the harness drives a MINIMALLY-ASSEMBLED app: no file loading, no
+persistence, no viewport. Edit-reacting subscriptions come from the shared events above; a NEW
+edit-reacting subscription belongs inside `initialize-edit-watchers` (or
+`watch-library-changes`), never wired inline in `initialize-workspace`, or the harness silently
+misses it. Headless there is no DOM text measurement, so `:text/reflow` work never drains.
 
 **Caveats:** inline `Test` exceptions are UNCAUGHT on the frontend (crash the runner — assert in
 the trailing asserter). `(optional (in-sequence …))` is not flattened for the interpreter — use
