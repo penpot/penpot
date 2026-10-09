@@ -367,7 +367,6 @@
           near-copy2-nested4-head (ctf/find-near-match file page-file libraries copy2-nested4-head)
           near-copy2-nested4-child (ctf/find-near-match file page-file libraries copy2-nested4-child)]
 
-      (thf/dump-file library1 :keys [:name :swap-slot-label] :show-refs? true)
       (t/is (some? main1-root))
       (t/is (some? main1-child))
       (t/is (some? main2-root))

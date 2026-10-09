@@ -133,7 +133,6 @@
     ;; ==== Check
 
     ;; It should the same as above, but in an external library.
-    (thf/dump-file file)
     (t/is (ctk/instance-root? copy-h-board-with-ellipse))
     (t/is (= (:shape-ref copy-h-board-with-ellipse) (thi/id :board-with-ellipse)))
     (t/is (nil? (ctk/get-swap-slot copy-h-board-with-ellipse)))

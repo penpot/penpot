@@ -44,6 +44,15 @@ For shape mutations, prefer production-path helpers such as `cls/generate-update
 
 `thf/apply-changes` validates by default and usually gives the most useful invariant failure. Pass `:validate? false` only for intentionally malformed intermediate state.
 
+## Validation and repair tests
+
+`common-tests.files.repair-components-test` has one test per component error code: break a file with
+the helpers (`ths/update-shape`, `thc/update-component`), assert the exact set of codes, then repair
+as the backend does (validate + `cfr/repair-file` until valid, at most 10 passes, like
+`app.srepl.procs.file-repair`) and assert the result. Repairs that never converge are pinned with
+`tm/known-failure`. A deleted component's objects are reached with `ctkl/get-component data id true`
+(`thc/get-component` skips deleted ones).
+
 ## Geometry setup caution
 
 For geometry-sensitive tests, read `mem:common/geometry-invariants` before positioning shapes. Use geometry-preserving helpers or production change helpers rather than direct single-field edits.
