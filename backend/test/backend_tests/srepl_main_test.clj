@@ -11,7 +11,8 @@
    [app.system :as sys]
    [app.worker :as wrk]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -150,3 +151,36 @@
                            #(srepl/process-deleted-files-cascade :ids [(:id file)]))]
             (t/is (= [{:object :file :id (:id file)}]
                      (mapv #(select-keys % [:object :id]) (params-of submitted))))))))))
+
+(t/deftest delete-profile-emits-identifiable-audit-event
+  ;; The SREPL delete used to emit no profile-id and empty props, leaving a
+  ;; row no projection could attribute. Both insert and cascade are mocked,
+  ;; so this has no side effects.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
+               wrk-mock {:target 'app.worker/invoke! :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})]
+      (srepl/delete-profile! (str (:id profile)))
+      (let [events (->> (:call-args-list @audit-mock)
+                        (map second))]
+        (t/is (= 1 (count events)))
+        (let [event (first events)]
+          (t/is (= "delete-profile" (:name event)))
+          (t/is (= "action" (:type event)))
+          (t/is (= (:id profile) (:profile-id event)))
+          (t/is (= (:id profile) (get-in event [:props :id]))))))))
+
+(t/deftest delete-team-emits-identifiable-audit-event
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
+               wrk-mock {:target 'app.worker/invoke! :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          team    (th/create-team* 95 {:profile-id (:id profile)})]
+      (srepl/delete-team! (str (:id team)))
+      (let [events (->> (:call-args-list @audit-mock)
+                        (map second))]
+        (t/is (= 1 (count events)))
+        (let [event (first events)]
+          (t/is (= "delete-team" (:name event)))
+          (t/is (= "action" (:type event)))
+          (t/is (= (:id team) (get-in event [:props :id])))
+          (t/is (= "explicit call to delete-team!"
+                   (get-in event [:context :cause]))))))))
