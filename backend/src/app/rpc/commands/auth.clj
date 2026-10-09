@@ -123,8 +123,9 @@
                   ;; accept invitation with other email
                   response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
                                {:invitation-token (:invitation-token params)}
-                               (assoc profile :is-admin (let [admins (cf/get :admins)]
-                                                          (contains? admins (:email profile)))))]
+                               (assoc profile :is-superuser
+                                      (contains? (::auth/superusers cfg)
+                                                 (:id profile))))]
               (login-lockout/clear-attempts! cfg (:id profile))
               (-> response
                   (rph/with-transform (session/create-fn cfg profile))

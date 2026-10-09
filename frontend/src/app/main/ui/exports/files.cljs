@@ -37,8 +37,8 @@
         files))
 
 (defn- mark-file-cancelled
-  "The job of a file was cancelled elsewhere: a neutral terminal state,
-  neither success nor error."
+  "The job of a file was cancelled elsewhere: no artifact is coming,
+  a neutral terminal state instead of hanging on the queued state."
   [files file-id]
   (mapv #(cond-> %
            (= file-id (:id %))

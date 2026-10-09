@@ -28,17 +28,17 @@
    [app.util.services :as sv]
    [cuerdas.core :as str]))
 
-(def ^:private max-limit 200)
-(def ^:private default-limit 50)
+(def max-limit 200)
+(def default-limit 50)
 
-(def ^:private source-names
+(def source-names
   {1 "legacy-v1"
    2 "legacy-v2"
    3 "logging"
    4 "audit-log"
    5 "rlimit"})
 
-(defn- source->name
+(defn source->name
   [source]
   (get source-names source (str "unknown-" source)))
 
@@ -46,7 +46,7 @@
   [name]
   (some (fn [[k v]] (when (= v name) k)) source-names))
 
-(def ^:private schema:error-report-summary
+(def schema:error-report-summary
   [:map
    [:id ::sm/uuid]
    [:created-at ct/schema:inst]
@@ -57,7 +57,7 @@
    [:version {:optional true} ::sm/text]
    [:hint {:optional true} ::sm/text]])
 
-(def ^:private schema:get-error-reports-params
+(def schema:get-error-reports-params
   [:map {:title "get-error-reports-params"}
    [:since {:optional true} ct/schema:inst]
    [:since-id {:optional true} ::sm/uuid]
@@ -71,13 +71,13 @@
    [:hint {:optional true} ::sm/text]
    [:until {:optional true} ct/schema:inst]])
 
-(def ^:private schema:get-error-reports-result
+(def schema:get-error-reports-result
   [:map
    [:items [:vector schema:error-report-summary]]
    [:next-since {:optional true} ct/schema:inst]
    [:next-id {:optional true} ::sm/uuid]])
 
-(def ^:private schema:error-report
+(def schema:error-report
   [:map
    [:id ::sm/uuid]
    [:created-at ct/schema:inst]
@@ -91,7 +91,7 @@
    [:href {:optional true} ::sm/text]
    [:context {:optional true} ::sm/text]])
 
-(def ^:private schema:get-error-report-params
+(def schema:get-error-report-params
   [:map
    [:id ::sm/uuid]])
 
@@ -104,7 +104,7 @@
        "content->>'~:profile-id' AS profile_id "
        "FROM server_error_report"))
 
-(defn- build-list-query
+(defn build-list-query
   [{:keys [since since-id source profile-id kind tenant version hint until limit]
     :or {limit default-limit}}]
   (let [source-id (when source (name->source source))

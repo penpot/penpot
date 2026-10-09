@@ -13,6 +13,7 @@
    [app.common.transit :as t]
    [app.db :as-alias db]
    [app.http.access-token :as actoken]
+   [app.http.admin :as-alias admin]
    [app.http.assets :as-alias assets]
    [app.http.awsns :as-alias awsns]
    [app.http.debug :as-alias debug]
@@ -251,6 +252,7 @@
    [::rpc/routes schema:routes]
    [::oidc/routes schema:routes]
    [::assets/routes schema:routes]
+   [::admin/routes schema:routes]
    [::link-preview/routes schema:routes]
    [::debug/routes schema:routes]
    [::mtx/routes schema:routes]
@@ -280,6 +282,7 @@
 
      (::mtx/routes cfg)
      (::assets/routes cfg)
+     (::admin/routes cfg)
      (::link-preview/routes cfg)
      (::debug/routes cfg)
 

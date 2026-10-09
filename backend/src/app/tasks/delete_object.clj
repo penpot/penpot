@@ -12,13 +12,16 @@
    [app.common.time :as ct]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.features.object-cascade :as cascade]
    [app.jobs :as jobs]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.storage :as sto]
    [integrant.core :as ig]))
 
-(def ^:dynamic *team-deletion* false)
+(defn- absorb-library
+  [cfg id]
+  (db/tx-run! cfg files/absorb-library id))
 
 (defmulti delete-object
   (fn [_ props] (:object props)))
@@ -39,97 +42,18 @@
               {::db/return-keys false}))
 
 (defmethod delete-object :file
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (when-let [file (db/get* conn :file {:id id}
-                           {::db/remove-deleted false
-                            ::sql/columns [:id :is-shared]})]
-
-    (l/trc :obj "file" :id (str id)
-           :deleted-at (ct/format-inst deleted-at))
-
-    (db/update! conn :file
-                {:deleted-at deleted-at
-                 :is-shared false}
-                {:id id}
-                {::db/return-keys false})
-
-    (when (and (:is-shared file)
-               (not *team-deletion*))
-      ;; NOTE: we don't prevent file deletion on absorb operation failure
-      (try
-        (db/tx-run! cfg files/absorb-library id)
-        (catch Throwable cause
-          (l/warn :hint "error on absorbing library"
-                  :file-id id
-                  :cause cause))))
-
-    ;; Mark file change to be deleted
-    (db/update! conn :file-change
-                {:deleted-at deleted-at}
-                {:file-id id}
-                {::db/return-keys false})
-
-    ;; Mark file data fragment to be deleted
-    (db/update! conn :file-data
-                {:deleted-at deleted-at}
-                {:file-id id}
-                {::db/return-keys false})
-
-    ;; Mark file media objects to be deleted
-    (db/update! conn :file-media-object
-                {:deleted-at deleted-at}
-                {:file-id id}
-                {::db/return-keys false})
-
-    ;; Mark thumbnails to be deleted
-    (db/update! conn :file-thumbnail
-                {:deleted-at deleted-at}
-                {:file-id id}
-                {::db/return-keys false})
-
-    (db/update! conn :file-tagged-object-thumbnail
-                {:deleted-at deleted-at}
-                {:file-id id}
-                {::db/return-keys false})))
+  [cfg {:keys [id deleted-at]}]
+  (cascade/update-cascade cfg :file id
+                          {:deleted-at deleted-at
+                           :absorb-file! absorb-library}))
 
 (defmethod delete-object :project
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :obj "project" :id (str id)
-         :deleted-at (ct/format-inst deleted-at))
-
-  (db/update! conn :project
-              {:deleted-at deleted-at}
-              {:id id}
-              {::db/return-keys false})
-
-  (doseq [file (db/query conn :file
-                         {:project-id id}
-                         {::db/columns [:id :deleted-at]})]
-    (delete-object cfg (assoc file
-                              :object :file
-                              :deleted-at deleted-at))))
+  [cfg {:keys [id deleted-at]}]
+  (cascade/update-cascade cfg :project id {:deleted-at deleted-at}))
 
 (defmethod delete-object :team
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :obj "team" :id (str id)
-         :deleted-at (ct/format-inst deleted-at))
-  (db/update! conn :team
-              {:deleted-at deleted-at}
-              {:id id}
-              {::db/return-keys false})
-
-  (db/update! conn :team-font-variant
-              {:deleted-at deleted-at}
-              {:team-id id}
-              {::db/return-keys false})
-
-  (binding [*team-deletion* true]
-    (doseq [project (db/query conn :project
-                              {:team-id id}
-                              {::db/columns [:id :deleted-at]})]
-      (delete-object cfg (assoc project
-                                :object :project
-                                :deleted-at deleted-at)))))
+  [cfg {:keys [id deleted-at]}]
+  (cascade/update-cascade cfg :team id {:deleted-at deleted-at}))
 
 (defmethod delete-object :profile
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
