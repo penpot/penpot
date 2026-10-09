@@ -43,6 +43,7 @@ Change pipeline, validation, and migrations:
 
 Components, variants, and debugging:
 - Component/variant data model, ref chains, touched override semantics, and cloning paths: `mem:common/component-data-model`.
+- Intended touched/sync semantics per operation (what touches, what sync writes, authored vs derived geometry, eager cascade, settled design decisions): `mem:common/component-sync-contract`.
 - Component swap, variant switch, and keep-touched pipeline: `mem:common/component-swap-pipeline`.
 - Live inspection snippets, temporary runtime patching, and test-side debugging helpers for common change/component behavior: `mem:common/component-debugging-recipes`.
 
