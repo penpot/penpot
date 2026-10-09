@@ -99,6 +99,18 @@
   (let [errors (count (tsc/token-errors res))]
     {:resolved (- (count tokens) errors) :errors errors}))
 
+(defn- parse-fn
+  "Parses every string value of the fixture without the processor's parse
+  cache: the cost of a first build."
+  [tokens]
+  (let [values (into [] (comp (map (comp :value val)) (filter string?)) tokens)]
+    (fn [_]
+      (reduce (fn [n v]
+                (try (tsc/parse v {:mode :inline}) (inc n)
+                     (catch #?(:clj Throwable :cljs :default) _ n)))
+              0
+              values))))
+
 (defn- update-fn [tokens {:strs [name type values]}]
   (let [state (:state (tsc/build tokens))]
     (fn [i]
@@ -122,6 +134,11 @@
       (conj (attempt "build"
                      #(let [m (measure (build-fn tokens) opts)]
                         (merge base {:op "build"} (dissoc m :first) (summarize (:first m) tokens)))))
+
+      (contains? ops "parse")
+      (conj (attempt "parse"
+                     #(let [m (measure (parse-fn tokens) opts)]
+                        (merge base {:op "parse" :parsed (:first m)} (dissoc m :first)))))
 
       (and (contains? ops "update") (get fixture "update"))
       (conj (attempt "update"

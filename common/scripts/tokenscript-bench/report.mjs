@@ -220,6 +220,31 @@ export function render(data) {
     );
   }
 
+  // Parsing ------------------------------------------------------------------
+  const parseEngines = engines.filter((e) =>
+    data.results.some((r) => r.engine === e && r.op === "parse"),
+  );
+  if (parseEngines.length) {
+    out.push("## Parsing every value without cache: median (ms)", "");
+    out.push(
+      "Lexing and parsing all string values of the fixture, bypassing the port's parse cache. This is the parsing share of a first build.",
+      "",
+    );
+    out.push(
+      table(
+        ["Fixture", "Tokens", ...parseEngines.map(label)],
+        rows
+          .filter((r) => parseEngines.some((e) => get(e, r.fixture, "parse")))
+          .map((r) => [
+            r.fixture,
+            r.size.toLocaleString("en-US"),
+            ...parseEngines.map((e) => cell(get(e, r.fixture, "parse"))),
+          ]),
+      ),
+      "",
+    );
+  }
+
   // Scaling ------------------------------------------------------------------
   const profilesInOrder = [...new Set(rows.map((r) => r.profile))];
   const scalingRows = [];

@@ -37,7 +37,7 @@ const { values: opts } = parseArgs({
     profiles: { type: "string", default: Object.keys(profiles).join(",") },
     sizes: { type: "string", default: "100,500,1000,2500,5000,10000" },
     input: { type: "string", multiple: true, default: [] },
-    ops: { type: "string", default: "build,update" },
+    ops: { type: "string", default: "build,update,parse" },
     "base-ref": { type: "string" },
     "ts-local": { type: "string" },
     "budget-ms": { type: "string", default: "2000" },
@@ -64,7 +64,8 @@ if (opts.help) {
   --sizes LIST         token counts (default 100,500,1000,2500,5000,10000)
   --input NAME=FILE    extra fixture from real data: JSON object of
                        name -> {type, value}; repeatable
-  --ops LIST           build,update (default both)
+  --ops LIST           build,update,parse (default all; parse is the port's
+                       uncached parsing of every value, other engines skip it)
   --base-ref REF       git ref with ${oldPackagePath} (default: auto)
   --ts-local DIR       tokenscript-interpreter checkout (needs dist/, npm run build:lib)
   --budget-ms N        sampling time per case (default 2000)
