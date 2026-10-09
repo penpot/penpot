@@ -160,15 +160,20 @@
      :missing #{}
      :visiting #{}}))
 
+;; Two level update of the state, cheaper than `assoc-in` on the hot paths
+(defn- put
+  [st k name v]
+  (assoc st k (assoc (get st k) name v)))
+
 (defn- add-issue
   [st name i]
-  (update-in st [:issues name] (fnil conj []) i))
+  (put st :issues name (conj (get (:issues st) name []) i)))
 
 (defn- add-error
   "Records an error for a token or sub-field. Sub-field errors are stored
   on their parent with the field path."
   [st name error]
-  (if-let [{:keys [parent field-path]} (get-in st [:sub-fields name])]
+  (if-let [{:keys [parent field-path]} (get (:sub-fields st) name)]
     (add-issue st parent (error->field-issue error parent field-path))
     (add-issue st name error)))
 
@@ -189,15 +194,15 @@
   (if (contains? (:resolved st) name)
     (update st :graph assoc name #{})
     (-> st
-        (assoc-in [:resolved name] value)
-        (assoc-in [:cache name] value)
+        (put :resolved name value)
+        (put :cache name value)
         (lint name value)
         (update :graph assoc name #{}))))
 
 (defn- fail-early
   [st name error]
   (-> st
-      (assoc-in [:resolved name] error)
+      (put :resolved name error)
       (add-error name error)
       (update :graph assoc name #{})))
 
@@ -316,7 +321,7 @@
       error (fail-early st name error)
       (nil? ast) (resolve-early st name "")
       :else (-> st
-                (assoc-in [:parsed name] parsed)
+                (put :parsed name parsed)
                 (update :graph assoc name deps)))))
 
 (defn- parse-structured
@@ -326,14 +331,14 @@
       (resolve-early st name (td/structured->symbol value (or type "unknown") metadata (:parsers st)))
       (let [st (reduce (fn [st [path expr]]
                          (-> st
-                             (assoc-in [:sub-fields path]
-                                       {:parent name :field-path (let [rest (subs path (count name))]
-                                                                   (if (str/starts-with? rest ".") (subs rest 1) rest))})
+                             (put :sub-fields path
+                                  {:parent name :field-path (let [rest (subs path (count name))]
+                                                              (if (str/starts-with? rest ".") (subs rest 1) rest))})
                              (parse-expression path expr)))
                        st
                        fields)]
         (-> st
-            (assoc-in [:structured name] {:fields fields})
+            (put :structured name {:fields fields})
             (update :graph assoc name (set (map first fields))))))))
 
 (defn- parse-token
@@ -395,16 +400,16 @@
   "Resolves all tokens under `prefix` and caches a dictionary of the
   expression tokens directly below it."
   [st prefix]
-  (let [st (reduce resolve-name st (sort (get-in st [:prefixes prefix])))
+  (let [st (reduce resolve-name st (sort (get (:prefixes st) prefix)))
         entries (into (sym/value (sym/dictionary nil))
                       (keep (fn [short]
                               (let [path (str prefix "." short)]
                                 (when (contains? (:cache st) path)
-                                  (let [v (get-in st [:cache path])]
+                                  (let [v (get (:cache st) path)]
                                     [short (sym/clone-if-mutable (sym/data->symbol v))])))))
-                      (sort (get-in st [:direct-children prefix])))]
+                      (sort (get (:direct-children st) prefix)))]
     (if (seq entries)
-      (assoc-in st [:cache prefix] (sym/dictionary entries))
+      (put st :cache prefix (sym/dictionary entries))
       st)))
 
 (defn- resolve-virtual-child
@@ -412,12 +417,12 @@
   dictionary."
   [st path parent]
   (let [st (resolve-name st parent)
-        parent-value (get-in st [:resolved parent])]
+        parent-value (get (:resolved st) parent)]
     (cond
       (contains? (:cache st) path) st
 
       (err/error-map? parent-value)
-      (assoc-in st [:resolved path] (dependency-error path parent parent-value))
+      (put st :resolved path (dependency-error path parent parent-value))
 
       ;; Only direct keys of a dictionary token are reachable, like the
       ;; one level flattening of the other implementations.
@@ -425,11 +430,11 @@
       (let [key (subs path (inc (count parent)))
             v (when-not (str/includes? key ".") (get (sym/value parent-value) key))]
         (if (some? v)
-          (assoc-in st [:cache path] (sym/clone-if-mutable v))
-          (assoc-in st [:resolved path] (err/error-map :processor/token-not-found {:data {:token-name path}}))))
+          (put st :cache path (sym/clone-if-mutable v))
+          (put st :resolved path (err/error-map :processor/token-not-found {:data {:token-name path}}))))
 
       :else
-      (assoc-in st [:resolved path] (err/error-map :processor/token-not-found {:data {:token-name path}})))))
+      (put st :resolved path (err/error-map :processor/token-not-found {:data {:token-name path}})))))
 
 (defn- ensure-dependency
   "Makes the value of `dep` available in the cache if possible. Returns
@@ -442,7 +447,7 @@
 
     (or (token? st dep) (contains? (:sub-fields st) dep))
     (let [st (resolve-name st dep)
-          v (get-in st [:resolved dep])]
+          v (get (:resolved st) dep)]
       [st (cond
             ;; still unwinding a cycle: the current token is on it too
             (::cycle-root st) :cycle
@@ -450,7 +455,7 @@
             :else :ok)])
 
     (contains? (:resolved st) dep)
-    (let [v (get-in st [:resolved dep])]
+    (let [v (get (:resolved st) dep)]
       [st (if (err/error-map? v) v :ok)])
 
     :else
@@ -459,7 +464,7 @@
         [(resolve-prefix st dep) :ok]
         (if-let [parent (parent-token st dep)]
           (let [st (resolve-virtual-child st dep parent)
-                v (get-in st [:resolved dep])]
+                v (get (:resolved st) dep)]
             [st (if (err/error-map? v) v :ok)])
           [(update st :missing conj dep) :missing])))))
 
@@ -488,12 +493,12 @@
   [st name result]
   (if (err/error-map? result)
     (-> st
-        (assoc-in [:resolved name] result)
+        (put :resolved name result)
         (add-error name result))
     (let [result (if (nil? result) "" result)]
       (-> st
-          (assoc-in [:resolved name] result)
-          (assoc-in [:cache name] result)
+          (put :resolved name result)
+          (put :cache name result)
           (lint name result)))))
 
 (defn- circular-error
@@ -508,28 +513,28 @@
         (case status
           :ok (recur st (rest deps))
           :cycle (-> st
-                     (assoc-in [:resolved name] (circular-error name))
+                     (put :resolved name (circular-error name))
                      (add-error name (circular-error name))
                      (cond-> (not (::cycle-root st)) (assoc ::cycle-root dep)))
           :missing (let [error (dependency-error name dep (err/error-map :processor/token-not-found {:data {:token-name dep}}))]
-                     (-> st (assoc-in [:resolved name] error) (add-error name error)))
+                     (-> st (put :resolved name error) (add-error name error)))
           (let [error (dependency-error name dep status)]
-            (-> st (assoc-in [:resolved name] error) (add-error name error)))))
+            (-> st (put :resolved name error) (add-error name error)))))
       (store-result st name (interpret-ast st ast)))))
 
 (defn- resolve-structured
   [st name {:keys [fields]}]
   (let [st (reduce (fn [st [path]] (resolve-name st path)) st fields)
         failure (some (fn [[path]]
-                        (let [v (get-in st [:resolved path])]
+                        (let [v (get (:resolved st) path)]
                           (when (err/error-map? v) v)))
                       fields)]
     (if failure
       (-> st
-          (assoc-in [:resolved name] failure)
+          (put :resolved name failure)
           (add-issue name failure))
-      (let [{:keys [value type metadata]} (get-in st [:tokens name])
-            resolved-fields (into {} (map (fn [[path]] [path (get-in st [:resolved path])])) fields)
+      (let [{:keys [value type metadata]} (get (:tokens st) name)
+            resolved-fields (into {} (map (fn [[path]] [path (get (:resolved st) path)])) fields)
             token (td/structured->symbol-with-fields name resolved-fields value (or type "unknown") metadata (:parsers st))]
         (store-result st name token)))))
 
@@ -542,8 +547,8 @@
     :else
     (let [st (update st :visiting conj name)
           st (cond
-               (contains? (:structured st) name) (resolve-structured st name (get-in st [:structured name]))
-               (contains? (:parsed st) name) (resolve-parsed st name (get-in st [:parsed name]))
+               (contains? (:structured st) name) (resolve-structured st name (get (:structured st) name))
+               (contains? (:parsed st) name) (resolve-parsed st name (get (:parsed st) name))
                :else st)
           st (update st :visiting disj name)]
       ;; Every token on a cycle gets its own circular dependency error.
@@ -677,7 +682,7 @@
                     source (cond
                              (contains? (:tokens st) dep) [dep]
                              (contains? (:sub-fields st) dep) [dep]
-                             (contains? (:prefixes st) dep) (get-in st [:prefixes dep])
+                             (contains? (:prefixes st) dep) (get (:prefixes st) dep)
                              :else (if-let [parent (parent-token st dep)] [parent] [dep]))]
                 [source node])]
     (reduce (fn [acc [source node]] (update acc source (fnil conj #{}) node)) {} edges)))
@@ -704,9 +709,9 @@
   (let [keep? (fn [name]
                 (and (contains? tokens name)
                      (not (contains? dirty name))
-                     (= (get tokens name) (get-in st [:tokens name]))
+                     (= (get tokens name) (get (:tokens st) name))
                      (contains? (:resolved st) name)
-                     (not (err/error-map? (get-in st [:resolved name])))))
+                     (not (err/error-map? (get (:resolved st) name)))))
         names (filter keep? (keys (:tokens st)))]
     {:resolved (select-keys (:resolved st) names)
      :cache (select-keys (:cache st) names)

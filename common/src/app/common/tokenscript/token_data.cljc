@@ -155,15 +155,20 @@
   `shadow[0].blur`. Maps matched by an object parser are atomic."
   ([value parent-path] (string-fields value parent-path default-object-parsers))
   ([value parent-path parsers]
-   (letfn [(walk-value [v path]
+   (letfn [(walk-value [acc v path]
              (cond
-               (string? v) [[path v]]
+               (string? v) (conj! acc [path v])
                (map? v) (if (matching-parser parsers v)
-                          []
-                          (mapcat (fn [[k child]] (walk-value child (str path "." (key-name k)))) v))
-               (sequential? v) (mapcat (fn [i child] (walk-value child (str path "[" i "]"))) (range) v)
-               :else []))]
-     (vec (walk-value value parent-path)))))
+                          acc
+                          (reduce (fn [acc [k child]] (walk-value acc child (str path "." (key-name k))))
+                                  acc
+                                  (seq v)))
+               (sequential? v) (loop [acc acc i 0 items (seq v)]
+                                 (if items
+                                   (recur (walk-value acc (first items) (str path "[" i "]")) (inc i) (next items))
+                                   acc))
+               :else acc))]
+     (persistent! (walk-value (transient []) value parent-path)))))
 
 (defn parse-field-path
   "`\"[0].blur\"` -> `[0 \"blur\"]`, `\"offsetX\"` -> `[\"offsetX\"]`."
