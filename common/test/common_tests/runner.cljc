@@ -23,6 +23,7 @@
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
+   [common-tests.files.repair-components-test]
    [common-tests.files.repair-test]
    [common-tests.files.shapes-builder-test]
    [common-tests.files.tokens-test]
@@ -66,6 +67,7 @@
    [common-tests.logic.composable-sync-test]
    [common-tests.logic.copying-and-duplicating-test]
    [common-tests.logic.duplicated-pages-test]
+   [common-tests.logic.library-asset-sync-test]
    [common-tests.logic.move-shapes-test]
    [common-tests.logic.multiple-nesting-levels-test]
    [common-tests.logic.swap-and-reset-test]
@@ -128,6 +130,7 @@
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
+   'common-tests.files.repair-components-test
    'common-tests.files.repair-test
    'common-tests.files.shapes-builder-test
    'common-tests.files.tokens-test
@@ -171,6 +174,7 @@
    'common-tests.logic.composable-sync-test
    'common-tests.logic.copying-and-duplicating-test
    'common-tests.logic.duplicated-pages-test
+   'common-tests.logic.library-asset-sync-test
    'common-tests.logic.move-shapes-test
    'common-tests.logic.multiple-nesting-levels-test
    'common-tests.logic.swap-and-reset-test

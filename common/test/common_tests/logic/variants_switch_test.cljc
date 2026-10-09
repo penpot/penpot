@@ -43,7 +43,6 @@
         file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         copy01'   (ths/get-shape file' :copy01)]
-    (thf/dump-file file :keys [:width])
     ;; The copy had width 5 before the switch
     (t/is (= (:width copy01) 5))
     ;; The copy has width 15 after the switch
@@ -108,7 +107,6 @@
         file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         copy01'   (ths/get-shape file' :copy01)]
-    (thf/dump-file file :keys [:width])
     ;; The copy had width 25 before the switch
     (t/is (= (:width copy01) 25))
     ;; The override is keept: The copy still has width 25 after the switch
@@ -222,8 +220,6 @@
 
         copy01'   (ths/get-shape file' :copy01)]
 
-    (thf/dump-file file :keys [:width])
-
     ;; The copy had width 5 before the switch
     (t/is (= (:width copy01) 5))
     ;; The copy has width 15 after the switch
@@ -256,8 +252,6 @@
         file'     (tho/swap-component-in-shape file :child01 :c02 {:keep-touched? true})
 
         child01'   (ths/get-shape file' :child01)]
-
-    (thf/dump-file file :keys [:width])
 
     ;; The copy had width 5 before the switch
     (t/is (= (:width child01) 5))
@@ -304,8 +298,6 @@
         file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         copy01'   (ths/get-shape file' :copy01)]
-
-    (thf/dump-file file :keys [:width :touched])
 
     ;; The copy had fill color before the switch
     (t/is (= (:fills copy01) fills))
@@ -357,8 +349,6 @@
         file'     (tho/swap-component-in-shape file :nested02 :c02 {:keep-touched? true})
 
         nested02' (ths/get-shape file' :nested02)]
-
-    (thf/dump-file file :keys [:width])
 
     ;; The copy had fill color before the switch
     (t/is (= (:fills nested02) fills))
@@ -474,8 +464,6 @@
 
         copy-both'        (ths/get-shape file' :copy-both-2)
         copy-both-t'      (get-in page' [:objects (-> copy-both' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
 
     ;;;;;;;;;;; Clean copy
@@ -599,8 +587,6 @@
         copy-both'        (ths/get-shape file' :copy-both-2)
         copy-both-t'      (get-in page' [:objects (-> copy-both' :shapes first)])]
 
-    (thf/dump-file file' {:keys [:name #_:content]})
-
 
     ;;;;;;;;;;; Clean copy
     ;; Before the switch:
@@ -720,8 +706,6 @@
 
         copy-both'        (ths/get-shape file' :copy-both-2)
         copy-both-t'      (get-in page' [:objects (-> copy-both' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
 
     ;;;;;;;;;;; Clean copy
@@ -845,8 +829,6 @@
         copy-both'        (ths/get-shape file' :copy-both-2)
         copy-both-t'      (get-in page' [:objects (-> copy-both' :shapes first)])]
 
-    (thf/dump-file file' {:keys [:name #_:content]})
-
 
     ;;;;;;;;;;; Clean copy
     ;; Before the switch:
@@ -963,8 +945,6 @@
 
         copy-structure-mixed'   (ths/get-shape file' :copy-structure-mixed-2)
         copy-structure-mixed-t' (get-in page' [:objects (-> copy-structure-mixed' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
     ;;;;;;;;;;; Copy structure clean
     ;; Before the switch, first line:
@@ -1095,8 +1075,6 @@
         copy-structure-mixed'   (ths/get-shape file' :copy-structure-mixed-2)
         copy-structure-mixed-t' (get-in page' [:objects (-> copy-structure-mixed' :shapes first)])]
 
-    (thf/dump-file file' {:keys [:name #_:content]})
-
     ;;;;;;;;;;; Copy structure clean
     ;; Before the switch, first line:
     ;;   * font size 14
@@ -1221,8 +1199,6 @@
 
         copy-structure-mixed'   (ths/get-shape file' :copy-structure-mixed-2)
         copy-structure-mixed-t' (get-in page' [:objects (-> copy-structure-mixed' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
     ;;;;;;;;;;; Copy structure clean
     ;; Before the switch, first line:
@@ -1349,8 +1325,6 @@
 
         copy-structure-mixed'   (ths/get-shape file' :copy-structure-mixed-2)
         copy-structure-mixed-t' (get-in page' [:objects (-> copy-structure-mixed' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
     ;;;;;;;;;;; Copy structure clean
     ;; Before the switch, first line:
@@ -1494,7 +1468,6 @@
 
         copy02'    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape file' :copy-cp02)]
-    (thf/dump-file file')
     ;;copy-cp02 is a copy of external02
     (t/is (= (:component-id copy-cp02) (:id external02)))
     ;;copy-01 had copy-cp02 as child
@@ -1543,7 +1516,6 @@
         copy02'    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape file' :copy-cp02)
         copy-cp02-rect' (ths/get-shape-by-id file' (-> copy-cp02' :shapes first))]
-    (thf/dump-file file')
     ;;copy-cp02 is a copy of external02
     (t/is (= (:component-id copy-cp02) (:id external02)))
     ;;copy-01 had copy-cp02 as child
@@ -1611,7 +1583,6 @@
         c02-in-copy' (ths/get-shape file' :c02-in-copy)
         rect02'      (get-in page' [:objects (-> c02-in-copy' :shapes first)])]
 
-    (thf/dump-file file :keys [:width :touched])
     ;; The rect had width 25 before the switch
     (t/is (= (:width rect01) 25))
     ;; The rect still has width 25 after the switch
