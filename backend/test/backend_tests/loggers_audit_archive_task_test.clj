@@ -325,41 +325,24 @@
         (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
           (t/is (= 1 (count rows))))))))
 
-(t/deftest archive-events-enriches-team-name-from-file-id
-  (let [actor   (th/create-profile* 1 {:is-active true})
-        team    (th/create-team* 1 {:profile-id (:id actor)})
-        project (th/create-project* 1 {:profile-id (:id actor)
-                                       :team-id (:id team)})
-        file    (th/create-file* 1 {:profile-id (:id actor)
-                                    :project-id (:id project)})]
+(t/deftest archive-events-forwards-export-job-not-legacy-export
+  (let [actor (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id actor)})]
     (with-redefs [cf/flags #{:admin-console}]
       (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! (:id actor) "create-export-binfile-job"
+                           {:team-id (:id team)
+                            :job-id (uuid/next)
+                            :files 1
+                            :export-type "detach-libraries"})
         (insert-audit-row! (:id actor) "export-binfile"
-                           {:file-id (:id file)})
+                           {:file-id (uuid/next)})
         (th/run-task! :audit-log-archive {})
-        (let [props (nitrate-event-props nitrate-mock)]
+        (let [[_ _ params] (:call-args @nitrate-mock)
+              events       (:events params)
+              props        (:props (first events))]
+          (t/is (= ["create-export-binfile-job"] (mapv :name events)))
           (t/is (= (:id team) (:team-id props)))
           (t/is (= (:name team) (:team-name props))))
         (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
-          (t/is (= 1 (count rows))))))))
-
-(t/deftest archive-events-enriches-soft-deleted-team-from-file-id
-  ;; Soft-deleted teams must still resolve file→team-id→team-name on
-  ;; the nitrate path (same policy as load-team-names).
-  (let [actor   (th/create-profile* 1 {:is-active true})
-        team    (th/create-team* 1 {:profile-id (:id actor)})
-        project (th/create-project* 1 {:profile-id (:id actor)
-                                       :team-id (:id team)})
-        file    (th/create-file* 1 {:profile-id (:id actor)
-                                    :project-id (:id project)})]
-    (th/db-update! :team {:deleted-at (ct/now)} {:id (:id team)})
-    (with-redefs [cf/flags #{:admin-console}]
-      (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
-        (insert-audit-row! (:id actor) "export-binfile"
-                           {:file-id (:id file)})
-        (th/run-task! :audit-log-archive {})
-        (let [props (nitrate-event-props nitrate-mock)]
-          (t/is (= (:id team) (:team-id props)))
-          (t/is (= (:name team) (:team-name props))))
-        (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
-          (t/is (= 1 (count rows))))))))
+          (t/is (= 2 (count rows))))))))

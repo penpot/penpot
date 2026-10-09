@@ -81,6 +81,7 @@
     "add-team-to-organization"
     "cancel-organization-invitation"
     "change-organization-advanced-permission"
+    "create-export-binfile-job"
     "create-file"
     "create-organization"
     "create-organization-invitation"
@@ -98,7 +99,6 @@
     "delete-team"
     "delete-team-invitation"
     "delete-team-member"
-    "export-binfile"
     "leave-team"
     "move-project"
     "move-team-to-organization"
@@ -121,11 +121,6 @@
     "update-team-photo"
     "verify-token"})
 
-;; Event name -> props key holding a file uuid. Used to fill :team-id
-;; before shipping to nitrate when the producer did not set it.
-(def ^:private team-from-file-prop
-  {"export-binfile" :file-id})
-
 ;; Props id key -> email prop filled from profile.email (nitrate path only).
 ;; Some producers store ids as UUID strings (e.g. :user-who-send-invitation).
 (def ^:private id->email-prop
@@ -134,27 +129,13 @@
    :member-id                  :member-email
    :user-who-send-invitation   :user-who-send-invitation-email})
 
-(defn- props-uuid
-  "Return a UUID when `v` is a UUID or a parseable UUID string; else nil."
-  [v]
-  (uuid/coerce v))
-
-(defn- collect-file-ids-needing-team
-  [events]
-  (into #{}
-        (keep (fn [{:keys [name props]}]
-                (when-let [prop-key (get team-from-file-prop name)]
-                  (when-not (contains? props :team-id)
-                    (props-uuid (get props prop-key))))))
-        events))
-
 (defn- collect-team-ids-needing-name
   [events]
   (into #{}
         (comp (map :props)
               (keep (fn [props]
                       (when-let [team-id (and (not (contains? props :team-name))
-                                              (props-uuid (:team-id props)))]
+                                              (uuid/coerce (:team-id props)))]
                         team-id))))
         events))
 
@@ -164,24 +145,9 @@
         (mapcat (fn [{:keys [props]}]
                   (keep (fn [[id-key email-key]]
                           (when-not (contains? props email-key)
-                            (props-uuid (get props id-key))))
+                            (uuid/coerce (get props id-key))))
                         id->email-prop)))
         events))
-
-(defn- load-team-ids-by-file
-  "Map file id -> team id. Includes soft-deleted teams/projects/files —
-  nitrate enrich must still resolve historical audit props."
-  [conn file-ids]
-  (if (seq file-ids)
-    (let [arr  (db/create-array conn "uuid" file-ids)
-          rows (db/exec! conn
-                         ["SELECT f.id AS file_id, t.id AS team_id
-                             FROM file AS f
-                             JOIN project AS p ON (p.id = f.project_id)
-                             JOIN team AS t ON (t.id = p.team_id)
-                            WHERE f.id = ANY(?)" arr])]
-      (into {} (map (juxt :file-id :team-id) rows)))
-    {}))
 
 (defn- load-team-names
   [conn ids]
@@ -199,24 +165,11 @@
       (into {} (map (juxt :id :email) rows)))
     {}))
 
-(defn- maybe-assoc-team-id-from-file
-  [event file->team]
-  (if-let [prop-key (get team-from-file-prop (:name event))]
-    (let [props (:props event)]
-      (if (or (contains? props :team-id)
-              (nil? (get props prop-key)))
-        event
-        (if-let [team-id (when-let [file-id (props-uuid (get props prop-key))]
-                           (get file->team file-id))]
-          (assoc-in event [:props :team-id] team-id)
-          event)))
-    event))
-
 (defn- maybe-assoc-team-name
   [event team-names]
   (let [props (:props event)]
     (if-let [team-name (and (not (contains? props :team-name))
-                            (when-let [team-id (props-uuid (:team-id props))]
+                            (when-let [team-id (uuid/coerce (:team-id props))]
                               (get team-names team-id)))]
       (assoc-in event [:props :team-name] team-name)
       event)))
@@ -227,7 +180,7 @@
           (fn [props]
             (reduce-kv (fn [props id-key email-key]
                          (if-let [email (and (not (contains? props email-key))
-                                             (when-let [id (props-uuid (get props id-key))]
+                                             (when-let [id (uuid/coerce (get props id-key))]
                                                (get emails id)))]
                            (assoc props email-key email)
                            props))
@@ -236,17 +189,12 @@
 
 (defn- enrich-events-for-nitrate
   "Enrich allowlisted events before nitrate ingest:
-  1. Fill missing :team-id via `team-from-file-prop` (batched; includes
-     soft-deleted teams).
-  2. Fill missing :team-name from team id (including soft-deleted).
-  3. Fill missing emails from matching id keys (including soft-deleted
+  1. Fill missing :team-name from team id (including soft-deleted).
+  2. Fill missing emails from matching id keys (including soft-deleted
      profiles): :profile-email, :user-email, :member-email,
      :user-who-send-invitation-email."
   [{:keys [::db/conn]} events]
-  (let [file-ids    (collect-file-ids-needing-team events)
-        file->team  (load-team-ids-by-file conn file-ids)
-        events      (mapv #(maybe-assoc-team-id-from-file % file->team) events)
-        team-ids    (collect-team-ids-needing-name events)
+  (let [team-ids    (collect-team-ids-needing-name events)
         profile-ids (collect-profile-ids-needing-email events)
         team-names  (load-team-names conn team-ids)
         emails      (load-profile-emails conn profile-ids)]
