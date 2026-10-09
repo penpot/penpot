@@ -416,18 +416,47 @@
     (t/is (empty? (uc/failures situation)))
     (t/is (= red (fill-of (tm/shape-by-id situation (n/lineage-rect situation m)))))))
 
-(t/deftest known-failures-explain-only-what-happens
+(t/deftest failures-carry-what-differs
+  (let [situation (r/run-variant {:setup     setup/simple-component-with-copy
+                                  :operation (->WrongUndoEdit)})]
+    (t/is (= [#{[:object :copy-root :name]}
+              #{[:object :copy-root :name]}
+              #{[:object :copy-root :name]}]
+             (mapv :signature (uc/failures situation))))))
+
+(t/deftest signature-names-what-differs
+  (let [shape    {:id (thi/new-id! :shape) :name "A" :opacity 1}
+        other    {:id (thi/new-id! :other) :name "B"}
+        page-id  (thi/new-id! :page)
+        file     (fn [objects] {:data {:pages-index {page-id {:id page-id :objects objects}}}})]
+    (t/is (= #{[:object :shape :opacity] [:object :other :extra]}
+             (uc/signature (file {(:id shape) shape})
+                           (file {(:id shape) (assoc shape :opacity 0.5)
+                                  (:id other) other}))))
+    (t/is (= #{[:object :unlabelled :missing]}
+             (uc/signature (file {(uuid/next) shape}) (file {}))))))
+
+(t/deftest known-failures-pin-how-the-check-fails
   (let [edit      (tm/assign-id (->WrongUndoEdit))
         situation (r/run-variant {:setup     setup/simple-component-with-copy
                                   :operation edit})
-        known     {:bug "F0" :phases #{:undo :redo :variant-undo} :op edit}
-        other     {:bug "F1" :phases #{:variant-redo}}]
-    (t/is (= {:unexpected [] :resolved []}
-             (uc/verdict situation {:undo-check {:known-failures [known]}})))
+        pin       #{[:object :copy-root :name]}
+        known     {:bug "F0" :fails {:undo pin :redo pin :variant-undo pin} :op edit}
+        verdict   #(uc/verdict situation {:undo-check {:known-failures %}})]
+    (t/is (= {:unexpected [] :resolved []} (verdict [known])))
     (t/is (= [:undo :redo :variant-undo]
              (mapv :phase (:unexpected (uc/verdict situation {})))))
-    (t/is (= [other]
-             (:resolved (uc/verdict situation {:undo-check {:known-failures [known other]}}))))
-    (t/is (= [] (:resolved (uc/verdict situation
-                                       {:undo-check {:known-failures
-                                                     [known (assoc other :when (constantly false))]}}))))))
+    (t/testing "a failure that differs from its pin stays a failure"
+      (let [{:keys [unexpected resolved]}
+            (verdict [(assoc-in known [:fails :undo] #{[:object :copy-root :opacity]})])]
+        (t/is (= [:undo] (mapv :phase unexpected)))
+        (t/is (= [:undo] (mapv :phase resolved)))))
+    (t/testing "a pinned phase that does not fail is resolved"
+      (t/is (= [:variant-redo]
+               (mapv :phase (:resolved (verdict [(assoc-in known [:fails :variant-redo] pin)]))))))
+    (t/testing "a mark applies only where its step ran and its runner runs"
+      (t/is (= [] (:resolved (verdict [known (assoc known :op (tm/assign-id (->WrongUndoEdit)))]))))
+      (t/is (= [] (:resolved (verdict [known (assoc known :runners #{:frontend} :op nil)])))))
+    (t/testing "a mark must pin its failures"
+      (t/is (thrown? #?(:clj Exception :cljs :default)
+                     (verdict [(dissoc known :fails)]))))))

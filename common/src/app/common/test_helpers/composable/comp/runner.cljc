@@ -224,9 +224,7 @@
   (try
     (round-trip situation)
     (catch #?(:clj Exception :cljs :default) e
-      (uc/add-failure situation {:phase phase
-                                 :step step
-                                 :error (str (ex-message e) " " (pr-str (ex-data e)))}))))
+      (uc/add-error situation step phase (str (ex-message e) " " (pr-str (ex-data e)))))))
 
 (defn- check-step
   "The round trip of user step `op` (see `uc`): `before` is the normalized

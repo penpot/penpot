@@ -360,15 +360,12 @@
   (.then (settle! event)
          (fn [error]
            (if error
-             [(uc/add-failure situation {:phase phase :step step :error error}) false]
-             (let [index (undo-index)]
-               [(cond-> (uc/compare-states situation step phase expected (snapshot))
-                  (not= expected-index index)
-                  (uc/add-failure {:phase (keyword (str (name phase) "-index"))
-                                   :step  step
-                                   :error (str "undo index " index ", expected "
-                                               expected-index)}))
-                true])))))
+             [(uc/add-error situation step phase error) false]
+             [(-> situation
+                  (uc/compare-states step phase expected (snapshot))
+                  (uc/compare-index step (keyword (str (name phase) "-index"))
+                                    expected-index (undo-index)))
+              true]))))
 
 (defn- check-step
   "The round trip of user step `op`, given the snapshot `before` and the undo
@@ -397,7 +394,7 @@
               (.then (settle! event)
                      (fn [error]
                        (if error
-                         [(uc/add-failure situation {:phase phase :error error}) times]
+                         [(uc/add-error situation nil phase error) times]
                          (step (inc times)))))))]
     (step 0)))
 

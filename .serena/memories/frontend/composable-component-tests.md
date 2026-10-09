@@ -114,11 +114,16 @@ Two pure runners (no store, JVM + CLJS):
   redo all. Files compare through `app.common.test-helpers.normalize` (`thn/normalize-file`:
   drops file/component `:modified-at`, optionally `:position-data`; shapes as plain maps).
   Failures are recorded in the situation with labelled diffs (labels die with the variant, so
-  they are resolved when recorded); `uc/check!` asserts after the asserter. A case map's
-  `:undo-check` takes `{:off "reason"}` or `{:known-failures [{:bug "F41" :phases #{…} :op
-  <the case's node> :runners #{:pure :frontend} :when pred}]}`; a mark applies to variants of
-  its runners (`uc/with-runner`) where its `:op` ran and `:when` holds, and one that applies but
-  does not happen fails the case. The interpreter runs the same round trip on every `:user` and
+  they are resolved when recorded) and a `:signature`, the set of what differs
+  (`uc/signature`: `[:object <label> attr]`, `:missing`/`:extra`, `:page`/`:component` alike,
+  `[:undo-index n]`, `[:error]`; unlabelled shapes are `:unlabelled`); `uc/check!` asserts after
+  the asserter and prints the signature. A case map's `:undo-check` takes `{:off "reason"}` or
+  `{:known-failures [{:bug "F41" :fails {phase signature} :op <the case's node> :runners
+  #{:pure :frontend} :when pred}]}`: strict expected failures. A mark applies to variants of its
+  runners (`uc/with-runner`) where its `:op` ran and `:when` holds; it covers a failure only
+  when the signature is exactly the pinned one, and a pinned phase that does not fail as pinned
+  fails the case. Marks without `:fails` throw. Never edit a pin to make a case pass: a pin
+  changes only when the failure is understood, and the mark goes only in the fix commit. The interpreter runs the same round trip on every `:user` and
   `:frontend-only` event step through the real `dwu/undo`/`dwu/redo`, and also checks the
   workspace undo index (`:undo-index`/`:redo-index` phases): a step must add exactly one undo
   entry or group. File installs (assembly ops, reset) are its baselines. The interpreter

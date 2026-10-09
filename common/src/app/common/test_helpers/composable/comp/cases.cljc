@@ -126,9 +126,10 @@
     {:setup      setup/component-with-many-children
      :operation  (tm/in-sequence [move])
      ;; the undo of the sync's move leaves the copy children reordered
-     :undo-check {:known-failures [{:bug "F41"
-                                    :phases #{:undo :variant-undo}
-                                    :op move}]}
+     :undo-check {:known-failures [{:bug   "F41"
+                                    :fails {:undo         #{[:object :copy-root :shapes]}
+                                            :variant-undo #{[:object :copy-root :shapes]}}
+                                    :op    move}]}
      :asserter   (fn [situation]
                    (let [copy-root (setup/copy-root situation)
                          order     (vec (:shapes copy-root))
@@ -252,20 +253,56 @@
 (def ^:private base-color "#aaaaaa")
 (def ^:private swap-colors ["#ff0000" "#00ff00" "#0000ff"])   ; level 0/1/2 targets
 
+(def ^:private level-0-reflow-left
+  ;; what one undo of a first step at level 0 leaves in place
+  #{[:object :sync-main-innercopy-0 :component-id]
+    [:object :sync-main-innercopy-0 :shape-ref]
+    [:object :sync-main-innercopy-0 :shapes]
+    [:object :sync-main-innercopy-0 :touched]
+    [:object :sync-main-innercopy-0 :width]
+    [:object :sync-main-innercopy-0 :height]
+    [:object :sync-main-innercopy-0 :selrect]
+    [:object :sync-main-innercopy-1 :width]
+    [:object :sync-main-innercopy-1 :height]
+    [:object :sync-main-innercopy-1 :selrect]
+    [:object :sync-main-innercopy-2 :width]
+    [:object :sync-main-innercopy-2 :height]
+    [:object :sync-main-innercopy-2 :selrect]
+    [:object :unlabelled :component-id]
+    [:object :unlabelled :shapes]
+    [:object :unlabelled :missing]
+    [:object :unlabelled :extra]})
+
+(def ^:private level-1-reflow-left
+  ;; what one undo of a first step at level 1 leaves in place
+  #{[:object :unlabelled :component-id]
+    [:object :unlabelled :shape-ref]
+    [:object :unlabelled :shapes]
+    [:object :unlabelled :touched]
+    [:object :unlabelled :missing]
+    [:object :unlabelled :extra]
+    [:object :sync-main-innercopy-1 :width]
+    [:object :sync-main-innercopy-1 :height]
+    [:object :sync-main-innercopy-1 :selrect]
+    [:object :sync-main-innercopy-2 :width]
+    [:object :sync-main-innercopy-2 :height]
+    [:object :sync-main-innercopy-2 :selrect]})
+
 (defn- first-steps-break-undo
   "Known failures of the frontend round trip for the sweeps over `steps`, the
    optional steps at levels 0, 1 and 2: the first of them to run at level 0 or
    1 reflows the nested frames, and that reflow lands in undo entries of its
    own (F43), so one undo does not revert the whole step."
   [steps]
-  (let [mark (fn [op pred]
+  (let [mark (fn [op pred left entries]
                {:bug     "F43"
-                :phases  #{:undo :undo-index}
+                :fails   {:undo       left
+                          :undo-index #{[:undo-index entries]}}
                 :op      op
                 :runners #{:frontend}
                 :when    pred})]
-    [(mark (nth steps 0) (constantly true))
-     (mark (nth steps 1) #(not (tm/applied? % (nth steps 0))))]))
+    [(mark (nth steps 0) (constantly true) level-0-reflow-left 5)
+     (mark (nth steps 1) #(not (tm/applied? % (nth steps 0))) level-1-reflow-left 2)]))
 
 (defn swap-scenarios
   "Case L. SWAP SWEEP — build a 3-level nesting, then OPTIONALLY swap the
