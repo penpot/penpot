@@ -43,11 +43,23 @@
     (val entry)
     (lookup m [k])))
 
+(defn- normalized?
+  "Whether `v` is already token data as `normalize` returns it."
+  [v]
+  (and (map? v)
+       (contains? v :value)
+       (case (count v)
+         1 true
+         2 (string? (get v :type))
+         false)))
+
 (defn normalize
   "Coerces any accepted token input into token data."
   [v]
   (cond
-    ;; Fast path for `{:value .. :type ..}`, the shape penpot passes
+    (normalized? v) v
+
+    ;; Fast path for `{:value .. :type ..}` maps with other keys
     (and (map? v) (contains? v :value))
     (let [type (lookup-key v :type "type")
           metadata (lookup-key v :metadata "metadata")]
@@ -66,9 +78,16 @@
     {:value v}))
 
 (defn normalize-tokens
-  "Normalizes a flat map of token name to token input."
+  "Normalizes a flat map of token name to token input. Returns `tokens`
+  itself when it is already normalized."
   [tokens]
-  (into {} (map (fn [[k v]] [(key-name k) (normalize v)])) tokens))
+  (if (every? string? (keys tokens))
+    (reduce-kv (fn [acc k v]
+                 (let [v' (normalize v)]
+                   (if (identical? v v') acc (assoc acc k v'))))
+               tokens
+               tokens)
+    (into {} (map (fn [[k v]] [(key-name k) (normalize v)])) tokens)))
 
 (defn- nested?
   "A map is a nested token tree when it has a non `$` key with a map

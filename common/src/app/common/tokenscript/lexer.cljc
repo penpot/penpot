@@ -63,6 +63,10 @@
 
 ;; State ----------------------------------------------------------------------
 
+;; A record rather than a map: the lexer reads and updates the state for
+;; every token.
+(defrecord LexerState [text pos line column last-unitable tolerant? greedy-strings?])
+
 (defn make-lexer
   "Creates the lexer state for `text`. Options:
 
@@ -72,18 +76,24 @@
                      or a structural delimiter (inline mode)"
   ([text] (make-lexer text nil))
   ([text {:keys [tolerant? greedy-strings?]}]
-   {:text (or text "")
-    :pos 0
-    :line 1
-    :column 1
-    :last-unitable nil
-    :tolerant? (boolean tolerant?)
-    :greedy-strings? (boolean greedy-strings?)}))
+   (->LexerState (or text "") 0 1 1 nil (boolean tolerant?) (boolean greedy-strings?))))
 
-(defn- char-at
-  [{:keys [^String text]} i]
+(defn- char-of
+  "One char string at `i` of `text`, nil out of range."
+  [^String text i]
   (when (< -1 i (count text))
     (subs text i (inc i))))
+
+(defn- ch=
+  "Equality of two one char strings (or nil). JavaScript compares strings
+  by value with `identical?`, which skips the protocol dispatch of `=`."
+  [a b]
+  #?(:clj (= a b)
+     :cljs (identical? a b)))
+
+(defn- char-at
+  [st i]
+  (char-of (:text st) i))
 
 (defn- current
   [st]
@@ -93,12 +103,23 @@
   ([st] (peek-char st 1))
   ([st n] (char-at st (+ (:pos st) n))))
 
+;; Readers scan ahead by index and move the state once per token with
+;; `advance-to`, instead of building a new state for every char.
+
+(defn- advance-to
+  "State moved to position `end`, counting lines and columns."
+  [st end]
+  (let [text (:text st)]
+    (loop [i (:pos st) line (:line st) column (:column st)]
+      (if (< i end)
+        (if (ch= "\n" (char-of text i))
+          (recur (inc i) (inc line) 1)
+          (recur (inc i) line (inc column)))
+        (assoc st :pos end :line line :column column)))))
+
 (defn- advance
   [st]
-  (let [pos (:pos st)]
-    (if (= (char-at st pos) "\n")
-      (assoc st :pos (inc pos) :line (inc (:line st)) :column 1)
-      (assoc st :pos (inc pos) :column (inc (:column st))))))
+  (advance-to st (inc (:pos st))))
 
 (defn- lex-error
   [st code data]
@@ -112,7 +133,10 @@
 
 (defn- skip-whitespace
   [st]
-  (if (u/space? (current st)) (recur (advance st)) st))
+  (let [text (:text st)
+        start (:pos st)
+        end (loop [i start] (if (u/space? (char-of text i)) (recur (inc i)) i))]
+    (if (= end start) st (advance-to st end))))
 
 (defn- skip-line
   [st]
@@ -121,21 +145,17 @@
                (if (and (some? c) (not= c "\n")) (recur (advance st)) st)))]
     (if (= (current st) "\n") (eat st "\n") st)))
 
-(defn- comment?
-  [st]
-  (and (= (current st) "/") (= (peek-char st) "/")))
-
 (defn- token
   [type value st start-pos]
   {:type type :value value :line (:line st) :pos start-pos :end-pos (:pos st)})
 
-(defn- digit-start?
+(defn- digit-start-at?
   "Python like isdigit that also accepts numbers starting with `.`."
-  [st]
-  (let [c (current st)]
+  [text i]
+  (let [c (char-of text i)]
     (and (some? c)
          (or (u/digit? c)
-             (and (= c ".") (u/digit? (peek-char st)))))))
+             (and (ch= c ".") (u/digit? (char-of text (inc i))))))))
 
 (defn- valid-identifier-start?
   [c]
@@ -169,32 +189,35 @@
 
 (defn- read-number
   [st]
-  (let [start (:pos st)
-        initial (if (= (current st) ".") "0" "")
+  (let [text (:text st)
+        start (:pos st)
+        initial (if (= (char-of text start) ".") "0" "")
         ;; Every consumed char is part of the number
-        text-of (fn [st] (str initial (subs (:text st) start (:pos st))))]
-    (loop [st st has-point? false]
-      (let [c (current st)]
+        text-of (fn [end] (str initial (subs text start end)))
+        finish (fn [end]
+                 (let [st (advance-to st end)
+                       tok (token :number (text-of end) st start)]
+                   [tok (assoc st :last-unitable tok)]))]
+    (loop [i start has-point? false]
+      (let [c (char-of text i)]
         (cond
           (and (some? c) (u/digit? c))
-          (recur (advance st) has-point?)
+          (recur (inc i) has-point?)
 
           (= c ".")
           (cond
             ;; A dot not followed by a digit is a method call dot (1.to_string())
-            (not (u/digit? (peek-char st)))
-            (let [tok (token :number (text-of st) st start)]
-              [tok (assoc st :last-unitable tok)])
+            (not (u/digit? (char-of text (inc i))))
+            (finish i)
 
             has-point?
-            (lex-error st :lexer/multiple-decimal-points {:value (str (text-of st) c)})
+            (lex-error (advance-to st i) :lexer/multiple-decimal-points {:value (str (text-of i) c)})
 
             :else
-            (recur (advance st) true))
+            (recur (inc i) true))
 
           :else
-          (let [tok (token :number (text-of st) st start)]
-            [tok (assoc st :last-unitable tok)]))))))
+          (finish i))))))
 
 (defn- classify-word
   "Returns the keyword/format/string token for an identifier-like word."
@@ -216,55 +239,59 @@
   (let [start (:pos st)
         greedy? (and (:greedy-strings? st) (not (valid-format-position? st start)))
         check (if greedy? valid-string-element-greedy? valid-string-element?)]
-    (loop [st st simple? true]
-      (let [c (current st)]
+    (loop [i start simple? true]
+      (let [c (char-of (:text st) i)]
         (if (check c)
-          (recur (advance st)
+          (recur (inc i)
                  (and simple? (or (u/alphanumeric? c) (= c "-") (= c "_"))))
-          [(classify-word st (subs (:text st) start (:pos st)) start simple?) st])))))
+          (let [st (advance-to st i)]
+            [(classify-word st (subs (:text st) start i) start simple?) st]))))))
 
 (defn- read-reference
   [st]
   (let [st (eat st "{")
+        text (:text st)
         ref-start (:pos st)
         ;; The name is the consumed text without whitespace
-        text-of (fn [st spaces?]
-                  (let [raw (subs (:text st) ref-start (:pos st))]
+        text-of (fn [end spaces?]
+                  (let [raw (subs text ref-start end)]
                     (if spaces?
                       (->> raw (map str) (remove u/space?) (apply str))
                       raw)))]
-    (loop [st st spaces? false]
-      (let [c (current st)]
+    (loop [i ref-start spaces? false]
+      (let [c (char-of text i)]
         (cond
-          (and (= c "{") (:tolerant? st))
-          [(token :partial-reference (text-of st spaces?) st ref-start) st]
+          (and (ch= c "{") (:tolerant? st))
+          (let [st (advance-to st i)]
+            [(token :partial-reference (text-of i spaces?) st ref-start) st])
 
-          (= c "{")
-          (lex-error st :lexer/unterminated-reference {})
+          (ch= c "{")
+          (lex-error (advance-to st i) :lexer/unterminated-reference {})
 
           (nil? c)
-          (if (:tolerant? st)
-            [(token :partial-reference (text-of st spaces?) st ref-start) st]
-            (lex-error st :lexer/unterminated-reference {}))
+          (let [st (advance-to st i)]
+            (if (:tolerant? st)
+              [(token :partial-reference (text-of i spaces?) st ref-start) st]
+              (lex-error st :lexer/unterminated-reference {})))
 
-          (= c "}")
-          (let [result (text-of st spaces?)]
+          (ch= c "}")
+          (let [st (advance-to st i)
+                result (text-of i spaces?)]
             (if (= result "")
               (if (:tolerant? st)
                 [(token :partial-reference "" st ref-start) st]
                 (lex-error st :lexer/empty-variable-name {}))
-              (let [ref-end (:pos st)
-                    st' (eat st "}")
+              (let [st' (eat st "}")
                     tok {:type :reference :value result :line (:line st')
-                         :pos ref-start :end-pos ref-end}]
+                         :pos ref-start :end-pos i}]
                 ;; Format adjacency uses the position after the closing brace
                 [tok (assoc st' :last-unitable (assoc tok :end-pos (:pos st')))])))
 
           (u/space? c)
-          (recur (advance st) true)
+          (recur (inc i) true)
 
           :else
-          (recur (advance st) spaces?))))))
+          (recur (inc i) spaces?))))))
 
 (defn- read-explicit-string
   [st quote]
@@ -309,12 +336,15 @@
 
 (defn- read-hex-color
   [st]
-  (let [start (:pos st)
-        [st result] (loop [st st result ""]
-                      (let [c (current st)]
-                        (if (and (some? c) (or (u/alpha? c) (digit-start? st) (= c "#")))
-                          (recur (advance st) (str result c))
-                          [st result])))]
+  (let [text (:text st)
+        start (:pos st)
+        end (loop [i start]
+              (let [c (char-of text i)]
+                (if (and (some? c) (or (u/alpha? c) (digit-start-at? text i) (= c "#")))
+                  (recur (inc i))
+                  i)))
+        result (subs text start end)
+        st (advance-to st end)]
     (if (contains? #{4 5 7 9} (count result))
       [(token :hex-color result st start) st]
       (if (:tolerant? st)
@@ -326,8 +356,9 @@
   "Consumes `s` and returns a token of `type` with `value`."
   ([st type value s] (simple-token st type value s false))
   ([st type value s unitable?]
+   ;; The caller has checked that the input starts with `s`
    (let [start (:pos st)
-         st (reduce eat st (map str (seq s)))
+         st (advance-to st (+ start (count s)))
          tok (token type value st start)]
      [tok (if unitable? (assoc st :last-unitable tok) st)])))
 
@@ -337,51 +368,57 @@
   tokens are produced."
   [st]
   (let [st (skip-whitespace st)
-        c (current st)
-        p (peek-char st)]
+        text (:text st)
+        pos (:pos st)
+        c (char-of text pos)
+        p (char-of text (inc pos))]
     (cond
       (nil? c)
-      [(token :eof nil st (:pos st)) st]
+      [(token :eof nil st pos) st]
 
-      (comment? st)
+      (and (ch= c "/") (ch= p "/"))
       (recur (skip-line st))
 
-      (digit-start? st) (read-number st)
-      (or (= c "'") (= c "\"")) (read-explicit-string st c)
-      (= c "`") (read-template-string st)
+      (digit-start-at? text pos) (read-number st)
+      (or (ch= c "'") (ch= c "\"")) (read-explicit-string st c)
+      (ch= c "`") (read-template-string st)
       (valid-identifier-start? c) (read-word st)
-      (= c "{") (read-reference st)
-      (= c "[") (simple-token st :lblock "[" "[")
-      (= c "]") (simple-token st :rblock "]" "]")
-      (and (= c "!") (= p "=")) (simple-token st :is-not-eq "!=" "!=")
-      (= c "+") (simple-token st :operation "+" "+")
-      (= c "-") (simple-token st :operation "-" "-")
-      (= c "*") (simple-token st :operation "*" "*")
-      (= c "/") (simple-token st :operation "/" "/")
-      (= c "^") (simple-token st :operation "^" "^")
-      (= c "!") (simple-token st :operation "!" "!")
-      (= c "(") (simple-token st :lparen "(" "(")
-      (= c ")") (simple-token st :rparen ")" ")" true)
-      (= c ",") (simple-token st :comma "," ",")
-      (= c ".") (simple-token st :dot "." ".")
-      (= c "#") (read-hex-color st)
-      (= c "%") (simple-token st :format "%" "%")
-      (and (= c "=") (= p "=")) (simple-token st :is-eq "==" "==")
-      (= c "=") (simple-token st :assign "=" "=")
-      (and (= c ">") (= p "=")) (simple-token st :is-gt-eq ">=" ">=")
-      (= c ">") (simple-token st :is-gt ">" ">")
-      (and (= c "<") (= p "=")) (simple-token st :is-lt-eq "<=" "<=")
-      (= c "<") (simple-token st :is-lt "<" "<")
-      (= c ";") (simple-token st :semicolon ";" ";")
-      (and (= c "&") (= p "&")) (simple-token st :logic-and "&&" "&&")
-      (and (= c "|") (= p "|")) (simple-token st :logic-or "||" "||")
-      (= c ":") (simple-token st :colon ":" ":")
-
-      (:tolerant? st)
-      (recur (advance st))
+      (ch= c "{") (read-reference st)
 
       :else
-      (lex-error st :lexer/invalid-character {:char c :position (:pos st)}))))
+      (case c
+        "[" (simple-token st :lblock "[" "[")
+        "]" (simple-token st :rblock "]" "]")
+        "!" (if (ch= p "=")
+              (simple-token st :is-not-eq "!=" "!=")
+              (simple-token st :operation "!" "!"))
+        "+" (simple-token st :operation "+" "+")
+        "-" (simple-token st :operation "-" "-")
+        "*" (simple-token st :operation "*" "*")
+        "/" (simple-token st :operation "/" "/")
+        "^" (simple-token st :operation "^" "^")
+        "(" (simple-token st :lparen "(" "(")
+        ")" (simple-token st :rparen ")" ")" true)
+        "," (simple-token st :comma "," ",")
+        "." (simple-token st :dot "." ".")
+        "#" (read-hex-color st)
+        "%" (simple-token st :format "%" "%")
+        "=" (if (ch= p "=")
+              (simple-token st :is-eq "==" "==")
+              (simple-token st :assign "=" "="))
+        ">" (if (ch= p "=")
+              (simple-token st :is-gt-eq ">=" ">=")
+              (simple-token st :is-gt ">" ">"))
+        "<" (if (ch= p "=")
+              (simple-token st :is-lt-eq "<=" "<=")
+              (simple-token st :is-lt "<" "<"))
+        ";" (simple-token st :semicolon ";" ";")
+        ":" (simple-token st :colon ":" ":")
+        (cond
+          (and (ch= c "&") (ch= p "&")) (simple-token st :logic-and "&&" "&&")
+          (and (ch= c "|") (ch= p "|")) (simple-token st :logic-or "||" "||")
+          (:tolerant? st) (recur (advance st))
+          :else (lex-error st :lexer/invalid-character {:char c :position pos}))))))
 
 (defn tokenize
   "Tokenizes the whole input, returning a vector of tokens including the

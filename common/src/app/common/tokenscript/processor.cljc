@@ -151,8 +151,8 @@
      :parsed {}            ; name -> {:ast :deps}
      :sub-fields {}        ; field path -> {:parent :field-path}
      :structured {}        ; name -> {:fields [[path expr]]}
-     :prefixes {}          ; prefix -> #{member token}
-     :direct-children {}   ; prefix -> #{short name}
+     ;; :prefixes        prefix -> #{member token}, built on demand
+     ;; :direct-children prefix -> #{short name}, built on demand
      :graph {}             ; name -> #{dep}
      :resolved {}          ; name -> symbol | error map
      :cache {}             ; reference path -> value
@@ -268,6 +268,13 @@
            :prefixes (persist prefixes)
            :direct-children (persist children))))
 
+(defn- ensure-prefix-index
+  "State with `:prefixes` and `:direct-children`. The index is only needed
+  for references to a group (`{colors}`) and for incremental updates, so
+  builds whose references all name tokens never compute it."
+  [st]
+  (if (contains? st :prefixes) st (index-prefixes st)))
+
 ;; Parsed values are cached across builds: the result only depends on the
 ;; text, and penpot resolves the same values again on every set or theme
 ;; change and on every edit. Entries are immutable data and shared.
@@ -348,8 +355,7 @@
 
 (defn- parse-all
   [st]
-  (-> (reduce-kv parse-token st (:tokens st))
-      (index-prefixes)))
+  (reduce-kv parse-token st (:tokens st)))
 
 ;; Resolution phase -----------------------------------------------------------
 
@@ -426,15 +432,15 @@
     (let [v (get-in st [:resolved dep])]
       [st (if (err/error-map? v) v :ok)])
 
-    (and (contains? (:prefixes st) dep) (not (token? st dep)))
-    [(resolve-prefix st dep) :ok]
-
     :else
-    (if-let [parent (parent-token st dep)]
-      (let [st (resolve-virtual-child st dep parent)
-            v (get-in st [:resolved dep])]
-        [st (if (err/error-map? v) v :ok)])
-      [(update st :missing conj dep) :missing])))
+    (let [st (ensure-prefix-index st)]
+      (if (contains? (:prefixes st) dep)
+        [(resolve-prefix st dep) :ok]
+        (if-let [parent (parent-token st dep)]
+          (let [st (resolve-virtual-child st dep parent)
+                v (get-in st [:resolved dep])]
+            [st (if (err/error-map? v) v :ok)])
+          [(update st :missing conj dep) :missing])))))
 
 (defn- constants-table
   "Initial variable table for one evaluation. Mutable constants are copied
@@ -577,16 +583,29 @@
   (let [names (public-names st)
         resolved (:resolved st)
         tokens (:tokens st)
-        issues (select-names (:issues st) names)]
-    {:tokens (persistent!
-              (reduce (fn [acc name]
-                        (let [v (get resolved name)]
-                          (assoc! acc name (if (err/error-map? v) (get-in tokens [name :value]) v))))
-                      (transient {})
-                      names))
-     :resolved (select-names resolved names)
+        issues (select-names (:issues st) names)
+        no-sub-fields? (empty? (:sub-fields st))
+        ;; Without composite sub-fields or failed virtual children the
+        ;; resolved map holds exactly the input names and is reused.
+        exact? (and no-sub-fields?
+                    (= (count resolved) (count tokens))
+                    (every? #(contains? tokens %) (keys resolved)))]
+    {:tokens (if exact?
+               (reduce-kv (fn [acc name v]
+                            (if (err/error-map? v)
+                              (assoc acc name (get-in tokens [name :value]))
+                              acc))
+                          resolved
+                          resolved)
+               (persistent!
+                (reduce (fn [acc name]
+                          (let [v (get resolved name)]
+                            (assoc! acc name (if (err/error-map? v) (get-in tokens [name :value]) v))))
+                        (transient {})
+                        names)))
+     :resolved (if exact? resolved (select-names resolved names))
      :issues (when (seq issues) issues)
-     :graph (select-names (:graph st) names)
+     :graph (if no-sub-fields? (:graph st) (select-names (:graph st) names))
      :state st}))
 
 (defn- run
@@ -630,7 +649,8 @@
   child parents, so a change to a token dirties everything that could
   observe it."
   [st]
-  (let [graph (:graph st)
+  (let [st (ensure-prefix-index st)
+        graph (:graph st)
         edges (for [[node deps] graph
                     dep deps
                     source (cond

@@ -33,6 +33,8 @@
   (let [[tok lexer-state] (lex/next-token lexer-state)]
     (volatile! {:lexer lexer-state
                 :current tok
+                ;; peeked `[token lexer-state]` pairs after :current
+                :ahead []
                 :references #{}
                 :incomplete []
                 :tolerant? (boolean tolerant?)})))
@@ -49,22 +51,37 @@
   [p]
   (:tolerant? @p))
 
+(defn- lookahead
+  "The next `n` `[token lexer-state]` pairs after the current token, fewer
+  at EOF. Peeked tokens are kept until `eat` consumes them, so each token
+  is lexed once; a lexer error still surfaces when the token is first
+  peeked or consumed."
+  [p n]
+  (let [{:keys [ahead lexer]} @p
+        at-eof? (fn [ahead] (and (seq ahead) (= :eof (:type (first (peek ahead))))))]
+    (if (or (>= (count ahead) n) (at-eof? ahead))
+      ahead
+      (let [ahead (loop [ahead ahead]
+                    (if (or (>= (count ahead) n) (at-eof? ahead))
+                      ahead
+                      (recur (conj ahead (lex/next-token (if (seq ahead) (second (peek ahead)) lexer))))))]
+        (vswap! p assoc :ahead ahead)
+        ahead))))
+
 (defn- peek-token
   "Next token after the current one, nil at EOF."
   [p]
-  (let [[tok] (lex/next-token (:lexer @p))]
+  (let [[tok] (first (lookahead p 1))]
     (when-not (= :eof (:type tok)) tok)))
 
 (defn- peek-tokens
   "Up to `n` tokens after the current one (stops at EOF), nil if none."
   [p n]
-  (loop [st (:lexer @p) i 0 acc []]
-    (if (= i n)
-      (seq acc)
-      (let [[tok st] (lex/next-token st)]
-        (if (= :eof (:type tok))
-          (seq acc)
-          (recur st (inc i) (conj acc tok)))))))
+  (->> (lookahead p n)
+       (take n)
+       (map first)
+       (take-while #(not= :eof (:type %)))
+       (seq)))
 
 (defn- add-reference
   [p ref]
@@ -114,8 +131,9 @@
   [p type]
   (let [tok (current p)]
     (if (= (:type tok) type)
-      (let [[next-tok lexer] (lex/next-token (:lexer @p))]
-        (vswap! p assoc :current next-tok :lexer lexer)
+      (let [ahead (:ahead @p)
+            [next-tok lexer] (if (seq ahead) (first ahead) (lex/next-token (:lexer @p)))]
+        (vswap! p assoc :current next-tok :lexer lexer :ahead (if (seq ahead) (subvec ahead 1) []))
         tok)
       (parse-error p :parser/expected-token-type
                    {:expected (lex/token-type-name type)
