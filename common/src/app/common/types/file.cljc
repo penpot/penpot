@@ -680,7 +680,8 @@
 
 (defn find-asset-type-usages
   "Find all usages of an asset in a file (may be in pages or in the components
-  of the local library).
+  of the local library, deleted ones included, since they keep their shapes
+  to be restored and to resolve their remaining copies).
 
   Returns a list ((asset ((container shapes) (container shapes)...))...)"
   [file-data library-data asset-type]
@@ -696,12 +697,17 @@
             (when (d/not-empty? instances)
               [[container instances]])))
 
+        containers
+        (concat (containers-seq file-data)
+                (map #(ctn/make-container % :component)
+                     (ctkl/deleted-components-seq file-data)))
+
         find-asset-usages
-        (fn [file-data asset]
-          (mapcat #(find-usages-in-container % asset) (containers-seq file-data)))]
+        (fn [asset]
+          (mapcat #(find-usages-in-container % asset) containers))]
 
     (mapcat (fn [asset]
-              (let [instances (find-asset-usages file-data asset)]
+              (let [instances (find-asset-usages asset)]
                 (when (d/not-empty? instances)
                   [[asset instances]])))
             assets)))
