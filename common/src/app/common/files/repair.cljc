@@ -45,24 +45,50 @@
 
 (defmethod repair-error :parent-not-found
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [repair-shape
+  (let [objects (:objects (ctpl/get-page file-data page-id))
+        repair-shape
         (fn [shape]
           ;; Set parent to root frame.
           (log/debug :hint "  -> set to " :parent-id uuid/zero)
-          (assoc shape :parent-id uuid/zero))]
+          (assoc shape :parent-id uuid/zero))
+
+        repair-root
+        (fn [root]
+          ;; Add every shape without parent, not only this one: all repairs
+          ;; are built from the same file data and each one sets the whole
+          ;; `:shapes` list, so with one shape per repair only the last one
+          ;; would be kept
+          (let [listed   (set (:shapes root))
+                orphans  (->> (vals objects)
+                              (filter #(and (not (cfh/root? %))
+                                            (not (contains? objects (:parent-id %)))
+                                            (not (contains? listed (:id %)))))
+                              (map :id))]
+            (update root :shapes (fnil into []) orphans)))]
 
     (log/debug :hint "repairing shape :parent-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+        (pcb/update-shapes [(:id shape)] repair-shape)
+        (pcb/update-shapes [uuid/zero] repair-root))))
 
 (defmethod repair-error :child-not-in-parent
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [repair-shape
+  (let [objects (:objects (ctpl/get-page file-data page-id))
+        repair-shape
         (fn [parent-shape]
-          ;; Add shape to parent's children list
+          ;; Add every unlisted child, not only this one: all repairs are
+          ;; built from the same file data and each one sets the whole
+          ;; `:shapes` list, so with one child per repair only the last
+          ;; one would be kept
           (log/debug :hint "  -> add children to" :parent-id (:id parent-shape))
-          (update parent-shape :shapes conj (:id shape)))]
+          (let [listed   (set (:shapes parent-shape))
+                unlisted (->> (vals objects)
+                              (filter #(and (= (:parent-id %) (:id parent-shape))
+                                            (not (cfh/root? %))
+                                            (not (contains? listed (:id %)))))
+                              (map :id))]
+            (update parent-shape :shapes (fnil into []) unlisted)))]
 
     (log/debug :hint "repairing shape :child-not-in-parent" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)

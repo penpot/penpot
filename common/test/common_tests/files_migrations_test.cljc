@@ -554,3 +554,54 @@
     (t/is (contains? (:migrations file') migration-id) "migration id persisted")
     (t/is (= "30" (:stroke-width-top applied'))
           "legacy token applied to the sides")))
+
+(t/deftest migration-0032-adds-unlisted-children-to-their-parent
+  (let [migration-id "0032-fix-children-not-in-parent"
+        page-id      (uuid/next)
+        parent-id    (uuid/next)
+        listed-id    (uuid/next)
+        unlisted1-id (uuid/next)
+        unlisted2-id (uuid/next)
+        orphan-id    (uuid/next)
+        root         (cts/setup-shape {:id uuid/zero :type :frame :shapes [parent-id orphan-id]})
+        parent       (cts/setup-shape {:id parent-id :type :frame :parent-id uuid/zero
+                                       :shapes [listed-id]})
+        child        (fn [id parent-id]
+                       (cts/setup-shape {:id id :type :rect :parent-id parent-id}))
+        data         {:pages-index
+                      {page-id
+                       {:objects {uuid/zero    root
+                                  parent-id    parent
+                                  listed-id    (child listed-id parent-id)
+                                  unlisted1-id (child unlisted1-id parent-id)
+                                  unlisted2-id (child unlisted2-id parent-id)
+                                  orphan-id    (child orphan-id (uuid/next))}}}}
+        data'        (cfm/migrate-data data migration-id)
+        objects'     (get-in data' [:pages-index page-id :objects])
+        shapes'      (get-in objects' [parent-id :shapes])]
+
+    (t/is (= listed-id (first shapes')) "already listed children keep their place")
+    (t/is (= #{listed-id unlisted1-id unlisted2-id} (set shapes'))
+          "unlisted children added to the parent")
+    (t/is (= 3 (count shapes')) "no duplicated children")
+    (t/is (= [parent-id orphan-id] (get-in objects' [uuid/zero :shapes]))
+          "root unchanged")
+    (t/is (= (get-in data [:pages-index page-id :objects orphan-id])
+             (get objects' orphan-id))
+          "shapes whose parent does not exist are left untouched")
+    (t/is (= data' (cfm/migrate-data data' migration-id))
+          "migration is idempotent")))
+
+(t/deftest migration-0032-adds-unlisted-children-in-components
+  (let [migration-id "0032-fix-children-not-in-parent"
+        component-id (uuid/next)
+        main-id      (uuid/next)
+        child-id     (uuid/next)
+        data         {:components
+                      {component-id
+                       {:objects {main-id  (cts/setup-shape {:id main-id :type :frame :shapes []})
+                                  child-id (cts/setup-shape {:id child-id :type :rect
+                                                             :parent-id main-id})}}}}
+        data'        (cfm/migrate-data data migration-id)]
+
+    (t/is (= [child-id] (get-in data' [:components component-id :objects main-id :shapes])))))

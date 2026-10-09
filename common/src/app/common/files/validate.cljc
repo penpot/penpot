@@ -797,9 +797,10 @@
     (check-variant-component component file)))
 
 (defn- get-orphan-shapes
-  "Return the ids of shapes whose parent does not exist in the objects
-  map (i.e. shapes unreachable from the root traversal). The root
-  shape itself is excluded since it is always validated separately.
+  "Return the ids of shapes unreachable from the root traversal: shapes
+  whose parent does not exist in the objects map, or whose parent exists
+  but does not list them in its `:shapes`. The root shape itself is
+  excluded since it is always validated separately.
 
   Implemented with `reduce-kv` rather than a `map`/`filter` pipeline.
   The previous implementation mapped over `objects` and returned a
@@ -808,14 +809,17 @@
   orphaned shapes were silently skipped.  The `reduce-kv` approach
   builds a plain vector of IDs and never yields `nil` entries."
   [{:keys [objects] :as _page}]
-  (persistent!
-   (reduce-kv (fn [result id shape]
-                (if (and (not (cfh/root? shape))
-                         (not (contains? objects (:parent-id shape))))
-                  (conj! result id)
-                  result))
-              (transient [])
-              objects)))
+  (let [children-sets (or *children-sets* (build-children-sets objects))]
+    (persistent!
+     (reduce-kv (fn [result id shape]
+                  ;; A missing parent has no entry in `children-sets`,
+                  ;; so this also covers shapes whose parent does not exist
+                  (if (and (not (cfh/root? shape))
+                           (not (contains? (get children-sets (:parent-id shape)) id)))
+                    (conj! result id)
+                    result))
+                (transient [])
+                objects))))
 
 (defn check-tokens
   "Check tokens in the file. The internal structure should be correct because
