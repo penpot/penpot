@@ -53,6 +53,17 @@ as the backend does (validate + `cfr/repair-file` until valid, at most 10 passes
 `tm/known-failure`. A deleted component's objects are reached with `ctkl/get-component data id true`
 (`thc/get-component` skips deleted ones).
 
+## Component sync benchmark
+
+`common/dev/bench/component_sync.clj` times component sync on fixed-size worlds (one main into
+10/100/1000 copies, 3 nesting levels, a chain of dependents, a variant switch, a library update).
+Each world checks its result (how many rects end red) so it never times a no-op. Run from
+`common/`: `scripts/bench-components` compares with `dev/bench/component_sync_baseline.edn` and
+exits 1 when a world's lower quantile is more than 10% slower; `scripts/bench-components record`
+rewrites the baseline (only on purpose, saying why). It takes about 4 minutes. Every commit that
+touches sync, swap or change application runs it and quotes the table in its message. The lower
+quantile is compared because the mean moves with background load (devenv watchers) and GC.
+
 ## Geometry setup caution
 
 For geometry-sensitive tests, read `mem:common/geometry-invariants` before positioning shapes. Use geometry-preserving helpers or production change helpers rather than direct single-field edits.
