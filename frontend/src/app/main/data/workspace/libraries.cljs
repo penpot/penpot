@@ -1401,11 +1401,13 @@
                  (rx/map first))
 
             ;; Barriers open before async inspection and close after detection.
+            ;; Every local commit opens one, so a wait covers the watcher's
+            ;; decision for any commit: sync, only touch, or drop.
             pending-sync-barriers* (atom #{})
 
             start-sync-barrier
-            (fn [{:keys [file-id save-undo?] :as event}]
-              (let [task (when (and save-undo? (uuid? file-id))
+            (fn [{:keys [file-id] :as event}]
+              (let [task (when (uuid? file-id)
                            (wrf/start! :sync-file [file-id]))]
                 (when task
                   (swap! pending-sync-barriers* conj task))
@@ -1423,18 +1425,31 @@
               (doseq [[[_ task] _] batch]
                 (finish-sync-barrier! task)))
 
-            commits-s
+            local-commits-s
             (->> stream
                  (rx/filter dch/commit?)
                  (rx/map deref)
                  (rx/filter #(= :local (:source %)))
-                 ;; Translation commits never propagate component changes.
-                 (rx/filter (complement :translation?))
-                 ;; Derived / corrective commits (font-load selrect fix,
-                 ;; position-data regen) are not user component edits.
-                 (rx/filter (complement :skip-component-sync?))
                  ;; Keep waits pending while component changes are checked.
                  (rx/map start-sync-barrier)
+                 (rx/share))
+
+            ;; Translation commits never propagate component changes. Derived /
+            ;; corrective commits (font-load selrect fix, position-data regen)
+            ;; are not user component edits.
+            dropped-commit?
+            (fn [[{:keys [translation? skip-component-sync?]} _]]
+              (or translation? skip-component-sync?))
+
+            dropped-commits-s
+            (->> local-commits-s
+                 (rx/filter dropped-commit?)
+                 (rx/tap (comp finish-sync-barrier! second))
+                 (rx/ignore))
+
+            commits-s
+            (->> local-commits-s
+                 (rx/filter (complement dropped-commit?))
                  ;; Paired as it arrives, so later commits in the same batch
                  ;; cannot hide the shapes this one moved or deleted.
                  (rx/with-latest-from workspace-buffer-s)
@@ -1502,6 +1517,7 @@
         (when (or (contains? cf/flags :component-thumbnails)
                   (features/active-feature? state "render-wasm/v1"))
           (->> (rx/merge
+                dropped-commits-s
                 component-events-s
 
                 ;; WASM only: render the thumbnail on every component
