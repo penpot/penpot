@@ -199,16 +199,30 @@ const transports: LogTransportProvider[] = [consoleTransport, fileTransport, lok
 export const logFilePath: string | undefined = fileTransport.getFilePath();
 
 /**
+ * The pino transport targets to configure, empty when the logger writes to stdout directly.
+ *
+ * @param env - environment to inspect, injectable for tests
+ * @returns the active transport targets, empty inside a node:test child process
+ */
+export function logTransportTargets(env: NodeJS.ProcessEnv = process.env): TransportTargetSpec[] {
+    if (env.NODE_TEST_CONTEXT !== undefined) {
+        return [];
+    }
+    return transports.map((t) => t.getTarget()).filter((target): target is TransportTargetSpec => target !== null);
+}
+
+const transportTargets = logTransportTargets();
+
+/**
  * Logger instance configured with the active transports (console, optional file, optional Loki).
+ *
+ * Inside a node:test child process the transports are skipped and the logger writes to stdout,
+ * so the test process does not outlive its tests over a transport worker thread.
  */
 export const logger = pino({
     level: LOG_LEVEL,
     timestamp: pino.stdTimeFunctions.isoTime,
-    transport: {
-        targets: transports
-            .map((t) => t.getTarget())
-            .filter((target): target is TransportTargetSpec => target !== null),
-    },
+    ...(transportTargets.length > 0 ? { transport: { targets: transportTargets } } : {}),
 });
 
 /**
