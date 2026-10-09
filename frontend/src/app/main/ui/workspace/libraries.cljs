@@ -819,7 +819,7 @@
 
     [:div {:class (stl/css :lib-section)}
      [:> title-bar* {:collapsable false
-                     :title       "ASSETS IN THIS FILE"
+                     :title       (tr "workspace.libraries.assets-in-this-file")
                      :class       (stl/css :title-spacing-lib)}]
      [:div {:class (stl/css :section-list)}
       [:div {:class (stl/css :section-list-publish)}
@@ -916,7 +916,7 @@
            (tr "workspace.libraries.empty.no-connected-libraries")]
           [:button {:class (stl/css :go-to-shared-button)
                     :on-click go-to-shared}
-           "Add a shared library"]])]]]))
+           (tr "workspace.libraries.add-shared-library")]])]]]))
 
 
 (defn- extract-assets
@@ -1153,7 +1153,7 @@
         tabs
         (mf/with-memo [token-lib-sync?]
           (if token-lib-sync?
-            [{:label "This file"
+            [{:label (tr "workspace.libraries.this-file")
               :id "file"}
              {:label (tr "workspace.libraries.libraries")
               :id "libraries"}
