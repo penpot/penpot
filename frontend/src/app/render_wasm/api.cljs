@@ -344,20 +344,11 @@
 (declare request-render-preserving-target)
 (declare render-pending?)
 
-;; These are the type of frames we have in our
-;; render pipeline.
-(def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
-(def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
-(def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
-(def ^:const FRAME_TYPE_VIEWPORT_READY 3) ;; Viewport presented; interest tiles may still be pending.
-
 (defn- needs-more-render-frames?
   "True when WASM still has progressive tile work (visible or interest ring)."
   []
-  (or (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
-      (= wasm/internal-frame-type FRAME_TYPE_VIEWPORT_READY)))
-
-(def ^:const RENDER-FLAG-SYNC-TILES 4) ;; Rebuild tile index without ending fast mode (pan/zoom pause).
+  (or (= wasm/internal-frame-type wasm/FRAME_TYPE_PARTIAL)
+      (= wasm/internal-frame-type wasm/FRAME_TYPE_VIEWPORT_READY)))
 
 (defn- internal-render
   ([]
@@ -455,7 +446,7 @@
     ;; one-shot on both sides: WASM clears it when the render loop starts, so
     ;; the progressive continuation frames behave normally.
     (if (compare-and-set! preserve-target-render? true false)
-      (internal-render timestamp (bit-or wasm/internal-frame-type RENDER-FLAG-SYNC-TILES))
+      (internal-render timestamp (bit-or wasm/internal-frame-type wasm/RENDER_FLAG_SYNC_TILES))
       (internal-render timestamp))
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
@@ -660,7 +651,7 @@
     (timers/cancel-af! frame-id)
     (set! wasm/internal-frame-id nil))
   (reset! pending-render false)
-  (set! wasm/internal-frame-type FRAME_TYPE_NONE))
+  (set! wasm/internal-frame-type wasm/FRAME_TYPE_NONE))
 
 (defn- register-deferred-render!
   []
@@ -1483,7 +1474,7 @@
     ;; this implicitly (`zoom_changed`); this extends it to pan/resize-triggered
     ;; ends (e.g. selecting a shape opens the options panel and resizes the
     ;; viewport), which previously blanked.
-    (internal-render (js/performance.now) RENDER-FLAG-SYNC-TILES)))
+    (internal-render (js/performance.now) wasm/RENDER_FLAG_SYNC_TILES)))
 
 (def render-finish
   (letfn [(do-render []
@@ -1492,7 +1483,7 @@
             (when (initialized?)
               (if (view-gesture-active?)
                 ;; Pan/zoom pause: render without ending the interaction.
-                (internal-render (js/performance.now) RENDER-FLAG-SYNC-TILES)
+                (internal-render (js/performance.now) wasm/RENDER_FLAG_SYNC_TILES)
                 (finalize-view-interaction!))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
@@ -1761,21 +1752,11 @@
       ;; No pending images — complete immediately.
       (when on-complete (on-complete)))))
 
-(defn process-object
-  [shape]
-  (let [{:keys [thumbnails full font-face-keys pending-font-face-keys]}
-        (set-object shape)
-        text-font-state (acc-text-font-state empty-text-font-state
-                                             (:id shape)
-                                             font-face-keys
-                                             pending-font-face-keys)]
-    (process-pending [shape] thumbnails full text-font-state noop-fn)))
-
 (defn process-objects
-  "Like process-object but for multiple shapes at once. Accumulates all
-   pending font/image callbacks before calling process-pending, so that
-   update-text-layouts fires for all text shapes after fonts load — not
-   just the first shape that triggered the fetch."
+  "Takes multiple shapes, calling `set-object` for each one and accumulating
+  their thumbnails, full-image callbacks, and text font state. Then calls
+  `process-pending` once for the whole batch, so text layouts are updated for
+  all shapes after pending fonts and images are processed."
   [shapes]
   (let [total-shapes (count shapes)
         {:keys [thumbnails full text-font-state]}
