@@ -7,7 +7,7 @@
 (ns frontend-tests.composable-tests.interpreter
   "FRONTEND interpreter + test-facing `check` for the composable test model.
 
-   The generic engine lives in `frontend-tests.composable-tests.core` and the
+   The generic engine lives in `app.common.test-helpers.composable.core` and the
    component instruments (operation records, setups, role accessors, inspection
    methods) behind the `comp` boundary. What lives HERE is:
      1. `op->events` — the event realisation of each EVENT-op: the real
@@ -37,6 +37,8 @@
    `setup-store`), because the watcher reads `refs/workspace-data` which derives
    from `st/state`. State is re-installed per variant for isolation."
   (:require
+   [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
@@ -51,8 +53,6 @@
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [cljs.test :as t]
-   [frontend-tests.composable-tests.comp.nodes :as n]
-   [frontend-tests.composable-tests.core :as tm]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -119,7 +119,7 @@
 
 (defn op->events
   "Map a comp operation record to the real workspace event(s) it dispatches.
-   `op` is one of the comp node records (frontend-tests.composable-tests.comp.nodes);
+   `op` is one of the comp node records (app.common.test-helpers.composable.comp.nodes);
    `situation` provides cross-file context (e.g. the library id) for ops that need
    it.
 
@@ -267,21 +267,15 @@
 (defn- record-op
   "Record an operation's application onto the situation (after its effect settled),
    re-reading the file from the store. For a RecordedChoice (one-of), record the
-   chosen op's application AND the choice under the one-of identity (so the
-   asserter's `get-choice` works), mirroring `RecordedChoice`'s own `apply-to`."
+   choice under the one-of identity (so the asserter's `get-choice` works) and
+   then the chosen op's application, in the order `RecordedChoice`'s own
+   `apply-to` uses."
   [situation op]
-  (let [situation (tm/with-file situation (current-file))]
-    (if (tm/recorded-choice? op)
-      (let [chosen     (tm/choice-of op)
-            descriptor (dissoc (into {} chosen) :frontend-tests.composable-tests.core/id)]
-        (-> situation
-            ;; record the chosen op under its own identity …
-            (tm/record-application chosen descriptor)
-            ;; … and the choice under the one-of's identity, keyed for get-choice
-            (update :node-data assoc (tm/choice-one-of-id op) {:chosen chosen})
-            (update :applied conj (tm/choice-one-of-id op))))
-      (let [descriptor (dissoc (into {} op) :frontend-tests.composable-tests.core/id)]
-        (tm/record-application situation op descriptor)))))
+  (let [situation      (tm/with-file situation (current-file))
+        [situation op] (if (tm/recorded-choice? op)
+                         [(tm/record-choice situation op) (tm/choice-of op)]
+                         [situation op])]
+    (tm/record-application situation op (dissoc (into {} op) ::tm/id))))
 
 (defn- op-events
   "The workspace events to dispatch for an op unit (a plain op or a one-of's
@@ -306,32 +300,24 @@
 (defn- sync-op?
   "Whether `op` is a SYNCHRONOUS, `apply-to`-based operation rather than one that
    dispatches a workspace event and needs settling. Two kinds:
-     - FILE-TRANSFORMING (`make-nested-component`, `skip`): a pure file-value transformation
-       that arranges the CONFIGURATION (deepens it, re-points roles) — applied by
-       running `apply-to` against the live store file and writing the result back.
-       The property under test is still exercised by the SUBSEQUENT real-event ops.
+     - FILE-TRANSFORMING: the `:assembly` nodes (see `n/IComponentOperation`) and
+       `skip`, which arrange the CONFIGURATION (create, nest, instantiate,
+       re-point roles) — applied by running `apply-to` against the live store
+       file and writing the result back. The property under test is still
+       exercised by the SUBSEQUENT real-event ops.
      - `Test`: an inline assertion checkpoint — its `apply-to` runs the assertion
        against the current situation and returns it unchanged.
    Both are handled by `run-sync-op` (no async settle — any store write is a
    synchronous UpdateEvent)."
   [op]
   (let [op (if (tm/recorded-choice? op) (tm/choice-of op) op)]
-    (or (instance? n/MakeNestedComponent op)
-        ;; the structural building blocks are also file-transforming: they arrange
-        ;; the configuration via the shared `apply-to`. ResetCopyInstance is also a
-        ;; file-op: the real reset event transitively reads browser globals (CSS
-        ;; vars), so it cannot run headless; the shared apply-to runs the production
-        ;; reset generator with validation off.
-        (instance? n/CreateComponent op)
-        (instance? n/InstantiateCopy op)
-        (instance? n/ResetCopyInstance op)
-        ;; the variant container (test-helper assembly) and variant nesting (the
-        ;; shared nesting helper) are file-transforming sync-ops; the SWITCH is the
-        ;; real `variants-switch` workspace event (handled by op->events), not here.
-        (instance? n/MakeVariantContainer op)
-        (instance? n/MakeNestedComponentWithVariant op)
-        (instance? tm/Skip op)
-        (instance? tm/Test op))))
+    (or (instance? tm/Skip op)
+        (instance? tm/Test op)
+        (= :assembly (n/op-kind op))
+        ;; A user operation, but the real reset event transitively reads browser
+        ;; globals (CSS vars), so it cannot run headless; the shared apply-to runs
+        ;; the production reset generator with validation off.
+        (instance? n/ResetCopyInstance op))))
 
 (defn- run-sync-op
   "Apply a synchronous (`sync-op?`) operation: run its shared `apply-to` against a
@@ -341,16 +327,10 @@
    file is unchanged; for `make-nested-component`/`skip` it writes back the transformed file.
    Synchronous."
   [situation op]
-  (let [op'       (if (tm/recorded-choice? op) (tm/choice-of op) op)
-        situation (tm/with-file situation (current-file))
-        situation (tm/apply-to op' situation)]
+  (let [situation (tm/with-file situation (current-file))
+        situation (tm/apply-to op situation)]
     (st/emit! (install-file-event (tm/file situation)))
-    ;; record the choice too, if this came wrapped in a one-of
-    (if (tm/recorded-choice? op)
-      (-> situation
-          (update :node-data assoc (tm/choice-one-of-id op) {:chosen op'})
-          (update :applied conj (tm/choice-one-of-id op)))
-      situation)))
+    situation))
 
 (defn- op-grace-ms
   "Extra wait AFTER an event-op has settled, before proceeding. Always zero:
@@ -464,8 +444,9 @@
    success (recording calls) and `rx/timer` fires instantly, so the
    `SyncFromLibrary` op's delayed RPC does not produce network errors.
 
-   Arities: `(check done case-map)` or `(check done case-map asserter)`."
-  ([done case-map] (check done case-map nil))
+   Arities: `(check done case-map)`, which takes the asserter from the case
+   map's `:asserter`, or `(check done case-map asserter)`."
+  ([done case-map] (check done case-map (:asserter case-map)))
   ([done {:keys [setup operation]} asserter]
    (mock/with-mocks
      {rp/cmd!  mock/rpc-cmd-mock
