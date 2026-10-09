@@ -431,6 +431,14 @@ export function createApi(
       checkPermission('content:read', false);
       return plugin.context.management!.listProjects(options);
     },
+    listDeletedProjects(options) {
+      checkPermission('content:read', false);
+      return plugin.context.management!.listDeletedProjects(options);
+    },
+    listDeletedFiles(options) {
+      checkPermission('content:read', false);
+      return plugin.context.management!.listDeletedFiles(options);
+    },
     getFile(fileId) {
       checkPermission('content:read', false);
       return plugin.context.management!.getFile(fileId);

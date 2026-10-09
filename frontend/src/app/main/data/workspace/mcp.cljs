@@ -39,12 +39,7 @@
    :allow-background true
    :scope "global"
    :permissions
-   #{"user:read"
-     "library:read" "library:write"
-     "comment:read" "comment:write"
-     "content:write" "content:read"
-     "allow:global"
-     "manage:projects" "manage:teams" "manage:delete"}})
+   preg/mcp-permissions})
 
 (defonce interval-sub
   (atom nil))

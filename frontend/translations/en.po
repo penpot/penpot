@@ -8263,7 +8263,7 @@ msgstr "Read and modify your libraries and assets."
 
 #: src/app/main/ui/workspace/plugins.cljs:360
 msgid "workspace.plugins.permissions.manage-delete"
-msgstr "Delete your files, projects and teams."
+msgstr "Delete your files and projects."
 
 #: src/app/main/ui/workspace/plugins.cljs:346
 msgid "workspace.plugins.permissions.manage-projects"

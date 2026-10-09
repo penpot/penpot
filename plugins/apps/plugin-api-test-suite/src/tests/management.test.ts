@@ -182,25 +182,8 @@ describe('Management', () => {
       ).toBe(true);
     });
 
-    test('createTeam and remove create and delete a team', async (ctx) => {
-      const name = temporaryName('team');
-      const created = await ctx.penpotMgmt.createTeam({ name: `  ${name}  ` });
-      const listed = async () =>
-        (await ctx.penpotMgmt.listTeams()).some((t) => t.id === created.id);
-
-      expect(created.name).toBe(name);
-      expect(created.isDefault).toBe(false);
-      expect(await listed()).toBe(true);
-
-      await created.remove();
-      expect(await listed()).toBe(false);
-    });
-
-    test('team.remove rejects deleting the current team', async (ctx) => {
-      await expectReject(
-        (await currentTeam(ctx)).remove(),
-        'Cannot delete the current team',
-      );
+    test('teams do not expose deletion', async (ctx) => {
+      expect('remove' in (await currentTeam(ctx))).toBe(false);
     });
 
     test('assigning name renames the team', async (ctx) => {

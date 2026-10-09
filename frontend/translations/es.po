@@ -8358,7 +8358,7 @@ msgstr "Leer y modificar la información de sus bibliotecas y recursos."
 
 #: src/app/main/ui/workspace/plugins.cljs:360
 msgid "workspace.plugins.permissions.manage-delete"
-msgstr "Eliminar tus archivos, proyectos y equipos."
+msgstr "Eliminar tus archivos y proyectos."
 
 #: src/app/main/ui/workspace/plugins.cljs:346
 msgid "workspace.plugins.permissions.manage-projects"

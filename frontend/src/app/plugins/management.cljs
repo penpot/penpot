@@ -8,8 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.features :as cfeat]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.team :as dtm]
    [app.main.features :as features]
@@ -20,6 +22,7 @@
    [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
+   [app.util.sse :as sse]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -43,6 +46,42 @@
                 (update-fn state)
                 state))))
 
+(defn- refresh-restored-project
+  [team-id project-id]
+  (if (dashboard-of-team? @st/state team-id)
+    (->> (rx/zip (rp/cmd! :get-projects {:team-id team-id})
+                 (rp/cmd! :get-project-files {:project-id project-id})
+                 (rp/cmd! :get-team-deleted-files {:team-id team-id}))
+         (rx/tap (fn [[projects files deleted-files]]
+                   (update-dashboard
+                    team-id
+                    (fn [state]
+                      (-> state
+                          (update :projects merge (d/index-by :id projects))
+                          (update :files merge (d/index-by :id (concat files deleted-files)))
+                          (assoc :deleted-files (d/index-by :id deleted-files)))))))
+         (rx/map (constantly nil)))
+    (rx/of nil)))
+
+(defn- restore-deleted-files
+  "Uses the dashboard's Trash operation and waits for its final result."
+  [team-id ids]
+  (->> (rp/cmd! ::sse/restore-deleted-team-files {:team-id team-id :ids ids})
+       (rx/filter sse/end-of-stream?)
+       (rx/take 1)
+       (rx/map sse/get-payload)
+       (rx/reduce (fn [_ restored] restored) nil)
+       (rx/mapcat (fn [restored]
+                    (cond
+                      (nil? restored)
+                      (rx/throw (js/Error. "Restoration ended without a result"))
+
+                      (not (set/subset? ids restored))
+                      (rx/throw (js/Error. "Some files could not be restored; they may no longer exist"))
+
+                      :else
+                      (rx/of nil))))))
+
 (defn- valid-name
   "Returns `value` trimmed when it is a name of 1 to 250 characters."
   [value]
@@ -55,6 +94,18 @@
   [permission]
   (js/Error. (str "Permission " permission " is not granted")))
 
+(defn- backend-error
+  "Adds the backend type and code to plugin errors without exposing RPC data."
+  [error]
+  (if-let [{:keys [type code hint]} (ex-data error)]
+    (let [details (str/join "/" (keep #(some-> % name) [type code]))
+          message (or hint (ex-message error))
+          result  (js/Error. (str message (when (seq details) (str " (" details ")"))))]
+      (obj/set! result "type" (some-> type name))
+      (obj/set! result "code" (some-> code name))
+      result)
+    error))
+
 (defn- request
   "Resolves with the single value of the stream built by `make-stream` when
   the plugin has `permission`."
@@ -62,8 +113,32 @@
   (if (r/check-permission plugin-id permission)
     (js/Promise.
      (fn [resolve reject]
-       (rx/subs! resolve reject (make-stream))))
+       (rx/subs! resolve #(reject (backend-error %)) (make-stream))))
     (js/Promise.reject (permission-error permission))))
+
+(defn- set-property
+  "Runs a setter's RPC before updating the proxy and app state. Async failures
+  are logged even when synchronous validation errors are configured to throw."
+  [plugin-id data attr value event]
+  (st/emit!
+   (se/add-event
+    (ptk/reify ::set-property
+      ev/Event
+      (-data [_]
+        (assoc (if (satisfies? ev/Event event) (ev/-data event) {})
+               ::ev/name (name (ptk/type event))))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (->> (rx/concat
+              (ptk/watch event state stream)
+              (rx/of (fn [state]
+                       (swap! data assoc attr value)
+                       (ptk/update event state))))
+             (rx/catch (fn [error]
+                         (u/display-not-valid attr (.-message (backend-error error)))
+                         (rx/empty))))))
+    plugin-id)))
 
 (defn- set-project-pin
   [{:keys [id is-pinned] :as params}]
@@ -145,6 +220,27 @@
                                 (map (partial project-proxy plugin-id))
                                 (into-array)))))))
 
+(defn- list-deleted-projects
+  [plugin-id team-id]
+  (request plugin-id "content:read"
+           #(->> (rp/cmd! :get-projects {:team-id team-id})
+                 (rx/map (fn [projects]
+                           (into-array (map (partial project-proxy plugin-id)
+                                            (filter (fn [project]
+                                                      (some-> (:deleted-at project) (ct/is-after? (ct/now))))
+                                                    projects))))))))
+
+(defn- list-deleted-files
+  [plugin-id team-id project-id]
+  (request plugin-id "content:read"
+           #(->> (rp/cmd! :get-team-deleted-files {:team-id team-id})
+                 (rx/map (fn [files]
+                           (into-array (map (partial file-proxy plugin-id)
+                                            (cond->> (filter (fn [file]
+                                                               (some-> (:will-be-deleted-at file) (ct/is-after? (ct/now))))
+                                                             files)
+                                              project-id (filter (fn [file] (= project-id (:project-id file))))))))))))
+
 (defn- create-project
   [plugin-id team-id options]
   (if-let [name (valid-name (obj/get options "name"))]
@@ -205,23 +301,20 @@
              (u/not-valid plugin-id :name value)
 
              :else
-             (do (swap! data assoc :name name)
-                 (st/emit! (dtm/update-team {:id (:id @data) :name name}))))))}
+             (set-property plugin-id data :name name
+                           (dtm/update-team {:id (:id @data) :name name})))))}
 
       :listProjects
       (fn [] (list-projects plugin-id (:id @data)))
 
-      :createProject
-      (fn [options] (create-project plugin-id (:id @data) options))
+      :listDeletedProjects
+      (fn [] (list-deleted-projects plugin-id (:id @data)))
 
-      :remove
-      (fn []
-        (if (= (:id @data) (:current-team-id @st/state))
-          (js/Promise.reject (js/Error. "Cannot delete the current team"))
-          (request plugin-id "manage:delete"
-                   #(->> (rp/cmd! :delete-team {:id (:id @data)})
-                         (rx/tap (fn [_] (st/emit! (dtm/fetch-teams))))
-                         (rx/map (constantly nil)))))))))
+      :listDeletedFiles
+      (fn [] (list-deleted-files plugin-id (:id @data) nil))
+
+      :createProject
+      (fn [options] (create-project plugin-id (:id @data) options)))))
 
 (defn project-proxy
   [plugin-id project]
@@ -254,8 +347,8 @@
              (u/not-valid plugin-id :name value)
 
              :else
-             (do (swap! data assoc :name name)
-                 (st/emit! (dd/rename-project {:id (:id @data) :name name}))))))}
+             (set-property plugin-id data :name name
+                           (dd/rename-project {:id (:id @data) :name name})))))}
 
       :pinned
       {:get #(boolean (:is-pinned @data))
@@ -269,17 +362,36 @@
            (u/not-valid plugin-id :pinned value)
 
            :else
-           (do (swap! data assoc :is-pinned value)
-               (st/emit! (set-project-pin {:id (:id @data)
+           (set-property plugin-id data :is-pinned value
+                         (set-project-pin {:id (:id @data)
                                            :team-id (:team-id @data)
-                                           :is-pinned value})))))}
+                                           :is-pinned value}))))}
 
       :listFiles
       (fn []
         (request plugin-id "content:read"
                  #(->> (rp/cmd! :get-project-files {:project-id (:id @data)})
                        (rx/map (fn [files]
-                                 (into-array (map (partial file-proxy plugin-id) files)))))))
+                                 (into-array (map (fn [file]
+                                                    (file-proxy plugin-id (assoc file :team-id (:team-id @data))))
+                                                  files)))))))
+
+      :listDeletedFiles
+      (fn [] (list-deleted-files plugin-id (:team-id @data) (:id @data)))
+
+      :restore
+      (fn []
+        (request plugin-id "manage:projects"
+                 #(let [{:keys [id team-id]} @data]
+                    (->> (rp/cmd! :get-team-deleted-files {:team-id team-id})
+                         (rx/mapcat (fn [files]
+                                      (let [ids (into #{} (comp (filter (fn [file] (= id (:project-id file))))
+                                                                (map :id)) files)]
+                                        (if (seq ids)
+                                          (restore-deleted-files team-id ids)
+                                          (rx/throw (js/Error. "Cannot restore a project without recoverable files"))))))
+                         (rx/tap (fn [_] (swap! data dissoc :deleted-at)))
+                         (rx/mapcat (fn [_] (refresh-restored-project team-id id)))))))
 
       :createFile
       (fn [options]
@@ -290,7 +402,6 @@
                       (->> (rp/cmd! :create-file {:project-id id :name name :features features})
                            (rx/map (fn [file] (-> (dissoc file :data) (assoc :team-id team-id))))
                            (rx/tap (fn [file]
-                                     (swap! data update :count (fnil inc 0))
                                      (update-dashboard team-id (fn [state] (ptk/update (dd/file-created file) state)))))
                            (rx/map (partial file-proxy plugin-id)))))
           (js/Promise.reject (js/Error. "Expected a name with 1 to 250 characters"))))
@@ -304,6 +415,7 @@
                      #(let [{:keys [id team-id]} @data]
                         (->> (rp/cmd! :duplicate-project (cond-> {:project-id id}
                                                            (some? name) (assoc :name (valid-name name))))
+                             (rx/mapcat dd/project-with-file-count)
                              (rx/tap (fn [project]
                                        (update-dashboard team-id (fn [state] (ptk/update (dd/project-duplicated project) state)))))
                              (rx/map (partial project-proxy plugin-id))))))))
@@ -360,9 +472,8 @@
              (u/not-valid plugin-id :name value)
 
              :else
-             (do (swap! data assoc :name name)
-                 (st/emit! (-> (dd/rename-file {:id (:id @data) :name name})
-                               (se/add-event plugin-id)))))))}
+             (set-property plugin-id data :name name
+                           (dd/rename-file {:id (:id @data) :name name})))))}
 
       :shared
       {:get #(boolean (:is-shared @data))
@@ -376,9 +487,8 @@
            (u/not-valid plugin-id :shared value)
 
            :else
-           (do (swap! data assoc :is-shared value)
-               (st/emit! (-> (dd/set-file-shared {:id (:id @data) :is-shared value})
-                             (se/add-event plugin-id))))))}
+           (set-property plugin-id data :is-shared value
+                         (dd/set-file-shared {:id (:id @data) :is-shared value}))))}
 
       :open
       (fn []
@@ -386,12 +496,24 @@
           (open-file (str (:id @data)) #js {:teamId (str (:team-id @data))})
           (js/Promise.reject (permission-error "content:read"))))
 
+      :restore
+      (fn []
+        (request plugin-id "content:write"
+                 #(->> (restore-deleted-files (:team-id @data) #{(:id @data)})
+                       (rx/tap (fn [_]
+                                 (swap! data dissoc :deleted-at :will-be-deleted-at)))
+                       (rx/mapcat (fn [_] (refresh-restored-project (:team-id @data) (:project-id @data)))))))
+
       :moveTo
       (fn [project]
         (if-let [project-id (uuid/parse* (obj/get project "id"))]
           (request plugin-id "content:write"
                    #(let [{:keys [id team-id]} @data]
-                      (->> (rp/cmd! :move-files {:ids #{id} :project-id project-id})
+                      (->> (rp/cmd! :get-project {:id project-id})
+                           (rx/mapcat (fn [target]
+                                        (if (= team-id (:team-id target))
+                                          (rp/cmd! :move-files {:ids #{id} :project-id project-id})
+                                          (rx/throw (js/Error. "Cannot move a file to a project in another team")))))
                            (rx/tap (fn [_]
                                      (update-dashboard team-id (fn [state] (ptk/update (dd/move-files {:ids #{id} :project-id project-id}) state)))
                                      (swap! data assoc :project-id project-id)))
@@ -458,4 +580,20 @@
                          (uuid/parse* id)
                          (:current-team-id @st/state))]
         (list-projects plugin-id team-id)
+        (js/Promise.reject (js/Error. "Expected a team UUID"))))
+
+    :listDeletedProjects
+    (fn [options]
+      (if-let [team-id (if-let [id (obj/get options "teamId")]
+                         (uuid/parse* id)
+                         (:current-team-id @st/state))]
+        (list-deleted-projects plugin-id team-id)
+        (js/Promise.reject (js/Error. "Expected a team UUID"))))
+
+    :listDeletedFiles
+    (fn [options]
+      (if-let [team-id (if-let [id (obj/get options "teamId")]
+                         (uuid/parse* id)
+                         (:current-team-id @st/state))]
+        (list-deleted-files plugin-id team-id nil)
         (js/Promise.reject (js/Error. "Expected a team UUID"))))))

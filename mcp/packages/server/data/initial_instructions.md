@@ -440,11 +440,13 @@ Teams (`Team`), projects (`Project`) and files (`ProjectFile`) are objects with 
   * `await project.listFiles()` lists a project's files; `await penpotMgmt.getFile(id)` loads any file by id, e.g. `penpotMgmt.workspace.fileId`.
   * Create with `await team.createProject({ name: "Design system" })` and `await project.createFile({ name: "Login" })`.
   * Rename by assigning `name`; pin a project with `project.pinned = true`; share a file as a team library with `file.shared = true`.
-  * `moveTo`, `duplicate` and `remove` move, copy and delete projects and files; `penpotMgmt.createTeam({ name })` and `team.remove()` create and delete teams.
+  * `moveTo`, `duplicate` and `remove` move, copy and delete projects and files; `penpotMgmt.createTeam({ name })` creates teams. Team deletion is not exposed.
+  * Project and file `remove()` moves them to Trash. There is no API for their permanent deletion. Discover recoverable objects with `await penpotMgmt.listDeletedProjects()` and `await penpotMgmt.listDeletedFiles()` (optionally pass `{ teamId }`), or `team.listDeletedProjects()`, `team.listDeletedFiles()` and `project.listDeletedFiles()`.
+  * Restore with `await project.restore()` or `await file.restore()` before the retention period expires. Restoration uses the dashboard's Trash operation and requires team edit access. Project restoration restores its recoverable files and rejects if none remain, including empty projects. File restoration also restores its deleted parent project.
   * None of these change the current view. To edit a file, call `await file.open()` (or `await penpotMgmt.openFile(fileId)`) and reacquire file, page and shape objects.
   * Connect a shared library to the open file with `penpot.library.connectLibrary(file.id)`.
 You navigate to different design files only when your task explicitly requires it/you are instructed to do so.
-Only rename, move or delete projects and files when the user asks for it.
+Only rename teams or rename, move, delete or restore projects and files when the user asks for it.
 If `penpotMgmt` is `null`, file management is unavailable and only the file that is open in Penpot can be used;
 ask the user to open another file if needed.
 
