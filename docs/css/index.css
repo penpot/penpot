@@ -393,8 +393,12 @@ footer {
 .footer-inside {
   display: grid;
   grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr;
+  column-gap: 1.5rem;
   max-width: 1400px;
   width: 100%;
+}
+.footer-inside .footer-logo {
+  grid-row: span 2;
 }
 .footer-inside .main-logo {
     margin-right: auto;
@@ -464,6 +468,9 @@ footer {
 }
 .footer-icon-list a img:hover {
   fill: var(--graylight);
+}
+.footer-icon-list .footer-dpg a img {
+  width: auto;
 }
 .github-widget {
   height: 28px;
@@ -1172,7 +1179,19 @@ table tr:nth-child(odd) {
     transform: rotate(180deg);
   }
   .footer-inside {
-    flex-direction: column;
+    grid-template-columns: 1fr 1fr;
+  }
+  .footer-inside .footer-logo {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  .footer-bottom {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .footer-icon-list {
+    flex-wrap: wrap;
+    height: auto;
   }
   :target[id]::before {
     display: inline;

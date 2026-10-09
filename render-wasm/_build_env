@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+
+export RUST_VERSION=1.91.0
 export VERSION_TAG=${VERSION:-develop};
 export RENDER_TARGET="${RENDER_TARGET:-${1:-frontend}}";
 
@@ -113,6 +115,9 @@ function clean {
 }
 
 function setup {
+    # Setup default rust version
+    rustup default $RUST_VERSION
+    rustup target add wasm32-unknown-emscripten
     pnpm install;
 }
 

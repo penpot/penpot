@@ -14,6 +14,7 @@ pushd "$_SCRIPT_DIR" > /dev/null
 
 . ./_build_env frontend
 
+setup
 cargo test --bin render_wasm -- --show-output
 
 RESULT=$?
