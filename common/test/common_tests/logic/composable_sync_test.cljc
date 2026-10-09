@@ -11,6 +11,7 @@
   (:require
    [app.common.test-helpers.composable.comp.cases :as cases]
    [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.ids-map :as thi]
    [clojure.test :as t]))
@@ -18,12 +19,14 @@
 (t/use-fixtures :each thi/test-fixture)
 
 (defn- check
-  "Run every variant of `case-map` and apply its asserter to each result."
+  "Run every variant of `case-map`, apply its asserter to each result and
+   assert that its undo/redo round trip passed."
   [{:keys [asserter] :as case-map}]
   (doseq [situation (r/run-all case-map)]
-    (when asserter
-      (t/testing (str "operations:\n  " (tm/describe-applied situation))
-        (asserter situation)))))
+    (t/testing (str "operations:\n  " (tm/describe-applied situation))
+      (when asserter
+        (asserter situation))
+      (uc/check! situation case-map))))
 
 (t/deftest case-b-copy-override-survives-later-main-change
   (check (cases/copy-override-survives-later-main-change)))

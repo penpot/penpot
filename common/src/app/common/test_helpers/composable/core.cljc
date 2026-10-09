@@ -186,6 +186,12 @@
         args (dissoc record ::kind)]
     (str kind (when (seq args) (str " " (pr-str args))))))
 
+(defn describe-application
+  "A one-line description of what `node` recorded about its application in
+   `situation` (see `describe-applied`), or nil if it has not been applied."
+  [situation node]
+  (some-> (node-data situation node) render-application))
+
 (defn describe-applied
   "A human-readable, ordered transcript of the operations that produced
    `situation` — one line per application, in order. Built purely from the

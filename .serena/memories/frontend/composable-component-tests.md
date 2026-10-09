@@ -106,6 +106,20 @@ Two pure runners (no store, JVM + CLJS):
   frontend events call. Not modelled: the `:modified-at` bump, and the swap/switch event follow-ups
   (token propagation, WASM text resize, layout update). Tests:
   `common-tests.logic.composable-runner-test`.
+- Undo/redo round trip (`comp/undo_check.cljc`, alias `uc`), on by default in the pure runner
+  (`:undo-check?`): after each `:user` step that pushed a group, undo must give back the
+  normalized file before it and redo the file after it (the variant continues from the redone
+  file); a user step that pushed nothing must change nothing (`:no-undo-entry`); at the end,
+  undo back to the last assembly step (the baseline; a case's own undo below it moves it) and
+  redo all. Files compare through `app.common.test-helpers.normalize` (`thn/normalize-file`:
+  drops file/component `:modified-at`, optionally `:position-data`; shapes as plain maps).
+  Failures are recorded in the situation with labelled diffs (labels die with the variant, so
+  they are resolved when recorded); `uc/check!` asserts after the asserter. A case map's
+  `:undo-check` takes `{:off "reason"}` or `{:known-failures [{:bug "F41" :phases #{…} :op
+  <the case's node> :when pred}]}`: a known failure that stops happening fails the case. Match
+  steps by node identity, never by record type or rendered name: `n/MoveChild` does not resolve
+  through an alias on the JVM, and the JS test build strips record names (transcripts show
+  `node`).
 - Label map gotcha: running a second variant re-registers labels, so assert on a situation
   before running the next one (`thi/id` then points at the new run's shapes). Case letters B..P;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance

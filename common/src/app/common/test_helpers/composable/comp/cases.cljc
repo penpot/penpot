@@ -123,23 +123,27 @@
   "Case F."
   []
   (let [move (n/move-child :main-child1 :main-root 2)]
-    {:setup     setup/component-with-many-children
-     :operation (tm/in-sequence [move])
-     :asserter  (fn [situation]
-                  (let [copy-root (setup/copy-root situation)
-                        order     (vec (:shapes copy-root))
-                        c1        (setup/copy-child situation 1)
-                        c2        (setup/copy-child situation 2)
-                        c3        (setup/copy-child situation 3)]
-                    (t/is (= (nth order 0) (:id c2)))
-                    (t/is (= (nth order 1) (:id c1)))
-                    (t/is (= (nth order 2) (:id c3)))
-                    (t/is (some? (:shape-ref c1)))
-                    (t/is (some? (:shape-ref c2)))
-                    (t/is (some? (:shape-ref c3)))
-                    (t/is (nil? (:touched c1)))
-                    (t/is (nil? (:touched c2)))
-                    (t/is (nil? (:touched c3)))))}))
+    {:setup      setup/component-with-many-children
+     :operation  (tm/in-sequence [move])
+     ;; the undo of the sync's move leaves the copy children reordered
+     :undo-check {:known-failures [{:bug "F41"
+                                    :phases #{:undo :variant-undo}
+                                    :op move}]}
+     :asserter   (fn [situation]
+                   (let [copy-root (setup/copy-root situation)
+                         order     (vec (:shapes copy-root))
+                         c1        (setup/copy-child situation 1)
+                         c2        (setup/copy-child situation 2)
+                         c3        (setup/copy-child situation 3)]
+                     (t/is (= (nth order 0) (:id c2)))
+                     (t/is (= (nth order 1) (:id c1)))
+                     (t/is (= (nth order 2) (:id c3)))
+                     (t/is (some? (:shape-ref c1)))
+                     (t/is (some? (:shape-ref c2)))
+                     (t/is (some? (:shape-ref c3)))
+                     (t/is (nil? (:touched c1)))
+                     (t/is (nil? (:touched c2)))
+                     (t/is (nil? (:touched c3)))))}))
 
 (defn undo-reverts-edit-and-its-propagation
   "Case I. Change the main (which propagates to the clean copy), then undo. A
