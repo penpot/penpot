@@ -12,12 +12,15 @@
    [app.binfile.v3 :as v3]
    [app.common.data :as d]
    [app.common.features :as cfeat]
+   [app.common.files.tokens :as cfo]
    [app.common.files.validate :as cfv]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -25,6 +28,7 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
+   [app.srepl.procs.fdata-storage :as fdata-storage]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
@@ -104,6 +108,83 @@
                :type :rect})}])
 
      (dissoc file :data))))
+
+(defn- make-token-lib-with-activation
+  [set-id theme-id set-name theme-name]
+  (-> (ctob/make-tokens-lib)
+      (ctob/add-set (ctob/make-token-set :id set-id :name set-name))
+      (ctob/add-token set-id
+                      (cto/make-token :name (str "color." set-name)
+                                      :type :color
+                                      :value "#000000"))
+      (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                             :name theme-name
+                                             :sets #{set-name}))))
+
+(defn- create-token-source-consumer!
+  [profile source-index file-index name local?]
+  (let [source             (th/create-file* source-index
+                                            {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)
+                                             :is-shared true
+                                             :name name})
+        file               (th/create-file* file-index
+                                            {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)
+                                             :is-shared false
+                                             :name (str name " Consumer")})
+        source-set-id      (uuid/next)
+        source-theme-id    (uuid/next)
+        source-tokens      (make-token-lib-with-activation source-set-id source-theme-id
+                                                           "shared" "Dark")
+        local-set-id       (when local? (uuid/next))
+        local-theme-id     (when local? (uuid/next))
+        local-tokens       (when local?
+                             (make-token-lib-with-activation local-set-id local-theme-id
+                                                             "shared" "Dark"))
+        changes            (cond-> []
+                             local? (conj {:type :set-tokens-lib
+                                           :tokens-lib local-tokens})
+                             true (conj {:type :set-tokens-source
+                                         :file-id (:id file)
+                                         :library-id (:id source)})
+                             true (conj {:type :set-tokens-status
+                                         :theme-ids #{source-theme-id}
+                                         :set-ids #{source-set-id}}))]
+    (update-file! :file-id (:id source)
+                  :profile-id (:id profile)
+                  :changes [{:type :set-tokens-lib :tokens-lib source-tokens}])
+    (update-file! :file-id (:id file)
+                  :profile-id (:id profile)
+                  :changes changes)
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id file)
+                 :library-file-id (:id source)})
+    {:source source
+     :file file
+     :source-set-id source-set-id
+     :source-theme-id source-theme-id
+     :local-set-id local-set-id
+     :local-theme-id local-theme-id}))
+
+(defn- export-link-later!
+  [file-ids]
+  (let [output (tmp/tempfile :suffix ".zip")]
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids (set file-ids))
+         (assoc ::bfc/export-type :link-later))
+     (io/output-stream output))
+    output))
+
+(defn- import-link-later!
+  [profile input]
+  (-> th/*system*
+      (assoc ::bfc/project-id (:default-project-id profile))
+      (assoc ::bfc/profile-id (:id profile))
+      (assoc ::bfc/team-id (:default-team-id profile))
+      (assoc ::bfc/input input)
+      (v3/import-files!)))
 
 (def ^:private svg-raw-page-id (uuid/custom 1 1))
 (def ^:private svg-raw-root-id (uuid/custom 3 1))
@@ -439,6 +520,369 @@
         (let [rels (db/query th/*system* :file-library-rel
                              {:library-file-id (:id library2)})]
           (t/is (= 1 (count rels))))))))
+
+(t/deftest link-later-restores-token-source-activation-by-name
+  (let [profile            (th/create-profile* 1)
+        library           (th/create-file* 1 {:profile-id (:id profile)
+                                              :project-id (:default-project-id profile)
+                                              :is-shared true
+                                              :name "Token Library"})
+        file              (th/create-file* 2 {:profile-id (:id profile)
+                                              :project-id (:default-project-id profile)
+                                              :is-shared false})
+        local-set-id      (uuid/next)
+        local-theme-id    (uuid/next)
+        source-set-id     (uuid/next)
+        source-theme-id   (uuid/next)
+        missing-set-id    (uuid/next)
+        missing-theme-id  (uuid/next)
+        local-tokens      (make-token-lib-with-activation local-set-id local-theme-id
+                                                          "local" "Local")
+        source-tokens     (-> (make-token-lib-with-activation source-set-id source-theme-id
+                                                              "shared" "Dark")
+                              (ctob/add-set (ctob/make-token-set :id missing-set-id
+                                                                 :name "retired"))
+                              (ctob/add-token missing-set-id
+                                              (cto/make-token :name "color.retired"
+                                                              :type :color
+                                                              :value "#000000"))
+                              (ctob/add-theme (ctob/make-token-theme :id missing-theme-id
+                                                                     :name "Retired"
+                                                                     :sets #{"retired"})))
+        output            (tmp/tempfile :suffix ".zip")]
+
+    (update-file! :file-id (:id library)
+                  :profile-id (:id profile)
+                  :changes [{:type :set-tokens-lib :tokens-lib source-tokens}])
+    (update-file! :file-id (:id file)
+                  :profile-id (:id profile)
+                  :changes [{:type :set-tokens-lib :tokens-lib local-tokens}
+                            {:type :set-tokens-source
+                             :file-id (:id file)
+                             :library-id (:id library)}
+                            {:type :set-tokens-status
+                             :theme-ids #{source-theme-id missing-theme-id}
+                             :set-ids #{source-set-id missing-set-id}}])
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id file)
+                 :library-file-id (:id library)})
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/export-type :link-later))
+     (io/output-stream output))
+
+    (db/update! th/*system* :file
+                {:deleted-at (ct/now)}
+                {:id (:id library)})
+
+    (let [replacement (th/create-file* 3 {:profile-id (:id profile)
+                                          :project-id (:default-project-id profile)
+                                          :is-shared true
+                                          :name "Token Library"})
+          replacement-set-id (uuid/next)
+          replacement-theme-id (uuid/next)
+          replacement-tokens (make-token-lib-with-activation replacement-set-id
+                                                             replacement-theme-id
+                                                             "shared" "Dark")
+          _ (update-file! :file-id (:id replacement)
+                          :profile-id (:id profile)
+                          :changes [{:type :set-tokens-lib
+                                     :tokens-lib replacement-tokens}])
+          result (-> th/*system*
+                     (assoc ::bfc/project-id (:default-project-id profile))
+                     (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
+                     (assoc ::bfc/input output)
+                     (v3/import-files!))
+          imported (bfc/get-file th/*system* (first (:file-ids result)))
+          status (get-in imported [:data :tokens-status])
+          rels (db/query th/*system* :file-library-rel
+                         {:file-id (:id imported)
+                          :library-file-id (:id replacement)})]
+
+      (t/is (= 1 (count rels)))
+      (t/is (= (:id replacement) (cfo/get-tokens-source (:data imported))))
+      (t/is (ctos/tokens-status? status))
+      (t/is (= #{replacement-theme-id} (ctos/get-active-theme-ids status)))
+      (t/is (= #{replacement-set-id} (ctos/get-active-set-ids status)))
+      (t/is (nil? (cfv/validate-file imported [replacement]))))))
+
+(t/deftest link-later-token-source-fallbacks
+  (let [profile     (th/create-profile* 1)
+        cases       [(create-token-source-consumer! profile 1 2 "Local Fallback" true)
+                     (create-token-source-consumer! profile 3 4 "Empty Fallback" false)
+                     (create-token-source-consumer! profile 5 6 "Local Missing" true)
+                     (create-token-source-consumer! profile 7 8 "Empty Missing" false)]
+        asset-lib   (th/create-file* 9 {:profile-id (:id profile)
+                                        :project-id (:default-project-id profile)
+                                        :is-shared true
+                                        :name "Unrelated Assets"})
+        local-file  (th/create-file* 10 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared false
+                                         :name "Local Token Source"})
+        local-set-id (uuid/next)
+        local-theme-id (uuid/next)
+        local-tokens (make-token-lib-with-activation local-set-id local-theme-id
+                                                     "local" "Local")
+        _ (update-file! :file-id (:id local-file)
+                        :profile-id (:id profile)
+                        :changes [{:type :set-tokens-lib :tokens-lib local-tokens}
+                                  {:type :set-tokens-status
+                                   :theme-ids #{local-theme-id}
+                                   :set-ids #{local-set-id}}])
+        _ (db/insert! th/*system* :file-library-rel
+                      {:file-id (:id local-file)
+                       :library-file-id (:id asset-lib)})
+        files       (conj (mapv :file cases) local-file)
+        output      (export-link-later! (map :id files))
+        old-libs    (conj (mapv :source cases) asset-lib)
+        _ (doseq [library old-libs]
+            (db/update! th/*system* :file
+                        {:deleted-at (ct/now)}
+                        {:id (:id library)}))
+        local-match (th/create-file* 11 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared true
+                                         :name "Local Fallback"})
+        empty-match (th/create-file* 12 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared true
+                                         :name "Empty Fallback"})
+        asset-match (th/create-file* 13 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared true
+                                         :name "Unrelated Assets"})
+        result      (import-link-later! profile output)
+        imported    (into {}
+                          (map (fn [file-id]
+                                 (let [file (bfc/get-file th/*system* file-id)]
+                                   [(:name file) file])))
+                          (:file-ids result))
+        local-match-file (get imported "Local Fallback Consumer")
+        empty-match-file (get imported "Empty Fallback Consumer")
+        local-missing-file (get imported "Local Missing Consumer")
+        empty-missing-file (get imported "Empty Missing Consumer")
+        local-file' (get imported "Local Token Source")]
+
+    (doseq [[file replacement] [[local-match-file local-match]
+                                [empty-match-file empty-match]]]
+      (t/is (= 1 (count (db/query th/*system* :file-library-rel
+                                  {:file-id (:id file)
+                                   :library-file-id (:id replacement)}))))
+      (t/is (nil? (cfv/validate-file file []))))
+
+    (t/is (= (:id local-match-file) (cfo/get-effective-tokens-source (:data local-match-file))))
+
+    (doseq [file [empty-match-file empty-missing-file]]
+      (t/is (not (cfo/tokens-provider? (:data file)))))
+
+    (t/is (= (:id local-missing-file) (cfo/get-effective-tokens-source (:data local-missing-file))))
+    (t/is (nil? (cfv/validate-file local-missing-file [])))
+
+    (doseq [[file outcome] [[local-match-file :tokens-source-fallback-local]
+                            [empty-match-file :tokens-source-deactivated]
+                            [local-missing-file :tokens-source-fallback-local]
+                            [empty-missing-file :tokens-source-deactivated]]]
+      (let [status (get-in file [:data :tokens-status])]
+        (t/is (= outcome (get-in file [:metadata :tokens-source-fallback-notification])))
+        (t/is (nil? (cfo/get-tokens-source (:data file))))
+        (t/is (ctos/tokens-status? status))
+        (t/is (empty? (ctos/get-active-theme-ids status)))
+        (t/is (empty? (ctos/get-active-set-ids status)))))
+
+    (t/is (= 1 (count (db/query th/*system* :file-library-rel
+                                {:file-id (:id local-file')
+                                 :library-file-id (:id asset-match)}))))
+    (t/is (= (:id local-file') (cfo/get-effective-tokens-source (:data local-file'))))
+    (t/is (= #{local-theme-id}
+             (ctos/get-active-theme-ids (get-in local-file' [:data :tokens-status]))))
+    (t/is (= #{local-set-id}
+             (ctos/get-active-set-ids (get-in local-file' [:data :tokens-status]))))
+    (t/is (nil? (get-in local-file' [:metadata :tokens-source-fallback-notification])))))
+
+(t/deftest link-later-manual-token-source-resolution
+  (let [profile          (th/create-profile* 1)
+        source           (th/create-file* 1 {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)
+                                             :is-shared true
+                                             :name "Manual Token Source"})
+        source-set-id    (uuid/next)
+        source-theme-id  (uuid/next)
+        source-tokens    (make-token-lib-with-activation source-set-id source-theme-id
+                                                         "shared" "Dark")
+        first-file       (th/create-file* 2 {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)
+                                             :is-shared false
+                                             :name "Manual Chosen Consumer"})
+        second-file      (th/create-file* 3 {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)
+                                             :is-shared false
+                                             :name "Manual Skipped Consumer"})
+        ordinary-file    (th/create-file* 6 {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)
+                                             :is-shared false
+                                             :name "Manual Ordinary Consumer"})
+        first-local-set  (uuid/next)
+        first-local-theme (uuid/next)
+        first-local      (make-token-lib-with-activation first-local-set first-local-theme
+                                                         "shared" "Dark")
+        second-local-set (uuid/next)
+        second-local-theme (uuid/next)
+        second-local     (make-token-lib-with-activation second-local-set second-local-theme
+                                                         "shared" "Dark")
+        ordinary-local-set (uuid/next)
+        ordinary-local-theme (uuid/next)
+        ordinary-local (make-token-lib-with-activation ordinary-local-set ordinary-local-theme
+                                                       "local" "Local")
+        output           (tmp/tempfile :suffix ".zip")]
+    (update-file! :file-id (:id source)
+                  :profile-id (:id profile)
+                  :changes [{:type :set-tokens-lib :tokens-lib source-tokens}])
+    (doseq [[file tokens-lib] [[first-file first-local]
+                               [second-file second-local]]]
+      (update-file! :file-id (:id file)
+                    :profile-id (:id profile)
+                    :changes [{:type :set-tokens-lib :tokens-lib tokens-lib}
+                              {:type :set-tokens-source
+                               :file-id (:id file)
+                               :library-id (:id source)}
+                              {:type :set-tokens-status
+                               :theme-ids #{source-theme-id}
+                               :set-ids #{source-set-id}}])
+      (db/insert! th/*system* :file-library-rel
+                  {:file-id (:id file)
+                   :library-file-id (:id source)}))
+    (update-file! :file-id (:id ordinary-file)
+                  :profile-id (:id profile)
+                  :changes [{:type :set-tokens-lib :tokens-lib ordinary-local}
+                            {:type :set-tokens-status
+                             :theme-ids #{ordinary-local-theme}
+                             :set-ids #{ordinary-local-set}}])
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id ordinary-file)
+                 :library-file-id (:id source)})
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id first-file) (:id second-file) (:id ordinary-file)})
+         (assoc ::bfc/export-type :link-later))
+     (io/output-stream output))
+    (db/update! th/*system* :file
+                {:deleted-at (ct/now)}
+                {:id (:id source)})
+    (let [candidate-a (th/create-file* 4 {:profile-id (:id profile)
+                                          :project-id (:default-project-id profile)
+                                          :is-shared true
+                                          :name "Manual Token Source"})
+          candidate-b (th/create-file* 5 {:profile-id (:id profile)
+                                          :project-id (:default-project-id profile)
+                                          :is-shared true
+                                          :name "Manual Token Source"})
+          tokenless (th/create-file* 7 {:profile-id (:id profile)
+                                        :project-id (:default-project-id profile)
+                                        :is-shared true
+                                        :name "Tokenless Library"})
+          candidate-a-set (uuid/next)
+          candidate-a-theme (uuid/next)
+          candidate-b-set (uuid/next)
+          candidate-b-theme (uuid/next)
+          _ (update-file! :file-id (:id candidate-a)
+                          :profile-id (:id profile)
+                          :changes [{:type :set-tokens-lib
+                                     :tokens-lib (make-token-lib-with-activation
+                                                  candidate-a-set candidate-a-theme "shared" "Dark")}])
+          _ (update-file! :file-id (:id candidate-b)
+                          :profile-id (:id profile)
+                          :changes [{:type :set-tokens-lib
+                                     :tokens-lib (make-token-lib-with-activation
+                                                  candidate-b-set candidate-b-theme "shared" "Dark")}])
+          result (import-link-later! profile output)
+          imported (into {}
+                         (map (fn [file-id]
+                                (let [file (bfc/get-file th/*system* file-id)]
+                                  [(:name file) file])))
+                         (:file-ids result))
+          first-imported (get imported "Manual Chosen Consumer")
+          second-imported (get imported "Manual Skipped Consumer")
+          ordinary-imported (get imported "Manual Ordinary Consumer")
+          first-before (bfc/get-file th/*system* (:id first-imported))
+          pending (first (get-in result [:resolution (:id first-imported) :pending]))
+          ordinary-pending (first (get-in result [:resolution (:id ordinary-imported) :pending]))]
+      (t/is (:tokens-source? pending))
+      (t/is (not (:tokens-source? ordinary-pending)))
+      (t/is (= (set (map :id (:candidates pending)))
+               #{(:id candidate-a) (:id candidate-b)}))
+      (t/is (some? (:tokens-status-names pending)))
+      (t/is (nil? (cfv/validate-file first-imported [])))
+      (let [resolve-params {::th/type :resolve-import-token-source
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id first-imported)
+                            :library-id (:id candidate-a)
+                            :tokens-status-names (:tokens-status-names pending)}
+            chosen-out      (th/command! resolve-params)
+            repeated-out    (th/command! resolve-params)
+            ordinary-out    (th/command! {::th/type :link-file-to-library
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id ordinary-imported)
+                                          :library-id (:id candidate-b)})]
+        (t/is (nil? (:error chosen-out)))
+        (t/is (nil? (:error repeated-out)))
+        (t/is (nil? (:error ordinary-out)))
+        (t/is (= :tokens-source-restored
+                 (get-in chosen-out [:result :tokens-source-outcome])))
+        (t/is (= :tokens-source-restored
+                 (get-in repeated-out [:result :tokens-source-outcome]))))
+      (let [first-imported (bfc/get-file th/*system* (:id first-imported))
+            second-imported (bfc/get-file th/*system* (:id second-imported))
+            ordinary-imported (bfc/get-file th/*system* (:id ordinary-imported))
+            first-status (get-in first-imported [:data :tokens-status])
+            second-status (get-in second-imported [:data :tokens-status])
+            ordinary-status (get-in ordinary-imported [:data :tokens-status])]
+        (t/is (= (inc (:revn first-before)) (:revn first-imported)))
+        (t/is (not= (:modified-at first-before) (:modified-at first-imported)))
+        (t/is (= (:id candidate-a) (cfo/get-tokens-source (:data first-imported))))
+        (t/is (= #{candidate-a-theme} (ctos/get-active-theme-ids first-status)))
+        (t/is (= #{candidate-a-set} (ctos/get-active-set-ids first-status)))
+        (t/is (nil? (cfo/get-tokens-source (:data second-imported))))
+        (t/is (= #{} (ctos/get-active-theme-ids second-status)))
+        (t/is (= #{} (ctos/get-active-set-ids second-status)))
+        (t/is (nil? (cfo/get-tokens-source (:data ordinary-imported))))
+        (t/is (= (:id ordinary-imported)
+                 (cfo/get-effective-tokens-source (:data ordinary-imported))))
+        (t/is (= #{ordinary-local-theme} (ctos/get-active-theme-ids ordinary-status)))
+        (t/is (= #{ordinary-local-set} (ctos/get-active-set-ids ordinary-status)))
+        (t/is (= 1 (count (db/query th/*system* :file-library-rel
+                                    {:file-id (:id first-imported)
+                                     :library-file-id (:id candidate-a)}))))
+        (t/is (empty? (db/query th/*system* :file-library-rel
+                                {:file-id (:id first-imported)
+                                 :library-file-id (:id candidate-b)}))))
+      (t/is (= 1 (count (db/query th/*system* :file-library-rel
+                                  {:file-id (:id ordinary-imported)
+                                   :library-file-id (:id candidate-b)}))))
+      (t/is (empty? (db/query th/*system* :file-library-rel
+                              {:file-id (:id second-imported)})))
+      (t/is (nil? (cfv/validate-file first-imported [candidate-a])))
+      (t/is (nil? (cfv/validate-file second-imported [])))
+      (t/is (nil? (cfv/validate-file ordinary-imported [candidate-b])))
+        ;; a tokenless choice clears the source and stores an empty status
+      (let [cleared-out (th/command! {::th/type :resolve-import-token-source
+                                      ::rpc/profile-id (:id profile)
+                                      :file-id (:id first-imported)
+                                      :library-id (:id tokenless)
+                                      :tokens-status-names (:tokens-status-names pending)})
+            cleared    (bfc/get-file th/*system* (:id first-imported))
+            cleared-status (get-in cleared [:data :tokens-status])]
+        (t/is (nil? (:error cleared-out)))
+        (t/is (= :tokens-source-fallback-local
+                 (get-in cleared-out [:result :tokens-source-outcome])))
+        (t/is (nil? (cfo/get-tokens-source (:data cleared))))
+        (t/is (ctos/tokens-status? cleared-status))
+        (t/is (empty? (ctos/get-active-theme-ids cleared-status)))
+        (t/is (empty? (ctos/get-active-set-ids cleared-status)))
+        (t/is (nil? (cfv/validate-file cleared [candidate-a tokenless])))))))
 
 (t/deftest import-no-auto-link-no-match
   (let [profile (th/create-profile* 1)
@@ -852,6 +1296,30 @@
 ;; -----------------------------------------------------------------------------
 ;; Category 2: Cross-Team Migration
 ;; -----------------------------------------------------------------------------
+
+(t/deftest link-later-overwrite-with-missing-tokens-source
+  (let [profile (th/create-profile* 1)]
+    (doseq [[source-idx file-idx local?] [[1 2 true] [3 4 false]]]
+      (let [{:keys [source file]} (create-token-source-consumer!
+                                   profile source-idx file-idx "Missing Source" local?)
+            output               (export-link-later! [(:id file)])]
+        (db/update! th/*system* :file
+                    {:deleted-at (ct/now)}
+                    {:id (:id source)})
+        (let [result   (-> th/*system*
+                           (assoc ::bfc/project-id (:default-project-id profile))
+                           (assoc ::bfc/profile-id (:id profile))
+                           (assoc ::bfc/team-id (:default-team-id profile))
+                           (assoc ::bfc/file-id (:id file))
+                           (assoc ::bfc/input output)
+                           (v3/import-files!))
+              imported (bfc/get-file th/*system* (:id file))]
+          (t/is (= #{(:id file)} (set (:file-ids result))))
+          (t/is (nil? (cfo/get-tokens-source (:data imported))))
+          (t/is (ctos/tokens-status? (get-in imported [:data :tokens-status])))
+          (t/is (= (if local? :tokens-source-fallback-local :tokens-source-deactivated)
+                   (get-in imported [:metadata :tokens-source-fallback-notification])))
+          (t/is (nil? (cfv/validate-file imported []))))))))
 
 (t/deftest link-later-cross-team-library-pre-exists
   (let [{:keys [profile file-id team-id]} (import-sample-file)
@@ -2495,3 +2963,229 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+(t/deftest fallback-notification-consumption-across-file-data-backends
+  (let [profile  (th/create-profile* 1)
+        reader   (th/create-profile* 2)
+        stranger (th/create-profile* 3)]
+    (doseq [[backend-index backend] (map-indexed vector ["db" "storage" "legacy-db"])
+            [case-index local? outcome] [[0 true :tokens-source-fallback-local]
+                                         [1 false :tokens-source-deactivated]]]
+      (t/testing (str backend " " outcome)
+        (binding [cf/config (assoc cf/config :file-data-backend backend)]
+          (let [index  (+ 10 (* backend-index 10) (* case-index 2))
+                case   (create-token-source-consumer! profile index (inc index)
+                                                      (str backend " " case-index) local?)
+                output (export-link-later! [(:id (:file case))])]
+            (db/update! th/*system* :file {:deleted-at (ct/now)}
+                        {:id (:id (:source case))})
+            (let [result      (import-link-later! profile output)
+                  file-id     (first (:file-ids result))
+                  before      (bfc/get-file th/*system* file-id)
+                  row         (th/db-get :file-data {:file-id file-id :id file-id})
+                  legacy-data (seq (:data (th/db-get :file {:id file-id})))
+                  params      {::th/type :consume-tokens-source-fallback-notification
+                               ::rpc/profile-id (:id reader)
+                               :file-id file-id}]
+              (t/is (= backend (:backend before)))
+              (t/is (= outcome (get-in before [:metadata :tokens-source-fallback-notification])))
+              (t/is (= backend (:backend row)))
+              (if (= backend "db")
+                (t/is (bytes? (:data row)))
+                (t/is (nil? (:data row))))
+              (when (= backend "legacy-db")
+                (t/is (bytes? (:data (th/db-get :file {:id file-id}))))
+                (db/tx-run! th/*system* fdata-storage/migrate-file-to-storage {:id file-id})
+                (let [migrated (bfc/get-file th/*system* file-id)]
+                  (t/is (= "db" (:backend migrated)))
+                  (t/is (= (:metadata before) (:metadata migrated))))
+                (db/tx-run! th/*system* fdata-storage/rollback-file-from-storage {:id file-id})
+                (db/tx-run! th/*system* fdata-storage/rollback-file-from-storage {:id file-id})
+                (let [rolled-back (bfc/get-file th/*system* file-id)]
+                  (t/is (= "legacy-db" (:backend rolled-back)))
+                  (t/is (= (:metadata before) (:metadata rolled-back)))))
+              (when (= backend "storage")
+                (t/is (uuid? (get-in before [:metadata :storage-ref-id]))))
+
+              (let [row (th/db-get :file-data {:file-id file-id :id file-id})]
+                (let [denied (th/command! (assoc params ::rpc/profile-id (:id stranger)))]
+                  (t/is (some? (:error denied)))
+                  (t/is (= (:metadata before)
+                           (:metadata (bfc/get-file th/*system* file-id)))))
+
+                ;; Read access alone is sufficient; both calls start together
+                ;; and use separate RPC transactions.
+                (db/insert! th/*system* :file-profile-rel
+                            {:file-id file-id :profile-id (:id reader)
+                             :is-owner false :is-admin false :can-edit false})
+                (let [ready   (java.util.concurrent.CountDownLatch. 2)
+                      start   (promise)
+                      calls   (mapv (fn [_]
+                                      (future
+                                        (.countDown ready)
+                                        @start
+                                        (th/command! params)))
+                                    (range 2))
+                      _       (t/is (.await ready 5 java.util.concurrent.TimeUnit/SECONDS))
+                      _       (deliver start true)
+                      results (mapv #(deref % 10000 ::timeout) calls)]
+                  (doseq [call calls] (future-cancel call))
+                  (t/is (not-any? #{::timeout} results))
+                  (t/is (every? #(nil? (:error %)) results))
+                  (t/is (= {outcome 1 nil 1}
+                           (frequencies (map #(get-in % [:result :tokens-source-fallback-notification])
+                                             results)))))
+
+                (let [after (bfc/get-file th/*system* file-id)]
+                  (t/is (= (dissoc (:metadata before) :tokens-source-fallback-notification)
+                           (:metadata after)))
+                  (t/is (= (:revn before) (:revn after)))
+                  (t/is (= (:modified-at before) (:modified-at after)))
+                  (t/is (= backend (:backend after)))
+                  (t/is (= (cfo/get-tokens-source (:data before))
+                           (cfo/get-tokens-source (:data after))))
+                  (let [before-status (get-in before [:data :tokens-status])
+                        after-status  (get-in after [:data :tokens-status])]
+                    (t/is (ctos/tokens-status? after-status))
+                    (t/is (= (ctos/get-active-theme-ids before-status)
+                             (ctos/get-active-theme-ids after-status)))
+                    (t/is (= (ctos/get-active-set-ids before-status)
+                             (ctos/get-active-set-ids after-status))))
+                  (t/is (= legacy-data (seq (:data (th/db-get :file {:id file-id})))))
+                  (t/is (= (:modified-at row)
+                           (:modified-at (th/db-get :file-data {:file-id file-id :id file-id}))))
+                  (t/is (= (seq (:data row))
+                           (seq (:data (th/db-get :file-data {:file-id file-id :id file-id}))))))
+                (let [again (th/command! params)]
+                  (t/is (nil? (:error again)))
+                  (t/is (nil? (get-in again [:result :tokens-source-fallback-notification]))))))))))))
+
+(t/deftest link-later-fallback-notification-consumed-once
+  "Fallback import/resolution persists a one-shot workspace marker that a
+  read-permission + row-lock consume RPC returns and clears atomically."
+  (let [profile       (th/create-profile* 1)
+        stranger      (th/create-profile* 2)
+        local-case    (create-token-source-consumer! profile 1 2 "Notify Local" true)
+        empty-case    (create-token-source-consumer! profile 3 4 "Notify Empty" false)
+        restored-case (create-token-source-consumer! profile 5 6 "Notify Restored" true)
+        output        (export-link-later! (mapv :id [(:file local-case)
+                                                     (:file empty-case)
+                                                     (:file restored-case)]))]
+    (doseq [{:keys [source]} [local-case empty-case restored-case]]
+      (db/update! th/*system* :file
+                  {:deleted-at (ct/now)}
+                  {:id (:id source)}))
+    (let [tokenless-local (th/create-file* 11 {:profile-id (:id profile)
+                                               :project-id (:default-project-id profile)
+                                               :is-shared true
+                                               :name "Notify Local"})
+          tokenless-empty (th/create-file* 12 {:profile-id (:id profile)
+                                               :project-id (:default-project-id profile)
+                                               :is-shared true
+                                               :name "Notify Empty"})
+          provider        (th/create-file* 13 {:profile-id (:id profile)
+                                               :project-id (:default-project-id profile)
+                                               :is-shared true
+                                               :name "Notify Restored"})
+          _ (update-file! :file-id (:id provider)
+                          :profile-id (:id profile)
+                          :changes [{:type :set-tokens-lib
+                                     :tokens-lib (make-token-lib-with-activation
+                                                  (uuid/next) (uuid/next) "shared" "Dark")}])
+          result (import-link-later! profile output)
+          by-name (into {}
+                        (map (fn [file-id]
+                               (let [file (bfc/get-file th/*system* file-id)]
+                                 [(:name file) file])))
+                        (:file-ids result))
+          local-file (get by-name "Notify Local Consumer")
+          empty-file (get by-name "Notify Empty Consumer")
+          restored-file (get by-name "Notify Restored Consumer")]
+      ;; Import persists the marker only on the two fallback outcomes.
+      (t/is (= :tokens-source-fallback-local
+               (get-in local-file [:metadata :tokens-source-fallback-notification])))
+      (t/is (= :tokens-source-deactivated
+               (get-in empty-file [:metadata :tokens-source-fallback-notification])))
+      (t/is (nil? (get-in restored-file [:metadata :tokens-source-fallback-notification])))
+      (t/is (= (:id provider) (cfo/get-tokens-source (:data restored-file))))
+      (doseq [file [local-file empty-file]]
+        (t/is (nil? (cfo/get-tokens-source (:data file))))
+        (t/is (ctos/tokens-status? (get-in file [:data :tokens-status])))
+        (t/is (nil? (cfv/validate-file file []))))
+      ;; Consume returns the marker once without touching revn/source/status.
+      (let [revn-before (:revn local-file)
+            out (th/command! {::th/type :consume-tokens-source-fallback-notification
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id local-file)})]
+        (t/is (nil? (:error out)))
+        (t/is (= :tokens-source-fallback-local
+                 (get-in out [:result :tokens-source-fallback-notification])))
+        (let [cleared (bfc/get-file th/*system* (:id local-file))]
+          (t/is (nil? (get-in cleared [:metadata :tokens-source-fallback-notification])))
+          (t/is (= revn-before (:revn cleared)))
+          (t/is (nil? (cfo/get-tokens-source (:data cleared))))
+          (t/is (ctos/tokens-status? (get-in cleared [:data :tokens-status]))))
+        (let [again (th/command! {::th/type :consume-tokens-source-fallback-notification
+                                  ::rpc/profile-id (:id profile)
+                                  :file-id (:id local-file)})]
+          (t/is (nil? (:error again)))
+          (t/is (nil? (get-in again [:result :tokens-source-fallback-notification])))))
+      ;; A stranger without read access cannot consume or clear the marker.
+      (let [denied (th/command! {::th/type :consume-tokens-source-fallback-notification
+                                 ::rpc/profile-id (:id stranger)
+                                 :file-id (:id empty-file)})]
+        (t/is (some? (:error denied)))
+        (t/is (= :tokens-source-deactivated
+                 (get-in (bfc/get-file th/*system* (:id empty-file))
+                         [:metadata :tokens-source-fallback-notification]))))
+      (let [out (th/command! {::th/type :consume-tokens-source-fallback-notification
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id empty-file)})]
+        (t/is (nil? (:error out)))
+        (t/is (= :tokens-source-deactivated
+                 (get-in out [:result :tokens-source-fallback-notification])))
+        (t/is (nil? (get-in (bfc/get-file th/*system* (:id empty-file))
+                            [:metadata :tokens-source-fallback-notification]))))
+      ;; Resolution to a tokenless library sets the marker; resolution to a
+      ;; provider clears it. Ordinary linking stays untouched.
+      (let [extra-tokenless (th/create-file* 14 {:profile-id (:id profile)
+                                                 :project-id (:default-project-id profile)
+                                                 :is-shared true
+                                                 :name "Notify Extra Tokenless"})
+            extra-provider (th/create-file* 15 {:profile-id (:id profile)
+                                                :project-id (:default-project-id profile)
+                                                :is-shared true
+                                                :name "Notify Extra Provider"})
+            _ (update-file! :file-id (:id extra-provider)
+                            :profile-id (:id profile)
+                            :changes [{:type :set-tokens-lib
+                                       :tokens-lib (make-token-lib-with-activation
+                                                    (uuid/next) (uuid/next) "shared" "Dark")}])
+            fell-back (th/command! {::th/type :resolve-import-token-source
+                                    ::rpc/profile-id (:id profile)
+                                    :file-id (:id restored-file)
+                                    :library-id (:id extra-tokenless)
+                                    :tokens-status-names {}})]
+        (t/is (nil? (:error fell-back)))
+        (t/is (= :tokens-source-fallback-local
+                 (get-in fell-back [:result :tokens-source-outcome])))
+        (t/is (= :tokens-source-fallback-local
+                 (get-in (bfc/get-file th/*system* (:id restored-file))
+                         [:metadata :tokens-source-fallback-notification])))
+        (let [consumed (th/command! {::th/type :consume-tokens-source-fallback-notification
+                                     ::rpc/profile-id (:id profile)
+                                     :file-id (:id restored-file)})]
+          (t/is (nil? (:error consumed)))
+          (t/is (= :tokens-source-fallback-local
+                   (get-in consumed [:result :tokens-source-fallback-notification]))))
+        (let [restored (th/command! {::th/type :resolve-import-token-source
+                                     ::rpc/profile-id (:id profile)
+                                     :file-id (:id local-file)
+                                     :library-id (:id extra-provider)
+                                     :tokens-status-names {}})]
+          (t/is (nil? (:error restored)))
+          (t/is (= :tokens-source-restored
+                   (get-in restored [:result :tokens-source-outcome])))
+          (let [file (bfc/get-file th/*system* (:id local-file))]
+            (t/is (= (:id extra-provider) (cfo/get-tokens-source (:data file))))
+            (t/is (nil? (get-in file [:metadata :tokens-source-fallback-notification])))))))))

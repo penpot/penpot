@@ -95,7 +95,8 @@
   [:map {:title "Metadata"}
    [:storage-ref-id {:optional true} ::sm/uuid]
    [:generated-by {:optional true} :string]
-   [:referer {:optional true} :string]])
+   [:referer {:optional true} :string]
+   [:tokens-source-fallback-notification {:optional true} [:enum :tokens-source-fallback-local :tokens-source-deactivated]]])
 
 (def schema:file
   "A schema for validate a file data structure; data is optional
