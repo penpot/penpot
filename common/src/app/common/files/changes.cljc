@@ -6,6 +6,7 @@
 
 (ns app.common.files.changes
   (:require
+   #?(:cljs [app.common.files.validate :as val])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -438,7 +439,14 @@
     [:map {:title "SetTokensSource"}
      [:type [:= :set-tokens-source]]
      [:file-id ::sm/uuid]
-     [:library-id [:maybe ::sm/uuid]]]]])
+     [:library-id [:maybe ::sm/uuid]]]]
+
+   [:validate-shapes
+    [:map {:title "ValidateShapesChange"}
+     [:type [:= :validate-shapes]]
+     [:page-id ::sm/uuid]
+     [:shape-ids [:vector ::sm/uuid]]
+     [:context :string]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -474,7 +482,7 @@
   to the processor backend."
   nil)
 
-(defmulti process-change (fn [_ change] (:type change)))
+(defmulti process-change (fn [_ change _] (:type change)))
 (defmulti process-operation (fn [_ op] (:type op)))
 
 ;; Changes Processing Impl
@@ -506,22 +514,25 @@
 
 (defn process-changes
   ([data items]
-   (process-changes data items true))
+   (process-changes data items true {}))
 
   ([data items verify?]
+   (process-changes data items verify? {}))
+
+  ([data items verify? libraries]
    ;; When verify? false we spec the schema validation. Currently used
    ;; to make just 1 validation even if the changes are applied twice
    (when verify?
      (check-changes items))
 
    (binding [*touched-changes* (volatile! #{})]
-     (let [result (reduce #(or (process-change %1 %2) %1) data items)]
+     (let [result (reduce #(or (process-change %1 %2 libraries) %1) data items)]
        (reduce process-touched-change result @*touched-changes*)))))
 
 ;; --- Comment Threads
 
 (defmethod process-change :set-comment-thread-position
-  [data {:keys [page-id comment-thread-id position frame-id]}]
+  [data {:keys [page-id comment-thread-id position frame-id]} _]
   (d/update-in-when data [:pages-index page-id]
                     (fn [page]
                       (if (and position frame-id)
@@ -534,7 +545,7 @@
 ;; --- Guides
 
 (defmethod process-change :set-guide
-  [data {:keys [page-id id params]}]
+  [data {:keys [page-id id params]} _]
   (if (nil? params)
     (d/update-in-when data [:pages-index page-id]
                       (fn [page]
@@ -550,7 +561,7 @@
 ;; --- Flows
 
 (defmethod process-change :set-flow
-  [data {:keys [page-id id params]}]
+  [data {:keys [page-id id params]} _]
   (if (nil? params)
     (d/update-in-when data [:pages-index page-id]
                       (fn [page]
@@ -566,7 +577,7 @@
 ;; --- Grids
 
 (defmethod process-change :set-default-grid
-  [data {:keys [page-id grid-type params]}]
+  [data {:keys [page-id grid-type params]} _]
   (if (nil? params)
     (d/update-in-when data [:pages-index page-id]
                       (fn [page]
@@ -603,7 +614,7 @@
     (update state :media-refs into xform media-refs)))
 
 (defmethod process-change :add-obj
-  [data {:keys [id obj page-id component-id frame-id parent-id index ignore-touched]}]
+  [data {:keys [id obj page-id component-id frame-id parent-id index ignore-touched]} _]
   ;; NOTE: we only perform hard validation on backend
   #?(:clj (validate-shape obj page-id))
 
@@ -638,7 +649,7 @@
     objects))
 
 (defmethod process-change :mod-obj
-  [data {:keys [page-id component-id] :as change}]
+  [data {:keys [page-id component-id] :as change} _]
   (if page-id
     (d/update-in-when data [:pages-index page-id :objects] process-operations change)
     (d/update-in-when data [:components component-id :objects] process-operations change)))
@@ -668,19 +679,19 @@
     objects))
 
 (defmethod process-change :reorder-children
-  [data {:keys [page-id component-id] :as change}]
+  [data {:keys [page-id component-id] :as change} _]
   (if page-id
     (d/update-in-when data [:pages-index page-id :objects] process-children-reordering change)
     (d/update-in-when data [:components component-id :objects] process-children-reordering change)))
 
 (defmethod process-change :del-obj
-  [data {:keys [page-id component-id id ignore-touched]}]
+  [data {:keys [page-id component-id id ignore-touched]} _]
   (if page-id
     (d/update-in-when data [:pages-index page-id] ctst/delete-shape id ignore-touched)
     (d/update-in-when data [:components component-id] ctst/delete-shape id ignore-touched)))
 
 (defmethod process-change :fix-obj
-  [data {:keys [page-id component-id id] :as params}]
+  [data {:keys [page-id component-id id] :as params} _]
   (letfn [(fix-container [container]
             (case (:fix params :broken-children)
               :broken-children (ctst/fix-broken-children container id)
@@ -692,7 +703,7 @@
       (d/update-in-when data [:components component-id] fix-container))))
 
 (defmethod process-change :reg-objects
-  [data {:keys [page-id component-id shapes]}]
+  [data {:keys [page-id component-id shapes]} _]
   ;; FIXME: Improve performance
   (letfn [(reg-objects [objects]
             (let [lookup    (d/getf objects)
@@ -749,7 +760,7 @@
 
 (defmethod process-change :mov-objects
   ;; FIXME: ignore-touched is no longer used, so we can consider it deprecated
-  [data {:keys [parent-id shapes index page-id component-id #_ignore-touched after-shape allow-altering-copies syncing]}]
+  [data {:keys [parent-id shapes index page-id component-id #_ignore-touched after-shape allow-altering-copies syncing]} _]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
@@ -864,7 +875,7 @@
       (d/update-in-when data [:components component-id :objects] move-objects))))
 
 (defmethod process-change :add-page
-  [data {:keys [id name page]}]
+  [data {:keys [id name page]} _]
   (when (and id name page)
     (ex/raise :type :conflict
               :hint "id+name or page should be provided, never both"))
@@ -874,7 +885,7 @@
     (ctpl/add-page data page)))
 
 (defmethod process-change :mod-page
-  [data {:keys [id] :as params}]
+  [data {:keys [id] :as params} _]
   (d/update-in-when data [:pages-index id]
                     (fn [page]
                       (let [name       (get params :name)
@@ -911,7 +922,7 @@
                           (dissoc :pixel-grid-opacity))))))
 
 (defmethod process-change :set-plugin-data
-  [data {:keys [object-type object-id page-id namespace key value]}]
+  [data {:keys [object-type object-id page-id namespace key value]} _]
   (letfn [(update-fn [data]
             (if (some? value)
               (assoc-in data [:plugin-data namespace key] value)
@@ -937,83 +948,83 @@
       (d/update-in-when data [:components object-id] update-fn))))
 
 (defmethod process-change :del-page
-  [data {:keys [id]}]
+  [data {:keys [id]} _]
   (ctpl/delete-page data id))
 
 (defmethod process-change :mov-page
-  [data {:keys [id index]}]
+  [data {:keys [id index]} _]
   (update data :pages d/insert-at-index index [id]))
 
 (defmethod process-change :add-color
-  [data {:keys [color]}]
+  [data {:keys [color]} _]
   (ctl/add-color data color))
 
 (defmethod process-change :mod-color
-  [data {:keys [color]}]
+  [data {:keys [color]} _]
   (ctl/set-color data color))
 
 (defmethod process-change :del-color
-  [data {:keys [id]}]
+  [data {:keys [id]} _]
   (ctl/delete-color data id))
 
 ;; -- Media
 
 (defmethod process-change :add-media
-  [data {:keys [object]}]
+  [data {:keys [object]} _]
   (update data :media assoc (:id object) object))
 
 (defmethod process-change :mod-media
-  [data {:keys [object]}]
+  [data {:keys [object]} _]
   (d/update-in-when data [:media (:id object)] merge object))
 
 (defmethod process-change :del-media
-  [data {:keys [id]}]
+  [data {:keys [id]} _]
   (d/update-when data :media dissoc id))
 
 ;; -- Components
 
 (defmethod process-change :add-component
-  [data params]
+  [data params _]
   (ctkl/add-component data params))
 
 (defmethod process-change :mod-component
-  [data params]
+  [data params _]
   (ctkl/mod-component data params))
 
 (defmethod process-change :del-component
-  [data {:keys [id skip-undelete? delta]}]
+  [data {:keys [id skip-undelete? delta]} _]
   (ctf/delete-component data id skip-undelete? delta))
 
 (defmethod process-change :restore-component
-  [data {:keys [id page-id]}]
+  [data {:keys [id page-id]} _]
   (ctf/restore-component data id page-id))
 
 (defmethod process-change :purge-component
-  [data {:keys [id]}]
+  [data {:keys [id]} _]
   (ctf/purge-component data id))
 
 ;; -- Typography
 
 (defmethod process-change :add-typography
-  [data {:keys [typography]}]
+  [data {:keys [typography]} _]
   (ctyl/add-typography data typography))
 
 (defmethod process-change :mod-typography
-  [data {:keys [typography]}]
+  [data {:keys [typography]} _]
   (ctyl/update-typography data (:id typography) merge typography))
 
 (defmethod process-change :del-typography
-  [data {:keys [id]}]
+  [data {:keys [id]} _]
   (ctyl/delete-typography data id))
 
 ;; -- Design Tokens
 
 (defmethod process-change :set-tokens-lib
-  [data {:keys [tokens-lib]}]
+  [data {:keys [tokens-lib]} _]
   (assoc data :tokens-lib tokens-lib))
 
 (defmethod process-change :set-token
-  [data {:keys [set-id token-id attrs]}]
+  [data {:keys [set-id token-id attrs]} _]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-lib
        (fn [lib']
@@ -1030,7 +1041,7 @@
                                 (ctob/make-token (merge prev-token attrs)))))))))
 
 (defmethod process-change :set-token-set
-  [data {:keys [id attrs]}]
+  [data {:keys [id attrs]} _]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-lib
        (fn [lib']
@@ -1045,7 +1056,7 @@
            (ctob/update-set lib' id (fn [_] (ctob/make-token-set attrs))))))))
 
 (defmethod process-change :set-token-theme
-  [data {:keys [id attrs]}]
+  [data {:keys [id attrs]} _]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-lib
        (fn [lib']
@@ -1063,34 +1074,68 @@
                                 (ctob/make-token-theme (merge prev-token-theme attrs)))))))))
 
 (defmethod process-change :set-tokens-status
-  [data {:keys [theme-ids set-ids]}]
+  [data {:keys [theme-ids set-ids]} _]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-status ctos/set-tokens-status theme-ids set-ids)))
 
 (defmethod process-change :rename-token-set-group
-  [data {:keys [set-group-path set-group-fname]}]
+  [data {:keys [set-group-path set-group-fname]} _]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-lib ctob/rename-set-group set-group-path set-group-fname)))
 
 (defmethod process-change :move-token-set
-  [data {:keys [from-path to-path before-path before-group] :as changes}]
+  [data {:keys [from-path to-path before-path before-group] :as changes} _]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-lib ctob/move-set from-path to-path before-path before-group)))
 
 (defmethod process-change :move-token-set-group
-  [data {:keys [from-path to-path before-path before-group]}]
+  [data {:keys [from-path to-path before-path before-group]} _]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-lib ctob/move-set-group from-path to-path before-path before-group)))
 
-;; === Design Tokens configuration
+;; --- Design Tokens configuration
 
 (defmethod process-change :set-base-font-size
-  [data {:keys [base-font-size]}]
+  [data {:keys [base-font-size]} _]
   (ctf/set-base-font-size data base-font-size))
 
 (defmethod process-change :set-tokens-source
-  [data {:keys [library-id]}]
+  [data {:keys [library-id]} _]
   (cfo/set-tokens-source data library-id))
+
+;; --- Validate Shapes
+
+(defn skip-validate-changes
+  "Remove the :validate-shapes changes, for data where the shapes can't
+  be validated (e.g. without the full file or its libraries)."
+  [changes]
+  (remove #(= :validate-shapes (:type %)) changes))
+
+#?(:clj
+   (defmethod process-change :validate-shapes
+     [data _ _]
+     data))
+
+#?(:cljs
+   (defmethod process-change :validate-shapes
+     [data {:keys [page-id shape-ids context]} libraries]
+     (when libraries
+       (let [file {:id (:id data) :data data}
+             errors (reduce (fn [acc shape-id]
+                              (if-let [page (ctpl/get-page data page-id)]
+                                (let [page-errors (val/validate-shape shape-id file page libraries)]
+                                  (if (seq page-errors)
+                                    (into acc page-errors)
+                                    acc))
+                                acc))
+                            []
+                            shape-ids)]
+         (when (seq errors)
+           (ex/raise :type :validation
+                     :code :referential-integrity
+                     :hint (str "error on validating shapes: " context)
+                     :details errors))))
+     data))
 
 ;; === Operations
 

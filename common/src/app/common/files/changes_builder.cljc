@@ -56,6 +56,10 @@
     :undo-changes '()
     :origin origin}))
 
+(defn empty-changes?
+  [changes]
+  (empty? (:redo-changes changes)))
+
 (defn set-save-undo?
   [changes save-undo?]
   (assoc changes :save-undo? save-undo?))
@@ -194,6 +198,8 @@
           redo-changes  (:redo-changes changes)
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
+                               ;; Validation only makes sense on the real file data
+                               (cfc/skip-validate-changes)
                                (map #(-> %
                                          (assoc :page-id uuid/zero)
                                          (dissoc :component-id))))
@@ -1222,20 +1228,42 @@
 
 (defn get-library-data
   [changes]
+  (assert-library! changes)
   (::library-data (meta changes)))
 
 (defn get-objects
   [changes]
+  (assert-objects! changes)
   (dm/get-in (::file-data (meta changes)) [:pages-index uuid/zero :objects]))
 
 (defn get-page
   [changes]
+  (assert-page! changes)
   (::page (meta changes)))
 
 (defn get-page-id
   [changes]
+  (assert-page-id! changes)
   (::page-id (meta changes)))
 
+;; The getters above assert that their context has been given. Use these
+;; predicates when a caller has a fallback for a missing context.
+
+(defn has-library-data?
+  [changes]
+  (contains? (meta changes) ::library-data))
+
+(defn has-objects?
+  [changes]
+  (contains? (meta changes) ::file-data))
+
+(defn has-page?
+  [changes]
+  (contains? (meta changes) ::page))
+
+(defn has-page-id?
+  [changes]
+  (contains? (meta changes) ::page-id))
 
 (defn set-text-content
   [changes id content prev-content]
@@ -1257,3 +1285,12 @@
     (-> changes
         (update :redo-changes conj redo-change)
         (update :undo-changes conj undo-change))))
+
+;; Validate Shapes
+
+(defn validate-shapes
+  [changes page-id shape-ids context]
+  (update changes :redo-changes conj {:type :validate-shapes
+                                      :page-id page-id
+                                      :shape-ids (vec shape-ids)
+                                      :context context}))

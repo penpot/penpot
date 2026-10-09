@@ -570,7 +570,9 @@
         objects     (:objects page)
         file-data   (:data file)
         first-child (get objects (first shapes))
-        prop-names  (cfv/extract-properties-names first-child file-data)]
+
+        prop-names  (cfv/extract-properties-names file-data first-child)]
+
     (run! (fn [child-id]
             (when-let [child (get objects child-id)]
               (if (not (ctk/is-variant? child))
@@ -584,7 +586,7 @@
                                   (str/ffmt "Main instance in variant % should have the variant-id of the container but has %" (:id child) (:variant-id child))
                                   child file page
                                   :variant-id shape-id))
-                  (when (not= prop-names (cfv/extract-properties-names child file-data))
+                  (when (not= prop-names (cfv/extract-properties-names file-data child))
                     (report-error :invalid-variant-properties
                                   (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
                                   child file page

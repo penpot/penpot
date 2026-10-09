@@ -440,8 +440,10 @@
              cont-props   (if flex?
                             (into base-props flex-props)
                             base-props)
+             ;; The variant has no properties yet, so its variant-name is empty
              main-props   {:name name
-                           :variant-id variant-id}
+                           :variant-id variant-id
+                           :variant-name ""}
 
              stroke-props {:stroke-alignment :inner
                            :stroke-style :solid
@@ -474,9 +476,11 @@
            (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
            (when flex? (dwsl/create-layout-from-id variant-id :flex))
            (dwsh/update-shapes variant-vec #(merge % cont-props))
+           ;; Set the variant-id on the component before the main shape, so the
+           ;; shape validation after updating the main sees both in sync
+           (set-variant-id component-id variant-id)
            (dwsh/update-shapes [main-instance-id] #(merge % main-props))
-           (cl/add-stroke variant-vec stroke-props)
-           (set-variant-id component-id variant-id))
+           (cl/add-stroke variant-vec stroke-props))
 
           ;; Add the necessary number of new properties, with default values
           (rx/from
@@ -803,7 +807,7 @@
                                             (remove #(= (:id %) component-id))
                                             (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
                                             (reverse))
-                nearest-comp           (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
+                nearest-comp           (apply min-key #(ctv/properties-distance target-props (:variant-properties %)) valid-comps)
                 shape-parents          (cfh/get-parents-with-self current-page-objects (:parent-id shape))
                 nearest-comp-children  (cfh/get-children-with-self component-page-objects (:main-instance-id nearest-comp))
                 comps-nesting-loop?    (seq? (cfh/components-nesting-loop? nearest-comp-children shape-parents))

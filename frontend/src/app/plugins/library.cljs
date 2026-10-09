@@ -1075,7 +1075,7 @@
              components (->> data
                              :components
                              (remove (comp :deleted second))
-                             (remove (comp #(cfv/is-secondary-variant? % data) second))
+                             (remove (comp #(cfv/is-secondary-variant? data %) second))
                              (map first)
                              (map #(lib-component-proxy plugin-id file-id %)))]
          (apply array components)))}
