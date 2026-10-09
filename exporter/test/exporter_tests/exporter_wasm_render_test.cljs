@@ -49,19 +49,13 @@
           "style degrades before weight")
     (t/is (nil? (render/find-variant variants "f9" 400 0)))))
 
-(t/deftest family-uuid-delegates-to-the-shared-quartets
-  ;; `family-uuid` is a one-line adapter over `app.common.uuid`: the
-  ;; roundtrip itself belongs to `common`, not to this pipeline, so
-  ;; this only pins that the adapter passes the quartet through in
-  ;; order (a probing session showed `from-unsigned-parts` answering
-  ;; zeroes in this bundle — suspected pre-existing `common` issue,
-  ;; flagged separately, never worked around here).
-  (let [seen (atom nil)]
-    (with-redefs [uuid/from-unsigned-parts (fn [a b c d]
-                                             (reset! seen [a b c d])
-                                             :uuid)]
-      (t/is (= :uuid (render/family-uuid #js [11 22 33 44])))
-      (t/is (= [11 22 33 44] @seen)))))
+(t/deftest family-uuid-roundtrips-through-u32
+  ;; `:id` is a JS array (never a clj vector: `aget` on a vector
+  ;; reads `undefined`, which the u32 setter coerces to zero).
+  (let [id    (uuid/next)
+        quart (uuid/get-u32 id)]
+    (t/is (= id (render/family-uuid #js [(aget quart 0) (aget quart 1)
+                                         (aget quart 2) (aget quart 3)])))))
 
 (t/deftest scene-fallback-fonts-covers-emoji
   (let [text-shape (fn [text]
