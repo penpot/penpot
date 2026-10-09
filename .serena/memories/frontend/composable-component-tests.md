@@ -116,7 +116,15 @@ Two pure runners (no store, JVM + CLJS):
   Failures are recorded in the situation with labelled diffs (labels die with the variant, so
   they are resolved when recorded); `uc/check!` asserts after the asserter. A case map's
   `:undo-check` takes `{:off "reason"}` or `{:known-failures [{:bug "F41" :phases #{…} :op
-  <the case's node> :when pred}]}`: a known failure that stops happening fails the case. Match
+  <the case's node> :runners #{:pure :frontend} :when pred}]}`; a mark applies to variants of
+  its runners (`uc/with-runner`) where its `:op` ran and `:when` holds, and one that applies but
+  does not happen fails the case. The interpreter runs the same round trip on every `:user` and
+  `:frontend-only` event step through the real `dwu/undo`/`dwu/redo`, and also checks the
+  workspace undo index (`:undo-index`/`:redo-index` phases): a step must add exactly one undo
+  entry or group. File installs (assembly ops, reset) are its baselines. The interpreter
+  empties `:workspace-undo` per variant. Frontend snapshots drop `:position-data` under WASM.
+  Undo groups get lost in derived work: `initialize-shape-layout` buffers `:layout/update`
+  without its `:undo-group` (F43), so a swap's reflow lands in entries of its own. Match
   steps by node identity, never by record type or rendered name: `n/MoveChild` does not resolve
   through an alias on the JVM, and the JS test build strips record names (transcripts show
   `node`).

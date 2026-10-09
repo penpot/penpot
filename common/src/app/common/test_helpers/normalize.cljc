@@ -14,12 +14,19 @@
        change, undo and redo included;
      - with `{:position-data? false}`, the shapes' `:position-data`, the text
        layout that WASM measurement regenerates.
-   Shapes become plain maps, so a shape record and a map with the same
-   attributes compare equal. Everything else is kept, `:touched` and
-   `:remote-synced` included."
+   Shapes and the maps that hold them become plain maps, so a shape record
+   compares equal to a map with the same attributes, and an objects map (see
+   `app.common.types.objects-map`) to a plain map with the same entries.
+   Everything else is kept, `:touched` and `:remote-synced` included."
   (:require
    [app.common.data :as d]
    [clojure.data :as data]))
+
+(defn- map-vals
+  "A plain map with `f` applied to each value of the map `m`, whatever its
+   type."
+  [f m]
+  (into {} (map (fn [[k v]] [k (f v)])) m))
 
 (defn- normalize-shape
   [shape {:keys [position-data?]}]
@@ -28,7 +35,7 @@
 
 (defn- normalize-objects
   [objects opts]
-  (update-vals objects #(normalize-shape % opts)))
+  (map-vals #(normalize-shape % opts) objects))
 
 (defn- normalize-page
   [page opts]
@@ -51,8 +58,10 @@
          (update :data
                  (fn [data]
                    (-> data
-                       (d/update-when :pages-index update-vals #(normalize-page % opts))
-                       (d/update-when :components update-vals #(normalize-component % opts)))))))))
+                       (d/update-when :pages-index
+                                      (partial map-vals #(normalize-page % opts)))
+                       (d/update-when :components
+                                      (partial map-vals #(normalize-component % opts))))))))))
 
 (defn diff
   "What differs between the values `a` and `b`, as `[only-in-a only-in-b]`

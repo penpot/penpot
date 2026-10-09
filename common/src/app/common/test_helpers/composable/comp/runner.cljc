@@ -336,7 +336,9 @@
                      {:undo-check? (uc/enabled? case-map)}
                      opts)]
      (if (:undo-check? opts)
-       (-> (mark-baseline (setup))
+       (-> (setup)
+           (uc/with-runner :pure)
+           (mark-baseline)
            (run-op operation opts)
            (check-variant))
        (run-op (setup) operation opts)))))

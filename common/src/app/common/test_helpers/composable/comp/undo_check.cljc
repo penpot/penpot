@@ -24,16 +24,23 @@
      - `:known-failures`, the failures a known bug causes, each a map of
        `:bug` (its row in the plan's suspected bugs), `:phases` (a set),
        `:op` (the case's operation node whose step fails, matched by node
-       identity; any step when nil) and `:when` (a situation predicate;
-       every variant when nil).
-       A known failure that does not happen fails the case, so the mark goes
-       once the bug is fixed."
+       identity; any step when nil), `:runners` (a subset of `#{:pure
+       :frontend}`; both when nil) and `:when` (a situation predicate).
+       A known failure applies to a variant of its runners where its `:op`
+       ran and `:when` holds. One that applies but does not happen fails the
+       case, so the mark goes once the bug is fixed."
   (:require
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.normalize :as thn]
    [clojure.test :as t]
    [clojure.walk :as walk]))
+
+(defn with-runner
+  "Record in `situation` which runner runs it, `:pure` or `:frontend`, for
+   the `:runners` of known failures."
+  [situation runner]
+  (assoc situation ::runner runner))
 
 (defn enabled?
   "Whether `case-map` runs the round trip."
@@ -105,9 +112,12 @@
    of the case explains (`:unexpected`), and the known failures that apply to
    the variant but did not happen (`:resolved`)."
   [situation case-map]
-  (let [known  (->> (get-in case-map [:undo-check :known-failures])
-                    (filter #(if-let [applies? (:when %)] (applies? situation) true)))
-        found  (failures situation)]
+  (let [applies? (fn [{:keys [op runners] pred :when}]
+                   (and (or (nil? runners) (contains? runners (::runner situation)))
+                        (or (nil? op) (tm/applied? situation op))
+                        (or (nil? pred) (pred situation))))
+        known    (filter applies? (get-in case-map [:undo-check :known-failures]))
+        found    (failures situation)]
     {:unexpected (filterv (fn [failure] (not-any? #(matches? % failure) known)) found)
      :resolved   (filterv (fn [k] (not-any? #(matches? k %) found)) known)}))
 

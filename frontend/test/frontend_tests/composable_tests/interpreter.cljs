@@ -40,6 +40,7 @@
    from `st/state`. State is re-installed per variant for isolation."
   (:require
    [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
@@ -52,6 +53,7 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.reflow :as pwrf]
@@ -231,7 +233,8 @@
    primary file as the current/workspace file, plus any AUXILIARY files (e.g. a
    linked library, for the cross-file case H) alongside in `:files`, each tagged
    `:library-of` the current file so the library-sync machinery treats them as
-   linked libraries."
+   linked libraries. The undo stack starts empty, so an undo never reaches the
+   previous variant's entries."
   [situation]
   (let [file (tm/file situation)
         aux  (tm/aux-files situation)]
@@ -242,6 +245,7 @@
                :current-file-id (:id file)
                :current-page-id (cthf/current-page-id file)
                :permissions {:can-edit true}
+               :workspace-undo {}
                :files (into {(:id file) file}
                             (map (fn [[lib-id lib]] [lib-id (assoc lib :library-of (:id file))]))
                             aux))))))
@@ -306,6 +310,116 @@
                  :current-page-id (cthf/current-page-id file))
           (assoc-in [:files (:id file)] file)))))
 
+(defn- unwrap
+  "The concrete operation of an op unit (the chosen op of a RecordedChoice)."
+  [op]
+  (if (tm/recorded-choice? op) (tm/choice-of op) op))
+
+;; --------------------------------------------------------------------------
+;; Undo/redo round trip (see `app.common.test-helpers.composable.comp.undo-check`)
+;;
+;; Run on every user step that goes through a real event: undo must give back
+;; the file before the step and redo the file after it, each moving the
+;; workspace undo index back to where it was, so a step adds exactly one undo
+;; entry (or group). File installs (assembly steps and the reset, see
+;; `sync-op?`) add no entry, so they are the baseline the end-of-variant round
+;; trip undoes back to.
+;; --------------------------------------------------------------------------
+
+(defn- undo-index
+  "The workspace undo index: the entry the next undo reverts, -1 when none."
+  []
+  (let [{:keys [index items]} (:workspace-undo @st/state)]
+    (or index (dec (count items)))))
+
+(defn- snapshot
+  "The normalized live file the round trip compares. WASM regenerates
+   `:position-data` by measuring, so it is left out there."
+  []
+  (uc/snapshot (current-file)
+               {:position-data? (not (features/active-feature? @st/state "render-wasm/v1"))}))
+
+(defn- mark-baseline
+  [situation]
+  (uc/mark-baseline situation (undo-index) (snapshot)))
+
+(defn- settle!
+  "Emit `event` and wait for it to settle. Resolves with nil, or with the
+   reason it did not settle."
+  [event]
+  (.then (await-step [event])
+         (fn [result]
+           (when-not (= :settled result)
+             (str "did not settle; pending: " (pr-str (describe-pending (:timeout result))))))))
+
+(defn- round-trip-move
+  "Emit `event` (undo or redo) and check that the file equals the snapshot
+   `expected` and the undo index `expected-index`, recording failures of
+   `phase` at `step`. Resolves with `[situation settled?]`."
+  [situation event step phase expected expected-index]
+  (.then (settle! event)
+         (fn [error]
+           (if error
+             [(uc/add-failure situation {:phase phase :step step :error error}) false]
+             (let [index (undo-index)]
+               [(cond-> (uc/compare-states situation step phase expected (snapshot))
+                  (not= expected-index index)
+                  (uc/add-failure {:phase (keyword (str (name phase) "-index"))
+                                   :step  step
+                                   :error (str "undo index " index ", expected "
+                                               expected-index)}))
+                true])))))
+
+(defn- check-step
+  "The round trip of user step `op`, given the snapshot `before` and the undo
+   index `index-before` taken before it. Resolves with the situation."
+  [situation op before index-before]
+  (let [step        (uc/step situation op)
+        after       (snapshot)
+        index-after (undo-index)]
+    (if (= index-before index-after)
+      (js/Promise.resolve (uc/compare-states situation step :no-undo-entry before after))
+      (.then (round-trip-move situation dwu/undo step :undo before index-before)
+             (fn [[situation settled?]]
+               (if settled?
+                 (.then (round-trip-move situation dwu/redo step :redo after index-after)
+                        first)
+                 situation))))))
+
+(defn- repeat-move
+  "Emit `event` (undo or redo) until `done?` holds, at most `limit` times.
+   Resolves with `[situation times]`, `situation` holding a failure of
+   `phase` when a move did not settle."
+  [situation event phase done? limit]
+  (letfn [(step [times]
+            (if (or (done?) (>= times limit))
+              (js/Promise.resolve [situation times])
+              (.then (settle! event)
+                     (fn [error]
+                       (if error
+                         [(uc/add-failure situation {:phase phase :error error}) times]
+                         (step (inc times)))))))]
+    (step 0)))
+
+(defn- check-variant
+  "The end-of-variant round trip: undo back to the baseline, then redo as many
+   times. Resolves with the situation."
+  [situation]
+  (let [{:keys [depth] :as baseline} (uc/baseline situation)
+        final       (snapshot)
+        final-index (undo-index)
+        limit       (- final-index depth)]
+    (if (pos? limit)
+      (.then (repeat-move situation dwu/undo :variant-undo #(<= (undo-index) depth) limit)
+             (fn [[situation times]]
+               (let [situation (uc/compare-states situation nil :variant-undo
+                                                  (:snapshot baseline) (snapshot))]
+                 (.then (repeat-move situation dwu/redo :variant-redo
+                                     #(>= (undo-index) final-index) times)
+                        (fn [[situation _]]
+                          (uc/compare-states situation nil :variant-redo final (snapshot)))))))
+      (js/Promise.resolve situation))))
+
 (defn- sync-op?
   "Whether `op` is a SYNCHRONOUS, `apply-to`-based operation rather than one that
    dispatches a workspace event and needs settling. Two kinds:
@@ -319,7 +433,7 @@
    Both are handled by `run-sync-op` (no async settle — any store write is a
    synchronous UpdateEvent)."
   [op]
-  (let [op (if (tm/recorded-choice? op) (tm/choice-of op) op)]
+  (let [op (unwrap op)]
     (or (instance? tm/Skip op)
         (instance? tm/Test op)
         (= :assembly (n/op-kind op))
@@ -339,7 +453,10 @@
   (let [situation (tm/with-file situation (current-file))
         situation (tm/apply-to op situation)]
     (st/emit! (install-file-event (tm/file situation)))
-    situation))
+    (cond-> situation
+      (and (::undo-check? situation)
+           (not (instance? tm/Test (unwrap op))))
+      (mark-baseline))))
 
 (defn- run-ops
   "Async fold over `ops` (concrete operation units, in order — plain ops and/or
@@ -353,16 +470,36 @@
   [situation ops k]
   (if (empty? ops)
     (k situation)
-    (let [op (first ops)]
+    (let [op           (first ops)
+          kind         (let [op (unwrap op)]
+                         (when (satisfies? n/IComponentOperation op)
+                           (n/op-kind op)))
+          check-step?  (and (::undo-check? situation)
+                            (contains? #{:user :frontend-only} kind))
+          before       (when check-step? (snapshot))
+          index-before (undo-index)]
       (if (sync-op? op)
         (run-ops (run-sync-op situation op) (rest ops) k)
         (.then (await-step (op-events op situation))
                (fn [result]
                  (if (= :settled result)
-                   (run-ops (record-op situation op) (rest ops) k)
+                   (let [situation (record-op situation op)]
+                     (cond
+                       check-step?
+                       (.then (check-step situation (unwrap op) before index-before)
+                              #(run-ops % (rest ops) k))
+
+                       ;; never undo past the state a case's own undo went back to
+                       (and (::undo-check? situation)
+                            (= :undo kind)
+                            (< (undo-index) (:depth (uc/baseline situation))))
+                       (run-ops (mark-baseline situation) (rest ops) k)
+
+                       :else
+                       (run-ops situation (rest ops) k)))
                    (do
                      (t/is false (str "Step did not settle in " step-timeout-ms "ms: "
-                                      (pr-str (type (if (tm/recorded-choice? op) (tm/choice-of op) op)))
+                                      (pr-str (type (unwrap op)))
                                       "; pending: " (pr-str (describe-pending (:timeout result)))))
                      (k nil)))))))))
 
@@ -401,11 +538,22 @@
 
 (defn- run-variant
   "Set up one variant on the global store and run its ops. `setup` returns a
-   situation (file + roles). Calls `k` with the final situation."
-  [setup ops k]
+   situation (file + roles). With `undo-check?`, runs the undo/redo round
+   trip of each user step and of the variant. Calls `k` with the final
+   situation, or nil when a step did not settle."
+  [setup ops undo-check? k]
   ;; fresh label space per variant (mirrors the pure `tm/run-all`)
   (cthi/reset-idmap!)
-  (run-ops (install! (setup)) ops k))
+  (let [situation (-> (setup)
+                      (assoc ::undo-check? undo-check?)
+                      (uc/with-runner :frontend)
+                      (install!))]
+    (run-ops (cond-> situation undo-check? (mark-baseline))
+             ops
+             (fn [situation]
+               (if (and situation undo-check?)
+                 (.then (check-variant situation) k)
+                 (k situation))))))
 
 ;; --------------------------------------------------------------------------
 ;; (3) Test-facing check
@@ -416,6 +564,10 @@
    if `asserter` is given, apply it (a situation -> any fn performing assertions)
    to the resulting situation of EACH enumerated variant. Async — `done` is the
    cljs.test async callback and MUST be called when finished.
+
+   Each variant also runs the undo/redo round trip, asserted after the
+   asserter (see `app.common.test-helpers.composable.comp.undo-check`; the
+   case map's `:undo-check` turns it off or marks known failures).
 
    Assertions may be INLINE (via `Test` operations in the `:operation` sequence,
    firing as the op runs) and/or via the trailing `asserter`; `asserter` is
@@ -430,7 +582,7 @@
    Arities: `(check done case-map)`, which takes the asserter from the case
    map's `:asserter`, or `(check done case-map asserter)`."
   ([done case-map] (check done case-map (:asserter case-map)))
-  ([done {:keys [setup operation]} asserter]
+  ([done {:keys [setup operation] :as case-map} asserter]
    (mock/with-mocks
      {rp/cmd!  mock/rpc-cmd-mock
       rx/timer mock/timer-mock}
@@ -445,10 +597,13 @@
                       ;; ops. `enumerate` already removed all one-of choices, so the
                       ;; variant is a Sequence (or a single op).
                       (tm/sequence-ops (first vs))
+                      (uc/enabled? case-map)
                       (fn [situation]
-                        (when (and asserter situation)
+                        (when situation
                           (t/testing (str "operations:\n  " (tm/describe-applied situation))
-                            (asserter situation)))
+                            (when asserter
+                              (asserter situation))
+                            (uc/check! situation case-map)))
                         (run-next (rest vs))))))]
            (run-next variants))))
      done)))

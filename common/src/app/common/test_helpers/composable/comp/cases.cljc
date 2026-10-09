@@ -252,6 +252,21 @@
 (def ^:private base-color "#aaaaaa")
 (def ^:private swap-colors ["#ff0000" "#00ff00" "#0000ff"])   ; level 0/1/2 targets
 
+(defn- first-steps-break-undo
+  "Known failures of the frontend round trip for the sweeps over `steps`, the
+   optional steps at levels 0, 1 and 2: the first of them to run at level 0 or
+   1 reflows the nested frames, and that reflow lands in undo entries of its
+   own (F43), so one undo does not revert the whole step."
+  [steps]
+  (let [mark (fn [op pred]
+               {:bug     "F43"
+                :phases  #{:undo :undo-index}
+                :op      op
+                :runners #{:frontend}
+                :when    pred})]
+    [(mark (nth steps 0) (constantly true))
+     (mark (nth steps 1) #(not (tm/applied? % (nth steps 0))))]))
+
 (defn swap-scenarios
   "Case L. SWAP SWEEP — build a 3-level nesting, then OPTIONALLY swap the
    nested component at each level for a differently-coloured one, and assert
@@ -270,20 +285,21 @@
           (or (some (fn [j] (when (tm/applied? s (nth swaps j)) (nth swap-colors j)))
                     (range i -1 -1))
               base-color))]
-    {:setup     setup/empty-situation
-     :operation (tm/in-sequence
-                 (concat
-                  [(n/create-component m base-color)]
-                  ;; a target lineage per level
-                  (map-indexed (fn [i c] (n/create-component (nth targets i) c)) swap-colors)
-                  [(n/make-nested-component m) (n/make-nested-component m) (n/make-nested-component m)]
-                  ;; optionally swap at each level
-                  (map (fn [sw] (tm/optional sw)) swaps)
-                  [(tm/test-that
-                    (fn [s]
-                      (doseq [i (range 3)]
-                        (t/is (= (expected-at s i) (level-color s m i))
-                              (str "level " i)))))]))}))
+    {:setup      setup/empty-situation
+     :undo-check {:known-failures (first-steps-break-undo swaps)}
+     :operation  (tm/in-sequence
+                  (concat
+                   [(n/create-component m base-color)]
+                   ;; a target lineage per level
+                   (map-indexed (fn [i c] (n/create-component (nth targets i) c)) swap-colors)
+                   [(n/make-nested-component m) (n/make-nested-component m) (n/make-nested-component m)]
+                   ;; optionally swap at each level
+                   (map (fn [sw] (tm/optional sw)) swaps)
+                   [(tm/test-that
+                     (fn [s]
+                       (doseq [i (range 3)]
+                         (t/is (= (expected-at s i) (level-color s m i))
+                               (str "level " i)))))]))}))
 
 (defn variant-switch-scenarios
   "Case M. VARIANT-SWITCH SWEEP — the variant-switch flavour of case L. Build
@@ -311,28 +327,29 @@
           (or (some (fn [j] (when (tm/applied? s (nth switches j)) (nth swap-colors j)))
                     (range i -1 -1))
               base-color))]
-    {:setup     setup/empty-situation
-     :operation (tm/in-sequence
-                 (concat
-                  ;; the nesting lineage, and the variant set (members = [value color])
-                  [(n/create-component m base-color)
-                   (n/make-variant-container vset (mapv vector vals colors))]
-                  ;; introduce the variant instance ONCE (innermost), then wrap it
-                  ;; with plain nesting so each outer level CONTAINS the one below
-                  ;; (progressive nesting, like case L). nested-head at every level
-                  ;; is then the variant (the deepest instance), so a switch at
-                  ;; level i targets it and propagates OUTWARD — exactly like case
-                  ;; L's swap.
-                  [(n/make-nested-component-with-variant m vset "v0")
-                   (n/make-nested-component m)
-                   (n/make-nested-component m)]
-                  ;; optionally switch each level's variant head to its target sibling
-                  (map (fn [sw] (tm/optional sw)) switches)
-                  [(tm/test-that
-                    (fn [s]
-                      (doseq [i (range 3)]
-                        (t/is (= (expected-at s i) (level-color s m i))
-                              (str "level " i)))))]))}))
+    {:setup      setup/empty-situation
+     :undo-check {:known-failures (first-steps-break-undo switches)}
+     :operation  (tm/in-sequence
+                  (concat
+                   ;; the nesting lineage, and the variant set (members = [value color])
+                   [(n/create-component m base-color)
+                    (n/make-variant-container vset (mapv vector vals colors))]
+                   ;; introduce the variant instance ONCE (innermost), then wrap it
+                   ;; with plain nesting so each outer level CONTAINS the one below
+                   ;; (progressive nesting, like case L). nested-head at every level
+                   ;; is then the variant (the deepest instance), so a switch at
+                   ;; level i targets it and propagates OUTWARD — exactly like case
+                   ;; L's swap.
+                   [(n/make-nested-component-with-variant m vset "v0")
+                    (n/make-nested-component m)
+                    (n/make-nested-component m)]
+                   ;; optionally switch each level's variant head to its target sibling
+                   (map (fn [sw] (tm/optional sw)) switches)
+                   [(tm/test-that
+                     (fn [s]
+                       (doseq [i (range 3)]
+                         (t/is (= (expected-at s i) (level-color s m i))
+                               (str "level " i)))))]))}))
 
 (defn variant-switch-keeps-override-only-where-mains-agree
   "Case O. A copy overrides the fill of its nested variant's rect, then the
