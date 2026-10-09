@@ -13,11 +13,20 @@
 
     JVM:  clojure -M:dev -m tokenscript-bench <job.json>
     node: node --expose-gc target/tokenscript-bench/engine.cjs <job.json>
-          (shadow-cljs build :tokenscript-bench)"
+          (shadow-cljs build :tokenscript-bench)
+
+  `parity <inputs.edn> <out.edn>` instead of a job file writes the tokens,
+  parse results and errors of every input string (a vector in EDN) in a
+  platform neutral form, so the JVM and node outputs can be compared
+  byte for byte."
   (:require
+   #?(:clj [clojure.edn :as reader])
    #?(:cljs ["fs" :as fs])
+   #?(:cljs [cljs.reader :as reader])
    [app.common.json :as json]
    [app.common.tokenscript :as tsc]
+   [app.common.tokenscript.lexer :as lex]
+   [app.common.tokenscript.util :as u]
    [clojure.walk :as walk]))
 
 (defn- now []
@@ -159,12 +168,50 @@
                               :initMs init-ms
                               :results results}))))
 
+;; Parity ---------------------------------------------------------------------
+
+(defn- neutral
+  "Platform neutral data: numbers formatted like JavaScript, maps and sets
+  sorted, records as maps."
+  [x]
+  (walk/postwalk
+   (fn [v]
+     (cond
+       (number? v) (u/num->str v)
+       (map? v) (into (sorted-map-by #(compare (str %1) (str %2))) v)
+       (set? v) (vec (sort-by str v))
+       :else v))
+   x))
+
+(defn- outcome
+  [f]
+  (try {:ok (f)}
+       (catch #?(:clj Throwable :cljs :default) e
+         {:error (ex-message e) :data (ex-data e)})))
+
+(defn run-parity
+  [in out]
+  (let [inputs (reader/read-string (read-file in))
+        lexer-modes [nil {:greedy-strings? true} {:tolerant? true} {:tolerant? true :greedy-strings? true}]
+        parse-modes [{:mode :inline} {:mode :script} {:mode :inline :tolerant? true} {:mode :script :tolerant? true}]]
+    (write-file out (pr-str (neutral (mapv (fn [s]
+                                             [s
+                                              (mapv #(outcome (fn [] (lex/tokenize s %))) lexer-modes)
+                                              (mapv #(outcome (fn [] (tsc/parse s %))) parse-modes)])
+                                           inputs))))))
+
+(defn- dispatch
+  [args]
+  (if (= "parity" (first args))
+    (run-parity (nth args 1) (nth args 2))
+    (run-job (first args))))
+
 #?(:clj
-   (defn -main [path]
-     (run-job path)
+   (defn -main [& args]
+     (dispatch args)
      (shutdown-agents)
      (System/exit 0)))
 
 #?(:cljs
-   (defn main [path]
-     (run-job path)))
+   (defn main [& args]
+     (dispatch args)))
