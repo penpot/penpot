@@ -877,6 +877,7 @@
                     (audit/insert system
                                   {:name "restore-profile"
                                    :type "action"
+                                   :profile-id profile-id
                                    :props (audit/profile->props profile)
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-profile!"}})

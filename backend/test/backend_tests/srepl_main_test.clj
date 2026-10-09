@@ -184,3 +184,20 @@
           (t/is (= (:id team) (get-in event [:props :id])))
           (t/is (= "explicit call to delete-team!"
                    (get-in event [:context :cause]))))))))
+
+(t/deftest restore-profile-emits-identifiable-audit-event
+  ;; The restore must look like a normal profile event: the consumer keys on
+  ;; the event profile, so a zero profile would create a junk row.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
+               wrk-mock {:target 'app.worker/invoke! :return nil}]
+    (with-redefs [sys/system th/*system*]
+      (let [profile (th/create-profile* 1 {:is-active true})]
+        (srepl/restore-profile! (str (:id profile)))
+        (let [events (->> (:call-args-list @audit-mock)
+                          (map second))]
+          (t/is (= 1 (count events)))
+          (let [event (first events)]
+            (t/is (= "restore-profile" (:name event)))
+            (t/is (= "action" (:type event)))
+            (t/is (= (:id profile) (:profile-id event)))
+            (t/is (= (:id profile) (get-in event [:props :id])))))))))
