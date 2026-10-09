@@ -37,6 +37,7 @@
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
+   [app.main.data.jobs :as dj]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace.media :as dwm]
@@ -1221,11 +1222,17 @@
          ;; Call exporter to get image URI, then fetch blob and resolve the deferred.
          (->> (if (features/active-feature? state "render-wasm/v1")
                 (rx/of {:uri (wasm.exports/export-image-uri export)})
-                (rp/cmd! :export
-                         {:exports [export]
-                          :profile-id (:profile-id state)
-                          :cmd :export-shapes
-                          :wait true}))
+
+                ;; One export job, its artifact under the completed row's
+                ;; result: the URI of the resource is what the blob fetch
+                ;; reads now, as the download of the exports does.
+                (->> (rp/cmd! :create-export-assets-job
+                              {:params {:exports [export]}})
+                     (rx/mapcat (fn [{job-id :id}]
+                                  (->> (dj/watch-job (:ws-conn state) job-id)
+                                       (rx/filter #(= "completed" (:status %)))
+                                       (rx/map :result))))
+                     (rx/map (fn [result] {:uri (:resource-uri result)}))))
 
               (rx/mapcat (fn [{:keys [uri]}]
                            (http/send! {:method :get

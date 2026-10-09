@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns exporter-tests.export-shapes-test
+(ns exporter-tests.consumer-plan-test
   "Chunking of the browser backend."
   (:require
    [app.common.uuid :as uuid]
-   [app.handlers.export-shapes :as export-shapes]
+   [app.consumer.plan :as plan]
    [cljs.test :as t :include-macros true]))
 
 (defn- exports
@@ -26,6 +26,6 @@
           (range n))))
 
 (t/deftest browser-exports-are-chunked
-  (let [parts (export-shapes/prepare-exports (exports 120 :png 1) "token" false)]
+  (let [parts (plan/prepare-exports (exports 120 :png 1) "token" false)]
     (t/is (= 3 (count parts)))
     (t/is (= [50 50 20] (mapv (comp count :objects) parts)))))

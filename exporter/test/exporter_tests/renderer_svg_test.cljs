@@ -58,10 +58,10 @@
 
 (deftest exporter-honours-svg-attr-fills
   (async done
-    (->> (wasm-io/init!)
+    (->> (wasm-io/init)
          (p/mcat
           (fn [_]
-            (serialize/serialize-scene! (scene))
+            (serialize/serialize-scene (scene))
             (let [red (render-svg-string svg-red-id)
                   blue (render-svg-string blue-id)]
               (is (str/includes? blue "blue")

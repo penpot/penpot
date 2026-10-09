@@ -37,6 +37,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
+   [app.main.data.jobs :as dj]
    [app.main.data.persistence :as dwp]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
@@ -1642,20 +1643,18 @@
                                (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "wasm")))
                                (rx/subs! resolve reject)))))
 
-                     ;; Render via the exporter service.
-                     (let [shape (u/locate-shape file-id page-id id)
-                           payload
-                           {:cmd :export-shapes
-                            :profile-id (:profile-id @st/state)
-                            :wait true
-                            :is-wasm wasm-enabled?
-                            :exports [(de/normalize-export {:file-id   file-id
-                                                            :page-id   page-id
-                                                            :object-id id
-                                                            :name      (:name shape)
-                                                            :type      export-type
-                                                            :suffix    (:suffix value "")
-                                                            :scale     (:scale value 1)})]}]
+                     ;; One export job of the named item: the worker
+                     ;; renders it, the completed row carries the artifact
+                     ;; under its result, and the blob fetch reads its
+                     ;; resource uri.
+                     (let [shape    (u/locate-shape file-id page-id id)
+                           item     (de/normalize-export {:file-id   file-id
+                                                          :page-id   page-id
+                                                          :object-id id
+                                                          :name      (:name shape)
+                                                          :type      export-type
+                                                          :suffix    (:suffix value "")
+                                                          :scale     (:scale value 1)})]
                        (js/Promise.
                         (fn [resolve reject]
                           ;; Exporter reads persisted file state; flush first
@@ -1665,10 +1664,16 @@
                           (->> (rx/concat
                                 (->> (dwp/wait-persisted 5000)
                                      (rx/ignore))
-                                (rp/cmd! :export payload))
-                               (rx/mapcat (fn [{:keys [uri]}]
+                                (->> (rp/cmd! :create-export-assets-job
+                                              {:params {:exports [item]
+                                                        :is-wasm wasm-enabled?}})
+                                     (rx/mapcat (fn [{job-id :id}]
+                                                  (->> (dj/watch-job (:ws-conn @st/state) job-id)
+                                                       (rx/filter #(= "completed" (:status %)))
+                                                       (rx/map :result))))))
+                               (rx/mapcat (fn [result]
                                             (->> (http/send! {:method :get
-                                                              :uri uri
+                                                              :uri (:resource-uri result)
                                                               :response-type :blob
                                                               :omit-default-headers true})
                                                  (rx/map :body))))

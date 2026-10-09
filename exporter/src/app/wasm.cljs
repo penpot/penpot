@@ -56,11 +56,11 @@
 
 ;; --- MODULE LIFECYCLE
 
-(defn init!
+(defn init
   "Loads the render-wasm artifact under Node and boots it headless. Sets the
   shared `wasm/internal-module` so the portable serialization leaves work.
   Idempotent-ish: callers should hold the returned module."
-  ([] (init! default-viewport-width default-viewport-height))
+  ([] (init default-viewport-width default-viewport-height))
   ([width height]
    (let [dir       artifact-dir
          js-path   (path/resolve dir "render-wasm.js")
@@ -130,7 +130,7 @@
                  (d/distinct-xf font-key))
         shape-ids))
 
-(defn store-font!
+(defn store-font
   "Uploads one font's TTF bytes into the WASM font store, keyed by the family
   (uuid quartet + weight + style). `font-bytes` is a Uint8Array/Buffer.
 
@@ -147,12 +147,12 @@
             (aget id 0) (aget id 1) (aget id 2) (aget id 3)
             weight style (boolean emoji?) (boolean fallback?))))
 
-(defn store-font-url!
+(defn store-font-url
   "Registers the public URL a font family was loaded from. The SVG export emits
   one `@font-face` per family from these, and skips families without one, so
-  this must run for every family `store-font!` uploads.
+  this must run for every family `store-font` uploads.
 
-  Does NOT call `mem/free`, for the same reason as `store-font!`."
+  Does NOT call `mem/free`, for the same reason as `store-font`."
   [{:keys [id weight style]} url]
   (let [bytes (js/Buffer.from url "utf-8")
         ptr   (mem/alloc (.-byteLength bytes))]
@@ -161,16 +161,16 @@
             (aget id 0) (aget id 1) (aget id 2) (aget id 3)
             weight style)))
 
-(defn clear-fonts!
+(defn clear-fonts
   "Resets the WASM font store. Must be called once per render request because
   the shared module would otherwise accumulate fonts across requests."
   []
   (h/call wasm/internal-module "_clear_fonts"))
 
-(defn update-text-layout!
+(defn update-text-layout
   "Recomputes a text shape's layout with the currently provisioned fonts. Text is
   laid out at serialize time using the fallback font (real fonts aren't uploaded
-  yet), so this must run again after `provision-fonts!` or glyph metrics/line
+  yet), so this must run again after `provision-fonts` or glyph metrics/line
   breaks are wrong.
 
   Forced, because provisioning a font changes nothing `update_layout` keys on:
@@ -191,13 +191,13 @@
                         (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
                         false)))))
 
-(defn store-image-url!
+(defn store-image-url
   "Registers the public URL an image was loaded from. The SVG export emits
   linked `<image href>` from these, and falls back to Skia base64 when missing,
   so this should run for every media id the scene references (including
   already-cached images).
 
-  Does NOT call `mem/free`, for the same reason as `store-font-url!`."
+  Does NOT call `mem/free`, for the same reason as `store-font-url`."
   [image-id url]
   (when (and (some? url) (not (str/blank? url)))
     (let [bytes (js/Buffer.from url "utf-8")
@@ -207,7 +207,7 @@
       (h/call wasm/internal-module "_store_image_url"
               (aget quart 0) (aget quart 1) (aget quart 2) (aget quart 3)))))
 
-(defn store-image!
+(defn store-image
   "Uploads one image's *encoded* bytes (PNG/JPEG — Skia decodes, no WebGL) into
   the WASM image store via `_store_image`. Buffer layout matches the Rust reader:
   [shape uuid 16][image uuid 16][is_thumbnail u32][encoded bytes]. Images are
@@ -239,13 +239,13 @@
     (.set heap img-u8 (+ ptr 36))
     (h/call module "_store_image")))
 
-(defn evict-images!
+(defn evict-images
   "Evicts least-recently-used images until the store retains at most `max-bytes`
   bytes. Returns the number evicted."
   [max-bytes]
   (h/call wasm/internal-module "_evict_images_to_budget" max-bytes))
 
-(defn provision-fonts!
+(defn provision-fonts
   "Resolves and uploads every font needed by `shape-ids`, each family fetched
   once. `resolve-font` is an injected fn of the family map -> promise of TTF
   bytes (or nil to skip); optional `font-url` is a fn of the family map -> the
@@ -257,9 +257,9 @@
               (->> (resolve-font family)
                    (p/fmap (fn [bytes]
                              (when bytes
-                               (store-font! family bytes)
+                               (store-font family bytes)
                                (when-let [url (when font-url (font-url family))]
-                                 (store-font-url! family url))))))))
+                                 (store-font-url family url))))))))
        (p/all)))
 
 ;; --- RENDER

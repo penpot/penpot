@@ -6,7 +6,7 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! get get-in merge clone contains?])
+  (:refer-clojure :exclude [set! get get-in merge update clone contains?])
   (:require
    [cuerdas.core :as str]))
 
@@ -46,24 +46,24 @@
   [a]
   (js/Object.assign #js {} a))
 
-(defn merge!
+(defn merge-into
   ([a b]
    (js/Object.assign a b))
   ([a b & more]
-   (reduce merge! (merge! a b) more)))
+   (reduce merge-into (merge-into a b) more)))
 
 (defn merge
   ([a b]
    (js/Object.assign #js {} a b))
   ([a b & more]
-   (reduce merge! (merge a b) more)))
+   (reduce merge-into (merge a b) more)))
 
 (defn set!
   [obj key value]
   (unchecked-set obj key value)
   obj)
 
-(defn update!
+(defn update
   [obj key f & args]
   (let [found (get obj key ::not-found)]
     (if-not (identical? ::not-found found)

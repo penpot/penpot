@@ -5,82 +5,85 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns exporter-tests.jobs-test
-  "Job state machine. Runs without redis: a store write with no connection is
-  reported and swallowed, so only the in-process record is exercised."
+  "The local arm of the claimed job: the flag and the pieces a hard
+  cancel needs. The row of the job is the backend's business; nothing
+  here touches it."
   (:require
    [app.common.uuid :as uuid]
    [app.jobs :as jobs]
-   [cljs.test :as t :include-macros true]
-   [promesa.core :as p]))
+   [cljs.test :as t :include-macros true]))
 
-(defn- create!
+(defn- register
   []
-  (jobs/create! {:profile-id (uuid/next)
-                 :cmd :export-shapes
-                 :backend "wasm"
-                 :total 10
-                 :name "test"
-                 :resource-id (uuid/next)}
-                (constantly (p/resolved nil))))
+  (let [job-id (uuid/next)]
+    (jobs/register job-id)
+    job-id))
 
-(t/deftest progress-does-not-resurrect-a-finished-job
-  (t/testing "a render reporting after the export failed cannot undo the failure"
+(t/deftest mark-cancelled-runs-the-cancel-pieces-once
+  (t/testing "the signal arms, the callbacks run, and a second mark is a no-op"
     (t/async done
-      (p/let [job (create!)
-              _   (jobs/start! job)
-              _   (jobs/fail! (jobs/lookup (:id job)) (ex-info "boom" {}))
-              ;; `job` is the snapshot handed to the work when it started, which
-              ;; is what a straggling render still holds.
-              _   (jobs/progress! job 7)]
-        (let [current (jobs/lookup (:id job))]
-          (t/is (= "error" (:state current)))
-          (t/is (= "boom" (:error current)))
-          (t/is (not= 7 (:done current))))
-        (jobs/release! (:id job))
+      (let [job-id (register)
+            seen   (atom [])]
+        (jobs/on-cancel job-id (fn [] (swap! seen conj :first)))
+        (jobs/on-cancel job-id (fn [] (swap! seen conj :second)))
+
+        (t/is (true? (jobs/mark-cancelled job-id)))
+        (t/is (true? (jobs/cancelled? job-id)))
+        (t/is (some? (jobs/cancel-signal job-id)))
+        ;; the signal is armed: a render thread reading it stops
+        (let [^js signal (jobs/cancel-signal job-id)]
+          (t/is (= 1 (js/Atomics.load signal 0))))
+
+        (t/is (= [:first :second] @seen))
+
+        ;; a settled job is a no-op: nothing marked, nobody new called
+        (t/is (nil? (jobs/mark-cancelled job-id)))
+        (t/is (= [:first :second] @seen))
         (done)))))
 
-(t/deftest first-terminal-state-wins
-  (t/testing "a failure arriving after a cancellation leaves the job cancelled"
-    (t/async done
-      (p/let [job (create!)
-              _   (jobs/start! job)
-              _   (jobs/cancel! (:id job))
-              _   (jobs/fail! job (ex-info "too late" {}))]
-        (let [current (jobs/lookup (:id job))]
-          (t/is (= "cancelled" (:state current)))
-          (t/is (nil? (:error current))))
-        (jobs/release! (:id job))
-        (done)))))
+(t/deftest the-callbacks-see-the-cancelled-flag
+  ;; a callback that stops the in-flight render reads the flag first: the
+  ;; terminate of the worker is what a hard-cancel is for, and the pieces
+  ;; below it must not race the writer
+  (t/async done
+    (let [job-id (register)
+          seen   (atom ::not-called)]
+      (jobs/on-cancel job-id (fn [] (reset! seen (jobs/cancelled? job-id))))
+      (jobs/mark-cancelled job-id)
+      (t/is (true? @seen))
+      (done))))
 
-(t/deftest cancel-is-recorded-before-the-callbacks-run
-  (t/testing "a queued job dropped by its own cancel callback still ends cancelled"
+(t/deftest a-signal-created-after-the-mark-is-armed
+  (t/testing "a job cancelled before its render leased a worker is
+              already stoppable for the render that comes next"
     (t/async done
-      (let [seen (atom ::not-called)]
-        (p/let [job (create!)
-                ;; What `scheduler/drop-queued!` does: it takes the job off the
-                ;; queue and releases it. Anything the lifecycle wrote after
-                ;; the callbacks ran would be dropped on the floor, so by the
-                ;; time one is called the record has to be terminal already.
-                _   (jobs/on-cancel (:id job)
-                                    (fn []
-                                      (reset! seen (:state (jobs/lookup (:id job))))
-                                      (jobs/release! (:id job))))
-                _   (jobs/cancel! (:id job))]
-          (t/is (= "cancelled" @seen))
-          (t/is (nil? (jobs/lookup (:id job))))
-          (done))))))
+      (let [job-id (register)]
+        (jobs/mark-cancelled job-id)
+        (let [^js signal (jobs/cancel-signal job-id)]
+          (t/is (some? signal))
+          (t/is (= 1 (js/Atomics.load signal 0))))
+        (done)))))
 
 (t/deftest writes-stop-once-the-job-is-released
-  (t/testing "a late write for a job the scheduler already settled is dropped"
+  (t/testing "a late cancel for a settled job changes nothing, and
+              release drops every piece"
     (t/async done
-      (p/let [job (create!)
-              _   (jobs/start! job)
-              _   (jobs/complete! (jobs/lookup (:id job)) {:uri "http://example/x"
-                                                           :filename "x.zip"
-                                                           :mtype "application/zip"})
-              ended (jobs/lookup (:id job))
-              _   (jobs/release! (:id job))
-              _   (jobs/progress! job 3)]
-        (t/is (= "ended" (:state ended)))
-        (t/is (nil? (jobs/lookup (:id job))))
+      (let [job-id (register)
+            seen   (atom ::not-called)]
+        (jobs/on-cancel job-id (fn [] (reset! seen :callback-ran)))
+        (jobs/release job-id)
+
+        (t/is (nil? (jobs/mark-cancelled job-id)))
+        (t/is (= ::not-called @seen))
+        (t/is (false? (jobs/cancelled? job-id)))
+        (t/is (nil? (jobs/cancel-signal job-id)))
+        (done)))))
+
+(t/deftest an-unowned-job-is-a-no-op
+  (t/testing "mark and pieces for a job this process never registered"
+    (t/async done
+      (let [job-id (uuid/next)]
+        (t/is (nil? (jobs/mark-cancelled job-id)))
+        (t/is (false? (jobs/cancelled? job-id)))
+        (t/is (nil? (jobs/cancel-signal job-id)))
         (done)))))

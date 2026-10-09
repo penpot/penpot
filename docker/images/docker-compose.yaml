@@ -211,6 +211,9 @@ services:
       - penpot
 
   penpot-exporter:
+    # The exporter is a consumer's process: it polls the backend's
+    # `:exporter` job queue through valkey and calls the backend's
+    # management API to claim, report and settle every export job.
     image: "penpotapp/exporter:${PENPOT_VERSION:-2.18}"
     restart: always
 
@@ -225,17 +228,17 @@ services:
       << : [*penpot-flags, *penpot-secret-key, *penpot-public-uri]
 
       # Don't touch it; this uses an internal docker network to
-      # communicate with the frontend.
+      # reach the backend's management API and the frontend of the
+      # assets the exports render.
       PENPOT_INTERNAL_URI: http://penpot-frontend:8080
 
-      ## Valkey (or previously Redis) is used for the websockets notifications
-      ## and for storing the state export jobs
+      ## Valkey (or previously Redis) carries the export jobs queue the
+      ## backend dispatcher pushes to, plus the websockets
+      ## notifications
       PENPOT_REDIS_URI: redis://penpot-valkey/0
 
-      # PENPOT_EXPORTER_MAX_CONCURRENT_JOBS: 4
-      # PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE: 2
-      # PENPOT_EXPORTER_QUEUE_MAX: 64
       # PENPOT_EXPORTER_JOB_TTL: 3600
+      # PENPOT_EXPORTER_WORKER_CONCURRENCY: 2
       # PENPOT_WASM_WORKER_POOL_MAX: 2
       # PENPOT_WASM_WORKER_POOL_MIN: 1
       # PENPOT_WASM_WORKER_IDLE_TIMEOUT: 300

@@ -81,6 +81,8 @@
    :jobs-retention (ct/duration {:days 7})
    :jobs-user-ttl (ct/duration {:days 7})
    :jobs-request-timeout (ct/duration {:minutes 2})
+   :job-session-ttl (ct/duration {:hours 1})
+   :exporter-max-result-size (* 1024 1024 350) ; 350MiB
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
@@ -201,6 +203,8 @@
     [:jobs-retention {:optional true} ::ct/duration]
     [:jobs-user-ttl {:optional true} ::ct/duration]
     [:jobs-request-timeout {:optional true} ::ct/duration]
+    [:job-session-ttl {:optional true} ::ct/duration]
+    [:exporter-max-result-size {:optional true} ::sm/int]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -489,6 +493,25 @@
   []
   (or (c/get config :jobs-user-ttl)
       (ct/duration {:days 7})))
+
+(defn get-job-session-ttl
+  "How long the token minted by `create-job-session` verifies, beyond
+  the session row's own lifetime: an export never runs for hours, so a
+  short expiry is defense in depth for the worker that dies without
+  settling. The session row itself is swept by the sessions idle GC."
+  []
+  (or (c/get config :job-session-ttl)
+      (ct/duration {:hours 1})))
+
+(defn get-exporter-max-result-size
+  "How big the artifact a worker sends with `complete-job` may be. The
+  ceiling is the same the multipart body already has at the HTTP server
+  (`:http/max-multipart-body-size`); lowering it rejects a result
+  before any object is stored. Raising it past the server cap is an
+  operational change of both this and nginx `client_max_body_size`."
+  []
+  (or (c/get config :exporter-max-result-size)
+      (* 1024 1024 350)))
 
 (defn get
   "A configuration getter. Helps code be more testable."

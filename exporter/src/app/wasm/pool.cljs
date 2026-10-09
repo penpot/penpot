@@ -15,7 +15,7 @@
   Acquisition is not capped: the admission scheduler is the backpressure, and
   the idle watchdog guarantees a wedged worker gives its slot back.
 
-  Workers run the same bundle as the main thread; `app.core/start` branches on
+  Workers run the same bundle as the main thread; `exporter.main/start` branches on
   `isMainThread`. There is always at least one worker, since a headless render
   has nowhere else to go."
   (:require
@@ -27,6 +27,7 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.config :as cf]
+   [app.consumer.config :as ccfg]
    [promesa.core :as p]))
 
 (l/set-level! :info)
@@ -102,26 +103,23 @@
                    (p/resolved (true? (unchecked-get worker "__alive"))))})
 
 (defn capacity
-  "How many renders can run at once, and so how many headless jobs the
-  scheduler may admit."
+  "How many renders can run at once: the pool holds as many render
+  workers as concurrent jobs the process runs, which is what the
+  pollers count. Clamped rather than rejected: a bad value should not
+  stop the exporter from booting, and a headless render has no other
+  backend to fall back to."
   []
-  ;; Clamped rather than rejected: a bad value should not stop the exporter
-  ;; from booting, and a headless render has no other backend to fall back to.
-  (max 1 (cf/get :wasm-worker-pool-max 2)))
+  (max 1 (ccfg/concurrency)))
 
 (defn init
   []
-  (let [configured  (cf/get :wasm-worker-pool-max 2)
-        max-workers (capacity)
+  (let [max-workers (capacity)
         opts #js {:max max-workers
                   :min (min max-workers (cf/get :wasm-worker-pool-min 1))
                   :testOnBorrow true
                   :evictionRunIntervalMillis 30000
                   :numTestsPerEvictionRun 2
                   :idleTimeoutMillis 300000}]
-    (when (not= configured max-workers)
-      (l/warn :hint "wasm-worker-pool-max raised to the minimum of one"
-              :configured configured))
     (l/info :hint "initializing render worker pool" :opts opts)
     (reset! pool (gp/createPool worker-pool-factory opts))
     (p/resolved nil)))
@@ -233,7 +231,7 @@
                           :hint "export job was cancelled"))
     (run-on-worker worker params cancel-buffer on-object)))
 
-(defn terminate!
+(defn terminate
   [^js worker]
   (when worker
     (unchecked-set worker "__alive" false)

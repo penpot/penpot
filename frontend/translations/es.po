@@ -7357,6 +7357,14 @@ msgstr "Exportación lenta"
 msgid "workspace.options.exporting-queued"
 msgstr "Esperando..."
 
+#: src/app/main/ui/exports/assets.cljs:179
+msgid "workspace.options.exporting-packaging"
+msgstr "Empaquetando archivos…"
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "workspace.options.exporting-preparing"
+msgstr "Preparando..."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:238
 msgid "workspace.options.fill"
 msgstr "Relleno"

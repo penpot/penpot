@@ -10,23 +10,66 @@
    [cljs.test :as t]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
-   [exporter-tests.export-shapes-test]
+   [exporter-tests.api-test]
+   [exporter-tests.browser-scope-test]
+   [exporter-tests.browser-test]
+   [exporter-tests.consumer-api-test]
+   [exporter-tests.consumer-config-test]
+   [exporter-tests.consumer-plan-test]
+   [exporter-tests.consumer-test]
+   [exporter-tests.consumer-worker-test]
+   [exporter-tests.exporter-consumer-config-test]
+   [exporter-tests.exporter-consumer-plan-test]
+   [exporter-tests.exporter-jobs-test]
+   [exporter-tests.exporter-shell-test]
    [exporter-tests.jobs-test]
+   [exporter-tests.main-test]
+   [exporter-tests.renderer-browser-test]
    [exporter-tests.renderer-svg-test]
-   [exporter-tests.scheduler-test]
+   [exporter-tests.renderer-test]
+   [exporter-tests.renderer-wasm-test]
    [exporter-tests.shell-test]
+   [exporter-tests.system-test]
+   [exporter-tests.wasm-pool-service-test]
    [exporter-tests.wasm-pool-test]
+   [exporter-tests.wasm-scope-test]
+   [exporter-tests.worker-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
 
+;; The tests that ride the mock http must never leave a rejected promise
+;; dangling: a dangling one kills the whole run with ERR_UNHANDLED_REJECTION
+;; and without any way to point at the chain that broke. Log and keep going.
+(js/process.on "unhandledRejection"
+               (fn [reason _promise]
+                 (println (str "UNHANDLED-REJECTION: " reason))))
+
 (def test-namespaces
-  ['exporter-tests.export-shapes-test
+  ['exporter-tests.browser-scope-test
+   'exporter-tests.browser-test
+   'exporter-tests.consumer-api-test
+   'exporter-tests.consumer-plan-test
+   'exporter-tests.consumer-test
+   'exporter-tests.consumer-worker-test
+   'exporter-tests.exporter-consumer-config-test
+   'exporter-tests.exporter-consumer-plan-test
+   'exporter-tests.exporter-jobs-test
+   'exporter-tests.exporter-shell-test
    'exporter-tests.jobs-test
+   'exporter-tests.main-test
+   'exporter-tests.api-test
+   'exporter-tests.worker-test
+   'exporter-tests.consumer-config-test
+   'exporter-tests.renderer-browser-test
    'exporter-tests.renderer-svg-test
-   'exporter-tests.scheduler-test
+   'exporter-tests.renderer-test
+   'exporter-tests.renderer-wasm-test
    'exporter-tests.shell-test
-   'exporter-tests.wasm-pool-test])
+   'exporter-tests.system-test
+   'exporter-tests.wasm-pool-service-test
+   'exporter-tests.wasm-pool-test
+   'exporter-tests.wasm-scope-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")
@@ -72,7 +115,7 @@
        "Log level example:\n"
        "  node target/tests/test.js --focus exporter-tests.renderer-svg-test --log-level warn"))
 
-(defn- fail!
+(defn- fail
   [message]
   (js/console.error message)
   (.exit js/process 1))
@@ -82,7 +125,7 @@
   (let [[ns-name test-name & extra] (str/split focus #"/")]
     (cond
       (or (str/blank? ns-name) (seq extra))
-      (fail! (str "Invalid --focus value: " focus))
+      (fail (str "Invalid --focus value: " focus))
 
       (some? test-name)
       {:ns (symbol ns-name) :test test-name}
@@ -118,17 +161,17 @@
 (defn- selected-tests
   [{:keys [ns test]}]
   (when-not (some #{ns} test-namespaces)
-    (fail! (str "Unknown test namespace: " ns)))
+    (fail (str "Unknown test namespace: " ns)))
   (let [vars (vec (ns-test-vars ns))]
     (when (empty? vars)
-      (fail! (str "No tests found in namespace: " ns)))
+      (fail (str "No tests found in namespace: " ns)))
     (if test
       (let [test-sym (symbol test)
             test-var (some #(when (= test-sym (:name (meta %))) %) vars)]
         (if test-var
           {:vars [test-var]
            :fixtures (ns-fixtures ns [test-var])}
-          (fail! (str "Unknown test var: " ns "/" test))))
+          (fail (str "Unknown test var: " ns "/" test))))
       {:vars vars
        :fixtures (ns-fixtures ns vars)})))
 
@@ -137,7 +180,7 @@
   {:once (apply merge (keep :once fixtures))
    :each (apply merge (keep :each fixtures))})
 
-(defn- run-test-vars!
+(defn- run-test-vars
   [tests]
   (let [vars     (vec (mapcat :vars tests))
         fixtures (merge-fixtures (map :fixtures tests))
@@ -156,16 +199,16 @@
                 (t/report @summary)
                 (t/report (assoc @summary :type :end-run-tests)))]))))
 
-(defn- run-focused-test!
+(defn- run-focused-test
   [focus]
-  (run-test-vars! [(selected-tests (parse-focus focus))]))
+  (run-test-vars [(selected-tests (parse-focus focus))]))
 
 (defn -main
   []
   (let [{:keys [options errors summary]} (parse-opts (argv) cli-options)]
     (cond
       (seq errors)
-      (fail! (str/join "\n" errors))
+      (fail (str/join "\n" errors))
 
       (:help options)
       (do
@@ -176,5 +219,5 @@
       (do
         (l/setup! {:app (or (:log-level options) :warn)})
         (if (:focus options)
-          (run-focused-test! (:focus options))
-          (run-test-vars! (map #(selected-tests {:ns %}) test-namespaces)))))))
+          (run-focused-test (:focus options))
+          (run-test-vars (map #(selected-tests {:ns %}) test-namespaces)))))))

@@ -67,7 +67,7 @@
                 :code :unable-to-locate-temporal-file
                 :hint "unable to find a tempfile candidate"))))
 
-(defn move!
+(defn move
   [origin-path dest-path]
   (.rename fs/promises origin-path dest-path))
 
@@ -81,11 +81,7 @@
        (p/merr (fn [_cause]
                  (p/resolved nil)))))
 
-(defn rmdir!
-  [path]
-  (.rm fs/promises path #js {:recursive true}))
-
-(defn write-file!
+(defn write-file
   [fpath content]
   (.writeFile fs/promises fpath content))
 
@@ -93,7 +89,7 @@
   [fpath]
   (.readFile fs/promises fpath))
 
-(defn run-cmd!
+(defn run-cmd
   [cmd & args]
   (p/create
    (fn [resolve reject]

@@ -5,18 +5,14 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.handlers.resources
-  "Temporal resources management."
+  "The run's local resources: the artifact files the runner parks in
+  the temp area until the settle moves them into the job's completion,
+  zipped once a run packs more than one."
   (:require
    ["archiver" :as arc]
    ["node:fs" :as fs]
-   ["node:fs/promises" :as fsp]
    ["node:path" :as path]
-   ["undici" :as http]
-   [app.common.exceptions :as ex]
-   [app.common.transit :as t]
-   [app.common.uri :as u]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
    [cljs.core :as c]
@@ -63,36 +59,3 @@
   (p/create (fn [resolve]
               (.on ^js zip "close" resolve)
               (.finalize ^js zip))))
-
-(defn upload-resource
-  [auth-token resource]
-  (->> (fsp/readFile (:path resource))
-       (p/fmap (fn [buffer]
-                 (new js/Blob #js [buffer] #js {:type (:mtype resource)})))
-       (p/mcat (fn [blob]
-                 (let [fdata  (new http/FormData)
-                       agent  (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
-                       headers #js {"X-Shared-Key" (str "exporter " cf/management-key)
-                                    "Authorization" (str "Bearer " auth-token)}
-
-                       request #js {:headers headers
-                                    :method "POST"
-                                    :body fdata
-                                    :dispatcher agent}
-                       uri     (-> (cf/get-internal-uri)
-                                   (u/ensure-path-slash)
-                                   (u/join "api/management/methods/upload-tempfile")
-                                   (str))]
-
-                   (.append fdata "content" blob (:filename resource))
-                   (http/fetch uri request))))
-
-       (p/mcat (fn [response]
-                 (if (not= (.-status response) 200)
-                   (ex/raise :type :internal
-                             :code :unable-to-upload-resource
-                             :response-status (.-status response))
-                   (.text response))))
-       (p/fmap t/decode-str)
-       (p/fmap (fn [result]
-                 (merge resource (dissoc result :id))))))

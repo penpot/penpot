@@ -52,10 +52,10 @@
 
 (defonce ^:private module* (atom nil))
 
-(defn- ensure-module!
+(defn- ensure-module
   []
   (or @module*
-      (reset! module* (wasm/init!))))
+      (reset! module* (wasm/init))))
 
 ;; --- backend endpoints
 ;;
@@ -94,7 +94,7 @@
                 (if code (str code ": " msg) msg))))
        (str/join " <- ")))
 
-(defn- fetch!
+(defn- fetch
   "`undici/fetch` that fails with an ex-info carrying the target uri and the
   unwrapped cause chain, so a failed request says what actually went wrong and
   against which endpoint."
@@ -106,7 +106,7 @@
                                       cause))))))
 
 (defn- explain
-  "Log-friendly reason for `cause`: the detail `fetch!` already attached, or a
+  "Log-friendly reason for `cause`: the detail `fetch` already attached, or a
   freshly unwrapped chain for anything else (WASM aborts, decode errors)."
   [cause]
   (or (:detail (ex-data cause))
@@ -146,7 +146,7 @@
            :file-id (str file-id)
            :page-id (str page-id)
            :roots (count root-ids))
-    (->> (fetch! uri #js {:method "POST" :headers headers :body body})
+    (->> (fetch uri #js {:method "POST" :headers headers :body body})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
                      (.text resp)
@@ -177,7 +177,7 @@
         body    (t/encode-str (cond-> {:file-id file-id}
                                 share-id (assoc :share-id share-id)))
         uri     (internal-uri "api/rpc/command/get-font-variants")]
-    (->> (fetch! uri #js {:method "POST" :headers headers :body body})
+    (->> (fetch uri #js {:method "POST" :headers headers :body body})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
                      (.text resp)
@@ -193,7 +193,7 @@
   here degrades to fallback fonts, it does not fail the export."
   ([uri] (fetch-ttf-bytes uri #js {:method "GET"}))
   ([uri opts]
-   (->> (fetch! uri opts)
+   (->> (fetch uri opts)
         (p/mcat (fn [^js resp]
                   (if (= 200 (.-status resp))
                     (.arrayBuffer resp)
@@ -291,7 +291,7 @@
 ;; Emoji and non-latin scripts render through fallback families, not through
 ;; any span's font family, so `wasm/fonts-for-shape` never reports them and the
 ;; provisioning above never uploads them. Must run per request, since
-;; `clear-fonts!` empties the store; the TTF bytes stay cached per process.
+;; `clear-fonts` empties the store; the TTF bytes stay cached per process.
 
 (defn- scene-fallback-fonts
   "Fallback font descriptors needed by the scene's text. Deduped because
@@ -319,7 +319,7 @@
     (cached-ttf-bytes [font-id weight style] #(fetch-gfont-bytes ttf-url))
     (p/resolved nil)))
 
-(defn- provision-fallback-fonts!
+(defn- provision-fallback-fonts
   [scene]
   (->> (scene-fallback-fonts scene)
        (map (fn [{:keys [font-id weight style is-emoji is-fallback] :as font}]
@@ -327,12 +327,12 @@
                 (->> (fetch-fallback-font-bytes font)
                      (p/fmap (fn [buf]
                                (if buf
-                                 (wasm/store-font! {:id (uuid/get-u32 font-uuid)
-                                                    :weight weight
-                                                    :style style
-                                                    :emoji? (boolean is-emoji)
-                                                    :fallback? (boolean is-fallback)}
-                                                   buf)
+                                 (wasm/store-font {:id (uuid/get-u32 font-uuid)
+                                                   :weight weight
+                                                   :style style
+                                                   :emoji? (boolean is-emoji)
+                                                   :fallback? (boolean is-fallback)}
+                                                  buf)
                                  (l/warn :hint "wasm render: fallback font unavailable"
                                          :font-id font-id)))))
                 (p/resolved nil))))
@@ -349,7 +349,7 @@
   [media-id {:keys [token]}]
   (let [headers (asset-headers token)
         uri     (internal-uri (str "assets/by-file-media-id/" media-id))]
-    (->> (fetch! uri #js {:method "GET" :headers headers})
+    (->> (fetch uri #js {:method "GET" :headers headers})
          (p/mcat (fn [^js resp]
                    (if (= 200 (.-status resp))
                      (.arrayBuffer resp)
@@ -365,7 +365,7 @@
                            :detail (explain cause) :cause cause)
                    (p/resolved nil))))))
 
-(defn- provision-images!
+(defn- provision-images
   "Fetches and stores every image the scene references (shape, stroke and
   text-span fills, enumerated by `app.common.types.shape.images`). Unlike fonts,
   the image store is not reset per request, so already-held images are skipped
@@ -380,7 +380,7 @@
            :total (count all-ids)
            :cached (- (count all-ids) (count new-ids)))
     (doseq [image-id all-ids]
-      (wasm/store-image-url! image-id (public-uri (str "assets/by-file-media-id/" image-id))))
+      (wasm/store-image-url image-id (public-uri (str "assets/by-file-media-id/" image-id))))
     (->> new-ids
          (map (fn [image-id]
                 (->> (fetch-file-media-bytes image-id params)
@@ -390,22 +390,22 @@
                                    (l/dbg :hint "wasm render: image stored"
                                           :media-id (str image-id)
                                           :bytes (.-byteLength ^js buf))
-                                   (wasm/store-image! image-id buf))
+                                   (wasm/store-image image-id buf))
                                  (l/warn :hint "wasm render: image unavailable"
                                          :media-id (str image-id))))))))
          (p/all))))
 
-(defn- relayout-text!
+(defn- relayout-text
   "Recomputes layout for every text shape, once the real fonts are provisioned
   (serialize-time layout used the fallback)."
   [scene]
   (doseq [shape (vals scene)
           :when (= :text (:type shape))]
-    (wasm/update-text-layout! (:id shape))))
+    (wasm/update-text-layout (:id shape))))
 
 ;; --- render
 
-(defn- check-cancelled!
+(defn- check-cancelled
   "Cancellation is cooperative: a render already inside Skia cannot be
   interrupted, so the flag is only observed between objects. Killing a job
   mid-object is the caller's job (terminating the worker)."
@@ -440,17 +440,17 @@
          :objects (count objects)
          :file-id (str (:file-id params))
          :page-id (str (:page-id params)))
-  (->> (ensure-module!)
+  (->> (ensure-module)
        (p/mcat (fn [_] (fetch-objects params)))
        (p/mcat (fn [scene]
                  (l/dbg :hint "wasm render: scene fetched" :shapes (count scene))
-                 (serialize/serialize-scene! scene)
+                 (serialize/serialize-scene scene)
                  (l/dbg :hint "wasm render: scene serialized")
                  ;; So fonts from a previous request don't leak into this one.
-                 (wasm/clear-fonts!)
+                 (wasm/clear-fonts)
                  (->> (p/all [(fetch-font-variants params)
-                              (provision-images! scene params)
-                              (provision-fallback-fonts! scene)])
+                              (provision-images scene params)
+                              (provision-fallback-fonts scene)])
                       (p/mcat
                        (fn [[variants _]]
                          (let [variants     (or variants [])
@@ -459,14 +459,14 @@
                            ;; Before rendering, so the relayout below sees real
                            ;; font metrics. Deduped across objects: shapes
                            ;; sharing one family download its TTF once.
-                           (wasm/provision-fonts! (map :id objects) resolve-font
-                                                  :font-url font-url))))
+                           (wasm/provision-fonts (map :id objects) resolve-font
+                                                 :font-url font-url))))
                       (p/mcat
                        (fn [_]
-                         (relayout-text! scene)
+                         (relayout-text scene)
                          (p/run
                           (fn [{:keys [id] :as object}]
-                            (check-cancelled! params)
+                            (check-cancelled params)
                             (let [bytes (render-object-bytes type id scale)
                                   path  (sh/tempfile :prefix "penpot.tmp.wasm."
                                                      :suffix (mime/get-extension type))]
@@ -481,7 +481,7 @@
        (p/fmap (fn [result]
                  ;; After the request, never mid-render, so an image can't
                  ;; disappear under a running export.
-                 (let [evicted (wasm/evict-images! (cf/get :wasm-worker-image-cache-size wasm/image-cache-size))]
+                 (let [evicted (wasm/evict-images (cf/get :wasm-worker-image-cache-size wasm/image-cache-size))]
                    (when (pos? evicted)
                      (l/info :hint "wasm render: evicted cached images" :count evicted)))
                  result))

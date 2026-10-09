@@ -24,21 +24,21 @@
 
 (defonce ^:private tracked (atom {}))
 
-(defn track!
+(defn track
   "Registers `path` as owned by `job-id`, so it is removed when the job settles."
   [job-id path]
   (when (and job-id path)
     (swap! tracked update (str job-id) (fnil conj #{}) path))
   path)
 
-(defn- remove-path!
+(defn- remove-path
   [path]
   (->> (p/do (fsp/rm path #js {:recursive true :force true}))
        (p/merr (fn [cause]
                  (l/warn :hint "unable to remove job temp file" :path path :cause cause)
                  (p/resolved nil)))))
 
-(defn release!
+(defn release
   "Removes every file the job owns. Called once the job reached a terminal
   state and its result has already been uploaded, so nothing else reads them."
   [job-id]
@@ -46,16 +46,17 @@
         paths (get @tracked k)]
     (swap! tracked dissoc k)
     (if (seq paths)
-      (->> (map remove-path! paths)
+      (->> (map remove-path paths)
            (p/all)
            (p/fmap (fn [_]
                      (l/dbg :hint "released job temp files" :job-id k :count (count paths))
                      nil)))
       (p/resolved nil))))
 
-(defn- clean!
+(defn clean-orphans
   "Removes managed temp files older than the job TTL. They can only be leftovers
-  of a previous process: every live one belongs to a job of this process."
+  of a previous process: every live one belongs to a job of this process.
+  Runs once at boot; nothing here needs initializing."
   []
   (let [max-age (* 1000 (cf/get :exporter-job-ttl 3600))
         now     (js/Date.now)]
@@ -67,7 +68,7 @@
                                  (->> (p/do (fsp/stat fpath))
                                       (p/mcat (fn [^js stat]
                                                 (if (> (- now (inst-ms (.-mtime stat))) max-age)
-                                                  (->> (remove-path! fpath)
+                                                  (->> (remove-path fpath)
                                                        (p/fmap (constantly 1)))
                                                   (p/resolved 0))))
                                       (p/merr (fn [_] (p/resolved 0)))))))
@@ -80,7 +81,3 @@
          (p/merr (fn [cause]
                    (l/warn :hint "temp file cleanup failed" :cause cause)
                    (p/resolved 0))))))
-
-(defn init
-  []
-  (clean!))

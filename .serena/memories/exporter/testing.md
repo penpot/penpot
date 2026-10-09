@@ -12,5 +12,6 @@
 - Focus a test var with `node target/tests/test.js --focus exporter-tests.renderer-svg-test/creates-the-correct-gradient-element`.
 - Set app log level by appending `--log-level warn` (or `trace|debug|info|warn|error`).
 - `test:quiet` accepts forwarded options but rebuilds the bundle; prefer the direct runner after `build:test` for focused runs.
+- The direct runner and `test`/`test:quiet` default `PENPOT_SECRET_KEY=test-secret-key` when the environment says nothing: the config needs a secret to boot.
 - From `exporter/`: `pnpm run check-fmt:clj` checks ClojureScript formatting.
 - From `exporter/`: `pnpm run lint:clj` runs ClojureScript linting.

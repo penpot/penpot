@@ -5,13 +5,14 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.browser
+  (:refer-clojure :exclude [eval])
   (:require
    ["generic-pool" :as gp]
    ["generic-pool/lib/errors.js" :as gpe]
    ["playwright" :as pw]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.config :as cf]
+   [app.consumer.config :as ccfg]
    [app.util.object :as obj]
    [promesa.core :as p]))
 
@@ -38,8 +39,8 @@
               :name name
               :value token}]))
 
-(defn nav!
-  ([page url] (nav! page url nil))
+(defn nav
+  ([page url] (nav page url nil))
   ([page url {:keys [wait-until timeout] :or {wait-until "networkidle" timeout 20000}}]
    (.goto ^js page (str url) #js {:waitUntil wait-until :timeout timeout})))
 
@@ -97,7 +98,7 @@
                                                  (obj/set! "clip" nil))))]
      (.screenshot ^js frame options))))
 
-(defn emulate-media!
+(defn emulate-media
   [page {:keys [media]}]
   (.emulateMedia ^js page #js {:media media})
   page)
@@ -112,7 +113,7 @@
                        :pageRanges page-ranges
                        :printBackground true
                        :preferCSSPageSize true})))
-(defn eval!
+(defn eval
   [frame f]
   (.evaluate ^js frame f))
 
@@ -155,8 +156,8 @@
 
 (defn init
   []
-  (let [opts #js {:max (cf/get :browser-pool-max 5)
-                  :min (cf/get :browser-pool-min 0)
+  (let [opts #js {:max (max 1 (ccfg/concurrency))
+                  :min 0
                   :testOnBorrow true
                   :evictionRunIntervalMillis 5000
                   :numTestsPerEvictionRun 5
@@ -189,7 +190,7 @@
               :cause cause)
     (p/rejected cause)))
 
-(defn exec!
+(defn exec
   [config handle]
   (letfn [(handle-browser [browser]
             (p/let [id      (unchecked-get browser "__id")

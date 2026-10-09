@@ -5,19 +5,33 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.exports.assets
+  "The shapes and frames exportation, over the jobs substrate.
+
+  Every export here is one `:export-assets` job: the backend creates it
+  (`create-export-assets-job`) and freezes the items, the external
+  exporter worker renders them, and the client follows its life on the
+  websocket with `dj/watch-job`, the same channel the file exports of
+  `data.exports.files` ride since they became jobs. The milestones of
+  the job (`:preparing`, `:rendering`, `:packaging`, with the `objects`
+  and `pages` counters) become the figures the progress widget shows;
+  the completed row carries the artifact under its `result`, for the
+  download; and the X of the widget cancels the job by its id.
+
+  The client-side wasm render of a single object is the exception: it
+  never leaves the browser, so it keeps rendering and downloading
+  locally."
   (:require
    [app.common.time :as ct]
-   [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
+   [app.main.data.jobs :as dj]
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dwp]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -33,12 +47,6 @@
 (defn- normalize-exports
   [exports]
   (mapv normalize-export exports))
-
-(defn- normalize-export-shapes-params
-  [{:keys [exports] :as params}]
-  (cond-> params
-    (seq exports)
-    (assoc :exports (normalize-exports exports))))
 
 (defn toggle-detail-visibililty
   []
@@ -65,7 +73,6 @@
                  (not= id existing-id))
           state
           (dissoc state :export))))))
-
 
 (defn show-workspace-export-dialog
   [{:keys [selected origin]}]
@@ -115,7 +122,7 @@
                           (cond-> share-id (assoc :share-id share-id))))]
         (rx/of (modal/show :export-shapes {:exports (vec exports)
                                            :origin "viewer"
-                                           :name name})))))) #_TODO
+                                           :name name}))))))
 
 (defn show-workspace-export-frames-dialog
   [frames]
@@ -132,7 +139,12 @@
                                :file-id file-id
                                :object-id (:id frame)
                                :shape frame
-                               :name (:name frame)})
+                               :name (:name frame)
+                               ;; pages render as one pdf: the kind
+                               ;; travels declared, the items fully typed
+                               :type :pdf
+                               :scale 1
+                               :suffix ""})
                             frames)]
 
         (rx/of (modal/show :export-frames
@@ -140,69 +152,119 @@
                             :origin "workspace:menu"
                             :name page-name}))))))
 
+;; ---- THE PROGRESS WIDGET STATE ------------------------------------
+;; The events this namespace emits for the export progress widget. The
+;; job's channel (`dj/watch-job`) turns into them on its way up.
+
 (defn- initialize-export-status
-  "`job` is only present on the job API path; without it the widget counts the
-  exports the client submitted, exactly as it always has."
-  [exports cmd resource {:keys [job-id total status backend] :as job}]
+  "The state a just created job starts at: the widget shows it queued,
+  with no figures yet — the counter comes with the first milestone the
+  worker publishes, and counts itself down from the items meanwhile.
+  The creation answers the row status (`pending`): the widget names it
+  queued, because nobody works on the job yet."
+  [exports cmd {:keys [id status]}]
   (ptk/reify ::initialize-export-status
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :export (cond-> {:in-progress true
-                                    :resource-id (:id resource)
-                                    :healthy? true
-                                    :error false
-                                    :progress 0
-                                    :widget-visible true
-                                    :detail-visible true
-                                    :exports exports
-                                    :last-update (ct/now)
-                                    :cmd cmd}
-                             (some? job)
-                             (assoc :job-id job-id
-                                    :total total
-                                    :status status
-                                    :backend backend))))))
+      (assoc state :export {:in-progress true
+                            :healthy? true
+                            :error false
+                            :progress 0
+                            :widget-visible true
+                            :detail-visible true
+                            :exports exports
+                            :last-update (ct/now)
+                            :cmd cmd
+                            :job-id id
+                            :status (if (= "pending" status) "queued" status)}))))
 
-(defn- update-export-status
-  [{:keys [done total status resource-uri filename mtype] :as data}]
-  (ptk/reify ::update-export-status
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [time-diff (ct/diff-ms (get-in state [:export :last-update]) (ct/now))
-            healthy?  (< time-diff 6000)
-            ;; The legacy path has no server-side figures to track; it keeps
-            ;; reporting progress over the client's own list.
-            job?      (some? (get-in state [:export :job-id]))]
-        (cond-> state
-          job?
-          (update :export assoc :status status)
+(defn- counter-of
+  "The figures of one milestone: `objects` counts the shapes and
+  `pages` counts the frames, both as `current` exported and `total`
+  planned. A job publishes one kind or the other; this takes whatever
+  it carries."
+  [counters]
+  (or (:objects counters) (:pages counters)))
 
-          (and job? (some? total))
-          (update :export assoc :total total)
+(defn- add-milestone
+  "One beat of the job into the widget: what has landed and what is
+  coming, named by the stage the run is in. The status moves to running
+  on the first beat, figures or not. A milestone without figures (the
+  first breath of the worker) names the stage but keeps the figures the
+  widget already holds. A milestone that arrives once the widget
+  settled from a cancel or an error is ignored."
+  [payload]
+  (let [figures (counter-of (:counters payload))]
+    (ptk/reify ::add-milestone
+      ptk/UpdateEvent
+      (update [_ state]
+        (if-not (get-in state [:export :in-progress])
+          state
+          (-> (update state :export assoc
+                      :status "running"
+                      :stage (:stage payload)
+                      :last-update (ct/now))
+              (cond-> (some? figures)
+                (update :export assoc
+                        :progress (:current figures)
+                        :total (or (:total figures)
+                                   (get-in state [:export :total]))))))))))
 
-          (= status "running")
-          (update :export assoc :progress done :last-update (ct/now) :healthy? healthy?)
+(defn- add-outcome
+  "The last row of the job as the end of the widget. A completed job
+  downloads its artifact right away and the widget goes away after a
+  moment; a failed one stays, naming the error; a cancelled one just
+  settles; and a cancelling step keeps the widget alive while the
+  cancel flies."
+  [{:keys [status result error]}]
+  (let [downloadable? (or (= "completed" status) (= "ended" status))]
+    (ptk/reify ::add-outcome
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :export (fn [export]
+                                (if-not (and (map? export)
+                                             (or (:in-progress export)
+                                                 (= "cancelling" (:status export))))
+                                  export
+                                  (cond
+                                    (= "cancelling" status)
+                                    (assoc export :status "cancelling"
+                                           :last-update (ct/now))
 
-          (= status "error")
-          (update :export assoc :in-progress false :error (:cause data) :last-update (ct/now) :healthy? healthy?)
+                                    downloadable?
+                                    (assoc export :status "ended"
+                                           :in-progress false
+                                           :last-update (ct/now))
 
-          (= status "cancelling")
-          (update :export assoc :last-update (ct/now) :healthy? healthy?)
+                                    (= "failed" status)
+                                    (assoc export :status "error"
+                                           :in-progress false
+                                           :error (:hint error)
+                                           :error-code (:code error)
+                                           :last-update (ct/now))
 
-          (= status "cancelled")
-          (update :export assoc :in-progress false :last-update (ct/now) :healthy? healthy?)
+                                    (= "cancelled" status)
+                                    (assoc export :status "cancelled"
+                                           :in-progress false
+                                           :last-update (ct/now))
 
-          (= status "ended")
-          (update :export assoc :in-progress false :progress done :last-update (ct/now) :healthy? healthy?))))
+                                    :else export)))))
 
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (when (= status "ended")
-        (dom/trigger-download-uri filename mtype resource-uri)))))
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (when downloadable?
+          (dom/trigger-download-uri (:filename result)
+                                    (:mtype result)
+                                    (:resource-uri result)))
+        (when (or downloadable? (= "cancelled" status))
+          ;; the widget has its moment naming what happened, and goes
+          ;; away
+          (->> (rx/of (clear-export-state nil))
+               (rx/delay default-timeout)))))))
 
 ;; The exporter is at capacity. Not a crash: the widget says so and the user
 ;; retries, instead of the generic error dialog.
-(def ^:private saturation-codes #{:queue-full})
+(def ^:private saturation-codes #{:queue-full :max-quote-reached})
 
 (defn- export-failed
   "Reports a failure that happened before the export ever started, so the widget
@@ -224,32 +286,75 @@
                             :last-update (ct/now)}))))
 
 (defn cancel-export
-  "Stops the running export. Only reachable on the job API path, where the
-  exporter can actually abort the work.
-
-  The widget settles from here rather than from the job's `cancelled` message:
-  the outcome is known once the request returns, and waiting on a round trip
-  through redis and the websocket would leave it stuck whenever that message is
-  missed."
+  "Stops the running export: the X of the widget asks the backend to
+  cancel its job — fire and forget, the job may have just ended on its
+  own — and settles the widget itself, because the outcome is known
+  once the cancel is dispatched; waiting on the row and the websocket
+  would leave it stuck whenever that message is missed. The widget
+  keeps its cancelled state on display a moment, and goes away."
   []
   (ptk/reify ::cancel-export
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [job-id (get-in state [:export :job-id])]
-        (let [resource-id (get-in state [:export :resource-id])
-              settle      (rx/concat
-                           (rx/of (update-export-status {:status "cancelled"}))
-                           (->> (rx/of (clear-export-state resource-id))
-                                (rx/delay default-timeout)))]
-          (rx/concat
-           ;; Stopping is not instantaneous: the request has to reach the
-           ;; exporter and the work has to unwind.
-           (rx/of (update-export-status {:status "cancelling"}))
-           (->> (rp/cmd! :cancel-export-job {:job-id job-id})
-                (rx/mapcat (fn [_] settle))
-                ;; Already finished, or the exporter is gone; either way
-                ;; there is nothing left to stop.
-                (rx/catch (fn [_] settle)))))))))
+        (dj/cancel-job job-id)
+        ;; Stopping is not instantaneous: the row is marked, and the
+        ;; worker stops at its next beat.
+        (rx/of (add-outcome {:status "cancelling"}))))))
+
+;; ---- THE JOB FLOW -------------------------------------------------
+
+(defn- ->widget-event
+  "One emission of the job taken from `dj/watch-job` is the event the
+  widget consumes: the payload of a progress event carries the
+  milestone, and the row at the end answers with the outcome."
+  [emission]
+  (cond
+    (and (= :progress (:kind emission))
+         (map? (:payload emission)))
+    (add-milestone (:payload emission))
+
+    (contains? emission :status)
+    (add-outcome emission)))
+
+(defn- export-stream!
+  "The whole life of one export job as a stream of widget events: the
+  creation of the job, then its channel (`dj/watch-job`) mapped into
+  the vocabulary of the widget, and the stream over once the outcome
+  lands. The start and retry events of the channel are dropped by the
+  mapper.
+
+  A creation that could not even happen (the export queue saturated,
+  mostly) reports on the widget and, unless it is saturation, rethrows
+  for the global error handling of the store."
+  [ws-conn exports cmd {:keys [force-multiple name is-wasm kind]}]
+  (let [params (cond-> {:exports exports
+                        :is-wasm is-wasm}
+                 (some? name)
+                 (assoc :name name)
+
+                 (some? kind)
+                 (assoc :kind kind)
+
+                 (some? force-multiple)
+                 (assoc :force-multiple force-multiple))]
+
+    (->> (rp/cmd! :create-export-assets-job {:params params})
+         (rx/mapcat
+          (fn [job]
+            (rx/concat
+             (rx/of (initialize-export-status exports cmd job))
+             (->> (dj/watch-job ws-conn (:id job))
+                  (rx/map ->widget-event)
+                  (rx/filter some?)))))
+         (rx/catch (fn [cause]
+                     (let [failed (export-failed exports cmd cause)]
+                       (if (contains? saturation-codes (:code (ex-data cause)))
+                         (rx/of failed)
+                         (rx/concat (rx/of failed)
+                                    (rx/throw cause))))))
+         (rx/finalize (fn []
+                        (swap! st/ongoing-tasks disj :export))))))
 
 (def ^:private wasm-export-types #{:jpeg :webp :png :pdf :svg})
 
@@ -278,33 +383,16 @@
   [{:keys [export]}]
   (let [export (normalize-export export)]
     (ptk/reify ::request-simple-export
-      ptk/UpdateEvent
-      (update [_ state]
-        (cond-> state
-          (not (use-wasm-export? state export))
-          (update :export assoc :in-progress true :id uuid/zero)))
-
       ptk/WatchEvent
       (watch [_ state _]
         (if (use-wasm-export? state export)
           (rx/of (request-simple-export-wasm export))
-          (let [profile-id (:profile-id state)
-                params     (normalize-export-shapes-params {:exports [export]
-                                                            :profile-id profile-id
-                                                            :cmd :export-shapes
-                                                            :wait true
-                                                            :is-wasm (wasm-export-enabled? state)})]
+          (let [ws-conn (:ws-conn state)]
+            (swap! st/ongoing-tasks conj :export)
             (rx/concat
              (dwp/force-persist-and-wait 400)
-
-             (->> (rp/cmd! :export params)
-                  (rx/map (fn [{:keys [filename mtype uri]}]
-                            (dom/trigger-download-uri filename mtype uri)
-                            (clear-export-state uuid/zero)))
-                  (rx/catch (fn [cause]
-                              (rx/concat
-                               (rx/of (clear-export-state uuid/zero))
-                               (rx/throw cause))))))))))))
+             (export-stream! ws-conn [export] nil
+                             {:is-wasm (wasm-export-enabled? state)}))))))))
 
 (defn request-multiple-export
   [{:keys [exports cmd name]
@@ -314,85 +402,17 @@
     (ptk/reify ::request-multiple-export
       ptk/WatchEvent
       (watch [_ state _]
-        (let [resource-id (volatile! nil)
-              profile-id  (:profile-id state)
-              ws-conn     (:ws-conn state)
-              params      (cond->
-                           {:exports exports
-                            :cmd cmd
-                            :profile-id profile-id
-                            :force-multiple true
-                            :is-wasm (wasm-export-enabled? state)}
-                            (some? name)
-                            (assoc :name name))
-
-              progress-stream
-              (->> (ws/get-rcv-stream ws-conn)
-                   (rx/filter ws/message-event?)
-                   (rx/map :payload)
-                   (rx/filter #(= :export-update (:type %)))
-                   (rx/filter #(= @resource-id (:resource-id %)))
-                   (rx/share))
-
-              stopper
-              (rx/filter #(or (= "ended" (:status %))
-                              (= "error" (:status %))
-                              (= "cancelled" (:status %)))
-                         progress-stream)]
-
+        (let [ws-conn (:ws-conn state)]
           (swap! st/ongoing-tasks conj :export)
-
           (rx/merge
            ;; Force that all data is persisted; best effort.
            (rx/of ::dwp/force-persist)
 
-           ;; Launch the exportation process and stores the resource id
-           ;; locally. With wasm export active the job API is used instead: it
-           ;; answers with the exporter's own object count and gives a handle
-           ;; to cancel.
-           (->> (if (wasm-export-enabled? state)
-                  (->> (rp/cmd! :create-export-job params)
-                       (rx/map (fn [{job-id :id :keys [total] :as job}]
-                                 (vreset! resource-id (:resource-id job))
-                                 (initialize-export-status exports cmd
-                                                           {:id (:resource-id job)}
-                                                           {:job-id job-id
-                                                            :total total
-                                                            :status (:state job)
-                                                            :backend (:backend job)}))))
-                  (->> (rp/cmd! :export params)
-                       (rx/map (fn [{:keys [id] :as resource}]
-                                 (vreset! resource-id id)
-                                 (initialize-export-status exports cmd resource nil)))))
-                (rx/catch (fn [cause]
-                            ;; Saturation is an answer, not a fault.
-                            (if (contains? saturation-codes (:code (ex-data cause)))
-                              (rx/of (export-failed exports cmd cause))
-                              (rx/concat
-                               (rx/of (export-failed exports cmd cause))
-                               (rx/throw cause))))))
-
-           ;; We proceed to update the export state with incoming
-           ;; progress updates. We delay the stopper for give some time
-           ;; to update the status with ended or errored status before
-           ;; close the stream.
-           (->> progress-stream
-                (rx/map update-export-status)
-                (rx/take-until (rx/delay 500 stopper))
-                (rx/finalize (fn []
-                               (swap! st/ongoing-tasks disj :export))))
-
-           ;; We hide need to hide the ui elements of the export after
-           ;; some interval. We also delay a little bit more the stopper
-           ;; for ensure that after some security time, the stream is
-           ;; completely closed.
-           (->> progress-stream
-                (rx/filter #(or (= "ended" (:status %))
-                                (= "cancelled" (:status %))))
-                (rx/take 1)
-                (rx/delay default-timeout)
-                (rx/map #(clear-export-state @resource-id))
-                (rx/take-until (rx/delay 6000 stopper)))))))))
+           (->> (export-stream! ws-conn exports cmd
+                                {:force-multiple true
+                                 :name name
+                                 :kind (if (= :export-frames cmd) :frames :shapes)
+                                 :is-wasm (wasm-export-enabled? state)}))))))))
 
 (defn request-export
   [{:keys [exports] :as params}]
