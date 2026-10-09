@@ -6741,6 +6741,14 @@ msgstr "Locate"
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Locate grid layout"
 
+#: src/app/main/ui/workspace/libraries.cljs:898
+msgid "workspace.libraries.add-shared-library"
+msgstr "Add a shared library"
+
+#: src/app/main/ui/workspace/libraries.cljs:801
+msgid "workspace.libraries.assets-in-this-file"
+msgstr "ASSETS IN THIS FILE"
+
 #: src/app/main/ui/workspace/libraries.cljs:126, src/app/main/ui/workspace/libraries.cljs:155, src/app/main/ui/workspace/libraries.cljs:199
 msgid "workspace.libraries.colors"
 msgid_plural "workspace.libraries.colors"
@@ -6894,6 +6902,10 @@ msgstr "Unlink all assets"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:554
 msgid "workspace.libraries.text.multiple-token-tooltip"
 msgstr "Detach all tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:1136
+msgid "workspace.libraries.this-file"
+msgstr "This file"
 
 #: src/app/main/ui/workspace/libraries.cljs:167, src/app/main/ui/workspace/libraries.cljs:211
 msgid "workspace.libraries.token-sets"
