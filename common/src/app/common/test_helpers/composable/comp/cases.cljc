@@ -5,20 +5,15 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.test-helpers.composable.comp.cases
-  "Component-behaviour cases authored on the composable test model, shared by
-   both runners: the frontend interpreter (the real app, in
-   `frontend-tests.composable-tests.comp.sync-test`) and the pure runner
-   (`app.common.test-helpers.composable.comp.runner`, in
-   `common-tests.logic.composable-sync-test`).
+  "Component cases of the composable test model, run by the frontend
+   interpreter (`frontend-tests.composable-tests.comp.sync-test`) and by the
+   pure runner (`common-tests.logic.composable-sync-test`).
 
-   Each case is a zero-arg function returning `{:setup :operation :asserter}`.
-   Assertions use `clojure.test` (`cljs.test` in CLJS), inline through `Test`
-   operations and/or in the optional trailing `:asserter`, which receives the
-   resulting situation of each enumerated variant. A case contains only the user
-   edits: the runner syncs copies on its own, and that is what the cases
-   assert.
+   A case is a zero-arg fn returning `{:setup :operation :asserter}`; the
+   asserter gets the resulting situation of each variant. A case holds only
+   user actions: the runners sync the copies, and the cases assert on that.
 
-   The cases (see `mem:frontend/composable-component-tests` for details):
+   The cases (`mem:frontend/composable-component-tests`):
      B — an override on a copy child survives a later main change (touched gate).
      C — a sweep (one-of) over several attribute changes, each propagating.
      D — a shape added to the main is structurally propagated (ref-integrity).
@@ -28,8 +23,8 @@
          the explicit library sync (cross-file propagation).
      I — undo reverses an edit AND its propagation.
      P — redo applies an undone edit and its propagation again.
-     K — the synchronisation sweep: depth x edit-targets, with override-precedence
-         and reset checkpoints.
+     K — edits at depth 0..2: the copy's own, else its main's, else the
+         remote's; a reset keeps the main's.
      L — the swap sweep: swaps at any subset of nesting levels.
      M — the variant-switch sweep: case L with variant switches.
      O — a variant switch keeps a copy override only where the mains agree.
@@ -42,6 +37,8 @@
      W — one undo node undoes several steps over nested cascades.
      X — an undo committed before the edit's sync leaves copies unchanged
          (frontend only).
+     AJ — one undo after a nested sync reverts only the reflow (F43, frontend
+         only).
      Y — a text override merges with a main text change per subgroup.
      Z — a move of a main child reaches the copies (frontend only).
      AA..AE — swap outcomes: a copy's swap survives main changes; reset of a
@@ -51,7 +48,7 @@
      AG — a main reorder keeps the copy's nested copies aligned.
      AH, AI — a copy deleting a nested copy keeps the others aligned (AI also
          reflows, frontend only).
-     N — geometry sync with rotated instances (needs the frontend placement step).
+     N — main edits reach rotated copies (frontend only).
      Rotation — a touched copy child survives a main rotation (frontend only too)."
   (:require
    [app.common.data :as d]
@@ -72,40 +69,50 @@
 (def ^:private red "#ff0000")
 (def ^:private green "#00ff00")
 (def ^:private blue "#0000ff")
+(def ^:private base-color "#aaaaaa")
 
-;; (Cases A, G, J retired — subsumed by case K's depth-swept propagation scenario.)
+(defn- fill-color
+  [shape]
+  (-> shape :fills first :fill-color))
+
+(defn- depth-sweep
+  "One variant per nesting depth 0, 1 and 2 of lineage `name`."
+  [name]
+  (tm/one-of [(tm/skip)
+              (n/make-nested-component name)
+              (n/make-nested-component name 2)]))
 
 (defn copy-override-survives-later-main-change
-  "Case B."
+  "Case B. A copy overrides its child's fill, then the main changes it. The
+   override survives, touched."
   []
-  (let [override (n/change-attr :copy-child :fills green)]  ; touch the copy first
+  (let [override (n/change-property :copy-child :fills green)]
     {:setup     setup/simple-component-with-labeled-copy
-     ;; override the copy, then change the main; sync runs after each edit. The
-     ;; override must survive (touched-flag gate).
      :operation (tm/in-sequence
                  [override
-                  (n/change-attr :main-child :fills red)])
+                  (n/change-property :main-child :fills red)])
      :asserter  (fn [situation]
                   (let [copy-child (setup/copy-instance situation)]
-                    (t/is (n/has-attr? override copy-child))
+                    (t/is (n/has-property-of override copy-child))
                     (t/is (contains? (:touched copy-child) :fill-group))
                     (t/is (some? (:shape-ref copy-child)))))}))
 
 (defn attribute-sweep-propagates-to-clean-copy
-  "Case C."
+  "Case C. A main change of fill or opacity reaches a clean copy."
   []
   (let [sweep (tm/one-of
-               [(n/change-attr :main-child :fills red)
-                (n/change-attr :main-child :opacity 0.5)])]
+               [(n/change-property :main-child :fills red)
+                (n/change-property :main-child :opacity 0.5)])]
     {:setup     setup/simple-component-with-copy
      :operation (tm/in-sequence [sweep])
      :asserter  (fn [situation]
                   (let [chosen (tm/get-choice situation sweep)]
                     (t/is (some? chosen))
-                    (t/is (n/has-attr? chosen (setup/copy-instance situation)))))}))
+                    (t/is (n/has-property-of chosen (setup/copy-instance situation)))))}))
 
 (defn add-shape-to-main-propagates-to-clean-copy
-  "Case D."
+  "Case D. A shape added to the main appears in the copy, linked to it and
+   untouched."
   []
   (let [add (n/add-child :main-root :main-child-2)]
     {:setup     setup/simple-component-with-labeled-copy
@@ -120,7 +127,8 @@
                     (t/is (nil? (:touched copy-new)))))}))
 
 (defn remove-shape-from-main-propagates-to-clean-copy
-  "Case E."
+  "Case E. The middle of three main children is deleted; the copy loses it
+   and keeps the others in order, linked and untouched."
   []
   (let [removal (n/remove-child :main-child2)]
     {:setup     setup/component-with-many-children
@@ -140,7 +148,8 @@
                     (t/is (nil? (:touched copy-root)))))}))
 
 (defn move-shape-in-main-propagates-order-to-clean-copy
-  "Case F."
+  "Case F. The main moves its first child to the end; the copy follows, its
+   children linked and untouched."
   []
   (let [move (n/move-child :main-child1 :main-root 2)]
     {:setup      setup/component-with-many-children
@@ -168,245 +177,147 @@
 
 (defn undo-reverts-edit-and-its-propagation
   "Case I. Change the main (which propagates to the clean copy), then undo. A
-   single undo reverses the whole logical action — the edit AND its
-   propagation — so the copy returns to baseline and is left untouched."
+   single undo reverses the edit and its propagation, so main and copy are
+   back to the first fill and the copy is untouched."
   []
-  (let [original "#abcdef"                    ; the labeled setup's starting fill
-        baseline (n/change-attr :main-child :fills original)  ; expected-VALUE descriptor
-        change   (n/change-attr :main-child :fills red)]
-    {:setup     setup/simple-component-with-labeled-copy
-     :operation (tm/in-sequence [change (n/undo)])
-     :asserter  (fn [situation]
-                  (let [copy (setup/copy-instance situation)
-                        main (setup/main-instance situation)]
-                    ;; the edit was reversed on the main …
-                    (t/is (n/has-attr? baseline main))
-                    ;; … and on the copy (the propagation was reversed too) …
-                    (t/is (n/has-attr? baseline copy))
-                    ;; … leaving the copy clean.
-                    (t/is (nil? (:touched copy)))))}))
+  {:setup     setup/simple-component-with-labeled-copy
+   :operation (tm/in-sequence [(n/change-property :main-child :fills red) (n/undo)])
+   :asserter  (fn [situation]
+                (let [copy (setup/copy-instance situation)]
+                  (t/is (= setup/labeled-fill (fill-color (setup/main-instance situation))))
+                  (t/is (= setup/labeled-fill (fill-color copy)))
+                  (t/is (nil? (:touched copy)))))})
 
 (defn redo-reapplies-edit-and-its-propagation
   "Case P. Change the main (which propagates to the clean copy), undo, then
    redo. The redo applies the edit and its propagation again, so the copy
    shows the main's new value and is left untouched."
   []
-  (let [change (n/change-attr :main-child :fills red)]
+  (let [change (n/change-property :main-child :fills red)]
     {:setup     setup/simple-component-with-labeled-copy
      :operation (tm/in-sequence [change (n/undo) (n/redo)])
      :asserter  (fn [situation]
                   (let [copy (setup/copy-instance situation)
                         main (setup/main-instance situation)]
-                    (t/is (n/has-attr? change main))
-                    (t/is (n/has-attr? change copy))
+                    (t/is (n/has-property-of change main))
+                    (t/is (n/has-property-of change copy))
                     (t/is (nil? (:touched copy)))))}))
 
 (defn library-change-propagates-across-file-boundary-on-sync
-  "Case H. The main lives in a linked LIBRARY, the copy in the consuming
-   (current) file. The library main has diverged (setup applied `red` to it,
-   leaving the copy stale). In-file sync does NOT cross the file boundary; the
-   app propagates via the library-UPDATE action, so the operation is
-   `sync-from-library`. `expected` is only an expected-VALUE descriptor (its
-   target is irrelevant; `has-attr?` uses just attr+value)."
+  "Case H. The main lives in a linked library, the copy in the consuming
+   (current) file. The library main has diverged (the setup filled it `red`,
+   leaving the copy stale). In-file sync does not cross the file boundary;
+   the app propagates through the library update action, so the operation is
+   `sync-from-library`."
   []
-  (let [expected (n/change-attr :main-child :fills red)]
-    {:setup     #(setup/cross-file-component-with-copy red)
-     :operation (tm/in-sequence [(n/sync-from-library)])
-     :asserter  (fn [situation]
-                  (t/is (n/has-attr? expected (setup/copy-instance situation))))}))
+  {:setup     #(setup/cross-file-component-with-copy red)
+   :operation (tm/in-sequence [(n/sync-from-library)])
+   :asserter  (fn [situation]
+                (t/is (= red (fill-color (setup/copy-instance situation)))))})
 
 (defn synchronisation-scenarios
-  "Case K. CONSOLIDATED SCENARIO SWEEP — one composition standing in for many
-   cases. Built from the sync-scenario operations on an empty situation. It
-   sweeps:
-     - DEPTH 0/1/2 via two independent `(optional (make-nested-component ...))`
-     - which EDITS were made via three independent `(optional change-*)`
-   and asserts, at INLINE checkpoints, the override-precedence and reset rules.
-   The change targets are the tracked lineage rects, so the same composition
-   holds at any depth. Subsumes the flat/nested propagation cases (A/G/J)."
+  "Case K. At nesting depth 0, 1 or 2, optionally the remote main, the main
+   and the copy change their rect. The copy shows its own change, else the
+   main's, else the remote's, else the first fill. Then the copy overrides
+   its rect and resets: it shows the main's change, else the remote's, else
+   the first fill."
   []
-  (let [m "main"
+  (let [m             "main"
         change-remote (n/change-property (n/remote-rect-of m) :fills red)
         change-main   (n/change-property (n/main-rect-of m) :fills green)
         change-copy   (n/change-property (n/copy-rect-of m) :fills blue)
-        copy-rect     (fn [s] (n/lineage-copy-rect s m))
-        ;; precedence at the copy: copy override wins; else main; else remote.
-        expected-after-edits
-        (fn [s]
-          (cond
-            (tm/applied? s change-copy)   (n/has-property-of change-copy (tm/shape-by-id s (copy-rect s)))
-            (tm/applied? s change-main)   (n/has-property-of change-main (tm/shape-by-id s (copy-rect s)))
-            (tm/applied? s change-remote) (n/has-property-of change-remote (tm/shape-by-id s (copy-rect s)))
-            :else true))]
+        force-copy    (n/change-property (n/copy-rect-of m) :fills blue)
+        copy-color    (fn [s] (fill-color (tm/shape-by-id s (n/lineage-copy-rect s m))))
+        main-color    (fn [s]
+                        (cond
+                          (tm/applied? s change-main)   green
+                          (tm/applied? s change-remote) red
+                          :else                         base-color))]
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
-                 [(n/create-component m red)
-                  ;; depth sweep: two independent optionals give depths 0/1/2
-                  ;; (depth 1 appears twice — harmless) without nesting a
-                  ;; Sequence inside an optional.
-                  (tm/optional (n/make-nested-component m))
-                  (tm/optional (n/make-nested-component m))
+                 [(n/create-component m base-color :size 100)
+                  (depth-sweep m)
                   (n/instantiate-copy m)
                   (tm/optional change-remote)
                   (tm/optional change-main)
                   (tm/optional change-copy)
-                  (tm/test-that (fn [s] (t/is (expected-after-edits s))))
-                  ;; force a copy override, observe it wins, then reset it away
-                  change-copy
-                  (tm/test-that
-                   (fn [s] (t/is (n/has-property-of change-copy (tm/shape-by-id s (copy-rect s))))))
-                  (n/reset-copy-instance m)
                   (tm/test-that
                    (fn [s]
-                     ;; after reset: main's value if main changed, else remote's
-                     ;; if remote changed (else the original — not asserted).
-                     (cond
-                       (tm/applied? s change-main)   (t/is (n/has-property-of change-main (tm/shape-by-id s (copy-rect s))))
-                       (tm/applied? s change-remote) (t/is (n/has-property-of change-remote (tm/shape-by-id s (copy-rect s))))
-                       :else true)))])}))
+                     (t/is (= (if (tm/applied? s change-copy) blue (main-color s))
+                              (copy-color s)))))
+                  force-copy
+                  (tm/test-that (fn [s] (t/is (= blue (copy-color s)))))
+                  (n/reset-copy-instance m)
+                  (tm/test-that (fn [s] (t/is (= (main-color s) (copy-color s)))))])}))
 
 (defn- level-color
-  "The fill colour of the rect currently at lineage `name`'s nesting level `i`."
+  "The fill of the rect at lineage `name`'s nesting level `i`."
   [s name i]
-  (-> (tm/shape-by-id s (n/level-rect s name i)) :fills first :fill-color))
+  (fill-color (tm/shape-by-id s (n/level-rect s name i))))
 
-(def ^:private base-color "#aaaaaa")
 (def ^:private swap-colors ["#ff0000" "#00ff00" "#0000ff"])   ; level 0/1/2 targets
 
-(def ^:private level-0-reflow-left
-  ;; what one undo of a first step at level 0 leaves in place
-  #{[:object :sync-main-innercopy-0 :component-id]
-    [:object :sync-main-innercopy-0 :shape-ref]
-    [:object :sync-main-innercopy-0 :shapes]
-    [:object :sync-main-innercopy-0 :touched]
-    [:object :sync-main-innercopy-0 :width]
-    [:object :sync-main-innercopy-0 :height]
-    [:object :sync-main-innercopy-0 :selrect]
-    [:object :sync-main-innercopy-1 :width]
-    [:object :sync-main-innercopy-1 :height]
-    [:object :sync-main-innercopy-1 :selrect]
-    [:object :sync-main-innercopy-2 :width]
-    [:object :sync-main-innercopy-2 :height]
-    [:object :sync-main-innercopy-2 :selrect]
-    [:object :unlabelled :component-id]
-    [:object :unlabelled :shapes]
-    [:object :unlabelled :missing]
-    [:object :unlabelled :extra]})
-
-(def ^:private level-1-reflow-left
-  ;; what one undo of a first step at level 1 leaves in place
-  #{[:object :unlabelled :component-id]
-    [:object :unlabelled :shape-ref]
-    [:object :unlabelled :shapes]
-    [:object :unlabelled :touched]
-    [:object :unlabelled :missing]
-    [:object :unlabelled :extra]
-    [:object :sync-main-innercopy-1 :width]
-    [:object :sync-main-innercopy-1 :height]
-    [:object :sync-main-innercopy-1 :selrect]
-    [:object :sync-main-innercopy-2 :width]
-    [:object :sync-main-innercopy-2 :height]
-    [:object :sync-main-innercopy-2 :selrect]})
-
-(defn- first-steps-break-undo
-  "Known failures of the frontend round trip for the sweeps over `steps`, the
-   optional steps at levels 0, 1 and 2: the first of them to run at level 0 or
-   1 reflows the nested frames, and that reflow lands in undo entries of its
-   own (F43), so one undo does not revert the whole step."
-  [steps]
-  (let [mark (fn [op pred left entries]
-               {:bug     "F43"
-                :fails   {:undo       left
-                          :undo-index #{[:undo-index entries]}}
-                :op      op
-                :runners #{:frontend}
-                :when    pred})]
-    [(mark (nth steps 0) (constantly true) level-0-reflow-left 5)
-     (mark (nth steps 1) #(not (tm/applied? % (nth steps 0))) level-1-reflow-left 2)]))
+(defn- expected-level-color
+  "The color at nesting level `i` after the optional per-level `steps` (swaps
+   or switches; step j gives `swap-colors` j): a step at level j reaches
+   every level from j outwards, so it is the color of the applied step at
+   the highest j <= i, else the base color."
+  [s steps i]
+  (or (some #(when (tm/applied? s (nth steps %)) (nth swap-colors %))
+            (range i -1 -1))
+      base-color))
 
 (defn swap-scenarios
-  "Case L. SWAP SWEEP — build a 3-level nesting, then OPTIONALLY swap the
-   nested component at each level for a differently-coloured one, and assert
-   the colour that surfaces at every level. A swap at level i propagates to
-   level i and every OUTER (higher-index) level, until a swap at a higher level
-   overrides it. So the colour at level i is the swap at the HIGHEST index
-   j <= i that was applied, else the base colour."
+  "Case L. A three-level nesting optionally swaps the nested component at
+   each level for one of its own colour. Each level shows the colour of
+   `expected-level-color`."
   []
   (let [m       "main"
         targets ["s0" "s1" "s2"]
-        ;; swap[i] swaps level i's nested component for target lineage i (color i)
-        swaps   (mapv (fn [i] (n/swap-component m i (nth targets i))) (range 3))
-        expected-at
-        (fn [s i]
-          ;; the colour of the applied swap at the highest j <= i, else base
-          (or (some (fn [j] (when (tm/applied? s (nth swaps j)) (nth swap-colors j)))
-                    (range i -1 -1))
-              base-color))]
-    {:setup      setup/empty-situation
-     :undo-check {:known-failures (first-steps-break-undo swaps)}
-     :operation  (tm/in-sequence
-                  (concat
-                   [(n/create-component m base-color)]
-                   ;; a target lineage per level
-                   (map-indexed (fn [i c] (n/create-component (nth targets i) c)) swap-colors)
-                   [(n/make-nested-component m) (n/make-nested-component m) (n/make-nested-component m)]
-                   ;; optionally swap at each level
-                   (map (fn [sw] (tm/optional sw)) swaps)
-                   [(tm/test-that
-                     (fn [s]
-                       (doseq [i (range 3)]
-                         (t/is (= (expected-at s i) (level-color s m i))
-                               (str "level " i)))))]))}))
+        ;; swap i swaps level i for lineage i, of colour i
+        swaps   (mapv (fn [i] (n/swap-component m i (nth targets i))) (range 3))]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 (concat
+                  [(n/create-component m base-color :size 100)]
+                  (map-indexed (fn [i c] (n/create-component (nth targets i) c :size 100))
+                               swap-colors)
+                  [(n/make-nested-component m) (n/make-nested-component m) (n/make-nested-component m)]
+                  (map (fn [sw] (tm/optional sw)) swaps)
+                  [(tm/test-that
+                    (fn [s]
+                      (doseq [i (range 3)]
+                        (t/is (= (expected-level-color s swaps i) (level-color s m i))
+                              (str "level " i)))))]))}))
 
 (defn variant-switch-scenarios
-  "Case M. VARIANT-SWITCH SWEEP — the variant-switch flavour of case L. Build
-   a variant SET of peer members and nest the base member at EVERY level (so
-   each level has a variant head, just as case L's swap target exists at every
-   level). Then OPTIONALLY switch the variant head at each level to a
-   differently-coloured sibling and assert the colour that surfaces at every
-   level. A variant switch is a keep-touched swap, so it propagates like case
-   L: the colour at level i is the switch at the HIGHEST index j <= i that was
-   applied, else the base member's colour."
+  "Case M. Case L with variant switches: a variant member nested and wrapped
+   twice, so every level holds its image, and an optional switch at each
+   level to a member of its own colour."
   []
   (let [m       "main"        ; the nesting lineage (holds the nesting-data)
         vset    "vset"        ; the variant set
-        vals    ["v0" "v1" "v2" "v3"]
+        values  ["v0" "v1" "v2" "v3"]
         colors  (into [base-color] swap-colors) ; base + sibling colours
-        ;; switch[i] switches level i's variant head to member i+1 (colour i). The
-        ;; single variant instance has a corresponding (switchable) head at every
-        ;; level — `nested-head` IS the deepest instance there — so we can switch at
-        ;; ANY level, exactly like case L's per-level swap.
-        switches (mapv (fn [i] (n/switch-variant (n/nested-head-of m i) (nth vals (inc i))))
-                       (range 3))
-        expected-at
-        (fn [s i]
-          ;; same precedence as case L
-          (or (some (fn [j] (when (tm/applied? s (nth switches j)) (nth swap-colors j)))
-                    (range i -1 -1))
-              base-color))]
-    {:setup      setup/empty-situation
-     :undo-check {:known-failures (first-steps-break-undo switches)}
-     :operation  (tm/in-sequence
-                  (concat
-                   ;; the nesting lineage, and the variant set (members = [value color])
-                   [(n/create-component m base-color)
-                    (n/make-variant-container vset (mapv vector vals colors))]
-                   ;; introduce the variant instance ONCE (innermost), then wrap it
-                   ;; with plain nesting so each outer level CONTAINS the one below
-                   ;; (progressive nesting, like case L). nested-head at every level
-                   ;; is then the variant (the deepest instance), so a switch at
-                   ;; level i targets it and propagates OUTWARD — exactly like case
-                   ;; L's swap.
-                   [(n/make-nested-component-with-variant m vset "v0")
-                    (n/make-nested-component m)
-                    (n/make-nested-component m)]
-                   ;; optionally switch each level's variant head to its target sibling
-                   (map (fn [sw] (tm/optional sw)) switches)
-                   [(tm/test-that
-                     (fn [s]
-                       (doseq [i (range 3)]
-                         (t/is (= (expected-at s i) (level-color s m i))
-                               (str "level " i)))))]))}))
+        ;; switch i switches level i to member i+1, of colour i
+        switches (mapv (fn [i] (n/switch-variant (n/nested-head-of m i) (nth values (inc i))))
+                       (range 3))]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 (concat
+                  [(n/create-component m base-color :size 100)
+                   (n/make-variant-container vset (mapv vector values colors) :size 100)]
+                  ;; each outer level holds the one below, so a switch
+                  ;; reaches the outer levels
+                  [(n/make-nested-component-with-variant m vset "v0")
+                   (n/make-nested-component m)
+                   (n/make-nested-component m)]
+                  (map (fn [sw] (tm/optional sw)) switches)
+                  [(tm/test-that
+                    (fn [s]
+                      (doseq [i (range 3)]
+                        (t/is (= (expected-level-color s switches i) (level-color s m i))
+                              (str "level " i)))))]))}))
 
 (defn variant-switch-keeps-override-only-where-mains-agree
   "Case O. A copy overrides the fill of its nested variant's rect, then the
@@ -444,7 +355,7 @@
                         (t/is (n/has-property-of override rect))
                         (t/is (contains? (:touched rect) :fill-group)))
                       (do
-                        (t/is (= red (-> rect :fills first :fill-color)))
+                        (t/is (= red (fill-color rect)))
                         (t/is (not (contains? (:touched rect) :fill-group)))))))}))
 
 (defn detach-keeps-nested-copies-linked
@@ -458,65 +369,30 @@
    remote main."
   []
   (let [m             "main"
-        nest-1        (n/make-nested-component m)
-        nest-2        (n/make-nested-component m)
         change-main   (n/change-property (n/main-rect-of m) :fills green)
-        change-remote (n/change-property (n/remote-rect-of m) :fills blue)
-        ;; at depth 2 the sync of the remote change reflows the nested
-        ;; frames, and the reflow lands in an undo entry of its own (F43)
-        reflow-mark   (fn [main? left entries]
-                        {:bug     "F43"
-                         :fails   {:undo       left
-                                   :undo-index #{[:undo-index entries]}}
-                         :op      change-remote
-                         :runners #{:frontend}
-                         :when    #(and (tm/applied? % nest-1)
-                                        (tm/applied? % nest-2)
-                                        (= main? (tm/applied? % change-main)))})]
-    {:setup      setup/empty-situation
-     :undo-check {:known-failures
-                  [(reflow-mark true
-                                #{[:object :sync-main-innercopy-0 :width]
-                                  [:object :sync-main-innercopy-0 :height]
-                                  [:object :sync-main-innercopy-0 :selrect]
-                                  [:object :sync-main-rect :fills]
-                                  [:object :unlabelled :fills]}
-                                2)
-                   (reflow-mark false
-                                #{[:object :sync-main-innercopy-0 :width]
-                                  [:object :sync-main-innercopy-0 :height]
-                                  [:object :sync-main-innercopy-0 :selrect]
-                                  [:object :sync-main-innercopy-1 :width]
-                                  [:object :sync-main-innercopy-1 :height]
-                                  [:object :sync-main-innercopy-1 :selrect]
-                                  [:object :sync-main-copyhead-0 :width]
-                                  [:object :sync-main-copyhead-0 :height]
-                                  [:object :sync-main-copyhead-0 :selrect]
-                                  [:object :sync-main-rect :fills]
-                                  [:object :unlabelled :fills]}
-                                3)]}
-     :operation  (tm/in-sequence
-                  [(n/create-component m red)
-                   (tm/optional nest-1)
-                   (tm/optional nest-2)
-                   (n/instantiate-copy m)
-                   (tm/optional change-main)
-                   (n/detach (n/copy-head-of m))
-                   change-remote])
-     :asserter   (fn [s]
-                   (let [rect    (tm/shape-by-id s (n/lineage-copy-rect s m))
-                         color   (-> rect :fills first :fill-color)
-                         nested? (or (tm/applied? s nest-1) (tm/applied? s nest-2))
-                         main?   (tm/applied? s change-main)]
-                     (if nested?
-                       (do
-                         (t/is (some? (:shape-ref rect)))
-                         (t/is (= (if main? green blue) color))
-                         (t/is (= main? (contains? (:touched rect) :fill-group))))
-                       (do
-                         (t/is (nil? (:shape-ref rect)))
-                         (t/is (nil? (:touched rect)))
-                         (t/is (= (if main? green red) color))))))}))
+        change-remote (n/change-property (n/remote-rect-of m) :fills blue)]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 [(n/create-component m red :size 100)
+                  (depth-sweep m)
+                  (n/instantiate-copy m)
+                  (tm/optional change-main)
+                  (n/detach (n/copy-head-of m))
+                  change-remote])
+     :asserter  (fn [s]
+                  (let [rect    (tm/shape-by-id s (n/lineage-copy-rect s m))
+                        color   (fill-color rect)
+                        nested? (pos? (n/nesting-depth s m))
+                        main?   (tm/applied? s change-main)]
+                    (if nested?
+                      (do
+                        (t/is (some? (:shape-ref rect)))
+                        (t/is (= (if main? green blue) color))
+                        (t/is (= main? (contains? (:touched rect) :fill-group))))
+                      (do
+                        (t/is (nil? (:shape-ref rect)))
+                        (t/is (nil? (:touched rect)))
+                        (t/is (= (if main? green red) color))))))}))
 
 (defn update-main-reaches-other-copies
   "Case R. A component at nesting depth 0, 1 or 2 has two copies. The first
@@ -528,14 +404,11 @@
    the main when it had none."
   []
   (let [m              "main"
-        nest-1         (n/make-nested-component m)
-        nest-2         (n/make-nested-component m)
         other-override (n/change-property (n/nth-copy-rect-of m 1) :fills blue)]
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
                  [(n/create-component m red)
-                  (tm/optional nest-1)
-                  (tm/optional nest-2)
+                  (depth-sweep m)
                   (n/instantiate-copy m)
                   (n/instantiate-copy m)
                   (tm/optional other-override)
@@ -543,18 +416,17 @@
                   (n/update-main (n/nth-copy-head-of m 0))])
      :asserter  (fn [s]
                   (let [rect    (fn [id] (tm/shape-by-id s id))
-                        color   (fn [shape] (-> shape :fills first :fill-color))
                         fill?   (fn [shape] (contains? (:touched shape) :fill-group))
-                        nested? (or (tm/applied? s nest-1) (tm/applied? s nest-2))
+                        nested? (pos? (n/nesting-depth s m))
                         other?  (tm/applied? s other-override)
                         main    (rect (n/lineage-rect s m))
                         copy-0  (rect (n/lineage-nth-copy-rect s m 0))
                         copy-1  (rect (n/lineage-nth-copy-rect s m 1))]
-                    (t/is (= green (color main)))
+                    (t/is (= green (fill-color main)))
                     (t/is (= nested? (fill? main)))
-                    (t/is (= green (color copy-0)))
+                    (t/is (= green (fill-color copy-0)))
                     (t/is (not (fill? copy-0)))
-                    (t/is (= (if other? blue green) (color copy-1)))
+                    (t/is (= (if other? blue green) (fill-color copy-1)))
                     (t/is (= other? (fill? copy-1)))))}))
 
 (defn deleted-component-copies-sync-again-after-restore
@@ -568,8 +440,7 @@
   (let [override      (n/change-property :copy-instance :fills green)
         first-change  (n/change-property :main-instance :fills red)
         deletion      (n/delete-component :main-root)
-        second-change (n/change-property :main-instance :fills blue)
-        color         (fn [shape] (-> shape :fills first :fill-color))]
+        second-change (n/change-property :main-instance :fills blue)]
     {:setup     setup/simple-component-with-copies-on-two-pages
      :operation (tm/in-sequence
                  [(tm/optional override)
@@ -581,16 +452,16 @@
                            other (setup/other-page-copy-instance s)]
                        (t/is (some? (:shape-ref copy)))
                        (t/is (some? (:shape-ref other)))
-                       (t/is (= (if (tm/applied? s override) green red) (color copy)))
-                       (t/is (= red (color other))))))
+                       (t/is (= (if (tm/applied? s override) green red) (fill-color copy)))
+                       (t/is (= red (fill-color other))))))
                   (n/restore-component deletion)
                   second-change])
      :asserter  (fn [s]
                   (let [copy  (setup/copy-instance s)
                         other (setup/other-page-copy-instance s)]
-                    (t/is (= blue (color (setup/main-instance s))))
-                    (t/is (= (if (tm/applied? s override) green blue) (color copy)))
-                    (t/is (= blue (color other)))
+                    (t/is (= blue (fill-color (setup/main-instance s))))
+                    (t/is (= (if (tm/applied? s override) green blue) (fill-color copy)))
+                    (t/is (= blue (fill-color other)))
                     (t/is (nil? (:touched other)))))}))
 
 (defn duplicated-copy-keeps-overrides-and-link
@@ -607,8 +478,7 @@
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
                  [(n/create-component m red)
-                  (tm/optional (n/make-nested-component m))
-                  (tm/optional (n/make-nested-component m))
+                  (depth-sweep m)
                   (n/instantiate-copy m)
                   (tm/optional override)
                   duplication
@@ -619,9 +489,9 @@
                         copy-rect (tm/shape-by-id s (n/lineage-copy-rect s m))
                         expected  (if (tm/applied? s override) green blue)]
                     (t/is (some? (:shape-ref dup-rect)))
-                    (t/is (= expected (-> dup-rect :fills first :fill-color)))
+                    (t/is (= expected (fill-color dup-rect)))
                     (t/is (= (:touched copy-rect) (:touched dup-rect)))
-                    (t/is (= expected (-> copy-rect :fills first :fill-color)))))}))
+                    (t/is (= expected (fill-color copy-rect)))))}))
 
 (defn nested-copy-reaches-copies-of-the-receiving-main
   "Case U. A copy of an inner component is moved into the main of an outer
@@ -652,14 +522,14 @@
      :asserter  (fn [s]
                   (let [moved  (tm/shape-by-id s (n/lineage-copy-rect s inner))
                         nested (tm/shape-by-id s (nested-rect s))]
-                    (t/is (= blue (-> moved :fills first :fill-color)))
+                    (t/is (= blue (fill-color moved)))
                     (t/is (nil? (:touched moved)))
                     (if (tm/applied? s override)
                       (do
-                        (t/is (= green (-> nested :fills first :fill-color)))
+                        (t/is (= green (fill-color nested)))
                         (t/is (contains? (:touched nested) :fill-group)))
                       (do
-                        (t/is (= blue (-> nested :fills first :fill-color)))
+                        (t/is (= blue (fill-color nested)))
                         (t/is (nil? (:touched nested)))))))}))
 
 (defn new-edit-after-undo-clears-redo
@@ -687,14 +557,11 @@
    with the minimal one, the frontend reflows after the remote change land in
    undo entries of their own (F43), so three undos stop short."
   []
-  (let [m      "main"
-        rect   (fn [s id] (tm/shape-by-id s id))
-        colour (fn [shape] (-> shape :fills first :fill-color))]
+  (let [m "main"]
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
                  [(n/create-component m red :size 100)
-                  (tm/optional (n/make-nested-component m))
-                  (tm/optional (n/make-nested-component m))
+                  (depth-sweep m)
                   (n/instantiate-copy m)
                   (n/change-property (n/remote-rect-of m) :fills blue)
                   (n/change-property (n/main-rect-of m) :fills green)
@@ -704,8 +571,9 @@
                   (doseq [id [((n/remote-rect-of m) s)
                               ((n/main-rect-of m) s)
                               (n/lineage-copy-rect s m)]]
-                    (t/is (= red (colour (rect s id))))
-                    (t/is (empty? (:touched (rect s id))))))}))
+                    (let [rect (tm/shape-by-id s id)]
+                      (t/is (= red (fill-color rect)))
+                      (t/is (empty? (:touched rect))))))}))
 
 (defn undo-before-sync-leaves-copies-unchanged
   "Case X (frontend only). An edit to the main is undone in the same step, so
@@ -713,14 +581,40 @@
    to its state before the edit: the main and its copy show the first value
    and the copy is untouched."
   []
-  (let [original (n/change-property :main-instance :fills "#abcdef")]
-    {:setup     setup/simple-component-with-labeled-copy
-     :operation (tm/in-sequence [(n/undo-before-sync :main-instance :fills red)])
-     :asserter  (fn [s]
-                  (let [copy (setup/copy-instance s)]
-                    (t/is (n/has-property-of original (setup/main-instance s)))
-                    (t/is (n/has-property-of original copy))
-                    (t/is (nil? (:touched copy)))))}))
+  {:setup     setup/simple-component-with-labeled-copy
+   :operation (tm/in-sequence [(n/undo-before-sync :main-instance :fills red)])
+   :asserter  (fn [s]
+                (let [copy (setup/copy-instance s)]
+                  (t/is (= setup/labeled-fill (fill-color (setup/main-instance s))))
+                  (t/is (= setup/labeled-fill (fill-color copy)))
+                  (t/is (nil? (:touched copy)))))})
+
+(defn reflow-after-nested-sync-is-its-own-undo-step
+  "Case AJ (frontend only). A component nested two levels deep, with the
+   minimal frame size, has a copy; its remote main changes the rect, then one
+   undo runs. The transform math rewrites the minimal nested frames with float
+   noise, so the sync of the change reflows them, and the reflow commits land
+   in undo entries of their own (F43). One undo should revert the change and
+   its sync; it reverts only the last reflow entry, so the remote rect keeps
+   the change. How many entries the reflow makes depends on when its 100 ms
+   buffer flushes, so the case checks the value one undo leaves, never the
+   undo stack."
+  []
+  (let [m      "main"
+        remote (n/remote-rect-of m)]
+    {:setup      setup/empty-situation
+     ;; the round trip's signature depends on when the reflow buffer flushes
+     :undo-check {:off "the case undoes its own step (F43)"}
+     :operation  (tm/in-sequence
+                  [(n/create-component m red)
+                   (n/make-nested-component m)
+                   (n/make-nested-component m)
+                   (n/instantiate-copy m)
+                   (n/change-property remote :fills blue)
+                   (n/undo)])
+     :asserter   (fn [s]
+                   (tm/known-failure "F43" red blue
+                                     (fill-color (tm/shape-by-id s (remote s)))))}))
 
 (defn text-override-merges-with-main-text-change
   "Case Y. A main text changes its characters or its font size; before that,
@@ -767,11 +661,10 @@
 ;; ---------------------------------------------------------------------------
 ;; Swap outcomes
 ;;
-;; What a swap must give, asserted on values and structure rather than on how
-;; the swap is stored, so the cases hold across the swap model change of the
-;; plan's Phase 2b. Each builds a component "main" whose main nests a copy of
-;; it once (level 0), and a copy of that, whose nested head the case swaps.
-;; Real sizes keep the frontend reflows out of the undo entries (F43).
+;; What a swap must give, asserted on values and structure, not on how the
+;; swap is stored. Each case builds a component "main" whose main nests a
+;; copy once, and a copy of it, whose nested head the case swaps. Real sizes
+;; keep the frontend reflows out of the undo entries (F43).
 ;; ---------------------------------------------------------------------------
 
 (defn- head-component
@@ -786,7 +679,7 @@
     (->> (cfh/get-children-ids objects (head s))
          (map #(get objects %))
          (d/seek #(= :rect (:type %)))
-         :fills first :fill-color)))
+         (fill-color))))
 
 (defn copy-swap-survives-main-changes
   "Case AA. A copy swaps its nested copy for another component. Optionally the
@@ -876,20 +769,10 @@
    pushes the copy's component: the main's nested copy becomes an instance of
    it, and so does the second copy's."
   []
-  (let [m        "main"
-        main-nst (fn [s] (:nested-head (n/lineage-nesting s m 0)))
-        second   (fn [s]
-                   (let [objects (:objects (thf/current-page (tm/file s)))
-                         head    ((n/nth-copy-head-of m 1) s)]
-                     (->> (cfh/get-immediate-children objects head)
-                          (d/seek :component-id)
-                          :id)))
-        nested   (fn [s]
-                   (let [objects (:objects (thf/current-page (tm/file s)))
-                         head    ((n/nth-copy-head-of m 0) s)]
-                     (->> (cfh/get-immediate-children objects head)
-                          (d/seek :component-id)
-                          :id)))]
+  (let [m             "main"
+        main-nested   (n/nested-head-under (n/main-head-of m))
+        first-nested  (n/nested-head-under (n/nth-copy-head-of m 0))
+        second-nested (n/nested-head-under (n/nth-copy-head-of m 1))]
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
                  [(n/create-component m base-color :size 100)
@@ -897,20 +780,13 @@
                   (n/make-nested-component m)
                   (n/instantiate-copy m)
                   (n/instantiate-copy m)
-                  (n/swap-shape nested "s1")
+                  (n/swap-shape first-nested "s1")
                   (n/update-main (n/nth-copy-head-of m 0))])
      :asserter  (fn [s]
-                  (let [s1 (n/lineage-component-id s "s1")
-                        main-head (fn [s]
-                                    (let [objects (:objects (thf/current-page (tm/file s)))
-                                          outer   (:main-head (n/lineage-nesting s m 0))]
-                                      (->> (cfh/get-immediate-children objects outer)
-                                           (d/seek :component-id)
-                                           :id)))]
-                    (t/is (some? (main-nst s)))
-                    (t/is (= s1 (head-component s main-head)))
-                    (t/is (= s1 (head-component s second)))
-                    (t/is (= red (head-rect-color s second)))))}))
+                  (let [s1 (n/lineage-component-id s "s1")]
+                    (t/is (= s1 (head-component s main-nested)))
+                    (t/is (= s1 (head-component s second-nested)))
+                    (t/is (= red (head-rect-color s second-nested)))))}))
 
 (defn detached-or-duplicated-swapped-copy-follows-its-component
   "Case AE. A copy swaps its nested copy; then the copy is detached, or
@@ -921,11 +797,7 @@
   (let [m           "main"
         nested      (n/nested-head-in m)
         duplication (n/duplicate (n/copy-head-of m))
-        dup-nested  (fn [s]
-                      (let [objects (:objects (thf/current-page (tm/file s)))]
-                        (->> (cfh/get-immediate-children objects ((n/duplicate-head-of duplication) s))
-                             (d/seek :component-id)
-                             :id)))]
+        dup-nested  (n/nested-head-under (n/duplicate-head-of duplication))]
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
                  [(n/create-component m base-color :size 100)
@@ -964,7 +836,7 @@
                     (t/is (= 3 (column s :copy-root :copy-child)))))}))
 
 (defn main-reorder-keeps-copy-sub-heads-aligned
-  "Case AG (port of the plugin's MainReorderKeepsCopySlots). A main holds three
+  "Case AG (the plugin's MainReorderKeepsCopySlots). A main holds three
    nested copies side by side; it moves the first to the end. The copy follows:
    each of its children references the main's child at the same position."
   []
@@ -980,7 +852,7 @@
                    (t/is (= [] (setup/misaligned-sub-heads s))))}))
 
 (defn copy-sub-head-delete-keeps-others-aligned
-  "Case AH (port of the plugin's CopySubheadDeletePreservesSlots, without its
+  "Case AH (the plugin's CopySubheadDeletePreservesSlots, without its
    reflow). A grid main holds three nested copies; its copy optionally deletes
    its first or its last one. The copy's remaining children still reference
    the main's children at the same positions."
@@ -992,7 +864,7 @@
                 (t/is (= [] (setup/misaligned-sub-heads s))))})
 
 (defn copy-sub-head-delete-and-reflow-keeps-others-aligned
-  "Case AI (frontend only; port of the plugin's CopySubheadDeletePreservesSlots
+  "Case AI (frontend only; the plugin's CopySubheadDeletePreservesSlots
    with its reflow). As case AH, then the copy root optionally changes height,
    which reflows its grid. The copy's remaining children still reference the
    main's children at the same positions."
@@ -1005,24 +877,17 @@
                 (t/is (= [] (setup/misaligned-sub-heads s))))})
 
 (defn geometry-sync-with-rotated-instances
-  "Case N. Regression sweep for #10109, with #13267's semantics as its
-   complement: an instance root's transformation is inherited, overridable
-   content — asymmetric to position, which is free per-instance placement.
-
-   On the simple component-with-copy, sweep three axes: optionally rotate the
-   COPY as a whole (an override of its root's placement — must not block
-   propagation), optionally rotate the MAIN as a whole (inherited content — an
-   untouched copy must follow it), and apply ONE of a property edit (fills) or
-   a geometry edit (height) to the main child. In EVERY variant the chosen edit
-   must arrive at the copy child; the copy's rotation is its own 45° if the
-   copy was rotated (override wins), else the main's 45° if the main was
-   rotated (clean copy follows), else 0; and only a rotated copy's ROOT is
-   touched (:geometry-group) — its child merely follows and stays untouched."
+  "Case N (frontend only). Optionally the copy rotates, optionally the main
+   rotates, then the main child changes its fill or its height. The change
+   reaches the copy child. A copy root's rotation is inherited content that a
+   copy may override: the copy shows its own rotation, else the main's, else
+   none. Only a rotated copy root is touched (:geometry-group); its child
+   follows untouched."
   []
   (let [rotate-copy (n/rotate :copy-root 45)
         rotate-main (n/rotate :main-root 45)
         edits       (tm/one-of
-                     [(n/change-attr :main-instance :fills red)
+                     [(n/change-property :main-instance :fills red)
                       (n/change-height :main-instance 80)])]
     {:setup     setup/simple-component-with-labeled-copy
      :operation (tm/in-sequence [(tm/optional rotate-copy)
@@ -1036,19 +901,16 @@
                                             (tm/applied? situation rotate-copy) 45
                                             (tm/applied? situation rotate-main) 45
                                             :else                               0)]
-                    ;; the chosen main edit arrived at the copy child, in every variant
                     (t/is (some? chosen))
                     (t/is (n/has-property-of chosen copy-child))
-                    ;; the copy shows the expected rotation (own override > followed main > none)
                     (t/is (mth/close? (or (:rotation copy-root) 0) expected-rotation))
                     (t/is (mth/close? (or (:rotation copy-child) 0) expected-rotation))
-                    ;; only a rotated copy's ROOT is an override; the child merely follows
                     (t/is (= (if (tm/applied? situation rotate-copy) #{:geometry-group} nil)
                              (:touched copy-root)))
                     (t/is (nil? (:touched copy-child)))))}))
 
 (defn main-child-move-reaches-copies
-  "Case Z (frontend only, like the other geometry operations). A child of the
+  "Case Z (frontend only). A child of the
    main moves; optionally the copy moved its own child before. The copy child
    keeps its offset from the copy root equal to the main child's from the main
    root, so it follows the move, unless it moved itself: then it keeps its own
@@ -1075,11 +937,9 @@
                     (t/is (empty? (:touched (setup/copy-root s))))))}))
 
 (defn touched-copy-child-survives-main-rotation
-  "A copy whose ROOT is rotated (a geometry override) AND whose CHILD has its
-   own geometry override (resized) must keep the child exactly in place when
-   the MAIN is later rotated: the child's placement is its own, shielded by its
-   touched :geometry-group. We capture the child's position relative to the
-   copy root before the main rotation and assert it is unchanged after."
+  "Frontend only. A copy rotates its root and resizes its child, then the
+   main rotates. The child's touched :geometry-group shields it: its height
+   and its position relative to the copy root do not change."
   []
   (let [before  (atom nil)
         rel-pos (fn [situation]
@@ -1098,11 +958,8 @@
                   (let [copy-child (setup/copy-instance situation)
                         copy-root  (setup/copy-root situation)
                         after      (rel-pos situation)]
-                    ;; both overrides are recorded as geometry touches
                     (t/is (contains? (:touched copy-root) :geometry-group))
                     (t/is (contains? (:touched copy-child) :geometry-group))
-                    ;; the child keeps its own overridden height
                     (t/is (mth/close? (:height copy-child) 60))
-                    ;; and its position relative to the copy root is unchanged by the main rotation
                     (t/is (mth/close? (:x @before) (:x after) 0.5) (str "rel-x " (:x @before) " -> " (:x after)))
                     (t/is (mth/close? (:y @before) (:y after) 0.5) (str "rel-y " (:y @before) " -> " (:y after)))))}))

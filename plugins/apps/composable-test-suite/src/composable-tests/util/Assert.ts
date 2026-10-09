@@ -40,9 +40,9 @@ export class Assert {
      */
     static knownFailure<T>(
         bug: string,
-        actual: T,
         expected: T,
         pinned: T,
+        actual: T,
         equals: (a: T, b: T) => boolean,
         render: (v: T) => string = String
     ): void {

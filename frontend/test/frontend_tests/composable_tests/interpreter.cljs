@@ -5,46 +5,24 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.composable-tests.interpreter
-  "FRONTEND interpreter + test-facing `check` for the composable test model.
-
-   The generic engine lives in `app.common.test-helpers.composable.core` and the
-   component instruments (operation records, setups, role accessors, inspection
-   methods) behind the `comp` boundary. What lives HERE is:
-     1. `op->events` — the event realisation of each EVENT-op: the real
-        workspace event(s) it dispatches (it depends on
-        `app.main.data.workspace.*`).
-     2. an ASYNC interpreter that drives a sequence of operations through the REAL
-        app: it installs the situation's file into the global store, starts the
-        real component-change watcher, then for each operation dispatches its
-        event(s) and AWAITS all pending work it caused (`await-step`: the
-        watcher's sync wait and layout/text reflow, so the app's AUTOMATIC
-        propagation — not a manual sync — is what runs), re-reading the file
-        from the store after each. A step that does not settle in time fails.
-     3. `check` — the test-facing entry: takes {:setup :operation} + an OPTIONAL
-        asserter; enumerates the operation and runs each variant; assertions may
-        be inline (`Test` ops) and/or in the asserter.
-
-   IN-FILE PROPAGATION IS AUTOMATIC: there is no propagate operation. The watcher
-   (`dwl/watch-component-changes`), running on the global store, detects
-   main-instance changes in the CURRENT file and syncs that file's copies on its
-   own. That automatic behaviour is precisely what the cases exercise. The one
-   deliberate exception is CROSS-FILE propagation (case H): when the main lives
-   in a linked LIBRARY and the copy in the consuming file, the watcher does NOT
-   cross the file boundary — the real app propagates via the library-UPDATE
-   action, so the `SyncFromLibrary` op explicitly dispatches `sync-file` (this is
-   faithful: it is exactly the user action, not a test shortcut). See
-   `mem:frontend/composable-component-tests`.
-
-   NOTE on the store: this uses the GLOBAL `st/state` store (not the isolated
-   `setup-store`), because the watcher reads `refs/workspace-data` which derives
-   from `st/state`. State is re-installed per variant for isolation."
+  "Runs composable component cases through the frontend (see
+   `mem:frontend/composable-component-tests`). It installs the situation's
+   files in the global store (the component watcher reads it through
+   `app.main.refs`), starts the workspace watchers, maps each user operation
+   to the workspace events a user action dispatches (`op->events`) and waits
+   for the work they cause (`await-step`). The app's own watcher syncs the
+   copies; only the library update of case H is an explicit `sync-file`, as
+   in the app. `check` is the test entry point."
   (:require
+   [app.common.files.changes-builder :as pcb]
+   [app.common.logic.shapes :as cls]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.main.data.changes :as dch]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
@@ -65,18 +43,8 @@
    [potok.v2.core :as ptk]))
 
 ;; --------------------------------------------------------------------------
-;; (0) Thumbnail rendering — disabled in this headless suite
-;;
-;; The propagation watcher we start (`dwl/watch-component-changes`) ALSO schedules
-;; THUMBNAIL renders on every component change (its `component-changed` event has a
-;; thumbnail branch). Thumbnail rendering reaches `app.util.dom/get-css-variable`,
-;; which calls `window.getComputedStyle` — and there is no `window` in the headless
-;; runner, so a (queued, async) render fires LATER and crashes the run. Thumbnails
-;; are pure UI side-effect, irrelevant to what we test, so we stub the public seam
-;; `dwth/update-thumbnail` to a no-op event for the duration of OUR tests (installed
-;; / restored by a `:each` fixture in the case namespace — the same `set!`-and-
-;; restore pattern as `frontend_tests.helpers.wasm`, whose `:after` correctly runs
-;; only after each async test's `done`). Scope is thus our suite only.
+;; Thumbnails: the component watcher renders them, which reaches `window`,
+;; absent headless, so tests stub `dwth/update-thumbnail` (see `fixture`).
 ;; --------------------------------------------------------------------------
 
 (defonce ^:private original-update-thumbnail (atom nil))
@@ -102,70 +70,31 @@
     (set! dwth/update-thumbnail orig)
     (reset! original-update-thumbnail nil)))
 
-;; --------------------------------------------------------------------------
-;; (1) Frontend realisation of operations: op record -> workspace event(s)
-;;
-;; The operation's "what" (its update-fn / target) is shared in common; this maps
-;; it to the "how" on the frontend — the real event a user interaction dispatches.
-;; Returns a vector of events to emit for that operation.
-;; --------------------------------------------------------------------------
+(def fixture
+  "An `:each` fixture for tests that run the component watcher: a fresh label
+   map and no thumbnail rendering. Its `:after` runs after an async test's
+   `done`, so it covers the whole test."
+  {:before (fn []
+             (cthi/reset-idmap!)
+             (install-thumbnail-noop!))
+   :after  restore-thumbnail!})
 
-;; The edit a ChangeProperty performs is the SHARED `n/set-property`, so the
-;; frontend applies the identical change the common node does (only the wrapping
-;; differs: a real workspace event here vs. apply-changes there).
-
-(defn- add-child->shape
-  "Build the shape value AddChild introduces, parented under the target parent in
-   the current store page (mirrors the common add-child's sample shape). Returns
-   the shape with parent/frame set to the target parent."
-  [parent-label new-label shape-params]
-  (let [parent-id (cthi/id parent-label)
-        shape     (cths/sample-shape new-label (or shape-params {}))]
-    (assoc shape
-           :parent-id parent-id
-           :frame-id  parent-id)))
+;; --------------------------------------------------------------------------
+;; Operations as workspace events
+;; --------------------------------------------------------------------------
 
 (defn op->events
-  "Map a comp operation record to the real workspace event(s) it dispatches.
-   `op` is one of the comp node records (app.common.test-helpers.composable.comp.nodes);
-   `situation` provides cross-file context (e.g. the library id) for ops that need
-   it.
-
-   Each operation is realised with the SAME production change builder the common
-   node uses, but wrapped in the real workspace event (so it commits to the store
-   and the watcher auto-propagates):
-     ChangeProperty  -> update-shapes   (generate-update-shapes; n/set-property)
-     EditText        -> v2-update-text-shape-content (n/edit-text-content)
-     MoveShape       -> update-position (sidebar, page coordinates)
-     MoveChild       -> relocate-shapes (generate-relocate, existing shape)
-     AddChild        -> add-shape       (create a shape under the parent)
-     RemoveChild     -> delete-shapes   (generate-delete-shapes)
-     Detach          -> detach-component (generate-detach-component)
-     UpdateMain      -> update-component-sync (generate-sync-shape-inverse)
-     DeleteComponent -> delete-component (generate-delete-shapes on the main)
-     RestoreComponent -> restore-component (generate-restore-component)
-     Duplicate       -> duplicate-shapes (generate-duplicate-changes)
-     NestCopy        -> relocate-shapes  (generate-relocate into a main)
-     SwapShape       -> component-swap   (any copy head)
-     MoveToCell      -> update-shapes on the grid board (n/move-to-cell-fn)
-     SyncFromLibrary -> sync-file       (the cross-file library-update action, H)
-     Undo            -> dwu/undo         (reverse the previous operation(s), I)
-     Redo            -> dwu/redo         (apply the undone operation(s) again)
-     UndoBeforeSync  -> update-shapes + dwu/undo, emitted together
-   (In-file propagation is automatic — the watcher — so no propagate op exists.)"
+  "The workspace events a user action dispatches for the comp operation `op`,
+   built from `situation` and from the same helpers the common node uses."
   [op situation]
   (cond
     (instance? n/ChangeProperty op)
     (let [{:keys [target property value]} op]
-      ;; `target` may be a ROLE (resolved via the situation, so the edit follows
-      ;; the role as make-nested-component re-points it) or a label — same dual resolution
-      ;; as the common ChangeProperty. The edit uses the SHARED `n/set-property`.
       [(dwsh/update-shapes #{(tm/target-shape-id situation target)}
                            (fn [shape] (n/set-property shape property value)))])
 
     (instance? n/EditText op)
-    ;; The commit the text editor makes when the edit ends (on blur), SVG
-    ;; renderer path.
+    ;; the text editor's commit on blur, SVG renderer path
     (let [{:keys [target edit value]} op
           id                     (tm/target-shape-id situation target)
           shape                  (tm/shape-by-id situation id)
@@ -178,36 +107,21 @@
                                           :original-content (:content shape))])
 
     (instance? n/Rotate op)
-    ;; The real sidebar rotation event, absolute mode: rotates the shape (and its
-    ;; whole subtree) around its center. Its apply-modifiers step runs the
-    ;; placement-vs-override classification for component copies (check-delta),
-    ;; which is part of what a case using `rotate` exercises.
+    ;; the sidebar rotation, which decides what it touches in copies (check-delta)
     (let [{:keys [target angle]} op]
       [(dwt/increase-rotation [(tm/target-shape-id situation target)] angle)])
 
     (instance? n/MoveShape op)
-    ;; The real sidebar position event, in page coordinates.
+    ;; the sidebar position, in page coordinates
     (let [{:keys [target dx dy]} op
           id                     (tm/target-shape-id situation target)
           {:keys [x y]}          (:selrect (tm/shape-by-id situation id))]
       [(dwt/update-position id {:x (+ x dx) :y (+ y dy)} {:absolute? true})])
 
     (instance? n/ChangeHeight op)
-    ;; The real sidebar dimension event.
+    ;; the sidebar height
     (let [{:keys [target value]} op]
       [(dwt/update-dimensions [(tm/target-shape-id situation target)] :height value)])
-
-    (instance? n/SwapComponent op)
-    ;; Swap lineage `name`'s nesting level `level` for lineage `target`'s component
-    ;; via the REAL swap event (dwl/component-swap), so it commits through the
-    ;; normal path and the watcher AUTOMATICALLY propagates the swap to copies
-    ;; (incl. the deeper nesting levels). This is the behaviour under test.
-    (let [{:keys [name level target keep-touched?]} op
-          file-id   (:id (tm/file situation))
-          nested    (n/lineage-nesting situation name level)
-          shape     (tm/shape-by-id situation (:nested-head nested))
-          target-id (n/lineage-component-id situation target)]
-      [(dwl/component-swap shape file-id target-id (boolean keep-touched?))])
 
     (instance? n/SwapShape op)
     (let [{:keys [target to keep-touched?]} op]
@@ -217,20 +131,13 @@
                            (boolean keep-touched?))])
 
     (instance? n/MoveToCell op)
-    ;; The board's new cells, as the commit of a canvas drop into the cell.
+    ;; the board's new cells, as a canvas drop commits them
     (let [{:keys [board child row column]} op]
       [(dwsh/update-shapes #{(tm/target-shape-id situation board)}
                            (n/move-to-cell-fn (tm/target-shape-id situation child) row column)
                            {:with-objects? true})])
 
     (instance? n/SwitchVariant op)
-    ;; The variant-switch action: switch the resolved variant copy head to the
-    ;; sibling member whose selector property (pos 0) has `value`, via the REAL
-    ;; `variants-switch` event (which discovers the sibling in the variant container
-    ;; and routes through component-swap keep-touched? true, so the watcher
-    ;; auto-propagates the switch across nesting levels exactly like a swap). `target`
-    ;; uses the standard resolution (role | label | (situation -> id) fn), so the op
-    ;; is structure-blind.
     (let [{:keys [target value]} op
           head-id (tm/target-shape-id situation target)
           shape   (tm/shape-by-id situation head-id)]
@@ -263,40 +170,34 @@
 
     (instance? n/MoveChild op)
     (let [{:keys [target parent to-index]} op]
-      [(dwsh/relocate-shapes #{(cthi/id target)} (cthi/id parent) to-index)])
+      [(dwsh/relocate-shapes #{(tm/resolve-shape-id situation target)}
+                             (tm/resolve-shape-id situation parent)
+                             to-index)])
 
     (instance? n/RemoveChild op)
-    (let [{:keys [target]} op]
-      [(dwsh/delete-shapes #{(cthi/id target)})])
+    [(dwsh/delete-shapes #{(tm/resolve-shape-id situation (:target op))})]
 
     (instance? n/AddChild op)
-    (let [{:keys [parent new-label shape-params]} op]
-      [(dwsh/add-shape (add-child->shape parent new-label shape-params)
+    (let [{:keys [parent new-label shape-params]} op
+          parent (tm/resolve-shape situation parent)]
+      [(dwsh/add-shape (n/child-shape parent new-label shape-params)
                        {:no-select? true})])
 
     (instance? n/SyncFromLibrary op)
-    ;; The cross-file library-update action: sync the current (consuming) file
-    ;; from its linked library — exactly what the "library updated" dialog does.
-    (let [file-id    (:current-file-id @st/state)
-          library-id (first (keys (tm/aux-files situation)))]
-      [(dwl/sync-file file-id library-id)])
+    ;; the library update the "library updated" dialog runs
+    [(dwl/sync-file (:current-file-id @st/state) (n/library-id situation))]
 
     (instance? n/Undo op)
-    ;; Reverse the previous operation(s) via the real undo event, once per
-    ;; operation to undo. The workspace undo stack was maintained automatically
-    ;; by the prior ops' commits.
     (vec (repeat (:times op) dwu/undo))
 
     (instance? n/UndoBeforeSync op)
-    ;; The edit and the undo go out together, so the undo commits before the
-    ;; watcher inspects the edit's commit.
+    ;; emitted together, so the undo commits before the watcher inspects the edit
     (let [{:keys [target property value]} op]
       [(dwsh/update-shapes #{(tm/target-shape-id situation target)}
                            (fn [shape] (n/set-property shape property value)))
        dwu/undo])
 
     (instance? n/Redo op)
-    ;; Apply again the latest undone operation(s) via the real redo event.
     [dwu/redo]
 
     :else
@@ -304,19 +205,16 @@
                     {:op op}))))
 
 ;; --------------------------------------------------------------------------
-;; (2) Async interpreter
+;; Interpreter
 ;; --------------------------------------------------------------------------
 
 ;; Longest a step may take to settle; a step that takes longer fails.
 (def ^:private step-timeout-ms 2000)
 
 (defn- install-situation-event
-  "An UpdateEvent installing the situation's files into the (global) store: the
-   primary file as the current/workspace file, plus any AUXILIARY files (e.g. a
-   linked library, for the cross-file case H) alongside in `:files`, each tagged
-   `:library-of` the current file so the library-sync machinery treats them as
-   linked libraries. The undo stack starts empty, so an undo never reaches the
-   previous variant's entries."
+  "An event that installs the situation's file as the current one, its
+   auxiliary files as linked libraries, and an empty undo stack, so an undo
+   never reaches the previous variant's entries."
   [situation]
   (let [file (tm/file situation)
         aux  (tm/aux-files situation)]
@@ -333,20 +231,37 @@
                             aux))))))
 
 (defn current-file
-  "Read the live workspace file out of the global store."
+  "The current file in the global store."
   []
   (let [st @st/state]
     (get-in st [:files (:current-file-id st)])))
 
+(defn fill-of
+  "The fill color of the shape `label` in the live file."
+  [label]
+  (-> (cths/get-shape (current-file) label) :fills first :fill-color))
+
+(defn fill-commit
+  "A commit that fills the shape `label` of the live file with `color`, with
+   `opts` merged into the commit params."
+  [label color opts]
+  (let [page    (cthf/current-page (current-file))
+        changes (cls/generate-update-shapes
+                 (pcb/empty-changes nil (:id page))
+                 #{(cthi/id label)}
+                 #(assoc % :fills (cths/sample-fills-color :fill-color color))
+                 (:objects page)
+                 {})]
+    (dch/commit-changes (merge {:redo-changes (:redo-changes changes)
+                                :undo-changes (:undo-changes changes)}
+                               opts))))
+
 (defn await-step
-  "Emit `events` into the global store and return a promise that resolves with
-   `:settled` once every pending work has drained: component sync (the
-   watcher's wait for each commit and the sync it starts) and layout and text
-   reflow, as tracked by `app.main.data.workspace.reflow`. It waits the way the
-   plugin `waitForLayoutUpdate` does. When `timeout-ms` (default
-   `step-timeout-ms`) passes first, it resolves with `{:timeout pending}`, the
-   work still pending then. Relies on every producer opening its pending work
-   synchronously while the events are processed."
+  "Emit `events` and return a promise of `:settled` once the pending work of
+   `app.main.data.workspace.reflow` drains (component sync, layout and text
+   reflow), as the plugin `waitForLayoutUpdate` waits; or of
+   `{:timeout pending}` after `timeout-ms` (default `step-timeout-ms`). Work
+   must be opened while the events are processed."
   ([events] (await-step events step-timeout-ms))
   ([events timeout-ms]
    (doseq [e events] (st/emit! e))
@@ -375,12 +290,9 @@
     situation))
 
 (defn- record-op
-  "Record an operation's application onto the situation (after its effect settled),
-   re-reading the file from the store. The record is the op's own fields, plus
-   its `n/applied-result` when it has one. For a RecordedChoice (one-of), record
-   the choices first, under their one-of identities (so the asserter's
-   `get-choice` works), and then the chosen op's application, in the order
-   `RecordedChoice`'s own `apply-to` uses."
+  "`situation` with the live file and the application of the settled op unit
+   `op`: its choices first, then the op's own fields and its
+   `n/applied-result`, if any."
   [situation op]
   (let [before    (tm/file situation)
         situation (-> situation
@@ -393,16 +305,13 @@
     (tm/record-application situation op record)))
 
 (defn- op-events
-  "The workspace events to dispatch for an op unit (a plain op or a one-of's
-   RecordedChoice — for the latter, the chosen op's events). `situation` provides
-   cross-file context to ops that need it."
+  "The workspace events of the op unit `op` (for a choice, of the chosen op)."
   [op situation]
   (op->events (unwrap op) situation))
 
 (defn- install-file-event
-  "An UpdateEvent that replaces the current file in the (global) store with `file`
-   (keeping aux files and everything else). Used to write back the result of a
-   FILE-TRANSFORMING op (see `file-op?`)."
+  "An event that makes `file` the current file in the store, the result of a
+   `sync-op?` operation."
   [file]
   (ptk/reify ::install-file
     ptk/UpdateEvent
@@ -415,12 +324,10 @@
 ;; --------------------------------------------------------------------------
 ;; Undo/redo round trip (see `app.common.test-helpers.composable.comp.undo-check`)
 ;;
-;; Run on every user step that goes through a real event: undo must give back
-;; the file before the step and redo the file after it, each moving the
-;; workspace undo index back to where it was, so a step adds exactly one undo
-;; entry (or group). File installs (assembly steps and the reset, see
-;; `sync-op?`) add no entry, so they are the baseline the end-of-variant round
-;; trip undoes back to.
+;; Run on every user step that dispatches events: undo gives back the file
+;; and the undo index before the step, redo those after it, so a step adds
+;; exactly one undo entry or group. File installs (`sync-op?`) add none and
+;; are the baseline the end-of-variant round trip undoes back to.
 ;; --------------------------------------------------------------------------
 
 (defn- undo-index
@@ -515,35 +422,19 @@
       (js/Promise.resolve situation))))
 
 (defn- sync-op?
-  "Whether `op` is a SYNCHRONOUS, `apply-to`-based operation rather than one that
-   dispatches a workspace event and needs settling. Two kinds:
-     - FILE-TRANSFORMING: the `:assembly` nodes (see `n/IComponentOperation`) and
-       `skip`, which arrange the CONFIGURATION (create, nest, instantiate,
-       re-point roles) — applied by running `apply-to` against the live store
-       file and writing the result back. The property under test is still
-       exercised by the SUBSEQUENT real-event ops.
-     - `Test`: an inline assertion checkpoint — its `apply-to` runs the assertion
-       against the current situation and returns it unchanged.
-   Both are handled by `run-sync-op` (no async settle — any store write is a
-   synchronous UpdateEvent)."
+  "Whether the op unit `op` runs its `apply-to` on the live file instead of
+   dispatching events: assembly nodes, the reset, `skip` and inline tests."
   [op]
   (let [op (unwrap op)]
     (or (instance? tm/Skip op)
         (instance? tm/Test op)
         (= :assembly (n/op-kind op))
-        ;; A user operation, but the real reset event transitively reads browser
-        ;; globals (CSS vars), so it cannot run headless; the shared apply-to runs
-        ;; the production reset generator with validation off.
-        (instance? n/ResetCopyInstance op)
+        ;; a user operation, but the real reset event reads browser globals
         (instance? n/ResetOverrides op))))
 
 (defn- run-sync-op
-  "Apply a synchronous (`sync-op?`) operation: run its shared `apply-to` against a
-   situation whose `:file` is the live store file, write the resulting file back
-   into the store, and return the updated situation (with any re-pointed roles).
-   For `Test` this runs the inline assertion (against the live store state) and the
-   file is unchanged; for `make-nested-component`/`skip` it writes back the transformed file.
-   Synchronous."
+  "Run the `apply-to` of the `sync-op?` op unit `op` on the live file and
+   install the result. Returns the situation."
   [situation op]
   (let [situation (tm/with-file situation (current-file))
         situation (tm/apply-to op situation)]
@@ -557,14 +448,10 @@
       (mark-baseline))))
 
 (defn- run-ops
-  "Async fold over `ops` (concrete operation units, in order — plain ops and/or
-   one-of RecordedChoice wrappers). Threads the situation. A SYNCHRONOUS op
-   (`sync-op?` — file-transforming or an inline `Test`) is applied synchronously
-   via `apply-to`; every other op dispatches its real workspace event(s) and
-   awaits all pending work (`await-step`). The file is re-read from the store
-   after each. Calls `k` with the final situation, or with nil when a step did
-   not settle in time; that step fails the test, naming the work still
-   pending."
+  "Run the op units `ops` in order, each `sync-op?` one on the live file and
+   the others as events awaited with `await-step`. Calls `k` with the final
+   situation, or with nil after failing the test when a step did not
+   settle."
   [situation ops k]
   (if (empty? ops)
     (k situation)
@@ -602,14 +489,9 @@
                      (k nil)))))))))
 
 (defonce ^:private original-store
-  ;; Captured at namespace-LOAD time — i.e. before any test in the run executes.
-  ;; Several test namespaces (the plugins suite) `set!` st/state / st/stream to
-  ;; isolated stores and never restore them. That silently kills this harness:
-  ;; the refs in `app.main.refs` (through which `watch-component-changes`
-  ;; observes commits) are okulary lenses bound to THIS atom instance at load
-  ;; time, so once the var points elsewhere, our events commit to a store the
-  ;; watcher does not see and propagation dies with no error. Re-installing the
-  ;; original per variant makes the harness immune to run order.
+  ;; The store at load time. Some test namespaces `set!` st/state and
+  ;; st/stream and never restore them, while the `app.main.refs` lenses the
+  ;; component watcher reads stay bound to these atoms.
   {:state st/state :stream st/stream})
 
 (defn- restore-global-store!
@@ -662,7 +544,7 @@
    trip of each user step and of the variant. Calls `k` with the final
    situation, or nil when a step did not settle."
   [setup ops undo-check? k]
-  ;; fresh label space per variant (mirrors the pure `tm/run-all`)
+  ;; a fresh label map per variant, as `tm/run-all` does
   (cthi/reset-idmap!)
   (let [situation (-> (setup)
                       (assoc ::undo-check? undo-check?)
@@ -676,31 +558,15 @@
                  (k situation))))))
 
 ;; --------------------------------------------------------------------------
-;; (3) Test-facing check
+;; Test entry point
 ;; --------------------------------------------------------------------------
 
 (defn check
-  "Frontend `check`: run `case-map` ({:setup :operation}) through the REAL app and,
-   if `asserter` is given, apply it (a situation -> any fn performing assertions)
-   to the resulting situation of EACH enumerated variant. Async — `done` is the
-   cljs.test async callback and MUST be called when finished.
-
-   Each variant also runs the undo/redo round trip, asserted after the
-   asserter (see `app.common.test-helpers.composable.comp.undo-check`; the
-   case map's `:undo-check` turns it off or marks known failures).
-
-   Assertions may be INLINE (via `Test` operations in the `:operation` sequence,
-   firing as the op runs) and/or via the trailing `asserter`; `asserter` is
-   optional (omit when all assertions are inline). The asserter closes over node
-   references the test holds (e.g. `has-property-of` on a change node). In-file
-   propagation is AUTOMATIC (the watcher) — no propagate op is added.
-
-   Mocks are installed for the duration of the check: `rp/cmd!` returns
-   success (recording calls) and `rx/timer` fires instantly, so the
-   `SyncFromLibrary` op's delayed RPC does not produce network errors.
-
-   Arities: `(check done case-map)`, which takes the asserter from the case
-   map's `:asserter`, or `(check done case-map asserter)`."
+  "Run every variant of `case-map` through the frontend, apply `asserter`
+   (default the case map's `:asserter`) to each result and check its undo/redo
+   round trip (`app.common.test-helpers.composable.comp.undo-check`). Calls the
+   async test's `done` at the end. RPC calls are mocked and `rx/timer` fires
+   at once, for the delayed RPC of the library update."
   ([done case-map] (check done case-map (:asserter case-map)))
   ([done {:keys [setup operation] :as case-map} asserter]
    (mock/with-mocks
@@ -713,9 +579,6 @@
                      (inner-done)
                      (run-variant
                       setup
-                      ;; a variant is a composed operation; flatten to its ordered leaf
-                      ;; ops. `enumerate` already removed all one-of choices, so the
-                      ;; variant is a Sequence (or a single op).
                       (tm/sequence-ops (first vs))
                       (uc/enabled? case-map)
                       (fn [situation]

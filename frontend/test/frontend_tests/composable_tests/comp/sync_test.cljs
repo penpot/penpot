@@ -6,26 +6,14 @@
 
 (ns frontend-tests.composable-tests.comp.sync-test
   "Runs the shared composable component cases
-   (`app.common.test-helpers.composable.comp.cases`) against the REAL app
-   (frontend interpreter). In-file propagation is AUTOMATIC: a case contains
-   ONLY the user edit(s) (no propagate op); the app's component-change watcher
-   syncs copies on its own, and that is what the cases assert.
-
-   Async: each deftest uses `t/async`; `ftm/check` drives the store and calls
-   `done` when finished."
+   (`app.common.test-helpers.composable.comp.cases`) through the frontend
+   interpreter, where the app's component watcher syncs the copies."
   (:require
    [app.common.test-helpers.composable.comp.cases :as cases]
    [cljs.test :as t :include-macros true]
    [frontend-tests.composable-tests.interpreter :as ftm]))
 
-;; Disable thumbnail rendering for the duration of each (async) test: the
-;; propagation watcher schedules thumbnail renders that reach `window`, absent in
-;; the headless runner. `:each` `:after` runs only after the test's `done` fires
-;; (same guarantee the wasm-mock fixtures rely on), so the no-op covers the whole
-;; async lifetime and is scoped to THIS namespace. See ftm/install-thumbnail-noop!.
-(t/use-fixtures :each
-  {:before ftm/install-thumbnail-noop!
-   :after  ftm/restore-thumbnail!})
+(t/use-fixtures :each ftm/fixture)
 
 (t/deftest case-b-copy-override-survives-later-main-change
   (t/async done (ftm/check done (cases/copy-override-survives-later-main-change))))
@@ -86,6 +74,9 @@
 
 (t/deftest case-x-undo-before-sync-leaves-copies-unchanged
   (t/async done (ftm/check done (cases/undo-before-sync-leaves-copies-unchanged))))
+
+(t/deftest case-aj-reflow-after-nested-sync-is-its-own-undo-step
+  (t/async done (ftm/check done (cases/reflow-after-nested-sync-is-its-own-undo-step))))
 
 (t/deftest case-y-text-override-merges-with-main-text-change
   (t/async done (ftm/check done (cases/text-override-merges-with-main-text-change))))

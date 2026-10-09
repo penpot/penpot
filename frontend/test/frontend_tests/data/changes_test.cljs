@@ -15,13 +15,7 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.composable-tests.interpreter :as ftm]))
 
-;; The component watcher schedules thumbnail renders that reach `window`,
-;; absent headless (see `ftm/install-thumbnail-noop!`).
-(t/use-fixtures :each
-  {:before (fn []
-             (thi/reset-idmap!)
-             (ftm/install-thumbnail-noop!))
-   :after  ftm/restore-thumbnail!})
+(t/use-fixtures :each ftm/fixture)
 
 (t/deftest change-without-page-leaves-the-pages-alone
   (t/async done

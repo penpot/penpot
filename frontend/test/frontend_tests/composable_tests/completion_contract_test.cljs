@@ -11,16 +11,12 @@
   down on purpose, so a step that resolved early would see a half-synced
   file."
   (:require
-   [app.common.files.changes-builder :as pcb]
-   [app.common.logic.shapes :as cls]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
-   [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
-   [app.main.data.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
@@ -32,13 +28,7 @@
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
-;; The watcher schedules thumbnail renders that reach `window`, absent
-;; headless (see `ftm/install-thumbnail-noop!`).
-(t/use-fixtures :each
-  {:before (fn []
-             (thi/reset-idmap!)
-             (ftm/install-thumbnail-noop!))
-   :after  ftm/restore-thumbnail!})
+(t/use-fixtures :each ftm/fixture)
 
 (def ^:private original "#abcdef")
 (def ^:private red "#ff0000")
@@ -68,32 +58,10 @@
   [_]
   (rx/create (fn [_] nil)))
 
-(defn- pause
-  [ms]
-  (js/Promise. (fn [resolve] (js/setTimeout resolve ms))))
-
 (defn- fill-main-child
   [color]
   (dwsh/update-shapes #{(thi/id :main-child)}
                       #(assoc % :fills (ths/sample-fills-color :fill-color color))))
-
-(defn- fill-of
-  [label]
-  (-> (ths/get-shape (ftm/current-file) label) :fills first :fill-color))
-
-(defn- raw-fill-commit
-  "A main child fill commit with `opts` merged into its params."
-  [opts]
-  (let [page    (thf/current-page (ftm/current-file))
-        changes (cls/generate-update-shapes
-                 (pcb/empty-changes nil (:id page))
-                 #{(thi/id :main-child)}
-                 #(assoc % :fills (ths/sample-fills-color :fill-color red))
-                 (:objects page)
-                 {})]
-    (dch/commit-changes (merge {:redo-changes (:redo-changes changes)
-                                :undo-changes (:undo-changes changes)}
-                               opts))))
 
 (t/deftest ^:async edit-step-waits-for-slow-sync
   (let [sync-file dwl/sync-file]
@@ -102,36 +70,35 @@
        {dwl/sync-file (deferred-sync-file sync-file slow-sync)}
        (ftm/install! (setup/simple-component-with-labeled-copy))
        (t/is (= :settled (await (ftm/await-step [(fill-main-child red)]))))
-       (t/is (= red (fill-of :copy-child)))))))
+       (t/is (= red (ftm/fill-of :copy-child)))))))
 
 (t/deftest ^:async undo-and-redo-steps-follow-a-slow-sync
   ;; Undo must find the slow sync already committed: it reverts the edit and
-  ;; its sync together only when both are on the undo stack. The pause after
-  ;; the undo step lets any work that outlived the edit step land.
+  ;; its sync together only when both are on the undo stack.
   (let [sync-file dwl/sync-file]
     (await
      (mock/with-mocks*
        {dwl/sync-file (deferred-sync-file sync-file slow-sync)}
        (ftm/install! (setup/simple-component-with-labeled-copy))
        (await (ftm/await-step [(fill-main-child red)]))
+       (t/is (= red (ftm/fill-of :copy-child)) "the edit step ends synced")
 
        (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
-       (await (pause (* 2 sync-delay-ms)))
-       (t/is (= original (fill-of :main-child)))
-       (t/is (= original (fill-of :copy-child)))
+       (t/is (= original (ftm/fill-of :main-child)))
+       (t/is (= original (ftm/fill-of :copy-child)))
 
        (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
-       (t/is (= red (fill-of :main-child)))
-       (t/is (= red (fill-of :copy-child)))))))
+       (t/is (= red (ftm/fill-of :main-child)))
+       (t/is (= red (ftm/fill-of :copy-child)))))))
 
 (defn- watch-touches
-  "Count the `touch-component` events emitted from now on. Returns
-  `[count-atom subscription]`."
+  "Collect the ids of the components that `touch-component` events touch from
+  now on. Returns `[ids-atom subscription]`."
   []
-  (let [touches (atom 0)
+  (let [touched (atom #{})
         sub     (rx/sub! (rx/filter (ptk/type? ::dwl/touch-component) st/stream)
-                         (fn [_] (swap! touches inc)))]
-    [touches sub]))
+                         (fn [event] (swap! touched into @event)))]
+    [touched sub]))
 
 (t/deftest ^:async undo-and-redo-steps-wait-for-the-watcher
   ;; Undo and redo start no sync: the watcher only touches the component, a
@@ -139,19 +106,21 @@
   ;; would finish before that touch.
   (ftm/install! (setup/simple-component-with-labeled-copy))
   (await (ftm/await-step [(fill-main-child red)]))
-  (let [[touches sub] (watch-touches)]
+  (let [component     #{(thi/id :component1)}
+        [touched sub] (watch-touches)]
     (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
-    (t/is (= 1 @touches) "the undo step waited for the watcher")
+    (t/is (= component @touched) "the undo step waited for the watcher")
+    (reset! touched #{})
     (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
-    (t/is (= 2 @touches) "the redo step waited for the watcher")
+    (t/is (= component @touched) "the redo step waited for the watcher")
     (rx/dispose! sub)))
 
 (t/deftest ^:async dropped-commit-steps-settle
   ;; Translation and derived commits start no sync; their steps must still
   ;; resolve.
   (ftm/install! (setup/simple-component-with-labeled-copy))
-  (t/is (= :settled (await (ftm/await-step [(raw-fill-commit {:translation? true})]))))
-  (t/is (= :settled (await (ftm/await-step [(raw-fill-commit {:skip-component-sync? true})])))))
+  (t/is (= :settled (await (ftm/await-step [(ftm/fill-commit :main-child red {:translation? true})]))))
+  (t/is (= :settled (await (ftm/await-step [(ftm/fill-commit :main-child red {:skip-component-sync? true})])))))
 
 (defn- run-endless-step
   "Install a component whose sync never finishes and run a main edit step with
@@ -174,7 +143,7 @@
   (ftm/install! (setup/simple-component-with-labeled-copy))
   (t/is (empty? (wrf/pending)))
   (t/is (= :settled (await (ftm/await-step [(fill-main-child red)]))))
-  (t/is (= red (fill-of :copy-child))))
+  (t/is (= red (ftm/fill-of :copy-child))))
 
 (t/deftest skipped-optional-keeps-the-undo-baseline
   ;; The end-of-variant round trip undoes back to the last file install. A
