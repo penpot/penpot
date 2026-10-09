@@ -20,7 +20,17 @@
 
    :compiler-options
    {:output-feature-set :es-next
-    :output-wrapper false}}}
- }
+    :output-wrapper false}}
+
+  ;; Engine for common/scripts/tokenscript-bench (see dev/tokenscript_bench.cljc)
+  :tokenscript-bench
+  {:target :node-script
+   :output-to "target/tokenscript-bench/engine.cjs"
+   :output-dir "target/tokenscript-bench/out"
+   :main tokenscript-bench/main
+   :devtools {:autoload false}
+
+   :compiler-options
+   {:output-feature-set :es-next}}}}
 
 
