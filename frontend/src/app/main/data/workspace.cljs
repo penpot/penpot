@@ -381,123 +381,38 @@
                  :file-id (dm/str file-id))
         (rx/of (fetch-bundle file-id features))))))
 
-(defn initialize-workspace
-  [team-id file-id]
-  (assert (uuid? team-id) "expected valud uuid for `team-id`")
-  (assert (uuid? file-id) "expected valud uuid for `file-id`")
+(defn finalize-edit-watchers
+  "Stops the watchers started by `initialize-edit-watchers`."
+  []
+  (ptk/reify ::finalize-edit-watchers
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dwsl/finalize-shape-layout)
+             (dwtxt/finalize-text-reflow)))))
 
-  (ptk/reify ::initialize-workspace
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc :recent-colors (:recent-colors storage/user))
-          (assoc :recent-fonts (:recent-fonts storage/user))
-          (assoc :current-file-id file-id)
-          (assoc :workspace-presence {})
-          (update :workspace-global dissoc :default-font)
-          (update :comments-local dcmt/merge-persisted-filters)))
-
+(defn initialize-edit-watchers
+  "Starts the watchers that react to edits while a file is open: the undo
+  stack, layout updates, text reflow and the WASM text measurements. They run
+  until `finalize-edit-watchers`, or until this event comes again (a file
+  reload), which replaces them. Tests that drive edits without the whole
+  workspace start them too, so they see the same reactions as the app."
+  []
+  (ptk/reify ::initialize-edit-watchers
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
-            rparams      (rt/get-params state)
-            features     (features/get-enabled-features state team-id)
+      (let [stopper-s            (rx/merge
+                                  (rx/filter (ptk/type? ::finalize-edit-watchers) stream)
+                                  (rx/filter (ptk/type? ::initialize-edit-watchers) stream))
             render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
             render-wasm-ready?   #(and render-wasm-enabled?
                                        (wasm-state/ready?))]
-
-        (log/debug :hint "initialize-workspace"
-                   :team-id (dm/str team-id)
-                   :file-id (dm/str file-id))
-
-        (rx/concat
+        (rx/merge
+         ;; Stop the layout and text watchers a previous start left running.
+         (rx/of (dwsl/finalize-shape-layout)
+                (dwtxt/finalize-text-reflow)
+                (dwsl/initialize-shape-layout)
+                (dwtxt/initialize-text-reflow))
          (->> (rx/merge
-               (rx/concat
-                ;; Fetch all essential data that should be loaded before the file
-                (rx/merge
-                 (if ^boolean render-wasm-enabled?
-                   (->> (rx/from @wasm/module)
-                        (rx/filter true?)
-                        (rx/tap (fn [_]
-                                  (let [event (ug/event "penpot:wasm:loaded")]
-                                    (ug/dispatch! event))))
-                        (rx/ignore))
-                   (rx/empty))
-
-                 (->> stream
-                      (rx/filter (ptk/type? ::df/fonts-loaded))
-                      (rx/take 1)
-                      (rx/ignore))
-
-                 (rx/of (ntf/hide)
-                        (dcmt/retrieve-comment-threads file-id)
-                        (dcmt/fetch-profiles)
-                        (df/fetch-fonts team-id)))
-
-                ;; Once the essential data is fetched, lets proceed to
-                ;; fetch the file bundle
-                (rx/of (initialize-file team-id file-id)))
-
-               (->> stream
-                    (rx/filter (ptk/type? ::bundle-fetched))
-                    (rx/take 1)
-                    (rx/map deref)
-                    (rx/mapcat
-                     (fn [{:keys [file]}]
-                       (log/debug :hint "bundle fetched"
-                                  :team-id (dm/str team-id)
-                                  :file-id (dm/str file-id))
-
-                       (rx/of (dpj/initialize-project (:project-id file))
-                              (dwn/initialize team-id file-id)
-                              (dwsl/initialize-shape-layout)
-                              (dwtxt/initialize-text-reflow)
-                              (fetch-libraries file-id features)
-                              (-> (workspace-initialized file-id)
-                                  (with-meta {:team-id team-id
-                                              :file-id file-id}))))))
-
-               ;; Install dev perf observers once the workspace is ready
-               (when (contains? cf/flags :perf-logs)
-                 (->> stream
-                      (rx/filter (ptk/type? ::workspace-initialized))
-                      (rx/take 1)
-                      (rx/tap (fn [_] (perf/setup)))))
-
-               (->> stream
-                    (rx/filter (ptk/type? ::dps/persistence-notification))
-                    (rx/take 1)
-                    (rx/map dwc/set-workspace-visited))
-
-               ;; Emit audit event with file statistics once all libraries are resolved
-               (->> stream
-                    (rx/filter (ptk/type? ::all-libraries-resolved))
-                    (rx/take 1)
-                    (rx/map #(emit-workspace-file-stats file-id team-id)))
-
-               (when-let [component-id (some-> rparams :component-id uuid/parse)]
-                 (->> stream
-                      (rx/filter (ptk/type? ::workspace-initialized))
-                      (rx/observe-on :async)
-                      (rx/take 1)
-                      (rx/map #(dwl/go-to-local-component :id component-id :update-layout? (:update-layout rparams)))))
-
-               (when (:board-id rparams)
-                 (->> stream
-                      (rx/filter (ptk/type? ::dwv/initialize-viewport))
-                      (rx/take 1)
-                      (rx/map zoom-to-frame)))
-
-               (when-let [comment-id (some-> rparams :comment-id uuid/parse)]
-                 (->> stream
-                      (rx/filter (ptk/type? ::workspace-initialized))
-                      (rx/observe-on :async)
-                      (rx/take 1)
-                      (rx/map #(dwcm/navigate-to-comment-id comment-id))))
-
-               ;; Keep comment thread positions in sync on undo/redo
-               (rx/of (dwcm/watch-comment-thread-position-changes stoper-s))
-
                ;; Resize auto-grow text shapes whose selrect does not match
                ;; the WASM text layout once their fonts finish loading.
                (->> stream
@@ -560,7 +475,7 @@
                                :save-undo? false
                                :tags #{:position-data}
                                :skip-component-sync? true})))))
-                      (rx/take-until stoper-s)))
+                      (rx/take-until stopper-s)))
 
                (->> stream
                     (rx/filter dch/commit?)
@@ -575,6 +490,121 @@
                                       :selected-before selected-before}]
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
+              (rx/take-until stopper-s)))))))
+
+(defn initialize-workspace
+  [team-id file-id]
+  (assert (uuid? team-id) "expected valud uuid for `team-id`")
+  (assert (uuid? file-id) "expected valud uuid for `file-id`")
+
+  (ptk/reify ::initialize-workspace
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc :recent-colors (:recent-colors storage/user))
+          (assoc :recent-fonts (:recent-fonts storage/user))
+          (assoc :current-file-id file-id)
+          (assoc :workspace-presence {})
+          (update :workspace-global dissoc :default-font)
+          (update :comments-local dcmt/merge-persisted-filters)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
+            rparams      (rt/get-params state)
+            features     (features/get-enabled-features state team-id)
+            render-wasm-enabled? (features/active-feature? state "render-wasm/v1")]
+
+        (log/debug :hint "initialize-workspace"
+                   :team-id (dm/str team-id)
+                   :file-id (dm/str file-id))
+
+        (rx/concat
+         (->> (rx/merge
+               (rx/concat
+                ;; Fetch all essential data that should be loaded before the file
+                (rx/merge
+                 (if ^boolean render-wasm-enabled?
+                   (->> (rx/from @wasm/module)
+                        (rx/filter true?)
+                        (rx/tap (fn [_]
+                                  (let [event (ug/event "penpot:wasm:loaded")]
+                                    (ug/dispatch! event))))
+                        (rx/ignore))
+                   (rx/empty))
+
+                 (->> stream
+                      (rx/filter (ptk/type? ::df/fonts-loaded))
+                      (rx/take 1)
+                      (rx/ignore))
+
+                 (rx/of (ntf/hide)
+                        (dcmt/retrieve-comment-threads file-id)
+                        (dcmt/fetch-profiles)
+                        (df/fetch-fonts team-id)))
+
+                ;; Once the essential data is fetched, lets proceed to
+                ;; fetch the file bundle
+                (rx/of (initialize-file team-id file-id)))
+
+               (->> stream
+                    (rx/filter (ptk/type? ::bundle-fetched))
+                    (rx/take 1)
+                    (rx/map deref)
+                    (rx/mapcat
+                     (fn [{:keys [file]}]
+                       (log/debug :hint "bundle fetched"
+                                  :team-id (dm/str team-id)
+                                  :file-id (dm/str file-id))
+
+                       (rx/of (dpj/initialize-project (:project-id file))
+                              (dwn/initialize team-id file-id)
+                              (initialize-edit-watchers)
+                              (fetch-libraries file-id features)
+                              (-> (workspace-initialized file-id)
+                                  (with-meta {:team-id team-id
+                                              :file-id file-id}))))))
+
+               ;; Install dev perf observers once the workspace is ready
+               (when (contains? cf/flags :perf-logs)
+                 (->> stream
+                      (rx/filter (ptk/type? ::workspace-initialized))
+                      (rx/take 1)
+                      (rx/tap (fn [_] (perf/setup)))))
+
+               (->> stream
+                    (rx/filter (ptk/type? ::dps/persistence-notification))
+                    (rx/take 1)
+                    (rx/map dwc/set-workspace-visited))
+
+               ;; Emit audit event with file statistics once all libraries are resolved
+               (->> stream
+                    (rx/filter (ptk/type? ::all-libraries-resolved))
+                    (rx/take 1)
+                    (rx/map #(emit-workspace-file-stats file-id team-id)))
+
+               (when-let [component-id (some-> rparams :component-id uuid/parse)]
+                 (->> stream
+                      (rx/filter (ptk/type? ::workspace-initialized))
+                      (rx/observe-on :async)
+                      (rx/take 1)
+                      (rx/map #(dwl/go-to-local-component :id component-id :update-layout? (:update-layout rparams)))))
+
+               (when (:board-id rparams)
+                 (->> stream
+                      (rx/filter (ptk/type? ::dwv/initialize-viewport))
+                      (rx/take 1)
+                      (rx/map zoom-to-frame)))
+
+               (when-let [comment-id (some-> rparams :comment-id uuid/parse)]
+                 (->> stream
+                      (rx/filter (ptk/type? ::workspace-initialized))
+                      (rx/observe-on :async)
+                      (rx/take 1)
+                      (rx/map #(dwcm/navigate-to-comment-id comment-id))))
+
+               ;; Keep comment thread positions in sync on undo/redo
+               (rx/of (dwcm/watch-comment-thread-position-changes stoper-s)))
 
               (rx/take-until stoper-s)))))
 
@@ -608,8 +638,7 @@
       (let [project-id (:current-project-id state)]
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)
-               (dwsl/finalize-shape-layout)
-               (dwtxt/finalize-text-reflow)
+               (finalize-edit-watchers)
                (dwcl/stop-picker)
                (dwc/set-workspace-visited)
                (modal/hide)
