@@ -2495,3 +2495,45 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+(t/deftest file-permissions-ignore-soft-deleted
+  ;; sql:file-permissions must not grant anything through a file,
+  ;; project or team that is soft-deleted (GHSA-m53j-2766-6jqw: the
+  ;; websocket re-check relies on this query, and the subscribe handler
+  ;; additionally refuses deleted files via check-file-exists).
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)})
+          perms?  #(some? (bfc/get-file-permissions th/*system* (:id editor) (:id file)))
+          undelete (fn [table id]
+                     (db/update! th/*system* table {:deleted-at nil} {:id id}))
+          soft-delete (fn [table id]
+                        (db/update! th/*system* table {:deleted-at (ct/now)} {:id id}))]
+
+      (t/testing "a live member can read the live file"
+        (t/is (perms?)))
+
+      (t/testing "a soft-deleted file grants nothing"
+        (soft-delete :file (:id file))
+        (t/is (nil? (bfc/get-file-permissions th/*system* (:id editor) (:id file))))
+        (undelete :file (:id file))
+        (t/is (perms?)))
+
+      (t/testing "a soft-deleted project grants nothing"
+        (soft-delete :project (:id project))
+        (t/is (nil? (bfc/get-file-permissions th/*system* (:id editor) (:id file))))
+        (undelete :project (:id project))
+        (t/is (perms?)))
+
+      (t/testing "a soft-deleted team grants nothing"
+        (soft-delete :team (:id team))
+        (t/is (nil? (bfc/get-file-permissions th/*system* (:id editor) (:id file))))
+        (undelete :team (:id team))
+        (t/is (perms?))))))

@@ -145,6 +145,10 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
+    ;; How often a websocket subscription re-checks that its access still
+    ;; holds. The default lives in `app.http.websocket`, not here.
+    [:subscription-revalidation-interval {:optional true} ::ct/duration]
+
     ;; Explicit CORS allowlist used when the :cors flag is enabled.
     ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
     ;; separated list of origins (e.g. "https://plugins.example.com").

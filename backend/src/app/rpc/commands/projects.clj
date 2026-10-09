@@ -22,6 +22,7 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.notifications :as ntf]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.util.services :as sv]))
@@ -318,6 +319,12 @@
                                 :profile-id profile-id
                                 :project-id id)
         project (delete-project cfg team id)]
+
+    ;; Deleting the project ends read access for whoever had one of its
+    ;; files open, so the whole team is announced and the watcher
+    ;; re-checks each member against the subscriptions they hold.
+    (ntf/notify-team-permissions-changed cfg (:id team))
+
     (rph/with-meta (rph/wrap)
       {::audit/props {:team-id (:team-id project)
                       :name (:name project)

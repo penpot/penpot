@@ -15,6 +15,7 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.session :as session]
    [app.metrics :as mtx]
@@ -22,6 +23,7 @@
    [app.nitrate :as nitrate]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.notifications :as notifications]
    [app.util.websocket :as ws]
    [integrant.core :as ig]
    [promesa.exec.csp :as sp]
@@ -37,31 +39,79 @@
 ;; WEBSOCKET HOOKS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def state (atom {}))
+(def state
+  "Registry of the websocket connections held by this backend instance.
+
+  Holds `:connections` (connection id -> connection data) and
+  `:by-profile` (profile id -> set of connection ids). Both live in the
+  same atom so a single `swap!` keeps them consistent, and so the
+  profile index never has to be rebuilt by scanning every connection.
+
+  NOTE: the registry is local to one backend instance, unlike the
+  message bus, which is shared. Code that must reach connections
+  regardless of which instance owns them has to go through the bus."
+  (atom {:connections {}
+         :by-profile {}}))
+
+(defn register-connection
+  "Adds `wsp` to the registry under `id`, indexing it by its profile."
+  [id wsp]
+  (let [profile-id (::profile-id wsp)]
+    (swap! state
+           (fn [st]
+             (-> st
+                 (update :connections assoc id wsp)
+                 (cond-> profile-id
+                   (update-in [:by-profile profile-id]
+                              (fnil conj #{}) id)))))))
+
+(defn unregister-connection
+  "Removes the connection `id` from the registry and from the profile
+  index."
+  [id]
+  (swap! state
+         (fn [{:keys [connections] :as st}]
+           (let [owner   (::profile-id (get connections id))
+                 indexed (disj (get-in st [:by-profile owner] #{}) id)]
+             (cond-> (assoc st :connections (dissoc connections id))
+               (and owner (seq indexed))
+               (update :by-profile assoc owner indexed)
+               (and owner (empty? indexed))
+               (update :by-profile dissoc owner))))))
+
+(defn get-connection
+  "Returns the connection data registered under `id`, or nil."
+  [id]
+  (get-in @state [:connections id]))
+
+(defn connections-for-profile
+  "Returns the set of connection ids currently held by `profile-id`."
+  [profile-id]
+  (get-in @state [:by-profile profile-id] #{}))
 
 ;; REPL HELPERS
 
 (defn repl-get-connections-for-file
   [file-id]
-  (->> (vals @state)
+  (->> (vals (:connections @state))
        (filter #(= file-id (-> % ::ws/state deref ::file-subscription :file-id)))
        (map ::ws/id)))
 
 (defn repl-get-connections-for-team
   [team-id]
-  (->> (vals @state)
+  (->> (vals (:connections @state))
        (filter #(= team-id (-> % ::ws/state deref ::team-subscription :team-id)))
        (map ::ws/id)))
 
 (defn repl-close-connection
   [id]
-  (when-let [{:keys [::ws/close-ch] :as wsp} (get @state id)]
+  (when-let [{:keys [::ws/close-ch]} (get-connection id)]
     (sp/put! close-ch [8899 "closed from server"])
     (sp/close! close-ch)))
 
 (defn repl-get-connection-info
   [id]
-  (when-let [wsp (get @state id)]
+  (when-let [wsp (get-connection id)]
     (let [subs (some-> wsp ::ws/state deref)]
       {:id               id
        :created-at       (::created-at wsp)
@@ -85,6 +135,137 @@
            (pp/pprint)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SUBSCRIPTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A subscription is authorized once, when it is opened, and that
+;; single decision is then trusted for as long as the connection
+;; lives. Two things bound that: a mutation that changes access
+;; announces it (see the revocation section below), and the relay
+;; re-checks on an interval.
+
+(def default-revalidation-interval
+  "How long a subscription may rely on the authorization it was granted
+  with before its relay loop re-checks it.
+
+  This is the safety net for what the announcement cannot cover: an
+  access change made outside a Penpot command. Nitrate transferring the
+  ownership of an organization is an HTTP call to another service that
+  fires no RPC here, and rows deleted straight over SQL fire nothing
+  either. Both are rare, so the interval is generous; the cost is one
+  permission query per subscription per interval."
+  (ct/duration {:minutes 5}))
+
+(defn revalidation-interval
+  []
+  (cf/get :subscription-revalidation-interval default-revalidation-interval))
+
+(defn- still-authorized?
+  "Runs the `check-access` permission check, reporting instead of
+  throwing when the lookup itself fails.
+
+  A transient database error must not close a subscription that is still
+  legitimate, and the next tick tries again. This is one of two places
+  that fail open, deliberately: the announcement path (`watch-revocations`
+  below) also logs and moves on when a re-check throws. An interrupt is
+  not a lookup failure and is rethrown."
+  [check-access]
+  (try
+    (boolean (check-access))
+    (catch InterruptedException cause
+      (throw cause))
+    (catch Throwable cause
+      (l/error :hint "cannot re-check a websocket subscription"
+               :cause cause)
+      true)))
+
+(defn close-file-subscription
+  "Tears down the file subscription held by the connection `wsp`, if it
+  is subscribed to `file-id`.
+
+  Announces the departure so the remaining participants drop the
+  presence of this session, closes the relay channel (which in turn
+  stops the `:subscribe-file` go-loop, because `take!` on a closed
+  channel returns nil) and removes the subscription from the bus.
+
+  Does nothing when the connection is subscribed to a different file,
+  so it is safe to call for a subscription that is already gone."
+  [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} file-id]
+  (let [subs (::file-subscription @state)]
+    (when (= (:file-id subs) file-id)
+      (mbus/pub! msgbus
+                 :topic file-id
+                 :message {:type :leave-file
+                           :file-id file-id
+                           :session-id session-id
+                           :profile-id profile-id})
+      (let [ch (:channel subs)]
+        (sp/close! ch)
+        (mbus/purge! msgbus [ch])
+        (swap! state dissoc ::file-subscription)))))
+
+(defn close-team-subscription
+  "Tears down the team subscription held by the connection `wsp`, if it
+  is subscribed to `team-id`.
+
+  Closing the channel is what stops the relay, so no further team or
+  organization traffic reaches this connection.
+
+  Does nothing when the connection is subscribed to a different team,
+  so it is safe to call for a subscription that is already gone."
+  [{:keys [::mbus/msgbus]} {:keys [::ws/state]} team-id]
+  (let [subs (::team-subscription @state)]
+    (when (= (:team-id subs) team-id)
+      (let [ch (:channel subs)]
+        (sp/close! ch)
+        (mbus/purge! msgbus [ch])
+        (swap! state dissoc ::team-subscription)))))
+
+
+(defn- start-relay
+  "Forwards `channel` into the client output channel of `wsp`, and keeps
+  a re-check of `check-access` running on a fixed cadence. When access no
+  longer holds, `close-fn` tears the subscription down, which closes the
+  channel and ends the loop.
+
+  The loop waits on the subscription channel and a one-shot tick channel
+  together, with priority on the tick: when both hold something, the tick
+  wins, so a steady stream of messages can never push the re-check away.
+  A single tick channel covers a whole cadence and message turns reuse
+  it, so busy files don't churn timers; the cadence holds under load
+  because nothing moves the tick. Closing the channel ends the loop
+  either way, because a take on a closed channel is always ready
+  with nil.
+
+  `on-forward` runs for every forwarded message, which is how the file
+  relay announces presence."
+  [{:keys [::ws/output-ch] :as wsp} channel check-access close-fn on-forward]
+  (let [interval-ms (inst-ms (revalidation-interval))]
+    (sp/go-loop [tick-ch (sp/timeout-chan interval-ms)]
+      (let [[message port] (sp/alts! [tick-ch channel] :priority true)]
+        (cond
+          (identical? port tick-ch)
+          (do
+            (when-not (still-authorized? check-access)
+              (l/info :hint
+                      "closing websocket subscription on re-check"
+                      :profile-id (::profile-id wsp))
+              (close-fn))
+            (when-not (sp/closed? channel)
+              (recur (sp/timeout-chan interval-ms))))
+
+          (nil? message)
+          ;; The channel was closed, which means the subscription is gone
+          ;; and the relay ends.
+          nil
+
+          :else
+          (do
+            (sp/put! output-ch message)
+            (when on-forward (on-forward message))
+            (recur tick-ch)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBSOCKET HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -151,10 +332,10 @@
       nil)))
 
 (defmethod handle-message :subscribe-team
-  [cfg {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [team-id] :as params}]
+  [cfg {:keys [::ws/id ::ws/state ::session-id ::profile-id] :as wsp} {:keys [team-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
   (teams/check-read-permissions! cfg profile-id team-id)
-  (let [prev-subs       (get @state ::team-subscription)
+  (let [prev-subs       (::team-subscription @state)
         organization-id (get-team-organization-id cfg team-id)
         ;; Resolved server-side so a client only hears its readable team's org
         topics          (cond-> [team-id]
@@ -163,23 +344,29 @@
         channel         (sp/chan :buf (sp/dropping-buffer 64)
                                  :xf  (remove #(= (:session-id %) session-id)))]
 
-    (sp/pipe channel output-ch false)
-    (mbus/sub! (::mbus/msgbus cfg) :topics topics :chan channel)
-
+    ;; The team topic also carries library change diffs, so a
+    ;; subscription that outlives access to the team leaks content, not
+    ;; just presence.
     (let [subs {:team-id team-id
                 :organization-id organization-id
                 :channel channel
                 :topic team-id}]
       (swap! state assoc ::team-subscription subs))
 
+    (start-relay wsp channel
+                 #(teams/has-read-permissions? cfg profile-id team-id)
+                 #(close-team-subscription cfg wsp team-id)
+                 nil)
+
+    (mbus/sub! (::mbus/msgbus cfg) :topics topics :chan channel)
+
     ;; Close previous subscription if exists
     (when-let [ch (:channel prev-subs)]
       (sp/close! ch)
       (mbus/purge! (::mbus/msgbus cfg) [ch]))))
 
-
 (defmethod handle-message :subscribe-file
-  [cfg {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  [cfg {:keys [::ws/id ::ws/state ::session-id ::profile-id] :as wsp} {:keys [file-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
   (bfc/check-file-exists cfg file-id)
   (files/check-read-permissions! cfg profile-id file-id)
@@ -190,51 +377,40 @@
     (let [subs {:file-id file-id :channel fch :topic file-id}]
       (swap! state assoc ::file-subscription subs))
 
+    (start-relay wsp fch
+                 #(files/has-read-permissions? cfg profile-id file-id)
+                 #(close-file-subscription cfg wsp file-id)
+                 (fn [{:keys [type]}]
+                   (when (or (= :join-file type)
+                             (= :leave-file type)
+                             (= :disconnect type))
+                     (mbus/pub! (::mbus/msgbus cfg)
+                                :topic file-id
+                                :message {:type :presence
+                                          :file-id file-id
+                                          :session-id session-id
+                                          :profile-id profile-id}))))
+
     ;; Close previous subscription if exists
     (when-let [ch (:channel psub)]
       (sp/close! ch)
       (mbus/purge! (::mbus/msgbus cfg) [ch]))
 
-    (sp/go-loop []
-      (when-let [{:keys [type] :as message} (sp/take! fch)]
-        (sp/put! output-ch message)
-        (when (or (= :join-file type)
-                  (= :leave-file type)
-                  (= :disconnect type))
-          (let [message {:type :presence
-                         :file-id file-id
-                         :session-id session-id
-                         :profile-id profile-id}]
-            (mbus/pub! (::mbus/msgbus cfg)
-                       :topic file-id
-                       :message message)))
-        (recur)))
-
     ;; Subscribe to file topic
     (mbus/sub! (::mbus/msgbus cfg) :topic file-id :chan fch)
 
     ;; Notifify the rest of participants of the new connection.
-    (let [message {:type :join-file
-                   :file-id file-id
-                   :session-id session-id
-                   :profile-id profile-id}]
-      (mbus/pub! (::mbus/msgbus cfg) :topic file-id :message message))))
+    (mbus/pub! (::mbus/msgbus cfg)
+               :topic file-id
+               :message {:type :join-file
+                         :file-id file-id
+                         :session-id session-id
+                         :profile-id profile-id})))
 
 (defmethod handle-message :unsubscribe-file
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  [cfg {:keys [::ws/id] :as wsp} {:keys [file-id] :as params}]
   (l/trace :fn "handle-message" :event "unsubscribe-file" :file-id file-id :conn-id id)
-
-  (let [subs    (::file-subscription @state)
-        message {:type :leave-file
-                 :file-id file-id
-                 :session-id session-id
-                 :profile-id profile-id}]
-
-    (when (= (:file-id subs) file-id)
-      (mbus/pub! msgbus :topic file-id :message message)
-      (let [ch (:channel subs)]
-        (sp/close! ch)
-        (mbus/purge! msgbus [ch])))))
+  (close-file-subscription cfg wsp file-id))
 
 (defmethod handle-message :keepalive
   [_ _ _]
@@ -265,6 +441,109 @@
           :message message
           :conn-id id))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SUBSCRIPTION REVOCATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A subscription is authorized once, when it is opened, and that single
+;; decision is then trusted for as long as the connection lives. The
+;; mutation that changes access announces it on
+;; `app.rpc.notifications/internal-revocation-topic`, and every backend
+;; re-verifies the subscriptions it owns for that profile.
+;;
+;; The announcement travels over the message bus precisely because this
+;; registry is local: the RPC that revokes access runs on whichever
+;; instance received the request, which is usually not the one holding
+;; the socket.
+
+(defn revalidate-profile-subscriptions
+  "Re-checks every subscription held by the connections of `profile-id`
+  and closes the ones that are no longer authorized.
+
+  The event is the trigger, the fresh permission check is the decision.
+  Reusing the same predicates that `:subscribe-file` and
+  `:subscribe-team` authorize with means the watcher needs no second copy
+  of the permission rules: a downgrade to viewer keeps read access and
+  so keeps the subscription, and a non-member organization owner keeps
+  the read-only access it is entitled to.
+
+  Returns the number of subscriptions it closed."
+  [cfg profile-id]
+  (let [closed (volatile! 0)]
+    (doseq [id (connections-for-profile profile-id)]
+      (when-let [wsp (get-connection id)]
+        (let [subs (some-> wsp ::ws/state deref)
+              fsub (get subs ::file-subscription)
+              tsub (get subs ::team-subscription)]
+          (when (and fsub
+                     (not (files/has-read-permissions? cfg profile-id
+                                                       (:file-id fsub))))
+            (close-file-subscription cfg wsp (:file-id fsub))
+            (vswap! closed inc))
+          (when (and tsub
+                     (not (teams/has-read-permissions? cfg profile-id
+                                                       (:team-id tsub))))
+            (close-team-subscription cfg wsp (:team-id tsub))
+            (vswap! closed inc)))))
+    @closed))
+
+(defn- watch-revocations
+  "Consumes revocation events and applies them to the connections this
+  instance owns. Returns the subscription channel, which `ig/halt-key!`
+  closes to stop the loop."
+  [{:keys [::mbus/msgbus] :as cfg}]
+  (let [ch (sp/chan :buf (sp/dropping-buffer 64))]
+    (mbus/sub! msgbus
+               :topic notifications/internal-revocation-topic
+               :chan ch)
+    (sp/go-loop []
+      (when-let [{:keys [type profile-id team-id]} (sp/take! ch)]
+        (try
+          (cond
+            (= :profile-permissions-changed type)
+            (when (pos? (revalidate-profile-subscriptions cfg profile-id))
+              (l/debug :hint "revoked websocket subscriptions"
+                       :profile-id profile-id))
+
+            (= :team-permissions-changed type)
+            (let [revoked (->> (teams/get-team-members cfg team-id)
+                               (map :id)
+                               (map #(revalidate-profile-subscriptions cfg %))
+                               (reduce + 0))]
+              (when (pos? revoked)
+                (l/debug :hint "revoked websocket subscriptions"
+                         :team-id team-id
+                         :count revoked))))
+          (catch Throwable cause
+            (l/error :hint "cannot revalidate websocket subscriptions"
+                     :profile-id profile-id
+                     :team-id team-id
+                     :cause cause)))
+        (recur)))
+    ch))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INTEGRANT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:revocation-watcher
+  [:map
+   ::mbus/msgbus
+   ::db/pool
+   [:app.nitrate/client {:optional true} [:maybe :map]]])
+
+(defmethod ig/assert-key ::revocation-watcher
+  [_ params]
+  (assert (sm/valid? schema:revocation-watcher params)))
+
+(defmethod ig/init-key ::revocation-watcher
+  [_ cfg]
+  (watch-revocations cfg))
+
+(defmethod ig/halt-key! ::revocation-watcher
+  [_ ch]
+  (sp/close! ch))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -273,7 +552,7 @@
   [{:keys [::mtx/metrics]} {:keys [::ws/id] :as wsp}]
   (let [created-at (ct/now)]
     (l/trace :fn "on-connect" :conn-id id)
-    (swap! state assoc id wsp)
+    (register-connection id wsp)
     (mtx/run! metrics
               :id :websocket-active-connections
               :inc 1)
@@ -281,7 +560,7 @@
     (assoc wsp ::ws/on-disconnect
            (fn []
              (l/trace :fn "on-disconnect" :conn-id id)
-             (swap! state dissoc id)
+             (unregister-connection id)
              (mtx/run! metrics :id :websocket-active-connections :dec 1)
              (mtx/run! metrics
                        :id :websocket-session-timing

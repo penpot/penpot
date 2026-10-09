@@ -498,6 +498,11 @@
     ::session/manager   (ig/ref ::session/manager)
     :app.nitrate/client (ig/ref :app.nitrate/client)}
 
+   ::http.ws/revocation-watcher
+   {::db/pool           (ig/ref ::db/pool)
+    ::mbus/msgbus       (ig/ref ::mbus/msgbus)
+    :app.nitrate/client (ig/ref :app.nitrate/client)}
+
    :app.http.assets/routes
    {::http.assets/path              (cf/get :assets-path)
     ::http.assets/cache-max-age     (ct/duration {:hours 24})
