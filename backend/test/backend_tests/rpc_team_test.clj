@@ -1823,3 +1823,47 @@
     (t/is (= (:created-at team) (:created-at props)))
     (t/is (ct/inst? (:modified-at props)))
     (t/is (ct/inst? (:deleted-at props)))))
+
+(t/deftest create-team-with-invitations-audit-event-carries-team-id
+  ;; The team is created by an internal call, so both the command event and
+  ;; the manual event must carry its id for a projection to key it.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}
+               email-mock {:target 'app.email/send! :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [profile (th/create-profile* 1 {:is-active true})
+            out     (th/command-raw! {::th/type :create-team-with-invitations
+                                      ::rpc/profile-id (:id profile)
+                                      :name "team"
+                                      :emails #{"invitee@example.com"}
+                                      :role :editor})
+            props   (:app.loggers.audit/props (meta out))
+            events  (->> (:call-args-list @audit-mock)
+                         (map second)
+                         (filter #(= "create-team" (:name %))))]
+        (t/is (= (:id out) (:id props)))
+        (t/is (= 1 (count events)))
+        (t/is (= (:id out) (get-in (first events) [:props :id])))))))
+
+(t/deftest update-team-member-role-to-owner-names-demoted-member
+  ;; Promoting a member to owner demotes the actor; the event names them so a
+  ;; projection can keep a single owner.
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 82 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [out   (th/command-raw! {::th/type :update-team-member-role
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :member-id (:id editor)
+                                  :role :editor})
+          props (:app.loggers.audit/props (meta out))]
+      (t/is (nil? (:prev-owner-id props))))
+    (let [out   (th/command-raw! {::th/type :update-team-member-role
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :member-id (:id editor)
+                                  :role :owner})
+          props (:app.loggers.audit/props (meta out))]
+      (t/is (= (:id owner) (:prev-owner-id props))))))

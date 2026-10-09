@@ -593,7 +593,7 @@
                 :hint "the maximum of invitation on single request is reached"
                 :threshold max-invitations-by-request-threshold))
 
-    (let [props {:name name :features features}
+    (let [props {:id (:id team) :name name :features features}
           event (-> (audit/event-from-rpc-params params)
                     (assoc :name "create-team")
                     (assoc :props props))]
@@ -609,7 +609,8 @@
                            (map (fn [email] (assoc params :email email)))
                            (map (partial create-invitation cfg)))]
 
-      (vary-meta team assoc ::audit/props {:invitations (count invitations)}))))
+      (vary-meta team assoc ::audit/props {:id (:id team)
+                                           :invitations (count invitations)}))))
 
 ;; --- Query: get-team-invitation-token
 
