@@ -8261,6 +8261,18 @@ msgstr "Read your libraries and assets."
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Read and modify your libraries and assets."
 
+#: src/app/main/ui/workspace/plugins.cljs:360
+msgid "workspace.plugins.permissions.manage-delete"
+msgstr "Delete your files and projects."
+
+#: src/app/main/ui/workspace/plugins.cljs:346
+msgid "workspace.plugins.permissions.manage-projects"
+msgstr "Create, rename, pin and duplicate your projects."
+
+#: src/app/main/ui/workspace/plugins.cljs:353
+msgid "workspace.plugins.permissions.manage-teams"
+msgstr "See, create and rename your teams, and move projects between them."
+
 #: src/app/main/ui/workspace/plugins.cljs:387
 msgid "workspace.plugins.permissions.title"
 msgstr "'%s' PLUGIN WANTS ACCESS TO:"

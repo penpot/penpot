@@ -262,6 +262,7 @@ eliminarla
 eliminarlo
 eliminarlos
 ella
+ellos
 eso
 esos
 este

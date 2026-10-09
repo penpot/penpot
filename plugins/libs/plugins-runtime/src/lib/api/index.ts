@@ -419,21 +419,29 @@ export function createApi(
       checkPermission('content:read', false);
       return plugin.context.management!.workspace;
     },
+    listTeams() {
+      checkPermission('manage:teams', false);
+      return plugin.context.management!.listTeams();
+    },
+    createTeam(options) {
+      checkPermission('manage:teams', false);
+      return plugin.context.management!.createTeam(options);
+    },
     listProjects(options) {
       checkPermission('content:read', false);
       return plugin.context.management!.listProjects(options);
     },
-    listFiles(options) {
+    listDeletedProjects(options) {
       checkPermission('content:read', false);
-      return plugin.context.management!.listFiles(options);
+      return plugin.context.management!.listDeletedProjects(options);
     },
-    createProject(options) {
-      checkPermission('content:write', false);
-      return plugin.context.management!.createProject(options);
+    listDeletedFiles(options) {
+      checkPermission('content:read', false);
+      return plugin.context.management!.listDeletedFiles(options);
     },
-    createFile(options) {
-      checkPermission('content:write', false);
-      return plugin.context.management!.createFile(options);
+    getFile(fileId) {
+      checkPermission('content:read', false);
+      return plugin.context.management!.getFile(fileId);
     },
     openFile(fileId, options) {
       checkPermission('content:read', false);
