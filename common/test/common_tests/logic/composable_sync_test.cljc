@@ -7,7 +7,8 @@
 (ns common-tests.logic.composable-sync-test
   "Runs the shared composable component cases through the pure runner, on the
    JVM and in JS. Case N and the rotation case need the frontend placement
-   step, so only the frontend interpreter runs them."
+   step, and case X a pending frontend sync, so only the frontend interpreter
+   runs them."
   (:require
    [app.common.test-helpers.composable.comp.cases :as cases]
    [app.common.test-helpers.composable.comp.runner :as r]
@@ -63,3 +64,51 @@
 
 (t/deftest case-o-variant-switch-keeps-override-only-where-mains-agree
   (check (cases/variant-switch-keeps-override-only-where-mains-agree)))
+
+(t/deftest case-q-detach-keeps-nested-copies-linked
+  (check (cases/detach-keeps-nested-copies-linked)))
+
+(t/deftest case-r-update-main-reaches-other-copies
+  (check (cases/update-main-reaches-other-copies)))
+
+(t/deftest case-s-deleted-component-copies-sync-again-after-restore
+  (check (cases/deleted-component-copies-sync-again-after-restore)))
+
+(t/deftest case-t-duplicated-copy-keeps-overrides-and-link
+  (check (cases/duplicated-copy-keeps-overrides-and-link)))
+
+(t/deftest case-u-nested-copy-reaches-copies-of-the-receiving-main
+  (check (cases/nested-copy-reaches-copies-of-the-receiving-main)))
+
+(t/deftest case-v-new-edit-after-undo-clears-redo
+  (check (cases/new-edit-after-undo-clears-redo)))
+
+(t/deftest case-w-undo-several-steps-over-nested-cascades
+  (check (cases/undo-several-steps-over-nested-cascades)))
+
+(t/deftest case-y-text-override-merges-with-main-text-change
+  (check (cases/text-override-merges-with-main-text-change)))
+
+(t/deftest case-aa-copy-swap-survives-main-changes
+  (check (cases/copy-swap-survives-main-changes)))
+
+(t/deftest case-ab-reset-of-nested-swap-keeps-top-copy-overrides
+  (check (cases/reset-of-nested-swap-keeps-top-copy-overrides)))
+
+(t/deftest case-ac-second-variant-switch-keeps-root-overrides
+  (check (cases/second-variant-switch-keeps-root-overrides)))
+
+(t/deftest case-ad-update-main-pushes-a-swapped-child
+  (check (cases/update-main-pushes-a-swapped-child)))
+
+(t/deftest case-ae-detached-or-duplicated-swapped-copy-follows-its-component
+  (check (cases/detached-or-duplicated-swapped-copy-follows-its-component)))
+
+(t/deftest case-af-grid-cell-move-reaches-a-swapped-copy-child
+  (check (cases/grid-cell-move-reaches-a-swapped-copy-child)))
+
+(t/deftest case-ag-main-reorder-keeps-copy-sub-heads-aligned
+  (check (cases/main-reorder-keeps-copy-sub-heads-aligned)))
+
+(t/deftest case-ah-copy-sub-head-delete-keeps-others-aligned
+  (check (cases/copy-sub-head-delete-keeps-others-aligned)))

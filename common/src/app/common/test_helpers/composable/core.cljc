@@ -32,9 +32,11 @@
   (:require
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [clojure.test :as t]))
 
 ;; ---------------------------------------------------------------------------
 ;; Situation
@@ -257,6 +259,27 @@
    tracked component object."
   [situation id]
   (ctst/get-shape (thf/current-page (file situation)) id))
+
+(defn find-shape
+  "The live shape with `id` in any page of the situation's file (nil if
+   absent). For shapes outside the current page."
+  [situation id]
+  (some #(ctst/get-shape % id) (ctpl/pages-seq (:data (file situation)))))
+
+(defn role-shape-in-file
+  "Like `role-shape`, but finds the role's shape in any page of the file."
+  [situation role-key]
+  (let [id (get-in situation [:roles role-key])]
+    (when (nil? id)
+      (throw (ex-info (str "Unbound role: " (pr-str role-key))
+                      {:type ::unbound-role
+                       :role role-key})))
+    (or (find-shape situation id)
+        (throw (ex-info (str "Role " (pr-str role-key) " resolves to a shape no longer "
+                             "present in the file (id " (pr-str id) ").")
+                        {:type ::role-shape-absent
+                         :role role-key
+                         :id id})))))
 
 (defn rebind-role
   "Re-point `role-key` to the current id of shape `label` (resolved via the global
@@ -635,3 +658,24 @@
       (assoc-in [:node-data (choice-one-of-id recorded-choice)]
                 {:chosen (choice-of recorded-choice)})
       (update :applied conj (choice-one-of-id recorded-choice))))
+
+;; ---------------------------------------------------------------------------
+;; Known failures
+;;
+;; A case assertion that a known bug breaks stays in the case as a strict
+;; expected failure: it pins the wrong value the bug gives, so the case fails
+;; when the failure changes or stops. Only the commit that fixes the bug
+;; turns it back into a plain assertion.
+;; ---------------------------------------------------------------------------
+
+(defn known-failure
+  "Assert a strict expected failure for `bug` (its row in the plan's suspected
+   bugs): `expected` is the value that should hold and `actual` the value
+   found. While the bug is open, `actual` must be exactly `pinned`, the wrong
+   value the bug gives; any other value fails, `expected` included."
+  [bug expected pinned actual]
+  (t/is (= pinned actual)
+        (str "Known failure " bug ": expected " (pr-str expected)
+             ", pinned to the bug's " (pr-str pinned)
+             (when (= expected actual)
+               ". The expected value now holds: drop the pin in the fix commit"))))
