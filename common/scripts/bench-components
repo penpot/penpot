@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Runs the component sync benchmark (`dev/bench/component_sync.clj`).
+#   scripts/bench-components          compare against the recorded baseline
+#   scripts/bench-components record   record a new baseline
+# Exits 1 when a world is more than 10% slower than its baseline.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+exec clojure -M:dev -m bench.component-sync "${1:-compare}"
