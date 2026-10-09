@@ -116,3 +116,24 @@
 
 (t/deftest case-ai-copy-sub-head-delete-and-reflow-keeps-others-aligned
   (t/async done (ftm/check done (cases/copy-sub-head-delete-and-reflow-keeps-others-aligned))))
+
+(t/deftest case-ak-update-main-pushes-grid-cells
+  (t/async done (ftm/check done (cases/update-main-pushes-grid-cells))))
+
+(t/deftest case-al-update-main-renames-the-component
+  (t/async done (ftm/check done (cases/update-main-renames-the-component))))
+
+(t/deftest case-am-update-main-pushes-a-swap-inside-a-group
+  (t/async done (ftm/check done (cases/update-main-pushes-a-swap-inside-a-group))))
+
+(t/deftest case-an-flex-child-override-follows-sync-reset-and-update-main
+  (t/async done (ftm/check done (cases/flex-child-override-follows-sync-reset-and-update-main))))
+
+(t/deftest case-ao-copy-dropped-into-a-grid-cell-reaches-copies
+  (t/async done (ftm/check done (cases/copy-dropped-into-a-grid-cell-reaches-copies))))
+
+(t/deftest case-ap-library-main-child-removal-reaches-copy
+  (t/async done (ftm/check done (cases/library-main-child-removal-reaches-copy))))
+
+(t/deftest case-aq-main-change-reaches-a-copy-nested-in-a-sub-board
+  (t/async done (ftm/check done (cases/main-change-reaches-a-copy-nested-in-a-sub-board))))

@@ -39,6 +39,22 @@
                              :copy-root     :copy-root})))
 
 
+(defn flex-component-with-copy
+  "Like `simple-component-with-copy`, with a 100x100 main root that has a
+   flex layout (row) and a 50x50 child. Same labels and roles."
+  []
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-simple-component-with-copy
+                  :component1 :main-root :main-child :copy-root
+                  :main-root-params {:layout :flex :layout-flex-dir :row
+                                     :width 100 :height 100}
+                  :main-child-params {:width 50 :height 50}
+                  :copy-root-params {:children-labels [:copy-child]}))]
+    (tm/make-situation file {:main-instance :main-child
+                             :copy-instance :copy-child
+                             :main-root     :main-root
+                             :copy-root     :copy-root})))
+
 (defn empty-situation
   "A situation with an empty file and no roles, for cases that build their
    configuration with operations (`create-component` and the like)."
@@ -144,6 +160,43 @@
                              :copy-root  :grid-copy
                              :main-child :child1
                              :copy-child :copy-child1})))
+
+(defn grouped-component-with-copy
+  "A component whose main board holds a group with a copy of an `:item`
+   component, and a copy of it. A second component, `:other`, has a red rect
+   (a swap target). Labels: :grouped-root :group :child1 (main side),
+   :grouped-copy :copy-group :copy-child1 (copy side), :item, :other. Roles:
+   :main-root, :copy-root, :main-child -> :child1, :copy-child -> :copy-child1."
+  []
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-simple-component :item :item-root :item-rect
+                                           :root-params {:width 100 :height 100}
+                                           :child-params {:width 50 :height 50})
+                 (tho/add-simple-component :other :other-root :other-rect
+                                           :root-params {:width 100 :height 100}
+                                           :child-params {:width 50 :height 50
+                                                          :fills (ths/sample-fills-color
+                                                                  :fill-color "#ff0000")})
+                 (tho/add-frame :grouped-root :width 200 :height 200)
+                 (tho/add-group :group :parent-label :grouped-root)
+                 (thc/instantiate-component :item :child1 :parent-label :group)
+                 (thc/make-component :grouped :grouped-root)
+                 (thc/instantiate-component :grouped :grouped-copy))]
+    (label-copy-children! file :grouped-copy {:group :copy-group})
+    (label-copy-children! file :copy-group {:child1 :copy-child1})
+    (tm/make-situation file {:main-root  :grouped-root
+                             :copy-root  :grouped-copy
+                             :main-child :child1
+                             :copy-child :copy-child1})))
+
+(defn grid-component-with-copy-and-loose-item
+  "`grid-component-with-copy` plus a top-level copy of `:item`, labelled
+   :loose. Same roles, plus :loose."
+  []
+  (let [situation (grid-component-with-copy)]
+    (-> situation
+        (tm/with-file (thc/instantiate-component (tm/file situation) :item :loose))
+        (assoc-in [:roles :loose] (thi/id :loose)))))
 
 (defn component-with-sibling-instances
   "A component whose main (300x100) holds three copies of an `:icon`
@@ -279,3 +332,55 @@
     (-> (tm/make-situation file {:copy-instance :copy-child
                                  :copy-root     :copy-root})
         (tm/with-aux-files {(:id library') library'}))))
+
+(defn cross-file-component-with-many-children
+  "A component with three children in a shared library file and a copy of it
+   in the current file; the library main then deletes its middle child, so
+   the copy is behind it. The library travels as an auxiliary file. Labels:
+   in the library :component1 :main-root :main-child1/2/3, in the file
+   :copy-root :copy-child1/2/3. Roles: :copy-root and :copy-child-1/2/3."
+  []
+  (let [library  (-> (thf/sample-file :library :is-shared true)
+                     (tho/add-component-with-many-children
+                      :component1 :main-root [:main-child1 :main-child2 :main-child3]))
+        file     (-> (thf/sample-file :file)
+                     (thc/instantiate-component :component1 :copy-root
+                                                :library library
+                                                :children-labels [:copy-child1
+                                                                  :copy-child2
+                                                                  :copy-child3]))
+        page     (thf/current-page library)
+        [_ del]  (cls/generate-delete-shapes (pcb/empty-changes nil (:id page))
+                                             (:data library)
+                                             page
+                                             (:objects page)
+                                             #{(thi/id :main-child2)}
+                                             {})
+        library' (thf/apply-changes library del)]
+    (-> (tm/make-situation file {:copy-root    :copy-root
+                                 :copy-child-1 :copy-child1
+                                 :copy-child-2 :copy-child2
+                                 :copy-child-3 :copy-child3})
+        (tm/with-aux-files {(:id library') library'}))))
+
+(defn component-nested-in-a-sub-board
+  "An `:inner` component (root and rect) and an `:outer` one whose main board
+   holds a sub-board with a copy of `:inner` in it, and a copy of `:outer`.
+   Labels: :inner-root :inner-rect, :outer-root :sub-board :nested,
+   :outer-copy. Roles: :main-instance -> :inner-rect, :main-root ->
+   :outer-root, :copy-root -> :outer-copy."
+  []
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-simple-component :inner :inner-root :inner-rect
+                                           :root-params {:width 50 :height 50}
+                                           :child-params {:width 20 :height 20
+                                                          :fills (ths/sample-fills-color
+                                                                  :fill-color labeled-fill)})
+                 (tho/add-frame :outer-root :width 200 :height 200)
+                 (tho/add-frame :sub-board :parent-label :outer-root :width 100 :height 100)
+                 (thc/instantiate-component :inner :nested :parent-label :sub-board)
+                 (thc/make-component :outer :outer-root)
+                 (thc/instantiate-component :outer :outer-copy))]
+    (tm/make-situation file {:main-instance :inner-rect
+                             :main-root     :outer-root
+                             :copy-root     :outer-copy})))
