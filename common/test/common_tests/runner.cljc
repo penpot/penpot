@@ -69,6 +69,8 @@
    [common-tests.logic.comp-sync-layout-items-test]
    [common-tests.logic.comp-sync-test]
    [common-tests.logic.comp-touched-test]
+   [common-tests.logic.composable-runner-test]
+   [common-tests.logic.composable-sync-test]
    [common-tests.logic.copying-and-duplicating-test]
    [common-tests.logic.duplicated-pages-test]
    [common-tests.logic.move-shapes-test]
@@ -184,6 +186,8 @@
    'common-tests.logic.comp-sync-layout-items-test
    'common-tests.logic.comp-sync-test
    'common-tests.logic.comp-touched-test
+   'common-tests.logic.composable-runner-test
+   'common-tests.logic.composable-sync-test
    'common-tests.logic.copying-and-duplicating-test
    'common-tests.logic.duplicated-pages-test
    'common-tests.logic.move-shapes-test

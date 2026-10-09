@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.composable-tests.core
+(ns app.common.test-helpers.composable.core
   "The domain-agnostic ENGINE of the composable test model (see
    `mem:frontend/composable-component-tests`):
 
@@ -22,7 +22,7 @@
        event-dispatching counterpart and the test-facing entry point).
 
    No Penpot domain terms live here; the component-specific operations sit
-   behind the `comp` boundary (`frontend-tests.composable-tests.comp.*`).
+   behind the `comp` boundary (`app.common.test-helpers.composable.comp.*`).
 
    Shape references use the existing label->uuid system (`app.common.test-helpers.ids-map`)
    rather than a parallel binding map: a binding name in an operation IS a
@@ -133,7 +133,8 @@
    per-node boilerplate, faithful to the actual type). E.g. a ChangeAttr record
    yields \"change-attr\"."
   [node]
-  (let [cls   (or (some-> node type .-name (str/split #"\.") last)
+  (let [cls   (or #?(:clj  (some-> ^Class (type node) .getSimpleName)
+                     :cljs (some-> node type .-name (str/split #"\.") last))
                   "node")
         ;; CamelCase -> kebab-case
         kebab (-> cls
@@ -447,6 +448,8 @@
 ;; multiplies out correctly via the sequence's cartesian product.
 ;; ---------------------------------------------------------------------------
 
+(declare record-choice)
+
 (defrecord RecordedChoice [one-of-id chosen]
   ;; Internal node produced by OneOf enumeration. Applying it records, under the
   ;; originating one-of's identity, which alternative was chosen, then applies
@@ -454,11 +457,9 @@
   ;; one-of) recovers the choice from the resulting situation. It is already
   ;; concrete, so it enumerates to itself.
   IOperation
-  (apply-to [_ situation]
-    (-> situation
-        (assoc-in [:node-data one-of-id] {:chosen chosen})
-        (update :applied conj one-of-id)
-        (->> (apply-to chosen))))
+  (apply-to [this situation]
+    (->> (record-choice situation this)
+         (apply-to chosen)))
 
   IEnumerable
   (-enumerate [this] [this]))
@@ -566,13 +567,17 @@
    setup so per-variant setups don't clobber labels). Returns a vector of the
    resulting situations, one per enumerated variant, in enumeration order. Makes
    no judgment and does not touch clojure.test — see `check` (in
-   `frontend-tests.composable-tests.interpreter`) for the test-facing entry point that asserts."
-  [{:keys [setup operation]}]
-  (->> (enumerate operation)
-       (mapv (fn [variant]
-               (thi/reset-idmap!)
-               (run-variant {:setup setup
-                             :operation variant})))))
+   `frontend-tests.composable-tests.interpreter`) for the test-facing entry point that asserts.
+
+   `run-variant-fn` runs one variant from `{:setup :operation}` (default
+   `run-variant`); other runners pass their own."
+  ([case-map] (run-all case-map run-variant))
+  ([{:keys [setup operation]} run-variant-fn]
+   (->> (enumerate operation)
+        (mapv (fn [variant]
+                (thi/reset-idmap!)
+                (run-variant-fn {:setup setup
+                                 :operation variant}))))))
 
 
 (defn sequence-ops
@@ -594,6 +599,11 @@
     :else
     [variant]))
 
+(defn sequence?
+  "True if `op` is a `Sequence`; its ordered steps are under `:steps`."
+  [op]
+  (instance? Sequence op))
+
 (defn recorded-choice?
   "True if `op` is a one-of's enumerated choice wrapper."
   [op]
@@ -609,3 +619,13 @@
    interpreter can record the choice under it, enabling `get-choice`)."
   [recorded-choice]
   (:one-of-id recorded-choice))
+
+(defn record-choice
+  "Record in `situation` the alternative `recorded-choice` selected, under its
+   one-of's identity, so `get-choice` finds it. Runners call it before applying
+   the chosen operation."
+  [situation recorded-choice]
+  (-> situation
+      (assoc-in [:node-data (choice-one-of-id recorded-choice)]
+                {:chosen (choice-of recorded-choice)})
+      (update :applied conj (choice-one-of-id recorded-choice))))

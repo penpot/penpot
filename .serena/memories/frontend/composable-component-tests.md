@@ -4,8 +4,10 @@ A framework concept for systematically testing Penpot's component subsystem
 (synchronisation/propagation, swaps, variant switches, nesting, overrides), implemented in TWO test
 suites that share the principles below:
 
-1. **ClojureScript suite** — in the frontend test tree (`frontend/test/frontend_tests/
-   composable_tests/`), driving a minimally-assembled real app headlessly. The original.
+1. **ClojureScript suite** — engine, nodes and setups in common
+   (`common/src/app/common/test_helpers/composable/`, CLJC), interpreter and cases in the
+   frontend test tree (`frontend/test/frontend_tests/composable_tests/`), driving a
+   minimally-assembled real app headlessly. The original.
 2. **TypeScript suite** — a Penpot plugin (`plugins/apps/composable-test-suite/`), driving the FULL
    production app end-to-end through the Plugin API, with a slightly more elaborate set of
    abstractions. Runs interactively (panel), remotely (Playwright), and headlessly in CI. Its
@@ -55,20 +57,58 @@ tests.
 
 ---
 
-# ClojureScript suite (frontend test tree)
+# ClojureScript suite
 
-Test-only `.cljs` code in the frontend test tree (nothing "common" about it). A **situation** =
+The engine, nodes and setups are CLJC test helpers in common and load on the JVM and in
+CLJS; only the interpreter and the cases are frontend code. A **situation** =
 the in-memory file value + named roles + `:vars` + an ordered applied-log. Operations are records
 implementing `IOperation`/`apply-to` (`apply` collides with core). Assertions = inline `Test` ops
 and/or a trailing asserter; the runner makes no judgment. Failures carry `describe-applied` (the
 transcript), which is what makes a failing variant in a sweep identifiable.
 
-Layout: `core.cljs` (the domain-agnostic engine: situation, identity/transcript, roles/targets,
-operators, runners), `comp/setups.cljs` (setups + role accessors), `comp/nodes.cljs` (the component
-operations and their check duals), `interpreter.cljs` (runs cases against the real frontend),
-`comp/sync_test.cljs` (the cases; registered in `frontend_tests/runner.cljs`). Case letters B..N;
+Layout:
+- common, `app.common.test-helpers.composable.*`: `core.cljc` (the domain-agnostic engine:
+  situation, identity/transcript, roles/targets, operators, runners), `comp/setups.cljc`
+  (setups + role accessors), `comp/nodes.cljc` (the component operations and their check
+  duals), `comp/runner.cljc` (pure runner), `comp/cases.cljc` (THE cases, shared by both
+  runners). No frontend requires allowed here.
+- frontend, `frontend-tests.composable-tests.*`: `interpreter.cljs` (runs cases against the
+  real frontend), `comp/sync_test.cljs` (one `t/async` deftest per shared case; registered in
+  `frontend_tests/runner.cljs`).
+- JVM/JS: `common-tests.logic.composable-sync-test` runs the shared cases through the pure
+  runner; all except N and the rotation case (placement step). Same assertion counts as the
+  frontend for the shared subset (174).
+
+A case is a zero-arg fn in `cases.cljc` returning `{:setup :operation :asserter}`; assertions
+use `clojure.test` (aliased to `cljs.test` in CLJS), inline (`test-that`) or in `:asserter`.
+`ftm/check done case-map` reads `:asserter` from the map. Write a new case there, then add a
+wrapper deftest in BOTH test namespaces (or only the frontend one if it needs frontend code).
+
+Two pure runners (no store, JVM + CLJS):
+- `core/run-variant`/`run-all`: apply nodes only (no sync, `n/undo` throws). For engine tests.
+- `comp.runner/run-variant`/`run-all`: the case runner. Every comp node declares its kind via
+  `n/IComponentOperation` (`op-kind`: `:assembly`, `:user`, `:undo`, `:frontend-only`); the
+  runner and the interpreter's `sync-op?` dispatch on it. A NEW node MUST implement it. User ops
+  record their production changes (`n/record-changes`, nil when nothing changed); the runner
+  throws if a `:user` op records nothing or another kind records changes. After a user op the
+  runner syncs to a fixpoint (`ch/components-changed` + `generate-sync-file-changes`, one pass
+  per cascade level, like the frontend watcher) and pushes op + syncs as one undo group.
+  `n/undo` reverts the latest group, no re-sync. The runner validates the file (against the
+  situation's files) once settled: after the sync fixpoint and after an undo group; never
+  between cascade passes, where an outer copy still points at the component its main dropped
+  (`:component-id-mismatch`), nor with `{:sync? false}`. Assembly ops (create/instantiate/nest/variant
+  container): no sync, no undo group. `ResetCopyInstance` is a user op here (sync + undo),
+  unlike the interpreter (file install). `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`
+  are `:frontend-only` and throw `::runner/frontend-only` (the placement step is frontend code). Swap and switch nodes use the production
+  `clv/generate-component-swap-in-place` (+ `clv/find-switch-target` for switch), the same code the
+  frontend events call. Not modelled: the `:modified-at` bump, and the swap/switch event follow-ups
+  (token propagation, WASM text resize, layout update). Tests:
+  `common-tests.logic.composable-runner-test`.
+- Label map gotcha: running a second variant re-registers labels, so assert on a situation
+  before running the next one (`thi/id` then points at the new run's shapes). Case letters B..O;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance
-geometry, on the #10109 fix branch until merged) are the flagship pattern — read them before
+geometry, on the #10109 fix branch until merged; O: switch of an overridden copy, mains
+agreeing or not) are the flagship pattern — read them before
 writing a new sweep.
 
 **Scenario lineage model** (behind the sweeps): scenario ops track named component lineages as
@@ -92,7 +132,8 @@ STORE-SWAP IMMUNITY: other test namespaces `set!` `st/state`/`st/stream` and nev
 the `app.main.refs` lenses stay bound to the ORIGINAL atoms — propagation then dies silently. The
 interpreter captures the atoms at namespace-load time and re-`set!`s them per variant.
 
-Running: `cd frontend && pnpm run build:test`, then
+Running (JVM): `cd common && clojure -M:dev:test --focus common-tests.logic.composable-sync-test`.
+Running (frontend): `cd frontend && pnpm run build:test`, then
 `node target/tests/test.js --focus frontend-tests.composable-tests.comp.sync-test`
 (var-level focus for one case).
 
@@ -103,7 +144,7 @@ unwired subscription and verify by PROBING store state, not by trusting a green 
 
 **Caveats:** inline `Test` exceptions are UNCAUGHT on the frontend (crash the runner — assert in
 the trailing asserter). `(optional (in-sequence …))` is not flattened for the interpreter — use
-independent optionals. The Serena/clj-kondo cache for `nodes.cljs` goes stale (phantom symbols) —
+independent optionals. The Serena/clj-kondo cache for `nodes.cljc` goes stale (phantom symbols) —
 trust the build. Cross-namespace global-state leaks land in this suite first; suspect them before
 the framework on inexplicable full-run-only failures. Case H's `sync-file` schedules a delayed RPC
 that fails headless (benign; absorbed by per-op grace).
