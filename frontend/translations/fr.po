@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-30 16:51+0000\n"
-"Last-Translator: imagoiq <loic@anicro.ch>\n"
+"PO-Revision-Date: 2026-10-10 16:51+0000\n"
+"Last-Translator: Surfoo <surfooo@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.10.1.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -9518,3 +9518,179 @@ msgid "workspace.options.font-not-available"
 msgstr ""
 "La police utilisée par ce texte (%s) n'est plus disponible. Téléverser à "
 "nouveau la police pour créer un style typographique"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:117
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "Barré"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:176
+msgid "inspect.tabs-switcher-label"
+msgstr "Changer d'onglet d'inspection"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:447
+msgid "workspace.colorpicker.color-picker"
+msgstr "Prélever une couleur à l'écran"
+
+#: src/app/main/data/plugins.cljs:158
+msgid "workspace.plugins.error.unreachable"
+msgstr "L'URL de l'extension est inaccessible."
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:413
+msgid "workspace.toolbar.label"
+msgstr "Outils de dessin"
+
+#: src/app/main/ui/dashboard/import.cljs:709
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Connecter les bibliothèques sélectionnées"
+
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "Nom du fichier"
+
+#: src/app/main/ui/dashboard/import.cljs:710
+msgid "dashboard.import.next-file"
+msgstr "Fichier suivant"
+
+#: src/app/main/ui/dashboard/import.cljs:459
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "connecter à"
+
+#: src/app/main/ui/dashboard/import.cljs:453
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "bibliothèque d'origine"
+
+#: src/app/main/ui/dashboard/import.cljs:529
+msgid "dashboard.import.summary.manually-linked"
+msgstr "lié manuellement"
+
+#: src/app/main/ui/dashboard/import.cljs:537
+msgid "dashboard.import.summary.new"
+msgstr "Nouveau"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "dashboard.import.summary.original"
+msgstr "Original"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:185
+msgid "dashboard.no-organizations-yet"
+msgstr "Aucune organisation pour l'instant."
+
+#: src/app/main/ui/auth/login.cljs:113
+msgid "errors.account-locked"
+msgstr ""
+"Trop de tentatives échouées. Votre compte est verrouillé pendant %s minutes. "
+"Veuillez réessayer plus tard."
+
+#: src/app/main/errors.cljs:499
+msgid "errors.connection-error"
+msgstr ""
+"Impossible de joindre le serveur. Vérifiez votre connexion et réessayez."
+
+#: src/app/main/data/persistence.cljs:307
+msgid "errors.save-retrying"
+msgstr ""
+"Connexion perdue. Nouvelle tentative d'enregistrement de vos modifications."
+
+#: src/app/main/ui/dashboard/import.cljs:703
+msgid "labels.skip"
+msgstr "Passer"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:562
+msgid "labels.team-management"
+msgstr "Gestion de l'équipe"
+
+#: src/app/main/ui/workspace/left_header.cljs:125
+msgid "workspace.header.retrying"
+msgstr "Nouvelle tentative d'enregistrement"
+
+#: src/app/main/ui/workspace/libraries.cljs:842
+msgid "workspace.libraries.connected-libraries"
+msgstr "Bibliothèque connectée"
+
+#: src/app/main/ui/workspace/libraries.cljs:183
+msgid "workspace.libraries.connected-through"
+msgstr "Connectée via"
+
+#: src/app/main/ui/workspace/libraries.cljs:812
+msgid "workspace.libraries.empty.no-assets"
+msgstr "Aucune ressource pour l'instant"
+
+#: src/app/main/ui/workspace/libraries.cljs:895
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "Aucune bibliothèque connectée pour l'instant."
+
+#: src/app/main/ui/workspace/libraries.cljs:827, src/app/main/ui/workspace/libraries.cljs:874
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "Définir comme source des tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:621
+msgid "workspace.libraries.shared-library-added"
+msgstr "Ajoutée"
+
+#: src/app/main/ui/workspace/libraries.cljs:167, src/app/main/ui/workspace/libraries.cljs:211
+msgid "workspace.libraries.token-sets"
+msgid_plural "workspace.libraries.token-sets"
+msgstr[0] "1 collection"
+msgstr[1] "%s collections"
+
+#: src/app/main/ui/workspace/libraries.cljs:170, src/app/main/ui/workspace/libraries.cljs:215
+msgid "workspace.libraries.token-themes"
+msgid_plural "workspace.libraries.token-themes"
+msgstr[0] "1 thème"
+msgstr[1] "%s thèmes"
+
+#: src/app/main/ui/workspace/libraries.cljs:164, src/app/main/ui/workspace/libraries.cljs:207
+msgid "workspace.libraries.tokens"
+msgid_plural "workspace.libraries.tokens"
+msgstr[0] "1 token"
+msgstr[1] "%s tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:820, src/app/main/ui/workspace/libraries.cljs:866
+msgid "workspace.libraries.tokens-source"
+msgstr "Source des tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:75
+msgid "workspace.options.canvas-background-section"
+msgstr "Section du fond du canevas"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:99, src/app/main/ui/workspace/sidebar/options/page.cljs:106
+msgid "workspace.options.pixel-grid-color"
+msgstr "Couleur de la grille de pixels"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:106
+msgid "workspace.tokens.add-set"
+msgstr "Ajouter une collection"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:98
+msgid "workspace.tokens.change-token-source"
+msgstr "Changer la source des tokens"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:101
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "C'est la source actuelle des tokens"
+
+#: src/app/main/data/workspace/libraries.cljs:847
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "Les collections ou thèmes de la source des tokens ont été modifiés"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:438, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:67
+msgid "workspace.tokens.only-first-fill-or-stroke"
+msgstr ""
+"Les design tokens ne peuvent s'appliquer qu'au premier remplissage ou "
+"contour de la liste."
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:104
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "Ouvrir la source des tokens dans un nouvel onglet"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:311, src/app/main/ui/workspace/tokens/management/context_menu.cljs:335
+msgid "workspace.tokens.stroke-width"
+msgstr "Largeur du contour"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:75
+msgid "workspace.tokens.source"
+msgstr "Source :"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:80
+msgid "workspace.tokens.this-file"
+msgstr "Ce fichier"
