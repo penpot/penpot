@@ -45,6 +45,9 @@
 (t/deftest case-i-undo-reverts-edit-and-its-auto-propagation
   (t/async done (ftm/check done (cases/undo-reverts-edit-and-its-propagation))))
 
+(t/deftest case-p-redo-reapplies-edit-and-its-auto-propagation
+  (t/async done (ftm/check done (cases/redo-reapplies-edit-and-its-propagation))))
+
 (t/deftest case-h-library-change-propagates-across-file-boundary-on-sync
   (t/async done (ftm/check done (cases/library-change-propagates-across-file-boundary-on-sync))))
 

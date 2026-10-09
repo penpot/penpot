@@ -27,6 +27,7 @@
      H — locality: a library main's change reaches the consuming file's copy on
          the explicit library sync (cross-file propagation).
      I — undo reverses an edit AND its propagation.
+     P — redo applies an undone edit and its propagation again.
      K — the synchronisation sweep: depth x edit-targets, with override-precedence
          and reset checkpoints.
      L — the swap sweep: swaps at any subset of nesting levels.
@@ -158,6 +159,21 @@
                     ;; … and on the copy (the propagation was reversed too) …
                     (t/is (n/has-attr? baseline copy))
                     ;; … leaving the copy clean.
+                    (t/is (nil? (:touched copy)))))}))
+
+(defn redo-reapplies-edit-and-its-propagation
+  "Case P. Change the main (which propagates to the clean copy), undo, then
+   redo. The redo applies the edit and its propagation again, so the copy
+   shows the main's new value and is left untouched."
+  []
+  (let [change (n/change-attr :main-child :fills red)]
+    {:setup     setup/simple-component-with-labeled-copy
+     :operation (tm/in-sequence [change (n/undo) (n/redo)])
+     :asserter  (fn [situation]
+                  (let [copy (setup/copy-instance situation)
+                        main (setup/main-instance situation)]
+                    (t/is (n/has-attr? change main))
+                    (t/is (n/has-attr? change copy))
                     (t/is (nil? (:touched copy)))))}))
 
 (defn library-change-propagates-across-file-boundary-on-sync

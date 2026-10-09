@@ -87,13 +87,15 @@ wrapper deftest in BOTH test namespaces (or only the frontend one if it needs fr
 Two pure runners (no store, JVM + CLJS):
 - `core/run-variant`/`run-all`: apply nodes only (no sync, `n/undo` throws). For engine tests.
 - `comp.runner/run-variant`/`run-all`: the case runner. Every comp node declares its kind via
-  `n/IComponentOperation` (`op-kind`: `:assembly`, `:user`, `:undo`, `:frontend-only`); the
+  `n/IComponentOperation` (`op-kind`: `:assembly`, `:user`, `:undo`, `:redo`, `:frontend-only`); the
   runner and the interpreter's `sync-op?` dispatch on it. A NEW node MUST implement it. User ops
   record their production changes (`n/record-changes`, nil when nothing changed); the runner
   throws if a `:user` op records nothing or another kind records changes. After a user op the
   runner syncs to a fixpoint (`ch/components-changed` + `generate-sync-file-changes`, one pass
   per cascade level, like the frontend watcher) and pushes op + syncs as one undo group.
-  `n/undo` reverts the latest group, no re-sync. The runner validates the file (against the
+  `n/undo` reverts the latest group and moves it to a redo stack; `n/redo` applies it again
+  (interpreter: `dwu/redo`); neither re-syncs. A user op that pushes a group empties the redo
+  stack; one that changed nothing keeps it. The runner validates the file (against the
   situation's files) once settled: after the sync fixpoint and after an undo group; never
   between cascade passes, where an outer copy still points at the component its main dropped
   (`:component-id-mismatch`), nor with `{:sync? false}`. Assembly ops (create/instantiate/nest/variant
@@ -105,7 +107,7 @@ Two pure runners (no store, JVM + CLJS):
   (token propagation, WASM text resize, layout update). Tests:
   `common-tests.logic.composable-runner-test`.
 - Label map gotcha: running a second variant re-registers labels, so assert on a situation
-  before running the next one (`thi/id` then points at the new run's shapes). Case letters B..O;
+  before running the next one (`thi/id` then points at the new run's shapes). Case letters B..P;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance
 geometry, on the #10109 fix branch until merged; O: switch of an overridden copy, mains
 agreeing or not) are the flagship pattern — read them before

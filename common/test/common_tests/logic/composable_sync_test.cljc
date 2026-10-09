@@ -46,6 +46,9 @@
 (t/deftest case-i-undo-reverts-edit-and-its-propagation
   (check (cases/undo-reverts-edit-and-its-propagation)))
 
+(t/deftest case-p-redo-reapplies-edit-and-its-propagation
+  (check (cases/redo-reapplies-edit-and-its-propagation)))
+
 (t/deftest case-k-synchronisation-scenarios
   (check (cases/synchronisation-scenarios)))
 

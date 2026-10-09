@@ -14,9 +14,11 @@
        `ch/components-changed` reports, then the components each sync changed,
        until none is left. The frontend component watcher does the same, one
        pass per sync commit.
-     - Undo. A user operation and the syncs it caused form one undo group.
-       `n/undo` reverts the latest group and syncs nothing, as in the frontend,
-       where an undo commit only bumps the component's `:modified-at`.
+     - Undo and redo. A user operation and the syncs it caused form one undo
+       group. `n/undo` reverts the latest group and `n/redo` applies again the
+       latest reverted one; neither syncs, as in the frontend, where an undo
+       or redo commit only bumps the component's `:modified-at`. A user
+       operation that pushes a group empties the redo stack.
 
    Assembly operations (create, instantiate, nest) change the file with no sync
    and no undo group, like the frontend interpreter's file installs.
@@ -109,30 +111,67 @@
 
 (defn- push-undo-group
   "Add `group`, the changes of one user operation and its syncs in order, to
-   the undo stack. Changes with nothing to undo are left out, as the frontend
-   undo stack leaves out commits with no undo changes."
+   the undo stack and empty the redo stack. Changes with nothing to undo are
+   left out, as the frontend undo stack leaves out commits with no undo
+   changes; a group left empty changes neither stack."
   [situation group]
   (let [group (filterv (comp seq :undo-changes) group)]
     (cond-> situation
-      (seq group) (update ::undo-stack (fnil conj []) group))))
+      (seq group) (-> (update ::undo-stack (fnil conj []) group)
+                      (assoc ::redo-stack [])))))
 
-(defn- run-undo
-  "Revert the latest undo group, newest changes first, and validate the
-   result. With an empty stack it changes nothing, like the frontend undo."
-  [situation op]
-  (let [stack (get situation ::undo-stack [])
-        group (peek stack)
-        file  (reduce (fn [file changes]
-                        (thf/apply-changes file
-                                           {:redo-changes (:undo-changes changes)}
-                                           :validate? false))
-                      (tm/file situation)
-                      (rseq (or group [])))]
+(defn- apply-group
+  "Apply to the situation's file the `side` changes (`:undo-changes` or
+   `:redo-changes`) of each changes in `group`, in order, and validate the
+   result."
+  [situation side group]
+  (let [file (reduce (fn [file changes]
+                       (thf/apply-changes file
+                                          {:redo-changes (get changes side)}
+                                          :validate? false))
+                     (tm/file situation)
+                     group)]
     (-> situation
         (tm/with-file file)
-        (validate-settled!)
-        (assoc ::undo-stack (if (seq stack) (pop stack) stack))
-        (tm/record-application op {:undone (count group)}))))
+        (validate-settled!))))
+
+(defn- move-group
+  "Move the latest group of the `from` stack to the `to` stack, applying its
+   `side` changes, in `order` (`seq` or `rseq`). Returns `[situation group]`;
+   with an empty `from` stack it changes nothing, like the frontend undo and
+   redo."
+  [situation from to side order]
+  (let [stack (get situation from [])]
+    (if (empty? stack)
+      [situation nil]
+      (let [group (peek stack)]
+        [(-> situation
+             (apply-group side (order group))
+             (assoc from (pop stack))
+             (update to (fnil conj []) group))
+         group]))))
+
+(defn- undo-group
+  "Revert the latest undo group, newest changes first, and move it to the
+   redo stack."
+  [situation]
+  (move-group situation ::undo-stack ::redo-stack :undo-changes rseq))
+
+(defn- redo-group
+  "Apply again the latest redo group, oldest changes first, and move it back
+   to the undo stack."
+  [situation]
+  (move-group situation ::redo-stack ::undo-stack :redo-changes seq))
+
+(defn- run-undo
+  [situation op]
+  (let [[situation group] (undo-group situation)]
+    (tm/record-application situation op {:undone (count group)})))
+
+(defn- run-redo
+  [situation op]
+  (let [[situation group] (redo-group situation)]
+    (tm/record-application situation op {:redone (count group)})))
 
 (defn- op-kind
   "The kind of a leaf operation (see `n/IComponentOperation`), or nil for an
@@ -189,6 +228,9 @@
         :undo
         (run-undo situation op)
 
+        :redo
+        (run-redo situation op)
+
         :frontend-only
         (throw (ex-info (str "The pure runner cannot run " (pr-str (type op))
                              ": its production result needs frontend code. "
@@ -202,6 +244,11 @@
   "How many undo groups the runner holds in `situation`."
   [situation]
   (count (get situation ::undo-stack)))
+
+(defn redo-depth
+  "How many redo groups the runner holds in `situation`."
+  [situation]
+  (count (get situation ::redo-stack)))
 
 (defn run-variant
   "Run one concrete (already enumerated) variant: build a fresh situation with

@@ -136,6 +136,7 @@
      RemoveChild     -> delete-shapes   (generate-delete-shapes)
      SyncFromLibrary -> sync-file       (the cross-file library-update action, H)
      Undo            -> dwu/undo         (reverse the previous operation(s), I)
+     Redo            -> dwu/redo         (apply the undone operation(s) again)
    (In-file propagation is automatic — the watcher — so no propagate op exists.)"
   [op situation]
   (cond
@@ -209,6 +210,10 @@
     ;; Reverse the previous operation(s) via the real undo event. The workspace
     ;; undo stack was maintained automatically by the prior ops' commits.
     [dwu/undo]
+
+    (instance? n/Redo op)
+    ;; Apply again the latest undone operation(s) via the real redo event.
+    [dwu/redo]
 
     :else
     (throw (ex-info (str "op->events: no frontend realisation for " (pr-str (type op)))

@@ -120,6 +120,64 @@
     (t/is (contains? (:touched copy-rect) :fill-group))
     (t/is (= 1 (r/undo-depth situation)))))
 
+(t/deftest redo-reapplies-edit-and-its-sync
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/undo)
+                                 (n/redo)])})
+        copy      (setup/copy-instance situation)]
+    (t/is (= red (fill-of (setup/main-instance situation))))
+    (t/is (= red (fill-of copy)))
+    (t/is (nil? (:touched copy)))
+    (t/is (= 1 (r/undo-depth situation)))
+    (t/is (zero? (r/redo-depth situation)))))
+
+(t/deftest redo-reapplies-groups-in-undo-order
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/change-property :main-child :fills green)
+                                 (n/undo)
+                                 (n/undo)
+                                 (n/redo)])})]
+    (t/is (= red (fill-of (setup/copy-instance situation))))
+    (t/is (= 1 (r/undo-depth situation)))
+    (t/is (= 1 (r/redo-depth situation)))))
+
+(t/deftest user-operation-empties-the-redo-stack
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/undo)
+                                 (n/change-property :main-child :fills green)
+                                 (n/redo)])})]
+    (t/is (= green (fill-of (setup/copy-instance situation))))
+    (t/is (= 1 (r/undo-depth situation)))
+    (t/is (zero? (r/redo-depth situation)))))
+
+(t/deftest unchanged-user-operation-keeps-the-redo-stack
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/undo)
+                                 (n/change-property :main-child :fills original)
+                                 (n/redo)])})]
+    (t/is (= red (fill-of (setup/copy-instance situation))))))
+
+(t/deftest redo-with-an-empty-stack-changes-nothing
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/redo)])})]
+    (t/is (= red (fill-of (setup/copy-instance situation))))
+    (t/is (= 1 (r/undo-depth situation)))))
+
 (t/deftest assembly-operations-push-no-undo-group
   (let [m         "main"
         situation (r/run-variant

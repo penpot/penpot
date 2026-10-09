@@ -56,6 +56,8 @@
 ;;                   them to sync the file and to build its undo stack.
 ;;   :undo           reverts the latest user action; needs a runner's undo
 ;;                   stack.
+;;   :redo           applies again the latest reverted user action; needs a
+;;                   runner's redo stack.
 ;;   :frontend-only  its production result needs frontend code; the pure
 ;;                   runner rejects it.
 ;; The pure runner checks that a :user node recorded its changes and that
@@ -64,7 +66,8 @@
 
 (defprotocol IComponentOperation
   (op-kind [op]
-    "How a runner treats `op`: :assembly, :user, :undo or :frontend-only."))
+    "How a runner treats `op`: :assembly, :user, :undo, :redo or
+     :frontend-only."))
 
 (defn record-changes
   "Store `changes`, the production changes a user operation applied (nil when
@@ -1075,6 +1078,31 @@
    dispatches the real undo, reversing the immediately preceding operation(s)."
   []
   (tm/assign-id (->Undo)))
+
+;; ---------------------------------------------------------------------------
+;; redo — apply again the latest undone operation(s)
+;;
+;; The twin of `undo`. The frontend interpreter dispatches the real `dwu/redo`
+;; event; the pure runner applies the redo changes of the latest undone group.
+;; A new user operation empties the redo stack, as in the frontend.
+;; ---------------------------------------------------------------------------
+
+(defrecord Redo []
+  IComponentOperation
+  (op-kind [_] :redo)
+
+  tm/IOperation
+  (apply-to [_ _]
+    (throw (ex-info (str "Redo has no `apply-to` realisation: it needs a redo stack. "
+                         "Run it through the pure runner (comp.runner) or the frontend "
+                         "interpreter.")
+                    {:type ::redo-is-event-op}))))
+
+(defn redo
+  "Constructor for the redo node. Takes no parameters; on the frontend it
+   dispatches the real redo, applying again the latest undone operation(s)."
+  []
+  (tm/assign-id (->Redo)))
 
 
 ;; ---------------------------------------------------------------------------
