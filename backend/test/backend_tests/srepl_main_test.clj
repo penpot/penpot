@@ -153,9 +153,9 @@
                      (mapv #(select-keys % [:object :id]) (params-of submitted))))))))))
 
 (t/deftest delete-profile-emits-identifiable-audit-event
-  ;; The SREPL delete used to emit no profile-id and empty props, leaving a
-  ;; row no projection could attribute. Both insert and cascade are mocked,
-  ;; so this has no side effects.
+  ;; SREPL has no actor, so the event profile stays zero; the subject id in
+  ;; props is what makes the row attributable. Both insert and cascade are
+  ;; mocked, so this has no side effects.
   (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
                wrk-mock {:target 'app.worker/invoke! :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true})]
@@ -166,7 +166,9 @@
         (let [event (first events)]
           (t/is (= "delete-profile" (:name event)))
           (t/is (= "action" (:type event)))
-          (t/is (= (:id profile) (:profile-id event)))
+          ;; No actor on SREPL calls; insert defaults the missing profile
+          ;; to the zero one.
+          (t/is (nil? (:profile-id event)))
           (t/is (= (:id profile) (get-in event [:props :id]))))))))
 
 (t/deftest delete-team-emits-identifiable-audit-event
@@ -186,8 +188,8 @@
                    (get-in event [:context :cause]))))))))
 
 (t/deftest restore-profile-emits-identifiable-audit-event
-  ;; The restore must look like a normal profile event: the consumer keys on
-  ;; the event profile, so a zero profile would create a junk row.
+  ;; SREPL has no actor, so the event profile stays zero; the subject id in
+  ;; props is what makes the row attributable.
   (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
                wrk-mock {:target 'app.worker/invoke! :return nil}]
     (with-redefs [sys/system th/*system*]
@@ -199,5 +201,7 @@
           (let [event (first events)]
             (t/is (= "restore-profile" (:name event)))
             (t/is (= "action" (:type event)))
-            (t/is (= (:id profile) (:profile-id event)))
+            ;; No actor on SREPL calls; insert defaults the missing profile
+            ;; to the zero one.
+            (t/is (nil? (:profile-id event)))
             (t/is (= (:id profile) (get-in event [:props :id])))))))))
