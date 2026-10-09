@@ -44,8 +44,9 @@
                    :undo-changes []}))
 
 (defn- with-persistence
-  "Async fixture for the persistence tests: mocks the transport and flash, and
-  runs `f` with persistence initialized.
+  "Async fixture for the persistence tests: mocks the transport, flash and
+  the leave-page task set (`:tasks`), and runs `f` with persistence
+  initialized.
 
   Evaluates to a promise resolving once `f` settles and teardown completes;
   `await` it from an `^:async` test.
@@ -60,22 +61,24 @@
         response (rx/subject)
         failures (atom [])
         requests (atom [])
+        tasks    (atom #{})
         store    (ptk/store {:state {:current-file-id file-id
                                      :permissions {:can-edit true}
                                      :files {file-id {:id file-id :revn 0}}}
                              :on-error #(t/is false (str %))})]
     (mock/with-mocks*
-      {rp/cmd!      (mock/stub (fn [cmd params]
-                                 (swap! requests conj [cmd params])
-                                 (if respond
-                                   (respond cmd params)
-                                   (->> response (rx/take 1) (rx/observe-on :async)))))
-       errors/flash (fn [& {:keys [cause]}]
-                      (swap! failures conj cause))}
+      {rp/cmd!          (mock/stub (fn [cmd params]
+                                     (swap! requests conj [cmd params])
+                                     (if respond
+                                       (respond cmd params)
+                                       (->> response (rx/take 1) (rx/observe-on :async)))))
+       errors/flash     (fn [& {:keys [cause]}]
+                          (swap! failures conj cause))
+       st/ongoing-tasks tasks}
       (try
         (ptk/emit! store (dps/initialize-persistence))
         (await (f {:file-id file-id :response response :failures failures
-                   :requests requests :store store}))
+                   :requests requests :store store :tasks tasks}))
         (finally
           (rx/dispose! store)
           (rx/end! response))))))
@@ -455,7 +458,8 @@
                                  (swap! causes conj cause)
                                  "report")
         st/emit!               (mock/stub (fn [& emitted] (swap! events into emitted)))
-        rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")}
+        rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")
+        st/ongoing-tasks       (atom #{})}
        (try
          (ptk/emit! store (dps/initialize-persistence))
          ;; Phase 1 — the first stall reports once.
@@ -485,3 +489,33 @@
            (rx/dispose! store)
            (rx/end! ticks)
            (rx/end! response)))))))
+
+;; Scenario: the first send never answers. The request timeout fails it as
+;; a transient error, and the retry resends the same commit and saves. The
+;; timeout is shortened by wrapping the real operator. Proves: a hung save
+;; does not block the queue.
+(t/deftest ^:async hung-save-request-times-out-and-retries
+  (let [calls    (atom 0)
+        timeouts (atom [])
+        timeout  rx/timeout]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer   (mock/stub (fn [_] (rx/of :tick)))
+             rx/timeout (mock/stub (fn [ms with ob]
+                                     (swap! timeouts conj ms)
+                                     (timeout 0 with ob)))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                         (empty? (get-in @store [:persistence :queue])))
+                                   "the retry saves the file"))
+            (t/is (= 2 (count @requests)) "hung send plus one retry")
+            (t/is (apply = (map (comp :commit-id second) @requests))
+                  "both sends carry the same commit id")
+            (t/is (= [420000 420000] @timeouts) "every send gets the 7 minute timeout"))))
+       (fn [_ _]
+         (if (= 1 (swap! calls inc))
+           (rx/subject)
+           (rx/of {:revn 1})))))))

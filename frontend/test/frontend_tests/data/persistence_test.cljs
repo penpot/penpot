@@ -88,10 +88,11 @@
                              :on-error #(swap! errors conj %)})]
 
     (mock/with-mocks*
-      {rp/cmd! (mock/stub (fn [cmd params]
-                            (let [req (->> response (rx/take 1) (rx/observe-on :async))]
-                              (swap! requests conj {:cmd cmd :params params :req req})
-                              req)))}
+      {rp/cmd!          (mock/stub (fn [cmd params]
+                                     (let [req (->> response (rx/take 1) (rx/observe-on :async))]
+                                       (swap! requests conj {:cmd cmd :params params :req req})
+                                       req)))
+       st/ongoing-tasks (atom #{})}
       (try
         (await (run-read-only-phases store response requests file-id read-only-event errors))
         (finally
@@ -193,7 +194,8 @@
                                 (let [m (apply hash-map params)]
                                   (swap! reports conj m)
                                   (when (fn? (:report m))
-                                    ((:report m)))))}
+                                    ((:report m)))))
+       st/ongoing-tasks       (atom #{})}
       (try
         (ptk/emit! store (dps/initialize-persistence))
         (await (f {:clock clock :ticks ticks :response response :requests requests
@@ -359,7 +361,8 @@
                           (let [subscription (.subscribe ticks subscriber)]
                             (fn []
                               (rx/dispose! subscription)
-                              (swap! active-timers dec)))))))}
+                              (swap! active-timers dec)))))))
+        st/ongoing-tasks (atom #{})}
        (try
          (ptk/emit! store (dps/initialize-persistence))
          (t/is (= 1 @active-timers))
@@ -434,8 +437,9 @@
 ;; assert block is preceded by `wait-for` on its leading signal (or a bare
 ;; `settle` tick when it asserts only absence).
 (defn- with-persistence
-  "Async fixture for the persistence tests: mocks the transport and flash, and
-  runs `f` with persistence initialized.
+  "Async fixture for the persistence tests: mocks the transport, flash and
+  the leave-page task set (`:tasks`), and runs `f` with persistence
+  initialized.
 
   Evaluates to a promise resolving once `f` settles and teardown completes;
   `await` it from an `^:async` test.
@@ -450,22 +454,24 @@
         response (rx/subject)
         failures (atom [])
         requests (atom [])
+        tasks    (atom #{})
         store    (ptk/store {:state {:current-file-id file-id
                                      :permissions {:can-edit true}
                                      :files {file-id {:id file-id :revn 0}}}
                              :on-error #(t/is false (str %))})]
     (mock/with-mocks*
-      {rp/cmd!      (mock/stub (fn [cmd params]
-                                 (swap! requests conj [cmd params])
-                                 (if respond
-                                   (respond cmd params)
-                                   (->> response (rx/take 1) (rx/observe-on :async)))))
-       errors/flash (fn [& {:keys [cause]}]
-                      (swap! failures conj cause))}
+      {rp/cmd!          (mock/stub (fn [cmd params]
+                                     (swap! requests conj [cmd params])
+                                     (if respond
+                                       (respond cmd params)
+                                       (->> response (rx/take 1) (rx/observe-on :async)))))
+       errors/flash     (fn [& {:keys [cause]}]
+                          (swap! failures conj cause))
+       st/ongoing-tasks tasks}
       (try
         (ptk/emit! store (dps/initialize-persistence))
         (await (f {:file-id file-id :response response :failures failures
-                   :requests requests :store store}))
+                   :requests requests :store store :tasks tasks}))
         (finally
           (rx/dispose! store)
           (rx/end! response))))))
@@ -791,3 +797,60 @@
        (t/is (= :saved (get-in @store [:persistence :status])))
        (t/is (empty? (get-in @store [:persistence :queue]))))
      (fn [_ _] (rx/of {:revn 1})))))
+
+;; Leave-page guard tests.
+
+;; Scenario: an edit is buffered, then sent, then saved. The leave-page
+;; guard turns on with the buffered edit, stays on while the save is in
+;; flight, and turns off once it lands. Proves: unsaved edits always keep
+;; the browser's leave-page warning on.
+(t/deftest ^:async unsaved-edits-keep-the-leave-page-guard
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store tasks]}]
+       (ptk/emit! store (local-commit file-id))
+       (await (async/wait-for #(contains? @tasks :persistence)
+                              "a buffered edit turns the guard on"))
+       (ptk/emit! store ::dps/force-persist)
+       (await (async/wait-for #(seq @requests) "the edit is sent"))
+       (t/is (contains? @tasks :persistence) "the guard stays on while the save is in flight")
+       (rx/push! response {:revn 1})
+       (await (async/wait-for #(not (contains? @tasks :persistence))
+                              "the save turns the guard off"))
+       (t/is (= :saved (get-in @store [:persistence :status])))))))
+
+;; Scenario: a second edit arrives while the first is being saved, and the
+;; first save lands while the second edit is still in the buffer. The queue
+;; is empty at that point, yet the guard stays on until the second edit is
+;; saved. Proves: edits waiting in the buffer keep the leave-page warning on.
+(t/deftest ^:async edits-buffered-during-a-save-keep-the-leave-page-guard
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store tasks]}]
+       (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+       (await (async/wait-for #(= 1 (count @requests)) "the first edit is sent"))
+       (ptk/emit! store (local-commit file-id))
+       (rx/push! response {:revn 1})
+       (await (async/wait-for #(empty? (get-in @store [:persistence :queue]))
+                              "the first save lands"))
+       (await (async/settle))
+       (t/is (contains? @tasks :persistence) "the buffered edit keeps the guard on")
+       (ptk/emit! store ::dps/force-persist)
+       (await (async/wait-for #(= 2 (count @requests)) "the buffered edit is sent"))
+       (rx/push! response {:revn 2})
+       (await (async/wait-for #(not (contains? @tasks :persistence))
+                              "the second save turns the guard off"))
+       (t/is (empty? (get-in @store [:persistence :queue])))))))
+
+;; Scenario: the save fails terminally. The edit stays queued, and so does
+;; the guard. Proves: retained edits are not dropped silently on leave.
+(t/deftest ^:async failed-save-keeps-the-leave-page-guard
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store tasks]}]
+       (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+       (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                              "the save fails"))
+       (t/is (= 1 (count (get-in @store [:persistence :queue]))))
+       (t/is (contains? @tasks :persistence) "the guard stays on for retained edits"))
+     (fn [_ _] (rx/throw (ex-info "invalid" {:type :validation}))))))

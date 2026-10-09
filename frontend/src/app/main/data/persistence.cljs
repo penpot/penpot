@@ -20,6 +20,7 @@
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -38,6 +39,8 @@
 (def ^:private saving-stall-timeout-ms (* 5 60 1000))
 (def ^:private saving-check-interval-ms 30000)
 (def ^:private save-wait-timeout-ms (* 2 60 1000))
+;; Longer than the stall threshold so a hung save is reported before it is retried.
+(def ^:private save-request-timeout-ms (* 7 60 1000))
 
 (defn terminal-status?
   "True when a persistence snapshot releases waiters: a failed save, or
@@ -383,6 +386,13 @@
                 :features features}]
     ;; UI read-only mode does not invalidate already queued edits.
     (->> (update-file-request request-id params)
+         ;; Fails an unanswered request as a transient network error, so the
+         ;; retry path resends it instead of blocking the queue.
+         (rx/timeout save-request-timeout-ms
+                     (rx/throw (ex-info "The save request timed out"
+                                        {:type :network
+                                         :code :save-request-timeout
+                                         :file-id file-id})))
          (rx/take 1)
          ;; A response that carries no revision, including one that never
          ;; arrived, is treated as a failed save rather than a saved file.
@@ -552,6 +562,17 @@
           (rx/of (run-persistence-task))
           (rx/empty))))))
 
+(defn- sync-unload-guard
+  "Turns the browser's leave-page warning on while edits are unsaved:
+  buffered, queued, or retained after a failed save."
+  [buffered?]
+  (ptk/reify ::sync-unload-guard
+    ptk/EffectEvent
+    (effect [_ state _]
+      (if (or buffered? (seq (dm/get-in state [:persistence :queue])))
+        (swap! st/ongoing-tasks conj :persistence)
+        (swap! st/ongoing-tasks disj :persistence)))))
+
 (defn initialize-persistence
   []
   (ptk/reify ::initialize-persistence
@@ -559,6 +580,9 @@
     (watch [_ _ stream]
       (log/debug :hint "initialize persistence")
       (let [stoper-s (rx/filter (ptk/type? ::initialize-persistence) stream)
+
+            ;; True while local commits wait in the buffer for the next flush.
+            buffered? (volatile! false)
 
             local-commits-s
             (->> stream
@@ -602,6 +626,19 @@
               (rx/map #(ptk/data-event ::persistence-notification))
               (rx/take-until stoper-s))
 
+         ;; Syncs the leave-page warning on every local commit and on every
+         ;; queue change (append after a flush, discard after a save).
+         (->> (rx/merge
+               (rx/of false)
+               (->> local-commits-s
+                    (rx/map (fn [_] (vreset! buffered? true))))
+               (->> stream
+                    (rx/filter #(or (ptk/type? ::append-commit %)
+                                    (ptk/type? ::discard-commit %)))
+                    (rx/map (fn [_] @buffered?))))
+              (rx/map sync-unload-guard)
+              (rx/take-until stoper-s))
+
          (->> local-commits-s
               (rx/debounce 200)
               (rx/map (fn [_]
@@ -614,6 +651,7 @@
          (->> local-commits-s
               (rx/take-until stoper-s)
               (rx/buffer-until notifier-s)
+              (rx/tap (fn [_] (vreset! buffered? false)))
               (rx/mapcat merge-commit)
               (rx/map append-commit)
               (rx/finalize (fn []
