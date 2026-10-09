@@ -5,29 +5,15 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.test-helpers.composable.core
-  "The domain-agnostic ENGINE of the composable test model (see
-   `mem:frontend/composable-component-tests`):
+  "The domain-agnostic engine of the composable test model (see
+   `mem:frontend/composable-component-tests`): the situation (file, roles,
+   vars and the log of applied operations), node identity, strict-presence
+   lookup, the `IOperation` and `IEnumerable` protocols, the operators
+   `in-sequence`, `one-of`, `optional`, `skip` and `test-that`, and the plain
+   runners `run-variant` / `run-all`. Component operations live behind the
+   `comp` boundary (`app.common.test-helpers.composable.comp.*`).
 
-     - a `situation` carrying the in-memory file value, named ROLE bindings,
-       a `:vars` map, and an ordered record of applied operations,
-     - node identity (`assign-id`) + the applied-log (`record-application`,
-       `applied?`, `describe-applied`),
-     - strict-presence lookup that throws a diagnostic error on a missing name,
-     - the `IOperation` protocol (single method `apply-to`) and the
-       `IEnumerable` protocol behind variant enumeration,
-     - the composition operators `in-sequence`, `one-of`, `optional`, `skip`,
-       and the inline-assertion operation `test-that`,
-     - the enumerating pure runners `run-variant` / `run-all` (the frontend
-       interpreter in `frontend-tests.composable-tests.interpreter` is the
-       event-dispatching counterpart and the test-facing entry point).
-
-   No Penpot domain terms live here; the component-specific operations sit
-   behind the `comp` boundary (`app.common.test-helpers.composable.comp.*`).
-
-   Shape references use the existing label->uuid system (`app.common.test-helpers.ids-map`)
-   rather than a parallel binding map: a binding name in an operation IS a
-   shape label, resolved through `thi/id`. The situation adds the applied-log and
-   the strict-presence discipline on top of that substrate."
+   A shape name in an operation is a test label (`app.common.test-helpers.ids-map`)."
   (:refer-clojure :exclude [apply-to])
   (:require
    [app.common.test-helpers.files :as thf]
@@ -39,38 +25,19 @@
    [clojure.test :as t]))
 
 ;; ---------------------------------------------------------------------------
-;; Situation
-;;
-;; A situation wraps the in-memory Penpot file value together with the record of
-;; what has been applied to it. The environment of *shape* bindings is the
-;; global label->uuid map (reset per variant by the runners), so the situation
-;; does not duplicate it; it only adds:
-;;   :file        - the current in-memory file value
-;;   :applied-log - vector of application records, in application order
+;; Situation: the in-memory file value with its roles, vars and the log of
+;; what was applied to it. Shape labels live in the global label map, which
+;; the runners reset per variant.
 ;; ---------------------------------------------------------------------------
 
-;; resolve-shape is defined below (strict-presence section) but referenced by
-;; role-shape above it; declare it so the forward reference resolves at load.
-(declare resolve-shape)
 (declare resolve-shape-id)
 
 (defn make-situation
-  "Create a situation from an initial in-memory file value, optionally with role
-   bindings. Roles are meaningful named objects of the configuration the setup
-   built (e.g. :main-instance, :copy-instance), passed as shape *labels*. The
-   labels are resolved to ids IMMEDIATELY (at construction, while the labels are
-   freshly valid) and the situation stores the resolved ids. This is essential:
-   the global label->id map is time-varying and shared, so resolving a role label
-   later (e.g. in another enumerated variant's run) would be unsound; capturing
-   the id at setup time makes each situation resolve its roles against the file it
-   was built with, independent of the global map's later state.
-
-   The situation also carries:
-     :applied   - ordered vector of operation ids, in application order
-                  (so the full sequence is always recoverable from the situation)
-     :node-data - map of operation-id -> the record that operation
-                  wrote about its own application (keyed by NODE IDENTITY, not by
-                  a node-kind tag), so each node retrieves its own record."
+  "A situation for `file`, with `roles` (role key -> shape label) resolved to
+   ids at once: the label map changes from variant to variant, so a role keeps
+   the id of the file it was built with. `:applied` holds the ids of the
+   applied operations in order, `:node-data` what each recorded about its
+   application."
   ([file] (make-situation file {}))
   ([file roles]
    {:file file
@@ -85,20 +52,15 @@
   (:file situation))
 
 (defn with-file
-  "Return a situation with its file value replaced (the threaded result of
-   applying a transformation through the production change pipeline)."
+  "`situation` with its file replaced by `file'`."
   [situation file']
   (assoc situation :file file'))
 
 
 (defn with-aux-files
-  "Return a situation carrying AUXILIARY files (a map of file-id -> file value)
-   beyond the primary `:file`. Used by cross-file configurations (e.g. a copy in
-   the primary/current file whose main lives in a linked LIBRARY file): the
-   primary `:file` stays the current file the role accessors resolve against,
-   while the auxiliary files travel alongside so an interpreter can install them
-   too (e.g. into the frontend store's `:files`, so cross-file sync can run).
-   The primary file is NOT included here."
+  "`situation` with auxiliary files (file id -> file), such as a linked
+   library, besides its current file. Roles resolve against the current file;
+   an interpreter installs the auxiliary ones next to it."
   [situation files-by-id]
   (assoc situation :aux-files files-by-id))
 
@@ -108,14 +70,10 @@
   [situation]
   (get situation :aux-files {}))
 
-;; ----- Node identity (central, no inheritance) -----------------------------
+;; ----- Node identity -------------------------------------------------------
 ;;
-;; Records are value-equal in Clojure, so two structurally-identical nodes would
-;; collide as map keys. Each node therefore carries an explicit unique id under
-;; the reserved key ::id, stamped at construction by `assign-id` (the single
-;; thing every node constructor must call). The id machinery — stamping, and the
-;; record/retrieve-by-id pair below — is implemented ONCE here and shared by all
-;; nodes as plain functions; nodes never reimplement it, they just pass `this`.
+;; Records with equal fields are equal, so every node constructor stamps a
+;; unique id under ::id with `assign-id`; what a node records is keyed by it.
 
 (defn assign-id
   "Stamp a fresh unique id onto a node record (reserved key ::id). Every node
@@ -131,9 +89,8 @@
 ;; ----- Self-description, keyed by node identity ----------------------------
 
 (defn- node-kind
-  "A short readable kind name for a node, derived from its record type (no
-   per-node boilerplate, faithful to the actual type). E.g. a ChangeAttr record
-   yields \"change-attr\"."
+  "The kebab-case name of a node's record type: a ChangeProperty record
+   yields \"change-property\"."
   [node]
   (let [cls   (or #?(:clj  (some-> ^Class (type node) .getSimpleName)
                      :cljs (some-> node type .-name (str/split #"\.") last))
@@ -145,44 +102,30 @@
     kebab))
 
 (defn record-application
-  "Record what an operation `node` did into `situation`, keyed by the node's
-   identity, and append its id to the ordered :applied sequence. `record` is an
-   arbitrary map describing the application; the node retrieves it later via
-   `node-data` by passing itself. The node's kind (from its type) is merged in
-   under ::kind so the application can be rendered (see `describe-applied`)
-   without the node needing to name itself. Both consumers (inspection methods,
-   undo) read through node identity and ignore the extra ::kind key."
+  "Record in `situation` that `node` was applied, with `record`, a map of what
+   it did, under its identity (read back with `node-data`). The node's kind
+   goes in under ::kind for `describe-applied`."
   [situation node record]
   (-> situation
       (update :applied conj (node-id node))
       (assoc-in [:node-data (node-id node)] (assoc record ::kind (node-kind node)))))
 
 (defn node-data
-  "The record that `node` wrote about its own application in `situation`, or nil
-   if it has not been applied. Keyed by node identity."
+  "What `node` recorded about its application in `situation`, or nil when it
+   was not applied."
   [situation node]
   (get-in situation [:node-data (node-id node)]))
 
-(defn applied-ids
-  "The ordered vector of operation ids applied to the situation (the full
-   sequence, recoverable from the situation)."
-  [situation]
-  (:applied situation))
-
 (defn applied?
-  "Whether `operation` ran in this situation. Identity-based: true iff this exact
-   operation node (by its `::id`) recorded an application. Works through `optional`
-   / `one-of`: a chosen alternative records itself under its own identity, so
-   querying with the raw operation answers correctly. Bind an operation to a value
-   ONCE and reuse it (in the composition AND in any `Test` that queries it), so the
-   id you ask about is the id that ran."
+  "Whether this exact `operation` node ran in `situation`, also when it was
+   the chosen alternative of a `one-of` or `optional`. Bind an operation to a
+   value once and use that value both in the composition and in the query."
   [situation operation]
   (contains? (:node-data situation) (node-id operation)))
 
 
 (defn- render-application
-  "Render one (non-choice) application record as a short human-readable string.
-   Content-agnostic: uses ::kind and the record's own fields."
+  "One application record (not a choice) as a short readable line."
   [record]
   (let [kind (::kind record)
         args (dissoc record ::kind)]
@@ -195,22 +138,17 @@
   (some-> (node-data situation node) render-application))
 
 (defn describe-applied
-  "A human-readable, ordered transcript of the operations that produced
-   `situation` — one line per application, in order. Built purely from the
-   situation's recorded :applied ids and :node-data records (each node's own
-   self-description), so it is faithful to what actually ran, including the branch
-   a one-of chose. Used to label failures with the exact sequence at hand."
+  "The transcript of the operations that produced `situation`, one line per
+   application in order, including the branch each one-of chose. Failures
+   are labelled with it."
   [situation]
   (let [node-data (:node-data situation)]
     (->> (:applied situation)
          (keep (fn [id]
                  (let [record (get node-data id)]
                    (if (contains? record :chosen)
-                     ;; a one-of's choice record: if the chosen node recorded its
-                     ;; own application, its own line (also in :applied) already
-                     ;; tells the story — emit nothing to avoid a duplicate line.
-                     ;; Only a non-recording choice (a skipped `optional`) is
-                     ;; rendered here, so a skip stays visible in the transcript.
+                     ;; a choice gets a line only when the chosen node has none
+                     ;; of its own, such as a skipped `optional`
                      (let [chosen (:chosen record)]
                        (when-not (contains? node-data (::id chosen))
                          (str "one-of -> " (render-application {::kind (node-kind chosen)}))))
@@ -218,18 +156,10 @@
          (str/join "\n  "))))
 
 ;; ----- Role accessors ------------------------------------------------------
-;;
-;; A setup records role bindings (meaningful named objects of the configuration)
-;; as shape labels. `role-shape` resolves a role to the live shape in the current
-;; file, with strict presence: an absent role throws diagnostically (never nil).
-;; Specific named accessors (e.g. copy-instance) are thin wrappers, so tests read
-;; `(copy-instance situation)` rather than knowing the role key.
 
 (defn role-shape
-  "Resolve role `role-key` to the live shape in the situation's current file,
-   using the id captured at setup time. Throws a diagnostic error if the role is
-   not bound, or if its captured shape is no longer present in the current page
-   (e.g. it was deleted) — never returns nil silently."
+  "The live shape of role `role-key` in the situation's current page. Throws
+   when the role is not bound or its shape is not in the page."
   [situation role-key]
   (let [id   (get-in situation [:roles role-key])
         page (thf/current-page (file situation))]
@@ -254,9 +184,7 @@
   (contains? (:roles situation) role-key))
 
 (defn shape-by-id
-  "The live shape with `id` in the situation's current page (nil if absent). For
-   reading a shape whose id is held outside the role map — e.g. a field of a
-   tracked component object."
+  "The live shape with `id` in the situation's current page, or nil."
   [situation id]
   (ctst/get-shape (thf/current-page (file situation)) id))
 
@@ -281,53 +209,26 @@
                          :role role-key
                          :id id})))))
 
-(defn rebind-role
-  "Re-point `role-key` to the current id of shape `label` (resolved via the global
-   label map now, while it is valid). Used by state-building operations that move
-   the configuration (e.g. `make-nested-component`) and must update where a role points so
-   that role-targeted operations keep acting on the intended shape."
-  [situation role-key label]
-  (assoc-in situation [:roles role-key] (thi/id label)))
-
-(defn rebind-role-id
-  "Like `rebind-role`, but re-points `role-key` to a shape `id` directly (when the
-   operation discovered the shape by id, e.g. by following a :shape-ref chain,
-   rather than by label)."
-  [situation role-key id]
-  (assoc-in situation [:roles role-key] id))
-
 
 ;; ---------------------------------------------------------------------------
-;; Situation vars — arbitrary named values beyond roles
-;;
-;; Roles name SHAPES (resolved from labels to ids). Some operations need to track
-;; named values that are NOT shapes — e.g. a component id to instantiate next, or
-;; a counter (nesting depth). Those live in a separate `:vars` map so they do not
-;; get confused with shape roles. Set/read with `set-var`/`get-var`.
+;; Situation vars: named values that are not shapes, such as a component id
+;; or a nesting count.
 ;; ---------------------------------------------------------------------------
 
 (defn set-var
-  "Associate `k` with `v` in the situation's `:vars` (arbitrary named values that
-   are NOT shapes — e.g. a component id, a counter). Returns the situation."
+  "`situation` with var `k` set to `v`."
   [situation k v]
   (assoc-in situation [:vars k] v))
 
 (defn get-var
-  "Read the value of `k` from the situation's `:vars`, or `default` (nil if
-   omitted) when absent. See `set-var`."
+  "The value of var `k` in `situation`, or `default`."
   ([situation k] (get-var situation k nil))
   ([situation k default] (get-in situation [:vars k] default)))
 
 (defn target-shape-id
-  "Resolve an operation's target to a shape id:
-     - a FUNCTION `(situation -> id)` is called with the situation (lets the target
-       be computed from situation state — e.g. a field of a tracked object —
-       resolved at apply-time so it follows state changes);
-     - a currently-bound ROLE resolves via the role (so the operation follows the
-       role as state-building ops re-point it);
-     - otherwise `target` is a label (strict-presence).
-   This is what makes a single operation composable across depth / with
-   make-nested-component et al."
+  "The shape id an operation's `target` names, resolved when the operation
+   applies: a `(situation -> id)` fn is called, a bound role gives its shape,
+   anything else is a label (strict presence)."
   [situation target]
   (cond
     (fn? target)                 (target situation)
@@ -335,20 +236,13 @@
     :else                        (resolve-shape-id situation target)))
 
 ;; ---------------------------------------------------------------------------
-;; Strict-presence lookup
-;;
-;; Resolving a binding name (shape label) that is absent must throw a DIAGNOSTIC
-;; error: it names the absent binding and lists those present. A silently-nil
-;; lookup is forbidden (it would make a declarative case a lie / a green test
-;; that asserts against nothing). Acting on a present-but-wrong-kind binding is
-;; left to crash naturally downstream.
+;; Strict-presence lookup: an absent label throws, naming the labels present,
+;; so a case never asserts against nil.
 ;; ---------------------------------------------------------------------------
 
 (defn resolve-shape
-  "Resolve a shape binding name (label) to the actual shape in the situation's
-   current page, throwing a diagnostic error if the name is not bound to a shape
-   that exists in that page. The diagnostic lists the labels of the shapes that
-   ARE present, derived from the file itself (not from a parallel binding map)."
+  "The shape labelled `name` in the situation's current page. Throws, listing
+   the labels present, when there is none."
   [situation name]
   (let [the-file (file situation)
         page     (thf/current-page the-file)
@@ -367,72 +261,41 @@
     shape))
 
 (defn resolve-shape-id
-  "Resolve a shape binding name (label) to its uuid, with strict-presence
-   diagnostics (see `resolve-shape`)."
+  "The id of the shape labelled `name` (see `resolve-shape`)."
   [situation name]
   (:id (resolve-shape situation name)))
 
 ;; ---------------------------------------------------------------------------
-;; Operation protocol
-;;
-;; An OPERATION is a step in a composition. Most operations TRANSFORM the
-;; situation (an edit, a structural change, a nesting), but some do not (a `Test`
-;; asserts and returns the situation unchanged; `Skip` is a no-op) — hence the
-;; genus is "operation", not "transformation". An operation is reified as DATA (a
-;; record), not a bare function, so it is printable and navigable. `apply-to`
-;; takes the operation and a situation and returns a (possibly identical)
-;; situation; it may also record its own application. The method cannot be named
-;; `apply` (core clash).
+;; Operation protocol: a step of a composition, as a record so it prints.
+;; `apply-to` returns the situation after it, recording its application.
 ;; ---------------------------------------------------------------------------
 
 (defprotocol IOperation
   (apply-to [operation situation]
-    "Apply this operation to `situation`, returning a (possibly identical)
-     situation."))
-
+    "`situation` after this operation."))
 
 ;; ---------------------------------------------------------------------------
-;; Enumeration
-;;
-;; A composed operation may stand for MANY concrete cases (because `one-of`
-;; offers alternatives). Enumeration turns one composed operation into the
-;; sequence of fully-concrete operations it represents — each of which has
-;; no remaining choice and can be `apply-to`'d directly.
-;;
-;; Enumeration is a generic-engine concern: only the composition operators
-;; (`in-sequence`, `one-of`) implement it. Leaf/subject operations (e.g. the
-;; component nodes) need not know about it — the top-level `enumerate` falls back
-;; to "an operation with no choice enumerates to itself", so a plain node yields a
-;; single variant (itself). This keeps `apply-to` and `enumerate` orthogonal and
-;; keeps the `comp` node library free of enumeration code.
+;; Enumeration: a composed operation stands for one concrete operation per
+;; combination of its choices. Only the operators implement `IEnumerable`; any
+;; other operation enumerates to itself.
 ;; ---------------------------------------------------------------------------
 
 (defprotocol IEnumerable
   (-enumerate [operation]
-    "Return a sequence of fully-concrete operations this one represents."))
+    "The concrete operations, with no choice left, this one stands for."))
 
 (defn enumerate
-  "The concrete operations represented by `operation`. Falls back to a single
-   variant (the operation itself) for anything that does not implement
-   IEnumerable (i.e. leaf operations with no internal choice)."
+  "The concrete operations `operation` stands for."
   [operation]
   (if (satisfies? IEnumerable operation)
     (-enumerate operation)
     [operation]))
 
 ;; ---------------------------------------------------------------------------
-;; Composition operator: sequence
-;;
-;; A `Sequence` holds an ordered vector of child operations and applies them
-;; left-to-right, THREADING the situation through each: the situation returned
-;; by one child is the input to the next. Operations do not commute, so order
-;; is explicit. Its enumeration is the CARTESIAN PRODUCT of its children's
-;; variants (with single-variant children this is exactly one Sequence), which
-;; is what makes a `one-of`/`optional` composed inside a sequence multiply the
-;; case out into a matrix.
-;;
-;; The constructor is named `in-sequence` because `sequence` is a clojure.core
-;; name and must not be shadowed.
+;; Sequence: applies its steps in order, threading the situation. It
+;; enumerates to the cartesian product of its steps' variants, which is what
+;; multiplies a case out into a matrix. (`sequence` is a core name, hence
+;; `in-sequence`.)
 ;; ---------------------------------------------------------------------------
 
 (declare ->Sequence)
@@ -446,45 +309,30 @@
 
   IEnumerable
   (-enumerate [_]
-    ;; Cartesian product: every combination of one concrete variant per step,
-    ;; each combination rewrapped as a concrete Sequence. With single-variant
-    ;; steps this yields exactly one Sequence (the all-singletons case).
     (->> steps
-         (map enumerate)                 ; step -> seq of concrete variants
+         (map enumerate)
          (reduce (fn [acc step-variants]
                    (for [combo   acc
                          variant step-variants]
                      (conj combo variant)))
-                 [[]])                    ; seed: one empty combination
+                 [[]])
          (map ->Sequence))))
 
 (defn in-sequence
-  "Constructor for the sequence operator: apply `steps` (a seq of
-   transformations) in order, threading the situation through each."
+  "Constructor for the sequence operator: apply `steps` in order."
   [steps]
   (->Sequence (vec steps)))
 
-
 ;; ---------------------------------------------------------------------------
-;; Composition operator: one-of
-;;
-;; `one-of` offers a set of alternative transformations: it represents N cases,
-;; one per alternative. It is a pure *enumeration* construct — it has no single
-;; apply semantics, because applying it would mean arbitrarily picking one
-;; alternative. So `apply-to` on a raw OneOf is an error; it must be enumerated
-;; first (the runner does this). Its `-enumerate` is the UNION of its
-;; alternatives' enumerations, so `one-of` composed inside `in-sequence`
-;; multiplies out correctly via the sequence's cartesian product.
+;; One-of: one case per alternative. It cannot be applied, only enumerated:
+;; each variant is a `RecordedChoice` that records which alternative ran.
 ;; ---------------------------------------------------------------------------
 
 (declare record-choice)
 
 (defrecord RecordedChoice [one-of-id chosen]
-  ;; Internal node produced by OneOf enumeration. Applying it records, under the
-  ;; originating one-of's identity, which alternative was chosen, then applies
-  ;; that alternative. This is how `get-choice` (read by the test holding the
-  ;; one-of) recovers the choice from the resulting situation. It is already
-  ;; concrete, so it enumerates to itself.
+  ;; A variant of a one-of: records the choice under the one-of's identity
+  ;; (see `get-choice`), then applies the chosen operation.
   IOperation
   (apply-to [this situation]
     (->> (record-choice situation this)
@@ -503,21 +351,15 @@
 
   IEnumerable
   (-enumerate [this]
-    ;; Each alternative may itself enumerate to several concrete variants; every
-    ;; resulting concrete variant is wrapped so that, when applied, it records
-    ;; this one-of's choice under this one-of's identity.
     (for [alt     alternatives
           variant (enumerate alt)]
       (->RecordedChoice (node-id this) variant))))
 
 (defn one-of
-  "Constructor for the one-of operator: represents one case per alternative in
-   `alternatives`. Used to sweep a set of variants (e.g. several attribute
-   changes) across an otherwise-shared case. Carries an identity so the choice it
-   made in a given enumerated run can be recovered via `get-choice`."
+  "Constructor for the one-of operator: one case per alternative of
+   `alternatives`. Ask it which one ran with `get-choice`."
   [alternatives]
   (assign-id (->OneOf (vec alternatives))))
-
 
 (defrecord Skip []
   IOperation
@@ -526,18 +368,12 @@
   (-enumerate [self] [self]))
 
 (defn skip
-  "The identity operation: applies as a no-op, enumerates to itself. The building
-   block of `optional`."
+  "The operation that changes nothing."
   []
   (->Skip))
 
 (defrecord Test [assert-fn]
-  ;; An operation that makes ASSERTIONS at this point in the sequence and leaves
-  ;; the situation unchanged. `assert-fn` is a (situation -> any) that performs the
-  ;; assertions itself (e.g. calls `t/is`), exactly like an external asserter — so
-  ;; checks can be placed at INTERMEDIATE steps, not only at the end. It records
-  ;; its application (so the transcript shows where checkpoints sit) but changes
-  ;; nothing. Concrete, so it enumerates to itself.
+  ;; Runs assertions at its point of the sequence and changes nothing.
   IOperation
   (apply-to [this situation]
     (assert-fn situation)
@@ -546,60 +382,37 @@
   (-enumerate [self] [self]))
 
 (defn test-that
-  "Constructor for an inline `Test` operation. `assert-fn` is a (situation -> any)
-   that performs assertions (it is run for side effects; its return is ignored).
-   Place it inside an `in-sequence` to assert at that point in the trajectory.
-   Typically queries `applied?`/`get-choice`/`has-property-of` to decide what to
-   assert for the current enumerated variant."
+  "Constructor for an inline assertion: `assert-fn` (situation -> any) runs
+   its assertions at this point of the sequence."
   [assert-fn]
   (assign-id (->Test assert-fn)))
 
 (defn optional
-  "`(optional t)` = `(one-of [t (skip)])`: sweeps WITH and WITHOUT `t` across a
-   case (two enumerated variants). Kept as its own named constructor for
-   readability. The workhorse for adding a state-building step (e.g.
-   `(optional (make-nested-component))`) as an axis over an existing case."
+  "`(one-of [t (skip)])`: the case with and without `t`."
   [t]
   (one-of [t (skip)]))
 
 (defn get-choice
-  "The alternative this `one-of` chose in `situation` (the concrete transformation
-   that actually ran for this branch), or nil if it did not run in this variant.
-   Recovered by node identity, so the test holds the one-of and asks it."
+  "The alternative `one-of` chose in `situation`, or nil when it did not run."
   [situation one-of]
   (:chosen (node-data situation one-of)))
 
 ;; ---------------------------------------------------------------------------
-;; Executors
-;;
-;; Build a fresh situation from a setup thunk and apply a (possibly composed)
-;; OPERATION. `run-variant` runs one already-concrete variant; `run-all`
-;; enumerates a composed operation and runs every variant. Neither makes a
-;; judgment or touches clojure.test — `check` (in
-;; `frontend-tests.composable-tests.interpreter`) is the test-facing entry point. (Assertions can also live INSIDE the operation, via
-;; `Test`; those fire as the operation is applied.)
+;; Plain runners: apply operations only, with no sync, undo or judgment. The
+;; component cases run through `comp.runner` or the frontend interpreter.
 ;; ---------------------------------------------------------------------------
 
 (defn run-variant
-  "Run one concrete (already-enumerated) variant: build a fresh situation via
-   `setup` (a 0-arg fn returning a *situation*) and apply `operation`,
-   returning the resulting situation. Makes no judgment. Exceptions propagate.
-   This is the per-variant step `check` builds on; tests use `check`, not this."
+  "The situation after applying the concrete `operation` to a fresh one from
+   `setup`."
   [{:keys [setup operation]}]
   (->> (setup)
        (apply-to operation)))
 
-
 (defn run-all
-  "Enumerate `operation` into its concrete variants and run each (fresh setup
-   per variant, isolated label space — the id map is reset before each variant's
-   setup so per-variant setups don't clobber labels). Returns a vector of the
-   resulting situations, one per enumerated variant, in enumeration order. Makes
-   no judgment and does not touch clojure.test — see `check` (in
-   `frontend-tests.composable-tests.interpreter`) for the test-facing entry point that asserts.
-
-   `run-variant-fn` runs one variant from `{:setup :operation}` (default
-   `run-variant`); other runners pass their own."
+  "The resulting situations of every variant of `operation`, in order, each
+   run by `run-variant-fn` (default `run-variant`) on `{:setup :operation}`
+   with a fresh label map."
   ([case-map] (run-all case-map run-variant))
   ([{:keys [setup operation]} run-variant-fn]
    (->> (enumerate operation)
@@ -608,18 +421,10 @@
                 (run-variant-fn {:setup setup
                                  :operation variant}))))))
 
-
 (defn sequence-ops
-  "Flatten a CONCRETE (already-enumerated) operation into its ordered units.
-   Used by alternative interpreters (e.g. the frontend one) that dispatch
-   per-operation effects rather than calling `apply-to`.
-
-   A concrete variant is a single operation record, or a `Sequence` of them, with
-   `RecordedChoice` (the enumerated form of a one-of) appearing where a one-of was.
-   `Sequence` is flattened; a `RecordedChoice` is KEPT as a unit (it carries both
-   the chosen operation and the one-of identity, so a per-op interpreter can
-   dispatch the chosen op's effect AND record the choice for `get-choice`). Use
-   `recorded-choice?`, `choice-of`, and `choice-one-of-id` to handle those units."
+  "The steps of the concrete `variant`, in order, with sequences flattened. A
+   `RecordedChoice` stays one step, so an interpreter can record the choice
+   (`record-choice`) and run the chosen operation (`choice-of`)."
   [variant]
   (cond
     (instance? Sequence variant)
@@ -629,12 +434,12 @@
     [variant]))
 
 (defn sequence?
-  "True if `op` is a `Sequence`; its ordered steps are under `:steps`."
+  "Whether `op` is a `Sequence`; its steps are under `:steps`."
   [op]
   (instance? Sequence op))
 
 (defn recorded-choice?
-  "True if `op` is a one-of's enumerated choice wrapper."
+  "Whether `op` is a `RecordedChoice`, a variant of a one-of."
   [op]
   (instance? RecordedChoice op))
 
@@ -644,15 +449,13 @@
   (:chosen recorded-choice))
 
 (defn choice-one-of-id
-  "The identity of the one-of that produced this `RecordedChoice` (so a per-op
-   interpreter can record the choice under it, enabling `get-choice`)."
+  "The identity of the one-of a `RecordedChoice` comes from."
   [recorded-choice]
   (:one-of-id recorded-choice))
 
 (defn record-choice
   "Record in `situation` the alternative `recorded-choice` selected, under its
-   one-of's identity, so `get-choice` finds it. Runners call it before applying
-   the chosen operation."
+   one-of's identity, for `get-choice`."
   [situation recorded-choice]
   (-> situation
       (assoc-in [:node-data (choice-one-of-id recorded-choice)]
@@ -660,12 +463,8 @@
       (update :applied conj (choice-one-of-id recorded-choice))))
 
 ;; ---------------------------------------------------------------------------
-;; Known failures
-;;
-;; A case assertion that a known bug breaks stays in the case as a strict
-;; expected failure: it pins the wrong value the bug gives, so the case fails
-;; when the failure changes or stops. Only the commit that fixes the bug
-;; turns it back into a plain assertion.
+;; Known failures: an assertion a known bug breaks pins the wrong value the
+;; bug gives, so the case fails when the failure changes or stops.
 ;; ---------------------------------------------------------------------------
 
 (defn known-failure

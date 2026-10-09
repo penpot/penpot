@@ -20,21 +20,13 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
-(def ^:private original "#abcdef")
+(def ^:private original setup/labeled-fill)
 (def ^:private red "#ff0000")
 (def ^:private green "#00ff00")
 
 (defn- fill-of
   [shape]
   (-> shape :fills first :fill-color))
-
-(t/deftest main-edit-syncs-to-clean-copy
-  (let [situation (r/run-variant
-                   {:setup     setup/simple-component-with-labeled-copy
-                    :operation (n/change-property :main-child :fills red)})
-        copy      (setup/copy-instance situation)]
-    (t/is (= red (fill-of copy)))
-    (t/is (nil? (:touched copy)))))
 
 (t/deftest main-edit-without-sync-leaves-copy-stale
   (let [situation (r/run-variant
@@ -43,16 +35,6 @@
                    {:sync? false})]
     (t/is (= red (fill-of (setup/main-instance situation))))
     (t/is (= original (fill-of (setup/copy-instance situation))))))
-
-(t/deftest copy-override-survives-main-edit
-  (let [situation (r/run-variant
-                   {:setup     setup/simple-component-with-labeled-copy
-                    :operation (tm/in-sequence
-                                [(n/change-property :copy-child :fills green)
-                                 (n/change-property :main-child :fills red)])})
-        copy      (setup/copy-instance situation)]
-    (t/is (= green (fill-of copy)))
-    (t/is (contains? (:touched copy) :fill-group))))
 
 (t/deftest sync-cascades-through-nested-components
   ;; The edit is on the deepest main. Its copy inside the outer main changes,
@@ -190,13 +172,6 @@
     (t/is (zero? (r/undo-depth situation)))
     (t/is (some? (tm/shape-by-id situation (n/lineage-copy-rect situation m))))))
 
-(t/deftest added-child-reaches-copy
-  (let [add       (n/add-child :main-root :new-child)
-        situation (r/run-variant
-                   {:setup     setup/simple-component-with-copy
-                    :operation add})]
-    (t/is (some? (n/materialized-instance-child add situation (setup/copy-root situation))))))
-
 (t/deftest undo-removes-added-child-from-main-and-copy
   (let [situation (r/run-variant
                    {:setup     setup/simple-component-with-copy
@@ -320,7 +295,8 @@
     (t/is (= original (level-fill situation m 0)))
     (t/is (zero? (r/undo-depth situation)))))
 
-;; A user operation whose undo changes put back a different fill.
+;; A user operation that changes the opacity of the copy root and whose
+;; undo changes also rename it.
 (defrecord WrongUndoEdit []
   n/IComponentOperation
   (op-kind [_] :user)
@@ -348,7 +324,7 @@
           (tm/record-application this {})))))
 
 ;; A user operation that changes the file with no undo changes.
-(defrecord UndoableEdit []
+(defrecord EditWithoutUndo []
   n/IComponentOperation
   (op-kind [_] :user)
 
@@ -387,18 +363,20 @@
                                   :operation (->WrongUndoEdit)})]
     ;; the redo leaves the wrong name in place, and so does the variant undo
     (t/is (= [:undo :redo :variant-undo] (phases situation)))
+    (t/is (= (repeat 3 #{[:object :copy-root :name]})
+             (map :signature (uc/failures situation))))
     (t/is (= {:name "Wrong"}
              (-> (uc/failures situation) first :diff second :data :pages-index
                  vals first :objects (get :copy-root))))))
 
 (t/deftest round-trip-reports-a-change-with-no-undo-entry
   (let [situation (r/run-variant {:setup     setup/simple-component-with-copy
-                                  :operation (->UndoableEdit)})]
+                                  :operation (->EditWithoutUndo)})]
     (t/is (= [:no-undo-entry] (phases situation)))))
 
 (t/deftest round-trip-can-be-turned-off
   (let [situation (r/run-variant {:setup      setup/simple-component-with-copy
-                                  :operation  (->UndoableEdit)
+                                  :operation  (->EditWithoutUndo)
                                   :undo-check {:off "testing the switch"}})]
     (t/is (empty? (uc/failures situation)))))
 
@@ -415,14 +393,6 @@
                                  (n/change-property (n/copy-rect-of m) :fills green)])})]
     (t/is (empty? (uc/failures situation)))
     (t/is (= red (fill-of (tm/shape-by-id situation (n/lineage-rect situation m)))))))
-
-(t/deftest failures-carry-what-differs
-  (let [situation (r/run-variant {:setup     setup/simple-component-with-copy
-                                  :operation (->WrongUndoEdit)})]
-    (t/is (= [#{[:object :copy-root :name]}
-              #{[:object :copy-root :name]}
-              #{[:object :copy-root :name]}]
-             (mapv :signature (uc/failures situation))))))
 
 (t/deftest signature-names-what-differs
   (let [shape    {:id (thi/new-id! :shape) :name "A" :opacity 1}

@@ -1,4 +1,3 @@
-import { LibraryComponent } from "@penpot/plugin-types";
 import { TestCase } from "../test-suite/TestCase.ts";
 import { Situation } from "../core/Situation";
 import { Color } from "../model/Color";
@@ -21,9 +20,9 @@ const RED = new Color("#ff0000"); // the component the copy swaps to
  *
  * A copy of a component that nests another overrides its own root's opacity,
  * swaps its nested copy for a third component, then resets the nested copy. The
- * reset undoes the swap and must change nothing outside the nested copy; today it
- * also clears the root's opacity override (F12 in the stabilization plan), which
- * the case pins as a known failure.
+ * reset undoes the swap and must change nothing outside the nested copy. It also
+ * clears the root's opacity override (F12 in the stabilization plan), pinned as a
+ * known failure.
  */
 export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase {
     const opCreateComponent = new OpCreateNestableComponent(new ContentCreationStrategyRectangle(BASELINE));
@@ -33,13 +32,7 @@ export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase
     const { copyInstance } = opCreateComponent.roles;
 
     const copyNested = (s: Situation) => opCreateComponent.getNestedInstance(s, 1);
-    const redComponent = (s: Situation): LibraryComponent => {
-        const component = s.get(opCreateRed.roles.mainInstance).component();
-        if (component === null) {
-            throw new Error("the red main instance has no component");
-        }
-        return component;
-    };
+    const redComponent = (s: Situation) => opCreateRed.getMainComponent(s);
 
     return new TestCase(
         "ResetOfNestedSwapKeepsTopCopyOverrides",
@@ -47,8 +40,8 @@ export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase
             "another component with a red rectangle is created. A copy of the outer component " +
             "lowers its own opacity, swaps its nested copy for the red component, and then resets " +
             "the nested copy. The reset must undo the swap (the nested copy shows the original " +
-            "rectangle again) and leave the copy's own opacity override alone. Today the reset " +
-            "also clears that override (known failure F12).",
+            "rectangle again) and leave the copy's own opacity override alone. The reset also " +
+            "clears that override (known failure F12).",
         new OpSequence(
             opCreateComponent,
             opCreateRed,
@@ -64,9 +57,9 @@ export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase
                 // the reset clears the opacity, which the API then reads as null
                 Assert.knownFailure<number | null>(
                     "F12",
-                    opacity.read(s.get(copyInstance)) ?? null,
                     0.5,
                     null,
+                    opacity.read(s.get(copyInstance)) ?? null,
                     (a, b) => a === b
                 );
             })

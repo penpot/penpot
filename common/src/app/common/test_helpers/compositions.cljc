@@ -19,6 +19,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]))
 
 ;; ----- File building
@@ -82,6 +83,35 @@
         (ths/add-sample-shape child-label
                               (merge shape
                                      child-params)))))
+
+(defn add-grid-frame
+  [file frame-label & {:keys [] :as params}]
+  ;; Generated shape tree:
+  ;; :frame-label [:name Frame1 :layout :grid], with no rows, columns or cells
+  (add-frame file frame-label (merge {:layout :grid
+                                      :layout-grid-dir :row
+                                      :layout-grid-rows []
+                                      :layout-grid-columns []
+                                      :layout-grid-cells {}}
+                                     params)))
+
+(defn place-in-grid-columns
+  "Give the grid frame `frame-label` one row and `columns` flex columns, and
+   put each child of it in `labels-by-column` (1-based column -> label) in
+   the cell of that column."
+  [file frame-label columns labels-by-column]
+  (let [frame (reduce (fn [frame _] (ctl/add-grid-column frame {:type :flex :value 1}))
+                      (ctl/add-grid-row (ths/get-shape file frame-label) {:type :flex :value 1})
+                      (range columns))
+        cells (reduce-kv (fn [cells column label]
+                           (let [[id _] (d/seek #(= column (:column (val %))) cells)]
+                             (assoc-in cells [id :shapes] [(thi/id label)])))
+                         (:layout-grid-cells frame)
+                         labels-by-column)]
+    (-> file
+        (ths/update-shape frame-label :layout-grid-rows (:layout-grid-rows frame))
+        (ths/update-shape frame-label :layout-grid-columns (:layout-grid-columns frame))
+        (ths/update-shape frame-label :layout-grid-cells cells))))
 
 (defn add-minimal-component
   [file component-label root-label
