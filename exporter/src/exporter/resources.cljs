@@ -4,32 +4,35 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.handlers.resources
+(ns exporter.resources
   "The run's local resources: the artifact files the runner parks in
-  the temp area until the settle moves them into the job's completion,
-  zipped once a run packs more than one."
+  the injected temp area until the settle moves them into the job's
+  completion, zipped once a run packs more than one.
+
+  Same operations as the legacy `app.handlers.resources`, adapted:
+  the temp area arrives injected (no global), and the zip close is
+  awaited instead of chained. The per-file deletion timers of the old
+  shell are gone on purpose: the tmpdir registry owns every path and
+  releases it on the settle."
   (:require
    ["archiver" :as arc]
    ["node:fs" :as fs]
    ["node:path" :as path]
    [app.common.uuid :as uuid]
-   [app.util.mime :as mime]
-   [app.util.shell :as sh]
    [cljs.core :as c]
    [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [exporter.util.mime :as mime]))
 
-(defn- get-path
-  [type id]
-  (path/join sh/tmpdir (str/concat  "penpot.resource." (c/name type) "." id)))
+(defn- resource-path
+  [tmpdir type id]
+  (path/join tmpdir (str/concat "penpot.resource." (c/name type) "." id)))
 
 (defn create
-  "Generates ephimeral resource object."
-  [type name]
-  (let [task-id (uuid/next)
-        path    (-> (get-path type task-id)
-                    (sh/schedule-deletion))]
-    {:path     path
+  "An ephemeral artifact descriptor of `type` named `name`, parked
+  under the injected `tmpdir`."
+  [tmpdir type name]
+  (let [task-id (uuid/next)]
+    {:path     (resource-path tmpdir type task-id)
      :mtype    (mime/get type)
      :name     name
      :filename (str/concat (str/replace name #"[\\/:*?\"<>|]" "_") (mime/get-extension type))
@@ -54,8 +57,8 @@
   [zip path name]
   (.file ^js zip path #js {:name name}))
 
-(defn close-zip
+(defn ^:async close-zip
   [zip]
-  (p/create (fn [resolve]
-              (.on ^js zip "close" resolve)
-              (.finalize ^js zip))))
+  (await (js/Promise. (fn [resolve]
+                        (.on ^js zip "close" (fn [] (resolve nil)))
+                        (.finalize ^js zip)))))

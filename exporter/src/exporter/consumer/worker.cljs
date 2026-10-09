@@ -32,8 +32,7 @@
   (:require
    ["ioredis" :as redis]
    [app.common.logging :as l]
-   [app.config :as cf]
-   [app.jobs.utils :as job.utils]
+   [exporter.config :as cf]
    [exporter.consumer :as consumer]
    [exporter.consumer.api :as api]
    [exporter.consumer.config :as ccfg]
@@ -114,10 +113,9 @@
 
 (defn ^:async start
   "Launches the pollers over the queue and resolves the handle their
-  `stop` needs. A previous process leaves no temp files behind: the
-  boot cleans what the crash owned before the first pop."
+  `stop` needs. The temp area boots clean before the first poller: the
+  tmpdir service drops what a previous process left on its init."
   [{:keys [concurrency queue-key connect] :as cfg}]
-  (await (job.utils/clean-orphans))
   (let [running    (atom true)
         handle     {:running running :conns (atom [])}
         on-payload (fn [claim] (process cfg claim))

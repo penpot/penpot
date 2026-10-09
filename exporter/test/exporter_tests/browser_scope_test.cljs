@@ -11,9 +11,9 @@
    ["generic-pool" :as gp]
    ["node:os" :as os]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [cljs.test :as t :include-macros true]
-   [exporter.browser.scope :as scope]))
+   [exporter.browser.scope :as scope]
+   [exporter.config :as cf]))
 
 (defn- stub-locator
   []

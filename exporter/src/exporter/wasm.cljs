@@ -4,13 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.wasm
+(ns exporter.wasm
   "Headless driver for the render-wasm module under Node: the GPU-free
   counterpart of `app.render-wasm.api`. Loads the emscripten artifact, boots it
   via `init_headless`, and exposes font provisioning + shape rendering.
 
   Serialization is reused from the portable render-wasm leaves, so this
   namespace owns only the Node runtime and the headless render calls.
+  There are no promesa chains in this namespace.
 
   Requires render-wasm built with `-sENVIRONMENT=web,node`."
   (:require
@@ -23,10 +24,9 @@
    [app.common.render-wasm.serializers :as sr]
    [app.common.render-wasm.wasm :as wasm]
    [app.common.uuid :as uuid]
-   ;; Required for side effects: binds the generated enums.
-   [app.wasm.enums]
    [cuerdas.core :as str]
-   [promesa.core :as p]
+   ;; Required for side effects: binds the generated enums.
+   [exporter.wasm.enums]
    [shadow.esm :refer [dynamic-import]]))
 
 (def ^:private default-viewport-width 1920)
@@ -56,39 +56,35 @@
 
 ;; --- MODULE LIFECYCLE
 
-(defn init
+(defn ^:async init
   "Loads the render-wasm artifact under Node and boots it headless. Sets the
   shared `wasm/internal-module` so the portable serialization leaves work.
   Idempotent-ish: callers should hold the returned module."
   ([] (init default-viewport-width default-viewport-height))
   ([width height]
-   (let [dir       artifact-dir
-         js-path   (path/resolve dir "render-wasm.js")
-         wasm-path (path/resolve dir "render-wasm.wasm")
+   (let [dir        artifact-dir
+         js-path    (path/resolve dir "render-wasm.js")
+         wasm-path  (path/resolve dir "render-wasm.wasm")
          wasm-bytes (fs/readFileSync wasm-path)]
      (l/info :hint "loading render-wasm (headless)" :js js-path)
      ;; shadow-cljs :esm — use its dynamic-import helper (raw `js/import`
      ;; compiles to an undefined `import$`).
-     (->> (dynamic-import (str "file://" js-path))
-          (p/mcat
-           (fn [mod]
-             (let [factory (unchecked-get mod "default")]
-               (factory
-                #js {;; Bypass the web fetch loader: instantiate from local bytes.
-                     :instantiateWasm
-                     (fn [imports success]
-                       (-> (js/WebAssembly.instantiate wasm-bytes imports)
-                           (.then (fn [result] (success (.-instance result)))))
-                       #js {})
-                     :locateFile (fn [p] (path/resolve dir p))
-                     :printErr   (fn [s] (l/warn :wasm s))}))))
-          (p/fmap
-           (fn [module]
-             (set! wasm/internal-module module)
-             (h/call module "_init_headless" width height)
-             (set! wasm/context-initialized? true)
-             (l/info :hint "render-wasm headless module ready" :width width :height height)
-             module))))))
+     (let [mod     (await (dynamic-import (str "file://" js-path)))
+           factory (unchecked-get mod "default")
+           module  (await (factory
+                           #js {;; Bypass the web fetch loader: instantiate from local bytes.
+                                :instantiateWasm
+                                (fn [imports success]
+                                  (-> (js/WebAssembly.instantiate wasm-bytes imports)
+                                      (.then (fn [result] (success (.-instance result)))))
+                                  #js {})
+                                :locateFile (fn [p] (path/resolve dir p))
+                                :printErr   (fn [s] (l/warn :wasm s))}))]
+       (set! wasm/internal-module module)
+       (h/call module "_init_headless" width height)
+       (set! wasm/context-initialized? true)
+       (l/info :hint "render-wasm headless module ready" :width width :height height)
+       module))))
 
 ;; --- FONT PROVISIONING (on demand, mirrors the browser)
 
@@ -245,22 +241,24 @@
   [max-bytes]
   (h/call wasm/internal-module "_evict_images_to_budget" max-bytes))
 
-(defn provision-fonts
+(defn ^:async provision-fonts
   "Resolves and uploads every font needed by `shape-ids`, each family fetched
   once. `resolve-font` is an injected fn of the family map -> promise of TTF
   bytes (or nil to skip); optional `font-url` is a fn of the family map -> the
   public URL those bytes came from. This keeps the font *source* (gfonts proxy
   / custom assets / backend) out of the driver."
   [shape-ids resolve-font & {:keys [font-url]}]
-  (->> (fonts-for-shapes shape-ids)
-       (map (fn [family]
-              (->> (resolve-font family)
-                   (p/fmap (fn [bytes]
-                             (when bytes
-                               (store-font family bytes)
-                               (when-let [url (when font-url (font-url family))]
-                                 (store-font-url family url))))))))
-       (p/all)))
+  (let [families (fonts-for-shapes shape-ids)]
+    (await (js/Promise.all
+            (mapv (^:async fn [family]
+                    (let [bytes (await (resolve-font family))]
+                      (when bytes
+                        (store-font family bytes)
+                        (when-let [url (when font-url (font-url family))]
+                          (store-font-url family url)))
+                      nil))
+                  families)))
+    nil))
 
 ;; --- RENDER
 

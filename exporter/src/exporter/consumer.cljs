@@ -35,13 +35,13 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
-   [app.handlers.resources :as rsc]
-   [app.jobs.utils :as job.utils]
    [cuerdas.core :as str]
    [exporter.consumer.api :as api]
    [exporter.consumer.plan :as plan]
    [exporter.jobs :as jobs]
-   [exporter.shell :as shell]))
+   [exporter.resources :as rsc]
+   [exporter.shell :as shell]
+   [exporter.tmpdir :as tdir]))
 
 (def ^:private report-throttle-ms 250)
 (def ^:private watchdog-interval-ms 1000)
@@ -144,7 +144,7 @@
   names and partition size they served the old surface with, the same
   `single?` rule (one prepared export with one object, not forced),
   and the artifact the whole run fills."
-  [job-id token {:keys [exports kind force-multiple name skip-children is-wasm]}]
+  [job-id token tmpdir {:keys [exports kind force-multiple name skip-children is-wasm]}]
   (let [items     (normalize-items exports)
         ;; declared by the caller, never sniffed: typeless items do not
         ;; exist on the validated contract, so there is nothing to infer
@@ -166,7 +166,8 @@
      :skip-children skip-children
      :is-wasm      (boolean is-wasm)
      :counter-kind (if frames? :pages :objects)
-     :resource     (rsc/create artifact-kind
+     :resource     (rsc/create tmpdir
+                               artifact-kind
                                (or name (-> prepared first :name)))}))
 
 ;; ---- THE RUNNERS
@@ -189,14 +190,14 @@
   (let [{:keys [job-id resource counter-kind]} plan
         export   (-> plan :prepared first)
         object   (atom nil)]
-    (job.utils/track job-id (:path resource))
+    (tdir/track job-id (:path resource))
     (check-beat (await (beat :rendering (counter counter-kind 0 1) :force? true)))
     (await (render {:exports         [(assoc export
                                              :job-id job-id
                                              :skip-children (:skip-children plan))]
                     :on-object       (fn [obj]
                                        (reset! object obj)
-                                       (job.utils/track job-id (:path obj))
+                                       (tdir/track job-id (:path obj))
                                        nil)
                     :check-cancelled check-cancelled}))
     (await (shell/move (:path @object) (:path resource)))
@@ -218,7 +219,7 @@
                                  :on-progress (fn [_] nil))
         append   (fn [{:keys [filename path]}]
                    (check-cancelled)
-                   (job.utils/track job-id path)
+                   (tdir/track job-id path)
                    (vswap! rendered inc)
                    (beat :rendering
                          (counter counter-kind @rendered total))
@@ -241,10 +242,10 @@
   "The pages render one file per page; `pdfunite` stitches one pdf out
   of them all, the way the legacy export did."
   [job-id tmpdir file-id paths]
-  (let [path (job.utils/track job-id
-                              (shell/tempfile tmpdir
-                                              :prefix (str/concat "penpot.pdfunite." file-id ".")
-                                              :suffix ".pdf"))]
+  (let [path (tdir/track job-id
+                         (shell/tempfile tmpdir
+                                         :prefix (str/concat "penpot.pdfunite." file-id ".")
+                                         :suffix ".pdf"))]
     (await (shell/run-cmd "pdfunite" (into [] (concat (vec paths) [path]))))
     path))
 
@@ -258,7 +259,7 @@
         rendered  (volatile! 0)
         on-object (fn [{:keys [path]}]
                     (check-cancelled)
-                    (job.utils/track job-id path)
+                    (tdir/track job-id path)
                     (vswap! paths conj path)
                     (vswap! rendered inc)
                     (beat :rendering
@@ -307,7 +308,7 @@
   backend, the row keeps running until the lease GC turns it `aborted`,
   which is the honest state for a worker that cannot talk."
   [job-id session cause]
-  (await (job.utils/release job-id))
+  (await (tdir/release job-id))
   (jobs/release job-id)
   (try
     (await (api/fail-job job-id (failure-report cause)
@@ -341,7 +342,7 @@
         (reset! session session')
         (l/info :hint "render session minted"
                 :job-id (str job-id))
-        (let [plan     (make-plan job-id (:session-token session') params)
+        (let [plan     (make-plan job-id (:session-token session') tmpdir params)
               resource (await (run-prepared render tmpdir beat check-cancelled plan))]
           ;; the watchdog outlives the render, so the run stops it on
           ;; the way out: a run that ends badly stops beating too, or
@@ -354,7 +355,7 @@
             (await (api/complete-job-with-artifact
                     {:job-id job-id :session-id (:session-id session')}
                     artifact))
-            (await (job.utils/release job-id))
+            (await (tdir/release job-id))
             (jobs/release job-id)
             (l/info :hint "export job settled" :job-id (str job-id)
                     :outcome "completed")

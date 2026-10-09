@@ -21,8 +21,8 @@
    [app.common.exceptions :as ex]
    [app.common.transit :as t]
    [app.common.uri :as u]
-   [app.config :as cf]
-   [cljs.core :as c]))
+   [cljs.core :as c]
+   [exporter.config :as cf]))
 
 (def fetch
   "The network entry point of the client: a plain def, redefined by the

@@ -10,14 +10,14 @@
   contract this client owns."
   (:require
    ["node:fs/promises" :as fsp]
+   ["node:os" :as os]
    ["node:path" :as path]
    ["undici" :as http]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
-   [app.util.shell :as sh]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
+   [exporter.config :as cf]
    [exporter.consumer.api :as api]))
 
 (def ^:private original-fetch api/fetch)
@@ -145,7 +145,7 @@
     (try
       (let [job-id  (uuid/next)
             sid     (uuid/next)
-            tmpfile (path/join sh/tmpdir (str "test-artifact." (uuid/next)))]
+            tmpfile (path/join (os/tmpdir) (str "test-artifact." (uuid/next)))]
         (await (fsp/writeFile tmpfile "the export bytes"))
         (await (api/complete-job-with-artifact
                 {:job-id job-id :session-id sid}

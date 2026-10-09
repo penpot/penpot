@@ -39,6 +39,7 @@
    [app.common.schema :as sm]
    [exporter.browser.scope :as bscope]
    [exporter.utils.system :as system]
+   [exporter.wasm.render :as wrender]
    [exporter.wasm.scope :as scope]))
 
 (def schema:type
@@ -83,6 +84,18 @@
   [{:keys [is-wasm]}]
   (boolean is-wasm))
 
+(defn- render-env
+  "The render environment of one batch: internal and public endpoints,
+  the management key, the temp area and the image cache budget. Read
+  from the service config (wired from the environment); the worker
+  thread never resolves any of it itself."
+  [cfg]
+  {:internal-uri     (:base-uri cfg)
+   :public-uri       (:public-uri cfg)
+   :management-key   (:management-key cfg)
+   :tmpdir           (:exporter/tmpdir cfg)
+   :image-cache-size (:image-cache-size cfg)})
+
 (defn ^:async render
   "Renders every export, firing them all at once: the browser ones
   through their own scope, the wasm ones through one leased
@@ -93,7 +106,11 @@
   (let [cfg      (assoc cfg
                         ::on-object on-object
                         ::check-cancelled check-cancelled)
-        wexports (filter wasm? exports)
+        ;; Everything the worker thread needs beyond the export
+        ;; itself rides in the posted params: the worker reads no
+        ;; config and no globals.
+        wexports (map #(assoc % ::wrender/env (render-env cfg))
+                      (filter wasm? exports))
         bexports (remove wasm? exports)]
     (await (js/Promise.all
             (cond-> []

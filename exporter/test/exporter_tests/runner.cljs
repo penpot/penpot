@@ -10,30 +10,30 @@
    [cljs.test :as t]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
-   [exporter-tests.api-test]
    [exporter-tests.browser-scope-test]
    [exporter-tests.browser-test]
    [exporter-tests.consumer-api-test]
-   [exporter-tests.consumer-config-test]
-   [exporter-tests.consumer-plan-test]
    [exporter-tests.consumer-test]
    [exporter-tests.consumer-worker-test]
+   [exporter-tests.exporter-config-test]
    [exporter-tests.exporter-consumer-config-test]
    [exporter-tests.exporter-consumer-plan-test]
    [exporter-tests.exporter-jobs-test]
+   [exporter-tests.exporter-resources-test]
    [exporter-tests.exporter-shell-test]
-   [exporter-tests.jobs-test]
+   [exporter-tests.exporter-tmpdir-test]
+   [exporter-tests.exporter-util-mime-test]
+   [exporter-tests.exporter-util-object-test]
+   [exporter-tests.exporter-wasm-render-test]
+   [exporter-tests.exporter-wasm-svg-test]
+   [exporter-tests.exporter-wasm-worker-test]
    [exporter-tests.main-test]
    [exporter-tests.renderer-browser-test]
-   [exporter-tests.renderer-svg-test]
    [exporter-tests.renderer-test]
    [exporter-tests.renderer-wasm-test]
-   [exporter-tests.shell-test]
    [exporter-tests.system-test]
    [exporter-tests.wasm-pool-service-test]
-   [exporter-tests.wasm-pool-test]
    [exporter-tests.wasm-scope-test]
-   [exporter-tests.worker-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
@@ -49,26 +49,26 @@
   ['exporter-tests.browser-scope-test
    'exporter-tests.browser-test
    'exporter-tests.consumer-api-test
-   'exporter-tests.consumer-plan-test
    'exporter-tests.consumer-test
    'exporter-tests.consumer-worker-test
+   'exporter-tests.exporter-config-test
    'exporter-tests.exporter-consumer-config-test
    'exporter-tests.exporter-consumer-plan-test
    'exporter-tests.exporter-jobs-test
+   'exporter-tests.exporter-resources-test
    'exporter-tests.exporter-shell-test
-   'exporter-tests.jobs-test
+   'exporter-tests.exporter-tmpdir-test
+   'exporter-tests.exporter-util-mime-test
+   'exporter-tests.exporter-util-object-test
+   'exporter-tests.exporter-wasm-render-test
+   'exporter-tests.exporter-wasm-svg-test
+   'exporter-tests.exporter-wasm-worker-test
    'exporter-tests.main-test
-   'exporter-tests.api-test
-   'exporter-tests.worker-test
-   'exporter-tests.consumer-config-test
    'exporter-tests.renderer-browser-test
-   'exporter-tests.renderer-svg-test
    'exporter-tests.renderer-test
    'exporter-tests.renderer-wasm-test
-   'exporter-tests.shell-test
    'exporter-tests.system-test
    'exporter-tests.wasm-pool-service-test
-   'exporter-tests.wasm-pool-test
    'exporter-tests.wasm-scope-test])
 
 (assert (every? find-ns-obj test-namespaces)

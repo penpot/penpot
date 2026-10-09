@@ -66,3 +66,16 @@
       (t/is (str/includes? (str out) "hello")))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async run-cmd-passes-arguments-literally
+  ;; GHSA-4f36-m4hj-cv86 stays fixed: the wrapper runs execFile, so
+  ;; shell metacharacters in args travel literally and never execute.
+  (try
+    (let [marker (path/join (os/tmpdir) "penpot-rce-probe")
+          out    (await (shell/run-cmd "echo" (str "#000000$(touch " marker ")")))]
+      (t/is (str/includes? (str out) "$(touch ")
+            "the metacharacters traveled, they did not run")
+      (t/is (not (fs/existsSync marker))
+            "no RCE: the marker file was NOT created"))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))

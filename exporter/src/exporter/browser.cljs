@@ -23,7 +23,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.util.object :as obj]
+   [exporter.util.object :as obj]
    [exporter.utils.system :as system]))
 
 (l/set-level! :trace)

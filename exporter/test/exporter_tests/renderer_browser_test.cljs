@@ -12,9 +12,9 @@
    ["generic-pool" :as gp]
    ["node:os" :as os]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]
+   [exporter.config :as cf]
    [exporter.renderer.browser :as render]
    [exporter.renderer.svg-gradient :as grad]
    [exporter.shell :as shell]))

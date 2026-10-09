@@ -99,7 +99,7 @@ export FRONTEND_DEST="../frontend/resources/public/js";
 export EXPORT_DEST="../exporter/resources/wasm";
 
 export FRONTEND_SHARED_DEST="../frontend/src/app/render_wasm/api/shared.js";
-export EXPORT_SHARED_DEST="../exporter/src/app/wasm/shared.js";
+export EXPORT_SHARED_DEST="../exporter/src/exporter/wasm/shared.js";
 
 function clean {
     cargo clean;

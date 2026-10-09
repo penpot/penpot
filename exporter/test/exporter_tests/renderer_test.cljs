@@ -14,8 +14,8 @@
    ["node:os" :as os]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [cljs.test :as t :include-macros true]
+   [exporter.config :as cf]
    [exporter.renderer :as renderer]))
 
 ;; --- stub browser side (bitmap only: navigate once, shoot objects) ---
@@ -97,6 +97,8 @@
      :exporter/tmpdir          (os/tmpdir)
      :base-uri                 (cf/get-internal-uri)
      :public-uri               (cf/get :public-uri)
+     :management-key           "mgmt-key"
+     :image-cache-size         100
      :svgo?                    false
      :exporter.wasm/pool {:pool (stub-wasm-pool calls worker) :timeout-ms 5000}}))
 
@@ -146,6 +148,40 @@
       (t/is (some #{[:post "render"]} @calls))
       (t/is (some #{:check-cancelled} @calls))
       (t/is (not-any? #(and (vector? %) (= :goto (first %))) @calls)))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async render-posts-the-render-env-to-the-worker
+  ;; Everything the worker thread needs beyond the export itself
+  ;; travels in the posted params: the worker reads no config and no
+  ;; globals, so the lease message carries the render env.
+  (try
+    (let [calls  (atom [])
+          posted (atom nil)
+          worker (let [^js emitter (events/EventEmitter.)]
+                   (unchecked-set emitter "postMessage"
+                                  (fn [msg]
+                                    (reset! posted msg)
+                                    (js/setTimeout
+                                     (fn [] (.emit emitter "message" #js {:type "done"}))
+                                     0)))
+                   (unchecked-set emitter "terminate"
+                                  (fn [] (js/Promise.resolve nil)))
+                   emitter)
+          cfg    (assoc (test-cfg calls)
+                        :exporter.wasm/pool {:pool (stub-wasm-pool calls worker)
+                                             :timeout-ms 5000})]
+      (await ((renderer/render-fn cfg)
+              {:exports [(test-params :png {:is-wasm true})]
+               :on-object (fn [_] nil)
+               :check-cancelled (never-cancelled calls)}))
+      (let [params (transit/decode-str (unchecked-get @posted "params"))
+            env    (:exporter.wasm.render/env params)]
+        (t/is (= (cf/get-internal-uri) (:internal-uri env)))
+        (t/is (= (cf/get :public-uri) (:public-uri env)))
+        (t/is (= "mgmt-key" (:management-key env)))
+        (t/is (= (os/tmpdir) (:tmpdir env)))
+        (t/is (= 100 (:image-cache-size env)))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 

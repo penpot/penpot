@@ -26,12 +26,12 @@
    [app.common.logging :as l]
    [app.common.types.color :as ctc]
    [app.common.uri :as u]
-   [app.util.mime :as mime]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
    [exporter.browser :as browser]
    [exporter.renderer.svg-gradient :as svg-gradient]
-   [exporter.shell :as shell]))
+   [exporter.shell :as shell]
+   [exporter.util.mime :as mime]))
 
 (l/set-level! :trace)
 

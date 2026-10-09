@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.wasm.enums
+(ns exporter.wasm.enums
   "Binds this build's generated enums into the shared bridge.
 
   `shared.js` is emitted next to this file by `render-wasm/build export` and is

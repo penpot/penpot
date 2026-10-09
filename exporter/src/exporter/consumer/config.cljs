@@ -9,8 +9,8 @@
   queue they come from. Read live, so a long-lived process obeys a
   configuration change on the next poll."
   (:require
-   [app.config :as cf]
-   [cljs.core :as c]))
+   [cljs.core :as c]
+   [exporter.config :as cf]))
 
 (def queue-name
   "The queue this worker consumes: the one the `:export-assets` job-def

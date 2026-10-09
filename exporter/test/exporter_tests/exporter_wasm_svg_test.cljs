@@ -4,30 +4,30 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns exporter-tests.renderer-svg-test
+(ns exporter-tests.exporter-wasm-svg-test
+  "The SVG output of the headless pipeline over the real render-wasm
+  module: gradient defs and svg-attr fills survive the serialization."
   (:require
-   [app.renderer.svg-gradient :as svg-gradient]
-   [app.wasm :as wasm-io]
-   [app.wasm.serialize :as serialize]
-   [cljs.test :refer [deftest is testing async]]
+   [cljs.test :as t :include-macros true]
    [clojure.string :as str]
-   [promesa.core :as p]))
+   [exporter.renderer.svg-gradient :as svg-gradient]
+   [exporter.wasm :as wasm-io]
+   [exporter.wasm.serialize :as serialize]))
 
 (def gradient-stops
   [{"color" "#000000" "offset" 0 "opacity" 1}
    {"color" "#ffffff" "offset" 1 "opacity" 1}])
 
-(deftest creates-the-correct-gradient-element
+(t/deftest creates-the-correct-gradient-element
   (doseq [[gradient-type element-name]
           [["linear" "linearGradient"]
            ["radial" "radialGradient"]]]
-    (testing gradient-type
+    (t/testing gradient-type
       (let [gradient-data {"type" "gradient"
                            "gradient" {"type" gradient-type
                                        "stops" gradient-stops}}
             result         (svg-gradient/data->gradient-def "text-id" ["#000001" gradient-data])]
-        (is (= element-name (get result "name")))))))
-
+        (t/is (= element-name (get result "name")))))))
 
 (def ^:private svg-red-id (random-uuid))
 (def ^:private blue-id (random-uuid))
@@ -56,17 +56,12 @@
   [shape-id]
   (.toString (js/Buffer.from (wasm-io/render-shape-svg shape-id 1))))
 
-(deftest exporter-honours-svg-attr-fills
-  (async done
-    (->> (wasm-io/init)
-         (p/mcat
-          (fn [_]
-            (serialize/serialize-scene (scene))
-            (let [red (render-svg-string svg-red-id)
-                  blue (render-svg-string blue-id)]
-              (is (str/includes? blue "blue")
-                  "control: user fills render, so the harness works")
-              (is (str/includes? red "fill=\"red\"")
-                  "svg-attr fill survives headless serialization")
-              (p/resolved nil))))
-         (p/mcat (fn [_] (done))))))
+(t/deftest ^:async exporter-honours-svg-attr-fills
+  (await (wasm-io/init))
+  (serialize/serialize-scene (scene))
+  (let [red  (render-svg-string svg-red-id)
+        blue (render-svg-string blue-id)]
+    (t/is (str/includes? blue "blue")
+          "control: user fills render, so the harness works")
+    (t/is (str/includes? red "fill=\"red\"")
+          "svg-attr fill survives headless serialization")))

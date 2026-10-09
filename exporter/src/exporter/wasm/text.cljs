@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.wasm.text
+(ns exporter.wasm.text
   "Browser-free text-content serialization for the headless exporter. Only the
   paragraph walk is local: the binary layout and the font-id -> uuid mapping
   both come from `app.common.render-wasm.text-content`."

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.wasm.serialize
+(ns exporter.wasm.serialize
   "Browser-free shape serialization for the headless exporter: the counterpart
   of `app.render-wasm.api/set-object`, which cannot be reused directly because
   its namespace pulls React/DOM/store. Only the call sequencing lives here —
@@ -12,13 +12,13 @@
   WASM are the editor's.
 
   Covers everything except svg-raw. Image bytes and fonts are provisioned
-  separately by `app.renderer.wasm`."
+  separately by the render pipeline."
   (:require
    [app.common.render-wasm.api.props :as props]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.serialize-shape :as serialize-shape]
    [app.common.render-wasm.wasm :as wasm]
-   [app.wasm.text :as text]))
+   [exporter.wasm.text :as text]))
 
 (defn set-shape
   "Serializes a single shape into the WASM design state. The host-independent

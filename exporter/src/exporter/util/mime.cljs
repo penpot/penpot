@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.util.mime
+(ns exporter.util.mime
   "Mimetype and file extension helpers."
   (:refer-clojure :exclude [get])
   (:require
@@ -29,5 +29,3 @@
     :jpeg "image/jpeg"
     :png  "image/png"
     :webp "image/webp"))
-
-

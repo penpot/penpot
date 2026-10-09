@@ -6,10 +6,6 @@
   {:target :esm
    :runtime :node
    :output-dir "target/"
-   ;; Old reload hooks, superseded by the ^:dev metadata on the
-   ;; exporter.main vars. Listing both would run every hook twice.
-   ;; :devtools {:before-load-async app.core/stop
-   ;;            :after-load app.core/start}
 
    :modules
    {:app

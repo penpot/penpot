@@ -15,9 +15,9 @@
   namespace only plans."
   (:require
    [app.common.data :as d]
-   [app.util.mime :as mime]
    [cuerdas.core :as str]
-   [exporter.renderer :as renderer]))
+   [exporter.renderer :as renderer]
+   [exporter.util.mime :as mime]))
 
 ;; Regex to clean namefiles
 (def sanitize-file-regex #"[\\/:*?\"<>|]")

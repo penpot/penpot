@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.util.object
+(ns exporter.util.object
   "A collection of helpers for work with javascript objects."
   (:refer-clojure :exclude [set! get get-in merge update clone contains?])
   (:require

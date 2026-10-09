@@ -10,24 +10,24 @@
   `stop` and `restart` managing the running system.
 
   Render workers run this same bundle, so the thread decides what gets
-  booted: one legacy render worker (`app.wasm.worker`, engines stay
-  untouched), or the system of the main thread. Without the guard a
+  booted: one render worker (`exporter.wasm.worker`, owning the
+  headless module), or the system of the main thread. Without the guard a
   warmed pool worker would boot pools and pollers of its own and never
   post its `ready` handshake."
   (:require
    ["node:process" :as proc]
    ["node:worker_threads" :as wt]
    [app.common.logging :as l]
-   [app.config :as cf]
-   [app.wasm.worker :as wasm.worker]
    [exporter.browser :as browser]
+   [exporter.config :as cf]
    [exporter.consumer :as-alias consumer]
    [exporter.consumer.config :as ccfg]
    [exporter.consumer.worker]
    [exporter.tmpdir]
    [exporter.utils.system :as system]
    [exporter.wasm :as-alias wasm]
-   [exporter.wasm.pool]))
+   [exporter.wasm.pool]
+   [exporter.wasm.worker :as wasm.worker]))
 
 (l/setup! {:exporter :info})
 
@@ -43,7 +43,8 @@
    {:max (ccfg/concurrency)}
 
    :exporter/tmpdir
-   {:path (cf/get :tempdir)}
+   {:path    (cf/get :tempdir)
+    :job-ttl (cf/get :exporter-job-ttl 3600)}
 
    :exporter/renderer
    {::browser/pool  (system/ref :exporter.browser/pool)
@@ -51,6 +52,8 @@
     :exporter/tmpdir (system/ref :exporter/tmpdir)
     :base-uri       (cf/get-internal-uri)
     :public-uri     (cf/get :public-uri)
+    :management-key cf/management-key
+    :image-cache-size (cf/get :wasm-worker-image-cache-size)
     :svgo?          (contains? cf/flags :exporter-svgo)}
 
    ::consumer/worker

@@ -12,9 +12,9 @@
    ["node:path" :as path]
    ["node:process" :as proc]
    [app.common.logging :as l]
-   [app.config :as cf]
    [cljs.test :as t :include-macros true]
    [exporter.browser :as browser]
+   [exporter.config :as cf]
    [exporter.consumer.config :as ccfg]
    [exporter.main :as main]
    [exporter.utils.system :as system]))
@@ -59,7 +59,8 @@
                            :base-uri              "http://internal/"
                            :public-uri            "http://public/"
                            :svgo?                 false}
-   :exporter/tmpdir      {:path (path/join (os/tmpdir) "penpot-exporter-test")}})
+   :exporter/tmpdir      {:path    (path/join (os/tmpdir) "penpot-exporter-test")
+                          :job-ttl 3600}})
 
 (defn- pool-of
   []
@@ -106,7 +107,11 @@
       (t/is (= {:exporter.browser/pool (system/ref :exporter.browser/pool)
                 :exporter.wasm/pool    (system/ref :exporter.wasm/pool)}
                (select-keys renderer
-                            [:exporter.browser/pool :exporter.wasm/pool])))))
+                            [:exporter.browser/pool :exporter.wasm/pool])))
+      (t/is (= (cf/get-internal-uri) (:base-uri renderer)))
+      (t/is (= (cf/get :public-uri) (:public-uri renderer)))
+      (t/is (= cf/management-key (:management-key renderer)))
+      (t/is (= (cf/get :wasm-worker-image-cache-size) (:image-cache-size renderer)))))
   (t/testing "the queue consumer names the renderer it renders through"
     (let [worker (:exporter.consumer/worker main/system-config)]
       (t/is (= (ccfg/concurrency) (:concurrency worker)))
@@ -114,7 +119,8 @@
       (t/is (= (system/ref :exporter/renderer) (:renderer worker)))
       (t/is (= (system/ref :exporter/tmpdir) (:exporter/tmpdir worker)))))
   (t/testing "the temp area is wired from the environment"
-    (t/is (= {:path (cf/get :tempdir)}
+    (t/is (= {:path    (cf/get :tempdir)
+              :job-ttl (cf/get :exporter-job-ttl 3600)}
              (:exporter/tmpdir main/system-config)))))
 
 ;; NOTE: no test boots the production wiring: the wasm pool warms one

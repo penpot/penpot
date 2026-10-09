@@ -4,13 +4,23 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.config
+(ns exporter.config
+  "The process configuration, read from the environment.
+
+  Same shape as the legacy `app.config` it replaces: `PENPOT_`-prefixed
+  variables become kebab-case keys over the defaults, decoded and
+  validated against the schema. The one deliberate split: `prepare`
+  over an explicit env object is pure and throws on invalid input (so
+  tests exercise it), while only the wiring entry `load-config!` reads
+  the live environment and exits on it — the process never boots with
+  a config it cannot derive its management key from."
   (:refer-clojure :exclude [get])
   (:require
    ["node:buffer" :as buffer]
    ["node:crypto" :as crypto]
    ["node:process" :as process]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.flags :as flags]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -70,12 +80,13 @@
   [config]
   (flags/parse (:flags config)))
 
-(defn- read-env
-  [prefix]
-  (let [env    (unchecked-get process "env")
-        kwd    (fn [s] (-> (str/kebab s) (str/keyword)))
-        prefix (str prefix "_")
-        len    (count prefix)]
+(defn read-env
+  "The `PENPOT_`-prefixed variables of `env` as kebab-case keys, the
+  rest ignored. Takes the env object explicitly so tests pass a fake."
+  [env]
+  (let [prefix "penpot_"
+        len    (count prefix)
+        kwd    (fn [s] (-> (str/kebab s) (str/keyword)))]
     (reduce (fn [res key]
               (let [val (unchecked-get env key)
                     key (str/lower key)]
@@ -85,22 +96,32 @@
             {}
             (js/Object.keys env))))
 
-(defn- prepare-config
-  []
-  (let [env  (read-env "penpot")
-        env  (d/without-nils env)
-        data (merge defaults env)
-        data (decode-config data)]
-
+(defn prepare-config
+  "Defaults plus `env`, decoded and validated. Throws on invalid input
+  instead of exiting: only the wiring entry exits, on the live
+  environment."
+  [env]
+  (let [data (-> (merge defaults (d/without-nils (read-env env)))
+                 (decode-config))]
     (when-not (valid-config? data)
-      (let [explain (explain-config data)]
-        (println (sm/humanize-explain explain))
-        (process/exit -1)))
-
+      (throw (ex/error :type :internal
+                       :code :invalid-config
+                       :hint (sm/humanize-explain (explain-config data)))))
     data))
 
+(defn load-config!
+  "The live environment as validated config. Exits the process on
+  invalid input: without a secret there is no management key to derive,
+  so there is nothing to boot."
+  []
+  (try
+    (prepare-config (unchecked-get process "env"))
+    (catch :default cause
+      (println (ex-message cause))
+      (process/exit -1))))
+
 (def config
-  (prepare-config))
+  (load-config!))
 
 (def version
   (v/parse "%version%"))
@@ -121,11 +142,16 @@
   (or (c/get config :internal-uri)
       (c/get config :public-uri)))
 
+(defn derive-management-key
+  "The management key for `secret`: HKDF blake2b512 over \"exporter\",
+  32 bytes, base64url. Pure so tests pin the formula the backend
+  derives on its side."
+  [secret]
+  (-> (.from buffer/Buffer (crypto/hkdfSync "blake2b512" secret "exporter" "" 32))
+      (.toString "base64url")))
+
 (def management-key
   (let [key (or (c/get config :exporter-shared-key)
-                (let [secret-key  (c/get config :secret-key)
-                      derived-key (crypto/hkdfSync "blake2b512" secret-key, "exporter" "" 32)]
-                  (-> (.from buffer/Buffer derived-key)
-                      (.toString "base64url"))))]
+                (derive-management-key (c/get config :secret-key)))]
     (l/inf :hint "exporter key initialized" :key (d/obfuscate-string key))
     key))
