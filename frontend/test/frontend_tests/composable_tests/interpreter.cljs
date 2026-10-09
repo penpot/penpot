@@ -27,6 +27,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtx]
    [app.main.data.workspace.thumbnails :as dwth]
@@ -89,9 +90,14 @@
   [op situation]
   (cond
     (instance? n/ChangeProperty op)
-    (let [{:keys [target property value]} op]
-      [(dwsh/update-shapes #{(tm/target-shape-id situation target)}
-                           (fn [shape] (n/set-property shape property value)))])
+    (let [{:keys [target property value]} op
+          id (tm/target-shape-id situation target)]
+      (if (= :margin property)
+        ;; the sidebar's layout child margin
+        (let [shape (n/set-property {} property value)]
+          [(dwsl/update-layout-child [id] (select-keys shape [:layout-item-margin
+                                                              :layout-item-margin-type]))])
+        [(dwsh/update-shapes #{id} (fn [shape] (n/set-property shape property value)))]))
 
     (instance? n/EditText op)
     ;; the text editor's commit on blur, SVG renderer path
@@ -146,6 +152,9 @@
     (instance? n/Detach op)
     [(dwl/detach-component (tm/target-shape-id situation (:target op)))]
 
+    (instance? n/ResetOverrides op)
+    [(dwl/reset-component (tm/target-shape-id situation (:target op)))]
+
     (instance? n/UpdateMain op)
     [(dwl/update-component-sync (tm/target-shape-id situation (:target op))
                                 (:id (tm/file situation)))]
@@ -159,10 +168,13 @@
                            :change-selection? false)]
 
     (instance? n/NestCopy op)
-    (let [parent-id (tm/target-shape-id situation (:into op))]
-      [(dwsh/relocate-shapes #{(tm/target-shape-id situation (:copy op))}
-                             parent-id
-                             (n/nest-target-index situation parent-id))])
+    (let [parent-id (tm/target-shape-id situation (:into op))
+          copy-id   (tm/target-shape-id situation (:copy op))
+          index     (n/nest-target-index situation parent-id)]
+      (if-let [cell (:cell op)]
+        ;; the canvas drop into a grid cell
+        [(dwt/move-shapes-to-frame #{copy-id} parent-id index cell)]
+        [(dwsh/relocate-shapes #{copy-id} parent-id index)]))
 
     (instance? n/RestoreComponent op)
     [(dwl/restore-component (:id (tm/file situation))
@@ -423,14 +435,12 @@
 
 (defn- sync-op?
   "Whether the op unit `op` runs its `apply-to` on the live file instead of
-   dispatching events: assembly nodes, the reset, `skip` and inline tests."
+   dispatching events: assembly nodes, `skip` and inline tests."
   [op]
   (let [op (unwrap op)]
     (or (instance? tm/Skip op)
         (instance? tm/Test op)
-        (= :assembly (n/op-kind op))
-        ;; a user operation, but the real reset event reads browser globals
-        (instance? n/ResetOverrides op))))
+        (= :assembly (n/op-kind op)))))
 
 (defn- run-sync-op
   "Run the `apply-to` of the `sync-op?` op unit `op` on the live file and

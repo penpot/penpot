@@ -80,8 +80,12 @@
   (case property
     :fills   (assoc shape :fills (ths/sample-fills-color :fill-color value))
     :opacity (assoc shape :opacity value)
+    :name    (assoc shape :name value)
+    :margin  (assoc shape
+                    :layout-item-margin-type :simple
+                    :layout-item-margin {:m1 value :m2 value :m3 value :m4 value})
     (throw (ex-info (str "set-property: unsupported property " (pr-str property)
-                         " (supported: :fills, :opacity)")
+                         " (supported: :fills, :opacity, :name, :margin)")
                     {:property property}))))
 
 (defn- read-property
@@ -90,8 +94,10 @@
   (case property
     :fills   (-> shape :fills first :fill-color)
     :opacity (:opacity shape)
+    :name    (:name shape)
+    :margin  (-> shape :layout-item-margin :m1)
     (throw (ex-info (str "read-property: unsupported property " (pr-str property)
-                         " (supported: :fills, :opacity)")
+                         " (supported: :fills, :opacity, :name, :margin)")
                     {:property property}))))
 
 (defrecord ChangeProperty [target property value]
@@ -687,9 +693,8 @@
 ;; reset — reset the overrides of a copy head
 ;;
 ;; The "Reset overrides" action on the copy head bound to `target`, a nested
-;; head included, through the production `generate-reset-component`. The
-;; frontend interpreter runs it as a file install: the real reset event reads
-;; browser globals, so it cannot run headless.
+;; head included, through the production `generate-reset-component`
+;; (`reset-component` on the frontend).
 ;; ---------------------------------------------------------------------------
 
 (defrecord ResetOverrides [target]
@@ -955,7 +960,8 @@
 ;;
 ;; Moves the copy head bound to `copy` under the shape bound to `into`, as its
 ;; last child, through `generate-relocate`, as dragging it in the layers
-;; panel does. Unlike `make-nested-component` it is a user action, so the
+;; panel does; with a `cell` ([row column] of a grid `into`), into that cell,
+;; as a canvas drop does. Unlike `make-nested-component` it is a user action, so the
 ;; receiving main's copies sync and the step goes through undo.
 ;; ---------------------------------------------------------------------------
 
@@ -965,7 +971,7 @@
   [situation parent-id]
   (count (:shapes (tm/shape-by-id situation parent-id))))
 
-(defrecord NestCopy [copy into]
+(defrecord NestCopy [copy into cell]
   IComponentOperation
   (op-kind [_] :user)
 
@@ -980,18 +986,20 @@
                                                (pcb/with-objects (:objects page)))
                                            parent-id
                                            (nest-target-index situation parent-id)
-                                           #{copy-id})
+                                           #{copy-id}
+                                           :cell cell)
           file'     (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
           (record-changes changes)
-          (tm/record-application this {:copy copy :into into})))))
+          (tm/record-application this {:copy copy :into into :cell cell})))))
 
 (defn nest-copy
   "Constructor for the nest-copy operation: move the copy head `copy` names
-   under the shape `into` names, as its last child."
-  [copy into]
-  (tm/assign-id (->NestCopy copy into)))
+   under the shape `into` names, as its last child, or into the grid cell
+   `cell` ([row column]) when given."
+  [copy into & {:keys [cell]}]
+  (tm/assign-id (->NestCopy copy into cell)))
 
 ;; ---------------------------------------------------------------------------
 ;; swap-shape — swap a copy head for another component

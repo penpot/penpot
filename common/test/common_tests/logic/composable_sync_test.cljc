@@ -112,3 +112,24 @@
 
 (t/deftest case-ah-copy-sub-head-delete-keeps-others-aligned
   (check (cases/copy-sub-head-delete-keeps-others-aligned)))
+
+(t/deftest case-ak-update-main-pushes-grid-cells
+  (check (cases/update-main-pushes-grid-cells)))
+
+(t/deftest case-al-update-main-renames-the-component
+  (check (cases/update-main-renames-the-component)))
+
+(t/deftest case-am-update-main-pushes-a-swap-inside-a-group
+  (check (cases/update-main-pushes-a-swap-inside-a-group)))
+
+(t/deftest case-an-flex-child-override-follows-sync-reset-and-update-main
+  (check (cases/flex-child-override-follows-sync-reset-and-update-main)))
+
+(t/deftest case-ao-copy-dropped-into-a-grid-cell-reaches-copies
+  (check (cases/copy-dropped-into-a-grid-cell-reaches-copies)))
+
+(t/deftest case-ap-library-main-child-removal-reaches-copy
+  (check (cases/library-main-child-removal-reaches-copy)))
+
+(t/deftest case-aq-main-change-reaches-a-copy-nested-in-a-sub-board
+  (check (cases/main-change-reaches-a-copy-nested-in-a-sub-board)))
