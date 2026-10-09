@@ -263,6 +263,16 @@ AUTHOR=$(gh pr view <PR_NUMBER> --repo penpot/penpot --json author --jq '.author
 gh issue edit <ISSUE_NUMBER> --repo penpot/penpot --add-assignee "$AUTHOR"
 ```
 
+GitHub only allows assigning users with write permission, org members, or
+users who have already commented on the issue. Assigning an outside
+contributor fails with `422 ... assignees ... invalid`, and `gh issue edit`
+still exits 0 and prints the issue URL. Verify the result and, when the list
+stays empty, skip the assignment:
+
+```bash
+gh api repos/penpot/penpot/issues/<ISSUE_NUMBER> --jq '[.assignees[].login]'
+```
+
 ### Set Issue Type and verify
 
 See the **Setting the Issue Type** and **Verification** sections above — the
