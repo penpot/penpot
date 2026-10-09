@@ -996,7 +996,13 @@
   {::doc/added "1.17"
    ::sm/params schema:update-team-member-role}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (db/tx-run! cfg update-team-member-role (assoc params :profile-id profile-id)))
+  (db/tx-run! cfg update-team-member-role (assoc params :profile-id profile-id))
+  ;; The client keeps receiving nil; when ownership moves, the audit event
+  ;; names the demoted member so a projection can keep a single owner.
+  (rph/with-meta (rph/wrap)
+    (if (= :owner (:role params))
+      {::audit/props {:prev-owner-id profile-id}}
+      {})))
 
 ;; --- Mutation: Delete Team Member
 
