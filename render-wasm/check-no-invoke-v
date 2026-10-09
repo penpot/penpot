@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Fail if the Emscripten JS glue exports invoke_*V (JS longjmp + wasm SIMD ABI).
+set -euo pipefail
+
+_SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# _build_env reads NODE_ENV without a default; keep set -u happy.
+NODE_ENV=${NODE_ENV:-}
+# shellcheck source=/dev/null
+. "$_SCRIPT_DIR/_build_env" frontend
+
+if [[ $# -ge 1 ]]; then
+  GLUE=$1
+else
+  GLUE=$(cd -- "$_SCRIPT_DIR/$FRONTEND_DEST" && pwd)/$BUILD_NAME.js
+fi
+
+if [[ ! -f "$GLUE" ]]; then
+  echo "error: JS glue not found: $GLUE" >&2
+  echo "hint: run ./build frontend first" >&2
+  exit 1
+fi
+
+if rg -q 'invoke_[A-Za-z0-9]*V' "$GLUE"; then
+  echo "error: JS glue still exports invoke_*V: $GLUE" >&2
+  rg -o 'invoke_[A-Za-z0-9]*V' "$GLUE" | sort -u >&2
+  exit 1
+fi
