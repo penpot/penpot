@@ -657,7 +657,12 @@
   ([ast opts]
    (if (nil? ast)
      ""
-     (unwrap-return (eval-node (make-ctx opts) ast)))))
+     (case (:node ast)
+       ;; Most token values are a single reference or literal: evaluate
+       ;; them without building a context (config, variable table).
+       :reference (eval-reference {:refs (or (:references opts) {})} ast)
+       (:num :string :hex-color :boolean :null) (eval-node nil ast)
+       (unwrap-return (eval-node (make-ctx opts) ast))))))
 
 (defn interpret-with-table
   "Like `interpret` but also returns the final variable table:

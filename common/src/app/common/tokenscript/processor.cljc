@@ -353,9 +353,30 @@
       (or (map? value) (sequential? value)) (parse-structured st name data)
       :else (parse-expression st name (str value)))))
 
+(defn- merge-maps
+  [a b]
+  (if (< (count a) (count b)) (into b a) (into a b)))
+
 (defn- parse-all
+  "Parses every token. Plain expression tokens, the common case, only add
+  their AST and dependencies and are collected in transients; the others
+  go through `parse-token`."
   [st]
-  (reduce-kv parse-token st (:tokens st)))
+  (let [[st parsed graph]
+        (reduce-kv
+         (fn [[st parsed graph] name {:keys [value] :as data}]
+           (let [entry (when (and (string? value)
+                                  (not (contains? lex/uninterpreted-keyword-set value))
+                                  (td/valid-token-path? name))
+                         (cached-parse value))]
+             (if (and entry (nil? (:error entry)) (some? (:ast entry)))
+               [st (assoc! parsed name (:parsed entry)) (assoc! graph name (:deps entry))]
+               [(parse-token st name data) parsed graph])))
+         [st (transient {}) (transient {})]
+         (:tokens st))]
+    (assoc st
+           :parsed (merge-maps (:parsed st) (persistent! parsed))
+           :graph (merge-maps (:graph st) (persistent! graph)))))
 
 ;; Resolution phase -----------------------------------------------------------
 

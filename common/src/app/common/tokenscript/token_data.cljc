@@ -229,6 +229,10 @@
   [name]
   (and (string? name) (pos? (count name)) (nil? (re-find invalid-name-chars name))))
 
+;; Dot separated valid names, see `valid-token-name?`
+(def ^:private valid-path-re
+  #"[^ \t\n\r\f{}\[\].]+(?:\.[^ \t\n\r\f{}\[\].]+)*")
+
 (defn valid-token-path?
   [path]
-  (and (string? path) (every? valid-token-name? (str/split path #"\." -1))))
+  (and (string? path) (some? (re-matches valid-path-re path))))
