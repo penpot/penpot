@@ -1567,6 +1567,17 @@
              (rx/map (fn [_] (sync-tokens-status-with-lib)))
              (rx/take-until stopper-s))))))
 
+(defn watch-library-changes
+  "Starts the watchers that propagate edits of the file's library while a page
+  is open: component changes to the copies, token changes to the tokens
+  status. They stop when the page is finalized."
+  []
+  (ptk/reify ::watch-library-changes
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (watch-component-changes)
+             (watch-token-changes)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
