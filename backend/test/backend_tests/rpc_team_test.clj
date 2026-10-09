@@ -16,6 +16,7 @@
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.helpers :as rph]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
@@ -1791,3 +1792,34 @@
                       (map second)
                       (filter #(= "add-team-member" (:name %))))]
       (t/is (empty? events)))))
+
+(t/deftest create-team-audit-event-carries-created-at
+  ;; The projection keys the new team on the event id and needs its creation
+  ;; time from the same event.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        out     (th/command-raw! {::th/type :create-team
+                                  ::rpc/profile-id (:id profile)
+                                  :name "team"})
+        props   (:app.loggers.audit/props (meta out))]
+    (t/is (= (:id out) (:id props)))
+    (t/is (= (:created-at out) (:created-at props)))
+    (t/is (ct/inst? (:created-at props)))
+    (t/is (= (:modified-at out) (:modified-at props)))
+    (t/is (ct/inst? (:modified-at props)))))
+
+(t/deftest delete-team-audit-event-carries-entity-data
+  ;; The projection marks the team deleted from this single event, so it needs
+  ;; the identity, the name and the timestamps.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 31 {:profile-id (:id profile)})
+        out     (th/command-raw! {::th/type :delete-team
+                                  ::rpc/profile-id (:id profile)
+                                  :id (:id team)})
+        props   (:app.loggers.audit/props (meta out))]
+    ;; The API response is unchanged: the command still returns nil.
+    (t/is (nil? (rph/unwrap out)))
+    (t/is (= (:id team) (:id props)))
+    (t/is (= (:name team) (:name props)))
+    (t/is (= (:created-at team) (:created-at props)))
+    (t/is (ct/inst? (:modified-at props)))
+    (t/is (ct/inst? (:deleted-at props)))))
