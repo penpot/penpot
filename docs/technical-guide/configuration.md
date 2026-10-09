@@ -372,6 +372,49 @@ PENPOT_PUBLIC_URI: https://penpot.mycompany.com
 If you're using the official <code class="language-bash">docker-compose.yml</code> you only need to configure the
 <code class="language-bash">PENPOT_PUBLIC_URI</code> envvar in the top of the file.
 
+### Serve Penpot from a subpath
+
+Penpot can be served from a subpath such as `https://mycompany.com/penpot/`.
+Set `PENPOT_PUBLIC_URI` to the complete public URL, including the subpath and its
+trailing slash:
+
+```bash
+PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+```
+
+Your reverse proxy or Ingress must also:
+
+- Route requests under `/penpot/` to the Penpot frontend.
+- Remove the `/penpot` prefix before forwarding each request. The frontend
+  continues to serve its internal routes from `/`.
+- Preserve WebSocket upgrade headers for notifications and other services that
+  use WebSockets.
+
+Changing only `PENPOT_PUBLIC_URI` is not enough. Without the matching proxy
+rewrite, static assets, API calls, and WebSocket connections will use routes that
+the frontend does not recognize.
+
+#### Migrate an existing installation to a subpath
+
+Moving an installation from `/` to a subpath does not require a database or
+asset migration. Users, teams, projects, files, and uploaded assets remain in
+the existing storage.
+
+Before changing the public URL:
+
+1. Back up the database, assets, and current deployment configuration.
+2. Configure the proxy or Ingress route and prefix rewrite.
+3. Update `PENPOT_PUBLIC_URI` for every Penpot component that uses it.
+4. Keep the existing `PENPOT_SECRET_KEY`, database, and asset storage
+   configuration.
+5. Restart or redeploy Penpot and verify login, static assets, API requests,
+   WebSockets, file editing, and image uploads through the new URL.
+
+Existing bookmarks and integrations that use the previous root URL must be
+updated. You may also configure a redirect from the previous URL. If the scheme
+or hostname changes in addition to the path, review your authentication provider
+callback URLs and cookie settings. Active users may need to sign in again.
+
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
     you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
