@@ -113,8 +113,7 @@
            (rx/empty)
            (rx/of (dwth/watch-state-changes file-id page-id)))
 
-         (rx/of (dwl/watch-component-changes))
-         (rx/of (dwl/watch-token-changes))
+         (rx/of (dwl/watch-library-changes))
 
          (let [profile (:profile state)
                props   (get profile :props)]
