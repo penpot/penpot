@@ -11,6 +11,7 @@
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -118,6 +119,64 @@
         copy-rect (tm/shape-by-id situation (n/lineage-copy-rect situation m))]
     (t/is (= green (fill-of copy-rect)))
     (t/is (contains? (:touched copy-rect) :fill-group))
+    (t/is (= 1 (r/undo-depth situation)))))
+
+(t/deftest redo-reapplies-edit-and-its-sync
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/undo)
+                                 (n/redo)])})
+        copy      (setup/copy-instance situation)]
+    (t/is (= red (fill-of (setup/main-instance situation))))
+    (t/is (= red (fill-of copy)))
+    (t/is (nil? (:touched copy)))
+    (t/is (= 1 (r/undo-depth situation)))
+    (t/is (zero? (r/redo-depth situation)))))
+
+(t/deftest redo-reapplies-groups-in-undo-order
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/change-property :main-child :fills green)
+                                 (n/undo)
+                                 (n/undo)
+                                 (n/redo)])})]
+    (t/is (= red (fill-of (setup/copy-instance situation))))
+    (t/is (= 1 (r/undo-depth situation)))
+    (t/is (= 1 (r/redo-depth situation)))))
+
+(t/deftest user-operation-empties-the-redo-stack
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/undo)
+                                 (n/change-property :main-child :fills green)
+                                 (n/redo)])})]
+    (t/is (= green (fill-of (setup/copy-instance situation))))
+    (t/is (= 1 (r/undo-depth situation)))
+    (t/is (zero? (r/redo-depth situation)))))
+
+(t/deftest unchanged-user-operation-keeps-the-redo-stack
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/undo)
+                                 (n/change-property :main-child :fills original)
+                                 (n/redo)])})]
+    (t/is (= red (fill-of (setup/copy-instance situation))))))
+
+(t/deftest redo-with-an-empty-stack-changes-nothing
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :main-child :fills red)
+                                 (n/redo)])})]
+    (t/is (= red (fill-of (setup/copy-instance situation))))
     (t/is (= 1 (r/undo-depth situation)))))
 
 (t/deftest assembly-operations-push-no-undo-group
@@ -260,3 +319,144 @@
                                  (n/switch-variant (n/nested-head-of m 0) "a")])})]
     (t/is (= original (level-fill situation m 0)))
     (t/is (zero? (r/undo-depth situation)))))
+
+;; A user operation whose undo changes put back a different fill.
+(defrecord WrongUndoEdit []
+  n/IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [file    (tm/file situation)
+          page    (thf/current-page file)
+          changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              #{(:id (setup/copy-root situation))}
+                                              #(assoc % :opacity 0.5)
+                                              (:objects page)
+                                              {})
+          changes (update changes :undo-changes
+                          (partial mapv #(cond-> %
+                                           (= :mod-obj (:type %))
+                                           (update :operations conj {:type :set
+                                                                     :attr :name
+                                                                     :val "Wrong"
+                                                                     :ignore-touched true
+                                                                     :ignore-geometry false}))))]
+      (-> situation
+          (tm/with-file (thf/apply-changes file changes))
+          (n/record-changes changes)
+          (tm/record-application this {})))))
+
+;; A user operation that changes the file with no undo changes.
+(defrecord UndoableEdit []
+  n/IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [file    (tm/file situation)
+          page    (thf/current-page file)
+          changes (-> (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                  #{(:id (setup/copy-root situation))}
+                                                  #(assoc % :opacity 0.5)
+                                                  (:objects page)
+                                                  {})
+                      (assoc :undo-changes []))]
+      (-> situation
+          (tm/with-file (thf/apply-changes file changes))
+          (n/record-changes changes)
+          (tm/record-application this {})))))
+
+(defn- phases
+  [situation]
+  (mapv :phase (uc/failures situation)))
+
+(t/deftest round-trip-passes-for-exact-inverses
+  (let [situation (r/run-variant
+                   {:setup     setup/simple-component-with-labeled-copy
+                    :operation (tm/in-sequence
+                                [(n/change-property :copy-child :fills green)
+                                 (n/change-property :main-child :fills red)
+                                 (n/undo)
+                                 (n/redo)])})]
+    (t/is (empty? (uc/failures situation)))
+    (t/is (= red (fill-of (setup/main-instance situation))))))
+
+(t/deftest round-trip-reports-a-wrong-undo
+  (let [situation (r/run-variant {:setup     setup/simple-component-with-copy
+                                  :operation (->WrongUndoEdit)})]
+    ;; the redo leaves the wrong name in place, and so does the variant undo
+    (t/is (= [:undo :redo :variant-undo] (phases situation)))
+    (t/is (= {:name "Wrong"}
+             (-> (uc/failures situation) first :diff second :data :pages-index
+                 vals first :objects (get :copy-root))))))
+
+(t/deftest round-trip-reports-a-change-with-no-undo-entry
+  (let [situation (r/run-variant {:setup     setup/simple-component-with-copy
+                                  :operation (->UndoableEdit)})]
+    (t/is (= [:no-undo-entry] (phases situation)))))
+
+(t/deftest round-trip-can-be-turned-off
+  (let [situation (r/run-variant {:setup      setup/simple-component-with-copy
+                                  :operation  (->UndoableEdit)
+                                  :undo-check {:off "testing the switch"}})]
+    (t/is (empty? (uc/failures situation)))))
+
+(t/deftest round-trip-never-undoes-past-an-assembly-step
+  ;; The edit before the copy exists is not undone at the end of the variant,
+  ;; so the main keeps it.
+  (let [m         "main"
+        situation (r/run-variant
+                   {:setup     setup/empty-situation
+                    :operation (tm/in-sequence
+                                [(n/create-component m original)
+                                 (n/change-property (n/main-rect-of m) :fills red)
+                                 (n/instantiate-copy m)
+                                 (n/change-property (n/copy-rect-of m) :fills green)])})]
+    (t/is (empty? (uc/failures situation)))
+    (t/is (= red (fill-of (tm/shape-by-id situation (n/lineage-rect situation m)))))))
+
+(t/deftest failures-carry-what-differs
+  (let [situation (r/run-variant {:setup     setup/simple-component-with-copy
+                                  :operation (->WrongUndoEdit)})]
+    (t/is (= [#{[:object :copy-root :name]}
+              #{[:object :copy-root :name]}
+              #{[:object :copy-root :name]}]
+             (mapv :signature (uc/failures situation))))))
+
+(t/deftest signature-names-what-differs
+  (let [shape    {:id (thi/new-id! :shape) :name "A" :opacity 1}
+        other    {:id (thi/new-id! :other) :name "B"}
+        page-id  (thi/new-id! :page)
+        file     (fn [objects] {:data {:pages-index {page-id {:id page-id :objects objects}}}})]
+    (t/is (= #{[:object :shape :opacity] [:object :other :extra]}
+             (uc/signature (file {(:id shape) shape})
+                           (file {(:id shape) (assoc shape :opacity 0.5)
+                                  (:id other) other}))))
+    (t/is (= #{[:object :unlabelled :missing]}
+             (uc/signature (file {(uuid/next) shape}) (file {}))))))
+
+(t/deftest known-failures-pin-how-the-check-fails
+  (let [edit      (tm/assign-id (->WrongUndoEdit))
+        situation (r/run-variant {:setup     setup/simple-component-with-copy
+                                  :operation edit})
+        pin       #{[:object :copy-root :name]}
+        known     {:bug "F0" :fails {:undo pin :redo pin :variant-undo pin} :op edit}
+        verdict   #(uc/verdict situation {:undo-check {:known-failures %}})]
+    (t/is (= {:unexpected [] :resolved []} (verdict [known])))
+    (t/is (= [:undo :redo :variant-undo]
+             (mapv :phase (:unexpected (uc/verdict situation {})))))
+    (t/testing "a failure that differs from its pin stays a failure"
+      (let [{:keys [unexpected resolved]}
+            (verdict [(assoc-in known [:fails :undo] #{[:object :copy-root :opacity]})])]
+        (t/is (= [:undo] (mapv :phase unexpected)))
+        (t/is (= [:undo] (mapv :phase resolved)))))
+    (t/testing "a pinned phase that does not fail is resolved"
+      (t/is (= [:variant-redo]
+               (mapv :phase (:resolved (verdict [(assoc-in known [:fails :variant-redo] pin)]))))))
+    (t/testing "a mark applies only where its step ran and its runner runs"
+      (t/is (= [] (:resolved (verdict [known (assoc known :op (tm/assign-id (->WrongUndoEdit)))]))))
+      (t/is (= [] (:resolved (verdict [known (assoc known :runners #{:frontend} :op nil)])))))
+    (t/testing "a mark must pin its failures"
+      (t/is (thrown? #?(:clj Exception :cljs :default)
+                     (verdict [(dissoc known :fails)]))))))

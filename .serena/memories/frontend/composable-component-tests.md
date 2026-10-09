@@ -87,13 +87,15 @@ wrapper deftest in BOTH test namespaces (or only the frontend one if it needs fr
 Two pure runners (no store, JVM + CLJS):
 - `core/run-variant`/`run-all`: apply nodes only (no sync, `n/undo` throws). For engine tests.
 - `comp.runner/run-variant`/`run-all`: the case runner. Every comp node declares its kind via
-  `n/IComponentOperation` (`op-kind`: `:assembly`, `:user`, `:undo`, `:frontend-only`); the
+  `n/IComponentOperation` (`op-kind`: `:assembly`, `:user`, `:undo`, `:redo`, `:frontend-only`); the
   runner and the interpreter's `sync-op?` dispatch on it. A NEW node MUST implement it. User ops
   record their production changes (`n/record-changes`, nil when nothing changed); the runner
   throws if a `:user` op records nothing or another kind records changes. After a user op the
   runner syncs to a fixpoint (`ch/components-changed` + `generate-sync-file-changes`, one pass
   per cascade level, like the frontend watcher) and pushes op + syncs as one undo group.
-  `n/undo` reverts the latest group, no re-sync. The runner validates the file (against the
+  `n/undo` reverts the latest group and moves it to a redo stack; `n/redo` applies it again
+  (interpreter: `dwu/redo`); neither re-syncs. A user op that pushes a group empties the redo
+  stack; one that changed nothing keeps it. The runner validates the file (against the
   situation's files) once settled: after the sync fixpoint and after an undo group; never
   between cascade passes, where an outer copy still points at the component its main dropped
   (`:component-id-mismatch`), nor with `{:sync? false}`. Assembly ops (create/instantiate/nest/variant
@@ -104,8 +106,35 @@ Two pure runners (no store, JVM + CLJS):
   frontend events call. Not modelled: the `:modified-at` bump, and the swap/switch event follow-ups
   (token propagation, WASM text resize, layout update). Tests:
   `common-tests.logic.composable-runner-test`.
+- Undo/redo round trip (`comp/undo_check.cljc`, alias `uc`), on by default in the pure runner
+  (`:undo-check?`): after each `:user` step that pushed a group, undo must give back the
+  normalized file before it and redo the file after it (the variant continues from the redone
+  file); a user step that pushed nothing must change nothing (`:no-undo-entry`); at the end,
+  undo back to the last assembly step (the baseline; a case's own undo below it moves it) and
+  redo all. Files compare through `app.common.test-helpers.normalize` (`thn/normalize-file`:
+  drops file/component `:modified-at`, optionally `:position-data`; shapes as plain maps).
+  Failures are recorded in the situation with labelled diffs (labels die with the variant, so
+  they are resolved when recorded) and a `:signature`, the set of what differs
+  (`uc/signature`: `[:object <label> attr]`, `:missing`/`:extra`, `:page`/`:component` alike,
+  `[:undo-index n]`, `[:error]`; unlabelled shapes are `:unlabelled`); `uc/check!` asserts after
+  the asserter and prints the signature. A case map's `:undo-check` takes `{:off "reason"}` or
+  `{:known-failures [{:bug "F41" :fails {phase signature} :op <the case's node> :runners
+  #{:pure :frontend} :when pred}]}`: strict expected failures. A mark applies to variants of its
+  runners (`uc/with-runner`) where its `:op` ran and `:when` holds; it covers a failure only
+  when the signature is exactly the pinned one, and a pinned phase that does not fail as pinned
+  fails the case. Marks without `:fails` throw. Never edit a pin to make a case pass: a pin
+  changes only when the failure is understood, and the mark goes only in the fix commit. The interpreter runs the same round trip on every `:user` and
+  `:frontend-only` event step through the real `dwu/undo`/`dwu/redo`, and also checks the
+  workspace undo index (`:undo-index`/`:redo-index` phases): a step must add exactly one undo
+  entry or group. File installs (assembly ops, reset) are its baselines. The interpreter
+  empties `:workspace-undo` per variant. Frontend snapshots drop `:position-data` under WASM.
+  Undo groups get lost in derived work: `initialize-shape-layout` buffers `:layout/update`
+  without its `:undo-group` (F43), so a swap's reflow lands in entries of its own. Match
+  steps by node identity, never by record type or rendered name: `n/MoveChild` does not resolve
+  through an alias on the JVM, and the JS test build strips record names (transcripts show
+  `node`).
 - Label map gotcha: running a second variant re-registers labels, so assert on a situation
-  before running the next one (`thi/id` then points at the new run's shapes). Case letters B..O;
+  before running the next one (`thi/id` then points at the new run's shapes). Case letters B..P;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance
 geometry, on the #10109 fix branch until merged; O: switch of an overridden copy, mains
 agreeing or not) are the flagship pattern — read them before
