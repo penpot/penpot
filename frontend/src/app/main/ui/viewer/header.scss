@@ -185,7 +185,8 @@
   cursor: pointer;
 }
 
-.fullscreen-btn {
+.fullscreen-btn,
+.chrome-btn {
   @extend %button-tertiary;
   @include deprecated.flex-center;
 
@@ -362,4 +363,22 @@
 [data-force-visible="true"] .viewer-header,
 [data-fullscreen="true"] .viewer-header:hover {
   transform: translateY(0);
+}
+
+/** CHROME HIDDEN
+
+    The top bar stays out until the chrome is shown again. The strip that
+    makes the fullscreen header hoverable has nothing to reveal here.
+*/
+[data-chrome-hidden="true"] .viewer-header,
+[data-chrome-hidden="true"] .viewer-header:hover {
+  transform: translateY(-#{deprecated.$s-48});
+  visibility: hidden;
+  transition:
+    transform 400ms ease 300ms,
+    visibility 0s linear 400ms;
+}
+
+[data-chrome-hidden="true"] .viewer-header::after {
+  display: none;
 }

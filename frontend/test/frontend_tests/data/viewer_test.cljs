@@ -7,6 +7,7 @@
 (ns frontend-tests.data.viewer-test
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.notifications :as ntf]
    [app.main.data.viewer :as dv]
    [app.main.router :as rt]
    [beicon.v2.core :as rx]
@@ -77,6 +78,14 @@
     (some-> (ptk/watch event state nil)
             (rx/subscribe #(swap! out conj %)))
     @out))
+
+(defn- watch-events-after-update
+  "Collect the events an event's watch emits, with the state the store
+   would hand it: the store runs `update` first, so `watch` sees the
+   result of the event's own update."
+  [event state]
+  (let [state (if (ptk/update? event) (ptk/update event state) state)]
+    (watch-events event state)))
 
 (defn- zoom-state
   "Build a viewer state with the given `:zoom` query param and zoom type."
@@ -151,3 +160,47 @@
           ;; ones that can restart the zoom cycle.
           navigations (filter #(= :app.main.router/navigate (ptk/type %)) events)]
       (t/is (empty? navigations)))))
+
+(t/deftest toggle-chrome-hidden-hides-the-chrome-and-closes-thumbnails
+  (let [state {:viewer-local {:chrome-hidden? false
+                              :show-thumbnails true}}
+        result (ptk/update dv/toggle-chrome-hidden state)]
+    (t/is (true? (get-in result [:viewer-local :chrome-hidden?])))
+    (t/is (false? (get-in result [:viewer-local :show-thumbnails])))))
+
+(t/deftest toggle-chrome-hidden-toggles-back-and-defaults-to-visible
+  (t/testing "a hidden chrome is shown again"
+    (let [result (ptk/update dv/toggle-chrome-hidden
+                             {:viewer-local {:chrome-hidden? true}})]
+      (t/is (false? (get-in result [:viewer-local :chrome-hidden?])))))
+
+  (t/testing "a viewer-local state without the key starts visible"
+    (let [result (ptk/update dv/toggle-chrome-hidden {:viewer-local {}})]
+      (t/is (true? (get-in result [:viewer-local :chrome-hidden?]))))))
+
+(t/deftest toggle-chrome-hidden-hints-only-when-the-chrome-disappears
+  (t/testing "hiding emits the hint"
+    (let [events (watch-events-after-update dv/toggle-chrome-hidden
+                                            {:viewer-local {:chrome-hidden? false}})]
+      (t/is (= 1 (count events)))
+      (t/is (ptk/type? ::ntf/show (first events)))))
+
+  (t/testing "showing emits nothing"
+    (t/is (empty? (watch-events-after-update dv/toggle-chrome-hidden
+                                             {:viewer-local {:chrome-hidden? true}})))))
+
+(t/deftest show-chrome-only-acts-when-the-chrome-is-hidden
+  (t/testing "visible chrome: escape leaves the state untouched"
+    (let [state {:viewer-local {:chrome-hidden? false}}]
+      (t/is (= state (ptk/update dv/show-chrome state)))))
+
+  (t/testing "hidden chrome: escape brings it back"
+    (let [result (ptk/update dv/show-chrome {:viewer-local {:chrome-hidden? true}})]
+      (t/is (false? (get-in result [:viewer-local :chrome-hidden?]))))))
+
+(t/deftest initialize-resets-chrome-hidden
+  (t/testing "a new viewer visit starts with the chrome visible"
+    (let [state {:viewer-local {:chrome-hidden? true}}
+          event (dv/initialize {:file-id page-id})
+          result (ptk/update event state)]
+      (t/is (false? (get-in result [:viewer-local :chrome-hidden?]))))))

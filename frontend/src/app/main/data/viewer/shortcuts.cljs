@@ -65,6 +65,20 @@
                         :subsections [:zoom-viewer]
                         :fn #(st/emit! dv/toggle-fullscreen)}
 
+   :toggle-chrome-hidden {:tooltip (ds/shift "H")
+                          :label (fn [] (tr "shortcuts.toggle-chrome-hidden"))
+                          :command "shift+h"
+                          :section [:viewer]
+                          :subsections [:generic]
+                          :fn #(st/emit! dv/toggle-chrome-hidden)}
+
+   :show-chrome        {:tooltip (ds/esc)
+                        :label (fn [] (tr "shortcuts.show-chrome"))
+                        :command "escape"
+                        :section [:viewer]
+                        :subsections [:generic]
+                        :fn #(st/emit! dv/show-chrome)}
+
    :prev-frame         {:tooltip ds/left-arrow
                         :label (fn [] (tr "shortcuts.prev-frame"))
                         :command ["left" "up" "shift+enter" "pageup" "shift+space"]

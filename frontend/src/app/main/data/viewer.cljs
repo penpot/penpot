@@ -23,11 +23,13 @@
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.render-wasm.api :as wasm.api]
    [app.util.globals :as ug]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -37,6 +39,7 @@
   default-local-state
   {:zoom 1
    :fullscreen? false
+   :chrome-hidden? false
    :interactions-mode :show-on-click
    :show-interactions false
    :comments-mode :all
@@ -77,6 +80,9 @@
                       default-local-state
                       lstate)))
           (assoc-in [:viewer-local :share-id] share-id)
+          ;; Hiding the chrome is a way of looking at this viewer visit,
+          ;; not a preference: every visit starts with the interface on.
+          (assoc-in [:viewer-local :chrome-hidden?] false)
           (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
@@ -477,6 +483,41 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:viewer-local :fullscreen?] false))))
+
+;; The "chrome" is everything the viewer puts around the frames: the top
+;; bar, the previous/next buttons, the bottom bar with the reset button
+;; and the frame counter, and the thumbnails panel. Hiding it is not the
+;; same as `fullscreen`: it never touches the browser fullscreen API, so
+;; the viewport keeps exactly the size of the browser window.
+
+(def ^:private chrome-hidden-hint-timeout 2500)
+
+(def toggle-chrome-hidden
+  (ptk/reify ::toggle-chrome-hidden
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:viewer-local :chrome-hidden?] (fnil not false))
+          ;; The thumbnails panel is part of the chrome, and the only way
+          ;; to open it is the top bar we are hiding.
+          (assoc-in [:viewer-local :show-thumbnails] false)))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (get-in state [:viewer-local :chrome-hidden?])
+        (rx/of (ntf/info (tr "viewer.interface-hidden-hint")
+                         {:timeout chrome-hidden-hint-timeout}))
+        (rx/empty)))))
+
+(def show-chrome
+  "Bring the chrome back. A no-op when it is already visible, so binding
+   it to `escape` cannot interfere with the controls that use escape."
+  (ptk/reify ::show-chrome
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (get-in state [:viewer-local :chrome-hidden?])
+        (assoc-in state [:viewer-local :chrome-hidden?] false)
+        state))))
 
 (defn set-viewport-size
   [{:keys [size]}]
