@@ -22,11 +22,10 @@
     (wapi/create-uri blob)))
 
 (defn export-image
-  [{:keys [type suffix name] :as params}]
+  [{:keys [type name] :as params}]
   (let [url (export-image-uri params)
-        mtype (format->mtype type)
-        filename (str name (or suffix ""))]
-    (dom/trigger-download-uri filename mtype url)
+        mtype (format->mtype type)]
+    (dom/trigger-download-uri name mtype url)
     (wapi/revoke-uri url)
     nil))
 
@@ -37,9 +36,9 @@
     (wapi/create-uri blob)))
 
 (defn export-pdf
-  [{:keys [suffix name] :as params}]
+  [{:keys [name] :as params}]
   (let [url (export-pdf-uri params)
-        filename (str name (or suffix "") ".pdf")]
+        filename (str name ".pdf")]
     (dom/trigger-download-uri filename "application/pdf" url)
     (js/queueMicrotask #(wapi/revoke-uri url))
     nil))
@@ -51,9 +50,9 @@
     (wapi/create-uri blob)))
 
 (defn export-svg
-  [{:keys [suffix name] :as params}]
+  [{:keys [name] :as params}]
   (let [url (export-svg-uri params)
-        filename (str name (or suffix "") ".svg")]
+        filename (str name ".svg")]
     (dom/trigger-download-uri filename "image/svg+xml" url)
     (js/queueMicrotask #(wapi/revoke-uri url))
     nil))
