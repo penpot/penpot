@@ -27,6 +27,7 @@
      H — locality: a library main's change reaches the consuming file's copy on
          the explicit library sync (cross-file propagation).
      I — undo reverses an edit AND its propagation.
+     P — redo applies an undone edit and its propagation again.
      K — the synchronisation sweep: depth x edit-targets, with override-precedence
          and reset checkpoints.
      L — the swap sweep: swaps at any subset of nesting levels.
@@ -122,23 +123,28 @@
   "Case F."
   []
   (let [move (n/move-child :main-child1 :main-root 2)]
-    {:setup     setup/component-with-many-children
-     :operation (tm/in-sequence [move])
-     :asserter  (fn [situation]
-                  (let [copy-root (setup/copy-root situation)
-                        order     (vec (:shapes copy-root))
-                        c1        (setup/copy-child situation 1)
-                        c2        (setup/copy-child situation 2)
-                        c3        (setup/copy-child situation 3)]
-                    (t/is (= (nth order 0) (:id c2)))
-                    (t/is (= (nth order 1) (:id c1)))
-                    (t/is (= (nth order 2) (:id c3)))
-                    (t/is (some? (:shape-ref c1)))
-                    (t/is (some? (:shape-ref c2)))
-                    (t/is (some? (:shape-ref c3)))
-                    (t/is (nil? (:touched c1)))
-                    (t/is (nil? (:touched c2)))
-                    (t/is (nil? (:touched c3)))))}))
+    {:setup      setup/component-with-many-children
+     :operation  (tm/in-sequence [move])
+     ;; the undo of the sync's move leaves the copy children reordered
+     :undo-check {:known-failures [{:bug   "F41"
+                                    :fails {:undo         #{[:object :copy-root :shapes]}
+                                            :variant-undo #{[:object :copy-root :shapes]}}
+                                    :op    move}]}
+     :asserter   (fn [situation]
+                   (let [copy-root (setup/copy-root situation)
+                         order     (vec (:shapes copy-root))
+                         c1        (setup/copy-child situation 1)
+                         c2        (setup/copy-child situation 2)
+                         c3        (setup/copy-child situation 3)]
+                     (t/is (= (nth order 0) (:id c2)))
+                     (t/is (= (nth order 1) (:id c1)))
+                     (t/is (= (nth order 2) (:id c3)))
+                     (t/is (some? (:shape-ref c1)))
+                     (t/is (some? (:shape-ref c2)))
+                     (t/is (some? (:shape-ref c3)))
+                     (t/is (nil? (:touched c1)))
+                     (t/is (nil? (:touched c2)))
+                     (t/is (nil? (:touched c3)))))}))
 
 (defn undo-reverts-edit-and-its-propagation
   "Case I. Change the main (which propagates to the clean copy), then undo. A
@@ -158,6 +164,21 @@
                     ;; … and on the copy (the propagation was reversed too) …
                     (t/is (n/has-attr? baseline copy))
                     ;; … leaving the copy clean.
+                    (t/is (nil? (:touched copy)))))}))
+
+(defn redo-reapplies-edit-and-its-propagation
+  "Case P. Change the main (which propagates to the clean copy), undo, then
+   redo. The redo applies the edit and its propagation again, so the copy
+   shows the main's new value and is left untouched."
+  []
+  (let [change (n/change-attr :main-child :fills red)]
+    {:setup     setup/simple-component-with-labeled-copy
+     :operation (tm/in-sequence [change (n/undo) (n/redo)])
+     :asserter  (fn [situation]
+                  (let [copy (setup/copy-instance situation)
+                        main (setup/main-instance situation)]
+                    (t/is (n/has-attr? change main))
+                    (t/is (n/has-attr? change copy))
                     (t/is (nil? (:touched copy)))))}))
 
 (defn library-change-propagates-across-file-boundary-on-sync
@@ -232,6 +253,57 @@
 (def ^:private base-color "#aaaaaa")
 (def ^:private swap-colors ["#ff0000" "#00ff00" "#0000ff"])   ; level 0/1/2 targets
 
+(def ^:private level-0-reflow-left
+  ;; what one undo of a first step at level 0 leaves in place
+  #{[:object :sync-main-innercopy-0 :component-id]
+    [:object :sync-main-innercopy-0 :shape-ref]
+    [:object :sync-main-innercopy-0 :shapes]
+    [:object :sync-main-innercopy-0 :touched]
+    [:object :sync-main-innercopy-0 :width]
+    [:object :sync-main-innercopy-0 :height]
+    [:object :sync-main-innercopy-0 :selrect]
+    [:object :sync-main-innercopy-1 :width]
+    [:object :sync-main-innercopy-1 :height]
+    [:object :sync-main-innercopy-1 :selrect]
+    [:object :sync-main-innercopy-2 :width]
+    [:object :sync-main-innercopy-2 :height]
+    [:object :sync-main-innercopy-2 :selrect]
+    [:object :unlabelled :component-id]
+    [:object :unlabelled :shapes]
+    [:object :unlabelled :missing]
+    [:object :unlabelled :extra]})
+
+(def ^:private level-1-reflow-left
+  ;; what one undo of a first step at level 1 leaves in place
+  #{[:object :unlabelled :component-id]
+    [:object :unlabelled :shape-ref]
+    [:object :unlabelled :shapes]
+    [:object :unlabelled :touched]
+    [:object :unlabelled :missing]
+    [:object :unlabelled :extra]
+    [:object :sync-main-innercopy-1 :width]
+    [:object :sync-main-innercopy-1 :height]
+    [:object :sync-main-innercopy-1 :selrect]
+    [:object :sync-main-innercopy-2 :width]
+    [:object :sync-main-innercopy-2 :height]
+    [:object :sync-main-innercopy-2 :selrect]})
+
+(defn- first-steps-break-undo
+  "Known failures of the frontend round trip for the sweeps over `steps`, the
+   optional steps at levels 0, 1 and 2: the first of them to run at level 0 or
+   1 reflows the nested frames, and that reflow lands in undo entries of its
+   own (F43), so one undo does not revert the whole step."
+  [steps]
+  (let [mark (fn [op pred left entries]
+               {:bug     "F43"
+                :fails   {:undo       left
+                          :undo-index #{[:undo-index entries]}}
+                :op      op
+                :runners #{:frontend}
+                :when    pred})]
+    [(mark (nth steps 0) (constantly true) level-0-reflow-left 5)
+     (mark (nth steps 1) #(not (tm/applied? % (nth steps 0))) level-1-reflow-left 2)]))
+
 (defn swap-scenarios
   "Case L. SWAP SWEEP — build a 3-level nesting, then OPTIONALLY swap the
    nested component at each level for a differently-coloured one, and assert
@@ -250,20 +322,21 @@
           (or (some (fn [j] (when (tm/applied? s (nth swaps j)) (nth swap-colors j)))
                     (range i -1 -1))
               base-color))]
-    {:setup     setup/empty-situation
-     :operation (tm/in-sequence
-                 (concat
-                  [(n/create-component m base-color)]
-                  ;; a target lineage per level
-                  (map-indexed (fn [i c] (n/create-component (nth targets i) c)) swap-colors)
-                  [(n/make-nested-component m) (n/make-nested-component m) (n/make-nested-component m)]
-                  ;; optionally swap at each level
-                  (map (fn [sw] (tm/optional sw)) swaps)
-                  [(tm/test-that
-                    (fn [s]
-                      (doseq [i (range 3)]
-                        (t/is (= (expected-at s i) (level-color s m i))
-                              (str "level " i)))))]))}))
+    {:setup      setup/empty-situation
+     :undo-check {:known-failures (first-steps-break-undo swaps)}
+     :operation  (tm/in-sequence
+                  (concat
+                   [(n/create-component m base-color)]
+                   ;; a target lineage per level
+                   (map-indexed (fn [i c] (n/create-component (nth targets i) c)) swap-colors)
+                   [(n/make-nested-component m) (n/make-nested-component m) (n/make-nested-component m)]
+                   ;; optionally swap at each level
+                   (map (fn [sw] (tm/optional sw)) swaps)
+                   [(tm/test-that
+                     (fn [s]
+                       (doseq [i (range 3)]
+                         (t/is (= (expected-at s i) (level-color s m i))
+                               (str "level " i)))))]))}))
 
 (defn variant-switch-scenarios
   "Case M. VARIANT-SWITCH SWEEP — the variant-switch flavour of case L. Build
@@ -291,28 +364,29 @@
           (or (some (fn [j] (when (tm/applied? s (nth switches j)) (nth swap-colors j)))
                     (range i -1 -1))
               base-color))]
-    {:setup     setup/empty-situation
-     :operation (tm/in-sequence
-                 (concat
-                  ;; the nesting lineage, and the variant set (members = [value color])
-                  [(n/create-component m base-color)
-                   (n/make-variant-container vset (mapv vector vals colors))]
-                  ;; introduce the variant instance ONCE (innermost), then wrap it
-                  ;; with plain nesting so each outer level CONTAINS the one below
-                  ;; (progressive nesting, like case L). nested-head at every level
-                  ;; is then the variant (the deepest instance), so a switch at
-                  ;; level i targets it and propagates OUTWARD — exactly like case
-                  ;; L's swap.
-                  [(n/make-nested-component-with-variant m vset "v0")
-                   (n/make-nested-component m)
-                   (n/make-nested-component m)]
-                  ;; optionally switch each level's variant head to its target sibling
-                  (map (fn [sw] (tm/optional sw)) switches)
-                  [(tm/test-that
-                    (fn [s]
-                      (doseq [i (range 3)]
-                        (t/is (= (expected-at s i) (level-color s m i))
-                              (str "level " i)))))]))}))
+    {:setup      setup/empty-situation
+     :undo-check {:known-failures (first-steps-break-undo switches)}
+     :operation  (tm/in-sequence
+                  (concat
+                   ;; the nesting lineage, and the variant set (members = [value color])
+                   [(n/create-component m base-color)
+                    (n/make-variant-container vset (mapv vector vals colors))]
+                   ;; introduce the variant instance ONCE (innermost), then wrap it
+                   ;; with plain nesting so each outer level CONTAINS the one below
+                   ;; (progressive nesting, like case L). nested-head at every level
+                   ;; is then the variant (the deepest instance), so a switch at
+                   ;; level i targets it and propagates OUTWARD — exactly like case
+                   ;; L's swap.
+                   [(n/make-nested-component-with-variant m vset "v0")
+                    (n/make-nested-component m)
+                    (n/make-nested-component m)]
+                   ;; optionally switch each level's variant head to its target sibling
+                   (map (fn [sw] (tm/optional sw)) switches)
+                   [(tm/test-that
+                     (fn [s]
+                       (doseq [i (range 3)]
+                         (t/is (= (expected-at s i) (level-color s m i))
+                               (str "level " i)))))]))}))
 
 (defn variant-switch-keeps-override-only-where-mains-agree
   "Case O. A copy overrides the fill of its nested variant's rect, then the
