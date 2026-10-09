@@ -41,15 +41,16 @@
   [c]
   (or (alpha? c) (digit? c)))
 
-(def ^:private space-code-points
-  "Code points matched by the JavaScript `\\s` regex class."
-  #{9 10 11 12 13 32 160 5760 8232 8233 8239 8287 12288 65279})
-
 (defn space?
+  "Whether `c` is matched by the JavaScript `\\s` regex class: 9-13, 32,
+  160, 5760, 8192-8202, 8232, 8233, 8239, 8287, 12288 and 65279."
   [c]
   (when-let [cp (code-point c)]
-    (or (contains? space-code-points cp)
-        (<= 8192 cp 8202))))
+    (or (== cp 32)
+        (<= 9 cp 13)
+        (and (> cp 127)
+             (or (== cp 160) (== cp 5760) (<= 8192 cp 8202) (== cp 8232) (== cp 8233)
+                 (== cp 8239) (== cp 8287) (== cp 12288) (== cp 65279))))))
 
 (defn capitalize
   "Upper-cases the first char and lower-cases the rest, like the TS

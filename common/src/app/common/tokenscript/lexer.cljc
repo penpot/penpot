@@ -115,7 +115,8 @@
         (if (ch= "\n" (char-of text i))
           (recur (inc i) (inc line) 1)
           (recur (inc i) line (inc column)))
-        (assoc st :pos end :line line :column column)))))
+        ;; One new record instead of three with a variadic assoc
+        (->LexerState text end line column (:last-unitable st) (:tolerant? st) (:greedy-strings? st))))))
 
 (defn- advance
   [st]

@@ -28,16 +28,14 @@
 ;; The parser keeps its cursor in a volatile so the grammar functions
 ;; read like the grammar. Nothing escapes the `parse` call.
 
+;; `ahead` holds the peeked `[token lexer-state]` pairs after `current`. A
+;; record because the state is read and updated for every token.
+(defrecord ParserState [lexer current ahead references incomplete tolerant?])
+
 (defn- make-parser
   [lexer-state {:keys [tolerant?]}]
   (let [[tok lexer-state] (lex/next-token lexer-state)]
-    (volatile! {:lexer lexer-state
-                :current tok
-                ;; peeked `[token lexer-state]` pairs after :current
-                :ahead []
-                :references #{}
-                :incomplete []
-                :tolerant? (boolean tolerant?)})))
+    (volatile! (->ParserState lexer-state tok [] #{} [] (boolean tolerant?)))))
 
 (defn- current
   [p]
@@ -330,8 +328,8 @@
   [p]
   (let [tok (current p)
         elements (loop [acc [(expr p)]]
-                   (if (contains? #{:comma :rparen :eof :semicolon} (current-type p))
-                     acc
+                   (case (current-type p)
+                     (:comma :rparen :eof :semicolon) acc
                      (recur (conj acc (expr p)))))]
     (if (= 1 (count elements))
       (first elements)
@@ -363,26 +361,49 @@
 
 (declare factor)
 
+;; Operator predicates use `case`: they run at every precedence level for
+;; every token.
+
+(defn- power-op?
+  [tok]
+  (and (= :operation (:type tok)) (case (:value tok) "^" true false)))
+
+(defn- multiplicative-op?
+  [tok]
+  (and (= :operation (:type tok)) (case (:value tok) ("*" "/") true false)))
+
+(defn- additive-op?
+  [tok]
+  (and (= :operation (:type tok)) (case (:value tok) ("+" "-") true false)))
+
+(defn- comparison-op?
+  [tok]
+  (case (:type tok) (:is-eq :is-not-eq :is-gt :is-lt :is-gt-eq :is-lt-eq) true false))
+
+(defn- logic-op?
+  [tok]
+  (case (:type tok) (:logic-and :logic-or) true false))
+
 (defn- power
   [p]
-  (bin-op-loop p factor #(and (= :operation (:type %)) (= "^" (:value %)))))
+  (bin-op-loop p factor power-op?))
 
 (defn- term
   [p]
-  (bin-op-loop p power #(and (= :operation (:type %)) (contains? #{"*" "/"} (:value %)))))
+  (bin-op-loop p power multiplicative-op?))
 
 (defn- comparison
   "Additive expression; binds tighter than the comparison operators."
   [p]
-  (bin-op-loop p term #(and (= :operation (:type %)) (contains? #{"+" "-"} (:value %)))))
+  (bin-op-loop p term additive-op?))
 
 (defn- logic-term
   [p]
-  (bin-op-loop p comparison #(contains? #{:is-eq :is-not-eq :is-gt :is-lt :is-gt-eq :is-lt-eq} (:type %))))
+  (bin-op-loop p comparison comparison-op?))
 
 (defn- expr
   [p]
-  (bin-op-loop p logic-term #(contains? #{:logic-and :logic-or} (:type %))))
+  (bin-op-loop p logic-term logic-op?))
 
 (defn- function-call
   [p name-tok]
