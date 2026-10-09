@@ -904,6 +904,40 @@
       new-shape)
     shape))
 
+(defn merge-live-text-dimensions
+  "Pick displayed width/height while editing auto-grow text.
+
+  Geometry commits are finalize-only (see `v2-update-text-shape-content`), so the
+  Design tab and edition outline read live WASM layout for growing axes:
+  - `:auto-width` → live width and height
+  - `:auto-height` → selrect width, live height
+  - `:fixed` → selrect for both
+
+  Nil or non-positive live axes fall back to the committed selrect so a missing
+  WASM measure never flashes `0`."
+  [grow-type {:keys [width height]} live]
+  (let [lw (when (map? live) (:width live))
+        lh (when (map? live) (:height live))]
+    {:width  (if (and (= grow-type :auto-width) (number? lw) (pos? lw)) lw width)
+     :height (if (and (not= grow-type :fixed) (number? lh) (pos? lh)) lh height)}))
+
+(defn shape-with-live-text-dimensions
+  "Display-only patch of shape selrect (and :width/:height) from live WASM text
+  layout. Does not write to the store. Returns `shape` unchanged when WASM is
+  unavailable or dimensions do not change."
+  [shape]
+  (let [selrect (:selrect shape)
+        live    (when (wasm.api/initialized?)
+                  (wasm.api/get-text-dimensions (:id shape)))
+        {:keys [width height]} (merge-live-text-dimensions (:grow-type shape) selrect live)]
+    (if (and (mth/close? width (:width selrect))
+             (mth/close? height (:height selrect)))
+      shape
+      (-> shape
+          (assoc :selrect (grc/make-rect (:x selrect) (:y selrect) width height))
+          (cond-> (contains? shape :width) (assoc :width width))
+          (cond-> (contains? shape :height) (assoc :height height))))))
+
 (defn commit-update-text-modifier
   []
   (ptk/reify ::commit-update-text-modifier

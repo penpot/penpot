@@ -22,17 +22,15 @@
           [selrect transform] (dsh/get-selrect selrect-transform shape)
 
           ;; While editing, the committed selrect lags the text (geometry is
-          ;; finalize-only), so measure the live WASM text for the growing axes:
-          ;; width grows on auto-width, height on auto-width/auto-height.
-          grow-type (:grow-type shape)
-          {live-width :width live-height :height} (wasm.api/get-text-dimensions (:id shape))
-          sr-width  (if (= grow-type :auto-width) live-width (:width selrect))
-          sr-height (if (= grow-type :fixed) (:height selrect) live-height)]
+          ;; finalize-only), so measure the live WASM text for the growing axes.
+          live (wasm.api/get-text-dimensions (:id shape))
+          {:keys [width height]} (dwt/merge-live-text-dimensions
+                                  (:grow-type shape) selrect live)]
       [:rect.main.viewport-selrect
        {:x (:x selrect)
         :y (:y selrect)
-        :width sr-width
-        :height sr-height
+        :width width
+        :height height
         :transform transform
         :style {:stroke "var(--color-accent-tertiary)"
                 :stroke-width (/ 1 zoom)
