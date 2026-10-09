@@ -12,6 +12,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.json :as json]
+   [app.common.logic.variants :as clv]
    [app.common.path-names :as cpn]
    [app.common.record :as crc]
    [app.common.schema :as sm]
@@ -1578,7 +1579,7 @@
                  (not (ctk/in-component-copy? shape))
                  (u/not-valid plugin-id :swapComponent "The shape is not a component copy instance")
 
-                 (dwl/component-swap-nesting-loop? objects shape target-data target-id)
+                 (clv/swap-nesting-loop? objects shape target-data target-id)
                  (u/not-valid plugin-id :swapComponent "The swap would create a component nesting loop")
 
                  :else

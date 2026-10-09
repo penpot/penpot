@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.variant :as cfv]
+   [app.common.logic.variants :as clv]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -831,7 +832,7 @@
             (let [data       (dm/get-in libraries [current-library-id :data])
                   container  (ctf/get-component-page data item)
                   root-shape (ctf/get-component-root data item)
-                  loop?      (some #(dwl/component-swap-nesting-loop?
+                  loop?      (some #(clv/swap-nesting-loop?
                                      objects % data (:id item))
                                    shapes)]
               [:> component-swap-item* {:key (dm/str (:id item))
