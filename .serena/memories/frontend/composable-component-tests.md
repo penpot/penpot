@@ -99,8 +99,8 @@ Two pure runners (no store, JVM + CLJS):
   situation's files) once settled: after the sync fixpoint and after an undo group; never
   between cascade passes, where an outer copy still points at the component its main dropped
   (`:component-id-mismatch`), nor with `{:sync? false}`. Assembly ops (create/instantiate/nest/variant
-  container): no sync, no undo group. `n/reset` (`reset-copy-instance` resets a lineage's latest copy) is a user op here (sync +
-  undo), unlike the interpreter (file install). `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`/`MoveShape`
+  container): no sync, no undo group. `n/reset` (`reset-copy-instance` resets a lineage's latest copy) is a user op (sync +
+  undo); the interpreter sends `dwl/reset-component`. `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`/`MoveShape`
   are `:frontend-only` and throw `::runner/frontend-only` (the placement step is frontend code). Swap and switch nodes use the production
   `clv/generate-component-swap-in-place` (+ `clv/find-switch-target` for switch), the same code the
   frontend events call. Not modelled: the `:modified-at` bump, and the swap/switch event follow-ups
@@ -126,7 +126,7 @@ Two pure runners (no store, JVM + CLJS):
   changes only when the failure is understood, and the mark goes only in the fix commit. The interpreter runs the same round trip on every `:user` and
   `:frontend-only` event step through the real `dwu/undo`/`dwu/redo`, and also checks the
   workspace undo index (`:undo-index`/`:redo-index` phases): a step must add exactly one undo
-  entry or group. File installs (assembly ops, reset) are its baselines; a skipped optional and an inline `Test` are not. The interpreter
+  entry or group. File installs (assembly ops) are its baselines; a skipped optional and an inline `Test` are not. The interpreter
   empties `:workspace-undo` per variant. Frontend snapshots drop `:position-data` under WASM.
   Undo groups get lost in derived work: `initialize-shape-layout` buffers `:layout/update`
   without its `:undo-group` (F43), so a swap's reflow lands in entries of its own. Match
@@ -145,8 +145,9 @@ Two pure runners (no store, JVM + CLJS):
   their undo group (F43) at timing-dependent points (`initialize-shape-layout` buffers
   `:layout/update` in 100 ms windows): undo pins over such reflows are nondeterministic.
   New cases that are not about geometry pass `:size` (nesting sizes the outer frames too).
-  F43 lives in case AJ only (frontend only, round trip off): it pins the value one undo
-  leaves, which does not depend on how many entries the reflow makes.
+  F43 from float noise lives in case AJ only (frontend only, round trip off): it pins the
+  value one undo leaves, which does not depend on how many entries the reflow makes. Case AN
+  pins F43 from a real reflow (a flex main's margin edit, synced): stable in repeated runs.
 - Case assertions a known bug breaks use `tm/known-failure bug expected pinned actual`: a
   strict expected failure at assertion level (passes only while `actual` is the pinned wrong
   value). The undo-check marks cover only round-trip failures.
@@ -158,8 +159,7 @@ Two pure runners (no store, JVM + CLJS):
 - Depth sweeps: `depth-sweep` in `cases.cljc`, a one-of over skip,
   `(n/make-nested-component name)` and `(n/make-nested-component name 2)`; asserters read
   `n/nesting-depth`. Two independent nesting optionals run depth 1 twice.
-- General target-based nodes: `n/swap-shape target to` (`to` a lineage name or a component label), `n/move-to-cell board child row column`, `n/reset target` (a file install
-  in the interpreter). `n/swap-component name level to` is `swap-shape` on `n/nested-head-of`. `n/nested-head-in name` (and the general `n/nested-head-under parent-target`) finds a copy's nested
+- General target-based nodes: `n/swap-shape target to` (`to` a lineage name or a component label), `n/move-to-cell board child row column`, `n/reset target` (`dwl/reset-component` in the interpreter). `n/swap-component name level to` is `swap-shape` on `n/nested-head-of`. `n/nested-head-in name` (and the general `n/nested-head-under parent-target`) finds a copy's nested
   head through its parent, so it survives swaps and switches (they keep the head id anyway).
   Careful: `n/lineage-component-id` is the OUTER component after nesting.
 - `n/undo-before-sync` (frontend-only) emits an edit and `dwu/undo` in one step, so the undo
@@ -168,7 +168,7 @@ Two pure runners (no store, JVM + CLJS):
   before running the next one (`thi/id` then points at the new run's shapes). Case letters B..Z, then AA..;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance
 geometry, on the #10109 fix branch until merged; O: switch of an overridden copy, mains
-agreeing or not; Q: detach at depth 0..2, nested copies stay linked; R: update-main at depth 0..2 with two copies; S: delete/restore with a copy on another page; T: duplicate a copy at depth 0..2; U: move a copy into a main with a copy; V: new edit after undo empties redo; W: `(n/undo 3)` over nested cascades; X: undo before the edit's sync, frontend only; AJ: F43, one undo after a nested sync reverts only the reflow, frontend only; Y: text override × main text change, per subgroup; Z: main child move, frontend only; AA..AE: swap outcomes asserted on values, not slot storage, so they survive the Phase 2b swap model; AF: grid cell move vs a swapped copy child, setup `grid-component-with-copy`; AG/AH/AI: ports of the plugin's slot-alignment cases, setup `component-with-sibling-instances`, check `setup/misaligned-sub-heads`) are the flagship pattern — read them before
+agreeing or not; Q: detach at depth 0..2, nested copies stay linked; R: update-main at depth 0..2 with two copies; S: delete/restore with a copy on another page; T: duplicate a copy at depth 0..2; U: move a copy into a main with a copy; V: new edit after undo empties redo; W: `(n/undo 3)` over nested cascades; X: undo before the edit's sync, frontend only; AJ: F43, one undo after a nested sync reverts only the reflow, frontend only; Y: text override × main text change, per subgroup; Z: main child move, frontend only; AA..AE: swap outcomes asserted on values, not slot storage, so they survive the Phase 2b swap model; AF: grid cell move vs a swapped copy child, setup `grid-component-with-copy`; AG/AH/AI: ports of the plugin's slot-alignment cases, setup `component-with-sibling-instances`, check `setup/misaligned-sub-heads`; AK: update main into a grid main, F49 pinned; AL: update main renames the component (`change-property` takes `:name`); AM: update main of a swap inside a group, setup `grouped-component-with-copy`, F16 pinned; AN: flex child margin override through main edit, reset and update main, setup `flex-component-with-copy`; `change-property` takes `:margin`, which the interpreter sends as `dwsl/update-layout-child`; AO: a copy dropped into a grid cell of a main (`nest-copy` with `:cell`, sent as `dwt/move-shapes-to-frame`), F41 pinned; AP: a library main's middle child removal reaches a copy in another file (in one file, deleting a main child deletes the copies' children itself, so sync never meets the copy child), setup `cross-file-component-with-many-children`; AQ: main change reaches a copy nested in a sub-board, setup `component-nested-in-a-sub-board`) are the flagship pattern — read them before
 writing a new sweep.
 
 **Scenario lineage model** (behind the sweeps): scenario ops track named component lineages as

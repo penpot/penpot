@@ -48,6 +48,13 @@
      AG — a main reorder keeps the copy's nested copies aligned.
      AH, AI — a copy deleting a nested copy keeps the others aligned (AI also
          reflows, frontend only).
+     AK — update main pushes a copy's grid cells to a grid main.
+     AL — update main renames the component after a copy root rename.
+     AM — update main pushes a swap made inside a group.
+     AN — a flex child's margin override through sync, reset and update main.
+     AO — a copy dropped into a grid cell of a main reaches the main's copies.
+     AP — a library main's middle child removal reaches a copy in another file.
+     AQ — a main change reaches a copy nested in a sub-board of the outer main.
      N — main edits reach rotated copies (frontend only).
      Rotation — a touched copy child survives a main rotation (frontend only too)."
   (:require
@@ -62,6 +69,7 @@
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as thf]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [clojure.test :as t]))
@@ -875,6 +883,220 @@
                                (tm/optional (n/change-height :copy-root 500))])
    :asserter  (fn [s]
                 (t/is (= [] (setup/misaligned-sub-heads s))))})
+
+(defn- grid-placement
+  "The cells of grid board `board`, as `{column [child-shape ...]}`."
+  [s board]
+  (let [objects (:objects (thf/current-page (tm/file s)))]
+    (into {}
+          (map (fn [cell] [(:column cell) (mapv #(get objects %) (:shapes cell))]))
+          (vals (:layout-grid-cells board)))))
+
+(defn update-main-pushes-grid-cells
+  "Case AK. A component's main is a grid board holding two nested copies;
+   optionally its copy swaps the first of them. The copy moves that child to
+   the free third column, then pushes its overrides to the main (update
+   main). The main's child at that position moves to the third column: an
+   instance of the component the copy swapped to, if it swapped, else the
+   original. Every cell of the main holds only children of the main, and each
+   child is in a cell. The copy is left untouched."
+  []
+  (let [swap (n/swap-shape :copy-child :other)]
+    {:setup     setup/grid-component-with-copy
+     :operation (tm/in-sequence [(tm/optional swap)
+                                 (n/move-to-cell :copy-root :copy-child 1 3)
+                                 (n/update-main :copy-root)])
+     :asserter  (fn [s]
+                  (let [main       (tm/role-shape s :main-root)
+                        copy-child (tm/role-shape s :copy-child)
+                        placement  (grid-placement s main)
+                        in-cells   (into #{} (comp (mapcat val) (map :id)) placement)
+                        cells      {:stray    (into #{} (remove (set (:shapes main))) in-cells)
+                                    :uncelled (count (remove in-cells (:shapes main)))}
+                        ;; the main's third column takes the copy child's component
+                        in-col-3   (mapv :component-id (get placement 3))
+                        expected   [(:component-id copy-child)]]
+                    (if (tm/applied? s swap)
+                      ;; the cells keep the copy child's id, which no main child has
+                      (tm/known-failure "F49"
+                                        [{:stray #{} :uncelled 0} expected]
+                                        [{:stray #{(:id copy-child)} :uncelled 1} expected]
+                                        [cells in-col-3])
+                      (do
+                        (t/is (= {:stray #{} :uncelled 0} cells))
+                        (t/is (= expected in-col-3))))
+                    (t/is (empty? (:touched (tm/role-shape s :copy-root))))))}))
+
+(defn update-main-renames-the-component
+  "Case AL. A copy renames its root and optionally its child, then pushes its
+   overrides to the main (update main). The component and its main root take
+   the root's new name, the main child takes the child's new name when it was
+   renamed, and the copy is left untouched."
+  []
+  (let [rename-root  (n/change-property :copy-root :name "Renamed")
+        rename-child (n/change-property :copy-instance :name "Renamed child")]
+    {:setup     setup/simple-component-with-copy
+     :operation (tm/in-sequence [rename-root
+                                 (tm/optional rename-child)
+                                 (n/update-main :copy-root)])
+     :asserter  (fn [s]
+                  (let [main-root (tm/role-shape s :main-root)
+                        component (ctkl/get-component (:data (tm/file s))
+                                                      (:component-id main-root))]
+                    (t/is (= "Renamed" (:name component)))
+                    (t/is (n/has-property-of rename-root main-root))
+                    (when (tm/applied? s rename-child)
+                      (t/is (n/has-property-of rename-child (tm/role-shape s :main-instance))))
+                    (t/is (empty? (:touched (tm/role-shape s :copy-root))))
+                    (t/is (empty? (:touched (tm/role-shape s :copy-instance))))))}))
+
+(defn update-main-pushes-a-swap-inside-a-group
+  "Case AM. A component's main holds a nested copy inside a group; its copy
+   swaps that nested copy for another component, then pushes its overrides to
+   the main (update main). The main's group holds an instance of the
+   component swapped to in place of the old one, the copy's swapped child
+   references it, and the copy is left untouched."
+  []
+  {:setup     setup/grouped-component-with-copy
+   :operation (tm/in-sequence [(n/swap-shape :copy-child :other)
+                               (n/update-main :copy-root)])
+   :asserter  (fn [s]
+                (let [objects    (:objects (thf/current-page (tm/file s)))
+                      copy-child (tm/role-shape s :copy-child)
+                      group      (get objects (:parent-id (get objects (:shape-ref copy-child))))
+                      in-group   (mapv #(get objects %) (:shapes group))]
+                  (t/is (= (:id (tm/role-shape s :main-root)) (:parent-id group)))
+                  (t/is (= [(:component-id copy-child)] (mapv :component-id in-group)))
+                  (t/is (= [(:shape-ref copy-child)] (mapv :id in-group)))
+                  (t/is (empty? (:touched (tm/role-shape s :copy-root))))
+                  ;; update main leaves the swapped child its swap slot
+                  (tm/known-failure "F16" #{} #{:swap-slot}
+                                    (into #{}
+                                          (map #(if (ctk/swap-slot? %) :swap-slot %))
+                                          (:touched copy-child)))))})
+
+(defn flex-child-override-follows-sync-reset-and-update-main
+  "Case AN. A copy of a flex main overrides its child's margin. Then the main
+   changes that margin, the copy resets, or the copy runs update main. After
+   the main's change the copy keeps its own margin, touched; after the reset
+   it shows the main's, untouched; after update main the main shows the
+   copy's and the copy is untouched."
+  []
+  (let [override    (n/change-property :copy-instance :margin 8)
+        main-change (n/change-property :main-instance :margin 20)
+        reset       (n/reset :copy-root)
+        update-main (n/update-main :copy-root)
+        follow-up   (tm/one-of [main-change reset update-main])]
+    {:setup      setup/flex-component-with-copy
+     ;; the reflow after the sync of the main's margin lands in undo entries
+     ;; of its own, so one undo leaves the margin and the reflow in place
+     :undo-check {:known-failures [{:bug     "F43"
+                                    :fails   {:undo       #{[:object :main-child :layout-item-margin]
+                                                            [:object :main-child :layout-item-margin-type]
+                                                            [:object :main-child :x]
+                                                            [:object :main-child :selrect]
+                                                            [:object :main-child :points]}
+                                              :undo-index #{[:undo-index 2]}}
+                                    :op      main-change
+                                    :runners #{:frontend}}]}
+     :operation  (tm/in-sequence [override follow-up])
+     :asserter   (fn [s]
+                   (let [copy    (tm/role-shape s :copy-instance)
+                         main    (tm/role-shape s :main-instance)
+                         margin  (fn [shape] (-> shape :layout-item-margin :m1))
+                         chosen  (tm/get-choice s follow-up)
+                         touched (contains? (:touched copy) :layout-item-margin)]
+                     (condp = chosen
+                       main-change (do (t/is (n/has-property-of override copy))
+                                       (t/is (n/has-property-of main-change main))
+                                       (t/is touched))
+                       reset       (do (t/is (= (margin main) (margin copy)))
+                                       (t/is (not (n/has-property-of override copy)))
+                                       (t/is (not touched)))
+                       update-main (do (t/is (n/has-property-of override main))
+                                       (t/is (n/has-property-of override copy))
+                                       (t/is (not touched))))))}))
+
+(defn copy-dropped-into-a-grid-cell-reaches-copies
+  "Case AO. A grid main holds two nested copies in its first two columns, the
+   third free; a loose copy of the same component is dropped into the third
+   cell of the main. The main holds it in that cell, and the main's copy gets
+   a child that references it, in its own third cell. Every child of both is
+   in a cell, and the copy is left untouched."
+  []
+  (let [drop (n/nest-copy :loose :main-root :cell [1 3])]
+    {:setup      setup/grid-component-with-copy-and-loose-item
+     ;; the drop reorders the main's children; the undo of the sync's reorder
+     ;; leaves the copy's children reordered
+     :undo-check {:known-failures [{:bug   "F41"
+                                    :fails {:undo         #{[:object :grid-copy :shapes]}
+                                            :variant-undo #{[:object :grid-copy :shapes]}}
+                                    :op    drop}]}
+     :operation  (tm/in-sequence [drop])
+     :asserter   (fn [s]
+                   (let [main      (tm/role-shape s :main-root)
+                         copy      (tm/role-shape s :copy-root)
+                         loose-id  (:id (tm/role-shape s :loose))
+                         placement (fn [board]
+                                     (let [placed (grid-placement s board)]
+                                       {:col-3    (mapv :id (get placed 3))
+                                        :uncelled (count (remove (into #{} (comp (mapcat val) (map :id)) placed)
+                                                                 (:shapes board)))}))
+                         in-copy   (d/seek #(= loose-id (:shape-ref %))
+                                           (map #(tm/shape-by-id s %) (:shapes copy)))]
+                     (t/is (= {:col-3 [loose-id] :uncelled 0} (placement main)))
+                     (t/is (some? in-copy))
+                     (t/is (= {:col-3 [(:id in-copy)] :uncelled 0} (placement copy)))
+                     (t/is (empty? (:touched copy)))
+                     (t/is (empty? (:touched in-copy)))))}))
+
+(defn library-main-child-removal-reaches-copy
+  "Case AP. A library main with three children deletes its middle one; a copy
+   in the consuming file then takes the library update. The copy loses its
+   middle child and keeps the others in order, linked and untouched."
+  []
+  {:setup     setup/cross-file-component-with-many-children
+   :operation (tm/in-sequence [(n/sync-from-library)])
+   :asserter  (fn [s]
+                (let [c1 (tm/role-shape s :copy-child-1)
+                      c3 (tm/role-shape s :copy-child-3)]
+                  (t/is (= [(:id c1) (:id c3)] (:shapes (tm/role-shape s :copy-root))))
+                  (t/is (some? (:shape-ref c1)))
+                  (t/is (some? (:shape-ref c3)))
+                  (t/is (empty? (:touched c1)))
+                  (t/is (empty? (:touched c3)))))})
+
+(defn main-change-reaches-a-copy-nested-in-a-sub-board
+  "Case AQ. An outer main holds a copy of an inner component inside a
+   sub-board, not directly under its root; the outer main has a copy, which
+   optionally overrides the inner rect's fill. The inner main changes that
+   fill. The outer main's nested copy shows the change, and so does the outer
+   copy unless it overrode it: then it keeps its value, touched."
+  []
+  (let [override (n/change-property (fn [s]
+                                      (n/corresponding-shape-id s
+                                                                (:id (tm/role-shape s :copy-root))
+                                                                (:id (tm/role-shape s :main-instance))))
+                                    :fills green)
+        change   (n/change-property :main-instance :fills red)]
+    {:setup     setup/component-nested-in-a-sub-board
+     :operation (tm/in-sequence [(tm/optional override) change])
+     :asserter  (fn [s]
+                  (let [image (fn [role]
+                                (tm/shape-by-id s (n/corresponding-shape-id
+                                                   s
+                                                   (:id (tm/role-shape s role))
+                                                   (:id (tm/role-shape s :main-instance)))))
+                        in-main (image :main-root)
+                        in-copy (image :copy-root)]
+                    (t/is (n/has-property-of change in-main))
+                    (if (tm/applied? s override)
+                      (do
+                        (t/is (n/has-property-of override in-copy))
+                        (t/is (contains? (:touched in-copy) :fill-group)))
+                      (do
+                        (t/is (n/has-property-of change in-copy))
+                        (t/is (empty? (:touched in-copy)))))))}))
 
 (defn geometry-sync-with-rotated-instances
   "Case N (frontend only). Optionally the copy rotates, optionally the main
