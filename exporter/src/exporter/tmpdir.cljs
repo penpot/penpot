@@ -7,19 +7,16 @@
 (ns exporter.tmpdir
   "The temp-file area as a system component (`:exporter/tmpdir`).
 
-  The legacy `app.util.shell` creates its `tmpdir` at namespace load:
-  config read, log line and `mkdirSync` the first time anything
-  requires it, in every thread including render workers and tests.
-  This component pulls that moment into the lifecycle: referencing the
-  var forces the creation during boot (fail fast on a bad `:tempdir`),
-  orders it before anything that writes temp files, and carries the
-  path in the instance for the day the temp area becomes injected
-  instead of global. Named for what it owns, not for the legacy
-  namespace it shadows."
+  Its config value names the directory (`{:path ...}`, read from the
+  environment at the wiring layer); booting ensures it exists and the
+  running instance is the path itself, which renderers and runners
+  read straight from their config. Fail fast on a blank path instead
+  of failing the first render that writes. Named for what it owns,
+  not for the legacy namespace it shadows."
   (:require
-   [app.util.shell :as sh]
+   [exporter.shell :as shell]
    [exporter.utils.system :as system]))
 
 (defmethod system/init-key :exporter/tmpdir
-  [_ _]
-  {:tmpdir sh/tmpdir})
+  [_ {:keys [path]}]
+  (shell/ensure-dir path))

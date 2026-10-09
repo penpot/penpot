@@ -139,7 +139,12 @@
                                :file-id file-id
                                :object-id (:id frame)
                                :shape frame
-                               :name (:name frame)})
+                               :name (:name frame)
+                               ;; pages render as one pdf: the kind
+                               ;; travels declared, the items fully typed
+                               :type :pdf
+                               :scale 1
+                               :suffix ""})
                             frames)]
 
         (rx/of (modal/show :export-frames
@@ -322,11 +327,14 @@
   A creation that could not even happen (the export queue saturated,
   mostly) reports on the widget and, unless it is saturation, rethrows
   for the global error handling of the store."
-  [ws-conn exports cmd {:keys [force-multiple name is-wasm]}]
+  [ws-conn exports cmd {:keys [force-multiple name is-wasm kind]}]
   (let [params (cond-> {:exports exports
                         :is-wasm is-wasm}
                  (some? name)
                  (assoc :name name)
+
+                 (some? kind)
+                 (assoc :kind kind)
 
                  (some? force-multiple)
                  (assoc :force-multiple force-multiple))]
@@ -403,6 +411,7 @@
            (->> (export-stream! ws-conn exports cmd
                                 {:force-multiple true
                                  :name name
+                                 :kind (if (= :export-frames cmd) :frames :shapes)
                                  :is-wasm (wasm-export-enabled? state)}))))))))
 
 (defn request-export

@@ -10,13 +10,14 @@
   shell-outs; the exported file itself proves the reassembly."
   (:require
    ["generic-pool" :as gp]
+   ["node:os" :as os]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.util.shell :as sh]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]
    [exporter.renderer.browser :as render]
-   [exporter.renderer.svg-gradient :as grad]))
+   [exporter.renderer.svg-gradient :as grad]
+   [exporter.shell :as shell]))
 
 (defn- stub-locator
   [calls evaluate-fn]
@@ -65,6 +66,7 @@
 (defn- test-cfg
   [pool]
   {:exporter.browser/pool pool
+   :exporter/tmpdir       (os/tmpdir)
    :base-uri              (cf/get-internal-uri)
    :public-uri            (cf/get :public-uri)
    :svgo?                 false})
@@ -184,7 +186,7 @@
           {:keys [seen fn]} (collect-on-object)
           _       (await (render/render (test-cfg pool) (test-params :svg ["a"]) fn (never-cancelled)))
           path    (:path (first @seen))
-          content (await (sh/read-file path))]
+          content (await (shell/read-file path))]
       (t/is (= 1 (count @seen)))
       (t/is (str/ends-with? path ".svg"))
       (t/is (str/includes? content "<svg>"))

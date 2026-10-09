@@ -37,11 +37,11 @@
    [app.common.uuid :as uuid]
    [app.handlers.resources :as rsc]
    [app.jobs.utils :as job.utils]
-   [app.util.shell :as sh]
    [cuerdas.core :as str]
    [exporter.consumer.api :as api]
    [exporter.consumer.plan :as plan]
-   [exporter.jobs :as jobs]))
+   [exporter.jobs :as jobs]
+   [exporter.shell :as shell]))
 
 (def ^:private report-throttle-ms 250)
 (def ^:private watchdog-interval-ms 1000)
@@ -115,12 +115,6 @@
 
 ;; ---- THE PARAMS
 
-(defn- frame-item?
-  "The frames export names pages of a file without a `type`: the pdf
-  of their pages. A shape item always names its type."
-  [item]
-  (nil? (:type item)))
-
 (defn- ->uuid
   "One id of the claim into what the renderer wants: the claim carries
   the job row JSON, every id a string, while the render spec only
@@ -131,10 +125,10 @@
 
 (defn- normalize-items
   "The items the claim delivered are the plain JSON the job row holds:
-  the type arrives as text and the renderer dispatches on the keywords
-  the legacy surface received; every id arrives as text and the render
-  spec only takes uuid objects. The frames items are pages, not typed
-  shapes: they name the pdf of a page each."
+  the type arrives as text and the renderer dispatches on keywords;
+  every id arrives as text and the render spec only takes uuid objects.
+  Values that already are uuids or keywords (tests, callers in
+  process) pass through."
   [items]
   (->> items
        (mapv (fn [item]
@@ -143,26 +137,27 @@
                  (string? (:file-id item))   (update :file-id ->uuid)
                  (string? (:page-id item))   (update :page-id ->uuid)
                  (string? (:object-id item)) (update :object-id ->uuid)
-                 (string? (:share-id item))  (update :share-id ->uuid)
-                 (nil? (:type item))         (assoc :type :pdf :scale 1 :suffix ""))))))
+                 (string? (:share-id item))  (update :share-id ->uuid))))))
 
 (defn- make-plan
   "The render plan the legacy handlers prepare: the same transducers of
   names and partition size they served the old surface with, the same
   `single?` rule (one prepared export with one object, not forced),
   and the artifact the whole run fills."
-  [job-id token {:keys [exports force-multiple name skip-children is-wasm]}]
+  [job-id token {:keys [exports kind force-multiple name skip-children is-wasm]}]
   (let [items     (normalize-items exports)
-        frames?   (boolean (every? frame-item? items))
+        ;; declared by the caller, never sniffed: typeless items do not
+        ;; exist on the validated contract, so there is nothing to infer
+        frames?   (= :frames (keyword kind))
         prepared  (plan/prepare-exports items token is-wasm)
         single?   (and (not frames?)
                        (not (true? force-multiple))
                        (= 1 (count prepared))
                        (= 1 (count (-> prepared first :objects))))
-        kind      (cond
-                    single? (-> prepared first :type)
-                    frames? :pdf
-                    :else   :zip)]
+        artifact-kind (cond
+                        single? (-> prepared first :type)
+                        frames? :pdf
+                        :else   :zip)]
     {:frames?      frames?
      :single?      single?
      :job-id       (->uuid job-id)
@@ -171,7 +166,7 @@
      :skip-children skip-children
      :is-wasm      (boolean is-wasm)
      :counter-kind (if frames? :pages :objects)
-     :resource     (rsc/create kind
+     :resource     (rsc/create artifact-kind
                                (or name (-> prepared first :name)))}))
 
 ;; ---- THE RUNNERS
@@ -204,7 +199,7 @@
                                        (job.utils/track job-id (:path obj))
                                        nil)
                     :check-cancelled check-cancelled}))
-    (await (sh/move (:path @object) (:path resource)))
+    (await (shell/move (:path @object) (:path resource)))
     (check-beat (await (beat :packaging (counter counter-kind 1 1) :force? true)))
     resource))
 
@@ -245,17 +240,18 @@
 (defn- ^:async join-pdf
   "The pages render one file per page; `pdfunite` stitches one pdf out
   of them all, the way the legacy export did."
-  [job-id file-id paths]
+  [job-id tmpdir file-id paths]
   (let [path (job.utils/track job-id
-                              (sh/tempfile :prefix (str/concat "penpot.pdfunite." file-id ".")
-                                           :suffix ".pdf"))]
-    (await (sh/run-cmd "pdfunite" (into [] (concat (vec paths) [path]))))
+                              (shell/tempfile tmpdir
+                                              :prefix (str/concat "penpot.pdfunite." file-id ".")
+                                              :suffix ".pdf"))]
+    (await (shell/run-cmd "pdfunite" (into [] (concat (vec paths) [path]))))
     path))
 
 (defn- ^:async run-frames
   "The frames render: a file per page, joined into the pdf of the file
   once every page has landed."
-  [render beat plan check-cancelled]
+  [render tmpdir beat plan check-cancelled]
   (let [{:keys [job-id resource prepared total]} plan
         file-id   (-> prepared first :file-id)
         paths     (volatile! [])
@@ -274,16 +270,16 @@
                                            prepared)
                     :on-object       on-object
                     :check-cancelled check-cancelled}))
-    (let [joined (await (join-pdf job-id file-id @paths))]
-      (await (sh/move joined (:path resource)))
+    (let [joined (await (join-pdf job-id tmpdir file-id @paths))]
+      (await (shell/move joined (:path resource)))
       (check-beat (await (beat :packaging (counter :pages total total) :force? true)))
       resource)))
 
 (defn- run-prepared
-  [render beat check-cancelled plan]
+  [render tmpdir beat check-cancelled plan]
   (cond
     (:single? plan) (run-single render beat plan check-cancelled)
-    (:frames? plan) (run-frames render beat plan check-cancelled)
+    (:frames? plan) (run-frames render tmpdir beat plan check-cancelled)
     :else           (run-multiple render beat plan check-cancelled)))
 
 ;; ---- THE SETTLE
@@ -324,9 +320,10 @@
   "Runs one claimed export to its settle: first breath, render
   session, plan, render batch, multipart complete. `render` is the
   injected render fn (one task map per batch: `:exports`, `:on-object`,
-  `:check-cancelled`); the claim names the job and `params` carries
-  the frozen job params."
-  [render {:keys [job-id]} params]
+  `:check-cancelled`) plus `tmpdir`, the directory every temp path is
+  created under; the claim names the job and `params` carries the
+  frozen job params."
+  [render tmpdir {:keys [job-id]} params]
   (let [session         (atom nil)
         stop-watchdog   (atom nil)
         _               (jobs/register job-id)
@@ -345,7 +342,7 @@
         (l/info :hint "render session minted"
                 :job-id (str job-id))
         (let [plan     (make-plan job-id (:session-token session') params)
-              resource (await (run-prepared render beat check-cancelled plan))]
+              resource (await (run-prepared render tmpdir beat check-cancelled plan))]
           ;; the watchdog outlives the render, so the run stops it on
           ;; the way out: a run that ends badly stops beating too, or
           ;; its interval would knock on a dead job forever, one HTTP

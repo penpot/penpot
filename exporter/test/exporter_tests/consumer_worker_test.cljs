@@ -10,6 +10,7 @@
   and a fake management http."
   (:require
    ["node:fs/promises" :as fsp]
+   ["node:os" :as os]
    ["undici" :as http]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
@@ -60,8 +61,9 @@
 
 (defn- test-cfg
   [extra]
-  (merge {:concurrency 1
-          :queue-key   "the.queue.key"}
+  (merge {:concurrency    1
+          :queue-key      "the.queue.key"
+          :exporter/tmpdir (os/tmpdir)}
          extra))
 
 (t/deftest read-decodes-the-dispatcher-payload

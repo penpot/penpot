@@ -15,7 +15,7 @@
   Acquisition is not capped: the admission scheduler is the backpressure, and
   the idle watchdog guarantees a wedged worker gives its slot back.
 
-  Workers run the same bundle as the main thread; `app.core/start` branches on
+  Workers run the same bundle as the main thread; `exporter.main/start` branches on
   `isMainThread`. There is always at least one worker, since a headless render
   has nowhere else to go."
   (:require

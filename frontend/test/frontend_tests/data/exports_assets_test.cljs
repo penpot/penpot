@@ -200,6 +200,54 @@
                        :the/end)))
         done))))
 
+(t/deftest request-multiple-export-declares-the-frames-kind
+  ;; A frames run names its kind up front: the dialog freezes fully
+  ;; typed pages plus `:kind :frames`, so the worker joins them into
+  ;; one pdf instead of inferring it from missing keys.
+  (t/async done
+    (let [items    [{:page-id   (uuid/next)
+                     :file-id   (uuid/next)
+                     :object-id (uuid/next)
+                     :name      "page"
+                     :type      :pdf
+                     :scale     1
+                     :suffix    ""}]
+          observed (atom nil)]
+      (mock/with-mocks
+        {repo/cmd! (mock/stub (fn [cmd params]
+                                (reset! observed {:cmd cmd :params (:params params)})
+                                (rx/of fake-job)))
+         dj/watch-job (mock/stub (fn [_ _]
+                                   (fake-watch
+                                    [(milestone :rendering 1 1 :pages)
+                                     (completed-emission {:resource-uri "https://resources/uri"
+                                                          :filename "file.pdf"
+                                                          :mtype "application/pdf"})])))
+         dom/trigger-download-uri (mock/stub (fn [& _] nil))
+         st/ongoing-tasks (atom #{})}
+        (fn [done']
+          (let [completed (fn [state]
+                            (t/testing "the creation declared the frames run"
+                              (t/is (= :create-export-assets-job (:cmd @observed)))
+                              (t/is (= :frames (get-in @observed [:params :kind])))
+                              (t/is (= [{:page-id   (:page-id (first items))
+                                         :file-id   (:file-id (first items))
+                                         :object-id (:object-id (first items))
+                                         :name      "page"
+                                         :type      :pdf
+                                         :scale     1
+                                         :suffix    ""}]
+                                       (get-in @observed [:params :exports]))))
+                            (t/testing "the widget followed the job"
+                              (t/is (false? (get-in state [:export :in-progress])))
+                              (t/is (= "ended" (get-in state [:export :status])))))]
+            (ptk/emit! (the/prepare-store (test-state) done' completed)
+                       (de/request-multiple-export {:exports items
+                                                    :cmd :export-frames
+                                                    :name "the export"})
+                       :the/end)))
+        done))))
+
 (t/deftest request-multiple-export-reports-the-saturation
   ;; The creation refused because the queue is full: an answer, not a
   ;; fault — the widget names it and offers the retry.

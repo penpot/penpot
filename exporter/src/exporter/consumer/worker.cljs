@@ -71,7 +71,7 @@
               :name (:name answer) :status (:status answer))
       (do
         (l/info :hint "running job" :job-id (str job-id) :name (:name answer))
-        (await (consumer/run-export (:renderer cfg) {:job-id job-id} (:params answer)))
+        (await (consumer/run-export (:renderer cfg) (:exporter/tmpdir cfg) {:job-id job-id} (:params answer)))
         (l/info :hint "job settled" :job-id (str job-id))
         nil))))
 

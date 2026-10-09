@@ -43,7 +43,7 @@
    {:max (ccfg/concurrency)}
 
    :exporter/tmpdir
-   {}
+   {:path (cf/get :tempdir)}
 
    :exporter/renderer
    {::browser/pool  (system/ref :exporter.browser/pool)
@@ -54,9 +54,10 @@
     :svgo?          (contains? cf/flags :exporter-svgo)}
 
    ::consumer/worker
-   {:renderer    (system/ref :exporter/renderer)
-    :concurrency (ccfg/concurrency)
-    :queue-key   (ccfg/queue-key)}})
+   {:renderer       (system/ref :exporter/renderer)
+    :exporter/tmpdir (system/ref :exporter/tmpdir)
+    :concurrency    (ccfg/concurrency)
+    :queue-key      (ccfg/queue-key)}})
 
 ;; The running system map, or nil when nothing is started.
 ;; Counterpart of the backend's `app.system/system` var.

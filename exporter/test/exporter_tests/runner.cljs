@@ -21,6 +21,7 @@
    [exporter-tests.exporter-consumer-config-test]
    [exporter-tests.exporter-consumer-plan-test]
    [exporter-tests.exporter-jobs-test]
+   [exporter-tests.exporter-shell-test]
    [exporter-tests.jobs-test]
    [exporter-tests.main-test]
    [exporter-tests.renderer-browser-test]
@@ -54,6 +55,7 @@
    'exporter-tests.exporter-consumer-config-test
    'exporter-tests.exporter-consumer-plan-test
    'exporter-tests.exporter-jobs-test
+   'exporter-tests.exporter-shell-test
    'exporter-tests.jobs-test
    'exporter-tests.main-test
    'exporter-tests.api-test

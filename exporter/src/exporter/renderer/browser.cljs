@@ -13,7 +13,8 @@
   plain value or a promise; it is always awaited.
 
   `cfg` is task-free infrastructure: the `:exporter.browser/pool`, the
-  render `:base-uri` and `:public-uri`, and the `:svgo?` flag. The
+  render `:base-uri` and `:public-uri`, the `:exporter/tmpdir` area and
+  the `:svgo?` flag. The
   per-task injections (`on-object`, `check-cancelled`) ride positional. There
   are no promesa chains in this namespace."
   (:require
@@ -26,11 +27,11 @@
    [app.common.types.color :as ctc]
    [app.common.uri :as u]
    [app.util.mime :as mime]
-   [app.util.shell :as sh]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
    [exporter.browser :as browser]
-   [exporter.renderer.svg-gradient :as svg-gradient]))
+   [exporter.renderer.svg-gradient :as svg-gradient]
+   [exporter.shell :as shell]))
 
 (l/set-level! :trace)
 
@@ -68,21 +69,21 @@
 ;; --- BITMAP (png, jpeg, webp)
 
 (defn- ^:async render-bitmap-object
-  [page type object on-object]
-  (let [path (await (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix (mime/get-extension type)))
+  [tmpdir page type object on-object]
+  (let [path (await (shell/tempfile tmpdir :prefix "penpot.tmp.bitmap." :suffix (mime/get-extension type)))
         node (browser/select page (str/concat "#screenshot-" (:id object)))]
     (await (browser/wait-for node))
     (case type
       :png  (await (browser/screenshot node {:omit-background? true :type type :path path}))
       :jpeg (await (browser/screenshot node {:omit-background? false :type type :path path}))
-      :webp (let [png-path (await (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix ".png"))]
+      :webp (let [png-path (await (shell/tempfile tmpdir :prefix "penpot.tmp.bitmap." :suffix ".png"))]
               ;; playwright only supports jpg and png, we need to convert it afterwards
               (await (browser/screenshot node {:omit-background? true :type :png :path png-path}))
-              (await (sh/run-cmd "convert" png-path "-quality" "100" (str "WEBP:" path)))))
+              (await (shell/run-cmd "convert" png-path "-quality" "100" (str "WEBP:" path)))))
     (await (on-object (assoc object :path path)))))
 
 (defn- ^:async render-bitmap-page
-  [uri page type objects on-object]
+  [tmpdir uri page type objects on-object]
   (l/info :uri uri)
   ;; navigate to the page and perform basic setup
   (await (browser/nav page (str uri)))
@@ -90,7 +91,7 @@
   (await (browser/wait-for-fonts page))
   (await (browser/eval page (js* "() => document.body.style.background = 'transparent'")))
   ;; take the screnshot of requested objects, one by one
-  (await (js/Promise.all (mapv (fn [object] (render-bitmap-object page type object on-object))
+  (await (js/Promise.all (mapv (fn [object] (render-bitmap-object tmpdir page type object on-object))
                                objects)))
   nil)
 
@@ -105,7 +106,7 @@
         uri   (render-uri (:base-uri cfg) query)]
     (await (browser/exec (:exporter.browser/pool cfg)
                          (prepare-options uri token scale)
-                         (fn [page] (render-bitmap-page uri page type objects on-object))))))
+                         (fn [page] (render-bitmap-page (:exporter/tmpdir cfg) uri page type objects on-object))))))
 
 ;; --- PDF
 
@@ -140,9 +141,9 @@
                                   "html, body, #app { margin: 0; padding: 0; width: " width "px; height: " height "px; overflow: visible; }"))))))
 
 (defn- ^:async render-pdf-object
-  [page base-uri params object on-object]
+  [tmpdir page base-uri params object on-object]
   (let [uri  (prepare-pdf-uri base-uri params (:id object))
-        path (await (sh/tempfile :prefix "penpot.tmp.pdf." :suffix (mime/get-extension (:type params))))]
+        path (await (shell/tempfile tmpdir :prefix "penpot.tmp.pdf." :suffix (mime/get-extension (:type params))))]
     (l/info :uri uri)
     (await (browser/nav page uri))
     (let [dom (browser/select page (dm/str "#screenshot-" (:id object)))]
@@ -155,10 +156,10 @@
       (await (on-object (assoc object :path path))))))
 
 (defn- ^:async render-pdf-page
-  [base-uri page params objects on-object check-cancelled]
+  [tmpdir base-uri page params objects on-object check-cancelled]
   (doseq [object objects]
     (raise-if-cancelled check-cancelled)
-    (await (render-pdf-object page base-uri params object on-object)))
+    (await (render-pdf-object tmpdir page base-uri params object on-object)))
   nil)
 
 (defn- ^:async render-pdf
@@ -168,7 +169,7 @@
     (await (browser/exec (:exporter.browser/pool cfg)
                          (prepare-options base-uri token scale)
                          (fn [page]
-                           (render-pdf-page base-uri page params (:objects params) on-object check-cancelled))))))
+                           (render-pdf-page (:exporter/tmpdir cfg) base-uri page params (:objects params) on-object check-cancelled))))))
 
 ;; --- SVG
 
@@ -265,14 +266,14 @@
   [pngpath]
   (let [ppmpath (str/concat pngpath "origin.ppm")]
     (l/trace :fn :convert-to-ppm :path ppmpath)
-    (await (sh/run-cmd "convert" pngpath ppmpath))
+    (await (shell/run-cmd "convert" pngpath ppmpath))
     ppmpath))
 
 (defn- ^:async trace-color-mask
   [pbmpath]
   (l/trace :fn :trace-color-mask :pbmpath pbmpath)
   (let [svgpath (str/concat pbmpath ".svg")]
-    (await (sh/run-cmd "potrace" "--flat" "-b" "svg" pbmpath "-o" svgpath))
+    (await (shell/run-cmd "potrace" "--flat" "-b" "svg" pbmpath "-o" svgpath))
     svgpath))
 
 (defn- ^:async generate-color-layer
@@ -283,10 +284,10 @@
               :hint (str "invalid hex color: " color)))
   (l/trace :fn :generate-color-layer :ppmpath ppmpath :color color)
   (let [pbmpath (str/concat ppmpath ".mask-" (subs color 1) ".pbm")
-        stdout  (await (sh/run-cmd "ppmcolormask" color ppmpath))]
-    (await (sh/write-file pbmpath stdout))
+        stdout  (await (shell/run-cmd "ppmcolormask" color ppmpath))]
+    (await (shell/write-file pbmpath stdout))
     (let [svgpath (await (trace-color-mask pbmpath))
-          data    (await (sh/read-file svgpath))
+          data    (await (shell/read-file svgpath))
           data    (xml->clj data)
           data    (get-in data ["elements" 1])]
       {:color   color
@@ -373,11 +374,11 @@
     (join-color-layers node layers)))
 
 (defn- ^:async trace-node
-  [node]
+  [tmpdir node]
   (l/trace :fn :trace-node)
-  (let [pngpath (await (sh/tempfile :prefix "penpot.tmp.render.svg.parse."
-                                    :suffix ".origin.png"))]
-    (await (sh/write-file pngpath (:data node)))
+  (let [pngpath (await (shell/tempfile tmpdir :prefix "penpot.tmp.render.svg.parse."
+                                       :suffix ".origin.png"))]
+    (await (shell/write-file pngpath (:data node)))
     (let [ppmpath (await (convert-to-ppm pngpath))
           svgdata (await (convert-to-svg ppmpath node))]
       (-> node
@@ -419,16 +420,16 @@
     [shot node]))
 
 (defn- ^:async extract-txt-node
-  [page item]
+  [tmpdir page item]
   (let [[shot node] (await (resolve-text-node page item))
         single      (await (extract-single-node [shot node]))]
-    (await (trace-node single))))
+    (await (trace-node tmpdir single))))
 
 (defn- ^:async extract-txt-nodes
-  [page {:keys [id]}]
+  [tmpdir page {:keys [id]}]
   (l/trace :fn :process-text-nodes)
   (let [nodes (await (browser/select-all page (str/concat "#screenshot-" id " foreignObject")))
-        nodes (await (js/Promise.all (mapv (partial extract-txt-node page) nodes)))]
+        nodes (await (js/Promise.all (mapv (partial extract-txt-node tmpdir page) nodes)))]
     (d/index-by :id nodes)))
 
 (defn- ^:async extract-svg
@@ -445,11 +446,11 @@
 
 (defn- ^:async render-svg-object
   [cfg page type object on-object]
-  (let [path (await (sh/tempfile :prefix "penpot.tmp.render.svg." :suffix (mime/get-extension type)))
+  (let [path (await (shell/tempfile (:exporter/tmpdir cfg) :prefix "penpot.tmp.render.svg." :suffix (mime/get-extension type)))
         node (browser/select page (str/concat "#screenshot-" (:id object)))]
     (await (browser/wait-for node))
     (let [xmldata (await (extract-svg page object))
-          txtdata (await (extract-txt-nodes page object))
+          txtdata (await (extract-txt-nodes (:exporter/tmpdir cfg) page object))
           result  (replace-text-nodes xmldata txtdata)
           result  (sanitize-svg-content result)
 
@@ -458,7 +459,7 @@
                     result)
 
           result  (replace-internal-uris result (:base-uri cfg) (:public-uri cfg))]
-      (await (sh/write-file path result))
+      (await (shell/write-file path result))
       (await (on-object (assoc object :path path))))))
 
 (defn- ^:async render-svg-page

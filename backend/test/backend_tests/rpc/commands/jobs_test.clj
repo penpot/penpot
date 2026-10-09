@@ -274,6 +274,26 @@
             params  (jobs/decode-params job-def (:params job))]
         (t/is (= "" (:suffix (first (:exports params)))))))))
 
+(t/deftest create-export-assets-job-accepts-a-frames-kind
+  ;; the frames dialog freezes fully typed pages plus an explicit kind,
+  ;; so the worker joins them into one pdf instead of inferring it
+  ;; from missing keys
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        item    (assoc (export-item file-id) :type :pdf :scale 1 :suffix "")
+        out     (th/command! {::th/type       :create-export-assets-job
+                              ::rpc/profile-id (:id profile)
+                              :params         {:exports [item]
+                                               :kind    :frames}})]
+
+    (t/is (th/success? out))
+
+    (t/testing "and the kind is frozen as-is for the worker"
+      (let [job     (jobs/get-job th/*system* (:id (:result out)))
+            job-def (jobs/get-job-def (::jobs/defs th/*system*) :export-assets)
+            params  (jobs/decode-params job-def (:params job))]
+        (t/is (= :frames (:kind params)))))))
+
 (t/deftest create-export-assets-job-accepts-a-file-nameable-through-a-share
   ;; the viewer that renders a file through a public share exports the
   ;; same way every share fetch goes: the share id names the file, the

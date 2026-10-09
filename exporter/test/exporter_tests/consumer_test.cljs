@@ -11,15 +11,17 @@
   failure or a cancel settles as fail-job and never leaks the beat."
   (:require
    ["node:fs/promises" :as fsp]
+   ["node:os" :as os]
+   ["node:path" :as path]
    ["undici" :as http]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
-   [app.util.shell :as sh]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as cstr]
    [exporter.consumer :as consumer]
    [exporter.consumer.api :as api]
-   [exporter.jobs :as jobs]))
+   [exporter.jobs :as jobs]
+   [exporter.shell :as shell]))
 
 ;; ---- THE MANAGEMENT FAKE
 
@@ -73,8 +75,8 @@
      (js/Promise.
       (fn [resolve reject]
         (let [writes (mapv (fn [_]
-                             (let [path (sh/tempfile :prefix "penpot.render."
-                                                     :suffix ".png")]
+                             (let [path (shell/tempfile (os/tmpdir) :prefix "penpot.render."
+                                                        :suffix ".png")]
                                (.then (fsp/writeFile path content)
                                       (fn [_]
                                         (on-object {:path     path
@@ -123,7 +125,7 @@
                             {:action :run})))
         render         (stub-render "rendered!")]
     (try
-      (await (consumer/run-export render {:job-id job-id} (export-params)))
+      (await (consumer/run-export render (os/tmpdir) {:job-id job-id} (export-params)))
       (t/testing "the run went by first breath, session, beats, settle"
         (t/is (= ["report-job-progress" "create-job-session"
                   "report-job-progress" "report-job-progress"
@@ -152,7 +154,7 @@
         share-id       (uuid/next)]
     (try
       (await (consumer/run-export
-              render
+              render (os/tmpdir)
               {:job-id job-id}
               {:exports [{:file-id   (str (uuid/next))
                           :page-id   (str (uuid/next))
@@ -186,7 +188,7 @@
         job-id         (uuid/next)]
     (try
       (await (consumer/run-export
-              render
+              render (os/tmpdir)
               {:job-id job-id}
               {:exports [{:file-id   (str (uuid/next))
                           :page-id   (str (uuid/next))
@@ -217,7 +219,7 @@
         render         (stub-render-fail)
         job-id         (uuid/next)]
     (try
-      (await (consumer/run-export render {:job-id job-id} (export-params)))
+      (await (consumer/run-export render (os/tmpdir) {:job-id job-id} (export-params)))
       (await (js/Promise. (fn [resolve] (js/setTimeout resolve 1400))))
       (t/testing "the settle was a fail, not a complete"
         (t/is (= "fail-job" (last (steps-of)))))
@@ -242,7 +244,7 @@
         render         (stub-render "should never render")
         job-id         (uuid/next)]
     (try
-      (await (consumer/run-export render {:job-id job-id} (export-params)))
+      (await (consumer/run-export render (os/tmpdir) {:job-id job-id} (export-params)))
       (t/testing "the settle of a cancelled job was a fail the backend answers skip"
         (t/is (= "fail-job" (last (steps-of))))
         (let [fail (call-of "fail-job")]
@@ -251,3 +253,49 @@
         (t/is false (str "unexpected failure: " (ex-message cause))))
       (finally
         (restore-fetch)))))
+
+(t/deftest ^:async run-joins-frame-pages-as-pdf
+  ;; the frames path end to end except pdfunite itself: the page
+  ;; renders, the join runs in the injected temp area, the artifact
+  ;; settles as pdf. Frames travel declared (`:kind`), not sniffed:
+  ;; the items are fully typed pages, as the frozen job holds them.
+  (let [tmpdir         (shell/ensure-dir (path/join (os/tmpdir) "penpot-consumer-frames-test"))
+        restore-fetch  (fake-fetch
+                        (fn [method _body]
+                          (case method
+                            "create-job-session" {:session-id   (uuid/next)
+                                                  :session-token "session-token"}
+                            {:action :run})))
+        render         (stub-render "page!")
+        joined         (atom nil)
+        original-cmd   shell/run-cmd
+        job-id         (uuid/next)]
+    (set! shell/run-cmd
+          (^:async fn [cmd & args]
+            (let [dest (last (filter string? (flatten args)))]
+              (reset! joined [cmd dest])
+              (await (shell/write-file dest "joined!"))
+              nil)))
+    (try
+      (await (consumer/run-export render tmpdir {:job-id job-id}
+                                  {:exports [{:file-id   (str (uuid/next))
+                                              :page-id   (str (uuid/next))
+                                              :object-id (str (uuid/next))
+                                              :type      "pdf"
+                                              :name      "page"
+                                              :suffix    ""
+                                              :scale     1}]
+                                   :kind    "frames"
+                                   :name    "the export"}))
+      (t/testing "pdfunite joined inside the injected temp area"
+        (t/is (= "pdfunite" (first @joined)))
+        (t/is (cstr/starts-with? (second @joined) tmpdir)))
+      (t/testing "the artifact settled as pdf"
+        (let [fd (call-of "complete-job")]
+          (t/is (instance? http/FormData fd))
+          (t/is (= "application/pdf" (.get fd "mtype")))))
+      (catch :default cause
+        (t/is false (str "unexpected failure: " (ex-message cause))))
+      (finally
+        (restore-fetch)
+        (set! shell/run-cmd original-cmd)))))

@@ -9,6 +9,7 @@
   once, against a stub pool with stub pages."
   (:require
    ["generic-pool" :as gp]
+   ["node:os" :as os]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [cljs.test :as t :include-macros true]
@@ -54,6 +55,7 @@
 (defn- test-cfg
   [calls]
   {:exporter.browser/pool (stub-pool calls)
+   :exporter/tmpdir       (os/tmpdir)
    :base-uri              (cf/get-internal-uri)
    :public-uri            (cf/get :public-uri)
    :svgo?                 false})

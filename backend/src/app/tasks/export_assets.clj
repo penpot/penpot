@@ -50,9 +50,13 @@
 (def schema:params
   "Business params of an asset export: the items to render, frozen when
   the job was created, plus the options that shape the output. There is
-  no `wait` here: a job is followed by its id, not waited on."
+  no `wait` here: a job is followed by its id, not waited on. The
+  optional `kind` declares the export the caller asked for (`:frames`
+  joins pages into one pdf); absent it is a shapes export. The worker
+  reads it as declared instead of inferring it from the items."
   [:map {:title "export-assets-params" :closed true}
    [:exports        [:vector {:min 1} schema:export-item]]
+   [:kind           {:optional true} [::sm/one-of #{:shapes :frames}]]
    [:name           {:optional true} ::sm/text]
    [:skip-children  {:optional true} ::sm/boolean]
    [:force-multiple {:optional true} ::sm/boolean]

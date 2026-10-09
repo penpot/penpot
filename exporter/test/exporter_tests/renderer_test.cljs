@@ -11,6 +11,7 @@
   (:require
    ["generic-pool" :as gp]
    ["node:events" :as events]
+   ["node:os" :as os]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -93,6 +94,7 @@
   [calls]
   (let [worker (stub-worker calls)]
     {:exporter.browser/pool    (stub-browser-pool calls)
+     :exporter/tmpdir          (os/tmpdir)
      :base-uri                 (cf/get-internal-uri)
      :public-uri               (cf/get :public-uri)
      :svgo?                    false

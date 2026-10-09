@@ -8,8 +8,11 @@
   "The entry point of the new tree: the namespace loads, and
   start/stop/restart manage the running system."
   (:require
+   ["node:os" :as os]
+   ["node:path" :as path]
    ["node:process" :as proc]
    [app.common.logging :as l]
+   [app.config :as cf]
    [cljs.test :as t :include-macros true]
    [exporter.browser :as browser]
    [exporter.consumer.config :as ccfg]
@@ -56,7 +59,7 @@
                            :base-uri              "http://internal/"
                            :public-uri            "http://public/"
                            :svgo?                 false}
-   :exporter/tmpdir      {}})
+   :exporter/tmpdir      {:path (path/join (os/tmpdir) "penpot-exporter-test")}})
 
 (defn- pool-of
   []
@@ -108,7 +111,11 @@
     (let [worker (:exporter.consumer/worker main/system-config)]
       (t/is (= (ccfg/concurrency) (:concurrency worker)))
       (t/is (= (ccfg/queue-key) (:queue-key worker)))
-      (t/is (= (system/ref :exporter/renderer) (:renderer worker))))))
+      (t/is (= (system/ref :exporter/renderer) (:renderer worker)))
+      (t/is (= (system/ref :exporter/tmpdir) (:exporter/tmpdir worker)))))
+  (t/testing "the temp area is wired from the environment"
+    (t/is (= {:path (cf/get :tempdir)}
+             (:exporter/tmpdir main/system-config)))))
 
 ;; NOTE: no test boots the production wiring: the wasm pool warms one
 ;; worker eagerly (min 1), and in this process the worker script would
@@ -124,7 +131,8 @@
       (t/testing "the renderer boots as a render fn over the resolved pools"
         (t/is (fn? (:exporter/renderer @main/system))))
       (t/testing "the temp area boots before anything that writes to it"
-        (t/is (string? (:tmpdir (:exporter/tmpdir @main/system)))))
+        (t/is (= (path/join (os/tmpdir) "penpot-exporter-test")
+                 (:exporter/tmpdir @main/system))))
       (t/testing "the wasm pool rides the same lifecycle"
         (t/is (some? (:pool (wasm-pool-of))))
         (t/is (= 300000 (:timeout-ms (wasm-pool-of)))))
