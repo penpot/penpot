@@ -131,6 +131,7 @@
    [frontend-tests.ui.shape-filters-test]
    [frontend-tests.ui.shortcuts-labels-test]
    [frontend-tests.ui.sidebar-scroll-test]
+   [frontend-tests.ui.sortable-auto-scroll-test]
    [frontend-tests.ui.stroke-menu-test]
    [frontend-tests.ui.text-attrs-multiple-test]
    [frontend-tests.ui.workspace-libraries-test]
@@ -286,6 +287,7 @@
    'frontend-tests.ui.shape-filters-test
    'frontend-tests.ui.shortcuts-labels-test
    'frontend-tests.ui.sidebar-scroll-test
+   'frontend-tests.ui.sortable-auto-scroll-test
    'frontend-tests.ui.stroke-menu-test
    'frontend-tests.ui.text-attrs-multiple-test
    'frontend-tests.ui.workspace-libraries-test
