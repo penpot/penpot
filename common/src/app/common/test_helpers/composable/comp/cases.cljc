@@ -55,6 +55,18 @@
      AO — a copy dropped into a grid cell of a main reaches the main's copies.
      AP — a library main's middle child removal reaches a copy in another file.
      AQ — a main change reaches a copy nested in a sub-board of the outer main.
+     AR — variant property edits keep the copies of a member as they are; a
+         switch then finds its member by the edited properties.
+     AS — an added variant joins the set and is a switch target for copies.
+     AT..AX — variant management, frontend only: transform a component into a
+         variant (AT), combine components (AU), rename a variant (AV, F6),
+         rename a member in the layers panel and remove empty properties
+         (AW), the shortcuts that add members (AX). Copies of the members
+         keep their link and overrides.
+     AY — a border radius token on a main reaches untouched copies, and its
+         removal too; a copy's own token survives.
+     AZ — a nested copy pasted out of its main keeps the overrides the main
+         gave it (F17).
      N — main edits reach rotated copies (frontend only).
      Rotation — a touched copy child survives a main rotation (frontend only too)."
   (:require
@@ -72,6 +84,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (def ^:private red "#ff0000")
@@ -1097,6 +1110,484 @@
                       (do
                         (t/is (n/has-property-of change in-copy))
                         (t/is (empty? (:touched in-copy)))))))}))
+
+;; ---------------------------------------------------------------------------
+;; Variant management
+;;
+;; The design tab's edits of a variant set, with copies of its members
+;; present. A variant's properties live in its components and in its mains'
+;; `:variant-name`; copies hold neither, so an edit must leave them as they
+;; are, while a later switch finds its member by the edited properties.
+;; ---------------------------------------------------------------------------
+
+(defn- head-rect
+  "The rect inside the copy head bound to target fn `head`."
+  [s head]
+  (let [objects (:objects (thf/current-page (tm/file s)))]
+    (->> (cfh/get-children-ids objects (head s))
+         (map #(get objects %))
+         (d/seek #(= :rect (:type %))))))
+
+(defn variant-property-edits-keep-copies
+  "Case AR. A copy nests member a of a variant set (a, b; their rects differ)
+   and overrides the fill of the variant's rect. The set gets a second
+   property, then one edit: rename the first property, set member a's value,
+   move the new property first, or remove it. The members' properties and
+   their mains' variant names follow the edit; the copy stays an instance of
+   member a with its override, touched only there. Then the copy switches to
+   member b by the first property, at its position after the edit: it becomes
+   an instance of b and, the mains differing on the fill, takes b's fill
+   untouched (decision a)."
+  []
+  (let [m         "main"
+        vset      "vset"
+        nested    (n/nested-head-in m)
+        rename    (n/rename-variant-property vset 0 "Color")
+        set-value (n/set-variant-property-value vset "a" 0 "a2")
+        reorder   (n/reorder-variant-properties vset 1 0)
+        remove    (n/remove-variant-property vset 1)
+        ;; member a's properties and variant name after each edit
+        expected  (fn [s]
+                    (cond
+                      (tm/applied? s rename)    [[["Color" "a"] ["Size" "S"]] "a, S"]
+                      (tm/applied? s set-value) [[["Property 1" "a2"] ["Size" "S"]] "a2, S"]
+                      (tm/applied? s reorder)   [[["Size" "S"] ["Property 1" "a"]] "S, a"]
+                      (tm/applied? s remove)    [[["Property 1" "a"]] "a"]))]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 [(n/create-component m base-color :size 100)
+                  (n/make-variant-container vset [["a" base-color] ["b" red]] :size 100)
+                  (n/make-nested-component-with-variant m vset "a")
+                  (n/instantiate-copy m)
+                  (n/change-property #(:id (head-rect % nested)) :fills green)
+                  (n/add-variant-property vset :name "Size" :value "S")
+                  (tm/one-of [rename set-value reorder remove])
+                  (tm/test-that
+                   (fn [s]
+                     (let [[props variant-name] (expected s)
+                           rect                 (head-rect s nested)]
+                       (t/is (= props (n/member-properties s vset "a")))
+                       (t/is (= variant-name (:variant-name (n/member-root s vset "a"))))
+                       (t/is (= (n/variant-member-component-id s vset "a") (head-component s nested)))
+                       (t/is (= green (fill-color rect)))
+                       (t/is (= #{:fill-group} (:touched rect)))
+                       (t/is (empty? (:touched (tm/shape-by-id s (nested s))))))))
+                  (n/switch-variant nested "b" :pos #(if (tm/applied? % reorder) 1 0))])
+     :asserter  (fn [s]
+                  (let [rect (head-rect s nested)]
+                    (t/is (= (n/variant-member-component-id s vset "b") (head-component s nested)))
+                    (t/is (= red (fill-color rect)))
+                    (t/is (not (contains? (:touched rect) :fill-group)))))}))
+
+(defn added-variant-is-a-switch-target
+  "Case AS. A copy nests member a of a variant set (a, b; their rects differ)
+   and overrides the fill of the variant's rect. A member is added, a
+   duplicate of a or of b: it joins the set with the next value, its main in
+   the set's container, and the copy stays as it was. Then the copy switches
+   to the new member and becomes an instance of it. A duplicate of a agrees
+   with a on the fill, so the override is carried, touched; a duplicate of b
+   does not, so the rect takes b's fill untouched (decision a)."
+  []
+  (let [m      "main"
+        vset   "vset"
+        nested (n/nested-head-in m)
+        from-a (n/add-variant vset "a")
+        from-b (n/add-variant vset "b")
+        added  (fn [s] (n/added-variant-component-id s (if (tm/applied? s from-a) from-a from-b)))]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 [(n/create-component m base-color :size 100)
+                  (n/make-variant-container vset [["a" base-color] ["b" red]] :size 100)
+                  (n/make-nested-component-with-variant m vset "a")
+                  (n/instantiate-copy m)
+                  (n/change-property #(:id (head-rect % nested)) :fills green)
+                  (tm/one-of [from-a from-b])
+                  (tm/test-that
+                   (fn [s]
+                     (let [component (ctkl/get-component (:data (tm/file s)) (added s))
+                           main      (tm/shape-by-id s (:main-instance-id component))
+                           rect      (head-rect s nested)]
+                       (t/is (= [["Property 1" "Value 3"]] (n/component-properties s (added s))))
+                       (t/is (= (n/variant-set-id s vset) (:variant-id component)))
+                       (t/is (= (n/variant-set-id s vset) (:parent-id main)))
+                       (t/is (= (n/variant-member-component-id s vset "a") (head-component s nested)))
+                       (t/is (= green (fill-color rect)))
+                       (t/is (= #{:fill-group} (:touched rect))))))
+                  (n/switch-variant nested "Value 3")])
+     :asserter  (fn [s]
+                  (let [rect (head-rect s nested)]
+                    (t/is (= (added s) (head-component s nested)))
+                    (if (tm/applied? s from-a)
+                      (do
+                        (t/is (= green (fill-color rect)))
+                        (t/is (contains? (:touched rect) :fill-group)))
+                      (do
+                        (t/is (= red (fill-color rect)))
+                        (t/is (not (contains? (:touched rect) :fill-group)))))))}))
+
+(defn- variant-copy-checks
+  "Assert that the copy head bound to target fn `head` is still an instance of
+   `component-id`, its rect keeping the fill `color` override, touched only
+   there."
+  [s head component-id color]
+  (let [rect (head-rect s head)]
+    (t/is (= component-id (head-component s head)))
+    (t/is (= color (fill-color rect)))
+    (t/is (= #{:fill-group} (:touched rect)))
+    (t/is (empty? (:touched (tm/shape-by-id s (head s)))))))
+
+(defn transformed-component-keeps-its-copies
+  "Case AT (frontend only). A component has a copy that overrides its rect's
+   fill; optionally its main gets a path name. The main becomes a variant,
+   from the design tab or with the create-component shortcut on the
+   selected main. The component becomes the first member of a new set with
+   one property, valued after the path's last part if it has one, a second
+   member (a duplicate) joins it, and the copy stays an instance of the
+   component with its override. A switch of the copy to the second member
+   keeps the override, touched, the mains agreeing on the fill (decision
+   a)."
+  []
+  (let [m         "main"
+        head      (n/copy-head-of m)
+        main      (n/main-head-of m)
+        comp      #(n/lineage-component-id % m)
+        path-name (n/change-property main :name "Button/Primary")
+        first-val #(if (tm/applied? % path-name) "Primary" "Value 1")
+        transform (n/transform-in-variant main)
+        shortcut  (n/variant-shortcut :create-component [main])
+        ;; renaming the main to the path's first part syncs the copy's name
+        ;; in an undo entry of its own: one undo reverts only that sync
+        f6        (fn [op]
+                    {:bug     "F6"
+                     :fails   {:undo       #{[:object :sync-main-head :frame-id]
+                                             [:object :sync-main-head :parent-id]
+                                             [:object :sync-main-head :name]
+                                             [:object :sync-main-head :variant-id]
+                                             [:object :sync-main-head :variant-name]
+                                             [:object :sync-main-head :hide-in-viewer]
+                                             [:object :unlabelled :extra]
+                                             [:object :unlabelled :shapes]
+                                             [:component :sync-main-component :name]
+                                             [:component :sync-main-component :variant-id]
+                                             [:component :sync-main-component :variant-properties]
+                                             [:component :unlabelled :extra]}
+                               :undo-index #{[:undo-index 1]}}
+                     :op      op
+                     :runners #{:frontend}
+                     :when    #(tm/applied? % path-name)})]
+    {:setup      setup/empty-situation
+     :undo-check {:known-failures [(f6 transform) (f6 shortcut)]}
+     :operation  (tm/in-sequence
+                  [(n/create-component m base-color :size 100)
+                   (n/instantiate-copy m)
+                   (n/change-property (n/copy-rect-of m) :fills green)
+                   (tm/optional path-name)
+                   (tm/one-of [transform shortcut])
+                   (tm/test-that
+                    (fn [s]
+                      (let [component  (n/component-of s main)
+                            variant-id (:variant-id component)
+                            members    (n/variant-component-ids s variant-id)]
+                        (t/is (some? variant-id))
+                        (t/is (:is-variant-container (tm/shape-by-id s variant-id)))
+                        (t/is (= variant-id (:parent-id (tm/shape-by-id s (main s)))))
+                        (when (tm/applied? s path-name)
+                          (t/is (= "Button" (:name component)))
+                          (t/is (= "Button" (:name (tm/shape-by-id s variant-id)))))
+                        (t/is (= 2 (count members)))
+                        (t/is (= #{[["Property 1" (first-val s)]] [["Property 1" "Value 2"]]}
+                                 (set (map #(n/component-properties s %) members))))
+                        (t/is (= [["Property 1" (first-val s)]] (n/component-properties s (comp s))))
+                        (variant-copy-checks s head (comp s) green))))
+                   (n/switch-variant head "Value 2")])
+     :asserter  (fn [s]
+                  (let [rect   (head-rect s head)
+                        second (->> (n/variant-component-ids s (:variant-id (n/component-of s main)))
+                                    (remove #{(comp s)})
+                                    first)]
+                    (t/is (= second (head-component s head)))
+                    (t/is (= green (fill-color rect)))
+                    (t/is (contains? (:touched rect) :fill-group))))}))
+
+(defn combined-components-keep-their-copies
+  "Case AU (frontend only). Two components, each with a copy; the first copy
+   overrides its rect's fill. Their mains are combined as variants, by ids or
+   as the selection. Both components become members of one new set, each
+   with its own value, and the copies stay instances of their components,
+   the override kept. The first copy then switches to the second member and
+   takes its fill untouched, the mains differing (decision a)."
+  []
+  (let [m1   "first"
+        m2   "second"
+        head (n/copy-head-of m1)
+        mains [(n/main-head-of m1) (n/main-head-of m2)]
+        value (fn [s] (-> (n/component-properties s (n/lineage-component-id s m2)) first second))]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 [(n/create-component m1 base-color :size 100)
+                  (n/create-component m2 red :size 100)
+                  (n/instantiate-copy m1)
+                  (n/instantiate-copy m2)
+                  (n/change-property (n/copy-rect-of m1) :fills green)
+                  (tm/one-of [(n/combine-as-variants mains)
+                              (n/combine-as-variants mains :selected? true)])
+                  (tm/test-that
+                   (fn [s]
+                     (let [c1 (n/lineage-component-id s m1)
+                           c2 (n/lineage-component-id s m2)
+                           variant-id (:variant-id (n/component-of s (first mains)))]
+                       (t/is (some? variant-id))
+                       (t/is (= variant-id (:variant-id (n/component-of s (second mains)))))
+                       (t/is (= #{c1 c2} (set (n/variant-component-ids s variant-id))))
+                       (t/is (not= (n/component-properties s c1) (n/component-properties s c2)))
+                       (variant-copy-checks s head c1 green)
+                       (t/is (= c2 (head-component s (n/copy-head-of m2))))
+                       (t/is (= red (head-rect-color s (n/copy-head-of m2)))))))
+                  (n/switch-variant head value)])
+     :asserter  (fn [s]
+                  (let [rect (head-rect s head)]
+                    (t/is (= (n/lineage-component-id s m2) (head-component s head)))
+                    (t/is (= red (fill-color rect)))
+                    (t/is (not (contains? (:touched rect) :fill-group)))))}))
+
+(defn variant-rename-reaches-copy-names
+  "Case AV (frontend only). A copy nests member a of a variant set and
+   optionally renames its nested copy. The set is renamed from the design
+   tab. The container and every member's main take the new name, and so does
+   the nested copy in the outer main; the copy's nested copy takes it too
+   unless renamed, then it keeps its name, touched (decision d)."
+  []
+  (let [m           "main"
+        vset        "vset"
+        nested      (n/nested-head-in m)
+        in-main     (n/nested-head-under (n/main-head-of m))
+        rename-copy (n/change-property nested :name "Mine")
+        rename      (n/rename-variant #(:id (n/member-root % vset "a")) "Renamed")]
+    {:setup      setup/empty-situation
+     ;; the rename's transaction keeps the undo group of its first commit, the
+     ;; container's, while the copies' sync takes the group of the main
+     ;; renames: one undo reverts only the sync
+     :undo-check {:known-failures [{:bug     "F6"
+                                    :fails   {:undo       #{[:object :sync-vset-vcontainer :name]
+                                                            [:object :sync-vset-v0-root :name]
+                                                            [:object :sync-vset-v1-root :name]
+                                                            [:component :sync-vset-v0-component :name]
+                                                            [:component :sync-vset-v1-component :name]}
+                                              :undo-index #{[:undo-index 1]}}
+                                    :op      rename
+                                    :runners #{:frontend}}]}
+     :operation (tm/in-sequence
+                 [(n/create-component m base-color :size 100)
+                  (n/make-variant-container vset [["a" base-color] ["b" red]] :size 100)
+                  (n/make-nested-component-with-variant m vset "a")
+                  (n/instantiate-copy m)
+                  (tm/optional rename-copy)
+                  rename])
+     :asserter   (fn [s]
+                   (let [copy (tm/shape-by-id s (nested s))]
+                     (t/is (= "Renamed" (:name (tm/shape-by-id s (n/variant-set-id s vset)))))
+                     (doseq [v ["a" "b"]]
+                       (t/is (= "Renamed" (:name (n/member-root s vset v))) v))
+                     (t/is (= "Renamed" (:name (tm/shape-by-id s (in-main s)))))
+                     (if (tm/applied? s rename-copy)
+                       (do
+                         (t/is (= "Mine" (:name copy)))
+                         (t/is (contains? (:touched copy) :name-group)))
+                       (do
+                         (t/is (= "Renamed" (:name copy)))
+                         (t/is (not (contains? (:touched copy) :name-group)))))))}))
+
+(defn variant-layer-rename-and-cleanup
+  "Case AW (frontend only). A copy nests member a of a variant set (a, b; their
+   rects differ) and overrides the fill of the variant's rect. Member a is
+   renamed in the layers panel: its value changes and a property Size is
+   added, empty on b. The set gets a property with no values and the empty
+   properties are removed: only that one goes, Size holding a value. A
+   second layers-panel rename drops Size from a, leaving it empty on every
+   member, and the empty properties are removed again: Size goes. Then
+   member b gets an error and loses it. The copy stays as it was through
+   every step, and a switch then finds member b."
+  []
+  (let [m      "main"
+        vset   "vset"
+        nested (n/nested-head-in m)
+        a-id   #(n/variant-member-component-id % vset "a")
+        b-root #(n/member-root % vset "b")
+        props  (fn [s]
+                 [(n/member-properties s vset "a") (n/member-properties s vset "b")])
+        resized [[["Property 1" "a2"] ["Size" "S"]] [["Property 1" "b"] ["Size" ""]]]]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 [(n/create-component m base-color :size 100)
+                  (n/make-variant-container vset [["a" base-color] ["b" red]] :size 100)
+                  (n/make-nested-component-with-variant m vset "a")
+                  (n/instantiate-copy m)
+                  (n/change-property #(:id (head-rect % nested)) :fills green)
+                  (n/rename-variant-in-layers vset "a" [["Property 1" "a2"] ["Size" "S"]])
+                  (tm/test-that
+                   (fn [s]
+                     (t/is (= resized (props s)))
+                     (t/is (= "a2, S" (:variant-name (n/member-root s vset "a"))))
+                     (variant-copy-checks s nested (a-id s) green)))
+                  (n/add-variant-property vset :name "Empty")
+                  (n/remove-empty-properties vset)
+                  (tm/test-that
+                   (fn [s]
+                     (t/is (= resized (props s)))
+                     (variant-copy-checks s nested (a-id s) green)))
+                  (n/rename-variant-in-layers vset "a" [["Property 1" "a2"]])
+                  (tm/test-that
+                   (fn [s]
+                     (t/is (= [[["Property 1" "a2"] ["Size" ""]] [["Property 1" "b"] ["Size" ""]]]
+                              (props s)))))
+                  (n/remove-empty-properties vset)
+                  (tm/test-that
+                   (fn [s]
+                     (t/is (= [[["Property 1" "a2"]] [["Property 1" "b"]]] (props s)))
+                     (t/is (= "a2" (:variant-name (n/member-root s vset "a"))))
+                     (variant-copy-checks s nested (a-id s) green)))
+                  (n/set-variant-error vset "b" "Duplicated")
+                  (tm/test-that (fn [s] (t/is (= "Duplicated" (:variant-error (b-root s))))))
+                  (n/set-variant-error vset "b" nil)
+                  (tm/test-that
+                   (fn [s]
+                     (t/is (nil? (:variant-error (b-root s))))
+                     (variant-copy-checks s nested (a-id s) green)))
+                  (n/switch-variant nested "b")])
+     :asserter  (fn [s]
+                  (let [rect (head-rect s nested)]
+                    (t/is (= (n/variant-member-component-id s vset "b") (head-component s nested)))
+                    (t/is (= red (fill-color rect)))
+                    (t/is (not (contains? (:touched rect) :fill-group)))))}))
+
+(defn variant-shortcuts-add-members
+  "Case AX (frontend only). A copy nests member a of a variant set (a, b) and
+   overrides the fill of the variant's rect. With member a, or members a and
+   b, selected, the create-component or the duplicate shortcut adds one
+   member per selected one, each a duplicate with a value of its own. The
+   copy stays as it was."
+  []
+  (let [m      "main"
+        vset   "vset"
+        nested (n/nested-head-in m)
+        a      #(:id (n/member-root % vset "a"))
+        b      #(:id (n/member-root % vset "b"))
+        sweep  (tm/one-of [(n/variant-shortcut :create-component [a])
+                           (n/variant-shortcut :duplicate [a])
+                           (n/variant-shortcut :create-component [a b])
+                           (n/variant-shortcut :duplicate [a b])])]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 [(n/create-component m base-color :size 100)
+                  (n/make-variant-container vset [["a" base-color] ["b" red]] :size 100)
+                  (n/make-nested-component-with-variant m vset "a")
+                  (n/instantiate-copy m)
+                  (n/change-property #(:id (head-rect % nested)) :fills green)
+                  sweep])
+     :asserter  (fn [s]
+                  (let [members (n/variant-component-ids s (n/variant-set-id s vset))
+                        added   (count (get-in (tm/get-choice s sweep) [:params :targets]))]
+                    (t/is (= (+ 2 added) (count members)))
+                    (t/is (apply distinct? (map #(n/component-properties s %) members)))
+                    (variant-copy-checks s nested (n/variant-member-component-id s vset "a") green)))}))
+
+(defn- subtree-rect
+  "The rect in the subtree of the shape bound to target fn `head`."
+  [s head]
+  (let [objects (:objects (thf/current-page (tm/file s)))]
+    (->> (cfh/get-children-ids objects (head s))
+         (map #(get objects %))
+         (d/seek #(= :rect (:type %))))))
+
+(defn copy-moved-out-of-its-main-keeps-inherited-overrides
+  "Case AZ. A main nests a copy of another component and overrides the fill
+   of its rect; optionally a second main nests a copy of that main, whose
+   inner copy then inherits the override without holding it. The innermost
+   copy of the latest main is copied and pasted at the page root: the new
+   copy is a copy of the inner component and shows the overridden fill.
+   Then the inner main changes that fill. The new copy keeps the fill the
+   main gave it, as its own override, touched: the copy merges the touched
+   groups of the ref chain it skips, the way a detach keeps the near main's
+   overrides (F17 does not show through paste)."
+  []
+  (let [m      "main"
+        inner  (fn [s] (:parent-id (tm/shape-by-id s ((n/main-rect-of m) s))))
+        paste  (n/paste-to-root inner)
+        head   (n/duplicate-head-of paste)]
+    {:setup     setup/empty-situation
+     :operation (tm/in-sequence
+                 [(n/create-component m base-color :size 100)
+                  (n/make-nested-component m)
+                  (n/change-property (n/main-rect-of m) :fills green)
+                  (tm/optional (n/make-nested-component m))
+                  paste
+                  (tm/test-that
+                   (fn [s]
+                     (let [rect (subtree-rect s head)]
+                       (t/is (= uuid/zero (:parent-id (tm/shape-by-id s (head s)))))
+                       (t/is (= ((n/remote-rect-of m) s) (:shape-ref rect)))
+                       (t/is (= green (fill-color rect))))))
+                  (n/change-property (n/remote-rect-of m) :fills red)])
+     :asserter  (fn [s]
+                  (let [rect (subtree-rect s head)]
+                    (t/is (= green (fill-color rect)))
+                    (t/is (contains? (:touched rect) :fill-group))))}))
+
+;; ---------------------------------------------------------------------------
+;; Tokens
+;; ---------------------------------------------------------------------------
+
+(defn token-on-a-main-reaches-copies
+  "Case AY. The copy of a component optionally applies a border radius token
+   to its rect, then the main applies another one to its own. The main's
+   token and radius reach the copy unless it applied its own: then it keeps
+   its token and radius, touched. Then the main optionally removes its
+   token: a copy that followed loses it and keeps the radius; one with its
+   own token keeps it."
+  []
+  (let [m       "main"
+        own     (n/apply-token (n/copy-rect-of m) "radius.s" 10)
+        applied (n/apply-token (n/main-rect-of m) "radius.l" 30)
+        removal (n/unapply-token (n/main-rect-of m) "radius.l")
+        rect    (fn [s target] (tm/shape-by-id s (target s)))]
+    {:setup      setup/empty-situation
+     ;; the undo of the sync gives the copy rect, which had no tokens, an
+     ;; empty `:applied-tokens` map
+     :undo-check {:known-failures [{:bug   "F55"
+                                    :fails {:undo         #{[:object :unlabelled :applied-tokens]}
+                                            :variant-undo #{[:object :unlabelled :applied-tokens]}}
+                                    :op    applied
+                                    :when  #(not (tm/applied? % own))}]}
+     :operation  (tm/in-sequence
+                  [(n/create-component m base-color :size 100)
+                   (n/add-tokens [["radius.s" 10] ["radius.l" 30]])
+                   (n/instantiate-copy m)
+                   (tm/optional own)
+                   applied
+                   (tm/test-that
+                    (fn [s]
+                      (let [copy (rect s (n/copy-rect-of m))]
+                        (t/is (n/has-token? (rect s (n/main-rect-of m)) "radius.l" 30))
+                        (if (tm/applied? s own)
+                          (do
+                            (t/is (n/has-token? copy "radius.s" 10))
+                            (t/is (contains? (:touched copy) :radius-group)))
+                          (do
+                            (t/is (n/has-token? copy "radius.l" 30))
+                            (t/is (empty? (:touched copy))))))))
+                   (tm/optional removal)])
+     :asserter  (fn [s]
+                  (when (tm/applied? s removal)
+                    (let [main (rect s (n/main-rect-of m))
+                          copy (rect s (n/copy-rect-of m))]
+                      (t/is (empty? (:applied-tokens main)))
+                      (t/is (= 30 (:r1 main)))
+                      (if (tm/applied? s own)
+                        (t/is (n/has-token? copy "radius.s" 10))
+                        (do
+                          (t/is (empty? (:applied-tokens copy)))
+                          (t/is (= 30 (:r1 copy)))
+                          (t/is (empty? (:touched copy))))))))}))
 
 (defn geometry-sync-with-rotated-instances
   "Case N (frontend only). Optionally the copy rotates, optionally the main

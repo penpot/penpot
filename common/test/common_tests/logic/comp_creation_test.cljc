@@ -19,6 +19,8 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -450,6 +452,59 @@
     (t/is (ctk/main-instance? main1-root'))
     (t/is (ctk/main-instance-of? (:id main1-root') (:id page) component1'))
     (t/is (nil? saved-objects'))))
+
+(defn- restore-after-page-deletion
+  "Delete :component1, whose main lives on :page-2, then delete that page,
+   and restore the component from `current-page`. Returns the restored
+   file."
+  [file current-page]
+  (let [page2       (thf/get-page file :page-2)
+        root        (ths/get-shape file :main1-root :page-label :page-2)
+        [_ changes] (cls/generate-delete-shapes (pcb/empty-changes)
+                                                file
+                                                page2
+                                                (:objects page2)
+                                                #{(:id root)}
+                                                {:components-v2 true})
+        file        (-> (thf/apply-changes file changes)
+                        (ctf/update-file-data #(ctpl/delete-page % (:id page2))))
+        changes     (cll/generate-restore-component (pcb/empty-changes)
+                                                    (:data file)
+                                                    (thi/id :component1)
+                                                    (:id file)
+                                                    current-page
+                                                    (:objects current-page))]
+    (thf/apply-changes file changes)))
+
+(defn- three-page-file
+  "A file with pages :page-1, :page-2 (holding the main of :component1) and
+   :page-3."
+  []
+  (-> (thf/sample-file :file1 :page-label :page-1)
+      (thf/add-sample-page :page-2)
+      (tho/add-simple-component :component1 :main1-root :main1-child)
+      (thf/add-sample-page :page-3)
+      (thf/switch-to-page :page-1)))
+
+(t/deftest test-restore-component-whose-page-was-deleted
+  (let [file  (three-page-file)
+        file' (restore-after-page-deletion file (thf/get-page file :page-1))
+        comp' (thc/get-component file' :component1 :include-deleted? false)]
+    ;; the current page belongs to the library, so the main goes there
+    (t/is (some? comp'))
+    (t/is (= (thi/id :page-1) (:main-instance-page comp')))
+    (t/is (some? (get-in (thf/get-page file' :page-1) [:objects (:main-instance-id comp')])))))
+
+(t/deftest test-restore-component-from-a-page-of-another-file
+  (let [file  (three-page-file)
+        other (thf/sample-page :other-page)
+        file' (restore-after-page-deletion file other)
+        comp' (thc/get-component file' :component1 :include-deleted? false)]
+    ;; the current page is not one of the library's, so the main goes to
+    ;; the library's last page
+    (t/is (some? comp'))
+    (t/is (= (thi/id :page-3) (:main-instance-page comp')))
+    (t/is (some? (get-in (thf/get-page file' :page-3) [:objects (:main-instance-id comp')])))))
 
 (t/deftest test-instantiate-component
   (let [;; ==== Setup

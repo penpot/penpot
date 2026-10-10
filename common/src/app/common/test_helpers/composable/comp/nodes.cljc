@@ -14,10 +14,12 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
@@ -26,10 +28,18 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.tokens :as tht]
+   [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.text :as txt]))
+   [app.common.types.shape.radius :as ctsr]
+   [app.common.types.text :as txt]
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
+   [app.common.uuid :as uuid]))
 
 ;; ---------------------------------------------------------------------------
 ;; Operation kinds: how a runner treats a node.
@@ -956,6 +966,80 @@
   (fn [s] (:new-head (tm/node-data s node))))
 
 ;; ---------------------------------------------------------------------------
+;; paste-to-root — copy a shape and paste it at the page root
+;;
+;; As the clipboard does: the copy advances the shape refs of the nested copy
+;; heads in the copied subtree by the copy levels they leave, merging the
+;; touched groups of the ref chain they skip (`copy-selected`), and the paste
+;; duplicates the copied subtree under the root (`paste-shapes`, through
+;; `generate-duplicate-changes`).
+;; ---------------------------------------------------------------------------
+
+(defn- copied-objects
+  "The subtree of `id` as the clipboard copies it."
+  [file page libraries id]
+  (let [objects   (:objects page)
+        container (ctn/make-container page :page)
+        advance   (fn [delta copied shape]
+                    (let [new-ref (ctf/advance-shape-ref file page libraries shape delta
+                                                         {:include-deleted? true})]
+                      (cond-> copied
+                        (and (some? new-ref) (not= new-ref (:shape-ref shape)))
+                        (-> (assoc-in [(:id shape) :shape-ref] new-ref)
+                            (assoc-in [(:id shape) :touched]
+                                      (ctf/get-touched-from-ref-chain-until-target-ref
+                                       container libraries shape new-ref))))))
+        copied    (into {} (map (juxt :id identity)) (cfh/get-children-with-self objects id))]
+    (reduce (fn [copied head]
+              (if (and (ctk/instance-head? head) (not (ctk/main-instance? head)))
+                (let [delta (if (nil? (ctk/get-swap-slot head))
+                              (ctn/get-nesting-level-delta objects head uuid/zero)
+                              0)]
+                  (if (pos? delta)
+                    (reduce (partial advance delta) copied (cfh/get-children-with-self objects (:id head)))
+                    copied))
+                copied))
+            copied
+            (ctn/get-child-heads copied id))))
+
+(defrecord PasteToRoot [target]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  IAppliedResult
+  (applied-result [_ file-before file-after]
+    {:new-head (new-subtree-head (thf/current-page file-before)
+                                 (thf/current-page file-after))})
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file  (tm/file situation)
+          page      (thf/current-page the-file)
+          libs      (libraries situation)
+          id        (tm/target-shape-id situation target)
+          copied    (-> (copied-objects the-file page libs id)
+                        (update id assoc :parent-id uuid/zero :frame-id uuid/zero))
+          changes   (-> (pcb/empty-changes nil (:id page))
+                        (cll/generate-duplicate-changes (merge (:objects page) copied)
+                                                        page
+                                                        #{id}
+                                                        (gpt/point 0 0)
+                                                        libs
+                                                        (:data the-file)
+                                                        (:id the-file)))
+          file'     (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this (merge {:target target}
+                                             (applied-result this the-file file')))))))
+
+(defn paste-to-root
+  "Copy the shape `target` names and paste it at the page root."
+  [target]
+  (tm/assign-id (->PasteToRoot target)))
+
+;; ---------------------------------------------------------------------------
 ;; nest-copy — move an existing copy into a main
 ;;
 ;; Moves the copy head bound to `copy` under the shape bound to `into`, as its
@@ -1243,13 +1327,24 @@
 ;; switch-variant — switch a variant copy head to a sibling member
 ;;
 ;; Switches the variant copy head bound to `target` to the member whose
-;; property has `value`, through `find-switch-target` and a keep-touched
-;; `generate-component-swap-in-place` (`variants-switch` on the frontend). The
+;; property at position `pos` has `value`, through `find-switch-target` and a
+;; keep-touched `generate-component-swap-in-place` (`variants-switch` on the
+;; frontend). The
 ;; event's follow-ups (token propagation, WASM text resize, layout update) are
 ;; frontend code, left out here.
 ;; ---------------------------------------------------------------------------
 
-(defrecord SwitchVariant [target value]
+(defn switch-pos
+  "The property position the `switch-variant` node `op` switches by."
+  [situation {:keys [pos]}]
+  (if (fn? pos) (pos situation) pos))
+
+(defn switch-value
+  "The property value the `switch-variant` node `op` switches to."
+  [situation {:keys [value]}]
+  (if (fn? value) (value situation) value))
+
+(defrecord SwitchVariant [target value pos]
   IComponentOperation
   (op-kind [_] :user)
 
@@ -1260,7 +1355,9 @@
           objects   (:objects page)
           libraries (libraries situation)
           shape     (get objects (tm/target-shape-id situation target))
-          component (clv/find-switch-target libraries shape 0 value)]
+          component (clv/find-switch-target libraries shape
+                                            (switch-pos situation this)
+                                            (switch-value situation this))]
       (cond
         ;; the value is already `value`, or no sibling has it: nothing happens
         (nil? component)
@@ -1290,9 +1387,269 @@
 
 (defn switch-variant
   "Switch the variant copy head `target` names to the member whose property
-   has value `value`."
-  [target value]
-  (tm/assign-id (->SwitchVariant target value)))
+   at position `:pos` (default 0) has value `value`. Both may be
+   `(situation -> x)` fns, for sets an action built."
+  [target value & {:keys [pos] :or {pos 0}}]
+  (tm/assign-id (->SwitchVariant target value pos)))
+
+;; ---------------------------------------------------------------------------
+;; Variant properties — add, remove, rename, reorder a property of a set, or
+;; set the value of a member
+;;
+;; The edits of the design tab's variant properties, through the
+;; `app.common.logic.variant-properties` generators (the `dwv` events on the
+;; frontend). `variant-property-call` resolves an edit to the generator's
+;; arguments, which the frontend events take too. A member is named by the
+;; value it was built with (`variant-member`), whatever its value now.
+;; ---------------------------------------------------------------------------
+
+(defn variant-set-id
+  "The variant id of set `set-name`."
+  [situation set-name]
+  (:variant-id (variant-set situation set-name)))
+
+(defn member-component
+  "The component of set `set-name`'s member built with value `value`, read
+   from the file."
+  [situation set-name value]
+  (ctkl/get-component (:data (tm/file situation))
+                      (variant-member-component-id situation set-name value)))
+
+(defn component-properties
+  "The variant properties of the component `component-id`, as
+   `[[name value] ...]`."
+  [situation component-id]
+  (->> (ctkl/get-component (:data (tm/file situation)) component-id)
+       :variant-properties
+       (mapv (juxt :name :value))))
+
+(defn member-properties
+  "The variant properties of set `set-name`'s member built with value `value`,
+   as `[[name value] ...]`."
+  [situation set-name value]
+  (component-properties situation (variant-member-component-id situation set-name value)))
+
+(defn member-root
+  "The main root of set `set-name`'s member built with value `value`."
+  [situation set-name value]
+  (tm/shape-by-id situation (thi/id (:root-label (variant-member situation set-name value)))))
+
+(defn variant-property-call
+  "The edit of `op` as `[edit & args]`, the arguments the generator and the
+   frontend event of `edit` take after the changes."
+  [situation {:keys [set-name edit params]}]
+  (let [variant-id (variant-set-id situation set-name)]
+    (case edit
+      :add       [:add variant-id (select-keys params [:property-name :property-value])]
+      :remove    [:remove variant-id (:pos params)]
+      :rename    [:rename variant-id (:pos params) (:name params)]
+      :reorder   [:reorder variant-id (:from params) (:to params)]
+      :set-value [:set-value
+                  (variant-member-component-id situation set-name (:member params))
+                  (:pos params)
+                  (:value params)])))
+
+(defn- variant-property-changes
+  [changes [edit & args]]
+  (case edit
+    :add       (let [[variant-id opts] args]
+                 (clvp/generate-add-new-property changes variant-id opts))
+    :remove    (apply clvp/generate-remove-property changes args)
+    :rename    (apply clvp/generate-update-property-name changes args)
+    :reorder   (apply clvp/generate-reorder-variant-poperties changes args)
+    :set-value (apply clvp/generate-update-property-value changes args)))
+
+(defrecord EditVariantProperty [set-name edit params]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          page     (thf/current-page the-file)
+          changes  (-> (pcb/empty-changes nil (:id page))
+                       (pcb/with-library-data (:data the-file))
+                       (pcb/with-objects (:objects page))
+                       (variant-property-changes (variant-property-call situation this)))
+          file'    (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes (when (seq (:redo-changes changes)) changes))
+          (tm/record-application this {:set-name set-name :edit edit :params params})))))
+
+(defn add-variant-property
+  "Add a property `:name` to set `set-name`, with value `:value` on every
+   member (empty when not given)."
+  [set-name & {:keys [name value]}]
+  (tm/assign-id (->EditVariantProperty set-name :add (cond-> {}
+                                                       name  (assoc :property-name name)
+                                                       value (assoc :property-value value)))))
+
+(defn remove-variant-property
+  "Remove the property at position `pos` from set `set-name`."
+  [set-name pos]
+  (tm/assign-id (->EditVariantProperty set-name :remove {:pos pos})))
+
+(defn rename-variant-property
+  "Rename the property at position `pos` of set `set-name` to `name`."
+  [set-name pos name]
+  (tm/assign-id (->EditVariantProperty set-name :rename {:pos pos :name name})))
+
+(defn reorder-variant-properties
+  "Move the property at position `from` of set `set-name` to the gap before
+   position `to`."
+  [set-name from to]
+  (tm/assign-id (->EditVariantProperty set-name :reorder {:from from :to to})))
+
+(defn set-variant-property-value
+  "Set the value of the property at position `pos` of set `set-name`'s member
+   built with value `member` to `value`."
+  [set-name member pos value]
+  (tm/assign-id (->EditVariantProperty set-name :set-value
+                                       {:member member :pos pos :value value})))
+
+;; ---------------------------------------------------------------------------
+;; add-variant — add a member to a variant set
+;;
+;; The "add variant" action on a member: a duplicate of its component joins
+;; the set, its last property set to the next "Value n", through
+;; `clv/generate-add-new-variant` (`add-new-variant` on the frontend, which
+;; also places the new main in the container and selects it).
+;; ---------------------------------------------------------------------------
+
+(defn- new-component-id
+  "The id of the component that `file-after` has and `file-before` has not."
+  [file-before file-after]
+  (let [before (set (map :id (ctkl/components-seq (:data file-before))))]
+    (->> (ctkl/components-seq (:data file-after))
+         (map :id)
+         (remove before)
+         (first))))
+
+(defrecord AddVariant [set-name member]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  IAppliedResult
+  (applied-result [_ file-before file-after]
+    {:component-id (new-component-id file-before file-after)})
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file  (tm/file situation)
+          page      (thf/current-page the-file)
+          root      (member-root situation set-name member)
+          component (member-component situation set-name member)
+          changes   (-> (pcb/empty-changes nil (:id page))
+                        (pcb/with-library-data (:data the-file))
+                        (pcb/with-objects (:objects page))
+                        (clv/generate-add-new-variant root
+                                                      (:variant-id component)
+                                                      (uuid/next)
+                                                      (uuid/next)
+                                                      (dec (count (:variant-properties component)))))
+          file'     (thf/apply-changes the-file changes :validate? false)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this (merge {:set-name set-name :member member}
+                                             (applied-result this the-file file')))))))
+
+(defn add-variant
+  "Add a member to set `set-name`, a duplicate of its member built with value
+   `member`."
+  [set-name member]
+  (tm/assign-id (->AddVariant set-name member)))
+
+(defn added-variant-component-id
+  "The id of the component that the `add-variant` node `node` added."
+  [situation node]
+  (:component-id (tm/node-data situation node)))
+
+;; ---------------------------------------------------------------------------
+;; Variant actions with no common generator (frontend only)
+;;
+;; Transform a component into a variant, combine components as variants,
+;; rename a variant, rename a member in the layers panel, remove the empty
+;; properties, set a member's error, and the shortcuts that add a variant to
+;; selected members. Their logic is in the `dwv` events, so the frontend
+;; interpreter sends them and the pure runner rejects them. A set these
+;; actions build has no `variant-set` record: read it from the file
+;; (`component-of`, `variant-component-ids`).
+;; ---------------------------------------------------------------------------
+
+(defrecord VariantAction [action params]
+  IComponentOperation
+  (op-kind [_] :frontend-only)
+
+  tm/IOperation
+  (apply-to [_ _]
+    (throw (ex-info (str "variant action " action " runs only in the frontend")
+                    {:action action}))))
+
+(defn- variant-action
+  [action params]
+  (tm/assign-id (->VariantAction action params)))
+
+(defn transform-in-variant
+  "Turn the component whose main root `target` names into the first member of
+   a new variant set (`transform-in-variant`), which also adds a second
+   member."
+  [target]
+  (variant-action :transform {:target target}))
+
+(defn combine-as-variants
+  "Combine the components whose main roots `targets` name into a new variant
+   set (`combine-as-variants`), or with `:selected?`, select them and combine
+   the selection (`combine-selected-as-variants`)."
+  [targets & {:keys [selected?]}]
+  (variant-action :combine {:targets targets :selected? selected?}))
+
+(defn rename-variant
+  "Rename the variant set of the member whose main root `target` names, its
+   container and every member's main (`rename-comp-or-variant-and-main`)."
+  [target name]
+  (variant-action :rename {:target target :name name}))
+
+(defn rename-variant-in-layers
+  "Rename set `set-name`'s member built with value `member` in the layers
+   panel, to the properties `properties` (`[[name value] ...]`)
+   (`update-properties-names-and-values`)."
+  [set-name member properties]
+  (variant-action :rename-in-layers {:set-name set-name :member member :properties properties}))
+
+(defn remove-empty-properties
+  "Remove the properties of set `set-name` whose value is empty in every
+   member (`remove-empty-properties`)."
+  [set-name]
+  (variant-action :remove-empty {:set-name set-name}))
+
+(defn set-variant-error
+  "Set the error of set `set-name`'s member built with value `member` to
+   `value`, nil to clear it (`update-error`)."
+  [set-name member value]
+  (variant-action :error {:set-name set-name :member member :value value}))
+
+(defn variant-shortcut
+  "Select the shapes `targets` name and press the shortcut `kind`:
+   `:create-component` (`add-component-or-variant`) or `:duplicate`
+   (`duplicate-or-add-variant`)."
+  [kind targets]
+  (variant-action :shortcut {:kind kind :targets targets}))
+
+(defn component-of
+  "The component of the shape `target` names, read from the file."
+  [situation target]
+  (let [shape (tm/shape-by-id situation (tm/target-shape-id situation target))]
+    (ctkl/get-component (:data (tm/file situation)) (:component-id shape))))
+
+(defn variant-component-ids
+  "The ids of the components of the variant set `variant-id`, in the order of
+   its container's children."
+  [situation variant-id]
+  (let [page (thf/current-page (tm/file situation))]
+    (->> (get-in page [:objects variant-id :shapes])
+         (mapv #(get-in page [:objects % :component-id])))))
 
 
 
@@ -1551,3 +1908,119 @@
       (->> (:shapes container-shape)
            (map #(ths/get-shape-by-id the-file %))
            (d/seek #(= added-id (:shape-ref %)))))))
+
+;; ===========================================================================
+;; Tokens
+;;
+;; A token applied to a shape is recorded in its `:applied-tokens` (attribute
+;; -> token name) and sets the attribute to the token's value. Sync copies
+;; both to an untouched copy (`update-tokens`). Only border radius tokens
+;; (attributes :r1..:r4) are modelled.
+;; ===========================================================================
+
+(def radius-attrs
+  "The attributes a border radius token applies to."
+  #{:r1 :r2 :r3 :r4})
+
+(defrecord AddTokens [tokens]
+  IComponentOperation
+  (op-kind [_] :assembly)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [set-id   (uuid/next)
+          theme-id (uuid/next)
+          add      (fn [lib [name value]]
+                     (ctob/add-token lib set-id (ctob/make-token :name name
+                                                                 :type :border-radius
+                                                                 :value value)))
+          file'    (-> (tm/file situation)
+                       (tht/add-tokens-lib)
+                       (tht/update-tokens-lib
+                        #(as-> % lib
+                           (ctob/add-set lib (ctob/make-token-set :id set-id :name "composable"))
+                           (ctob/add-theme lib (ctob/make-token-theme :id theme-id
+                                                                      :name "composable"
+                                                                      :sets #{"composable"}))
+                           (reduce add lib tokens)))
+                       (tht/update-tokens-status #(ctos/set-tokens-status % #{theme-id} #{set-id})))]
+      (-> situation
+          (tm/with-file file')
+          (tm/record-application this {:tokens tokens})))))
+
+(defn add-tokens
+  "Give the file an active set of border radius tokens, `tokens` being
+   `[[name value] ...]`."
+  [tokens]
+  (tm/assign-id (->AddTokens tokens)))
+
+(defrecord ApplyToken [target token-name value]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    ;; as `apply-token` commits them: the token, then its value without
+    ;; touching
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          changes  (-> (pcb/empty-changes nil (:id page))
+                       (cls/generate-update-shapes
+                        #{shape-id}
+                        #(update % :applied-tokens merge (zipmap radius-attrs (repeat token-name)))
+                        (:objects page)
+                        {})
+                       (cls/generate-update-shapes
+                        #{shape-id}
+                        #(ctsr/set-radius-for-corners % radius-attrs value)
+                        (:objects page)
+                        {:ignore-touched true :attrs radius-attrs}))
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:target target :token-name token-name :value value})))))
+
+(defn apply-token
+  "Apply the border radius token `token-name`, of value `value`, to every
+   corner of the shape `target` names (`apply-token` on the frontend)."
+  [target token-name value]
+  (tm/assign-id (->ApplyToken target token-name value)))
+
+(defrecord UnapplyToken [target token-name]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          shape-id (tm/target-shape-id situation target)
+          page     (thf/current-page the-file)
+          changes  (cls/generate-update-shapes
+                    (pcb/empty-changes nil (:id page))
+                    #{shape-id}
+                    (fn [shape]
+                      (update shape :applied-tokens
+                              #(when % (cfo/remove-attributes-for-token radius-attrs token-name %))))
+                    (:objects page)
+                    {})
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes (when (seq (:redo-changes changes)) changes))
+          (tm/record-application this {:target target :token-name token-name})))))
+
+(defn unapply-token
+  "Remove the border radius token `token-name` from the shape `target` names,
+   keeping its radius (`unapply-token` on the frontend)."
+  [target token-name]
+  (tm/assign-id (->UnapplyToken target token-name)))
+
+(defn has-token?
+  "Whether `shape` has the border radius token `token-name` on every corner,
+   with radius `value`."
+  [shape token-name value]
+  (every? #(and (= token-name (get-in shape [:applied-tokens %]))
+                (= value (get shape %)))
+          radius-attrs))
