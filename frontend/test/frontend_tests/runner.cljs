@@ -9,8 +9,10 @@
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.config-test]
+   [frontend-tests.composable-tests.completion-contract-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.auth-test]
+   [frontend-tests.data.changes-test]
    [frontend-tests.data.comments-batches-test]
    [frontend-tests.data.comments-filters-test]
    [frontend-tests.data.common-test]
@@ -41,6 +43,7 @@
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
+   [frontend-tests.data.workspace-edit-watchers-test]
    [frontend-tests.data.workspace-focus-test]
    [frontend-tests.data.workspace-heal-undo-test]
    [frontend-tests.data.workspace-interactions-test]
@@ -48,6 +51,9 @@
    [frontend-tests.data.workspace-libraries-link-test]
    [frontend-tests.data.workspace-libraries-load-test]
    [frontend-tests.data.workspace-libraries-sync-test]
+   [frontend-tests.data.workspace-libraries-test]
+   [frontend-tests.data.workspace-library-links-test]
+   [frontend-tests.data.workspace-library-updates-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
    [frontend-tests.data.workspace-notifications-test]
@@ -60,9 +66,11 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-thumbnails-wasm-test]
+   [frontend-tests.data.workspace-undo-stack-test]
    [frontend-tests.data.workspace-undo-test]
    [frontend-tests.data.workspace-undo-translation-test]
    [frontend-tests.data.workspace-variant-rename-test]
+   [frontend-tests.data.workspace-variant-switch-wasm-test]
    [frontend-tests.data.workspace-variants-test]
    [frontend-tests.data.workspace-versions-test]
    [frontend-tests.debug-logging-test]
@@ -241,8 +249,10 @@
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.config-test
+   'frontend-tests.composable-tests.completion-contract-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.auth-test
+   'frontend-tests.data.changes-test
    'frontend-tests.data.comments-batches-test
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.common-test
@@ -279,6 +289,7 @@
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
+   'frontend-tests.data.workspace-edit-watchers-test
    'frontend-tests.data.workspace-focus-test
    'frontend-tests.data.workspace-heal-undo-test
    'frontend-tests.data.workspace-interactions-test
@@ -286,21 +297,26 @@
    'frontend-tests.data.workspace-libraries-link-test
    'frontend-tests.data.workspace-libraries-load-test
    'frontend-tests.data.workspace-libraries-sync-test
+   'frontend-tests.data.workspace-libraries-test
+   'frontend-tests.data.workspace-library-links-test
+   'frontend-tests.data.workspace-library-updates-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
    'frontend-tests.data.workspace-notifications-test
    'frontend-tests.data.workspace-pages-test
    'frontend-tests.data.workspace-path-edition-test
    'frontend-tests.data.workspace-reflow-test
-   'frontend-tests.data.workspace-sync-barrier-test
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-sync-text-wasm-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-thumbnails-wasm-test
+   'frontend-tests.data.workspace-sync-barrier-test
+   'frontend-tests.data.workspace-undo-stack-test
    'frontend-tests.data.workspace-undo-test
    'frontend-tests.data.workspace-undo-translation-test
    'frontend-tests.data.workspace-variant-rename-test
+   'frontend-tests.data.workspace-variant-switch-wasm-test
    'frontend-tests.data.workspace-variants-test
    'frontend-tests.data.workspace-versions-test
    'frontend-tests.debug-logging-test

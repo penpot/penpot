@@ -35,6 +35,7 @@
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
    [common-tests.files.page-diff-test]
+   [common-tests.files.repair-components-test]
    [common-tests.files.repair-test]
    [common-tests.files.shapes-builder-test]
    [common-tests.files.tokens-test]
@@ -81,6 +82,7 @@
    [common-tests.logic.composable-sync-test]
    [common-tests.logic.copying-and-duplicating-test]
    [common-tests.logic.duplicated-pages-test]
+   [common-tests.logic.library-asset-sync-test]
    [common-tests.logic.move-shapes-test]
    [common-tests.logic.multiple-nesting-levels-test]
    [common-tests.logic.swap-and-reset-test]
@@ -115,6 +117,7 @@
    [common-tests.types.components-test]
    [common-tests.types.container-test]
    [common-tests.types.file-load-component-objects-test]
+   [common-tests.types.file-test]
    [common-tests.types.fill-test]
    [common-tests.types.font-test]
    [common-tests.types.modifiers-test]
@@ -162,6 +165,7 @@
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
    'common-tests.files.page-diff-test
+   'common-tests.files.repair-components-test
    'common-tests.files.repair-test
    'common-tests.files.shapes-builder-test
    'common-tests.files.tokens-test
@@ -208,6 +212,7 @@
    'common-tests.logic.composable-sync-test
    'common-tests.logic.copying-and-duplicating-test
    'common-tests.logic.duplicated-pages-test
+   'common-tests.logic.library-asset-sync-test
    'common-tests.logic.move-shapes-test
    'common-tests.logic.multiple-nesting-levels-test
    'common-tests.logic.swap-and-reset-test
@@ -220,8 +225,8 @@
    'common-tests.logic.token-test
    'common-tests.logic.variants-paste-test
    'common-tests.logic.variants-reparent-test
-   'common-tests.logic.variants-switch-test
    'common-tests.logic.variants-switch-target-test
+   'common-tests.logic.variants-switch-test
    'common-tests.logic.variants-test
    'common-tests.math-test
    'common-tests.media-test
@@ -242,6 +247,7 @@
    'common-tests.types.components-test
    'common-tests.types.container-test
    'common-tests.types.file-load-component-objects-test
+   'common-tests.types.file-test
    'common-tests.types.fill-test
    'common-tests.types.font-test
    'common-tests.types.modifiers-test

@@ -9,6 +9,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
@@ -21,6 +22,7 @@
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path.segment :as segment]
    [clojure.set :as set]
    [clojure.string :as string]
    [clojure.test :as t]))
@@ -47,7 +49,6 @@
         file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         copy01'   (ths/get-shape file' :copy01)]
-    (thf/dump-file file :keys [:width])
     ;; The copy had width 5 before the switch
     (t/is (= (:width copy01) 5))
     ;; The copy has width 15 after the switch
@@ -112,7 +113,6 @@
         file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         copy01'   (ths/get-shape file' :copy01)]
-    (thf/dump-file file :keys [:width])
     ;; The copy had width 25 before the switch
     (t/is (= (:width copy01) 25))
     ;; The override is keept: The copy still has width 25 after the switch
@@ -226,8 +226,6 @@
 
         copy01'   (ths/get-shape file' :copy01)]
 
-    (thf/dump-file file :keys [:width])
-
     ;; The copy had width 5 before the switch
     (t/is (= (:width copy01) 5))
     ;; The copy has width 15 after the switch
@@ -260,8 +258,6 @@
         file'     (tho/swap-component-in-shape file :child01 :c02 {:keep-touched? true})
 
         child01'   (ths/get-shape file' :child01)]
-
-    (thf/dump-file file :keys [:width])
 
     ;; The copy had width 5 before the switch
     (t/is (= (:width child01) 5))
@@ -308,8 +304,6 @@
         file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         copy01'   (ths/get-shape file' :copy01)]
-
-    (thf/dump-file file :keys [:width :touched])
 
     ;; The copy had fill color before the switch
     (t/is (= (:fills copy01) fills))
@@ -361,8 +355,6 @@
         file'     (tho/swap-component-in-shape file :nested02 :c02 {:keep-touched? true})
 
         nested02' (ths/get-shape file' :nested02)]
-
-    (thf/dump-file file :keys [:width])
 
     ;; The copy had fill color before the switch
     (t/is (= (:fills nested02) fills))
@@ -478,8 +470,6 @@
 
         copy-both'        (ths/get-shape file' :copy-both-2)
         copy-both-t'      (get-in page' [:objects (-> copy-both' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
 
     ;;;;;;;;;;; Clean copy
@@ -603,8 +593,6 @@
         copy-both'        (ths/get-shape file' :copy-both-2)
         copy-both-t'      (get-in page' [:objects (-> copy-both' :shapes first)])]
 
-    (thf/dump-file file' {:keys [:name #_:content]})
-
 
     ;;;;;;;;;;; Clean copy
     ;; Before the switch:
@@ -724,8 +712,6 @@
 
         copy-both'        (ths/get-shape file' :copy-both-2)
         copy-both-t'      (get-in page' [:objects (-> copy-both' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
 
     ;;;;;;;;;;; Clean copy
@@ -849,8 +835,6 @@
         copy-both'        (ths/get-shape file' :copy-both-2)
         copy-both-t'      (get-in page' [:objects (-> copy-both' :shapes first)])]
 
-    (thf/dump-file file' {:keys [:name #_:content]})
-
 
     ;;;;;;;;;;; Clean copy
     ;; Before the switch:
@@ -967,8 +951,6 @@
 
         copy-structure-mixed'   (ths/get-shape file' :copy-structure-mixed-2)
         copy-structure-mixed-t' (get-in page' [:objects (-> copy-structure-mixed' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
     ;;;;;;;;;;; Copy structure clean
     ;; Before the switch, first line:
@@ -1099,8 +1081,6 @@
         copy-structure-mixed'   (ths/get-shape file' :copy-structure-mixed-2)
         copy-structure-mixed-t' (get-in page' [:objects (-> copy-structure-mixed' :shapes first)])]
 
-    (thf/dump-file file' {:keys [:name #_:content]})
-
     ;;;;;;;;;;; Copy structure clean
     ;; Before the switch, first line:
     ;;   * font size 14
@@ -1225,8 +1205,6 @@
 
         copy-structure-mixed'   (ths/get-shape file' :copy-structure-mixed-2)
         copy-structure-mixed-t' (get-in page' [:objects (-> copy-structure-mixed' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
     ;;;;;;;;;;; Copy structure clean
     ;; Before the switch, first line:
@@ -1353,8 +1331,6 @@
 
         copy-structure-mixed'   (ths/get-shape file' :copy-structure-mixed-2)
         copy-structure-mixed-t' (get-in page' [:objects (-> copy-structure-mixed' :shapes first)])]
-
-    (thf/dump-file file' {:keys [:name #_:content]})
 
     ;;;;;;;;;;; Copy structure clean
     ;; Before the switch, first line:
@@ -1498,7 +1474,6 @@
 
         copy02'    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape file' :copy-cp02)]
-    (thf/dump-file file')
     ;;copy-cp02 is a copy of external02
     (t/is (= (:component-id copy-cp02) (:id external02)))
     ;;copy-01 had copy-cp02 as child
@@ -1547,7 +1522,6 @@
         copy02'    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape file' :copy-cp02)
         copy-cp02-rect' (ths/get-shape-by-id file' (-> copy-cp02' :shapes first))]
-    (thf/dump-file file')
     ;;copy-cp02 is a copy of external02
     (t/is (= (:component-id copy-cp02) (:id external02)))
     ;;copy-01 had copy-cp02 as child
@@ -1615,7 +1589,6 @@
         c02-in-copy' (ths/get-shape file' :c02-in-copy)
         rect02'      (get-in page' [:objects (-> c02-in-copy' :shapes first)])]
 
-    (thf/dump-file file :keys [:width :touched])
     ;; The rect had width 25 before the switch
     (t/is (= (:width rect01) 25))
     ;; The rect still has width 25 after the switch
@@ -3523,3 +3496,128 @@
 
     ;; ==== Check
     (t/is (mth/close? (* width (/ (:width copy02') root-w)) (:width icon')))))
+
+;; ============================================================
+;; GEOMETRY OVERRIDES FROM A REAL RESIZE
+;; A transform updates :selrect and :points too, so the switch
+;; carries them as well as :width and :height.
+;; ============================================================
+
+(defn- copy-child
+  [file label]
+  (let [page (thf/current-page file)]
+    (get-in page [:objects (-> (ths/get-shape file label) :shapes first)])))
+
+(defn- resize-copy-child
+  "Resize the first child of the copy `label` by `sx`, `sy` from its top
+   left corner, as a transform does."
+  [file label sx sy]
+  (let [page    (thf/current-page file)
+        child   (copy-child file label)
+        origin  (gpt/point (-> child :selrect :x) (-> child :selrect :y))
+        changes (cls/generate-update-shapes
+                 (pcb/empty-changes nil (:id page))
+                 #{(:id child)}
+                 #(gsh/transform-shape % (ctm/resize-modifiers (gpt/point sx sy) origin))
+                 (:objects page)
+                 {})]
+    (thf/apply-changes file changes)))
+
+(defn- size-is
+  "Assert that `shape`'s :selrect and :points both measure `width` x
+   `height`."
+  [shape width height]
+  (let [points (grc/points->rect (:points shape))]
+    (t/is (mth/close? width (-> shape :selrect :width)))
+    (t/is (mth/close? height (-> shape :selrect :height)))
+    (t/is (mth/close? width (:width points)))
+    (t/is (mth/close? height (:height points)))))
+
+(t/deftest test-switch-keeps-a-resized-child-of-same-size-variants
+  (let [file  (-> (thf/sample-file :file1)
+                  (thv/add-variant-with-child
+                   :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                   {:child1-params {:width 100 :height 50 :type :rect}
+                    :child2-params {:width 100 :height 50 :type :rect}})
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-r01])
+                  (resize-copy-child :copy01 2 1))
+        ;; the switch moves the labels, so read the copy before it
+        rect  (copy-child file :copy01)
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        rect' (copy-child file' :copy02)]
+    (size-is rect 200 50)
+    ;; the variants agree on the size, so the override is carried
+    (size-is rect' 200 50)
+    (t/is (contains? (:touched rect') :geometry-group))))
+
+(t/deftest test-switch-with-h-sizing-fix-keeps-only-the-resized-height
+  (let [file  (-> (thf/sample-file :file1)
+                  (thv/add-variant-with-child
+                   :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                   {:child1-params {:width 100 :height 50 :type :rect :layout-item-h-sizing :fix}
+                    :child2-params {:width 100 :height 50 :type :rect :layout-item-h-sizing :fix}})
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-r01])
+                  (resize-copy-child :copy01 2 2))
+        rect  (copy-child file :copy01)
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})]
+    (size-is rect 200 100)
+    ;; the fixed width comes from the new variant; the height override stays
+    (size-is (copy-child file' :copy02) 100 100)))
+
+(t/deftest test-switch-keeps-a-resized-path-of-same-size-variants
+  (let [triangle (fn [x0 y0]
+                   [{:command :move-to :params {:x x0 :y y0}}
+                    {:command :line-to :params {:x (+ x0 24) :y y0}}
+                    {:command :line-to :params {:x (+ x0 12) :y (+ y0 14)}}
+                    {:command :close-path}])
+        file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :v01 :c01 :m01 :c02 :m02
+                                      {:variant1-params {:width 100 :height 100}
+                                       :variant2-params {:width 100 :height 100}})
+                     (ths/add-sample-shape :path1 :type :path :parent-label :m01
+                                           :content (triangle 0 10))
+                     (ths/add-sample-shape :path2 :type :path :parent-label :m02
+                                           :content (triangle 0 30))
+                     (thc/instantiate-component :c01 :copy01)
+                     (resize-copy-child :copy01 2 2))
+        path     (copy-child file :copy01)
+        file'    (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        path'    (copy-child file' :copy02)
+        content  (segment/content->selrect (:content path'))]
+    (size-is path 48 28)
+    ;; the path keeps its size: its content is scaled like its box
+    (t/is (= :path (:type path')))
+    (size-is path' 48 28)
+    (t/is (mth/close? 48 (:width content)))
+    (t/is (mth/close? 28 (:height content)))))
+
+(t/deftest test-switch-to-a-main-with-another-text-structure
+  ;; The second variant's text has two lines where the first has one, so
+  ;; the copy's text cannot keep its own structure. With uniform styles and
+  ;; mains that agree on them, a style override is carried onto the new
+  ;; variant's lines; when the mains disagree on the style, it is dropped.
+  (let [setup    (fn [main-font-size]
+                   (-> (thf/sample-file :file1)
+                       (thv/add-variant-with-text
+                        :v01 :c01 :m01 :c02 :m02 :t01 :t02 "hello world" "hello world")
+                       (change-structure :t02)
+                       (cond-> main-font-size
+                         (-> (update-attr :t02 font-size-path-0 main-font-size)
+                             (update-attr :t02 font-size-path-1 main-font-size)))
+                       (thc/instantiate-component :c01 :copy01 :children-labels [:copy01-t])
+                       (update-attr :copy01-t font-size-path-0 "25")))
+        switched (fn [file]
+                   (-> (tho/swap-component-in-shape file :copy01 :c02
+                                                    {:new-shape-label :copy02 :keep-touched? true})
+                       (copy-child :copy02)))
+        agree    (switched (setup nil))
+        disagree (switched (setup "50"))]
+    (t/is (= "new line 1" (get-in agree text-path-0)))
+    (t/is (= "new line 2" (get-in agree text-path-1)))
+    (t/is (= "25" (get-in agree font-size-path-0)))
+    (t/is (= "25" (get-in agree font-size-path-1)))
+
+    (t/is (= "new line 1" (get-in disagree text-path-0)))
+    (t/is (= "new line 2" (get-in disagree text-path-1)))
+    (t/is (= "50" (get-in disagree font-size-path-0)))
+    (t/is (= "50" (get-in disagree font-size-path-1)))))
