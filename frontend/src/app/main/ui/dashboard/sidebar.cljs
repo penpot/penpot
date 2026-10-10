@@ -89,8 +89,9 @@
         on-click
         (mf/use-fn
          (mf/deps project-id)
-         (fn []
-           (st/emit! (dcm/go-to-dashboard-files :project-id project-id))))
+         (fn [event]
+           (st/emit! (dcm/go-to-dashboard-files :project-id project-id
+                                                ::rt/new-window (kbd/mod? event)))))
 
         on-key-down
         (mf/use-fn
@@ -297,8 +298,10 @@
         go-drafts
         (mf/use-fn
          (mf/deps team-id default-project-id)
-         (fn []
-           (st/emit! (dcm/go-to-dashboard-files :team-id team-id :project-id default-project-id))))
+         (fn [event]
+           (st/emit! (dcm/go-to-dashboard-files :team-id team-id
+                                                :project-id default-project-id
+                                                ::rt/new-window (kbd/mod? event)))))
 
         go-drafts-with-key
         (mf/use-fn
