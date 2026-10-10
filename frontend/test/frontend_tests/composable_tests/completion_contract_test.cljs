@@ -145,6 +145,14 @@
   (t/is (= :settled (await (ftm/await-step [(fill-main-child red)]))))
   (t/is (= red (ftm/fill-of :copy-child))))
 
+(t/deftest ^:async install-forgets-work-no-watcher-owns
+  ;; With no layout watcher running, stopping one clears nothing: the install
+  ;; itself must forget the pending work.
+  (ftm/uninstall!)
+  (wrf/start! :sync-file [(random-uuid)])
+  (ftm/install! (setup/simple-component-with-labeled-copy))
+  (t/is (empty? (wrf/pending))))
+
 (t/deftest skipped-optional-keeps-the-undo-baseline
   ;; The end-of-variant round trip undoes back to the last file install. A
   ;; skipped optional installs nothing, so the baseline stays at the setup,
@@ -156,5 +164,6 @@
                   :operation (tm/in-sequence [(n/change-property :main-instance :fills red)
                                               (tm/optional later)])}
                  (fn [situation]
-                   (when-not (tm/applied? situation later)
-                     (t/is (= -1 (:depth (uc/baseline situation))))))))))
+                   ;; neither the skip nor the user step moves it
+                   (t/is (= -1 (:depth (uc/baseline situation)))
+                         (if (tm/applied? situation later) "with the later edit" "skipped")))))))

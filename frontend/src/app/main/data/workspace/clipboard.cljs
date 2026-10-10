@@ -23,7 +23,6 @@
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -70,42 +69,11 @@
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
 
-(defn- advance-shape
-  [file libraries page level-delta head-id objects shape]
-  (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
-        container     (ctn/make-container page :page)
-        ;; The head becomes a root copy, which cannot carry a swap slot, so
-        ;; strip inherited slots only for it. Nested sub-heads keep them so
-        ;; they still pair with the children of the new near main.
-        head?         (= (:id shape) head-id)
-        new-touched   (ctf/get-touched-from-ref-chain-until-target-ref
-                       container libraries shape new-shape-ref :remove-slots? head?)]
-    (cond-> objects
-      (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-      (update (:id shape) assoc :shape-ref new-shape-ref :touched new-touched))))
-
-(defn- advance-copy
-  [file libraries page objects shape]
-  (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-    (let [level-delta (if (nil? (ctk/get-swap-slot shape))
-                        (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
-                        0)]
-      (if (pos? level-delta)
-        (reduce (partial advance-shape file libraries page level-delta (:id shape))
-                objects
-                (cfh/get-children-with-self objects (:id shape)))
-        objects))
-    objects))
-
 (defn advance-copies
   "When copying an instance that is nested inside another one, we need to
    advance the shape refs to one or more levels of remote mains."
   [file libraries page selected data]
-  (let [heads (mapcat #(ctn/get-child-heads (:objects data) %) selected)]
-    (update data :objects
-            #(reduce (partial advance-copy file libraries page)
-                     %
-                     heads))))
+  (update data :objects #(cll/advance-copied-objects file page libraries % selected)))
 
 (defn copy-selected
   []

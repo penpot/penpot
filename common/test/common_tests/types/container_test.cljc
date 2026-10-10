@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -330,7 +331,24 @@
         objects (page-objects file)
         labels  #(set (map (comp label :id) (ctc/get-children-in-instance objects (thi/id %))))]
     (t/is (= #{:main1 :main1-child} (labels :main1)))
-    (t/is (= #{:main2} (labels :main2)))))
+    (t/is (= #{:main2} (labels :main2)))
+    ;; each ancestor comes back once per child below it
+    (tm/known-failure "F59" 2 3 (count (ctc/get-children-in-instance objects (thi/id :main1))))))
+
+(t/deftest copy-parent-above-a-plain-parent
+  ;; a rect in a plain group inside a copy: the copy is two levels up
+  (let [copy-id  (uuid/next)
+        group-id (uuid/next)
+        copy     (make-shape copy-id :type :frame :component-id (uuid/next)
+                             :component-file (uuid/next) :component-root true
+                             :shape-ref (uuid/next) :shapes [group-id])
+        group    (make-shape group-id :type :group :parent-id copy-id :shapes [])
+        rect     (make-shape (uuid/next) :parent-id group-id)
+        objects  (objects-map copy group rect)]
+    (t/is (ctc/has-any-copy-parent? objects group))
+    ;; the walk passes on the parent's id where it expects a shape, so it
+    ;; stops after the direct parent
+    (tm/known-failure "F63" true false (ctc/has-any-copy-parent? objects rect))))
 
 (t/deftest container-of-a-component
   (let [file      (placement-file)
@@ -360,7 +378,11 @@
               (ctc/remove-swap-keep-attrs shape))))
     (t/is (= [nil nil]
              ((juxt :layout-item-h-sizing :layout-item-v-sizing)
-              (ctc/remove-swap-keep-attrs fixed))))))
+              (ctc/remove-swap-keep-attrs fixed))))
+    (t/testing "auto sizing out of a layout is not kept"
+      (t/is (= [nil nil]
+               ((juxt :layout-item-h-sizing :layout-item-v-sizing)
+                (ctc/remove-swap-keep-attrs (dissoc shape :layout))))))))
 
 (t/deftest component-instance-with-default-options
   (let [file      (placement-file)
@@ -368,5 +390,8 @@
         [root shapes] (ctc/make-component-instance (thf/current-page file) component
                                                    (:data file) (gpt/point 0 0))]
     (t/is (= (thi/id :c1) (:component-id root)))
+    (t/is (:component-root root))
     (t/is (not (ctk/main-instance? root)))
-    (t/is (= 2 (count shapes)))))
+    (t/is (= 2 (count shapes)))
+    (t/testing "each shape references its main"
+      (t/is (= #{(thi/id :main1) (thi/id :main1-child)} (set (map :shape-ref shapes)))))))

@@ -127,9 +127,11 @@
     {:setup     setup/simple-component-with-copy
      :operation (tm/in-sequence [sweep])
      :asserter  (fn [situation]
-                  (let [chosen (tm/get-choice situation sweep)]
+                  (let [chosen (tm/get-choice situation sweep)
+                        copy   (setup/copy-instance situation)]
                     (t/is (some? chosen))
-                    (t/is (n/has-property-of chosen (setup/copy-instance situation)))))}))
+                    (t/is (n/has-property-of chosen copy))
+                    (t/is (nil? (:touched copy)))))}))
 
 (defn add-shape-to-main-propagates-to-clean-copy
   "Case D. A shape added to the main appears in the copy, linked to it and
@@ -169,8 +171,8 @@
                     (t/is (nil? (:touched copy-root)))))}))
 
 (defn move-shape-in-main-propagates-order-to-clean-copy
-  "Case F. The main moves its first child to the end; the copy follows, its
-   children linked and untouched."
+  "Case F. The main moves its first child one place down; the copy follows,
+   its children in the main's order, linked and untouched."
   []
   (let [move (n/move-child :main-child1 :main-root 2)]
     {:setup      setup/component-with-many-children
@@ -186,6 +188,8 @@
                          c1        (setup/copy-child situation 1)
                          c2        (setup/copy-child situation 2)
                          c3        (setup/copy-child situation 3)]
+                     (t/is (= (:shapes (setup/main-root situation))
+                              (mapv #(:shape-ref (tm/shape-by-id situation %)) order)))
                      (t/is (= (nth order 0) (:id c2)))
                      (t/is (= (nth order 1) (:id c1)))
                      (t/is (= (nth order 2) (:id c3)))
@@ -202,7 +206,11 @@
    back to the first fill and the copy is untouched."
   []
   {:setup     setup/simple-component-with-labeled-copy
-   :operation (tm/in-sequence [(n/change-property :main-child :fills red) (n/undo)])
+   :operation (tm/in-sequence
+               [(n/change-property :main-child :fills red)
+                (tm/test-that
+                 (fn [s] (t/is (= red (fill-color (setup/copy-instance s))) "synced before the undo")))
+                (n/undo)])
    :asserter  (fn [situation]
                 (let [copy (setup/copy-instance situation)]
                   (t/is (= setup/labeled-fill (fill-color (setup/main-instance situation))))
@@ -234,7 +242,9 @@
   {:setup     #(setup/cross-file-component-with-copy red)
    :operation (tm/in-sequence [(n/sync-from-library)])
    :asserter  (fn [situation]
-                (t/is (= red (fill-color (setup/copy-instance situation)))))})
+                (let [copy (setup/copy-instance situation)]
+                  (t/is (= red (fill-color copy)))
+                  (t/is (nil? (:touched copy)))))})
 
 (defn synchronisation-scenarios
   "Case K. At nesting depth 0, 1 or 2, optionally the remote main, the main
@@ -269,7 +279,10 @@
                   force-copy
                   (tm/test-that (fn [s] (t/is (= blue (copy-color s)))))
                   (n/reset-copy-instance m)
-                  (tm/test-that (fn [s] (t/is (= (main-color s) (copy-color s)))))])}))
+                  (tm/test-that
+                   (fn [s]
+                     (t/is (= (main-color s) (copy-color s)))
+                     (t/is (empty? (:touched (tm/shape-by-id s (n/lineage-copy-rect s m)))))))])}))
 
 (defn- level-color
   "The fill of the rect at lineage `name`'s nesting level `i`."
@@ -350,8 +363,8 @@
    is not touched."
   []
   (let [m          "main"
-        agree      (n/make-variant-container "vset" [["a" base-color] ["b" base-color]])
-        differ     (n/make-variant-container "vset" [["a" base-color] ["b" red]])
+        agree      (n/make-variant-container "vset" [["a" base-color] ["b" base-color]] :size 100)
+        differ     (n/make-variant-container "vset" [["a" base-color] ["b" red]] :size 100)
         override   (n/change-property (n/copy-rect-of m) :fills green)
         ;; the variant head inside the copy holds the copy rect
         copy-head  (fn [s] (:parent-id (tm/shape-by-id s (n/lineage-copy-rect s m))))
@@ -362,7 +375,7 @@
                        (d/seek #(= b-rect (:shape-ref %)) (vals objects))))]
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
-                 [(n/create-component m base-color)
+                 [(n/create-component m base-color :size 100)
                   (tm/one-of [agree differ])
                   (n/make-nested-component-with-variant m "vset" "a")
                   (n/instantiate-copy m)
@@ -428,7 +441,7 @@
         other-override (n/change-property (n/nth-copy-rect-of m 1) :fills blue)]
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
-                 [(n/create-component m red)
+                 [(n/create-component m red :size 100)
                   (depth-sweep m)
                   (n/instantiate-copy m)
                   (n/instantiate-copy m)
@@ -482,6 +495,7 @@
                         other (setup/other-page-copy-instance s)]
                     (t/is (= blue (fill-color (setup/main-instance s))))
                     (t/is (= (if (tm/applied? s override) green blue) (fill-color copy)))
+                    (t/is (= (when (tm/applied? s override) #{:fill-group}) (:touched copy)))
                     (t/is (= blue (fill-color other)))
                     (t/is (nil? (:touched other)))))}))
 
@@ -498,7 +512,7 @@
         change-main (n/change-property (n/main-rect-of m) :fills blue)]
     {:setup     setup/empty-situation
      :operation (tm/in-sequence
-                 [(n/create-component m red)
+                 [(n/create-component m red :size 100)
                   (depth-sweep m)
                   (n/instantiate-copy m)
                   (tm/optional override)
@@ -658,6 +672,7 @@
                   (let [copy   (setup/copy-instance s)
                         main   (setup/main-instance s)
                         edited (tm/get-choice s copy-edit)]
+                    (t/is (n/has-property-of (tm/get-choice s main-edit) main))
                     (doseq [edit [:text :font-size]]
                       (t/is (= (if (= edit (:edit edited))
                                  (:value edited)
@@ -788,7 +803,8 @@
   "Case AD. Of two copies, the first swaps its nested copy and pushes that to
    the main (update main). Per the swap model of decision (h), update main
    pushes the copy's component: the main's nested copy becomes an instance of
-   it, and so does the second copy's."
+   it, and so do the nested copies of both copies; the first one references
+   the main's new nested copy and has nothing touched (F16)."
   []
   (let [m             "main"
         main-nested   (n/nested-head-under (n/main-head-of m))
@@ -804,16 +820,26 @@
                   (n/swap-shape first-nested "s1")
                   (n/update-main (n/nth-copy-head-of m 0))])
      :asserter  (fn [s]
-                  (let [s1 (n/lineage-component-id s "s1")]
+                  (let [s1    (n/lineage-component-id s "s1")
+                        first (tm/shape-by-id s (first-nested s))]
                     (t/is (= s1 (head-component s main-nested)))
+                    (t/is (= s1 (head-component s first-nested)))
+                    (t/is (= red (head-rect-color s first-nested)))
+                    (t/is (= (main-nested s) (:shape-ref first)))
+                    ;; update main leaves the swapped child its swap slot
+                    (tm/known-failure "F16" #{} #{:swap-slot}
+                                      (into #{}
+                                            (map #(if (ctk/swap-slot? %) :swap-slot %))
+                                            (:touched first)))
                     (t/is (= s1 (head-component s second-nested)))
                     (t/is (= red (head-rect-color s second-nested)))))}))
 
 (defn detached-or-duplicated-swapped-copy-follows-its-component
   "Case AE. A copy swaps its nested copy; then the copy is detached, or
    duplicated; then the main of the component it swapped to changes. Detached,
-   the nested copy becomes a top-level copy of that component; duplicated, the
-   duplicate's nested copy is one too. Either way it follows the change."
+   the root loses its link and the nested copy becomes a top-level copy of
+   that component, with no swap slot; duplicated, the duplicate's nested copy
+   is one too. Either way it follows the change."
   []
   (let [m           "main"
         nested      (n/nested-head-in m)
@@ -832,6 +858,13 @@
                   (let [s1 (n/lineage-component-id s "s1")]
                     (t/is (= s1 (head-component s nested)))
                     (t/is (= blue (head-rect-color s nested)))
+                    (when-not (tm/applied? s duplication)
+                      ;; the detached root lost its link; its nested copy is a
+                      ;; top-level copy now, with no swap slot
+                      (let [head (tm/shape-by-id s (nested s))]
+                        (t/is (nil? (:component-id (tm/shape-by-id s ((n/copy-head-of m) s)))))
+                        (t/is (:component-root head))
+                        (t/is (nil? (ctk/get-swap-slot head)))))
                     (when (tm/applied? s duplication)
                       (t/is (= s1 (head-component s dup-nested)))
                       (t/is (= blue (head-rect-color s dup-nested))))))}))
@@ -872,17 +905,26 @@
      :asserter   (fn [s]
                    (t/is (= [] (setup/misaligned-sub-heads s))))}))
 
+(defn- deleted-copy-child-is-hidden
+  "Assert that the copy child the one-of `removal` deleted, if it ran, is
+   still there and hidden: a copy keeps the main's structure."
+  [s removal]
+  (when-let [chosen (tm/get-choice s removal)]
+    (t/is (:hidden (tm/shape-by-id s (tm/resolve-shape-id s (:target chosen)))))))
+
 (defn copy-sub-head-delete-keeps-others-aligned
   "Case AH (the plugin's CopySubheadDeletePreservesSlots, without its
    reflow). A grid main holds three nested copies; its copy optionally deletes
-   its first or its last one. The copy's remaining children still reference
-   the main's children at the same positions."
+   its first or its last one. A copy keeps the main's structure, so the
+   deleted child stays, hidden, and every child still references the main's
+   child at the same position."
   []
-  {:setup     #(setup/component-with-sibling-instances :grid)
-   :operation (tm/in-sequence [(tm/optional (tm/one-of [(n/remove-child :copy-sub1)
-                                                        (n/remove-child :copy-sub3)]))])
-   :asserter  (fn [s]
-                (t/is (= [] (setup/misaligned-sub-heads s))))})
+  (let [removal (tm/one-of [(n/remove-child :copy-sub1) (n/remove-child :copy-sub3)])]
+    {:setup     #(setup/component-with-sibling-instances :grid)
+     :operation (tm/in-sequence [(tm/optional removal)])
+     :asserter  (fn [s]
+                  (t/is (= [] (setup/misaligned-sub-heads s)))
+                  (deleted-copy-child-is-hidden s removal))}))
 
 (defn copy-sub-head-delete-and-reflow-keeps-others-aligned
   "Case AI (frontend only; the plugin's CopySubheadDeletePreservesSlots
@@ -890,12 +932,13 @@
    which reflows its grid. The copy's remaining children still reference the
    main's children at the same positions."
   []
-  {:setup     #(setup/component-with-sibling-instances :grid)
-   :operation (tm/in-sequence [(tm/optional (tm/one-of [(n/remove-child :copy-sub1)
-                                                        (n/remove-child :copy-sub3)]))
-                               (tm/optional (n/change-height :copy-root 500))])
-   :asserter  (fn [s]
-                (t/is (= [] (setup/misaligned-sub-heads s))))})
+  (let [removal (tm/one-of [(n/remove-child :copy-sub1) (n/remove-child :copy-sub3)])]
+    {:setup     #(setup/component-with-sibling-instances :grid)
+     :operation (tm/in-sequence [(tm/optional removal)
+                                 (tm/optional (n/change-height :copy-root 500))])
+     :asserter  (fn [s]
+                  (t/is (= [] (setup/misaligned-sub-heads s)))
+                  (deleted-copy-child-is-hidden s removal))}))
 
 (defn- grid-placement
   "The cells of grid board `board`, as `{column [child-shape ...]}`."
@@ -937,7 +980,10 @@
                                         [cells in-col-3])
                       (do
                         (t/is (= {:stray #{} :uncelled 0} cells))
-                        (t/is (= expected in-col-3))))
+                        (t/is (= expected in-col-3))
+                        ;; both main children instantiate the same component
+                        (t/is (= [(:shape-ref copy-child)] (mapv :id (get placement 3))))
+                        (t/is (empty? (get placement 1)))))
                     (t/is (empty? (:touched (tm/role-shape s :copy-root))))))}))
 
 (defn update-main-renames-the-component
@@ -1256,7 +1302,8 @@
         transform (n/transform-in-variant main)
         shortcut  (n/variant-shortcut :create-component [main])
         ;; renaming the main to the path's first part syncs the copy's name
-        ;; in an undo entry of its own: one undo reverts only that sync
+        ;; in an undo entry of its own: one undo reverts only that sync, so
+        ;; the component keeps the name and path the transform gave it
         f6        (fn [op]
                     {:bug     "F6"
                      :fails   {:undo       #{[:object :sync-main-head :frame-id]
@@ -1268,6 +1315,7 @@
                                              [:object :unlabelled :extra]
                                              [:object :unlabelled :shapes]
                                              [:component :sync-main-component :name]
+                                             [:component :sync-main-component :path]
                                              [:component :sync-main-component :variant-id]
                                              [:component :sync-main-component :variant-properties]
                                              [:component :unlabelled :extra]}
@@ -1486,8 +1534,14 @@
                   sweep])
      :asserter  (fn [s]
                   (let [members (n/variant-component-ids s (n/variant-set-id s vset))
-                        added   (count (get-in (tm/get-choice s sweep) [:params :targets]))]
-                    (t/is (= (+ 2 added) (count members)))
+                        targets (get-in (tm/get-choice s sweep) [:params :targets])
+                        color   (fn [component-id]
+                                  (let [component (ctkl/get-component (:data (tm/file s)) component-id)]
+                                    (fill-color (head-rect s (constantly (:main-instance-id component))))))]
+                    (t/is (= (+ 2 (count targets)) (count members)))
+                    ;; a duplicate keeps its source's rect fill
+                    (t/is (= (frequencies (concat [base-color red] (map {a base-color b red} targets)))
+                             (frequencies (map color members))))
                     (t/is (apply distinct? (map #(n/component-properties s %) members)))
                     (variant-copy-checks s nested (n/variant-member-component-id s vset "a") green)))}))
 
@@ -1583,7 +1637,9 @@
                       (t/is (empty? (:applied-tokens main)))
                       (t/is (= 30 (:r1 main)))
                       (if (tm/applied? s own)
-                        (t/is (n/has-token? copy "radius.s" 10))
+                        (do
+                          (t/is (n/has-token? copy "radius.s" 10))
+                          (t/is (contains? (:touched copy) :radius-group)))
                         (do
                           (t/is (empty? (:applied-tokens copy)))
                           (t/is (= 30 (:r1 copy)))
@@ -1598,7 +1654,7 @@
    follows untouched."
   []
   (let [rotate-copy (n/rotate :copy-root 45)
-        rotate-main (n/rotate :main-root 45)
+        rotate-main (n/rotate :main-root 30)
         edits       (tm/one-of
                      [(n/change-property :main-instance :fills red)
                       (n/change-height :main-instance 80)])]
@@ -1612,7 +1668,7 @@
                         copy-child        (setup/copy-instance situation)
                         expected-rotation (cond
                                             (tm/applied? situation rotate-copy) 45
-                                            (tm/applied? situation rotate-main) 45
+                                            (tm/applied? situation rotate-main) 30
                                             :else                               0)]
                     (t/is (some? chosen))
                     (t/is (n/has-property-of chosen copy-child))
@@ -1642,10 +1698,12 @@
                         moved?      (tm/applied? s copy-move)]
                     (if moved?
                       (do
-                        (t/is (= (mapv - main-offset [10 5]) (mapv - copy-offset [7 3])))
+                        (t/is (every? true? (map mth/close?
+                                                 (mapv - main-offset [10 5])
+                                                 (mapv - copy-offset [7 3]))))
                         (t/is (contains? (:touched (setup/copy-instance s)) :geometry-group)))
                       (do
-                        (t/is (= main-offset copy-offset))
+                        (t/is (every? true? (map mth/close? main-offset copy-offset)))
                         (t/is (empty? (:touched (setup/copy-instance s))))))
                     (t/is (empty? (:touched (setup/copy-root s))))))}))
 
@@ -1671,6 +1729,7 @@
                   (let [copy-child (setup/copy-instance situation)
                         copy-root  (setup/copy-root situation)
                         after      (rel-pos situation)]
+                    (t/is (mth/close? (:rotation copy-root) 30))
                     (t/is (contains? (:touched copy-root) :geometry-group))
                     (t/is (contains? (:touched copy-child) :geometry-group))
                     (t/is (mth/close? (:height copy-child) 60))
