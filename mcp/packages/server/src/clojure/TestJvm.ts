@@ -79,7 +79,7 @@ export class TestJvm {
 
     constructor(private readonly options: TestJvmOptions) {
         this.spawn = options.spawn ?? nodeSpawn;
-        this.isAlive = options.isAlive ?? defaultIsAlive;
+        this.isAlive = options.isAlive ?? isTestJvmProcess;
         this.kill = options.kill ?? ((pid, signal) => process.kill(pid, signal));
     }
 
@@ -234,9 +234,10 @@ export class TestJvm {
 
 /**
  * Whether `pid` is a live process running the test JVM script. The pid file outlives a JVM killed with KILL, and
- * the pid may since belong to another process, which must be neither adopted nor signalled.
+ * the pid may since belong to another process, which must be neither adopted nor signalled. Reads
+ * `/proc/<pid>/cmdline`, so it is Linux-only, as the devenv container is.
  */
-function defaultIsAlive(pid: number): boolean {
+export function isTestJvmProcess(pid: number): boolean {
     try {
         const argv = fs.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0");
         return argv.some((arg) => arg.endsWith(TESTJVM_SCRIPT));
