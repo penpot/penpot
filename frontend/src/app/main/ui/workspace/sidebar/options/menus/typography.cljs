@@ -291,7 +291,7 @@
 
 (mf/defc font-item*
   {::mf/wrap [mf/memo]}
-  [{:keys [font is-current on-click style]}]
+  [{:keys [font is-current is-applied on-click style]}]
   (let [item-ref (mf/use-ref)
         on-click (mf/use-fn (mf/deps font) #(on-click font))]
 
@@ -307,7 +307,7 @@
            :on-click on-click}
      [:div {:class  (stl/css-case :font-item true :selected is-current)}
       [:> font-item-preview* {:font font}]
-      (when is-current
+      (when is-applied
         [:> icon* {:icon-id i/tick
                    :size "s"}])]]))
 
@@ -467,7 +467,8 @@
                             :font font
                             :style {}
                             :on-click on-select-and-close
-                            :is-current (= (:id font) (:id effective-selected))}])])]
+                            :is-current (= (:id font) (:id effective-selected))
+                            :is-applied (= (:id font) (:id current-font))}])])]
 
       [:div {:class (stl/css-case :fonts-list true
                                   :fonts-list-full-size full-size?)}
@@ -475,7 +476,7 @@
         (fn [props]
           (let [width  (unchecked-get props "width")
                 height (unchecked-get props "height")
-                render #(row-renderer fonts effective-selected on-select-and-close %)]
+                render #(row-renderer fonts effective-selected current-font on-select-and-close %)]
             (mf/html
              [:> rvt/List #js {:height height
                                :ref flist
@@ -485,7 +486,7 @@
                                :rowRenderer render}])))]]]]))
 
 (defn row-renderer
-  [fonts selected on-select props]
+  [fonts selected current-font on-select props]
   (let [index (unchecked-get props "index")
         key   (unchecked-get props "key")
         style (unchecked-get props "style")
@@ -495,7 +496,8 @@
                      :font font
                      :style style
                      :on-click on-select
-                     :is-current (= (:id font) (:id selected))}])))
+                     :is-current (= (:id font) (:id selected))
+                     :is-applied (= (:id font) (:id current-font))}])))
 
 (mf/defc font-options*
   [{:keys [values on-change on-blur show-recent full-size-selector]}]
