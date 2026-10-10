@@ -16,6 +16,7 @@
   config (color initializers and conversions, unit conversions, dynamic
   functions) since they need the evaluator."
   (:require
+   [app.common.math :as mth]
    [app.common.tokenscript.ast :as ast]
    [app.common.tokenscript.colors :as colors]
    [app.common.tokenscript.config :as config]
@@ -224,7 +225,7 @@
                                                      []
                                                      inputs)]
                              :when (seq converted)]
-                         [(reduce max 0.0 (map #(Math/abs (double (or (sym/value %) 0))) converted)) converted])]
+                         [(reduce max 0.0 (map #(mth/abs (or (sym/value %) 0)) converted)) converted])]
         (if (empty? candidates)
           (err/raise :unit/no-valid-conversion-path)
           (second (reduce (fn [best c] (if (> (first c) (first best)) c best)) (first candidates) (rest candidates))))))))

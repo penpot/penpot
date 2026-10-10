@@ -12,6 +12,7 @@
   through the interpreter, so `math` takes the converter function as an
   argument instead of requiring the interpreter."
   (:require
+   [app.common.math :as mth]
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.units :as units]))
@@ -91,7 +92,7 @@
     "-" (apply-math - a b convert)
     "*" (apply-multiplicative * a b config convert)
     "/" (apply-multiplicative checked-divide a b config convert)
-    "^" (apply-power #(Math/pow (double %1) (double %2)) a b)
+    "^" (apply-power mth/pow a b)
     nil))
 
 (defn math-operator?

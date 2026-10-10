@@ -16,7 +16,6 @@
   `app.main.data.workspace.tokens.errors`) added to each token."
   (:require
    [app.common.logging :as l]
-   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.tokenscript :as tsc]
    [app.common.tokenscript.errors :as tse]
@@ -83,13 +82,6 @@
 ;; Tokenscript resolves any expression; these are the Penpot level checks
 ;; on the resolved value of each token type (ranges, allowed keywords,
 ;; composite shapes) that decide whether a token can be applied.
-
-(defn- out-of-bounds?
-  [n]
-  (or (>= n sm/max-safe-int) (<= n sm/min-safe-int)))
-
-(def ^:private text-case-values
-  #{"none" "uppercase" "lowercase" "capitalize"})
 
 (defn- words->string
   "Values like `700 Italic` resolve to a list of words; font weights are
@@ -161,7 +153,7 @@
   "Returns a Penpot error for a resolved `value` of a token `type`, or nil
   when it is acceptable."
   [type value]
-  (if (and (number? value) (out-of-bounds? value))
+  (if (and (number? value) (cto/number-out-of-bounds? value))
     (wte/error-with-value :error.token/number-too-large value)
     (case type
       :opacity
@@ -173,7 +165,7 @@
         (wte/error-with-value :error.style-dictionary/invalid-token-value-stroke-width value))
 
       :text-case
-      (when-not (and (string? value) (contains? text-case-values (str/lower (str/trim value))))
+      (when-not (and (string? value) (cto/valid-text-case value))
         (wte/error-with-value :error.style-dictionary/invalid-token-value-text-case value))
 
       :text-decoration
@@ -311,12 +303,3 @@
   the same name). Returns the resolved token."
   [tokens token]
   (get (resolve-tokens (assoc tokens (:name token) token)) (:name token)))
-
-(defn resolved-color
-  "`{:color hex :opacity alpha}` for a resolved color value string."
-  [value]
-  (when (string? value)
-    (if (= 9 (count value))
-      {:color (subs value 0 7)
-       :opacity (/ (js/parseInt (subs value 7 9) 16) 255)}
-      {:color value :opacity 1})))

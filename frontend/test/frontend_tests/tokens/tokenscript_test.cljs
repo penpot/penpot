@@ -47,7 +47,6 @@
     (t/is (= "#ff0000" (get-in resolved ["color.alias" :resolved-value])))
     (t/is (= "#ff000080" (get-in resolved ["color.alpha" :resolved-value])) "alpha is kept as hex8")
     (t/is (= "#FF0000" (get-in resolved ["color.named" :resolved-value])) "css names resolve")
-    (t/is (= {:color "#ff0000" :opacity 1} (ts/resolved-color "#ff0000")))
     (t/is (string? (get-in resolved ["color.light" :resolved-value])) "color functions resolve to hex")))
 
 (t/deftest resolve-tokens-errors-test

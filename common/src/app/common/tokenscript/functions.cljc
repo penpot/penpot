@@ -17,6 +17,7 @@
     {:specs {keyword spec} :spec-types {name keyword}
      :dynamic {keyword {:ast .. :spec ..}}}"
   (:require
+   [app.common.math :as mth]
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.parser :as parser]
    [app.common.tokenscript.symbols :as sym]
@@ -71,7 +72,7 @@
 
 (defn- hypot
   [nums]
-  (Math/sqrt (reduce + 0.0 (map #(* % %) nums))))
+  (mth/sqrt (reduce + 0.0 (map #(* % %) nums))))
 
 (defn- first-arg
   [args]
@@ -89,22 +90,23 @@
                                "mod"))
    "average" (fn [args] (over-many args #(/ (reduce + 0.0 %) (count %)) "average" 1))
    "round" (fn [args] (over (first-arg args) u/js-round "round"))
-   "abs" (fn [args] (over (first-arg args) #(Math/abs (double %)) "abs"))
-   "sqrt" (fn [args] (over (first-arg args) #(Math/sqrt %) "sqrt"))
-   "floor" (fn [args] (over (first-arg args) #(Math/floor %) "floor"))
-   "ceil" (fn [args] (over (first-arg args) #(Math/ceil %) "ceil"))
+   "abs" (fn [args] (over (first-arg args) mth/abs "abs"))
+   "sqrt" (fn [args] (over (first-arg args) mth/sqrt "sqrt"))
+   "floor" (fn [args] (over (first-arg args) mth/floor "floor"))
+   "ceil" (fn [args] (over (first-arg args) mth/ceil "ceil"))
+   ;; Not mth/cubicroot: pow(x, 1/3) is inexact (27 -> 3.0000000000000004)
    "cbrt" (fn [args] (over (first-arg args) #(Math/cbrt %) "cbrt"))
    "sign" (fn [args] (sym/number (u/js-sign (extract-number (first-arg args) "sign"))))
    "trunc" (fn [args] (over (first-arg args) u/js-trunc "trunc"))
    "exp" (fn [args] (over (first-arg args) #(Math/exp %) "exp"))
    "expm1" (fn [args] (over (first-arg args) #(Math/expm1 %) "expm1"))
-   "pow" (fn [[a b]] (over-two a b u/pow "pow"))
+   "pow" (fn [[a b]] (over-two a b mth/pow "pow"))
    "round_to" (fn [[v precision]]
                 (let [p (if (some? precision) (extract-number precision "round_to") 0)]
                   (over v
                         (if (zero? p)
                           u/js-round
-                          (fn [x] (let [factor (u/pow 10 p)] (/ (u/js-round (* x factor)) factor))))
+                          (fn [x] (let [factor (mth/pow 10 p)] (/ (u/js-round (* x factor)) factor))))
                         "round_to")))
    "hypot" (fn [args] (over-many args hypot "hypot" 1))
    "remainder" (fn [[a b]] (over-two a b (fn [x y]
@@ -112,9 +114,9 @@
                                              (err/raise :functions/division-by-zero {:data {:function-name "remainder"}}))
                                            (rem x y))
                                      "remainder"))
-   "sin" (fn [args] (over (first-arg args) #(Math/sin %) "sin"))
-   "cos" (fn [args] (over (first-arg args) #(Math/cos %) "cos"))
-   "tan" (fn [args] (over (first-arg args) #(Math/tan %) "tan"))
+   "sin" (fn [args] (over (first-arg args) mth/sin "sin"))
+   "cos" (fn [args] (over (first-arg args) mth/cos "cos"))
+   "tan" (fn [args] (over (first-arg args) mth/tan "tan"))
    "atan" (fn [args] (over (first-arg args) #(Math/atan %) "atan"))
    "asin" (fn [args]
             (let [v (extract-number (first-arg args) "asin")]
@@ -124,7 +126,7 @@
             (let [v (extract-number (first-arg args) "acos")]
               (when-not (<= -1 v 1) (out-of-range "acos" "between -1 and 1"))
               (over (first-arg args) #(Math/acos %) "acos")))
-   "atan2" (fn [[y x]] (sym/number (Math/atan2 (extract-number y "atan2") (extract-number x "atan2"))))
+   "atan2" (fn [[y x]] (sym/number (mth/atan2 (extract-number y "atan2") (extract-number x "atan2"))))
    "sinh" (fn [args] (over (first-arg args) #(Math/sinh %) "sinh"))
    "cosh" (fn [args] (over (first-arg args) #(Math/cosh %) "cosh"))
    "tanh" (fn [args] (over (first-arg args) #(Math/tanh %) "tanh"))

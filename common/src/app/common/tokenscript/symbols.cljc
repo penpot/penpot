@@ -24,6 +24,7 @@
   `config` need it only for color formatting/conversion lookups."
   (:refer-clojure :exclude [list boolean number symbol? number? string? boolean? list?])
   (:require
+   [app.common.math :as mth]
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.lexer :as lex]
    [app.common.tokenscript.util :as u]
@@ -744,8 +745,8 @@
          (when-not (and (u/integer-value? base) (<= 2 base 36))
            (err/raise :symbols/invalid-radix {:data {:radix base}}))
          (let [num-value (if (== base 16)
-                           (if (== 0.5 (Math/abs (rem v 1.0)))
-                             (Math/floor v)
+                           (if (== 0.5 (mth/abs (rem v 1.0)))
+                             (mth/floor v)
                              (u/js-round v))
                            v)]
            (if (u/integer-value? num-value)

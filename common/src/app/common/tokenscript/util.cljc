@@ -12,6 +12,7 @@
   JS-compatible number formatting, parsing and string splitting that
   behave the same on the JVM and in ClojureScript."
   (:require
+   [app.common.math :as mth]
    [clojure.string :as str])
   #?(:clj (:import
            java.math.BigDecimal
@@ -86,22 +87,10 @@
 
 ;; Numbers --------------------------------------------------------------------
 
-(defn nan?
-  [n]
-  (and (number? n)
-       #?(:clj (and (double? n) (Double/isNaN n))
-          :cljs (js/isNaN n))))
-
-(defn finite?
-  [n]
-  (and (number? n)
-       #?(:clj (not (or (nan? n) (and (double? n) (Double/isInfinite n))))
-          :cljs (js/isFinite n))))
-
 (defn integer-value?
   "`Number.isInteger`"
   [n]
-  (and (number? n) (finite? n) (== n (Math/floor n))))
+  (and (mth/finite? n) (== n (mth/floor n))))
 
 #?(:clj
    (defn- digits->js-string
@@ -133,7 +122,7 @@
   #?(:cljs (if (nil? n) "null" (str n))
      :clj (cond
             (nil? n) "null"
-            (nan? n) "NaN"
+            (and (double? n) (mth/nan? n)) "NaN"
             (and (double? n) (Double/isInfinite n)) (if (pos? n) "Infinity" "-Infinity")
             (zero? n) "0"
             (and (not (double? n)) (integer? n)) (str n)
@@ -210,7 +199,7 @@
 (defn js-round
   "JS `Math.round`: rounds half towards positive infinity."
   [n]
-  (double (Math/floor (+ (double n) 0.5))))
+  (double (mth/floor (+ (double n) 0.5))))
 
 (defn js-sign
   [n]
@@ -218,11 +207,7 @@
 
 (defn js-trunc
   [n]
-  (if (neg? n) (Math/ceil n) (Math/floor n)))
-
-(defn pow
-  [a b]
-  (Math/pow (double a) (double b)))
+  (if (neg? n) (mth/ceil n) (mth/floor n)))
 
 (defn typeof
   "Approximation of the JS `typeof` operator, used in error data."

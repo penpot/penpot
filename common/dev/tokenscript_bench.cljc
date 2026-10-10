@@ -20,9 +20,8 @@
   platform neutral form, so the JVM and node outputs can be compared
   byte for byte."
   (:require
-   #?(:clj [clojure.edn :as reader])
    #?(:cljs ["fs" :as fs])
-   #?(:cljs [cljs.reader :as reader])
+   [app.common.data :as d]
    [app.common.json :as json]
    [app.common.tokenscript :as tsc]
    [app.common.tokenscript.lexer :as lex]
@@ -191,7 +190,7 @@
 
 (defn run-parity
   [in out]
-  (let [inputs (reader/read-string (read-file in))
+  (let [inputs (d/read-string (read-file in))
         lexer-modes [nil {:greedy-strings? true} {:tolerant? true} {:tolerant? true :greedy-strings? true}]
         parse-modes [{:mode :inline} {:mode :script} {:mode :inline :tolerant? true} {:mode :script :tolerant? true}]]
     (write-file out (pr-str (neutral (mapv (fn [s]
