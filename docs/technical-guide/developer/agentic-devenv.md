@@ -80,9 +80,8 @@ with a comprehensive toolbox for Penpot development:
   * import .penpot files for reproducing issues,
   * export design elements as images, and more.
 
-  The devenv publishes the Penpot MCP server's ports on the loopback interface only, because these tools run
-  code in the browser and in the JVMs. The test JVM starts on the first call (about 15 s, about 2.5 GB of
-  memory) and stops after two hours without one.
+  The test JVM starts on the first call (about 15 s, about 2.5 GB of memory) and stops after two hours
+  without one.
 * **Serena MCP Server** provides code intelligence tools with support for Clojure and TypeScript.
   Its memory system is used to organise project knowledge in a context-efficient manner.
 * **Playwright MCP Server** provides tools for browser remote control.

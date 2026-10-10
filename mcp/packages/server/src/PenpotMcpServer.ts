@@ -310,13 +310,6 @@ export class PenpotMcpServer {
     }
 
     /**
-     * Indicates whether the developer tools are registered: single-user devenv mode.
-     */
-    public hasDeveloperTools(): boolean {
-        return shouldRegisterDeveloperTools(this.isDevEnv(), this.isMultiUserMode());
-    }
-
-    /**
      * The parts of the SDK's request context that tools use: the cancellation signal, the session, and progress
      * notifications, which go out only when the client sent a progress token.
      *
@@ -351,19 +344,6 @@ export class PenpotMcpServer {
             this.logger.info(
                 `Received MCP request: method=${req.body?.method ?? "<none>"}; userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
             );
-            // The devenv's nginx marks the requests it forwards, and it listens on every network interface. The
-            // developer tools run code in the browser and in JVMs, so they are served on the loopback port only.
-            if (this.hasDeveloperTools() && req.get("X-Penpot-Mcp-Proxied") !== undefined) {
-                res.status(403).json({
-                    jsonrpc: "2.0",
-                    id: req.body?.id ?? null,
-                    error: {
-                        code: -32001,
-                        message: `This server has developer tools, which it serves only on its own port (${this.port}), not through a proxy.`,
-                    },
-                });
-                return;
-            }
             if (this.isMultiUserMode()) {
                 await this.sessionContext.run({ userToken }, () => handleMcpRequest(req, res, req.body));
                 return;

@@ -30,10 +30,9 @@ services:
       # Storybook
       - ${PENPOT_STORYBOOK_PORT}:3451
 
-      # MCP. Loopback only: in single-user mode the server exposes developer
-      # tools that run code in the browser, the backend JVM, and a test JVM.
-      - 127.0.0.1:${PENPOT_MCP_SERVER_PORT}:4401
-      - 127.0.0.1:${PENPOT_MCP_REPL_PORT}:4403
+      # MCP
+      - ${PENPOT_MCP_SERVER_PORT}:4401
+      - ${PENPOT_MCP_REPL_PORT}:4403
 
       # Serena MCP server (agentic mode only). Internal ports fixed by Serena.
       - ${SERENA_EXTERNAL_PORT}:14281
