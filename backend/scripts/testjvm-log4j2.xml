@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  log4j2 config of the persistent test JVM (scripts/testjvm.clj), named by
+  the alias the MCP server passes when it starts that JVM. Derived from
+  backend/resources/log4j2-devenv-repl.xml, which the :test alias names:
+  same loggers and levels, but the file is the test JVM's own. The shared
+  logs/main-latest.log is the running backend's, and two processes rolling
+  one file over on their own counts split or lose lines.
+-->
+<Configuration status="fatal" monitorInterval="30">
+  <Appenders>
+    <RollingFile name="main" fileName="/tmp/penpot-testjvm/app.log"
+                 filePattern="/tmp/penpot-testjvm/app-%i.log">
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"
+                     alwaysWriteExceptions="true" />
+      <Policies>
+        <SizeBasedTriggeringPolicy size="50M"/>
+      </Policies>
+      <DefaultRolloverStrategy max="3"/>
+    </RollingFile>
+  </Appenders>
+
+  <Loggers>
+    <Logger name="io.lettuce" level="error" />
+    <Logger name="com.zaxxer.hikari" level="error"/>
+    <Logger name="org.postgresql" level="error" />
+
+    <Logger name="app.binfile" level="debug" />
+    <Logger name="app.storage.tmp" level="info" />
+    <Logger name="app.worker" level="trace" />
+    <Logger name="app.msgbus" level="info" />
+    <Logger name="app.http" level="info" />
+    <Logger name="app.util.websocket" level="info" />
+    <Logger name="app.redis" level="info" />
+    <Logger name="app.rpc.rlimit" level="info" />
+    <Logger name="app.rpc.climit" level="debug" />
+    <Logger name="app.common.files.migrations" level="debug" />
+
+    <Logger name="app.loggers" level="debug" additivity="false">
+      <AppenderRef ref="main" level="debug" />
+    </Logger>
+
+    <Logger name="app" level="all" additivity="false">
+      <AppenderRef ref="main" level="trace" />
+    </Logger>
+
+    <Logger name="user" level="trace" additivity="false">
+      <AppenderRef ref="main" level="trace" />
+    </Logger>
+
+    <Root level="info">
+      <AppenderRef ref="main" />
+    </Root>
+  </Loggers>
+</Configuration>

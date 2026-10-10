@@ -12,6 +12,18 @@ export class EmptyToolArgs {
 }
 
 /**
+ * What a tool may know about the MCP request that called it.
+ */
+export interface ToolCallContext {
+    /** fires when the client cancels the call */
+    signal?: AbortSignal;
+    /** identifies the MCP session of the client; undefined for stateless requests */
+    sessionId?: string;
+    /** reports progress to the client; undefined when the client asked for none */
+    progress?: (progress: number, message: string) => void;
+}
+
+/**
  * Base class for type-safe tools with automatic schema generation and validation.
  *
  * This class provides type safety through automatic validation and strongly-typed
@@ -46,7 +58,7 @@ export abstract class Tool<TArgs extends object> {
      * This method handles the unknown args from the MCP protocol,
      * delegating to the type-safe implementation.
      */
-    async execute(args: unknown): Promise<ToolResponse> {
+    async execute(args: unknown, context: ToolCallContext = {}): Promise<ToolResponse> {
         const executionId = ++Tool.executionCounter;
         try {
             let argsInstance: TArgs = args as TArgs;
@@ -56,7 +68,7 @@ export abstract class Tool<TArgs extends object> {
             }
 
             // execute the actual tool logic
-            let result = await this.executeCore(argsInstance);
+            let result = await this.executeCore(argsInstance, context);
 
             this.logger.info("Tool execution #%d complete: %s", executionId, this.getToolName());
             return result;
@@ -133,6 +145,7 @@ export abstract class Tool<TArgs extends object> {
      * Executes the tool's core logic.
      *
      * @param args - The (typed) tool arguments
+     * @param context - The MCP request's cancellation signal, session, and progress reporting
      */
-    protected abstract executeCore(args: TArgs): Promise<ToolResponse>;
+    protected abstract executeCore(args: TArgs, context: ToolCallContext): Promise<ToolResponse>;
 }
