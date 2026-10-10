@@ -87,28 +87,111 @@ wrapper deftest in BOTH test namespaces (or only the frontend one if it needs fr
 Two pure runners (no store, JVM + CLJS):
 - `core/run-variant`/`run-all`: apply nodes only (no sync, `n/undo` throws). For engine tests.
 - `comp.runner/run-variant`/`run-all`: the case runner. Every comp node declares its kind via
-  `n/IComponentOperation` (`op-kind`: `:assembly`, `:user`, `:undo`, `:frontend-only`); the
+  `n/IComponentOperation` (`op-kind`: `:assembly`, `:user`, `:undo`, `:redo`, `:frontend-only`); the
   runner and the interpreter's `sync-op?` dispatch on it. A NEW node MUST implement it. User ops
   record their production changes (`n/record-changes`, nil when nothing changed); the runner
   throws if a `:user` op records nothing or another kind records changes. After a user op the
   runner syncs to a fixpoint (`ch/components-changed` + `generate-sync-file-changes`, one pass
   per cascade level, like the frontend watcher) and pushes op + syncs as one undo group.
-  `n/undo` reverts the latest group, no re-sync. The runner validates the file (against the
+  `n/undo` (`(n/undo k)` for k groups) reverts the latest group and moves it to a redo stack; `n/redo` applies it again
+  (interpreter: `dwu/redo`); neither re-syncs. A user op that pushes a group empties the redo
+  stack; one that changed nothing keeps it. The runner validates the file (against the
   situation's files) once settled: after the sync fixpoint and after an undo group; never
   between cascade passes, where an outer copy still points at the component its main dropped
   (`:component-id-mismatch`), nor with `{:sync? false}`. Assembly ops (create/instantiate/nest/variant
-  container): no sync, no undo group. `ResetCopyInstance` is a user op here (sync + undo),
-  unlike the interpreter (file install). `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`
+  container): no sync, no undo group. `n/reset` (`reset-copy-instance` resets a lineage's latest copy) is a user op (sync +
+  undo); the interpreter sends `dwl/reset-component`. `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`/`MoveShape`
   are `:frontend-only` and throw `::runner/frontend-only` (the placement step is frontend code). Swap and switch nodes use the production
   `clv/generate-component-swap-in-place` (+ `clv/find-switch-target` for switch), the same code the
   frontend events call. Not modelled: the `:modified-at` bump, and the swap/switch event follow-ups
   (token propagation, WASM text resize, layout update). Tests:
   `common-tests.logic.composable-runner-test`.
+- Undo/redo round trip (`comp/undo_check.cljc`, alias `uc`), on by default in the pure runner
+  (`:undo-check?`): after each `:user` step that pushed a group, undo must give back the
+  normalized file before it and redo the file after it (the variant continues from the redone
+  file); a user step that pushed nothing must change nothing (`:no-undo-entry`); at the end,
+  undo back to the last assembly step (the baseline; a case's own undo below it moves it) and
+  redo all. Files compare through `app.common.test-helpers.normalize` (`thn/normalize-file`:
+  drops file/component `:modified-at`, optionally `:position-data`; shapes as plain maps).
+  Failures are recorded in the situation with labelled diffs (labels die with the variant, so
+  they are resolved when recorded) and a `:signature`, the set of what differs
+  (`uc/signature`: `[:object <label> attr]`, `:missing`/`:extra`, `:page`/`:component` alike,
+  `[:undo-index n]`, `[:error]`; unlabelled shapes are `:unlabelled`); `uc/check!` asserts after
+  the asserter and prints the signature. A case map's `:undo-check` takes `{:off "reason"}` or
+  `{:known-failures [{:bug "F41" :fails {phase signature} :op <the case's node> :runners
+  #{:pure :frontend} :when pred}]}`: strict expected failures. A mark applies to variants of its
+  runners (`uc/with-runner`) where its `:op` ran and `:when` holds; it covers a failure only
+  when the signature is exactly the pinned one, and a pinned phase that does not fail as pinned
+  fails the case. Marks without `:fails` throw. Never edit a pin to make a case pass: a pin
+  changes only when the failure is understood, and the mark goes only in the fix commit. The interpreter runs the same round trip on every `:user` and
+  `:frontend-only` event step through the real `dwu/undo`/`dwu/redo`, and also checks the
+  workspace undo index (`:undo-index`/`:redo-index` phases): a step must add exactly one undo
+  entry or group. File installs (assembly ops) are its baselines; a skipped optional and an inline `Test` are not. The interpreter
+  empties `:workspace-undo` per variant. Frontend snapshots drop `:position-data` under WASM.
+  Undo groups get lost in derived work: `initialize-shape-layout` buffers `:layout/update`
+  without its `:undo-group` (F43), so a swap's reflow lands in entries of its own. Match
+  steps by node identity, never by record type or rendered name: `n/MoveChild` does not resolve
+  through an alias on the JVM, and the JS test build strips record names (transcripts show
+  `node`).
+- The interpreter records an event op's application as the op's own fields, not what its
+  `apply-to` would record, so an accessor that must work in both runners reads the file
+  structure (e.g. `level-rect`, `n/deleted-component-id`), never the node's recorded data.
+  Shapes off the current page: `tm/find-shape`, `tm/role-shape-in-file` (setup
+  `simple-component-with-copies-on-two-pages`). When an accessor needs what an op created
+  (e.g. the duplicate's head), the node implements `n/IAppliedResult` (read from the file
+  before and after); the pure node and the interpreter's `record-op` both record it.
+- `n/create-component` builds 0.01-sized frames unless given `:size`. The transform math
+  writes float noise into those sizes, so frontend syncs emit reflows whose commits lose
+  their undo group (F43) at timing-dependent points (`initialize-shape-layout` buffers
+  `:layout/update` in 100 ms windows): undo pins over such reflows are nondeterministic.
+  New cases that are not about geometry pass `:size` (nesting sizes the outer frames too).
+  F43 from float noise lives in case AJ only (frontend only, round trip off): it pins the
+  value one undo leaves, which does not depend on how many entries the reflow makes. Case AN
+  pins F43 from a real reflow (a flex main's margin edit, synced): stable in repeated runs.
+- Case assertions a known bug breaks use `tm/known-failure bug expected pinned actual`: a
+  strict expected failure at assertion level (passes only while `actual` is the pinned wrong
+  value). The undo-check marks cover only round-trip failures.
+- Text: `n/edit-text` (`:text`/`:font-size` of the first span) with `n/text-edit-commit`, which
+  includes the editor's automatic rename when the name was generated from the old content;
+  setup `simple-text-component-with-copy` (text named after its content).
+- The interpreter unwraps nested choices (`(tm/optional (tm/one-of …))`); `(optional
+  (in-sequence …))` is still not flattened.
+- Depth sweeps: `depth-sweep` in `cases.cljc`, a one-of over skip,
+  `(n/make-nested-component name)` and `(n/make-nested-component name 2)`; asserters read
+  `n/nesting-depth`. Two independent nesting optionals run depth 1 twice.
+- General target-based nodes: `n/swap-shape target to` (`to` a lineage name or a component label), `n/move-to-cell board child row column`, `n/reset target` (`dwl/reset-component` in the interpreter). `n/swap-component name level to` is `swap-shape` on `n/nested-head-of`. `n/nested-head-in name` (and the general `n/nested-head-under parent-target`) finds a copy's nested
+  head through its parent, so it survives swaps and switches (they keep the head id anyway).
+  Careful: `n/lineage-component-id` is the OUTER component after nesting.
+- Variant properties: `n/add-variant-property`, `remove-`, `rename-`, `reorder-variant-properties`
+  and `set-variant-property-value` are one node (`EditVariantProperty`); `n/variant-property-call`
+  resolves the edit to the arguments both the `clvp/generate-*` generator and the `dwv/*` event take.
+  A member is named by the value it was built with; read its current state from the file
+  (`n/member-properties`, `n/member-component`, `n/member-root`). `n/switch-variant` takes `:pos`
+  (a number or a `(situation -> pos)` fn) for sets with several properties.
+  `n/add-variant set member` duplicates a member (`clv/generate-add-new-variant`; `dwv/add-new-variant`,
+  whose delayed DOM focus `check` neutralises by stubbing `dom/get-element`); ask the node for the
+  new component (`n/added-variant-component-id`).
+  Frontend-only variant actions are one node, `n/VariantAction` (`n/transform-in-variant`,
+  `combine-as-variants`, `rename-variant`, `rename-variant-in-layers`, `remove-empty-properties`,
+  `set-variant-error`, `variant-shortcut`); the interpreter's `variant-action-events` sends them.
+  A set they build has no `variant-set` record: read it with `n/component-of` and
+  `n/variant-component-ids`; `switch-variant` takes the value as a fn for it.
+- Tokens: `n/add-tokens` (assembly: an active set of border radius tokens), `n/apply-token`,
+  `n/unapply-token`, check `n/has-token?`. The interpreter sends `dwta/apply-token`, which resolves
+  tokens asynchronously and opens no pending work (F54), so `await-step` takes a `ready?` predicate
+  (`op-ready`: the token shows on the shape) that must hold before it awaits the pending work.
+- `n/paste-to-root target`: the clipboard's copy (shape-refs of nested heads advanced, the skipped ref
+  chain's touched merged) and paste at the root; the interpreter pastes `thp/simulate-copy-shape`'s data.
+  That helper mirrors `copy-selected`'s advance; keep them in step. A duplicate inside a copy is
+  refused by `ctk/allow-duplicate?`, and an alt-duplication with no move makes the next edit join
+  its undo group (it expects the drag's move), so neither models a move out of a main.
+- `n/undo-before-sync` (frontend-only) emits an edit and `dwu/undo` in one step, so the undo
+  commits while the watcher still holds the edit's sync.
 - Label map gotcha: running a second variant re-registers labels, so assert on a situation
-  before running the next one (`thi/id` then points at the new run's shapes). Case letters B..O;
+  before running the next one (`thi/id` then points at the new run's shapes). Case letters B..Z, then AA..;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance
 geometry, on the #10109 fix branch until merged; O: switch of an overridden copy, mains
-agreeing or not) are the flagship pattern — read them before
+agreeing or not; Q: detach at depth 0..2, nested copies stay linked; R: update-main at depth 0..2 with two copies; S: delete/restore with a copy on another page; T: duplicate a copy at depth 0..2; U: move a copy into a main with a copy; V: new edit after undo empties redo; W: `(n/undo 3)` over nested cascades; X: undo before the edit's sync, frontend only; AJ: F43, one undo after a nested sync reverts only the reflow, frontend only; Y: text override × main text change, per subgroup; Z: main child move, frontend only; AA..AE: swap outcomes asserted on values, not slot storage, so they survive the Phase 2b swap model; AF: grid cell move vs a swapped copy child, setup `grid-component-with-copy`; AG/AH/AI: ports of the plugin's slot-alignment cases, setup `component-with-sibling-instances`, check `setup/misaligned-sub-heads`; AK: update main into a grid main, F49 pinned; AL: update main renames the component (`change-property` takes `:name`); AM: update main of a swap inside a group, setup `grouped-component-with-copy`, F16 pinned; AN: flex child margin override through main edit, reset and update main, setup `flex-component-with-copy`; `change-property` takes `:margin`, which the interpreter sends as `dwsl/update-layout-child`; AO: a copy dropped into a grid cell of a main (`nest-copy` with `:cell`, sent as `dwt/move-shapes-to-frame`), F41 pinned; AP: a library main's middle child removal reaches a copy in another file (in one file, deleting a main child deletes the copies' children itself, so sync never meets the copy child), setup `cross-file-component-with-many-children`; AQ: main change reaches a copy nested in a sub-board, setup `component-nested-in-a-sub-board`; AR: variant property edits keep a member's copies as they are, then a switch finds its member by the edited properties; AS: an added variant joins the set and is a switch target; AT..AX, frontend only: transform into a variant, combine, rename a variant (F6 pinned: the transaction keeps the container commit's undo group, the copies' sync takes the main renames'), rename in layers + remove empty properties + member error, the shortcuts that add members; AY: a border radius token on a main reaches untouched copies and its removal too, F55 pinned; AZ: a nested copy pasted out of its main keeps the main's overrides) are the flagship pattern — read them before
 writing a new sweep.
 
 **Scenario lineage model** (behind the sweeps): scenario ops track named component lineages as
@@ -123,13 +206,21 @@ nestings do not propagate between each other.
 
 **Interpreter:** installs the situation's files into the global `st/state` (aux files tagged
 `:library-of`), starts the production watchers the app starts — `dw/initialize-edit-watchers`
-(undo stack, layout, text reflow, WASM text measurement; stopped by `dw/finalize-edit-watchers`)
-and `dwl/watch-library-changes` (component + token watchers) — then maps
-event-ops to REAL workspace events (`dwsh/update-shapes`, `dwl/component-swap`,
+(undo stack, layout, text reflow, WASM text measurement; stopped by `dw/finalize-edit-watchers`,
+replaced when started again) and `dwl/watch-library-changes` (component + token watchers;
+replaced when started again) — then maps
+event-ops to REAL workspace events (`dwsh/update-shapes`, `dwl/component-swap` (also `n/swap-shape`, any copy head),
 `dwv/variants-switch`, `dwt/increase-rotation` — which runs the `check-delta` placement
-classification — `dwt/update-dimensions`, `dwu/undo`, `dwl/sync-file`, …) and runs sync-ops'
-`apply-to` against the live store file; awaits settlement (idle-gap heuristic + per-op grace) and
-re-reads `:file` each step so the shared accessors keep working.
+classification — `dwt/update-dimensions`, `dwl/detach-component`, `dwl/update-component-sync`, `dwl/delete-component`, `dwl/restore-component`, `dws/duplicate-shapes`, `dwsh/relocate-shapes` (nest-copy), `dwtx/v2-update-text-shape-content` (edit-text, the editor's on-blur commit with its automatic rename), `dwu/undo`, `dwl/sync-file`, …) and runs sync-ops'
+`apply-to` against the live store file; each event step goes through `ftm/await-step`, which
+resolves once `wrf/settled nil` (the watcher's `:sync-file` wait, opened for EVERY local commit,
+plus the sync and layout/text reflow it starts) or reports `{:timeout pending}` after 2s; a
+timed-out step fails the test and skips the asserter. Contract: producers must open their
+pending work synchronously while the events are processed (Potok processes sub-events
+synchronously); an async hop without a pending task makes steps resolve early. Tests:
+`frontend-tests.composable-tests.completion-contract-test` (slowed-down sync via a mocked
+`dwl/sync-file`), `frontend-tests.data.workspace-sync-barrier-test`. Re-reads `:file` each step
+so the shared accessors keep working.
 STORE-SWAP IMMUNITY: other test namespaces `set!` `st/state`/`st/stream` and never restore, while
 the `app.main.refs` lenses stay bound to the ORIGINAL atoms — propagation then dies silently. The
 interpreter captures the atoms at namespace-load time and re-`set!`s them per variant.
@@ -143,11 +234,14 @@ Running (frontend): `cd frontend && pnpm run build:test`, then
 persistence, no viewport. Edit-reacting subscriptions come from the shared events above; a NEW
 edit-reacting subscription belongs inside `initialize-edit-watchers` (or
 `watch-library-changes`), never wired inline in `initialize-workspace`, or the harness silently
-misses it. Headless there is no DOM text measurement, so `:text/reflow` work never drains.
+misses it. Headless there is no DOM text measurement: `install!` starts
+`headless-text-measurement`, a stand-in that opens and closes a `:text-measure` task for each
+`:text/reflow` (geometry and `:position-data` unchanged), so text steps settle. It does not
+reproduce what the real measurement commits (F37: `commit-position-data`).
 
 **Caveats:** inline `Test` exceptions are UNCAUGHT on the frontend (crash the runner — assert in
 the trailing asserter). `(optional (in-sequence …))` is not flattened for the interpreter — use
-independent optionals. The Serena/clj-kondo cache for `nodes.cljc` goes stale (phantom symbols) —
+independent optionals (nested choices are fine). The Serena/clj-kondo cache for `nodes.cljc` goes stale (phantom symbols) —
 trust the build. Cross-namespace global-state leaks land in this suite first; suspect them before
 the framework on inexplicable full-run-only failures. Case H's `sync-file` schedules a delayed RPC
 that fails headless (benign; absorbed by per-op grace).
@@ -178,6 +272,14 @@ Distinguishing abstractions (the OOP articulation of the shared principles):
   (CI adapter) are three thin consumers.
 - Cases live in `src/composable-tests/cases/` as `case<Identifier>.ts` (e.g. `MainEditSyncs` — the
   sweep that found #10109).
+- Roles are bound BY NAME in the situation: two foundation ops with the same role names overwrite
+  each other. `OpCreateNestableComponent(strategy, name)` prefixes its roles with `name`; give
+  every extra lineage in a case a name.
+- `OpDetach`/`OpSwap`/`OpReset` wait for pending propagation before acting (a script could
+  otherwise act inside the sync window, which no user can). `swapComponent` keeps touched (F33).
+  The suite pins published `@penpot/plugin-types` 1.4.2, which lacks `resetOverrides` (typed cast).
+- Known bugs: `Assert.knownFailure(bug, expected, pinned, actual, equals)` (same order as `tm/known-failure`), the counterpart of
+  `tm/known-failure`.
 - Panel checkboxes carry stable DOM ids (case identifier / `Identifier-N` composites) for remote
   control via Playwright; recipe in the README.
 

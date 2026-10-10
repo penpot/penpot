@@ -10,6 +10,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -879,3 +880,50 @@
     (t/is (= "14" (:font-size line)))
     ;; The text doesn't change, because the structure was touched
     (t/is (= "hello world" (:text line)))))
+
+(t/deftest sync-copy-touched-only-in-content-group
+  ;; A copy text whose `:touched` has `:content-group` but no text subgroup,
+  ;; as files from before the subgroups hold it, keeps its own content
+  ;; when the main changes.
+  (let [;; ==== Setup
+        file       (-> (thf/sample-file :file1)
+                       (tho/add-frame-with-text :main-root :main-child "hello world")
+                       (thc/make-component :component1 :main-root)
+                       (thc/instantiate-component :component1 :copy-root {:children-labels [:copy-child]}))
+        copy-child (ths/get-shape file :copy-child)
+        file       (-> file
+                       (ths/update-shape :copy-child :content
+                                         (assoc-in (:content copy-child)
+                                                   [:children 0 :children 0 :children 0 :text]
+                                                   "copy text"))
+                       (ths/update-shape :copy-child :touched #{:content-group}))
+        page       (thf/current-page file)
+
+        ;; ==== Action
+        changes1     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                 #{(thi/id :main-child)}
+                                                 (fn [shape]
+                                                   (assoc-in shape [:content :children 0 :children 0 :children 0 :font-size] "32"))
+                                                 (:objects page)
+                                                 {})
+
+        updated-file (thf/apply-changes file changes1)
+
+        changes2     (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                     nil
+                                                     :components
+                                                     (:id updated-file)
+                                                     (thi/id :component1)
+                                                     (:id updated-file)
+                                                     {(:id updated-file) updated-file}
+                                                     (:id updated-file))
+
+        file'     (thf/apply-changes updated-file changes2)
+
+        ;; ==== Get
+        copy-child' (ths/get-shape file' :copy-child)
+        line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
+    ;; with no subgroup, sync takes the "nothing touched" branch and writes
+    ;; the main's content
+    (tm/known-failure "F50" "copy text" "hello world" (:text line))
+    (t/is (= #{:content-group} (:touched copy-child')))))

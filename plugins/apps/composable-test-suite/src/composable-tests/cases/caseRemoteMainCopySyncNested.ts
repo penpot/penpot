@@ -9,6 +9,7 @@ import { OpCreateNestableComponent } from "../operations/OpCreateNestableCompone
 import { ContentCreationStrategyRectangle } from "../content-creation/ContentCreationStrategyRectangle.ts";
 import { OpSequence } from "../operations/OpSequence.ts";
 import { OpOptional } from "../operations/OpOptional.ts";
+import { OpReset } from "../operations/OpReset.ts";
 
 // distinct fill colours (read-back values are lower-case)
 const BASELINE = new Color("#aaaaaa");
@@ -28,8 +29,8 @@ const BLUE = new Color("#0000ff"); // copy edit
  * tracked instance roles' rects (resolved via the strategy at the current depth),
  * so the same composition holds at any depth.
  *
- * (The reset checkpoint of the original case is omitted: the Plugin API exposes no
- * override-reset operation.)
+ * Then a copy override is forced and reset away: after the reset the copy shows
+ * the main change, else the remote change, else the baseline.
  */
 export function createTestCaseRemoteMainCopySyncNested(): TestCase {
     const opCreateComponent = new OpCreateNestableComponent(new ContentCreationStrategyRectangle(BASELINE));
@@ -45,6 +46,7 @@ export function createTestCaseRemoteMainCopySyncNested(): TestCase {
     const changeRemote = new OpChangeProperty(rectOf(remoteInstance), fillColor, RED, "remote rect");
     const changeMain = new OpChangeProperty(rectOf(mainInstance), fillColor, GREEN, "main rect");
     const changeCopy = new OpChangeProperty(rectOf(copyInstance), fillColor, BLUE, "copy rect");
+    const forceCopy = new OpChangeProperty(rectOf(copyInstance), fillColor, BLUE, "copy rect");
 
     // the colour expected at the copy under the precedence rule
     const expectedAtCopy = (s: Situation): Color => {
@@ -63,7 +65,9 @@ export function createTestCaseRemoteMainCopySyncNested(): TestCase {
             "then applied: colouring the rectangle on the remote, on the current main, and on the " +
             "copy. The copy's rectangle must show the highest-precedence applied edit — a copy " +
             "override wins over a main change, which wins over a remote change, which wins over " +
-            "the baseline — at every nesting depth.",
+            "the baseline — at every nesting depth. Finally the copy's rectangle is overridden " +
+            "once more and the copy's overrides are reset: it then shows the main change, else " +
+            "the remote change, else the baseline.",
         new OpSequence(
             opCreateComponent,
             opCreateComponent.createOpInstantiate(),
@@ -77,6 +81,14 @@ export function createTestCaseRemoteMainCopySyncNested(): TestCase {
             new OpAssert("scopy shows the highest-precedence applied edit", (s) => {
                 const copyRect = opCreateComponent.contentCreator.getRectangle(s.get(copyInstance));
                 fillColor.assertEqual(fillColor.read(copyRect), expectedAtCopy(s));
+            }),
+            // force a copy override, then reset it away
+            forceCopy,
+            new OpReset(copyInstance),
+            new OpAssert("after the reset the copy shows the main's value", (s) => {
+                const copyRect = opCreateComponent.contentCreator.getRectangle(s.get(copyInstance));
+                const expected = s.wasApplied(changeMain) ? GREEN : s.wasApplied(changeRemote) ? RED : BASELINE;
+                fillColor.assertEqual(fillColor.read(copyRect), expected);
             })
         )
     );

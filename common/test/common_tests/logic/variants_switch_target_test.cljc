@@ -10,6 +10,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.variants :as clv]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -105,32 +106,11 @@
    :first in the first column and a copy :copy01 of :c01 in the third, so the
    second cell is free."
   [file]
-  (let [file    (-> file
-                    (ths/add-sample-shape :board
-                                          :type :frame
-                                          :layout :grid
-                                          :layout-grid-dir :row
-                                          :layout-grid-rows []
-                                          :layout-grid-columns []
-                                          :layout-grid-cells {})
-                    (ths/add-sample-shape :first :parent-label :board)
-                    (thc/instantiate-component :c01 :copy01 :parent-label :board))
-        objects (:objects (thf/current-page file))
-        board   (-> (get objects (thi/id :board))
-                    (ctl/add-grid-row {:type :flex :value 1})
-                    (ctl/add-grid-column {:type :flex :value 1})
-                    (ctl/add-grid-column {:type :flex :value 1})
-                    (ctl/add-grid-column {:type :flex :value 1}))
-        place   (fn [cells column label]
-                  (let [[id _] (d/seek #(= column (:column (val %))) cells)]
-                    (assoc-in cells [id :shapes] [(thi/id label)])))
-        cells   (-> (:layout-grid-cells board)
-                    (place 1 :first)
-                    (place 3 :copy01))]
-    (-> file
-        (ths/update-shape :board :layout-grid-rows (:layout-grid-rows board))
-        (ths/update-shape :board :layout-grid-columns (:layout-grid-columns board))
-        (ths/update-shape :board :layout-grid-cells cells))))
+  (-> file
+      (tho/add-grid-frame :board)
+      (ths/add-sample-shape :first :parent-label :board)
+      (thc/instantiate-component :c01 :copy01 :parent-label :board)
+      (tho/place-in-grid-columns :board 3 {1 :first 3 :copy01})))
 
 (t/deftest swap-in-place-keeps-the-grid-cell
   (let [file      (-> (thf/sample-file :file1)

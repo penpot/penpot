@@ -384,38 +384,37 @@
                (t/is (= (count-shapes file' "rect-simple-1" "#333333") 2)))))))
       done)))
 
-;; FIXME: this test does not calls done consistently, so it break all the test suite
-#_(t/deftest copy-nested-3
-    (t/async done
-      (mock/with-mocks {uuid/next cthi/next-uuid}
-        (fn [done']
-          (let [;; ==== Setup
-                file     (setup-file)
-                store    (ths/setup-store file)
+(t/deftest copy-nested-3
+  (t/async done
+    (mock/with-mocks {uuid/next cthi/next-uuid}
+      (fn [done']
+        (let [;; ==== Setup
+              file     (setup-file)
+              store    (ths/setup-store file)
 
-                ;; ==== Action
-                ;; For each copy of Simple1 nested in a main or other copy, and the group inside Composed3
-                ;; main and copy:
-                ;;   - Duplicate it two times, moving the duplicates to another page
-                events
-                (concat
-                 (duplicate-copy-nested-and-group-out-of-the-main file :target-page-label :page-2)
-                 ;; - Change color of Simple1
-                 (set-color-bottom-shape :frame-simple-1 file {:color "#111111"})
-                 ;; - Change color of the previous main
-                 (set-color-bottom-shape :frame-composed-1 file {:color "#222222"})
-                 (set-color-bottom-shape :group-3 file {:color "#333333"}))]
-            `(ths/run-store
-              store done' events
-              (fn [new-state]
-                (let [file' (-> (ths/get-file-from-state new-state)
-                                (cthf/switch-to-page :page-2))]
-                  (cthf/validate-file! file')
-                  ;; Check that it's NOT PROPAGATED.
-                  (t/is (= (count-shapes file' "rect-simple-1" "#111111") 10))
-                  (t/is (= (count-shapes file' "rect-simple-1" "#222222") 4))
-                  (t/is (= (count-shapes file' "rect-simple-1" "#333333") 0)))))))
-        done)))
+              ;; ==== Action
+              ;; For each copy of Simple1 nested in a main or other copy, and the group inside Composed3
+              ;; main and copy:
+              ;;   - Duplicate it two times, moving the duplicates to another page
+              events
+              (concat
+               (duplicate-copy-nested-and-group-out-of-the-main file :target-page-label :page-2)
+               ;; - Change color of Simple1
+               (set-color-bottom-shape :frame-simple-1 file {:color "#111111"})
+               ;; - Change color of the previous main
+               (set-color-bottom-shape :frame-composed-1 file {:color "#222222"})
+               (set-color-bottom-shape :group-3 file {:color "#333333"}))]
+          (ths/run-store
+           store done' events
+           (fn [new-state]
+             (let [file' (-> (ths/get-file-from-state new-state)
+                             (cthf/switch-to-page :page-2))]
+               (cthf/validate-file! file')
+               ;; Check that it's NOT PROPAGATED.
+               (t/is (= (count-shapes file' "rect-simple-1" "#111111") 10))
+               (t/is (= (count-shapes file' "rect-simple-1" "#222222") 4))
+               (t/is (= (count-shapes file' "rect-simple-1" "#333333") 0)))))))
+      done)))
 
 (t/deftest duplicate-page-integrity-frame-group-component
   ;; This test covers the bug fixed in 2.9.0: duplicating a page with a mainInstance inside a group

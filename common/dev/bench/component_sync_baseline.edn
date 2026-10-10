@@ -1,0 +1,23 @@
+;; Component sync benchmark baseline, written by `scripts/bench-components record`.
+{:commit "1e6615a132",
+ :date "2026-10-09",
+ :machine
+ {:cpu "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz",
+  :cores 12,
+  :os "Linux amd64",
+  :jvm "26.0.2"},
+ :results
+ {:deepest-edit-through-three-levels
+  {:mean-ms 36.343, :lower-q-ms 35.215, :passes 4},
+  :edit-through-a-chain-of-dependents
+  {:mean-ms 75.119, :lower-q-ms 68.931, :passes 3},
+  :library-update-into-copies
+  {:mean-ms 89.295, :lower-q-ms 83.083, :passes 1},
+  :main-edit-into-10-copies
+  {:mean-ms 1.847, :lower-q-ms 1.79, :passes 1},
+  :main-edit-into-100-copies
+  {:mean-ms 16.234, :lower-q-ms 15.415, :passes 1},
+  :main-edit-into-1000-copies
+  {:mean-ms 158.728, :lower-q-ms 153.086, :passes 1},
+  :variant-switch-into-copies
+  {:mean-ms 33.1, :lower-q-ms 32.052, :passes 1}}}

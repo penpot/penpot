@@ -137,3 +137,16 @@ export class ShapePropHeight extends ShapePropNumberBase {
         shape.resize(shape.width, value);
     }
 }
+
+/** The opacity of a shape, from 0 to 1. Reads and writes `opacity` directly. */
+export class ShapePropOpacity extends ShapePropNumberBase {
+    readonly name = "opacity";
+
+    read(shape: Shape): number {
+        return shape.opacity;
+    }
+
+    write(shape: Shape, value: number): void {
+        shape.opacity = value;
+    }
+}

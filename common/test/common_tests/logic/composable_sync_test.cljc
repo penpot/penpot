@@ -6,11 +6,13 @@
 
 (ns common-tests.logic.composable-sync-test
   "Runs the shared composable component cases through the pure runner, on the
-   JVM and in JS. Case N and the rotation case need the frontend placement
-   step, so only the frontend interpreter runs them."
+   JVM and in JS. The geometry cases (N, Z, AI and the rotation case) need
+   the frontend placement step and case X a pending frontend sync, so only
+   the frontend interpreter runs them."
   (:require
    [app.common.test-helpers.composable.comp.cases :as cases]
    [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.ids-map :as thi]
    [clojure.test :as t]))
@@ -18,12 +20,14 @@
 (t/use-fixtures :each thi/test-fixture)
 
 (defn- check
-  "Run every variant of `case-map` and apply its asserter to each result."
+  "Run every variant of `case-map`, apply its asserter to each result and
+   assert that its undo/redo round trip passed."
   [{:keys [asserter] :as case-map}]
   (doseq [situation (r/run-all case-map)]
-    (when asserter
-      (t/testing (str "operations:\n  " (tm/describe-applied situation))
-        (asserter situation)))))
+    (t/testing (str "operations:\n  " (tm/describe-applied situation))
+      (when asserter
+        (asserter situation))
+      (uc/check! situation case-map))))
 
 (t/deftest case-b-copy-override-survives-later-main-change
   (check (cases/copy-override-survives-later-main-change)))
@@ -46,6 +50,9 @@
 (t/deftest case-i-undo-reverts-edit-and-its-propagation
   (check (cases/undo-reverts-edit-and-its-propagation)))
 
+(t/deftest case-p-redo-reapplies-edit-and-its-propagation
+  (check (cases/redo-reapplies-edit-and-its-propagation)))
+
 (t/deftest case-k-synchronisation-scenarios
   (check (cases/synchronisation-scenarios)))
 
@@ -57,3 +64,84 @@
 
 (t/deftest case-o-variant-switch-keeps-override-only-where-mains-agree
   (check (cases/variant-switch-keeps-override-only-where-mains-agree)))
+
+(t/deftest case-q-detach-keeps-nested-copies-linked
+  (check (cases/detach-keeps-nested-copies-linked)))
+
+(t/deftest case-r-update-main-reaches-other-copies
+  (check (cases/update-main-reaches-other-copies)))
+
+(t/deftest case-s-deleted-component-copies-sync-again-after-restore
+  (check (cases/deleted-component-copies-sync-again-after-restore)))
+
+(t/deftest case-t-duplicated-copy-keeps-overrides-and-link
+  (check (cases/duplicated-copy-keeps-overrides-and-link)))
+
+(t/deftest case-u-nested-copy-reaches-copies-of-the-receiving-main
+  (check (cases/nested-copy-reaches-copies-of-the-receiving-main)))
+
+(t/deftest case-v-new-edit-after-undo-clears-redo
+  (check (cases/new-edit-after-undo-clears-redo)))
+
+(t/deftest case-w-undo-several-steps-over-nested-cascades
+  (check (cases/undo-several-steps-over-nested-cascades)))
+
+(t/deftest case-y-text-override-merges-with-main-text-change
+  (check (cases/text-override-merges-with-main-text-change)))
+
+(t/deftest case-aa-copy-swap-survives-main-changes
+  (check (cases/copy-swap-survives-main-changes)))
+
+(t/deftest case-ab-reset-of-nested-swap-keeps-top-copy-overrides
+  (check (cases/reset-of-nested-swap-keeps-top-copy-overrides)))
+
+(t/deftest case-ac-second-variant-switch-keeps-root-overrides
+  (check (cases/second-variant-switch-keeps-root-overrides)))
+
+(t/deftest case-ad-update-main-pushes-a-swapped-child
+  (check (cases/update-main-pushes-a-swapped-child)))
+
+(t/deftest case-ae-detached-or-duplicated-swapped-copy-follows-its-component
+  (check (cases/detached-or-duplicated-swapped-copy-follows-its-component)))
+
+(t/deftest case-af-grid-cell-move-reaches-a-swapped-copy-child
+  (check (cases/grid-cell-move-reaches-a-swapped-copy-child)))
+
+(t/deftest case-ag-main-reorder-keeps-copy-sub-heads-aligned
+  (check (cases/main-reorder-keeps-copy-sub-heads-aligned)))
+
+(t/deftest case-ah-copy-sub-head-delete-keeps-others-aligned
+  (check (cases/copy-sub-head-delete-keeps-others-aligned)))
+
+(t/deftest case-ak-update-main-pushes-grid-cells
+  (check (cases/update-main-pushes-grid-cells)))
+
+(t/deftest case-al-update-main-renames-the-component
+  (check (cases/update-main-renames-the-component)))
+
+(t/deftest case-am-update-main-pushes-a-swap-inside-a-group
+  (check (cases/update-main-pushes-a-swap-inside-a-group)))
+
+(t/deftest case-an-flex-child-override-follows-sync-reset-and-update-main
+  (check (cases/flex-child-override-follows-sync-reset-and-update-main)))
+
+(t/deftest case-ao-copy-dropped-into-a-grid-cell-reaches-copies
+  (check (cases/copy-dropped-into-a-grid-cell-reaches-copies)))
+
+(t/deftest case-ap-library-main-child-removal-reaches-copy
+  (check (cases/library-main-child-removal-reaches-copy)))
+
+(t/deftest case-aq-main-change-reaches-a-copy-nested-in-a-sub-board
+  (check (cases/main-change-reaches-a-copy-nested-in-a-sub-board)))
+
+(t/deftest case-ar-variant-property-edits-keep-copies
+  (check (cases/variant-property-edits-keep-copies)))
+
+(t/deftest case-as-added-variant-is-a-switch-target
+  (check (cases/added-variant-is-a-switch-target)))
+
+(t/deftest case-ay-token-on-a-main-reaches-copies
+  (check (cases/token-on-a-main-reaches-copies)))
+
+(t/deftest case-az-copy-moved-out-of-its-main-keeps-inherited-overrides
+  (check (cases/copy-moved-out-of-its-main-keeps-inherited-overrides)))
