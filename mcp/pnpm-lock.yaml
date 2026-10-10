@@ -228,9 +228,6 @@ importers:
       js-yaml:
         specifier: ^5.4.2
         version: 5.4.2
-      nrepl-client:
-        specifier: ^0.3.0
-        version: 0.3.0
       pino:
         specifier: ^10.4.0
         version: 10.4.0
@@ -850,9 +847,6 @@ packages:
     resolution: {integrity: sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==}
     engines: {node: '>=8.0.0'}
 
-  bencode@2.0.3:
-    resolution: {integrity: sha512-D/vrAD4dLVX23NalHwb8dSvsUsxeRPO8Y7ToKA015JQYq69MLDOMkC0uGZYA/MPpltLO8rt8eqFC2j8DxjTZ/w==}
-
   body-parser@2.3.0:
     resolution: {integrity: sha512-2cGmJupaNgg+QUwVLAucDuWuoMZ6EX9iHDRswZ5lsNYEmwPaRknMPCLZz07yTzVq/83p4o/wzbDZbBrTvGGTIw==}
     engines: {node: '>=18'}
@@ -1236,9 +1230,6 @@ packages:
   negotiator@1.1.0:
     resolution: {integrity: sha512-NMPBRMJgiQHjbd8phG3Vebdx4kZ1H121rbl5IkMqeOsahptB9BKo/d7oJ3zTXqTgagn2bWlNSXkh0QUGM31RYg==}
     engines: {node: '>=18'}
-
-  nrepl-client@0.3.0:
-    resolution: {integrity: sha512-EcROXUrzlGHKOdu/E/5WB0OESCI0iGHhdXeYk9cULYtd72eFJrM/Q1umvjTBfKWlT62y76cnyLG/3CmSCqT12w==}
 
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
@@ -1980,8 +1971,6 @@ snapshots:
 
   atomic-sleep@1.0.0: {}
 
-  bencode@2.0.3: {}
-
   body-parser@2.3.0(supports-color@10.2.2):
     dependencies:
       bytes: 3.1.2
@@ -2351,11 +2340,6 @@ snapshots:
   negotiator@1.1.0:
     dependencies:
       content-type: 2.1.0
-
-  nrepl-client@0.3.0:
-    dependencies:
-      bencode: 2.0.3
-      tree-kill: 1.2.2
 
   object-inspect@1.13.4: {}
 
