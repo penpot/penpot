@@ -104,7 +104,7 @@ test.describe("BUG 12247 - Font picker marks the applied family", () => {
       .locator('[class*="__fonts-list"]')
       .locator('[class$="__font-item"], [class*="__font-item "]');
     recent = page
-      .locator("section")
+      .locator('[class$="__show-recent"]')
       .locator('[class$="__font-item"], [class*="__font-item "]');
     await expect(fontFamily).toContainText("Source Sans Pro");
   });
