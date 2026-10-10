@@ -440,3 +440,132 @@
     (t/is (= [:pass] (reports :wrong)))
     (t/is (= [:fail] (reports :right)))
     (t/is (= [:fail] (reports :other)))))
+
+(defn- report-types
+  "The types of the assertions `f` reports, in order, without reporting them."
+  [f]
+  (let [types (atom [])]
+    (binding [t/report #(swap! types conj (:type %))]
+      (f))
+    @types))
+
+(t/deftest known-failure-refuses-a-pin-equal-to-the-expected-value
+  (t/is (thrown? #?(:clj Exception :cljs :default)
+                 (tm/known-failure "F0" :right :right :right))))
+
+(t/deftest check-asserts-each-unpinned-or-resolved-failure
+  (let [edit      (tm/assign-id (->WrongUndoEdit))
+        situation (r/run-variant {:setup     setup/simple-component-with-copy
+                                  :operation edit})
+        pin       #{[:object :copy-root :name]}
+        known     {:bug "F0" :fails {:undo pin :redo pin :variant-undo pin} :op edit}
+        check     #(report-types (fn [] (uc/check! situation {:undo-check %})))]
+    (t/is (= [:fail :fail :fail] (check {})))
+    (t/is (= [] (check {:known-failures [known]})))
+    (t/is (= [:fail] (check {:known-failures [(assoc-in known [:fails :variant-redo] pin)]})))
+    (t/is (= [] (check {:off "testing the switch"})))))
+
+(t/deftest known-failure-marks-apply-by-runner-condition-and-step
+  (let [wrong     (tm/assign-id (->WrongUndoEdit))
+        right     (n/change-property :main-child :fills red)
+        situation (r/run-variant {:setup     setup/simple-component-with-copy
+                                  :operation (tm/in-sequence [wrong right])})
+        pin       #{[:object :copy-root :name]}
+        known     {:bug "F0" :fails {:undo pin :redo pin :variant-undo pin} :op wrong}
+        verdict   #(uc/verdict situation {:undo-check {:known-failures [%]}})
+        phases    (fn [k mark] (mapv :phase (k (verdict mark))))]
+    (t/is (= [] (phases :unexpected known)))
+    (t/testing "a mark of another runner covers nothing"
+      (t/is (= [:undo :redo :variant-undo] (phases :unexpected (assoc known :runners #{:frontend}))))
+      (t/is (= [] (phases :resolved (assoc known :runners #{:frontend})))))
+    (t/testing "a mark whose condition fails covers nothing"
+      (t/is (= [:undo :redo :variant-undo]
+               (phases :unexpected (assoc known :when (constantly false))))))
+    (t/testing "a mark covers only the failures of its own step"
+      (let [mark (assoc known :op right :fails {:undo pin :redo pin})]
+        (t/is (= [:undo :redo :variant-undo] (phases :unexpected mark)))
+        (t/is (= [:undo :redo] (phases :resolved mark)))))))
+
+(t/deftest a-mark-that-applies-to-no-variant-fails
+  (let [edit      (tm/assign-id (->WrongUndoEdit))
+        pin       #{[:object :copy-root :name]}
+        mark      {:bug "F0" :fails {:undo pin} :op edit}
+        case-map  {:undo-check {:known-failures [mark]}}]
+    (t/is (= [:fail] (report-types #(uc/check-marks-applied! case-map :pure []))))
+    (t/is (= [] (report-types #(uc/check-marks-applied! case-map :pure [mark]))))
+    (t/is (= [] (report-types #(uc/check-marks-applied!
+                                {:undo-check {:known-failures [(assoc mark :runners #{:pure})]}}
+                                :frontend []))))))
+
+;; A user operation whose undo points the copy root at a shape that does not
+;; exist, so the undo leaves an invalid file.
+(defrecord BreakingUndoEdit []
+  n/IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [file    (tm/file situation)
+          page    (thf/current-page file)
+          changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              #{(:id (setup/copy-root situation))}
+                                              #(assoc % :opacity 0.5)
+                                              (:objects page)
+                                              {})
+          changes (update changes :undo-changes
+                          (partial mapv #(cond-> %
+                                           (= :mod-obj (:type %))
+                                           (update :operations conj {:type :set
+                                                                     :attr :shape-ref
+                                                                     :val (uuid/next)
+                                                                     :ignore-touched true
+                                                                     :ignore-geometry false}))))]
+      (-> situation
+          (tm/with-file (thf/apply-changes file changes))
+          (n/record-changes changes)
+          (tm/record-application this {})))))
+
+(t/deftest round-trip-records-an-error-with-its-type
+  (let [situation (r/run-variant {:setup     setup/simple-component-with-copy
+                                  :operation (tm/in-sequence
+                                              [(n/change-property :main-child :fills red)
+                                               (->BreakingUndoEdit)])})
+        [undo variant-undo] (uc/failures situation)]
+    (t/is (= [:undo :variant-undo] (phases situation)))
+    (t/is (= #{[:error :validation]} (:signature undo)))
+    (t/is (= #{[:error :validation]} (:signature variant-undo)))
+    (t/testing "the variant goes on from the state after the step"
+      (t/is (= 0.5 (:opacity (setup/copy-root situation))))
+      (t/is (= red (fill-of (setup/copy-instance situation)))))))
+
+;; An operation that implements no component operation kind.
+(defrecord KindlessOp []
+  tm/IOperation
+  (apply-to [_ situation] situation))
+
+(t/deftest an-operation-without-a-kind-is-rejected
+  (t/is (= ::r/unknown-op (error-type (->KindlessOp)))))
+
+(t/deftest one-of-needs-alternatives
+  (t/is (thrown? #?(:clj Exception :cljs :default) (tm/one-of []))))
+
+(t/deftest run-each-judges-a-variant-while-its-labels-hold
+  (let [choice (tm/one-of [(n/change-property :main-child :fills red)
+                           (n/change-property :main-child :fills green)])
+        seen   (atom [])]
+    (r/run-each {:setup     setup/simple-component-with-labeled-copy
+                 :operation (tm/in-sequence [choice])}
+                (fn [situation]
+                  (swap! seen conj [(= (thi/id :copy-child) (:id (setup/copy-instance situation)))
+                                    (fill-of (setup/copy-instance situation))])))
+    (t/is (= [[true red] [true green]] @seen))))
+
+(t/deftest counting-assertions-counts-every-report
+  (let [counted (atom nil)]
+    (report-types
+     #(tm/counting-assertions
+       (fn [made]
+         (t/is true)
+         (t/is false)
+         (reset! counted @made))))
+    (t/is (= 2 @counted))))

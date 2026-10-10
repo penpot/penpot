@@ -24,8 +24,13 @@ export class OpDetach extends Operation {
     async applyTo(situation: Situation): Promise<void> {
         // act on the settled document, as a user would
         await PenpotSync.awaitPropagation();
-        resolveTarget(this.target, situation).detach();
+        const shape = resolveTarget(this.target, situation);
+        shape.detach();
         await PenpotSync.awaitPropagation();
+        // an API call that fails only logs, so a case would go on as if nothing happened
+        if (shape.component() != null) {
+            throw new Error(`the detach did not take effect: ${this}`);
+        }
     }
 
     toString(): string {

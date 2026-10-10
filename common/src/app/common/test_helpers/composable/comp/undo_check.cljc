@@ -80,12 +80,15 @@
 
 (defn add-error
   "Record that the round trip could not run `phase` at `step` (see `step`;
-   nil for the end-of-variant phases): `error` says why."
-  [situation step phase error]
-  (add-failure situation {:phase     phase
-                          :step      step
-                          :signature #{[:error]}
-                          :error     error}))
+   nil for the end-of-variant phases): `error` says why and `kind`, when
+   given, names the error in the signature (the `:type` of its ex-data)."
+  ([situation step phase error]
+   (add-error situation step phase error nil))
+  ([situation step phase error kind]
+   (add-failure situation {:phase     phase
+                           :step      step
+                           :signature #{(cond-> [:error] kind (conj kind))}
+                           :error     error})))
 
 (defn- labelled
   "`value` with every uuid replaced by its test label. Labels are valid only
@@ -102,11 +105,13 @@
 
 (defn- differing-keys
   "The keys, other than those in `skip`, whose values differ between the maps
-   `expected` and `actual`."
+   `expected` and `actual`, or that only one of them holds (a nil value
+   differs from an absent key)."
   [expected actual skip]
   (->> (into (set (keys expected)) (keys actual))
        (remove skip)
-       (filter #(not= (get expected %) (get actual %)))))
+       (filter #(or (not= (contains? expected %) (contains? actual %))
+                    (not= (get expected %) (get actual %))))))
 
 (defn- entities-signature
   "What differs between the maps of entities by id `expected` and `actual`:
@@ -158,7 +163,8 @@
     situation
     (add-failure situation {:phase     phase
                             :step      step
-                            :signature (signature expected actual)
+                            :signature (or (not-empty (signature expected actual))
+                                           #{[:unexplained]})
                             :diff      (labelled (thn/diff expected actual))})))
 
 (defn compare-index
@@ -178,6 +184,12 @@
   [situation]
   (get situation ::failures []))
 
+(defn with-failures-of
+  "`situation` with the failures recorded in `other`, a later situation of
+   the same variant."
+  [situation other]
+  (assoc situation ::failures (failures other)))
+
 (defn- matches?
   "Whether the known failure `mark` pins `failure` exactly."
   [{:keys [fails op]} failure]
@@ -194,20 +206,42 @@
                     {:type ::unpinned-mark
                      :mark mark}))))
 
+(defn- for-runner?
+  [{:keys [runners]} runner]
+  (or (nil? runners) (contains? runners runner)))
+
+(defn applying-marks
+  "The known failures of `case-map` that apply to `situation`, one of its
+   variants: marks of its runner whose `:op` ran and whose `:when` holds."
+  [situation case-map]
+  (let [marks (get-in case-map [:undo-check :known-failures])]
+    (run! check-mark! marks)
+    (filterv (fn [{:keys [op] pred :when :as mark}]
+               (and (for-runner? mark (::runner situation))
+                    (or (nil? op) (tm/applied? situation op))
+                    (or (nil? pred) (pred situation))))
+             marks)))
+
+(defn check-marks-applied!
+  "Assert that every known failure of `case-map` for `runner` applied to at
+   least one variant; `applied` holds the marks that did (see
+   `applying-marks`). A mark that applies nowhere pins nothing."
+  [case-map runner applied]
+  (when (enabled? case-map)
+    (doseq [{:keys [bug] :as mark} (get-in case-map [:undo-check :known-failures])
+            :when (and (for-runner? mark runner)
+                       (not (contains? (set applied) mark)))]
+      (t/is false (str "Known undo failure " bug " applies to no variant of the "
+                       (name runner) " runner")))))
+
 (defn verdict
   "The failures of `situation`, a variant of `case-map`, that no known failure
    of the case pins (`:unexpected`), and the pinned phases of the known
    failures that apply to the variant but did not fail as pinned
    (`:resolved`, each the mark with its `:phase`)."
   [situation case-map]
-  (let [marks    (get-in case-map [:undo-check :known-failures])
-        _        (run! check-mark! marks)
-        applies? (fn [{:keys [op runners] pred :when}]
-                   (and (or (nil? runners) (contains? runners (::runner situation)))
-                        (or (nil? op) (tm/applied? situation op))
-                        (or (nil? pred) (pred situation))))
-        known    (filter applies? marks)
-        found    (failures situation)]
+  (let [known (applying-marks situation case-map)
+        found (failures situation)]
     {:unexpected (filterv (fn [failure] (not-any? #(matches? % failure) known)) found)
      :resolved   (vec (for [mark  known
                             phase (keys (:fails mark))

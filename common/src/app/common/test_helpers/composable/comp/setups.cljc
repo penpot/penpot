@@ -246,14 +246,16 @@
 
 (defn misaligned-sub-heads
   "The indices of the copy root's children whose :shape-ref is not the main
-   root's child at the same index (positional alignment)."
+   root's child at the same index (positional alignment), plus `:count` when
+   the copy and the main have a different number of children."
   [situation]
   (let [main (:shapes (main-root situation))
         copy (:shapes (copy-root situation))
         ref  #(:shape-ref (tm/shape-by-id situation %))]
-    (->> (map vector (range) copy main)
-         (remove (fn [[_ c m]] (= m (ref c))))
-         (mapv first))))
+    (cond-> (->> (map vector (range) copy main)
+                 (remove (fn [[_ c m]] (= m (ref c))))
+                 (mapv first))
+      (not= (count copy) (count main)) (conj :count))))
 
 
 (defn component-with-many-children

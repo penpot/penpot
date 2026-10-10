@@ -55,6 +55,14 @@
                file'   (thf/apply-changes file {:redo-changes changes} :validate? false)]
            (recur file' (cfv/validate-file file' libraries) (inc passes))))))))
 
+(defn- repair-once
+  "`file` after one pass of the repair of the errors with `code` only, so the
+   repair of another error found in the same pass cannot do its work."
+  [file code]
+  (let [errors (filter #(= code (:code %)) (cfv/validate-file file {}))]
+    (assert (seq errors) (str "no " code " error"))
+    (thf/apply-changes file {:redo-changes (cfr/repair-file file {} errors)} :validate? false)))
+
 ;; ---- Configurations
 
 (defn- simple
@@ -131,6 +139,11 @@
   (get-in (ctkl/get-component (:data file) (thi/id component-label) true)
           [:objects (thi/id label)]))
 
+(defn- copy-link
+  "The `[component-id shape-ref]` of the copy :copy-root."
+  [file]
+  ((juxt :component-id :shape-ref) (ths/get-shape file :copy-root)))
+
 (defn- slot-group
   [id]
   #{(ctk/build-swap-slot-group id)})
@@ -147,17 +160,25 @@
     (t/is (= (thi/id :file1) (:component-file (ths/get-shape file' :main-root))))))
 
 (t/deftest component-not-found
-  (let [[found file' errors] (repair (ths/update-shape (simple) :copy-root :component-id (uuid/next)))]
+  (let [file                 (ths/update-shape (simple) :copy-root :component-id (uuid/next))
+        [found file' errors] (repair file)]
     (t/is (= #{:component-not-found :ref-shape-not-found} found))
     (t/is (nil? errors))
     ;; the copy is detached
-    (t/is (nil? (:component-id (ths/get-shape file' :copy-root))))))
+    (t/is (nil? (:component-id (ths/get-shape file' :copy-root))))
+    (t/testing "by its own repair"
+      (t/is (nil? (:component-id (ths/get-shape (repair-once file :component-not-found) :copy-root)))))))
 
 (t/deftest invalid-main-instance-id
   (let [[found file' errors] (repair (thc/update-component (simple) :component1 :main-instance-id (uuid/next)))]
     (t/is (= #{:invalid-main-instance-id :ref-shape-not-found} found))
     (t/is (nil? errors))
-    (t/is (= (thi/id :main-root) (:main-instance-id (thc/get-component file' :component1))))))
+    (t/is (= (thi/id :main-root) (:main-instance-id (thc/get-component file' :component1))))
+    ;; the :ref-shape-not-found repair, run in the same pass, detaches the copy
+    (tm/known-failure "F60"
+                      [(thi/id :component1) (thi/id :main-root)]
+                      [nil nil]
+                      (copy-link file'))))
 
 (t/deftest invalid-main-instance-page
   (let [file (-> (simple)
@@ -167,7 +188,12 @@
         [found file' errors] (repair file)]
     (t/is (= #{:invalid-main-instance-page :ref-shape-not-found} found))
     (t/is (nil? errors))
-    (t/is (= (thi/id :page1) (:main-instance-page (thc/get-component file' :component1))))))
+    (t/is (= (thi/id :page1) (:main-instance-page (thc/get-component file' :component1))))
+    ;; the :ref-shape-not-found repair, run in the same pass, detaches the copy
+    (tm/known-failure "F60"
+                      [(thi/id :component1) (thi/id :main-root)]
+                      [nil nil]
+                      (copy-link file'))))
 
 (t/deftest invalid-main-instance
   ;; the component names the copy as its main; the repair of
@@ -175,7 +201,12 @@
   (let [[found file' errors] (repair (thc/update-component (simple) :component1 :main-instance-id (thi/id :copy-root)))]
     (t/is (= #{:invalid-main-instance :invalid-main-instance-id :ref-shape-not-found} found))
     (t/is (nil? errors))
-    (t/is (= (thi/id :main-root) (:main-instance-id (thc/get-component file' :component1))))))
+    (t/is (= (thi/id :main-root) (:main-instance-id (thc/get-component file' :component1))))
+    ;; the :ref-shape-not-found repair, run in the same pass, detaches the copy
+    (tm/known-failure "F60"
+                      [(thi/id :component1) (thi/id :main-root)]
+                      [nil nil]
+                      (copy-link file'))))
 
 (t/deftest shape-ref-in-main
   (let [[found file' errors] (repair (ths/update-shape (simple) :main-root :shape-ref (thi/id :copy-root)))]
@@ -220,6 +251,18 @@
     (t/is (nil? errors))
     ;; no matching shape: the nested copy is detached
     (t/is (nil? (:shape-ref (ths/get-shape file' :copy2-nested-head))))))
+
+(t/deftest ref-shape-not-found-pointing-at-another-copy
+  ;; the nested copy points at the same nested copy of another copy of the
+  ;; outer component: it is reassigned to the main that one references
+  (let [file (-> (nested)
+                 (thc/instantiate-component :component2 :copy3-root
+                                            :children-labels [:copy3-nested-head :copy3-child]))
+        [found file' errors] (repair (ths/update-shape file :copy2-nested-head :shape-ref (thi/id :copy3-nested-head)))]
+    (t/is (contains? found :ref-shape-not-found))
+    (t/is (nil? errors))
+    (t/is (= (thi/id :main2-nested-head) (:shape-ref (ths/get-shape file' :copy2-nested-head))))
+    (t/is (ctk/instance-head? (ths/get-shape file' :copy2-nested-head)))))
 
 (t/deftest ref-shape-not-found-in-a-copy-child
   ;; the reference of a non-head copy shape is never checked: the check reads
@@ -283,7 +326,9 @@
     (t/is (nil? errors))
     ;; moved back to the page root, as a top main
     (t/is (= uuid/zero (:parent-id main)))
-    (t/is (true? (:component-root main)))))
+    (t/is (true? (:component-root main)))
+    (t/testing "its own repair makes it a nested main"
+      (t/is (nil? (:component-root (ths/get-shape (repair-once file :root-main-not-allowed) :main-root)))))))
 
 (t/deftest nested-main-not-allowed
   (let [[found file' errors] (repair (ths/update-shape (simple) :main-root :component-root nil))]
@@ -325,7 +370,10 @@
         [found file' errors] (repair file)]
     (t/is (= #{:shape-ref-cycle} found))
     (t/is (nil? errors))
-    (t/is (not= (thi/id :nested-a) (:shape-ref (deleted-object file' :component2 :nested-a))))))
+    ;; the nested copy with the cycle is detached, the other one is kept
+    (t/is (nil? (:shape-ref (deleted-object file' :component2 :nested-a))))
+    (t/is (nil? (:component-id (deleted-object file' :component2 :nested-a))))
+    (t/is (= (thi/id :main1-root) (:shape-ref (deleted-object file' :component2 :nested-b))))))
 
 ;; ---- Swap slots
 
@@ -342,6 +390,7 @@
         [found file' errors] (repair file)]
     (t/is (= #{:duplicate-slot} found))
     (t/is (nil? errors))
+    (t/is (= (thi/id :nested-a) (ctk/get-swap-slot (ths/get-shape file' :copy-a))))
     (t/is (nil? (ctk/get-swap-slot (ths/get-shape file' :copy-b))))))
 
 (t/deftest component-duplicate-slot
@@ -352,6 +401,7 @@
         [found file' errors] (repair file)]
     (t/is (= #{:component-duplicate-slot} found))
     (t/is (nil? errors))
+    (t/is (= (thi/id :nested-a) (ctk/get-swap-slot (deleted-object file' :component2 :nested-a))))
     (t/is (nil? (ctk/get-swap-slot (deleted-object file' :component2 :nested-b))))))
 
 (t/deftest missing-slot

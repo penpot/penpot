@@ -68,9 +68,13 @@
   (count (get-in @st/state [:workspace-undo :items])))
 
 (defn- step
-  "Run `events` and wait until their work drains."
+  "Run `events` and wait until their work drains; fails the test when it
+   does not."
   [& events]
-  (ftm/await-step (vec events)))
+  (.then (ftm/await-step (vec events))
+         (fn [result]
+           (t/is (= :settled result) "the step settled")
+           result)))
 
 (defn- select
   [& labels]
@@ -157,7 +161,7 @@
     (await (step dwu/undo))
     (t/is (= 2 (component-count)))))
 
-(t/deftest ^:async add-multiple-components-skips-copies
+(t/deftest ^:async add-multiple-components-refuses-a-selection-with-a-copy-child
   (install-file! (two-components))
   (await (step (select :rect-a :copy-a-child) (dwl/add-multiple-components)))
   (t/is (= 2 (component-count))))
@@ -202,9 +206,13 @@
     (await (step (dwl/update-component (cthi/id :copy))))
     (let [library' (get-in @st/state [:files (:id library)])]
       (t/is (= override (-> (cths/get-shape library' :lib-main-child) :fills first :fill-color))))
-    (t/testing "a shape that is not a head is left as it is"
+    (t/testing "a shape that is not a head pushes nothing"
+      (await (step (dwsh/update-shapes #{(cthi/id :copy-child)}
+                                       #(assoc % :fills (cths/sample-fills-color :fill-color "#333333")))))
       (await (step (dwl/update-component (cthi/id :copy-child))))
-      (t/is (= override (fill :copy-child))))))
+      (let [library' (get-in @st/state [:files (:id library)])]
+        (t/is (= override (-> (cths/get-shape library' :lib-main-child) :fills first :fill-color))))
+      (t/is (= "#333333" (fill :copy-child))))))
 
 (t/deftest ^:async rename-component-to-a-blank-name
   (install-file! (two-components))
