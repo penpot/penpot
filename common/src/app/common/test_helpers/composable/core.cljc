@@ -357,8 +357,11 @@
 
 (defn one-of
   "Constructor for the one-of operator: one case per alternative of
-   `alternatives`. Ask it which one ran with `get-choice`."
+   `alternatives`. Ask it which one ran with `get-choice`. Throws when there
+   is no alternative, which would leave the case with no variant."
   [alternatives]
+  (when (empty? alternatives)
+    (throw (ex-info "one-of with no alternatives" {:type ::empty-one-of})))
   (assign-id (->OneOf (vec alternatives))))
 
 (defrecord Skip []
@@ -409,17 +412,48 @@
   (->> (setup)
        (apply-to operation)))
 
+(defn- variants
+  "The concrete variants of `operation`. Throws when there is none."
+  [operation]
+  (let [variants (enumerate operation)]
+    (when (empty? variants)
+      (throw (ex-info "The operation has no variant" {:type ::no-variants})))
+    variants))
+
 (defn run-all
   "The resulting situations of every variant of `operation`, in order, each
    run by `run-variant-fn` (default `run-variant`) on `{:setup :operation}`
-   with a fresh label map."
+   with a fresh label map. Labels name the shapes of the last variant only:
+   to judge each variant, use `run-each`."
   ([case-map] (run-all case-map run-variant))
   ([{:keys [setup operation]} run-variant-fn]
-   (->> (enumerate operation)
+   (->> (variants operation)
         (mapv (fn [variant]
                 (thi/reset-idmap!)
                 (run-variant-fn {:setup setup
                                  :operation variant}))))))
+
+(defn run-each
+  "Run every variant of `operation` with `run-variant-fn` on `{:setup
+   :operation}`, each with a fresh label map, and call `f` on its situation
+   before the next variant runs, while labels still name its shapes."
+  [{:keys [setup operation]} run-variant-fn f]
+  (doseq [variant (variants operation)]
+    (thi/reset-idmap!)
+    (f (run-variant-fn {:setup setup
+                        :operation variant}))))
+
+(defn counting-assertions
+  "Call `f` with an atom that counts the assertions (passed, failed or
+   errored) reported while `f` runs; `f` may reset it."
+  [f]
+  (let [made   (atom 0)
+        report t/report]
+    (binding [t/report (fn [m]
+                         (when (contains? #{:pass :fail :error} (:type m))
+                           (swap! made inc))
+                         (report m))]
+      (f made))))
 
 (defn sequence-ops
   "The steps of the concrete `variant`, in order, with sequences flattened. A
@@ -432,6 +466,11 @@
 
     :else
     [variant]))
+
+(defn engine-op?
+  "Whether `op` is a leaf operation of the engine (`Test` or `Skip`)."
+  [op]
+  (or (instance? Test op) (instance? Skip op)))
 
 (defn sequence?
   "Whether `op` is a `Sequence`; its steps are under `:steps`."
@@ -473,6 +512,9 @@
    found. While the bug is open, `actual` must be exactly `pinned`, the wrong
    value the bug gives; any other value fails, `expected` included."
   [bug expected pinned actual]
+  (when (= expected pinned)
+    (throw (ex-info (str "Known failure " bug " pins the expected value")
+                    {:type ::pin-equals-expected :bug bug :value pinned})))
   (t/is (= pinned actual)
         (str "Known failure " bug ": expected " (pr-str expected)
              ", pinned to the bug's " (pr-str pinned)

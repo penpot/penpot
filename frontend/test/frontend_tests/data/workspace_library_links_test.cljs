@@ -13,6 +13,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.variants :as cthv]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
@@ -39,6 +40,20 @@
 (defn- commands
   [calls]
   (set (map first @calls)))
+
+(defn- watch-events
+  "Collect the props of the analytics events `store` receives from now on."
+  [store]
+  (let [events (atom [])]
+    (rx/sub! (->> (ptk/input-stream store)
+                  (rx/filter (ptk/type? ::ev/event))
+                  (rx/map deref))
+             #(swap! events conj %))
+    events))
+
+(defn- named
+  [events name]
+  (filterv #(= name (::ev/name %)) @events))
 
 (defn- merge-state
   "An event that merges `m` into the state, for what the workspace loads
@@ -76,15 +91,20 @@
                              :get-file-object-thumbnails {"thumbnail-id" "thumbnail-uri"}
                              :get-library-usage {:used-in 3}})}
         (fn [inner-done]
-          (ths/run-store
-           (ths/setup-store file) inner-done
-           [(merge-state {:shared-files {(:id library) {:library-summary {:variants [{} {}]}}}})
-            (dwl/link-file-to-library (:id file) (:id library))]
-           (fn [state]
-             (t/is (= #{(:id library) (:id dependency)} (linked-to state (:id file))))
-             (t/is (= "thumbnail-uri" (get-in state [:thumbnails "thumbnail-id" :uri])))
-             (t/testing "a library with variants asks how much it is used"
-               (t/is (contains? (commands calls) :get-library-usage))))))
+          (let [store  (ths/setup-store file)
+                events (watch-events store)]
+            (ths/run-store
+             store inner-done
+             [(merge-state {:shared-files {(:id library) {:library-summary {:variants [{} {}]}}}})
+              (dwl/link-file-to-library (:id file) (:id library))]
+             (fn [state]
+               (t/is (= #{(:id library) (:id dependency)} (linked-to state (:id file))))
+               (t/is (= "thumbnail-uri" (get-in state [:thumbnails "thumbnail-id" :uri])))
+               (t/testing "a library with variants reports how much it is used"
+                 (t/is (contains? (commands calls) :get-library-usage))
+                 (t/is (= [[3 2]]
+                          (mapv (juxt :library-used-in :variants-count)
+                                (named events "link-file-to-library-variants")))))))))
         done))))
 
 (t/deftest link-skips-libraries-already-loaded
@@ -134,12 +154,14 @@
         {rp/cmd! (rpc calls {:unlink-file-from-library nil
                              :get-file-libraries []})}
         (fn [inner-done]
+          ;; the file is marked as a library of itself, so only the guard
+          ;; that keeps the current file keeps it
           (ths/run-store
-           (ths/setup-store file) inner-done
+           (ths/setup-store (assoc file :library-of (:id file))) inner-done
            [(dwl/libraries-fetched (:id file) [library dependency])
             (dwl/unlink-file-from-library (:id file) (:id library))]
            (fn [state]
-             (t/is (empty? (linked-to state (:id file))))
+             (t/is (= #{(:id file)} (linked-to state (:id file))))
              (t/is (some? (get-in state [:files (:id file)]))))))
         done))))
 
@@ -161,10 +183,12 @@
       (mock/with-mocks
         {rp/cmd! (rpc calls {:set-file-shared nil})}
         (fn [inner-done]
-          (ths/run-store
-           (ths/setup-store file) inner-done
-           [(dwl/set-file-shared (:id file) shared?)]
-           #(check % @calls)))
+          (let [store  (ths/setup-store file)
+                events (watch-events store)]
+            (ths/run-store
+             store inner-done
+             [(dwl/set-file-shared (:id file) shared?)]
+             #(check % @calls (named events "set-file-variants-shared")))))
         done))))
 
 (t/deftest share-a-file-with-variants
@@ -173,17 +197,19 @@
     (let [file (-> (cthf/sample-file :file1)
                    (cthv/add-variant :v01 :c01 :m01 :c02 :m02))]
       ((share file true
-              (fn [state calls]
+              (fn [state calls variant-events]
                 (t/is (true? (get-in state [:files (:id file) :is-shared])))
-                (t/is (= [[:set-file-shared {:id (:id file) :is-shared true}]] calls))))
+                (t/is (= [[:set-file-shared {:id (:id file) :is-shared true}]] calls))
+                (t/is (= 1 (count variant-events)) "it reports that the shared file has variants")))
        done))))
 
 (t/deftest unshare-a-file
   (t/async
     done
-    (let [file (cthf/sample-file :file1)]
+    (let [file (cthf/sample-file :file1 :is-shared true)]
       ((share file false
-              (fn [state calls]
+              (fn [state calls variant-events]
                 (t/is (false? (get-in state [:files (:id file) :is-shared])))
-                (t/is (= [[:set-file-shared {:id (:id file) :is-shared false}]] calls))))
+                (t/is (= [[:set-file-shared {:id (:id file) :is-shared false}]] calls))
+                (t/is (empty? variant-events))))
        done))))

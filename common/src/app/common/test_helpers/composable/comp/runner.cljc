@@ -188,12 +188,29 @@
   (let [[situation group] (redo-group situation)]
     (tm/record-application situation op {:redone (count group)})))
 
+(def ^:private op-kinds
+  #{:assembly :user :undo :redo :frontend-only})
+
 (defn- op-kind
   "The kind of a leaf operation (see `n/IComponentOperation`), or nil for an
-   engine operation such as `Test` or `Skip`."
+   engine operation (`Test`, `Skip`). Throws for any other operation or kind,
+   which the runner would neither sync nor check."
   [op]
-  (when (satisfies? n/IComponentOperation op)
-    (n/op-kind op)))
+  (cond
+    (satisfies? n/IComponentOperation op)
+    (let [kind (n/op-kind op)]
+      (when-not (contains? op-kinds kind)
+        (throw (ex-info (str "Unknown operation kind " (pr-str kind))
+                        {:type ::unknown-op-kind :op op :kind kind})))
+      kind)
+
+    (tm/engine-op? op)
+    nil
+
+    :else
+    (throw (ex-info (str (pr-str (type op)) " does not implement "
+                         "`n/IComponentOperation`")
+                    {:type ::unknown-op :op op}))))
 
 (defn- check-recorded-changes!
   "Throw unless `op` recorded its changes exactly when it is a user operation."
@@ -227,48 +244,69 @@
   [situation]
   (uc/snapshot (tm/file situation)))
 
-(defn- try-round-trip
-  "Run `round-trip` (situation -> situation) on `situation`. When it throws,
-   record the error as a failure of `phase` at `step` and return `situation`
-   unchanged."
-  [situation step phase round-trip]
+(defn- attempt
+  "`[(f) nil]`, or `[nil error]` when `f` throws."
+  [f]
   (try
-    (round-trip situation)
-    (catch #?(:clj Exception :cljs :default) e
-      (uc/add-error situation step phase (str (ex-message e) " " (pr-str (ex-data e)))))))
+    [(f) nil]
+    (catch #?(:clj Throwable :cljs :default) e
+      [nil e])))
+
+(defn- round-trip-phase
+  "Run `f` (situation -> situation) on `from` as round-trip `phase` at `step`.
+   Returns `[situation nil]`, or, when `f` throws, `[nil failed]`, with
+   `failed` the situation the variant goes on from (`back-to`) holding the
+   failures of `from` plus the error."
+  [from back-to step phase f]
+  (let [[result e] (attempt #(f from))]
+    (if e
+      [nil (uc/with-failures-of
+             back-to
+             (uc/add-error from step phase (str (ex-message e) " " (pr-str (ex-data e)))
+                           (or (:type (ex-data e)) :exception)))]
+      [result nil])))
 
 (defn- check-step
   "The round trip of user step `op` (see `uc`): `before` is the normalized
-   file before it and `depth` the undo depth before it."
+   file before it and `depth` the undo depth before it. The variant goes on
+   from the redone situation, or from the one after the step when undo or
+   redo throws."
   [situation op before depth]
   (let [step  (uc/step situation op)
         after (snapshot situation)]
     (if (= depth (undo-depth situation))
       (uc/compare-states situation step :no-undo-entry before after)
-      (try-round-trip
-       situation step :undo
-       (fn [situation]
-         (let [undone (first (undo-group situation))
-               undone (uc/compare-states undone step :undo before (snapshot undone))
-               redone (first (redo-group undone))]
-           (uc/compare-states redone step :redo after (snapshot redone))))))))
+      (let [[undone failed] (round-trip-phase situation situation step :undo
+                                              (comp first undo-group))]
+        (or failed
+            (let [undone          (uc/compare-states undone step :undo before (snapshot undone))
+                  [redone failed] (round-trip-phase undone situation step :redo
+                                                    (comp first redo-group))]
+              (or failed
+                  (uc/compare-states redone step :redo after (snapshot redone)))))))))
 
 (defn- check-variant
   "The end-of-variant round trip (see `uc`): undo back to the baseline, then
-   redo all."
+   redo all. Returns `situation` with the failures the round trip found, so
+   the asserter judges the state the operations produced."
   [situation]
   (let [{:keys [depth] :as baseline} (uc/baseline situation)
         times (- (undo-depth situation) depth)
-        final (snapshot situation)]
+        final (snapshot situation)
+        times-of (fn [f] #(nth (iterate (comp first f) %) times))]
+    (assert (not (neg? times)) "the undo stack is below the round trip's baseline")
     (if (pos? times)
-      (try-round-trip
-       situation nil :variant-undo
-       (fn [situation]
-         (let [undone (nth (iterate (comp first undo-group) situation) times)
-               undone (uc/compare-states undone nil :variant-undo
-                                         (:snapshot baseline) (snapshot undone))
-               redone (nth (iterate (comp first redo-group) undone) times)]
-           (uc/compare-states redone nil :variant-redo final (snapshot redone)))))
+      (let [[undone failed] (round-trip-phase situation situation nil :variant-undo
+                                              (times-of undo-group))]
+        (or failed
+            (let [undone          (uc/compare-states undone nil :variant-undo
+                                                     (:snapshot baseline) (snapshot undone))
+                  [redone failed] (round-trip-phase undone situation nil :variant-redo
+                                                    (times-of redo-group))]
+              (uc/with-failures-of
+                situation
+                (or failed
+                    (uc/compare-states redone nil :variant-redo final (snapshot redone)))))))
       situation)))
 
 (defn- mark-baseline
@@ -344,13 +382,16 @@
    (let [opts (merge default-opts
                      {:undo-check? (uc/enabled? case-map)}
                      opts)]
-     (if (:undo-check? opts)
-       (-> (setup)
-           (uc/with-runner :pure)
-           (mark-baseline)
-           (run-op operation opts)
-           (check-variant))
-       (run-op (setup) operation opts)))))
+     (cond-> (if (:undo-check? opts)
+               (-> (setup)
+                   (uc/with-runner :pure)
+                   (mark-baseline)
+                   (run-op operation opts)
+                   (check-variant))
+               (run-op (setup) operation opts))
+       ;; assembly steps and a user step that changed nothing are not
+       ;; validated on their own
+       (:sync? opts) (validate-settled!)))))
 
 (defn run-all
   "Enumerate `operation` into its concrete variants and run each with
@@ -359,3 +400,10 @@
   ([case-map] (run-all case-map {}))
   ([case-map opts]
    (tm/run-all case-map #(run-variant (merge case-map %) opts))))
+
+(defn run-each
+  "Run every variant of `case-map` with `run-variant` and call `f` on its
+   situation before the next variant runs (see `tm/run-each`)."
+  ([case-map f] (run-each case-map {} f))
+  ([case-map opts f]
+   (tm/run-each case-map #(run-variant (merge case-map %) opts) f)))

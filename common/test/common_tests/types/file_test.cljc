@@ -10,6 +10,7 @@
    the original ref of a swapped shape, and the lookups on deleted
    components."
   (:require
+   [app.common.data :as d]
    [app.common.files.validate :as cfv]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.core :as tm]
@@ -52,11 +53,13 @@
                                                         :copy-root-params {:children-labels [:copy-child]})
                     (thc/instantiate-component :lib-component :lib-copy
                                                :library library
-                                               :children-labels [:lib-copy-child]))
+                                               :children-labels [:lib-copy-child])
+                    (ths/update-shape :lib-copy-child :touched #{:fill-group}))
         file'   (ctf/detach-external-references file (:id file))]
     (t/testing "a copy of a library component becomes plain shapes"
       (t/is (= {} (links file' :lib-copy)))
-      (t/is (= {} (links file' :lib-copy-child))))
+      (t/is (= {} (links file' :lib-copy-child)))
+      (tm/known-failure "F52" nil #{:fill-group} (:touched (ths/get-shape file' :lib-copy-child))))
     (t/testing "a copy of a local component keeps its links"
       (t/is (= (links file :copy) (links file' :copy)))
       (t/is (= (links file :copy-child) (links file' :copy-child))))
@@ -111,7 +114,13 @@
                                                                             :typography-ref-file library-id}
                                                                            {:text "local"
                                                                             :typography-ref-id (thi/id :typography)
-                                                                            :typography-ref-file (:id file)}]}]}]}))))
+                                                                            :typography-ref-file (:id file)}]}]}]})
+        (ths/add-sample-shape :local-rect
+                              :type :rect
+                              :fill-color-ref-id (thi/id :local-color)
+                              :fill-color-ref-file (:id file)
+                              :stroke-color-ref-id (thi/id :local-color)
+                              :stroke-color-ref-file (:id file)))))
 
 (defn- text-leaves
   [file]
@@ -124,6 +133,10 @@
         file'      (ctf/detach-external-references file (:id file))
         rect'      (ths/get-shape file' :rect)]
     (t/is (= {} (select-keys rect' [:fill-color-ref-file :stroke-color-ref-file])))
+    (t/testing "local refs are kept"
+      (t/is (= {:fill-color-ref-file (:id file) :stroke-color-ref-file (:id file)}
+               (select-keys (ths/get-shape file' :local-rect)
+                            [:fill-color-ref-file :stroke-color-ref-file]))))
     (t/is (= [{} {:typography-ref-file (:id file)}] (text-leaves file')))
     (t/testing "a fill ref inside `:fills`"
       (tm/known-failure "F57" nil library-id (-> rect' :fills first :fill-color-ref-file)))))
@@ -159,12 +172,16 @@
         roots    (->> (ctpl/get-page data' (:id (second pages')))
                       (ctn/shapes-seq)
                       (filter ctk/main-instance?)
-                      (sort-by :y))]
+                      (d/index-by :component-id))]
     (t/is (= ["Page 1" "Main components"] (map :name pages')))
-    (t/is (= 2 (count roots)))
+    (t/is (= #{(thi/id :component1) (thi/id :component2)} (set (keys roots))))
     (t/testing "the second component goes below the first, a grid gap apart"
-      (let [[first-root second-root] roots]
+      (let [first-root  (get roots (thi/id :component1))
+            second-root (get roots (thi/id :component2))]
         (t/is (<= (+ (:y first-root) (:height first-root) 50) (:y second-root)))))
+    (t/testing "the copies now use the file's own components"
+      (t/is (= (:id file) (:component-file (ths/get-shape file' :copy1))))
+      (t/is (= (:id file) (:component-file (ths/get-shape file' :copy2)))))
     (t/is (= #{} (validation-errors file')))))
 
 ;; ----- Original ref of a swapped shape
@@ -251,19 +268,27 @@
 (t/deftest update-objects-tree-updates-and-removes
   (let [file      (-> (thf/sample-file :file)
                       (tho/add-frame-with-child :frame :child)
+                      (tho/add-frame-with-child :gone :gone-child)
                       (tho/add-rect :rect))
         container (ctn/make-container (thf/current-page file) :page)
+        visited   (atom #{})
         result    (ctf/update-objects-tree
                    container
                    (fn [shape]
+                     (swap! visited conj (:id shape))
                      (condp = (:id shape)
-                       (thi/id :frame) {:result :update
-                                        :updated-shape (assoc shape :name "Updated")}
-                       (thi/id :rect)  {:result :remove}
-                       {:result :keep})))]
-    (t/is (= "Updated" (:name (ctst/get-shape result (thi/id :frame)))))
-    (t/is (some? (ctst/get-shape result (thi/id :child))))
+                       (thi/id :rect) {:result :remove}
+                       (thi/id :gone) {:result :remove}
+                       {:result :update
+                        :updated-shape (assoc shape :name "Updated")})))]
+    (t/testing "an update reaches the children of an updated shape"
+      (t/is (= "Updated" (:name (ctst/get-shape result (thi/id :frame)))))
+      (t/is (= "Updated" (:name (ctst/get-shape result (thi/id :child))))))
     (t/is (nil? (ctst/get-shape result (thi/id :rect))))
+    (t/testing "a removed shape goes with its children, which are not visited"
+      (t/is (nil? (ctst/get-shape result (thi/id :gone))))
+      (t/is (nil? (ctst/get-shape result (thi/id :gone-child))))
+      (t/is (not (contains? @visited (thi/id :gone-child)))))
     (t/testing "an unknown result"
       (t/is (thrown? #?(:clj Exception :cljs :default)
                      (ctf/update-objects-tree container (constantly {:result :other})))))))
@@ -277,9 +302,27 @@
         libraries {(:id file) file}
         chain     (ctf/get-ref-chain-until-target-ref page libraries
                                                       (ths/get-shape file :copy-child)
-                                                      (ths/get-shape file :copy))]
+                                                      (thi/id :copy))]
     (t/testing "the chain runs to the main and stops there"
       (t/is (= [(thi/id :copy-child) (thi/id :main-child)] (map :id chain))))))
+
+(t/deftest ref-chain-stops-at-the-target
+  ;; the target is the second link of a chain three links long
+  (let [file      (-> (thf/sample-file :file)
+                      (tho/add-two-levels-nested-component-with-copy
+                       :c1 :main1 :main1-child
+                       :c2 :main2 :nested-head1
+                       :c3 :main3 :nested-head2 :nested-subhead2
+                       :copy3))
+        copy-c2   (first (:shapes (ths/get-shape file :copy3)))
+        copy-c1   (ths/get-shape-by-id file (first (:shapes (ths/get-shape-by-id file copy-c2))))
+        chain     (ctf/get-ref-chain-until-target-ref (thf/current-page file) {(:id file) file}
+                                                      copy-c1 (thi/id :nested-subhead2))]
+    ;; the stop compares each shape with the target's id, so it never holds
+    (tm/known-failure "F62"
+                      [(:id copy-c1) (thi/id :nested-subhead2)]
+                      [(:id copy-c1) (thi/id :nested-subhead2) (thi/id :nested-head1) (thi/id :main1)]
+                      (mapv :id chain))))
 
 (t/deftest near-match-with-context
   (let [file  (-> (thf/sample-file :file)
@@ -290,4 +333,5 @@
                                    (ths/get-shape file :copy-child)
                                    :with-context? true)]
     (t/is (= (thi/id :main-child) (:id match)))
-    (t/is (some? (:container (meta match))))))
+    (t/is (= :page (:type (:container (meta match)))))
+    (t/is (= (:id (thf/current-page file)) (:id (:container (meta match)))))))

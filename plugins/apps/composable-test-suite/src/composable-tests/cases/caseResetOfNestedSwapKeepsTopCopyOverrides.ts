@@ -29,7 +29,7 @@ export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase
     const opCreateRed = new OpCreateNestableComponent(new ContentCreationStrategyRectangle(RED), "red");
     const fillColor = new ShapePropFillColor();
     const opacity = new ShapePropOpacity();
-    const { copyInstance } = opCreateComponent.roles;
+    const { copyInstance, remoteInstance } = opCreateComponent.roles;
 
     const copyNested = (s: Situation) => opCreateComponent.getNestedInstance(s, 1);
     const redComponent = (s: Situation) => opCreateRed.getMainComponent(s);
@@ -52,7 +52,12 @@ export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase
             new OpReset(copyNested, "the copy's nested copy"),
             new OpAssert("the reset undoes the swap and keeps the copy's opacity", (s) => {
                 const head = copyNested(s);
-                Assert.that(head.component()?.id !== redComponent(s).id, "the nested copy is no longer red");
+                const original = s.get(remoteInstance).component();
+                Assert.that(original != null, "the original component exists");
+                Assert.that(
+                    head.component()?.id === original?.id,
+                    "the nested copy is an instance of the original component again"
+                );
                 fillColor.assertEqual(fillColor.read(opCreateComponent.contentCreator.getRectangle(head)), BASELINE);
                 // the reset clears the opacity, which the API then reads as null
                 Assert.knownFailure<number | null>(

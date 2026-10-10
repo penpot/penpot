@@ -20,6 +20,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.composable-tests.interpreter :as ftm]
    [frontend-tests.helpers.mock :as mock]
@@ -90,6 +91,21 @@
   []
   (set (map :cmd @mock/rpc-calls)))
 
+(def ^:private rpc-on-subscribe
+  ;; An `rp/cmd!` double that records a call when its stream is subscribed,
+  ;; as the real one sends the request only then.
+  (mock/stub
+   (fn [cmd params & _]
+     (rx/defer (fn []
+                 (swap! mock/rpc-calls conj {:cmd cmd :params params})
+                 (rx/of nil))))))
+
+(defn- await-sync-status-sent
+  "Wait for the request that tells the server the file synced with the
+   library, which `sync-file` sends after a delay."
+  []
+  (await-until #(contains? (rpc-commands) :update-file-library-sync-status)))
+
 ;; ----- Which libraries need a sync
 
 (t/deftest assets-need-sync
@@ -117,15 +133,17 @@
 (t/deftest ^:async sync-dialog-updates-the-copies
   (await
    (mock/with-mocks*
-     {rp/cmd! mock/rpc-cmd-mock}
+     {rp/cmd!   rpc-on-subscribe
+      rx/timer  mock/timer-mock}
      (install-with-library! true)
      (t/is (= :settled (await (ftm/await-step [(dwl/notify-sync-file)] 1000 sync-dialog-shown?))))
      ((-> (notification) :accept :callback))
      (await (await-until #(= new-color (copy-fill))))
      (t/is (= new-color (copy-fill)))
      (t/is (not= :visible (:status (notification))))
+     (t/is (some? (:synced-at (live-library))))
      (t/is (not= synced-at (:synced-at (live-library))))
-     (t/is (contains? (rpc-commands) :update-file-library-sync-status)))))
+     (t/is (= :settled (await (await-sync-status-sent)))))))
 
 (t/deftest ^:async sync-dialog-dismiss-ignores-the-changes
   (await
@@ -187,14 +205,16 @@
 (t/deftest ^:async sync-from-an-external-library
   (await
    (mock/with-mocks*
-     {rp/cmd! mock/rpc-cmd-mock}
+     {rp/cmd!   rpc-on-subscribe
+      rx/timer  mock/timer-mock}
      (let [library (install-with-library! true)]
        (await (ftm/await-step [(dwl/set-updating-library true)
                                (dwl/sync-file (:id (ftm/current-file)) (:id library))]))
        (t/is (= new-color (copy-fill)))
        (t/is (not (:updating-library @st/state)))
+       (t/is (some? (:synced-at (live-library))))
        (t/is (not= synced-at (:synced-at (live-library))))
-       (t/is (contains? (rpc-commands) :update-file-library-sync-status))))))
+       (t/is (= :settled (await (await-sync-status-sent))))))))
 
 (t/deftest ^:async set-updating-library
   (await (ftm/await-step [(dwl/set-updating-library true)]))

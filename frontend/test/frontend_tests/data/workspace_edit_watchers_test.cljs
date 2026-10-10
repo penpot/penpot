@@ -7,7 +7,9 @@
 (ns frontend-tests.data.workspace-edit-watchers-test
   "Tests the lifecycle of the workspace edit watchers
   (`dw/initialize-edit-watchers`): starting them again, as a file reload
-  does, replaces the running ones instead of adding a second set."
+  does, replaces the running ones instead of adding a second set. Checked
+  through the undo stack watcher, the one whose double would show in the
+  entries an edit adds."
   (:require
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.ids-map :as thi]

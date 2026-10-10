@@ -22,6 +22,7 @@
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
    [app.common.math :as mth]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
@@ -32,7 +33,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
@@ -105,10 +105,18 @@
     :fills   (-> shape :fills first :fill-color)
     :opacity (:opacity shape)
     :name    (:name shape)
-    :margin  (-> shape :layout-item-margin :m1)
+    :margin  (when (= :simple (:layout-item-margin-type shape))
+               (let [{:keys [m1 m2 m3 m4]} (:layout-item-margin shape)]
+                 (when (= m1 m2 m3 m4) m1)))
     (throw (ex-info (str "read-property: unsupported property " (pr-str property)
                          " (supported: :fills, :opacity, :name, :margin)")
                     {:property property}))))
+
+(defn- applied-value*
+  "The value a change of `property` to `value` leaves: a rename cleans the
+   path, as the layers panel does."
+  [property value]
+  (if (= :name property) (cpn/clean-path value) value))
 
 (defrecord ChangeProperty [target property value]
   IComponentOperation
@@ -119,12 +127,17 @@
     (let [the-file (tm/file situation)
           shape-id (tm/target-shape-id situation target)
           page     (thf/current-page the-file)
-          changes  (cls/generate-update-shapes
-                    (pcb/empty-changes nil (:id page))
-                    #{shape-id}
-                    (fn [shape] (set-property shape property value))
-                    (:objects page)
-                    {})
+          shape    (get-in page [:objects shape-id])
+          value'   (applied-value* property value)
+          changes  (cond-> (cls/generate-update-shapes
+                            (pcb/empty-changes nil (:id page))
+                            #{shape-id}
+                            (fn [shape] (set-property shape property value'))
+                            (:objects page)
+                            {})
+                     ;; renaming a main root renames its component too
+                     (and (= :name property) (ctk/main-instance? shape))
+                     (cll/generate-rename-component (:component-id shape) value' (:data the-file)))
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
@@ -148,9 +161,9 @@
 (extend-type ChangeProperty
   IPropertyCheck
   (applied-property [node] (:property node))
-  (applied-value [node] (:value node))
+  (applied-value [node] (applied-value* (:property node) (:value node)))
   (has-property-of [node shape]
-    (= (:value node) (read-property shape (:property node)))))
+    (= (applied-value node) (read-property shape (:property node)))))
 
 ;; ---------------------------------------------------------------------------
 ;; edit-text — edit the content of a text shape
@@ -914,14 +927,18 @@
 
 (defn- new-subtree-head
   "The id of the shape in `page-after` that is not in `page-before` but whose
-   parent is: the head of the one subtree added between them."
+   parent is: the head of the one subtree added between them. Throws when
+   there is not exactly one, as when the sync also added children to copies."
   [page-before page-after]
-  (let [before (:objects page-before)]
-    (->> (vals (:objects page-after))
-         (filter #(and (not (contains? before (:id %)))
-                       (contains? before (:parent-id %))))
-         (map :id)
-         (first))))
+  (let [before (:objects page-before)
+        heads  (->> (vals (:objects page-after))
+                    (filter #(and (not (contains? before (:id %)))
+                                  (contains? before (:parent-id %))))
+                    (map :id))]
+    (when-not (= 1 (count heads))
+      (throw (ex-info (str "Expected one new subtree, found " (count heads))
+                      {:type ::new-subtree-head :heads heads})))
+    (first heads)))
 
 (defrecord Duplicate [target]
   IComponentOperation
@@ -938,6 +955,10 @@
           shape-id (tm/target-shape-id situation target)
           page     (thf/current-page the-file)
           objects  (:objects page)
+          _        (when-not (ctk/allow-duplicate? objects (get objects shape-id))
+                     ;; the frontend's `duplicate-shapes` drops it and does nothing
+                     (throw (ex-info "The shape cannot be duplicated (inside a copy)"
+                                     {:type ::duplicate-refused :target target})))
           changes  (-> (pcb/empty-changes nil)
                        (cll/generate-duplicate-changes objects
                                                        page
@@ -978,29 +999,12 @@
 (defn- copied-objects
   "The subtree of `id` as the clipboard copies it."
   [file page libraries id]
-  (let [objects   (:objects page)
-        container (ctn/make-container page :page)
-        advance   (fn [delta copied shape]
-                    (let [new-ref (ctf/advance-shape-ref file page libraries shape delta
-                                                         {:include-deleted? true})]
-                      (cond-> copied
-                        (and (some? new-ref) (not= new-ref (:shape-ref shape)))
-                        (-> (assoc-in [(:id shape) :shape-ref] new-ref)
-                            (assoc-in [(:id shape) :touched]
-                                      (ctf/get-touched-from-ref-chain-until-target-ref
-                                       container libraries shape new-ref))))))
-        copied    (into {} (map (juxt :id identity)) (cfh/get-children-with-self objects id))]
-    (reduce (fn [copied head]
-              (if (and (ctk/instance-head? head) (not (ctk/main-instance? head)))
-                (let [delta (if (nil? (ctk/get-swap-slot head))
-                              (ctn/get-nesting-level-delta objects head uuid/zero)
-                              0)]
-                  (if (pos? delta)
-                    (reduce (partial advance delta) copied (cfh/get-children-with-self objects (:id head)))
-                    copied))
-                copied))
-            copied
-            (ctn/get-child-heads copied id))))
+  (cll/advance-copied-objects file
+                              page
+                              libraries
+                              (into {} (map (juxt :id identity))
+                                    (cfh/get-children-with-self (:objects page) id))
+                              [id]))
 
 (defrecord PasteToRoot [target]
   IComponentOperation
@@ -1067,7 +1071,8 @@
           page      (thf/current-page the-file)
           changes   (cls/generate-relocate (-> (pcb/empty-changes nil)
                                                (pcb/with-page-id (:id page))
-                                               (pcb/with-objects (:objects page)))
+                                               (pcb/with-objects (:objects page))
+                                               (pcb/with-library-data (:data the-file)))
                                            parent-id
                                            (nest-target-index situation parent-id)
                                            #{copy-id}
@@ -1836,7 +1841,7 @@
           page      (thf/current-page the-file)
           [_all-parents changes]
           (cls/generate-delete-shapes (pcb/empty-changes)
-                                      the-file
+                                      (:data the-file)
                                       page
                                       (:objects page)
                                       #{shape-id}
@@ -1874,7 +1879,8 @@
           changes   (cls/generate-relocate
                      (-> (pcb/empty-changes nil)
                          (pcb/with-page-id (:id page))
-                         (pcb/with-objects (:objects page)))
+                         (pcb/with-objects (:objects page))
+                         (pcb/with-library-data (:data the-file)))
                      parent-id
                      to-index
                      #{shape-id})
