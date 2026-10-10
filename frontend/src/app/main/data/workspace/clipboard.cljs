@@ -23,7 +23,6 @@
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -156,33 +155,8 @@
             (let [file      (dsh/lookup-file state)
                   libraries (:files state)
                   ;; FIXME
-                  page      (dsh/lookup-page state)
-                  heads     (mapcat #(ctn/get-child-heads (:objects data) %) selected)]
-              (update data :objects
-                      #(reduce (partial advance-copy file libraries page)
-                               %
-                               heads))))
-
-          (advance-copy [file libraries page objects shape]
-            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-              (let [level-delta (if (nil? (ctk/get-swap-slot shape))
-                                  (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
-                                  0)]
-                (if (pos? level-delta)
-                  (reduce (partial advance-shape file libraries page level-delta)
-                          objects
-                          (cfh/get-children-with-self objects (:id shape)))
-                  objects))
-              objects))
-
-          (advance-shape [file libraries page level-delta objects shape]
-            (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
-                  container     (ctn/make-container page :page)
-                  new-touched   (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref)]
-              (cond-> objects
-                (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-                (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
-                    (assoc-in [(:id shape) :touched] new-touched)))))
+                  page      (dsh/lookup-page state)]
+              (update data :objects #(cll/advance-copied-objects file page libraries % selected))))
 
           (on-copy-error [error]
             (js/console.error "clipboard blocked:" error)
