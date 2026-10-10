@@ -133,3 +133,15 @@
 
 (t/deftest case-aq-main-change-reaches-a-copy-nested-in-a-sub-board
   (check (cases/main-change-reaches-a-copy-nested-in-a-sub-board)))
+
+(t/deftest case-ar-variant-property-edits-keep-copies
+  (check (cases/variant-property-edits-keep-copies)))
+
+(t/deftest case-as-added-variant-is-a-switch-target
+  (check (cases/added-variant-is-a-switch-target)))
+
+(t/deftest case-ay-token-on-a-main-reaches-copies
+  (check (cases/token-on-a-main-reaches-copies)))
+
+(t/deftest case-az-copy-moved-out-of-its-main-keeps-inherited-overrides
+  (check (cases/copy-moved-out-of-its-main-keeps-inherited-overrides)))

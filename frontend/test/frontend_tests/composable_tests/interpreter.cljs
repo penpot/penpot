@@ -14,7 +14,9 @@
    copies; only the library update of case H is an explicit `sync-file`, as
    in the app. `check` is the test entry point."
   (:require
+   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.tokens :as cfo]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
@@ -22,6 +24,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -31,6 +34,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtx]
    [app.main.data.workspace.thumbnails :as dwth]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
@@ -38,9 +42,11 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.reflow :as pwrf]
+   [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [cljs.test :as t]
    [frontend-tests.helpers.mock :as mock]
+   [frontend-tests.helpers.pages :as thp]
    [potok.v2.core :as ptk]))
 
 ;; --------------------------------------------------------------------------
@@ -83,6 +89,48 @@
 ;; --------------------------------------------------------------------------
 ;; Operations as workspace events
 ;; --------------------------------------------------------------------------
+
+(declare current-file)
+
+(defn- variant-action-events
+  "The workspace events of the `n/VariantAction` `op`."
+  [{:keys [action params]} situation]
+  (let [id     #(tm/target-shape-id situation %)
+        member #(n/member-component situation (:set-name params) (:member params))
+        select #(dws/select-shapes (into (d/ordered-set) (map id) %))]
+    (case action
+      :transform
+      [(dwv/transform-in-variant (id (:target params)))]
+
+      :combine
+      (if (:selected? params)
+        [(select (:targets params))
+         (dwv/combine-selected-as-variants {:trigger "workspace:context-menu"})]
+        [(dwv/combine-as-variants (mapv id (:targets params)) {:trigger "workspace:context-menu"})])
+
+      :rename
+      [(dwv/rename-comp-or-variant-and-main (:id (n/component-of situation (:target params)))
+                                            (:name params))]
+
+      :rename-in-layers
+      (let [{:keys [id variant-id variant-properties]} (member)]
+        [(dwv/update-properties-names-and-values
+          id variant-id variant-properties
+          (mapv (fn [[name value]] {:name name :value value}) (:properties params)))])
+
+      :remove-empty
+      [(dwv/remove-empty-properties (n/variant-set-id situation (:set-name params)))]
+
+      :error
+      [(if-let [value (:value params)]
+         (dwv/update-error (:id (member)) value)
+         (dwv/update-error (:id (member))))]
+
+      :shortcut
+      [(select (:targets params))
+       (case (:kind params)
+         :create-component (dwv/add-component-or-variant)
+         :duplicate        (dwv/duplicate-or-add-variant))])))
 
 (defn op->events
   "The workspace events a user action dispatches for the comp operation `op`,
@@ -144,10 +192,44 @@
                            {:with-objects? true})])
 
     (instance? n/SwitchVariant op)
-    (let [{:keys [target value]} op
-          head-id (tm/target-shape-id situation target)
+    (let [head-id (tm/target-shape-id situation (:target op))
           shape   (tm/shape-by-id situation head-id)]
-      [(dwv/variants-switch {:shapes [shape] :pos 0 :val value})])
+      [(dwv/variants-switch {:shapes [shape]
+                             :pos    (n/switch-pos situation op)
+                             :val    (n/switch-value situation op)})])
+
+    (instance? n/ApplyToken op)
+    (let [data  (:data (current-file))
+          token (-> (cfo/get-tokens-in-active-sets (cfo/get-tokens-status data)
+                                                   (cfo/get-tokens-lib data))
+                    (get (:token-name op)))]
+      [(dwta/apply-token {:shape-ids       [(tm/target-shape-id situation (:target op))]
+                          :attributes      n/radius-attrs
+                          :token           token
+                          :on-update-shape dwta/update-shape-radius})])
+
+    (instance? n/UnapplyToken op)
+    [(dwta/unapply-token {:shape-ids  [(tm/target-shape-id situation (:target op))]
+                          :attributes n/radius-attrs
+                          :token-name (:token-name op)})]
+
+    (instance? n/VariantAction op)
+    (variant-action-events op situation)
+
+    (instance? n/AddVariant op)
+    [(dwv/add-new-variant (:id (n/member-root situation (:set-name op) (:member op))))]
+
+    (instance? n/EditVariantProperty op)
+    ;; the design tab's variant property edits
+    (let [[edit & args] (n/variant-property-call situation op)]
+      [(case edit
+         :add       (let [[variant-id opts] args]
+                      (dwv/add-new-property variant-id opts))
+         :remove    (apply dwv/remove-property args)
+         :rename    (let [[variant-id pos name] args]
+                      (dwv/update-property-name variant-id pos name {:trigger "workspace:design-tab"}))
+         :reorder   (apply dwv/reorder-variant-poperties args)
+         :set-value (apply dwv/update-property-value args))])
 
     (instance? n/Detach op)
     [(dwl/detach-component (tm/target-shape-id situation (:target op)))]
@@ -166,6 +248,16 @@
     (instance? n/Duplicate op)
     [(dws/duplicate-shapes #{(tm/target-shape-id situation (:target op))}
                            :change-selection? false)]
+
+    (instance? n/PasteToRoot op)
+    ;; the clipboard's copy of the shape, pasted with the root selected
+    (let [file (current-file)
+          page (get-in file [:data :pages-index (:current-page-id @st/state)])
+          data (thp/simulate-copy-shape #{(tm/target-shape-id situation (:target op))}
+                                        (:objects page) {(:id file) file} page file
+                                        #{"components/v2"} 46)]
+      [(dws/select-shape uuid/zero)
+       (dw/paste-shapes data)])
 
     (instance? n/NestCopy op)
     (let [parent-id (tm/target-shape-id situation (:into op))
@@ -268,18 +360,39 @@
                                 :undo-changes (:undo-changes changes)}
                                opts))))
 
+(defn- await-ready
+  "A promise that resolves with true once `ready?` holds, polling, or with
+   false after `timeout-ms`."
+  [ready? timeout-ms]
+  (let [start (js/Date.now)]
+    (js/Promise.
+     (fn [resolve]
+       (letfn [(poll []
+                 (cond
+                   (ready?)                                  (resolve true)
+                   (> (- (js/Date.now) start) timeout-ms)   (resolve false)
+                   :else                                     (js/setTimeout poll 5)))]
+         (poll))))))
+
 (defn await-step
   "Emit `events` and return a promise of `:settled` once the pending work of
    `app.main.data.workspace.reflow` drains (component sync, layout and text
    reflow), as the plugin `waitForLayoutUpdate` waits; or of
    `{:timeout pending}` after `timeout-ms` (default `step-timeout-ms`). Work
-   must be opened while the events are processed."
+   must be opened while the events are processed; for events that commit
+   only after asynchronous work that opens none (token resolution), pass
+   `ready?`, which must hold before the pending work is awaited."
   ([events] (await-step events step-timeout-ms))
-  ([events timeout-ms]
+  ([events timeout-ms] (await-step events timeout-ms nil))
+  ([events timeout-ms ready?]
    (doseq [e events] (st/emit! e))
-   (-> (pwrf/wait-for-layout-update nil timeout-ms)
-       (.then (constantly :settled))
-       (.catch (fn [_] {:timeout (wrf/pending)})))))
+   (-> (if ready? (await-ready ready? timeout-ms) (js/Promise.resolve true))
+       (.then (fn [ready]
+                (if ready
+                  (-> (pwrf/wait-for-layout-update nil timeout-ms)
+                      (.then (constantly :settled))
+                      (.catch (fn [_] {:timeout (wrf/pending)})))
+                  {:timeout {:not-ready (wrf/pending)}}))))))
 
 (defn- describe-pending
   "The pending work map with the ids replaced by their test labels, if any."
@@ -320,6 +433,20 @@
   "The workspace events of the op unit `op` (for a choice, of the chosen op)."
   [op situation]
   (op->events (unwrap op) situation))
+
+(defn- live-shape
+  "The shape `id` of the current page of the live file."
+  [id]
+  (get-in (current-file) [:data :pages-index (:current-page-id @st/state) :objects id]))
+
+(defn- op-ready
+  "For the op unit `op` whose events commit only after asynchronous work that
+   opens no pending work, a predicate of when they have committed; else nil."
+  [op situation]
+  (let [op (unwrap op)]
+    (when (instance? n/ApplyToken op)
+      (let [id (tm/target-shape-id situation (:target op))]
+        #(= (:token-name op) (get-in (live-shape id) [:applied-tokens :r1]))))))
 
 (defn- install-file-event
   "An event that makes `file` the current file in the store, the result of a
@@ -475,7 +602,7 @@
           index-before (undo-index)]
       (if (sync-op? op)
         (run-ops (run-sync-op situation op) (rest ops) k)
-        (.then (await-step (op-events op situation))
+        (.then (await-step (op-events op situation) step-timeout-ms (op-ready op situation))
                (fn [result]
                  (if (= :settled result)
                    (let [situation (record-op situation op)]
@@ -575,13 +702,15 @@
   "Run every variant of `case-map` through the frontend, apply `asserter`
    (default the case map's `:asserter`) to each result and check its undo/redo
    round trip (`app.common.test-helpers.composable.comp.undo-check`). Calls the
-   async test's `done` at the end. RPC calls are mocked and `rx/timer` fires
-   at once, for the delayed RPC of the library update."
+   async test's `done` at the end. RPC calls are mocked, `rx/timer` fires at
+   once, for the delayed RPC of the library update, and DOM lookups find
+   nothing, for the delayed focus after adding a variant."
   ([done case-map] (check done case-map (:asserter case-map)))
   ([done {:keys [setup operation] :as case-map} asserter]
    (mock/with-mocks
-     {rp/cmd!  mock/rpc-cmd-mock
-      rx/timer mock/timer-mock}
+     {rp/cmd!           mock/rpc-cmd-mock
+      rx/timer          mock/timer-mock
+      dom/get-element   (constantly nil)}
      (fn [inner-done]
        (let [variants (tm/enumerate operation)]
          (letfn [(run-next [vs]
