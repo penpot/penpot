@@ -122,16 +122,13 @@ export class ClojureRuntime {
 
     static fromEnv(env: Record<string, string | undefined>): ClojureRuntime {
         const repoRoot = env.PENPOT_REPO_ROOT ?? "/home/penpot/penpot";
-        const seconds = (value: string | undefined, fallback: number) => {
-            const parsed = Number(value);
-            return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-        };
+        // Defaults only: each call can pass timeout_s, so the server needs no setting for them.
         const settings: ClojureSettings = {
             repoRoot,
             hostRoot: env.PENPOT_SOURCE_PATH || undefined,
-            testTimeoutS: seconds(env.PENPOT_MCP_CLOJURE_TEST_TIMEOUT_S, 300),
-            suiteTimeoutS: seconds(env.PENPOT_MCP_CLOJURE_SUITE_TIMEOUT_S, 1800),
-            evalTimeoutS: seconds(env.PENPOT_MCP_CLOJURE_EVAL_TIMEOUT_S, 120),
+            testTimeoutS: 300,
+            suiteTimeoutS: 1800,
+            evalTimeoutS: 120,
             callLog: env.PENPOT_MCP_CLOJURE_LOG || undefined,
         };
         const testJvm = new TestJvm({
