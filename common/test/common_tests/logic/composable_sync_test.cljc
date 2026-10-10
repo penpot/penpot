@@ -6,9 +6,10 @@
 
 (ns common-tests.logic.composable-sync-test
   "Runs the shared composable component cases through the pure runner, on the
-   JVM and in JS. The geometry cases (N, Z, AI and the rotation case) need
-   the frontend placement step and case X a pending frontend sync, so only
-   the frontend interpreter runs them."
+   JVM and in JS. Only the frontend interpreter runs the geometry cases (N, Z,
+   AI and the rotation case), which need the frontend placement step, case X,
+   which needs a pending frontend sync, case AJ, which needs the frontend
+   reflow, and cases AT..AX, whose variant actions are frontend events."
   (:require
    [app.common.test-helpers.composable.comp.cases :as cases]
    [app.common.test-helpers.composable.comp.runner :as r]
@@ -20,14 +21,25 @@
 (t/use-fixtures :each thi/test-fixture)
 
 (defn- check
-  "Run every variant of `case-map`, apply its asserter to each result and
-   assert that its undo/redo round trip passed."
+  "Run every variant of `case-map`, apply its asserter to each result before
+   the next variant runs and assert that its undo/redo round trip passed. A
+   variant whose inline tests and asserter make no assertion fails, and so
+   does a known undo failure that applies to no variant."
   [{:keys [asserter] :as case-map}]
-  (doseq [situation (r/run-all case-map)]
-    (t/testing (str "operations:\n  " (tm/describe-applied situation))
-      (when asserter
-        (asserter situation))
-      (uc/check! situation case-map))))
+  (let [applied (atom #{})]
+    (tm/counting-assertions
+     (fn [made]
+       (r/run-each case-map
+                   (fn [situation]
+                     (t/testing (str "operations:\n  " (tm/describe-applied situation))
+                       (when asserter
+                         (asserter situation))
+                       (let [n @made]
+                         (t/is (pos? n) "the variant made no assertion"))
+                       (uc/check! situation case-map)
+                       (swap! applied into (uc/applying-marks situation case-map))
+                       (reset! made 0))))))
+    (uc/check-marks-applied! case-map :pure @applied)))
 
 (t/deftest case-b-copy-override-survives-later-main-change
   (check (cases/copy-override-survives-later-main-change)))

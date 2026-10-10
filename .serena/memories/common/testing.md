@@ -51,7 +51,10 @@ the helpers (`ths/update-shape`, `thc/update-component`), assert the exact set o
 as the backend does (validate + `cfr/repair-file` until valid, at most 10 passes, like
 `app.srepl.procs.file-repair`) and assert the result. Repairs that never converge are pinned with
 `tm/known-failure`. A deleted component's objects are reached with `ctkl/get-component data id true`
-(`thc/get-component` skips deleted ones).
+(`thc/get-component` skips deleted ones). Validation often reports a second code on the same
+shapes, whose repair runs in the same pass: check what the repair keeps (the copies' links, not
+only the component) and run the code's own repair alone (`repair-once`) so another one cannot do
+its work.
 
 ## Component sync benchmark
 

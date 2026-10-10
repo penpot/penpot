@@ -3118,6 +3118,38 @@
                changes
                (map (d/getf objects) (:shapes obj)))))))
 
+(defn advance-copied-objects
+  "The clipboard's `objects` (`selected` and their children, copied from
+   `page` of `file`) with the copies nested in other copies advanced: each
+   copy head that the copy takes out of `n` copy levels, and its children,
+   get the shape ref `n` levels up the ref chain and the touched groups of
+   the chain they skip, so they keep the values the skipped mains gave them."
+  [file page libraries objects selected]
+  (let [container     (ctn/make-container page :page)
+        advance-shape (fn [level-delta objects shape]
+                        (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta
+                                                                   {:include-deleted? true})]
+                          (cond-> objects
+                            (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
+                            (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
+                                (assoc-in [(:id shape) :touched]
+                                          (ctf/get-touched-from-ref-chain-until-target-ref
+                                           container libraries shape new-shape-ref))))))
+        advance-copy  (fn [objects shape]
+                        (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+                          (let [level-delta (if (nil? (ctk/get-swap-slot shape))
+                                              (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                                              0)]
+                            (if (pos? level-delta)
+                              (reduce (partial advance-shape level-delta)
+                                      objects
+                                      (cfh/get-children-with-self objects (:id shape)))
+                              objects))
+                          objects))]
+    (reduce advance-copy
+            objects
+            (mapcat #(ctn/get-child-heads objects %) selected))))
+
 (defn generate-duplicate-changes
   "Prepare objects to duplicate: generate new id, give them unique names,
   move to the desired position, and recalculate parents and frames as needed."

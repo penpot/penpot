@@ -30,8 +30,13 @@ export class OpSwap extends Operation {
     async applyTo(situation: Situation): Promise<void> {
         // act on the settled document, as a user would
         await PenpotSync.awaitPropagation();
-        resolveTarget(this.target, situation).swapComponent(this.component(situation));
+        const to = this.component(situation);
+        resolveTarget(this.target, situation).swapComponent(to);
         await PenpotSync.awaitPropagation();
+        // an API call that fails only logs, so a case would go on as if nothing happened
+        if (resolveTarget(this.target, situation).component()?.id !== to.id) {
+            throw new Error(`the swap did not take effect: ${this}`);
+        }
     }
 
     toString(): string {

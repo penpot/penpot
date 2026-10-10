@@ -76,8 +76,17 @@ Layout:
   real frontend), `comp/sync_test.cljs` (one `t/async` deftest per shared case; registered in
   `frontend_tests/runner.cljs`).
 - JVM/JS: `common-tests.logic.composable-sync-test` runs the shared cases through the pure
-  runner; all except N and the rotation case (placement step). Same assertion counts as the
-  frontend for the shared subset (174).
+  runner; all except those that need frontend code: N, Z, AI and the rotation case (placement
+  step), X (pending sync), AJ (reflow), AT..AX (variant action events).
+
+Judging (both runners): each variant is judged before the next one runs (`r/run-each`, and the
+interpreter's `check`), while the label map still names its shapes; a variant whose inline
+tests and asserter make no assertion fails; a known undo failure that applies to no variant of
+a runner fails (`uc/applying-marks`, `uc/check-marks-applied!`); `tm/one-of` refuses an empty
+list and `tm/known-failure` a pin equal to the expected value. The asserter sees the state the
+operations produced, not the one the end-of-variant round trip left. The pure runner throws on
+an operation with no known kind and validates the final file; a round-trip error is recorded
+with its phase and `[:error <ex-data :type>]`. Signatures tell a nil value from an absent key.
 
 A case is a zero-arg fn in `cases.cljc` returning `{:setup :operation :asserter}`; assertions
 use `clojure.test` (aliased to `cljs.test` in CLJS), inline (`test-that`) or in `:asserter`.
@@ -182,13 +191,16 @@ Two pure runners (no store, JVM + CLJS):
   (`op-ready`: the token shows on the shape) that must hold before it awaits the pending work.
 - `n/paste-to-root target`: the clipboard's copy (shape-refs of nested heads advanced, the skipped ref
   chain's touched merged) and paste at the root; the interpreter pastes `thp/simulate-copy-shape`'s data.
-  That helper mirrors `copy-selected`'s advance; keep them in step. A duplicate inside a copy is
+  The node, that helper and `copy-selected` all advance through `cll/advance-copied-objects`. A duplicate inside a copy is
   refused by `ctk/allow-duplicate?`, and an alt-duplication with no move makes the next edit join
   its undo group (it expects the drag's move), so neither models a move out of a main.
 - `n/undo-before-sync` (frontend-only) emits an edit and `dwu/undo` in one step, so the undo
   commits while the watcher still holds the edit's sync.
 - Label map gotcha: running a second variant re-registers labels, so assert on a situation
-  before running the next one (`thi/id` then points at the new run's shapes). Case letters B..Z, then AA..;
+  before running the next one (`thi/id` then points at the new run's shapes); `run-each` does,
+  `run-all` does not.
+- `change-property` with `:name` renames as the layers panel does (`dw/end-rename-shape` in the
+  interpreter): the path is cleaned and a main root's component is renamed too. Case letters B..Z, then AA..;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance
 geometry, on the #10109 fix branch until merged; O: switch of an overridden copy, mains
 agreeing or not; Q: detach at depth 0..2, nested copies stay linked; R: update-main at depth 0..2 with two copies; S: delete/restore with a copy on another page; T: duplicate a copy at depth 0..2; U: move a copy into a main with a copy; V: new edit after undo empties redo; W: `(n/undo 3)` over nested cascades; X: undo before the edit's sync, frontend only; AJ: F43, one undo after a nested sync reverts only the reflow, frontend only; Y: text override × main text change, per subgroup; Z: main child move, frontend only; AA..AE: swap outcomes asserted on values, not slot storage, so they survive the Phase 2b swap model; AF: grid cell move vs a swapped copy child, setup `grid-component-with-copy`; AG/AH/AI: ports of the plugin's slot-alignment cases, setup `component-with-sibling-instances`, check `setup/misaligned-sub-heads`; AK: update main into a grid main, F49 pinned; AL: update main renames the component (`change-property` takes `:name`); AM: update main of a swap inside a group, setup `grouped-component-with-copy`, F16 pinned; AN: flex child margin override through main edit, reset and update main, setup `flex-component-with-copy`; `change-property` takes `:margin`, which the interpreter sends as `dwsl/update-layout-child`; AO: a copy dropped into a grid cell of a main (`nest-copy` with `:cell`, sent as `dwt/move-shapes-to-frame`), F41 pinned; AP: a library main's middle child removal reaches a copy in another file (in one file, deleting a main child deletes the copies' children itself, so sync never meets the copy child), setup `cross-file-component-with-many-children`; AQ: main change reaches a copy nested in a sub-board, setup `component-nested-in-a-sub-board`; AR: variant property edits keep a member's copies as they are, then a switch finds its member by the edited properties; AS: an added variant joins the set and is a switch target; AT..AX, frontend only: transform into a variant, combine, rename a variant (F6 pinned: the transaction keeps the container commit's undo group, the copies' sync takes the main renames'), rename in layers + remove empty properties + member error, the shortcuts that add members; AY: a border radius token on a main reaches untouched copies and its removal too, F55 pinned; AZ: a nested copy pasted out of its main keeps the main's overrides) are the flagship pattern — read them before
@@ -214,8 +226,10 @@ event-ops to REAL workspace events (`dwsh/update-shapes`, `dwl/component-swap` (
 classification — `dwt/update-dimensions`, `dwl/detach-component`, `dwl/update-component-sync`, `dwl/delete-component`, `dwl/restore-component`, `dws/duplicate-shapes`, `dwsh/relocate-shapes` (nest-copy), `dwtx/v2-update-text-shape-content` (edit-text, the editor's on-blur commit with its automatic rename), `dwu/undo`, `dwl/sync-file`, …) and runs sync-ops'
 `apply-to` against the live store file; each event step goes through `ftm/await-step`, which
 resolves once `wrf/settled nil` (the watcher's `:sync-file` wait, opened for EVERY local commit,
-plus the sync and layout/text reflow it starts) or reports `{:timeout pending}` after 2s; a
-timed-out step fails the test and skips the asserter. Contract: producers must open their
+plus the sync and layout/text reflow it starts) or reports `{:timeout pending}` after 10s; a
+timed-out step fails the test and skips the asserter. Potok catches an error thrown by an event
+and only logs it, so a step during which the store reports an error (`st/on-error`) fails too.
+`ftm/fixture` stops the watchers `install!` started (`ftm/uninstall!`). Contract: producers must open their
 pending work synchronously while the events are processed (Potok processes sub-events
 synchronously); an async hop without a pending task makes steps resolve early. Tests:
 `frontend-tests.composable-tests.completion-contract-test` (slowed-down sync via a mocked
@@ -239,8 +253,8 @@ misses it. Headless there is no DOM text measurement: `install!` starts
 `:text/reflow` (geometry and `:position-data` unchanged), so text steps settle. It does not
 reproduce what the real measurement commits (F37: `commit-position-data`).
 
-**Caveats:** inline `Test` exceptions are UNCAUGHT on the frontend (crash the runner — assert in
-the trailing asserter). `(optional (in-sequence …))` is not flattened for the interpreter — use
+**Caveats:** an exception in a frontend variant (inline `Test`, asserter, accessor) is reported
+as an error of its case and the next variant runs. `(optional (in-sequence …))` is not flattened for the interpreter — use
 independent optionals (nested choices are fine). The Serena/clj-kondo cache for `nodes.cljc` goes stale (phantom symbols) —
 trust the build. Cross-namespace global-state leaks land in this suite first; suspect them before
 the framework on inexplicable full-run-only failures. Case H's `sync-file` schedules a delayed RPC

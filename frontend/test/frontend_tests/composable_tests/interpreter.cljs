@@ -77,14 +77,19 @@
     (set! dwth/update-thumbnail orig)
     (reset! original-update-thumbnail nil)))
 
+(declare uninstall!)
+
 (def fixture
   "An `:each` fixture for tests that run the component watcher: a fresh label
-   map and no thumbnail rendering. Its `:after` runs after an async test's
-   `done`, so it covers the whole test."
+   map and no thumbnail rendering, and the watchers `install!` starts stopped
+   at the end. Its `:after` runs after an async test's `done`, so it covers
+   the whole test."
   {:before (fn []
              (cthi/reset-idmap!)
              (install-thumbnail-noop!))
-   :after  restore-thumbnail!})
+   :after  (fn []
+             (uninstall!)
+             (restore-thumbnail!))})
 
 ;; --------------------------------------------------------------------------
 ;; Operations as workspace events
@@ -140,11 +145,17 @@
     (instance? n/ChangeProperty op)
     (let [{:keys [target property value]} op
           id (tm/target-shape-id situation target)]
-      (if (= :margin property)
+      (case property
         ;; the sidebar's layout child margin
+        :margin
         (let [shape (n/set-property {} property value)]
           [(dwsl/update-layout-child [id] (select-keys shape [:layout-item-margin
                                                               :layout-item-margin-type]))])
+
+        ;; the layers panel's rename, which renames a main's component too
+        :name
+        [(dw/end-rename-shape id value)]
+
         [(dwsh/update-shapes #{id} (fn [shape] (n/set-property shape property value)))]))
 
     (instance? n/EditText op)
@@ -313,7 +324,7 @@
 ;; --------------------------------------------------------------------------
 
 ;; Longest a step may take to settle; a step that takes longer fails.
-(def ^:private step-timeout-ms 2000)
+(def ^:private step-timeout-ms 10000)
 
 (defn- install-situation-event
   "An event that installs the situation's file as the current one, its
@@ -584,14 +595,25 @@
            (not (instance? tm/Skip (unwrap op))))
       (mark-baseline))))
 
+(defonce ^:private step-errors
+  ;; The errors the store reported (`st/on-error`) while a step ran: Potok
+  ;; catches an error thrown by an event, so the step would settle as if the
+  ;; event did nothing.
+  (atom []))
+
+(defn- describe-op
+  "`op` as its fields: the JS test build strips record names."
+  [op]
+  (pr-str (dissoc (into {} op) ::tm/id)))
+
 (defn- run-ops
   "Run the op units `ops` in order, each `sync-op?` one on the live file and
-   the others as events awaited with `await-step`. Calls `k` with the final
-   situation, or with nil after failing the test when a step did not
-   settle."
-  [situation ops k]
+   the others as events awaited with `await-step`. Resolves with the final
+   situation, or with nil after failing the test when a step did not settle
+   or one of its events raised an error."
+  [situation ops]
   (if (empty? ops)
-    (k situation)
+    (js/Promise.resolve situation)
     (let [op           (first ops)
           kind         (let [op (unwrap op)]
                          (when (satisfies? n/IComponentOperation op)
@@ -601,29 +623,42 @@
           before       (when check-step? (snapshot))
           index-before (undo-index)]
       (if (sync-op? op)
-        (run-ops (run-sync-op situation op) (rest ops) k)
-        (.then (await-step (op-events op situation) step-timeout-ms (op-ready op situation))
-               (fn [result]
-                 (if (= :settled result)
-                   (let [situation (record-op situation op)]
+        (run-ops (run-sync-op situation op) (rest ops))
+        (do
+          (reset! step-errors [])
+          (.then (await-step (op-events op situation) step-timeout-ms (op-ready op situation))
+                 (fn [result]
+                   (let [[errors] (reset-vals! step-errors [])]
                      (cond
-                       check-step?
-                       (.then (check-step situation (unwrap op) before index-before)
-                              #(run-ops % (rest ops) k))
+                       (seq errors)
+                       (do
+                         (t/is false (str "Step raised an error: " (describe-op (unwrap op))
+                                          "; " (ex-message (first errors))))
+                         nil)
 
-                       ;; never undo past the state a case's own undo went back to
-                       (and (::undo-check? situation)
-                            (= :undo kind)
-                            (< (undo-index) (:depth (uc/baseline situation))))
-                       (run-ops (mark-baseline situation) (rest ops) k)
+                       (not= :settled result)
+                       (do
+                         (t/is false (str "Step did not settle in " step-timeout-ms "ms: "
+                                          (describe-op (unwrap op))
+                                          "; pending: " (pr-str (describe-pending (:timeout result)))))
+                         nil)
 
                        :else
-                       (run-ops situation (rest ops) k)))
-                   (do
-                     (t/is false (str "Step did not settle in " step-timeout-ms "ms: "
-                                      (pr-str (type (unwrap op)))
-                                      "; pending: " (pr-str (describe-pending (:timeout result)))))
-                     (k nil)))))))))
+                       (let [situation (record-op situation op)]
+                         (cond
+                           check-step?
+                           ;; go on from the redone file, as the pure runner does
+                           (.then (check-step situation (unwrap op) before index-before)
+                                  #(run-ops (tm/with-file % (current-file)) (rest ops)))
+
+                           ;; never undo past the state a case's own undo went back to
+                           (and (::undo-check? situation)
+                                (= :undo kind)
+                                (< (undo-index) (:depth (uc/baseline situation))))
+                           (run-ops (mark-baseline situation) (rest ops))
+
+                           :else
+                           (run-ops situation (rest ops)))))))))))))
 
 (defonce ^:private original-store
   ;; The store at load time. Some test namespaces `set!` st/state and
@@ -656,7 +691,8 @@
            (rx/tap (fn [{:keys [ids]}]
                      (wrf/finish! (wrf/start! :text-measure ids))))
            (rx/ignore)
-           (rx/take-until (rx/filter (ptk/type? ::headless-text-measurement) stream))))))
+           (rx/take-until (rx/filter (ptk/type? ::headless-text-measurement) stream))
+           (rx/take-until (rx/filter (ptk/type? ::stop-headless-text-measurement) stream))))))
 
 (defn install!
   "Install `situation` in the global store and start the watchers the workspace
@@ -675,24 +711,42 @@
             (headless-text-measurement))
   situation)
 
+(defn uninstall!
+  "Stop the watchers `install!` started and forget their pending work, so
+   they do not react to what later tests do with the store."
+  []
+  (st/emit! (dw/finalize-edit-watchers)
+            ;; the component and token watchers stop when the page closes
+            (ptk/data-event :app.main.data.workspace.pages/finalize-page)
+            (ptk/data-event ::stop-headless-text-measurement))
+  (wrf/reset-pending!))
+
 (defn- run-variant
   "Set up one variant on the global store and run its ops. `setup` returns a
    situation (file + roles). With `undo-check?`, runs the undo/redo round
-   trip of each user step and of the variant. Calls `k` with the final
-   situation, or nil when a step did not settle."
-  [setup ops undo-check? k]
-  ;; a fresh label map per variant, as `tm/run-all` does
+   trip of each user step and of the variant. Resolves with the final
+   situation, or nil when a step failed."
+  [setup ops undo-check?]
+  ;; a fresh label map per variant, as `tm/run-each` does
   (cthi/reset-idmap!)
   (let [situation (-> (setup)
                       (assoc ::undo-check? undo-check?)
                       (uc/with-runner :frontend)
                       (install!))]
-    (run-ops (cond-> situation undo-check? (mark-baseline))
-             ops
-             (fn [situation]
-               (if (and situation undo-check?)
-                 (.then (check-variant situation) k)
-                 (k situation))))))
+    (.then (run-ops (cond-> situation undo-check? (mark-baseline)) ops)
+           (fn [situation]
+             (if (and situation undo-check?)
+               (.then (check-variant situation)
+                      ;; the asserter judges the state the operations produced
+                      #(uc/with-failures-of situation %))
+               situation)))))
+
+(defn- assertions-made
+  "How many assertions (passed, failed or errored) the running test has
+   reported so far."
+  []
+  (let [{:keys [pass fail error]} (:report-counters (t/get-current-env))]
+    (+ pass fail error)))
 
 ;; --------------------------------------------------------------------------
 ;; Test entry point
@@ -701,10 +755,12 @@
 (defn check
   "Run every variant of `case-map` through the frontend, apply `asserter`
    (default the case map's `:asserter`) to each result and check its undo/redo
-   round trip (`app.common.test-helpers.composable.comp.undo-check`). Calls the
-   async test's `done` at the end. RPC calls are mocked, `rx/timer` fires at
-   once, for the delayed RPC of the library update, and DOM lookups find
-   nothing, for the delayed focus after adding a variant."
+   round trip (`app.common.test-helpers.composable.comp.undo-check`). A
+   variant that makes no assertion fails, and so does a known undo failure
+   that applies to no variant; an error in a variant is reported and the next
+   one runs. Calls the async test's `done` at the end. RPC calls are mocked,
+   `rx/timer` fires at once, for the delayed RPC of the library update, and
+   DOM lookups find nothing, for the delayed focus after adding a variant."
   ([done case-map] (check done case-map (:asserter case-map)))
   ([done {:keys [setup operation] :as case-map} asserter]
    (mock/with-mocks
@@ -712,20 +768,31 @@
       rx/timer          mock/timer-mock
       dom/get-element   (constantly nil)}
      (fn [inner-done]
-       (let [variants (tm/enumerate operation)]
-         (letfn [(run-next [vs]
-                   (if (empty? vs)
-                     (inner-done)
-                     (run-variant
-                      setup
-                      (tm/sequence-ops (first vs))
-                      (uc/enabled? case-map)
-                      (fn [situation]
-                        (when situation
-                          (t/testing (str "operations:\n  " (tm/describe-applied situation))
-                            (when asserter
-                              (asserter situation))
-                            (uc/check! situation case-map)))
-                        (run-next (rest vs))))))]
-           (run-next variants))))
+       (let [variants (tm/enumerate operation)
+             on-error @st/on-error
+             applied  (atom #{})
+             judge    (fn [variant]
+                        (let [made (assertions-made)]
+                          (-> (js/Promise.resolve)
+                              (.then #(run-variant setup (tm/sequence-ops variant) (uc/enabled? case-map)))
+                              (.then (fn [situation]
+                                       (when situation
+                                         (t/testing (str "operations:\n  " (tm/describe-applied situation))
+                                           (when asserter
+                                             (asserter situation))
+                                           (t/is (< made (assertions-made)) "the variant made no assertion")
+                                           (uc/check! situation case-map)
+                                           (swap! applied into (uc/applying-marks situation case-map))))))
+                              (.catch (fn [e]
+                                        (t/report {:type :error :message "the variant raised an error"
+                                                   :expected nil :actual e}))))))]
+         (t/is (seq variants) "the case has no variant")
+         (reset! st/on-error (fn [e] (swap! step-errors conj e) (on-error e)))
+         (-> (reduce (fn [p variant] (.then p #(judge variant))) (js/Promise.resolve) variants)
+             (.then #(uc/check-marks-applied! case-map :frontend @applied))
+             (.catch (fn [e] (t/report {:type :error :message "the case raised an error"
+                                        :expected nil :actual e})))
+             (.finally (fn []
+                         (reset! st/on-error on-error)
+                         (inner-done))))))
      done)))

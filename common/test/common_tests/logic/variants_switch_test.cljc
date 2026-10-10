@@ -15,6 +15,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -3210,7 +3211,7 @@
     (size-is rect' 200 50)
     (t/is (contains? (:touched rect') :geometry-group))))
 
-(t/deftest test-switch-with-h-sizing-fix-keeps-only-the-resized-height
+(t/deftest test-switch-with-h-sizing-fix-keeps-the-resized-size
   (let [file  (-> (thf/sample-file :file1)
                   (thv/add-variant-with-child
                    :v01 :c01 :m01 :c02 :m02 :r01 :r02
@@ -3221,8 +3222,11 @@
         rect  (copy-child file :copy01)
         file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})]
     (size-is rect 200 100)
-    ;; the fixed width comes from the new variant; the height override stays
-    (size-is (copy-child file' :copy02) 100 100)))
+    ;; the variants agree on the size, so the touched size is carried; a
+    ;; fixed sizing takes the new variant's width instead
+    (let [rect' (copy-child file' :copy02)]
+      (tm/known-failure "F61" [200 100] [100 100]
+                        (mapv #(mth/round (get-in rect' [:selrect %])) [:width :height])))))
 
 (t/deftest test-switch-keeps-a-resized-path-of-same-size-variants
   (let [triangle (fn [x0 y0]
@@ -3276,8 +3280,12 @@
     (t/is (= "new line 2" (get-in agree text-path-1)))
     (t/is (= "25" (get-in agree font-size-path-0)))
     (t/is (= "25" (get-in agree font-size-path-1)))
+    ;; the carried style stays an override
+    (t/is (contains? (:touched agree) :content-group))
 
     (t/is (= "new line 1" (get-in disagree text-path-0)))
     (t/is (= "new line 2" (get-in disagree text-path-1)))
     (t/is (= "50" (get-in disagree font-size-path-0)))
-    (t/is (= "50" (get-in disagree font-size-path-1)))))
+    (t/is (= "50" (get-in disagree font-size-path-1)))
+    ;; nothing was carried, so nothing is touched
+    (t/is (not (contains? (:touched disagree) :content-group)))))
