@@ -137,3 +137,30 @@
 
 (t/deftest case-aq-main-change-reaches-a-copy-nested-in-a-sub-board
   (t/async done (ftm/check done (cases/main-change-reaches-a-copy-nested-in-a-sub-board))))
+
+(t/deftest case-ar-variant-property-edits-keep-copies
+  (t/async done (ftm/check done (cases/variant-property-edits-keep-copies))))
+
+(t/deftest case-as-added-variant-is-a-switch-target
+  (t/async done (ftm/check done (cases/added-variant-is-a-switch-target))))
+
+(t/deftest case-at-transformed-component-keeps-its-copies
+  (t/async done (ftm/check done (cases/transformed-component-keeps-its-copies))))
+
+(t/deftest case-au-combined-components-keep-their-copies
+  (t/async done (ftm/check done (cases/combined-components-keep-their-copies))))
+
+(t/deftest case-av-variant-rename-reaches-copy-names
+  (t/async done (ftm/check done (cases/variant-rename-reaches-copy-names))))
+
+(t/deftest case-aw-variant-layer-rename-and-cleanup
+  (t/async done (ftm/check done (cases/variant-layer-rename-and-cleanup))))
+
+(t/deftest case-ax-variant-shortcuts-add-members
+  (t/async done (ftm/check done (cases/variant-shortcuts-add-members))))
+
+(t/deftest case-ay-token-on-a-main-reaches-copies
+  (t/async done (ftm/check done (cases/token-on-a-main-reaches-copies))))
+
+(t/deftest case-az-copy-moved-out-of-its-main-keeps-inherited-overrides
+  (t/async done (ftm/check done (cases/copy-moved-out-of-its-main-keeps-inherited-overrides))))

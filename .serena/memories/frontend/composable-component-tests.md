@@ -162,13 +162,36 @@ Two pure runners (no store, JVM + CLJS):
 - General target-based nodes: `n/swap-shape target to` (`to` a lineage name or a component label), `n/move-to-cell board child row column`, `n/reset target` (`dwl/reset-component` in the interpreter). `n/swap-component name level to` is `swap-shape` on `n/nested-head-of`. `n/nested-head-in name` (and the general `n/nested-head-under parent-target`) finds a copy's nested
   head through its parent, so it survives swaps and switches (they keep the head id anyway).
   Careful: `n/lineage-component-id` is the OUTER component after nesting.
+- Variant properties: `n/add-variant-property`, `remove-`, `rename-`, `reorder-variant-properties`
+  and `set-variant-property-value` are one node (`EditVariantProperty`); `n/variant-property-call`
+  resolves the edit to the arguments both the `clvp/generate-*` generator and the `dwv/*` event take.
+  A member is named by the value it was built with; read its current state from the file
+  (`n/member-properties`, `n/member-component`, `n/member-root`). `n/switch-variant` takes `:pos`
+  (a number or a `(situation -> pos)` fn) for sets with several properties.
+  `n/add-variant set member` duplicates a member (`clv/generate-add-new-variant`; `dwv/add-new-variant`,
+  whose delayed DOM focus `check` neutralises by stubbing `dom/get-element`); ask the node for the
+  new component (`n/added-variant-component-id`).
+  Frontend-only variant actions are one node, `n/VariantAction` (`n/transform-in-variant`,
+  `combine-as-variants`, `rename-variant`, `rename-variant-in-layers`, `remove-empty-properties`,
+  `set-variant-error`, `variant-shortcut`); the interpreter's `variant-action-events` sends them.
+  A set they build has no `variant-set` record: read it with `n/component-of` and
+  `n/variant-component-ids`; `switch-variant` takes the value as a fn for it.
+- Tokens: `n/add-tokens` (assembly: an active set of border radius tokens), `n/apply-token`,
+  `n/unapply-token`, check `n/has-token?`. The interpreter sends `dwta/apply-token`, which resolves
+  tokens asynchronously and opens no pending work (F54), so `await-step` takes a `ready?` predicate
+  (`op-ready`: the token shows on the shape) that must hold before it awaits the pending work.
+- `n/paste-to-root target`: the clipboard's copy (shape-refs of nested heads advanced, the skipped ref
+  chain's touched merged) and paste at the root; the interpreter pastes `thp/simulate-copy-shape`'s data.
+  That helper mirrors `copy-selected`'s advance; keep them in step. A duplicate inside a copy is
+  refused by `ctk/allow-duplicate?`, and an alt-duplication with no move makes the next edit join
+  its undo group (it expects the drag's move), so neither models a move out of a main.
 - `n/undo-before-sync` (frontend-only) emits an edit and `dwu/undo` in one step, so the undo
   commits while the watcher still holds the edit's sync.
 - Label map gotcha: running a second variant re-registers labels, so assert on a situation
   before running the next one (`thi/id` then points at the new run's shapes). Case letters B..Z, then AA..;
 the sweeps (K: depth × edit-precedence; L: swaps; M: variant switches; N: rotated-instance
 geometry, on the #10109 fix branch until merged; O: switch of an overridden copy, mains
-agreeing or not; Q: detach at depth 0..2, nested copies stay linked; R: update-main at depth 0..2 with two copies; S: delete/restore with a copy on another page; T: duplicate a copy at depth 0..2; U: move a copy into a main with a copy; V: new edit after undo empties redo; W: `(n/undo 3)` over nested cascades; X: undo before the edit's sync, frontend only; AJ: F43, one undo after a nested sync reverts only the reflow, frontend only; Y: text override × main text change, per subgroup; Z: main child move, frontend only; AA..AE: swap outcomes asserted on values, not slot storage, so they survive the Phase 2b swap model; AF: grid cell move vs a swapped copy child, setup `grid-component-with-copy`; AG/AH/AI: ports of the plugin's slot-alignment cases, setup `component-with-sibling-instances`, check `setup/misaligned-sub-heads`; AK: update main into a grid main, F49 pinned; AL: update main renames the component (`change-property` takes `:name`); AM: update main of a swap inside a group, setup `grouped-component-with-copy`, F16 pinned; AN: flex child margin override through main edit, reset and update main, setup `flex-component-with-copy`; `change-property` takes `:margin`, which the interpreter sends as `dwsl/update-layout-child`; AO: a copy dropped into a grid cell of a main (`nest-copy` with `:cell`, sent as `dwt/move-shapes-to-frame`), F41 pinned; AP: a library main's middle child removal reaches a copy in another file (in one file, deleting a main child deletes the copies' children itself, so sync never meets the copy child), setup `cross-file-component-with-many-children`; AQ: main change reaches a copy nested in a sub-board, setup `component-nested-in-a-sub-board`) are the flagship pattern — read them before
+agreeing or not; Q: detach at depth 0..2, nested copies stay linked; R: update-main at depth 0..2 with two copies; S: delete/restore with a copy on another page; T: duplicate a copy at depth 0..2; U: move a copy into a main with a copy; V: new edit after undo empties redo; W: `(n/undo 3)` over nested cascades; X: undo before the edit's sync, frontend only; AJ: F43, one undo after a nested sync reverts only the reflow, frontend only; Y: text override × main text change, per subgroup; Z: main child move, frontend only; AA..AE: swap outcomes asserted on values, not slot storage, so they survive the Phase 2b swap model; AF: grid cell move vs a swapped copy child, setup `grid-component-with-copy`; AG/AH/AI: ports of the plugin's slot-alignment cases, setup `component-with-sibling-instances`, check `setup/misaligned-sub-heads`; AK: update main into a grid main, F49 pinned; AL: update main renames the component (`change-property` takes `:name`); AM: update main of a swap inside a group, setup `grouped-component-with-copy`, F16 pinned; AN: flex child margin override through main edit, reset and update main, setup `flex-component-with-copy`; `change-property` takes `:margin`, which the interpreter sends as `dwsl/update-layout-child`; AO: a copy dropped into a grid cell of a main (`nest-copy` with `:cell`, sent as `dwt/move-shapes-to-frame`), F41 pinned; AP: a library main's middle child removal reaches a copy in another file (in one file, deleting a main child deletes the copies' children itself, so sync never meets the copy child), setup `cross-file-component-with-many-children`; AQ: main change reaches a copy nested in a sub-board, setup `component-nested-in-a-sub-board`; AR: variant property edits keep a member's copies as they are, then a switch finds its member by the edited properties; AS: an added variant joins the set and is a switch target; AT..AX, frontend only: transform into a variant, combine, rename a variant (F6 pinned: the transaction keeps the container commit's undo group, the copies' sync takes the main renames'), rename in layers + remove empty properties + member error, the shortcuts that add members; AY: a border radius token on a main reaches untouched copies and its removal too, F55 pinned; AZ: a nested copy pasted out of its main keeps the main's overrides) are the flagship pattern — read them before
 writing a new sweep.
 
 **Scenario lineage model** (behind the sweeps): scenario ops track named component lineages as
