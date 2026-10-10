@@ -18,7 +18,7 @@ export interface TestJvmOptions {
     startTimeoutMs: number;
     /** spawns the JVM; replaced in tests */
     spawn?: (command: string, args: string[], options: SpawnOptions) => ChildProcess;
-    /** whether a process exists; replaced in tests */
+    /** whether `pid` is a live test JVM; replaced in tests */
     isAlive?: (pid: number) => boolean;
     /** sends a signal to a process; replaced in tests */
     kill?: (pid: number, signal: NodeJS.Signals) => void;
@@ -232,11 +232,15 @@ export class TestJvm {
     }
 }
 
+/**
+ * Whether `pid` is a live process running the test JVM script. The pid file outlives a JVM killed with KILL, and
+ * the pid may since belong to another process, which must be neither adopted nor signalled.
+ */
 function defaultIsAlive(pid: number): boolean {
     try {
-        process.kill(pid, 0);
-        return true;
-    } catch (error) {
-        return (error as NodeJS.ErrnoException).code === "EPERM";
+        const argv = fs.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0");
+        return argv.some((arg) => arg.endsWith(TESTJVM_SCRIPT));
+    } catch {
+        return false;
     }
 }
