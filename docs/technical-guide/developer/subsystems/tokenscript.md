@@ -184,8 +184,10 @@ and a mix with the proportions of a real design system) and size.
 Real data can be added with `--input name=file.json`, a JSON object of
 token name to `{type, value}`. Every engine measures a full build and,
 where supported, an incremental update of the literal token with the most
-dependents. Node engines run each fixture in a fresh process so the cold
-first build is meaningful; the JVM runs all fixtures in one process.
+dependents. The port also measures `parse`: lexing and parsing every
+value without the parse cache, the parsing share of a first build. Node
+engines run each fixture in a fresh process so the cold first build is
+meaningful; the JVM runs all fixtures in one process.
 
 Results are written to `common/target/tokenscript-bench/<timestamp>/`
 (`results.json`, `report.md`). `report.mjs <results.json>` re-renders a
@@ -198,4 +200,16 @@ shows the earlier numbers of the re-run engines as "before" columns:
 ```bash
 node common/scripts/tokenscript-bench/bench.mjs --engines cljs,jvm \
   --baseline common/target/tokenscript-bench/<earlier>/results.json
+```
+
+The port must lex and parse identically on both platforms. The `parity`
+command of the benchmark engine writes the tokens, parse results and
+errors of a list of input strings (an EDN vector) in every mode in a
+platform neutral form; the JVM and node outputs must be byte identical:
+
+```bash
+cd common
+clojure -M:dev -m tokenscript-bench parity inputs.edn jvm.edn
+node target/tokenscript-bench/engine.cjs parity inputs.edn node.edn
+cmp jvm.edn node.edn
 ```
