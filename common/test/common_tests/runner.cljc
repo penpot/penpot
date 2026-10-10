@@ -96,6 +96,7 @@
    [common-tests.types.color-test]
    [common-tests.types.components-test]
    [common-tests.types.container-test]
+   [common-tests.types.file-test]
    [common-tests.types.fill-test]
    [common-tests.types.font-test]
    [common-tests.types.modifiers-test]
@@ -203,6 +204,7 @@
    'common-tests.types.color-test
    'common-tests.types.components-test
    'common-tests.types.container-test
+   'common-tests.types.file-test
    'common-tests.types.fill-test
    'common-tests.types.font-test
    'common-tests.types.modifiers-test

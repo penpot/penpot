@@ -32,6 +32,9 @@
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-edit-watchers-test]
    [frontend-tests.data.workspace-interactions-test]
+   [frontend-tests.data.workspace-libraries-test]
+   [frontend-tests.data.workspace-library-links-test]
+   [frontend-tests.data.workspace-library-updates-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
    [frontend-tests.data.workspace-pages-test]
@@ -194,6 +197,9 @@
    'frontend-tests.data.workspace-context-menu-test
    'frontend-tests.data.workspace-edit-watchers-test
    'frontend-tests.data.workspace-interactions-test
+   'frontend-tests.data.workspace-libraries-test
+   'frontend-tests.data.workspace-library-links-test
+   'frontend-tests.data.workspace-library-updates-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
    'frontend-tests.data.workspace-pages-test
