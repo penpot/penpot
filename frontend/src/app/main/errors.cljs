@@ -157,7 +157,7 @@
       (println "Context:")
       (println "--------------------")
       (println "Timestamp:" (ct/format-inst (ct/now) :rfc1123))
-      (println "Hint:     " (or (:hint data) (ex-message cause) "--"))
+      (println "Hint:     " (or (ex/get-hint cause) "--"))
       (println "Prof ID:  " (str (or profile-id "--")))
       (println "Team ID:  " (str (or team-id "--")))
       (when-let [file-id (or (:file-id data) file-id)]
