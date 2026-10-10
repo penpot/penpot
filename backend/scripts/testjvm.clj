@@ -1,5 +1,5 @@
 ;; testjvm.clj: the persistent test JVM behind the MCP server's
-;; `clojure_test` and `clojure_eval` tools (mcp/packages/server, TestJvm).
+;; `clj_test` and `clj_eval` tools (mcp/packages/server, TestJvm).
 ;;
 ;; One JVM on the backend's `:dev:test` classpath stays up between test runs.
 ;; Each run first reloads what changed on disk, then runs kaocha with the
@@ -314,7 +314,7 @@
   clj-reload prints a failed load as a full `#error` map, about 85 lines
   of stack trace at any `:output` level. The caller prints the message and
   the cause in one line, so the trace is cut here. A reload with nothing
-  to do prints nothing, because every `clojure_eval` in this JVM reloads
+  to do prints nothing, because every `clj_eval` in this JVM reloads
   first."
   []
   (let [sw  (java.io.StringWriter.)
@@ -354,7 +354,7 @@
          msg)))
 
 (defn reload-cli
-  "`reload!` for the reload before each `clojure_eval` in this JVM (with
+  "`reload!` for the reload before each `clj_eval` in this JVM (with
   `:quiet?`) and for an explicit reload. Takes the run lock until
   `:deadline-ms`. Prints one line naming the reloaded namespaces (unless
   `:quiet?`) or the failure; returns 0, 2 reload failed, 4 deadline, 5

@@ -70,7 +70,7 @@ export interface ClojureSettings {
     callLog?: string;
 }
 
-/** Parameters of a test run, as the clojure_test tool takes them. */
+/** Parameters of a test run, as the clj_test tool takes them. */
 export interface TestParams {
     ids?: string[];
     seed?: number;
@@ -78,7 +78,7 @@ export interface TestParams {
     restart?: boolean;
 }
 
-/** Parameters of an evaluation, as the clojure_eval tool takes them. */
+/** Parameters of an evaluation, as the clj_eval tool takes them. */
 export interface EvalParams {
     code?: string;
     file?: string;
@@ -101,7 +101,7 @@ interface Attempt {
 }
 
 /**
- * The machinery behind `clojure_test` and `clojure_eval`: the test JVM's lifecycle, the nREPL clients of the
+ * The machinery behind `clj_test` and `clj_eval`: the test JVM's lifecycle, the nREPL clients of the
  * test JVM and of the running backend, and the shaping of what they print.
  *
  * Recovery, once per call: a test JVM that is not running is started and the call runs again; a test JVM that
@@ -199,7 +199,7 @@ export class ClojureRuntime {
                         restartedJvm: false,
                         failure,
                     };
-                    return this.finish("clojure_test", attempt, failure, failure.body, t0, { what });
+                    return this.finish("clj_test", attempt, failure, failure.body, t0, { what });
                 }
                 asked.push("Restarted the test JVM first, as asked.");
             }
@@ -207,12 +207,12 @@ export class ClojureRuntime {
             attempt.did.unshift(...asked);
             const { outcome } = attempt;
             if (attempt.failure) {
-                return this.finish("clojure_test", attempt, attempt.failure, attempt.failure.body, t0, { what });
+                return this.finish("clj_test", attempt, attempt.failure, attempt.failure.body, t0, { what });
             }
             const verdict = testVerdict(outcome);
             let body = shapeRun(outcome.out);
             if (verdict.label === "JVM DIED") body = [body, this.jvmLog()].filter(Boolean).join("\n\n");
-            return this.finish("clojure_test", attempt, verdict, body, t0, { what, order: runOrder(outcome.out) });
+            return this.finish("clj_test", attempt, verdict, body, t0, { what, order: runOrder(outcome.out) });
         } finally {
             stopProgress();
             context.signal?.removeEventListener("abort", onAbort);
@@ -239,7 +239,7 @@ export class ClojureRuntime {
                 return refusal(
                     `Not evaluated: ${restart[0]} restarts the system inside the JVM, which can park the msgbus io-loop and leave graph sync and websockets dead until a process restart. ` +
                         'To pick up an edited file, pass it as file with target "backend". To restart the backend, restart its process in the backend window of the devenv\'s tmux session. ' +
-                        "To restart the test JVM: clojure_test with restart: true."
+                        "To restart the test JVM: clj_test with restart: true."
                 );
             }
             const problem = delimiterProblem(code);
@@ -312,14 +312,14 @@ export class ClojureRuntime {
                     ? await this.attempt(call, context)
                     : { outcome: await call(), did: [], startedJvm: false, restartedJvm: false };
             if (attempt.failure) {
-                return this.finish("clojure_eval", attempt, attempt.failure, attempt.failure.body, t0, { target });
+                return this.finish("clj_eval", attempt, attempt.failure, attempt.failure.body, t0, { target });
             }
             const verdict = evalVerdict(attempt.outcome, target);
             let body = capEval(attempt.outcome.out);
             if (verdict.label === "JVM DIED" && target === "test") {
                 body = [body, this.jvmLog()].filter(Boolean).join("\n\n");
             }
-            return this.finish("clojure_eval", attempt, verdict, body, t0, { target });
+            return this.finish("clj_eval", attempt, verdict, body, t0, { target });
         } finally {
             stopProgress();
             this.busySessions.delete(session);

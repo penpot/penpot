@@ -57,7 +57,7 @@ export class ClojureEvalTool extends Tool<ClojureEvalArgs> {
     }
 
     public getToolName(): string {
-        return "clojure_eval";
+        return "clj_eval";
     }
 
     public getToolDescription(): string {

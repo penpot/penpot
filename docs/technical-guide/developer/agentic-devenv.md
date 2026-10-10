@@ -74,9 +74,9 @@ with a comprehensive toolbox for Penpot development:
   enabling the agent to
   * execute JavaScript code in the frontend (using the plugin API),
   * execute ClojureScript code in the frontend (REPL),
-  * run backend tests in a persistent test JVM (`clojure_test`), where a focused run takes under a second
+  * run backend tests in a persistent test JVM (`clj_test`), where a focused run takes under a second
     instead of the 16 to 18 s of a cold `clojure -M:dev:test`,
-  * evaluate Clojure in that test JVM or in the running backend (`clojure_eval`),
+  * evaluate Clojure in that test JVM or in the running backend (`clj_eval`),
   * import .penpot files for reproducing issues,
   * export design elements as images, and more.
 

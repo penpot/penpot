@@ -52,7 +52,7 @@ export class ClojureTestTool extends Tool<ClojureTestArgs> {
     }
 
     public getToolName(): string {
-        return "clojure_test";
+        return "clj_test";
     }
 
     public getToolDescription(): string {
@@ -68,7 +68,7 @@ export class ClojureTestTool extends Tool<ClojureTestArgs> {
                 "RELOAD FAILED (2): a file did not load and no test ran. JVM DIED (3): the JVM's log tail follows. BUSY (4): another call holds the test JVM. " +
                 "TIMEOUT (4): results so far follow. CANCELLED (4). ERROR: the line says why. A stopped JVM is started, and a stale one restarted, once per call.",
             "For a whole-suite run before a commit, run the suite cold as CI does, in the devenv container: `cd ~/penpot && scripts/ci --test backend`. " +
-                "It shares the test database with this JVM, so not while a clojure_test call runs.",
+                "It shares the test database with this JVM, so not while a clj_test call runs.",
         ].join("\n\n");
     }
 

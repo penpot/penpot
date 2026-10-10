@@ -141,7 +141,7 @@ afterEach(async () => {
     fs.rmSync(repoRoot, { recursive: true, force: true });
 });
 
-describe("clojure_test", () => {
+describe("clj_test", () => {
     test("a passing run reports the verdict, the exit status, and the seed first", async () => {
         await jvm.listen();
         jvm.handle = (_msg, reply) => {
@@ -228,7 +228,7 @@ describe("clojure_test", () => {
     });
 });
 
-describe("clojure_eval", () => {
+describe("clj_eval", () => {
     test("an in-JVM restart is refused before it reaches the JVM", async () => {
         await jvm.listen();
         for (const code of ["(app.main/restart)", "(do (restart))", "(repl/refresh-all)", "(user/restart!)"]) {

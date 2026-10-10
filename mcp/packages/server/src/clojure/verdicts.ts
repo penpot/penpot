@@ -1,5 +1,5 @@
 /**
- * The verdict of a `clojure_test` or `clojure_eval` call, from its exit status and the lines the test JVM
+ * The verdict of a `clj_test` or `clj_eval` call, from its exit status and the lines the test JVM
  * printed.
  *
  * Exit status, shared with `scripts/testjvm.clj`: 0 pass or evaluated, 1 a test failed, no test matched, or the
