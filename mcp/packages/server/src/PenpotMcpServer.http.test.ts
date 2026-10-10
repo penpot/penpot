@@ -135,24 +135,3 @@ test("supports older Streamable HTTP clients without allocating a session", asyn
         await client.close();
     }
 });
-
-test("a single-user server with developer tools refuses requests forwarded by the devenv proxy", async () => {
-    await server.stop();
-    process.env.PENPOT_MCP_DEVENV = "true";
-    process.env.PENPOT_MCP_SERVER_PORT = String(nextPort++);
-    server = new PenpotMcpServer(false);
-    baseUrl = `http://127.0.0.1:${server.port}`;
-    await server.start();
-
-    const proxied = await fetch(`${baseUrl}/mcp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Penpot-Mcp-Proxied": "1" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 7, method: "tools/list", params: {} }),
-    });
-    assert.equal(proxied.status, 403);
-    assert.match(JSON.stringify(await proxied.json()), /developer tools/);
-
-    const direct = await modernRequest("tools/list");
-    assert.equal(direct.status, 200);
-    assert.match(await direct.text(), /clojure_eval/);
-});

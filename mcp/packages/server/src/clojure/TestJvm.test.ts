@@ -1,32 +1,41 @@
 import assert from "node:assert/strict";
 import { type ChildProcess, spawn } from "node:child_process";
+import { once } from "node:events";
 import { after, test } from "node:test";
 import { isTestJvmProcess } from "./TestJvm";
 
+const SCRIPT = "/home/penpot/penpot/backend/scripts/testjvm.clj";
 const children: ChildProcess[] = [];
 
-/** A child process that stays alive until `after` kills it; the timer runs in the child, and no test waits on it. */
-function child(...args: string[]): number {
-    const proc = spawn(process.execPath, ["-e", "setTimeout(() => {}, 30000)", ...args], { stdio: "ignore" });
+/** A child process that reads its stdin, so it stays alive until `after` closes the pipe. */
+function child(...args: string[]): ChildProcess {
+    const proc = spawn(process.execPath, ["-e", "process.stdin.resume()", ...args], {
+        stdio: ["pipe", "ignore", "ignore"],
+    });
     children.push(proc);
-    assert.ok(proc.pid);
-    return proc.pid;
+    return proc;
 }
 
 after(() => {
-    for (const proc of children) proc.kill("SIGKILL");
+    for (const proc of children) proc.stdin?.end();
 });
 
 test("a live process that runs another program is not the test JVM", () => {
-    assert.equal(isTestJvmProcess(child()), false);
+    assert.equal(isTestJvmProcess(child().pid!, SCRIPT), false);
 });
 
-test("a live process whose arguments name the test JVM script is the test JVM", () => {
-    assert.equal(isTestJvmProcess(child("-i", "/home/penpot/penpot/backend/scripts/testjvm.clj")), true);
+test("a live process whose arguments name this tree's script is the test JVM", () => {
+    assert.equal(isTestJvmProcess(child("-i", SCRIPT).pid!, SCRIPT), true);
+});
+
+test("a test JVM of another tree is not this tree's test JVM", () => {
+    const other = child("-i", "/home/penpot/other-tree/backend/scripts/testjvm.clj");
+    assert.equal(isTestJvmProcess(other.pid!, SCRIPT), false);
 });
 
 test("a pid with no process is not the test JVM", async () => {
-    const proc = spawn(process.execPath, ["-e", "", "scripts/testjvm.clj"], { stdio: "ignore" });
-    await new Promise((resolve) => proc.on("exit", resolve));
-    assert.equal(isTestJvmProcess(proc.pid!), false);
+    const proc = child("-i", SCRIPT);
+    proc.stdin!.end();
+    await once(proc, "exit");
+    assert.equal(isTestJvmProcess(proc.pid!, SCRIPT), false);
 });
