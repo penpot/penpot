@@ -138,10 +138,8 @@
     (db/tx-run! cfg
                 (fn [cfg]
                   (doseq [file-id (:file-ids result)]
-                    (audit/submit-create-event cfg params "create-file"
-                                               {:id file-id
-                                                :project-id project-id
-                                                :team-id (:id team)}))))
+                    (audit/submit-file-created-event cfg params file-id
+                                                     {:team-id (:id team)}))))
 
     result))
 

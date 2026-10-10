@@ -157,7 +157,11 @@
             (audit/submit-create-event cfg params "create-file"
                                        {:id (:id file)
                                         :project-id (:project-id file)
-                                        :team-id (:team-id project)})))
+                                        :team-id (:team-id project)
+                                        :name (:name file)
+                                        :created-at (:created-at file)
+                                        :modified-at (:modified-at file)
+                                        :revn (:revn file)})))
 
         project))))
 
@@ -454,15 +458,12 @@
                               {:id project-id}
                               {::db/return-keys false})
 
-                  (let [props (assoc (audit/clean-props params)
-                                     :team-id (:id team))]
-                    (doseq [file-id (:file-ids result)]
-                      (let [props (assoc props :id file-id)
-                            event (-> (audit/event-from-rpc-params params)
-                                      (assoc :profile-id profile-id)
-                                      (assoc :name "create-file")
-                                      (assoc :props props))]
-                        (audit/submit cfg event))))))
+                  (doseq [file-id (:file-ids result)]
+                    (audit/submit-file-created-event
+                     cfg
+                     (assoc params :profile-id profile-id)
+                     file-id
+                     {:team-id (:id team)}))))
 
     result))
 

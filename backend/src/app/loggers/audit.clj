@@ -531,6 +531,20 @@
                 (assoc :name event-name)
                 (assoc :props (d/without-nils props))))))
 
+(def ^:private sql:get-file-event-columns
+  "SELECT id, name, project_id, created_at, modified_at, revn
+     FROM file WHERE id = ?;")
+
+(defn submit-file-created-event
+  "Emit a `create-file` event for a file born inside a bulk operation,
+  with the same prop shape as the `create-file` command event. Only
+  the file id is needed: the light columns are read back (no data
+  blob), so projections that key on name, revn or timestamps work.
+  `extra` carries what the row lacks (the team id)."
+  [cfg params file-id extra]
+  (when-let [row (db/exec-one! cfg [sql:get-file-event-columns file-id])]
+    (submit-create-event cfg params "create-file" (merge row extra))))
+
 (defn insert
   "Submit audit event to the collector, intended to be used only from
   command line helpers because this skips all webhooks and telemetry

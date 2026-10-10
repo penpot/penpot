@@ -1099,6 +1099,7 @@
                       :name (:name file)
                       :created-at (:created-at file)
                       :modified-at (:modified-at file)
+                      :deleted-at (:deleted-at file)
                       :team-id (:id team)}})))
 
 (sv/defmethod ::delete-file

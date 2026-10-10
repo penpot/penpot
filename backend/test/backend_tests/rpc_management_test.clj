@@ -672,21 +672,22 @@
   ;; The per-file `create-file` events are built by hand, so they do not pass
   ;; through the generic resolver: the command must copy the team id itself.
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (let [prof    (th/create-profile* 1 {:is-active true})
-          team    (th/create-team* 1 {:profile-id (:id prof)})
-          project (th/create-project* 1 {:profile-id (:id prof)
-                                         :team-id (:id team)})
-          out     (th/command! {::th/type :clone-template
-                                ::rpc/profile-id (:id prof)
-                                :project-id (:id project)
-                                :template-id "test"})]
-      (t/is (th/success? out))
-      (th/consume-sse (:result out))
-      (let [events (->> (:call-args-list @audit-mock)
-                        (map second)
-                        (filter #(= "create-file" (:name %))))]
-        (t/is (seq events))
-        (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events))))))
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [prof    (th/create-profile* 1 {:is-active true})
+            team    (th/create-team* 1 {:profile-id (:id prof)})
+            project (th/create-project* 1 {:profile-id (:id prof)
+                                           :team-id (:id team)})
+            out     (th/command! {::th/type :clone-template
+                                  ::rpc/profile-id (:id prof)
+                                  :project-id (:id project)
+                                  :template-id "test"})]
+        (t/is (th/success? out))
+        (th/consume-sse (:result out))
+        (let [events (->> (:call-args-list @audit-mock)
+                          (map second)
+                          (filter #(= "create-file" (:name %))))]
+          (t/is (seq events))
+          (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events)))))))
 
 (t/deftest duplicate-project-audit-events-carry-entity-ids
   ;; The duplicated project and files are created by internal calls, so the
