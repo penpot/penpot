@@ -30,9 +30,10 @@ services:
       # Storybook
       - ${PENPOT_STORYBOOK_PORT}:3451
 
-      # MCP
-      - ${PENPOT_MCP_SERVER_PORT}:4401
-      - ${PENPOT_MCP_REPL_PORT}:4403
+      # MCP. Loopback only: in single-user mode the server exposes developer
+      # tools that run code in the browser, the backend JVM, and a test JVM.
+      - 127.0.0.1:${PENPOT_MCP_SERVER_PORT}:4401
+      - 127.0.0.1:${PENPOT_MCP_REPL_PORT}:4403
 
       # Serena MCP server (agentic mode only). Internal ports fixed by Serena.
       - ${SERENA_EXTERNAL_PORT}:14281
@@ -95,6 +96,9 @@ services:
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - PENPOT_TENANT=${PENPOT_TENANT}
       - PENPOT_TMUX_ATTACH=${PENPOT_TMUX_ATTACH}
+      # The host path of the bind mount above, so the MCP server can read
+      # files that an agent names by their host path.
+      - PENPOT_SOURCE_PATH=${PENPOT_SOURCE_PATH}
 
       # Agentic devenv: set to a PyPI release version/tag to update Serena on startup,
       # leave empty to skip update and use the version baked into the image.

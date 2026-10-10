@@ -1,4 +1,4 @@
-import { createMcpHandler, McpServer, type McpHttpHandler } from "@modelcontextprotocol/server";
+import { createMcpHandler, McpServer, type McpHttpHandler, type ServerContext } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import type { Server as HttpServer } from "node:http";
 import type { Express } from "express";
@@ -9,7 +9,7 @@ import { PluginBridge } from "./PluginBridge";
 import { RedisBridge } from "./RedisBridge";
 import { ConfigurationLoader } from "./ConfigurationLoader";
 import { createLogger } from "./logger";
-import { Tool } from "./Tool";
+import { Tool, type ToolCallContext } from "./Tool";
 import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
 import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
@@ -22,12 +22,17 @@ import { ReadTaigaIssueTool } from "./tools/ReadTaigaIssueTool";
 import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
+import { ClojureRuntime } from "./clojure/ClojureRuntime";
+import { ClojureTestTool } from "./tools/ClojureTestTool";
+import { ClojureEvalTool } from "./tools/ClojureEvalTool";
 
 /**
  * Session context for request-scoped data.
  */
 export interface SessionContext {
     userToken?: string;
+    /** fires on the client's `notifications/cancelled` for this tool call (single-user mode only) */
+    cancelSignal?: AbortSignal;
 }
 
 /**
@@ -113,6 +118,10 @@ export class PenpotMcpServer {
     private readonly mcpHandler: McpHttpHandler;
     public readonly pluginBridge: PluginBridge;
     private readonly replServer: ReplServer | null;
+    /** the test JVM and nREPL clients behind the Clojure tools; null without developer tools */
+    private clojureRuntime: ClojureRuntime | null = null;
+    /** single-user mode: tool calls in flight by JSON-RPC id, for `notifications/cancelled` */
+    private readonly inflightCalls = new Map<string, Set<AbortController>>();
     private apiDocs: ApiDocs;
     private readonly penpotHighLevelOverview: string;
     private readonly connectionInstructions: string;
@@ -268,6 +277,9 @@ export class PenpotMcpServer {
             toolInstances.push(new CljsCompilerOutputTool(this, nreplClient));
             toolInstances.push(new CljCheckParentheses(this));
             toolInstances.push(new ReadTaigaIssueTool(this));
+            this.clojureRuntime = ClojureRuntime.fromEnv(process.env);
+            toolInstances.push(new ClojureTestTool(this, this.clojureRuntime));
+            toolInstances.push(new ClojureEvalTool(this, this.clojureRuntime));
         }
 
         return toolInstances.map((instance) => {
@@ -289,10 +301,47 @@ export class PenpotMcpServer {
         );
 
         for (const tool of this.tools) {
-            server.registerTool(tool.name, tool.config, async (args) => tool.instance.execute(args));
+            server.registerTool(tool.name, tool.config, async (args, ctx) =>
+                tool.instance.execute(args, this.toolCallContext(ctx))
+            );
         }
 
         return server;
+    }
+
+    /**
+     * Indicates whether the developer tools are registered: single-user devenv mode.
+     */
+    public hasDeveloperTools(): boolean {
+        return shouldRegisterDeveloperTools(this.isDevEnv(), this.isMultiUserMode());
+    }
+
+    /**
+     * The parts of the SDK's request context that tools use: the cancellation signal, the session, and progress
+     * notifications, which go out only when the client sent a progress token.
+     *
+     * The SDK's own signal fires when the client drops the HTTP request. A `notifications/cancelled` arrives as a
+     * request of its own, which a stateless server cannot match to the call, so the HTTP endpoint matches it
+     * (`cancelSignal`).
+     */
+    private toolCallContext(ctx: ServerContext): ToolCallContext {
+        const token = ctx.mcpReq._meta?.progressToken;
+        const cancel = this.getSessionContext()?.cancelSignal;
+        return {
+            signal: cancel ? AbortSignal.any([ctx.mcpReq.signal, cancel]) : ctx.mcpReq.signal,
+            sessionId: ctx.sessionId,
+            progress:
+                token === undefined
+                    ? undefined
+                    : (progress, message) => {
+                          void ctx.mcpReq
+                              .notify({
+                                  method: "notifications/progress",
+                                  params: { progressToken: token, progress, message },
+                              })
+                              .catch(() => undefined);
+                      },
+        };
     }
 
     private setupHttpEndpoints(): void {
@@ -302,7 +351,47 @@ export class PenpotMcpServer {
             this.logger.info(
                 `Received MCP request: method=${req.body?.method ?? "<none>"}; userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
             );
-            await this.sessionContext.run({ userToken }, () => handleMcpRequest(req, res, req.body));
+            // The devenv's nginx marks the requests it forwards, and it listens on every network interface. The
+            // developer tools run code in the browser and in JVMs, so they are served on the loopback port only.
+            if (this.hasDeveloperTools() && req.get("X-Penpot-Mcp-Proxied") !== undefined) {
+                res.status(403).json({
+                    jsonrpc: "2.0",
+                    id: req.body?.id ?? null,
+                    error: {
+                        code: -32001,
+                        message: `This server has developer tools, which it serves only on its own port (${this.port}), not through a proxy.`,
+                    },
+                });
+                return;
+            }
+            if (this.isMultiUserMode()) {
+                await this.sessionContext.run({ userToken }, () => handleMcpRequest(req, res, req.body));
+                return;
+            }
+            // Single-user mode: one developer's clients, so a cancel names a call by its JSON-RPC id alone. An id
+            // that two calls share at once is ambiguous, and such a cancel is ignored.
+            const body = req.body as { method?: unknown; id?: unknown; params?: { requestId?: unknown } } | undefined;
+            if (body?.method === "notifications/cancelled" && body.params?.requestId !== undefined) {
+                const calls = this.inflightCalls.get(String(body.params.requestId));
+                if (calls?.size === 1) for (const call of calls) call.abort();
+            }
+            if (body?.method !== "tools/call" || body.id === undefined) {
+                await this.sessionContext.run({ userToken }, () => handleMcpRequest(req, res, req.body));
+                return;
+            }
+            const id = String(body.id);
+            const controller = new AbortController();
+            const calls = this.inflightCalls.get(id) ?? new Set<AbortController>();
+            calls.add(controller);
+            this.inflightCalls.set(id, calls);
+            try {
+                await this.sessionContext.run({ userToken, cancelSignal: controller.signal }, () =>
+                    handleMcpRequest(req, res, req.body)
+                );
+            } finally {
+                calls.delete(controller);
+                if (calls.size === 0) this.inflightCalls.delete(id);
+            }
         });
     }
 
@@ -360,6 +449,7 @@ export class PenpotMcpServer {
         if (this.replServer) {
             await this.replServer.stop();
         }
+        await this.clojureRuntime?.close();
         this.logger.info("Penpot MCP Server stopped");
     }
 }
