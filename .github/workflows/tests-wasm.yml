@@ -60,3 +60,13 @@ jobs:
         working-directory: ./render-wasm
         run: |
           ./test
+
+      - name: Build
+        working-directory: ./render-wasm
+        run: |
+          NODE_ENV=production ./build frontend
+
+      - name: Check no invoke_*V in JS glue
+        working-directory: ./render-wasm
+        run: |
+          ./check-no-invoke-v
