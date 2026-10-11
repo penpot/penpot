@@ -1705,10 +1705,6 @@ msgstr ""
 "Het profiel dat je uitnodigt, heeft e-mails gedempt (spammeldingen of hoge "
 "bounces)."
 
-#: src/app/main/errors.cljs:976
-msgid "errors.migration-in-progress"
-msgstr "Migratie aan de gang"
-
 #: src/app/main/errors.cljs:869
 msgid "errors.only-creator-can-lock"
 msgstr "Alleen de maker van de versie kan het vergrendelen"

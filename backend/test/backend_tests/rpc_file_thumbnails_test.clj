@@ -62,7 +62,6 @@
                    :id shid
                    :parent-id uuid/zero
                    :frame-id uuid/zero
-                   :components-v2 true
                    :obj (cts/setup-shape
                          {:id shid
                           :name "Artboard"

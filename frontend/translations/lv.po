@@ -1155,10 +1155,6 @@ msgstr ""
 "Uzaicinātajam profilam ir apklusināta e-pasta saņemšana (ziņojumi par "
 "surogātpastu vai daudz atlēcienu)."
 
-#: src/app/main/errors.cljs:976
-msgid "errors.migration-in-progress"
-msgstr "Notiek pārcelšana"
-
 #: src/app/main/errors.cljs:869
 msgid "errors.only-creator-can-lock"
 msgstr "Tikai versijas izveidotājs var to aizslēgt"

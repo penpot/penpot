@@ -233,7 +233,7 @@
        (contains? visited (:id shape))
        nil
 
-       (nil? (:parent-id shape))  ; This occurs in the root of components v1
+       (nil? (:parent-id shape))  ; A shape without parent ends the walk
        shape
 
        (ctk/main-instance? shape)

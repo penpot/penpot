@@ -1603,10 +1603,6 @@ msgstr "有効な画像ではないようです。"
 msgid "errors.member-is-muted"
 msgstr "招待しようとしているユーザーは、メールがミュートされています（スパム報告または配信エラーの多発）。"
 
-#: src/app/main/errors.cljs:976
-msgid "errors.migration-in-progress"
-msgstr "移行中です"
-
 #: src/app/main/errors.cljs:869
 msgid "errors.only-creator-can-lock"
 msgstr "このバージョンをロックできるのは作成者のみです"

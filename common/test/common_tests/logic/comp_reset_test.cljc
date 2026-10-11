@@ -187,7 +187,7 @@
                                     page
                                     (:objects page)
                                     #{(:id copy-child)}
-                                    {:components-v2 true})
+                                    {})
 
         file-mdf  (thf/apply-changes file changes)
         page-mdf  (thf/current-page file-mdf)

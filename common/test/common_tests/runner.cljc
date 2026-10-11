@@ -20,6 +20,7 @@
    [common-tests.data-macros-test]
    [common-tests.data-test]
    [common-tests.exceptions-test]
+   [common-tests.features-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
@@ -153,6 +154,7 @@
    'common-tests.data-macros-test
    'common-tests.data-test
    'common-tests.exceptions-test
+   'common-tests.features-test
    'common-tests.files-builder-test
    #?(:cljs 'common-tests.fonts-test)
    #?(:cljs 'common-tests.render-wasm.modifiers-test)

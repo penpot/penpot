@@ -1672,10 +1672,6 @@ msgstr ""
 "پروفایلی که دعوت می‌کنید ارسال ایمیل برایش غیرفعال شده است (گزارش‌های "
 "هرزنامه یا برگشت‌های زیاد)."
 
-#: src/app/main/errors.cljs:976
-msgid "errors.migration-in-progress"
-msgstr "مهاجرت در حال انجام است"
-
 #: src/app/main/errors.cljs:869
 msgid "errors.only-creator-can-lock"
 msgstr "فقط ایجادکنندهٔ نسخه می‌تواند آن را قفل کند"

@@ -1688,10 +1688,6 @@ msgstr ""
 "Den profil du bjuder in har e-postmeddelanden som är avstängda "
 "(skräppostrapporter eller höga studsar)."
 
-#: src/app/main/errors.cljs:976
-msgid "errors.migration-in-progress"
-msgstr "Migrering pågår"
-
 #: src/app/main/errors.cljs:869
 msgid "errors.only-creator-can-lock"
 msgstr "Endast skaparen av versionen kan låsa den"

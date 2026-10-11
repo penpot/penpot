@@ -103,8 +103,7 @@
     (t/testing "query single file without users"
       (let [data {::th/type :get-file
                   ::rpc/profile-id (:id prof)
-                  :id file-id
-                  :components-v2 true}
+                  :id file-id}
             out  (th/command! data)]
 
         ;; (th/print-result! out)
@@ -129,8 +128,7 @@
     (t/testing "query single file after delete"
       (let [data {::th/type :get-file
                   ::rpc/profile-id (:id prof)
-                  :id file-id
-                  :components-v2 true}
+                  :id file-id}
             out (th/command! data)]
         (let [error      (:error out)
               error-data (ex-data error)]
@@ -218,7 +216,6 @@
        :id shape-id
        :parent-id uuid/zero
        :frame-id uuid/zero
-       :components-v2 true
        :obj (cts/setup-shape
              {:id shape-id
               :name "image"
@@ -318,7 +315,6 @@
          :id shid
          :parent-id uuid/zero
          :frame-id uuid/zero
-         :components-v2 true
          :obj (cts/setup-shape
                {:id shid
                 :name "image"
@@ -482,7 +478,6 @@
          :id s1-shid
          :parent-id uuid/zero
          :frame-id uuid/zero
-         :components-v2 true
          :obj (cts/setup-shape
                {:id s1-shid
                 :name "image"
@@ -496,7 +491,6 @@
          :id s2-shid
          :parent-id uuid/zero
          :frame-id uuid/zero
-         :components-v2 true
          :obj (cts/setup-shape
                {:id s2-shid
                 :name "image"
@@ -509,7 +503,6 @@
          :id t-shid
          :parent-id uuid/zero
          :frame-id uuid/zero
-         :components-v2 true
          :obj (cts/setup-shape
                {:id t-shid
                 :name "text"
@@ -1298,7 +1291,6 @@
                       :profile-id (:id prof)
                       :revn 0
                       :vern 0
-                      :components-v2 true
                       :changes changes})
 
     (t/testing "RPC page query (rendering purposes)"
@@ -1790,7 +1782,6 @@
        :id s-id-1
        :parent-id uuid/zero
        :frame-id uuid/zero
-       :components-v2 true
        :obj (cts/setup-shape
              {:id s-id-1
               :name "Board"
@@ -1807,7 +1798,6 @@
        :id s-id-2
        :parent-id uuid/zero
        :frame-id uuid/zero
-       :components-v2 true
        :obj (cts/setup-shape
              {:id s-id-2
               :name "Board"
@@ -1951,7 +1941,6 @@
        :id s-id-1
        :parent-id uuid/zero
        :frame-id uuid/zero
-       :components-v2 true
        :obj (cts/setup-shape
              {:id s-id-1
               :name "Board"
@@ -1982,7 +1971,6 @@
        :id s-id-2
        :parent-id uuid/zero
        :frame-id uuid/zero
-       :components-v2 true
        :obj (cts/setup-shape
              {:id s-id-2
               :name "Board"
@@ -2151,7 +2139,6 @@
        :id s-id-1
        :parent-id uuid/zero
        :frame-id uuid/zero
-       :components-v2 true
        :obj (cts/setup-shape
              {:id s-id-1
               :name "Board"
@@ -2183,7 +2170,6 @@
        :id s-id-2
        :parent-id uuid/zero
        :frame-id uuid/zero
-       :components-v2 true
        :obj (cts/setup-shape
              {:id s-id-2
               :name "Board"
@@ -2285,7 +2271,6 @@
            :id main-id
            :parent-id uuid/zero
            :frame-id uuid/zero
-           :components-v2 true
            :obj (cts/setup-shape
                  {:id main-id
                   :name "Board"
@@ -2315,7 +2300,6 @@
            :id inst-id
            :parent-id uuid/zero
            :frame-id uuid/zero
-           :components-v2 true
            :obj (cts/setup-shape
                  {:id inst-id
                   :name "Board"
@@ -2747,7 +2731,6 @@
        :id frame-id
        :parent-id uuid/zero
        :frame-id uuid/zero
-       :components-v2 true
        :obj (cts/setup-shape
              {:id frame-id
               :name "frame"
@@ -2759,7 +2742,6 @@
        :id rect-id
        :parent-id frame-id
        :frame-id frame-id
-       :components-v2 true
        :obj (cts/setup-shape
              {:id rect-id
               :name "rect"
