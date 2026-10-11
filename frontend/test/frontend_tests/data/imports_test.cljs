@@ -307,6 +307,39 @@
                      {:libraries-resolution {}}]
                     @seen))))))))
 
+(t/deftest ^:async a-components-v1-file-fails-with-its-own-message
+  (let [ws-stream (rx/subject)
+        calls     (atom [])
+        rows      (atom {})
+        seen      (atom [])
+        target    (entry :name "Old")]
+
+    (await
+     (mock/with-mocks*
+       {st/state (atom {:ws-conn ws-stream})
+        http/send! (slurp-stub ::blob)
+        uploads/upload-blob-chunked (upload-stub (uuid/next))
+        rp/cmd! (fake-server calls rows (fn [job-id] (job job-id "running")))
+        ws/get-rcv-stream (ws-stub ws-stream)}
+
+       (let [done   (hva/observe (imp/import-files {:project-id project-id
+                                                    :entries    [target]})
+                                 {:on-next #(swap! seen conj %)})
+             job-id (:job-id (first @calls))]
+
+         (swap! rows assoc job-id
+                (job job-id "failed" :error {:type :restriction
+                                             :code :file-in-components-v1
+                                             :hint "components v1 is deprecated"}))
+         (rx/push! ws-stream (message (event job-id :end {:outcome "failed"})))
+         (await done)
+
+         (t/testing "the entry explains that the file is too old to import"
+           (t/is (= {:status  :error
+                     :file-id (:file-id target)
+                     :error   (tr "dashboard.import.components-v1-error")}
+                    (second @seen)))))))))
+
 (t/deftest ^:async a-package-that-cannot-be-created-fails-its-entries
   (let [ws-stream (rx/subject)
         seen      (atom [])

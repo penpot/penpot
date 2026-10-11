@@ -361,6 +361,37 @@
                                  (set/difference cfeat/backend-only-features))
                              #{}))))
 
+(defn- component-shape?
+  [shape]
+  (or (some? (:component-id shape))
+      (some? (:shape-ref shape))
+      (true? (:main-instance shape))))
+
+(defn- has-component-data?
+  [{:keys [components pages-index]}]
+  (or (seq components)
+      (some (fn [page] (some component-shape? (vals (:objects page))))
+            (vals pages-index))))
+
+(defn check-components-v2
+  "Check that an imported file can be stored as a components v2 file.
+  A file without the `components/v2` feature is in the deprecated
+  components v1 format: it is rejected when it has components or shapes
+  linked to them, and otherwise takes the feature as it is. Returns the
+  file."
+  [{:keys [features data] :as file}]
+  (cond
+    (contains? features "components/v2")
+    file
+
+    (has-component-data? data)
+    (ex/raise :type :restriction
+              :code :file-in-components-v1
+              :hint "components v1 is deprecated")
+
+    :else
+    (update file :features (fnil conj #{}) "components/v2")))
+
 (defn check-file-exists
   [cfg id & {:keys [include-deleted?]
              :or {include-deleted? false}

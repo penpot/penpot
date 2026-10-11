@@ -1009,7 +1009,8 @@
                                      {:generated-by (get manifest :generated-by)
                                       :referer (or (get manifest :referer) (get manifest :refer))}))
                    (dissoc :options)
-                   (dissoc :tokens-source))
+                   (dissoc :tokens-source)
+                   (bfc/check-components-v2))
           file  (bfc/process-file cfg file)
           file  (ctf/check-file file)]
 

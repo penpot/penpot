@@ -556,7 +556,8 @@
                      (cond-> (and (= idx 0) (some? name))
                        (assoc :name name))
                      (assoc :project-id project-id)
-                     (dissoc :thumbnails))
+                     (dissoc :thumbnails)
+                     (bfc/check-components-v2))
             file  (bfc/process-file system file)]
 
         ;; All features that are enabled and requires explicit migration are
