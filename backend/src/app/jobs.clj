@@ -899,13 +899,14 @@
       nil)))
 
 (defn- record-terminal
-  "Record the terminal outcome and the total time. Runs after the commit
+  "Record the total time of a terminal outcome. Runs after the commit
   that made the job terminal, so a rolled back transition is never
-  counted. Takes the cfg and resolves the metrics instance from it, so
-  the callback is not tied to an instance read at registration time."
+  counted. The histogram `_count` is the terminal total per outcome:
+  no separate counter. Takes the cfg and resolves the metrics
+  instance from it, so the callback is not tied to an instance read
+  at registration time."
   [cfg job outcome]
   (when job
-    (metrics/record-outcome cfg (:name job) (:queue job) outcome)
     (when (ct/inst? (:created-at job))
       (metrics/record-total
        cfg
