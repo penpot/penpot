@@ -240,6 +240,12 @@
     ::mdef/labels ["name" "queue"]
     ::mdef/type :counter}
 
+   :jobs-skipped
+   {::mdef/name "penpot_jobs_skipped_total"
+    ::mdef/help "Total number of durable job submissions skipped by skip-if-active."
+    ::mdef/labels ["name" "queue"]
+    ::mdef/type :counter}
+
    :jobs-dispatched
    {::mdef/name "penpot_jobs_dispatched_total"
     ::mdef/help "Total number of jobs pushed to a worker queue."

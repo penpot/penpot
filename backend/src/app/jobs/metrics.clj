@@ -65,6 +65,12 @@
                 [(name-label name) (queue-label queue)]
                 1))
 
+(defn record-skipped
+  [cfg name queue]
+  (record-count (mtx/instance cfg) :jobs-skipped
+                [(name-label name) (queue-label queue)]
+                1))
+
 (defn record-dispatched
   [cfg name queue amount]
   (record-count (mtx/instance cfg) :jobs-dispatched

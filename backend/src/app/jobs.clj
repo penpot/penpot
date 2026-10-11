@@ -309,8 +309,9 @@
   With `::skip-if-active`, the insert is skipped (and `nil` returned)
   when a live job (`new`, `scheduled`, `running` or `retry`) already
   exists for the same tenant, name, queue and label. The check and the
-  insert share one transaction. A skip deletes nothing, inserts nothing
-  and records no submitted metric: the call never happened. The option
+  insert share one transaction. A skip deletes nothing and inserts
+  nothing; it records a skipped metric instead of a submitted one, so
+  dashboards can tell withheld work apart from new work. The option
   needs an explicit non-blank `::label`, otherwise it raises.
 
   NOTE: the dedupe DELETE and the INSERT run atomically: joined to
@@ -400,12 +401,14 @@
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn]}]
                   (if (active? conn)
-                    (l/trc :hint "submit skipped, active job exists"
-                           :name job-name
-                           :tenant tenant
-                           :queue queue
-                           :label label
-                           :skipped true)
+                    (do (db/after-commit
+                         #(metrics/record-skipped cfg job-name queue))
+                        (l/trc :hint "submit skipped, active job exists"
+                               :name job-name
+                               :tenant tenant
+                               :queue queue
+                               :label label
+                               :skipped true))
                     (let [result (insert! conn)]
                       (db/after-commit
                        #(metrics/record-submitted cfg job-name queue))

@@ -33,6 +33,7 @@
 
 (def ^:private metric-ids
   [:jobs-submitted
+   :jobs-skipped
    :jobs-dispatched
    :jobs-completed
    :jobs-retries
@@ -142,10 +143,33 @@
     (t/is (= 1.0 (counter-value metrics :jobs-submitted ["echo" "default"])))
     (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "default" "completed"])))))
 
+(t/deftest skip-if-active-records-skipped-metric
+  (let [metrics (make-metrics)
+        defs    {:echo {::jobs/name      :echo
+                        ::jobs/schema    [:map]
+                        ::jobs/handler   (fn [_context params] params)
+                        ::jobs/decoder   identity
+                        ::jobs/validator (constantly true)}}
+        cfg     {::jobs/defs   defs
+                 ::db/pool     th/*pool*
+                 ::mtx/metrics metrics}
+        _       (jobs/submit cfg {::jobs/name   :echo
+                                  ::jobs/params {}
+                                  ::jobs/label  "skip-metric"})
+        skipped (jobs/submit cfg {::jobs/name   :echo
+                                  ::jobs/params {}
+                                  ::jobs/label  "skip-metric"
+                                  ::jobs/skip-if-active true})]
+    (t/is (nil? skipped))
+    (t/is (= 1.0 (counter-value metrics :jobs-skipped ["echo" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["echo" "default"]))
+          "the withheld submit records no submission")))
+
 (t/deftest lifecycle-helpers-use-labels-as-is
   (let [metrics (make-metrics)
         cfg     (metrics-cfg metrics)]
     (jobs-metrics/record-submitted cfg "delete-object" "default")
+    (jobs-metrics/record-skipped cfg "delete-object" "default")
     (jobs-metrics/record-dispatched cfg "delete-object" "default" 2)
     (jobs-metrics/record-outcome cfg "delete-object" "default" :completed)
     (jobs-metrics/record-retry cfg "delete-object" "default" :backoff)
@@ -157,6 +181,7 @@
     (jobs-metrics/record-legacy-execution cfg "delete-object" 42)
 
     (t/is (= 1.0 (counter-value metrics :jobs-submitted ["delete-object" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-skipped ["delete-object" "default"])))
     (t/is (= 2.0 (counter-value metrics :jobs-dispatched ["delete-object" "default"])))
     (t/is (= 1.0 (counter-value metrics :jobs-completed ["delete-object" "default" "completed"])))
     (t/is (= 1.0 (counter-value metrics :jobs-retries ["delete-object" "default" "backoff"])))
