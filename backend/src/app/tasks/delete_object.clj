@@ -195,7 +195,7 @@
                       (let [{:keys [teams projects files]} @*cascade*]
                         (when (and (contains? cf/flags :audit-log)
                                    (or (seq teams) (seq projects) (seq files)))
-                          (audit/submit cfg {:name "cascade-deleted"
+                          (audit/submit cfg {:name "delete-object-with-cascade"
                                              :type "command"
                                              :props {:object (:object props)
                                                      :id (:id props)

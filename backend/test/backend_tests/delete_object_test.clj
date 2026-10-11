@@ -24,7 +24,7 @@
 
 (defn- cascade-events
   [audit-mock]
-  (filter #(= "cascade-deleted" (:name %))
+  (filter #(= "delete-object-with-cascade" (:name %))
           (submitted-events audit-mock)))
 
 (t/deftest delete-object-team-cascade-emits-event

@@ -30,15 +30,19 @@
 ;; buffering the row itself yields nil columns.
 
 (defn- submit-hard-delete-event
-  "Emits a hard-delete audit event for a batch of rows just purged by this
-  task, so a projection of the audit stream can drop its local rows. Runs
-  inside the caller transaction, next to the deletes."
-  [cfg event-name ids]
+  "Emits one hard-delete audit event for the batch of rows just purged
+  by this task, so a projection of the audit stream can drop its local
+  rows. Each GC section purges in its own chunk transactions, so each
+  chunk carries only its own entity key (`:team-ids`, `:project-ids`
+  or `:file-ids`); a single event spanning sections could never share
+  their transactions. Runs inside the caller transaction, next to the
+  deletes: if the purge aborts, the event aborts with it."
+  [cfg ids-key ids]
   (when (contains? cf/flags :audit-log)
     (audit/submit cfg
-                  {:name event-name
+                  {:name "hard-delete-objects"
                    :type "command"
-                   :props {:ids (vec ids)}
+                   :props {ids-key (vec ids)}
                    :context {:triggered-by "objects-gc"}})))
 
 (def ^:private sql:get-upload-sessions
@@ -213,7 +217,7 @@
                                           (cond-> deleted-ids (pos? affected) (conj id))]))
                                      [0 []]))]
                     (when (seq deleted-ids)
-                      (submit-hard-delete-event cfg "hard-delete-team" deleted-ids))
+                      (submit-hard-delete-event cfg :team-ids deleted-ids))
                     total)))
     (catch Throwable cause
       (l/err :obj "team"
@@ -323,7 +327,7 @@
                                           (cond-> deleted-ids (pos? affected) (conj id))]))
                                      [0 []]))]
                     (when (seq deleted-ids)
-                      (submit-hard-delete-event cfg "hard-delete-project" deleted-ids))
+                      (submit-hard-delete-event cfg :project-ids deleted-ids))
                     total)))
     (catch Throwable cause
       (l/err :obj "project"
@@ -377,7 +381,7 @@
                                           (cond-> deleted-ids (pos? affected) (conj id))]))
                                      [0 []]))]
                     (when (seq deleted-ids)
-                      (submit-hard-delete-event cfg "hard-delete-file" deleted-ids))
+                      (submit-hard-delete-event cfg :file-ids deleted-ids))
                     total)))
     (catch Throwable cause
       (l/err :obj "file"
