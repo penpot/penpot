@@ -526,48 +526,6 @@
                                             libraries
                                             current-file-id)))))))))
 
-(defn generate-sync-library
-  "Generate changes to synchronize all shapes in all components of the
-  local library of the given file, that use assets of the given type in
-  the given library.
-
-  If an asset id is given, only shapes linked to this particular asset will
-  be synchronized.
-
-  If early-return? is true, stops as soon as the first change is generated."
-  ([changes file-id asset-type asset-id library-id libraries current-file-id]
-   (generate-sync-library changes file-id asset-type asset-id library-id libraries current-file-id false))
-  ([changes file-id asset-type asset-id library-id libraries current-file-id early-return?]
-   (assert (contains? #{:colors :components :typographies} asset-type))
-   (assert (or (nil? asset-id) (uuid? asset-id)))
-   (assert (uuid? file-id))
-   (assert (uuid? library-id))
-
-   (container-log :info asset-id
-                  :msg "Sync local components with library"
-                  :asset-type asset-type
-                  :asset-id asset-id
-                  :file (pretty-file file-id libraries current-file-id)
-                  :library (pretty-file library-id libraries current-file-id))
-
-   (let [file (get-in libraries [file-id :data])]
-     (loop [local-components (ctkl/components-seq file)
-            changes          changes]
-       (let [local-component (first local-components)]
-         (if (or (nil? local-component)
-                 (and early-return? (seq (:redo-changes changes))))
-           changes
-           (recur (next local-components)
-                  (pcb/concat-changes ;;TODO Remove concat changes
-                   changes
-                   (generate-sync-container (pcb/empty-changes nil)
-                                            asset-type
-                                            asset-id
-                                            library-id
-                                            (cfh/make-container local-component :component)
-                                            libraries
-                                            current-file-id)))))))))
-
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
   or a component) that use assets of the given type in the given library."
@@ -587,9 +545,8 @@
         (recur (next shapes)
                (let [objects' (pcb/get-objects changes)
                      shape'   (get objects' (:id shape))]
-                 ;; The shape could have been deleted in previous changes, if this nested component
-                 ;; comes from components-v1 era or if there has been some error with the swap slot.
-                 ;; In that case, we just skip it.
+                 ;; An earlier change of this loop may have deleted the shape (a broken
+                 ;; swap slot can do it); then it is skipped.
                  (if shape'
                    (generate-sync-shape asset-type
                                         changes
@@ -2803,11 +2760,6 @@
          sync-typographies? (or (nil? asset-type) (= asset-type :typographies))
          done?              (fn [c] (and early-return? (seq (:redo-changes c))))]
      (-> (pcb/set-undo-group changes undo-group)
-         ;; library-changes
-         (maybe-sync sync-components? done? #(generate-sync-library % file-id :components asset-id library-id libraries current-file-id early-return?))
-         (maybe-sync sync-colors? done? #(generate-sync-library % file-id :colors asset-id library-id libraries current-file-id early-return?))
-         (maybe-sync sync-typographies? done? #(generate-sync-library % file-id :typographies asset-id library-id libraries current-file-id early-return?))
-         ;; file-changes
          (maybe-sync sync-components? done? #(generate-sync-file % file-id :components asset-id library-id libraries current-file-id early-return?))
          (maybe-sync sync-colors? done? #(generate-sync-file % file-id :colors asset-id library-id libraries current-file-id early-return?))
          (maybe-sync sync-typographies? done? #(generate-sync-file % file-id :typographies asset-id library-id libraries current-file-id early-return?))))))

@@ -1695,10 +1695,6 @@ msgstr "Seems that this is not a valid image."
 msgid "errors.member-is-muted"
 msgstr "The profile you inviting has emails muted (spam reports or high bounces)."
 
-#: src/app/main/errors.cljs:814
-msgid "errors.migration-in-progress"
-msgstr "Migration in progress"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Only the version creator can lock it"

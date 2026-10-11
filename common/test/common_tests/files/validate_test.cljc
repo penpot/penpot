@@ -71,16 +71,20 @@
                   :main-instance-page (uuid/next)})))))
 
 ;; ----------------------------------------------------------------
-;; 1. Feature gate
+;; 1. Features
 ;; ----------------------------------------------------------------
 
-(t/deftest validate-file-affected-no-feature
-  (t/testing "returns nil when file does not have the components/v2 feature"
+(t/deftest validate-file-whatever-its-features
+  (t/testing "a file without features is validated like any other"
     (let [file    (-> (thf/sample-file :file1 :page-label :page1)
-                      (assoc :features #{}))
+                      (assoc :features #{})
+                      (inject-broken-child :page1))
           page-id (thi/id :page1)
           changes [{:type :add-obj :page-id page-id :id (uuid/next)}]]
-      (t/is (nil? (cfv/validate-file-affected file {} changes))))))
+      (t/is (some #(= :child-not-found (:code %))
+                  (cfv/validate-file-affected file {} changes)))
+      (t/is (some #(= :child-not-found (:code %))
+                  (cfv/validate-file file {}))))))
 
 ;; ----------------------------------------------------------------
 ;; 2. Empty changes – nothing to validate

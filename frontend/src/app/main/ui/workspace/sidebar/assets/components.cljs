@@ -339,8 +339,7 @@
 
         selected-full            (into #{} (filter #(contains? selected (:id %))) components)
         multi-components?        (> (count selected) 1)
-        multi-assets?            (or (seq (:graphics selected))
-                                     (seq (:colors selected))
+        multi-assets?            (or (seq (:colors selected))
                                      (seq (:typographies selected)))
 
         selected-and-current     (mf/with-memo [selected components current-component-id]

@@ -995,10 +995,6 @@ msgstr ""
 "Profil koji pozivaš ima isključen e-email (izvješća o neželjenoj pošti ili "
 "veliki broj odbijanja)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Migracija u tijeku"
-
 #: src/app/main/ui/auth/recovery.cljs:25, src/app/main/ui/settings/password.cljs:73
 msgid "errors.password-invalid-confirmation"
 msgstr "Lozinka za potvrdu mora odgovarati"

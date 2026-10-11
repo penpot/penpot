@@ -998,10 +998,6 @@ msgstr ""
 "Profil, který zvete, má ztlumené e-maily (zprávy o spamu nebo vysoké "
 "nedoručitelnosti)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Probíhá migrace"
-
 #: src/app/main/ui/auth/recovery.cljs:25, src/app/main/ui/settings/password.cljs:73
 msgid "errors.password-invalid-confirmation"
 msgstr "Potvrzovací heslo se musí shodovat"

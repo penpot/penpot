@@ -1170,10 +1170,6 @@ msgstr ""
 "Profilul pe care încerci să îl inviți este dezactivat (din cauza "
 "rapoartelor spam sau inactivitate)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Migrație în progres"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Doar creatorul versiunii poate bloca"

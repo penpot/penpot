@@ -972,11 +972,6 @@
 (defmethod ptk/handle-error :restriction
   [{:keys [code] :as error}]
   (cond
-    (= :migration-in-progress code)
-    (let [message    (tr "errors.migration-in-progress" (:feature error))
-          on-accept  (constantly nil)]
-      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
-
     (= :team-feature-mismatch code)
     (let [message    (tr "errors.team-feature-mismatch" (:feature error))
           on-accept  (constantly nil)]

@@ -254,7 +254,7 @@
                                     page
                                     (:objects page)
                                     #{(:id main-child)}
-                                    {:components-v2 true})
+                                    {})
 
         updated-file (thf/apply-changes file changes1)
 

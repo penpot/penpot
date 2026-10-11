@@ -36,7 +36,6 @@
    {current-file-id
     {:id current-file-id
      :data {:id current-file-id
-            :options {:components-v2 true}
             :components {}
             :pages []
             :pages-index {}}}}

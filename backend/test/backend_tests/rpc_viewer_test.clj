@@ -74,8 +74,7 @@
       (let [data {::th/type :get-view-only-bundle
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])
-                  :components-v2 true}
+                  :page-id (get-in file [:data :pages 0])}
 
             out  (th/command! data)]
 
@@ -108,8 +107,7 @@
       (let [data {::th/type :get-view-only-bundle
                   ::rpc/profile-id (:id prof2)
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])
-                  :components-v2 true}
+                  :page-id (get-in file [:data :pages 0])}
             out  (th/command! data)]
 
         ;; (th/print-result! out)
@@ -124,8 +122,7 @@
                   ::rpc/profile-id (:id prof2)
                   :share-id @share-id
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])
-                  :components-v2 true}
+                  :page-id (get-in file [:data :pages 0])}
             out  (th/command! data)]
 
         ;; (th/print-result! out)
@@ -139,8 +136,7 @@
       (let [data {::th/type :get-view-only-bundle
                   :share-id @share-id
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])
-                  :components-v2 true}
+                  :page-id (get-in file [:data :pages 0])}
             out  (th/command! data)]
 
         ;; (th/print-result! out)
@@ -390,8 +386,7 @@
     (t/testing "control: non-member cannot read the library directly"
       (let [out (th/command! {::th/type :get-file
                               ::rpc/profile-id (:id stranger)
-                              :id (:id lib)
-                              :components-v2 true})
+                              :id (:id lib)})
             error-data (ex-data (:error out))]
         (t/is (th/ex-info? (:error out)))
         (t/is (= :not-found (:type error-data)))))
@@ -552,7 +547,6 @@
                              :id n-main
                              :parent-id uuid/zero
                              :frame-id uuid/zero
-                             :components-v2 true
                              :obj (frame n-main uuid/zero uuid/zero
                                          {:main-instance true
                                           :component-root true
@@ -575,7 +569,6 @@
                              :id u-main
                              :parent-id uuid/zero
                              :frame-id uuid/zero
-                             :components-v2 true
                              :obj (frame u-main uuid/zero uuid/zero
                                          {:main-instance true
                                           :component-root true
@@ -586,7 +579,6 @@
                              :id u-child
                              :parent-id u-main
                              :frame-id u-main
-                             :components-v2 true
                              :obj (frame u-child u-main u-main
                                          {:main-instance false
                                           :component-root true
@@ -609,7 +601,6 @@
                              :id x-main
                              :parent-id uuid/zero
                              :frame-id uuid/zero
-                             :components-v2 true
                              :obj (frame x-main uuid/zero uuid/zero
                                          {:main-instance true
                                           :component-root true
@@ -637,7 +628,6 @@
                              :id inst
                              :parent-id uuid/zero
                              :frame-id uuid/zero
-                             :components-v2 true
                              :obj (frame inst uuid/zero uuid/zero
                                          {:main-instance false
                                           :component-root true
@@ -687,7 +677,6 @@
                             :id main
                             :parent-id uuid/zero
                             :frame-id uuid/zero
-                            :components-v2 true
                             :obj (cts/setup-shape
                                   {:id main
                                    :name "Board"
@@ -733,7 +722,6 @@
                             :id inst
                             :parent-id uuid/zero
                             :frame-id uuid/zero
-                            :components-v2 true
                             :obj (cts/setup-shape
                                   {:id inst
                                    :name "Board"
@@ -786,7 +774,6 @@
                             :id b-main
                             :parent-id uuid/zero
                             :frame-id uuid/zero
-                            :components-v2 true
                             :obj (cts/setup-shape
                                   {:id b-main
                                    :name "Leaf"
@@ -826,7 +813,6 @@
                             :id a-main
                             :parent-id uuid/zero
                             :frame-id uuid/zero
-                            :components-v2 true
                             :obj (cts/setup-shape
                                   {:id a-main
                                    :name "Wrapper"
@@ -842,7 +828,6 @@
                             :id a-child
                             :parent-id a-main
                             :frame-id a-main
-                            :components-v2 true
                             :obj (cts/setup-shape
                                   {:id a-child
                                    :name "Leaf"
@@ -875,7 +860,6 @@
                             :id inst
                             :parent-id uuid/zero
                             :frame-id uuid/zero
-                            :components-v2 true
                             :obj (cts/setup-shape
                                   {:id inst
                                    :name "Wrapper"
