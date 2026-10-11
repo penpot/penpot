@@ -2495,3 +2495,138 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FILES FROM BEFORE COMPONENTS V2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- prepare-file-with-component
+  "A simple file whose library holds a component, with the file's shape
+  as its main."
+  [profile idx]
+  (let [file (prepare-simple-file profile idx)]
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-component
+       :id (uuid/custom 5 3)
+       :name "component"
+       :path ""
+       :main-instance-id (uuid/custom 2 1)
+       :main-instance-page (uuid/custom 1 1)}])
+    file))
+
+(defn- drop-components-v2!
+  "Store the file without the `components/v2` feature, as a file from
+  before components v2."
+  [file-id]
+  (th/db-exec! ["UPDATE file SET features = array_remove(features, 'components/v2') WHERE id = ?"
+                file-id]))
+
+(defn- export-file
+  "A package of one file in the given binfile version."
+  [version file-id]
+  (let [output (tmp/tempfile :suffix ".penpot")
+        cfg    (-> th/*system*
+                   (assoc ::bfc/ids #{file-id})
+                   (assoc ::bfc/embed-assets false)
+                   (assoc ::bfc/include-libraries false))]
+    (case version
+      1 (v1/export-files! cfg output)
+      3 (v3/export-files! cfg (io/output-stream output)))
+    output))
+
+(defn- import-file
+  "Import a package of the given binfile version into the default
+  project of the profile; returns the ids of the imported files."
+  [version profile input]
+  (let [cfg (-> th/*system*
+                (assoc ::bfc/project-id (:default-project-id profile))
+                (assoc ::bfc/profile-id (:id profile))
+                (assoc ::bfc/team-id (:default-team-id profile))
+                (assoc ::bfc/input input))]
+    (case version
+      1 (vec (v1/import-files! cfg))
+      3 (:file-ids (v3/import-files! cfg)))))
+
+(defn- import-error
+  "The data of the error an import raises, or nil when it succeeds."
+  [version profile input]
+  (try
+    (import-file version profile input)
+    nil
+    (catch clojure.lang.ExceptionInfo cause
+      (ex-data cause))))
+
+(defn- imported-features
+  [file-id]
+  (:features (bfc/get-file th/*system* file-id)))
+
+(defn- check-import-of-components-v1-files
+  [version]
+  (let [profile (th/create-profile* 1)]
+
+    (t/testing "a file without components/v2 that has a component is rejected"
+      (let [file    (prepare-file-with-component profile 1)
+            _       (drop-components-v2! (:id file))
+            package (export-file version (:id file))
+            before  (count (db/query th/*system* :file {:project-id (:default-project-id profile)}))
+            error   (import-error version profile package)]
+        (t/is (= :restriction (:type error)))
+        (t/is (= :file-in-components-v1 (:code error)))
+        (t/is (= before (count (db/query th/*system* :file {:project-id (:default-project-id profile)}))))))
+
+    (t/testing "a file without components/v2 and without components is imported with it"
+      (let [file    (prepare-simple-file profile 2)
+            _       (drop-components-v2! (:id file))
+            package (export-file version (:id file))
+            [id]    (import-file version profile package)]
+        (t/is (contains? (imported-features id) "components/v2"))))
+
+    (t/testing "a file with components/v2 and a component is imported"
+      (let [file    (prepare-file-with-component profile 3)
+            package (export-file version (:id file))
+            [id]    (import-file version profile package)]
+        (t/is (contains? (imported-features id) "components/v2"))
+        (t/is (some? (get-in (bfc/get-file th/*system* id :realize? true)
+                             [:data :components (uuid/custom 5 3)])))))))
+
+(t/deftest import-binfile-v1-rejects-components-v1-files
+  (check-import-of-components-v1-files 1))
+
+(t/deftest import-binfile-v3-rejects-components-v1-files
+  (check-import-of-components-v1-files 3))
+
+(t/deftest check-components-v2-looks-at-components-and-component-shapes
+  (let [page-id  (uuid/custom 1 1)
+        shape-id (uuid/custom 2 1)
+        file     (fn [features shape components]
+                   {:features features
+                    :data {:pages [page-id]
+                           :pages-index {page-id {:id page-id
+                                                  :objects {shape-id (merge {:id shape-id} shape)}}}
+                           :components components}})
+        rejected? (fn [file]
+                    (= :file-in-components-v1
+                       (try
+                         (bfc/check-components-v2 file)
+                         nil
+                         (catch clojure.lang.ExceptionInfo cause
+                           (:code (ex-data cause))))))]
+
+    (t/testing "a file without components/v2 is rejected when it has component data"
+      (t/is (rejected? (file #{} {} {(uuid/custom 5 3) {:id (uuid/custom 5 3)}})))
+      (t/is (rejected? (file #{} {:component-id (uuid/custom 5 3)} nil)))
+      (t/is (rejected? (file #{} {:shape-ref (uuid/custom 2 2)} nil)))
+      (t/is (rejected? (file #{} {:main-instance true} nil))))
+
+    (t/testing "a file without components/v2 and without component data takes the feature"
+      (t/is (= #{"components/v2"}
+               (:features (bfc/check-components-v2 (file #{} {} nil))))))
+
+    (t/testing "a file with components/v2 is left as it is"
+      (let [file (file #{"components/v2"} {:shape-ref (uuid/custom 2 2)} nil)]
+        (t/is (= file (bfc/check-components-v2 file)))))))
