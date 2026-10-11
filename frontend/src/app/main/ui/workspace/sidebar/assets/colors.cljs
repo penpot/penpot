@@ -395,7 +395,6 @@
 
         multi-colors?   (> (count selected) 1)
         multi-assets?   (or (seq (:components selected))
-                            (seq (:graphics selected))
                             (seq (:typographies selected)))
 
         groups          (mf/with-memo [colors is-reverse-sort]

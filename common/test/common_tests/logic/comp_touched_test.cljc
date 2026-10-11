@@ -154,7 +154,7 @@
                                     page
                                     (:objects page)
                                     #{(:id copy-child)}
-                                    {:components-v2 true})
+                                    {})
 
         file'   (thf/apply-changes file changes)
 

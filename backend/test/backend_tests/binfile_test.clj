@@ -99,7 +99,6 @@
         :id shape-id
         :parent-id uuid/zero
         :frame-id uuid/zero
-        :components-v2 true
         :obj (cts/setup-shape
               {:id shape-id
                :name "image"
@@ -314,7 +313,6 @@
         :id root-id
         :parent-id uuid/zero
         :frame-id uuid/zero
-        :components-v2 true
         :obj (cts/setup-shape
               {:id root-id
                :name "svg-root"
@@ -327,7 +325,6 @@
         :id child-id
         :parent-id root-id
         :frame-id uuid/zero
-        :components-v2 true
         :obj (cts/setup-shape
               {:id child-id
                :name "svg-text"
@@ -358,8 +355,7 @@
           file-id  (first (:file-ids result))
           imported (:result (th/command! {::th/type :get-file
                                           ::rpc/profile-id (:id profile)
-                                          :id file-id
-                                          :components-v2 true}))
+                                          :id file-id}))
           root     (get-in imported [:data :pages-index svg-raw-page-id
                                      :objects svg-raw-root-id])]
 
@@ -2236,8 +2232,7 @@
         ;; Get the imported file's data
         (let [imported (:result (th/command! {::th/type :get-file
                                               ::rpc/profile-id (:id profile)
-                                              :id new-file-id
-                                              :components-v2 true}))
+                                              :id new-file-id}))
               shapes (get-file-shapes (:data imported))]
           ;; Check that component-file references point to the new library
           (doseq [shape shapes]
@@ -2272,8 +2267,7 @@
         ;; Get the imported file's data
         (let [imported (:result (th/command! {::th/type :get-file
                                               ::rpc/profile-id (:id profile)
-                                              :id new-file-id
-                                              :components-v2 true}))
+                                              :id new-file-id}))
               file-data (:data imported)
               pages (vals (:pages-index file-data))
               all-shapes (mapcat vals (map :objects pages))
@@ -2445,8 +2439,7 @@
             original-lib-id (:id (first (:external-libraries manifest)))
             imported (:result (th/command! {::th/type :get-file
                                             ::rpc/profile-id (:id profile)
-                                            :id new-file-id
-                                            :components-v2 true}))
+                                            :id new-file-id}))
             file-data (:data imported)
             pages (vals (:pages-index file-data))
             all-shapes (mapcat vals (map :objects pages))
@@ -2501,8 +2494,7 @@
               original-lib-id (:id (first (:external-libraries manifest)))
               imported (:result (th/command! {::th/type :get-file
                                               ::rpc/profile-id (:id viewer)
-                                              :id new-file-id
-                                              :components-v2 true}))
+                                              :id new-file-id}))
               file-data (:data imported)
               pages (vals (:pages-index file-data))
               all-shapes (mapcat vals (map :objects pages))

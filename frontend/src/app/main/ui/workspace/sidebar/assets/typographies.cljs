@@ -328,7 +328,6 @@
 
         multi-typographies?  (> (count selected) 1)
         multi-assets?        (or (seq (:components selected))
-                                 (seq (:graphics selected))
                                  (seq (:colors selected)))
 
         open-groups-ref      (mf/with-memo [open-status-ref]

@@ -1219,10 +1219,6 @@ msgstr ""
 "जिस प्रोफाइल को आप निमंत्रित कर रहे हैं उसके ईमेल म्यूट किए गए हैं (स्पैम "
 "रिपोर्ट्स या उच्च बाउंस के कारण)।"
 
-#: src/app/main/errors.cljs:976
-msgid "errors.migration-in-progress"
-msgstr "माइग्रेशन प्रगति पर है"
-
 #: src/app/main/errors.cljs:869
 msgid "errors.only-creator-can-lock"
 msgstr "केवल संस्करण निर्माता ही इसे लॉक कर सकता है"

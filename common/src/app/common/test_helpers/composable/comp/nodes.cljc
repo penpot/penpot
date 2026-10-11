@@ -1881,7 +1881,7 @@
                                       page
                                       (:objects page)
                                       #{shape-id}
-                                      {:components-v2 true})
+                                      {})
           file'     (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')

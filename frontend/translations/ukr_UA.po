@@ -1429,10 +1429,6 @@ msgstr ""
 "Електронна пошта профілю, який Ви намагаєтесь запросити, має приглушення "
 "листів (скарги на спам або постійне пересилання)."
 
-#: src/app/main/errors.cljs:976
-msgid "errors.migration-in-progress"
-msgstr "Міграція триває"
-
 #: src/app/main/errors.cljs:869
 msgid "errors.only-creator-can-lock"
 msgstr "Тільки власник версії може заблокувати її"

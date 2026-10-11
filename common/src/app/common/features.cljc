@@ -260,40 +260,32 @@
 
 (defn check-teams-compatibility!
   [{source-features :features} {destination-features :features}]
-  (when (contains? source-features "ephimeral/migration")
-    (ex/raise :type :restriction
-              :code :migration-in-progress
-              :hint "the source team is in migration process"))
+  (let [source-features      (into #{} xf-remove-ephimeral source-features)
+        destination-features (into #{} xf-remove-ephimeral destination-features)]
 
-  (when (contains? destination-features "ephimeral/migration")
-    (ex/raise :type :restriction
-              :code :migration-in-progress
-              :hint "the destination team is in migration process"))
+    (let [not-supported (-> source-features
+                            (set/difference destination-features)
+                            (set/difference no-migration-features)
+                            (set/difference default-features)
+                            (seq))]
+      (when not-supported
+        (ex/raise :type :restriction
+                  :code :team-feature-mismatch
+                  :feature (first not-supported)
+                  :hint (str/ffmt "the destination team does not have support '%' features"
+                                  (str/join "," not-supported)))))
 
-  (let [not-supported (-> (or source-features #{})
-                          (set/difference destination-features)
-                          (set/difference no-migration-features)
-                          (set/difference default-features)
-                          (seq))]
-    (when not-supported
-      (ex/raise :type :restriction
-                :code :team-feature-mismatch
-                :feature (first not-supported)
-                :hint (str/ffmt "the destination team does not have support '%' features"
-                                (str/join "," not-supported)))))
-
-  (let [not-supported (-> (or destination-features #{})
-                          (set/difference source-features)
-                          (set/difference no-migration-features)
-                          (set/difference default-features)
-                          (seq))]
-    (when not-supported
-      (ex/raise :type :restriction
-                :code :team-feature-mismatch
-                :feature (first not-supported)
-                :hint (str/ffmt "the source team does not have support '%' features"
-                                (str/join "," not-supported))))))
-
+    (let [not-supported (-> destination-features
+                            (set/difference source-features)
+                            (set/difference no-migration-features)
+                            (set/difference default-features)
+                            (seq))]
+      (when not-supported
+        (ex/raise :type :restriction
+                  :code :team-feature-mismatch
+                  :feature (first not-supported)
+                  :hint (str/ffmt "the source team does not have support '%' features"
+                                  (str/join "," not-supported)))))))
 
 (defn check-paste-features!
   "Function used for check feature compability between currently enabled

@@ -49,12 +49,10 @@
    [app.main.ui.shapes.text.fontfaces :as ff]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
-   [app.util.http :as http]
    [app.util.strings :as ust]
    [app.util.thumbnails :as th]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
-   [clojure.set :as set]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -575,8 +573,7 @@
   [{:keys [component] :as props}]
   (let [name       (:name component)
         path       (:path component)
-        root-id    (or (:main-instance-id component)
-                       (:id component))
+        root-id    (:main-instance-id component)
         orig-root  (get (:objects component) root-id)
         objects    (adapt-objects-for-shape (:objects component)
                                             root-id)
@@ -645,80 +642,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; RENDER FOR DOWNLOAD (wrongly called exportation)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- get-image-data [shape]
-  (cond
-    (= :image (:type shape))
-    [(:metadata shape)]
-
-    (some? (:fill-image shape))
-    [(:fill-image shape)]
-
-    :else
-    []))
-
-(defn- populate-images-cache
-  [objects]
-  (let [images (->> objects
-                    (vals)
-                    (mapcat get-image-data))]
-    (->> (rx/from images)
-         (rx/map #(cfg/resolve-file-media %))
-         (rx/merge-map http/fetch-data-uri))))
-
-(defn populate-fonts-cache [objects]
-  (let [texts (->> objects
-                   (vals)
-                   (filterv #(= (:type %) :text))
-                   (mapv :content))]
-
-    (->> (rx/from texts)
-         (rx/map fonts/get-content-fonts)
-         (rx/reduce set/union #{})
-         (rx/merge-map identity)
-         (rx/merge-map fonts/fetch-font-css)
-         (rx/merge-map fonts/extract-fontface-urls)
-         (rx/merge-map http/fetch-data-uri))))
-
-(defn render-page
-  [data]
-  (rx/concat
-   (->> (rx/merge
-         (populate-images-cache (:objects data))
-         (populate-fonts-cache (:objects data)))
-        (rx/ignore))
-
-   (->> (rx/of data)
-        (rx/map
-         (fn [data]
-           (let [elem (mf/element page-svg #js {:data data :embed true :include-metadata true})]
-             (rds/renderToStaticMarkup elem)))))))
-
-(defn render-components
-  [data deleted?]
-  (let [;; Join all components objects into a single map
-        components  (if (not deleted?)
-                      (ctkl/components-seq data)
-                      (ctkl/deleted-components-seq data))
-        objects (->> components
-                     (map (partial ctf/load-component-objects data))
-                     (map :objects)
-                     (reduce conj))]
-    (rx/concat
-     (->> (rx/merge
-           (populate-images-cache objects)
-           (populate-fonts-cache objects))
-          (rx/ignore))
-
-     (->> (rx/of data)
-          (rx/map
-           (fn [data]
-             (let [elem (mf/element components-svg
-                                    #js {:data data
-                                         :embed true
-                                         :include-metadata true
-                                         :deleted? deleted?})]
-               (rds/renderToStaticMarkup elem))))))))
 
 (defn render-frame
   ([objects shape object-id]
