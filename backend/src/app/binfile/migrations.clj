@@ -30,9 +30,6 @@
   [_cfg]
   (doseq [[feature _file-id] (-> bfc/*state* deref :pending-to-migrate)]
     (case feature
-      "components/v2"
-      nil
-
       "fdata/shape-data-type"
       nil
 

@@ -704,6 +704,12 @@ msgstr ""
 msgid "dashboard.import.check.title"
 msgstr "Comprobando tus archivos..."
 
+#: src/app/main/data/imports.cljs:57
+msgid "dashboard.import.components-v1-error"
+msgstr ""
+"Este fichero usa un tipo antiguo de componentes de Penpot que ya no tiene "
+"soporte, así que no se puede importar."
+
 #: src/app/main/ui/dashboard/import.cljs:838
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirmar vínculos de biblioteca"
