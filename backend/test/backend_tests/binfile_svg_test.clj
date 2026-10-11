@@ -221,7 +221,6 @@
                                 :id shape-id
                                 :parent-id uuid/zero
                                 :frame-id uuid/zero
-                                :components-v2 true
                                 :obj (cts/setup-shape
                                       {:id shape-id
                                        :name "image"
@@ -343,7 +342,6 @@
                                    :id shape-id
                                    :parent-id uuid/zero
                                    :frame-id uuid/zero
-                                   :components-v2 true
                                    :obj (cts/setup-shape
                                          {:id shape-id
                                           :name "image"

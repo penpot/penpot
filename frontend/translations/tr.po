@@ -1672,10 +1672,6 @@ msgstr ""
 "Davet ettiğiniz profilin e-posta adresine ait çok fazla geri dönme raporu "
 "var veya spam olarak bildirilmiş."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Geçiş devam ediyor"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Yalnızca sürüm oluşturucu onu kilitleyebilir"

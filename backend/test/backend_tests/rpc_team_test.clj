@@ -1526,8 +1526,7 @@
       (t/testing "get-file after leaving fails with not-found"
         (let [out   (th/command! {::th/type :get-file
                                   ::rpc/profile-id (:id editor)
-                                  :id (:id file)
-                                  :components-v2 true})
+                                  :id (:id file)})
               error (:error out)]
           (t/is (th/ex-info? error))
           (t/is (th/ex-of-type? error :not-found)))))))

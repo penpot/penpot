@@ -1701,10 +1701,6 @@ msgstr ""
 "El perfil que esta invitando tiene los emails silenciados (por reportes de "
 "spam o alto índice de rebote)."
 
-#: src/app/main/errors.cljs:814
-msgid "errors.migration-in-progress"
-msgstr "Migración en proceso"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Solo el creador de la versión puede bloquearla"

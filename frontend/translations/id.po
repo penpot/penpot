@@ -1053,10 +1053,6 @@ msgstr ""
 "Profil yang Anda undang membisukan surel (laporan spam atau lompatan "
 "tinggi)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Migrasi sedang berlangsung"
-
 #: src/app/main/ui/auth/recovery.cljs:25, src/app/main/ui/settings/password.cljs:73
 msgid "errors.password-invalid-confirmation"
 msgstr "Kata sandi konfirmasi harus cocok"

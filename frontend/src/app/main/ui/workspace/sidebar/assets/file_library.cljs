@@ -244,8 +244,6 @@
              (st/emit! (dwu/start-undo-transaction undo-id))
              (run! st/emit! (map delete-component
                                  (:components selected)))
-             (run! st/emit! (map #(dwl/delete-media {:id %})
-                                 (:graphics selected)))
              (run! st/emit! (map #(dwl/delete-color {:id %})
                                  (:colors selected)))
              (run! st/emit! (map #(dwl/delete-typography %)

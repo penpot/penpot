@@ -1579,10 +1579,6 @@ msgstr "這似乎不是有效的圖片。"
 msgid "errors.member-is-muted"
 msgstr "您邀請的使用者已因垃圾郵件檢舉或退信率過高而暫停接收電子郵件。"
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "正在進行資料遷移"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "只有此版本的建立者可以鎖定此版本"

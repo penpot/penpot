@@ -75,7 +75,6 @@
 
 (def schema:options
   [:map {:title "FileOptions"}
-   [:components-v2 {:optional true} ::sm/boolean]
    [:base-font-size {:optional true} :string]])
 
 (def schema:data
@@ -157,8 +156,7 @@
        (ctpl/add-page page)
 
        :always
-       (update :options merge {:components-v2 true
-                               :base-font-size BASE-FONT-SIZE})))))
+       (update :options merge {:base-font-size BASE-FONT-SIZE})))))
 
 ;; FIXME: we can't handle the "default" migrations for avoid providing
 ;; them all the time the file is created because we can't import file
@@ -221,10 +219,10 @@
     (update file :data f)))
 
 (defn containers-seq
-  "Generate a sequence of all pages and all components, wrapped as containers"
+  "Generate a sequence of all pages, wrapped as containers. Live
+  components hold no objects: their main instances are page shapes."
   [file-data]
-  (concat (map #(ctn/make-container % :page) (ctpl/pages-seq file-data))
-          (map #(ctn/make-container % :component) (ctkl/components-seq file-data))))
+  (map #(ctn/make-container % :page) (ctpl/pages-seq file-data)))
 
 (defn object-containers-seq
   "Generate a sequence of all pages and all deleted components (all those components that have :objects), wrapped as containers"
@@ -707,8 +705,7 @@
             assets)))
 
 (defn used-in?
-  "Checks if a specific asset is used in a given file (by any shape in its pages or in
-  the components of the local library)."
+  "Checks if a specific asset is used in a given file (by any shape in its pages)."
   [file-data library-id asset asset-type]
   (letfn [(used-in-shape? [shape]
             (uses-asset? asset-type shape library-id asset))

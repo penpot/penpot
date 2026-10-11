@@ -836,38 +836,37 @@
   "Validate full referential integrity and semantic coherence on file data.
 
   Return a list of errors or `nil`"
-  [{:keys [data features] :as file} libraries]
-  (when (contains? features "components/v2")
-    (binding [*errors* (volatile! [])]
+  [{:keys [data] :as file} libraries]
+  (binding [*errors* (volatile! [])]
 
-      ;; `reduce-kv` is used throughout this function (and `validate-file-affected`)
-      ;; instead of `(run! f (vals m))` or `(doseq [[k v] m])` because persistent
-      ;; maps implement `IKVReduce`, which drives iteration internally without
-      ;; first materialising an intermediate sequence of key-value pairs.
-      (reduce-kv
-       (fn [_ _ page]
-         (when (some? page)
-           ;; Both performance caches are scoped to a single page: ref-shape
-           ;; lookups and parent→children sets are page-local and must never
-           ;; carry over to the next page.  A fresh volatile is created for
-           ;; each page so stale entries cannot corrupt subsequent pages.
-           (binding [*ref-shape-cache* (volatile! {})
-                     *children-sets* (build-children-sets (:objects page))]
-             (check-shape uuid/zero file page libraries)
-             (run! #(check-shape % file page libraries)
-                   (get-orphan-shapes page)))))
-       nil
-       (:pages-index data))
+    ;; `reduce-kv` is used throughout this function (and `validate-file-affected`)
+    ;; instead of `(run! f (vals m))` or `(doseq [[k v] m])` because persistent
+    ;; maps implement `IKVReduce`, which drives iteration internally without
+    ;; first materialising an intermediate sequence of key-value pairs.
+    (reduce-kv
+     (fn [_ _ page]
+       (when (some? page)
+         ;; Both performance caches are scoped to a single page: ref-shape
+         ;; lookups and parent→children sets are page-local and must never
+         ;; carry over to the next page.  A fresh volatile is created for
+         ;; each page so stale entries cannot corrupt subsequent pages.
+         (binding [*ref-shape-cache* (volatile! {})
+                   *children-sets* (build-children-sets (:objects page))]
+           (check-shape uuid/zero file page libraries)
+           (run! #(check-shape % file page libraries)
+                 (get-orphan-shapes page)))))
+     nil
+     (:pages-index data))
 
-      (reduce-kv
-       (fn [_ _ component]
-         (check-component component file))
-       nil
-       (:components data))
+    (reduce-kv
+     (fn [_ _ component]
+       (check-component component file))
+     nil
+     (:components data))
 
-      (check-tokens file)
+    (check-tokens file)
 
-      (-> *errors* deref not-empty))))
+    (-> *errors* deref not-empty)))
 
 (defn validate-shape
   "Validate a shape and all its children. Returns a list of errors."
@@ -946,34 +945,33 @@
   to call on every incremental file update.
 
   Returns a list of errors or `nil`."
-  [{:keys [data features] :as file} libraries changes]
-  (when (contains? features "components/v2")
-    (let [{:keys [page-ids component-ids]} (extract-affected-ids changes)]
-      (binding [*errors* (volatile! [])]
+  [{:keys [data] :as file} libraries changes]
+  (let [{:keys [page-ids component-ids]} (extract-affected-ids changes)]
+    (binding [*errors* (volatile! [])]
 
-        (reduce-kv
-         (fn [_ page-id page]
-           (when (and (some? page) (contains? page-ids page-id))
-             ;; Both performance caches are scoped to a single page: ref-shape
-             ;; lookups and parent→children sets are page-local and must never
-             ;; carry over to the next page.  A fresh volatile is created for
-             ;; each page so stale entries cannot corrupt subsequent pages.
-             (binding [*ref-shape-cache* (volatile! {})
-                       *children-sets*   (build-children-sets (:objects page))]
-               (check-shape uuid/zero file page libraries)
-               (run! #(check-shape % file page libraries)
-                     (get-orphan-shapes page)))))
-         nil
-         (:pages-index data))
+      (reduce-kv
+       (fn [_ page-id page]
+         (when (and (some? page) (contains? page-ids page-id))
+           ;; Both performance caches are scoped to a single page: ref-shape
+           ;; lookups and parent→children sets are page-local and must never
+           ;; carry over to the next page.  A fresh volatile is created for
+           ;; each page so stale entries cannot corrupt subsequent pages.
+           (binding [*ref-shape-cache* (volatile! {})
+                     *children-sets*   (build-children-sets (:objects page))]
+             (check-shape uuid/zero file page libraries)
+             (run! #(check-shape % file page libraries)
+                   (get-orphan-shapes page)))))
+       nil
+       (:pages-index data))
 
-        (reduce-kv
-         (fn [_ id component]
-           (when (contains? component-ids id)
-             (check-component component file)))
-         nil
-         (:components data))
+      (reduce-kv
+       (fn [_ id component]
+         (when (contains? component-ids id)
+           (check-component component file)))
+       nil
+       (:components data))
 
-        (-> *errors* deref not-empty)))))
+      (-> *errors* deref not-empty))))
 
 (defn validate-file-affected!
   "Like `validate-file-affected` but raises on the first non-empty

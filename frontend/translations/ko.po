@@ -1265,10 +1265,6 @@ msgstr "유효한 이미지가 아닌 것 같습니다."
 msgid "errors.member-is-muted"
 msgstr "초대하려는 프로필의 이메일 수신이 거부되었습니다(스팸 신고 또는 높은 반송률)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "마이그레이션 진행 중"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "버전 생성자만 잠글 수 있습니다"

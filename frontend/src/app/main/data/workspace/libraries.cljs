@@ -242,62 +242,6 @@
                           (pcb/add-color new-color))]
         (rx/of (dch/commit-changes changes))))))
 
-;; FIXME: this should be deleted
-(defn add-media
-  [media]
-  (let [media (ctf/check-file-media media)]
-    (ptk/reify ::add-media
-      ev/Event
-      (-data [_] media)
-
-      ptk/WatchEvent
-      (watch [it _ _]
-        (let [obj     (select-keys media [:id :name :width :height :mtype])
-              changes (-> (pcb/empty-changes it)
-                          (pcb/add-media obj))]
-          (rx/of (dch/commit-changes changes)))))))
-
-(defn rename-media
-  [id new-name]
-
-  (dm/assert!
-   "expected valid uuid for `id`"
-   (uuid? id))
-
-  (dm/assert!
-   "expected valid string for `new-name`"
-   (string? new-name))
-
-  (ptk/reify ::rename-media
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [new-name (str/trim new-name)]
-        (if (str/empty? new-name)
-          (rx/empty)
-          (let [[path name] (cpn/split-group-name new-name)
-                data        (dsh/lookup-file-data state)
-                object      (get-in data [:media id])
-                new-object  (assoc object :path path :name name)
-                changes     (-> (pcb/empty-changes it)
-                                (pcb/with-library-data data)
-                                (pcb/update-media new-object))]
-            (rx/of (dch/commit-changes changes))))))))
-
-(defn delete-media
-  [{:keys [id]}]
-  (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::delete-media
-    ev/Event
-    (-data [_] {:id id})
-
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [data        (dsh/lookup-file-data state)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/delete-media id))]
-        (rx/of (dch/commit-changes changes))))))
-
 (defn add-typography
   ([typography] (add-typography typography true))
   ([typography edit?]

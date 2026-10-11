@@ -1155,10 +1155,6 @@ msgstr ""
 "O perfil que você está convidando tem e-mails silenciados (relatos de spam "
 "ou altas devoluções)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Migração em progresso"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Somente o criador da versão pode bloqueá-la﻿"

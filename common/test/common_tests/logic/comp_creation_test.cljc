@@ -380,7 +380,7 @@
                                     page
                                     (:objects page)
                                     #{(:id root)}
-                                    {:components-v2 true})
+                                    {})
 
         file' (thf/apply-changes file changes)
 
@@ -421,7 +421,7 @@
                                     page
                                     (:objects page)
                                     #{(:id root)}
-                                    {:components-v2 true})
+                                    {})
 
         file-deleted (thf/apply-changes file changes)
         page-deleted (thf/current-page file-deleted)
@@ -465,7 +465,7 @@
                                                 page2
                                                 (:objects page2)
                                                 #{(:id root)}
-                                                {:components-v2 true})
+                                                {})
         file        (-> (thf/apply-changes file changes)
                         (ctf/update-file-data #(ctpl/delete-page % (:id page2))))
         changes     (cll/generate-restore-component (pcb/empty-changes)

@@ -1380,10 +1380,6 @@ msgstr "该图片好像不可用。"
 msgid "errors.member-is-muted"
 msgstr "受邀用户已停用邮件通知（曾举报垃圾邮件或多次发生退信）。"
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "迁移正在进行中"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "只有版本创建者可以锁定"

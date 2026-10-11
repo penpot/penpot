@@ -1528,10 +1528,6 @@ msgstr "נראה כי זאת תמונה שגויה."
 msgid "errors.member-is-muted"
 msgstr "הודעות הדוא״ל לפרופיל שהזמנת מושתקות (דיווחים על דואר זבל או הרבה החזרות)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "מתבצעת הסבה"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "רק יוצר או יוצרת הגרסה יכולים לנעול אותה"

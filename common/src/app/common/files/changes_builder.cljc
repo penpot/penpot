@@ -812,33 +812,6 @@
         (update :undo-changes conj {:type :add-color :color prev-color})
         (apply-changes-local))))
 
-(defn add-media
-  [changes object]
-  (-> changes
-      (update :redo-changes conj {:type :add-media :object object})
-      (update :undo-changes conj {:type :del-media :id (:id object)})
-      (apply-changes-local)))
-
-(defn update-media
-  [changes object]
-  (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
-        prev-object (get-in library-data [:media (:id object)])]
-    (-> changes
-        (update :redo-changes conj {:type :mod-media :object object})
-        (update :undo-changes conj {:type :mod-media :object prev-object})
-        (apply-changes-local))))
-
-(defn delete-media
-  [changes id]
-  (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
-        prev-object (get-in library-data [:media id])]
-    (-> changes
-        (update :redo-changes conj {:type :del-media :id id})
-        (update :undo-changes conj {:type :add-media :object prev-object})
-        (apply-changes-local))))
-
 (defn add-typography
   [changes typography]
   (-> changes

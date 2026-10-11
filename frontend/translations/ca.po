@@ -1686,10 +1686,6 @@ msgstr ""
 "El perfil que estàs convidant té els missatges de correu silenciats (per "
 "informes de correu brossa o de retorns alts)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Migració en curs"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Només la persona creadora de la versió la pot bloquejar"

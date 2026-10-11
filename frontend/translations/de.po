@@ -1403,10 +1403,6 @@ msgstr ""
 "In dem von Ihnen eingeladenen Profil sind E-Mails stummgeschaltet "
 "(Spam-Berichte oder hohe Unzustellbarkeitsberichte)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Migration wird durchgeführt"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Nur der Ersteller der Version kann sie sperren"
