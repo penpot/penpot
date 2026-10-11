@@ -669,6 +669,12 @@ msgstr[1] "%s libraries were automatically linked by name."
 msgid "dashboard.import.bad-url"
 msgstr "Import failed. The template URL is incorrect"
 
+#: src/app/main/data/imports.cljs:57
+msgid "dashboard.import.components-v1-error"
+msgstr ""
+"This file uses an old type of Penpot components that is no longer "
+"supported, so it can't be imported."
+
 #: src/app/main/ui/dashboard/import.cljs:733
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirm library links"

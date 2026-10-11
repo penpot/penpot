@@ -53,7 +53,9 @@
 (defn- job-message
   "The message of a job that failed."
   [error]
-  (or (resolve-hint error) (tr "labels.error")))
+  (if (= :file-in-components-v1 (:code error))
+    (tr "dashboard.import.components-v1-error")
+    (or (resolve-hint error) (tr "labels.error"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; READING A PACKAGE
