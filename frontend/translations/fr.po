@@ -1709,10 +1709,6 @@ msgstr ""
 "L'adresse e-mail du profil que vous invitez est ignorée (signalée comme "
 "spam ou taux de rebond élevé)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Migration en cours"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Seul le créateur d'une version peut la verrouiller"

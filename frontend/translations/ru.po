@@ -1714,10 +1714,6 @@ msgstr "Неверное медиа."
 msgid "errors.member-is-muted"
 msgstr "Невозможно пригласить адресата с недоступным адресом электронной почты."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Миграция в процессе"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Только создатель версии может ее заблокировать"

@@ -1549,10 +1549,6 @@ msgstr ""
 "Il profilo che stai invitando ha le email disattivate (rapporti di spam o "
 "alti tassi di rimbalzo)."
 
-#: src/app/main/errors.cljs:805
-msgid "errors.migration-in-progress"
-msgstr "Migrazione in corso"
-
 #: src/app/main/errors.cljs:707
 msgid "errors.only-creator-can-lock"
 msgstr "Solo il creatore della versione può bloccarla"
