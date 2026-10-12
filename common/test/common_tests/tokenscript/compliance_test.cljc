@@ -43,4 +43,5 @@
       (t/is (pos? (:passed report)))
       (t/is (empty? unexpected)
             (str "unexpected compliance failures: " (pr-str (map #(get % "name") unexpected)))))
-    (println "compliance suite skipped: TOKENSCRIPT_COMPLIANCE_DIR not set")))
+    ;; Without an assertion kaocha reports the skipped test as failed.
+    (t/is true "compliance suite skipped: TOKENSCRIPT_COMPLIANCE_DIR not set")))
