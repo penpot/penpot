@@ -460,3 +460,18 @@
     (t/is (= (thi/id :heart-main) (:shape-ref head)))
     (t/is (not (ctk/swapped? head)))
     (t/is (empty? (:touched head)))))
+
+(t/deftest swapped-head-takes-the-flex-item-attrs-of-the-replaced-child
+  (let [margin {:m1 7 :m2 7 :m3 7 :m4 7}
+        file   (-> (thf/sample-file :file1)
+                   (tho/add-simple-component :star :star-main :star-rect)
+                   (tho/add-simple-component :heart :heart-main :heart-rect)
+                   (tho/add-frame :card-main :layout :flex :layout-flex-dir :row)
+                   (thc/instantiate-component :star :card-star :parent-label :card-main)
+                   (thc/make-component :card :card-main)
+                   (thc/instantiate-component :card :copy :children-labels [:copy-star])
+                   (tho/swap-component-in-shape :copy-star :heart)
+                   (ths/update-shape :card-star :layout-item-margin margin)
+                   (propagate :card)
+                   (thf/validate-file!))]
+    (t/is (= margin (:layout-item-margin (ths/get-shape file :copy-star))))))

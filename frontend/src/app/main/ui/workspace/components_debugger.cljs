@@ -111,7 +111,7 @@
            (ctk/instance-root? shape)
            (ctk/main-instance? shape)
            ;; Swapped nested heads are not instance-roots, but still need a slot.
-           (some? (ctk/get-swap-slot shape)))))
+           (ctk/swapped? shape))))
 
 (defn- box-thumbnail-slot?
   "A box reserves a thumbnail slot when it is the root of a panel or the
@@ -231,12 +231,9 @@
    Includes deleted components so the chain can surface them."
   [file page libraries objects shape]
   (when-let [source (near-match-source-shape objects shape)]
-    (when-let [ref-shape (or (ctf/find-near-match file page libraries source
-                                                  :with-context? true
-                                                  :include-deleted? true)
-                             (ctf/find-ref-shape file page libraries source
-                                                 :with-context? true
-                                                 :include-deleted? true))]
+    (when-let [ref-shape (ctf/find-ref-shape file page libraries source
+                                             :with-context? true
+                                             :include-deleted? true)]
       (near-component-render-data (ref-shape->component-head ref-shape)
                                   ref-shape))))
 
@@ -279,27 +276,22 @@
              :page-name  (:name match-page)
              :page-id    (:id match-page)))))
 
-(defn- resolve-swap-slot-main-data
-  "When the highlighted shape has a swap-slot, return its component main tree."
-  [file page libraries objects highlight-id]
+(defn- resolve-swap-main-data
+  "When the highlighted shape is swapped, return the main tree of its own
+  component, where its content comes from."
+  [file _page libraries objects highlight-id]
   (when-let [shape (get objects highlight-id)]
-    (when (ctk/get-swap-slot shape)
-      (when-let [component (ctf/find-ref-component file page libraries shape
-                                                   :include-deleted? true)]
-        (let [head           (ctn/get-head-shape objects shape)
-              component-file (ctf/find-component-file file libraries (:component-file head))
+    (when (ctk/swapped? shape)
+      (when-let [component (ctf/resolve-component shape file libraries :include-deleted? true)]
+        (let [component-file (ctf/find-component-file file libraries (:component-file shape))
               file-data      (:data component-file)
               container      (ctf/get-component-container file-data component)
               root-shape     (ctf/get-component-root file-data component)
-              component-page (ctf/get-component-page file-data component)
-              highlight-main-id
-              (or (ctf/find-ref-id-for-swapped shape page libraries)
-                  (some-> (ctf/get-ref-shape file-data component shape) :id)
-                  (ctk/get-swap-slot shape))]
+              component-page (ctf/get-component-page file-data component)]
           (when root-shape
             {:root-shape root-shape
              :objects (:objects container)
-             :highlight-id highlight-main-id
+             :highlight-id (:id root-shape)
              :file component-file
              :deleted (boolean (:deleted component))
              :file-name (resolve-file-name component-file libraries)
@@ -403,14 +395,14 @@
   [objects root-shape labels thumbnail-context highlight-id]
   (shape-box-height objects root-shape preview-width labels thumbnail-context highlight-id true))
 
-(defn- swap-slot-panel
+(defn- swap-panel
   "Build a swap-main panel for the highlight at `column-idx`.
    The panel is drawn one column to the right (`(inc column-idx)`), so
    arrows pair it with `highlight-panels` via `(dec column-idx)`."
   [column-idx swap-row-y file page libraries objects highlight-id]
   (when-let [{:keys [root-shape objects highlight-id file deleted
                      file-id page-id file-name page-name]}
-             (resolve-swap-slot-main-data file page libraries objects highlight-id)]
+             (resolve-swap-main-data file page libraries objects highlight-id)]
     {:column-idx (inc column-idx)
      :y swap-row-y
      :root-shape root-shape
@@ -776,7 +768,7 @@
   [shape file-id page-id enabled?]
   (let [shape-id       (:id shape)
         tag            (shape-thumbnail-tag shape)
-        swapped?       (some? (ctk/get-swap-slot shape))
+        swapped?       (ctk/swapped? shape)
         object-id      (mf/with-memo [file-id page-id shape-id tag]
                          (thc/fmt-object-id file-id page-id shape-id tag))
         thumb-ref      (mf/with-memo [object-id]
@@ -955,17 +947,17 @@
 
         selection-swap-panel
         (when (and root-shape selected-id swap-row-y)
-          (swap-slot-panel 0 swap-row-y
-                           file page libraries objects selected-id))
+          (swap-panel 0 swap-row-y
+                      file page libraries objects selected-id))
 
         near-swap-panels
         (when (and near-component-chain swap-row-y)
           (keep-indexed
            ;; Near columns are 1-based (selection is column 0), matching
-           ;; swap-slot-panel's (inc column-idx) placement and arrow pairing.
+           ;; swap-panel's (inc column-idx) placement and arrow pairing.
            (fn [idx {:keys [highlight-id file page objects]}]
-             (swap-slot-panel (inc idx) swap-row-y
-                              file page libraries objects highlight-id))
+             (swap-panel (inc idx) swap-row-y
+                         file page libraries objects highlight-id))
            near-component-chain))
 
         swap-panels*

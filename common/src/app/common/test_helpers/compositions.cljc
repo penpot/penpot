@@ -445,16 +445,16 @@
                       [changes nil])
 
 
+        ;; the old form does not validate any more
         file' (cond-> (thf/apply-changes file changes :validate? (and (not propagate-fn) (not as-slot?)))
                 as-slot?
-                (-> (thc/store-swap-as-slot libraries (:id new-shape) slot)
-                    (cond-> (not propagate-fn) (thf/validate-file!))))]
+                (thc/store-swap-as-slot libraries (:id new-shape) slot))]
     (when new-shape-label
       (thi/rm-id! (:id new-shape))
       (thi/set-id! new-shape-label (:id new-shape)))
     (if propagate-fn
-      (-> (propagate-fn file')
-          (thf/validate-file!))
+      (cond-> (propagate-fn file')
+        (not as-slot?) (thf/validate-file!))
       file')))
 
 (defn swap-component-in-shape
