@@ -20,9 +20,7 @@ const RED = new Color("#ff0000"); // the component the copy swaps to
  *
  * A copy of a component that nests another overrides its own root's opacity,
  * swaps its nested copy for a third component, then resets the nested copy. The
- * reset undoes the swap and must change nothing outside the nested copy. It also
- * clears the root's opacity override (F12 in the stabilization plan), pinned as a
- * known failure.
+ * reset undoes the swap and must change nothing outside the nested copy.
  */
 export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase {
     const opCreateComponent = new OpCreateNestableComponent(new ContentCreationStrategyRectangle(BASELINE));
@@ -40,8 +38,7 @@ export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase
             "another component with a red rectangle is created. A copy of the outer component " +
             "lowers its own opacity, swaps its nested copy for the red component, and then resets " +
             "the nested copy. The reset must undo the swap (the nested copy shows the original " +
-            "rectangle again) and leave the copy's own opacity override alone. The reset also " +
-            "clears that override (known failure F12).",
+            "rectangle again) and leave the copy's own opacity override alone.",
         new OpSequence(
             opCreateComponent,
             opCreateRed,
@@ -59,14 +56,7 @@ export function createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(): TestCase
                     "the nested copy is an instance of the original component again"
                 );
                 fillColor.assertEqual(fillColor.read(opCreateComponent.contentCreator.getRectangle(head)), BASELINE);
-                // the reset clears the opacity, which the API then reads as null
-                Assert.knownFailure<number | null>(
-                    "F12",
-                    0.5,
-                    null,
-                    opacity.read(s.get(copyInstance)) ?? null,
-                    (a, b) => a === b
-                );
+                opacity.assertEqual(opacity.read(s.get(copyInstance)), 0.5);
             })
         )
     );

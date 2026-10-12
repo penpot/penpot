@@ -413,8 +413,10 @@
     (thf/apply-changes file changes :validate? false)))
 
 (defn swap-component-
-  "Swap the specified shape by the component specified by component-tag"
-  [file shape component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label library]}]
+  "Swap the specified shape by the component specified by component-tag. With
+  `as-slot?`, store the swap the way files older than the feature
+  components/swap-group do."
+  [file shape component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label library as-slot?]}]
   (let [page    (if page-label
                   (thf/get-page file page-label)
                   (thf/current-page file))
@@ -422,6 +424,7 @@
                     (some? library)
                     (assoc (:id library) library))
         library   (or library file)
+        slot      (when as-slot? (thc/swap-slot-of file libraries shape))
 
         orig-shapes (when keep-touched? (cfh/get-children-with-self (:objects page) (:id shape)))
 
@@ -446,7 +449,10 @@
                       [changes nil])
 
 
-        file' (thf/apply-changes file changes :validate? (not propagate-fn))]
+        file' (cond-> (thf/apply-changes file changes :validate? (and (not propagate-fn) (not as-slot?)))
+                as-slot?
+                (-> (thc/store-swap-as-slot libraries (:id new-shape) slot)
+                    (cond-> (not propagate-fn) (thf/validate-file!))))]
     (when new-shape-label
       (thi/rm-id! (:id new-shape))
       (thi/set-id! new-shape-label (:id new-shape)))
@@ -456,17 +462,18 @@
       file')))
 
 (defn swap-component-in-shape
-  [file shape-tag component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label library]}]
+  [file shape-tag component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label library as-slot?]}]
   (swap-component- file (ths/get-shape file shape-tag :page-label page-label)
                    component-tag
                    :page-label page-label
                    :propagate-fn propagate-fn
                    :keep-touched? keep-touched?
                    :new-shape-label new-shape-label
-                   :library library))
+                   :library library
+                   :as-slot? as-slot?))
 
 (defn swap-component-in-first-child
-  [file shape-tag component-tag & {:keys [page-label propagate-fn library]}]
+  [file shape-tag component-tag & {:keys [page-label propagate-fn library as-slot?]}]
   (let [first-child-id (->> (ths/get-shape file shape-tag :page-label page-label)
                             :shapes
                             first)]
@@ -475,7 +482,8 @@
                      component-tag
                      :page-label page-label
                      :propagate-fn propagate-fn
-                     :library library)))
+                     :library library
+                     :as-slot? as-slot?)))
 
 (defn change-shape
   "Applies `update-fn` to the shape identified by shape-tag. With
