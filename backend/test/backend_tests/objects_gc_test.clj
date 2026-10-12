@@ -152,7 +152,7 @@
         (th/run-pending-tasks!)
         (th/reset-mock! audit-mock)
         (th/run-task! :objects-gc {:skip-delay true})
-        (t/is (nil? (th/db-get :team {:id (:id team)})))
+        (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))
         (let [events (filter #(contains? (:props %) :team-ids)
                              (events-named audit-mock "hard-delete-objects"))]
           (t/is (= 1 (count events)))
@@ -174,7 +174,7 @@
         (th/run-pending-tasks!)
         (th/reset-mock! audit-mock)
         (th/run-task! :objects-gc {:skip-delay true})
-        (t/is (nil? (th/db-get :project {:id (:id project)})))
+        (t/is (nil? (th/db-get :project {:id (:id project)} {::db/remove-deleted false})))
         (let [events (filter #(contains? (:props %) :project-ids)
                              (events-named audit-mock "hard-delete-objects"))]
           (t/is (= 1 (count events)))
@@ -198,7 +198,7 @@
         (th/run-pending-tasks!)
         (th/reset-mock! audit-mock)
         (th/run-task! :objects-gc {:skip-delay true})
-        (t/is (nil? (th/db-get :file {:id (:id file)})))
+        (t/is (nil? (th/db-get :file {:id (:id file)} {::db/remove-deleted false})))
         (let [events (filter #(contains? (:props %) :file-ids)
                              (events-named audit-mock "hard-delete-objects"))]
           (t/is (= 1 (count events)))
@@ -219,7 +219,7 @@
       (th/run-pending-tasks!)
       (th/reset-mock! audit-mock)
       (th/run-task! :objects-gc {:skip-delay true})
-      (t/is (nil? (th/db-get :team {:id (:id team)})))
+      (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))
       (t/is (empty? (:call-args-list @audit-mock))))))
 
 (t/deftest gc-emits-events-only-for-committed-chunks

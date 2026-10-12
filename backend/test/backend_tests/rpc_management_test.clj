@@ -9,6 +9,7 @@
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -710,7 +711,12 @@
         (t/is (th/success? out))
         (t/is (some #(and (= "create-project" (:name %))
                           (= (get-in out [:result :id]) (get-in % [:props :id]))
-                          (= (:id team) (get-in % [:props :team-id])))
+                          (= (:id team) (get-in % [:props :team-id]))
+                          (= "copy" (get-in % [:props :name])))
                     events))
-        (t/is (some #(= "create-file" (:name %)) events))
+        (t/is (some #(and (= "create-file" (:name %))
+                          (string? (get-in % [:props :name]))
+                          (int? (get-in % [:props :revn]))
+                          (ct/inst? (get-in % [:props :modified-at])))
+                    events))
         (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events))))))

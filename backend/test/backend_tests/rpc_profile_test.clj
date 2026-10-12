@@ -1816,3 +1816,16 @@
     (t/is (ct/inst? (:created-at props)))
     (t/is (ct/inst? (:modified-at props)))
     (t/is (ct/inst? (:deleted-at props)))))
+
+(t/deftest delete-profile-is-idempotent
+  ;; Deleting an already-deleted profile (client retry after a lost response)
+  ;; succeeds: the row is still there, only marked.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        params  {::th/type :delete-profile
+                 ::rpc/profile-id (:id profile)}
+        first-out (th/command-raw! params)]
+    (t/is (th/success? first-out))
+    (let [second-out (th/command-raw! params)]
+      (t/is (th/success? second-out))
+      (t/is (= (:id profile)
+               (get-in (meta second-out) [:app.loggers.audit/props :id]))))))

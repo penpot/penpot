@@ -540,7 +540,7 @@
   {::doc/added "1.0"
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (let [profile    (db/get conn :profile {:id profile-id})
+  (let [profile    (db/get* conn :profile {:id profile-id} {::db/remove-deleted false})
         teams      (get-owned-teams conn profile-id)
         deleted-at (ct/now)]
 

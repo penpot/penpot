@@ -146,7 +146,10 @@
         ;; event of their own; emit one per entity for a local projection.
         (audit/submit-create-event cfg params "create-project"
                                    {:id (:id project)
-                                    :team-id (:team-id project)})
+                                    :team-id (:team-id project)
+                                    :name (:name project)
+                                    :created-at (:created-at project)
+                                    :modified-at (:modified-at project)})
 
         (doseq [file-id files]
           (let [params (-> params
@@ -225,7 +228,7 @@
                          (update :team-id bfc/lookup-index)
                          (assoc :created-at timestamp)
                          (assoc :modified-at timestamp))]
-          (teams/add-profile-to-team! cfg params {::db/return-keys false})))
+          (teams/add-profile-to-team! cfg params)))
 
       ;; Duplicate team fonts
       (doseq [font fonts]

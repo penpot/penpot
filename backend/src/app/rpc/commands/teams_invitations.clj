@@ -202,7 +202,10 @@
           (when (contains? cf/flags :admin-console)
             (teams/initialize-user-in-organization cfg (:id member) (:id organization) email))
           ;; Insert the invited member to the team
-          (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true}))
+          (teams/add-profile-to-team! cfg params
+                                      {::db/on-conflict-do-nothing? true}
+                                      {:actor-id (:id profile)
+                                       :rpc-params params}))
 
         ;; If profile is not yet verified, mark it as verified because
         ;; accepting an invitation link serves as verification.
@@ -318,7 +321,7 @@
                               :role :editor))))
 
 (defn- add-member-to-team
-  [{:keys [::db/conn] :as cfg} profile team role member]
+  [{:keys [::db/conn] :as cfg} profile team role member event-opts]
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
@@ -340,7 +343,9 @@
       ::quotes/team-id team-id})
 
     ;; Insert the member to the team
-    (teams/add-profile-to-team! cfg params {::db/on-conflict-do-nothing? true})
+    (teams/add-profile-to-team! cfg params
+                                {::db/on-conflict-do-nothing? true}
+                                event-opts)
 
     ;; Delete any request
     (db/delete! conn :team-access-request
@@ -438,7 +443,9 @@
          (filter #(contains? invitation-emails (key %)))
          (map (fn [[email member]]
                 (let [role (:role (first (filter #(= (:email %) email) invitation-data)))]
-                  (add-member-to-team cfg profile team role member))))
+                  (add-member-to-team cfg profile team role member
+                                      {:actor-id (:id profile)
+                                       :rpc-params params}))))
          (doall))
 
     invitations))

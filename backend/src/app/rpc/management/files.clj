@@ -10,9 +10,9 @@
   The single method `get-file-for-analysis` returns the semantic
   projection of one file (pages, frames, text, links, interactions):
   small, neutral data the decision model consumes. Full file binaries
-  never cross this boundary, and the call itself leaves no audit
-  trail (`::audit/skip`), so periodic sweeps do not pollute the log
-  the pipeline reads."
+  never cross this boundary. Every call leaves an audit event like any
+  other management call, so content reads stay traceable; the volume
+  scales with analyzed files, and the nexus consumer ignores the event."
   (:require
    [app.binfile.common :as bfc]
    [app.common.data :as d]
@@ -21,7 +21,6 @@
    [app.common.time :as ct]
    [app.common.types.text :as txt]
    [app.db :as db]
-   [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]
@@ -216,12 +215,12 @@
 
   Read-only: returns the file identity, revision, share state and the
   neutral projection (pages, frames, text, links, interactions).
-  Called by nexus with the shared-key identity; takes no profile."
+  Called by nexus with the shared-key identity; takes no profile.
+  Every call leaves an audit event like any other management call."
   {::doc/added "2.20"
    ::sm/params schema:get-file-for-analysis-params
    ::sm/result schema:get-file-for-analysis-result
-   ::rpc/auth false
-   ::audit/skip true}
+   ::rpc/auth false}
   [cfg {:keys [file-id]}]
   ;; `realize?` loads the whole object tree eagerly: the projection
   ;; walks every shape, so lazy pointers (no `load-fn` bound here)

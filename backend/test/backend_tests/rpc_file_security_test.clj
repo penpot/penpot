@@ -247,6 +247,33 @@
         cfg       (assoc th/*system* ::rpc/module "main")]
     (audit/prepare-rpc-event cfg mdata params result)))
 
+(t/deftest get-file-for-analysis-emits-audit-event
+  ;; Content reads stay traceable: with the skip gone, the call flows
+  ;; through `wrap-audit` like any other management method. `wrap-audit`
+  ;; itself is fixed at system init (no audit flags there), so assert the
+  ;; metadata flip plus the event shape through `prepare-rpc-event` with
+  ;; the real method metadata.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:profile-id (:id profile)
+                                       :team-id (:id team)})
+        file-id (create-file! (:id profile) (:id project))
+        [mdata _] (get-in th/*system* [:app.rpc/management-methods :get-file-for-analysis])]
+    (t/is (not (::audit/skip mdata)))
+    (let [out    (th/management-command! {::th/type :get-file-for-analysis
+                                          :file-id file-id})
+          result (:result out)
+          params (-> {:file-id file-id}
+                     (assoc ::rpc/request-id (uuid/next)
+                            ::rpc/request-at (ct/now))
+                     (with-meta {:app.http/request mock-request}))
+          cfg    (assoc th/*system* ::rpc/module "management")
+          event  (audit/prepare-rpc-event cfg mdata params result)]
+      (t/is (nil? (:error out)))
+      (t/is (= "management-get-file-for-analysis" (:name event)))
+      (t/is (= file-id (get-in event [:props :file-id])))
+      (t/is (= (:id team) (get-in event [:props :team-id]))))))
+
 (t/deftest file-events-carry-scheduling-props
   (let [profile (th/create-profile* 2 {:is-active true})
         team    (th/create-team* 2 {:profile-id (:id profile)})

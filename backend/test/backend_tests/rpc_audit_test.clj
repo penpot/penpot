@@ -651,17 +651,22 @@
 
 (defn- prepare-event
   "Call prepare-rpc-event with a bare request, returning the built event."
-  [caller result]
-  (let [mdata    {::sv/name "test-cmd"}
-        params   {::rpc/profile-id caller
-                  ::rpc/request-id (uuid/next)
-                  ::rpc/request-at (ct/now)}
-        mock-req (reify
-                   yetti.request/IRequest
-                   (get-header [_ _] nil)
-                   (remote-addr [_] "127.0.0.1"))
-        params   (with-meta params {:app.http/request mock-req})]
-    (audit/prepare-rpc-event th/*system* mdata params result)))
+  ([caller result]
+   (prepare-event caller "test-cmd" result))
+  ([caller cmd-name result]
+   (let [mdata    {::sv/name cmd-name}
+         params   {::rpc/profile-id caller
+                   ::rpc/request-id (uuid/next)
+                   ::rpc/request-at (ct/now)}
+         mock-req (reify
+                    yetti.request/IRequest
+                    (get-header [_ _] nil)
+                    (remote-addr [_] "127.0.0.1"))
+         params   (with-meta params {:app.http/request mock-req})]
+     ;; Production always resolves commands with `::module` set ("main" or
+     ;; "management"): the event name (and the read exclusion) depends on it.
+     (audit/prepare-rpc-event (assoc th/*system* ::rpc/module "main")
+                              mdata params result))))
 
 (t/deftest prepare-rpc-event-ignores-profile-id-from-result
   ;; An audit event belongs to the caller, never to whatever `:profile-id`
@@ -748,6 +753,23 @@
         result  (with-meta {} {::audit/props {:project-id (:default-project-id profile)}})
         event   (prepare-event (:id profile) result)]
     (t/is (= (:default-team-id profile) (get-in event [:props :team-id])))))
+
+(t/deftest prepare-rpc-event-skips-team-id-resolution-for-reads
+  ;; Read events carry no consumer state: resolving their team would add a
+  ;; query to every read, so `get-*` names (plus the known non-get reads)
+  ;; are left untouched even when they carry a project or file id.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 13 {:profile-id (:id profile)})
+        project (th/create-project* 13 {:profile-id (:id profile)
+                                        :team-id (:id team)})
+        file    (th/create-file* 13 {:profile-id (:id profile)
+                                     :project-id (:id project)})]
+    (doseq [cmd-name ["get-file-fragment" "get-comments" "has-file-libraries"]
+            props    [{:file-id (:id file)} {:project-id (:id project)}]]
+      (let [result (with-meta {} {::audit/props props})
+            event  (prepare-event (:id profile) cmd-name result)]
+        (t/is (not (contains? (:props event) :team-id))
+              (str cmd-name " with " (keys props) " must not resolve team-id"))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PREPARE-RPC-EVENT PROFILE-ID COERCION

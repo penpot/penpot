@@ -621,29 +621,42 @@
                                     :default-team-id default-team-id}))
               default-team-id))))))))
 
+(defn- params->role
+  "Derive the team role from membership flags, inverse of
+  `types.team/permissions-for-role`. `team_profile_rel` carries no role
+  column, so no caller can pass it in `params`: derive it here so the event
+  always carries one."
+  [{:keys [is-owner is-admin can-edit]}]
+  (cond is-owner :owner is-admin :admin can-edit :editor :else :viewer))
+
 (defn- submit-membership-event
   "Emits an audit event for a new team membership, so the event stream carries
   every membership add, including the ones that only happen as a side effect of
   another command (team creation, invitation accepted without email roundtrip,
-  duplicated team)."
-  [cfg {:keys [profile-id team-id] :as params}]
+  duplicated team). `event-opts` carries what the row lacks: `:actor-id` (the
+  action owner, defaulting to the member) and `:rpc-params` (request context,
+  which sibling events get from `prepare-rpc-event`)."
+  [cfg {:keys [profile-id team-id] :as params} {:keys [actor-id rpc-params]}]
   (when (contains? cf/flags :audit-log)
     (audit/submit cfg
-                  {:name "add-team-member"
-                   :type "action"
-                   :profile-id profile-id
-                   :props (d/without-nils
-                           {:team-id team-id
-                            :member-id profile-id
-                            :role (:role params)
-                            :is-owner (boolean (:is-owner params))
-                            :is-admin (boolean (:is-admin params))
-                            :can-edit (boolean (:can-edit params))})})))
+                  (-> (audit/event-from-rpc-params (or rpc-params {}))
+                      (assoc :name "add-team-member"
+                             :type "action"
+                             :profile-id (or actor-id profile-id))
+                      (assoc :props (d/without-nils
+                                     {:team-id team-id
+                                      :member-id profile-id
+                                      :role (params->role params)
+                                      :is-owner (boolean (:is-owner params))
+                                      :is-admin (boolean (:is-admin params))
+                                      :can-edit (boolean (:can-edit params))}))))))
 
 (defn add-profile-to-team!
   ([cfg params]
-   (add-profile-to-team! cfg params nil))
-  ([{:keys [::db/conn] :as cfg} {:keys [:profile-id :team-id] :as params} options]
+   (add-profile-to-team! cfg params nil nil))
+  ([cfg params options]
+   (add-profile-to-team! cfg params options nil))
+  ([{:keys [::db/conn] :as cfg} {:keys [:profile-id :team-id] :as params} options event-opts]
    (assert (db/connection-map? cfg)
            "expected cfg with valid connection")
    (when (contains? cf/flags :admin-console)
@@ -658,7 +671,7 @@
      ;; Only emit when a row was actually inserted: with `on-conflict-do-nothing`
      ;; an existing membership returns nil and must not be reported twice.
      (when (some? result)
-       (submit-membership-event cfg params))
+       (submit-membership-event cfg params event-opts))
      result)))
 
 (defn create-team

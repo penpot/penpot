@@ -406,13 +406,25 @@
      JOIN file AS f ON (f.project_id = p.id)
     WHERE f.id = ?")
 
+(def ^:private read-event-names
+  "Read commands excluded from team-id resolution on top of the `get-*`
+  prefix: their events carry no consumer state, so the lookup would only
+  tax the read path."
+  #{"has-file-libraries"})
+
+(defn- read-event?
+  [event-name]
+  (or (str/starts-with? event-name "get-")
+      (contains? read-event-names event-name)))
+
 (defn- enrich-team-id
   "Adds the team id to the event props when it is missing and can be resolved
   locally, so consumers do not have to join production tables. Only events that
   already carry a project or file id are considered: read commands put the
   entity id under `:id`, and resolving those would add a query to every read."
-  [cfg props]
+  [cfg event-name props]
   (if (or (:team-id props)
+          (read-event? event-name)
           (and (nil? (:project-id props))
                (nil? (:file-id props))))
     props
@@ -439,29 +451,32 @@
                          (::rpc/profile-id params)
                          uuid/zero)
 
+        module       (get cfg ::rpc/module)
+        event-name   (or (::name resultm)
+                         (let [sname (::sv/name mdata)]
+                           (if (not= module "main")
+                             (str module "-" sname)
+                             sname)))
+
         props        (-> (or (::replace-props resultm)
                              (merge params (::props resultm)))
                          (clean-props))
 
         ;; Resolve the team locally when the event carries a project or file
         ;; id, so the consumers do not need to join production tables.
-        props        (enrich-team-id cfg props)
+        ;; Reads are excluded: their events carry no consumer state.
+        props        (enrich-team-id cfg event-name props)
 
         context      (-> (::context resultm)
                          (merge (prepare-context-from-request request))
                          (assoc :request-id (::rpc/request-id params))
                          (d/without-nils))
 
-        ip-addr      (inet/parse-request request)
-        module       (get cfg ::rpc/module)]
+        ip-addr      (inet/parse-request request)]
 
     {:type (or (::type resultm)
                (::rpc/type cfg))
-     :name (or (::name resultm)
-               (let [sname (::sv/name mdata)]
-                 (if (not= module "main")
-                   (str module "-" sname)
-                   sname)))
+     :name event-name
 
      :profile-id profile-id
      :ip-addr ip-addr
