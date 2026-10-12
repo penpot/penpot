@@ -86,7 +86,11 @@
             team    (th/create-team* 51 {:profile-id (:id profile)})
             project (th/create-project* 51 {:profile-id (:id profile)
                                             :team-id (:id team)})
-            file-id (uuid/next)]
+            ;; A real row: `submit-file-created-event` reads the light
+            ;; columns back, so a phantom id would emit no event.
+            file    (th/create-file* 99 {:profile-id (:id profile)
+                                         :project-id (:id project)})
+            file-id (:id file)]
         (with-redefs [bf.v3/import-files! (fn [_cfg] {:file-ids [file-id]})]
           (#'binfile/import-binfile
            th/*system*
