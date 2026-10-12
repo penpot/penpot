@@ -43,41 +43,40 @@
   ;; `key-fn` of the vector form. That silently turned the limit into a single
   ;; shared one, so one stuck call ended up rejecting the audit batches of
   ;; every profile on the instance. Two profiles must not share a limiter.
-  (let [climit  (th/init-climit {:submit-audit-events/by-profile
-                                 {:permits 1 :queue 1 :timeout 30000}})
+  (th/with-climit [climit {:submit-audit-events/by-profile
+                           {:permits 1 :queue 1 :timeout 30000}}]
+    (let [;; The metadata declared by the command itself, that is what the test
+          ;; has to cover.
+          mdata   (meta (ns-resolve 'app.rpc.commands.audit 'sm$push-audit-events))
 
-        ;; The metadata declared by the command itself, that is what the test
-        ;; has to cover.
-        mdata   (meta (ns-resolve 'app.rpc.commands.audit 'sm$push-audit-events))
+          gate    (promise)
+          entered (promise)
+          calls   (atom 0)
+          handler (fn [_ _]
+                    (when (= 1 (swap! calls inc))
+                      (deliver entered true)
+                      @gate)
+                    :ok)
+          wrapped (climit/wrap {::rpc/climit climit} handler mdata)
+          call    (fn [profile-id]
+                    (wrapped {::rpc/climit climit} {::rpc/profile-id profile-id}))
+          pid-a   (uuid/next)
+          pid-b   (uuid/next)
+          holder  (future (call pid-a))]
 
-        gate    (promise)
-        entered (promise)
-        calls   (atom 0)
-        handler (fn [_ _]
-                  (when (= 1 (swap! calls inc))
-                    (deliver entered true)
-                    @gate)
-                  :ok)
-        wrapped (climit/wrap {::rpc/climit climit} handler mdata)
-        call    (fn [profile-id]
-                  (wrapped {::rpc/climit climit} {::rpc/profile-id profile-id}))
-        pid-a   (uuid/next)
-        pid-b   (uuid/next)
-        holder  (future (call pid-a))]
+      ;; The first call stays inside the handler holding the only permit.
+      (t/is (true? (deref entered 2000 false)))
 
-    ;; The first call stays inside the handler holding the only permit.
-    (t/is (true? (deref entered 2000 false)))
+      ;; Another call from the SAME profile shares the limiter, so it waits.
+      (let [same (future (call pid-a))]
+        (t/is (= :waiting (deref same 300 :waiting))))
 
-    ;; Another call from the SAME profile shares the limiter, so it waits.
-    (let [same (future (call pid-a))]
-      (t/is (= :waiting (deref same 300 :waiting))))
+      ;; A different profile owns a different limiter and is served right away.
+      ;; With the shared limiter (the bug) this one waits too and times out.
+      (t/is (= :ok (deref (future (call pid-b)) 2000 :timeout)))
 
-    ;; A different profile owns a different limiter and is served right away.
-    ;; With the shared limiter (the bug) this one waits too and times out.
-    (t/is (= :ok (deref (future (call pid-b)) 2000 :timeout)))
-
-    (deliver gate true)
-    (t/is (= :ok (deref holder 2000 :timeout)))))
+      (deliver gate true)
+      (t/is (= :ok (deref holder 2000 :timeout))))))
 
 (t/deftest prepare-context-initiator-is-plain-string
   ;; The initiator must always be a plain string, never a keyword: shared-key

@@ -8,10 +8,12 @@
   (:require
    [app.metrics :as mtx]
    [clojure.test :as t]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    io.prometheus.client.Collector$MetricFamilySamples
-   io.prometheus.client.Collector$MetricFamilySamples$Sample))
+   io.prometheus.client.Collector$MetricFamilySamples$Sample
+   java.util.concurrent.ScheduledThreadPoolExecutor))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -47,3 +49,28 @@
     (t/is (contains? names "process_open_fds"))
     (t/is (contains? names "process_max_fds"))
     (t/is (contains? names "process_cpu_seconds_total"))))
+
+(t/deftest create-sampler-reschedules-after-error
+  ;; The docstring promise, tested once for both call sites: an unexpected error
+  ;; on a single sample must not cancel the following runs. The first sample
+  ;; runs immediately and throws; the next one must still be scheduled.
+  (let [calls   (atom 0)
+        sampler (mtx/create-sampler 1000 (fn []
+                                           (swap! calls inc)
+                                           (throw (ex-info "boom" {}))))]
+    (try
+      (t/is (loop [i 0]
+              (cond (pos? @calls) true
+                    (> i 200) false
+                    :else (do (Thread/sleep 10) (recur (inc i)))))
+            "the first sample must run immediately")
+
+      (let [queue (.getQueue ^ScheduledThreadPoolExecutor sampler)]
+        (t/is (loop [i 0]
+                (cond (= 1 (.size queue)) true
+                      (> i 200) false
+                      :else (do (Thread/sleep 10) (recur (inc i)))))
+              "the next sample must be scheduled after the error"))
+
+      (finally
+        (px/shutdown-now sampler)))))
