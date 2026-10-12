@@ -828,45 +828,69 @@
 ;; CASCADE FIXING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- submit-deleted-cascade
+  "Replay the deletion cascade of every soft-deleted row of `table`, by
+  submitting one `:delete-object` task per row.
+
+  Reads the rows with a server-side cursor (`db/plan`) instead of materialising
+  the whole table, and enqueues the task instead of running it inline, so it
+  can be used against production in bounded batches. The task is idempotent (it
+  only marks the children with the row's own date), `label` is the row id and
+  `dedupe` drops not-yet-due duplicates.
+
+  Options: `:limit` (max rows read), `:ids` (restrict the run to these row ids)
+  and `:dry-run?` (count without enqueueing). `table` and `object` are internal
+  constants, never operator input.
+
+  Returns `{:found n :submitted m}`.
+
+  Note: the submissions are given the outer `system` (with the pool) on
+  purpose; handing them the read-only transaction cfg would write on it."
+  [system {:keys [table object limit ids dry-run?]}]
+  (let [clauses (cond-> ["deleted_at is not null"]
+                  (seq ids) (conj "id = any(?)"))
+        sql     (str "select id, deleted_at from " table
+                     " where " (str/join " and " clauses)
+                     (when limit (str " limit " (long limit))))]
+
+    (db/tx-run! (assoc system ::db/read-only true)
+                (fn [{:keys [::db/conn]}]
+                  (let [query (cond-> [sql]
+                                (seq ids) (conj (db/create-array conn "uuid" ids)))
+                        found (reduce (fn [total {:keys [id deleted-at]}]
+                                        (when-not dry-run?
+                                          (wrk/submit! (-> system
+                                                           (assoc ::wrk/task :delete-object)
+                                                           (assoc ::wrk/params {:object object
+                                                                                :deleted-at deleted-at
+                                                                                :id id})
+                                                           (assoc ::wrk/label (str id))
+                                                           (assoc ::wrk/dedupe true))))
+                                        (inc total))
+                                      0
+                                      (db/plan conn query))]
+                    {:found found
+                     :submitted (if dry-run? 0 found)})))))
+
 (defn process-deleted-profiles-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from profile where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :profile
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+  "Replay the deletion cascade of every soft-deleted profile."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "profile" :object :profile} opts)))
 
 (defn process-deleted-teams-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from team where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :team
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+  "Replay the deletion cascade of every soft-deleted team."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "team" :object :team} opts)))
 
 (defn process-deleted-projects-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from project where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :project
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+  "Replay the deletion cascade of every soft-deleted project."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "project" :object :project} opts)))
 
 (defn process-deleted-files-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from file where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :file
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+  "Replay the deletion cascade of every soft-deleted file."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "file" :object :file} opts)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SSO
