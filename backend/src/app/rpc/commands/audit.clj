@@ -157,8 +157,7 @@
    [:events [:vector schema:frontend-event]]])
 
 (sv/defmethod ::push-audit-events
-  {::climit/id :submit-audit-events/by-profile
-   ::climit/key-fn ::rpc/profile-id
+  {::climit/id [[:submit-audit-events/by-profile ::rpc/profile-id]]
    ::sm/params schema:push-audit-events
    ::audit/skip true
    ::doc/skip true
