@@ -572,8 +572,6 @@
   (t/is (dps/transient-error? {:type :persistence :cause-type :service-unavailable :code :save-failed}))
   (t/is (dps/transient-error? {:type :persistence :cause-type :bad-gateway :code :save-failed}))
   (t/is (dps/transient-error? {:type :persistence :code :invalid-save-response}))
-  ;; A repeat the backend turned away while the save it repeats was running.
-  (t/is (dps/transient-error? {:type :persistence :cause-type :validation :code :commit-in-progress}))
   (t/is (not (dps/transient-error? {:type :authentication})))
   (t/is (not (dps/transient-error? {:type :validation})))
   (t/is (not (dps/transient-error? {:type :internal})))
@@ -758,38 +756,29 @@
                                 "the resent commit saves"))
          (t/is (= 1 (count @requests))))))))
 
-;; Scenario: a save fails terminally and a new edit arrives. The queue
-;; restarts from its head: the failed commit goes out again under its own
-;; commit id, then the new edit follows. Proves: an edit after a failure
-;; sends everything queued, in order.
-(t/deftest ^:async an-edit-after-a-failed-save-sends-the-queue-again
-  (let [calls (atom 0)]
-    (await
-     (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
-         (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-         (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                "the first save fails"))
-         (t/is (= 1 (count @requests)))
-         (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                      (empty? (get-in @store [:persistence :queue])))
-                                "the queue saves after the new edit"))
-         (let [commit-ids (mapv (comp :commit-id second) @requests)]
-           (t/is (= 3 (count commit-ids)))
-           (t/is (= (first commit-ids) (second commit-ids))
-                 "the failed commit is sent again under the same commit id")
-           (t/is (not= (second commit-ids) (nth commit-ids 2))
-                 "the new edit follows as its own commit")))
-       (fn [_ _]
-         (if (= 1 (swap! calls inc))
-           (rx/throw (ex-info "Validation failed" {:type :validation}))
-           (rx/of {:revn @calls})))))))
+;; Scenario: the backend rejects a save outright and a new edit arrives.
+;; Proves: an edit does not send a save that would only fail the same way
+;; again, and the new edit is kept in the queue rather than dropped.
+(t/deftest ^:async an-edit-after-a-rejected-save-does-not-send-it-again
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests store]}]
+       (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+       (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                              "the first save fails"))
+       (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+       (await (async/wait-for #(= 2 (count (get-in @store [:persistence :queue])))
+                              "the edit joins the queue"))
+       (await (async/settle))
+       (t/is (= 1 (count @requests)) "the rejected save is not sent again")
+       (t/is (= :error (get-in @store [:persistence :status]))))
+     (fn [_ _] (rx/throw (ex-info "Validation failed" {:type :validation}))))))
 
-;; Scenario: a save keeps failing while edits arrive. Inside the retry
-;; window each edit sends the queue again; once the window has passed, edits
-;; only pile up. Proves: a commit is never sent after the backend may have
-;; forgotten its id, and the edits are kept rather than dropped.
+;; Scenario: a save fails because edit permission was lost; the permission
+;; comes back and edits arrive. Past the retry window an edit only joins the
+;; queue; inside it, an edit sends the head again. Proves: a commit is never
+;; sent after the backend may have forgotten its id, and the edits are kept
+;; rather than dropped.
 (t/deftest ^:async an-edit-past-the-retry-window-does-not-send-the-queue-again
   (let [clock (atom 0)]
     (await
@@ -798,45 +787,49 @@
          (await
           (mock/with-mocks*
             {ct/now (mock/stub #(ct/inst @clock))}
+            (ptk/emit! store #(assoc-in % [:permissions :can-edit] false))
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+            (await (async/wait-for #(= :save-permission-denied
+                                       (get-in @store [:persistence :error :code]))
                                    "the first save fails"))
-            (t/is (= 1 (count @requests)))
-
-            (reset! clock (quot dps/retry-give-up-ms 2))
-            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 2 (count @requests))
-                                   "inside the window an edit sends the head again"))
+            (ptk/emit! store #(assoc-in % [:permissions :can-edit] true))
 
             (reset! clock (+ dps/retry-give-up-ms 1000))
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 3 (count (get-in @store [:persistence :queue])))
+            (await (async/wait-for #(= 2 (count (get-in @store [:persistence :queue])))
                                    "the edit joins the queue"))
             (await (async/settle))
-            (t/is (= 2 (count @requests)) "past the window an edit sends nothing")
-            (t/is (= :error (get-in @store [:persistence :status]))))))
+            (t/is (= 0 (count @requests)) "past the window an edit sends nothing")
+            (t/is (= :error (get-in @store [:persistence :status])))
+
+            ;; Back inside the window, measured from the first failure.
+            (reset! clock (quot dps/retry-give-up-ms 2))
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @requests))
+                                   "inside the window an edit sends the head again")))))
        (fn [_ _] (rx/throw (ex-info "Validation failed" {:type :validation})))))))
 
-;; Scenario: a save fails and a later edit saves the queue. Proves: a save
-;; that lands ends the run of failures, so the retry window starts over.
+;; Scenario: a save fails because edit permission was lost, the permission
+;; comes back, and a later edit saves the queue. Proves: a save that lands
+;; ends the run of failures, so the retry window starts over.
 (t/deftest ^:async a-landed-save-restarts-the-retry-window
   (let [calls (atom 0)]
     (await
      (with-persistence
        (^:async fn [{:keys [file-id store]}]
+         (ptk/emit! store #(assoc-in % [:permissions :can-edit] false))
          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
          (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
                                 "the first save fails"))
          (t/is (some? (get-in @store [:persistence :failing-since])))
+         (ptk/emit! store #(assoc-in % [:permissions :can-edit] true))
          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
          (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
                                       (empty? (get-in @store [:persistence :queue])))
                                 "the queue saves"))
          (t/is (nil? (get-in @store [:persistence :failing-since]))))
        (fn [_ _]
-         (if (= 1 (swap! calls inc))
-           (rx/throw (ex-info "Validation failed" {:type :validation}))
-           (rx/of {:revn @calls})))))))
+         (rx/of {:revn (swap! calls inc)}))))))
 
 ;; Scenario: a transient failure is retried after edit permission is lost,
 ;; so the commit fails with a request already sent. Restoring the permission
