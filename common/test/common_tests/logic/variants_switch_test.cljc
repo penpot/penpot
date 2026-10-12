@@ -229,9 +229,9 @@
     (t/is (= (:width copy01) 5))
     ;; The copy has width 15 after the switch
     (t/is (= (:width copy01') 15))
-    ;; The copy is not touched but has swap slot
-    (t/is (= (count (:touched copy01')) 1))
-    (t/is (= (ctk/get-swap-slot copy01') (thi/id :copy01)))))
+    ;; A switch in a main leaves a plain nested copy, not touched
+    (t/is (empty? (:touched copy01')))
+    (t/is (not (ctk/swapped? copy01')))))
 
 (t/deftest test-nested-switch-in-copy
   (let [;; ==== Setup
@@ -262,9 +262,9 @@
     (t/is (= (:width child01) 5))
     ;; The copy has width 15 after the switch
     (t/is (= (:width child01') 15))
-    ;; The copy is not touched but has swap slot
-    (t/is (= (count (:touched child01')) 1))
-    (t/is (= (ctk/get-swap-slot child01') (thi/id :nested01)))))
+    ;; A switch in a copy is a swap of the position it refers to
+    (t/is (= #{:swap-group} (:touched child01')))
+    (t/is (= (thi/id :nested01) (:shape-ref child01')))))
 
 ;; ============================================================
 ;; NESTED COPY SWITCH (with overrides)
@@ -312,10 +312,9 @@
     (t/is (= (:width copy01) 25))
     ;; The copy gets the switched variant width 15, because this is the value changed in the variant
     (t/is (= (:width copy01') 15))
-    ;; The copy is fills touched and has swap slot
-    (t/is (= (count (:touched copy01')) 2))
-    (t/is (= (ctk/get-swap-slot copy01') (thi/id :copy01)))
-    (t/is (contains? (:touched copy01') :fill-group))))
+    ;; The copy is fills touched, and a plain nested copy
+    (t/is (= #{:fill-group} (:touched copy01')))
+    (t/is (not (ctk/swapped? copy01')))))
 
 (t/deftest test-nested-switch-in-copy-with-override
   (let [;; ==== Setup
@@ -363,10 +362,9 @@
     (t/is (not= (:width nested02) 5))
     ;; The copy gets the switched variant width 15, because this is the value changed in the variant
     (t/is (= (:width nested02') 15))
-    ;; The copy is fills touched and has swap slot
-    (t/is (= (count (:touched nested02')) 2))
-    (t/is (= (ctk/get-swap-slot nested02') (thi/id :nested01)))
-    (t/is (contains? (:touched nested02') :fill-group))))
+    ;; The copy is fills touched, and a swap of the position it refers to
+    (t/is (= #{:fill-group :swap-group} (:touched nested02')))
+    (t/is (= (thi/id :nested01) (:shape-ref nested02')))))
 
 ;; ============================================================
 ;; TEXT OVERRIDES (identical variants)

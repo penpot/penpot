@@ -49,13 +49,12 @@
              (ths/get-shape-by-id file)
              (:component-id)))
 
-          (nested-swap-slot [file]
+          (nested-shape [file]
             (->>
              (ths/get-shape file :copy)
              :shapes
              first
-             (ths/get-shape-by-id file)
-             (ctk/get-swap-slot)))
+             (ths/get-shape-by-id file)))
 
           (circle-component-id [file]
             (:id (thc/get-component file :circle)))
@@ -75,13 +74,14 @@
         (tho/swap-component-in-shape :copy-copy-rectangle :circle)
         (validate #(t/is (= (copy-type %) :circle)))
         (validate #(t/is (= (nested-component-id %) (circle-component-id %))))
-        (validate #(t/is (= (copy-rectangle-id %) (nested-swap-slot %))))
+        (validate #(t/is (= (copy-rectangle-id %) (:shape-ref (nested-shape %)))))
+        (validate #(t/is (ctk/swapped? (nested-shape %))))
 
         ;; Do a "Reset override" on the newly created Ellipse. It should swap for a Rectangle
         (tho/reset-overrides-in-first-child :copy)
         (validate #(t/is (= (copy-type %) :rect)))
         (validate #(t/is (= (nested-component-id %) (rectangle-component-id %))))
-        (validate #(t/is (nil? (nested-swap-slot %)))))))
+        (validate #(t/is (not (ctk/swapped? (nested-shape %))))))))
 
 ;; The nested component sits inside a group, not directly under the instance root.
 ;; Resetting overrides after a swap must undo the swap without error.
@@ -135,10 +135,11 @@
       ;; ==== Check – after swap
       (t/is (= :circle (:type (tho/bottom-shape file-swapped :copy-nested-swapped))))
       (t/is (= circle-id (:component-id swapped)))
-      (t/is (= main-nested-id (ctk/get-swap-slot swapped)))
+      (t/is (= main-nested-id (:shape-ref swapped)))
+      (t/is (ctk/swapped? swapped))
 
-      ;; ==== Check – after reset: back to rectangle, no swap slot, file still valid
+      ;; ==== Check – after reset: back to rectangle, not swapped, file still valid
       (t/is (some? restored))
       (t/is (= :rect (:type (tho/bottom-shape-by-id file' (:id restored)))))
       (t/is (= rectangle-id (:component-id restored)))
-      (t/is (nil? (ctk/get-swap-slot restored))))))
+      (t/is (not (ctk/swapped? restored))))))

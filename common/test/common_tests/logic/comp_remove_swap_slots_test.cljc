@@ -30,10 +30,10 @@
   ;; {:frame-green} [:name Frame1]                         # [Component :green]
   ;;     :red-copy-green [:name Frame1]                    @--> :frame-red
   ;; {:frame-b1} [:name Frame1]                            # [Component :b1]
-  ;;     :blue1 [:name Frame1, :swap-slot-label :red-copy] @--> :frame-blue
+  ;;     :blue1 [:name Frame1]                             @--> :frame-blue
   ;;     :frame-yellow [:name Frame1]
   ;;     :green-copy [:name Frame1]                        @--> :frame-green
-  ;;         :blue2 [:name Frame1, :swap-slot-label :red-copy-green] @--> :frame-blue
+  ;;         :blue2 [:name Frame1] (swapped)               @--> :frame-blue
   ;; {:frame-b2} [:name Frame1]                            # [Component :b2]
   (-> (thf/sample-file :file1)
       (tho/add-frame :frame-red)
@@ -75,12 +75,12 @@
 
     ;; ==== Check
 
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1)))
 
-    ;; blue1 has not swap-id after move
+    ;; blue1 is still a plain nested copy
     (t/is (some? blue1'))
-    (t/is (nil? (ctk/get-swap-slot blue1')))))
+    (t/is (not (ctk/swapped? blue1')))))
 
 (t/deftest test-remove-swap-slot-relocating-blue1-to-b2
   (let [;; ==== Setup
@@ -105,12 +105,12 @@
 
     ;; ==== Check
 
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1)))
 
-    ;; blue1 has not swap-id after move
+    ;; blue1 is still a plain nested copy
     (t/is (some? blue1'))
-    (t/is (nil? (ctk/get-swap-slot blue1')))))
+    (t/is (not (ctk/swapped? blue1')))))
 
 (t/deftest test-remove-swap-slot-relocating-yellow-to-root
   (let [;; ==== Setup
@@ -148,12 +148,12 @@
 
     ;; ==== Check
 
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1)))
 
-    ;; blue1 has not swap-id after move
+    ;; blue1 is still a plain nested copy
     (t/is (some? blue1''))
-    (t/is (nil? (ctk/get-swap-slot blue1'')))))
+    (t/is (not (ctk/swapped? blue1'')))))
 
 (t/deftest test-remove-swap-slot-relocating-yellow-to-b2
   (let [;; ==== Setup
@@ -192,12 +192,12 @@
 
     ;; ==== Check
 
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1)))
 
-    ;; blue1 has not swap-id after move
+    ;; blue1 is still a plain nested copy
     (t/is (some? blue1''))
-    (t/is (nil? (ctk/get-swap-slot blue1'')))))
+    (t/is (not (ctk/swapped? blue1'')))))
 
 (defn- find-duplicated-shape
   [original-shape page]
@@ -238,12 +238,12 @@
 
     ;; ==== Check
 
-    ;; blue1 has swap-id
-    (t/is (some? (ctk/get-swap-slot blue1')))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1')))
 
-    ;; duplicated-blue1 has not swap-id
+    ;; neither is its duplicate
     (t/is (some? duplicated-blue1'))
-    (t/is (nil? (ctk/get-swap-slot duplicated-blue1')))))
+    (t/is (not (ctk/swapped? duplicated-blue1')))))
 
 (t/deftest test-remove-swap-slot-duplicate-yellow
   (let [;; ==== Setup
@@ -293,12 +293,12 @@
 
     ;; ==== Check
 
-    ;; blue1'' has swap-id
-    (t/is (some? (ctk/get-swap-slot blue1'')))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1'')))
 
-    ;; duplicated-blue1'' has not swap-id
+    ;; neither is its duplicate
     (t/is (some? duplicated-blue1''))
-    (t/is (nil? (ctk/get-swap-slot duplicated-blue1'')))))
+    (t/is (not (ctk/swapped? duplicated-blue1'')))))
 
 (t/deftest test-keep-swap-slot-relocating-blue1-before-yellow
   (let [;; ==== Setup
@@ -322,12 +322,12 @@
 
     ;; ==== Check
 
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1)))
 
-    ;; blue1 still has swap-id after move
+    ;; blue1 is still a plain nested copy
     (t/is (some? blue1'))
-    (t/is (some? (ctk/get-swap-slot blue1')))))
+    (t/is (not (ctk/swapped? blue1')))))
 
 (t/deftest test-keep-swap-slot-move-blue1-inside-and-outside-yellow
   (let [;; ==== Setup
@@ -365,12 +365,12 @@
 
     ;; ==== Check
 
-    ;; blue1 has swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1)))
 
-    ;;blue1 still has swap-id after move
+    ;; blue1 is still a plain nested copy
     (t/is (some? blue1''))
-    (t/is (some? (ctk/get-swap-slot blue1'')))))
+    (t/is (not (ctk/swapped? blue1'')))))
 
 
 (t/deftest test-keep-swap-slot-relocate-blue1-inside-and-outside-yellow
@@ -411,12 +411,12 @@
 
     ;; ==== Check
 
-    ;; blue1 has swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
+    ;; blue1 was swapped in a main, so it is not marked
+    (t/is (not (ctk/swapped? blue1)))
 
-    ;;blue1 still has swap-id after move
+    ;; blue1 is still a plain nested copy
     (t/is (some? blue1''))
-    (t/is (some? (ctk/get-swap-slot blue1'')))))
+    (t/is (not (ctk/swapped? blue1'')))))
 
 
 (t/deftest test-remove-swap-slot-relocating-green-copy-to-root
@@ -442,12 +442,12 @@
 
     ;; ==== Check
 
-    ;; blue2 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue2)))
+    ;; blue2 is swapped before the move
+    (t/is (ctk/swapped? blue2))
 
-    ;; blue1still has swap-id after move
+    ;; blue2 is still swapped after the move
     (t/is (some? blue2'))
-    (t/is (some? (ctk/get-swap-slot blue2')))))
+    (t/is (ctk/swapped? blue2'))))
 
 (t/deftest test-remove-swap-slot-relocating-green-copy-to-b2
   (let [;; ==== Setup
@@ -473,12 +473,12 @@
 
     ;; ==== Check
 
-    ;; blue2 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue2)))
+    ;; blue2 is swapped before the move
+    (t/is (ctk/swapped? blue2))
 
-    ;; blue1still has swap-id after move
+    ;; blue2 is still swapped after the move
     (t/is (some? blue2'))
-    (t/is (some? (ctk/get-swap-slot blue2')))))
+    (t/is (ctk/swapped? blue2'))))
 
 (t/deftest test-remove-swap-slot-duplicating-green-copy
   (let [;; ==== Setup
@@ -515,12 +515,12 @@
 
     ;; ==== Check
 
-    ;; blue1 has swap-id
-    (t/is (some? (ctk/get-swap-slot blue1')))
+    ;; blue1 was swapped in a main, so it is a plain nested copy
+    (t/is (not (ctk/swapped? blue1')))
 
-    ;; duplicated-blue1 also has swap-id
+    ;; the duplicate of blue2 is swapped too
     (t/is (some? duplicated-blue1'))
-    (t/is (some? (ctk/get-swap-slot duplicated-blue1')))))
+    (t/is (ctk/swapped? duplicated-blue1'))))
 
 (t/deftest test-swap-outside-component-doesnt-have-swap-slot
   (let [;; ==== Setup
@@ -536,9 +536,9 @@
 
     ;; ==== Check
 
-    ;; blue-copy1 has not swap-id
+    ;; blue-copy1 is not swapped
     (t/is (some? blue-copy1'))
-    (t/is (nil? (ctk/get-swap-slot blue-copy1')))))
+    (t/is (not (ctk/swapped? blue-copy1')))))
 
 (t/deftest test-remove-swap-slot-detach
   (let [;; ==== Setup
@@ -561,9 +561,9 @@
 
     ;; ==== Check
 
-    ;; blue2 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue2)))
+    ;; blue2 is swapped before the detach
+    (t/is (ctk/swapped? blue2))
 
-    ;; blue2' has not swap-id after move
+    ;; blue2 is a plain copy after the detach
     (t/is (some? blue2'))
-    (t/is (nil? (ctk/get-swap-slot blue2')))))
+    (t/is (not (ctk/swapped? blue2')))))

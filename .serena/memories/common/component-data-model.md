@@ -26,11 +26,14 @@ The intended per-operation rules (which writes touch, what sync, reset, update-m
 
 Masters are not normally touched through `set-shape-attr`, but touched flags can appear on master shapes through cloning/duplication paths. `add-touched-from-ref-chain` in `app.common.logic.variants` unions touched flags from ancestors into the copy being processed, so upstream/master touched state can affect downstream switch behavior.
 
-## Swap slots and positional matching
+## Swapped heads and positional matching
 
-- A swap slot (stored via `ctk/set-swap-slot`, a `:touched` group `swap-slot-<uuid>`) marks a copy sub-head that was SWAPPED to another component; `compare-children` then pairs it to the main child by slot instead of by `shape-ref`.
-- Copy sub-heads without a slot are paired to main children by `shape-ref` (seek, not index). `find-near-match` (positional) is only a validator/repair heuristic; validity requires membership of the ref among the near-main parent's children, not index equality (`mem:common/file-change-validation-migration-subtleties`).
+- A copy sub-head the user SWAPPED to another component keeps `:shape-ref` on the near-main child it replaces (its *position*); `:component-id`/`:component-file` name the component its *content* comes from; the touched group `:swap-group` marks the swap. Its children refer into its own component's main.
+- So for a swapped head the position shape (`find-ref-shape`, X in the near main) and the content shape (its component's main root) differ. `ctf/find-ref-shape` gives position (parent heads are tried outermost first); code that needs the content of a swapped head goes through the content helper, never through `get-ref-shape` with the head's own component.
+- A copy sub-head whose component differs from its near main's component must have `:swap-group`; one that matches must not.
+- Copy children are paired to main children by `shape-ref` (`is-main-of?`, seek, not index), swapped or not. `find-near-match` (positional) is only a validator/repair heuristic; validity requires membership of the ref among the near-main parent's children, not index equality (`mem:common/file-change-validation-migration-subtleties`).
 - Copy child ORDER converges to the main's via the async sync (`moved` branch of `compare-children`); local code must never reorder copy children directly (guards in `:mov-objects`/`:reorder-children`).
+- Files older than the feature `components/swap-group` stored the swap as a slot (`swap-slot-<uuid>` touched group, `:shape-ref` on the new component's root); the migration converts them.
 
 ## Cloning paths
 

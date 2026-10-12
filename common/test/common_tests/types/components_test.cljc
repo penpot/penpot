@@ -181,7 +181,7 @@
               (tho/add-simple-component :component3 :main3-root :main3-child
                                         :root-params {:name "Frame3"}
                                         :child-params {:name "Rect3"})
-              (tho/swap-component-in-first-child :copy2 :component3))
+              (tho/swap-component-in-first-child :copy2 :component3 :as-slot? true))
 
           page (thf/current-page file)
 
@@ -244,7 +244,7 @@
                                         :main1-child-params {:name "Rect3"}
                                         :main2-root-params {:name "Frame4"}
                                         :nested-head-params {:children-labels [:nested4-child]})
-              (tho/swap-component-in-first-child :copy2 :component4))
+              (tho/swap-component-in-first-child :copy2 :component4 :as-slot? true))
 
           page (thf/current-page file)
 
@@ -329,7 +329,7 @@
           (-> (thf/sample-file :file1)
               (thc/instantiate-component :component2 :copy2 :children-labels [:copy2-nested-head]
                                          :library library1)
-              (tho/swap-component-in-first-child :copy2 :component4 :library library2))
+              (tho/swap-component-in-first-child :copy2 :component4 :library library2 :as-slot? true))
 
           page-library1 (thf/current-page library1)
           page-library2 (thf/current-page library2)
