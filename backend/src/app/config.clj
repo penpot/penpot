@@ -176,7 +176,6 @@
     [:audit-log-http-handler-concurrency {:optional true} ::sm/int]
 
     [:default-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
-    [:scheduled-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
     [:worker-default-parallelism {:optional true} ::sm/int]
     [:worker-webhook-parallelism {:optional true} ::sm/int]
 

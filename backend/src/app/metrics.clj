@@ -10,7 +10,8 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.metrics.definition :as-alias mdef]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    io.prometheus.client.CollectorRegistry
    io.prometheus.client.Counter
@@ -140,6 +141,33 @@
   (when-let [mobj (get-collector instance id)]
     (run-collector! mobj params)
     true))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SAMPLER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-sampler
+  "Create a daemon scheduler that runs `sample` every `interval-ms`,
+  starting right away. A single thread is used, named after `name`
+  (default `metrics`), and an unexpected error on a single sample does NOT
+  cancel the following runs: the next run is scheduled in a `finally`.
+  The caller owns the returned scheduler and has to shut it down
+  (`px/shutdown-now`) when its component halts."
+  ([interval-ms sample]
+   (create-sampler interval-ms sample {}))
+  ([interval-ms sample {:keys [name] :or {name "metrics"}}]
+   (let [prefix    (str "penpot/" name "/")
+         scheduler (px/scheduled-executor
+                    :parallelism 1
+                    :factory (px/thread-factory :prefix prefix :daemon true))
+         task      (fn task []
+                     (try
+                       (sample)
+                       (finally
+                         (px/schedule scheduler interval-ms task))))]
+
+     (px/schedule scheduler 0 task)
+     scheduler)))
 
 (defn- create-registry
   []
