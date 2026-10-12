@@ -7,7 +7,6 @@
 (ns backend-tests.rpc-file-test
   (:require
    [app.common.features :as cfeat]
-   [app.common.generic-pool :as gpool]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
@@ -18,15 +17,12 @@
    [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.http :as http]
-   [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [cuerdas.core :as str])
-  (:import
-   java.lang.AutoCloseable))
+   [cuerdas.core :as str]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -2765,21 +2761,9 @@
   [file]
   (:revn (th/db-get :file {:id (:id file)})))
 
-(defn- commit-key
-  [file-id commit-id]
-  (str "penpot.file-commit." (cf/get :tenant) "." file-id "." commit-id))
-
-(defn- with-redis
-  [f]
-  (let [conn (gpool/get (get-in th/*system* [:app.redis/pool]))]
-    (try
-      (f @conn)
-      (finally
-        (.close ^AutoCloseable conn)))))
-
 (defn- get-commit-record
   [file-id commit-id]
-  (with-redis #(rds/get % (commit-key file-id commit-id))))
+  (th/db-get :file-commit {:file-id file-id :commit-id commit-id}))
 
 (t/deftest a-saved-commit-is-recorded-with-its-revision
   (let [profile   (th/create-profile* 1 {:is-active true})
@@ -2790,10 +2774,10 @@
         out       (th/command! (save-params profile file commit-id "page"))]
 
     (t/is (nil? (:error out)))
-    (t/is (= "0" (get-commit-record (:id file) commit-id))
+    (t/is (= 0 (:revn (get-commit-record (:id file) commit-id)))
           "the record holds the revision the save answered with")))
 
-(t/deftest a-failed-save-releases-its-commit-id
+(t/deftest a-failed-save-leaves-no-commit-record
   (let [profile   (th/create-profile* 1 {:is-active true})
         file      (th/create-file* 1 {:profile-id (:id profile)
                                       :project-id (:default-project-id profile)
@@ -2813,21 +2797,94 @@
         (t/is (nil? (:error out2)))
         (t/is (= 1 (file-revn file)))))))
 
-(t/deftest a-repeat-of-a-save-in-progress-is-turned-away
-  (let [profile   (th/create-profile* 1 {:is-active true})
-        file      (th/create-file* 1 {:profile-id (:id profile)
-                                      :project-id (:default-project-id profile)
-                                      :is-shared false})
-        commit-id (uuid/random)]
+(t/deftest a-repeat-waiting-behind-a-slow-save-applies-once
+  ;; After a gateway timeout the client sends the save again while the
+  ;; first one still runs. The repeat waits on the file lock, and however
+  ;; long the first save takes, it must find the record once the lock is
+  ;; free.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        params  (save-params profile file (uuid/random) "page")
+        apply*  (var-get #'app.rpc.commands.files-update/update-file*)
+        entered (java.util.concurrent.CountDownLatch. 1)]
 
-    ;; A save that holds the commit id and never records its outcome.
-    (with-redis #(rds/set % (commit-key (:id file) commit-id) "pending"
-                          {:ex (ct/duration {:minutes 1})}))
+    (with-redefs [app.rpc.commands.files-update/update-file*
+                  (fn [& args]
+                    (.countDown entered)
+                    (th/sleep 1500)
+                    (apply apply* args))]
+      (let [original (future (th/command! params))
+            _        (.await entered)
+            retry    (future (th/command! params))
+            outs     (mapv #(deref % 30000 ::timeout) [original retry])]
 
-    (let [out (th/command! (save-params profile file commit-id "page"))]
-      (t/is (th/ex-of-type? (:error out) :validation))
-      (t/is (th/ex-of-code? (:error out) :commit-in-progress))
-      (t/is (= 0 (file-revn file)) "nothing is applied"))))
+        (t/is (not-any? #{::timeout} outs) "both requests finished")
+        (t/is (every? (comp nil? :error) outs))
+        (t/is (= 1 (file-revn file)) "the changes are applied once")
+        (t/is (= [0 0] (mapv (comp :revn :result) outs))
+              "both callers get the same answer")))))
+
+(t/deftest a-save-whose-record-fails-applies-nothing
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        params  (save-params profile file (uuid/random) "page")]
+
+    (with-redefs [app.rpc.commands.files-update/record-commit!
+                  (fn [& _] (throw (ex-info "unable to record commit" {})))]
+      (let [out (th/command! params)]
+        (t/is (some? (:error out)))
+        (t/is (= 0 (file-revn file))
+              "the changes roll back together with their record")))
+
+    (t/testing "the retry applies once"
+      (let [out (th/command! params)]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (file-revn file)))
+        (t/is (some? (get-commit-record (:id file) (:commit-id params))))))))
+
+(t/deftest objects-gc-deletes-only-expired-commit-records
+  ;; A record must outlive the client's 24h retry window, which starts
+  ;; after the save does; only records past the retention are deleted.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        old-id  (uuid/random)
+        kept-id (uuid/random)]
+
+    (t/is (nil? (:error (th/command! (save-params profile file old-id "old")))))
+    (t/is (nil? (:error (th/command! (save-params profile file kept-id "kept")))))
+
+    (th/db-update! :file-commit {:created-at (ct/in-past {:hours 49})}
+                   {:file-id (:id file) :commit-id old-id})
+    (th/db-update! :file-commit {:created-at (ct/in-past {:hours 30})}
+                   {:file-id (:id file) :commit-id kept-id})
+
+    (th/run-task! :objects-gc {})
+
+    (t/is (nil? (get-commit-record (:id file) old-id))
+          "a record past the retention is deleted")
+    (t/is (some? (get-commit-record (:id file) kept-id))
+          "a record older than a day but inside the retention is kept")))
+
+(t/deftest a-repeated-commit-on-a-deleted-file-is-not-answered
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        params  (save-params profile file (uuid/random) "page")
+        out1    (th/command! params)]
+
+    (t/is (nil? (:error out1)))
+    (th/db-update! :file {:deleted-at (ct/now)} {:id (:id file)})
+
+    (let [out2 (th/command! params)]
+      (t/is (some? (:error out2))
+            "the repeat fails as a save to a deleted file does"))))
 
 (t/deftest update-file-refuses-a-repeated-commit-after-a-version-restore
   (let [profile (th/create-profile* 1 {:is-active true})

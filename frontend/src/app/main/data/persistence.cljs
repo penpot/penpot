@@ -43,8 +43,9 @@
   30000)
 
 (def retry-give-up-ms
-  "How long a failing queue keeps being sent. Matches how long the backend
-  remembers a commit id."
+  "How long a failing queue keeps being sent. Must stay shorter than how
+  long the backend keeps a commit record (`commit-retention` in
+  `app.rpc.commands.files-update`), or a resend could be applied twice."
   (* 24 60 60 1000))
 
 (def ^:private saving-stall-timeout-ms (* 5 60 1000))
@@ -127,10 +128,8 @@
                     (dissoc :run-id :last-progress-at :stall-reported))))))))
 
 (def ^:private transient-codes
-  "Save failures a later attempt can get past: an unusable save response, and
-  a repeat the backend turned away while the save it repeats was running."
-  #{:invalid-save-response
-    :commit-in-progress})
+  "Save failures a later attempt can get past: an unusable save response."
+  #{:invalid-save-response})
 
 (defn transient-error?
   "True when a save failure is worth retrying with backoff: a transient
@@ -165,6 +164,16 @@
   (let [since (:failing-since pstate)]
     (or (nil? since)
         (< (- (inst-ms (ct/now)) since) retry-give-up-ms))))
+
+(defn- resumable-failure?
+  "True when a new edit may send a failed queue again: the failure was
+  transient, or edit permission was lost and is back. A save the backend
+  rejected outright would only fail the same way again."
+  [state]
+  (let [error (dm/get-in state [:persistence :error])]
+    (or (transient-error? error)
+        (and (= :save-permission-denied (:code error))
+             (dm/get-in state [:permissions :can-edit])))))
 
 (defn- report-stalled-persistence
   [now]
@@ -262,9 +271,10 @@
           (cond
             ;; A new edit restarts a failed queue from its head, while the
             ;; backend still recognizes the head's commit id and so cannot
-            ;; apply it twice.
+            ;; apply it twice, unless the failure would only repeat.
             (= :error (:status pstate))
-            (when (retry-window-open? pstate)
+            (when (and (retry-window-open? pstate)
+                       (resumable-failure? state))
               (rx/of (resume-persistence)))
 
             ;; A `:retrying` episode keeps its run id, so a new edit only
