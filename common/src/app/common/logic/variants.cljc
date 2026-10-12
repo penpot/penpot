@@ -105,6 +105,17 @@
                 (ctk/remove-swap-slot)
                 (ctk/set-swap-slot (:shape-ref related-shape-in-new)))))
 
+        ;; A swap stored as override takes the place of the related shape,
+        ;; and stays a swap while its component differs from that one
+        (cond->
+         (ctk/swapped? orig-swapped-child)
+          (pcb/update-shapes
+           [(:id orig-swapped-child)]
+           #(cond-> (assoc % :shape-ref (:shape-ref related-shape-in-new))
+              (and (= (:component-id %) (:component-id related-shape-in-new))
+                   (= (:component-file %) (:component-file related-shape-in-new)))
+              (ctk/remove-swap-group))))
+
         ;; Delete new non-swapped item
         (cls/generate-delete-shapes ldata page objects (d/ordered-set (:id related-shape-in-new)) {:allow-altering-copies true})
         second)))
@@ -120,7 +131,7 @@
         ;; Ignore first and last (base-parent and shape)
         ancestors (when (and ancestors (<= 3 num-ancestors))
                     (subvec (vec ancestors) 1 (dec num-ancestors)))]
-    (some ctk/get-swap-slot ancestors)))
+    (some #(or (ctk/get-swap-slot %) (ctk/swapped? %)) ancestors)))
 
 (defn- find-shape-ref-child-of
   "Get the shape referenced by the shape-ref of the near main of the shape,
@@ -141,10 +152,15 @@
 
 (defn- add-touched-from-ref-chain
   "Adds to the :touched attr of a shape the content of
-   the :touched of all its chain of ref shapes"
+   the :touched of all its chain of ref shapes. A swap made in a main of the
+   chain is part of that main, so only the shape's own swap counts, and a
+   swapped shape keeps only its own groups."
   [container libraries shape]
-  (let [new-touched (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape nil)]
-    (assoc shape :touched new-touched)))
+  (if (ctk/swapped? shape)
+    ;; its content comes from its own component's main, which has no overrides
+    shape
+    (let [new-touched (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape nil)]
+      (assoc shape :touched (disj new-touched :swap-group)))))
 
 (defn generate-keep-touched
   "This is used as part of the switch process, when you switch from
@@ -201,13 +217,20 @@
         [changes parents-of-swapped]
         (reduce
          (fn [[changes parent-of-swapped] orig-child-touched]
-           (let [;; If the orig-child-touched was swapped, get its swap-slot
-                 swap-slot      (ctk/get-swap-slot orig-child-touched)
+           (let [;; The switched shape itself relates to the root of the new one
+                 root?          (= (:id orig-child-touched) (:id original-shape))
+
+                 ;; If the orig-child-touched was swapped, get its swap-slot
+                 swap-slot      (when-not root? (ctk/get-swap-slot orig-child-touched))
+                 swapped?       (and (not root?)
+                                     (or (some? swap-slot) (ctk/swapped? orig-child-touched)))
 
                  ;; orig-child-touched is in a copy. Get the referenced shape on the main component
                  ;; If there is a swap slot, we will get the referenced shape in another way
-                 orig-ref-shape (when-not swap-slot
-                                  (find-shape-ref-child-of container libraries orig-child-touched (:id orig-base-ref-shape)))
+                 orig-ref-shape (cond
+                                  root?     orig-base-ref-shape
+                                  swap-slot nil
+                                  :else     (find-shape-ref-child-of container libraries orig-child-touched (:id orig-base-ref-shape)))
 
                  orig-ref-id    (if swap-slot
                                   ;; If there is a swap slot, find the referenced shape id
@@ -228,7 +251,7 @@
                  ;; If there is a related shape, keep its data
                  changes
                  (if related-shape-in-new
-                   (if swap-slot
+                   (if swapped?
                      ;; If the orig-child-touched was swapped, keep it
                      (keep-swapped-item changes related-shape-in-new orig-child-touched
                                         ldata page orig-ref-id)

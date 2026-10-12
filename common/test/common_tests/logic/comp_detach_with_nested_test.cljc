@@ -93,15 +93,15 @@
     ;; are advanced to point to the new near main inside board-with-ellipse.
     (t/is (ctk/instance-root? copy-h-board-with-ellipse))
     (t/is (= (:shape-ref copy-h-board-with-ellipse) (thi/id :board-with-ellipse)))
-    (t/is (nil? (ctk/get-swap-slot copy-h-board-with-ellipse)))
+    (t/is (not (ctk/swapped? copy-h-board-with-ellipse)))
 
     (t/is (ctk/instance-head? copy-nested-h-ellipse))
     (t/is (= (:shape-ref copy-nested-h-ellipse) (thi/id :nested-h-ellipse)))
-    (t/is (nil? (ctk/get-swap-slot copy-nested-h-ellipse)))
+    (t/is (not (ctk/swapped? copy-nested-h-ellipse)))
 
     (t/is (not (ctk/instance-head? copy-nested-ellipse)))
     (t/is (= (:shape-ref copy-nested-ellipse) (thi/id :nested-ellipse)))
-    (t/is (nil? (ctk/get-swap-slot copy-nested-ellipse)))))
+    (t/is (not (ctk/swapped? copy-nested-ellipse)))))
 
 (t/deftest test-advance-in-library
   (let [;; ==== Setup
@@ -135,15 +135,15 @@
     ;; It should the same as above, but in an external library.
     (t/is (ctk/instance-root? copy-h-board-with-ellipse))
     (t/is (= (:shape-ref copy-h-board-with-ellipse) (thi/id :board-with-ellipse)))
-    (t/is (nil? (ctk/get-swap-slot copy-h-board-with-ellipse)))
+    (t/is (not (ctk/swapped? copy-h-board-with-ellipse)))
 
     (t/is (ctk/instance-head? copy-nested-h-ellipse))
     (t/is (= (:shape-ref copy-nested-h-ellipse) (thi/id :nested-h-ellipse)))
-    (t/is (nil? (ctk/get-swap-slot copy-nested-h-ellipse)))
+    (t/is (not (ctk/swapped? copy-nested-h-ellipse)))
 
     (t/is (not (ctk/instance-head? copy-nested-ellipse)))
     (t/is (= (:shape-ref copy-nested-ellipse) (thi/id :nested-ellipse)))
-    (t/is (nil? (ctk/get-swap-slot copy-nested-ellipse)))))
+    (t/is (not (ctk/swapped? copy-nested-ellipse)))))
 
 (t/deftest test-advance-in-broken-library
   (let [;; ==== Setup
@@ -215,15 +215,15 @@
     ;; as they already pointing to the near main inside board-with-rectangle.
     (t/is (ctk/instance-root? copy-h-board-with-rectangle))
     (t/is (= (:shape-ref copy-h-board-with-rectangle) (thi/id :board-with-rectangle)))
-    (t/is (nil? (ctk/get-swap-slot copy-h-board-with-rectangle)))
+    (t/is (not (ctk/swapped? copy-h-board-with-rectangle)))
 
     (t/is (ctk/instance-head? copy-nested-h-rectangle))
     (t/is (= (:shape-ref copy-nested-h-rectangle) (thi/id :nested-h-rectangle)))
-    (t/is (nil? (ctk/get-swap-slot copy-nested-h-rectangle)))
+    (t/is (not (ctk/swapped? copy-nested-h-rectangle)))
 
     (t/is (not (ctk/instance-head? copy-nested-rectangle)))
     (t/is (= (:shape-ref copy-nested-rectangle) (thi/id :nested-rectangle)))
-    (t/is (nil? (ctk/get-swap-slot copy-nested-rectangle)))))
+    (t/is (not (ctk/swapped? copy-nested-rectangle)))))
 
 (t/deftest test-propagate-slot-when-swapped-main
   (let [;; ==== Setup
@@ -259,17 +259,17 @@
     ;; This one is advanced normally, as it has not been swapped.
     (t/is (ctk/instance-root? copy-h-board-with-ellipse))
     (t/is (= (:shape-ref copy-h-board-with-ellipse) (thi/id :board-with-ellipse)))
-    (t/is (nil? (ctk/get-swap-slot copy-h-board-with-ellipse)))
+    (t/is (not (ctk/swapped? copy-h-board-with-ellipse)))
 
-    ;; If the nested copy has been swapped in the main, it does advance,
-    ;; but the swap slot of the near main is propagated to the copy.
+    ;; If the nested copy has been swapped in the main, it advances by
+    ;; position, and takes the swap of the near main.
     (t/is (ctk/instance-head? copy-nested-h-rectangle))
-    (t/is (= (:shape-ref copy-nested-h-rectangle) (thi/id :r-rectangle)))
-    (t/is (= (ctk/get-swap-slot copy-nested-h-rectangle) (thi/id :nested-h-ellipse)))
+    (t/is (= (:shape-ref copy-nested-h-rectangle) (thi/id :nested-h-ellipse)))
+    (t/is (ctk/swapped? copy-nested-h-rectangle))
 
     (t/is (not (ctk/instance-head? copy-nested-rectangle)))
     (t/is (= (:shape-ref copy-nested-rectangle) (thi/id :rectangle)))
-    (t/is (nil? (ctk/get-swap-slot copy-nested-rectangle)))))
+    (t/is (not (ctk/swapped? copy-nested-rectangle)))))
 
 (t/deftest test-propagate-touched
   (let [;; ==== Setup

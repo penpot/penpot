@@ -259,7 +259,7 @@
               (tho/add-simple-component :component3 :main3-root :main3-child
                                         :root-params {:name "Frame3"}
                                         :child-params {:name "Rect3"})
-              (tho/swap-component-in-first-child :copy2-root :component3))
+              (tho/swap-component-in-first-child :copy2-root :component3 :as-slot? true))
 
           file' (ctf/update-file-data file #(cfcp/fix-missing-swap-slots % {}))]
 
@@ -289,7 +289,7 @@
                                         :root-params {:name "Frame3"}
                                         :child-params {:name "Rect3"})
               (tho/swap-component-in-shape :nested-head :component3
-                                           :propagate-fn #(tho/propagate-component-changes % :component2)))
+                                           :propagate-fn #(tho/propagate-component-changes % :component2) :as-slot? true))
 
           file' (ctf/update-file-data file #(cfcp/fix-missing-swap-slots % {}))]
 
@@ -318,7 +318,7 @@
               (tho/add-simple-component :component3 :main3-root :main3-child
                                         :root-params {:name "Frame3"}
                                         :child-params {:name "Rect3"})
-              (tho/swap-component-in-first-child :copy2-root :component3)
+              (tho/swap-component-in-first-child :copy2-root :component3 :as-slot? true)
               (ths/update-shape :copy2-nested-head :touched nil))
 
           file' (ctf/update-file-data file #(cfcp/fix-missing-swap-slots % {}))
@@ -360,7 +360,7 @@
                                         :root-params {:name "Frame3"}
                                         :child-params {:name "Rect3"})
               (tho/swap-component-in-shape :nested-head :component3
-                                           :propagate-fn #(tho/propagate-component-changes % :component2))
+                                           :propagate-fn #(tho/propagate-component-changes % :component2) :as-slot? true)
               (ths/update-shape :nested-head :touched nil))
 
           file' (ctf/update-file-data file #(cfcp/fix-missing-swap-slots % {}))]
@@ -398,7 +398,7 @@
                                         :root-params {:name "Frame4"}
                                         :child-params {:name "Rect4"})
               (tho/swap-component-in-shape :nested-subhead2 :component4
-                                           :propagate-fn #(tho/propagate-component-changes % :component3))
+                                           :propagate-fn #(tho/propagate-component-changes % :component3) :as-slot? true)
               (ths/update-shape :nested-subhead2 :touched nil))
 
           file' (ctf/update-file-data file #(cfcp/fix-missing-swap-slots % {}))
@@ -452,7 +452,7 @@
           (-> (thf/sample-file :file1)
               (thc/instantiate-component :component2 :copy2 :children-labels [:copy2-nested-head]
                                          :library library1)
-              (tho/swap-component-in-first-child :copy2 :component4 :library library2)
+              (tho/swap-component-in-first-child :copy2 :component4 :library library2 :as-slot? true)
               (ths/update-shape :copy2-nested-head :touched nil))
 
           libraries {(:id library1) library1
@@ -553,7 +553,7 @@
                                         :root-params {:name "Frame3"}
                                         :child-params {:name "Rect3"})
               (thc/instantiate-component :component2 :copy3-root :children-labels [:copy3-nested-head])
-              (tho/swap-component-in-first-child :copy3-root :component3))
+              (tho/swap-component-in-first-child :copy3-root :component3 :as-slot? true))
 
           file' (ctf/update-file-data file #(cfcp/sync-component-id-with-ref-shape % {}))]
 
@@ -626,7 +626,7 @@
                                         :root-params {:name "Frame3"}
                                         :child-params {:name "Rect3"})
               (tho/swap-component-in-shape :nested-head :component3
-                                           :propagate-fn #(tho/propagate-component-changes % :component2))
+                                           :propagate-fn #(tho/propagate-component-changes % :component2) :as-slot? true)
               (ths/update-shape :copy2-nested-head :component-id (thi/new-id! :some-other-id))
               (ths/update-shape :copy2-nested-head :component-file (thi/new-id! :some-other-file)))
 
@@ -784,7 +784,7 @@
                                         :nested-head-params {:children-labels [:nested4-child]}))
 
           library1
-          (tho/swap-component-in-shape library1 :nested2-head :component4 :library library2)
+          (tho/swap-component-in-shape library1 :nested2-head :component4 :library library2 :as-slot? true)
 
           file
           ;; :copy2 [:name Frame2]                  #--> [Component :component2] :main2-root

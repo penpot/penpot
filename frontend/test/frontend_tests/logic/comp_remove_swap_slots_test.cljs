@@ -31,10 +31,10 @@
   ;; {:frame-green} [:name Frame1]                         # [Component :green]
   ;;     :red-copy-green [:name Frame1]                    @--> :frame-red
   ;; {:frame-b1} [:name Frame1]                            # [Component :b1]
-  ;;     :blue1 [:name Frame1, :swap-slot-label :red-copy] @--> :frame-blue
+  ;;     :blue1 [:name Frame1]                             @--> :frame-blue
   ;;     :frame-yellow [:name Frame1]
   ;;     :green-copy [:name Frame1]                        @--> :frame-green
-  ;;         :blue-copy-in-green-copy [:name Frame1, :swap-slot-label :red-copy-green] @--> :frame-blue
+  ;;         :blue-copy-in-green-copy [:name Frame1] (swapped) @--> :frame-blue
   ;; {:frame-b2} [:name Frame1]                            # [Component :b2]
   (-> (cthf/sample-file :file1)
       (ctho/add-frame :frame-red)
@@ -63,9 +63,9 @@
   ;;     :red-copy-green [:name Frame1]                    @--> :frame-red
   ;; {:frame-b1} [:name Frame1]                            # [Component :b1]
   ;;     :frame-yellow [:name Frame1]
-  ;;         :blue1 [:name Frame1, :swap-slot-label :red-copy] @--> :frame-blue
+  ;;         :blue1 [:name Frame1]                         @--> :frame-blue
   ;;     :green-copy [:name Frame1]                        @--> :frame-green
-  ;;         :blue-copy-in-green-copy [:name Frame1, :swap-slot-label :red-copy-green] @--> :frame-blue
+  ;;         :blue-copy-in-green-copy [:name Frame1] (swapped) @--> :frame-blue
   ;; {:frame-b2} [:name Frame1]                            # [Component :b2]
   (-> (cthf/sample-file :file1)
       (ctho/add-frame :frame-red)
@@ -124,12 +124,12 @@
 
            ;; ==== Check
 
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue1')))
+           ;; blue1 was swapped in a main, so it is not marked
+           (t/is (not (ctk/swapped? blue1')))
 
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
 (t/deftest test-remove-swap-slot-copy-paste-blue1-to-b1
@@ -163,12 +163,12 @@
                copied-blue1' (find-copied-shape blue1' page' (:id b1'))]
 
            ;; ==== Check
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue1')))
+           ;; blue1 was swapped in a main, so it is not marked
+           (t/is (not (ctk/swapped? blue1')))
 
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 (t/deftest test-remove-swap-slot-copy-paste-blue1-to-yellow
   (t/async
@@ -201,12 +201,12 @@
                copied-blue1' (find-copied-shape blue1' page' (:id yellow'))]
 
            ;; ==== Check
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue1')))
+           ;; blue1 was swapped in a main, so it is not marked
+           (t/is (not (ctk/swapped? blue1')))
 
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
 (t/deftest test-remove-swap-slot-copy-paste-blue1-to-b2
@@ -240,12 +240,12 @@
                copied-blue1' (find-copied-shape blue1' page' (:id b2'))]
 
            ;; ==== Check
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue1')))
+           ;; blue1 was swapped in a main, so it is not marked
+           (t/is (not (ctk/swapped? blue1')))
 
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
 (t/deftest test-remove-swap-slot-cut-paste-blue1-to-root
@@ -278,9 +278,9 @@
                copied-blue1' (find-copied-shape blue1 page' uuid/zero)]
 
            ;; ==== Check
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
 
@@ -316,9 +316,9 @@
                copied-blue1' (find-copied-shape blue1 page' (:id yellow'))]
 
            ;; ==== Check
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
 (t/deftest test-remove-swap-slot-cut-paste-blue1-to-b2
@@ -353,9 +353,9 @@
                copied-blue1' (find-copied-shape blue1 page' (:id b2'))]
 
            ;; ==== Check
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
 (t/deftest test-remove-swap-slot-copy-paste-yellow-to-root
@@ -389,12 +389,12 @@
 
            ;; ==== Check
 
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue1')))
+           ;; blue1 was swapped in a main, so it is not marked
+           (t/is (not (ctk/swapped? blue1')))
 
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 (t/deftest test-remove-swap-slot-copy-paste-yellow-to-b1
   (t/async
@@ -429,12 +429,12 @@
 
            ;; ==== Check
 
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue1')))
+           ;; blue1 was swapped in a main, so it is not marked
+           (t/is (not (ctk/swapped? blue1')))
 
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 (t/deftest test-remove-swap-slot-copy-paste-yellow-to-b2
   (t/async
@@ -469,11 +469,11 @@
 
            ;; ==== Check
 
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue1')))
-           ;; copied-blue1 has not swap-id
+           ;; blue1 was swapped in a main, so it is not marked
+           (t/is (not (ctk/swapped? blue1')))
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 (t/deftest test-remove-swap-slot-cut-paste-yellow-to-root
   (t/async
@@ -507,9 +507,9 @@
                copied-blue1'  (find-copied-shape blue1 page' (:id copied-yellow'))]
 
            ;; ==== Check
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 (t/deftest test-remove-swap-slot-cut-paste-yellow-to-b1
   (t/async
@@ -545,9 +545,9 @@
                copied-blue1'  (find-copied-shape blue1 page' (:id copied-yellow'))]
 
            ;; ==== Check
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 (t/deftest test-remove-swap-slot-cut-paste-yellow-to-b2
   (t/async
@@ -583,9 +583,9 @@
                copied-blue1'  (find-copied-shape blue1 page' (:id copied-yellow'))]
 
            ;; ==== Check
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 (t/deftest test-keep-swap-slot-copy-paste-green-copy-to-root
   (t/async
@@ -618,12 +618,12 @@
 
            ;; ==== Check
 
-           ;; blue2 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue2')))
+           ;; blue2 is swapped
+           (t/is (ctk/swapped? blue2'))
 
-           ;; copied-blue2 also has swap-id
+           ;; copied-blue2 is swapped
            (t/is (some? copied-blue2'))
-           (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
+           (t/is (ctk/swapped? copied-blue2'))))))))
 
 (t/deftest test-keep-swap-slot-copy-paste-green-copy-to-b1
   (t/async
@@ -658,12 +658,12 @@
 
            ;; ==== Check
 
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue2')))
+           ;; blue2 is swapped
+           (t/is (ctk/swapped? blue2'))
 
-           ;; copied-blue1 also has swap-id
+           ;; copied-blue2 is swapped
            (t/is (some? copied-blue2'))
-           (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
+           (t/is (ctk/swapped? copied-blue2'))))))))
 
 (t/deftest test-keep-swap-slot-copy-paste-green-copy-to-b2
   (t/async
@@ -698,12 +698,12 @@
 
            ;; ==== Check
 
-           ;; blue2 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue2')))
+           ;; blue2 is swapped
+           (t/is (ctk/swapped? blue2'))
 
-           ;; copied-blue1 also has swap-id
+           ;; copied-blue2 is swapped
            (t/is (some? copied-blue2'))
-           (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
+           (t/is (ctk/swapped? copied-blue2'))))))))
 
 
 (t/deftest test-keep-swap-slot-cut-paste-green-copy-to-root
@@ -738,9 +738,9 @@
                copied-blue1'  (find-copied-shape blue2 page' (:id copied-green'))]
 
            ;; ==== Check
-           ;; copied-blue1 has swap-id
+           ;; copied-blue2 is swapped
            (t/is (some? copied-blue1'))
-           (t/is (some? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (ctk/swapped? copied-blue1'))))))))
 
 (t/deftest test-keep-swap-slot-cut-paste-green-copy-to-b1
   (t/async
@@ -776,9 +776,9 @@
                copied-blue2'  (find-copied-shape blue2 page' (:id copied-green'))]
 
            ;; ==== Check
-           ;; copied-blue1 has swap-id
+           ;; copied-blue2 is swapped
            (t/is (some? copied-blue2'))
-           (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
+           (t/is (ctk/swapped? copied-blue2'))))))))
 
 (t/deftest test-keep-swap-slot-cut-paste-green-copy-to-b2
   (t/async
@@ -814,9 +814,9 @@
                copied-blue2'  (find-copied-shape blue2 page' (:id copied-green'))]
 
            ;; ==== Check
-           ;; copied-blue1 has swap-id
+           ;; copied-blue2 is swapped
            (t/is (some? copied-blue2'))
-           (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
+           (t/is (ctk/swapped? copied-blue2'))))))))
 
 
 
@@ -827,7 +827,7 @@
           ;; {:frame-red} [:name frame-blue]                    # [Component :red]
           ;; {:frame-blue} [:name frame-blue]                   #[Component :blue]
           ;; {:frame-green} [:name frame-green]                 #[Component :green]
-          ;;     :blue1 [:name frame-blue, :swap-slot-label :red-copy-green] @--> frame-blue
+          ;;     :blue1 [:name frame-blue, ] @--> frame-blue
 
           file     (-> (cthf/sample-file :file1)
                        (ctho/add-frame :frame-red :name "frame-blue")
@@ -864,12 +864,12 @@
                copied-blue1' (find-copied-shape blue1' page' (:id copied-green'))]
 
            ;; ==== Check
-           ;; blue1 has swap-id
-           (t/is (some? (ctk/get-swap-slot blue1')))
+           ;; blue1 was swapped in a main, so it is not marked
+           (t/is (not (ctk/swapped? blue1')))
 
-           ;; copied-blue1 has not swap-id
+           ;; the pasted blue1 is not marked
            (t/is (some? copied-blue1'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+           (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
 (t/deftest test-keep-inherited-swap-slot-copy-paste-nested-copy-to-root

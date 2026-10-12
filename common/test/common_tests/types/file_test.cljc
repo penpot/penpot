@@ -196,7 +196,7 @@
     (thi/set-id! :copy-c1 copy-c1)
     (-> file
         (tho/add-simple-component :c4 :main4 :main4-child)
-        (tho/swap-component-in-shape :copy-c1 :c4 :new-shape-label :swapped))))
+        (tho/swap-component-in-shape :copy-c1 :c4 :new-shape-label :swapped :as-slot? true))))
 
 (defn- ref-id-for-swapped
   [file]

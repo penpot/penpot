@@ -146,11 +146,43 @@
 
     file'))
 
+(defn swap-slot-of
+  "The swap slot a swap of `shape` stored, in files older than the feature
+  components/swap-group: the deepest main child of its position, when the
+  shape is inside a component."
+  [file libraries shape]
+  (let [page    (thf/current-page file)
+        objects (:objects page)]
+    (when (ctn/in-any-component? objects (get objects (:parent-id shape)))
+      (ctf/find-swap-slot shape page file (assoc libraries (:id file) file)))))
+
+(defn store-swap-as-slot
+  "Store the swap of the head `head-id` the way files older than the feature
+  components/swap-group do: its :shape-ref on the root of its own component,
+  and the swap slot `slot` in :touched."
+  [file libraries head-id slot]
+  (let [page      (thf/current-page file)
+        libraries (assoc libraries (:id file) file)
+        head      (ctst/get-shape page head-id)
+        component (ctf/get-component libraries (:component-file head) (:component-id head)
+                                     :include-deleted? true)
+        head'     (cond-> head
+                    (ctk/swapped? head)
+                    (-> (assoc :shape-ref (:main-instance-id component))
+                        (ctk/remove-swap-group))
+
+                    (some? slot)
+                    (ctk/set-swap-slot slot))]
+    (update file :data ctpl/update-page (:id page) #(ctst/set-shape % head'))))
+
 (defn component-swap
-  [file shape-label new-component-label new-shape-label & {:keys [library children-labels] :as params}]
+  "Swap the shape for a copy of the component. With `as-slot?`, store the swap
+  the way files older than the feature components/swap-group do."
+  [file shape-label new-component-label new-shape-label & {:keys [library children-labels as-slot?] :as params}]
   (let [shape            (ths/get-shape file shape-label)
         library          (or library file)
         libraries        {(:id library) library}
+        slot             (when as-slot? (swap-slot-of file libraries shape))
         page             (thf/current-page file)
         objects          (:objects page)
         id-new-component (-> (get-component library new-component-label)
@@ -163,7 +195,9 @@
         (-> (pcb/empty-changes nil (:id page))
             (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values false))
 
-        file' (thf/apply-changes file changes)]
+        file' (cond-> (thf/apply-changes file changes)
+                as-slot?
+                (store-swap-as-slot libraries (:id new_shape) slot))]
 
     (thi/set-id! new-shape-label (:id new_shape))
 

@@ -407,7 +407,7 @@
 (t/deftest missing-slot
   (let [file (-> (two-nested)
                  (tho/add-simple-component :component3 :main3-root :main3-child)
-                 (tho/swap-component-in-shape :copy-a :component3 :new-shape-label :swapped)
+                 (tho/swap-component-in-shape :copy-a :component3 :new-shape-label :swapped :as-slot? true)
                  (ths/update-shape :swapped :touched nil))
         [found file' errors] (repair file)]
     (t/is (= #{:missing-slot} found))
