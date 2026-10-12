@@ -502,7 +502,10 @@
     :fn (mg/resource "app/migrations/sql/0152-rename-version-and-add-indexes-to-server-error-report.sql")}
 
    {:name "0153-del-orphan-profile-rels-after-team-leave"
-    :fn (mg/resource "app/migrations/sql/0153-del-orphan-profile-rels-after-team-leave.sql")}])
+    :fn (mg/resource "app/migrations/sql/0153-del-orphan-profile-rels-after-team-leave.sql")}
+
+   {:name "0154-del-legacy-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0154-del-legacy-file-object-thumbnail-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
