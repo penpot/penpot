@@ -23,6 +23,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 - `app.worker`: task execution/cron plumbing.
 - `app.main`: Integrant system map and component wiring.
 - `app.config`: `PENPOT_*` env config and feature flags.
+- `app.health`: per-process availability flag; `/readyz` answers 503 while offline. Flipped from `app.srepl.main` (`set-offline` / `set-online`).
 - `app.srepl.*`: development REPL helpers for manual backend operations (data inspection, migration helpers, one-off admin tasks).
 - `app.nitrate`, `app.rpc.commands.nitrate`, and `app.rpc.management.nitrate`: external Nitrate subscription/organization integration, gated by the `:nitrate` feature flag and shared-key HTTP calls.
 

@@ -25,6 +25,7 @@
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.health :as health]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.msgbus :as mbus]
@@ -94,6 +95,30 @@
                 (let [email   (profile/clean-email email)
                       profile (profile/get-profile-by-email conn email)]
                   (#'auth/send-email-verification! cfg profile)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INSTANCE AVAILABILITY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-offline
+  "Take this instance out of the load balancer.
+
+  The `/readyz` endpoint starts answering 503, so the load balancer
+  removes the instance from rotation. Requests already in flight are
+  still served; wait for the load balancer to notice and for the traffic
+  to drop before restarting the process.
+
+  A restarted process comes back online on its own."
+  []
+  (health/set-offline))
+
+(defn set-online
+  "Put this instance back into the load balancer rotation.
+
+  Only needed to undo a `set-offline` without a restart; a restarted
+  process starts online."
+  []
+  (health/set-online))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROFILES MANAGEMENT

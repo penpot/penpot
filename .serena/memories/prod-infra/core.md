@@ -27,6 +27,10 @@ Two known race patterns survive multi-backend operation:
 
 Penpot in production lives with both: horizontal-scale deployments accept "exactly-once" as "essentially-once for idempotent operations." Devenv parallel instances handle it by running workers only on ws0 (see `mem:devenv/core`).
 
+## Draining one instance
+
+Each backend has a per-process availability flag (`app.health`, a global atom). While offline, `/readyz` answers `503 OFFLINE` without querying the database, so the load balancer removes that instance from rotation while requests in flight still finish. Operator surface: `app.srepl.main/set-offline` / `set-online`; a restart comes back online. In-flight worker tasks are safe: tasks claimed as `scheduled` return to `new` after 5 minutes via `sql:reschedule-lost` and another instance picks them up.
+
 ## See also
 
 - Devenv composition and the ws0-only worker placement: `mem:devenv/core`.
