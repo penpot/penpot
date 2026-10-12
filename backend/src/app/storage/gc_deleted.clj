@@ -41,22 +41,22 @@
   "DELETE FROM storage_object
     WHERE id = ANY(?::uuid[])")
 
-(defn- delete-sobjects!
+(defn- delete-sobjects
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (-> (db/exec-one! conn [sql:delete-sobjects ids])
         (db/get-update-count))))
 
-(defn- delete-in-bulk!
+(defn- delete-in-bulk
   [cfg backend-id ids]
-  ;; We run the deletion on a separate transaction. This is
-  ;; because if some exception is raised inside procesing
-  ;; one chunk, it does not affects the rest of the chunks.
+  ;; Each chunk runs in its own transaction, on its own connection: a chunk
+  ;; that fails (for example, an object that a foreign key still references) is
+  ;; logged and skipped, and it cannot poison the cursor that feeds the rest.
   (try
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn ::sto/storage]}]
                   (when-let [ids (lock-ids conn ids)]
-                    (let [total (delete-sobjects! conn ids)]
+                    (let [total (delete-sobjects conn ids)]
                       (-> (impl/resolve-backend storage backend-id)
                           (impl/del-objects-in-bulk ids))
 
@@ -82,21 +82,40 @@
       AND s.deleted_at <= ?
     ORDER BY s.deleted_at ASC")
 
-(defn- get-buckets
-  [conn]
-  (let [now (ct/now)]
-    (sequence
-     (comp (partition-all 25)
-           (mapcat group-by-backend))
-     (db/cursor conn [sql:get-deleted-sobjects now]))))
+(def ^:private chunk-size
+  "Pending objects deleted in each transaction."
+  25)
 
-(defn- clean-deleted!
-  [{:keys [::db/conn] :as cfg}]
-  (reduce (fn [total [backend-id ids]]
-            (let [deleted (delete-in-bulk! cfg backend-id ids)]
-              (+ total (or deleted 0))))
-          0
-          (get-buckets conn)))
+(defn- pending-row
+  "Takes the columns the GC needs from a `db/plan` row.
+
+  A plan row is a view over the open result set, valid only while the reduction
+  is running, so it cannot be stored for later: this has to happen inside the
+  reducing function."
+  [row]
+  {:id (:id row)
+   :backend (:backend row)})
+
+(defn- clean-deleted
+  "Walks the pending objects with `db/plan`, a server-side cursor that streams
+  the rows instead of materialising them, and deletes them chunk by chunk.
+
+  The rows are read in their own read-only transaction and every chunk of
+  `chunk-size` objects is deleted in its own one (see `delete-in-bulk`), so a
+  chunk that fails is logged and skipped instead of aborting the whole run, and
+  the work of the previous chunks is already committed."
+  [cfg]
+  (let [xform (comp (map pending-row)
+                    (partition-all chunk-size)
+                    (mapcat group-by-backend))
+        rf    (fn
+                ([total] total)
+                ([total [backend-id ids]]
+                 (+ total (or (delete-in-bulk cfg backend-id ids) 0))))]
+    (db/tx-run! (assoc cfg ::db/read-only true)
+                (fn [{:keys [::db/conn]}]
+                  (transduce xform rf 0
+                             (db/plan conn [sql:get-deleted-sobjects (ct/now)]))))))
 
 (defmethod ig/assert-key ::handler
   [_ params]
@@ -106,7 +125,6 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [_]
-    (db/tx-run! cfg (fn [cfg]
-                      (let [total (clean-deleted! cfg)]
-                        (l/inf :hint "task finished" :total total)
-                        {:deleted total})))))
+    (let [total (clean-deleted cfg)]
+      (l/inf :hint "task finished" :total total)
+      {:deleted total})))

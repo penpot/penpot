@@ -25,7 +25,7 @@
 - Existing object values can remain readable until physical deletion.
 - `:expired-at` blocks reads after the expiration time.
 - `del-object!` sets `deleted_at`. It does not remove backend content.
-- `storage-gc-deleted` removes the database row and backend content after the deletion delay.
+- `storage-gc-deleted` removes the database row and backend content after the deletion delay, streaming the pending rows with `db/plan` inside a read-only transaction and deleting them in chunks of 25, each chunk in its own transaction: a chunk that fails (for example, an object a foreign key still references) is logged and skipped instead of aborting the run.
 - `storage-gc-touched` finds references before it sets `deleted_at`.
 - `objects-gc` removes deleted domain rows and touches their storage object IDs.
 - Use `::db/reuse-conn true` with `sto/resolve` inside a database transaction.
