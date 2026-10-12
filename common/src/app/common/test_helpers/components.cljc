@@ -9,7 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.comp-processors :as cfcp]
    [app.common.files.helpers :as cfh]
+   [app.common.files.swap-slots :as cfss]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.path-names :as cpn]
@@ -154,7 +156,7 @@
   (let [page    (thf/current-page file)
         objects (:objects page)]
     (when (ctn/in-any-component? objects (get objects (:parent-id shape)))
-      (ctf/find-swap-slot shape page file (assoc libraries (:id file) file)))))
+      (cfcp/find-swap-slot shape page file (assoc libraries (:id file) file)))))
 
 (defn store-swap-as-slot
   "Store the swap of the head `head-id` the way files older than the feature
@@ -172,7 +174,7 @@
                         (ctk/remove-swap-group))
 
                     (some? slot)
-                    (ctk/set-swap-slot slot))]
+                    (cfss/set-swap-slot slot))]
     (update file :data ctpl/update-page (:id page) #(ctst/set-shape % head'))))
 
 (defn component-swap

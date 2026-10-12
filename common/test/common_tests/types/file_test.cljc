@@ -11,6 +11,8 @@
    components."
   (:require
    [app.common.data :as d]
+   [app.common.files.comp-processors :as cfcp]
+   [app.common.files.swap-slots :as cfss]
    [app.common.files.validate :as cfv]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.core :as tm]
@@ -200,9 +202,9 @@
 
 (defn- ref-id-for-swapped
   [file]
-  (ctf/find-ref-id-for-swapped (ths/get-shape file :swapped)
-                               (thf/current-page file)
-                               {(:id file) file}))
+  (cfcp/find-ref-id-for-swapped (ths/get-shape file :swapped)
+                                (thf/current-page file)
+                                {(:id file) file}))
 
 (t/deftest ref-id-for-swapped-goes-up-the-ref-chain
   (let [file (-> (thf/sample-file :file)
@@ -212,7 +214,7 @@
                   :c3 :main3 :nested-head2 :nested-subhead2
                   :copy3)
                  (swap-at-second-level))]
-    (t/is (= (thi/id :nested-head1) (ctk/get-swap-slot (ths/get-shape file :swapped))))
+    (t/is (= (thi/id :nested-head1) (cfss/get-swap-slot (ths/get-shape file :swapped))))
     (t/is (= (thi/id :nested-subhead2) (ref-id-for-swapped file)))))
 
 (t/deftest ref-id-for-swapped-with-mains-on-other-pages
@@ -227,7 +229,7 @@
                  (thc/make-component :c3 :main3)
                  (thc/instantiate-component :c3 :copy3)
                  (swap-at-second-level))]
-    (t/is (= (thi/id :nested-head1) (ctk/get-swap-slot (ths/get-shape file :swapped))))
+    (t/is (= (thi/id :nested-head1) (cfss/get-swap-slot (ths/get-shape file :swapped))))
     (tm/known-failure "F56" (thi/id :nested-subhead2) nil (ref-id-for-swapped file))))
 
 ;; ----- Deleted components
@@ -329,9 +331,9 @@
                   (tho/add-simple-component-with-copy :component :main :main-child
                                                       :copy
                                                       :copy-root-params {:children-labels [:copy-child]}))
-        match (ctf/find-near-match file (thf/current-page file) {(:id file) file}
-                                   (ths/get-shape file :copy-child)
-                                   :with-context? true)]
+        match (cfcp/find-near-match file (thf/current-page file) {(:id file) file}
+                                    (ths/get-shape file :copy-child)
+                                    :with-context? true)]
     (t/is (= (thi/id :main-child) (:id match)))
     (t/is (= :page (:type (:container (meta match)))))
     (t/is (= (:id (thf/current-page file)) (:id (:container (meta match)))))))

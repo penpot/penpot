@@ -467,9 +467,6 @@
 
         variant-shapes (filter ctk/is-variant? shapes)
 
-        component-main-parent
-        (ctn/find-component-main objects parent false)
-
         groups-to-delete
         (loop [current-id  (first parents)
                to-check    (rest parents)
@@ -572,14 +569,6 @@
         ;; Remove the hide in viewer flag
         (cond-> (and (not= uuid/zero parent-id) (cfh/frame-shape? parent))
           (pcb/update-shapes ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true))))
-
-        ;; Remove the swap slots if it is moving to a different component
-        (pcb/update-shapes
-         child-heads-ids
-         (fn [shape]
-           (cond-> shape
-             (not= component-main-parent (ctn/find-component-main objects shape false))
-             (ctk/remove-swap-slot))))
 
         ;; Remove component-root property when moving a shape inside a component
         (cond-> (ctn/get-instance-root objects parent)

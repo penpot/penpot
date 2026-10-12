@@ -23,6 +23,7 @@
    [common-tests.files-migrations-0026-test]
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
+   [common-tests.files.convert-swap-slots-test]
    [common-tests.files.helpers-test]
    [common-tests.files.repair-components-test]
    [common-tests.files.repair-test]
@@ -60,7 +61,7 @@
    [common-tests.logic.comp-detach-with-nested-test]
    [common-tests.logic.comp-flex-interactions-test]
    [common-tests.logic.comp-main-edit-breaks-copy-slots-test]
-   [common-tests.logic.comp-remove-swap-slots-test]
+   [common-tests.logic.comp-move-swapped-copies-test]
    [common-tests.logic.comp-reset-test]
    [common-tests.logic.comp-sync-test]
    [common-tests.logic.comp-touched-test]
@@ -138,6 +139,7 @@
    'common-tests.files-migrations-0026-test
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
+   'common-tests.files.convert-swap-slots-test
    'common-tests.files.helpers-test
    'common-tests.files.repair-components-test
    'common-tests.files.repair-test
@@ -175,7 +177,7 @@
    'common-tests.logic.comp-detach-with-nested-test
    'common-tests.logic.comp-flex-interactions-test
    'common-tests.logic.comp-main-edit-breaks-copy-slots-test
-   'common-tests.logic.comp-remove-swap-slots-test
+   'common-tests.logic.comp-move-swapped-copies-test
    'common-tests.logic.comp-reset-test
    'common-tests.logic.comp-sync-test
    'common-tests.logic.comp-touched-test

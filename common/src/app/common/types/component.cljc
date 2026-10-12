@@ -6,14 +6,12 @@
 
 (ns app.common.types.component
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as-alias ct]
    [app.common.types.page :as ctp]
    [app.common.types.plugins :as ctpg]
-   [app.common.types.variant :as ctv]
-   [cuerdas.core :as str]))
+   [app.common.types.variant :as ctv]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -273,62 +271,6 @@
     (swapped? shape)
     (update :touched disj :swap-group)))
 
-(defn build-swap-slot-group
-  "Convert a swap-slot into a :touched group"
-  [swap-slot]
-  (when swap-slot
-    (keyword (str "swap-slot-" swap-slot))))
-
-(defn swap-slot?
-  [group]
-  (str/starts-with? (name group) "swap-slot-"))
-
-(def ^:private xf:normal-touched
-  "Transducer that removes swap-slot touched groups."
-  (remove swap-slot?))
-
-(defn normal-touched-groups
-  "Gets all touched groups that are not swap slots.
-  Returns an empty set immediately when `:touched` is nil or empty,
-  avoiding an unnecessary `into #{}` allocation for the common case."
-  [shape]
-  (let [touched (:touched shape)]
-    (if (empty? touched)
-      #{}
-      (into #{} xf:normal-touched touched))))
-
-(defn group->swap-slot
-  [group]
-  (parse-uuid (subs (name group) 10)))  ;; 10 is the length of "swap-slot-"
-
-(defn get-swap-slot
-  "If the shape has a :touched group in the form :swap-slot-<uuid>, get the id."
-  [shape]
-  (let [group (d/seek swap-slot? (:touched shape))]
-    (when group
-      (group->swap-slot group))))
-
-(defn set-swap-slot
-  "Add a touched group with a form :swap-slot-<uuid>."
-  [shape swap-slot]
-  (cond-> shape
-    (some? swap-slot)
-    (update :touched set-touched-group (build-swap-slot-group swap-slot))))
-
-(defn match-swap-slot?
-  [shape-main shape-inst]
-  (let [slot-main   (get-swap-slot shape-main)
-        slot-inst   (get-swap-slot shape-inst)]
-    (when (some? slot-inst)
-      (or (= slot-main slot-inst)
-          (= (:id shape-main) slot-inst)))))
-
-(defn remove-swap-slot
-  [shape]
-  (update shape :touched
-          (fn [touched]
-            (into #{} (remove #(str/starts-with? (name %) "swap-slot-") touched)))))
-
 (defn get-deleted-component-root
   [component]
   (get-in component [:objects (:main-instance-id component)]))
@@ -408,6 +350,4 @@
   [group]
   (ex/ignoring
    (or (contains? all-touched-groups group)
-       (= group :swap-group)
-       (and (swap-slot? group)
-            (some? (group->swap-slot group))))))
+       (= group :swap-group))))

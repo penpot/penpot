@@ -12,10 +12,18 @@
    [app.binfile.v3 :as v3]
    [app.common.data :as d]
    [app.common.features :as cfeat]
+   [app.common.files.comp-processors :as cfcp]
+   [app.common.files.migrations :as fmg]
+   [app.common.files.swap-slots :as cfss]
    [app.common.files.validate :as cfv]
    [app.common.pprint :as pp]
+   [app.common.test-helpers.components :as cthc]
+   [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
+   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -2622,3 +2630,67 @@
     (t/testing "a file with components/v2 is left as it is"
       (let [file (file #{"components/v2"} {:shape-ref (uuid/custom 2 2)} nil)]
         (t/is (= file (bfc/check-components-v2 file)))))))
+
+(defn- swap-slot-library
+  "A library, in the form files older than the feature components/swap-group
+  have, whose :page main holds a copy of :card with its star swapped for
+  :heart."
+  []
+  (-> (cthf/sample-file :library)
+      (ctho/add-simple-component :star :star-main :star-rect)
+      (ctho/add-simple-component :heart :heart-main :heart-rect)
+      (ctho/add-simple-component :badge :badge-main :badge-rect)
+      (ctho/add-frame :card-main)
+      (cthc/instantiate-component :star :card-star :parent-label :card-main)
+      (cthc/make-component :card :card-main)
+      (ctho/add-frame :page-main)
+      (cthc/instantiate-component :card :inner-copy
+                                  :parent-label :page-main
+                                  :children-labels [:inner-star])
+      (cthc/make-component :page :page-main)
+      (ctho/swap-component-in-shape :inner-star :heart :as-slot? true)))
+
+(t/deftest import-converts-deferred-swap-slots-once-libraries-are-linked
+  (cthi/reset-idmap!)
+  (let [profile    (th/create-profile* 1)
+        project-id (:default-project-id profile)
+        old-migs   (disj fmg/available-migrations "0033-convert-swap-slots-to-swap-groups")
+        library    (swap-slot-library)
+        ;; a file with a copy of :page whose star is swapped for :badge
+        file       (-> (cthf/sample-file :file1)
+                       (cthc/instantiate-component :page :outer-copy
+                                                   :library library
+                                                   :children-labels [:outer-inner :outer-star])
+                       (ctho/swap-component-in-shape :outer-star :badge
+                                                     :library library
+                                                     :as-slot? true)
+                       (assoc :project-id project-id)
+                       (assoc :migrations old-migs)
+                       (update :features disj "components/swap-group"))
+        page-id    (-> file :data :pages first)]
+
+    (db/tx-run! th/*system*
+                (fn [cfg]
+                  (binding [bfc/*state* (volatile! {:index {}})]
+                    (bfc/insert-file! cfg (-> library
+                                              (assoc :project-id project-id)
+                                              (update :data cfcp/convert-swap-slots {})))
+
+                    ;; the library is not linked yet: the swap is left as it is
+                    (let [imported (bfc/process-imported-file cfg file)]
+                      (bfc/insert-file! cfg imported)
+                      (t/is (= #{(:id file)} (:deferred-swaps @bfc/*state*)))
+                      (t/is (contains? (:features imported) "components/swap-group"))
+                      (t/is (some? (-> imported :data :pages-index (get page-id) :objects
+                                       (get (cthi/id :outer-star)) cfss/get-swap-slot))))
+
+                    (db/insert! cfg :file-library-rel {:file-id (:id file)
+                                                       :library-file-id (:id library)})
+                    (bfc/convert-deferred-swaps! cfg)
+
+                    (let [head (-> (bfc/get-file cfg (:id file) :migrate? false :realize? true)
+                                   :data :pages-index (get page-id) :objects
+                                   (get (cthi/id :outer-star)))]
+                      (t/is (= (cthi/id :inner-star) (:shape-ref head)))
+                      (t/is (ctk/swapped? head))
+                      (t/is (nil? (cfss/get-swap-slot head)))))))))

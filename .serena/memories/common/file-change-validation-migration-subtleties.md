@@ -21,7 +21,7 @@
 - Full referential/semantic validation currently runs only when file features contain `"components/v2"`.
 - Validation starts at root plus orphan shapes, then validates component records. `validate-file!` raises `:validation :referential-integrity` with collected details.
 - `repair-file` does not mutate data directly; it reduces validation errors into redo changes using `changes-builder`. Callers must apply or persist those changes.
-- `:missing-slot` fires only for a REAL swap: a copy sub-head whose `shape-ref` is no longer a child of the near main parent. A pure positional mismatch (ref still a sibling elsewhere) is a reorder — valid, realigned by the async component sync; do not "repair" it by assigning swap slots (a slot freezes the child out of normal sync). `fix-missing-swap-slots` (migration 0019) follows the same membership rule.
+- `:ref-not-in-near-main`: a nested copy head inside a copy must refer to a child of the near main of its parent (the content ref of the parent, so a swapped parent counts by its own component). A pure positional mismatch (ref still a sibling elsewhere) is a reorder — valid, realigned by the async component sync. Its repair pairs the head with the child that stands for the same deepest main child, else the free child at its index (adding `:swap-group` when the components differ), else detaches it. `:misplaced-swap-group`: `:swap-group` anywhere but a nested copy head inside a copy. `:misplaced-slot`: any swap slot (files are migrated to `:swap-group` before validation, migration 0033).
 
 ## Migrations
 

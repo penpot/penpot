@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
+   [app.common.files.swap-slots :as cfss]
    [app.common.files.variant :as cfv]
    [app.common.path-names :as cpn]
    [app.common.schema :as sm]
@@ -34,11 +35,9 @@
     :child-not-found
     :frame-not-found
     :invalid-frame
-    :component-duplicate-slot
     :component-not-main
     :component-main-external
     :component-not-found
-    :duplicate-slot
     :invalid-main-instance-id
     :invalid-main-instance-page
     :invalid-main-instance
@@ -63,7 +62,9 @@
     :instance-head-not-frame
     :invalid-text-touched
     :misplaced-slot
-    :missing-slot
+    :misplaced-swap-group
+    :ref-not-in-near-main
+    :duplicate-ref
     :shape-ref-cycle
     :main-instance-not-a-variant
     :main-instance-invalid-variant-id
@@ -402,8 +403,7 @@
   "Validate that if the copy has not been swapped, the component-id and component-file are
    the same as in the referenced shape in the near main."
   [shape file page libraries]
-  (when (and (nil? (ctk/get-swap-slot shape))
-             (not (ctk/swapped? shape)))
+  (when-not (ctk/swapped? shape)
     (when-let [ref-shape (find-ref-shape* file page libraries shape)]
       (when (or (not= (:component-id shape) (:component-id ref-shape))
                 (not= (:component-file shape) (:component-file ref-shape)))
@@ -413,61 +413,60 @@
                       :component-id (:component-id ref-shape)
                       :component-file (:component-file ref-shape))))))
 
-(defn- check-empty-swap-slot
-  "Validate that this shape does not have any swap slot."
+(defn- check-no-swap-slot
+  "Validate that this shape has no swap slot, the form older files stored
+  swaps in."
   [shape file page]
-  (when (some? (ctk/get-swap-slot shape))
+  (when (some? (cfss/get-swap-slot shape))
     (report-error :misplaced-slot
                   "This shape should not have swap slot"
                   shape file page)))
 
-(defn- has-duplicate-swap-slot?
-  "Returns true if any two children of `shape` share the same swap slot.
-  Uses a single pass with early exit on the first duplicate, avoiding
-  the intermediate `frequencies` map allocation."
-  [shape container]
-  (let [objects (:objects container)
-        result  (reduce (fn [seen child-id]
-                          (let [slot (ctk/get-swap-slot (get objects child-id))]
-                            (if (nil? slot)
-                              seen
-                              (if (contains? seen slot)
-                                (reduced true)
-                                (conj seen slot)))))
-                        #{}
-                        (:shapes shape))]
-    (true? result)))
-
-(defn- check-duplicate-swap-slot
-  "Validate that the children of this shape does not have duplicated slots."
+(defn- check-not-swapped
+  "Validate that this shape is not marked as swapped: only a nested copy
+  head inside a copy can be."
   [shape file page]
-  (when (has-duplicate-swap-slot? shape page)
-    (report-error :duplicate-slot
-                  "This shape has children with the same swap slot"
+  (when (ctk/swapped? shape)
+    (report-error :misplaced-swap-group
+                  "Only a nested copy head inside a copy can be swapped"
                   shape file page)))
 
-(defn- check-required-swap-slot
-  "Validate that the shape has a swap slot if it's a subinstance head that has been
-   swapped (see `ctf/swapped-subhead?`)."
+(defn- check-ref-in-near-main
+  "Validate that a nested copy head refers to a child of the near main of
+  its parent: the shape whose position it takes."
   [shape file page libraries]
-  ;; Guard first: if the shape already has a swap slot the invariant is satisfied
-  ;; and we can avoid the ref-shape lookups entirely.
-  (when (and (nil? (ctk/get-swap-slot shape))
-             (ctf/swapped-subhead? shape page #(if (ctk/swapped? %)
-                                                 (ctf/find-content-ref-shape file page libraries %
-                                                                             :include-deleted? true)
-                                                 (find-ref-shape* file page libraries %))))
-    (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
-      (when (some? near-match)
-        (report-error :missing-slot
-                      "Shape has been swapped, should have swap slot"
-                      shape file page
-                      :swap-slot (or (ctk/get-swap-slot near-match) (:id near-match)))))))
+  (when (ctf/swapped-subhead? shape page #(ctf/find-content-ref-shape file page libraries %
+                                                                      :include-deleted? true))
+    (report-error :ref-not-in-near-main
+                  (str/ffmt "Referenced shape % is not a child of the near main of the parent" (:shape-ref shape))
+                  shape file page)))
+
+(defn- duplicate-ref?
+  "Whether two children of the shape refer to the same main shape."
+  [shape page]
+  (let [objects (:objects page)]
+    (true? (reduce (fn [seen child-id]
+                     (let [ref (:shape-ref (get objects child-id))]
+                       (cond
+                         (nil? ref)            seen
+                         (contains? seen ref) (reduced true)
+                         :else                (conj seen ref))))
+                   #{}
+                   (:shapes shape)))))
+
+(defn- check-no-duplicate-ref
+  "Validate that no two children of a copy shape take the position of the
+  same main shape."
+  [shape file page]
+  (when (duplicate-ref? shape page)
+    (report-error :duplicate-ref
+                  "Two children of this copy refer to the same main shape"
+                  shape file page)))
 
 (defn- check-valid-touched
   "Validate that the text touched flags are coherent."
   [shape file page]
-  (let [touched-groups (ctk/normal-touched-groups shape)
+  (let [touched-groups (or (:touched shape) #{})
         content-touched? (touched-groups :content-group)
         text-touched?    (or (touched-groups :text-content-text)
                              (touched-groups :text-content-attribute)
@@ -489,8 +488,8 @@
   (check-component-main-head shape file page libraries)
   (check-component-root shape file page)
   (check-component-not-ref shape file page)
-  (check-empty-swap-slot shape file page)
-  (check-duplicate-swap-slot shape file page)
+  (check-no-swap-slot shape file page)
+  (check-not-swapped shape file page)
   (run! #(check-shape % file page libraries :context :main-top) (:shapes shape)))
 
 (defn- check-shape-main-root-nested
@@ -502,7 +501,8 @@
   (check-component-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
-  (check-empty-swap-slot shape file page)
+  (check-no-swap-slot shape file page)
+  (check-not-swapped shape file page)
   (run! #(check-shape % file page libraries :context :main-nested) (:shapes shape)))
 
 (defn- check-shape-copy-root-top
@@ -518,9 +518,10 @@
     (check-component-root shape file page)
     (check-component-ref shape file page libraries)
     (check-ref-is-head shape file page libraries)
-    (check-empty-swap-slot shape file page)
-    (check-duplicate-swap-slot shape file page)
+    (check-no-swap-slot shape file page)
+    (check-not-swapped shape file page)
     (check-valid-touched shape file page)
+    (check-no-duplicate-ref shape file page)
     (run! #(check-shape % file page libraries :context :copy-top :library-exists library-exists) (:shapes shape))))
 
 (defn- check-shape-copy-root-nested
@@ -533,12 +534,14 @@
   (check-component-not-root shape file page)
   (check-valid-touched shape file page)
   (check-ref-component-id shape file page libraries)
-  (check-required-swap-slot shape file page libraries)
+  (check-no-swap-slot shape file page)
+  (check-ref-in-near-main shape file page libraries)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
   (when library-exists
     (check-component-ref shape file page libraries)
     (check-ref-is-head shape file page libraries))
+  (check-no-duplicate-ref shape file page)
   (run! #(check-shape % file page libraries :context :copy-nested) (:shapes shape)))
 
 (defn- check-shape-main-not-root
@@ -547,7 +550,8 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
-  (check-empty-swap-slot shape file page)
+  (check-no-swap-slot shape file page)
+  (check-not-swapped shape file page)
   (run! #(check-shape % file page libraries :context :main-any) (:shapes shape)))
 
 (defn- check-shape-copy-not-root
@@ -557,8 +561,10 @@
   (check-component-not-root shape file page)
   (check-component-ref shape file page libraries)
   (check-ref-is-not-head shape file page libraries)
-  (check-empty-swap-slot shape file page)
+  (check-no-swap-slot shape file page)
+  (check-not-swapped shape file page)
   (check-valid-touched shape file page)
+  (check-no-duplicate-ref shape file page)
   (run! #(check-shape % file page libraries :context :copy-any) (:shapes shape)))
 
 (defn- check-shape-not-component
@@ -568,7 +574,8 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
-  (check-empty-swap-slot shape file page)
+  (check-no-swap-slot shape file page)
+  (check-not-swapped shape file page)
   (run! #(check-shape % file page libraries :context :not-component) (:shapes shape)))
 
 (defn- check-variant-container
@@ -730,14 +737,6 @@
                               shape file page)
                 (check-shape-not-component shape file page libraries)))))))))
 
-(defn check-component-duplicate-swap-slot
-  [component file]
-  (let [shape (get-in component [:objects (:main-instance-id component)])]
-    (when (has-duplicate-swap-slot? shape component)
-      (report-error :component-duplicate-slot
-                    "This deleted component has children with the same swap slot"
-                    component file nil))))
-
 (defn check-ref-cycles
   [component file]
   (let [cycles-ids (-> (reduce-kv (fn [acc id shape]
@@ -801,7 +800,6 @@
     (check-main-inside-main component file)
     (check-not-objects component file))
   (when (:deleted component)
-    (check-component-duplicate-swap-slot component file)
     (check-ref-cycles component file))
 
   (when (ctk/is-variant? component)
