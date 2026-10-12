@@ -1,54 +1,65 @@
 ;; Example climit.edn file
 ;; Required: permits
-;; Optional: queue, ommited means Integer/MAX_VALUE
-;; Optional: timeout, ommited means no timeout
-;; Note: queue and timeout are excluding
-{:update-file/global {:permits 20}
+;; Optional: queue, omitted means Integer/MAX_VALUE (unbounded)
+;; Optional: timeout in milliseconds, omitted means the thread waits for a
+;; permit forever, and a saturated limiter parks it for good. Values below:
+;; 60s for operations that can be slow (file updates, images, fonts, thumbnails,
+;; snapshots, imports) and 30s for the rest.
+;; Note: a queue bounds how many waiters pile up, a timeout bounds how long one
+;; waiter waits. Every entry sets a timeout; the by-profile ones also set a
+;; queue, which is where a pile-up hurts.
+{:update-file/global
+ {:permits 20 :timeout 60000}
  :update-file/by-profile
- {:permits 1 :queue 5}
+ {:permits 1 :queue 5 :timeout 60000}
 
- :process-font/global {:permits 4}
- :process-font/by-profile {:permits 1}
+ :process-font/global
+ {:permits 4 :timeout 60000}
+ :process-font/by-profile
+ {:permits 1 :timeout 60000}
 
- :process-image/global {:permits 8}
- :process-image/by-profile {:permits 1}
+ :process-image/global
+ {:permits 8 :timeout 60000}
+ :process-image/by-profile
+ {:permits 1 :timeout 60000}
 
- :auth/global {:permits 8}
+ :auth/global
+ {:permits 8 :timeout 30000}
 
  :root/global
- {:permits 40}
+ {:permits 40 :timeout 30000}
 
  :root/by-profile
  {:permits 10 :queue 30 :timeout 30000}
 
  :file-thumbnail-ops/global
- {:permits 20}
+ {:permits 20 :timeout 60000}
  :file-thumbnail-ops/by-profile
- {:permits 2}
+ {:permits 2 :timeout 60000}
 
  :submit-audit-events/by-profile
- {:permits 1 :queue 3}
+ {:permits 1 :queue 3 :timeout 30000}
 
  :restore-file-snapshot/global
- {:permits 3}
+ {:permits 3 :timeout 60000}
 
  :restore-file-snapshot/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  :create-file-snapshot/global
- {:permits 3}
+ {:permits 3 :timeout 60000}
 
  :create-file-snapshot/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  :send-user-feedback/global
- {:permits 4}
+ {:permits 4 :timeout 30000}
 
  :send-user-feedback/by-profile
- {:permits 1 :queue 3}
+ {:permits 1 :queue 3 :timeout 30000}
 
  :import-binfile/global
- {:permits 4}
+ {:permits 4 :timeout 60000}
 
  :import-binfile/by-profile
- {:permits 1 :queue 2}}
+ {:permits 1 :queue 2 :timeout 60000}}

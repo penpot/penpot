@@ -9,3 +9,4 @@ JVM `clojure.test` (kaocha runner) under `backend/test/backend_tests/`.
 - Isolated run: `clojure -M:dev:test --focus backend-tests.my-ns-test` for a specific test namespace, or `clojure -M:dev:test --focus backend-tests.my-ns-test/my-test-var` for a specific test var.
 - Regression run: `clojure -M:dev:test` to ensure no regressions in related functional areas.
 - If you need to filter output, tee to a temp file first: `clojure -M:dev:test 2>&1 | tee /tmp/penpot-test-output.txt`.
+- `backend-tests.helpers` has `metrics-stub` (a metrics instance with no collectors, where every `run!` is a no-op) and `init-climit` (a concurrency limiter built from an inline config map), for tests that need a limiter without starting the system. Log lines are capturable with `add-watch` on `app.common.logging/log-record` (it holds the last record; the watcher sees every one).

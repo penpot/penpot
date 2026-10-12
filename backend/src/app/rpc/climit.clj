@@ -71,6 +71,9 @@
     (when-let [params (some->> config slurp edn/read-string check-config)]
       (l/inf :hint "initializing concurrency limit" :config (str config))
       (let [params (reduce-kv (fn [result k v]
+                                (when-not (:timeout v)
+                                  (l/wrn :hint "limiter without timeout, a saturated one parks its threads forever"
+                                         :id k))
                                 (assoc result k (assoc v ::id k)))
                               params
                               params)
@@ -158,6 +161,16 @@
 
 (def ^:private idseq (AtomicLong. 0))
 
+(def ^:private ^ThreadLocal held-limiters
+  ;; Limiters a thread is inside of, identified by the limiter instance, which
+  ;; already encodes the limit id and its key: the cache is per id+key pair.
+  ;; `pbh/invoke!` runs the handler on the calling thread, so a handler that
+  ;; enters climit again for a limit it holds finds it here. Without this a
+  ;; thread parks forever behind a permit it holds itself.
+  (ThreadLocal/withInitial
+   (reify java.util.function.Supplier
+     (get [_] (java.util.HashSet.)))))
+
 (defn- impl-invoke
   [metrics cache config handler]
   (let [limit-id     (::id config)
@@ -170,38 +183,50 @@
         mlabels     (into-array String [(id->str limit-id)])
         limit-id    (id->str limit-id limit-key)
         limiter     (cache/get cache limit-id (partial create-limiter config))
-        tpoint      (ct/tpoint)
-        req-id      (.incrementAndGet ^AtomicLong idseq)]
-    (try
-      (let [stats (pbh/get-stats limiter)]
-        (measure metrics mlabels stats nil)
-        (log "enqueued" req-id stats limit-id limit-label limit-params nil))
+        held        ^java.util.Set (.get ^ThreadLocal held-limiters)]
 
-      (pbh/invoke! limiter (fn []
-                             (let [elapsed (tpoint)
-                                   stats   (pbh/get-stats limiter)]
-                               (measure metrics mlabels stats elapsed)
-                               (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
-                               (handler))))
+    (if (.contains held limiter)
+      ;; The calling thread already holds this limiter for this key: run the
+      ;; handler inline instead of queueing behind itself.
+      (do
+        (l/trc :hint "reentrant invocation" :id limit-id :label limit-label)
+        (handler))
 
-      (catch ExceptionInfo cause
-        (let [{:keys [type code]} (ex-data cause)]
-          (if (= :bulkhead-error type)
+      (let [tpoint (ct/tpoint)
+            req-id (.incrementAndGet ^AtomicLong idseq)]
+
+        (.add held limiter)
+        (try
+          (let [stats (pbh/get-stats limiter)]
+            (measure metrics mlabels stats nil)
+            (log "enqueued" req-id stats limit-id limit-label limit-params nil))
+
+          (pbh/invoke! limiter (fn []
+                                 (let [elapsed (tpoint)
+                                       stats   (pbh/get-stats limiter)]
+                                   (measure metrics mlabels stats elapsed)
+                                   (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
+                                   (handler))))
+
+          (catch ExceptionInfo cause
+            (let [{:keys [type code]} (ex-data cause)]
+              (if (= :bulkhead-error type)
+                (let [elapsed (tpoint)
+                      stats   (pbh/get-stats limiter)]
+                  (log "rejected" req-id stats limit-id limit-label limit-params elapsed)
+                  (ex/raise :type :concurrency-limit
+                            :code code
+                            :hint "concurrency limit reached"
+                            :cause cause))
+                (throw cause))))
+
+          (finally
+            (.remove held limiter)
             (let [elapsed (tpoint)
-                  stats   (pbh/get-stats limiter)]
-              (log "rejected" req-id stats limit-id limit-label limit-params elapsed)
-              (ex/raise :type :concurrency-limit
-                        :code code
-                        :hint "concurrency limit reached"
-                        :cause cause))
-            (throw cause))))
+                  stats (pbh/get-stats limiter)]
 
-      (finally
-        (let [elapsed (tpoint)
-              stats (pbh/get-stats limiter)]
-
-          (measure metrics mlabels stats nil)
-          (log "finished" req-id stats limit-id limit-label limit-params elapsed))))))
+              (measure metrics mlabels stats nil)
+              (log "finished" req-id stats limit-id limit-label limit-params elapsed))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MIDDLEWARE
@@ -263,7 +288,13 @@
                   (l/wrn :hint "no config found for specified queue" :id (id->str limit-id))
                   handler)))
             handler
-            (concat global-limits (get-limits mdata)))
+            ;; The root limiters go last so they end up outermost: every path
+            ;; meets them before the command's own limits. The nested
+            ;; `climit/invoke!` chains carry only the command's own limits and
+            ;; run inside those of the enclosing call, so this puts both paths
+            ;; in the same order. With the opposite order two calls of the same
+            ;; profile hold the same limiters inverted and park for good.
+            (concat (get-limits mdata) global-limits))
 
     handler))
 

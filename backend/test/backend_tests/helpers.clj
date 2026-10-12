@@ -23,9 +23,11 @@
    [app.main :as main]
    [app.media]
    [app.media :as-alias mtx]
+   [app.metrics :as-alias metrics]
    [app.migrations]
    [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-create :as files.create]
@@ -424,6 +426,25 @@
                                            (assoc :app.worker.runner/queue (:queue task))
                                            (assoc :app.worker.runner/id 0))]
                                (#'app.worker.runner/run-task cfg task)))))))
+
+(defn metrics-stub
+  "A metrics instance with no collectors, where every `run!` is a no-op."
+  []
+  (reify metrics/IMetrics
+    (get-handler [_] nil)
+    (get-collector [_ _] nil)
+    (get-registry [_] nil)))
+
+(defn init-climit
+  "Build a concurrency limiter component from an inline config map."
+  [config]
+  (let [file (doto (java.io.File/createTempFile "climit" ".edn")
+               (.deleteOnExit))]
+    (spit file (pr-str config))
+    (ig/init-key ::rpc/climit
+                 {::climit/enabled true
+                  ::climit/config (.getAbsolutePath file)
+                  ::metrics/metrics (metrics-stub)})))
 
 ;; --- UTILS
 

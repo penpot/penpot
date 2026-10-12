@@ -12,13 +12,11 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
-   [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.util.services :as sv]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [integrant.core :as ig]
    [yetti.request]))
 
 (t/use-fixtures :once th/state-init)
@@ -45,21 +43,8 @@
   ;; `key-fn` of the vector form. That silently turned the limit into a single
   ;; shared one, so one stuck call ended up rejecting the audit batches of
   ;; every profile on the instance. Two profiles must not share a limiter.
-  (let [config  (doto (java.io.File/createTempFile "climit" ".edn")
-                  (.deleteOnExit))
-        _       (spit config "{:submit-audit-events/by-profile {:permits 1 :queue 1}}")
-
-        ;; The limiter only uses the metrics instance to measure, and with a
-        ;; stub collector every `run!` is a no-op.
-        metrics (reify mtx/IMetrics
-                  (get-handler [_] nil)
-                  (get-collector [_ _] nil)
-                  (get-registry [_] nil))
-
-        climit  (ig/init-key ::rpc/climit
-                             {::climit/enabled true
-                              ::climit/config (.getAbsolutePath config)
-                              ::mtx/metrics metrics})
+  (let [climit  (th/init-climit {:submit-audit-events/by-profile
+                                 {:permits 1 :queue 1 :timeout 30000}})
 
         ;; The metadata declared by the command itself, that is what the test
         ;; has to cover.
