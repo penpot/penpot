@@ -13,6 +13,7 @@
    [app.common.files.comp-processors :as cfcp]
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
+   [app.common.files.swap-slots :as cfss]
    [app.common.files.tokens :as cfo]
    [app.common.files.variant :as cfv]
    [app.common.geom.matrix :as gmt]
@@ -930,12 +931,12 @@
                   libraries {component-file {:id component-file :data data}}
                   ref-shape  (ctf/find-ref-shape file page libraries shape {:include-deleted? true :with-context? true})
                   ref-parent (get (:objects (:container (meta ref-shape))) (:parent-id ref-shape))
-                  shape-swap-slot (ctk/get-swap-slot shape)
-                  ref-swap-slot   (ctk/get-swap-slot ref-shape)]
+                  shape-swap-slot (cfss/get-swap-slot shape)
+                  ref-swap-slot   (cfss/get-swap-slot ref-shape)]
               (if (and (some? shape-swap-slot)
                        (= shape-swap-slot ref-swap-slot)
                        (ctk/main-instance? ref-parent))
-                (ctk/remove-swap-slot shape)
+                (cfss/remove-swap-slot shape)
                 shape)))
 
           (update-page [page]
@@ -946,10 +947,10 @@
 (defmethod migrate-data "legacy-48"
   [data _]
   (letfn [(fix-shape [shape]
-            (let [swap-slot (ctk/get-swap-slot shape)]
+            (let [swap-slot (cfss/get-swap-slot shape)]
               (if (and (some? swap-slot)
                        (not (ctk/subcopy-head? shape)))
-                (ctk/remove-swap-slot shape)
+                (cfss/remove-swap-slot shape)
                 shape)))
 
           (update-page [page]
@@ -1485,11 +1486,11 @@
 (defmethod migrate-data "0010-fix-swap-slots-pointing-non-existent-shapes"
   [data _]
   (letfn [(fix-shape [page shape]
-            (if (ctk/get-swap-slot shape)
+            (if (cfss/get-swap-slot shape)
               (let [libs (some-> (:libs data) deref)
-                    ref-id (when libs (ctf/find-ref-id-for-swapped shape page libs))]
+                    ref-id (when libs (cfcp/find-ref-id-for-swapped shape page libs))]
                 (if (nil? ref-id)
-                  (ctk/remove-swap-slot shape)
+                  (cfss/remove-swap-slot shape)
                   shape))
               shape))
 
@@ -1501,7 +1502,7 @@
 (defmethod migrate-data "0011-fix-invalid-text-touched-flags"
   [data _]
   (letfn [(fix-shape [shape]
-            (let [touched-groups (ctk/normal-touched-groups shape)
+            (let [touched-groups (cfss/normal-touched-groups shape)
                   content-touched? (touched-groups :content-group)
                   text-touched?    (or (touched-groups :text-content-text)
                                        (touched-groups :text-content-attribute)
@@ -2517,6 +2518,14 @@
             (concat (map :objects (vals (:pages-index data)))
                     (map :objects (vals (:components data)))))))
 
+(defmethod migrate-data "0040-convert-swap-slots-to-swap-groups"
+  [data _]
+  (some-> cfeat/*new* (swap! conj "components/swap-group"))
+  (let [libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (cfcp/convert-swap-slots data libraries)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2611,4 +2620,5 @@
          "0036-clear-nil-keys-in-objects"
          "0037-fix-shape-svg-attrs-and-defs"
          "0038-sanitize-variant-property-text"
-         "0039-align-variant-component-names"]))
+         "0039-align-variant-component-names"
+         "0040-convert-swap-slots-to-swap-groups"]))

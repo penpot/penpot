@@ -16,6 +16,7 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.files.repair :as cfr]
+   [app.common.files.swap-slots :as cfss]
    [app.common.files.validate :as cfv]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
@@ -146,7 +147,7 @@
 
 (defn- slot-group
   [id]
-  #{(ctk/build-swap-slot-group id)})
+  #{(cfss/build-swap-slot-group id)})
 
 ;; ---- Main heads
 
@@ -247,7 +248,7 @@
 
 (t/deftest ref-shape-not-found
   (let [[found file' errors] (repair (ths/update-shape (nested) :copy2-nested-head :shape-ref (uuid/next)))]
-    (t/is (= #{:ref-shape-not-found :missing-slot} found))
+    (t/is (= #{:ref-shape-not-found :ref-not-in-near-main} found))
     (t/is (nil? errors))
     ;; no matching shape: the nested copy is detached
     (t/is (nil? (:shape-ref (ths/get-shape file' :copy2-nested-head))))))
@@ -381,35 +382,36 @@
   (let [[found file' errors] (repair (ths/update-shape (simple) :copy-root :touched (slot-group (uuid/next))))]
     (t/is (= #{:misplaced-slot} found))
     (t/is (nil? errors))
-    (t/is (nil? (ctk/get-swap-slot (ths/get-shape file' :copy-root))))))
+    (t/is (nil? (cfss/get-swap-slot (ths/get-shape file' :copy-root))))))
 
-(t/deftest duplicate-slot
-  (let [file (-> (two-nested)
-                 (ths/update-shape :copy-a :touched (slot-group (thi/id :nested-a)))
-                 (ths/update-shape :copy-b :touched (slot-group (thi/id :nested-a))))
-        [found file' errors] (repair file)]
-    (t/is (= #{:duplicate-slot} found))
+(t/deftest misplaced-swap-group
+  (let [[found file' errors] (repair (ths/update-shape (simple) :copy-root :touched #{:swap-group}))]
+    (t/is (= #{:misplaced-swap-group} found))
     (t/is (nil? errors))
-    (t/is (= (thi/id :nested-a) (ctk/get-swap-slot (ths/get-shape file' :copy-a))))
-    (t/is (nil? (ctk/get-swap-slot (ths/get-shape file' :copy-b))))))
+    (t/is (not (ctk/swapped? (ths/get-shape file' :copy-root))))))
 
-(t/deftest component-duplicate-slot
-  (let [file (-> (two-nested)
-                 (delete-main :main2-root)
-                 (update-deleted-object :component2 :nested-a #(assoc % :touched (slot-group (thi/id :nested-a))))
-                 (update-deleted-object :component2 :nested-b #(assoc % :touched (slot-group (thi/id :nested-a)))))
-        [found file' errors] (repair file)]
-    (t/is (= #{:component-duplicate-slot} found))
-    (t/is (nil? errors))
-    (t/is (= (thi/id :nested-a) (ctk/get-swap-slot (deleted-object file' :component2 :nested-a))))
-    (t/is (nil? (ctk/get-swap-slot (deleted-object file' :component2 :nested-b))))))
-
-(t/deftest missing-slot
+(t/deftest ref-not-in-near-main
+  ;; a swapped copy that lost its position: it refers to the root of its own
+  ;; component, as files older than components/swap-group did, with no slot
   (let [file (-> (two-nested)
                  (tho/add-simple-component :component3 :main3-root :main3-child)
                  (tho/swap-component-in-shape :copy-a :component3 :new-shape-label :swapped :as-slot? true)
                  (ths/update-shape :swapped :touched nil))
-        [found file' errors] (repair file)]
-    (t/is (= #{:missing-slot} found))
+        [found file' errors] (repair file)
+        swapped (ths/get-shape file' :swapped)]
+    (t/is (= #{:ref-not-in-near-main} found))
     (t/is (nil? errors))
-    (t/is (= (thi/id :nested-a) (ctk/get-swap-slot (ths/get-shape file' :swapped))))))
+    ;; it takes the free position at its index, as a swap
+    (t/is (= (thi/id :nested-a) (:shape-ref swapped)))
+    (t/is (ctk/swapped? swapped))))
+
+(t/deftest duplicate-ref
+  ;; two children of the copy take the position of the same main shape
+  (let [file (ths/update-shape (two-nested) :copy-b :shape-ref (thi/id :nested-a))
+        [found file' errors] (repair file)
+        children (:shapes (ths/get-shape file' :copy2-root))]
+    (t/is (contains? found :duplicate-ref))
+    (t/is (nil? errors))
+    ;; the first one is kept, the second one deleted with its children
+    (t/is (= [(thi/id :copy-a)] (filterv #{(thi/id :copy-a) (thi/id :copy-b)} children)))
+    (t/is (nil? (ths/get-shape file' :copy-b)))))

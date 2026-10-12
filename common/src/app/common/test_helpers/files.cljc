@@ -9,10 +9,10 @@
    [app.common.data :as d]
    [app.common.features :as ffeat]
    [app.common.files.changes :as cfc]
+   [app.common.files.swap-slots :as cfss]
    [app.common.files.validate :as cfv]
    [app.common.pprint :refer [pprint]]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
@@ -137,9 +137,9 @@
 (defn- stringify-keys [m keys]
   (let [kv (-> (select-keys m keys)
                (assoc :swap-slot (when ((set keys) :swap-slot)
-                                   (ctk/get-swap-slot m)))
+                                   (cfss/get-swap-slot m)))
                (assoc :swap-slot-label (when ((set keys) :swap-slot-label)
-                                         (when-let [slot (ctk/get-swap-slot m)]
+                                         (when-let [slot (cfss/get-swap-slot m)]
                                            (thi/label slot))))
                (d/without-nils))
 

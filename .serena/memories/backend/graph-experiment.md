@@ -88,7 +88,7 @@
 - Formats graph column values.
 - Quotes reserved graph labels such as `Group` and `Boolean`.
 - Defines container tables and shape tables.
-- Defines `IsChildOf`, `IsInstanceOf`, `RefersTo`, and `FillsSwapSlot`.
+- Defines `IsChildOf`, `IsInstanceOf`, and `RefersTo`.
 
 ### `app.graph.schema.contract`
 
@@ -175,10 +175,8 @@
 - `link-shape-refs` creates `RefersTo` edges from `shape-ref`.
 - Ladybug limits multi-label relationship `MERGE` statements.
 - The transform emits one statement for each shape-table pair.
-- `link-swap-slots` creates `FillsSwapSlot` edges.
-- Swap slot IDs come from `swap-slot-<uuid>` entries in `touched`.
-- The transform removes swap slot entries from `touched` after edge creation.
-- The transform order matters because it reads and then changes `touched`.
+- A swapped copy head carries `swap-group` in `touched`; its `RefersTo` edge points at the main child it replaces, and its `IsInstanceOf` edge at the component it takes its content from.
+- The transforms read disjoint columns, so their order does not matter.
 
 ### `app.graph.meta`
 
