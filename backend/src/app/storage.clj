@@ -181,10 +181,30 @@
       AND (deleted_at IS NULL)
       AND status = 'valid'")
 
+(def ^:private sql:get-storage-object-any
+  "SELECT *
+     FROM storage_object
+    WHERE id = ?")
+
 (defn- get-database-object
-  [conn id]
-  (some-> (db/exec-one! conn [sql:get-storage-object id])
-          (row->storage-object)))
+  ([conn id]
+   (get-database-object conn id nil))
+  ([conn id options]
+   (let [sql (if (:include-deleted? options)
+               sql:get-storage-object-any
+               sql:get-storage-object)]
+     (some-> (db/exec-one! conn [sql id])
+             (row->storage-object)))))
+
+(defn- readable?
+  "An object is readable when it is not marked as deleted, or when the
+  caller explicitly asks for deleted objects. Objects marked for
+  deletion (`deleted_at` set) still have their content in the backend
+  until the gc task removes them."
+  [object options]
+  (or (:include-deleted? options)
+      (nil? (:expired-at object))
+      (ct/is-after? (:expired-at object) (ct/now))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
@@ -224,10 +244,23 @@
             :labels [(name result) (mtx/label bucket "unknown")]))
 
 (defn get-object
-  [storage id]
+  ([storage id]
+   (get-object storage id nil))
+  ([storage id options]
+   (assert (valid-storage? storage))
+   (let [ds (db/get-connectable storage)]
+     (get-database-object ds id options))))
+
+(defn get-object-by-hash
+  "Return an alive object with the given hash and bucket, if any. The
+  backend can be passed explicitly; by default the storage backend is used."
+  [{:keys [::backend] :as storage} {:keys [hash bucket] :as params}]
   (assert (valid-storage? storage))
-  (let [ds (db/get-connectable storage)]
-    (get-database-object ds id)))
+  (let [backend (or (:backend params) backend)
+        ds      (db/get-connectable storage)
+        row     (get-database-object-by-hash ds backend bucket hash)]
+    (when row
+      (row->storage-object row))))
 
 (defn put-object!
   "Creates a new object with the provided content."
@@ -337,26 +370,27 @@
 
 (defn get-object-data
   "Return an input stream instance of the object content."
-  ^InputStream
-  [storage object]
-  (assert (valid-storage? storage))
-  (when (or (nil? (:expired-at object))
-            (ct/is-after? (:expired-at object) (ct/now)))
-    (let [result (-> (impl/resolve-backend storage (:backend object))
-                     (impl/get-object-data object))]
-      (emit-op! storage "get-data" (-> object meta :bucket) object)
-      result)))
+  (^InputStream [storage object]
+   (get-object-data storage object nil))
+  (^InputStream [storage object options]
+   (assert (valid-storage? storage))
+   (when (readable? object options)
+     (let [result (-> (impl/resolve-backend storage (:backend object))
+                      (impl/get-object-data object))]
+       (emit-op! storage "get-data" (-> object meta :bucket) object)
+       result))))
 
 (defn get-object-bytes
   "Returns a byte array of object content."
-  [storage object]
-  (assert (valid-storage? storage))
-  (when (or (nil? (:expired-at object))
-            (ct/is-after? (:expired-at object) (ct/now)))
-    (let [result (-> (impl/resolve-backend storage (:backend object))
-                     (impl/get-object-bytes object))]
-      (emit-op! storage "get-bytes" (-> object meta :bucket) object)
-      result)))
+  ([storage object]
+   (get-object-bytes storage object nil))
+  ([storage object options]
+   (assert (valid-storage? storage))
+   (when (readable? object options)
+     (let [result (-> (impl/resolve-backend storage (:backend object))
+                      (impl/get-object-bytes object))]
+       (emit-op! storage "get-bytes" (-> object meta :bucket) object)
+       result))))
 
 (defn get-object-url
   ([storage object]

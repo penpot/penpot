@@ -165,6 +165,41 @@
     (t/is (ct/is-after? (:expired-at object) (ct/now)))
     (t/is (nil? (sto/get-object storage (:id object))))))
 
+(t/deftest put-and-retrieve-deleted-object
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+
+    (t/is (true? (sto/del-object! storage (:id object))))
+
+    ;; by default an object marked for deletion is not readable
+    (t/is (nil? (sto/get-object storage (:id object))))
+
+    ;; but it can still be read when the caller asks for it: the content is
+    ;; there until the gc task removes it
+    (let [deleted (sto/get-object storage (:id object) {:include-deleted? true})]
+      (t/is (some? deleted))
+      (t/is (= (:id object) (:id deleted)))
+      (t/is (nil? (sto/get-object-data storage deleted)))
+      (t/is (= "content" (slurp (sto/get-object-data storage deleted {:include-deleted? true})))))))
+
+(t/deftest get-object-by-hash
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        object  (sto/put-object! storage {::sto/content (-> (sto/content "content")
+                                                            (sto/wrap-with-hash "given-hash"))
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+
+    (t/is (= (:id object)
+             (:id (sto/get-object-by-hash storage {:hash "given-hash"
+                                                   :bucket "file-media-object"}))))
+    (t/is (nil? (sto/get-object-by-hash storage {:hash "given-hash"
+                                                 :bucket "file-object-thumbnail"})))))
+
 (t/deftest put-and-delete-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))

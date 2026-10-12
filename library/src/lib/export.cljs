@@ -56,6 +56,9 @@
 (def encode-plugin-data
   (sm/encoder ctpg/schema:plugin-data sm/json-transformer))
 
+;; Buckets that can appear inside a `.penpot` file. It is a subset of the
+;; backend `app.storage/valid-buckets`: `organization` and `tempfile` are
+;; runtime-only and never travel inside a file.
 (def ^:private valid-buckets
   #{"file-media-object"
     "team-font-variant"
@@ -72,10 +75,16 @@
    [:size ::sm/int]
    [:content-type :string]
    [:bucket [::sm/one-of {:format :string} valid-buckets]]
-   [:hash :string]])
+   ;; `:hash` is optional: the builder does not compute a hash for file media,
+   ;; and the importer only verifies it when it is present
+   ;; (`app.binfile.v3/import-storage-objects`).
+   [:hash {:optional true} :string]])
 
 (def encode-storage-object
   (sm/encoder schema:storage-object sm/json-transformer))
+
+(def ^:private check-storage-object
+  (sm/check-fn schema:storage-object :hint "invalid storage object"))
 
 (def ^:private file-attrs
   #{:id
@@ -173,7 +182,8 @@
 
                     [(str "objects/" media-id ".json")
                      (delay (-> media
-                                ;; FIXME: proper encode?
+                                (check-storage-object)
+                                (encode-storage-object)
                                 (json/encode)))]
                     [(str "files/" (:file-id file-media) "/media/" file-media-id ".json")
                      (delay (-> file-media
