@@ -1,0 +1,68 @@
+{
+  "name": "SRGB",
+  "type": "color",
+  "description": "sRGB color space with normalized 0-1 range. The standard color space for web and displays.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "r": {
+        "type": "number",
+        "description": "Red channel (0-1)"
+      },
+      "g": {
+        "type": "number",
+        "description": "Green channel (0-1)"
+      },
+      "b": {
+        "type": "number",
+        "description": "Blue channel (0-1)"
+      }
+    },
+    "required": ["r", "g", "b"],
+    "order": ["r", "g", "b"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "sRGB Color Initializer",
+      "keyword": "srgb",
+      "description": "Creates an sRGB color from normalized 0-1 values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/rgb-color/0/",
+      "target": "$self",
+      "description": "Converts RGB (0-255) to sRGB (0-1) by normalizing",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-rgb.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/hsl-color/0/",
+      "target": "$self",
+      "description": "Converts HSL to sRGB",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-hsl.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/srgb-linear-color/0/",
+      "target": "$self",
+      "description": "Converts Linear sRGB to sRGB by applying gamma correction",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-linear.tokenscript"
+      }
+    }
+  ]
+}

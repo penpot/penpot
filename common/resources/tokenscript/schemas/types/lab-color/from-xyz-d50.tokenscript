@@ -1,0 +1,78 @@
+// XYZ-D50 to CIE Lab Conversion
+// Reference: CIE 15.3:2004 section 8.2.1.1
+// Reference: https://github.com/color-js/color.js/blob/main/src/spaces/lab.js
+//
+// Algorithm:
+// 1. Scale XYZ by D50 white point reference
+// 2. Apply f function: f(x) = x > ε ? cbrt(x) : (κ*x + 16)/116
+// 3. L = 116 * f[Y] - 16
+// 4. a = 500 * (f[X] - f[Y])
+// 5. b = 200 * (f[Y] - f[Z])
+//
+// Input: Color.XYZD50 with x, y, z tristimulus
+// Output: Color.Lab with l, a, b coordinates
+
+// Get input XYZ-D50 values
+variable x: Number = {input}.x;
+variable y: Number = {input}.y;
+variable z: Number = {input}.z;
+
+// CIE constants (exact rational fractions)
+// ε = 216/24389 = (6/29)^3
+variable epsilon: Number = 0.008856451679035631;
+// κ = 24389/27 = (29/3)^3  
+variable kappa: Number = 903.2962962962963;
+
+// D50 white point reference (ColorJS exact values)
+// D50: [0.3457/0.3585, 1.0, (1-0.3457-0.3585)/0.3585]
+variable white_x: Number = 0.9642956764295677;
+variable white_y: Number = 1.0;
+variable white_z: Number = 0.8251046025104602;
+
+// Scale XYZ by white point
+variable xr: Number = x / white_x;
+variable yr: Number = y / white_y;
+variable zr: Number = z / white_z;
+
+// Apply f function with cube root
+// f(t) = t > ε ? t^(1/3) : (κt + 16) / 116
+variable cube_root_exp: Number = 0.3333333333333333;
+
+variable fx: Number = 0;
+variable fy: Number = 0;
+variable fz: Number = 0;
+
+if (xr > epsilon) [
+    fx = pow(xr, cube_root_exp);
+] else [
+    fx = (kappa * xr + 16) / 116;
+];
+
+if (yr > epsilon) [
+    fy = pow(yr, cube_root_exp);
+] else [
+    fy = (kappa * yr + 16) / 116;
+];
+
+if (zr > epsilon) [
+    fz = pow(zr, cube_root_exp);
+] else [
+    fz = (kappa * zr + 16) / 116;
+];
+
+// Calculate Lab values
+variable lab_l: Number = 116 * fy - 16;
+variable lab_a: Number = 500 * (fx - fy);
+variable lab_b: Number = 200 * (fy - fz);
+
+// Create output
+variable output: Color.Lab;
+output.l = lab_l;
+output.a = lab_a;
+output.b = lab_b;
+
+return output;
+
+
+
+

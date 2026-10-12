@@ -1,0 +1,13 @@
+// CSS Color Initializer
+// Accepts a CSS color string and returns it
+// This is primarily used for type registration; 
+// the main usage is converting TO css from other color types
+//
+// Input: String (CSS color value)
+// Output: String (same value)
+
+variable input: List = {input};
+variable value: String = input.get(0);
+
+return value;
+

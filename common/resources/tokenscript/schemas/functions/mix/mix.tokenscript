@@ -1,0 +1,47 @@
+// mix: Blend two colors in perceptual space
+// Uses shortest hue path for natural color blending.
+//
+// Algorithm: Linear interpolation on L, C, and shortest-path H
+//
+// Input:  Any color space (converted to OKLCH internally)
+// Output: OKLCH (working space)
+// To get sRGB: mix(color1, color2, 0.5).to.srgb()
+
+variable input: List = {input};
+variable color1: Color.OKLCH = input.get(0).to.oklch();
+variable color2: Color.OKLCH = input.get(1).to.oklch();
+
+// Default amount is 0.5 (50/50 blend)
+variable amount: Number = 0.5;
+if (input.length() > 2) [
+    amount = input.get(2);
+];
+
+// Interpolate lightness and chroma linearly
+variable new_l: Number = color1.l + (color2.l - color1.l) * amount;
+variable new_c: Number = color1.c + (color2.c - color1.c) * amount;
+
+// Interpolate hue using shortest path
+variable h1: Number = color1.h;
+variable h2: Number = color2.h;
+variable h_diff: Number = h2 - h1;
+
+// Normalize to shortest path (-180 to 180)
+if (h_diff > 180) [ h_diff = h_diff - 360; ];
+if (h_diff < -180) [ h_diff = h_diff + 360; ];
+
+variable new_h: Number = h1 + h_diff * amount;
+if (new_h < 0) [ new_h = new_h + 360; ];
+if (new_h >= 360) [ new_h = new_h - 360; ];
+
+// Create mixed color
+variable result: Color.OKLCH;
+result.l = new_l;
+result.c = new_c;
+result.h = new_h;
+
+return result;
+
+
+
+

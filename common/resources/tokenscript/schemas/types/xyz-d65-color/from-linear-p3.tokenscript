@@ -1,0 +1,47 @@
+// Linear P3 to XYZ-D65 Conversion
+// Converts linear Display-P3 RGB to CIE XYZ (D65)
+// Reference: CSS Color Level 4 specification
+//
+// Uses the P3 to XYZ-D65 transformation matrix
+// Matrix values from ColorJS / CSS Color Level 4
+//
+// Input: Color.LinearP3 with linear r, g, b values
+// Output: Color.XYZD65 with x, y, z tristimulus values
+
+// Get linear P3 values
+variable r: Number = {input}.r;
+variable g: Number = {input}.g;
+variable b: Number = {input}.b;
+
+// Linear P3 to XYZ-D65 matrix
+// Row 1
+variable m00: Number = 0.4865709486482162;
+variable m01: Number = 0.26566769316909306;
+variable m02: Number = 0.1982172852343625;
+
+// Row 2
+variable m10: Number = 0.2289745640697488;
+variable m11: Number = 0.6917385218365064;
+variable m12: Number = 0.079286914093745;
+
+// Row 3
+variable m20: Number = 0.0;
+variable m21: Number = 0.04511338185890264;
+variable m22: Number = 1.043944368900976;
+
+// Matrix multiplication: [x, y, z] = M × [r, g, b]
+variable x: Number = m00 * r + m01 * g + m02 * b;
+variable y: Number = m10 * r + m11 * g + m12 * b;
+variable z: Number = m20 * r + m21 * g + m22 * b;
+
+// Create output
+variable output: Color.XYZD65;
+output.x = x;
+output.y = y;
+output.z = z;
+
+return output;
+
+
+
+

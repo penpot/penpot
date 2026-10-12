@@ -1,0 +1,21 @@
+// HSL Color Initializer
+// Creates an HSL color from H, S, L values
+// Input: List of [h, s, l] or [h, s, l, alpha] values
+
+variable hsl_values: List = {input};
+variable output: Color.HSL;
+
+output.h = hsl_values.get(0);
+output.s = hsl_values.get(1);
+output.l = hsl_values.get(2);
+
+// Set alpha if provided as 4th parameter
+if (hsl_values.length() > 3) [
+  output.alpha = hsl_values.get(3);
+];
+
+return output;
+
+
+
+

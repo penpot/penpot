@@ -1,0 +1,16 @@
+// XYZ-D50 Color Initializer
+// Creates an XYZ-D50 color from tristimulus values
+// Input: List of [x, y, z] tristimulus values
+
+variable xyz_values: List = {input};
+variable output: Color.XYZD50;
+
+output.x = xyz_values.get(0);
+output.y = xyz_values.get(1);
+output.z = xyz_values.get(2);
+
+return output;
+
+
+
+

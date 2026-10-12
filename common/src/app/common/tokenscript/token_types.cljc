@@ -19,6 +19,7 @@
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.parser :as parser]
    [app.common.tokenscript.registry :as reg]
+   [app.common.tokenscript.schema-uri :as suri]
    [clojure.string :as str]
    [clojure.walk :as walk]))
 
@@ -56,7 +57,8 @@
 (defn register
   "Registers a token type specification under `uri`."
   [registry uri spec]
-  (let [spec (normalize-spec uri spec)
+  (let [uri (suri/normalize uri)
+        spec (normalize-spec uri spec)
         registry (reg/add-spec registry uri spec (spec-name spec))]
     (if-let [validation (:validation spec)]
       (register-validation registry (:name spec) validation)

@@ -1,0 +1,21 @@
+// OKLab Color Initializer
+// Creates an OKLab color from L, a, b values
+// Input: List of [l, a, b] or [l, a, b, alpha] values
+
+variable lab_values: List = {input};
+variable output: Color.OKLab;
+
+output.l = lab_values.get(0);
+output.a = lab_values.get(1);
+output.b = lab_values.get(2);
+
+// Set alpha if provided as 4th parameter
+if (lab_values.length() > 3) [
+  output.alpha = lab_values.get(3);
+];
+
+return output;
+
+
+
+

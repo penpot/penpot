@@ -1,0 +1,24 @@
+{
+  "name": "Desaturate",
+  "type": "function",
+  "description": "Decreases color saturation by reducing chroma in OKLCH space. Amount is 0-1 where 0.25 = 25% less saturated.",
+  "keyword": "desaturate",
+  "input": {
+    "type": "object",
+    "properties": {
+      "color": {
+        "type": "color",
+        "description": "The color to desaturate"
+      },
+      "amount": {
+        "type": "number",
+        "description": "Amount to desaturate (0-1). Default is 0.25"
+      }
+    }
+  },
+  "script": {
+    "type": "/api/v1/core/tokenscript/0/",
+    "script": "./desaturate.tokenscript"
+  },
+  "requirements": ["/api/v1/core/oklch-color/0/", "/api/v1/core/srgb-color/0/"]
+}

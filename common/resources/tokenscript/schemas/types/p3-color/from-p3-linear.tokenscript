@@ -1,0 +1,59 @@
+// Linear P3 to P3 Conversion
+// Applies sRGB transfer function (gamma encoding)
+// P3 uses the same transfer function as sRGB
+// Reference: CSS Color Level 4
+//
+// Algorithm (same as sRGB):
+//   if linear ≤ 0.0031308: encoded = 12.92 × linear
+//   else: encoded = 1.055 × linear^(1/2.4) - 0.055
+//
+// Input: Color.LinearP3 with linear r, g, b values
+// Output: Color.P3 with gamma-encoded r, g, b values
+
+// Transfer function constants (same as sRGB)
+variable threshold: Number = 0.0031308;
+variable linear_scale: Number = 12.92;
+variable gamma_scale: Number = 1.055;
+variable gamma_offset: Number = 0.055;
+variable gamma_exponent: Number = 0.4166666666666667;
+
+// Get linear values
+variable linear_r: Number = {input}.r;
+variable linear_g: Number = {input}.g;
+variable linear_b: Number = {input}.b;
+
+// Convert red channel
+variable encoded_r: Number = 0;
+if (linear_r <= threshold) [
+    encoded_r = linear_scale * linear_r;
+] else [
+    encoded_r = gamma_scale * pow(linear_r, gamma_exponent) - gamma_offset;
+];
+
+// Convert green channel
+variable encoded_g: Number = 0;
+if (linear_g <= threshold) [
+    encoded_g = linear_scale * linear_g;
+] else [
+    encoded_g = gamma_scale * pow(linear_g, gamma_exponent) - gamma_offset;
+];
+
+// Convert blue channel
+variable encoded_b: Number = 0;
+if (linear_b <= threshold) [
+    encoded_b = linear_scale * linear_b;
+] else [
+    encoded_b = gamma_scale * pow(linear_b, gamma_exponent) - gamma_offset;
+];
+
+// Create output
+variable output: Color.P3;
+output.r = encoded_r;
+output.g = encoded_g;
+output.b = encoded_b;
+
+return output;
+
+
+
+

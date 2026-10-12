@@ -1,0 +1,48 @@
+{
+  "name": "OKLCH",
+  "type": "color",
+  "description": "OKLCH color space - the polar form of OKLab. L is lightness (0-1), C is chroma, H is hue angle (0-360).",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "l": {
+        "type": "number",
+        "description": "Lightness (0-1)"
+      },
+      "c": {
+        "type": "number",
+        "description": "Chroma (0 to ~0.4 for sRGB gamut)"
+      },
+      "h": {
+        "type": "number",
+        "description": "Hue angle (0-360 degrees)"
+      }
+    },
+    "required": ["l", "c", "h"],
+    "order": ["l", "c", "h"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "OKLCH Color Initializer",
+      "keyword": "oklch",
+      "description": "Creates an OKLCH color from L, C, H values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/oklab-color/0/",
+      "target": "$self",
+      "description": "Converts OKLab to OKLCH using Cartesian to polar transformation",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-oklab.tokenscript"
+      }
+    }
+  ]
+}

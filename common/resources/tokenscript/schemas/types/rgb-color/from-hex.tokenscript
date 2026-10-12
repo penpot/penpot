@@ -1,0 +1,43 @@
+// Hex to RGB Conversion
+// Converts hexadecimal color string to RGB (0-255 range)
+//
+// Supports both shorthand (#RGB) and standard (#RRGGBB) formats:
+//   #f00     → RGB(255, 0, 0)
+//   #ff0000  → RGB(255, 0, 0)
+//
+// Algorithm:
+// 1. Remove '#' prefix and split into characters
+// 2. For shorthand: duplicate each digit (f → ff)
+// 3. Parse hex pairs to decimal values
+//
+// Input: Color.Hex (e.g., #ff5733)
+// Output: Color.Rgb with r, g, b in 0-255 range
+
+// Split hex string on '#' and get the color value
+variable color_parts: List = {input}.to_string().split('#'); 
+variable color: List = color_parts.get(1).split(); 
+variable length: Number = color.length(); 
+
+// Initialize RGB values
+variable rgb: List = 0, 0, 0; 
+
+// Handle shorthand (#RGB) vs standard (#RRGGBB) format
+if(length == 3) [ 
+  // Shorthand: duplicate each digit
+  rgb.update(0, parse_int(color.get(0).concat(color.get(0)), 16)); 
+  rgb.update(1, parse_int(color.get(1).concat(color.get(1)), 16)); 
+  rgb.update(2, parse_int(color.get(2).concat(color.get(2)), 16)); 
+] else [ 
+  // Standard: pair adjacent digits
+  rgb.update(0, parse_int(color.get(0).concat(color.get(1)), 16)); 
+  rgb.update(1, parse_int(color.get(2).concat(color.get(3)), 16)); 
+  rgb.update(2, parse_int(color.get(4).concat(color.get(5)), 16)); 
+]; 
+
+// Create output color
+variable output: Color.Rgb; 
+output.r = rgb.get(0); 
+output.g = rgb.get(1); 
+output.b = rgb.get(2); 
+
+return output;

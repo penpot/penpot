@@ -1,0 +1,31 @@
+// HSV to HWB Conversion
+// Reference: CSS Color Level 4
+//
+// Algorithm:
+// H stays the same
+// W = (1 - S) * V  (Whiteness)
+// B = 1 - V        (Blackness)
+//
+// Input: Color.HSV with h, s, v values
+// Output: Color.HWB with h, w, b values
+
+// Get input HSV values
+variable h: Number = {input}.h;
+variable s: Number = {input}.s;
+variable v: Number = {input}.v;
+
+// Calculate whiteness and blackness
+variable w: Number = (1 - s) * v;
+variable b: Number = 1 - v;
+
+// Create output
+variable output: Color.HWB;
+output.h = h;
+output.w = w;
+output.b = b;
+
+return output;
+
+
+
+

@@ -1,0 +1,48 @@
+{
+  "name": "HSV",
+  "type": "color",
+  "description": "HSV color space - Hue, Saturation, Value. Also known as HSB (Hue, Saturation, Brightness).",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "h": {
+        "type": "number",
+        "description": "Hue angle (0-360 degrees)"
+      },
+      "s": {
+        "type": "number",
+        "description": "Saturation (0-1)"
+      },
+      "v": {
+        "type": "number",
+        "description": "Value/Brightness (0-1)"
+      }
+    },
+    "required": ["h", "s", "v"],
+    "order": ["h", "s", "v"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "HSV Color Initializer",
+      "keyword": "hsv",
+      "description": "Creates an HSV color from H, S, V values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/srgb-color/0/",
+      "target": "$self",
+      "description": "Converts sRGB to HSV",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-srgb.tokenscript"
+      }
+    }
+  ]
+}

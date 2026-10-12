@@ -1,0 +1,29 @@
+// XYZ-D65 to CSS Conversion
+// Converts XYZ-D65 to CSS color(xyz-d65) syntax
+// CSS Color Level 4: color(xyz-d65 x y z) or color(xyz-d65 x y z / alpha)
+//
+// Input: Color.XYZD65 with x, y, z tristimulus values, optional alpha (0-1)
+// Output: Color.CSS with value like "color(xyz-d65 0.4124 0.2126 0.0193)" or "color(xyz-d65 0.4124 0.2126 0.0193 / 0.5)"
+// Note: Alpha is omitted if null or 1.0 (fully opaque)
+
+variable precision: Number = 100000;
+variable x: Number = round({input}.x * precision) / precision;
+variable y: Number = round({input}.y * precision) / precision;
+variable z: Number = round({input}.z * precision) / precision;
+
+variable css_value: String = "color(xyz-d65 ".concat(x.to_string()).concat(" ").concat(y.to_string()).concat(" ").concat(z.to_string());
+
+// Add alpha if present, not null, and not 1.0 (per CSS convention)
+variable alpha: Number = {input}.alpha;
+if (alpha != null) [
+  if (alpha != 1) [
+    css_value = css_value.concat(" / ").concat(alpha.to_string());
+  ];
+];
+
+css_value = css_value.concat(")");
+
+variable output: Color.CSS;
+output.value = css_value;
+return output;
+

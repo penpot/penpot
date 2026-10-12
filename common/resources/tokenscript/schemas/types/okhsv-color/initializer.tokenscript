@@ -1,0 +1,31 @@
+// OKHSV Color Initializer
+// Reference: Björn Ottosson - "A perceptual color picker: OKHSL and OKHSV"
+// URL: https://bottosson.github.io/posts/colorpicker/
+//
+// Creates an OKHSV color from hue, saturation, and value.
+// OKHSV is a perceptually uniform version of HSV built on OKLab.
+//
+// Parameters:
+// - h: Hue angle (0-360 degrees), same as OKLCH hue
+// - s: Saturation (0-1), ratio of chroma to maximum at this value
+// - v: Value/brightness (0-1), with V=1 being brightest for that saturation
+// - alpha: Optional alpha channel (0-1)
+//
+// Input: Object with h, s, v, and optional alpha properties
+// Output: Color.OKHSV
+
+variable h: Number = input.h;
+variable s: Number = input.s;
+variable v: Number = input.v;
+
+variable output: Color.OKHSV;
+output.h = h;
+output.s = s;
+output.v = v;
+
+// Set alpha if provided
+if (input.alpha != null) [
+  output.alpha = input.alpha;
+];
+
+output

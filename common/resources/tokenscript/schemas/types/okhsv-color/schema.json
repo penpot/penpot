@@ -1,0 +1,48 @@
+{
+  "name": "OKHSV",
+  "type": "color",
+  "description": "OKHSV color space by Björn Ottosson - a perceptually uniform HSV based on OKLab. H is hue (0-360), S is saturation (0-1), V is value (0-1). Reference: https://bottosson.github.io/posts/colorpicker/",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "h": {
+        "type": "number",
+        "description": "Hue angle (0-360 degrees), same as OKLCH hue"
+      },
+      "s": {
+        "type": "number",
+        "description": "Saturation (0-1), ratio of chroma to maximum at this value"
+      },
+      "v": {
+        "type": "number",
+        "description": "Value/brightness (0-1), with V=1 being the brightest for that saturation"
+      }
+    },
+    "required": ["h", "s", "v"],
+    "order": ["h", "s", "v"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "OKHSV Color Initializer",
+      "keyword": "okhsv",
+      "description": "Creates an OKHSV color from H, S, V values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/oklab-color/0/",
+      "target": "$self",
+      "description": "Converts OKLab to OKHSV using Ottosson's algorithm with Halley's method refinement for gamut boundary",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-oklab.tokenscript"
+      }
+    }
+  ]
+}

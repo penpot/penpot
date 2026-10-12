@@ -1,0 +1,29 @@
+// OKLCH to CSS Conversion
+// Converts OKLCH to CSS oklch() syntax
+// CSS Color Level 4: oklch(L C H) or oklch(L C H / alpha) where L is 0-1 decimal
+//
+// Input: Color.OKLCH with l (0-1), c, h (0-360), optional alpha (0-1)
+// Output: Color.CSS with value like "oklch(0.7 0.15 180)" or "oklch(0.7 0.15 180 / 0.5)"
+// Note: Alpha is omitted if null or 1.0 (fully opaque)
+
+variable precision: Number = 100000;
+variable l: Number = round({input}.l * precision) / precision;
+variable c: Number = round({input}.c * precision) / precision;
+variable h: Number = round({input}.h * precision) / precision;
+
+variable css_value: String = "oklch(".concat(l.to_string()).concat(" ").concat(c.to_string()).concat(" ").concat(h.to_string());
+
+// Add alpha if present, not null, and not 1.0 (per CSS convention)
+variable alpha: Number = {input}.alpha;
+if (alpha != null) [
+  if (alpha != 1) [
+    css_value = css_value.concat(" / ").concat(alpha.to_string());
+  ];
+];
+
+css_value = css_value.concat(")");
+
+variable output: Color.CSS;
+output.value = css_value;
+return output;
+

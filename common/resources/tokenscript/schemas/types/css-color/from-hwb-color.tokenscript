@@ -1,0 +1,29 @@
+// HWB to CSS Conversion
+// Converts HWB to CSS hwb() syntax
+// CSS Color Level 4: hwb(h w b) or hwb(h w b / alpha) where w and b are percentages
+//
+// Input: Color.HWB with h (0-360), w (0-1), b (0-1), optional alpha (0-1)
+// Output: Color.CSS with value like "hwb(120 10% 20%)" or "hwb(120 10% 20% / 0.5)"
+// Note: Alpha is omitted if null or 1.0 (fully opaque)
+
+variable precision: Number = 100;
+variable h: Number = round({input}.h * precision) / precision;
+variable w: Number = round({input}.w * 100 * precision) / precision;
+variable b_val: Number = round({input}.b * 100 * precision) / precision;
+
+variable css_value: String = "hwb(".concat(h.to_string()).concat(" ").concat(w.to_string()).concat("% ").concat(b_val.to_string()).concat("%");
+
+// Add alpha if present, not null, and not 1.0 (per CSS convention)
+variable alpha: Number = {input}.alpha;
+if (alpha != null) [
+  if (alpha != 1) [
+    css_value = css_value.concat(" / ").concat(alpha.to_string());
+  ];
+];
+
+css_value = css_value.concat(")");
+
+variable output: Color.CSS;
+output.value = css_value;
+return output;
+

@@ -1,0 +1,48 @@
+{
+  "name": "XYZD50",
+  "type": "color",
+  "description": "CIE XYZ color space with D50 white point. Used for Lab and LCH color spaces.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "x": {
+        "type": "number",
+        "description": "X tristimulus value"
+      },
+      "y": {
+        "type": "number",
+        "description": "Y tristimulus value (luminance)"
+      },
+      "z": {
+        "type": "number",
+        "description": "Z tristimulus value"
+      }
+    },
+    "required": ["x", "y", "z"],
+    "order": ["x", "y", "z"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "XYZ-D50 Color Initializer",
+      "keyword": "xyzd50",
+      "description": "Creates an XYZ-D50 color from tristimulus values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/xyz-d65-color/0/",
+      "target": "$self",
+      "description": "Converts XYZ-D65 to XYZ-D50 using Bradford chromatic adaptation",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-xyz-d65.tokenscript"
+      }
+    }
+  ]
+}

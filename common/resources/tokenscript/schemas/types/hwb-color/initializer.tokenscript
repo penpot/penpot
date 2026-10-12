@@ -1,0 +1,21 @@
+// HWB Color Initializer
+// Creates an HWB color from H, W, B values
+// Input: List of [h, w, b] or [h, w, b, alpha] values
+
+variable hwb_values: List = {input};
+variable output: Color.HWB;
+
+output.h = hwb_values.get(0);
+output.w = hwb_values.get(1);
+output.b = hwb_values.get(2);
+
+// Set alpha if provided as 4th parameter
+if (hwb_values.length() > 3) [
+  output.alpha = hwb_values.get(3);
+];
+
+return output;
+
+
+
+

@@ -1,0 +1,410 @@
+// OKLab to OKHSL Conversion
+// Reference: Björn Ottosson - "A perceptual color picker: OKHSL and OKHSV"
+// URL: https://bottosson.github.io/posts/colorpicker/
+// Reference: https://github.com/color-js/color.js/blob/main/src/spaces/okhsl.js
+// Reference: https://bottosson.github.io/posts/oklab/ (original OKLab paper)
+//
+// OKHSL provides a perceptually uniform HSL with proper saturation scaling.
+// The algorithm uses three key chroma values (C_0, C_mid, C_max) and
+// performs piecewise interpolation to map chroma to saturation.
+//
+// This implementation includes the FULL findGamutIntersection algorithm
+// with Halley's method refinement for accurate gamut boundary detection.
+//
+// Input: Color.OKLab with l (0-1), a, b coordinates
+// Output: Color.OKHSL with h (0-360), s (0-1), l (0-1)
+
+variable lab_l: Number = input.l;
+variable lab_a: Number = input.a;
+variable lab_b: Number = input.b;
+
+// Native constants
+variable pi_val: Number = pi();
+variable float_max: Number = 999999999;
+
+// Toe function constants
+// K3 = (1 + K1) / (1 + K2)
+variable toe_k1: Number = 0.206;
+variable toe_k2: Number = 0.03;
+variable toe_k3: Number = 1.17009708737864;
+
+// LMS to OKLab matrix coefficients (LabtoLMS_M columns 1,2)
+variable lab_lms_kl_a: Number = 0.3963377774;
+variable lab_lms_kl_b: Number = 0.2158037573;
+variable lab_lms_km_a: Number = -0.1055613458;
+variable lab_lms_km_b: Number = -0.0638541728;
+variable lab_lms_ks_a: Number = -0.0894841775;
+variable lab_lms_ks_b: Number = -1.2914855480;
+
+// LMS to sRGB-linear matrix
+variable lms_r0: Number = 4.0767416360759583;
+variable lms_r1: Number = -3.3077115392580629;
+variable lms_r2: Number = 0.2309699031821043;
+variable lms_g0: Number = -1.2684379732850315;
+variable lms_g1: Number = 2.6097573492876882;
+variable lms_g2: Number = -0.3413193760026570;
+variable lms_b0: Number = -0.0041960761386756;
+variable lms_b1: Number = -0.7034186179359362;
+variable lms_b2: Number = 1.7076146940746117;
+
+// RGB limit coefficients for determining which channel clips first
+variable red_limit_a: Number = -1.8817031;
+variable red_limit_b: Number = -0.80936501;
+variable green_limit_a: Number = 1.8144408;
+variable green_limit_b: Number = -1.19445267;
+
+// Red Kn coefficients
+variable red_k0: Number = 1.19086277;
+variable red_k1: Number = 1.76576728;
+variable red_k2: Number = 0.59662641;
+variable red_k3: Number = 0.75515197;
+variable red_k4: Number = 0.56771245;
+
+// Green Kn coefficients
+variable green_k0: Number = 0.73956515;
+variable green_k1: Number = -0.45954404;
+variable green_k2: Number = 0.08285427;
+variable green_k3: Number = 0.12541073;
+variable green_k4: Number = -0.14503204;
+
+// Blue Kn coefficients
+variable blue_k0: Number = 1.35733652;
+variable blue_k1: Number = -0.00915799;
+variable blue_k2: Number = -1.1513021;
+variable blue_k3: Number = -0.50559606;
+variable blue_k4: Number = 0.00692167;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 1: Convert to polar coordinates and apply toe function
+// ═══════════════════════════════════════════════════════════════════════════
+variable c: Number = sqrt(lab_a * lab_a + lab_b * lab_b);
+
+// Apply toe function: toe(x) = 0.5 * (k3*x - k1 + sqrt((k3*x - k1)^2 + 4*k2*k3*x))
+variable l: Number = lab_l;
+if (lab_l > 0.0001 && lab_l < 0.9999) [
+  variable term: Number = toe_k3 * lab_l - toe_k1;
+  l = 0.5 * (term + sqrt(term * term + 4 * toe_k2 * toe_k3 * lab_l));
+];
+
+// Compute hue using atan2(-b, -a) + 0.5 (ColorJS convention)
+variable h: Number = 0;
+if (c > 0.00001) [
+  variable h_normalized: Number = 0.5 + atan2(-lab_b, -lab_a) / (2 * pi_val);
+  h = h_normalized * 360;
+  if (h < 0) [ h = h + 360; ];
+  if (h >= 360) [ h = h - 360; ];
+];
+
+// Initialize saturation
+variable s: Number = 0;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 2: Check if chromatic (non-achromatic, non-edge)
+// ═══════════════════════════════════════════════════════════════════════════
+variable is_chromatic: Number = 1;
+if (c < 0.00001) [ is_chromatic = 0; ];
+if (l < 0.0001) [ is_chromatic = 0; ];
+if (l > 0.9999) [ is_chromatic = 0; ];
+
+if (is_chromatic > 0.5) [
+  // ═══════════════════════════════════════════════════════════════════════
+  // Step 3: Normalize hue direction (a_, b_)
+  // ═══════════════════════════════════════════════════════════════════════
+  variable a_: Number = lab_a / c;
+  variable b_: Number = lab_b / c;
+  
+  // Pre-compute LMS coefficients
+  variable kl: Number = lab_lms_kl_a * a_ + lab_lms_kl_b * b_;
+  variable km: Number = lab_lms_km_a * a_ + lab_lms_km_b * b_;
+  variable ks: Number = lab_lms_ks_a * a_ + lab_lms_ks_b * b_;
+  
+  // ═══════════════════════════════════════════════════════════════════════
+  // Step 4: computeMaxSaturation - Find S_max for this hue
+  // ═══════════════════════════════════════════════════════════════════════
+  variable test_red: Number = red_limit_a * a_ + red_limit_b * b_;
+  variable test_green: Number = green_limit_a * a_ + green_limit_b * b_;
+  
+  variable k0: Number = blue_k0;
+  variable k1_coef: Number = blue_k1;
+  variable k2_coef: Number = blue_k2;
+  variable k3_coef: Number = blue_k3;
+  variable k4_coef: Number = blue_k4;
+  variable wl: Number = lms_b0;
+  variable wm: Number = lms_b1;
+  variable ws: Number = lms_b2;
+  
+  if (test_red > 1) [
+    k0 = red_k0; k1_coef = red_k1; k2_coef = red_k2; k3_coef = red_k3; k4_coef = red_k4;
+    wl = lms_r0; wm = lms_r1; ws = lms_r2;
+  ] else [
+    if (test_green > 1) [
+      k0 = green_k0; k1_coef = green_k1; k2_coef = green_k2; k3_coef = green_k3; k4_coef = green_k4;
+      wl = lms_g0; wm = lms_g1; ws = lms_g2;
+    ];
+  ];
+  
+  // Polynomial approximation
+  variable s_max: Number = k0 + k1_coef * a_ + k2_coef * b_ + k3_coef * a_ * a_ + k4_coef * a_ * b_;
+  
+  // Halley's method refinement for s_max
+  variable l_temp: Number = 1 + s_max * kl;
+  variable m_temp: Number = 1 + s_max * km;
+  variable s_temp: Number = 1 + s_max * ks;
+  
+  variable l_cubed: Number = l_temp * l_temp * l_temp;
+  variable m_cubed: Number = m_temp * m_temp * m_temp;
+  variable s_cubed: Number = s_temp * s_temp * s_temp;
+  
+  variable l_ds: Number = 3 * kl * l_temp * l_temp;
+  variable m_ds: Number = 3 * km * m_temp * m_temp;
+  variable s_ds: Number = 3 * ks * s_temp * s_temp;
+  
+  variable l_ds2: Number = 6 * kl * kl * l_temp;
+  variable m_ds2: Number = 6 * km * km * m_temp;
+  variable s_ds2: Number = 6 * ks * ks * s_temp;
+  
+  variable f: Number = wl * l_cubed + wm * m_cubed + ws * s_cubed;
+  variable f1: Number = wl * l_ds + wm * m_ds + ws * s_ds;
+  variable f2: Number = wl * l_ds2 + wm * m_ds2 + ws * s_ds2;
+  
+  variable halley_denom: Number = f1 * f1 - 0.5 * f * f2;
+  if (abs(halley_denom) > 0.000001) [
+    s_max = s_max - f * f1 / halley_denom;
+  ];
+  
+  // ═══════════════════════════════════════════════════════════════════════
+  // Step 5: findCusp - Get L_cusp and C_cusp
+  // ═══════════════════════════════════════════════════════════════════════
+  variable l_cusp: Number = 1;
+  variable c_cusp: Number = 0;
+  
+  if (s_max > 0) [
+    variable cusp_l_: Number = 1 + s_max * kl;
+    variable cusp_m_: Number = 1 + s_max * km;
+    variable cusp_s_: Number = 1 + s_max * ks;
+    
+    variable cusp_l: Number = cusp_l_ * cusp_l_ * cusp_l_;
+    variable cusp_m: Number = cusp_m_ * cusp_m_ * cusp_m_;
+    variable cusp_s: Number = cusp_s_ * cusp_s_ * cusp_s_;
+    
+    variable cusp_r: Number = lms_r0 * cusp_l + lms_r1 * cusp_m + lms_r2 * cusp_s;
+    variable cusp_g: Number = lms_g0 * cusp_l + lms_g1 * cusp_m + lms_g2 * cusp_s;
+    variable cusp_b: Number = lms_b0 * cusp_l + lms_b1 * cusp_m + lms_b2 * cusp_s;
+    
+    variable max_rgb: Number = cusp_r;
+    if (cusp_g > max_rgb) [ max_rgb = cusp_g; ];
+    if (cusp_b > max_rgb) [ max_rgb = cusp_b; ];
+    if (max_rgb < 0.0001) [ max_rgb = 0.0001; ];
+    
+    l_cusp = pow(1 / max_rgb, 0.3333333333333333);
+    c_cusp = l_cusp * s_max;
+  ];
+  
+  // ═══════════════════════════════════════════════════════════════════════
+  // Step 6: findGamutIntersection - Find C_max at current L
+  // This is the FULL algorithm with Halley's method for upper half
+  //
+  // Finds intersection of line: L = L0*(1-t) + t*L1, C = t*C1
+  // where L0=L1=lab_l and C1=1 (seeking max chroma at this L)
+  // ═══════════════════════════════════════════════════════════════════════
+  variable c_max: Number = 0;
+  
+  if (l_cusp > 0.0001 && c_cusp > 0.0001) [
+    // Parameters for gamut intersection: l1=lab_l, c1=1, l0=lab_l
+    variable l1: Number = lab_l;
+    variable c1: Number = 1;
+    variable l0: Number = lab_l;
+    
+    // Check which half: (l1 - l0) * c_cusp - (l_cusp - l0) * c1
+    // Since l1 = l0 = lab_l, this simplifies to: -(l_cusp - lab_l) * 1 = lab_l - l_cusp
+    variable half_test: Number = lab_l - l_cusp;
+    variable t_intersect: Number = 0;
+    
+    if (half_test <= 0) [
+      // Lower half (below cusp) - simple triangle intersection
+      // t = (c_cusp * l0) / (c1 * l_cusp + c_cusp * (l0 - l1))
+      // Since l0 = l1, denominator = c1 * l_cusp = l_cusp
+      variable lower_denom: Number = l_cusp;
+      if (abs(lower_denom) > 0.00001) [
+        t_intersect = (c_cusp * lab_l) / lower_denom;
+      ];
+    ] else [
+      // Upper half (above cusp) - triangle + Halley's method
+      // First: triangle intersection
+      // t = (c_cusp * (l0 - 1)) / (c1 * (l_cusp - 1) + c_cusp * (l0 - l1))
+      // Since l0 = l1 = lab_l: t = (c_cusp * (lab_l - 1)) / (l_cusp - 1)
+      variable upper_denom: Number = l_cusp - 1;
+      if (abs(upper_denom) > 0.00001) [
+        t_intersect = c_cusp * (lab_l - 1) / upper_denom;
+      ];
+      
+      // Halley's method refinement for upper half
+      // dl = l1 - l0 = 0, dc = c1 = 1
+      variable dl: Number = 0;
+      variable dc: Number = 1;
+      
+      variable ldt_: Number = dl + dc * kl;
+      variable mdt_: Number = dl + dc * km;
+      variable sdt_: Number = dl + dc * ks;
+      
+      // Compute L and C at current t
+      variable L_at_t: Number = l0 * (1 - t_intersect) + t_intersect * l1;
+      variable C_at_t: Number = t_intersect * c1;
+      
+      // LMS values at (L, C)
+      variable l_at: Number = L_at_t + C_at_t * kl;
+      variable m_at: Number = L_at_t + C_at_t * km;
+      variable s_at: Number = L_at_t + C_at_t * ks;
+      
+      variable l_lms: Number = l_at * l_at * l_at;
+      variable m_lms: Number = m_at * m_at * m_at;
+      variable s_lms: Number = s_at * s_at * s_at;
+      
+      // First derivatives
+      variable ldt: Number = 3 * ldt_ * l_at * l_at;
+      variable mdt: Number = 3 * mdt_ * m_at * m_at;
+      variable sdt: Number = 3 * sdt_ * s_at * s_at;
+      
+      // Second derivatives
+      variable ldt2: Number = 6 * ldt_ * ldt_ * l_at;
+      variable mdt2: Number = 6 * mdt_ * mdt_ * m_at;
+      variable sdt2: Number = 6 * sdt_ * sdt_ * s_at;
+      
+      // Red channel Halley step
+      variable r_val: Number = lms_r0 * l_lms + lms_r1 * m_lms + lms_r2 * s_lms - 1;
+      variable r1: Number = lms_r0 * ldt + lms_r1 * mdt + lms_r2 * sdt;
+      variable r2: Number = lms_r0 * ldt2 + lms_r1 * mdt2 + lms_r2 * sdt2;
+      variable r_denom: Number = r1 * r1 - 0.5 * r_val * r2;
+      variable ur: Number = 0;
+      variable tr: Number = float_max;
+      if (abs(r_denom) > 0.000001) [
+        ur = r1 / r_denom;
+        if (ur >= 0) [ tr = -r_val * ur; ];
+      ];
+      
+      // Green channel Halley step
+      variable g_val: Number = lms_g0 * l_lms + lms_g1 * m_lms + lms_g2 * s_lms - 1;
+      variable g1: Number = lms_g0 * ldt + lms_g1 * mdt + lms_g2 * sdt;
+      variable g2: Number = lms_g0 * ldt2 + lms_g1 * mdt2 + lms_g2 * sdt2;
+      variable g_denom: Number = g1 * g1 - 0.5 * g_val * g2;
+      variable ug: Number = 0;
+      variable tg: Number = float_max;
+      if (abs(g_denom) > 0.000001) [
+        ug = g1 / g_denom;
+        if (ug >= 0) [ tg = -g_val * ug; ];
+      ];
+      
+      // Blue channel Halley step
+      variable b_val: Number = lms_b0 * l_lms + lms_b1 * m_lms + lms_b2 * s_lms - 1;
+      variable b1: Number = lms_b0 * ldt + lms_b1 * mdt + lms_b2 * sdt;
+      variable b2: Number = lms_b0 * ldt2 + lms_b1 * mdt2 + lms_b2 * sdt2;
+      variable b_denom: Number = b1 * b1 - 0.5 * b_val * b2;
+      variable ub: Number = 0;
+      variable tb: Number = float_max;
+      if (abs(b_denom) > 0.000001) [
+        ub = b1 / b_denom;
+        if (ub >= 0) [ tb = -b_val * ub; ];
+      ];
+      
+      // Take minimum of the three corrections
+      variable t_correction: Number = tr;
+      if (tg < t_correction) [ t_correction = tg; ];
+      if (tb < t_correction) [ t_correction = tb; ];
+      if (t_correction < float_max) [
+        t_intersect = t_intersect + t_correction;
+      ];
+    ];
+    
+    // C_max = t * c1 = t (since c1 = 1)
+    c_max = t_intersect;
+    if (c_max < 0) [ c_max = 0; ];
+  ];
+  
+  // ═══════════════════════════════════════════════════════════════════════
+  // Step 7: getStMid - Polynomial approximation for mid-saturation ST
+  // ═══════════════════════════════════════════════════════════════════════
+  variable st_mid_s: Number = 0.11516993 + 1 / (
+    7.44778970 + 4.15901240 * b_ +
+    a_ * (-2.19557347 + 1.75198401 * b_ +
+      a_ * (-2.13704948 - 10.02301043 * b_ +
+        a_ * (-4.24894561 + 5.38770819 * b_ + 4.69891013 * a_))));
+  
+  variable st_mid_t: Number = 0.11239642 + 1 / (
+    1.61320320 - 0.68124379 * b_ +
+    a_ * (0.40370612 + 0.90148123 * b_ +
+      a_ * (-0.27087943 + 0.61223990 * b_ +
+        a_ * (0.00299215 - 0.45399568 * b_ - 0.14661872 * a_))));
+  
+  // ═══════════════════════════════════════════════════════════════════════
+  // Step 8: getCs - Compute C_0, C_mid, C_max with scale factor k
+  // ═══════════════════════════════════════════════════════════════════════
+  variable st_max_s: Number = c_cusp / (l_cusp + 0.0001);
+  variable st_max_t: Number = c_cusp / (1 - l_cusp + 0.0001);
+  
+  // Scale factor k = c_max / min(L * st_max_s, (1-L) * st_max_t)
+  variable min_st: Number = lab_l * st_max_s;
+  variable min_st_t: Number = (1 - lab_l) * st_max_t;
+  if (min_st_t < min_st) [ min_st = min_st_t; ];
+  
+  variable k_factor: Number = 1;
+  if (min_st > 0.0001 && c_max > 0.0001) [
+    k_factor = c_max / min_st;
+  ];
+  
+  // C_mid = 0.9 * k * sqrt(sqrt(1 / (1/ca^4 + 1/cb^4)))
+  variable ca: Number = lab_l * st_mid_s;
+  variable cb: Number = (1 - lab_l) * st_mid_t;
+  variable ca4: Number = ca * ca * ca * ca;
+  variable cb4: Number = cb * cb * cb * cb;
+  variable c_mid: Number = 0;
+  if (ca4 > 0.0000001 && cb4 > 0.0000001) [
+    c_mid = 0.9 * k_factor * sqrt(sqrt(1 / (1 / ca4 + 1 / cb4)));
+  ];
+  
+  // C_0 using average ST values (0.4, 0.8)
+  variable ca0: Number = lab_l * 0.4;
+  variable cb0: Number = (1 - lab_l) * 0.8;
+  variable ca0_sq: Number = ca0 * ca0;
+  variable cb0_sq: Number = cb0 * cb0;
+  variable c_0: Number = 0;
+  if (ca0_sq > 0.0000001 && cb0_sq > 0.0000001) [
+    c_0 = sqrt(1 / (1 / ca0_sq + 1 / cb0_sq));
+  ];
+  
+  // ═══════════════════════════════════════════════════════════════════════
+  // Step 9: Compute saturation using piecewise interpolation
+  // ═══════════════════════════════════════════════════════════════════════
+  variable mid: Number = 0.8;
+  
+  if (c < c_mid && c_mid > 0.0001 && c_0 > 0.0001) [
+    // Below mid-point: s = t * 0.8 where t = c / (k1 + k2*c)
+    variable k1_low: Number = mid * c_0;
+    variable k2_low: Number = 1 - k1_low / c_mid;
+    variable t_low: Number = c / (k1_low + k2_low * c + 0.0001);
+    s = t_low * mid;
+  ] else [
+    if (c_mid > 0.0001 && c_0 > 0.0001 && c_max > c_mid) [
+      // Above mid-point: s = 0.8 + 0.2 * t where t = (c - c_mid) / (k1 + k2*(c - c_mid))
+      variable mid_inv: Number = 1.25;
+      variable k0_high: Number = c_mid;
+      variable k1_high: Number = 0.2 * c_mid * c_mid * mid_inv * mid_inv / c_0;
+      variable k2_high: Number = 1 - k1_high / (c_max - c_mid + 0.0001);
+      variable c_diff: Number = c - k0_high;
+      variable t_high: Number = c_diff / (k1_high + k2_high * c_diff + 0.0001);
+      s = mid + 0.2 * t_high;
+    ];
+  ];
+  
+  // Clamp saturation
+  if (s > 1) [ s = 1; ];
+  if (s < 0) [ s = 0; ];
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Output
+// ═══════════════════════════════════════════════════════════════════════════
+variable output: Color.OKHSL;
+output.h = h;
+output.s = s;
+output.l = l;
+output

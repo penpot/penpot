@@ -1,0 +1,17 @@
+// HWBA Color Initializer
+// Creates an HWB color with alpha from H, W, B, A values
+//
+// Usage: hwba(180, 0.2, 0.3, 0.9) → Color.HWB { h: 180, w: 0.2, b: 0.3, alpha: 0.9 }
+//
+// Input: List of 4 numbers [h, w, b, alpha]
+// Output: Color.HWB with alpha
+
+variable hwb_values: List = {input};
+variable output: Color.HWB;
+
+output.h = hwb_values.get(0);
+output.w = hwb_values.get(1);
+output.b = hwb_values.get(2);
+output.alpha = hwb_values.get(3);
+
+return output;

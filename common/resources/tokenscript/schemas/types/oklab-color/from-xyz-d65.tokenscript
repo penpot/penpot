@@ -1,0 +1,43 @@
+// XYZ-D65 to OKLab Conversion
+// Uses ColorJS-compatible matrices (recalculated for consistent D65 white)
+// Reference: https://github.com/color-js/color.js/blob/main/src/spaces/oklab.js
+//
+// Algorithm:
+// 1. XYZ-D65 → LMS (M1 matrix)
+// 2. LMS → LMS' (cube root transformation)
+// 3. LMS' → OKLab (M2 matrix)
+//
+// Input: Color.XYZD65 with x, y, z tristimulus
+// Output: Color.OKLab with l, a, b coordinates
+
+// Get input XYZ-D65 values
+variable x: Number = {input}.x;
+variable y: Number = {input}.y;
+variable z: Number = {input}.z;
+
+// Step 1: XYZ-D65 → LMS cone response
+// ColorJS XYZtoLMS_M matrix (recalculated for consistent reference white)
+variable lms_l: Number = x * 0.8190224379967030 + y * 0.3619062600528904 + z * -0.1288737815209879;
+variable lms_m: Number = x * 0.0329836539323885 + y * 0.9292868615863434 + z * 0.0361446663506424;
+variable lms_s: Number = x * 0.0481771893596242 + y * 0.2642395317527308 + z * 0.6335478284694309;
+
+// Step 2: Apply cube root (γ = 1/3)
+// Note: Using pow with 1/3 exponent (cbrt equivalent for positive values)
+variable cube_root_exp: Number = 0.3333333333333333;
+variable lms_l_prime: Number = pow(lms_l, cube_root_exp);
+variable lms_m_prime: Number = pow(lms_m, cube_root_exp);
+variable lms_s_prime: Number = pow(lms_s, cube_root_exp);
+
+// Step 3: LMS' → OKLab
+// ColorJS LMStoLab_M matrix
+variable oklab_l: Number = lms_l_prime * 0.2104542683093140 + lms_m_prime * 0.7936177747023054 + lms_s_prime * -0.0040720430116193;
+variable oklab_a: Number = lms_l_prime * 1.9779985324311684 + lms_m_prime * -2.4285922420485799 + lms_s_prime * 0.4505937096174110;
+variable oklab_b: Number = lms_l_prime * 0.0259040424655478 + lms_m_prime * 0.7827717124575296 + lms_s_prime * -0.8086757549230774;
+
+// Create output
+variable output: Color.OKLab;
+output.l = oklab_l;
+output.a = oklab_a;
+output.b = oklab_b;
+
+return output;

@@ -37,7 +37,7 @@
              :properties {:value {:type "string"}}}
     :initializers [{:title "Hex Color Initializer"
                     :keyword "hex"
-                    :script {:type "https://schema.tokenscript.dev.gcp.tokens.studio/api/v1/core/tokenscript/0/initializer"
+                    :script {:type "/api/v1/core/tokenscript/0/"
                              :script "variable c: Color.Hex;\n c.value = {input};\nreturn c;"}}]
     :conversions []}})
 
@@ -78,8 +78,8 @@
 (defn- register-conversions
   [registry uri spec]
   (reduce (fn [registry {:keys [source target script]}]
-            (let [source-uri (if (= source "$self") uri source)
-                  target-uri (if (= target "$self") uri target)
+            (let [source-uri (suri/normalize (if (= source "$self") uri source))
+                  target-uri (suri/normalize (if (= target "$self") uri target))
                   ast (:ast (parser/parse (:script script)))]
               (reg/add-conversion registry source-uri target-uri
                                   {:ast ast :source-uri source-uri :target-uri target-uri})))
@@ -89,7 +89,8 @@
 (defn register
   "Registers a color specification under `uri`."
   [registry uri spec]
-  (let [spec (normalize-spec uri spec)]
+  (let [uri (suri/normalize uri)
+        spec (normalize-spec uri spec)]
     (-> registry
         (reg/add-spec uri spec (spec-name spec))
         (register-initializers spec)

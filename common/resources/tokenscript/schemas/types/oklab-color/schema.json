@@ -1,0 +1,78 @@
+{
+  "name": "OKLab",
+  "type": "color",
+  "description": "OKLab perceptually uniform color space by Björn Ottosson. L is lightness (0-1), a is green-red axis, b is blue-yellow axis.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "l": {
+        "type": "number",
+        "description": "Lightness (0-1)"
+      },
+      "a": {
+        "type": "number",
+        "description": "Green-red axis (typically -0.4 to 0.4)"
+      },
+      "b": {
+        "type": "number",
+        "description": "Blue-yellow axis (typically -0.4 to 0.4)"
+      }
+    },
+    "required": ["l", "a", "b"],
+    "order": ["l", "a", "b"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "OKLab Color Initializer",
+      "keyword": "oklab",
+      "description": "Creates an OKLab color from L, a, b values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/xyz-d65-color/0/",
+      "target": "$self",
+      "description": "Converts XYZ-D65 to OKLab using Björn Ottosson's algorithm",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-xyz-d65.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/oklch-color/0/",
+      "target": "$self",
+      "description": "Converts OKLCH to OKLab (polar to cartesian)",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-oklch.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/okhsl-color/0/",
+      "target": "$self",
+      "description": "Converts OKHSL to OKLab",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-okhsl.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/okhsv-color/0/",
+      "target": "$self",
+      "description": "Converts OKHSV to OKLab",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-okhsv.tokenscript"
+      }
+    }
+  ]
+}

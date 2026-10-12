@@ -1,0 +1,68 @@
+{
+  "name": "XYZD65",
+  "type": "color",
+  "description": "CIE XYZ color space with D65 white point. The primary connection hub for color space conversions.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "x": {
+        "type": "number",
+        "description": "X tristimulus value"
+      },
+      "y": {
+        "type": "number",
+        "description": "Y tristimulus value (luminance)"
+      },
+      "z": {
+        "type": "number",
+        "description": "Z tristimulus value"
+      }
+    },
+    "required": ["x", "y", "z"],
+    "order": ["x", "y", "z"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "XYZ-D65 Color Initializer",
+      "keyword": "xyzd65",
+      "description": "Creates an XYZ-D65 color from tristimulus values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/srgb-linear-color/0/",
+      "target": "$self",
+      "description": "Converts Linear sRGB to XYZ-D65 using the sRGB transformation matrix",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-linear-srgb.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/p3-linear-color/0/",
+      "target": "$self",
+      "description": "Converts Linear P3 to XYZ-D65 using the P3 transformation matrix",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-linear-p3.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/oklab-color/0/",
+      "target": "$self",
+      "description": "Converts OKLab to XYZ-D65 using inverse LMS transformation",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-oklab.tokenscript"
+      }
+    }
+  ]
+}

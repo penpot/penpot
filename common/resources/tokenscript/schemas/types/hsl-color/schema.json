@@ -1,0 +1,57 @@
+{
+  "name": "HSL",
+  "type": "color",
+  "description": "HSL color space - Hue, Saturation, Lightness. Popular for color pickers and CSS.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "h": {
+        "type": "number",
+        "description": "Hue angle (0-360 degrees)"
+      },
+      "s": {
+        "type": "number",
+        "description": "Saturation (0-1)"
+      },
+      "l": {
+        "type": "number",
+        "description": "Lightness (0-1)"
+      }
+    },
+    "required": ["h", "s", "l"],
+    "order": ["h", "s", "l"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "HSL Color Initializer",
+      "keyword": "hsl",
+      "description": "Creates an HSL color from H, S, L values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    },
+    {
+      "title": "HSLA Color Initializer",
+      "keyword": "hsla",
+      "description": "Creates an HSL color with alpha from H, S, L, A values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./hsla-initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/srgb-color/0/",
+      "target": "$self",
+      "description": "Converts sRGB to HSL",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-srgb.tokenscript"
+      }
+    }
+  ]
+}

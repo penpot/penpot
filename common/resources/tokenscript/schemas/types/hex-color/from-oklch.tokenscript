@@ -1,0 +1,119 @@
+// OKLCH to Hex Conversion
+// Converts OKLCH perceptual color to hexadecimal string format
+// Path: OKLCH → OKLab → XYZ-D65 → Linear sRGB → sRGB → Hex
+//
+// Input: Color.OKLCH with l (0-1), c, h (0-360)
+// Output: Hex string #rrggbb
+
+// Get input OKLCH values
+variable ok_l: Number = {input}.l;
+variable ok_c: Number = {input}.c;
+variable ok_h: Number = {input}.h;
+
+// === Step 1: OKLCH to OKLab (polar to cartesian) ===
+variable pi: Number = pi();
+variable deg_to_rad: Number = pi / 180;
+variable h_rad: Number = ok_h * deg_to_rad;
+
+variable lab_a: Number = ok_c * cos(h_rad);
+variable lab_b: Number = ok_c * sin(h_rad);
+
+// === Step 2: OKLab to XYZ-D65 ===
+// Inverse Lab-to-LMS matrix
+variable lms_l: Number = 1.0 * ok_l + 0.3963377773761749 * lab_a + 0.2158037573099136 * lab_b;
+variable lms_m: Number = 1.0 * ok_l + -0.1055613458156586 * lab_a + -0.0638541728258133 * lab_b;
+variable lms_s: Number = 1.0 * ok_l + -0.0894841775298119 * lab_a + -1.2914855480194092 * lab_b;
+
+// Cube the values (inverse of cube root)
+variable lms_l_cubed: Number = lms_l * lms_l * lms_l;
+variable lms_m_cubed: Number = lms_m * lms_m * lms_m;
+variable lms_s_cubed: Number = lms_s * lms_s * lms_s;
+
+// Inverse LMS-to-XYZ matrix
+variable xyz_x: Number = 1.2268798758459243 * lms_l_cubed + -0.5578149944602171 * lms_m_cubed + 0.2813910456659647 * lms_s_cubed;
+variable xyz_y: Number = -0.0405757452148008 * lms_l_cubed + 1.1122868032803170 * lms_m_cubed + -0.0717110580655164 * lms_s_cubed;
+variable xyz_z: Number = -0.0763729366746601 * lms_l_cubed + -0.4214933324022432 * lms_m_cubed + 1.5869240198367816 * lms_s_cubed;
+
+// === Step 3: XYZ-D65 to Linear sRGB ===
+variable linear_r: Number = 3.2409699419045226 * xyz_x + -1.537383177570094 * xyz_y + -0.4986107602930034 * xyz_z;
+variable linear_g: Number = -0.9692436362808796 * xyz_x + 1.8759675015077202 * xyz_y + 0.04155505740717559 * xyz_z;
+variable linear_b: Number = 0.05563007969699366 * xyz_x + -0.20397695888897652 * xyz_y + 1.0569715142428786 * xyz_z;
+
+// === Step 4: Linear sRGB to sRGB (gamma correction) ===
+variable threshold: Number = 0.0031308;
+variable linear_scale: Number = 12.92;
+variable gamma_offset: Number = 0.055;
+variable gamma_scale: Number = 1.055;
+variable gamma_exp: Number = 0.416666666666667;
+
+variable srgb_r: Number = 0;
+if (linear_r <= threshold) [
+    srgb_r = linear_r * linear_scale;
+] else [
+    if (linear_r > 0) [
+        srgb_r = gamma_scale * pow(linear_r, gamma_exp) - gamma_offset;
+    ] else [
+        srgb_r = 0;
+    ];
+];
+
+variable srgb_g: Number = 0;
+if (linear_g <= threshold) [
+    srgb_g = linear_g * linear_scale;
+] else [
+    if (linear_g > 0) [
+        srgb_g = gamma_scale * pow(linear_g, gamma_exp) - gamma_offset;
+    ] else [
+        srgb_g = 0;
+    ];
+];
+
+variable srgb_b: Number = 0;
+if (linear_b <= threshold) [
+    srgb_b = linear_b * linear_scale;
+] else [
+    if (linear_b > 0) [
+        srgb_b = gamma_scale * pow(linear_b, gamma_exp) - gamma_offset;
+    ] else [
+        srgb_b = 0;
+    ];
+];
+
+// === Step 5: sRGB to Hex ===
+variable hex: String = "#";
+variable value: Number = 0;
+
+// Red (clamp to 0-1)
+value = srgb_r;
+if (value < 0) [ value = 0; ];
+if (value > 1) [ value = 1; ];
+value = round(value * 255);
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+// Green
+value = srgb_g;
+if (value < 0) [ value = 0; ];
+if (value > 1) [ value = 1; ];
+value = round(value * 255);
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+// Blue
+value = srgb_b;
+if (value < 0) [ value = 0; ];
+if (value > 1) [ value = 1; ];
+value = round(value * 255);
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+return hex;

@@ -1,0 +1,21 @@
+// CIE LCH Color Initializer
+// Creates a LCH color from L, C, H values
+// Input: List of [l, c, h] or [l, c, h, alpha] values
+
+variable lch_values: List = {input};
+variable output: Color.LCH;
+
+output.l = lch_values.get(0);
+output.c = lch_values.get(1);
+output.h = lch_values.get(2);
+
+// Set alpha if provided as 4th parameter
+if (lch_values.length() > 3) [
+  output.alpha = lch_values.get(3);
+];
+
+return output;
+
+
+
+

@@ -1,0 +1,36 @@
+// XYZ-D65 to XYZ-D50 Conversion
+// Chromatic adaptation using Bradford transform
+// Reference: https://github.com/color-js/color.js/blob/main/src/adapt.js
+//
+// Bradford CAT matrix for D65 → D50:
+// [1.0479298   0.0229469  -0.0501923]
+// [0.0296278   0.9904344  -0.0170738]
+// [-0.0092430  0.0150552   0.7518743]
+//
+// Input: Color.XYZD65 with x, y, z tristimulus (D65 white)
+// Output: Color.XYZD50 with x, y, z tristimulus (D50 white)
+
+// Get input XYZ-D65 values
+variable x65: Number = {input}.x;
+variable y65: Number = {input}.y;
+variable z65: Number = {input}.z;
+
+// Bradford chromatic adaptation matrix (ColorJS exact values)
+// Row 1
+variable x50: Number = x65 * 1.0479297925449969 + y65 * 0.022946870601609652 + z65 * -0.05019226628920524;
+// Row 2
+variable y50: Number = x65 * 0.02962780877005599 + y65 * 0.9904344267538799 + z65 * -0.017073799063418826;
+// Row 3
+variable z50: Number = x65 * -0.009243040646204504 + y65 * 0.015055191490298152 + z65 * 0.7518742814281371;
+
+// Create output
+variable output: Color.XYZD50;
+output.x = x50;
+output.y = y50;
+output.z = z50;
+
+return output;
+
+
+
+

@@ -1,0 +1,33 @@
+// Saturate a color by increasing its OKLCH chroma
+// Amount: 0-1 where 0.25 means 25% increase
+//
+// Algorithm: C' = C * (1 + amount)
+// Chroma has no strict upper bound but ~0.4 is practical max for sRGB
+
+variable input: List = {input};
+variable color: Color.OKLCH = input.get(0).to.oklch();
+
+// Default amount is 0.25 (25%)
+variable amount: Number = 0.25;
+if (input.length() > 1) [
+    amount = input.get(1);
+];
+
+// Calculate new chroma
+variable current_c: Number = color.c;
+variable new_c: Number = current_c * (1 + amount);
+
+// Soft clamp at 0.4 (approximate sRGB gamut max)
+if (new_c > 0.4) [ new_c = 0.4; ];
+
+// Create output in OKLCH, return as sRGB
+variable result: Color.OKLCH;
+result.l = color.l;
+result.c = new_c;
+result.h = color.h;
+
+return result;
+
+
+
+

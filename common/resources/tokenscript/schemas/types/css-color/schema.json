@@ -1,0 +1,148 @@
+{
+  "name": "CSS",
+  "type": "color",
+  "description": "CSS color string representation. Outputs the appropriate CSS syntax for any color space.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "value": {
+        "type": "string",
+        "description": "CSS color string (e.g., 'rgb(255 128 64)', 'oklch(0.7 0.15 180)')"
+      }
+    },
+    "required": ["value"]
+  },
+  "initializers": [
+    {
+      "title": "CSS Color Initializer",
+      "keyword": "css",
+      "description": "Creates a CSS color from a string value",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/rgb-color/0/",
+      "target": "$self",
+      "description": "Converts RGB (0-255) to CSS rgb() syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-rgb-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/srgb-color/0/",
+      "target": "$self",
+      "description": "Converts sRGB (0-1) to CSS color(srgb) syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-srgb-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/hsl-color/0/",
+      "target": "$self",
+      "description": "Converts HSL to CSS hsl() syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-hsl-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/hwb-color/0/",
+      "target": "$self",
+      "description": "Converts HWB to CSS hwb() syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-hwb-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/lab-color/0/",
+      "target": "$self",
+      "description": "Converts CIE Lab to CSS lab() syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-lab-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/lch-color/0/",
+      "target": "$self",
+      "description": "Converts CIE LCH to CSS lch() syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-lch-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/oklab-color/0/",
+      "target": "$self",
+      "description": "Converts OKLab to CSS oklab() syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-oklab-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/oklch-color/0/",
+      "target": "$self",
+      "description": "Converts OKLCH to CSS oklch() syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-oklch-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/srgb-linear-color/0/",
+      "target": "$self",
+      "description": "Converts Linear sRGB to CSS color(srgb-linear) syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-srgb-linear-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/xyz-d65-color/0/",
+      "target": "$self",
+      "description": "Converts XYZ-D65 to CSS color(xyz-d65) syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-xyz-d65-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/xyz-d50-color/0/",
+      "target": "$self",
+      "description": "Converts XYZ-D50 to CSS color(xyz-d50) syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-xyz-d50-color.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/p3-color/0/",
+      "target": "$self",
+      "description": "Converts Display-P3 to CSS color(display-p3) syntax",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-p3-color.tokenscript"
+      }
+    }
+  ]
+}

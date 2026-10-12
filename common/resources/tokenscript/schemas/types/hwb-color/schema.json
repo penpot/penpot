@@ -1,0 +1,57 @@
+{
+  "name": "HWB",
+  "type": "color",
+  "description": "HWB color space - Hue, Whiteness, Blackness. CSS Color Level 4.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "h": {
+        "type": "number",
+        "description": "Hue angle (0-360 degrees)"
+      },
+      "w": {
+        "type": "number",
+        "description": "Whiteness (0-1)"
+      },
+      "b": {
+        "type": "number",
+        "description": "Blackness (0-1)"
+      }
+    },
+    "required": ["h", "w", "b"],
+    "order": ["h", "w", "b"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "HWB Color Initializer",
+      "keyword": "hwb",
+      "description": "Creates an HWB color from H, W, B values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    },
+    {
+      "title": "HWBA Color Initializer",
+      "keyword": "hwba",
+      "description": "Creates an HWB color with alpha from H, W, B, A values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./hwba-initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/hsv-color/0/",
+      "target": "$self",
+      "description": "Converts HSV to HWB",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-hsv.tokenscript"
+      }
+    }
+  ]
+}

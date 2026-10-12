@@ -1,0 +1,29 @@
+// Invert Color Function
+// Returns the inverse/negative of a color by subtracting each RGB channel from 255
+//
+// Algorithm:
+//   R' = 255 - R
+//   G' = 255 - G  
+//   B' = 255 - B
+//
+// Use cases:
+//   - Creating negative images
+//   - High contrast accessibility variants
+//   - Artistic color effects
+//
+// Input: Any color (converted to RGB internally)
+// Output: Color.Rgb with inverted channels
+
+variable input: List = {input};
+
+// Convert input to RGB (0-255 range)
+variable rgb_color: Color.Rgb = input.get(0).to.rgb();
+
+// Invert each channel by subtracting from 255
+variable inverted_r: Number = 255 - rgb_color.r;
+variable inverted_g: Number = 255 - rgb_color.g;
+variable inverted_b: Number = 255 - rgb_color.b;
+
+// Create and return the inverted color
+variable inverted_color: Color.Rgb = rgb(inverted_r, inverted_g, inverted_b);
+return inverted_color;

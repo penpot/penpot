@@ -1,0 +1,286 @@
+// OKLab to OKHSV Conversion
+// Reference: Björn Ottosson - "A perceptual color picker: OKHSL and OKHSV"
+// URL: https://bottosson.github.io/posts/colorpicker/
+// Reference: https://github.com/color-js/color.js/blob/main/src/spaces/okhsv.js
+// Reference: https://bottosson.github.io/posts/oklab/ (original OKLab paper)
+//
+// OKHSV maps colors to a perceptually uniform HSV cylinder.
+// The algorithm finds the exact gamut boundary using compute_max_saturation
+// and positions colors relative to the cusp (maximum chroma point).
+//
+// Key difference from OKHSL:
+// - V=1 means maximum brightness (white at S=0, cusp color at S=1)
+// - More intuitive for picking saturated colors
+//
+// Input: Color.OKLab with l (0-1), a, b coordinates
+// Output: Color.OKHSV with h (0-360), s (0-1), v (0-1)
+
+variable lab_l: Number = input.l;
+variable lab_a: Number = input.a;
+variable lab_b: Number = input.b;
+
+// Native constants
+variable pi_val: Number = pi();
+
+// Toe function constants (same as OKHSL)
+variable toe_k1: Number = 0.206;
+variable toe_k2: Number = 0.03;
+variable toe_k3: Number = 1.17009708737864;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 1: Convert to polar coordinates (L, C, H)
+// ═══════════════════════════════════════════════════════════════════════════
+variable c: Number = sqrt(lab_a * lab_a + lab_b * lab_b);
+variable h: Number = 0;
+
+if (c > 0.00001) [
+  // Note: ColorJS uses atan2(-b, -a) and adds 0.5, we use atan2(b, a)
+  h = atan2(lab_b, lab_a) * 180 / pi_val;
+  if (h < 0) [
+    h = h + 360;
+  ];
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 2: Initialize defaults and apply toe function to L for V
+// toe(x) = 0.5 * (k3*x - k1 + sqrt((k3*x - k1)^2 + 4*k2*k3*x))
+// ═══════════════════════════════════════════════════════════════════════════
+variable s: Number = 0;
+variable v: Number = lab_l;
+
+// Apply toe function to get initial V
+if (lab_l > 0.0001 && lab_l < 0.9999) [
+  variable term: Number = toe_k3 * lab_l - toe_k1;
+  v = 0.5 * (term + sqrt(term * term + 4 * toe_k2 * toe_k3 * lab_l));
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 3: Compute normalized hue direction
+// ═══════════════════════════════════════════════════════════════════════════
+variable a_: Number = 0;
+variable b_: Number = 0;
+if (c > 0.00001) [
+  a_ = lab_a / c;
+  b_ = lab_b / c;
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Pre-compute LMS coefficients (used in multiple steps)
+// ═══════════════════════════════════════════════════════════════════════════
+variable kl: Number = 0.3963377774 * a_ + 0.2158037573 * b_;
+variable km: Number = -0.1055613458 * a_ - 0.0638541728 * b_;
+variable ks: Number = -0.0894841775 * a_ - 1.2914855480 * b_;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 4: Find maximum saturation and cusp
+// Only process if we have chroma (non-achromatic) and L is valid
+// ═══════════════════════════════════════════════════════════════════════════
+variable s_max: Number = 0;
+variable l_cusp: Number = 1;
+variable c_cusp: Number = 0;
+
+// Variables for LMS intermediate calculations
+variable l_lms: Number = 0;
+variable m_lms: Number = 0;
+variable s_lms: Number = 0;
+
+if (c > 0.00001 && lab_l > 0.00001 && lab_l < 0.99999) [
+  // Determine which RGB component clips first
+  variable k0: Number = 0;
+  variable k1_coef: Number = 0;
+  variable k2_coef: Number = 0;
+  variable k3_coef: Number = 0;
+  variable k4_coef: Number = 0;
+  variable wl: Number = 0;
+  variable wm: Number = 0;
+  variable ws: Number = 0;
+  
+  variable test_r: Number = -1.88170328 * a_ - 0.80936493 * b_;
+  variable test_g: Number = 1.81444104 * a_ - 1.19445276 * b_;
+  
+  if (test_r > 1) [
+    k0 = 1.19086277;
+    k1_coef = 1.76576728;
+    k2_coef = 0.59662641;
+    k3_coef = 0.75515197;
+    k4_coef = 0.56771245;
+    wl = 4.0767416621;
+    wm = -3.3077115913;
+    ws = 0.2309699292;
+  ] else [
+    if (test_g > 1) [
+      k0 = 0.73956515;
+      k1_coef = -0.45954404;
+      k2_coef = 0.08285427;
+      k3_coef = 0.12541073;
+      k4_coef = -0.14503204;
+      wl = -1.2684380046;
+      wm = 2.6097574011;
+      ws = -0.3413193965;
+    ] else [
+      k0 = 1.35733652;
+      k1_coef = -0.00915799;
+      k2_coef = -1.15130210;
+      k3_coef = -0.50559606;
+      k4_coef = 0.00692167;
+      wl = -0.0041960863;
+      wm = -0.7034186147;
+      ws = 1.7076147010;
+    ];
+  ];
+  
+  // Polynomial approximation
+  s_max = k0 + k1_coef * a_ + k2_coef * b_ + k3_coef * a_ * a_ + k4_coef * a_ * b_;
+  
+  // Halley's method refinement
+  variable l_temp: Number = 1 + s_max * kl;
+  variable m_temp: Number = 1 + s_max * km;
+  variable s_temp: Number = 1 + s_max * ks;
+  
+  variable l_cubed: Number = l_temp * l_temp * l_temp;
+  variable m_cubed: Number = m_temp * m_temp * m_temp;
+  variable s_cubed: Number = s_temp * s_temp * s_temp;
+  
+  variable l_ds: Number = 3 * kl * l_temp * l_temp;
+  variable m_ds: Number = 3 * km * m_temp * m_temp;
+  variable s_ds: Number = 3 * ks * s_temp * s_temp;
+  
+  variable l_ds2: Number = 6 * kl * kl * l_temp;
+  variable m_ds2: Number = 6 * km * km * m_temp;
+  variable s_ds2: Number = 6 * ks * ks * s_temp;
+  
+  variable f: Number = wl * l_cubed + wm * m_cubed + ws * s_cubed;
+  variable f1: Number = wl * l_ds + wm * m_ds + ws * s_ds;
+  variable f2: Number = wl * l_ds2 + wm * m_ds2 + ws * s_ds2;
+  
+  variable denom: Number = f1 * f1 - 0.5 * f * f2;
+  if (abs(denom) > 0.000001) [
+    s_max = s_max - f * f1 / denom;
+  ];
+  
+  // ═══════════════════════════════════════════════════════════════════════
+  // Find cusp (L_cusp, C_cusp)
+  // ═══════════════════════════════════════════════════════════════════════
+  if (s_max > 0) [
+    variable l_cusp_temp: Number = 1 + s_max * kl;
+    variable m_cusp_temp: Number = 1 + s_max * km;
+    variable s_cusp_temp: Number = 1 + s_max * ks;
+    
+    l_lms = l_cusp_temp * l_cusp_temp * l_cusp_temp;
+    m_lms = m_cusp_temp * m_cusp_temp * m_cusp_temp;
+    s_lms = s_cusp_temp * s_cusp_temp * s_cusp_temp;
+    
+    variable r_lin: Number = 4.0767416621 * l_lms - 3.3077115913 * m_lms + 0.2309699292 * s_lms;
+    variable g_lin: Number = -1.2684380046 * l_lms + 2.6097574011 * m_lms - 0.3413193965 * s_lms;
+    variable b_lin: Number = -0.0041960863 * l_lms - 0.7034186147 * m_lms + 1.7076147010 * s_lms;
+    
+    variable max_rgb: Number = r_lin;
+    if (g_lin > max_rgb) [ max_rgb = g_lin; ];
+    if (b_lin > max_rgb) [ max_rgb = b_lin; ];
+    
+    if (max_rgb > 0) [
+      l_cusp = pow(1 / max_rgb, 0.3333333333333333);
+      c_cusp = l_cusp * s_max;
+    ];
+  ];
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 5: Compute OKHSV S and V using ColorJS algorithm
+//
+// The algorithm uses the ST coordinate system where:
+// - S_t = C/L (slope from origin)
+// - T_t = C/(1-L) (slope from white)
+//
+// Key formulas from ColorJS:
+// - t = tMax / (c + l * tMax)
+// - lv = t * l, cv = t * c
+// - Apply RGB scaling and toe compensation
+// - v = l / lv, s = ((s0 + tMax) * cv) / (tMax * s0 + tMax * k * cv)
+// ═══════════════════════════════════════════════════════════════════════════
+if (c > 0.00001 && lab_l > 0.00001 && lab_l < 0.99999 && l_cusp > 0.0001 && c_cusp > 0.0001) [
+  // Compute ST values at cusp
+  variable s_t_cusp: Number = c_cusp / l_cusp;
+  variable t_t_cusp: Number = c_cusp / (1 - l_cusp + 0.0001);
+  
+  // Fixed s0 parameter
+  variable s_0: Number = 0.5;
+  variable k_param: Number = 1 - s_0 / s_t_cusp;
+  
+  // Compute t and derived values (following ColorJS exactly)
+  variable t: Number = t_t_cusp / (c + lab_l * t_t_cusp + 0.0001);
+  variable lv: Number = t * lab_l;
+  variable cv: Number = t * c;
+  
+  // Apply inverse toe to lv for compensation
+  variable lvt: Number = lv;
+  if (lv > 0.0001 && lv < 0.9999) [
+    lvt = (lv * lv + toe_k1 * lv) / (toe_k3 * (lv + toe_k2));
+  ];
+  
+  variable cvt: Number = cv;
+  if (lv > 0.0001) [
+    cvt = cv * lvt / lv;
+  ];
+  
+  // RGB scale computation
+  variable scale_l_: Number = 1 + s_max * kl;
+  variable scale_m_: Number = 1 + s_max * km;
+  variable scale_s_: Number = 1 + s_max * ks;
+  
+  variable lms_l: Number = lvt + a_ * cvt * kl;
+  variable lms_m: Number = lvt + a_ * cvt * km;
+  variable lms_s: Number = lvt + a_ * cvt * ks;
+  
+  // Convert to linear RGB using LMS
+  variable lms_l_cubed: Number = lms_l * lms_l * lms_l;
+  variable lms_m_cubed: Number = lms_m * lms_m * lms_m;
+  variable lms_s_cubed: Number = lms_s * lms_s * lms_s;
+  
+  variable rs: Number = 4.0767416621 * lms_l_cubed - 3.3077115913 * lms_m_cubed + 0.2309699292 * lms_s_cubed;
+  variable gs: Number = -1.2684380046 * lms_l_cubed + 2.6097574011 * lms_m_cubed - 0.3413193965 * lms_s_cubed;
+  variable bs: Number = -0.0041960863 * lms_l_cubed - 0.7034186147 * lms_m_cubed + 1.7076147010 * lms_s_cubed;
+  
+  variable max_s: Number = rs;
+  if (gs > max_s) [ max_s = gs; ];
+  if (bs > max_s) [ max_s = bs; ];
+  if (max_s < 0.0001) [ max_s = 0.0001; ];
+  
+  variable scale_l: Number = pow(1 / max_s, 0.3333333333333333);
+  
+  // Scale L and C
+  variable l_scaled: Number = lab_l / scale_l;
+  variable c_scaled: Number = c / scale_l;
+  
+  // Apply toe to scaled L for compensation
+  variable l_toed: Number = l_scaled;
+  if (l_scaled > 0.0001 && l_scaled < 0.9999) [
+    variable term2: Number = toe_k3 * l_scaled - toe_k1;
+    l_toed = 0.5 * (term2 + sqrt(term2 * term2 + 4 * toe_k2 * toe_k3 * l_scaled));
+  ];
+  
+  c_scaled = c_scaled * l_toed / (l_scaled + 0.0001);
+  
+  // Compute final v and s
+  if (lv > 0.0001) [
+    v = l_toed / lv;
+    if (v > 1) [ v = 1; ];
+    if (v < 0) [ v = 0; ];
+  ];
+  
+  variable denom_s: Number = t_t_cusp * s_0 + t_t_cusp * k_param * cv;
+  if (abs(denom_s) > 0.0001) [
+    s = ((s_0 + t_t_cusp) * cv) / denom_s;
+    if (s > 1) [ s = 1; ];
+    if (s < 0) [ s = 0; ];
+  ];
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Output
+// ═══════════════════════════════════════════════════════════════════════════
+variable output: Color.OKHSV;
+output.h = h;
+output.s = s;
+output.v = v;
+output

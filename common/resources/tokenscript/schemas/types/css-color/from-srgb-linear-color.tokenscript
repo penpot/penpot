@@ -1,0 +1,16 @@
+// Linear sRGB to CSS Conversion
+// Converts Linear sRGB to CSS color(srgb-linear) syntax
+// CSS Color Level 4: color(srgb-linear r g b)
+//
+// Input: Color.LinearSRGB with r, g, b in 0-1 range
+// Output: Color.CSS with value like "color(srgb-linear 1 0.25 0.0625)"
+
+variable precision: Number = 100000;
+variable r: Number = round({input}.r * precision) / precision;
+variable g: Number = round({input}.g * precision) / precision;
+variable b: Number = round({input}.b * precision) / precision;
+
+variable output: Color.CSS;
+output.value = "color(srgb-linear ".concat(r.to_string()).concat(" ").concat(g.to_string()).concat(" ").concat(b.to_string()).concat(")");
+return output;
+

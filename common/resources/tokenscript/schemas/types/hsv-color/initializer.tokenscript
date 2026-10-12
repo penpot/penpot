@@ -1,0 +1,21 @@
+// HSV Color Initializer
+// Creates an HSV color from H, S, V values
+// Input: List of [h, s, v] or [h, s, v, alpha] values
+
+variable hsv_values: List = {input};
+variable output: Color.HSV;
+
+output.h = hsv_values.get(0);
+output.s = hsv_values.get(1);
+output.v = hsv_values.get(2);
+
+// Set alpha if provided as 4th parameter
+if (hsv_values.length() > 3) [
+  output.alpha = hsv_values.get(3);
+];
+
+return output;
+
+
+
+

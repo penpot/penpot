@@ -1,0 +1,47 @@
+// XYZ-D65 to Linear P3 Conversion
+// Converts CIE XYZ (D65) to linear Display-P3 RGB
+// Reference: CSS Color Level 4 specification
+//
+// Uses the inverse of the P3 to XYZ-D65 matrix
+// Matrix values from ColorJS / CSS Color Level 4
+//
+// Input: Color.XYZD65 with x, y, z tristimulus values
+// Output: Color.LinearP3 with linear r, g, b values (may be outside 0-1 for out-of-gamut)
+
+// Get XYZ values
+variable x: Number = {input}.x;
+variable y: Number = {input}.y;
+variable z: Number = {input}.z;
+
+// XYZ to Linear P3 matrix (inverse of P3 to XYZ)
+// Row 1
+variable m00: Number = 2.4934969119414254;
+variable m01: Number = -0.9313836179191239;
+variable m02: Number = -0.40271078445071684;
+
+// Row 2
+variable m10: Number = -0.8294889695615747;
+variable m11: Number = 1.7626640603183463;
+variable m12: Number = 0.023624685841943577;
+
+// Row 3
+variable m20: Number = 0.03584583024378447;
+variable m21: Number = -0.07617238926804182;
+variable m22: Number = 0.9568845240076872;
+
+// Matrix multiplication: [r, g, b] = M × [x, y, z]
+variable linear_r: Number = m00 * x + m01 * y + m02 * z;
+variable linear_g: Number = m10 * x + m11 * y + m12 * z;
+variable linear_b: Number = m20 * x + m21 * y + m22 * z;
+
+// Create output (note: values may be outside 0-1 for out-of-gamut colors)
+variable output: Color.LinearP3;
+output.r = linear_r;
+output.g = linear_g;
+output.b = linear_b;
+
+return output;
+
+
+
+

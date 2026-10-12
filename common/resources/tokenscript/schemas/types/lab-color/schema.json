@@ -1,0 +1,48 @@
+{
+  "name": "Lab",
+  "type": "color",
+  "description": "CIE Lab (L*a*b*) perceptually uniform color space. L is lightness (0-100), a is green-red axis, b is blue-yellow axis.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "l": {
+        "type": "number",
+        "description": "Lightness (0-100)"
+      },
+      "a": {
+        "type": "number",
+        "description": "Green-red axis (typically -125 to 125)"
+      },
+      "b": {
+        "type": "number",
+        "description": "Blue-yellow axis (typically -125 to 125)"
+      }
+    },
+    "required": ["l", "a", "b"],
+    "order": ["l", "a", "b"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "Lab Color Initializer",
+      "keyword": "lab",
+      "description": "Creates a CIE Lab color from L, a, b values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/xyz-d50-color/0/",
+      "target": "$self",
+      "description": "Converts XYZ-D50 to CIE Lab using the CIE standard formula",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-xyz-d50.tokenscript"
+      }
+    }
+  ]
+}

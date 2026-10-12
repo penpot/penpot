@@ -26,7 +26,7 @@
 (def ms-unit-uri (suri/build-uri {:category "core" :name "ms-unit" :version {:major 0}}))
 (def rem-unit-uri (suri/build-uri {:category "core" :name "rem-unit" :version {:major 0}}))
 (def ch-unit-uri (suri/build-uri {:category "core" :name "ch-unit" :version {:major 0}}))
-(def percent-unit-uri "https://schema.tokenscript.dev.gcp.tokens.studio/api/v1/core/percent-unit/0/")
+(def percent-unit-uri (suri/build-uri {:category "core" :name "percent-unit" :version {:major 0}}))
 
 (def default-specs
   [[seconds-unit-uri
@@ -90,8 +90,8 @@
 (defn- register-conversions
   [registry uri spec]
   (reduce (fn [registry {:keys [source target script]}]
-            (let [source-uri (if (= source "$self") uri source)
-                  target-uri (if (= target "$self") uri target)
+            (let [source-uri (suri/normalize (if (= source "$self") uri source))
+                  target-uri (suri/normalize (if (= target "$self") uri target))
                   ast (:ast (parser/parse (:script script)))]
               (reg/add-conversion registry source-uri target-uri
                                   {:ast ast :source-uri source-uri :target-uri target-uri})))
@@ -101,7 +101,8 @@
 (defn register
   "Registers a unit specification under `uri`."
   [registry uri spec]
-  (let [spec (normalize-spec uri spec)]
+  (let [uri (suri/normalize uri)
+        spec (normalize-spec uri spec)]
     (-> registry
         (reg/add-spec uri spec (spec-name spec))
         (assoc-in [:keywords (str/upper-case (:keyword spec))] uri)

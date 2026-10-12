@@ -1,0 +1,80 @@
+// sRGB to HSV Conversion
+// Reference: Standard RGB to HSV algorithm
+//
+// Algorithm:
+// V = max(R, G, B)
+// S = (V - min(R, G, B)) / V  (if V > 0)
+// H depends on which channel is max
+//
+// Input: Color.SRGB with r, g, b in 0-1 range
+// Output: Color.HSV with h (0-360), s (0-1), v (0-1)
+
+// Get input sRGB values
+variable r: Number = {input}.r;
+variable g: Number = {input}.g;
+variable b: Number = {input}.b;
+
+// Find max and min
+variable max_val: Number = r;
+if (g > max_val) [
+    max_val = g;
+];
+if (b > max_val) [
+    max_val = b;
+];
+
+variable min_val: Number = r;
+if (g < min_val) [
+    min_val = g;
+];
+if (b < min_val) [
+    min_val = b;
+];
+
+// Value is the max channel
+variable v: Number = max_val;
+
+// Calculate saturation and hue
+variable s: Number = 0;
+variable h: Number = 0;
+variable delta: Number = max_val - min_val;
+
+if (max_val > 0) [
+    s = delta / max_val;
+];
+
+if (delta > 0) [
+    // Hue calculation depends on which channel is max
+    if (max_val == r) [
+        h = ((g - b) / delta);
+        if (g < b) [
+            h = h + 6;
+        ];
+    ] else [
+        if (max_val == g) [
+            h = (b - r) / delta + 2;
+        ] else [
+            h = (r - g) / delta + 4;
+        ];
+    ];
+    
+    // Convert to degrees
+    h = h * 60;
+];
+
+// Normalize hue to 0-360
+if (h < 0) [
+    h = h + 360;
+];
+
+// Create output
+variable output: Color.HSV;
+output.h = h;
+output.s = s;
+output.v = v;
+
+return output;
+
+
+
+

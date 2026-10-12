@@ -1,0 +1,32 @@
+// Desaturate a color by decreasing its OKLCH chroma
+// Amount: 0-1 where 0.25 means 25% decrease, 1.0 = full grayscale
+//
+// Algorithm: C' = C * (1 - amount)
+
+variable input: List = {input};
+variable color: Color.OKLCH = input.get(0).to.oklch();
+
+// Default amount is 0.25 (25%)
+variable amount: Number = 0.25;
+if (input.length() > 1) [
+    amount = input.get(1);
+];
+
+// Calculate new chroma
+variable current_c: Number = color.c;
+variable new_c: Number = current_c * (1 - amount);
+
+// Clamp to valid range
+if (new_c < 0) [ new_c = 0; ];
+
+// Create output in OKLCH, return as sRGB
+variable result: Color.OKLCH;
+result.l = color.l;
+result.c = new_c;
+result.h = color.h;
+
+return result;
+
+
+
+

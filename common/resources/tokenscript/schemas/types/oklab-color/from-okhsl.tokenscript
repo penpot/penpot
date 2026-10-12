@@ -1,0 +1,195 @@
+// OKHSL to OKLab Conversion
+// Reference: Björn Ottosson - "A perceptual color picker: OKHSL and OKHSV"
+// URL: https://bottosson.github.io/posts/colorpicker/
+// Reference: https://github.com/color-js/color.js/blob/main/src/spaces/okhsl.js
+//
+// Converts OKHSL back to OKLab using:
+// 1. Inverse toe function to recover OKLab lightness
+// 2. Cusp finding to determine max chroma at this hue
+// 3. Saturation denormalization to get actual chroma
+//
+// Input: Color.OKHSL with h (0-360), s (0-1), l (0-1)
+// Output: Color.OKLab with l (0-1), a, b coordinates
+
+variable h: Number = input.h;
+variable s: Number = input.s;
+variable l: Number = input.l;
+
+// Native constants
+variable pi_val: Number = pi();
+
+// Toe function constants
+variable toe_k1: Number = 0.206;
+variable toe_k2: Number = 0.03;
+variable toe_k3: Number = 1.17009708737864;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 1: Apply inverse toe function to get OKLab lightness
+// toe_inv(x) = (x^2 + k1*x) / (k3 * (x + k2))
+// ═══════════════════════════════════════════════════════════════════════════
+variable lab_l: Number = l;
+if (l > 0.0001 && l < 0.9999) [
+  lab_l = (l * l + toe_k1 * l) / (toe_k3 * (l + toe_k2));
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 2: Handle achromatic case
+// ═══════════════════════════════════════════════════════════════════════════
+variable lab_a: Number = 0;
+variable lab_b: Number = 0;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 3: Compute hue direction
+// ═══════════════════════════════════════════════════════════════════════════
+variable h_rad: Number = h * pi_val / 180;
+variable a_: Number = cos(h_rad);
+variable b_: Number = sin(h_rad);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Pre-compute LMS coefficients (used in steps 4 and 5)
+// ═══════════════════════════════════════════════════════════════════════════
+variable kl: Number = 0.3963377774 * a_ + 0.2158037573 * b_;
+variable km: Number = -0.1055613458 * a_ - 0.0638541728 * b_;
+variable ks: Number = -0.0894841775 * a_ - 1.2914855480 * b_;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 4: Find maximum saturation at this hue (same as forward conversion)
+// ═══════════════════════════════════════════════════════════════════════════
+variable s_max: Number = 0;
+
+// Variables for LMS intermediate calculations (reused in step 5)
+variable l_lms: Number = 0;
+variable m_lms: Number = 0;
+variable s_lms: Number = 0;
+
+if (s >= 0.0001) [
+  variable k0: Number = 0;
+  variable k1_coef: Number = 0;
+  variable k2_coef: Number = 0;
+  variable k3_coef: Number = 0;
+  variable k4_coef: Number = 0;
+  variable wl: Number = 0;
+  variable wm: Number = 0;
+  variable ws: Number = 0;
+  
+  variable test_r: Number = -1.88170328 * a_ - 0.80936493 * b_;
+  variable test_g: Number = 1.81444104 * a_ - 1.19445276 * b_;
+  
+  if (test_r > 1) [
+    k0 = 1.19086277;
+    k1_coef = 1.76576728;
+    k2_coef = 0.59662641;
+    k3_coef = 0.75515197;
+    k4_coef = 0.56771245;
+    wl = 4.0767416621;
+    wm = -3.3077115913;
+    ws = 0.2309699292;
+  ] else [
+    if (test_g > 1) [
+      k0 = 0.73956515;
+      k1_coef = -0.45954404;
+      k2_coef = 0.08285427;
+      k3_coef = 0.12541073;
+      k4_coef = -0.14503204;
+      wl = -1.2684380046;
+      wm = 2.6097574011;
+      ws = -0.3413193965;
+    ] else [
+      k0 = 1.35733652;
+      k1_coef = -0.00915799;
+      k2_coef = -1.15130210;
+      k3_coef = -0.50559606;
+      k4_coef = 0.00692167;
+      wl = -0.0041960863;
+      wm = -0.7034186147;
+      ws = 1.7076147010;
+    ];
+  ];
+  
+  s_max = k0 + k1_coef * a_ + k2_coef * b_ + k3_coef * a_ * a_ + k4_coef * a_ * b_;
+  
+  // Halley's method refinement
+  variable l_temp: Number = 1 + s_max * kl;
+  variable m_temp: Number = 1 + s_max * km;
+  variable s_temp: Number = 1 + s_max * ks;
+  
+  variable l_cubed: Number = l_temp * l_temp * l_temp;
+  variable m_cubed: Number = m_temp * m_temp * m_temp;
+  variable s_cubed: Number = s_temp * s_temp * s_temp;
+  
+  variable l_ds: Number = 3 * kl * l_temp * l_temp;
+  variable m_ds: Number = 3 * km * m_temp * m_temp;
+  variable s_ds: Number = 3 * ks * s_temp * s_temp;
+  
+  variable l_ds2: Number = 6 * kl * kl * l_temp;
+  variable m_ds2: Number = 6 * km * km * m_temp;
+  variable s_ds2: Number = 6 * ks * ks * s_temp;
+  
+  variable f: Number = wl * l_cubed + wm * m_cubed + ws * s_cubed;
+  variable f1: Number = wl * l_ds + wm * m_ds + ws * s_ds;
+  variable f2: Number = wl * l_ds2 + wm * m_ds2 + ws * s_ds2;
+  
+  variable denom: Number = f1 * f1 - 0.5 * f * f2;
+  if (abs(denom) > 0.000001) [
+    s_max = s_max - f * f1 / denom;
+  ];
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 5: Find cusp
+// ═══════════════════════════════════════════════════════════════════════════
+variable l_cusp: Number = 1;
+variable c_cusp: Number = 0;
+
+if (s >= 0.0001 && s_max > 0) [
+  // Recompute LMS values with refined s_max (kl, km, ks already computed)
+  variable l_cusp_temp: Number = 1 + s_max * kl;
+  variable m_cusp_temp: Number = 1 + s_max * km;
+  variable s_cusp_temp: Number = 1 + s_max * ks;
+  
+  l_lms = l_cusp_temp * l_cusp_temp * l_cusp_temp;
+  m_lms = m_cusp_temp * m_cusp_temp * m_cusp_temp;
+  s_lms = s_cusp_temp * s_cusp_temp * s_cusp_temp;
+  
+  variable r_lin: Number = 4.0767416621 * l_lms - 3.3077115913 * m_lms + 0.2309699292 * s_lms;
+  variable g_lin: Number = -1.2684380046 * l_lms + 2.6097574011 * m_lms - 0.3413193965 * s_lms;
+  variable b_lin: Number = -0.0041960863 * l_lms - 0.7034186147 * m_lms + 1.7076147010 * s_lms;
+  
+  variable max_rgb: Number = r_lin;
+  if (g_lin > max_rgb) [ max_rgb = g_lin; ];
+  if (b_lin > max_rgb) [ max_rgb = b_lin; ];
+  
+  if (max_rgb > 0) [
+    l_cusp = pow(1 / max_rgb, 0.3333333333333333);
+    c_cusp = l_cusp * s_max;
+  ];
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 6: Compute chroma from saturation
+// ═══════════════════════════════════════════════════════════════════════════
+variable c: Number = 0;
+
+if (s >= 0.0001 && l_cusp > 0.0001 && c_cusp > 0.0001) [
+  variable s_t_cusp: Number = c_cusp / l_cusp;
+  
+  // Denormalize saturation to get chroma
+  c = s * lab_l * s_t_cusp;
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Step 7: Convert polar to cartesian
+// ═══════════════════════════════════════════════════════════════════════════
+if (s >= 0.0001) [
+  lab_a = c * a_;
+  lab_b = c * b_;
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Output
+// ═══════════════════════════════════════════════════════════════════════════
+variable output: Color.OKLab;
+output.l = lab_l;
+output.a = lab_a;
+output.b = lab_b;
+output

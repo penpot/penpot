@@ -1,0 +1,48 @@
+{
+  "name": "P3",
+  "type": "color",
+  "description": "Display-P3 color space with sRGB transfer function. Wider gamut than sRGB, common on modern Apple displays.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "r": {
+        "type": "number",
+        "description": "Red channel (0-1, can exceed for out-of-gamut)"
+      },
+      "g": {
+        "type": "number",
+        "description": "Green channel (0-1, can exceed for out-of-gamut)"
+      },
+      "b": {
+        "type": "number",
+        "description": "Blue channel (0-1, can exceed for out-of-gamut)"
+      }
+    },
+    "required": ["r", "g", "b"],
+    "order": ["r", "g", "b"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "Display-P3 Color Initializer",
+      "keyword": "p3",
+      "description": "Creates a Display-P3 color from 0-1 values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/p3-linear-color/0/",
+      "target": "$self",
+      "description": "Converts Linear P3 to P3 by applying sRGB transfer function",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-p3-linear.tokenscript"
+      }
+    }
+  ]
+}

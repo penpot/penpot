@@ -1,0 +1,48 @@
+{
+  "name": "LCH",
+  "type": "color",
+  "description": "CIE LCH color space - the polar form of CIE Lab. L is lightness (0-100), C is chroma, H is hue angle (0-360).",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "l": {
+        "type": "number",
+        "description": "Lightness (0-100)"
+      },
+      "c": {
+        "type": "number",
+        "description": "Chroma"
+      },
+      "h": {
+        "type": "number",
+        "description": "Hue angle (0-360 degrees)"
+      }
+    },
+    "required": ["l", "c", "h"],
+    "order": ["l", "c", "h"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "LCH Color Initializer",
+      "keyword": "lch",
+      "description": "Creates a CIE LCH color from L, C, H values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/lab-color/0/",
+      "target": "$self",
+      "description": "Converts CIE Lab to LCH using Cartesian to polar transformation",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-lab.tokenscript"
+      }
+    }
+  ]
+}

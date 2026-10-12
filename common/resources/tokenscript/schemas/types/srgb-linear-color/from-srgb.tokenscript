@@ -1,0 +1,55 @@
+// sRGB to Linear sRGB Conversion
+// Removes gamma correction (inverse transfer function)
+// Reference: IEC 61966-2-1:1999 (sRGB specification)
+//
+// Algorithm:
+//   if srgb ≤ 0.04045: linear = srgb / 12.92
+//   else: linear = ((srgb + 0.055) / 1.055) ^ 2.4
+//
+// Input: Color.SRGB with r, g, b in 0-1 range
+// Output: Color.LinearSRGB with r, g, b in linear 0-1 range
+
+// Gamma correction constants (IEC 61966-2-1)
+variable threshold: Number = 0.04045;
+variable linear_scale: Number = 12.92;
+variable gamma_offset: Number = 0.055;
+variable gamma_scale: Number = 1.055;
+variable gamma_exponent: Number = 2.4;
+
+// Get input sRGB values
+variable srgb_r: Number = {input}.r;
+variable srgb_g: Number = {input}.g;
+variable srgb_b: Number = {input}.b;
+
+// Convert red channel
+variable linear_r: Number = 0;
+if (srgb_r <= threshold) [
+    linear_r = srgb_r / linear_scale;
+] else [
+    linear_r = pow((srgb_r + gamma_offset) / gamma_scale, gamma_exponent);
+];
+
+// Convert green channel
+variable linear_g: Number = 0;
+if (srgb_g <= threshold) [
+    linear_g = srgb_g / linear_scale;
+] else [
+    linear_g = pow((srgb_g + gamma_offset) / gamma_scale, gamma_exponent);
+];
+
+// Convert blue channel
+variable linear_b: Number = 0;
+if (srgb_b <= threshold) [
+    linear_b = srgb_b / linear_scale;
+] else [
+    linear_b = pow((srgb_b + gamma_offset) / gamma_scale, gamma_exponent);
+];
+
+// Create output
+variable output: Color.LinearSRGB;
+output.r = linear_r;
+output.g = linear_g;
+output.b = linear_b;
+
+return output;
+

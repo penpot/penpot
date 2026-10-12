@@ -14,6 +14,10 @@
      :spec-types  {lower-case-name uri}
      :conversions {source-uri {target-uri conversion}}}
 
+  URIs are stored and looked up in their path form (see
+  `app.common.tokenscript.schema-uri/normalize`), so a schema referenced
+  with and without a host is the same schema.
+
   Lookups resolve versions (`0.0.1` -> `0.0` -> `0` -> latest) and
   conversions between two schemas are found by a breadth first search
   over the registered conversion edges, so a chain of conversions can be
@@ -60,13 +64,14 @@
 
 (defn add-spec
   [registry uri spec name]
-  (-> registry
-      (assoc-in [:specs uri] spec)
-      (assoc-in [:spec-types name] uri)))
+  (let [uri (suri/normalize uri)]
+    (-> registry
+        (assoc-in [:specs uri] spec)
+        (assoc-in [:spec-types name] uri))))
 
 (defn add-conversion
   [registry source-uri target-uri conversion]
-  (assoc-in registry [:conversions source-uri target-uri] conversion))
+  (assoc-in registry [:conversions (suri/normalize source-uri) (suri/normalize target-uri)] conversion))
 
 (defn- latest-version-uri
   [registry uri]
@@ -75,7 +80,6 @@
          (keep (fn [spec-uri]
                  (let [target (suri/parse-uri spec-uri)]
                    (when (and target
-                              (= (:base-url target) (:base-url source))
                               (= (:category target) (:category source))
                               (= (:name target) (:name source))
                               (map? (:version target)))
@@ -98,12 +102,13 @@
 (defn resolve-uri
   "Registered URI matching `uri` after version resolution, or nil."
   [registry uri]
-  (memoized registry [:resolve uri] #(resolve-uri* registry uri)))
+  (let [uri (suri/normalize uri)]
+    (memoized registry [:resolve uri] #(resolve-uri* registry uri))))
 
 (defn spec
   "Spec registered under `uri`, with version resolution."
   [registry uri]
-  (or (get (:specs registry) uri)
+  (or (get (:specs registry) (suri/normalize uri))
       (when-let [resolved (resolve-uri registry uri)]
         (get (:specs registry) resolved))))
 
@@ -156,11 +161,15 @@
   "Sequence of URIs from `source` to `target` (inclusive) found by BFS,
   or empty when unreachable."
   [registry source target]
-  (memoized registry [:path source target] #(conversion-path* registry source target)))
+  (let [source (suri/normalize source)
+        target (suri/normalize target)]
+    (memoized registry [:path source target] #(conversion-path* registry source target))))
 
 (defn has-conversion?
   [registry source target]
-  (let [conversions (:conversions registry)
+  (let [source (suri/normalize source)
+        target (suri/normalize target)
+        conversions (:conversions registry)
         rs (resolved-or-self registry source)
         rt (resolved-or-self registry target)]
     (or (contains? (get conversions source) target)
@@ -210,4 +219,6 @@
   Returns `[]` for an identity conversion and nil when no path exists or
   a step is missing."
   [registry source target]
-  (memoized registry [:steps source target] #(conversion-steps* registry source target)))
+  (let [source (suri/normalize source)
+        target (suri/normalize target)]
+    (memoized registry [:steps source target] #(conversion-steps* registry source target))))

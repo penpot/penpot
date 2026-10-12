@@ -1,0 +1,29 @@
+// OKLab to CSS Conversion
+// Converts OKLab to CSS oklab() syntax
+// CSS Color Level 4: oklab(L a b) or oklab(L a b / alpha) where L is 0-1 decimal
+//
+// Input: Color.OKLab with l (0-1), a, b, optional alpha (0-1)
+// Output: Color.CSS with value like "oklab(0.7 0.1 -0.05)" or "oklab(0.7 0.1 -0.05 / 0.5)"
+// Note: Alpha is omitted if null or 1.0 (fully opaque)
+
+variable precision: Number = 100000;
+variable l: Number = round({input}.l * precision) / precision;
+variable a: Number = round({input}.a * precision) / precision;
+variable b_val: Number = round({input}.b * precision) / precision;
+
+variable css_value: String = "oklab(".concat(l.to_string()).concat(" ").concat(a.to_string()).concat(" ").concat(b_val.to_string());
+
+// Add alpha if present, not null, and not 1.0 (per CSS convention)
+variable alpha: Number = {input}.alpha;
+if (alpha != null) [
+  if (alpha != 1) [
+    css_value = css_value.concat(" / ").concat(alpha.to_string());
+  ];
+];
+
+css_value = css_value.concat(")");
+
+variable output: Color.CSS;
+output.value = css_value;
+return output;
+

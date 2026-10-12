@@ -1,0 +1,28 @@
+// RGB to CSS Conversion
+// Converts RGB (0-255) to CSS rgb() syntax
+// CSS Color Level 4 modern syntax: rgb(r g b) or rgb(r g b / alpha)
+//
+// Input: Color.Rgb with r, g, b in 0-255 range, optional alpha (0-1)
+// Output: Color.CSS with value like "rgb(255 128 64)" or "rgb(255 128 64 / 0.5)"
+// Note: Alpha is omitted if null or 1.0 (fully opaque)
+
+variable r: Number = round({input}.r);
+variable g: Number = round({input}.g);
+variable b: Number = round({input}.b);
+
+variable css_value: String = "rgb(".concat(r.to_string()).concat(" ").concat(g.to_string()).concat(" ").concat(b.to_string());
+
+// Add alpha if present, not null, and not 1.0 (per CSS convention)
+variable alpha: Number = {input}.alpha;
+if (alpha != null) [
+  if (alpha != 1) [
+    css_value = css_value.concat(" / ").concat(alpha.to_string());
+  ];
+];
+
+css_value = css_value.concat(")");
+
+variable output: Color.CSS;
+output.value = css_value;
+return output;
+

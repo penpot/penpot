@@ -1,0 +1,45 @@
+// Display P3 to Hex Conversion
+// Converts P3 (0-1) to hexadecimal string format
+// Note: P3 colors may be out of sRGB gamut, values are clamped to 0-1
+//
+// Examples:
+//   P3(1, 0, 0)     → #ff0000
+//   P3(0, 1, 0.5)   → #00ff80
+
+variable hex: String = "#";
+variable value: Number = 0;
+
+// Red channel (clamp P3 to sRGB range)
+value = {input}.r;
+if (value < 0) [ value = 0; ];
+if (value > 1) [ value = 1; ];
+value = round(value * 255);
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+// Green channel
+value = {input}.g;
+if (value < 0) [ value = 0; ];
+if (value > 1) [ value = 1; ];
+value = round(value * 255);
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+// Blue channel
+value = {input}.b;
+if (value < 0) [ value = 0; ];
+if (value > 1) [ value = 1; ];
+value = round(value * 255);
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+return hex;

@@ -1,0 +1,37 @@
+// darken: Decrease lightness proportionally towards black
+// Amount: 0-1 where 0.25 means 25% closer to black
+//
+// Algorithm: L' = L * (1 - amount)
+// This ensures we approach black (L=0) proportionally.
+//
+// Input:  Any color space (converted to OKLab internally)
+// Output: OKLCH (working space)
+// To get sRGB: darken(color, 0.25).to.srgb()
+
+variable input: List = {input};
+variable color: Color.OKLab = input.get(0).to.oklab();
+
+// Default amount is 0.25 (25%)
+variable amount: Number = 0.25;
+if (input.length() > 1) [
+    amount = input.get(1);
+];
+
+// Calculate new lightness (move toward 0)
+variable current_l: Number = color.l;
+variable new_l: Number = current_l * (1 - amount);
+
+// Clamp to valid range
+if (new_l < 0) [ new_l = 0; ];
+
+// Create output in OKLab, return as OKLCH (working space)
+variable result: Color.OKLab;
+result.l = new_l;
+result.a = color.a;
+result.b = color.b;
+
+return result.to.oklch();
+
+
+
+

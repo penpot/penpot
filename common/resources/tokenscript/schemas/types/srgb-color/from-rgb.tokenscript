@@ -1,0 +1,20 @@
+// RGB to sRGB Conversion
+// Converts RGB (0-255) to sRGB (0-1) by normalizing
+// Input: Color.Rgb with r, g, b in 0-255 range
+// Output: Color.SRGB with r, g, b in 0-1 range
+// Lossless: Yes (simple division)
+
+variable r_normalized: Number = {input}.r / 255;
+variable g_normalized: Number = {input}.g / 255;
+variable b_normalized: Number = {input}.b / 255;
+
+variable output: Color.SRGB;
+output.r = r_normalized;
+output.g = g_normalized;
+output.b = b_normalized;
+
+return output;
+
+
+
+

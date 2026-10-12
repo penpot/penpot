@@ -1,0 +1,106 @@
+// HSL to sRGB Conversion
+// Reference: https://github.com/color-js/color.js/blob/main/src/spaces/hsl.js
+//
+// Algorithm:
+// 1. If saturation is 0, it's achromatic: R=G=B=L
+// 2. Otherwise use the HSL to RGB formula:
+//    - Calculate intermediate values based on L
+//    - Use hue to determine RGB components
+//
+// Input: Color.HSL with h (0-360), s (0-1), l (0-1)
+// Output: Color.SRGB with r, g, b in 0-1 range
+
+// Get input HSL values
+variable h: Number = {input}.h;
+variable s: Number = {input}.s;
+variable l: Number = {input}.l;
+
+// Normalize hue to 0-1 range
+variable hue: Number = h / 360;
+
+// Output values
+variable r: Number = l;
+variable g: Number = l;
+variable b: Number = l;
+
+// Only calculate if there's saturation (not achromatic)
+if (s > 0) [
+    // Calculate intermediate value
+    variable q: Number = 0;
+    if (l < 0.5) [
+        q = l * (1 + s);
+    ] else [
+        q = l + s - l * s;
+    ];
+    
+    variable p: Number = 2 * l - q;
+    
+    // Helper function logic inlined for R (hue + 1/3)
+    variable tr: Number = hue + 0.333333333333333;
+    if (tr < 0) [ tr = tr + 1; ];
+    if (tr > 1) [ tr = tr - 1; ];
+    
+    if (tr < 0.166666666666667) [
+        r = p + (q - p) * 6 * tr;
+    ] else [
+        if (tr < 0.5) [
+            r = q;
+        ] else [
+            if (tr < 0.666666666666667) [
+                r = p + (q - p) * (0.666666666666667 - tr) * 6;
+            ] else [
+                r = p;
+            ];
+        ];
+    ];
+    
+    // Helper function logic inlined for G (hue)
+    variable tg: Number = hue;
+    if (tg < 0) [ tg = tg + 1; ];
+    if (tg > 1) [ tg = tg - 1; ];
+    
+    if (tg < 0.166666666666667) [
+        g = p + (q - p) * 6 * tg;
+    ] else [
+        if (tg < 0.5) [
+            g = q;
+        ] else [
+            if (tg < 0.666666666666667) [
+                g = p + (q - p) * (0.666666666666667 - tg) * 6;
+            ] else [
+                g = p;
+            ];
+        ];
+    ];
+    
+    // Helper function logic inlined for B (hue - 1/3)
+    variable tb: Number = hue - 0.333333333333333;
+    if (tb < 0) [ tb = tb + 1; ];
+    if (tb > 1) [ tb = tb - 1; ];
+    
+    if (tb < 0.166666666666667) [
+        b = p + (q - p) * 6 * tb;
+    ] else [
+        if (tb < 0.5) [
+            b = q;
+        ] else [
+            if (tb < 0.666666666666667) [
+                b = p + (q - p) * (0.666666666666667 - tb) * 6;
+            ] else [
+                b = p;
+            ];
+        ];
+    ];
+];
+
+// Create output
+variable output: Color.SRGB;
+output.r = r;
+output.g = g;
+output.b = b;
+
+return output;
+
+
+
+

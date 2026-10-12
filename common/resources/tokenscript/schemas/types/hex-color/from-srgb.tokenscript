@@ -1,0 +1,41 @@
+// sRGB to Hex Conversion
+// Converts sRGB (0-1) to hexadecimal string format
+//
+// Examples:
+//   sRGB(1, 0, 0)     → #ff0000
+//   sRGB(0, 1, 0.5)   → #00ff80
+
+variable hex: String = "#";
+variable value: Number = 0;
+
+// Red channel
+value = round({input}.r * 255);
+if (value < 0) [ value = 0; ];
+if (value > 255) [ value = 255; ];
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+// Green channel
+value = round({input}.g * 255);
+if (value < 0) [ value = 0; ];
+if (value > 255) [ value = 255; ];
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+// Blue channel
+value = round({input}.b * 255);
+if (value < 0) [ value = 0; ];
+if (value > 255) [ value = 255; ];
+if (value < 16) [
+  hex = hex.concat("0").concat(value.to_string(16));
+] else [
+  hex = hex.concat(value.to_string(16));
+];
+
+return hex;

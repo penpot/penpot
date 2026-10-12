@@ -1,0 +1,29 @@
+// XYZ-D50 to CSS Conversion
+// Converts XYZ-D50 to CSS color(xyz-d50) syntax
+// CSS Color Level 4: color(xyz-d50 x y z) or color(xyz-d50 x y z / alpha)
+//
+// Input: Color.XYZD50 with x, y, z tristimulus values, optional alpha (0-1)
+// Output: Color.CSS with value like "color(xyz-d50 0.4360 0.2225 0.0139)" or "color(xyz-d50 0.4360 0.2225 0.0139 / 0.5)"
+// Note: Alpha is omitted if null or 1.0 (fully opaque)
+
+variable precision: Number = 100000;
+variable x: Number = round({input}.x * precision) / precision;
+variable y: Number = round({input}.y * precision) / precision;
+variable z: Number = round({input}.z * precision) / precision;
+
+variable css_value: String = "color(xyz-d50 ".concat(x.to_string()).concat(" ").concat(y.to_string()).concat(" ").concat(z.to_string());
+
+// Add alpha if present, not null, and not 1.0 (per CSS convention)
+variable alpha: Number = {input}.alpha;
+if (alpha != null) [
+  if (alpha != 1) [
+    css_value = css_value.concat(" / ").concat(alpha.to_string());
+  ];
+];
+
+css_value = css_value.concat(")");
+
+variable output: Color.CSS;
+output.value = css_value;
+return output;
+

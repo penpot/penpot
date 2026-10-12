@@ -1,0 +1,29 @@
+// Display-P3 to CSS Conversion
+// Converts Display-P3 to CSS color(display-p3) syntax
+// CSS Color Level 4: color(display-p3 r g b) or color(display-p3 r g b / alpha)
+//
+// Input: Color.P3 with r, g, b in 0-1 range, optional alpha (0-1)
+// Output: Color.CSS with value like "color(display-p3 1 0.5 0.25)" or "color(display-p3 1 0.5 0.25 / 0.5)"
+// Note: Alpha is omitted if null or 1.0 (fully opaque)
+
+variable precision: Number = 100000;
+variable r: Number = round({input}.r * precision) / precision;
+variable g: Number = round({input}.g * precision) / precision;
+variable b: Number = round({input}.b * precision) / precision;
+
+variable css_value: String = "color(display-p3 ".concat(r.to_string()).concat(" ").concat(g.to_string()).concat(" ").concat(b.to_string());
+
+// Add alpha if present, not null, and not 1.0 (per CSS convention)
+variable alpha: Number = {input}.alpha;
+if (alpha != null) [
+  if (alpha != 1) [
+    css_value = css_value.concat(" / ").concat(alpha.to_string());
+  ];
+];
+
+css_value = css_value.concat(")");
+
+variable output: Color.CSS;
+output.value = css_value;
+return output;
+

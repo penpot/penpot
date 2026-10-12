@@ -109,16 +109,41 @@ codes used by the UI (`:error.style-dictionary/missing-reference`,
 
 ## Bundled schemas
 
-Color spaces (sRGB, HSL, OKLCH, P3, ...), color functions (`lighten`,
-`darken`, `saturate`, `desaturate`, `mix`, `invert`) and CSS named colors
-come from the `preset:css` and `preset:cssColors` presets of
-`@tokens-studio/tokenscript-schemas`. They are data in
-`app.common.tokenscript.bundle`, generated from the schema bundle:
+The schemas shipped with Penpot are JSON files with tokenscript scripts
+in
+[common/resources/tokenscript/schemas](https://github.com/penpot/penpot/tree/develop/common/resources/tokenscript/schemas):
+
+| Directory | Contents | URI |
+|---|---|---|
+| `types/<name>/` | Color spaces: sRGB, HSL, OKLCH, P3, ... | `/api/v1/core/<name>/0/` |
+| `functions/<name>/` | Functions: `lighten`, `darken`, `saturate`, `desaturate`, `mix`, `invert` | `/api/v1/function/<name>/0/` |
+| `constants/<name>/` | CSS named colors | `/api/v1/constants/<name>/0/` |
+
+Each directory holds a `schema.json` that references its scripts by
+relative path (`"script": "./initializer.tokenscript"`). The color
+spaces, the color functions and the named colors come from
+`@tokens-studio/tokenscript-schemas` 0.4.0 (MPL-2.0) and are kept
+unchanged, so they can be compared with that package.
+
+`app.common.tokenscript.bundle` is generated from these files with the
+bundler in `common/dev/tokenscript_bundle.clj`, which inlines the
+scripts and fails when a script does not parse or a schema references
+one that is not bundled:
 
 ```bash
-npx @tokens-studio/tokenscript-schemas bundle preset:css preset:cssColors --output /tmp/schemas.js
-node common/scripts/tokenscript-bundle.mjs /tmp/schemas.js common/src/app/common/tokenscript/bundle.cljc
+cd common
+clojure -M:dev -m tokenscript-bundle           # regenerate the bundle
+clojure -M:dev -m tokenscript-bundle --check   # fail when it is stale
 ```
+
+`common-tests.tokenscript.bundle-test` also fails when the bundle is
+stale.
+
+Schemas are identified by path URIs and never fetched. URIs with a host,
+as other tokenscript tools write them
+(`https://<host>/api/v1/core/rgb-color/0/`), are normalized to the path
+form when they are registered or looked up, so external schemas still
+connect to the bundled ones.
 
 Additional schemas (for example user defined functions in the future)
 are plain maps registered with `app.common.tokenscript/register-schemas`.

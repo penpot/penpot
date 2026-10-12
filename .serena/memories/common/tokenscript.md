@@ -11,7 +11,8 @@
 - Config is an immutable map of registries (`:colors :units :functions :tokens :inline-constants`); `registry` has version resolution and BFS conversion paths. Schemas are keywordized maps; scripts parsed once at registration.
 - `processor`: memoized DFS resolution; cycle detection via `:visiting`; every cycle member gets `:processor/circular-dependency`, dependents get `:processor/dependency-error` with `:chain`/`:root-cause`. Structured tokens expand string leaves to virtual sub-field tokens (`shadow[0].blur`); group refs `{color}` build a dictionary of direct expression children; `{dict.key}` reaches one level into dictionary tokens.
 - `errors`: `ex-info` with data `{:type :tokenscript/error :kind :code :hint :message :data}`; same maps are the issue values. `err/code->compliance-code` maps `:interpreter/unknown-reference` -> `INT_UNKNOWN_REFERENCE`.
-- `bundle.cljc` is GENERATED (`common/scripts/tokenscript-bundle.mjs`), do not hand edit.
+- `bundle.cljc` is GENERATED from `common/resources/tokenscript/schemas/{types,functions,constants}/<name>/schema.json` + `.tokenscript` files by `clojure -M:dev -m tokenscript-bundle` (`common/dev/tokenscript_bundle.clj`); do not hand edit, `bundle-test` fails when stale.
+- Schema URIs are path URIs (`/api/v1/core/rgb-color/0/`), never fetched; `schema-uri/normalize` strips hosts and the registries normalize on register and lookup.
 
 ## Invariants / gotchas
 

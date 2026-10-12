@@ -1,0 +1,3 @@
+variable c: Color.Hex;
+c.value = {input};
+return c;

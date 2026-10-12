@@ -1,0 +1,17 @@
+// HSLA Color Initializer
+// Creates an HSL color with alpha from H, S, L, A values
+//
+// Usage: hsla(180, 0.5, 0.5, 0.8) → Color.HSL { h: 180, s: 0.5, l: 0.5, alpha: 0.8 }
+//
+// Input: List of 4 numbers [h, s, l, alpha]
+// Output: Color.HSL with alpha
+
+variable hsl_values: List = {input};
+variable output: Color.HSL;
+
+output.h = hsl_values.get(0);
+output.s = hsl_values.get(1);
+output.l = hsl_values.get(2);
+output.alpha = hsl_values.get(3);
+
+return output;

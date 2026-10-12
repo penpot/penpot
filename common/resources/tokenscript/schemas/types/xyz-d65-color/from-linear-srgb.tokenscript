@@ -1,0 +1,38 @@
+// Linear sRGB to XYZ-D65 Conversion
+// Uses the sRGB primaries transformation matrix
+// Reference: IEC 61966-2-1:1999 (sRGB specification)
+//
+// Matrix (Linear RGB → XYZ-D65):
+// [X]   [0.4123908  0.3575843  0.1804808] [R]
+// [Y] = [0.2126390  0.7151687  0.0721923] [G]
+// [Z]   [0.0193308  0.1191948  0.9505322] [B]
+//
+// Input: Color.LinearSRGB with r, g, b in linear 0-1 range
+// Output: Color.XYZD65 with x, y, z tristimulus values
+
+// Get input linear sRGB values
+variable r: Number = {input}.r;
+variable g: Number = {input}.g;
+variable b: Number = {input}.b;
+
+// Matrix multiplication: M × [R, G, B]ᵀ
+// Row 1: X = 0.4123908 * R + 0.3575843 * G + 0.1804808 * B
+variable x: Number = r * 0.41239079926595934 + g * 0.357584339383878 + b * 0.1804807884018343;
+
+// Row 2: Y = 0.2126390 * R + 0.7151687 * G + 0.0721923 * B
+variable y: Number = r * 0.21263900587151027 + g * 0.715168678767756 + b * 0.07219231536073371;
+
+// Row 3: Z = 0.0193308 * R + 0.1191948 * G + 0.9505322 * B
+variable z: Number = r * 0.01933081871559182 + g * 0.11919477979462598 + b * 0.9505321522496607;
+
+// Create output
+variable output: Color.XYZD65;
+output.x = x;
+output.y = y;
+output.z = z;
+
+return output;
+
+
+
+

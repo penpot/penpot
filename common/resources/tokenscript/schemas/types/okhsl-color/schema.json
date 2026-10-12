@@ -1,0 +1,48 @@
+{
+  "name": "OKHSL",
+  "type": "color",
+  "description": "OKHSL color space by Björn Ottosson - a perceptually uniform HSL based on OKLab. H is hue (0-360), S is saturation (0-1, normalized to sRGB gamut), L is lightness (0-1). Reference: https://bottosson.github.io/posts/colorpicker/",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "h": {
+        "type": "number",
+        "description": "Hue angle (0-360 degrees), same as OKLCH hue"
+      },
+      "s": {
+        "type": "number",
+        "description": "Saturation (0-1), normalized relative to sRGB gamut boundary"
+      },
+      "l": {
+        "type": "number",
+        "description": "Lightness (0-1), perceptually uniform with toe function applied"
+      }
+    },
+    "required": ["h", "s", "l"],
+    "order": ["h", "s", "l"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "OKHSL Color Initializer",
+      "keyword": "okhsl",
+      "description": "Creates an OKHSL color from H, S, L values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/oklab-color/0/",
+      "target": "$self",
+      "description": "Converts OKLab to OKHSL using Ottosson's algorithm with Halley's method refinement for gamut boundary",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-oklab.tokenscript"
+      }
+    }
+  ]
+}

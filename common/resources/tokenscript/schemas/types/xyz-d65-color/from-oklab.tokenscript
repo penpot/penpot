@@ -1,0 +1,44 @@
+// OKLab to XYZ-D65 Conversion
+// Reference: ColorJS oklab.js (inverse transformation)
+//
+// Algorithm:
+// 1. Apply inverse Lab-to-LMS matrix to get LMS cone responses
+// 2. Cube the LMS values (inverse of cube root)
+// 3. Apply inverse LMS-to-XYZ matrix
+//
+// Input: Color.OKLab with l, a, b perceptual coordinates
+// Output: Color.XYZD65 with x, y, z tristimulus values
+
+// Get input OKLab values
+variable ok_l: Number = {input}.l;
+variable ok_a: Number = {input}.a;
+variable ok_b: Number = {input}.b;
+
+// Inverse LMStoLab_M matrix (Lab to LMS')
+// These are the inverse of the matrix used in from-xyz-d65.tokenscript
+variable lms_l: Number = 1.0 * ok_l + 0.3963377773761749 * ok_a + 0.2158037573099136 * ok_b;
+variable lms_m: Number = 1.0 * ok_l + -0.1055613458156586 * ok_a + -0.0638541728258133 * ok_b;
+variable lms_s: Number = 1.0 * ok_l + -0.0894841775298119 * ok_a + -1.2914855480194092 * ok_b;
+
+// Cube the values (inverse of cube root)
+variable lms_l_cubed: Number = lms_l * lms_l * lms_l;
+variable lms_m_cubed: Number = lms_m * lms_m * lms_m;
+variable lms_s_cubed: Number = lms_s * lms_s * lms_s;
+
+// Inverse XYZtoLMS_M matrix (LMS to XYZ)
+// From ColorJS oklab.js
+variable x: Number = 1.2268798758459243 * lms_l_cubed + -0.5578149944602171 * lms_m_cubed + 0.2813910456659647 * lms_s_cubed;
+variable y: Number = -0.0405757452148008 * lms_l_cubed + 1.1122868032803170 * lms_m_cubed + -0.0717110580655164 * lms_s_cubed;
+variable z: Number = -0.0763729366746601 * lms_l_cubed + -0.4214933324022432 * lms_m_cubed + 1.5869240198367816 * lms_s_cubed;
+
+// Create output
+variable output: Color.XYZD65;
+output.x = x;
+output.y = y;
+output.z = z;
+
+return output;
+
+
+
+

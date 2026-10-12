@@ -1,0 +1,65 @@
+{
+  "name": "Hex",
+  "type": "color",
+  "description": "A color in hex format, e.g. #ff0000",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "value": {
+        "type": "string"
+      }
+    }
+  },
+  "initializers": [
+    {
+      "title": "Hex Color Initializer",
+      "keyword": "hex",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/srgb-color/0/",
+      "target": "$self",
+      "description": "Converts sRGB (0-1) to Hex format",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-srgb.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/p3-color/0/",
+      "target": "$self",
+      "description": "Converts Display P3 to Hex format (clamps to sRGB gamut)",
+      "lossless": false,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-p3.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/hsl-color/0/",
+      "target": "$self",
+      "description": "Converts HSL to Hex format",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-hsl.tokenscript"
+      }
+    },
+    {
+      "source": "/api/v1/core/oklch-color/0/",
+      "target": "$self",
+      "description": "Converts OKLCH to Hex format (clamps to sRGB gamut)",
+      "lossless": false,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-oklch.tokenscript"
+      }
+    }
+  ]
+}

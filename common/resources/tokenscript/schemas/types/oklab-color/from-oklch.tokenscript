@@ -1,0 +1,39 @@
+// OKLCH to OKLab Conversion
+// Converts polar (C, H) back to cartesian (a, b) coordinates
+// Reference: Björn Ottosson's OKLab specification
+//
+// Algorithm:
+// L stays the same (lightness)
+// a = C * cos(H * π/180)
+// b = C * sin(H * π/180)
+//
+// Input: Color.OKLCH with l, c, h coordinates
+// Output: Color.OKLab with l, a, b coordinates
+
+// Get input OKLCH values
+variable l: Number = {input}.l;
+variable c: Number = {input}.c;
+variable h: Number = {input}.h;
+
+// Constants
+variable pi: Number = pi();
+variable deg_to_rad: Number = pi / 180;
+
+// Convert hue to radians
+variable h_rad: Number = h * deg_to_rad;
+
+// Convert polar to cartesian
+variable a: Number = c * cos(h_rad);
+variable b: Number = c * sin(h_rad);
+
+// Create output
+variable output: Color.OKLab;
+output.l = l;
+output.a = a;
+output.b = b;
+
+return output;
+
+
+
+

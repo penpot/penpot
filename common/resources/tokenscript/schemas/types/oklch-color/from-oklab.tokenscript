@@ -1,0 +1,45 @@
+// OKLab to OKLCH Conversion
+// Converts Cartesian (a, b) to polar (C, H) coordinates
+// Reference: Björn Ottosson's OKLab specification
+//
+// Algorithm:
+// L stays the same (lightness)
+// C = sqrt(a² + b²) (chroma - distance from neutral axis)
+// H = atan2(b, a) * 180/π (hue angle in degrees)
+//
+// Input: Color.OKLab with l, a, b coordinates
+// Output: Color.OKLCH with l, c, h coordinates
+
+// Get input OKLab values
+variable l: Number = {input}.l;
+variable a: Number = {input}.a;
+variable b: Number = {input}.b;
+
+// Constants
+variable pi: Number = pi();
+variable rad_to_deg: Number = 180 / pi;
+
+// Calculate chroma (distance from neutral axis)
+variable c: Number = sqrt(a * a + b * b);
+
+// Calculate hue angle using atan2
+// atan2(y, x) returns angle in radians from -π to π
+variable h_rad: Number = atan2(b, a);
+variable h: Number = h_rad * rad_to_deg;
+
+// Normalize hue to 0-360 range
+if (h < 0) [
+    h = h + 360;
+];
+
+// Create output
+variable output: Color.OKLCH;
+output.l = l;
+output.c = c;
+output.h = h;
+
+return output;
+
+
+
+

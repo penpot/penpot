@@ -1,0 +1,17 @@
+// RGBA Color Initializer
+// Creates an RGB color with alpha from r, g, b, a values
+//
+// Usage: rgba(255, 128, 64, 0.5) → Color.Rgb { r: 255, g: 128, b: 64, alpha: 0.5 }
+//
+// Input: List of 4 numbers [r, g, b, alpha]
+// Output: Color.Rgb with alpha
+
+variable color_parts: List = {input}; 
+
+variable output: Color.Rgb;
+output.r = color_parts.get(0);
+output.g = color_parts.get(1);
+output.b = color_parts.get(2);
+output.alpha = color_parts.get(3);
+
+return output;

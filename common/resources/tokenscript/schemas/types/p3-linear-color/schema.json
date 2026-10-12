@@ -1,0 +1,48 @@
+{
+  "name": "LinearP3",
+  "type": "color",
+  "description": "Linear Display-P3 color space (gamma-decoded). Used for matrix transformations to XYZ.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "r": {
+        "type": "number",
+        "description": "Linear red channel (0-1, can exceed for HDR)"
+      },
+      "g": {
+        "type": "number",
+        "description": "Linear green channel (0-1, can exceed for HDR)"
+      },
+      "b": {
+        "type": "number",
+        "description": "Linear blue channel (0-1, can exceed for HDR)"
+      }
+    },
+    "required": ["r", "g", "b"],
+    "order": ["r", "g", "b"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "Linear P3 Color Initializer",
+      "keyword": "linearp3",
+      "description": "Creates a linear Display-P3 color from linear 0-1 values",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/xyz-d65-color/0/",
+      "target": "$self",
+      "description": "Converts XYZ-D65 to Linear P3 using the P3 transformation matrix",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-xyz-d65.tokenscript"
+      }
+    }
+  ]
+}

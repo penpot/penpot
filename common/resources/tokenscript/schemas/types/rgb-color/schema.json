@@ -1,0 +1,64 @@
+{
+  "name": "Rgb",
+  "type": "color",
+  "description": "RGB color",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "r": {
+        "type": "number"
+      },
+      "g": {
+        "type": "number"
+      },
+      "b": {
+        "type": "number"
+      }
+    },
+    "required": ["r", "g", "b"],
+    "order": ["r", "g", "b"],
+    "additionalProperties": false
+  },
+  "initializers": [
+    {
+      "title": "function",
+      "keyword": "rgb",
+      "description": "Creates an RGB color",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./initializer.tokenscript"
+      }
+    },
+    {
+      "title": "function",
+      "keyword": "rgba",
+      "description": "Creates an RGB color with alpha",
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./rgba-initializer.tokenscript"
+      }
+    }
+  ],
+  "conversions": [
+    {
+      "source": "/api/v1/core/hex-color/0/",
+      "target": "$self",
+      "description": "Converts HEX to RGB",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./from-hex.tokenscript"
+      }
+    },
+    {
+      "source": "$self",
+      "target": "/api/v1/core/hex-color/0/",
+      "description": "Converts RGB to HEX",
+      "lossless": true,
+      "script": {
+        "type": "/api/v1/core/tokenscript/0/",
+        "script": "./to-hex.tokenscript"
+      }
+    }
+  ]
+}

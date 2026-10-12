@@ -7,18 +7,22 @@
 (ns app.common.tokenscript.schema-uri
   "Parsing and construction of tokenscript schema URIs.
 
-  Schemas are identified by URIs of the form
+  Schemas are identified by path URIs of the form
 
-    https://host/api/v1/<category>/<name>/<version>/
+    /api/v1/<category>/<name>/<version>/
 
   where category is `schema`, `core` or `function` and version is a
   semantic version prefix (`0`, `0.1`, `0.1.2`) or `latest`. Versions are
   maps `{:major 0 :minor 1 :patch 2}` with minor/patch optional, or the
-  keyword `:latest`."
+  keyword `:latest`.
+
+  Schemas are never fetched, so the host of an absolute URI
+  (`https://host/api/v1/...`, as written by other tokenscript tools) is
+  not part of the identity: `normalize` drops it and the registries only
+  hold path URIs."
   (:require
    [clojure.string :as str]))
 
-(def default-registry-url "https://schema.tokenscript.dev.gcp.tokens.studio")
 (def default-api-path "/api/v1")
 
 (defn- parse-int
@@ -53,45 +57,54 @@
     :else "latest"))
 
 (defn build-uri
-  "Builds a schema URI from its components. A nil `:base-url` uses the
-  default registry, an empty one builds a path only URI."
-  [{:keys [base-url category name version]}]
-  (let [base (if (nil? base-url) default-registry-url base-url)]
-    (str base default-api-path "/" category "/" name "/" (version->string version) "/")))
+  "Builds a schema URI from its components."
+  [{:keys [category name version]}]
+  (str default-api-path "/" category "/" name "/" (version->string version) "/"))
 
-(defn- split-url
-  "Returns `[base-url pathname]` for a URI; nil for an unparseable
-  absolute URL."
+(defn- normalize*
   [uri]
-  (if-let [[_ scheme-host path] (re-matches #"^([a-zA-Z][a-zA-Z0-9+.-]*://[^/]*)(/.*)?$" uri)]
-    [scheme-host (or path "/")]
-    (if (str/includes? uri "://")
-      nil
-      ["" uri])))
+  (if-let [[_ path] (re-matches #"^[a-zA-Z][a-zA-Z0-9+.-]*://[^/]*(/.*)?$" uri)]
+    (or path "/")
+    uri))
+
+;; Schema URIs come from a small set (the registered schemas and their
+;; version candidates) and are normalized and parsed on every lookup, so
+;; both are cached.
+(def ^:private max-cached-uris 4096)
+
+(defonce ^:private normalize-cache (atom {}))
+
+(defn normalize
+  "Path URI of a schema URI: `https://host/api/v1/core/x/0/` ->
+  `/api/v1/core/x/0/`. Other values (path URIs, `$self`, nil) are
+  returned as is."
+  [uri]
+  (if-not (string? uri)
+    uri
+    (let [m @normalize-cache]
+      (if-let [v (get m uri)]
+        v
+        (let [v (normalize* uri)]
+          (swap! normalize-cache (fn [m] (assoc (if (>= (count m) max-cached-uris) {} m) uri v)))
+          v)))))
 
 (defn- parse-uri*
   [uri]
-  (when-let [[base-url pathname] (split-url uri)]
-    (let [parts (remove str/blank? (str/split pathname #"/"))
-          [api v category name version] parts]
-      (when (and (>= (count parts) 5)
-                 (= api "api")
-                 (str/starts-with? (str v) "v")
-                 (contains? #{"schema" "core" "function"} category))
-        {:base-url base-url
-         :category category
-         :name name
-         :version (parse-version version)}))))
-
-;; Schema URIs come from a small set (the registered schemas and their
-;; version candidates) and are parsed on every lookup, so parses are cached.
-(def ^:private max-cached-uris 4096)
+  (let [parts (remove str/blank? (str/split (normalize uri) #"/"))
+        [api v category name version] parts]
+    (when (and (>= (count parts) 5)
+               (= api "api")
+               (str/starts-with? (str v) "v")
+               (contains? #{"schema" "core" "function"} category))
+      {:category category
+       :name name
+       :version (parse-version version)})))
 
 (defonce ^:private uri-cache (atom {}))
 
 (defn parse-uri
-  "Parses a schema URI into
-  `{:base-url .. :category .. :name .. :version ..}` or nil."
+  "Parses a schema URI into `{:category .. :name .. :version ..}` or
+  nil. The host of absolute URIs is ignored."
   [uri]
   (let [m @uri-cache]
     (if (contains? m uri)
@@ -103,9 +116,9 @@
 (defn base-uri
   "URI without the version segment."
   [uri]
-  (if-let [{:keys [base-url category name]} (parse-uri uri)]
-    (str base-url default-api-path "/" category "/" name "/")
-    uri))
+  (if-let [{:keys [category name]} (parse-uri uri)]
+    (str default-api-path "/" category "/" name "/")
+    (normalize uri)))
 
 (defn semver
   "Semantic version of a URI or nil for `latest`/unparseable."
@@ -117,15 +130,16 @@
   "URIs to try when resolving `uri`, from most to least specific:
   `0.0.1` -> `[0.0.1 0.0 0 latest]`."
   [uri]
-  (if-let [{:keys [version] :as components} (parse-uri uri)]
-    (if (map? version)
-      (let [{:keys [major minor patch]} version]
-        (cond-> [uri]
-          (some? patch) (conj (build-uri (assoc components :version {:major major :minor minor})))
-          (some? minor) (conj (build-uri (assoc components :version {:major major})))
-          :always (conj (build-uri (assoc components :version :latest)))))
-      [uri])
-    [uri]))
+  (let [uri (normalize uri)]
+    (if-let [{:keys [version] :as components} (parse-uri uri)]
+      (if (map? version)
+        (let [{:keys [major minor patch]} version]
+          (cond-> [uri]
+            (some? patch) (conj (build-uri (assoc components :version {:major major :minor minor})))
+            (some? minor) (conj (build-uri (assoc components :version {:major major})))
+            :always (conj (build-uri (assoc components :version :latest)))))
+        [uri])
+      [uri])))
 
 (defn compare-versions
   [a b]
@@ -142,8 +156,7 @@
   [a b]
   (let [ca (parse-uri a) cb (parse-uri b)]
     (if (and ca cb)
-      (and (= (:base-url ca) (:base-url cb))
-           (= (:category ca) (:category cb))
+      (and (= (:category ca) (:category cb))
            (= (:name ca) (:name cb)))
       (= (base-uri a) (base-uri b)))))
 

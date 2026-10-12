@@ -1,0 +1,42 @@
+// RGB to Hex Conversion
+// Converts RGB (0-255) color to hexadecimal string format
+//
+// Examples:
+//   RGB(255, 0, 0)   → #ff0000
+//   RGB(0, 255, 128) → #00ff80
+//
+// Algorithm:
+// 1. Round each channel to nearest integer
+// 2. Convert to base-16 string
+// 3. Pad single digits with leading zero
+// 4. Concatenate with '#' prefix
+//
+// Input: Color.Rgb with r, g, b in 0-255 range
+// Output: String (hex format #rrggbb)
+
+variable rgba: List = {input}.r, {input}.g, {input}.b;
+variable hex: String = "#";
+variable i: Number = 0;
+variable value: Number = 0;
+
+// Convert each RGB channel to hex
+while( i < min(rgba.length(), 3)) [
+  value = round(rgba.get(i));
+  if(value < 16) [
+    hex = hex.concat("0").concat(value.to_string(16));
+  ] else [
+    hex = hex.concat(value.to_string(16));
+  ];
+  i = i + 1;
+];
+
+if (rgba.length() == 4) [
+  value = rgba.get(3) * 255; // Convert alpha to 0-255 range
+  if(value < 16) [
+    hex = hex.concat("0").concat(value.to_string(16));
+  ] else [
+    hex = hex.concat(value.to_string(16));
+  ];
+];
+
+return hex;
