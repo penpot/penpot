@@ -720,6 +720,15 @@
                                           :id team-id})))
     :deleted))
 
+(def ^:private sql:restore-font-file-objects
+  "UPDATE storage_object
+      SET deleted_at = null
+    WHERE deleted_at IS NOT NULL
+      AND id IN (SELECT unnest(array[woff1_file_id, woff2_file_id, otf_file_id, ttf_file_id])
+                   FROM team_font_variant
+                  WHERE team_id = ?::uuid
+                    AND deleted_at IS NULL)")
+
 (defn- restore-team*
   [{:keys [::db/conn] :as cfg} team-id]
   (db/update! conn :team
@@ -729,6 +738,11 @@
   (db/update! conn :team-font-variant
               {:deleted-at nil}
               {:team-id team-id})
+
+  ;; Same as in `restore-files`: the font objects of the variants we just
+  ;; brought back must stop being marked for deletion, or the storage GC will
+  ;; skip them forever (those foreign keys are `NO ACTION`).
+  (db/exec-one! conn [sql:restore-font-file-objects team-id])
 
   (doseq [{:keys [id]} (db/query conn :project
                                  {:team-id team-id}
