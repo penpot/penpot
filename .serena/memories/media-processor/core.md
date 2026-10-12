@@ -9,6 +9,7 @@ Stateless HTTP service for Penpot image and font processing. Handles image info 
 - Framework: Express
 - Image processing: sharp (libvips)
 - Font processing: FontForge (TTF/OTF), sfnt2woff, woff2_decompress
+- SVG sanitization: DOMPurify (allowlist) over jsdom (temporary DOM for Node)
 - Upload handling: multer (hybrid storage: memory for small, disk for large)
 - Logging: pino (with optional Loki transport)
 - Config validation: Zod
@@ -26,6 +27,8 @@ media-processor/
 │   ├── upload.ts             # Multer configuration, getFileBuffer helper
 │   ├── upload-storage.ts     # Hybrid storage engine (memory < threshold, disk >= threshold)
 │   ├── logger.ts             # Pino logger setup
+│   ├── svg-pool.ts           # worker_threads pool for SVG sanitization
+│   ├── svg-worker.ts         # worker entry point (runs sanitizeSvgSync)
 │   ├── middleware/
 │   │   ├── auth.ts           # Timing-safe shared key authentication
 │   │   ├── error-handler.ts  # ProcessingError class, centralized error handling
@@ -33,10 +36,12 @@ media-processor/
 │   ├── routes/
 │   │   ├── health.ts         # GET /api/health
 │   │   ├── image.ts          # POST /api/image/info, /api/image/thumbnail
-│   │   └── font.ts           # POST /api/font/convert
+│   │   ├── font.ts           # POST /api/font/convert
+│   │   └── svg.ts            # POST /api/svg/sanitize
 │   └── services/
 │       ├── image.ts          # sharp-based image info/thumbnail generation
 │       ├── font.ts           # FontForge/woff-tools font conversion
+│       ├── svg.ts            # DOMPurify SVG sanitization over jsdom
 │       └── errors.ts         # throwValidation, throwRestriction, throwProcessing
 ├── test/                     # Vitest test files
 ├── vitest.config.ts          # Test configuration
@@ -54,8 +59,10 @@ media-processor/
 
 ### Resource Limits
 - Image: max pixels, max width/height enforced before processing
+- SVG: max input size enforced before parsing (default 2MB, `PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE`); an oversized input is rejected with 413, never truncated
+- SVG workers: `PENPOT_MEDIA_PROCESSOR_SVG_WORKERS` (default 2; 0 runs inline), `PENPOT_MEDIA_PROCESSOR_SVG_WORKER_MAX_OLD_MB` (default 512, per-worker V8 old-generation cap) and `PENPOT_MEDIA_PROCESSOR_SVG_TIMEOUT` (default 30000 ms)
 - Font: prlimit wraps FontForge processes with memory (AS) and CPU time limits
-- Concurrency: p-queue limits concurrent requests (default 10)
+- Concurrency: p-queue limits concurrent requests (default 10). Image and font share one queue; SVG has **its own**, so an SVG request waiting for a free worker does not hold a queue slot that image or font requests need. The app wiring lives in `app.ts` (`createApp`), kept apart from `index.ts` so tests can build the real app.
 - Upload: hybrid storage — memory for files < 10MB, disk for larger; configurable via `PENPOT_MEDIA_PROCESSOR_MEMORY_THRESHOLD`
 - Max file size: configurable (default 350MB)
 
@@ -73,6 +80,58 @@ media-processor/
 - Supported formats: TTF, OTF, WOFF, WOFF2
 - SFNT type detected via magic bytes (0x4f54544f = OTF, 0x00010000 = TTF)
 - Temp files cleaned up in finally blocks (best-effort)
+
+### SVG Sanitization
+- `POST /api/svg/sanitize` (multipart field `file`) returns the sanitized SVG
+  bytes with `Content-Type: image/svg+xml`; it is the remote backend of
+  `app.media/sanitize-svg` in the JVM.
+- The route never runs the sanitizer on the main thread: `sanitizeSvg` delegates
+  to a pool of `worker_threads` workers (`svg-pool.ts` / `svg-worker.ts`), so a
+  heavy SVG cannot block the service's event loop (`/api/health` included).
+  `sanitizeSvgSync` is the CPU-bound core and stays synchronous. With
+  `PENPOT_MEDIA_PROCESSOR_SVG_WORKERS=0` the pool is disabled and the sanitizer
+  runs inline (tests and an escape hatch).
+- The pool is created at boot, queues when every worker is busy, and applies
+  `resourceLimits: { maxOldGenerationSizeMb }` per worker: a worker that runs out
+  of memory dies with an error instead of the kernel killing the process, and the
+  pool maps that to a 503 and respawns it. A stuck job is terminated by a timeout
+  and its worker respawned. Worst-case memory is roughly workers ×
+  maxOldGenerationSizeMb.
+- A worker that fails before it ever answers is respawned at most
+  `MAX_SPAWN_FAILURES` (5) consecutive times; after that the slot is dropped and
+  a pool left with no workers is degraded (`svg-pool-degraded`), so a broken
+  worker cannot spin in a spawn→fail→respawn loop for the life of the process.
+  The streak resets as soon as a worker answers. A malformed worker message is
+  treated as a worker failure (`svg-worker-failed`), never trusted.
+- DOMPurify is given `USE_PROFILES: {svg: true, svgFilters: true}` and
+  `NAMESPACE: "http://www.w3.org/2000/svg"`, so it parses the document as XML/SVG
+  the way a browser parses a standalone `.svg`. Its default allowlist fails closed
+  and already drops `script`, `foreignObject`, `set`, `animate` and `use`; do not
+  add `ADD_TAGS`/`ADD_ATTR`/`FORBID_TAGS`, and do not use `IN_PLACE`, `setConfig`
+  or hooks. To fix a bypass, upgrade DOMPurify (it is a fast-moving security
+  dependency; pin the latest patched 3.x).
+- A fresh jsdom `window` is created per call and closed in `finally`. Reusing one
+  window in a long-lived process leaks memory and degrades latency without bound.
+- The XML declaration and DOCTYPE are stripped before parsing (the XML parser
+  bails on them; stripping the DOCTYPE also keeps its entities undeclared). An
+  input that does not produce an `<svg` root is rejected with 400
+  `invalid-svg-file`.
+- Error mapping: a parse/validation failure is 400 `invalid-svg-file`; anything
+  else (a bug, an OOM, a DOMPurify regression) is logged and reported as 503
+  `svg-sanitization-failed`, never as an invalid file.
+- The 2MB cap is deliberately lower than the backend's `:media-max-file-size`
+  (30MiB): the jsdom parse cost and memory do not scale with bytes the way
+  sharp's does, so a large SVG is a denial-of-service vector. The backend enforces
+  the same cap (`:media-svg-max-file-size`, `mem:backend/media-sanitization`) so
+  both modes behave the same; keep the two knobs aligned.
+- Errors: `400 invalid-svg-file` (not a well-formed SVG), `413 svg-too-large`,
+  and 503 `svg-sanitization-failed` (internal failure), `svg-timeout`,
+  `svg-worker-failed` / `svg-worker-exited` (broken worker), `svg-pool-degraded`
+  (no worker could start) and `svg-pool-stopped` (shutdown).
+- Tests: `svg.test.ts` (service corpus, route, and the exact multipart the JVM
+  backend builds) and `svg-pool.test.ts` (queue, timeout, failure/respawn with a
+  fake worker). The contract test pins the wire format but does not run the JVM
+  against a live service — that gap is known and accepted.
 
 ## Commands
 

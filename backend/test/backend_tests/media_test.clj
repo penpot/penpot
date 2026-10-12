@@ -7,8 +7,10 @@
 (ns backend-tests.media-test
   (:require
    [app.common.exceptions :as ex]
+   [app.config :as cf]
    [app.media :as media]
    [app.media.svg :as svg]
+   [app.media.validation :as media.v]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]))
@@ -202,6 +204,36 @@
           result (svg/sanitize-svg svg)]
       (t/is (clojure.string/includes? result "xml:space"))
       (t/is (clojure.string/includes? result "hola")))))
+
+(t/deftest sanitize-svg-dispatch-local
+  (t/testing "app.media/sanitize-svg delegates to the local filter without the remote flag"
+    (with-redefs [cf/flags #{}]
+      (let [result (media/sanitize-svg th/*system*
+                                       "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><script>alert('xss')</script><rect width=\"50\" height=\"50\"/></svg>")]
+        (t/is (not (clojure.string/includes? result "<script")))
+        (t/is (not (clojure.string/includes? result "alert")))
+        (t/is (clojure.string/includes? result "<rect"))))))
+
+(t/deftest sanitize-svg-dispatch-local-rejects-broken
+  (t/testing "app.media/sanitize-svg local path rejects malformed SVG"
+    (with-redefs [cf/flags #{}]
+      (let [err (ex/try! (media/sanitize-svg th/*system* "<svg><not-closed>"))]
+        (t/is (ex/error? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :invalid-svg-file (:code (ex-data err))))))))
+
+(t/deftest validate-media-size-svg-cap
+  (t/testing "SVG uses its own cap and code; other types use the general cap"
+    (let [cap (cf/get :media-svg-max-file-size)]
+      (t/is (pos? cap))
+      (let [err (ex/try! (media.v/validate-media-size! {:mtype "image/svg+xml" :size (inc cap)}))]
+        (t/is (ex/error? err))
+        (t/is (= :restriction (:type (ex-data err))))
+        (t/is (= :svg-too-large (:code (ex-data err)))))
+      (t/is (= {:mtype "image/svg+xml" :size cap}
+               (media.v/validate-media-size! {:mtype "image/svg+xml" :size cap})))
+      (t/is (= {:mtype "image/jpeg" :size (inc cap)}
+               (media.v/validate-media-size! {:mtype "image/jpeg" :size (inc cap)}))))))
 
 (t/deftest info-invalid-image
   (t/testing "info on invalid image raises error"

@@ -7,17 +7,20 @@
 (ns backend-tests.rpc-media-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
+   [clojure.string :as str]
    [clojure.test :as t]
    [datoteka.fs :as fs]
    [datoteka.io :as io]
    [mockery.core :refer [with-mocks]])
   (:import
+   java.io.ByteArrayInputStream
    java.io.RandomAccessFile))
 
 (t/use-fixtures :once th/state-init)
@@ -1171,6 +1174,114 @@
       (t/is (th/ex-info? error))
       (t/is (= :not-found (:type error-data)))
       (t/is (= :object-not-found (:code error-data))))))
+
+(defn- write-svg-tempfile
+  [^String text]
+  (let [path (fs/create-tempfile :prefix "penpot-upload-svg-" :suffix ".svg")]
+    (spit (str path) text :encoding "UTF-8")
+    path))
+
+(def ^:private evil-upload-svg
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><script>PWNMARK_UPLOAD</script><circle r=\"20\"/></svg>")
+
+(t/deftest upload-svg-sanitizes-script
+  (t/testing "uploading an SVG strips scripts before storing it"
+    (let [prof   (th/create-profile* 1)
+          file   (th/create-file* 1 {:profile-id (:id prof)
+                                     :project-id (:default-project-id prof)
+                                     :is-shared false})
+          path   (write-svg-tempfile evil-upload-svg)
+          out    (th/command! {::th/type :upload-file-media-object
+                               ::rpc/profile-id (:id prof)
+                               :file-id (:id file)
+                               :is-local true
+                               :name "evil.svg"
+                               :content {:filename "evil.svg"
+                                         :path path
+                                         :mtype "image/svg+xml"
+                                         :size (alength (.getBytes evil-upload-svg "UTF-8"))}})]
+      (t/is (nil? (:error out)))
+      (let [storage (:app.storage/storage th/*system*)
+            object  (sto/get-object storage (get-in out [:result :media-id]))
+            stored  (String. ^bytes (sto/get-object-bytes storage object) "UTF-8")]
+        (t/is (not (str/includes? stored "<script")))
+        (t/is (not (str/includes? stored "PWNMARK_UPLOAD")))
+        (t/is (str/includes? stored "<circle"))))))
+
+(t/deftest upload-svg-uses-media-processor-when-remote
+  (t/testing "with remote media processing on, the stored SVG comes from the service"
+    (let [prof   (th/create-profile* 1)
+          file   (th/create-file* 1 {:profile-id (:id prof)
+                                     :project-id (:default-project-id prof)
+                                     :is-shared false})
+          served "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><circle r=\"20\"/></svg>"
+          path   (write-svg-tempfile evil-upload-svg)]
+      (with-mocks [mock {:target 'app.media.remote/service-request
+                         :return {:status 200
+                                  :body (ByteArrayInputStream. (.getBytes served "UTF-8"))}}]
+        (with-redefs [cf/flags #{:remote-media-processing}
+                      cf/get (th/config-get-mock {:media-processing-service-uri "http://localhost:6065"
+                                                  :media-processing-service-timeout 5000})]
+          (let [out (th/command! {::th/type :upload-file-media-object
+                                  ::rpc/profile-id (:id prof)
+                                  :file-id (:id file)
+                                  :is-local true
+                                  :name "evil.svg"
+                                  :content {:filename "evil.svg"
+                                            :path path
+                                            :mtype "image/svg+xml"
+                                            :size (alength (.getBytes evil-upload-svg "UTF-8"))}})]
+            (t/is (nil? (:error out)))
+            (let [storage (:app.storage/storage th/*system*)
+                  object  (sto/get-object storage (get-in out [:result :media-id]))
+                  stored  (String. ^bytes (sto/get-object-bytes storage object) "UTF-8")]
+              (t/is (= served stored))
+              (t/is (= 1 (:call-count @mock))))))))))
+
+(def ^:private big-upload-svg
+  (str "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\">"
+       (apply str (repeat 90000 "<rect width=\"1\" height=\"1\"/>"))
+       "</svg>"))
+
+(t/deftest upload-svg-over-cap-is-rejected
+  (t/testing "an SVG over the svg cap is rejected on upload"
+    (let [prof (th/create-profile* 1)
+          file (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+          path (write-svg-tempfile big-upload-svg)
+          out  (th/command! {::th/type :upload-file-media-object
+                             ::rpc/profile-id (:id prof)
+                             :file-id (:id file)
+                             :is-local true
+                             :name "big.svg"
+                             :content {:filename "big.svg"
+                                       :path path
+                                       :mtype "image/svg+xml"
+                                       :size (alength (.getBytes big-upload-svg "UTF-8"))}})]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :restriction))
+      (t/is (th/ex-of-code? (:error out) :svg-too-large)))))
+
+(t/deftest upload-svg-over-cap-with-lying-size-is-rejected
+  (t/testing "the real size is checked even when the declared size lies"
+    (let [prof (th/create-profile* 1)
+          file (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+          path (write-svg-tempfile big-upload-svg)
+          out  (th/command! {::th/type :upload-file-media-object
+                             ::rpc/profile-id (:id prof)
+                             :file-id (:id file)
+                             :is-local true
+                             :name "big.svg"
+                             :content {:filename "big.svg"
+                                       :path path
+                                       :mtype "image/svg+xml"
+                                       :size 10}})]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :restriction))
+      (t/is (th/ex-of-code? (:error out) :svg-too-large)))))
 
 (t/deftest upload-file-media-object-rejects-client-id
   (let [prof  (th/create-profile* 1)

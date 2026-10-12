@@ -16,7 +16,9 @@
   },
   "packageManager": "pnpm@12.8.1+sha512.f64ba907507f5ceafe06c8d38e6052d0179444580ec1279ddd5bfc11cb48aa8a2644b66598e07e761da84872a9fc57d5f902b87fa49d024198d558612aabbe45",
   "dependencies": {
+    "dompurify": "^3.4.16",
     "express": "^5.2.1",
+    "jsdom": "^30.1.2",
     "multer": "^2.4.0",
     "p-queue": "^9.3.3",
     "pino": "^10.4.0",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/jsdom": "^30.0.0",
     "@types/multer": "^2.3.0",
     "@types/node": "^26.6.4",
     "@types/supertest": "^7.2.1",

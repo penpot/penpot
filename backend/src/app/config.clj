@@ -83,6 +83,11 @@
    :jobs-request-timeout (ct/duration {:minutes 2})
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
+   ;; SVG has its own, lower cap: parsing it with jsdom in media-processor
+   ;; costs memory and time out of proportion to its byte size, so a large SVG
+   ;; is a denial-of-service vector for the service. Keep it aligned with
+   ;; PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE (see mem:backend/media-sanitization).
+   :media-svg-max-file-size (* 1024 1024 2) ; 2MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
    :font-process-mem 512    ;; 512 MiB address space ceiling
@@ -163,6 +168,7 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
+    [:media-svg-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]
 
     ;; Font processing resource limits (PENPOT_FONT_PROCESS_*)

@@ -121,17 +121,25 @@
 
 (defn- service-multipart-request
   "Send a multipart request to the media-processor service.
-   Accepts a file from disk via :path. The file stream is closed
-   after the HTTP request completes (success or failure)."
-  [system {:keys [endpoint path mtype query timeout]}]
+
+   The file payload comes from `:path` (a file on disk) or from `:data`
+   (bytes already in memory); `:path` wins when both are present. The
+   stream is closed after the HTTP request completes (success or failure)."
+  [system {:keys [endpoint path data mtype query timeout]}]
   (let [shared-key  (get-shared-key system)
         boundary    (multipart-boundary)
         ctype       (or mtype "application/octet-stream")
         base-url    (service-base-url)
         request-uri (cond-> (uri/join base-url endpoint)
                       (seq query)
-                      (str "?" (uri/map->query-string query)))]
-    (with-open [file-stream (io/input-stream path)]
+                      (str "?" (uri/map->query-string query)))
+        input       (cond
+                      (some? path) (io/input-stream path)
+                      (some? data) (ByteArrayInputStream. ^bytes data)
+                      :else        (ex/raise :type :internal
+                                             :code :missing-multipart-input
+                                             :hint "service-multipart-request needs :path or :data"))]
+    (with-open [file-stream input]
       (let [body (build-multipart-stream boundary ctype file-stream)]
         (service-request system
                          {:method  :post
@@ -210,6 +218,25 @@
                    :ts     (ct/now)))
           (finally
             (.close body)))))))
+
+(defmethod process :sanitize-svg
+  [system {:keys [content] :as params}]
+  (let [resp (service-multipart-request system {:endpoint "api/svg/sanitize"
+                                                :data     (.getBytes ^String content "UTF-8")
+                                                :mtype    "image/svg+xml"})
+        body (:body resp)]
+    (try
+      ;; Defense in depth: the service guarantees an `<svg` root, but a
+      ;; misconfigured proxy or a future endpoint change must not let a non-SVG
+      ;; body be stored as `image/svg+xml`.
+      (let [cleaned (str/trim (slurp body :encoding "UTF-8"))]
+        (when-not (re-find #"(?i)^<svg" cleaned)
+          (ex/raise :type :internal
+                    :code :invalid-sanitized-svg
+                    :hint "media-processor returned a non-SVG response"))
+        (assoc params :content cleaned))
+      (finally
+        (.close body)))))
 
 (defn- thumbnail-request
   "Shared implementation for generic-thumbnail and profile-thumbnail."
