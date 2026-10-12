@@ -27,7 +27,7 @@
 - `del-object!` sets `deleted_at`. It does not remove backend content.
 - `storage-gc-deleted` removes the database row and backend content after the deletion delay, streaming the pending rows with `db/plan` inside a read-only transaction and deleting them in chunks of 25, each chunk in its own transaction: a chunk that fails (for example, an object a foreign key still references) is logged and skipped instead of aborting the run.
 - `storage-gc-touched` finds references before it sets `deleted_at`.
-- `objects-gc` removes deleted domain rows and touches their storage object IDs.
+- `objects-gc` removes deleted domain rows and touches their storage object IDs. Each proc streams its pending keys with `db/plan` inside a read-only transaction and deletes them in chunks, each chunk in its own transaction with `FOR UPDATE SKIP LOCKED`: a chunk that fails is logged and skipped instead of aborting the run.
 - Use `::db/reuse-conn true` with `sto/resolve` inside a database transaction.
 
 ## Deduplication
