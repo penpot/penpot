@@ -1,0 +1,87 @@
+// CSS hsl() and hsla()
+// https://www.w3.org/TR/css-color-4/#the-hsl-notation
+//
+// Accepts the CSS syntaxes, so color values written for CSS (and
+// accepted by StyleDictionary) keep working:
+//
+//   hsl(0, 100%, 50%)        hsl(0 100% 50%)
+//   hsl(120deg, 100%, 50%)   hsla(0, 100%, 50%, 0.5)
+//   hsla(0 100% 50% 50%)     hsla({color.primary}, 0.5)
+//
+// The hue is a number or `deg`, wrapped to 0-360. Saturation and
+// lightness are percentages or plain numbers. Plain numbers are
+// fractions (0-1) like the channels of Color.HSL, `hsl(0, 1, 0.5)`,
+// unless one of them is above 1: then they are read as CSS percentages,
+// `hsl(0, 100, 50)`. Both end up clamped to 0-1. The alpha is a number
+// (0-1) or a percentage, clamped to 0-1; an alpha of 1 makes the color
+// opaque. A color as first argument keeps its channels and takes the
+// alpha.
+//
+// The slash alpha syntax (`hsl(0 100% 50% / 50%)`) is not supported: the
+// slash is a division in tokenscript.
+//
+// Input:  List of arguments
+// Output: Color.HSL
+
+variable args: List = {input};
+variable parts: List = args;
+if (args.length() == 1 && is_list(args.get(0))) [
+  parts = args.get(0);
+];
+
+variable output: Color.HSL;
+variable alpha_index: Number = 3;
+
+if (is_color(parts.get(0))) [
+  output = parts.get(0).to.hsl();
+  alpha_index = 1;
+] else [
+  variable hue: Number = 0;
+  if (type(parts.get(0)) == "deg") [
+    hue = parts.get(0).to_number();
+  ] else [
+    hue = parts.get(0);
+  ];
+
+  variable s_percent: Boolean = type(parts.get(1)) == "%";
+  variable l_percent: Boolean = type(parts.get(2)) == "%";
+  variable s: Number = 0;
+  variable l: Number = 0;
+  if (s_percent) [
+    s = parts.get(1).to_number() / 100;
+  ] else [
+    s = parts.get(1);
+  ];
+  if (l_percent) [
+    l = parts.get(2).to_number() / 100;
+  ] else [
+    l = parts.get(2);
+  ];
+
+  // Plain numbers above 1 mean the CSS percentage scale.
+  if ((!s_percent && s > 1) || (!l_percent && l > 1)) [
+    if (!s_percent) [ s = s / 100; ];
+    if (!l_percent) [ l = l / 100; ];
+  ];
+
+  output.h = mod(hue, 360);
+  output.s = min(max(s, 0), 1);
+  output.l = min(max(l, 0), 1);
+];
+
+if (parts.length() > alpha_index) [
+  variable alpha: Number = 1;
+  if (type(parts.get(alpha_index)) == "%") [
+    alpha = parts.get(alpha_index).to_number() / 100;
+  ] else [
+    alpha = parts.get(alpha_index);
+  ];
+  alpha = min(max(alpha, 0), 1);
+  if (alpha < 1) [
+    output.alpha = alpha;
+  ] else [
+    output.alpha = null;
+  ];
+];
+
+return output;

@@ -13,6 +13,7 @@
 - `errors`: `ex-info` with data `{:type :tokenscript/error :kind :code :hint :message :data}`; same maps are the issue values. `err/code->compliance-code` maps `:interpreter/unknown-reference` -> `INT_UNKNOWN_REFERENCE`.
 - `bundle.cljc` is GENERATED from `common/resources/tokenscript/schemas/{types,functions,constants}/<name>/schema.json` + `.tokenscript` files by `clojure -M:dev -m tokenscript-bundle` (`common/dev/tokenscript_bundle.clj`); do not hand edit, `bundle-test` fails when stale.
 - Schema URIs are path URIs (`/api/v1/core/rgb-color/0/`), never fetched; `schema-uri/normalize` strips hosts and the registries normalize on register and lookup.
+- CSS color syntax (`rgb(255 0 0)`, `hsl(0, 100%, 50%)`, `rgba({c}, 0.5)`) is handled by the Penpot schema functions `functions/css-rgb|css-rgba|css-hsl|css-hsla`, which shadow the color initializers. The CSS slash alpha (`rgb(0 0 128 / 50%)`) is parsed as a division and gives wrong channels.
 
 ## Invariants / gotchas
 

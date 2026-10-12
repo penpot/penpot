@@ -661,6 +661,90 @@
                             :lossless true
                             :script {:type "/api/v1/core/tokenscript/0/"
                                      :script "// OKLab to XYZ-D65 Conversion\n// Reference: ColorJS oklab.js (inverse transformation)\n//\n// Algorithm:\n// 1. Apply inverse Lab-to-LMS matrix to get LMS cone responses\n// 2. Cube the LMS values (inverse of cube root)\n// 3. Apply inverse LMS-to-XYZ matrix\n//\n// Input: Color.OKLab with l, a, b perceptual coordinates\n// Output: Color.XYZD65 with x, y, z tristimulus values\n\n// Get input OKLab values\nvariable ok_l: Number = {input}.l;\nvariable ok_a: Number = {input}.a;\nvariable ok_b: Number = {input}.b;\n\n// Inverse LMStoLab_M matrix (Lab to LMS')\n// These are the inverse of the matrix used in from-xyz-d65.tokenscript\nvariable lms_l: Number = 1.0 * ok_l + 0.3963377773761749 * ok_a + 0.2158037573099136 * ok_b;\nvariable lms_m: Number = 1.0 * ok_l + -0.1055613458156586 * ok_a + -0.0638541728258133 * ok_b;\nvariable lms_s: Number = 1.0 * ok_l + -0.0894841775298119 * ok_a + -1.2914855480194092 * ok_b;\n\n// Cube the values (inverse of cube root)\nvariable lms_l_cubed: Number = lms_l * lms_l * lms_l;\nvariable lms_m_cubed: Number = lms_m * lms_m * lms_m;\nvariable lms_s_cubed: Number = lms_s * lms_s * lms_s;\n\n// Inverse XYZtoLMS_M matrix (LMS to XYZ)\n// From ColorJS oklab.js\nvariable x: Number = 1.2268798758459243 * lms_l_cubed + -0.5578149944602171 * lms_m_cubed + 0.2813910456659647 * lms_s_cubed;\nvariable y: Number = -0.0405757452148008 * lms_l_cubed + 1.1122868032803170 * lms_m_cubed + -0.0717110580655164 * lms_s_cubed;\nvariable z: Number = -0.0763729366746601 * lms_l_cubed + -0.4214933324022432 * lms_m_cubed + 1.5869240198367816 * lms_s_cubed;\n\n// Create output\nvariable output: Color.XYZD65;\noutput.x = x;\noutput.y = y;\noutput.z = z;\n\nreturn output;"}}]}}
+   {:uri "/api/v1/function/css-hsl/0/"
+    :schema {:name "CSS HSL"
+             :type "function"
+             :description "CSS hsl(): hue in degrees, saturation and lightness as percentages or 0-1, and an optional alpha. Returns a Color.HSL."
+             :keyword "hsl"
+             :input {:type "object"
+                     :properties {:alpha {:type "number"
+                                          :description "Alpha (0-1) or percentage"
+                                          :optional true}
+                                  :h {:type "number"
+                                      :description "Hue in degrees, or a color to take the alpha"
+                                      :optional true}
+                                  :l {:type "number"
+                                      :description "Lightness, percentage or 0-1"
+                                      :optional true}
+                                  :s {:type "number"
+                                      :description "Saturation, percentage or 0-1"
+                                      :optional true}}}
+             :script {:type "/api/v1/core/tokenscript/0/"
+                      :script "// CSS hsl() and hsla()\n// https://www.w3.org/TR/css-color-4/#the-hsl-notation\n//\n// Accepts the CSS syntaxes, so color values written for CSS (and\n// accepted by StyleDictionary) keep working:\n//\n//   hsl(0, 100%, 50%)        hsl(0 100% 50%)\n//   hsl(120deg, 100%, 50%)   hsla(0, 100%, 50%, 0.5)\n//   hsla(0 100% 50% 50%)     hsla({color.primary}, 0.5)\n//\n// The hue is a number or `deg`, wrapped to 0-360. Saturation and\n// lightness are percentages or plain numbers. Plain numbers are\n// fractions (0-1) like the channels of Color.HSL, `hsl(0, 1, 0.5)`,\n// unless one of them is above 1: then they are read as CSS percentages,\n// `hsl(0, 100, 50)`. Both end up clamped to 0-1. The alpha is a number\n// (0-1) or a percentage, clamped to 0-1; an alpha of 1 makes the color\n// opaque. A color as first argument keeps its channels and takes the\n// alpha.\n//\n// The slash alpha syntax (`hsl(0 100% 50% / 50%)`) is not supported: the\n// slash is a division in tokenscript.\n//\n// Input:  List of arguments\n// Output: Color.HSL\n\nvariable args: List = {input};\nvariable parts: List = args;\nif (args.length() == 1 && is_list(args.get(0))) [\n  parts = args.get(0);\n];\n\nvariable output: Color.HSL;\nvariable alpha_index: Number = 3;\n\nif (is_color(parts.get(0))) [\n  output = parts.get(0).to.hsl();\n  alpha_index = 1;\n] else [\n  variable hue: Number = 0;\n  if (type(parts.get(0)) == \"deg\") [\n    hue = parts.get(0).to_number();\n  ] else [\n    hue = parts.get(0);\n  ];\n\n  variable s_percent: Boolean = type(parts.get(1)) == \"%\";\n  variable l_percent: Boolean = type(parts.get(2)) == \"%\";\n  variable s: Number = 0;\n  variable l: Number = 0;\n  if (s_percent) [\n    s = parts.get(1).to_number() / 100;\n  ] else [\n    s = parts.get(1);\n  ];\n  if (l_percent) [\n    l = parts.get(2).to_number() / 100;\n  ] else [\n    l = parts.get(2);\n  ];\n\n  // Plain numbers above 1 mean the CSS percentage scale.\n  if ((!s_percent && s > 1) || (!l_percent && l > 1)) [\n    if (!s_percent) [ s = s / 100; ];\n    if (!l_percent) [ l = l / 100; ];\n  ];\n\n  output.h = mod(hue, 360);\n  output.s = min(max(s, 0), 1);\n  output.l = min(max(l, 0), 1);\n];\n\nif (parts.length() > alpha_index) [\n  variable alpha: Number = 1;\n  if (type(parts.get(alpha_index)) == \"%\") [\n    alpha = parts.get(alpha_index).to_number() / 100;\n  ] else [\n    alpha = parts.get(alpha_index);\n  ];\n  alpha = min(max(alpha, 0), 1);\n  if (alpha < 1) [\n    output.alpha = alpha;\n  ] else [\n    output.alpha = null;\n  ];\n];\n\nreturn output;"}
+             :requirements ["/api/v1/core/hsl-color/0/"]}}
+   {:uri "/api/v1/function/css-hsla/0/"
+    :schema {:name "CSS HSLA"
+             :type "function"
+             :description "CSS hsla(), the same as hsl(). Also takes a color and an alpha: hsla({color}, 0.5)."
+             :keyword "hsla"
+             :input {:type "object"
+                     :properties {:alpha {:type "number"
+                                          :description "Alpha (0-1) or percentage"
+                                          :optional true}
+                                  :h {:type "number"
+                                      :description "Hue in degrees, or a color to take the alpha"
+                                      :optional true}
+                                  :l {:type "number"
+                                      :description "Lightness, percentage or 0-1"
+                                      :optional true}
+                                  :s {:type "number"
+                                      :description "Saturation, percentage or 0-1"
+                                      :optional true}}}
+             :script {:type "/api/v1/core/tokenscript/0/"
+                      :script "// CSS hsl() and hsla()\n// https://www.w3.org/TR/css-color-4/#the-hsl-notation\n//\n// Accepts the CSS syntaxes, so color values written for CSS (and\n// accepted by StyleDictionary) keep working:\n//\n//   hsl(0, 100%, 50%)        hsl(0 100% 50%)\n//   hsl(120deg, 100%, 50%)   hsla(0, 100%, 50%, 0.5)\n//   hsla(0 100% 50% 50%)     hsla({color.primary}, 0.5)\n//\n// The hue is a number or `deg`, wrapped to 0-360. Saturation and\n// lightness are percentages or plain numbers. Plain numbers are\n// fractions (0-1) like the channels of Color.HSL, `hsl(0, 1, 0.5)`,\n// unless one of them is above 1: then they are read as CSS percentages,\n// `hsl(0, 100, 50)`. Both end up clamped to 0-1. The alpha is a number\n// (0-1) or a percentage, clamped to 0-1; an alpha of 1 makes the color\n// opaque. A color as first argument keeps its channels and takes the\n// alpha.\n//\n// The slash alpha syntax (`hsl(0 100% 50% / 50%)`) is not supported: the\n// slash is a division in tokenscript.\n//\n// Input:  List of arguments\n// Output: Color.HSL\n\nvariable args: List = {input};\nvariable parts: List = args;\nif (args.length() == 1 && is_list(args.get(0))) [\n  parts = args.get(0);\n];\n\nvariable output: Color.HSL;\nvariable alpha_index: Number = 3;\n\nif (is_color(parts.get(0))) [\n  output = parts.get(0).to.hsl();\n  alpha_index = 1;\n] else [\n  variable hue: Number = 0;\n  if (type(parts.get(0)) == \"deg\") [\n    hue = parts.get(0).to_number();\n  ] else [\n    hue = parts.get(0);\n  ];\n\n  variable s_percent: Boolean = type(parts.get(1)) == \"%\";\n  variable l_percent: Boolean = type(parts.get(2)) == \"%\";\n  variable s: Number = 0;\n  variable l: Number = 0;\n  if (s_percent) [\n    s = parts.get(1).to_number() / 100;\n  ] else [\n    s = parts.get(1);\n  ];\n  if (l_percent) [\n    l = parts.get(2).to_number() / 100;\n  ] else [\n    l = parts.get(2);\n  ];\n\n  // Plain numbers above 1 mean the CSS percentage scale.\n  if ((!s_percent && s > 1) || (!l_percent && l > 1)) [\n    if (!s_percent) [ s = s / 100; ];\n    if (!l_percent) [ l = l / 100; ];\n  ];\n\n  output.h = mod(hue, 360);\n  output.s = min(max(s, 0), 1);\n  output.l = min(max(l, 0), 1);\n];\n\nif (parts.length() > alpha_index) [\n  variable alpha: Number = 1;\n  if (type(parts.get(alpha_index)) == \"%\") [\n    alpha = parts.get(alpha_index).to_number() / 100;\n  ] else [\n    alpha = parts.get(alpha_index);\n  ];\n  alpha = min(max(alpha, 0), 1);\n  if (alpha < 1) [\n    output.alpha = alpha;\n  ] else [\n    output.alpha = null;\n  ];\n];\n\nreturn output;"}
+             :requirements ["/api/v1/core/hsl-color/0/"]}}
+   {:uri "/api/v1/function/css-rgb/0/"
+    :schema {:name "CSS RGB"
+             :type "function"
+             :description "CSS rgb(): comma or space separated channels (0-255 or percentages) and an optional alpha. Returns a Color.Rgb."
+             :keyword "rgb"
+             :input {:type "object"
+                     :properties {:alpha {:type "number"
+                                          :description "Alpha (0-1) or percentage"
+                                          :optional true}
+                                  :b {:type "number"
+                                      :description "Blue (0-255) or percentage"
+                                      :optional true}
+                                  :g {:type "number"
+                                      :description "Green (0-255) or percentage"
+                                      :optional true}
+                                  :r {:type "number"
+                                      :description "Red (0-255) or percentage, or a color to take the alpha"
+                                      :optional true}}}
+             :script {:type "/api/v1/core/tokenscript/0/"
+                      :script "// CSS rgb() and rgba()\n// https://www.w3.org/TR/css-color-4/#rgb-functions\n//\n// Accepts the CSS syntaxes, so color values written for CSS (and\n// accepted by StyleDictionary) keep working:\n//\n//   rgb(255, 0, 0)          rgb(255 0 0)\n//   rgb(100%, 0%, 0%)       rgba(255, 0, 0, 0.5)\n//   rgba(255 0 0 50%)       rgba({color.primary}, 0.5)\n//\n// Channels are numbers (0-255) or percentages; they are clamped to\n// 0-255 and rounded like CSS does. The alpha is a number (0-1) or a\n// percentage, clamped to 0-1; an alpha of 1 makes the color opaque. A\n// color as first argument keeps its channels and takes the alpha.\n//\n// The slash alpha syntax (`rgb(255 0 0 / 50%)`) is not supported: the\n// slash is a division in tokenscript.\n//\n// Input:  List of arguments\n// Output: Color.Rgb\n\nvariable args: List = {input};\nvariable parts: List = args;\nif (args.length() == 1 && is_list(args.get(0))) [\n  parts = args.get(0);\n];\n\nvariable output: Color.Rgb;\nvariable alpha_index: Number = 3;\n\nif (is_color(parts.get(0))) [\n  output = parts.get(0).to.rgb();\n  alpha_index = 1;\n] else [\n  // Fewer than three channels fail on `channels.get` below.\n  variable channels: List;\n  variable channel: Number = 0;\n  for part, index in parts [\n    if (index < 3) [\n      if (type(part) == \"%\") [\n        channel = part.to_number() * 255 / 100;\n      ] else [\n        channel = part;\n      ];\n      channels.append(round(min(max(channel, 0), 255)));\n    ];\n  ];\n\n  output.r = channels.get(0);\n  output.g = channels.get(1);\n  output.b = channels.get(2);\n];\n\nif (parts.length() > alpha_index) [\n  variable alpha: Number = 1;\n  if (type(parts.get(alpha_index)) == \"%\") [\n    alpha = parts.get(alpha_index).to_number() / 100;\n  ] else [\n    alpha = parts.get(alpha_index);\n  ];\n  alpha = min(max(alpha, 0), 1);\n  if (alpha < 1) [\n    output.alpha = alpha;\n  ] else [\n    output.alpha = null;\n  ];\n];\n\nreturn output;"}
+             :requirements ["/api/v1/core/rgb-color/0/"]}}
+   {:uri "/api/v1/function/css-rgba/0/"
+    :schema {:name "CSS RGBA"
+             :type "function"
+             :description "CSS rgba(), the same as rgb(). Also takes a color and an alpha: rgba({color}, 0.5)."
+             :keyword "rgba"
+             :input {:type "object"
+                     :properties {:alpha {:type "number"
+                                          :description "Alpha (0-1) or percentage"
+                                          :optional true}
+                                  :b {:type "number"
+                                      :description "Blue (0-255) or percentage"
+                                      :optional true}
+                                  :g {:type "number"
+                                      :description "Green (0-255) or percentage"
+                                      :optional true}
+                                  :r {:type "number"
+                                      :description "Red (0-255) or percentage, or a color to take the alpha"
+                                      :optional true}}}
+             :script {:type "/api/v1/core/tokenscript/0/"
+                      :script "// CSS rgb() and rgba()\n// https://www.w3.org/TR/css-color-4/#rgb-functions\n//\n// Accepts the CSS syntaxes, so color values written for CSS (and\n// accepted by StyleDictionary) keep working:\n//\n//   rgb(255, 0, 0)          rgb(255 0 0)\n//   rgb(100%, 0%, 0%)       rgba(255, 0, 0, 0.5)\n//   rgba(255 0 0 50%)       rgba({color.primary}, 0.5)\n//\n// Channels are numbers (0-255) or percentages; they are clamped to\n// 0-255 and rounded like CSS does. The alpha is a number (0-1) or a\n// percentage, clamped to 0-1; an alpha of 1 makes the color opaque. A\n// color as first argument keeps its channels and takes the alpha.\n//\n// The slash alpha syntax (`rgb(255 0 0 / 50%)`) is not supported: the\n// slash is a division in tokenscript.\n//\n// Input:  List of arguments\n// Output: Color.Rgb\n\nvariable args: List = {input};\nvariable parts: List = args;\nif (args.length() == 1 && is_list(args.get(0))) [\n  parts = args.get(0);\n];\n\nvariable output: Color.Rgb;\nvariable alpha_index: Number = 3;\n\nif (is_color(parts.get(0))) [\n  output = parts.get(0).to.rgb();\n  alpha_index = 1;\n] else [\n  // Fewer than three channels fail on `channels.get` below.\n  variable channels: List;\n  variable channel: Number = 0;\n  for part, index in parts [\n    if (index < 3) [\n      if (type(part) == \"%\") [\n        channel = part.to_number() * 255 / 100;\n      ] else [\n        channel = part;\n      ];\n      channels.append(round(min(max(channel, 0), 255)));\n    ];\n  ];\n\n  output.r = channels.get(0);\n  output.g = channels.get(1);\n  output.b = channels.get(2);\n];\n\nif (parts.length() > alpha_index) [\n  variable alpha: Number = 1;\n  if (type(parts.get(alpha_index)) == \"%\") [\n    alpha = parts.get(alpha_index).to_number() / 100;\n  ] else [\n    alpha = parts.get(alpha_index);\n  ];\n  alpha = min(max(alpha, 0), 1);\n  if (alpha < 1) [\n    output.alpha = alpha;\n  ] else [\n    output.alpha = null;\n  ];\n];\n\nreturn output;"}
+             :requirements ["/api/v1/core/rgb-color/0/"]}}
    {:uri "/api/v1/function/darken/0/"
     :schema {:name "Darken"
              :type "function"

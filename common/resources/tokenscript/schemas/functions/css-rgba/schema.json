@@ -1,0 +1,36 @@
+{
+  "name": "CSS RGBA",
+  "type": "function",
+  "description": "CSS rgba(), the same as rgb(). Also takes a color and an alpha: rgba({color}, 0.5).",
+  "keyword": "rgba",
+  "input": {
+    "type": "object",
+    "properties": {
+      "r": {
+        "type": "number",
+        "optional": true,
+        "description": "Red (0-255) or percentage, or a color to take the alpha"
+      },
+      "g": {
+        "type": "number",
+        "optional": true,
+        "description": "Green (0-255) or percentage"
+      },
+      "b": {
+        "type": "number",
+        "optional": true,
+        "description": "Blue (0-255) or percentage"
+      },
+      "alpha": {
+        "type": "number",
+        "optional": true,
+        "description": "Alpha (0-1) or percentage"
+      }
+    }
+  },
+  "script": {
+    "type": "/api/v1/core/tokenscript/0/",
+    "script": "../css-rgb/rgb.tokenscript"
+  },
+  "requirements": ["/api/v1/core/rgb-color/0/"]
+}

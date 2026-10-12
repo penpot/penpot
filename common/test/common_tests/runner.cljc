@@ -88,6 +88,7 @@
    [common-tests.token-test]
    [common-tests.tokenscript.bundle-test]
    [common-tests.tokenscript.compliance-test]
+   [common-tests.tokenscript.css-functions-test]
    [common-tests.tokenscript.interpreter-test]
    [common-tests.tokenscript.lexer-test]
    [common-tests.tokenscript.parser-test]
@@ -197,6 +198,7 @@
    'common-tests.token-test
    'common-tests.tokenscript.bundle-test
    'common-tests.tokenscript.compliance-test
+   'common-tests.tokenscript.css-functions-test
    'common-tests.tokenscript.interpreter-test
    'common-tests.tokenscript.lexer-test
    'common-tests.tokenscript.parser-test

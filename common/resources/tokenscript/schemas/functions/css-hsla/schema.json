@@ -1,0 +1,36 @@
+{
+  "name": "CSS HSLA",
+  "type": "function",
+  "description": "CSS hsla(), the same as hsl(). Also takes a color and an alpha: hsla({color}, 0.5).",
+  "keyword": "hsla",
+  "input": {
+    "type": "object",
+    "properties": {
+      "h": {
+        "type": "number",
+        "optional": true,
+        "description": "Hue in degrees, or a color to take the alpha"
+      },
+      "s": {
+        "type": "number",
+        "optional": true,
+        "description": "Saturation, percentage or 0-1"
+      },
+      "l": {
+        "type": "number",
+        "optional": true,
+        "description": "Lightness, percentage or 0-1"
+      },
+      "alpha": {
+        "type": "number",
+        "optional": true,
+        "description": "Alpha (0-1) or percentage"
+      }
+    }
+  },
+  "script": {
+    "type": "/api/v1/core/tokenscript/0/",
+    "script": "../css-hsl/hsl.tokenscript"
+  },
+  "requirements": ["/api/v1/core/hsl-color/0/"]
+}

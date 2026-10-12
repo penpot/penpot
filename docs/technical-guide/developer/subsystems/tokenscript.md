@@ -116,14 +116,15 @@ in
 | Directory | Contents | URI |
 |---|---|---|
 | `types/<name>/` | Color spaces: sRGB, HSL, OKLCH, P3, ... | `/api/v1/core/<name>/0/` |
-| `functions/<name>/` | Functions: `lighten`, `darken`, `saturate`, `desaturate`, `mix`, `invert` | `/api/v1/function/<name>/0/` |
+| `functions/<name>/` | Functions: `lighten`, `darken`, `saturate`, `desaturate`, `mix`, `invert`, and the CSS color functions `rgb`, `rgba`, `hsl`, `hsla` | `/api/v1/function/<name>/0/` |
 | `constants/<name>/` | CSS named colors | `/api/v1/constants/<name>/0/` |
 
 Each directory holds a `schema.json` that references its scripts by
 relative path (`"script": "./initializer.tokenscript"`). The color
 spaces, the color functions and the named colors come from
 `@tokens-studio/tokenscript-schemas` 0.4.0 (MPL-2.0) and are kept
-unchanged, so they can be compared with that package.
+unchanged, so they can be compared with that package; the `css-*`
+functions are Penpot's.
 
 `app.common.tokenscript.bundle` is generated from these files with the
 bundler in `common/dev/tokenscript_bundle.clj`, which inlines the
@@ -147,6 +148,27 @@ connect to the bundled ones.
 
 Additional schemas (for example user defined functions in the future)
 are plain maps registered with `app.common.tokenscript/register-schemas`.
+
+### CSS color functions
+
+`rgb`, `rgba`, `hsl` and `hsla` are schema functions written in
+tokenscript. They take precedence over the `rgb`/`hsl` initializers of
+the color spaces and accept the CSS syntaxes:
+
+```
+rgb(255, 0, 0)    rgb(255 0 0)    rgb(100%, 0%, 0%)    rgba(255, 0, 0, 50%)
+hsl(0, 100%, 50%)    hsl(120deg 100% 50%)    hsla({color.primary}, 0.5)
+```
+
+RGB channels are clamped to 0-255 and rounded, alpha values are clamped
+to 0-1 and an alpha of 1 is opaque. HSL saturation and lightness given
+as plain numbers are fractions (`hsl(0, 1, 0.5)`, the tokenscript HSL
+scale) unless one of them is above 1, in which case they are CSS
+percentages (`hsl(0, 100, 50)`).
+
+The slash alpha syntax (`rgb(255 0 0 / 50%)`) is not supported: in
+tokenscript the slash is a division, evaluated before the function sees
+its arguments.
 
 ## Tests
 
