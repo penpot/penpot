@@ -87,7 +87,7 @@ Fixtures can populate local data for manual testing/perf work. From the backend 
 
 * **Type Hinting:** Use explicit JVM type hints (e.g. `^String`, `^long`) in performance-critical paths to avoid reflection overhead.
 * **Batch inserts:** Use `db/insert-many!` for bulk row inserts — generates a single SQL with multiple parameter tuples. Avoid on very large datasets (SQL length / parameter count limits).
-* **Server-side cursors:** Use `db/plan` (fetch-size 1000, forward-only, read-only) or `db/cursor` for large result sets. Never fetch large collections into memory at once.
+* **Server-side cursors:** Use `db/plan` (fetch-size 1000, forward-only, read-only) for large result sets. Never fetch large collections into memory at once. `db/plan` is an `IReduceInit`: `reduce`/`transduce` over it (`sequence` does not work on it), and with `partition-all` the transducer's completing arity is what flushes the last partial chunk. A plan row is a **view over the open result set**, valid only inside the reducing function: read the columns you need right there — buffering rows to read them later (a `partition-all` buffer, a lazy seq) silently yields nil columns. `db/cursor` (manual `DECLARE`/`FETCH`) is a leftover with no callers left.
 * **Transaction discipline:** Use `tx-run!` for writes (opens a transaction), `run!` for reads (single connection, no transaction). Set `:read-only` on `tx-run!` when applicable to let PostgreSQL optimize.
 
 ## Lint and Format
