@@ -31,6 +31,15 @@ Penpot in production lives with both: horizontal-scale deployments accept "exact
 
 Each backend has a per-process availability flag (`app.health`, a global atom). While offline, `/readyz` answers `503 OFFLINE` without querying the database, so the load balancer removes that instance from rotation while requests in flight still finish. Operator surface: `app.srepl.main/set-offline` / `set-online`; a restart comes back online. In-flight worker tasks are safe: tasks claimed as `scheduled` return to `new` after 5 minutes via `sql:reschedule-lost` and another instance picks them up.
 
+## Touching production data
+
+Production runs the deployed toolbox, not the devenv one:
+
+- **No psql meta-commands there.** `scripts/psql` and `\set`, `\if`, `\copy` do not exist in production, so a data script must be **plain SQL**, copy-pasteable into any client.
+- **Start from the ids, not from an inventory.** The ids come from the error or the logs. Unbounded queries over tables with tens of millions of rows (`storage_object`, `file_media_object`) do not finish in a reasonable time; bounded to an id list they are index lookups.
+- **One query per reference column.** Two columns in one `IN (col_a, col_b)` lose the index and scan the whole table; split them.
+- The read-only replica cuts long queries: see `mem:prod-infra/grafana`.
+
 ## See also
 
 - Devenv composition and the ws0-only worker placement: `mem:devenv/core`.
