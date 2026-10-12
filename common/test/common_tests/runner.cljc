@@ -80,6 +80,7 @@
    [common-tests.logic.multiple-nesting-levels-test]
    [common-tests.logic.swap-and-reset-test]
    [common-tests.logic.swap-as-override-test]
+   [common-tests.logic.swap-group-test]
    [common-tests.logic.swap-keeps-id-test]
    [common-tests.logic.swap-missing-library-test]
    [common-tests.logic.text-editor-output-test]
@@ -206,6 +207,7 @@
    'common-tests.logic.multiple-nesting-levels-test
    'common-tests.logic.swap-and-reset-test
    'common-tests.logic.swap-as-override-test
+   'common-tests.logic.swap-group-test
    'common-tests.logic.swap-keeps-id-test
    'common-tests.logic.swap-missing-library-test
    'common-tests.logic.text-editor-output-test
