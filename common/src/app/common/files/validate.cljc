@@ -395,7 +395,8 @@
   "Validate that if the copy has not been swapped, the component-id and component-file are
    the same as in the referenced shape in the near main."
   [shape file page libraries]
-  (when (nil? (ctk/get-swap-slot shape))
+  (when (and (nil? (ctk/get-swap-slot shape))
+             (not (ctk/swapped? shape)))
     (when-let [ref-shape (find-ref-shape* file page libraries shape)]
       (when (or (not= (:component-id shape) (:component-id ref-shape))
                 (not= (:component-file shape) (:component-file ref-shape)))
@@ -445,7 +446,10 @@
   ;; Guard first: if the shape already has a swap slot the invariant is satisfied
   ;; and we can avoid the ref-shape lookups entirely.
   (when (and (nil? (ctk/get-swap-slot shape))
-             (ctf/swapped-subhead? shape page #(find-ref-shape* file page libraries %)))
+             (ctf/swapped-subhead? shape page #(if (ctk/swapped? %)
+                                                 (ctf/find-content-ref-shape file page libraries %
+                                                                             :include-deleted? true)
+                                                 (find-ref-shape* file page libraries %))))
     (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
       (when (some? near-match)
         (report-error :missing-slot

@@ -60,6 +60,14 @@
 (def ^:private flex-child-attrs
   (disj ctk/swap-keep-attrs :interactions))
 
+;; Attributes that place a shape in its parent
+(def ^:private placement-attrs
+  (conj flex-child-attrs :constraints-h :constraints-v :fixed-scroll))
+
+;; Touched groups of the placement attributes and of the position
+(def ^:private placement-groups
+  (into #{:geometry-group} (map #(ctk/resolve-sync-group :rect %)) placement-attrs))
+
 (defn enabled-shape?
   [id container]
   (or (empty? log-shape-ids)
@@ -105,6 +113,7 @@
 (declare update-grid-copy-attrs)
 (declare update-flex-child-main-attrs)
 (declare update-flex-child-copy-attrs)
+(declare update-swapped-placement)
 (declare reposition-shape)
 (declare make-change)
 
@@ -324,6 +333,7 @@
 (declare generate-detach-recursive)
 (declare generate-advance-nesting-level)
 (declare generate-detach-immediate)
+(declare generate-rehead-swapped)
 
 (defn generate-detach-instance
   "Generate changes to remove the links between a shape and all its children
@@ -352,7 +362,12 @@
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> remove swap-slot")
                                            (ctk/remove-swap-slot %)))
 
-        (nil? (ctk/get-swap-slot shape))
+        (ctk/swapped? shape)
+        ; A swapped head left with no copy around it is a copy of its own component
+        (generate-rehead-swapped container libraries shape)
+
+        (and (nil? (ctk/get-swap-slot shape))
+             (not (ctk/swapped? shape)))
         ; Near shape-ref of shape and children need to be advanced one level
         ; (except if the head is already swapped)
         (generate-advance-nesting-level nil container libraries (:id shape)))
@@ -364,11 +379,54 @@
                 (pcb/update-shapes changes [(:id shape)] ctk/detach-shape)
                 children-ids)))))
 
+(defn- swap-content-root-id
+  "The id of the main root a swapped head takes its content from."
+  [libraries shape]
+  (:main-instance-id (ctf/get-component libraries
+                                        (:component-file shape)
+                                        (:component-id shape)
+                                        :include-deleted? true)))
+
+(defn- rehead-swapped
+  "Make a swapped head a plain copy of its own component, for when it leaves
+  every copy level."
+  [shape root-id]
+  (-> shape
+      (assoc :shape-ref root-id)
+      (ctk/remove-swap-group)))
+
+(defn- generate-rehead-swapped
+  [changes container libraries shape]
+  (if-let [root-id (swap-content-root-id libraries shape)]
+    (pcb/update-shapes changes [(:id shape)] #(rehead-swapped % root-id))
+    (generate-detach-immediate changes container (:id shape) (atom #{}))))
+
+(defn- swapped-descendant-ids
+  "The ids of the shapes below a swapped head in the subtree of the shape.
+  They refer into the head's own component, so they do not change when the
+  head changes its nesting level."
+  [objects shape-id]
+  (into #{}
+        (comp (filter ctk/swapped?)
+              (mapcat #(cfh/get-children-ids objects (:id %))))
+        (cfh/get-children-with-self objects shape-id)))
+
+(defn- inherited-touched
+  "The touched groups a copy shape takes from the main shape it skips when it
+  goes up a nesting level. A swapped head takes only the placement ones,
+  since its content does not come from that main."
+  [shape ref-touched]
+  (if (ctk/swapped? shape)
+    (set/intersection ref-touched placement-groups)
+    ref-touched))
+
 (defn- generate-advance-nesting-level
   [changes file container libraries shape-id]
   (log/trace :msg "  -> advance-nesting-level")
   (let [detached-ids (atom #{})
-        children  (cfh/get-children-with-self (:objects container) shape-id)  ;; TODO: this function should be refactored to be a recursive tree traversal.
+        unchanged-ids (swapped-descendant-ids (:objects container) shape-id)
+        children  (->> (cfh/get-children-with-self (:objects container) shape-id)  ;; TODO: this function should be refactored to be a recursive tree traversal.
+                       (remove #(contains? unchanged-ids (:id %))))
         skip-near (fn [changes shape]                                         ;;       this way we could shake the tree more easily when detaching shapes
                     (shape-log :trace (:id shape) container                   ;;       and perhaps even allow to recover nested instances that have been
                                :msg "     * advancing" :shape-id (:id shape)) ;;       swapped and so we can access the main instance again.
@@ -392,7 +450,7 @@
                                 (log/trace :msg (str "       (ref touched: " (:touched ref-shape) ")"))
                                 (assoc % :touched
                                        (set/union (:touched shape)
-                                                  (ctk/normal-touched-groups ref-shape)))))
+                                                  (inherited-touched shape (ctk/normal-touched-groups ref-shape))))))
 
                           ;; Swap slot must also be copied if the current shape has not any,
                           ;; except if this is the first level subcopy.
@@ -770,7 +828,7 @@
                          (if reset?
                            ;; the reset is against the ref-shape, not against the original shape of the component
                            (ctf/find-ref-shape file container libraries shape-inst)
-                           (ctf/get-ref-shape library component shape-inst)))
+                           (ctf/get-content-ref-shape library component shape-inst)))
 
             initial-root?  (:component-root shape-inst)
 
@@ -923,11 +981,17 @@
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
-                               :msg "Match slot"
+                               :msg "Swapped"
                                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                    ;; For now we don't make any sync here.
-                    changes)
+                    (if (ctk/swapped? child-inst)
+                      (update-swapped-placement changes
+                                                child-inst
+                                                child-main
+                                                root-inst
+                                                root-main
+                                                container)
+                      changes))
 
           moved (fn [changes child-inst child-main]
                   (shape-log :trace (:id child-inst) container
@@ -1041,7 +1105,7 @@
                         (change-touched shape-inst
                                         shape-main
                                         container
-                                        {:reset-touched? true})
+                                        {:reset-touched? true :keep-swap? true})
                         (change-touched shape-main
                                         shape-inst
                                         component-container
@@ -1081,7 +1145,8 @@
                                          component-container
                                          container
                                          root-inst
-                                         root-main))
+                                         root-main
+                                         libraries))
 
           only-main (fn [changes child-main]
                       (remove-shape changes
@@ -1152,78 +1217,86 @@
 ;; ---- Operation generation helpers ----
 
 (defn- compare-children
+  "Pair the children of a copy shape with the children of its main and call
+  the callback of each case. A child pairs with the main child it refers to;
+  a swapped child pairs that way too, and takes `swapped-cb` in a normal sync,
+  `both-cb` in a reset, and does not pair in an inverse sync, so the main
+  child it replaces is removed and the swapped child is added in its place."
   [changes shape-inst children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
   (shape-log :trace (:id shape-inst) container-inst :msg "Compare children")
-  (loop [children-inst (seq (or children-inst []))
-         children-main (seq (or children-main []))
-         changes       changes]
-    (let [child-inst (first children-inst)
-          child-main (first children-main)]
-      (shape-log :trace (:id shape-inst) container-inst
-                 :msg "Comparing"
-                 :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
-                 :inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
-      (cond
-        (and (nil? child-inst) (nil? child-main))
-        changes
+  (let [pair?
+        (fn [child-main child-inst]
+          (or (and (ctk/is-main-of? child-main child-inst)
+                   (not (and inverse? (ctk/swapped? child-inst))))
+              (and (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries)
+                   (not reset?))))
 
-        (nil? child-inst)
-        (reduce only-main-cb changes children-main)
+        synced-pair?
+        (fn [child-main child-inst]
+          (and (ctk/is-main-of? child-main child-inst)
+               (or reset? (not (ctk/swapped? child-inst)))))]
+    (loop [children-inst (seq (or children-inst []))
+           children-main (seq (or children-main []))
+           changes       changes]
+      (let [child-inst (first children-inst)
+            child-main (first children-main)]
+        (shape-log :trace (:id shape-inst) container-inst
+                   :msg "Comparing"
+                   :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
+                   :inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
+        (cond
+          (and (nil? child-inst) (nil? child-main))
+          changes
 
-        (nil? child-main)
-        (reduce only-inst-cb changes children-inst)
+          (nil? child-inst)
+          (reduce only-main-cb changes children-main)
 
-        :else
-        (if (or (ctk/is-main-of? child-main child-inst)
-                (and (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries)
-                     (not reset?)))
-          (recur (next children-inst)
-                 (next children-main)
-                 (if (ctk/is-main-of? child-main child-inst)
-                   (both-cb changes child-inst child-main)
-                   (swapped-cb changes child-inst child-main)))
+          (nil? child-main)
+          (reduce only-inst-cb changes children-inst)
 
-          (let [child-inst' (d/seek #(or (ctk/is-main-of? child-main %)
-                                         (and (ctf/match-swap-slot? child-main % container-inst container-main file libraries)
-                                              (not reset?)))
-                                    children-inst)
-                child-main' (d/seek #(or (ctk/is-main-of? % child-inst)
-                                         (and (ctf/match-swap-slot? % child-inst container-inst container-main file libraries)
-                                              (not reset?)))
-                                    children-main)]
-            (cond
-              (nil? child-inst')
-              (recur children-inst
-                     (next children-main)
-                     (only-main-cb changes child-main))
+          :else
+          (if (pair? child-main child-inst)
+            (recur (next children-inst)
+                   (next children-main)
+                   (if (synced-pair? child-main child-inst)
+                     (both-cb changes child-inst child-main)
+                     (swapped-cb changes child-inst child-main)))
 
-              (nil? child-main')
-              (recur (next children-inst)
-                     children-main
-                     (only-inst-cb changes child-inst))
+            (let [child-inst' (d/seek #(pair? child-main %) children-inst)
+                  child-main' (d/seek #(pair? % child-inst) children-main)]
+              (cond
+                (nil? child-inst')
+                (recur children-inst
+                       (next children-main)
+                       (only-main-cb changes child-main))
 
-              :else
-              (if inverse?
-                (let [is-main? (ctk/is-main-of? child-inst child-main')]
-                  (recur (next children-inst)
-                         (remove #(= (:id %) (:id child-main')) children-main)
-                         (cond-> changes
-                           is-main?
-                           (both-cb child-inst child-main')
-                           (not is-main?)
-                           (swapped-cb child-inst child-main')
-                           :always
-                           (moved-cb child-inst child-main'))))
-                (let [is-main? (ctk/is-main-of? child-inst' child-main)]
-                  (recur (remove #(= (:id %) (:id child-inst')) children-inst)
-                         (next children-main)
-                         (cond-> changes
-                           is-main?
-                           (both-cb child-inst' child-main)
-                           (not is-main?)
-                           (swapped-cb child-inst' child-main)
-                           :always
-                           (moved-cb child-inst' child-main))))))))))))
+                (nil? child-main')
+                (recur (next children-inst)
+                       children-main
+                       (only-inst-cb changes child-inst))
+
+                :else
+                (if inverse?
+                  (let [is-main? (ctk/is-main-of? child-inst child-main')]
+                    (recur (next children-inst)
+                           (remove #(= (:id %) (:id child-main')) children-main)
+                           (cond-> changes
+                             is-main?
+                             (both-cb child-inst child-main')
+                             (not is-main?)
+                             (swapped-cb child-inst child-main')
+                             :always
+                             (moved-cb child-inst child-main'))))
+                  (let [synced? (synced-pair? child-main child-inst')]
+                    (recur (remove #(= (:id %) (:id child-inst')) children-inst)
+                           (next children-main)
+                           (cond-> changes
+                             synced?
+                             (both-cb child-inst' child-main)
+                             (not synced?)
+                             (swapped-cb child-inst' child-main)
+                             :always
+                             (moved-cb child-inst' child-main)))))))))))))
 
 (defn- add-shape-to-instance
   [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced?]
@@ -1233,9 +1306,12 @@
                        " "
                        (pretty-uuid (:id component-shape))))
   (let [component-parent-shape (ctn/get-shape component-page (:parent-id component-shape))
-        parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape %)
-                                       (cfh/get-children-with-self (:objects container)
-                                                                   (:id root-instance)))
+        ;; a swapped root refers to the shape it replaces, not to the main root
+        parent-shape           (if (= (:id component-parent-shape) (:id root-main))
+                                 root-instance
+                                 (d/seek #(ctk/is-main-of? component-parent-shape %)
+                                         (cfh/get-children-with-self (:objects container)
+                                                                     (:id root-instance))))
         all-parents            (into [(:id parent-shape)]
                                      (cfh/get-parent-ids (:objects container)
                                                          (:id parent-shape)))
@@ -1303,7 +1379,7 @@
           (pcb/apply-changes-local)))))
 
 (defn- add-shape-to-main
-  [changes shape index component component-container page root-instance root-main]
+  [changes shape index component component-container page root-instance root-main libraries]
   (shape-log :info (:id shape) page
              :msg (str "ADD [C " (pretty-uuid (:id component-container)) "] "
                        (:name shape)
@@ -1317,14 +1393,35 @@
                            (cfh/get-parent-ids (:objects component-container)
                                                (:id component-parent-shape)))
 
-        update-new-shape (fn [new-shape _original-shape]
-                           (reposition-shape new-shape
-                                             root-instance
-                                             root-main))
+        ;; A swapped head pushed to the main replaces the main child it refers to.
+        ;; Inside a copy of the main it is a swap of that child's position;
+        ;; elsewhere it is a plain copy of its own component.
+        swap-in-copy?    (and (ctk/swapped? shape)
+                              (seq (ctn/get-parent-copy-heads (:objects component-container)
+                                                              component-parent-shape)))
+        new-swap-ref     (when (ctk/swapped? shape)
+                           (if swap-in-copy?
+                             (:shape-ref (ctn/get-shape component-container (:shape-ref shape)))
+                             (swap-content-root-id libraries shape)))
 
+        update-new-shape (fn [new-shape original-shape]
+                           (cond-> (reposition-shape new-shape
+                                                     root-instance
+                                                     root-main)
+                             (and (= (:id original-shape) (:id shape))
+                                  (ctk/swapped? shape))
+                             (assoc :shape-ref new-swap-ref)
+
+                             (and (= (:id original-shape) (:id shape))
+                                  (ctk/swapped? shape)
+                                  (not swap-in-copy?))
+                             (ctk/remove-swap-group)))
+
+        ;; the copy now follows the main, swap included
         update-original-shape (fn [original-shape new-shape]
-                                (assoc original-shape
-                                       :shape-ref (:id new-shape)))
+                                (-> original-shape
+                                    (assoc :shape-ref (:id new-shape))
+                                    (ctk/remove-swap-group)))
 
         [_new-shape new-shapes updated-shapes]
         (ctst/clone-shape shape
@@ -1500,8 +1597,11 @@
           (pcb/apply-changes-local)))))
 
 (defn change-touched
+  "Update the touched groups of the dest shape: clear them (`reset-touched?`,
+  keeping the swap with `keep-swap?`), add those of the origin shape
+  (`copy-touched?`) or leave them as they are."
   [changes dest-shape origin-shape container
-   {:keys [reset-touched? copy-touched?] :as options}]
+   {:keys [reset-touched? keep-swap? copy-touched?] :as options}]
   (if (nil? (:shape-ref dest-shape))
     changes
     (do
@@ -1514,6 +1614,9 @@
                            (pretty-uuid (:id dest-shape)))
                  :options options)
       (let [new-touched (cond
+                          (and reset-touched? keep-swap? (ctk/swapped? dest-shape))
+                          #{:swap-group}
+
                           reset-touched?
                           nil
 
@@ -2336,6 +2439,52 @@
                 (assoc attr (get origin attr)))))
           dest))))
 
+(defn- update-swapped-placement
+  "Synchronizes a swapped copy head with the main shape it replaces, in the
+  attributes that place it in its parent: position, constraints and layout
+  item attributes. Its content comes from its own component. A position set
+  by a layout is left to the layout."
+  [changes shape-inst shape-main root-inst root-main container]
+  (let [objects    (:objects container)
+        touched    (get shape-inst :touched #{})
+        untouched? (fn [attr]
+                     (not (touched (ctk/resolve-sync-group (:type shape-inst) attr))))
+
+        placement  (reduce (fn [attrs attr]
+                             (let [value (get shape-main attr)]
+                               (if (and (untouched? attr)
+                                        (not= value (get shape-inst attr)))
+                                 (assoc attrs attr value)
+                                 attrs)))
+                           {}
+                           placement-attrs)
+
+        position   (fn [shape]
+                     (gpt/point (dm/get-in shape [:selrect :x])
+                                (dm/get-in shape [:selrect :y])))
+        delta      (gpt/subtract (position (reposition-shape shape-main root-main root-inst))
+                                 (position shape-inst))
+        move?      (and (untouched? :x)
+                        (not (gpt/almost-zero? delta))
+                        (or (not (ctsl/any-layout-immediate-child? objects shape-inst))
+                            (ctsl/position-absolute? shape-inst)))]
+    (cond-> changes
+      (seq placement)
+      (pcb/update-shapes [(:id shape-inst)]
+                         (fn [shape]
+                           (reduce-kv (fn [shape attr value]
+                                        (if (nil? value)
+                                          (dissoc shape attr)
+                                          (assoc shape attr value)))
+                                      shape
+                                      placement))
+                         {:ignore-touched true})
+
+      move?
+      (pcb/update-shapes (cfh/get-children-ids-with-self objects (:id shape-inst))
+                         #(gsh/move % delta)
+                         {:ignore-touched true}))))
+
 (defn- update-flex-child-copy-attrs
   "Synchronizes the attributes inside the flex-child items (main->copy)"
   [changes shape-main shape-copy main-container main-component copy-container omit-touched?]
@@ -2643,6 +2792,62 @@
         (pcb/with-objects (:objects container))
         (generate-detach-instance container libraries id))))
 
+(defn- main-ref-ids
+  "Map the shapes of a main subtree to the shapes of a copy of it: for each
+  shape in the subtree of `head`, follow its ref chain until a shape whose id
+  is in `main-ids`, and map that id to the shape's id."
+  [file container libraries head main-ids]
+  (let [ref-in-main
+        (fn [shape]
+          (loop [shape shape container container steps 0]
+            (when (and (some? shape) (< steps 64))
+              (if (contains? main-ids (:id shape))
+                (:id shape)
+                (let [ref (ctf/find-ref-shape file container libraries shape
+                                              :include-deleted? true
+                                              :with-context? true)]
+                  (recur ref (:container (meta ref)) (inc steps)))))))]
+    (into {}
+          (keep (fn [shape]
+                  (when-let [main-id (ref-in-main shape)]
+                    [main-id (:id shape)])))
+          (cfh/get-children-with-self (:objects container) (:id head)))))
+
+(defn- generate-swap-in-copy
+  "A swap inside a copy keeps the position: the new head refers to the main
+  shape the old one referred to. It is marked as swapped while its component
+  differs from that shape's; otherwise it is a plain nested copy of it, and
+  its children refer to that shape's children."
+  [changes new-shape shape file page libraries]
+  (let [file*     {:id (:id file) :data file}
+        ref-shape (ctf/find-ref-shape file* page libraries shape
+                                      :include-deleted? true
+                                      :with-context? true)
+        swapped?  (or (nil? ref-shape)
+                      (not= (:component-id ref-shape) (:component-id new-shape))
+                      (not= (:component-file ref-shape) (:component-file new-shape)))
+        new-ids   (->> (:redo-changes changes)
+                       (filter #(= :add-obj (:type %)))
+                       (map :obj)
+                       (d/index-by :id))
+        children  (->> (vals new-ids)
+                       (filter #(contains? (set (cfh/get-parent-ids new-ids (:id %)))
+                                           (:id new-shape))))
+        ref-map   (when-not swapped?
+                    (main-ref-ids file* (:container (meta ref-shape)) libraries ref-shape
+                                  (into #{} (map :shape-ref) children)))]
+    [(cond-> (assoc new-shape :shape-ref (:shape-ref shape))
+       swapped?
+       (update :touched (fnil conj #{}) :swap-group))
+     (cond-> (pcb/update-shapes changes
+                                [(:id new-shape)]
+                                #(assoc % :shape-ref (:shape-ref shape))
+                                {:ignore-touched true})
+       (seq ref-map)
+       (pcb/update-shapes (map :id children)
+                          #(d/update-when % :shape-ref (fn [ref] (get ref-map ref ref)))
+                          {:ignore-touched true}))]))
+
 (defn generate-new-shape-for-swap
   [changes shape file page libraries id-new-component index target-cell keep-props-values]
   (let [objects      (:objects page)
@@ -2651,10 +2856,10 @@
                          (pcb/with-objects objects))
         position     (-> position (with-meta {:cell target-cell}))
         parent       (get objects (:parent-id shape))
-        inside-comp? (ctn/in-any-component? objects parent)
+        inside-copy? (ctk/in-component-copy? parent)
 
         [new-shape changes]
-        ;; When we make a swap of an item, there can be copies which swap-slot points to that item
+        ;; When we make a swap of an item, there can be copies which refer to that item,
         ;; so we want to assign the item id to the new instanciated copy, to mantain that reference
         (generate-instantiate-component changes
                                         objects
@@ -2669,15 +2874,10 @@
                                         {(:id shape) (:id shape)} ;; keep the id of the original shape
                                         {:force-frame? true})
 
-        new-shape (cond-> new-shape
-                    ;; if the shape isn't inside a main component, it shouldn't have a swap slot
-                    (and (nil? (ctk/get-swap-slot new-shape))
-                         inside-comp?)
-                    (ctk/set-swap-slot (ctf/find-swap-slot shape
-                                                           page
-                                                           {:id (:id file)
-                                                            :data file}
-                                                           libraries)))]
+        [new-shape changes]
+        (if inside-copy?
+          (generate-swap-in-copy changes new-shape shape file page libraries)
+          [new-shape changes])]
 
     [new-shape (-> changes
                    ;; Restore the properties
@@ -2698,8 +2898,9 @@
         ;; swapped children (we will keep them too)
         ignore-swapped-fn
         (if ignore-swapped?
-          #(-> (get objects %)
-               (ctk/get-swap-slot))
+          #(let [child (get objects %)]
+             (or (some? (ctk/get-swap-slot child))
+                 (ctk/swapped? child)))
           (constantly false))
 
         ;; In the cases where the swapped shape was the first element of the masked group it would make the group to loose the
@@ -2967,7 +3168,17 @@
            level-delta            (if (some? level-delta)
                                     level-delta
                                     (ctn/get-nesting-level-delta objects obj parent))
-           new-shape-ref          (ctf/advance-shape-ref nil page libraries obj level-delta {:include-deleted? true})
+
+           ;; a swapped head that leaves every copy level
+           rehead?                (and (ctk/swapped? obj)
+                                       (pos? level-delta)
+                                       (>= level-delta
+                                           (->> (ctn/get-parent-copy-heads objects obj)
+                                                (remove #(= (:id %) (:id obj)))
+                                                (count))))
+           new-shape-ref          (if rehead?
+                                    (swap-content-root-id libraries obj)
+                                    (ctf/advance-shape-ref nil page libraries obj level-delta {:include-deleted? true}))
 
            regenerate-component
            (fn [changes shape]
@@ -3005,6 +3216,9 @@
                (cond-> (and (some? new-shape-ref)
                             (not= new-shape-ref (:shape-ref obj)))
                  (assoc :shape-ref new-shape-ref))
+
+               (cond-> rehead?
+                 (ctk/remove-swap-group))
 
                (gsh/move delta)
                (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
@@ -3053,7 +3267,8 @@
                                                   ids-map
                                                   child
                                                   delta
-                                                  level-delta
+                                                  ;; the children of a swapped head refer into its own component
+                                                  (if (ctk/swapped? obj) 0 level-delta)
                                                   libraries
                                                   library-data
                                                   file-id
@@ -3085,18 +3300,37 @@
                             (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
                             (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
                                 (assoc-in [(:id shape) :touched]
-                                          (ctf/get-touched-from-ref-chain-until-target-ref
-                                           container libraries shape new-shape-ref))))))
+                                          (set/union
+                                           (or (:touched shape) #{})
+                                           (inherited-touched
+                                            shape
+                                            (ctf/get-touched-from-ref-chain-until-target-ref
+                                             container libraries shape new-shape-ref))))))))
+        detach-copy   (fn [objects shape]
+                        (reduce #(update %1 %2 ctk/detach-shape)
+                                objects
+                                (cfh/get-children-ids-with-self objects (:id shape))))
         advance-copy  (fn [objects shape]
                         (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
                           (let [level-delta (if (nil? (ctk/get-swap-slot shape))
                                               (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
                                               0)]
-                            (if (pos? level-delta)
-                              (reduce (partial advance-shape level-delta)
-                                      objects
-                                      (cfh/get-children-with-self objects (:id shape)))
-                              objects))
+                            (cond
+                              (not (pos? level-delta))
+                              objects
+
+                              ;; the copy leaves every copy level
+                              (ctk/swapped? shape)
+                              (if-let [root-id (swap-content-root-id libraries shape)]
+                                (update objects (:id shape) rehead-swapped root-id)
+                                (detach-copy objects shape))
+
+                              :else
+                              (let [unchanged-ids (swapped-descendant-ids objects (:id shape))]
+                                (reduce (partial advance-shape level-delta)
+                                        objects
+                                        (->> (cfh/get-children-with-self objects (:id shape))
+                                             (remove #(contains? unchanged-ids (:id %))))))))
                           objects))]
     (reduce advance-copy
             objects

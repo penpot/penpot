@@ -831,9 +831,9 @@
                         original (:component-id (tm/shape-by-id s (:nested-head (n/lineage-nesting s m 0))))]
                     (t/is (= original (head-component s nested)))
                     (t/is (= base-color (head-rect-color s nested)))
-                    ;; the reset climbs to the top copy and clears its overrides
-                    (tm/known-failure "F12" 0.5 nil (:opacity root))
-                    (tm/known-failure "F12" #{:layer-effects-group} nil (:touched root))))}))
+                    ;; the reset leaves the top copy's overrides alone
+                    (t/is (= 0.5 (:opacity root)))
+                    (t/is (= #{:layer-effects-group} (:touched root)))))}))
 
 (defn second-variant-switch-keeps-root-overrides
   "Case AC. A copy nests a variant; the copy overrides the opacity of the
@@ -859,10 +859,8 @@
      :asserter  (fn [s]
                   (t/is (= (n/variant-member-component-id s "vset" "c") (head-component s nested)))
                   (t/is (= green (head-rect-color s nested)))
-                  ;; the second switch of a head with a swap slot loses its overrides
-                  (tm/known-failure "F29" 0.5 nil (:opacity (root s)))
-                  (tm/known-failure "F29" true false
-                                    (contains? (:touched (root s)) :layer-effects-group)))}))
+                  (t/is (= 0.5 (:opacity (root s))))
+                  (t/is (contains? (:touched (root s)) :layer-effects-group)))}))
 
 (defn update-main-pushes-a-swapped-child
   "Case AD. Of two copies, the first swaps its nested copy and pushes that to
@@ -891,11 +889,7 @@
                     (t/is (= s1 (head-component s first-nested)))
                     (t/is (= red (head-rect-color s first-nested)))
                     (t/is (= (main-nested s) (:shape-ref first)))
-                    ;; update main leaves the swapped child its swap slot
-                    (tm/known-failure "F16" #{} #{:swap-slot}
-                                      (into #{}
-                                            (map #(if (ctk/swap-slot? %) :swap-slot %))
-                                            (:touched first)))
+                    (t/is (empty? (:touched first)))
                     (t/is (= s1 (head-component s second-nested)))
                     (t/is (= red (head-rect-color s second-nested)))))}))
 
@@ -903,7 +897,7 @@
   "Case AE. A copy swaps its nested copy; then the copy is detached, or
    duplicated; then the main of the component it swapped to changes. Detached,
    the root loses its link and the nested copy becomes a top-level copy of
-   that component, with no swap slot; duplicated, the duplicate's nested copy
+   that component, no longer swapped; duplicated, the duplicate's nested copy
    is one too. Either way it follows the change."
   []
   (let [m           "main"
@@ -925,11 +919,11 @@
                     (t/is (= blue (head-rect-color s nested)))
                     (when-not (tm/applied? s duplication)
                       ;; the detached root lost its link; its nested copy is a
-                      ;; top-level copy now, with no swap slot
+                      ;; top-level copy now, no longer swapped
                       (let [head (tm/shape-by-id s (nested s))]
                         (t/is (nil? (:component-id (tm/shape-by-id s ((n/copy-head-of m) s)))))
                         (t/is (:component-root head))
-                        (t/is (nil? (ctk/get-swap-slot head)))))
+                        (t/is (not (ctk/swapped? head)))))
                     (when (tm/applied? s duplication)
                       (t/is (= s1 (head-component s dup-nested)))
                       (t/is (= blue (head-rect-color s dup-nested))))))}))
@@ -949,10 +943,7 @@
                                  (n/move-to-cell :main-root :main-child 1 3)])
      :asserter  (fn [s]
                   (t/is (= 3 (column s :main-root :main-child)))
-                  (if (tm/applied? s swap)
-                    ;; the grid sync pairs a slotted child only by its raw slot
-                    (tm/known-failure "F44" 3 1 (column s :copy-root :copy-child))
-                    (t/is (= 3 (column s :copy-root :copy-child)))))}))
+                  (t/is (= 3 (column s :copy-root :copy-child))))}))
 
 (defn main-reorder-keeps-copy-sub-heads-aligned
   "Case AG (the plugin's MainReorderKeepsCopySlots). A main holds three
@@ -1038,10 +1029,12 @@
                         in-col-3   (mapv :component-id (get placement 3))
                         expected   [(:component-id copy-child)]]
                     (if (tm/applied? s swap)
-                      ;; the cells keep the copy child's id, which no main child has
+                      ;; the cells keep the id of the main child update main
+                      ;; replaced, which is gone, and the new main child is in
+                      ;; no cell
                       (tm/known-failure "F49"
                                         [{:stray #{} :uncelled 0} expected]
-                                        [{:stray #{(:id copy-child)} :uncelled 1} expected]
+                                        [{:stray #{nil} :uncelled 1} [nil]]
                                         [cells in-col-3])
                       (do
                         (t/is (= {:stray #{} :uncelled 0} cells))
@@ -1093,11 +1086,7 @@
                   (t/is (= [(:component-id copy-child)] (mapv :component-id in-group)))
                   (t/is (= [(:shape-ref copy-child)] (mapv :id in-group)))
                   (t/is (empty? (:touched (tm/role-shape s :copy-root))))
-                  ;; update main leaves the swapped child its swap slot
-                  (tm/known-failure "F16" #{} #{:swap-slot}
-                                    (into #{}
-                                          (map #(if (ctk/swap-slot? %) :swap-slot %))
-                                          (:touched copy-child)))))})
+                  (t/is (empty? (:touched copy-child)))))})
 
 (defn flex-child-override-follows-sync-reset-and-update-main
   "Case AN. A copy of a flex main overrides its child's margin. Then the main

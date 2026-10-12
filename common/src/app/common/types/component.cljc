@@ -260,6 +260,19 @@
   [shape group]
   ((or (:touched shape) #{}) group))
 
+(defn swapped?
+  "Whether the copy head was swapped by the user: its component is its own
+  choice, not the one of the main shape it refers to."
+  [shape]
+  (contains? (:touched shape) :swap-group))
+
+(defn remove-swap-group
+  "Make the shape not swapped."
+  [shape]
+  (cond-> shape
+    (swapped? shape)
+    (update :touched disj :swap-group)))
+
 (defn build-swap-slot-group
   "Convert a swap-slot into a :touched group"
   [swap-slot]
@@ -395,5 +408,6 @@
   [group]
   (ex/ignoring
    (or (contains? all-touched-groups group)
+       (= group :swap-group)
        (and (swap-slot? group)
             (some? (group->swap-slot group))))))

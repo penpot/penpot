@@ -400,6 +400,14 @@
   (when (:shape-ref shape)
     (get-component-shape file-data component (:shape-ref shape) :with-context? with-context?)))
 
+(defn get-content-ref-shape
+  "Retrieve the shape in the component whose content the instance shape
+  follows: the root for a swapped head, the referenced shape otherwise."
+  [file-data component shape]
+  (if (ctk/swapped? shape)
+    (get-component-root file-data component)
+    (get-ref-shape file-data component shape)))
+
 (defn get-shape-in-copy
   "Given a shape in the main component and the root of the copy component returns the equivalent
   shape inside the root copy that matches the main-shape"
@@ -419,6 +427,26 @@
             (when (some? component)
               (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
     (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
+
+(defn find-content-ref-shape
+  "Retrieve the shape whose content the instance shape follows: the main root
+  of its own component for a swapped head, the referenced shape otherwise."
+  [file container libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
+  (if (ctk/swapped? shape)
+    (let [component-file (find-component-file file libraries (:component-file shape))
+          file-data      (:data component-file)
+          component      (when (some? component-file)
+                           (ctkl/get-component file-data (:component-id shape) include-deleted?))
+          root           (when (some? component)
+                           (get-component-root file-data component))]
+      (cond-> root
+        (and (some? root) with-context?)
+        (with-meta {:file {:id (:id file-data)
+                           :data file-data}
+                    :container (get-component-container file-data component)})))
+    (find-ref-shape file container libraries shape
+                    :include-deleted? include-deleted?
+                    :with-context? with-context?)))
 
 (defn find-near-match
   "Locate the shape that occupies the same position in the near main component.
@@ -478,9 +506,20 @@
 
     (some find-ref-component-in-head (ctn/get-parent-copy-heads (:objects page) shape))))
 
+(declare find-remote-shape*)
+
 (defn find-remote-shape
-  "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
+  "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component.
+  The remote shape of a swapped head is the main root of its own component."
   [container libraries shape & {:keys [with-context?] :or {with-context? false}}]
+  (if (ctk/swapped? shape)
+    (find-content-ref-shape nil container libraries shape
+                            :include-deleted? true
+                            :with-context? with-context?)
+    (find-remote-shape* container libraries shape with-context?)))
+
+(defn- find-remote-shape*
+  [container libraries shape with-context?]
   (let [top-instance        (ctn/get-component-shape (:objects container) shape)
         component-file      (get-in libraries [(:component-file top-instance) :data])
         component           (ctkl/get-component component-file (:component-id top-instance) true)
@@ -509,10 +548,12 @@
 
 (defn direct-copy?
   "Check if the shape is in a direct copy of the component (i.e. the shape-ref points to shapes inside
-   the component)."
+   the component). A swapped head is a direct copy of its own component."
   [shape component page file libraries]
-  (let [ref-component (find-ref-component file page libraries shape :include-deleted? true)]
-    (true? (= (:id component) (:id ref-component)))))
+  (if (ctk/swapped? shape)
+    (= (:id component) (:component-id shape))
+    (let [ref-component (find-ref-component file page libraries shape :include-deleted? true)]
+      (true? (= (:id component) (:id ref-component))))))
 
 (defn find-swap-slot
   ([shape container file libraries]
