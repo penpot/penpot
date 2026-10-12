@@ -1030,7 +1030,7 @@
                    (dissoc :options)
                    (dissoc :tokens-source)
                    (bfc/check-components-v2))
-          file  (bfc/process-file cfg file)
+          file  (bfc/process-imported-file cfg file)
           file  (ctf/check-file file)]
 
       (bfm/register-pending-migrations! cfg file)
@@ -1279,6 +1279,7 @@
 
     (let [resolution (resolve-and-link-libraries cfg files-info)]
 
+      (bfc/convert-deferred-swaps! cfg)
       (bfm/apply-pending-migrations! cfg)
       {:file-ids   file-ids
        :resolution resolution})))

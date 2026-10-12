@@ -48,6 +48,7 @@
     "fdata/shape-data-type"
     "fdata/path-data"
     "components/v2"
+    "components/swap-group"
     "styles/v2"
     "layout/grid"
     "plugins/runtime"
@@ -67,6 +68,7 @@
     "styles/v2"
     "layout/grid"
     "components/v2"
+    "components/swap-group"
     "plugins/runtime"
     "design-tokens/v1"
     "tokens/numeric-input"
@@ -96,7 +98,8 @@
 ;; or modifying a file or creating or modifying a team
 (def no-team-inheritable-features
   #{"fdata/path-data"
-    "fdata/shape-data-type"})
+    "fdata/shape-data-type"
+    "components/swap-group"})
 
 ;; This is a set of features that does not require an explicit
 ;; migration like components/v2 or the migration is not mandatory to
@@ -107,6 +110,7 @@
         "design-tokens/v1"
         "fdata/shape-data-type"
         "fdata/path-data"
+        "components/swap-group"
         "tokens/numeric-input"
         "variants/v1"}
       (into frontend-only-features)
