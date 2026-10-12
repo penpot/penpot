@@ -601,9 +601,15 @@
 
 (defmethod read-section :v1/sobjects
   [{:keys [::db/conn ::bfc/input ::bfc/timestamp] :as cfg}]
-  (let [storage (sto/resolve cfg)
-        ids     (read-obj! input)
-        thumb?  (into #{} (map :media-id) (:thumbnails @bfc/*state*))]
+  (let [storage    (sto/resolve cfg)
+        ids        (read-obj! input)
+
+        ;; The bucket of every object is decided by the reference that uses
+        ;; it: an object shared by references of different buckets is stored
+        ;; once per bucket.
+        references (-> {}
+                       (bfc/collect-storage-references :media (:media @bfc/*state*))
+                       (bfc/collect-storage-references :thumbnail (:thumbnails @bfc/*state*)))]
 
     (doseq [expected-storage-id ids]
       (let [id    (read-uuid! input)
@@ -627,28 +633,30 @@
                                       {:keys [bytes size]} (bfc/sanitize-imported-svg mdata raw)]
                                   [bytes size])
                                 [resource size])
-              hash            (sto/calculate-hash resource)
-              content         (-> (sto/content resource size)
-                                  (sto/wrap-with-hash hash))
+              buckets         (get references id)]
 
-              params          (-> mdata
+          ;; Objects that no reference uses are not persisted.
+          (when (seq buckets)
+            (let [hash    (sto/calculate-hash resource)
+                  content (-> (sto/content resource size)
+                              (sto/wrap-with-hash hash))]
+
+              (doseq [bucket buckets]
+                (let [params  (-> mdata
+                                  (assoc :bucket bucket)
                                   (assoc ::sto/content content)
                                   (assoc ::sto/deduplicate? true)
                                   (assoc ::sto/touched-at timestamp))
 
-              params          (if (thumb? id)
-                                (assoc params :bucket "file-object-thumbnail")
-                                (assoc params :bucket "file-media-object"))
+                      sobject (sto/put-object! storage params)]
 
-              sobject         (sto/put-object! storage params)]
+                  (l/dbg :hint "persisted storage object"
+                         :old-id (str id)
+                         :new-id (str (:id sobject))
+                         :bucket bucket
+                         ::l/sync? true)
 
-          (l/dbg :hint "persisted storage object"
-                 :old-id (str id)
-                 :new-id (str (:id sobject))
-                 :is-thumbnail (boolean (thumb? id))
-                 ::l/sync? true)
-
-          (vswap! bfc/*state* update :index assoc id (:id sobject)))))
+                  (vswap! bfc/*state* bfc/assoc-storage-id id bucket (:id sobject)))))))))
 
     (doseq [item (:media @bfc/*state*)]
       (l/dbg :hint "inserting file media object"
@@ -662,11 +670,11 @@
           (db/insert! conn :file-media-object
                       (-> item
                           (assoc :file-id file-id)
-                          (d/update-when :media-id bfc/lookup-index)
-                          (d/update-when :thumbnail-id bfc/lookup-index))))))
+                          (d/update-when :media-id #(bfc/reference-storage-id % (:media bfc/storage-bucket-by-kind)))
+                          (d/update-when :thumbnail-id #(bfc/reference-storage-id % (:media bfc/storage-bucket-by-kind))))))))
 
     (doseq [item (:thumbnails @bfc/*state*)]
-      (let [item (update item :media-id bfc/lookup-index)]
+      (let [item (update item :media-id #(bfc/reference-storage-id % (:thumbnail bfc/storage-bucket-by-kind)))]
         (l/dbg :hint "inserting file object thumbnail"
                :file-id (str (:file-id item))
                :media-id (str (:media-id item))

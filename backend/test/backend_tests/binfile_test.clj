@@ -15,6 +15,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
    [app.common.files.validate :as cfv]
+   [app.common.json :as json]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
@@ -2899,3 +2900,342 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; STORAGE OBJECT REFERENCES
+;;
+;; The bucket of a storage object is decided by the reference that uses
+;; it, not by the label that the object carries in the file.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- read-zip-entries
+  "Return a map of entry name to bytes for the given zip file."
+  [path]
+  (with-open [zip (java.util.zip.ZipFile. (jio/file path))]
+    (into {}
+          (map (fn [^java.util.zip.ZipEntry entry]
+                 [(.getName entry)
+                  (with-open [stream (.getInputStream zip entry)]
+                    (io/read stream))]))
+          (enumeration-seq (.entries zip)))))
+
+(defn- write-zip-entries
+  "Write a new zip file with the given entries (name -> bytes or string)."
+  [entries]
+  (let [path (tmp/tempfile :suffix ".zip")]
+    (with-open [output (java.util.zip.ZipOutputStream. (io/output-stream path))]
+      (doseq [[name data] entries]
+        (.putNextEntry output (java.util.zip.ZipEntry. ^String name))
+        (.write output ^bytes (if (bytes? data) data (.getBytes ^String data "UTF-8")))
+        (.closeEntry output)))
+    path))
+
+(defn- read-json-entry
+  [data]
+  (json/decode (String. ^bytes data "UTF-8") :key-fn json/read-kebab-key))
+
+(defn- map-json-entries
+  "Apply `f` to the decoded json of every entry whose name matches `path?`.
+  Entries that do not match are copied as they are; when `f` returns nil the
+  entry is dropped."
+  [entries path? f]
+  (into {}
+        (keep (fn [[name data]]
+                (if (path? name)
+                  (when-let [result (f (read-json-entry data))]
+                    [name (json/encode result)])
+                  [name data])))
+        entries))
+
+(defn- media-entry?
+  [name]
+  (some? (re-matches #"files/[^/]+/media/[^/]+\.json" name)))
+
+(defn- object-entry?
+  [name]
+  (some? (re-matches #"objects/[^/]+\.json" name)))
+
+(defn- thumbnail-entry?
+  [name]
+  (some? (re-matches #"files/[^/]+/thumbnails/[^/]+/[^/]+/[^/]+\.json" name)))
+
+(def ^:private real-penpot-export
+  "A real penpot export: file, pages, shapes, object thumbnails and their
+  png blobs."
+  "backend_tests/test_files/svg-attrs-camel-case.penpot")
+
+(defn- bundle-file-id
+  "Return the id (as string) of the first file of the bundle."
+  [entries]
+  (->> entries
+       keys
+       (keep #(second (re-matches #"files/([^/]+)\.json" %)))
+       first))
+
+(defn- prepare-bundle!
+  "Copy the bundle at `input`, apply `f` to the decoded json of every entry
+  whose name matches `path?` and add the `extra` entries (name -> data)."
+  [input path? f extra]
+  (-> (read-zip-entries input)
+      (map-json-entries path? f)
+      (merge extra)
+      (write-zip-entries)))
+
+(defn- export-to-zip!
+  [file-id]
+  (let [output (tmp/tempfile :suffix ".zip")]
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{file-id})
+         (assoc ::bfc/export-type :detach-libraries))
+     (io/output-stream output))
+    output))
+
+(defn- import-zip!
+  [profile input]
+  (-> th/*system*
+      (assoc ::bfc/project-id (:default-project-id profile))
+      (assoc ::bfc/profile-id (:id profile))
+      (assoc ::bfc/team-id (:default-team-id profile))
+      (assoc ::bfc/input input)
+      (v3/import-files!)))
+
+(defn- put-image-object!
+  "Store a real image from the test files as a storage object."
+  [storage bucket resource]
+  (let [source  (th/tempfile resource)
+        content (-> (sto/content source)
+                    (sto/wrap-with-hash (sto/calculate-hash source)))]
+    (sto/put-object! storage {::sto/content content
+                              :content-type "image/jpeg"
+                              :bucket bucket})))
+
+(defn- prepare-file-with-media-object
+  "Like `prepare-file-with-media` but also returns the media row and the
+  storage object it points to."
+  [profile]
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (stt/configure-storage-backend))
+
+        sobject (put-image-object! storage "file-media-object"
+                                   "backend_tests/test_files/sample.jpg")
+
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        mobj    (th/create-file-media-object* {:file-id (:id file)
+                                               :is-local true
+                                               :media-id (:id sobject)})]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes [{:type :add-media :object mobj}])
+
+    {:file    (dissoc file :data)
+     :row     mobj
+     :sobject sobject
+     :storage storage}))
+
+(t/deftest export-binfile-v3-normalizes-cross-bucket-reference
+  ;; A reference that points to an object of the wrong bucket is exported
+  ;; pointing to the alive object with the same content, so the bundle does
+  ;; not carry the incoherence.
+  (let [profile (th/create-profile* 1)
+        {:keys [file row sobject storage]} (prepare-file-with-media-object profile)
+
+        ;; the same real image, stored with the wrong bucket
+        foreign (put-image-object! storage "file-object-thumbnail"
+                                   "backend_tests/test_files/sample.jpg")
+
+        _       (th/db-update! :file-media-object {:thumbnail-id (:id foreign)} {:id (:id row)})
+        entries (read-zip-entries (export-to-zip! (:id file)))
+        media   (->> entries
+                     (keep (fn [[name data]]
+                             (when (media-entry? name)
+                               (read-json-entry data))))
+                     first)]
+
+    (t/is (some? media))
+    (t/is (not= (str (:id foreign)) (:thumbnail-id media)))
+    (t/is (= (str (:id sobject)) (:thumbnail-id media)))
+    (t/is (not (contains? entries (str "objects/" (:id foreign) ".json"))))))
+
+(t/deftest export-binfile-v3-emits-a-copy-without-twin
+  ;; When there is no alive object with the same content and the required
+  ;; bucket, the export emits a copy of the object with that bucket.
+  (let [profile (th/create-profile* 1)
+        {:keys [file row storage]} (prepare-file-with-media-object profile)
+
+        ;; a different real image, stored with the wrong bucket
+        foreign (put-image-object! storage "file-object-thumbnail"
+                                   "backend_tests/test_files/sample2.jpg")
+
+        _       (th/db-update! :file-media-object {:thumbnail-id (:id foreign)} {:id (:id row)})
+        entries (read-zip-entries (export-to-zip! (:id file)))
+        media   (->> entries
+                     (keep (fn [[name data]]
+                             (when (media-entry? name)
+                               (read-json-entry data))))
+                     first)
+        thumb   (:thumbnail-id media)
+        params  (read-json-entry (get entries (str "objects/" thumb ".json")))]
+
+    (t/is (some? media))
+    (t/is (not= (str (:id foreign)) thumb))
+    (t/is (= "file-media-object" (:bucket params)))
+    (t/is (= (alength ^bytes (io/read (io/input-stream (th/tempfile "backend_tests/test_files/sample2.jpg"))))
+             (alength ^bytes (get entries (str "objects/" thumb ".jpg")))))))
+
+(t/deftest import-binfile-v3-rejects-undefined-storage-reference
+  ;; A reference to an object that the bundle does not contain must be
+  ;; rejected: it would end up dangling or pointing to an object of another
+  ;; file.
+  (let [profile  (th/create-profile* 1)
+        input    (th/tempfile real-penpot-export)
+        file-id  (bundle-file-id (read-zip-entries input))
+        media-id (uuid/random)
+        entry    {:id media-id
+                  :name "sample"
+                  :width 100
+                  :height 100
+                  :mtype "image/png"
+                  :is-local true
+                  :media-id (uuid/random)}
+        bundle   (prepare-bundle! input media-entry? identity
+                                  {(str "files/" file-id "/media/" media-id ".json")
+                                   (json/encode entry)})
+        out      (try
+                   (import-zip! profile bundle)
+                   :no-error
+                   (catch Throwable e
+                     (or (ex-data e) (some-> (ex-cause e) ex-data))))]
+
+    (t/is (= :validation (:type out)))
+    (t/is (= :inconsistent-penpot-file (:code out)))))
+
+(t/deftest import-binfile-v3-does-not-store-unreferenced-objects
+  ;; Objects that no reference uses are not persisted.
+  (let [profile (th/create-profile* 1)
+        input   (th/tempfile real-penpot-export)
+        png     (th/tempfile "backend_tests/test_files/sample.png")
+        blob    (io/read (io/input-stream png))
+        junk-id (uuid/random)
+        bundle  (prepare-bundle! input (constantly false) identity
+                                 {(str "objects/" junk-id ".json")
+                                  (json/encode {:id junk-id
+                                                :size (alength ^bytes blob)
+                                                :content-type "image/png"
+                                                :bucket "file-thumbnail"
+                                                :hash (sto/calculate-hash png)})
+                                  (str "objects/" junk-id ".png")
+                                  blob})]
+
+    (import-zip! profile bundle)
+
+    (t/is (empty? (th/db-exec! ["select id from storage_object where metadata->>'bucket' = ? or metadata->>'~:bucket' = ?"
+                                "file-thumbnail" "file-thumbnail"])))))
+
+(t/deftest import-binfile-v1-stores-objects-per-reference
+  ;; The legacy importer stores every object with the bucket required by the
+  ;; reference that uses it, and resolves each reference with its own object.
+  ;; The legacy format carries no bucket labels, so one object shared by a
+  ;; media thumbnail and by an object thumbnail has to be split in two.
+  (let [profile (th/create-profile* 1)
+        {:keys [file row sobject]} (prepare-file-with-media-object profile)
+
+        _      (th/db-update! :file-media-object
+                              {:thumbnail-id (:id sobject)}
+                              {:id (:id row)})
+
+        _      (th/db-insert! :file-tagged-object-thumbnail
+                              {:file-id (:id file)
+                               :object-id (thc/fmt-object-id {:file-id (:id file)
+                                                              :page-id (uuid/random)
+                                                              :frame-id (uuid/random)})
+                               :tag "frame"
+                               :media-id (:id sobject)})
+
+        output (tmp/tempfile :suffix ".penpot")]
+
+    (v1/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream output))
+
+    (let [result  (-> th/*system*
+                      (assoc ::bfc/project-id (:default-project-id profile))
+                      (assoc ::bfc/profile-id (:id profile))
+                      (assoc ::bfc/input output)
+                      (v1/import-files!))
+          new-id  (first result)
+          media   (first (th/db-query :file-media-object {:file-id new-id :deleted-at nil}))
+          thumb   (first (bfc/get-file-object-thumbnails th/*system* new-id))
+          storage (-> (:app.storage/storage th/*system*)
+                      (stt/configure-storage-backend))
+          obj1    (sto/get-object storage (:media-id media))
+          obj2    (sto/get-object storage (:media-id thumb))]
+
+      (t/is (= 1 (count result)))
+      (t/is (some? media))
+      (t/is (some? thumb))
+      (t/is (not= (:id obj1) (:id obj2)))
+      (t/is (= "file-media-object" (:bucket (meta obj1))))
+      (t/is (= "file-object-thumbnail" (:bucket (meta obj2))))
+      (t/is (= (seq (sto/get-object-bytes storage obj1))
+               (seq (sto/get-object-bytes storage obj2)))))))
+
+(t/deftest import-binfile-v3-splits-object-shared-by-two-buckets
+  ;; A media object that references an object of the `file-object-thumbnail`
+  ;; bucket (the shape found in production) is imported storing the object
+  ;; once per bucket, and each reference points to its own object.
+  (let [profile  (th/create-profile* 1)
+        input    (th/tempfile real-penpot-export)
+        entries  (read-zip-entries input)
+        file-id  (bundle-file-id entries)
+
+        ;; a storage object that is already referenced by an object thumbnail
+        shared   (->> entries
+                      (keep (fn [[name data]]
+                              (when (thumbnail-entry? name)
+                                (read-json-entry data))))
+                      first
+                      :media-id)
+
+        media-id (uuid/random)
+        entry    {:id media-id
+                  :name "sample"
+                  :width 100
+                  :height 100
+                  :mtype "image/png"
+                  :is-local true
+                  :media-id shared}
+        bundle   (prepare-bundle! input media-entry? identity
+                                  {(str "files/" file-id "/media/" media-id ".json")
+                                   (json/encode entry)})
+
+        result   (import-zip! profile bundle)
+        new-id   (first (:file-ids result))
+        media    (first (th/db-query :file-media-object {:file-id new-id :deleted-at nil}))
+        storage  (-> (:app.storage/storage th/*system*)
+                     (stt/configure-storage-backend))
+        obj1     (sto/get-object storage (:media-id media))
+        obj2     (sto/get-object-by-hash storage {:hash (:hash (meta obj1))
+                                                  :bucket "file-object-thumbnail"
+                                                  :backend (:backend obj1)})]
+
+    (t/is (some? shared))
+    (t/is (= 1 (count (:file-ids result))))
+    (t/is (some? media))
+    (t/is (some? obj1))
+    (t/is (some? obj2))
+    (t/is (not= (:id obj1) (:id obj2)))
+    (t/is (= "file-media-object" (:bucket (meta obj1))))
+    (t/is (= "file-object-thumbnail" (:bucket (meta obj2))))
+    (t/is (= (seq (sto/get-object-bytes storage obj1))
+             (seq (sto/get-object-bytes storage obj2))))))
