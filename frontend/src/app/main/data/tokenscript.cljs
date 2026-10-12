@@ -142,6 +142,17 @@
      :font-weight {:value (words->string (symbol->value s))}
      {:value (symbol->value s)})))
 
+(defn- convert-token-value
+  "`convert-value` for a token: a failing conversion (e.g. a color that
+  cannot be written as hex) is an error of that token, not of the whole
+  resolution."
+  [{:keys [type value]} s]
+  (try
+    (convert-value type s)
+    (catch :default e
+      {:error (-> (wte/error-with-value :error.style-dictionary/invalid-token-value value)
+                  (assoc :error/detail-message (or (:hint (ex-data e)) (ex-message e))))})))
+
 (defn plugin-value
   "Resolved value of a token as exposed by the plugin API: like
   `:resolved-value` but with typography line heights left as resolved."
@@ -257,7 +268,7 @@
                          (if (empty-value? token)
                            (assoc token :errors [(wte/get-error-code :error.token/empty-input)])
                            (let [errors (token-errors (get issues name) (:value token))
-                                 {:keys [value error]} (when-not errors (convert-value (:type token) (get resolved name)))
+                                 {:keys [value error]} (when-not errors (convert-token-value token (get resolved name)))
                                  error (or error (when-not errors (validate-value (:type token) value)))]
                              (cond
                                errors (assoc token :errors (vec errors))
