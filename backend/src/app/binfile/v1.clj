@@ -479,6 +479,7 @@
                     (read-section options))))
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
+        (bfc/convert-deferred-swaps! cfg)
         (bfm/apply-pending-migrations! cfg)
 
         ;; Knowing that the ids of the created files are in index,
@@ -558,7 +559,7 @@
                      (assoc :project-id project-id)
                      (dissoc :thumbnails)
                      (bfc/check-components-v2))
-            file  (bfc/process-file system file)]
+            file  (bfc/process-imported-file system file)]
 
         ;; All features that are enabled and requires explicit migration are
         ;; added to the state for a posterior migration step.

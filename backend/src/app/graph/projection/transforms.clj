@@ -70,61 +70,14 @@
            "MERGE (s)-[:RefersTo]->(t) "
            "RETURN count(*);")))))
 
-(def ^:private swap-slot-prefix "swap-slot-")
-
-(def ^:private slot-uuid-expr
-  ;; Ladybug `substring` is 1-indexed; 36 = RFC 4122 UUID text length.
-  (str "substring(touched_key, " (inc (count swap-slot-prefix)) ", 36)"))
-
-(defn- link-swap-slots!
-  "`FillsSwapSlot` from a swapped-in shape to the slot it replaces.
-
-  Penpot records a component sub-shape swap as a `swap-slot-<uuid>` entry in
-  the *replacing* shape's `touched` set, where `<uuid>` names the replaced
-  slot shape in the main instance. The entries are then stripped from
-  `touched`, as `app.common.types.component/normal-touched-groups` does, so a
-  reader of `touched` sees design edits rather than swap bookkeeping.
-
-  Stripping makes this the one transform that writes a column another
-  transform could read. Anything reading `touched` has to run before it."
-  [^Connection conn]
-  (let [linked
-        (reduce
-         (fn [total statement] (+ total (run-scalar! conn statement)))
-         0
-         (shape-pair-statements
-          (fn [from to]
-            (str "MATCH (s:" (nodes/match-label from) ") "
-                 "WHERE size(s.touched) > 0 "
-                 "UNWIND s.touched AS touched_key "
-                 "WITH s, touched_key "
-                 "WHERE STARTS_WITH(touched_key, '" swap-slot-prefix "') "
-                 "WITH s, CAST(" slot-uuid-expr ", 'UUID') AS slot_id "
-                 "MATCH (t:" (nodes/match-label to) ") "
-                 "WHERE t.id = slot_id AND s.id <> t.id "
-                 "MERGE (s)-[r:FillsSwapSlot {slot_id: slot_id}]->(t) "
-                 "RETURN count(r);"))))]
-    ;; Strip unconditionally: an entry may name a slot that was garbage
-    ;; collected, so "no edge created" does not mean "nothing to strip".
-    (doseq [table nodes/shape-tables]
-      (ladybug/exec-on-connection!
-       conn
-       [(str "MATCH (s:" (nodes/match-label table) ") "
-             "WHERE size(s.touched) > 0 "
-             "SET s.touched = list_filter(s.touched, x -> "
-             "NOT STARTS_WITH(x, '" swap-slot-prefix "'));")]))
-    linked))
-
 (def registry
   "Every transform this backend applies.
 
   `:id` names the transform in the ingest report and the log. `:rel` names
-  the relationship it produces. The three registered here read disjoint
-  columns, so the vector order is not load-bearing. The one ordering
-  constraint that exists is stated on `link-swap-slots!`."
-  [{:id "link-component-instances" :rel :IsInstanceOf  :run link-component-instances!}
-   {:id "link-shape-refs"          :rel :RefersTo      :run link-shape-refs!}
-   {:id "link-swap-slots"          :rel :FillsSwapSlot :run link-swap-slots!}])
+  the relationship it produces. The ones registered here read disjoint
+  columns, so the vector order is not load-bearing."
+  [{:id "link-component-instances" :rel :IsInstanceOf :run link-component-instances!}
+   {:id "link-shape-refs"          :rel :RefersTo     :run link-shape-refs!}])
 
 (defn apply-transforms!
   "Apply every registered transform to an already loaded graph.

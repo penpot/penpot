@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns common-tests.logic.comp-remove-swap-slots-test
+(ns common-tests.logic.comp-move-swapped-copies-test
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
@@ -53,7 +53,7 @@
       (tho/add-frame :frame-b2)
       (thc/make-component :b2 :frame-b2)))
 
-(t/deftest test-remove-swap-slot-relocating-blue1-to-root
+(t/deftest test-relocating-blue1-to-root
   (let [;; ==== Setup
         file                   (setup-file)
 
@@ -82,7 +82,7 @@
     (t/is (some? blue1'))
     (t/is (not (ctk/swapped? blue1')))))
 
-(t/deftest test-remove-swap-slot-relocating-blue1-to-b2
+(t/deftest test-relocating-blue1-to-b2
   (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
@@ -112,7 +112,7 @@
     (t/is (some? blue1'))
     (t/is (not (ctk/swapped? blue1')))))
 
-(t/deftest test-remove-swap-slot-relocating-yellow-to-root
+(t/deftest test-relocating-yellow-to-root
   (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
@@ -155,7 +155,7 @@
     (t/is (some? blue1''))
     (t/is (not (ctk/swapped? blue1'')))))
 
-(t/deftest test-remove-swap-slot-relocating-yellow-to-b2
+(t/deftest test-relocating-yellow-to-b2
   (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
@@ -208,7 +208,7 @@
                      (str/starts-with? (thi/label (:id %)) "<no-label")))
        first))
 
-(t/deftest test-remove-swap-slot-duplicating-blue1
+(t/deftest test-duplicating-blue1
   (let [;; ==== Setup
         file                   (setup-file)
 
@@ -245,7 +245,7 @@
     (t/is (some? duplicated-blue1'))
     (t/is (not (ctk/swapped? duplicated-blue1')))))
 
-(t/deftest test-remove-swap-slot-duplicate-yellow
+(t/deftest test-duplicate-yellow
   (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
@@ -300,7 +300,7 @@
     (t/is (some? duplicated-blue1''))
     (t/is (not (ctk/swapped? duplicated-blue1'')))))
 
-(t/deftest test-keep-swap-slot-relocating-blue1-before-yellow
+(t/deftest test-relocating-blue1-before-yellow
   (let [;; ==== Setup
         file                   (setup-file)
 
@@ -329,7 +329,7 @@
     (t/is (some? blue1'))
     (t/is (not (ctk/swapped? blue1')))))
 
-(t/deftest test-keep-swap-slot-move-blue1-inside-and-outside-yellow
+(t/deftest test-move-blue1-inside-and-outside-yellow
   (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
@@ -373,7 +373,7 @@
     (t/is (not (ctk/swapped? blue1'')))))
 
 
-(t/deftest test-keep-swap-slot-relocate-blue1-inside-and-outside-yellow
+(t/deftest test-relocate-blue1-inside-and-outside-yellow
   (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
@@ -419,7 +419,7 @@
     (t/is (not (ctk/swapped? blue1'')))))
 
 
-(t/deftest test-remove-swap-slot-relocating-green-copy-to-root
+(t/deftest test-relocating-green-copy-to-root
   (let [;; ==== Setup
         file                   (setup-file)
 
@@ -449,7 +449,7 @@
     (t/is (some? blue2'))
     (t/is (ctk/swapped? blue2'))))
 
-(t/deftest test-remove-swap-slot-relocating-green-copy-to-b2
+(t/deftest test-relocating-green-copy-to-b2
   (let [;; ==== Setup
         file                   (setup-file)
 
@@ -480,7 +480,7 @@
     (t/is (some? blue2'))
     (t/is (ctk/swapped? blue2'))))
 
-(t/deftest test-remove-swap-slot-duplicating-green-copy
+(t/deftest test-duplicating-green-copy
   (let [;; ==== Setup
         file                   (setup-file)
 
@@ -522,7 +522,7 @@
     (t/is (some? duplicated-blue1'))
     (t/is (ctk/swapped? duplicated-blue1'))))
 
-(t/deftest test-swap-outside-component-doesnt-have-swap-slot
+(t/deftest test-swap-outside-component-is-not-marked
   (let [;; ==== Setup
         file                   (setup-file)
         ;; ==== Action
@@ -540,7 +540,7 @@
     (t/is (some? blue-copy1'))
     (t/is (not (ctk/swapped? blue-copy1')))))
 
-(t/deftest test-remove-swap-slot-detach
+(t/deftest test-detach-ends-the-swap
   (let [;; ==== Setup
         file                   (setup-file)
 

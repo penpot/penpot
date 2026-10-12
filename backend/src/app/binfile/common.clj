@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.comp-processors :as cfcp]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.files.tokens :as cfo]
@@ -786,6 +787,25 @@
         ;; migrations registered on the database, so we need to persist
         ;; all of them, not only the applied
         (vary-meta dissoc ::fmg/migrated))))
+
+(defn process-imported-file
+  "Process a file read from a binfile. The swap slots whose near main is in a
+  library not linked yet are left for `convert-deferred-swaps!`."
+  [cfg {:keys [id] :as file}]
+  (let [file (binding [cfcp/*defer-unreachable-swaps* true]
+               (process-file cfg file))]
+    (when (::cfcp/deferred-swaps (meta (:data file)))
+      (vswap! *state* update :deferred-swaps (fnil conj #{}) id))
+    file))
+
+(defn convert-deferred-swaps!
+  "Convert the swap slots the import left in its files, once the libraries
+  of the files are linked."
+  [cfg]
+  (doseq [file-id (:deferred-swaps @*state*)]
+    (let [file (get-file cfg file-id :realize? true :migrate? false)
+          libs (get-resolved-file-libraries cfg file)]
+      (update-file! cfg (update file :data cfcp/convert-swap-slots libs)))))
 
 (defn- encode-file
   [cfg {:keys [id features] :as file}]

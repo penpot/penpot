@@ -450,27 +450,6 @@
                     :include-deleted? include-deleted?
                     :with-context? with-context?)))
 
-(defn find-near-match
-  "Locate the shape that occupies the same position in the near main component.
-  This will be the ref-shape except if the shape is a copy subhead that has been
-  swapped. In this case, the near match will be the ref-shape that was before
-  the swap."
-  [file container libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
-  (let  [parent-shape     (ctst/get-shape container (:parent-id shape))
-         parent-ref-shape (when parent-shape
-                            (find-ref-shape file container libraries parent-shape :include-deleted? include-deleted? :with-context? true))
-         ref-container    (when parent-ref-shape
-                            (:container (meta parent-ref-shape)))
-         shape-index      (when parent-shape
-                            (d/index-of (:shapes parent-shape) (:id shape)))
-         near-match-id    (when (and parent-ref-shape shape-index)
-                            (get (:shapes parent-ref-shape) shape-index))
-         near-match       (when near-match-id
-                            (cond-> (ctst/get-shape ref-container near-match-id)
-                              with-context?
-                              (with-meta (meta parent-ref-shape))))]
-    near-match))
-
 (defn swapped-subhead?
   "Whether `shape` references outside its near main parent and needs a swap slot.
   Same-parent positional differences are synchronized as reorders."
@@ -556,80 +535,6 @@
     (= (:id component) (:component-id shape))
     (let [ref-component (find-ref-component file page libraries shape :include-deleted? true)]
       (true? (= (:id component) (:id ref-component))))))
-
-(defn find-swap-slot
-  ([shape container file libraries]
-   (find-swap-slot shape container file libraries #{}))
-  ([shape container file libraries viewed-ids]
-   (if (contains? viewed-ids (:id shape)) ;; prevent cycles
-     nil
-     (if-let [swap-slot (ctk/get-swap-slot shape)]
-       swap-slot
-       (let [ref-shape (find-ref-shape file
-                                       container
-                                       libraries
-                                       shape
-                                       :include-deleted? true
-                                       :with-context? true)
-             shape-meta (meta ref-shape)
-             ref-file (:file shape-meta)
-             ref-container (:container shape-meta)]
-         (if ref-shape
-           (if-let [swap-slot (ctk/get-swap-slot ref-shape)]
-             swap-slot
-             (if (ctk/main-instance? ref-shape)
-               (:id shape)
-               (find-swap-slot ref-shape ref-container ref-file libraries (conj viewed-ids (:id shape)))))
-           (:id shape))))))) ;; If cannot locate ref-shape (e.g. in an unlinked external library), use what we have
-
-(defn match-swap-slot?
-  [shape-main shape-inst container-inst container-main file libraries]
-  (let [slot-main (find-swap-slot shape-main container-main file libraries)
-        slot-inst (find-swap-slot shape-inst container-inst file libraries)]
-    (when (some? slot-inst)
-      (or (= slot-main slot-inst)
-          (= (:id shape-main) slot-inst)))))
-
-(defn- find-next-related-swap-shape-id
-  "Go up from the chain of references shapes that will eventually lead to the shape
-   with swap-slot-id as id. Returns the next shape on the chain"
-  [parent swap-slot-id libraries]
-  (let [container         (get-component-container-from-head parent libraries)
-        objects           (:objects container)
-
-        children          (cfh/get-children objects (:id parent))
-        original-shape-id (->> children
-                               (filter #(= swap-slot-id (:id %)))
-                               first
-                               :id)]
-    (if original-shape-id
-      ;; Return the children which id is the swap-slot-id
-      original-shape-id
-      ;; No children with swap-slot-id as id, go up
-      (let [referenced-shape (find-ref-shape nil container libraries parent)
-            ;; Recursive call that will get the id of the next shape on
-            ;; the chain that ends on a shape with swap-slot-id as id
-            next-shape-id    (when referenced-shape
-                               (find-next-related-swap-shape-id referenced-shape swap-slot-id libraries))]
-        ;; Return the children which shape-ref points to the next-shape-id
-        (->> children
-             (filter #(= next-shape-id (:shape-ref %)))
-             first
-             :id)))))
-
-(defn find-ref-id-for-swapped
-  "When a shape has been swapped, find the original ref-id that the shape had
-   before the swap"
-  [shape container libraries]
-  (let [swap-slot   (ctk/get-swap-slot shape)
-        objects     (:objects container)
-
-        parent      (get objects (:parent-id shape))
-        parent-head (ctn/get-head-shape objects parent)
-        parent-ref  (find-ref-shape nil container libraries parent-head)]
-
-    (when (and swap-slot parent-ref)
-      (find-next-related-swap-shape-id parent-ref swap-slot libraries))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"
@@ -1317,10 +1222,10 @@
 (defn get-touched-from-ref-chain-until-target-ref
   "Returns a set with the :touched of all the items on the shape
    ref chain until target-ref, including itself"
-  [container libraries shape target-ref & {:keys [remove-slots?] :or {remove-slots? true}}]
-  (let [chain        (get-ref-chain-until-target-ref container libraries shape target-ref)
-        more-touched (cond->> chain
-                       :always       (map :touched)
-                       :always       (reduce set/union #{})
-                       remove-slots? (remove ctk/swap-slot?))]
-    (set/union (or (:touched shape) #{}) (set more-touched))))
+  [container libraries shape target-ref]
+  (let [chain (get-ref-chain-until-target-ref container libraries shape target-ref)
+        more-touched (->> chain
+                          (map :touched)
+                          (remove nil?)
+                          (apply set/union))]
+    (set/union (or (:touched shape) #{}) more-touched)))

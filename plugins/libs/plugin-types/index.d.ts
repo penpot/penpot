@@ -4271,7 +4271,8 @@ export interface ShapeBase extends PluginData {
 
   /**
    * @return Returns the equivalent shape in the component main instance. If the current shape is inside a
-   * main instance will return `null`;
+   * main instance will return `null`; For a copy that was swapped for another component, returns the shape
+   * of the main instance that it replaces.
    */
   componentRefShape(): Shape | null;
 

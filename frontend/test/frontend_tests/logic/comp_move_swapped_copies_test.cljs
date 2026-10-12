@@ -3,7 +3,7 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
-(ns frontend-tests.logic.comp-remove-swap-slots-test
+(ns frontend-tests.logic.comp-move-swapped-copies-test
   (:require
    [app.common.files.validate :as cfv]
    [app.common.test-helpers.components :as cthc]
@@ -94,7 +94,7 @@
                      (str/starts-with? (cthi/label (:id %)) "<no-label")))
        first))
 
-(t/deftest test-remove-swap-slot-copy-paste-blue1-to-root
+(t/deftest test-copy-paste-blue1-to-root
   (t/async
     done
     (let [;; ==== Setup
@@ -132,7 +132,7 @@
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
-(t/deftest test-remove-swap-slot-copy-paste-blue1-to-b1
+(t/deftest test-copy-paste-blue1-to-b1
   (t/async
     done
     (let [;; ==== Setup
@@ -170,7 +170,7 @@
            (t/is (some? copied-blue1'))
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
-(t/deftest test-remove-swap-slot-copy-paste-blue1-to-yellow
+(t/deftest test-copy-paste-blue1-to-yellow
   (t/async
     done
     (let [;; ==== Setup
@@ -209,7 +209,7 @@
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
-(t/deftest test-remove-swap-slot-copy-paste-blue1-to-b2
+(t/deftest test-copy-paste-blue1-to-b2
   (t/async
     done
     (let [;; ==== Setup
@@ -248,7 +248,7 @@
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
-(t/deftest test-remove-swap-slot-cut-paste-blue1-to-root
+(t/deftest test-cut-paste-blue1-to-root
   (t/async
     done
     (let [;; ==== Setup
@@ -284,7 +284,7 @@
 
 
 
-(t/deftest test-remove-swap-slot-cut-paste-blue1-to-yellow
+(t/deftest test-cut-paste-blue1-to-yellow
   (t/async
     done
     (let [;; ==== Setup
@@ -321,7 +321,7 @@
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
-(t/deftest test-remove-swap-slot-cut-paste-blue1-to-b2
+(t/deftest test-cut-paste-blue1-to-b2
   (t/async
     done
     (let [;; ==== Setup
@@ -358,7 +358,7 @@
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
-(t/deftest test-remove-swap-slot-copy-paste-yellow-to-root
+(t/deftest test-copy-paste-yellow-to-root
   (t/async
     done
     (let [;; ==== Setup
@@ -396,7 +396,7 @@
            (t/is (some? copied-blue1'))
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
-(t/deftest test-remove-swap-slot-copy-paste-yellow-to-b1
+(t/deftest test-copy-paste-yellow-to-b1
   (t/async
     done
     (let [;; ==== Setup
@@ -436,7 +436,7 @@
            (t/is (some? copied-blue1'))
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
-(t/deftest test-remove-swap-slot-copy-paste-yellow-to-b2
+(t/deftest test-copy-paste-yellow-to-b2
   (t/async
     done
     (let [;; ==== Setup
@@ -475,7 +475,7 @@
            (t/is (some? copied-blue1'))
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
-(t/deftest test-remove-swap-slot-cut-paste-yellow-to-root
+(t/deftest test-cut-paste-yellow-to-root
   (t/async
     done
     (let [;; ==== Setup
@@ -511,7 +511,7 @@
            (t/is (some? copied-blue1'))
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
-(t/deftest test-remove-swap-slot-cut-paste-yellow-to-b1
+(t/deftest test-cut-paste-yellow-to-b1
   (t/async
     done
     (let [;; ==== Setup
@@ -549,7 +549,7 @@
            (t/is (some? copied-blue1'))
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
-(t/deftest test-remove-swap-slot-cut-paste-yellow-to-b2
+(t/deftest test-cut-paste-yellow-to-b2
   (t/async
     done
     (let [;; ==== Setup
@@ -587,7 +587,7 @@
            (t/is (some? copied-blue1'))
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
-(t/deftest test-keep-swap-slot-copy-paste-green-copy-to-root
+(t/deftest test-copy-paste-green-copy-to-root
   (t/async
     done
     (let [;; ==== Setup
@@ -625,7 +625,7 @@
            (t/is (some? copied-blue2'))
            (t/is (ctk/swapped? copied-blue2'))))))))
 
-(t/deftest test-keep-swap-slot-copy-paste-green-copy-to-b1
+(t/deftest test-copy-paste-green-copy-to-b1
   (t/async
     done
     (let [;; ==== Setup
@@ -665,7 +665,7 @@
            (t/is (some? copied-blue2'))
            (t/is (ctk/swapped? copied-blue2'))))))))
 
-(t/deftest test-keep-swap-slot-copy-paste-green-copy-to-b2
+(t/deftest test-copy-paste-green-copy-to-b2
   (t/async
     done
     (let [;; ==== Setup
@@ -706,7 +706,7 @@
            (t/is (ctk/swapped? copied-blue2'))))))))
 
 
-(t/deftest test-keep-swap-slot-cut-paste-green-copy-to-root
+(t/deftest test-cut-paste-green-copy-to-root
   (t/async
     done
     (let [;; ==== Setup
@@ -742,7 +742,7 @@
            (t/is (some? copied-blue1'))
            (t/is (ctk/swapped? copied-blue1'))))))))
 
-(t/deftest test-keep-swap-slot-cut-paste-green-copy-to-b1
+(t/deftest test-cut-paste-green-copy-to-b1
   (t/async
     done
     (let [;; ==== Setup
@@ -780,7 +780,7 @@
            (t/is (some? copied-blue2'))
            (t/is (ctk/swapped? copied-blue2'))))))))
 
-(t/deftest test-keep-swap-slot-cut-paste-green-copy-to-b2
+(t/deftest test-cut-paste-green-copy-to-b2
   (t/async
     done
     (let [;; ==== Setup
@@ -820,7 +820,7 @@
 
 
 
-(t/deftest test-remove-swap-slot-copy-paste-swapped-main
+(t/deftest test-copy-paste-swapped-main
   (t/async
     done
     (let [;; ==== Setup

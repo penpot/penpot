@@ -29,7 +29,7 @@
    [clojure.string :as str]))
 
 (def schema-version
-  "penpot-graph-slice-4")
+  "penpot-graph-slice-5")
 
 (def ^:private document-projection
   {:source ctf/schema:file
@@ -329,15 +329,9 @@
   []
   (shape-to-shape-rel-ddl "RefersTo" nil))
 
-(defn fills-swap-slot-ddl
-  "Swapped-in shape → the slot shape it replaces."
-  []
-  (shape-to-shape-rel-ddl "FillsSwapSlot" ["`slot_id` UUID"]))
-
 (defn ddl-statements
   []
   (-> (mapv create-node-table-ddl node-types)
       (conj (is-child-of-ddl))
       (conj (is-instance-of-ddl))
-      (conj (refers-to-ddl))
-      (conj (fills-swap-slot-ddl))))
+      (conj (refers-to-ddl))))

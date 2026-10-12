@@ -357,19 +357,12 @@
         (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> promote to root")
                                            (assoc % :component-root true)))
 
-        (some? (ctk/get-swap-slot shape))
-        ; First level subinstances of a detached component can't have swap-slot
-        (pcb/update-shapes [shape-id] #(do (log/trace :msg "  -> remove swap-slot")
-                                           (ctk/remove-swap-slot %)))
-
         (ctk/swapped? shape)
         ; A swapped head left with no copy around it is a copy of its own component
         (generate-rehead-swapped container libraries shape)
 
-        (and (nil? (ctk/get-swap-slot shape))
-             (not (ctk/swapped? shape)))
+        (not (ctk/swapped? shape))
         ; Near shape-ref of shape and children need to be advanced one level
-        ; (except if the head is already swapped)
         (generate-advance-nesting-level nil container libraries (:id shape)))
 
       ;; Otherwise, detach the shape and all children
@@ -439,9 +432,9 @@
                           (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (advanced to " (:shape-ref ref-shape) ")"))
                                                                 (assoc % :shape-ref (:shape-ref ref-shape))))
 
-                          ;; When advancing level, the normal touched groups (not swap slots) of the
-                          ;; ref-shape must be merged into the current shape, because they refer to
-                          ;; the new referenced shape.
+                          ;; When advancing level, the touched groups of the ref-shape must be
+                          ;; merged into the current shape, because they refer to the new
+                          ;; referenced shape.
                           (some? ref-shape)
                           (pcb/update-shapes
                            [(:id shape)]
@@ -450,15 +443,7 @@
                                 (log/trace :msg (str "       (ref touched: " (:touched ref-shape) ")"))
                                 (assoc % :touched
                                        (set/union (:touched shape)
-                                                  (inherited-touched shape (ctk/normal-touched-groups ref-shape))))))
-
-                          ;; Swap slot must also be copied if the current shape has not any,
-                          ;; except if this is the first level subcopy.
-                          (and (some? (ctk/get-swap-slot ref-shape))
-                               (nil? (ctk/get-swap-slot shape))
-                               (not= (:id shape) shape-id))
-                          (pcb/update-shapes [(:id shape)] #(do (log/trace :msg (str "       (got swap-slot " (ctk/get-swap-slot ref-shape) ")"))
-                                                                (ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))
+                                                  (inherited-touched shape (or (:touched ref-shape) #{}))))))
 
                           ;; If we can't get the ref-shape (e.g. it's in an external library not linked),
                           ;: we can't do a suitable advance. So it's better to detach the shape and all its
@@ -1012,9 +997,6 @@
                             children-inst
                             children-main
                             container
-                            component-container
-                            file
-                            libraries
                             only-inst
                             only-main
                             both
@@ -1190,9 +1172,6 @@
                             children-inst
                             children-main
                             container
-                            component-container
-                            file
-                            libraries
                             only-inst
                             only-main
                             both
@@ -1222,14 +1201,12 @@
   a swapped child pairs that way too, and takes `swapped-cb` in a normal sync,
   `both-cb` in a reset, and does not pair in an inverse sync, so the main
   child it replaces is removed and the swapped child is added in its place."
-  [changes shape-inst children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
+  [changes shape-inst children-inst children-main container-inst only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
   (shape-log :trace (:id shape-inst) container-inst :msg "Compare children")
   (let [pair?
         (fn [child-main child-inst]
-          (or (and (ctk/is-main-of? child-main child-inst)
-                   (not (and inverse? (ctk/swapped? child-inst))))
-              (and (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries)
-                   (not reset?))))
+          (and (ctk/is-main-of? child-main child-inst)
+               (not (and inverse? (ctk/swapped? child-inst)))))
 
         synced-pair?
         (fn [child-main child-inst]
@@ -2582,26 +2559,13 @@
       (pcb/update-shapes
        [shape-copy-id]
        (fn [shape-copy objects]
-         (let [component-page
-               (ctf/get-component-page main-container main-component)
-
-               component-swap-children
-               (->> shape-main
-                    :shapes
-                    (map #(get (:objects component-page) %))
-                    (filter #(some? (ctk/get-swap-slot %)))
-                    (group-by ctk/get-swap-slot))
-
-               ids-map
+         (let [ids-map
                (into {}
                      (comp
                       (map #(get objects %))
                       (keep
                        (fn [copy-shape]
-                         (let [main-shape
-                               (if (some? (ctk/get-swap-slot copy-shape))
-                                 (first (get component-swap-children (ctk/get-swap-slot copy-shape)))
-                                 (ctf/get-ref-shape main-container main-component copy-shape))]
+                         (let [main-shape (ctf/get-ref-shape main-container main-component copy-shape)]
                            [(:id main-shape) (:id copy-shape)]))))
                      (:shapes shape-copy))
 
@@ -2926,9 +2890,7 @@
         ;; swapped children (we will keep them too)
         ignore-swapped-fn
         (if ignore-swapped?
-          #(let [child (get objects %)]
-             (or (some? (ctk/get-swap-slot child))
-                 (ctk/swapped? child)))
+          #(ctk/swapped? (get objects %))
           (constantly false))
 
         ;; In the cases where the swapped shape was the first element of the masked group it would make the group to loose the
@@ -2963,37 +2925,14 @@
          (maybe-sync sync-typographies? done? #(generate-sync-file % file-id :typographies asset-id library-id libraries current-file-id early-return?))))))
 
 
-(defn generate-sync-head
-  [changes file-full libraries container id reset?]
-  (let [shape-inst (ctn/get-shape container id)
-        objects    (:objects container)
-        parent     (get objects (:parent-id shape-inst))
-        head       (ctn/get-component-shape objects parent)
-        changes
-        (-> changes
-            (pcb/with-container container)
-            (pcb/with-objects (:objects container))
-            (generate-sync-shape-direct file-full libraries container (:id head) reset?))]
-    changes))
-
 (defn generate-reset-component
+  "Reset the copy head to its near main. A swapped head turns back into the
+  component of the main shape it refers to, keeping its id."
   [changes file-full libraries container id]
-  (let [objects    (:objects container)
-        swap-slot  (-> (ctn/get-shape container id)
-                       (ctk/get-swap-slot))
-        changes
-        (-> changes
-            (pcb/with-container container)
-            (pcb/with-objects objects)
-            (generate-sync-shape-direct file-full libraries container id true))]
-
-    ;; If the shape has been swapped, the reset also have to undo the swap. As the
-    ;; shape has been reset and it's not touched now, by the sync above, if we
-    ;; do another reset of the parent, the shape will be reset as it is in the
-    ;; near main component.
-    (cond-> changes
-      (some? swap-slot)
-      (generate-sync-head file-full libraries container id true))))
+  (-> changes
+      (pcb/with-container container)
+      (pcb/with-objects (:objects container))
+      (generate-sync-shape-direct file-full libraries container id true)))
 
 (defn generate-duplicate-flows
   [changes shapes page ids-map]
@@ -3160,11 +3099,11 @@
 
 (defn generate-duplicate-shape-change
   ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true nil))
+   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false nil))
   ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id variant-props]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true variant-props))
+   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false variant-props))
 
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot? variant-props]
+  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? variant-props]
    (cond
      (nil? obj)
      changes
@@ -3187,8 +3126,6 @@
                                       (ctk/instance-root? obj))
            duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
            is-component-main?     (ctk/main-instance? obj)
-           subinstance-head?      (ctk/subinstance-head? obj)
-           instance-root?         (ctk/instance-root? obj)
 
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
@@ -3219,11 +3156,6 @@
                       :name name
                       :parent-id parent-id
                       :frame-id frame-id)
-
-               (cond-> (and (not instance-root?)
-                            subinstance-head?
-                            remove-swap-slot?)
-                 (ctk/remove-swap-slot))
 
                (dissoc :shapes
                        :use-for-thumbnail)
@@ -3304,11 +3236,6 @@
                                                   new-id
                                                   duplicating-component?
                                                   true
-                                                  (and remove-swap-slot?
-                                                       ;; only remove swap slot of children when the current shape
-                                                       ;; is not a subinstance head nor a instance root
-                                                       (not subinstance-head?)
-                                                       (not instance-root?))
                                                   variant-props))
                changes
                (map (d/getf objects) (:shapes obj)))))))
@@ -3340,9 +3267,7 @@
                                 (cfh/get-children-ids-with-self objects (:id shape))))
         advance-copy  (fn [objects shape]
                         (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-                          (let [level-delta (if (nil? (ctk/get-swap-slot shape))
-                                              (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
-                                              0)]
+                          (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
                             (cond
                               (not (pos? level-delta))
                               objects

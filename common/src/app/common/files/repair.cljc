@@ -10,7 +10,9 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cfc]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.comp-processors :as cfcp]
    [app.common.files.helpers :as cfh]
+   [app.common.files.swap-slots :as cfss]
    [app.common.files.tokens :as cfo]
    [app.common.logging :as log]
    [app.common.path-names :as cpn]
@@ -591,79 +593,73 @@
         (fn [shape]
           ;; Remove the swap slot
           (log/debug :hint "  -> remove swap-slot")
-          (ctk/remove-swap-slot shape))]
+          (cfss/remove-swap-slot shape))]
 
     (log/debug :hint "repairing shape :misplaced-slot" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
-(defmethod repair-error :duplicate-slot
+(defmethod repair-error :misplaced-swap-group
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [page      (ctpl/get-page file-data page-id)
-        childs    (map #(get (:objects page) %) (:shapes shape))
-        child-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
-                                                    (let [swap-slot (ctk/get-swap-slot item)]
-                                                      (if (contains? seen swap-slot)
-                                                        [seen (conj duplicates item)]
-                                                        [(conj seen swap-slot) duplicates])))
-                                                  [#{} []]
-                                                  childs)]
-                               (second result))
-        repair-shape
-        (fn [shape]
-          ;; Remove the swap slot
-          (log/debug :hint "  -> remove swap-slot" :child-id (:id shape))
-          (ctk/remove-swap-slot shape))]
-
-    (log/debug :hint "repairing shape :duplicated-slot" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes (map :id child-with-duplicate) repair-shape))))
-
-(defmethod repair-error :component-duplicate-slot
-  [_ {:keys [shape] :as error} file-data _]
-  (let [main-shape            (get-in shape [:objects (:main-instance-id shape)])
-        childs                (map #(get (:objects shape) %) (:shapes main-shape))
-        childs-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
-                                                     (let [swap-slot (ctk/get-swap-slot item)]
-                                                       (if (contains? seen swap-slot)
-                                                         [seen (conj duplicates item)]
-                                                         [(conj seen swap-slot) duplicates])))
-                                                   [#{} []]
-                                                   childs)]
-                                (second result))
-        duplicated-ids        (set (mapv :id childs-with-duplicate))
-        repair-component
-        (fn [component]
-          (let [objects (reduce-kv (fn [acc k v]
-                                     (if (contains? duplicated-ids k)
-                                       (assoc acc k (ctk/remove-swap-slot v))
-                                       (assoc acc k v)))
-                                   {}
-                                   (:objects component))]
-            (assoc component :objects objects)))]
-
-    (log/debug :hint "repairing component :component-duplicated-slot" :id (:id shape) :name (:name shape))
-    (-> (pcb/empty-changes nil)
-        (pcb/with-library-data file-data)
-        (pcb/update-component (:id shape) repair-component))))
-
-(defmethod repair-error :missing-slot
-  [_ {:keys [shape page-id args] :as error} file-data _]
   (let [repair-shape
         (fn [shape]
-          ;; Set the desired swap slot
-          (let [slot (:swap-slot args)]
-            (if (some? slot)
-              (do (log/debug :hint (str "  -> set swap-slot to " slot))
-                  (ctk/set-swap-slot shape slot))
-              shape)))]
+          (log/debug :hint "  -> remove :swap-group")
+          (ctk/remove-swap-group shape))]
 
-    (log/debug :hint "repairing shape :missing-slot" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/debug :hint "repairing shape :misplaced-swap-group" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
+
+(defmethod repair-error :ref-not-in-near-main
+  [_ {:keys [shape page-id] :as error} file-data libraries]
+  (let [page     (ctpl/get-page file-data page-id)
+        replaced (cfcp/find-replaced-shape {:id (:id file-data) :data file-data}
+                                           (ctn/make-container page :page)
+                                           libraries
+                                           shape)
+
+        reassign-shape
+        (fn [shape]
+          (log/debug :hint "  -> reassign shape-ref to" :shape-ref (:id replaced))
+          (cond-> (assoc shape :shape-ref (:id replaced))
+            (or (not= (:component-id shape) (:component-id replaced))
+                (not= (:component-file shape) (:component-file replaced)))
+            (update :touched (fnil conj #{}) :swap-group)))]
+
+    (log/debug :hint "repairing shape :ref-not-in-near-main" :id (:id shape) :name (:name shape) :page-id page-id)
+    (if (some? replaced)
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-file-data file-data)
+          (pcb/update-shapes [(:id shape)] reassign-shape))
+      ;; no position to take: the copy keeps its content, detached
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-file-data file-data)
+          (pcb/update-shapes (cfh/get-children-ids-with-self (:objects page) (:id shape))
+                             ctk/detach-shape)))))
+
+(defmethod repair-error :duplicate-ref
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [page    (ctpl/get-page file-data page-id)
+        objects (:objects page)
+        ;; sync pairs the first child that refers to a main shape; the
+        ;; others have no position to take
+        extra   (->> (:shapes shape)
+                     (map #(get objects %))
+                     (reduce (fn [[seen extra] child]
+                               (let [ref (:shape-ref child)]
+                                 (if (and (some? ref) (contains? seen ref))
+                                   [seen (conj extra (:id child))]
+                                   [(cond-> seen (some? ref) (conj ref)) extra])))
+                             [#{} []])
+                     (second))
+        ids     (mapcat #(cfh/get-children-ids-with-self objects %) extra)]
+    (log/debug :hint "repairing shape :duplicate-ref" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/debug :hint "  -> delete shapes" :shape-ids ids)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/remove-objects ids))))
 
 (defmethod repair-error :main-instance-not-a-variant
   [_ {:keys [shape page-id args]} file-data _]
