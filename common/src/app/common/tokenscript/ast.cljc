@@ -47,39 +47,10 @@
   [v]
   (and (map? v) (keyword? (:node v))))
 
-(defn node-type
-  [node]
-  (:node node))
-
-(defn identifier-name
-  [node]
-  (:name node))
-
 (defn type-decl-name
   "Full type name of a type declaration, e.g. `Color.RGB`."
   [{:keys [base-type sub-types]}]
   (str/join "." (map :name (cons base-type sub-types))))
-
-(defn attributes->string
-  [attrs]
-  (str/join "." attrs))
-
-(defn reassign-base-identifier
-  [{:keys [identifiers]}]
-  (first identifiers))
-
-(defn reassign-attribute-assignment?
-  [{:keys [identifiers]}]
-  (> (count identifiers) 1))
-
-(defn reassign-identifier-string
-  [{:keys [identifiers]}]
-  (attributes->string (map :name identifiers)))
-
-(defn reassign-attributes
-  "Attribute names following the base identifier in a reassignment."
-  [{:keys [identifiers]}]
-  (mapv :name (rest identifiers)))
 
 (defn children
   "Direct child nodes of `node`."
@@ -151,7 +122,7 @@
   [node]
   (let [stmt (last-statement node)]
     (when (= :reassign (:node stmt))
-      {:var-name (:name (reassign-base-identifier stmt))})))
+      {:var-name (:name (first (:identifiers stmt)))})))
 
 (defn rename-references
   "Rewrites `original` replacing the references named in `rename-map`

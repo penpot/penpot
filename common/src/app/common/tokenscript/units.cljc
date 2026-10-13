@@ -109,10 +109,6 @@
   []
   (reduce (fn [registry [uri spec]] (reg/register registry uri spec)) (empty-registry) default-specs))
 
-(defn spec
-  [registry uri]
-  (reg/spec registry uri))
-
 (defn uri-by-keyword
   [registry keyword]
   (get (:keywords registry) (str/upper-case keyword)))
@@ -120,13 +116,9 @@
 (defn spec-by-keyword
   [registry keyword]
   (when-let [uri (uri-by-keyword registry keyword)]
-    (spec registry uri)))
+    (reg/spec registry uri)))
 
 (defn relative?
   "Whether the unit keyword is registered as a relative unit."
   [registry keyword]
   (= "relative" (:type (spec-by-keyword registry keyword))))
-
-(defn conversion-steps
-  [registry source-uri target-uri]
-  (reg/conversion-steps registry source-uri target-uri))

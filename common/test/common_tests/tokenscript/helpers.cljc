@@ -61,7 +61,7 @@
     nil
     (catch #?(:clj Throwable :cljs :default) e
       (if (err/language-error? e)
-        (err/code e)
+        (:code (ex-data e))
         (throw e)))))
 
 (defn ev-error

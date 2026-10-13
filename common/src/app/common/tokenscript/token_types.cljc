@@ -70,10 +70,6 @@
   []
   (->TokenTypeRegistry {} {} {} (reg/new-cache)))
 
-(defn spec
-  [registry uri]
-  (reg/spec registry uri))
-
 (defn spec-by-type
   [registry type]
   (reg/spec-by-name registry (str/lower-case type)))
@@ -82,10 +78,6 @@
   "Validation entry (`{:script :ast}`) for a token type."
   [registry token-type]
   (get (:validation registry) (str/lower-case token-type)))
-
-(defn validation-script
-  [registry token-type]
-  (:script (validation registry token-type)))
 
 (defn- error-types-of
   [registry token-type]

@@ -45,8 +45,8 @@
 
   (t/testing "registries resolve schemas with or without host"
     (let [registry (:colors (tsc/default-config))]
-      (t/is (some? (colors/spec registry "/api/v1/core/hsl-color/0/")))
-      (t/is (some? (colors/spec registry "https://example.com/api/v1/core/hsl-color/0/")))
+      (t/is (some? (reg/spec registry "/api/v1/core/hsl-color/0/")))
+      (t/is (some? (reg/spec registry "https://example.com/api/v1/core/hsl-color/0/")))
       (t/is (seq (reg/conversion-steps registry
                                        "https://example.com/api/v1/core/hex-color/0/"
                                        "/api/v1/core/hsl-color/0/")))))

@@ -22,10 +22,6 @@
 
 ;; Vocabulary -----------------------------------------------------------------
 
-(def operations
-  {:subtract "-" :add "+" :multiply "*" :divide "/" :power "^"
-   :logic-and "&&" :logic-or "||" :logic-not "!"})
-
 (def supported-formats
   "Unit keywords (`SupportedFormats` in the TS implementation)."
   ["px" "em" "rem" "vw" "vh" "pt" "in" "cm" "mm" "deg" "%" "s" "ms" "ch"])

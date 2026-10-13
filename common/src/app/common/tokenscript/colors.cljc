@@ -94,10 +94,6 @@
   []
   (reduce-kv reg/register (empty-registry) default-specs))
 
-(defn spec
-  [registry uri]
-  (reg/spec registry uri))
-
 (defn spec-by-type
   [registry type]
   (reg/spec-by-name registry (str/lower-case type)))
@@ -124,7 +120,3 @@
   (let [s (uri-by-type registry source-type)
         t (uri-by-type registry target-type)]
     (boolean (and s t (reg/has-conversion? registry s t)))))
-
-(defn conversion-steps
-  [registry source-uri target-uri]
-  (reg/conversion-steps registry source-uri target-uri))

@@ -13,6 +13,7 @@
   (:require
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.interpreter :as interp]
+   [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.token-types :as token-types]
    [clojure.string :as str]))
@@ -59,7 +60,7 @@
 
                      :else
                      (let [prop-value (get m prop-name)
-                           referenced (token-types/spec (:tokens config) (:url prop-spec))]
+                           referenced (reg/spec (:tokens config) (:url prop-spec))]
                        (if (and prop-value referenced)
                          (into results
                                (remove :valid?)
@@ -82,7 +83,7 @@
                           []))
 
                   (and (= "token" (:type items-spec)) (:url items-spec))
-                  (into (if-let [referenced (token-types/spec (:tokens config) (:url items-spec))]
+                  (into (if-let [referenced (reg/spec (:tokens config) (:url items-spec))]
                           (remove :valid?
                                   (validate* config (:name referenced) item
                                              (conj visited (:url items-spec)) item-path (inc depth)))

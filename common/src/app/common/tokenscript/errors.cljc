@@ -382,26 +382,6 @@
     (language-error? e) (ex-data e)
     :else nil))
 
-(defn code
-  [e]
-  (:code (->error-map e)))
-
-(defn kind
-  [e]
-  (:kind (->error-map e)))
-
-(defn hint
-  [e]
-  (:hint (->error-map e)))
-
-(defn data
-  [e]
-  (:data (->error-map e)))
-
-(defn kind?
-  [k e]
-  (= k (kind e)))
-
 (defn describe
   "Short description of any throwable or error map, for wrapping foreign
   errors into error data."

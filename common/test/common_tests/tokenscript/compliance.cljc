@@ -138,10 +138,10 @@
                      {:actualOutput (str result) :actualOutputType "Error"
                       :error (str "result (" result ") is not an interpreter symbol")}))
                  (catch #?(:clj Throwable :cljs :default) e
-                   (if (err/language-error? e)
-                     {:actualOutput (err/hint e)
+                   (if-let [{:keys [hint code]} (err/->error-map e)]
+                     {:actualOutput hint
                       :actualOutputType "Error"
-                      :actualErrorCode (err/code->compliance-code (err/code e))}
+                      :actualErrorCode (err/code->compliance-code code)}
                      {:actualOutput (ex-message e) :actualOutputType "Error" :error (str e)})))
         type-matches? (type-matches? expectedOutputType (:actualOutputType actual))
         passed? (if expectedErrorCode

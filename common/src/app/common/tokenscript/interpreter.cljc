@@ -17,7 +17,6 @@
   functions) since they need the evaluator."
   (:require
    [app.common.math :as mth]
-   [app.common.tokenscript.ast :as ast]
    [app.common.tokenscript.colors :as colors]
    [app.common.tokenscript.config :as config]
    [app.common.tokenscript.errors :as err]
@@ -25,6 +24,7 @@
    [app.common.tokenscript.lexer :as lex]
    [app.common.tokenscript.operations :as ops]
    [app.common.tokenscript.parser :as parser]
+   [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.units :as units]
    [clojure.string :as str]))
@@ -111,7 +111,7 @@
   (let [result (run-script config ast {"input" color})]
     (if (sym/color? result)
       result
-      (let [target-spec (or (colors/spec (:colors config) target-uri)
+      (let [target-spec (or (reg/spec (:colors config) target-uri)
                             (err/raise :color/conversion-target-not-found {:data {:target-uri target-uri}}))
             v (if (string? result) result (some-> result sym/value))]
         (sym/color v (:name target-spec) nil)))))
@@ -124,7 +124,7 @@
         source-uri (or (when-let [sub (:sub-type color)] (colors/uri-by-type registry sub))
                        (err/raise :color/source-uri-not-found {:data {:color-type (or (:sub-type color) "unknown")}}))]
     (try
-      (let [steps (or (colors/conversion-steps registry source-uri target-uri)
+      (let [steps (or (reg/conversion-steps registry source-uri target-uri)
                       (throw (ex-info (str "No conversion path found from '" source-uri "' to '" target-uri "'") {})))
             result (reduce (fn [c step] (run-color-conversion config step c)) color steps)]
         (assoc result :alpha (:alpha color)))
@@ -156,7 +156,7 @@
         source-uri (or (units/uri-by-keyword registry (:unit unit))
                        (err/raise :unit/source-uri-not-found {:data {:unit (:unit unit)}}))]
     (try
-      (let [steps (or (units/conversion-steps registry source-uri target-uri)
+      (let [steps (or (reg/conversion-steps registry source-uri target-uri)
                       (throw (ex-info (str "No conversion path found from '" source-uri "' to '" target-uri "'") {})))]
         (reduce (fn [u step] (run-unit-conversion config step u)) unit steps))
       (catch #?(:clj Throwable :cljs :default) e
@@ -252,7 +252,7 @@
               (sym/number total)))
           (catch #?(:clj Throwable :cljs :default) e
             (if (err/language-error? e)
-              (if (= :functions/expects-number-arguments (err/code e))
+              (if (= :functions/expects-number-arguments (:code (ex-data e)))
                 (throw e)
                 (err/raise :functions/unit-conversion-failed {:data {:function-name "sum" :error (err/describe e)}}))
               (err/raise :functions/unit-conversion-failed {:data {:function-name "sum" :error (err/describe e)}}))))))))
@@ -288,15 +288,13 @@
 (defn- set-color-attribute
   "`c.alpha = 0.5` / `c.r = 255` on a color variable. Returns the updated
   color."
-  [config color node value]
-  (let [attributes (ast/reassign-attributes node)
-        identifier (ast/reassign-identifier-string node)
+  [config color {:keys [identifiers token]} value]
+  (let [[base & attributes] (map :name identifiers)
+        identifier (str/join "." (cons base attributes))
         color-type (or (:sub-type color) "unknown")
-        token (:token node)]
+        chain-data {:attributes (str/join "." attributes) :identifier identifier :color-type color-type}]
     (when (not= 1 (count attributes))
-      (err/raise :color/attribute-chain-too-long
-                 {:token token
-                  :data {:attributes (ast/attributes->string attributes) :identifier identifier :color-type color-type}}))
+      (err/raise :color/attribute-chain-too-long {:token token :data chain-data}))
     (let [attr (first attributes)]
       (if (= attr "alpha")
         (do
@@ -308,9 +306,7 @@
             (assoc color :alpha alpha)))
         (do
           (when (string? (:value color))
-            (err/raise :color/string-value-assignment
-                       {:token token
-                        :data {:attributes (ast/attributes->string attributes) :identifier identifier :color-type color-type}}))
+            (err/raise :color/string-value-assignment {:token token :data chain-data}))
           (let [spec (or (colors/spec-from-color (:colors config) color)
                          (err/raise :color/missing-spec
                                     {:token token :data {:identifier identifier :color-type color-type}}))
@@ -470,15 +466,15 @@
         nil))))
 
 (defn- eval-reassign
-  [ctx {:keys [value] :as node}]
-  (let [base (ast/reassign-base-identifier node)
+  [ctx {:keys [identifiers value] :as node}]
+  (let [base (first identifiers)
         existing (or (lookup-var ctx (:name base))
                      (err/raise :interpreter/variable-not-found {:token (:token base) :data {:name (:name base)}}))
         v (eval-node ctx value)
-        identifier (ast/reassign-identifier-string node)]
+        identifier (str/join "." (map :name identifiers))]
     (when (nil? v)
       (err/raise :interpreter/assignment-value-null {:token (:token value) :data {:identifier identifier}}))
-    (if (ast/reassign-attribute-assignment? node)
+    (if (next identifiers)
       (when (sym/color? existing)
         (set-var ctx (:name base) (set-color-attribute (:config ctx) existing node v)))
       (do

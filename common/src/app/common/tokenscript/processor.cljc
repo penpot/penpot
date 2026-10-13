@@ -61,10 +61,6 @@
   [i]
   (or (err/error-map? i) (= :error (:severity i))))
 
-(defn issue-code
-  [i]
-  (:code i))
-
 (defn- dependency-error
   "Error for `token-name` caused by its dependency `dep` failing with
   `cause`. Carries the chain of token names down to the failing token
@@ -232,10 +228,10 @@
   "Inline parsing failures caused by statement keywords are retried in
   script mode."
   [e]
-  (and (err/kind? :parser e)
-       (or (= :parser/unallowed-inline-syntax (err/code e))
-           (and (= :parser/unexpected-token (err/code e))
-                (contains? lex/script-only-statement-keywords (get (err/data e) :token))))))
+  (let [{:keys [code data]} (ex-data e)]
+    (or (= :parser/unallowed-inline-syntax code)
+        (and (= :parser/unexpected-token code)
+             (contains? lex/script-only-statement-keywords (:token data))))))
 
 (defn- try-parse
   "Parses an expression in inline mode, falling back to script mode for
@@ -608,11 +604,6 @@
 
 ;; Building -------------------------------------------------------------------
 
-(defn- public-names
-  "Input token names, filtering virtual sub-field paths."
-  [st]
-  (keys (:tokens st)))
-
 (defn- select-names
   "`select-keys` for many keys."
   [m names]
@@ -626,9 +617,9 @@
 
 (defn- result
   [st]
-  (let [names (public-names st)
+  (let [tokens (:tokens st)
+        names (keys tokens)
         resolved (:resolved st)
-        tokens (:tokens st)
         issues (select-names (:issues st) names)
         no-sub-fields? (empty? (:sub-fields st))
         ;; Without composite sub-fields or failed virtual children the
