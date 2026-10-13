@@ -12,6 +12,7 @@
    generate accurate errors, and that the repair functions return the file to
    a stable state."
   (:require
+   [app.common.files.changes :as ch]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.test-helpers.components :as thc]
@@ -19,6 +20,8 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
+   [app.common.types.component :as ctk]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -228,6 +231,55 @@
       (t/is (nil? errors'))
       (t/is (= "Group / Subgroup" (:path comp1')))
       (t/is (= "Component" (:name comp1'))))))
+
+(t/deftest repair-component-duplicate-slot
+  (t/testing "repair a deleted component whose children share a swap slot, with changes scoped to the component"
+    (let [component-id (uuid/next)
+          main-id      (uuid/next)
+          child1       (uuid/next)
+          child2       (uuid/next)
+          slot         (uuid/next)
+          child        (fn [id]
+                         (ctk/set-swap-slot
+                          (cts/setup-shape
+                           {:id id :type :rect :name "Child"
+                            :frame-id main-id :parent-id main-id
+                            :x 0 :y 0 :width 10 :height 10
+                            :touched #{:geometry-group}})
+                          slot))
+          component    {:id component-id
+                        :name "Component" :path ""
+                        :main-instance-id main-id
+                        :deleted true
+                        :objects {main-id (cts/setup-shape
+                                           {:id main-id :type :frame :name "Main"
+                                            :frame-id uuid/zero :parent-id uuid/zero
+                                            :shapes [child1 child2]})
+                                  child1 (child child1)
+                                  child2 (child child2)}}
+          changes (cfr/repair-error :component-duplicate-slot
+                                    {:code :component-duplicate-slot :shape component}
+                                    {:components {component-id component}}
+                                    {})
+          change (first (:redo-changes changes))
+          data'  (ch/process-changes {:components {component-id component}} (:redo-changes changes))
+          objects' (:objects (get-in data' [:components component-id]))]
+
+      (t/is (= 1 (count (:redo-changes changes))))
+      (t/is (= :mod-obj (:type change))
+            "the repair updates one shape instead of rewriting the whole objects map")
+      (t/is (= component-id (:component-id change)))
+      (t/is (= child2 (:id change))
+            "the second child is the one carrying the duplicated slot")
+      (t/is (= [{:type :set :attr :touched :val #{:geometry-group}
+                 :ignore-geometry false :ignore-touched true}]
+               (:operations change)))
+
+      (t/testing "applying the repair drops the slot and leaves the rest alone"
+        (t/is (= 3 (count objects')))
+        (t/is (nil? (ctk/get-swap-slot (get objects' child2))))
+        (t/is (= #{:geometry-group} (:touched (get objects' child2))))
+        (t/is (= slot (ctk/get-swap-slot (get objects' child1))))))))
 
 (t/deftest repair-child-not-in-parent
   (t/testing "detect and repair shapes whose parent exists but does not list them"
