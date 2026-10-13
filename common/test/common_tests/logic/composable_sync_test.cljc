@@ -7,7 +7,7 @@
 (ns common-tests.logic.composable-sync-test
   "Runs the shared composable component cases through the pure runner, on the
    JVM and in JS. Only the frontend interpreter runs the geometry cases (N, Z,
-   AI and the rotation case), which need the frontend placement step, case X,
+   AI and the rotation case), whose modifiers come from frontend events, case X,
    which needs a pending frontend sync, case AJ, which needs the frontend
    reflow, and cases AT..AX, whose variant actions are frontend events."
   (:require
