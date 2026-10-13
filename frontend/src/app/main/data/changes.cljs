@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
+   [app.common.files.changes-merge :as mch]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
@@ -171,6 +172,14 @@
   (let [commit-id (or commit-id (uuid/next))
         source    (d/nilv source :local)
         local?    (= source :local)
+        ;; The component sync emits a `reg-objects` per touched shape, so a
+        ;; component swap or a wide group edit fills the batch with hundreds of
+        ;; them for a handful of groups. Fusing per container keeps the batch
+        ;; equivalent and much smaller. It runs here so every commit is already
+        ;; fused on its way to the store, the undo stack and the save queue,
+        ;; redo and undo alike.
+        redo-changes (mch/merge-reg-objects redo-changes)
+        undo-changes (mch/merge-reg-objects undo-changes)
         commit    {:id commit-id
                    :created-at (ct/now)
                    :source source
