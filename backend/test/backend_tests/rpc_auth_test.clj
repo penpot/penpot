@@ -8,12 +8,17 @@
   (:require
    [app.auth.ldap :as ldap]
    [app.auth.login-lockout :as lol]
+   [app.auth.oidc :as oidc]
    [app.common.flags :as flags]
    [app.common.generic-pool :as gpool]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.http :as-alias http]
    [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
    [app.redis :as rds]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.ldap :as ldap-cmd]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -251,5 +256,35 @@
               "session must be bound to the directory-verified profile")
         (t/is (not= (:id typed) (::audit/profile-id (meta result)))
               "session must not be bound to the typed-email profile")))))
+
+(t/deftest logout-uses-trusted-origin-for-post-logout-redirect
+  (let [profile-id (uuid/random)
+        provider   {:logout-uri "https://idp.example.com/logout"
+                    :client-id "test-client"}
+        data       {::th/type :logout
+                    ::rpc/profile-id profile-id
+                    :profile-id profile-id}
+        attrs      {::http/auth-data {:claims {:sso-provider-id "oidc"
+                                               :sso-session-id "sid"}}}
+        config     (assoc cf/config
+                          :public-uri "http://localhost:3449"
+                          :trusted-origins #{"https://alt.example.com"})]
+
+    (with-redefs [oidc/get-provider (fn [_ _] provider)]
+      (t/testing "trusted origin becomes the post-logout redirect"
+        (with-redefs [cf/config config]
+          (let [out (th/command-through-middleware!
+                     data {:headers {"origin" "https://alt.example.com"}
+                           :request-attrs attrs})
+                q   (u/query-string->map (:query (:redirect-uri (:result out))))]
+            (t/is (= "https://alt.example.com" (get q :post_logout_redirect_uri))))))
+
+      (t/testing "without a trusted origin the canonical base is used"
+        (with-redefs [cf/config config]
+          (let [out (th/command-through-middleware!
+                     data {:headers {"origin" "https://evil.example.com"}
+                           :request-attrs attrs})
+                q   (u/query-string->map (:query (:redirect-uri (:result out))))]
+            (t/is (= "http://localhost:3449" (get q :post_logout_redirect_uri)))))))))
 
 
