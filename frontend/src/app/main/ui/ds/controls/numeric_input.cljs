@@ -247,7 +247,6 @@
 
         scrubbable?     (and (some? value)
                              (not disabled)
-                             (not is-multiple?)
                              (not is-token-applied?))
 
         focused-id*     (mf/use-state nil)
@@ -580,15 +579,13 @@
          (mf/deps is-open ref min max nillable default scrubbable?)
          (fn [event]
            (when (and (not is-open) scrubbable?)
-             (let [has-token (some? (deref token-applied-name*))]
-               (when-not has-token
-                 (let [client-x  (.-clientX event)
-                       parsed    (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
-                       start-val (or parsed default 0)]
-                   (mf/set-ref-val! drag-state* :maybe-dragging)
-                   (mf/set-ref-val! drag-start-x* client-x)
-                   (mf/set-ref-val! drag-start-val* start-val)
-                   (dom/capture-pointer event)))))))
+             (let [client-x  (.-clientX event)
+                   parsed    (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
+                   start-val (or parsed default 0)]
+               (mf/set-ref-val! drag-state* :maybe-dragging)
+               (mf/set-ref-val! drag-start-x* client-x)
+               (mf/set-ref-val! drag-start-val* start-val)
+               (dom/capture-pointer event)))))
 
         on-scrub-pointer-move
         (mf/use-fn
