@@ -114,17 +114,17 @@
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
-   :rpc-climit-queue
-   {::mdef/name "penpot_rpc_climit_queue"
-    ::mdef/help "Current number of queued submissions."
+   :rpc-climit-waiting
+   {::mdef/name "penpot_rpc_climit_waiting"
+    ::mdef/help "Calls of this limiter name waiting for a permit, on this instance."
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
 
-   :rpc-climit-permits
-   {::mdef/name "penpot_rpc_climit_permits"
-    ::mdef/help "Current number of available permits"
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}
+   :rpc-climit-rejected
+   {::mdef/name "penpot_rpc_climit_rejected_total"
+    ::mdef/help "Calls rejected by this limiter, by name and reason."
+    ::mdef/labels ["name" "reason"]
+    ::mdef/type :counter}
 
    :rpc-climit-timing
    {::mdef/name "penpot_rpc_climit_timing"
@@ -202,11 +202,6 @@
    :http-worker-queue-size
    {::mdef/name "penpot_http_worker_queue_size"
     ::mdef/help "Current number of queued tasks in the http server xnio worker."
-    ::mdef/type :gauge}
-
-   :http-worker-busy-threads
-   {::mdef/name "penpot_http_worker_busy_threads"
-    ::mdef/help "Current number of busy threads in the http server xnio worker."
     ::mdef/type :gauge}
 
    :http-worker-pool-size

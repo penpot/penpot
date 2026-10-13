@@ -698,7 +698,10 @@
                                       (throw (ex-info "boom" {})))
                                     (apply orig args))))
       (try
-        (t/is (thrown? Exception (th/run-task! :storage-gc-deleted {})))
+        (let [result (th/run-task! :storage-gc-deleted {})]
+          (t/testing "the fault of the second chunk is skipped, the run finishes"
+            (t/is (= 25 (:deleted result)))))
+
         (t/testing "first chunk committed before the fault"
           (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM storage_object WHERE deleted_at IS NOT NULL"])))))
         (finally

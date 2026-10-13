@@ -1382,6 +1382,40 @@
   "UPDATE file_tagged_object_thumbnail SET deleted_at = null
     WHERE file_id = ANY(?::uuid[])")
 
+(def ^:private sql:restore-storage-objects
+  "WITH ids AS (SELECT unnest(?::uuid[]) AS file_id)
+
+   UPDATE storage_object
+      SET deleted_at = null
+    WHERE deleted_at IS NOT NULL
+      AND (id IN (SELECT media_id
+                    FROM file_media_object AS fmo
+                    JOIN ids ON (ids.file_id = fmo.file_id)
+                   WHERE fmo.deleted_at IS NULL
+                     AND fmo.media_id IS NOT NULL
+                  UNION
+                  SELECT thumbnail_id
+                    FROM file_media_object AS fmo
+                    JOIN ids ON (ids.file_id = fmo.file_id)
+                   WHERE fmo.deleted_at IS NULL
+                     AND fmo.thumbnail_id IS NOT NULL
+                  UNION
+                  SELECT ft.media_id
+                    FROM file_thumbnail AS ft
+                    JOIN ids ON (ids.file_id = ft.file_id)
+                   WHERE ft.deleted_at IS NULL
+                     AND ft.media_id IS NOT NULL
+                  UNION
+                  SELECT fot.media_id
+                    FROM file_tagged_object_thumbnail AS fot
+                    JOIN ids ON (ids.file_id = fot.file_id)
+                   WHERE fot.deleted_at IS NULL
+                     AND fot.media_id IS NOT NULL)
+           OR id::text IN (SELECT fd.metadata->>'storage-ref-id'
+                             FROM file_data AS fd
+                             JOIN ids ON (ids.file_id = fd.file_id)
+                            WHERE fd.deleted_at IS NULL))")
+
 (defn- restore-files
   [conn file-ids]
   (let [file-ids (db/create-array conn "uuid" file-ids)]
@@ -1390,7 +1424,13 @@
     (db/exec-one! conn [sql:restore-file-changes file-ids])
     (db/exec-one! conn [sql:restore-file-data file-ids])
     (db/exec-one! conn [sql:restore-file-thumbnails file-ids])
-    (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])))
+    (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])
+
+    ;; NOTE: the storage objects referenced by the rows we just brought back
+    ;; must stop being marked for deletion. The storage GC cannot delete an
+    ;; object that a live row references (those foreign keys are `NO ACTION`),
+    ;; so a marked object that comes back to life is skipped forever otherwise.
+    (db/exec-one! conn [sql:restore-storage-objects file-ids])))
 
 (def ^:private sql:restore-projects
   "UPDATE project SET deleted_at = null WHERE id = ANY(?::uuid[])")

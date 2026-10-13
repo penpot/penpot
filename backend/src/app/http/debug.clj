@@ -25,6 +25,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.file-migrations :as feat.fmig]
+   [app.health :as health]
    [app.http.session :as session]
    [app.redis :as rds]
    [app.rpc.commands.auth :as auth]
@@ -857,17 +858,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn health-handler
-  "Mainly a task that performs a health check."
+  "Mainly a task that performs a health check. When the instance is marked
+  as offline (see `app.health`), it reports the instance as unavailable
+  without querying the database, so the load balancer drains it while the
+  requests in flight are still served."
   [{:keys [::db/pool]} _]
-  (try
-    (db/exec-one! pool ["select count(*) as count from server_prop;"])
-    {::yres/status 200
-     ::yres/body "OK"}
-    (catch Throwable cause
-      (l/warn :hint "unable to execute query on health handler"
-              :cause cause)
-      {::yres/status 503
-       ::yres/body "KO"})))
+  (if (health/online?)
+    (try
+      (db/exec-one! pool ["select count(*) as count from server_prop;"])
+      {::yres/status 200
+       ::yres/body "OK"}
+      (catch Throwable cause
+        (l/warn :hint "unable to execute query on health handler"
+                :cause cause)
+        {::yres/status 503
+         ::yres/body "KO"}))
+    {::yres/status 503
+     ::yres/body "OFFLINE"}))
 
 (defn changelog-handler
   [_ _]

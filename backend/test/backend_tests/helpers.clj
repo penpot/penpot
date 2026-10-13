@@ -24,9 +24,11 @@
    [app.main :as main]
    [app.media]
    [app.media :as-alias mtx]
+   [app.metrics :as-alias metrics]
    [app.migrations]
    [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-create :as files.create]
@@ -540,6 +542,40 @@
                                      (assoc ::jobs/params (:params row))
                                      (assoc ::jobs/context (jobs/make-context row))
                                      (assoc ::jobs/job-id (:id row)))))))))
+
+(defn metrics-stub
+  "A metrics instance with no collectors, where every `run!` is a no-op."
+  []
+  (reify metrics/IMetrics
+    (get-handler [_] nil)
+    (get-collector [_ _] nil)
+    (get-registry [_] nil)))
+
+(defn init-climit
+  "Build a concurrency limiter component from an inline config map. The
+  optional second argument is the metrics instance to publish to (a
+  `metrics-stub` by default, where every `run!` is a no-op)."
+  ([config]
+   (init-climit config (metrics-stub)))
+  ([config metrics]
+   (let [file (doto (java.io.File/createTempFile "climit" ".edn")
+                (.deleteOnExit))]
+     (spit file (pr-str config))
+     (ig/init-key ::rpc/climit
+                  {::climit/enabled true
+                   ::climit/config (.getAbsolutePath file)
+                   ::metrics/metrics metrics}))))
+
+(defmacro with-climit
+  "Build a concurrency limiter from an inline config map, run the body and
+  halt it, so the republisher thread it starts never outlives the test. An
+  optional third binding element is the metrics instance to publish to."
+  [[sym config & [metrics]] & body]
+  `(let [~sym (init-climit ~config ~@(when metrics [metrics]))]
+     (try
+       ~@body
+       (finally
+         (ig/halt-key! ::rpc/climit ~sym)))))
 
 ;; --- UTILS
 

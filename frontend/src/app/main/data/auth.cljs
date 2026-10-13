@@ -235,7 +235,7 @@
   (ptk/reify ::logged-out
     ptk/UpdateEvent
     (update [_ state]
-      (select-keys state [:route :router :session-id :history]))
+      (select-keys state [:route :router :session-id]))
 
     ptk/WatchEvent
     (watch [_ _ _]

@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as climit]
    [app.util.services :as sv]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -34,6 +35,48 @@
       (case name
         "x-forwarded-for" "127.0.0.44"
         "x-real-ip" "127.0.0.43"))))
+
+(t/deftest push-audit-events-limit-is-keyed-by-profile
+  ;; Regression guard. This command asks for a per-profile limit, but it used
+  ;; to declare it as a plain keyword next to `::climit/key-fn`, metadata that
+  ;; `climit/wrap` does not read: it takes the key only from the positional
+  ;; `key-fn` of the vector form. That silently turned the limit into a single
+  ;; shared one, so one stuck call ended up rejecting the audit batches of
+  ;; every profile on the instance. Two profiles must not share a limiter.
+  (th/with-climit [climit {:submit-audit-events/by-profile
+                           {:permits 1 :queue 1 :timeout 30000}}]
+    (let [;; The metadata declared by the command itself, that is what the test
+          ;; has to cover.
+          mdata   (meta (ns-resolve 'app.rpc.commands.audit 'sm$push-audit-events))
+
+          gate    (promise)
+          entered (promise)
+          calls   (atom 0)
+          handler (fn [_ _]
+                    (when (= 1 (swap! calls inc))
+                      (deliver entered true)
+                      @gate)
+                    :ok)
+          wrapped (climit/wrap {::rpc/climit climit} handler mdata)
+          call    (fn [profile-id]
+                    (wrapped {::rpc/climit climit} {::rpc/profile-id profile-id}))
+          pid-a   (uuid/next)
+          pid-b   (uuid/next)
+          holder  (future (call pid-a))]
+
+      ;; The first call stays inside the handler holding the only permit.
+      (t/is (true? (deref entered 2000 false)))
+
+      ;; Another call from the SAME profile shares the limiter, so it waits.
+      (let [same (future (call pid-a))]
+        (t/is (= :waiting (deref same 300 :waiting))))
+
+      ;; A different profile owns a different limiter and is served right away.
+      ;; With the shared limiter (the bug) this one waits too and times out.
+      (t/is (= :ok (deref (future (call pid-b)) 2000 :timeout)))
+
+      (deliver gate true)
+      (t/is (= :ok (deref holder 2000 :timeout))))))
 
 (t/deftest prepare-context-initiator-is-plain-string
   ;; The initiator must always be a plain string, never a keyword: shared-key
