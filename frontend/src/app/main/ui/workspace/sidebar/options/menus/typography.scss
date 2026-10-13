@@ -448,9 +448,21 @@ $font-preview-box-height: 28px;
 }
 
 .fonts-list-full-size {
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+// Joins the list to the "Recent" section above it
+.fonts-list-below-recent {
   border-start-start-radius: 0;
   border-start-end-radius: 0;
-  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.fonts-list-empty {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  margin: 0;
+  padding: var(--sp-m);
 }
 
 .dropdown-icon {

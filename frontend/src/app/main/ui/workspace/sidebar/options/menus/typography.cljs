@@ -364,6 +364,10 @@
 
         full-size?   (boolean (and full-size show-recent))
 
+        ;; `recent-fonts` is a vector, so check it with `seq`: an empty one
+        ;; is truthy and would show the heading over nothing
+        show-recent? (boolean (and show-recent (seq recent-fonts)))
+
         select-next
         (mf/use-fn
          (mf/deps fonts)
@@ -480,7 +484,7 @@
                         :value (:term state)
                         :auto-focus true
                         :placeholder (tr "workspace.options.search-font")}]
-       (when (and recent-fonts show-recent)
+       (when show-recent?
          [:section {:class (stl/css :show-recent)}
           [:p {:class (stl/css :header-title)} (tr "workspace.options.recent-fonts")]
           (for [[idx font] (d/enumerate recent-fonts)]
@@ -491,7 +495,11 @@
                             :is-current (= (:id font) (:id effective-selected))}])])]
 
       [:div {:class (stl/css-case :fonts-list true
-                                  :fonts-list-full-size full-size?)}
+                                  :fonts-list-full-size full-size?
+                                  :fonts-list-below-recent show-recent?)}
+       (when (empty? fonts)
+         [:p {:class (stl/css :fonts-list-empty)}
+          (tr "workspace.options.no-font-results")])
        [:> rvt/AutoSizer {}
         (fn [props]
           (let [width  (unchecked-get props "width")
