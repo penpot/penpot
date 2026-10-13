@@ -76,6 +76,7 @@
    [common-tests.logic.library-asset-sync-test]
    [common-tests.logic.move-shapes-test]
    [common-tests.logic.multiple-nesting-levels-test]
+   [common-tests.logic.placement-test]
    [common-tests.logic.swap-and-reset-test]
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.swap-group-test]
@@ -200,6 +201,7 @@
    'common-tests.logic.library-asset-sync-test
    'common-tests.logic.move-shapes-test
    'common-tests.logic.multiple-nesting-levels-test
+   'common-tests.logic.placement-test
    'common-tests.logic.swap-and-reset-test
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.swap-group-test
