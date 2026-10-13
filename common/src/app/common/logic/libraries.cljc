@@ -641,22 +641,25 @@
   (shape-log :debug (:id shape) nil :msg "Sync colors of shape" :shape (:name shape))
 
   ;; Synchronize a shape that uses some colors of the library. The value of the
-  ;; color in the library is copied to the shape.
+  ;; color in the library is copied to the shape. It is a derived write, so it
+  ;; touches no override of a copy.
   (let [library-colors (get-in libraries [library-id :data :colors])]
     (pcb/update-shapes changes
                        [(:id shape)]
-                       #(ctl/sync-colors % library-id library-colors))))
+                       #(ctl/sync-colors % library-id library-colors)
+                       {:ignore-touched true})))
 
 (defmethod generate-sync-shape :typographies
   [_ changes library-id container shape libraries _]
   (shape-log :debug (:id shape) nil :msg "Sync typographies of shape" :shape (:name shape))
 
-  ;; Synchronize a shape that uses some typographies of the library. The attributes
-  ;; of the typography are copied to the shape."
+  ;; Synchronize a shape that uses some typographies of the library. The text
+  ;; styles of the typography are copied to the shape. It is a derived write,
+  ;; so it touches no override of a copy.
   (let [typographies  (get-in libraries [library-id :data :typographies])
         update-node (fn [node]
                       (if-let [typography (get typographies (:typography-ref-id node))]
-                        (merge node (dissoc typography :name :id))
+                        (merge node (select-keys typography txt/typography-fields))
                         (dissoc node :typography-ref-id
                                 :typography-ref-file)))]
     (generate-sync-text-shape changes shape container update-node)))
@@ -673,7 +676,8 @@
           :id (:id shape)
           :operations [{:type :set
                         :attr :content
-                        :val new-content}
+                        :val new-content
+                        :ignore-touched true}
                        {:type :set
                         :attr :position-data
                         :val nil}]})
@@ -685,7 +689,8 @@
           :id (:id shape)
           :operations [{:type :set
                         :attr :content
-                        :val old-content}
+                        :val old-content
+                        :ignore-touched true}
                        {:type :set
                         :attr :position-data
                         :val nil}]})
