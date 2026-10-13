@@ -27,17 +27,23 @@
 
 (defn- run-script
   [config token-type value path]
-  (if-let [{:keys [ast script]} (token-types/validation (:tokens config) token-type)]
-    (try
-      (let [ast (or ast (throw (ex-info (str "invalid validation script: " script) {})))
-            result (interp/interpret ast {:references {"input" value} :config config})]
-        (cond
-          (and (sym/boolean? result) (true? (:value result))) {:valid? true :token-type token-type}
-          (sym/string? result) (failure (:value result) token-type path)
-          :else (failure "VALIDATION_INVALID_RESULT" token-type path)))
-      (catch #?(:clj Throwable :cljs :default) e
-        (failure (str "VALIDATION_ERROR: " (err/describe e)) token-type path)))
-    {:valid? true :token-type token-type}))
+  (let [{:keys [ast script] :as validation} (token-types/validation (:tokens config) token-type)]
+    (cond
+      (nil? validation)
+      {:valid? true :token-type token-type}
+
+      (nil? ast)
+      (failure (str "VALIDATION_ERROR: invalid validation script: " script) token-type path)
+
+      :else
+      (try
+        (let [result (interp/interpret ast {:references {"input" value} :config config})]
+          (cond
+            (and (sym/boolean? result) (true? (:value result))) {:valid? true :token-type token-type}
+            (sym/string? result) (failure (:value result) token-type path)
+            :else (failure "VALIDATION_INVALID_RESULT" token-type path)))
+        (catch #?(:clj Throwable :cljs :default) e
+          (failure (str "VALIDATION_ERROR: " (err/describe e)) token-type path))))))
 
 (defn- value-map
   [value]

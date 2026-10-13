@@ -116,18 +116,22 @@
             v (if (string? result) result (some-> result sym/value))]
         (sym/color v (:name target-spec) nil)))))
 
+(defn- no-conversion-path
+  [source-uri target-uri]
+  (str "No conversion path found from '" source-uri "' to '" target-uri "'"))
+
 (defn convert-color
   "Converts `color` to the color space registered under `target-uri`,
   chaining conversions when needed. Alpha is preserved."
   [config color target-uri]
   (let [registry (:colors config)
         source-uri (or (when-let [sub (:sub-type color)] (colors/uri-by-type registry sub))
-                       (err/raise :color/source-uri-not-found {:data {:color-type (or (:sub-type color) "unknown")}}))]
+                       (err/raise :color/source-uri-not-found {:data {:color-type (or (:sub-type color) "unknown")}}))
+        steps (or (reg/conversion-steps registry source-uri target-uri)
+                  (err/raise :color/conversion-error {:data {:error (no-conversion-path source-uri target-uri)}}))]
     (try
-      (let [steps (or (reg/conversion-steps registry source-uri target-uri)
-                      (throw (ex-info (str "No conversion path found from '" source-uri "' to '" target-uri "'") {})))
-            result (reduce (fn [c step] (run-color-conversion config step c)) color steps)]
-        (assoc result :alpha (:alpha color)))
+      (-> (reduce (fn [c step] (run-color-conversion config step c)) color steps)
+          (assoc :alpha (:alpha color)))
       (catch #?(:clj Throwable :cljs :default) e
         (err/raise :color/conversion-error {:data {:error (err/describe e)}})))))
 
@@ -154,11 +158,11 @@
   [config unit target-uri]
   (let [registry (:units config)
         source-uri (or (units/uri-by-keyword registry (:unit unit))
-                       (err/raise :unit/source-uri-not-found {:data {:unit (:unit unit)}}))]
+                       (err/raise :unit/source-uri-not-found {:data {:unit (:unit unit)}}))
+        steps (or (reg/conversion-steps registry source-uri target-uri)
+                  (err/raise :unit/conversion-crashed {:data {:error (no-conversion-path source-uri target-uri)}}))]
     (try
-      (let [steps (or (reg/conversion-steps registry source-uri target-uri)
-                      (throw (ex-info (str "No conversion path found from '" source-uri "' to '" target-uri "'") {})))]
-        (reduce (fn [u step] (run-unit-conversion config step u)) unit steps))
+      (reduce (fn [u step] (run-unit-conversion config step u)) unit steps)
       (catch #?(:clj Throwable :cljs :default) e
         (err/raise :unit/conversion-crashed {:data {:error (err/describe e)}})))))
 
@@ -243,19 +247,15 @@
       (do
         (when-not (every? sym/numeric? args)
           (err/raise :functions/expects-number-arguments {:data {:function-name "sum"}}))
-        (try
-          (let [converted (convert-to-common-format config (vec args))
-                total (reduce + 0.0 (map sym/value converted))
-                unit-arg (first (filter sym/number-with-unit? converted))]
-            (if unit-arg
-              (sym/number-with-unit total (:unit unit-arg))
-              (sym/number total)))
-          (catch #?(:clj Throwable :cljs :default) e
-            (if (err/language-error? e)
-              (if (= :functions/expects-number-arguments (:code (ex-data e)))
-                (throw e)
-                (err/raise :functions/unit-conversion-failed {:data {:function-name "sum" :error (err/describe e)}}))
-              (err/raise :functions/unit-conversion-failed {:data {:function-name "sum" :error (err/describe e)}}))))))))
+        (let [converted (try
+                          (convert-to-common-format config (vec args))
+                          (catch #?(:clj Throwable :cljs :default) e
+                            (err/raise :functions/unit-conversion-failed
+                                       {:data {:function-name "sum" :error (err/describe e)}})))
+              total (reduce + 0.0 (map sym/value converted))]
+          (if-let [unit-arg (first (filter sym/number-with-unit? converted))]
+            (sym/number-with-unit total (:unit unit-arg))
+            (sym/number total)))))))
 
 (defn- call-dynamic-function
   [config {:keys [ast keyword]} args]
@@ -575,10 +575,7 @@
     (when-not (sym/list? coll)
       (err/raise :interpreter/for-each-not-list
                  {:token token :data {:actual-type (if (some? coll) (sym/type-name coll) "null")}}))
-    (let [cleanup (fn []
-                    (delete-var ctx item-var)
-                    (when index-var (delete-var ctx index-var)))
-          results (try
+    (let [results (try
                     (reduce (fn [acc [idx item]]
                               (set-var ctx item-var item)
                               (when index-var (set-var ctx index-var (sym/number (double idx))))
@@ -588,10 +585,9 @@
                                   (conj acc (or r (sym/null))))))
                             []
                             (map-indexed vector (sym/value coll)))
-                    (catch #?(:clj Throwable :cljs :default) e
-                      (cleanup)
-                      (throw e)))]
-      (cleanup)
+                    (finally
+                      (delete-var ctx item-var)
+                      (when index-var (delete-var ctx index-var))))]
       (if (return? results)
         results
         (sym/list results false)))))
