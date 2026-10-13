@@ -1,0 +1,48 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+
+.branch-chip {
+  --chip-bg-color: var(--color-background-tertiary);
+  --chip-border-color: var(--color-background-quaternary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: var(--sp-xs) var(--sp-s);
+  border: $b-1 solid var(--chip-border-color);
+  border-radius: $br-8;
+  background-color: var(--chip-bg-color);
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+
+  &:hover {
+    --chip-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
+  &.is-open {
+    --chip-bg-color: var(--color-background-quaternary);
+    --chip-border-color: var(--color-accent-primary);
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

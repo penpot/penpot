@@ -15,8 +15,9 @@
    [app.main.data.workspace.branches :as dwb]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.branch-row :refer [branch-row*]]
+   [app.main.ui.ds.product.branch-status :refer [branch-status*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
@@ -68,23 +69,24 @@
       [:span (dm/str n)]]
 
      [:& dropdown {:show (deref show?) :on-close on-close}
-      [:div {:class (stl/css :branches-popover)}
+      [:div {:class (stl/css :branches-popover)
+             :role "dialog"
+             :aria-label (tr "dashboard.branches-badge" (dm/str n))}
+       [:div {:class (stl/css :branches-popover-section)}
+        [:span (tr "workspace.branches.menu")]
+        [:span (dm/str (count branches))]]
        [:ul {:class (stl/css :branches-popover-list)}
         (for [b branches]
-          [:li {:key (dm/str (:id b))
-                :class (stl/css :branches-popover-item)
-                :role "button"
-                :data-branch (dm/str (:branch-file-id b))
-                :on-click on-open-branch}
-           [:> i/icon* {:icon-id i/git-branch :size "s"}]
-           [:span {:class (stl/css :branches-popover-name)} (:name b)]
-           (if (or (:diff-error b) (nil? (:ahead b)))
-             ;; the comparison could not be made: the warning stands
-             ;; where the counts would, because zeros read as "in sync"
-             [:span {:class (stl/css :branches-popover-error)
-                     :title (tr "workspace.branches.counts.error")}
-              [:> i/icon* {:icon-id i/triangle-alert :size "s"}]]
-             [:span {:class (stl/css :branches-popover-counts)}
-              (dm/str "↑" (:ahead b) " ↓" (:behind b))])])]
-       [:> button* {:variant "primary" :icon i/add :on-click on-create}
-        (tr "workspace.branches.new")]]]]))
+          [:li {:key (dm/str (:id b))}
+           [:> branch-row* {:label (:name b)
+                            :data-branch (dm/str (:branch-file-id b))
+                            :on-click on-open-branch}
+            [:> branch-status* {:ahead (:ahead b)
+                                :behind (:behind b)
+                                :conflicts (:conflicts b)
+                                :has-error (boolean (or (:diff-error b) (nil? (:ahead b))))}]]])]
+       [:hr {:class (stl/css :branches-popover-divider)}]
+       [:button {:class (stl/css :branches-popover-action)
+                 :on-click on-create}
+        [:> i/icon* {:icon-id i/git-branch-plus :size "s"}]
+        [:span (tr "workspace.branches.switcher.new")]]]]]))

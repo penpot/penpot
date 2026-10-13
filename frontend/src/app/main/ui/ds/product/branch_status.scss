@@ -1,0 +1,60 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+
+.branch-status {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+// counts use the monospace inspect font at 600 weight, as every branch
+// figure does; they only show when there are changes, so they stand out
+.count {
+  @include t.use-typography("code-font");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  font-weight: 600;
+  color: var(--color-accent-primary);
+}
+
+.error {
+  display: flex;
+  color: var(--color-foreground-warning);
+}
+
+.pill {
+  --pill-fg-color: var(--color-foreground-secondary);
+  --pill-bg-color: var(--color-background-tertiary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  padding: 0 var(--sp-xs);
+  border-radius: $br-4;
+  color: var(--pill-fg-color);
+  background-color: var(--pill-bg-color);
+}
+
+.pill-conflict {
+  --pill-fg-color: var(--color-foreground-warning);
+  --pill-bg-color: var(--color-background-warning);
+}
+
+.pill-pending {
+  --pill-fg-color: var(--color-foreground-info);
+  --pill-bg-color: var(--color-background-info);
+}
+
+.pill-approved {
+  --pill-fg-color: var(--color-foreground-success);
+  --pill-bg-color: var(--color-background-success);
+}

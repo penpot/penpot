@@ -1,0 +1,39 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as BranchRow from "./branch_row.stories";
+
+<Meta title="Product/Branching/BranchRow" />
+
+# BranchRow
+
+A branch in a short list, such as the branch switcher or the dashboard
+branches popover. Clicking it opens the branch.
+
+<Canvas of={BranchRow.Default} />
+
+## Variants
+
+The branch the open file is shows a tick and cannot be opened again.
+
+<Canvas of={BranchRow.Current} />
+
+Children go to the end of the row, usually a `BranchStatus`.
+
+<Canvas of={BranchRow.WithStatus} />
+
+## Technical notes
+
+The label is mandatory. The row is a `button`; any other prop
+(`on-click`, `data-*`) goes to it.
+
+```clj
+[:> branch-row* {:label (:name branch)
+                 :data-branch (dm/str (:branch-file-id branch))
+                 :on-click on-open}
+ [:> branch-status* {:ahead (:ahead branch) :behind (:behind branch)}]]
+```

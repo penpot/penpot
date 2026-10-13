@@ -20,13 +20,11 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
-   [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.mcp :as mcp]
-   [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
@@ -42,6 +40,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.workspace.branch-switcher :as bsw]
+   [app.main.ui.workspace.menu-shortcuts :refer [shortcuts*]]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -49,19 +48,6 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
-
-(mf/defc shortcuts*
-  {::mf/private true}
-  [{:keys [id]}]
-  (let [custom-shortcuts (mf/deref refs/custom-shortcuts)
-        customized?      (let [c (get-in custom-shortcuts [:workspace id])]
-                           (and c (not= c "")))]
-    [:span {:class (stl/css :shortcut)}
-     (for [sc (scd/split-sc (sc/get-effective-tooltip id custom-shortcuts))]
-       [:span {:class (stl/css-case :shortcut-key true
-                                    :customized-key customized?)
-               :key sc}
-        sc])]))
 
 (mf/defc help-info-menu*
   {::mf/private true

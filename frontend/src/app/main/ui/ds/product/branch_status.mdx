@@ -1,0 +1,56 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as BranchStatus from "./branch_status.stories";
+
+<Meta title="Product/Branching/BranchStatus" />
+
+# BranchStatus
+
+How a branch stands against main: the changes it has (↑) and lacks (↓),
+and one pill with what blocks or moves its merge.
+
+<Canvas of={BranchStatus.Default} />
+
+## Variants
+
+The pill shows the review state of an open pull request, pending or
+approved, with its approvals.
+
+<Canvas of={BranchStatus.InReview} />
+
+<Canvas of={BranchStatus.Approved} />
+
+Conflicts take the pill over the review state, because they block the
+merge whatever the reviewers say.
+
+<Canvas of={BranchStatus.WithConflicts} />
+
+When the comparison with main fails, a warning replaces the counts:
+zeros would read as "in sync".
+
+<Canvas of={BranchStatus.ComparisonFailed} />
+
+## Technical notes
+
+Every prop is optional. Counts at zero are not drawn.
+
+```clj
+[:> branch-status* {:ahead (:ahead branch)
+                    :behind (:behind branch)
+                    :conflicts (:conflicts branch)
+                    :review "pending"
+                    :approvals 1
+                    :reviewers 2}]
+```
+
+## Usage guidelines (design)
+
+### Where to use
+
+Next to a branch name: the workspace header row, the branch switcher and
+the branch lists.

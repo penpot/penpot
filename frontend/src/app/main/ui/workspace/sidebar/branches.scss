@@ -28,7 +28,7 @@
 // variables, so there are no new variables, no global override and the dark
 // theme is untouched.
 .compare-overlay,
-.branches-toolbox,
+.branches-list-content,
 .branch-banner {
   :global(.light) & {
     --color-foreground-success: var(--color-accent-success);
@@ -41,22 +41,7 @@
   }
 }
 
-// --- Panel
-
-.branches-toolbox {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: var(--sp-s);
-  height: 100%;
-  padding: var(--sp-s);
-  overflow: hidden;
-}
-
-.branches-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-}
+// --- Branch lists
 
 .branches-empty {
   display: flex;
@@ -64,33 +49,6 @@
   gap: var(--sp-xxxl);
   margin: var(--sp-xxxl) auto;
   inline-size: $sz-200;
-}
-
-.branches-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.branches-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-block: var(--sp-s) var(--sp-xs);
-  padding-inline: var(--sp-s);
-
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-
-.branches-section-count {
-  color: var(--color-foreground-secondary);
 }
 
 .branches-entries {
@@ -190,18 +148,18 @@
   @include t.use-typography("body-small");
 }
 
-.count-ahead,
-.count-behind {
+// ahead/behind: a side with changes stands out, a zero stays quiet
+.count {
   @include branch-count;
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xxs);
   color: var(--color-foreground-secondary);
-}
 
-.count-ahead {
-  color: var(--color-accent-primary);
+  &.has-changes {
+    color: var(--color-accent-primary);
+  }
 }
 
 .count-error {
@@ -1456,14 +1414,19 @@
   @include t.use-typography("body-small");
 }
 
-.branch-banner-title,
-.branch-banner-from {
-  color: var(--color-foreground-secondary);
+.branch-banner-title {
+  color: var(--color-foreground-primary);
+  white-space: nowrap;
 }
 
-.branch-banner-name {
-  color: var(--color-foreground-primary);
-  font-weight: 700;
+.branch-banner-icon-warning {
+  color: var(--color-foreground-warning);
+}
+
+.branch-banner-separator {
+  align-self: stretch;
+  inline-size: $sz-1;
+  background-color: var(--color-background-quaternary);
 }
 
 .branch-banner-actions {
@@ -1472,23 +1435,28 @@
   gap: var(--sp-s);
 }
 
-.branch-banner-counts {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-
-  @include t.use-typography("body-small");
-}
-
-// --- All branches dialog: the panel at a fixed height, so its list scrolls
-
-.branches-list-container {
-  inline-size: $sz-512;
-}
+// --- All branches dialog
 
 .branches-list-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
   block-size: $sz-480;
   min-block-size: 0;
+}
+
+.branches-list-tabs {
+  flex: 1;
+  min-block-size: 0;
+}
+
+.branches-list-search {
+  inline-size: $sz-224;
+  margin-inline-start: auto;
+}
+
+.branches-list-entries {
+  padding-block-start: var(--sp-m);
 }
 
 // --- Lifecycle: kebab menu, rename, archived section
@@ -1526,46 +1494,16 @@
 
   inset-block-start: 100%;
   inset-inline-end: 0;
-  inline-size: $sz-160;
+
+  // the options do not wrap: the menu grows to its longest one
+  inline-size: max-content;
+  min-inline-size: $sz-160;
 }
 
 .menu-option {
   @extend %menu-item-base;
 
   white-space: nowrap;
-}
-
-.branches-archived {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-}
-
-.branches-archived-toggle {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  padding-block: var(--sp-s) var(--sp-xs);
-  padding-inline: var(--sp-s);
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--color-foreground-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-
-.branches-archived-count {
-  margin-inline-start: auto;
-}
-
-.branches-footer {
-  margin-block-start: auto;
-  padding: var(--sp-s);
-  border-block-start: 1px solid var(--color-background-quaternary);
 }
 
 // The limits dialog is the only long modal here, and `%modal-container-base`
@@ -1584,22 +1522,6 @@
   flex: 1 1 auto;
   overflow-y: auto;
   padding-inline-end: var(--sp-xs);
-}
-
-.branches-limits-link {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--color-foreground-secondary);
-
-  &:hover {
-    color: var(--color-accent-primary);
-  }
 }
 
 .limits-section {

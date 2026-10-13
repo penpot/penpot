@@ -170,27 +170,3 @@
   margin-top: var(--sp-s);
 }
 
-.shortcut {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-xxs);
-  color: var(--menu-shortcut-foreground-color);
-}
-
-.shortcut-key {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: px2rem(20);
-  padding: var(--sp-xxs) px2rem(6);
-  border-radius: $br-6;
-  background-color: var(--menu-shortcut-background-color);
-}
-
-.customized-key {
-  background-color: var(--color-background-info);
-  color: var(--color-foreground-primary);
-}

@@ -15,15 +15,17 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.modal :as modal]
-   [app.main.data.shortcuts :as scd]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.pull-requests :as dwpr]
-   [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.branch-chip :refer [branch-chip*]]
+   [app.main.ui.ds.product.branch-row :refer [branch-row*]]
+   [app.main.ui.ds.product.branch-status :refer [branch-status*]]
+   [app.main.ui.workspace.menu-shortcuts :refer [shortcuts*]]
    [app.main.ui.workspace.sidebar.pull-requests :as prui]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -50,86 +52,40 @@
        (map (juxt :file-branch-id identity))
        (into {})))
 
-(defn- counts-error?
-  [row]
-  (or (:diff-error row)
-      (nil? (:ahead row))))
-
-;; --- Status: counts and the one pill that matters
-
-(mf/defc branch-counts*
-  {::mf/private true}
-  [{:keys [row]}]
-  (let [ahead  (or (:ahead row) 0)
-        behind (or (:behind row) 0)]
-    (if (counts-error? row)
-      [:span {:class (stl/css :count-error)
-              :title (tr "workspace.branches.counts.error")}
-       [:> i/icon* {:icon-id i/triangle-alert :size "s"}]]
-      (when (or (pos? ahead) (pos? behind))
-        [:span {:class (stl/css :counts)}
-         (when (pos? ahead)
-           [:span {:class (stl/css :count)
-                   :title (tr "workspace.branches.counts.ahead")}
-            [:> i/icon* {:icon-id i/arrow-up :size "s"}]
-            (dm/str ahead)])
-         (when (pos? behind)
-           [:span {:class (stl/css :count)
-                   :title (tr "workspace.branches.counts.behind")}
-            [:> i/icon* {:icon-id i/arrow-down :size "s"}]
-            (dm/str behind)])]))))
-
-(mf/defc branch-pill*
-  "One pill per branch: conflicts win over the review state, because they
-  block the merge whatever the reviewers say."
+(mf/defc row-status*
+  "The `branch-status*` of a branch row and its open pull request (nil
+  when it has none)."
   {::mf/private true}
   [{:keys [row pr]}]
-  (let [conflicts (or (:conflicts row) 0)]
-    (cond
-      (pos? conflicts)
-      [:span {:class (stl/css :pill :pill-conflict)
-              :title (tr "workspace.branches.banner.conflicts" (dm/str conflicts))}
-       [:> i/icon* {:icon-id i/triangle-alert :size "s"}]
-       (dm/str conflicts)]
-
-      (some? pr)
-      (let [[approvals total] (prui/current-approvals pr)
-            approved?         (and (pos? total) (= approvals total))]
-        [:span {:class (stl/css-case :pill true
-                                     :pill-review (not approved?)
-                                     :pill-approved approved?)
-                :title (tr "workspace.pull-requests.info.approvals")}
-         [:> i/icon* {:icon-id i/git-pull-request-arrow :size "s"}]
-         (when (pos? total)
-           (dm/str approvals "/" total))]))))
+  (let [[approvals reviewers] (if pr (prui/current-approvals pr) [0 0])
+        review (when (some? pr)
+                 (if (and (pos? reviewers) (= approvals reviewers)) "approved" "pending"))]
+    [:> branch-status* {:ahead (:ahead row)
+                        :behind (:behind row)
+                        :has-error (boolean (or (:diff-error row) (nil? (:ahead row))))
+                        :conflicts (:conflicts row)
+                        :review review
+                        :approvals approvals
+                        :reviewers reviewers}]))
 
 ;; --- Popover
 
 (mf/defc switcher-row*
   {::mf/private true}
   [{:keys [row pr current on-open]}]
-  (let [main? (:is-main row)]
-    [:li {:class (stl/css-case :row true :is-current current)}
-     [:button {:class (stl/css :row-button)
-               :data-branch (dm/str (:branch-file-id row))
-               :aria-current (when current "true")
-               :disabled current
-               :on-click on-open}
-      [:span {:class (stl/css :row-icon)}
-       [:> i/icon* {:icon-id (if current i/tick i/git-branch) :size "s"}]]
-      [:span {:class (stl/css :row-name)} (:name row)]
-      [:span {:class (stl/css :row-meta)}
-       (if main?
-         [:span {:class (stl/css :row-default)} (tr "workspace.branches.main-subtitle")]
-         [:*
-          [:> branch-counts* {:row row}]
-          [:> branch-pill* {:row row :pr pr}]])]]]))
+  [:li
+   [:> branch-row* {:label (:name row)
+                    :is-current (boolean current)
+                    :data-branch (dm/str (:branch-file-id row))
+                    :on-click on-open}
+    (if (:is-main row)
+      (tr "workspace.branches.main-subtitle")
+      [:> row-status* {:row row :pr pr}])]])
 
 (mf/defc switcher-popover*
   {::mf/private true}
   [{:keys [file current prs-by-branch on-close]}]
   (let [{:keys [data]} (mf/deref branches)
-        custom-sc      (mf/deref refs/custom-shortcuts)
 
         filter*        (mf/use-state "")
         filter-v       (deref filter*)
@@ -240,9 +196,7 @@
      [:button {:class (stl/css :action) :on-click on-show-all}
       [:> i/icon* {:icon-id i/menu :size "s"}]
       [:span {:class (stl/css :action-label)} (tr "workspace.branches.switcher.all")]
-      [:span {:class (stl/css :action-aside)}
-       (for [key (scd/split-sc (sc/get-effective-tooltip :open-branches custom-sc))]
-         [:span {:key key :class (stl/css :shortcut-key)} key])]]]))
+      [:> shortcuts* {:id :open-branches}]]]))
 
 ;; --- Branch row under the header
 
@@ -302,21 +256,15 @@
 
     (when ^boolean visible?
       [:div {:class (stl/css :branch-bar) :ref bar-ref}
-       [:button {:class (stl/css-case :chip true :is-open open?)
-                 :aria-haspopup "dialog"
-                 :aria-expanded open?
-                 :title (if (:is-main current)
-                          (tr "workspace.branches.switcher.tooltip")
-                          (tr "workspace.branches.header-badge-tooltip" (:name current)))
-                 :on-click on-toggle}
-        [:> i/icon* {:icon-id i/git-branch :size "s" :class (stl/css :chip-icon)}]
-        [:span {:class (stl/css :chip-name)} (:name current)]
-        [:> i/icon* {:icon-id i/arrow-down :size "s" :class (stl/css :chip-arrow)}]]
+       [:> branch-chip* {:label (:name current)
+                         :is-open open?
+                         :title (if (:is-main current)
+                                  (tr "workspace.branches.switcher.tooltip")
+                                  (tr "workspace.branches.header-badge-tooltip" (:name current)))
+                         :on-click on-toggle}]
 
        (when (and (some? ctx) (not merged?))
-         [:div {:class (stl/css :status)}
-          [:> branch-counts* {:row ctx}]
-          [:> branch-pill* {:row ctx :pr (get prs-by-branch (:id ctx))}]])
+         [:> row-status* {:row ctx :pr (get prs-by-branch (:id ctx))}])
 
        [:& dropdown {:show open? :on-close on-close :container bar-ref}
         [:> switcher-popover* {:file file

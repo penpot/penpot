@@ -6356,6 +6356,48 @@ msgstr "Transformar texto"
 msgid "workspace.assets.ungroup"
 msgstr "Desagrupar"
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1853
+msgid "workspace.branches.banner.status.ahead"
+msgid_plural "workspace.branches.banner.status.ahead"
+msgstr[0] "1 cambio que no está en main"
+msgstr[1] "%s cambios que no están en main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1841
+msgid "workspace.branches.banner.status.behind"
+msgid_plural "workspace.branches.banner.status.behind"
+msgstr[0] "main tiene 1 cambio nuevo"
+msgstr[1] "main tiene %s cambios nuevos"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1836
+msgid "workspace.branches.banner.status.conflicts"
+msgid_plural "workspace.branches.banner.status.conflicts"
+msgstr[0] "1 conflicto con main"
+msgstr[1] "%s conflictos con main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1847
+msgid "workspace.branches.banner.status.in-review"
+msgstr "En revisión · %s de %s aprobaciones"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1858
+msgid "workspace.branches.banner.status.up-to-date"
+msgstr "Al día con main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1000
+msgid "workspace.branches.list.empty"
+msgstr "No hay ramas aquí"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:945
+msgid "workspace.branches.list.tab.active"
+msgstr "Activas"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:944
+msgid "workspace.branches.list.tab.mine"
+msgstr "Mías"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:988
+msgid "workspace.branches.list.title"
+msgstr "Ramas · %s"
+
 #: src/app/main/ui/workspace/main_menu.cljs:1152
 msgid "workspace.branches.menu.create"
 msgstr "Crear rama…"
