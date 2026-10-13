@@ -166,59 +166,56 @@
 (t/deftest update-token-test
   (let [res (process {"a" "10" "b" "{a} + 5" "c" "{b} * 2" "d" "1"})
         st (:state res)
-        upd (proc/update-token st {:token-path "a" :token-data {:value "20"}})]
-    (t/is (= "20" (sym/to-string (:resolved upd))))
+        upd (proc/update-token st "a" {:value "20"})]
+    (t/is (= "20" (value upd "a")))
     (t/is (= "25" (value upd "b")))
     (t/is (= "50" (value upd "c")))
     (t/is (= #{"a" "b" "c"} (proc/affected-tokens upd)))
-    (t/is (= #{"a" "b" "c"} (proc/modified-dependants (:tokens res) upd)))
+    (t/is (= #{"a" "b" "c"} (proc/modified-dependents (:tokens res) upd)))
     (t/is (= "1" (value upd "d")) "unaffected tokens keep their value")
-    (t/is (:updated upd))
     (t/testing "updating an unknown token creates it"
-      (let [upd2 (proc/update-token st {:token-path "e" :token-data {:value "{d} + 1"}})]
-        (t/is (= "2" (value upd2 "e")))
-        (t/is (false? (:updated upd2)))))
+      (t/is (= "2" (value (proc/update-token st "e" {:value "{d} + 1"}) "e"))))
     (t/testing "a value can be broken and fixed again"
-      (let [broken (proc/update-token st {:token-path "a" :token-data {:value "{zzz}"}})
-            fixed (proc/update-token (:state broken) {:token-path "a" :token-data {:value "1"}})]
+      (let [broken (proc/update-token st "a" {:value "{zzz}"})
+            fixed (proc/update-token (:state broken) "a" {:value "1"})]
         (t/is (= #{"a" "b" "c"} (proc/broken-references broken)))
         (t/is (nil? (:issues fixed)))
         (t/is (= "12" (value fixed "c")))))))
 
 (t/deftest rename-token-test
   (let [res (process {"a" "10" "b" "{a} + 5"})
-        rn (proc/update-token (:state res) {:token-path "a" :token-path-renamed "alpha" :update-references? true})]
+        rn (proc/rename-token (:state res) "a" "alpha" {:update-references? true})]
     (t/is (= "{alpha} + 5" (get-in rn [:state :tokens "b" :value])))
     (t/is (= "15" (value rn "b")))
+    (t/is (= #{"alpha" "b"} (proc/affected-tokens rn)))
     (t/is (not (contains? (:tokens rn) "a"))))
   (t/testing "without reference updates the dependents break"
     (let [res (process {"a" "10" "b" "{a} + 5"})
-          rn (proc/update-token (:state res) {:token-path "a" :token-path-renamed "alpha"})]
+          rn (proc/rename-token (:state res) "a" "alpha")]
       (t/is (= #{"b"} (proc/broken-references rn)))))
-  (t/is (= :processor/token-already-exists
-           (h/error-code #(proc/update-token (:state (process {"a" "1" "b" "2"}))
-                                             {:token-path "a" :token-path-renamed "b"})))))
+  (let [st (:state (process {"a" "1" "b" "2"}))]
+    (t/is (= :processor/token-already-exists (h/error-code #(proc/rename-token st "a" "b"))))
+    (t/is (= :processor/token-not-found (h/error-code #(proc/rename-token st "x" "y"))))))
 
 (t/deftest create-and-delete-token-test
   (let [res (process {"a" "10" "b" "{a} + 5"})
-        cr (proc/create-token (:state res) {:token-path "c" :token-data {:value "{b} * 2"}})]
-    (t/is (:created cr))
+        cr (proc/create-token (:state res) "c" {:value "{b} * 2"})]
     (t/is (= "30" (value cr "c")))
     (t/is (= :processor/token-already-exists
-             (h/error-code #(proc/create-token (:state cr) {:token-path "c" :token-data {:value "1"}}))))
-    (let [del (proc/delete-token (:state cr) {:token-path "a"})]
+             (h/error-code #(proc/create-token (:state cr) "c" {:value "1"}))))
+    (let [del (proc/delete-token (:state cr) "a")]
       (t/is (not (contains? (:tokens del) "a")))
       (t/is (= #{"b" "c"} (proc/broken-references del)))
       (t/is (= #{"b" "c"} (proc/affected-tokens del)))
       (t/is (= :processor/token-not-found
-               (h/error-code #(proc/delete-token (:state del) {:token-path "a"})))))))
+               (h/error-code #(proc/delete-token (:state del) "a")))))))
 
 (t/deftest resolve-value-test
   (let [st (:state (process {"a" "10" "b" "{a} + 5"}))]
-    (t/is (= "16px" (sym/to-string (:resolved (proc/resolve-value st {:value "{b} + 1px"})))))
-    (t/is (= [:interpreter/unknown-reference] (mapv :code (:issues (proc/resolve-value st {:value "{zzz}"})))))
-    (t/is (= [:lexer/invalid-character] (mapv :code (:issues (proc/resolve-value st {:value "1 ´ 2"})))))
-    (t/is (= {:resolved nil :issues []} (proc/resolve-value st {:value ""})))))
+    (t/is (= "16px" (sym/to-string (:value (proc/resolve-value st "{b} + 1px")))))
+    (t/is (= [:interpreter/unknown-reference] (mapv :code (:issues (proc/resolve-value st "{zzz}")))))
+    (t/is (= [:lexer/invalid-character] (mapv :code (:issues (proc/resolve-value st "1 ´ 2")))))
+    (t/is (= {:value nil :issues []} (proc/resolve-value st "")))))
 
 (t/deftest dependents-test
   (let [graph {"a" #{} "b" #{"a"} "c" #{"b"} "d" #{"a"} "e" #{}}

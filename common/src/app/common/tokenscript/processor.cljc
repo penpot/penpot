@@ -28,9 +28,9 @@
   `app.common.tokenscript.errors` maps, and tokens depending on a failed
   token get a `:processor/dependency-error` describing the chain.
 
-  The returned `:state` supports incremental operations (`update-token`,
-  `create-token`, `delete-token`, `resolve-value`) that only re-resolve
-  tokens affected by the change."
+  The returned `:state` supports incremental operations (`create-token`,
+  `update-token`, `rename-token`, `delete-token`, `resolve-value`) that
+  only re-resolve tokens affected by the change."
   (:require
    [app.common.tokenscript.ast :as ast]
    [app.common.tokenscript.config :as config]
@@ -739,113 +739,105 @@
   (when-not (contains? (:tokens st) name)
     (err/raise :processor/token-not-found {:data {:token-name name}})))
 
-(defn- normalize-path
-  [path]
-  (str/trim (or path "")))
-
-(defn- operation-result
-  [res name extra]
-  (merge (dissoc res :state)
-         {:resolved (get-in res [:tokens name])
-          :dependants {:graph (:subgraph (dependents (:graph res) name))}
-          :state (:state res)}
-         extra))
+(defn- with-dependents
+  "Build result `res` with `:dependents`, the dependency graph between
+  `name` and the tokens depending on it."
+  [res name]
+  (assoc res :dependents (:subgraph (dependents (:graph res) name))))
 
 (defn create-token
-  "Adds a token. Returns the build result plus `:resolved` (the new value),
-  `:dependants {:graph ..}` and `:created true`."
-  [st {:keys [token-path token-data]}]
-  (let [name (normalize-path token-path)]
+  "Adds the token `name`. Returns the build result with `:dependents`."
+  [st name data]
+  (let [name (str/trim name)]
     (when (contains? (:tokens st) name)
       (err/raise :processor/token-already-exists {:data {:token-name name}}))
-    (let [tokens (assoc (:tokens st) name (td/normalize token-data))
-          res (rebuild st tokens [name])]
-      (operation-result res name {:created true}))))
+    (-> (rebuild st (assoc (:tokens st) name (td/normalize data)) [name])
+        (with-dependents name))))
 
 (defn update-token
-  "Updates and/or renames a token. Params:
+  "Sets the data of the token `name`, adding it when missing. Returns the
+  build result with `:dependents`."
+  [st name data]
+  (let [name (str/trim name)]
+    (-> (rebuild st (assoc (:tokens st) name (td/normalize data)) [name])
+        (with-dependents name))))
 
-    :token-path          current name
-    :token-data          new data (keeps the old one when nil)
-    :token-path-renamed  new name
-    :update-references?  rewrite `{old}` references in dependents
+(defn- rename-references
+  "Tokens of `st` with the references to `name` in its dependents renamed
+  to `new-name`."
+  [st name new-name]
+  (reduce (fn [tokens dependent]
+            (let [{:keys [value] :as data} (get tokens dependent)
+                  ast (get-in st [:parsed dependent :ast])]
+              (if (and (string? value) ast)
+                (assoc tokens dependent (assoc data :value (ast/rename-references value ast {name new-name})))
+                tokens)))
+          (:tokens st)
+          (disj (:tokens (dependents (:graph st) name)) name)))
 
-  Creates the token when it does not exist and data is given. Returns the
-  build result plus `:resolved`, `:dependants` and `:updated`."
-  [st {:keys [token-path token-data token-path-renamed update-references?]}]
-  (let [prev (normalize-path token-path)
-        new-name (some-> token-path-renamed str/trim)]
-    (if-not (contains? (:tokens st) prev)
-      (if token-data
-        (assoc (create-token st {:token-path prev :token-data token-data}) :updated false)
-        (err/raise :processor/token-not-found {:data {:token-name prev}}))
-      (let [rename? (and new-name (not= new-name prev))
-            _ (when (and rename? (contains? (:tokens st) new-name))
-                (err/raise :processor/token-already-exists {:data {:token-name new-name}}))
-            affected (disj (:tokens (dependents (:graph st) prev)) prev)
-            tokens (:tokens st)
-            tokens (if (and rename? update-references? (seq affected))
-                     (reduce (fn [tokens dependent]
-                               (let [data (get tokens dependent)
-                                     v (:value data)
-                                     ast (get-in st [:parsed dependent :ast])]
-                                 (if (and (string? v) ast)
-                                   (let [v' (ast/rename-references v ast {prev new-name})]
-                                     (if (= v v') tokens (assoc tokens dependent (assoc data :value v'))))
-                                   tokens)))
-                             tokens
-                             affected)
-                     tokens)
-            final (if rename? new-name prev)
-            tokens (-> tokens
-                       (dissoc prev)
-                       (assoc final (if token-data (td/normalize token-data) (get (:tokens st) prev))))
-            res (rebuild st tokens (cond-> [prev] rename? (conj new-name)))]
-        (operation-result res final {:updated true})))))
+(defn rename-token
+  "Renames the token `name` to `new-name`. The references to it break
+  unless `:update-references?` rewrites them in its dependents. Returns
+  the build result with `:dependents`."
+  ([st name new-name] (rename-token st name new-name nil))
+  ([st name new-name {:keys [update-references?]}]
+   (let [name (str/trim name)
+         new-name (str/trim new-name)]
+     (ensure-token st name)
+     (if (= name new-name)
+       (with-dependents (result st) name)
+       (do
+         (when (contains? (:tokens st) new-name)
+           (err/raise :processor/token-already-exists {:data {:token-name new-name}}))
+         (let [tokens (if update-references?
+                        (rename-references st name new-name)
+                        (:tokens st))
+               tokens (-> tokens (dissoc name) (assoc new-name (get tokens name)))]
+           (-> (rebuild st tokens [name new-name])
+               (with-dependents new-name))))))))
 
 (defn delete-token
-  "Removes a token. Returns the build result plus `:dependants` (the
-  tokens that depended on it)."
-  [st {:keys [token-path]}]
-  (let [name (normalize-path token-path)]
+  "Removes the token `name`. Returns the build result with `:dependents`,
+  the graph of the tokens that depended on it."
+  [st name]
+  (let [name (str/trim name)]
     (ensure-token st name)
-    (let [subgraph (-> (dependents (:graph st) name) :subgraph (dissoc name)
-                       (update-vals #(disj % name)))
-          res (rebuild st (dissoc (:tokens st) name) [name])]
-      (merge (dissoc res :state)
-             {:dependants {:graph subgraph}
-              :state (:state res)}))))
+    (assoc (rebuild st (dissoc (:tokens st) name) [name])
+           :dependents (-> (:subgraph (dependents (:graph st) name))
+                           (dissoc name)
+                           (update-vals #(disj % name))))))
 
 (defn resolve-value
-  "Evaluates an expression against the resolved tokens without changing
-  the state. Returns `{:resolved value-or-nil :issues [..]}`. With
-  `:validate?` and `:type`, the value is validated as that token type."
-  [st {:keys [value type validate?]}]
-  (if (or (nil? value) (= value ""))
-    {:resolved nil :issues []}
-    (let [text (str value)
-          parsed (try
-                   (parser/parse text)
-                   (catch #?(:clj Throwable :cljs :default) e
-                     (if (err/language-error? e) {:error (err/->error-map e)} (throw e))))]
-      (cond
-        (:error parsed) {:resolved nil :issues [(:error parsed)]}
-        (nil? (:ast parsed)) {:resolved text :issues []}
-        :else
-        (let [result (interpret-ast st (:ast parsed))]
-          (if (err/error-map? result)
-            {:resolved nil :issues [result]}
-            {:resolved result
-             :issues (if (and validate? type)
-                       (validation/type-issues (:config st) "__preview__" type result)
-                       [])}))))))
+  "Evaluates the expression `value` against the resolved tokens without
+  changing the state. Returns `{:value symbol-or-nil :issues [..]}`. With
+  `:type`, the value is validated as that token type."
+  ([st value] (resolve-value st value nil))
+  ([st value {:keys [type]}]
+   (if (or (nil? value) (= value ""))
+     {:value nil :issues []}
+     (let [text (str value)
+           parsed (try
+                    (parser/parse text)
+                    (catch #?(:clj Throwable :cljs :default) e
+                      (if (err/language-error? e) {:error (err/->error-map e)} (throw e))))]
+       (cond
+         (:error parsed) {:value nil :issues [(:error parsed)]}
+         (nil? (:ast parsed)) {:value text :issues []}
+         :else
+         (let [result (interpret-ast st (:ast parsed))]
+           (if (err/error-map? result)
+             {:value nil :issues [result]}
+             {:value result
+              :issues (if type
+                        (validation/type-issues (:config st) "__preview__" type result)
+                        [])})))))))
 
 ;; Result helpers -------------------------------------------------------------
 
 (defn affected-tokens
-  "Token names in the `:dependants` graph of an operation result."
+  "Token names in the `:dependents` graph of an operation result."
   [res]
-  (set (keys (get-in res [:dependants :graph]))))
+  (set (keys (:dependents res))))
 
 (defn broken-references
   "Tokens whose issues include a missing token or dependency error."
@@ -858,7 +850,7 @@
                   name)))
         (:issues res)))
 
-(defn modified-dependants
+(defn modified-dependents
   "Affected tokens whose resolved value differs from `old-tokens`."
   [old-tokens res]
   (into #{}

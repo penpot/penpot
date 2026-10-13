@@ -77,11 +77,13 @@ resolved. Errors never throw; a token depending on a failed token gets a
 names down to the failing token and the root cause error map as
 `:cause`, so callers can match on the root cause's code.
 
-`processor/update-token`, `create-token`, `delete-token` and
-`resolve-value` work on the returned `:state`. Updates re-resolve only
-the tokens that can observe the change (dependents, tokens under a
-changed group prefix, tokens that previously had issues) and keep the
-other values.
+`processor/create-token`, `update-token`, `rename-token`,
+`delete-token` and `resolve-value` work on the returned `:state`, e.g.
+`(update-token state "a" {:value "20"})`. They return a build result
+with `:dependents`, the dependency graph between the changed token and
+the tokens depending on it. Updates re-resolve only the tokens that can
+observe the change (dependents, tokens under a changed group prefix,
+tokens that previously had issues) and keep the other values.
 
 Caches that live across builds, all keyed by inputs that fully
 determine the result:
