@@ -64,7 +64,7 @@
     (t/is (sym/string? (sym/data->symbol "text")))
     (t/is (sym/list? (sym/data->symbol [1 2])))
     (t/is (sym/dictionary? (sym/data->symbol {:a 1})))
-    (t/is (= "1" (sym/to-string (sym/dict-get (sym/data->symbol {:a 1}) "a"))) "keyword keys become strings")
+    (t/is (= "1" (sym/to-string (sym/get-key (sym/data->symbol {:a 1}) "a"))) "keyword keys become strings")
     (t/is (sym/null? (sym/data->symbol nil)))))
 
 (t/deftest equality-test
@@ -81,9 +81,9 @@
 (t/deftest mutation-test
   (let [l (sym/list [(sym/number 1)])
         d (sym/dictionary nil)]
-    (sym/list-append l (sym/number 2))
-    (sym/dict-set d "l" l)
-    (sym/list-append l (sym/number 3))
+    (sym/append! l (sym/number 2))
+    (sym/set-key! d "l" l)
+    (sym/append! l (sym/number 3))
     (t/is (= "1, 2, 3" (sym/to-string l)))
     (t/is (= "{l: 1, 2}" (sym/to-string d)) "stored values are copies")))
 
@@ -94,7 +94,23 @@
   (t/is (not (sym/has-method? (sym/string "a") "concat" [])) "missing arguments")
   (t/is (sym/has-method? (sym/list []) "extend" [(sym/number 1) (sym/number 2)]) "variadic methods")
   (t/is (= "A" (sym/to-string (sym/call-method (sym/string "a") "UPPER" [] nil))) "method names are case insensitive")
+  (t/is (= "A" (sym/to-string (sym/call-method (sym/string "a") "upper" [(sym/number 1)] nil)))
+        "extra arguments of methods without declared arguments are ignored")
   (t/is (= :symbols/method-not-found (h/error-code #(sym/call-method (sym/string "a") "nope" [] nil)))))
+
+(t/deftest token-content-test
+  (let [record (sym/token "shadow" {"blur" (sym/number 1)})
+        items (sym/token "shadow" [(sym/number 1)])]
+    (t/is (= "1" (sym/to-string (sym/call-method record "get" [(sym/string "blur")] nil))))
+    (t/is (= "1" (sym/to-string (sym/call-method items "get" [(sym/number 0)] nil))))
+    (t/is (= "1, 2" (sym/to-string (sym/call-method items "append" [(sym/number 2)] nil))))
+    (t/is (= "1, 2" (sym/to-string (sym/call-method items "values" [] nil))))
+    (t/is (= :symbols/cannot-operation-on-token-type
+             (h/error-code #(sym/call-method record "append" [(sym/number 2)] nil)))
+          "list operations need a token holding a list")
+    (t/is (= :symbols/cannot-operation-on-token-type
+             (h/error-code #(sym/call-method items "keys" [] nil)))
+          "dictionary operations need a token holding a record")))
 
 (t/deftest attributes-test
   (t/is (= "1" (sym/to-string (sym/get-attribute (sym/number-with-unit 1 "px") "value"))))
