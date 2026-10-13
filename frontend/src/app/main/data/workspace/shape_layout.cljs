@@ -14,7 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout :as flex]
    [app.common.geom.shapes.grid-layout :as grid]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.duplicate :as cld]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
@@ -451,8 +451,8 @@
 
             changes
             (-> (pcb/empty-changes it)
-                (cll/generate-duplicate-changes objects page selected (gpt/point 0 0) libraries library-data file-id)
-                (cll/generate-duplicate-changes-update-indices objects selected))
+                (cld/generate-duplicate-changes objects page selected (gpt/point 0 0) libraries library-data file-id)
+                (cld/generate-duplicate-changes-update-indices objects selected))
 
             ;; Creates a map with shape-id => duplicated-shape-id
             ids-map
@@ -923,8 +923,8 @@
                 ;; Generate duplication changes for all shapes at once
                 changes
                 (-> (pcb/empty-changes it)
-                    (cll/generate-duplicate-changes objects page all-shapes (gpt/point 0 0) libraries library-data file-id)
-                    (cll/generate-duplicate-changes-update-indices objects all-shapes))
+                    (cld/generate-duplicate-changes objects page all-shapes (gpt/point 0 0) libraries library-data file-id)
+                    (cld/generate-duplicate-changes-update-indices objects all-shapes))
 
                 ;; Build ids-map: old-shape-id -> new-shape-id
                 ids-map

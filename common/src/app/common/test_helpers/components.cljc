@@ -13,7 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.swap-slots :as cfss]
    [app.common.geom.point :as gpt]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.swap :as clsw]
    [app.common.path-names :as cpn]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -195,7 +195,7 @@
 
         [new_shape _ changes]
         (-> (pcb/empty-changes nil (:id page))
-            (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values false))
+            (clsw/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values false))
 
         file' (cond-> (thf/apply-changes file changes)
                 as-slot?

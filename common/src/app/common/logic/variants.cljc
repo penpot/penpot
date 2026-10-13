@@ -4,8 +4,10 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.logic.duplicate :as cld]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.swap :as clsw]
    [app.common.logic.variant-properties :as clvp]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -28,7 +30,7 @@
                                      inc))
 
         [new-shape changes] (-> changes
-                                (cll/generate-duplicate-component
+                                (cld/generate-duplicate-component
                                  {:data data}
                                  component-id
                                  new-component-id
@@ -249,7 +251,7 @@
                                         ldata page libraries)
                      ;; If the orig-child-touched wasn't swapped, copy
                      ;; the touched attributes into it
-                     (cll/update-attrs-on-switch
+                     (clsw/update-attrs-on-switch
                       changes related-shape-in-new orig-child-touched
                       new-shape original-shape orig-ref-shape container))
                    changes)]
@@ -283,8 +285,8 @@
         keep-props  (select-keys shape ctk/swap-keep-attrs)
 
         [new-shape all-parents changes]
-        (cll/generate-component-swap changes objects shape ldata page libraries component-id
-                                     index target-cell keep-props keep-touched?)
+        (clsw/generate-component-swap changes objects shape ldata page libraries component-id
+                                      index target-cell keep-props keep-touched?)
 
         [changes parents-of-swapped]
         (if keep-touched?

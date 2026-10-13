@@ -17,7 +17,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.duplicate :as cld]
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.transit :as t]
@@ -156,7 +156,7 @@
                   libraries (:files state)
                   ;; FIXME
                   page      (dsh/lookup-page state)]
-              (update data :objects #(cll/advance-copied-objects file page libraries % selected))))
+              (update data :objects #(cld/advance-copied-objects file page libraries % selected))))
 
           (on-copy-error [error]
             (js/console.error "clipboard blocked:" error)
@@ -939,7 +939,7 @@
                                  (gslg/get-drop-cell frame-id all-objects position))
 
                   changes      (-> (pcb/empty-changes it)
-                                   (cll/generate-duplicate-changes all-objects page selected delta
+                                   (cld/generate-duplicate-changes all-objects page selected delta
                                                                    libraries ldata file-id {:variant-props variant-props})
                                    (pcb/amend-changes (partial process-rchange media-idx))
                                    (pcb/amend-changes (partial change-add-obj-index objects selected index)))

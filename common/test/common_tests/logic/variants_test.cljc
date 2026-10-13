@@ -8,7 +8,8 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.duplicate :as cld]
+   [app.common.logic.instances :as cli]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.test-helpers.components :as thc]
@@ -253,7 +254,7 @@
                     (pcb/with-page-id (:id page))
                     (pcb/with-library-data (:data file))
                     (pcb/with-objects (:objects page))
-                    (cll/generate-duplicate-changes objects                    ;; objects
+                    (cld/generate-duplicate-changes objects                    ;; objects
                                                     page                       ;; page
                                                     #{(:id variant-container)} ;; ids
                                                     (gpt/point 0 0)            ;; delta
@@ -319,7 +320,7 @@
         ;; Instantiate at a position inside the variant container, without
         ;; an explicit parent, so the destiny frame is chosen by position
         [new-shape changes]
-        (cll/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
+        (cli/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
                                                 (pcb/with-objects (:objects page)))
                                             (:objects page)
                                             (:id file)
