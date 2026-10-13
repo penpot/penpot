@@ -246,21 +246,25 @@
 
         ;; Historical previews must not create edits to the live file. Check
         ;; this when creating commits so previously queued edits can still save.
-        (when (and (:can-edit permissions)
-                   (not (dm/get-in state [:workspace-global :preview-id])))
-          (log/trace :hint "commit-changes" :redo-changes redo-changes)
-          (let [selected (dm/get-in state [:workspace-local :selected])]
-            (rx/of (-> params
-                       (assoc :undo-group undo-group)
-                       (assoc :features features)
-                       (assoc :tags tags)
-                       (assoc :stack-undo? stack-undo?)
-                       (assoc :save-undo? save-undo?)
-                       (assoc :file-id file-id)
-                       (assoc :file-revn (resolve-file-revn state file-id))
-                       (assoc :file-vern (resolve-file-vern state file-id))
-                       (assoc :undo-changes uchg)
-                       (assoc :redo-changes rchg)
-                       (assoc :selected-before selected)
-                       (assoc :translation? translation?)
-                       (commit)))))))))
+        ;; Refusals answer with an empty stream (never nil) so callers can
+        ;; uniformly subscribe and observe termination.
+        (if (and (:can-edit permissions)
+                 (not (dm/get-in state [:workspace-global :preview-id])))
+          (do
+            (log/trace :hint "commit-changes" :redo-changes redo-changes)
+            (let [selected (dm/get-in state [:workspace-local :selected])]
+              (rx/of (-> params
+                         (assoc :undo-group undo-group)
+                         (assoc :features features)
+                         (assoc :tags tags)
+                         (assoc :stack-undo? stack-undo?)
+                         (assoc :save-undo? save-undo?)
+                         (assoc :file-id file-id)
+                         (assoc :file-revn (resolve-file-revn state file-id))
+                         (assoc :file-vern (resolve-file-vern state file-id))
+                         (assoc :undo-changes uchg)
+                         (assoc :redo-changes rchg)
+                         (assoc :selected-before selected)
+                         (assoc :translation? translation?)
+                         (commit)))))
+          (rx/empty))))))
