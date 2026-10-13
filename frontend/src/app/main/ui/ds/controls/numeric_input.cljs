@@ -167,6 +167,8 @@
    [:on-focus {:optional true} fn?]
    [:on-detach {:optional true} fn?]
    [:property {:optional true} :string]
+   [:tooltip-class {:optional true}
+    [:maybe :string]]
    [:tooltip-placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]
    [:align {:optional true} [:maybe [:enum :left :right]]]])
@@ -182,7 +184,7 @@
            on-change on-change-start on-change-end
            on-blur on-focus on-detach
            property align ref name
-           tooltip-placement text-icon]
+           tooltip-class tooltip-placement text-icon]
     :rest props}]
 
   (let [;; NOTE: we use mfu/bean here for transparently handle
@@ -760,7 +762,7 @@
                                             (when (some? tokens)
                                               (mf/html [:> icon-button* {:variant "ghost"
                                                                          :icon i/tokens
-                                                                         :tooltip-class (stl/css :button-tooltip)
+                                                                         :tooltip-class (or tooltip-class (stl/css :button-tooltip))
                                                                          :class (stl/css :invisible-button)
                                                                          :aria-label token-tooltip
                                                                          :ref open-dropdown-ref
@@ -794,6 +796,7 @@
                               :class inner-class
                               :property property
                               :is-open is-open
+                              :tooltip-class tooltip-class
                               :tooltip-placement tooltip-placement
                               :slot-start (when (or icon text-icon)
                                             (mf/html

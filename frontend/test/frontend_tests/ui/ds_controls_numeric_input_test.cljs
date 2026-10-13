@@ -7,7 +7,9 @@
 (ns frontend-tests.ui.ds-controls-numeric-input-test
   (:require
    [app.common.data :as d]
-   [app.main.ui.ds.controls.numeric-input :refer [next-focus-index parse-value token-shortcut]]
+   [app.common.schema :as sm]
+   [app.main.ui.ds.controls.numeric-input :as numeric-input :refer [next-focus-index parse-value token-shortcut]]
+   [app.main.ui.ds.controls.utilities.token-field :as token-field]
    [app.main.ui.formats :as fmt]
    [cljs.test :as t :include-macros true]))
 
@@ -134,3 +136,37 @@
 
   (t/testing "works with nil focused-id (no current selection)"
     (t/is (= 0 (next-focus-index sample-options nil :down)))))
+
+;; Regression pins for the React `tooltipClass` unknown-prop warning:
+;; `numeric-input*` receives `:tooltip-class` from callers such as the
+;; layout-item menus (via `numeric-input-wrapper*`). The prop must be
+;; declared in the schema and destructured by the component, so it never
+;; stays in the `:rest` props that are spread onto the inner `input-field*`
+;; DOM `<input>`. `:tooltip-placement` already follows this pattern;
+;; `:tooltip-class` mirrors it. The same holds for `token-field*`, which
+;; forwards the class to its detach-button `icon-button*`.
+
+(t/deftest test-numeric-input-schema-accepts-tooltip-class
+  (let [schema @#'numeric-input/schema:numeric-input]
+    (t/testing "absent tooltip-class stays valid"
+      (t/is (true? (sm/validate schema {}))))
+    (t/testing "string tooltip-class is accepted"
+      (t/is (true? (sm/validate schema {:tooltip-class "my-tooltip"}))))
+    (t/testing "nil tooltip-class is accepted"
+      (t/is (true? (sm/validate schema {:tooltip-class nil}))))
+    (t/testing "non-string tooltip-class is rejected"
+      (t/is (false? (sm/validate schema {:tooltip-class 42}))))))
+
+(t/deftest test-token-field-schema-accepts-tooltip-class
+  (let [schema @#'token-field/schema:token-field
+        base   {:value "10"
+                :on-token-key-down (fn [_])
+                :detach-token (fn [_])}]
+    (t/testing "absent tooltip-class stays valid"
+      (t/is (true? (sm/validate schema base))))
+    (t/testing "string tooltip-class is accepted"
+      (t/is (true? (sm/validate schema (assoc base :tooltip-class "my-tooltip")))))
+    (t/testing "nil tooltip-class is accepted"
+      (t/is (true? (sm/validate schema (assoc base :tooltip-class nil)))))
+    (t/testing "non-string tooltip-class is rejected"
+      (t/is (false? (sm/validate schema (assoc base :tooltip-class 42)))))))
