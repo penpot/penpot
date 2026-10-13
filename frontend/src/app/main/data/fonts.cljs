@@ -115,7 +115,7 @@
                               :font-style  font-style
                               :uploads     uploads})))))
 
-(defn parse-mtype
+(defn- parse-font-mtype
   "Detects a font mime-type from the first four bytes of an ArrayBuffer.
 
   Returns the `font/*` mime-type string, or nil when the buffer is
@@ -134,7 +134,7 @@
         "167 117 106 62"  "font/woff2"
         nil))))
 
-(defn parse-font
+(defn- parse-font
   "Associates the opentype.js font object for TTF/OTF/WOFF blobs.
 
   Takes a `read-blob` result map. Passes `{:error ...}` maps through
@@ -159,7 +159,7 @@
         (log/warn :msg (str/fmt "skipping file %s, unsupported format" name))
         {:error name}))))
 
-(defn prepare-font
+(defn- prepare-font
   "Builds a ready-to-upload font entry from a parsed blob.
 
   Never throws for missing font metadata: a nil subfamily (opentype.js
@@ -279,7 +279,7 @@
                    (rx/map (fn [data]
                              {:data data
                               :name blob-name
-                              :type (parse-mtype data)}))
+                              :type (parse-font-mtype data)}))
                    (rx/catch (fn []
                                (rx/of {:error blob-name})))
                    (rx/mapcat (fn [{:keys [type error] :as font}]

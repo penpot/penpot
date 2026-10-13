@@ -272,14 +272,14 @@
     #js {:getEnglishName (fn [k] (get names k))
          :tables #js {:hhea hhea :os2 os2}}))
 
-(t/deftest parse-mtype-detects-font-signatures
-  (t/is (= "font/ttf" (df/parse-mtype (bytes->buffer [0 1 0 0]))))
-  (t/is (= "font/otf" (df/parse-mtype (bytes->buffer [79 84 84 79]))))
-  (t/is (= "font/woff" (df/parse-mtype (bytes->buffer [119 79 70 70]))))
-  (t/is (= "font/woff2" (df/parse-mtype (bytes->buffer [119 79 70 50]))))
-  (t/is (nil? (df/parse-mtype (bytes->buffer [1 2 3 4]))))
-  (t/is (nil? (df/parse-mtype nil)))
-  (t/is (nil? (df/parse-mtype (bytes->buffer [0 1])))))
+(t/deftest parse-font-mtype-detects-font-signatures
+  (t/is (= "font/ttf" (#'df/parse-font-mtype (bytes->buffer [0 1 0 0]))))
+  (t/is (= "font/otf" (#'df/parse-font-mtype (bytes->buffer [79 84 84 79]))))
+  (t/is (= "font/woff" (#'df/parse-font-mtype (bytes->buffer [119 79 70 70]))))
+  (t/is (= "font/woff2" (#'df/parse-font-mtype (bytes->buffer [119 79 70 50]))))
+  (t/is (nil? (#'df/parse-font-mtype (bytes->buffer [1 2 3 4]))))
+  (t/is (nil? (#'df/parse-font-mtype nil)))
+  (t/is (nil? (#'df/parse-font-mtype (bytes->buffer [0 1])))))
 
 (t/deftest prepare-font-defaults-missing-subfamily
   (let [font (fake-ot-font {:family "Satoshi"
@@ -288,7 +288,7 @@
                             :os2 #js {:usWinAscent 1000 :usWinDescent 300
                                       :sTypoAscender 800 :sTypoDescender 200
                                       :fsSelection 0}})
-        entry (df/prepare-font {:font font
+        entry (#'df/prepare-font {:font font
                                 :type "font/otf"
                                 :name "Satoshi-Regular.otf"
                                 :data (bytes->buffer [79 84 84 79 0 0 0 0])})]
@@ -299,7 +299,7 @@
 
 (t/deftest prepare-font-tolerates-missing-tables
   (let [font  (fake-ot-font {:family "Satoshi" :variant "Regular" :hhea nil :os2 nil})
-        entry (df/prepare-font {:font font
+        entry (#'df/prepare-font {:font font
                                 :type "font/ttf"
                                 :name "Satoshi-Regular.ttf"
                                 :data (bytes->buffer [0 1 0 0 0 0 0 0])})]
@@ -308,16 +308,16 @@
 
 (t/deftest parse-font-returns-error-on-unparseable
   (t/testing "read errors pass through"
-    (t/is (= {:error "x.ttf"} (df/parse-font {:error "x.ttf"}))))
+    (t/is (= {:error "x.ttf"} (#'df/parse-font {:error "x.ttf"}))))
   (t/testing "woff2 keeps a nil font for filename-based metadata"
-    (let [result (df/parse-font {:data (bytes->buffer [119 79 70 50])
+    (let [result (#'df/parse-font {:data (bytes->buffer [119 79 70 50])
                                  :type "font/woff2"
                                  :name "Satoshi-Bold.woff2"})]
       (t/is (nil? (:font result)))
       (t/is (nil? (:error result)))))
   (t/testing "opentype.js failures become errors instead of silent drops"
     (let [garbage (bytes->buffer (into [0 1 0 0] (repeat 96 0)))
-          result  (df/parse-font {:data garbage :type "font/ttf" :name "bad.ttf"})]
+          result  (#'df/parse-font {:data garbage :type "font/ttf" :name "bad.ttf"})]
       (t/is (= "bad.ttf" (:error result))))))
 
 (t/deftest ^:async process-upload-reports-unknown-signature
