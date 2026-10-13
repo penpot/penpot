@@ -291,21 +291,14 @@
 
 (mf/defc font-item*
   {::mf/wrap [mf/memo]}
-  [{:keys [font is-current on-click style]}]
-  (let [item-ref (mf/use-ref)
-        on-click (mf/use-fn (mf/deps font) #(on-click font))]
-
-    (mf/with-effect [is-current]
-      (when is-current
-        (let [element (mf/ref-val item-ref)]
-          (when-not (dom/is-in-viewport? element)
-            (dom/scroll-into-view! element)))))
-
+  [{:keys [font is-current is-focused on-click style]}]
+  (let [on-click (mf/use-fn (mf/deps font) #(on-click font))]
     [:div {:class (stl/css :font-wrapper)
            :style style
-           :ref item-ref
            :on-click on-click}
-     [:div {:class  (stl/css-case :font-item true :selected is-current)}
+     [:div {:class  (stl/css-case :font-item true
+                                  :selected is-current
+                                  :focused is-focused)}
       [:> font-item-preview* {:font font}]
       (when is-current
         [:> icon* {:icon-id i/tick
@@ -326,7 +319,15 @@
 
 (mf/defc font-selector*
   [{:keys [on-select on-close current-font show-recent full-size]}]
-  (let [selected     (mf/use-state current-font)
+  (let [;; The tick marks the font the text had when the selector opened.
+        ;; The focus (green border) marks the font Enter applies: arrows move
+        ;; it and preview the font, Esc and an outside click undo the preview
+        initial-font (mf/with-memo [] current-font)
+        focused*     (mf/use-state current-font)
+        focused      (deref focused*)
+        previewed?   (mf/use-ref false)
+        preview?     (mf/use-ref false)
+
         state*       (mf/use-state
                       #(do {:term "" :backends #{}}))
         state        (deref state*)
@@ -354,56 +355,57 @@
                             (filter #(contains? installed-ids (:id %)))
                             (filter-fonts state)))
 
-        ;; When the active font is not in the filtered results, pre-select
-        ;; the first match visually so the user can confirm it with Enter —
-        ;; without live-applying it on every keystroke.
-        effective-selected
-        (if (and (seq fonts) (not (d/seek #(= (:id %) (:id @selected)) fonts)))
-          (first fonts)
-          @selected)
-
         full-size?   (boolean (and full-size show-recent))
 
         ;; `recent-fonts` is a vector, so check it with `seq`: an empty one
         ;; is truthy and would show the heading over nothing
         show-recent? (boolean (and show-recent (seq recent-fonts)))
 
-        select-next
+        ;; Arrows only move the focus, from its latest value: a held key
+        ;; fires again before the listener sees the new state. The preview
+        ;; follows in an effect
+        focus-and-preview
         (mf/use-fn
          (mf/deps fonts)
-         (fn [event]
+         (fn [event get-font]
            (dom/stop-propagation event)
            (dom/prevent-default event)
-           (swap! selected get-next-font fonts)))
+           (when (seq fonts)
+             (mf/set-ref-val! preview? true)
+             (swap! focused* get-font fonts))))
 
-        select-prev
+        on-cancel
         (mf/use-fn
-         (mf/deps fonts)
-         (fn [event]
-           (dom/stop-propagation event)
-           (dom/prevent-default event)
-           (swap! selected get-prev-font fonts)))
+         (mf/deps initial-font on-select on-close)
+         (fn []
+           (when (mf/ref-val previewed?)
+             (on-select initial-font))
+           (on-close)))
 
         on-key-down
         (mf/use-fn
-         (mf/deps fonts on-select on-close)
+         (mf/deps focused focus-and-preview on-cancel on-select on-close)
          (fn [event]
            (cond
-             (kbd/up-arrow? event)   (select-prev event)
-             (kbd/down-arrow? event) (select-next event)
-             (kbd/esc? event)        (on-close)
-             (kbd/enter? event)
-             (let [first-result (when-not (d/seek #(= (:id %) (:id @selected)) fonts)
-                                  (first fonts))]
-               (if first-result
-                 (do (on-select first-result) (on-close))
-                 (on-close)))
+             (kbd/up-arrow? event)   (focus-and-preview event get-prev-font)
+             (kbd/down-arrow? event) (focus-and-preview event get-next-font)
+             (kbd/esc? event)        (on-cancel)
+             (kbd/enter? event)      (do (when (some? focused)
+                                           (on-select focused))
+                                         (on-close))
              :else                   (dom/focus! (mf/ref-val input)))))
 
         on-filter-change
         (mf/use-fn
-         (fn [event]
-           (swap! state* assoc :term event)))
+         (mf/deps state all-fonts)
+         (fn [term]
+           ;; Move the focus to the first result, without previewing it.
+           ;; `swap!` on a `use-state` returns nil, so build the new state here
+           (let [state (assoc state :term term)]
+             (reset! state* state)
+             (mf/set-ref-val! preview? false)
+             (when (seq term)
+               (reset! focused* (first (filter-fonts state all-fonts)))))))
 
         on-select-and-close
         (mf/use-fn
@@ -412,13 +414,13 @@
            (on-select font)
            (on-close)))]
 
-    (mf/with-effect [fonts on-key-down]
+    (mf/with-effect [on-key-down]
       (let [key (events/listen js/document "keydown" on-key-down)]
         #(events/unlistenByKey key)))
 
     ;; Close on an outside click. Starts on the next tick to skip the
     ;; opening click; detached targets (a just-selected row) are ignored
-    (mf/with-effect [on-close]
+    (mf/with-effect [on-cancel]
       (let [listening? (volatile! false)
             on-click   (fn [event]
                          (let [target (dom/get-target event)
@@ -427,7 +429,7 @@
                                       (some? node)
                                       (.-isConnected ^js target)
                                       (not (dom/child? target node)))
-                             (on-close))))
+                             (on-cancel))))
             task       (tm/schedule #(vreset! listening? true))
             keys       [(events/listen js/document "click" on-click)
                         (events/listen js/document "contextmenu" on-click)]]
@@ -451,15 +453,25 @@
             (when-some [n @node*]
               (fonts/detach-preview-sprite! n))))))
 
-    (mf/with-effect [@selected]
+    ;; Preview the focused font once the arrows stop for a moment. Applying
+    ;; every font of a held key floods the store and the text editor with
+    ;; updates, until React stops with "Maximum update depth exceeded"
+    (mf/with-effect [focused]
+      (when (mf/ref-val preview?)
+        (mf/set-ref-val! preview? false)
+        (let [task (tm/schedule 100 (fn []
+                                      (mf/set-ref-val! previewed? true)
+                                      (on-select focused)))]
+          #(tm/dispose! task))))
+
+    ;; The only scroll to the focused row: the list is virtualized, so the row
+    ;; may not be rendered yet
+    (mf/with-effect [focused fonts]
       (let [node  (mf/ref-val flist)
-            index (:index @selected)]
+            index (d/index-of-pred fonts #(= (:id %) (:id focused)))]
         ;; This is nil safe operation, do nothing if node or index are
         ;; invalid.
         (dom/scroll-to-row node index)))
-
-    (mf/with-effect [@selected]
-      (on-select @selected))
 
     (mf/with-effect []
       (st/emit! (dsc/push-shortcuts :typography {} :workspace))
@@ -492,7 +504,9 @@
                             :font font
                             :style {}
                             :on-click on-select-and-close
-                            :is-current (= (:id font) (:id effective-selected))}])])]
+                            ;; Recent fonts are reached with the mouse or by
+                            ;; filtering, never with the arrow keys, so no focus
+                            :is-current (= (:id font) (:id initial-font))}])])]
 
       [:div {:class (stl/css-case :fonts-list true
                                   :fonts-list-full-size full-size?
@@ -504,7 +518,7 @@
         (fn [props]
           (let [width  (unchecked-get props "width")
                 height (unchecked-get props "height")
-                render #(row-renderer fonts effective-selected on-select-and-close %)]
+                render #(row-renderer fonts (:id initial-font) (:id focused) on-select-and-close %)]
             (mf/html
              [:> rvt/List #js {:height height
                                :ref flist
@@ -514,7 +528,7 @@
                                :rowRenderer render}])))]]]]))
 
 (defn row-renderer
-  [fonts selected on-select props]
+  [fonts current-id focused-id on-select props]
   (let [index (unchecked-get props "index")
         key   (unchecked-get props "key")
         style (unchecked-get props "style")
@@ -524,7 +538,8 @@
                      :font font
                      :style style
                      :on-click on-select
-                     :is-current (= (:id font) (:id selected))}])))
+                     :is-current (= (:id font) current-id)
+                     :is-focused (= (:id font) focused-id)}])))
 
 (mf/defc font-options*
   [{:keys [values on-change on-blur show-recent full-size-selector]}]

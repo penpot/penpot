@@ -384,13 +384,20 @@ $font-preview-box-height: 28px;
 .font-item {
   @extend %asset-element;
 
-  width: px2rem(280);
+  inline-size: 100%;
   margin-bottom: var(--sp-xs);
   border-radius: $br-8;
   display: flex;
 
   &.selected {
     color: var(--color-foreground-primary);
+  }
+
+  // The font Enter applies, same border as the focused option of the
+  // select dropdowns
+  &.focused {
+    outline: $b-1 solid var(--color-accent-primary);
+    outline-offset: calc(-1 * #{$b-1});
   }
 
   // Center & clip so a previewed font's own metrics never grow/overflow the row.
