@@ -35,6 +35,11 @@
   [label]
   (get @idmap label))
 
+(defn labels
+  "The current map of labels to ids."
+  []
+  @idmap)
+
 (defn test-fixture
   ;; Ensure that each test starts with a clean ids map
   [f]

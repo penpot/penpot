@@ -346,27 +346,31 @@
         (run-op (tm/choice-of op) opts))
 
     :else
-    (let [kind (op-kind op)]
-      (case kind
-        :undo
-        (let [situation (run-undo situation op)]
-          ;; never undo past the state a case's own undo went back to
-          (cond-> situation
-            (and (:undo-check? opts)
-                 (< (undo-depth situation) (:depth (uc/baseline situation))))
-            (mark-baseline)))
+    (let [kind      (op-kind op)
+          situation (case kind
+                      :undo
+                      (let [situation (run-undo situation op)]
+                        ;; never undo past the state a case's own undo went back to
+                        (cond-> situation
+                          (and (:undo-check? opts)
+                               (< (undo-depth situation) (:depth (uc/baseline situation))))
+                          (mark-baseline)))
 
-        :redo
-        (run-redo situation op)
+                      :redo
+                      (run-redo situation op)
 
-        :frontend-only
-        (throw (ex-info (str "The pure runner cannot run " (pr-str (type op))
-                             ": its production result needs frontend code. "
-                             "Run the case through the frontend interpreter.")
-                        {:type ::frontend-only
-                         :op op}))
+                      :frontend-only
+                      (throw (ex-info (str "The pure runner cannot run " (pr-str (type op))
+                                           ": its production result needs frontend code. "
+                                           "Run the case through the frontend interpreter.")
+                                      {:type ::frontend-only
+                                       :op op}))
 
-        (run-node situation op kind opts)))))
+                      (run-node situation op kind opts))]
+      (when-let [observe (:observe opts)]
+        (when (contains? #{:user :undo :redo} kind)
+          (observe situation)))
+      situation)))
 
 (defn run-variant
   "Run one concrete (already enumerated) variant: build a fresh situation with
@@ -376,7 +380,9 @@
      - `:undo-check?` (default true, false when the case map turns the check
        off) runs the undo/redo round trip of
        `app.common.test-helpers.composable.comp.undo-check`; its failures are
-       recorded in the situation for `uc/check!`."
+       recorded in the situation for `uc/check!`;
+     - `:observe`, a function called with the situation after each user,
+       undo and redo operation settles (the golden master records them)."
   ([case-map] (run-variant case-map {}))
   ([{:keys [setup operation] :as case-map} opts]
    (let [opts (merge default-opts
