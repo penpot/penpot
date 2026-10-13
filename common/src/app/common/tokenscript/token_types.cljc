@@ -14,21 +14,17 @@
 
   `TokenTypeRegistry` has the common registry fields (see
   `app.common.tokenscript.registry`) plus `validation`
-  (`{lower-type {:script .. :ast ..}}`)."
+  (`{name-key {:script .. :ast ..}}`)."
   (:require
    [app.common.tokenscript.ast :as ast]
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.parser :as parser]
    [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.schema-uri :as suri]
-   [clojure.string :as str]
+   [app.common.tokenscript.util :as u]
    [clojure.walk :as walk]))
 
 (def valid-schema-types ["number" "string" "token" "object" "list"])
-
-(defn- spec-name
-  [spec]
-  (str/lower-case (:name spec)))
 
 (defn- normalize-spec
   [uri spec]
@@ -50,13 +46,13 @@
   script string or a map with a `:script` key."
   [registry token-type validation]
   (let [script (if (string? validation) validation (:script validation))]
-    (assoc-in registry [:validation (str/lower-case token-type)] (parse-validation script))))
+    (assoc-in registry [:validation (u/name-key token-type)] (parse-validation script))))
 
 (defn- register-spec
   [registry uri spec]
   (let [uri (suri/normalize uri)
         spec (normalize-spec uri spec)
-        registry (reg/add-spec registry uri spec (spec-name spec))]
+        registry (reg/add-spec registry uri spec)]
     (if-let [validation (:validation spec)]
       (register-validation registry (:name spec) validation)
       registry)))
@@ -70,14 +66,10 @@
   []
   (->TokenTypeRegistry {} {} {} (reg/new-cache)))
 
-(defn spec-by-type
-  [registry type]
-  (reg/spec-by-name registry (str/lower-case type)))
-
 (defn validation
   "Validation entry (`{:script :ast}`) for a token type."
   [registry token-type]
-  (get (:validation registry) (str/lower-case token-type)))
+  (u/get-name (:validation registry) token-type))
 
 (defn- error-types-of
   [registry token-type]

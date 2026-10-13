@@ -55,7 +55,7 @@
 
 (defn- lookup-var
   [{:keys [table]} name]
-  (u/get-lower-case @table name))
+  (u/get-name @table name))
 
 (defn- var-defined?
   [ctx name]
@@ -63,11 +63,11 @@
 
 (defn- set-var
   [{:keys [table]} name value]
-  (vswap! table assoc (str/lower-case name) value))
+  (vswap! table assoc (u/name-key name) value))
 
 (defn- delete-var
   [{:keys [table]} name]
-  (vswap! table dissoc (str/lower-case name)))
+  (vswap! table dissoc (u/name-key name)))
 
 ;; Return signal ----------------------------------------------------------------
 ;;
@@ -127,7 +127,7 @@
 (defn- convert-color*
   [config color target-uri]
   (let [registry (:colors config)
-        source-uri (or (when-let [sub (:sub-type color)] (colors/uri-by-type registry sub))
+        source-uri (or (when-let [sub (:sub-type color)] (reg/uri-by-name registry sub))
                        (err/raise :color/source-uri-not-found {:data {:color-type (or (:sub-type color) "unknown")}}))
         steps (or (reg/conversion-steps registry source-uri target-uri)
                   (err/raise :color/conversion-error {:data {:error (no-conversion-path source-uri target-uri)}}))]
@@ -185,9 +185,9 @@
   "Converts `color` to the color space named `target-type` (e.g. `hsl`).
   Returns the same color for identity conversions."
   [config color target-type]
-  (if (= (some-> (:sub-type color) str/lower-case) (str/lower-case target-type))
+  (if (u/name= (:sub-type color) target-type)
     color
-    (let [target-uri (or (colors/uri-by-type (:colors config) target-type)
+    (let [target-uri (or (reg/uri-by-name (:colors config) target-type)
                          (err/raise :color/target-uri-not-found {:data {:color-type target-type}}))]
       (convert-color config color target-uri))))
 
@@ -260,7 +260,7 @@
 
       :else
       (let [registry (:units config)
-            candidates (for [unit (distinct (map #(str/upper-case (:unit %)) with-units))
+            candidates (for [unit (distinct (map #(u/name-key (:unit %)) with-units))
                              :let [unit-uri (units/uri-by-keyword registry unit)]
                              :when unit-uri
                              :let [converted (reduce (fn [acc inp]
@@ -318,12 +318,11 @@
   "Callable for `name`: dynamic functions first, then built ins.
   Returns a fn of the argument vector or nil."
   [config name]
-  (let [lower (str/lower-case name)]
-    (if-let [dynamic (functions/dynamic-function (:functions config) lower)]
-      (fn [args] (call-dynamic-function config dynamic args))
-      (if (= lower "sum")
-        (fn [args] (sum-fn config args))
-        (functions/builtin lower)))))
+  (if-let [dynamic (functions/dynamic-function (:functions config) name)]
+    (fn [args] (call-dynamic-function config dynamic args))
+    (if (u/name= name "sum")
+      (fn [args] (sum-fn config args))
+      (functions/builtin name))))
 
 (defn has-function?
   [config name]
@@ -362,7 +361,7 @@
                                 (err/raise :color/missing-attribute-schema
                                            {:token token
                                             :data {:attribute attr :identifier identifier :color-type color-type}}))]
-            (when-not (sym/type-equals? (:type attr-schema) (sym/type-name value))
+            (when-not (u/name= (:type attr-schema) (sym/type-name value))
               (err/raise :color/invalid-attribute-type
                          {:token token
                           :data {:attribute-type (sym/type-name value)
@@ -461,13 +460,13 @@
 (defn- eval-function-call
   [ctx {:keys [name args token]}]
   (let [config (:config ctx)
-        fn-name (str/lower-case name)
+        fn-name (u/name-key name)
         arg-values (mapv #(eval-node ctx %) args)]
     (if-let [f (resolve-function config fn-name)]
       (do (functions/validate-args (:functions config) fn-name arg-values token)
           (f arg-values))
       (cond
-        (colors/has-initializer? (:colors config) fn-name)
+        (colors/initializer (:colors config) fn-name)
         (execute-initializer config fn-name arg-values)
 
         (contains? lex/uninterpreted-keyword-set fn-name)
@@ -521,7 +520,7 @@
       (when (sym/color? existing)
         (set-var ctx (:name base) (set-color-attribute (:config ctx) existing node v)))
       (do
-        (when-not (or (sym/list? v) (sym/type-equals? (sym/type-name existing) (sym/type-name v)))
+        (when-not (or (sym/list? v) (u/name= (sym/type-name existing) (sym/type-name v)))
           (err/raise :interpreter/type-mismatch
                      {:token (:token base)
                       :data {:value (sym/to-string v (:config ctx))
@@ -537,7 +536,7 @@
 
 (defn- color-method?
   [config left method-name]
-  (and (sym/color? left) (colors/has-initializer? (:colors config) method-name)))
+  (and (sym/color? left) (some? (colors/initializer (:colors config) method-name))))
 
 (defn- eval-attribute-access
   [ctx {:keys [left right token]}]

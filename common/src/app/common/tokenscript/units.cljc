@@ -14,13 +14,13 @@
 
   `UnitRegistry` has the common registry fields (see
   `app.common.tokenscript.registry`) plus `keywords`
-  (`{UPPER-KEYWORD uri}`)."
+  (`{name-key uri}`)."
   (:require
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.parser :as parser]
    [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.schema-uri :as suri]
-   [clojure.string :as str]
+   [app.common.tokenscript.util :as u]
    [clojure.walk :as walk]))
 
 (def pixel-unit-uri (suri/build-uri {:category "core" :name "px-unit" :version {:major 0}}))
@@ -69,10 +69,6 @@
 
 (def valid-unit-types ["absolute" "relative"])
 
-(defn- spec-name
-  [spec]
-  (str/lower-case (:name spec)))
-
 (defn- normalize-spec
   [uri spec]
   (let [spec (walk/keywordize-keys spec)]
@@ -91,8 +87,8 @@
   (let [uri (suri/normalize uri)
         spec (normalize-spec uri spec)]
     (-> registry
-        (reg/add-spec uri spec (spec-name spec))
-        (assoc-in [:keywords (str/upper-case (:keyword spec))] uri)
+        (reg/add-spec uri spec)
+        (assoc-in [:keywords (u/name-key (:keyword spec))] uri)
         (reg/add-conversions uri (:conversions spec)))))
 
 (defrecord UnitRegistry [specs spec-types conversions keywords cache]
@@ -111,7 +107,7 @@
 
 (defn uri-by-keyword
   [registry keyword]
-  (get (:keywords registry) (str/upper-case keyword)))
+  (u/get-name (:keywords registry) keyword))
 
 (defn spec-by-keyword
   [registry keyword]

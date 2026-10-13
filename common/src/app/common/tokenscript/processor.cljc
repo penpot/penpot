@@ -40,6 +40,7 @@
    [app.common.tokenscript.parser :as parser]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.token-data :as td]
+   [app.common.tokenscript.util :as u]
    [app.common.tokenscript.validation :as validation]
    [clojure.string :as str]))
 
@@ -86,7 +87,7 @@
   [cfg]
   (into {}
         (map (fn [[name raw]]
-               [(str/lower-case name)
+               [(u/name-key name)
                 (if (string? raw)
                   (try
                     (let [{:keys [ast]} (parser/parse raw)

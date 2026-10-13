@@ -17,8 +17,7 @@
   other tokenscript implementations."
   (:require
    [app.common.tokenscript.errors :as err]
-   [app.common.tokenscript.util :as u]
-   [clojure.string :as str]))
+   [app.common.tokenscript.util :as u]))
 
 ;; Vocabulary -----------------------------------------------------------------
 
@@ -219,7 +218,7 @@
 (defn- classify-word
   "Returns the keyword/format/string token for an identifier-like word."
   [st result start simple?]
-  (let [normalized (str/lower-case result)]
+  (let [normalized (u/name-key result)]
     (cond
       (and simple? (contains? reserved-keywords normalized))
       (token :reserved-keyword normalized st start)

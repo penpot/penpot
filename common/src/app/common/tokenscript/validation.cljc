@@ -104,7 +104,7 @@
     (let [top (run-script config token-type value path)]
       (if-not (:valid? top)
         [top]
-        (let [spec (token-types/spec-by-type (:tokens config) token-type)
+        (let [spec (reg/spec-by-name (:tokens config) token-type)
               schema (:schema spec)
               results (cond
                         (nil? schema) []
@@ -128,7 +128,7 @@
   "Validation issues for a resolved token value. Returns `[]` when the
   type has no registered spec or the value is not a symbol."
   [config token-name token-type value]
-  (if-not (and config (token-types/spec-by-type (:tokens config) token-type) (sym/symbol? value))
+  (if-not (and config (reg/spec-by-name (:tokens config) token-type) (sym/symbol? value))
     []
     (let [to-validate (if (sym/token? value)
                         (let [inner (sym/value value)]

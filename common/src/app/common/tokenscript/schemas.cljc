@@ -23,6 +23,7 @@
   identified by them, never fetched."
   (:require
    #?@(:clj [[app.common.tokenscript.parser :as parser]
+             [app.common.tokenscript.util :as u]
              [clojure.java.io :as io]
              [clojure.string :as str]])
    [app.common.json :as json])
@@ -167,7 +168,7 @@
            (fail (str (:uri s) " references " uri ", which is not shipped") {:uri (:uri s) :reference uri})))
        (doseq [[kw dups] (->> schemas
                               (filter #(= "function" (get-in % [:schema :type])))
-                              (group-by #(str/lower-case (get-in % [:schema :keyword]))))
+                              (group-by #(u/name-key (get-in % [:schema :keyword]))))
                :when (> (count dups) 1)]
          (fail (str "Function keyword " kw " is defined by " (str/join ", " (map :uri dups))) {:keyword kw}))
        schemas)))

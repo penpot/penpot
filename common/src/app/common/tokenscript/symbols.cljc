@@ -29,9 +29,9 @@
   (:refer-clojure :exclude [list boolean number symbol? number? string? boolean? list?])
   (:require
    [app.common.math :as mth]
-   [app.common.tokenscript.colors :as colors]
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.lexer :as lex]
+   [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.util :as u]
    [clojure.string :as str]
    [linked.map :as lkm]))
@@ -93,12 +93,6 @@
   (clear! [_]))
 
 ;; Names ----------------------------------------------------------------------
-
-(defn type-equals?
-  "Case insensitive type name comparison."
-  [a b]
-  (or (= a b)
-      (= (some-> a str/lower-case) (some-> b str/lower-case))))
 
 (defn qualified-type-name
   "`Color.Hex` for base `color` and sub type `hex`."
@@ -171,7 +165,7 @@
   "Spec registered for the color sub type in `config`, if any."
   [config c]
   (when-let [sub (:sub-type c)]
-    (colors/spec-by-type (:colors config) sub)))
+    (reg/spec-by-name (:colors config) sub)))
 
 (defn- format-number
   [n places remove-trailing-zeros?]
@@ -278,9 +272,9 @@
 (defn- color-sub-types-match?
   "Colors without a sub type are compatible with hex colors."
   [a b]
-  (or (and (nil? a) (type-equals? b "hex"))
-      (and (type-equals? a "hex") (nil? b))
-      (type-equals? a b)))
+  (or (and (nil? a) (u/name= b "hex"))
+      (and (u/name= a "hex") (nil? b))
+      (u/name= a b)))
 
 (defn- scalar-equals?
   [a b]
@@ -366,7 +360,7 @@
   (equals? [_ other]
     (and (instance? NumberWithUnitSymbol other)
          (= value (:value other))
-         (= (str/lower-case unit) (str/lower-case (:unit other)))))
+         (u/name= unit (:unit other))))
   (valid-value? [_ v] (instance? NumberWithUnitSymbol v))
 
   IScriptable
@@ -509,7 +503,7 @@
   ([v] (color v nil nil))
   ([v sub-type] (color v sub-type nil))
   ([v sub-type alpha]
-   (let [hex? (and (or (nil? sub-type) (= "hex" (str/lower-case sub-type)))
+   (let [hex? (and (or (nil? sub-type) (u/name= "hex" sub-type))
                    (clojure.core/string? v))
          dynamic? (and (clojure.core/string? sub-type) (map? v))]
      (when-not (or (nil? v) hex? dynamic?)
@@ -851,7 +845,7 @@
 
 (defn hex-color?
   [c]
-  (and (color? c) (type-equals? (:sub-type c) "hex")))
+  (and (color? c) (u/name= (:sub-type c) "hex")))
 
 (defn symbol-type-equals?
   "Type compatibility used for variable assignment. Colors without a sub
@@ -859,7 +853,7 @@
   [a b]
   (if (and (color? a) (color? b))
     (color-sub-types-match? (:sub-type a) (:sub-type b))
-    (type-equals? (type-name a) (type-name b))))
+    (u/name= (type-name a) (type-name b))))
 
 (def empty-constructors
   "Lower case type name to a constructor of the empty (null) symbol."
@@ -878,7 +872,7 @@
 
 (defn nullable?
   [s]
-  (contains? nullable-type-names (str/lower-case (type-name s))))
+  (some? (u/get-name nullable-type-names (type-name s))))
 
 (defn null-value?
   "True for nullable symbols holding a nil value (and the null symbol)."
@@ -887,7 +881,7 @@
 
 (defn empty-of-type
   [type-name]
-  (when-let [ctor (get empty-constructors (str/lower-case type-name))]
+  (when-let [ctor (u/get-name empty-constructors type-name)]
     (ctor)))
 
 ;; Results --------------------------------------------------------------------
@@ -1074,7 +1068,7 @@
 
 (defn- method-definition
   [s method-name]
-  (u/get-lower-case (get method-tables (type-name s)) method-name))
+  (u/get-name (get method-tables (type-name s)) method-name))
 
 (defn- accepts?
   [{:keys [args]} n]

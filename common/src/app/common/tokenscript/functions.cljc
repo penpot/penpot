@@ -241,11 +241,11 @@
   "The keyword of the spec becomes the callable name."
   [registry uri spec]
   (let [spec (normalize-spec uri spec)
-        keyword (str/lower-case (:keyword spec))
+        keyword (u/name-key (:keyword spec))
         ast (:ast (parser/parse (get-in spec [:script :script])))]
     (-> registry
         (assoc-in [:specs keyword] spec)
-        (assoc-in [:spec-types (str/lower-case (:name spec))] keyword)
+        (assoc-in [:spec-types (u/name-key (:name spec))] keyword)
         (assoc-in [:dynamic keyword] {:ast ast :spec spec :keyword keyword}))))
 
 (defrecord FunctionRegistry [specs spec-types dynamic]
@@ -254,22 +254,22 @@
     (register-spec this uri spec)))
 
 (defn empty-registry
-  "Registry of schema functions. Specs are keyed by lower case keyword;
-  the builtins (`builtin-functions`) are not part of it."
+  "Registry of schema functions. Specs are keyed by the `name-key` of
+  their keyword; the builtins (`builtin-functions`) are not part of it."
   []
   (->FunctionRegistry {} {} {}))
 
 (defn dynamic-function
   [registry name]
-  (get (:dynamic registry) (str/lower-case name)))
+  (u/get-name (:dynamic registry) name))
 
 (defn builtin
   [name]
-  (get builtin-functions (str/lower-case name)))
+  (u/get-name builtin-functions name))
 
 (defn spec
   [registry name]
-  (get (:specs registry) (str/lower-case name)))
+  (u/get-name (:specs registry) name))
 
 (defn function-names
   [registry]

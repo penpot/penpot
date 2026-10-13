@@ -14,14 +14,14 @@
 
   `ColorRegistry` has the common registry fields (see
   `app.common.tokenscript.registry`) plus `initializers`
-  (`{lower-case-keyword {:ast .. :keyword ..}}`); conversions are
+  (`{name-key {:ast .. :keyword ..}}`); conversions are
   `{:ast .. :source-uri .. :target-uri ..}`."
   (:require
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.parser :as parser]
    [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.schema-uri :as suri]
-   [clojure.string :as str]
+   [app.common.tokenscript.util :as u]
    [clojure.walk :as walk]))
 
 (def hex-color-uri
@@ -41,10 +41,6 @@
     :conversions []}})
 
 (def valid-schema-types ["number" "string" "color"])
-
-(defn- spec-name
-  [spec]
-  (str/lower-case (:name spec)))
 
 (defn- normalize-spec
   [uri spec]
@@ -67,7 +63,7 @@
                         (catch #?(:clj Throwable :cljs :default) e
                           (err/raise :color/initializer-construct-failed
                                      {:data {:error (err/describe e)}})))]
-              (assoc-in registry [:initializers (str/lower-case keyword)] {:ast ast :keyword keyword})))
+              (assoc-in registry [:initializers (u/name-key keyword)] {:ast ast :keyword keyword})))
           registry
           (:initializers spec)))
 
@@ -76,7 +72,7 @@
   (let [uri (suri/normalize uri)
         spec (normalize-spec uri spec)]
     (-> registry
-        (reg/add-spec uri spec (spec-name spec))
+        (reg/add-spec uri spec)
         (register-initializers spec)
         (reg/add-conversions uri (:conversions spec)))))
 
@@ -94,29 +90,18 @@
   []
   (reduce-kv reg/register (empty-registry) default-specs))
 
-(defn spec-by-type
-  [registry type]
-  (reg/spec-by-name registry (str/lower-case type)))
-
-(defn uri-by-type
-  [registry type]
-  (get (:spec-types registry) (str/lower-case type)))
-
 (defn spec-from-color
   [registry color]
   (when-let [sub (:sub-type color)]
-    (spec-by-type registry sub)))
-
-(defn has-initializer?
-  [registry keyword]
-  (contains? (:initializers registry) (str/lower-case keyword)))
+    (reg/spec-by-name registry sub)))
 
 (defn initializer
+  "Initializer registered for `keyword` (case insensitive), or nil."
   [registry keyword]
-  (get (:initializers registry) (str/lower-case keyword)))
+  (u/get-name (:initializers registry) keyword))
 
 (defn has-conversion-by-type?
   [registry source-type target-type]
-  (let [s (uri-by-type registry source-type)
-        t (uri-by-type registry target-type)]
+  (let [s (reg/uri-by-name registry source-type)
+        t (reg/uri-by-name registry target-type)]
     (boolean (and s t (reg/has-conversion? registry s t)))))

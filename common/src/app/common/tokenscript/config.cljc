@@ -23,7 +23,7 @@
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.token-types :as token-types]
    [app.common.tokenscript.units :as units]
-   [clojure.string :as str]
+   [app.common.tokenscript.util :as u]
    [clojure.walk :as walk]))
 
 (def default-language-options
@@ -72,11 +72,12 @@
   "Empty (null) value of the declared type `base-type.sub-type`, e.g.
   `Color.RGB` -> a null RGB color. Nil when the type is not defined."
   [config base-type sub-type]
-  (let [base (str/lower-case base-type)]
+  ;; One key for both checks: declarations run in every schema script
+  (let [base (u/name-key base-type)]
     (cond
       (= base "color") (cond
                          (nil? sub-type) (sym/color nil)
-                         (colors/spec-by-type (:colors config) sub-type) (sym/color nil sub-type))
+                         (reg/spec-by-name (:colors config) sub-type) (sym/color nil sub-type))
       (some? sub-type) nil
       :else (sym/empty-of-type base))))
 

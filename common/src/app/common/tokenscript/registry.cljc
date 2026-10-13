@@ -13,7 +13,7 @@
   share:
 
     specs        {uri spec}
-    spec-types   {lower-case-name uri}
+    spec-types   {name-key uri}, see `app.common.tokenscript.util/name-key`
     conversions  {source-uri {target-uri conversion}}
     cache        memoized lookups, see `new-cache`
 
@@ -32,7 +32,8 @@
   (:require
    [app.common.data :as d]
    [app.common.tokenscript.parser :as parser]
-   [app.common.tokenscript.schema-uri :as suri]))
+   [app.common.tokenscript.schema-uri :as suri]
+   [app.common.tokenscript.util :as u]))
 
 (defprotocol ISchemaRegistry
   "A registry of one kind of schema: color spaces, units, functions or
@@ -64,11 +65,13 @@
         v))))
 
 (defn add-spec
-  [registry uri spec name]
+  "Registry with `spec` under `uri`, also found by its case insensitive
+  `:name`."
+  [registry uri spec]
   (let [uri (suri/normalize uri)]
     (-> registry
         (assoc-in [:specs uri] spec)
-        (assoc-in [:spec-types name] uri)
+        (assoc-in [:spec-types (u/name-key (:name spec))] uri)
         (assoc :cache (new-cache)))))
 
 (defn add-conversion
@@ -129,9 +132,15 @@
       (when-let [resolved (resolve-uri registry uri)]
         (get (:specs registry) resolved))))
 
-(defn spec-by-name
+(defn uri-by-name
+  "URI of the spec named `name` (case insensitive)."
   [registry name]
-  (when-let [uri (get (:spec-types registry) name)]
+  (u/get-name (:spec-types registry) name))
+
+(defn spec-by-name
+  "Spec named `name` (case insensitive)."
+  [registry name]
+  (when-let [uri (uri-by-name registry name)]
     (spec registry uri)))
 
 (defn- resolved-or-self

@@ -53,14 +53,31 @@
              (or (== cp 160) (== cp 5760) (<= 8192 cp 8202) (== cp 8232) (== cp 8233)
                  (== cp 8239) (== cp 8287) (== cp 12288) (== cp 65279))))))
 
-(defn get-lower-case
-  "`(get m (str/lower-case k))` for maps keyed by lower case names. Names
-  are mostly written in lower case already, so they are tried as is
-  first: lower-casing runs on every variable and method lookup."
-  [m k]
-  (if-some [v (get m k)]
+;; Names ----------------------------------------------------------------------
+;;
+;; Names are case insensitive: variables, functions, methods, types, color
+;; spaces and units. Tables of names are keyed by `name-key` and read with
+;; `get-name`.
+
+(defn name-key
+  "Key of a case insensitive name in a table of names."
+  [name]
+  (str/lower-case name))
+
+(defn get-name
+  "Value of `name` in a table (map or set) keyed by `name-key`. Names are
+  mostly written in lower case already, so they are tried as written
+  first: lookups run on every variable access and method call."
+  [table name]
+  (if-some [v (get table name)]
     v
-    (get m (str/lower-case k))))
+    (get table (name-key name))))
+
+(defn name=
+  "Case insensitive name equality; nil only equals nil."
+  [a b]
+  (or (= a b)
+      (and (some? a) (some? b) (= (name-key a) (name-key b)))))
 
 (defn capitalize
   "Upper-cases the first char and lower-cases the rest, like the TS
