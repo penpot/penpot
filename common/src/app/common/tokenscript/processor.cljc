@@ -138,27 +138,46 @@
   [s]
   (or (sym/list? s) (sym/dictionary? s) (sym/token? s)))
 
+;; State of one build. `prefixes` and `direct-children` stay nil until
+;; `ensure-prefix-index`; `cycle-root` is set while the resolution
+;; unwinds a cycle.
+(defrecord State [config
+                  parsers
+                  tokens             ; name -> normalized token data
+                  constants          ; lower case name -> symbol
+                  mutable-constants? ; constants are copied per evaluation, see `constants-table`
+                  parsed             ; name -> {:ast :deps}
+                  sub-fields         ; field path -> {:parent :field-path}
+                  structured         ; name -> {:fields [[path expr]]}
+                  prefixes           ; prefix -> #{member token}
+                  direct-children    ; prefix -> #{short name}
+                  graph              ; name -> #{dep}
+                  resolved           ; name -> symbol | error map
+                  cache              ; reference path -> value
+                  issues             ; name -> [issue]
+                  missing            ; #{reference to no token}
+                  visiting           ; #{name being resolved}
+                  cycle-root])
+
 (defn- initial-state
   [tokens cfg parsers]
   (let [constants (constant-symbols cfg)]
-    {:config cfg
-     :parsers parsers
-     :tokens tokens
-     :constants constants
-     ;; Mutable constants have to be copied for every evaluation (see
-     ;; `constants-table`); checked once per build instead of per token.
-     :mutable-constants? (boolean (some mutable-symbol? (vals constants)))
-     :parsed {}            ; name -> {:ast :deps}
-     :sub-fields {}        ; field path -> {:parent :field-path}
-     :structured {}        ; name -> {:fields [[path expr]]}
-     ;; :prefixes        prefix -> #{member token}, built on demand
-     ;; :direct-children prefix -> #{short name}, built on demand
-     :graph {}             ; name -> #{dep}
-     :resolved {}          ; name -> symbol | error map
-     :cache {}             ; reference path -> value
-     :issues {}            ; name -> [issue]
-     :missing #{}
-     :visiting #{}}))
+    (map->State
+     {:config cfg
+      :parsers parsers
+      :tokens tokens
+      :constants constants
+      ;; checked once per build instead of per token
+      :mutable-constants? (boolean (some mutable-symbol? (vals constants)))
+      :parsed {}
+      :sub-fields {}
+      :structured {}
+      :graph {}
+      :resolved {}
+      :cache {}
+      :issues {}
+      :missing #{}
+      :visiting #{}})))
 
 ;; Two level update of the state, cheaper than `assoc-in` on the hot paths
 (defn- put
@@ -278,7 +297,7 @@
   for references to a group (`{colors}`) and for incremental updates, so
   builds whose references all name tokens never compute it."
   [st]
-  (if (contains? st :prefixes) st (index-prefixes st)))
+  (if (some? (:prefixes st)) st (index-prefixes st)))
 
 ;; Parsed values are cached across builds: the result only depends on the
 ;; text, and penpot resolves the same values again on every set or theme
@@ -450,7 +469,7 @@
           v (get (:resolved st) dep)]
       [st (cond
             ;; still unwinding a cycle: the current token is on it too
-            (::cycle-root st) :cycle
+            (:cycle-root st) :cycle
             (err/error-map? v) v
             :else :ok)])
 
@@ -515,7 +534,7 @@
           :cycle (-> st
                      (put :resolved name (circular-error name))
                      (add-error name (circular-error name))
-                     (cond-> (not (::cycle-root st)) (assoc ::cycle-root dep)))
+                     (cond-> (not (:cycle-root st)) (assoc :cycle-root dep)))
           :missing (let [error (dependency-error name dep (err/error-map :processor/token-not-found {:data {:token-name dep}}))]
                      (-> st (put :resolved name error) (add-error name error)))
           (let [error (dependency-error name dep status)]
@@ -552,9 +571,9 @@
                :else st)
           st (update st :visiting disj name)]
       ;; Every token on a cycle gets its own circular dependency error.
-      (if-let [root (::cycle-root st)]
+      (if-let [root (:cycle-root st)]
         (if (= root name)
-          (dissoc st ::cycle-root)
+          (assoc st :cycle-root nil)
           st)
         st))))
 
