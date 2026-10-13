@@ -30,6 +30,7 @@
   run on every color or unit conversion but only depend on the specs and
   conversions."
   (:require
+   [app.common.data :as d]
    [app.common.tokenscript.parser :as parser]
    [app.common.tokenscript.schema-uri :as suri]))
 
@@ -42,10 +43,10 @@
 
 ;; Memoization ----------------------------------------------------------------
 ;;
-;; The `cache` field of a registry holds the results of `resolve-uri`,
-;; `conversion-path` and `conversion-steps`. `add-spec` and
-;; `add-conversion` give the new registry a new cache, so a registry never
-;; sees results computed for the one it was built from.
+;; The `cache` field of a registry holds the results of `resolve-uri` and
+;; of the conversion search. `add-spec` and `add-conversion` give the new
+;; registry a new cache, so a registry never sees results computed for
+;; the one it was built from.
 
 (defn new-cache
   []
@@ -137,103 +138,75 @@
   [registry uri]
   (or (resolve-uri registry uri) uri))
 
-(defn- conversion-path*
+(defn- sources-for
+  "Registered conversion sources standing for `uri`: the URI, the
+  registered URI it resolves to and the registered URIs resolving to it."
+  [registry uri]
+  (let [resolved (resolve-uri registry uri)]
+    (distinct
+     (concat [uri]
+             (when (and resolved (not= resolved uri)) [resolved])
+             (filter #(or (= % uri) (= (resolve-uri registry %) uri))
+                     (keys (:conversions registry)))))))
+
+(defn- search*
   [registry source target]
   (if (suri/same-schema? source target)
-    [source]
+    {:path [source] :steps []}
     (let [conversions (:conversions registry)
-          sources-for (fn [current]
-                        (distinct
-                         (concat [current]
-                                 (let [r (resolve-uri registry current)] (when (and r (not= r current)) [r]))
-                                 (keep (fn [registered]
-                                         (when (or (= registered current)
-                                                   (= (resolve-uri registry registered) current))
-                                           registered))
-                                       (keys conversions)))))]
-      (loop [queue [[source [source]]]
+          hit (fn [[to :as edge]] (when (suri/same-schema? to target) edge))]
+      (loop [queue (d/queue {:uri source :path [source] :steps []})
              visited #{(suri/base-uri source)}]
-        (if (empty? queue)
-          []
-          (let [[current path] (first queue)
-                queue (vec (rest queue))
-                edges (for [s (sources-for current)
-                            uri (keys (get conversions s))]
-                        uri)
-                hit (some #(when (suri/same-schema? % target) %) edges)]
-            (if hit
-              (conj path hit)
+        (when-let [{:keys [uri path steps]} (peek queue)]
+          (let [edges (for [s (sources-for registry uri)
+                            edge (get conversions s)]
+                        edge)]
+            (if-let [[to conversion] (some hit edges)]
+              {:path (conj path to) :steps (conj steps conversion)}
               (let [[queue visited]
-                    (reduce (fn [[q v] uri]
-                              (let [b (suri/base-uri uri)]
-                                (if (contains? v b)
-                                  [q v]
-                                  [(conj q [uri (conj path uri)]) (conj v b)])))
-                            [queue visited]
+                    (reduce (fn [[queue visited :as acc] [to conversion]]
+                              (let [base (suri/base-uri to)]
+                                (if (contains? visited base)
+                                  acc
+                                  [(conj queue {:uri to :path (conj path to) :steps (conj steps conversion)})
+                                   (conj visited base)])))
+                            [(pop queue) visited]
                             edges)]
                 (recur queue visited)))))))))
 
-(defn conversion-path
-  "Sequence of URIs from `source` to `target` (inclusive) found by BFS,
-  or empty when unreachable."
+(defn- search
+  "Shortest chain of conversions from `source` to `target`, found by a
+  breadth first search over the conversion edges: `{:path [uri ..]
+  :steps [conversion ..]}`, nil when unreachable."
   [registry source target]
-  (let [source (suri/normalize source)
-        target (suri/normalize target)]
-    (memoized registry [:path source target] #(conversion-path* registry source target))))
+  (memoized registry [:search source target] #(search* registry source target)))
+
+(defn conversion-path
+  "Sequence of URIs from `source` to `target` (inclusive), or empty when
+  unreachable."
+  [registry source target]
+  (or (:path (search registry (suri/normalize source) (suri/normalize target))) []))
 
 (defn has-conversion?
   [registry source target]
-  (let [source (suri/normalize source)
-        target (suri/normalize target)
-        conversions (:conversions registry)
-        rs (resolved-or-self registry source)
-        rt (resolved-or-self registry target)]
-    (or (contains? (get conversions source) target)
-        (contains? (get conversions rs) rt)
-        (some (fn [registered-target]
-                (= (resolved-or-self registry registered-target) rt))
-              (keys (get conversions rs)))
-        (seq (conversion-path registry rs rt)))))
-
-(defn- find-step
-  "Conversion registered between `from` and `to`, trying resolved URIs."
-  [registry from to]
-  (let [conversions (:conversions registry)
-        rf (resolved-or-self registry from)
-        rt (resolved-or-self registry to)]
-    (or (get-in conversions [from to])
-        (get-in conversions [rf rt])
-        (some (fn [[registered-to conv]]
-                (when (= (resolved-or-self registry registered-to) rt) conv))
-              (get conversions rf))
-        (some (fn [[registered-from targets]]
-                (when (= (resolved-or-self registry registered-from) rf)
-                  (some (fn [[registered-to conv]]
-                          (when (= (resolved-or-self registry registered-to) rt) conv))
-                        targets)))
-              conversions))))
+  (boolean (seq (conversion-path registry
+                                 (resolved-or-self registry (suri/normalize source))
+                                 (resolved-or-self registry (suri/normalize target))))))
 
 (defn- conversion-steps*
   [registry source target]
-  (let [rs (resolved-or-self registry source)
-        rt (resolved-or-self registry target)]
+  (let [source (resolved-or-self registry source)
+        target (resolved-or-self registry target)
+        direct (get-in (:conversions registry) [source target])]
     (cond
-      (= rs rt) []
-
-      (get-in (:conversions registry) [rs rt])
-      [(get-in (:conversions registry) [rs rt])]
-
-      :else
-      (let [path (conversion-path registry rs rt)]
-        (when (seq path)
-          (let [steps (map (fn [[from to]] (find-step registry from to)) (partition 2 1 path))]
-            (when (every? some? steps)
-              (vec steps))))))))
+      (= source target) []
+      (some? direct) [direct]
+      :else (:steps (search registry source target)))))
 
 (defn conversion-steps
   "Conversions to apply, in order, to go from `source` to `target`.
-  Returns `[]` for an identity conversion and nil when no path exists or
-  a step is missing."
+  Returns `[]` for an identity conversion and nil when no path exists.
+  Runs on every conversion, so the result is memoized."
   [registry source target]
   (let [source (suri/normalize source)
         target (suri/normalize target)]
