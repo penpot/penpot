@@ -168,7 +168,7 @@
                  (and early-return? (seq (:redo-changes changes))))
            changes
            (recur (next containers)
-                  (pcb/concat-changes ;;TODO Remove concat changes
+                  (pcb/concat-changes
                    changes
                    (generate-sync-container (pcb/empty-changes nil)
                                             asset-type
@@ -431,7 +431,8 @@
   `:children-main`):
     - `:sync-shape` syncs the pair itself;
     - `:only-inst`, `:only-main`, `:swapped` and `:moved` handle the
-      children `compare-children` does not walk (see its callbacks);
+      children `compare-children` does not walk (see its callbacks); an
+      inverse sync pairs no swapped child, so it has no `:swapped`;
     - `:after-children` runs once the children are done.
   `:main-container` (ctx, shape-inst, shape-main -> container) finds the
   container of the main shape, and `:inverse?` goes to `compare-children`."
@@ -463,7 +464,7 @@
                           (partial (:only-inst direction) step)
                           (partial (:only-main direction) step)
                           walk
-                          (partial (:swapped direction) step)
+                          (some-> (:swapped direction) (partial step))
                           (partial (:moved direction) step)
                           (:inverse? direction)
                           (or (:inverse? direction) reset?))
@@ -515,40 +516,27 @@
          (change-remote-synced shape-inst container true))))
 
    :only-inst
-   (fn [{:keys [shape-inst container reset?]} changes child-inst]
+   (fn [{:keys [container]} changes child-inst]
      (shape-log :trace (:id child-inst) container
                 :msg "Only inst"
                 :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
-     (if-not (and (not reset?)
-                  (contains? (:touched shape-inst)
-                             :shapes-group))
-       (remove-shape changes
-                     child-inst
-                     container
-                     (not reset?))
-       changes))
+     (remove-shape changes child-inst container))
 
    :only-main
-   (fn [{:keys [shape-inst container main-container children-main root-inst root-main reset?
-                initial-root?]}
+   (fn [{:keys [container main-container children-main root-inst root-main reset? initial-root?]}
         changes child-main]
      (shape-log :trace (:id child-main) main-container
                 :msg "Only main"
                 :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-     (if-not (and (not reset?)
-                  (contains? (:touched shape-inst)
-                             :shapes-group))
-       (add-shape-to-instance changes
-                              child-main
-                              (d/index-of children-main
-                                          child-main)
-                              main-container
-                              container
-                              root-inst
-                              root-main
-                              (not reset?)
-                              (and (not initial-root?) reset?))
-       changes))
+     (add-shape-to-instance changes
+                            child-main
+                            (d/index-of children-main
+                                        child-main)
+                            main-container
+                            container
+                            root-inst
+                            root-main
+                            (and (not initial-root?) reset?)))
 
    :swapped
    (fn [{:keys [container root-inst root-main]} changes child-inst child-main]
@@ -566,7 +554,7 @@
        changes))
 
    :moved
-   (fn [{:keys [container children-inst children-main reset?]} changes child-inst child-main]
+   (fn [{:keys [container children-inst children-main]} changes child-inst child-main]
      (shape-log :trace (:id child-inst) container
                 :msg "Move"
                 :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
@@ -576,8 +564,7 @@
       child-inst
       (d/index-of children-inst child-inst)
       (d/index-of children-main child-main)
-      container
-      (not reset?)))
+      container))
 
    :after-children
    (fn [changes {:keys [shape-inst shape-main library component reset?]}]
@@ -697,19 +684,7 @@
 
    :only-main
    (fn [{:keys [main-container]} changes child-main]
-     (remove-shape changes
-                   child-main
-                   main-container
-                   false))
-
-   :swapped
-   (fn [{:keys [container]} changes child-inst child-main]
-     (shape-log :trace (:id child-inst) container
-                :msg "Match slot"
-                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-     ;; For now we don't make any sync here.
-     changes)
+     (remove-shape changes child-main main-container))
 
    :moved
    (fn [{:keys [main-container children-inst children-main]} changes child-inst child-main]
@@ -718,8 +693,7 @@
       child-main
       (d/index-of children-main child-main)
       (d/index-of children-inst child-inst)
-      main-container
-      false))
+      main-container))
 
    :after-children
    (fn [changes {:keys [shape-inst synced-ids]}]
@@ -747,7 +721,9 @@
   the callback of each case. A child pairs with the main child it refers to;
   a swapped child pairs that way too, and takes `swapped-cb` in a normal sync,
   `both-cb` in a reset, and does not pair in an inverse sync, so the main
-  child it replaces is removed and the swapped child is added in its place."
+  child it replaces is removed and the swapped child is added in its place.
+  An inverse sync (which passes `reset?`) never calls `swapped-cb`, so it
+  passes nil."
   [changes shape-inst children-inst children-main container-inst only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
   (shape-log :trace (:id shape-inst) container-inst :msg "Compare children")
   (let [pair?
@@ -823,7 +799,7 @@
                              (moved-cb child-inst' child-main)))))))))))))
 
 (defn- add-shape-to-instance
-  [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced?]
+  [changes component-shape index component-page container root-instance root-main set-remote-synced?]
   (shape-log :info (:id component-shape) component-page
              :msg (str "ADD [P " (pretty-uuid (:id container)) "] "
                        (:name component-shape)
@@ -903,10 +879,7 @@
                                                        :shapes all-parents}))
         changes' (reduce del-obj-change changes' new-shapes)]
 
-    (if (and (ctk/touched-group? parent-shape :shapes-group) omit-touched?)
-      changes
-      (-> changes'
-          (pcb/apply-changes-local)))))
+    (pcb/apply-changes-local changes')))
 
 (defn- add-shape-to-main
   [changes shape index component component-container page root-instance root-main libraries]
@@ -1046,7 +1019,7 @@
         (pcb/apply-changes-local))))
 
 (defn- remove-shape
-  [changes shape container omit-touched?]
+  [changes shape container]
   (shape-log :info (:id shape) container
              :msg (str "REMOVE-SHAPE "
                        (if (cfh/page? container) "[P " "[C ")
@@ -1056,7 +1029,6 @@
                        (pretty-uuid (:id shape))))
   (let [objects    (get container :objects)
         parents    (cfh/get-parent-ids objects (:id shape))
-        parent     (first parents)
         children   (cfh/get-children-ids objects (:id shape))
         ids        (-> (into [(:id shape)] children)
                        (reverse)) ;; Remove from bottom to top
@@ -1100,13 +1072,10 @@
                          changes'
                          ids)]
 
-    (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
-      changes
-      (-> changes'
-          (pcb/apply-changes-local)))))
+    (pcb/apply-changes-local changes')))
 
 (defn- move-shape
-  [changes shape index-before index-after container omit-touched?]
+  [changes shape index-before index-after container]
   (shape-log :info (:id shape) container
              :msg (str "MOVE "
                        (if (cfh/page? container) "[P " "[C ")
@@ -1118,30 +1087,24 @@
                        index-before
                        " -> "
                        index-after))
-  (let [parent (ctn/get-shape container (:parent-id shape))
-
-        changes' (-> changes
-                     (update :redo-changes conj (make-change
-                                                 container
-                                                 {:type :mov-objects
-                                                  :parent-id (:parent-id shape)
-                                                  :shapes [(:id shape)]
-                                                  :index index-after
-                                                  :ignore-touched true
-                                                  :allow-altering-copies true}))
-                     (update :undo-changes conj (make-change
-                                                 container
-                                                 {:type :mov-objects
-                                                  :parent-id (:parent-id shape)
-                                                  :shapes [(:id shape)]
-                                                  :index index-before
-                                                  :ignore-touched true
-                                                  :allow-altering-copies true})))]
-
-    (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
-      changes
-      (-> changes'
-          (pcb/apply-changes-local)))))
+  (-> changes
+      (update :redo-changes conj (make-change
+                                  container
+                                  {:type :mov-objects
+                                   :parent-id (:parent-id shape)
+                                   :shapes [(:id shape)]
+                                   :index index-after
+                                   :ignore-touched true
+                                   :allow-altering-copies true}))
+      (update :undo-changes conj (make-change
+                                  container
+                                  {:type :mov-objects
+                                   :parent-id (:parent-id shape)
+                                   :shapes [(:id shape)]
+                                   :index index-before
+                                   :ignore-touched true
+                                   :allow-altering-copies true}))
+      (pcb/apply-changes-local)))
 
 (defn change-touched
   "Update the touched groups of the dest shape: clear them (`reset-touched?`,
