@@ -15,7 +15,6 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -80,8 +79,8 @@
   (let [file' (change-library-color (component-using-color) "#222222")
         copy  (ths/get-shape file' :copy-child)]
     (t/is (= "#222222" (-> copy :fills first :fill-color)))
-    ;; the sync writes the fill without ignore-touched
-    (tm/known-failure "F3" nil #{:fill-group} (:touched copy))))
+    ;; a library sync is a derived write
+    (t/is (nil? (:touched copy)))))
 
 (t/deftest main-fill-edit-reaches-the-copy-after-a-library-color-sync
   (let [file' (-> (component-using-color)
@@ -89,8 +88,7 @@
                   (sync-file :components (thi/id :component1))
                   (update-shape :main-child #(assoc % :fills (ths/sample-fills-color :fill-color "#333333")))
                   (sync-file :components (thi/id :component1)))]
-    ;; the touched fill blocks it
-    (tm/known-failure "F3" "#333333" "#222222" (-> (ths/get-shape file' :copy-child) :fills first :fill-color))))
+    (t/is (= "#333333" (-> (ths/get-shape file' :copy-child) :fills first :fill-color)))))
 
 ;; ---- Typographies
 
@@ -131,8 +129,8 @@
   (let [file' (change-library-typography (component-using-typography) "24")
         copy  (ths/get-shape file' :copy-child)]
     (t/is (= "24" (font-size-of copy)))
-    ;; the sync writes the content with a raw :set, which touches it
-    (tm/known-failure "F3" nil #{:content-group :text-content-attribute} (:touched copy))))
+    ;; a library sync is a derived write
+    (t/is (nil? (:touched copy)))))
 
 (t/deftest main-font-edit-reaches-the-copy-after-a-library-typography-sync
   (let [file' (-> (component-using-typography)
@@ -143,12 +141,9 @@
                                   (update shape :content
                                           #(txt/transform-nodes txt/is-content-node? (fn [node] (assoc node :font-size "40")) %))))
                   (sync-file :components (thi/id :component1)))]
-    ;; the touched text attributes block it
-    (tm/known-failure "F3" "40" "24" (font-size-of (ths/get-shape file' :copy-child)))))
+    (t/is (= "40" (font-size-of (ths/get-shape file' :copy-child))))))
 
 (t/deftest library-typography-sync-writes-only-text-styles
-  ;; the sync merges the whole typography into each node, its own
-  ;; :modified-at included
   (let [file' (change-library-typography (component-using-typography) "24")
         node  (get-in (ths/get-shape file' :main-child) [:content :children 0 :children 0 :children 0])]
-    (tm/known-failure "F80" false true (contains? node :modified-at))))
+    (t/is (not (contains? node :modified-at)))))

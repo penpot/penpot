@@ -403,10 +403,8 @@
                   (sync :colors (thi/id :brand))
                   (thtx/set-text :main-child [[["New arrivals" {:weight 600 :size 18 :fills (brand "#7B3FD1")}]]])
                   (sync :components (thi/id :component1)))]
-    (tm/known-failure "F3"
-                      [[["New arrivals" {:weight 600 :size 18 :fills (brand "#7B3FD1")}]]]
-                      [[["New arrivals" {:weight 600 :fills (brand "#7B3FD1")}]]]
-                      (thtx/text-of file' :copy-child))))
+    (t/is (= [[["New arrivals" {:weight 600 :size 18 :fills (brand "#7B3FD1")}]]]
+             (thtx/text-of file' :copy-child)))))
 
 ;; ---- The worked example: a copy that bolds "Hello" and adds "!!!"
 
