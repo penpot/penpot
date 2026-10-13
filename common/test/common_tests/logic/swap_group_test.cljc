@@ -366,6 +366,20 @@
     (t/is (not (ctk/swapped? head)))
     (t/is (= (:id (thc/get-component file :heart)) (:component-id head)))))
 
+(t/deftest switch-to-a-variant-with-the-same-component-refers-to-its-children
+  (let [file  (-> (setup-variants)
+                  (tho/swap-component-in-shape :child2 :heart)
+                  (tho/swap-component-in-shape :copy01 :c02 {:keep-touched? true}))
+        child (first-child file :copy-child)
+        file' (-> file
+                  (tho/update-color :heart-rect "#333333")
+                  (propagate :heart :c02)
+                  (thf/validate-file!))]
+    (t/is (= (:id (first-child file :child2)) (:shape-ref child)))
+    ;; sync keeps the child, so its overrides stay
+    (t/is (= [(:id child)] (:shapes (ths/get-shape file' :copy-child))))
+    (t/is (= "#333333" (tho/bottom-fill-color file' :copy01)))))
+
 (t/deftest switch-does-not-carry-a-swap-made-in-the-main
   ;; :variant2 [:name Board]
   ;;     {:n02} [:name Board]              # [Component :d02]
@@ -430,6 +444,34 @@
     (t/is (= (:id (thc/get-component file :badge)) (:component-id main)))
     (t/is (= (thi/id :card-star) (:shape-ref main)))
     (t/is (ctk/swapped? main))
+    (t/is (= (:id main) (:shape-ref head)))
+    (t/is (not (ctk/swapped? head)))))
+
+(t/deftest update-main-of-a-swap-back-to-the-deeper-component-is-a-plain-copy
+  ;; {:page-main}                      # [Component :page]
+  ;;     :inner-copy                   @--> [Component :card]
+  ;;         :inner-star               @--> [Component :heart] (swapped)
+  ;; :outer-copy                       #--> [Component :page]
+  ;;     :outer-inner                  @--> :inner-copy
+  ;;         :outer-star               @--> [Component :star] (swapped back)
+  (let [file  (-> (setup)
+                  (tho/add-frame :page-main)
+                  (thc/instantiate-component :card :inner-copy
+                                             :parent-label :page-main
+                                             :children-labels [:inner-star])
+                  (tho/swap-component-in-shape :inner-star :heart)
+                  (thc/make-component :page :page-main)
+                  (thc/instantiate-component :page :outer-copy
+                                             :children-labels [:outer-inner :outer-star])
+                  (tho/swap-component-in-shape :outer-star :star)
+                  (update-main :outer-copy :page))
+        main  (first-child file :inner-copy)
+        head  (ths/get-shape file :outer-star)]
+    (t/is (= (:id (thc/get-component file :star)) (:component-id main)))
+    (t/is (= (thi/id :card-star) (:shape-ref main)))
+    (t/is (not (ctk/swapped? main)))
+    (t/is (= (:id (first-child file :card-star))
+             (:shape-ref (ths/get-shape-by-id file (first (:shapes main))))))
     (t/is (= (:id main) (:shape-ref head)))
     (t/is (not (ctk/swapped? head)))))
 
@@ -583,6 +625,25 @@
         child (ths/get-shape-by-id file' (first (:shapes copy)))]
     (t/is (== 30 (mth/precision (:rotation copy) 2)))
     (t/is (== 30 (mth/precision (:rotation child) 2)))))
+
+(t/deftest switch-turns-the-swap-with-the-child-of-the-new-variant
+  (let [file  (-> (thf/sample-file :file1)
+                  (tho/add-simple-component :star :star-main :star-rect
+                                            :root-params {:width 40 :height 40}
+                                            :child-params {:width 30 :height 30})
+                  (tho/add-simple-component :heart :heart-main :heart-rect
+                                            :root-params {:width 40 :height 40}
+                                            :child-params {:width 30 :height 30})
+                  (thv/add-variant-with-copy :variant :c01 :m01 :c02 :m02 :child1 :child2 :star)
+                  (transform-subtree :child2 #(ctm/rotation-modifiers %1 %2 30))
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-child])
+                  (tho/swap-component-in-shape :copy-child :heart))
+        file' (-> file
+                  (tho/swap-component-in-shape :copy01 :c02 {:keep-touched? true}))
+        head  (ths/get-shape file' :copy-child)]
+    (t/is (ctk/swapped? head))
+    (t/is (== 30 (:rotation (orientation file' :copy-child))))
+    (t/is (== 30 (mth/precision (:rotation (ths/get-shape-by-id file' (first (:shapes head)))) 2)))))
 
 (t/deftest swapped-head-follows-the-rotation-of-the-replaced-child
   (let [file  (-> (setup-sized)

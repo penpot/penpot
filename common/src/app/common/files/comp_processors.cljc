@@ -274,8 +274,8 @@
 
 (defn find-replaced-shape
   "The child of the near main of the parent of the copy head `shape` whose
-  position the head takes: the one that stands for the deepest main child
-  the head refers to, or else the free one at the same index."
+  position the head takes, with context: the one that stands for the deepest
+  main child the head refers to, or else the free one at the same index."
   [file container libraries shape]
   (let [parent     (ctn/get-shape container (:parent-id shape))
         parent-ref (when parent
@@ -283,12 +283,13 @@
                                                  :include-deleted? true
                                                  :with-context? true))]
     (when parent-ref
-      (or (find-swap-position parent-ref libraries (:shape-ref shape))
-          (let [taken   (into #{} (keep #(:shape-ref (ctn/get-shape container %))) (:shapes parent))
-                index   (d/index-of (:shapes parent) (:id shape))
-                near-id (when index (get (:shapes parent-ref) index))]
-            (when (and (some? near-id) (not (contains? taken near-id)))
-              (ctn/get-shape (:container (meta parent-ref)) near-id)))))))
+      (some-> (or (find-swap-position parent-ref libraries (:shape-ref shape))
+                  (let [taken   (into #{} (keep #(:shape-ref (ctn/get-shape container %))) (:shapes parent))
+                        index   (d/index-of (:shapes parent) (:id shape))
+                        near-id (when index (get (:shapes parent-ref) index))]
+                    (when (and (some? near-id) (not (contains? taken near-id)))
+                      (ctn/get-shape (:container (meta parent-ref)) near-id))))
+              (with-meta (meta parent-ref))))))
 
 (defn- swap-made-in-copy?
   "Whether a copy head with the swap slot `slot` was swapped in its copy,
