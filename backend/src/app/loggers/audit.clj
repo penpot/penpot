@@ -234,7 +234,9 @@
 (defn- append-audit-entry
   [cfg params]
   (let [params (-> params
-                   (assoc :id (uuid/next))
+                   ;; Keep a pre-assigned id (process-event assigns one so
+                   ;; the webhook task can reference the stored row).
+                   (update :id #(or % (uuid/next)))
                    (update :props db/tjson)
                    (update :context db/tjson)
                    (update :ip-addr db/inet))
@@ -253,62 +255,70 @@
 
 (defn- process-event
   [cfg event]
-  (when (contains? cf/flags :audit-log-logger)
-    (l/log! ::l/logger "app.audit"
-            ::l/level :info
-            :profile-id (str (:profile-id event))
-            :ip-addr (str (:ip-addr event))
-            :type (:type event)
-            :name (:name event)
-            :props (json/encode (:props event) :key-fn json/write-camel-key)
-            :context (json/encode (:context event) :key-fn json/write-camel-key)))
+  ;; Assign the row id up-front so every sink below shares it: the
+  ;; stored row and the `:process-webhook-event` task params. The
+  ;; webhook trigger row links back to its origin event through props
+  ;; `:event-id`, which used to land nil because the id was generated
+  ;; inside `append-audit-entry` without reaching the worker params.
+  (let [event (assoc event :id (or (:id event) (uuid/next)))]
+    (when (contains? cf/flags :audit-log-logger)
+      (l/log! ::l/logger "app.audit"
+              ::l/level :info
+              :profile-id (str (:profile-id event))
+              :ip-addr (str (:ip-addr event))
+              :type (:type event)
+              :name (:name event)
+              :props (json/encode (:props event) :key-fn json/write-camel-key)
+              :context (json/encode (:context event) :key-fn json/write-camel-key)))
 
-  (when (contains? cf/flags :audit-log)
-    (append-audit-entry cfg event))
+    (when (contains? cf/flags :audit-log)
+      (append-audit-entry cfg event))
 
-  (when (contains? cf/flags :telemetry)
-    ;; NOTE: when both audit-log and telemetry are enabled, events are stored
-    ;; twice: once with full details (above) and once stripped of props and
-    ;; ip-addr, tagged with source="telemetry" so the telemetry task can
-    ;; collect and ship them.  The profile-id is preserved (UUIDs are already
-    ;; anonymous random identifiers).  Only a safe subset of context fields
-    ;; is kept: initiator, version, client-version and client-user-agent.
-    ;; Timestamps are truncated to day precision to avoid leaking exact event
-    ;; timing.
-    (let [event (-> event
-                    (filter-telemetry-props)
-                    (filter-telemetry-context)
-                    (update :created-at ct/truncate :days)
-                    (update :tracked-at ct/truncate :days)
-                    (assoc :source "telemetry:backend")
-                    (assoc :ip-addr "0.0.0.0"))]
-      (append-audit-entry cfg event)))
+    (when (contains? cf/flags :telemetry)
+      ;; NOTE: when both audit-log and telemetry are enabled, events are stored
+      ;; twice: once with full details (above) and once stripped of props and
+      ;; ip-addr, tagged with source="telemetry" so the telemetry task can
+      ;; collect and ship them.  The profile-id is preserved (UUIDs are already
+      ;; anonymous random identifiers).  Only a safe subset of context fields
+      ;; is kept: initiator, version, client-version and client-user-agent.
+      ;; Timestamps are truncated to day precision to avoid leaking exact event
+      ;; timing. The shadow row gets its own id: reusing the full row id
+      ;; would collide on the primary key.
+      (let [event (-> event
+                      (assoc :id (uuid/next))
+                      (filter-telemetry-props)
+                      (filter-telemetry-context)
+                      (update :created-at ct/truncate :days)
+                      (update :tracked-at ct/truncate :days)
+                      (assoc :source "telemetry:backend")
+                      (assoc :ip-addr "0.0.0.0"))]
+        (append-audit-entry cfg event)))
 
-  (when (and (contains? cf/flags :webhooks)
-             (::webhooks/event? event))
-    (let [batch-key     (::webhooks/batch-key event)
-          batch-timeout (::webhooks/batch-timeout event)
-          label         (dm/str "rpc:" (:name event))
-          label         (cond
-                          (ifn? batch-key)    (dm/str label ":" (batch-key (::rpc/params event)))
-                          (string? batch-key) (dm/str label ":" batch-key)
-                          :else               label)
-          dedupe?       (boolean (and batch-key batch-timeout))]
+    (when (and (contains? cf/flags :webhooks)
+               (::webhooks/event? event))
+      (let [batch-key     (::webhooks/batch-key event)
+            batch-timeout (::webhooks/batch-timeout event)
+            label         (dm/str "rpc:" (:name event))
+            label         (cond
+                            (ifn? batch-key)    (dm/str label ":" (batch-key (::rpc/params event)))
+                            (string? batch-key) (dm/str label ":" batch-key)
+                            :else               label)
+            dedupe?       (boolean (and batch-key batch-timeout))]
 
-      (wrk/submit! (-> cfg
-                       (assoc ::wrk/task :process-webhook-event)
-                       (assoc ::wrk/queue :webhooks)
-                       (assoc ::wrk/max-retries 0)
-                       (assoc ::wrk/delay (or batch-timeout 0))
-                       (assoc ::wrk/dedupe dedupe?)
-                       (assoc ::wrk/label label)
-                       (assoc ::wrk/params (-> event
-                                               (d/without-qualified)
-                                               (dissoc :source)
-                                               (dissoc :context)
-                                               (dissoc :ip-addr)
-                                               (dissoc :type)))))))
-  event)
+        (wrk/submit! (-> cfg
+                         (assoc ::wrk/task :process-webhook-event)
+                         (assoc ::wrk/queue :webhooks)
+                         (assoc ::wrk/max-retries 0)
+                         (assoc ::wrk/delay (or batch-timeout 0))
+                         (assoc ::wrk/dedupe dedupe?)
+                         (assoc ::wrk/label label)
+                         (assoc ::wrk/params (-> event
+                                                 (d/without-qualified)
+                                                 (dissoc :source)
+                                                 (dissoc :context)
+                                                 (dissoc :ip-addr)
+                                                 (dissoc :type)))))))
+    event))
 
 (defn submit*
   "A public API, lower-level than submit, assumes all required fields are filled"

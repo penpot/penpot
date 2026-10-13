@@ -17,6 +17,7 @@
    [app.util.services :as sv]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [mockery.core :refer [with-mocks]]
    [yetti.request]))
 
 (t/use-fixtures :once th/state-init)
@@ -328,6 +329,58 @@
         (let [day-now (ct/truncate (ct/now) :days)]
           (t/is (= day-now (:created-at row2)))
           (t/is (= day-now (:tracked-at row2))))))))
+
+(t/deftest backend-process-event-forwards-id-to-webhook-task
+  ;; The `webhook/trigger` row links back to its origin event through
+  ;; props `:event-id`, so `process-event` must forward the stored row
+  ;; id to the `:process-webhook-event` worker task. Regression test:
+  ;; the id used to be generated inside `append-audit-entry` without
+  ;; ever reaching the worker params, so `:event-id` always landed nil.
+  (with-mocks [submit-mock {:target 'app.worker/submit! :return nil}]
+    (with-redefs [cf/flags #{:audit-log :webhooks}]
+      (let [prof  (th/create-profile* 1 {:is-active true})
+            event {:type "action"
+                   :name "delete-project"
+                   :profile-id (:id prof)
+                   :props {:team-id (:default-team-id prof)}
+                   :context {:version "2.0.0" :initiator "app"}
+                   :tracked-at (ct/now)
+                   :created-at (ct/now)
+                   :source "backend"
+                   :app.loggers.webhooks/event? true}]
+        (audit/submit* th/*system* event)
+        (let [[row :as rows] (->> (th/db-exec! ["select * from audit_log"])
+                                  (mapv decode-row))]
+          (t/is (= 1 (count rows)))
+          (t/is (= 1 (:call-count @submit-mock)))
+          (let [params (-> @submit-mock :call-args-list ffirst :app.worker/params)]
+            (t/is (some? (:id params)))
+            (t/is (= (:id row) (:id params)))))))))
+
+(t/deftest backend-process-event-telemetry-row-gets-own-id
+  ;; When both `:audit-log` and `:telemetry` are active, the shadow
+  ;; telemetry row must not reuse the full row id (shared PK), while
+  ;; the webhook task still carries the full row id.
+  (with-mocks [submit-mock {:target 'app.worker/submit! :return nil}]
+    (with-redefs [cf/flags #{:audit-log :telemetry :webhooks}]
+      (let [prof  (th/create-profile* 1 {:is-active true})
+            event {:type "action"
+                   :name "delete-project"
+                   :profile-id (:id prof)
+                   :props {:team-id (:default-team-id prof)}
+                   :context {:version "2.0.0" :initiator "app"}
+                   :tracked-at (ct/now)
+                   :created-at (ct/now)
+                   :source "backend"
+                   :app.loggers.webhooks/event? true}]
+        (audit/submit* th/*system* event)
+        (let [[row1 row2 :as rows] (->> (th/db-exec! ["select * from audit_log order by source"])
+                                        (mapv decode-row))]
+          (t/is (= 2 (count rows)))
+          (t/is (not= (:id row1) (:id row2)))
+          (let [params (-> @submit-mock :call-args-list ffirst :app.worker/params)]
+            (t/is (= (:id (first (filter #(= "backend" (:source %)) rows)))
+                     (:id params)))))))))
 
 (t/deftest push-events-disabled-when-no-flags-and-no-telemetry
   ;; When neither audit-log nor telemetry is enabled, no rows should

@@ -238,6 +238,8 @@ Webhooks let an external URL get notified when something happens in a team (for 
 
 One guarantee: sending webhooks never changes the audit event itself. If delivery fails, only the webhook (and its delivery log) is affected; the audit row stays untouched and still gets archived normally.
 
+Every match also writes a `webhook` / `trigger` row to `audit_log` (even with zero matches): its props are `{:name <origin event name>, :event-id <origin row id>, :total-affected <matched webhook count>}`. `process-event` assigns the origin row id up-front so the trigger can reference it; the telemetry shadow row always gets its own id (reusing it would collide on the PK).
+
 ## 10. Consumers II: error reporters
 
 Both `app.loggers.database` and `app.loggers.mattermost` listen to backend `:error` logs **and** frontend crash events (found by the `::audit/event` marker), through a sliding-buffer channel so a flood cannot stall the app. The database one stores them in `server-error-report` (source 3 = backend log, 4 = audit-log origin, 5 = rate-limit); the Mattermost one forwards a short note to `:error-report-webhook` when set.
