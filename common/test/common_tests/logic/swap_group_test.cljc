@@ -475,3 +475,14 @@
                    (propagate :card)
                    (thf/validate-file!))]
     (t/is (= margin (:layout-item-margin (ths/get-shape file :copy-star))))))
+
+(t/deftest switch-places-the-swap-where-the-new-variant-has-its-child
+  (let [file  (-> (setup-variants)
+                  (move-shape :child2 30 5))
+        rel   (fn [file child parent]
+                (let [[x y] (position file child)
+                      [px py] (position file parent)]
+                  [(- x px) (- y py)]))
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})]
+    (t/is (ctk/swapped? (ths/get-shape file' :copy-child)))
+    (t/is (= (rel file' :child2 :m02) (rel file' :copy-child :copy01)))))
