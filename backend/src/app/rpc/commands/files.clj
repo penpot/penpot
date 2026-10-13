@@ -951,6 +951,7 @@
              :file-id (str file-id))
 
       (bfc/update-file! cfg {:id file-id
+                             :features (:features file)
                              :migrations (:migrations file)
                              :revn (inc (:revn file))
                              :data (:data file)
