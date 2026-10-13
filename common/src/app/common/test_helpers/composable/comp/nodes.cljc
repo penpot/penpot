@@ -29,6 +29,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]
    [app.common.test-helpers.tokens :as tht]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -168,32 +169,62 @@
 ;; ---------------------------------------------------------------------------
 ;; edit-text — edit the content of a text shape
 ;;
-;; An edit of the characters (`:text`) or font size (`:font-size`) of a text's
-;; first span, as the text editor commits it when the edit ends: a new
+;; An edit of a text as the text editor commits it when the edit ends: a new
 ;; `:content`, and a new name when the text still has the name generated from
-;; its old content. The frontend interpreter commits it through
+;; its old content. The edit is one of
+;;   :text        the characters of the first span;
+;;   :font-size   the font size of the first span;
+;;   :fills       the fills of all of the text (select all, then a color);
+;;   :font-family the font family of all of the text;
+;;   :content     the whole text, written in the notation of
+;;                `app.common.test-helpers.texts`.
+;; The frontend interpreter commits it through
 ;; `v2-update-text-shape-content`, as the editor does on blur.
 ;; ---------------------------------------------------------------------------
 
 (def ^:private first-span [:content :children 0 :children 0 :children 0])
+
+(def ^:private text-edits #{:text :font-size :fills :font-family :content})
 
 (defn- generated-name
   "The name the text editor gives a text after its `content`."
   [content]
   (txt/generate-shape-name (txt/content->text content)))
 
+(defn- restyle-all
+  [content attrs]
+  (txt/transform-nodes (some-fn txt/is-text-node? txt/is-paragraph-node?) #(merge % attrs) content))
+
 (defn text-edit-commit
-  "What the text editor commits when the `edit` (`:text` or `:font-size`) of
-   the first span of `shape` becomes `value`: `:content`, and `:name` when the
-   editor renames the shape after its text, which it does when the shape still
-   has the name generated from its old content. Public so the frontend
-   interpreter commits the same edit."
+  "What the text editor commits when the `edit` (see `text-edits`) of
+   `shape` becomes `value`: `:content`, and `:name` when the editor renames
+   the shape after its text, which it does when the shape still has the name
+   generated from its old content. Public so the frontend interpreter commits
+   the same edit."
   [shape edit value]
-  (when-not (contains? #{:text :font-size} edit)
+  (when-not (contains? text-edits edit)
     (throw (ex-info (str "text-edit-commit: unsupported edit " (pr-str edit)
-                         " (supported: :text, :font-size)")
+                         " (supported: " (pr-str text-edits) ")")
                     {:edit edit})))
-  (let [content (assoc-in (:content shape) (conj (subvec first-span 1) edit) value)]
+  (let [content (case edit
+                  (:text :font-size)
+                  (assoc-in (:content shape) (conj (subvec first-span 1) edit) value)
+
+                  :fills
+                  (restyle-all (:content shape) {:fills value})
+
+                  :font-family
+                  (txt/transform-nodes (some-fn txt/is-text-node? txt/is-paragraph-node?)
+                                       #(assoc %
+                                               :font-family value
+                                               :font-id (get thtx/font-ids value)
+                                               :font-variant-id (thtx/variant-id value
+                                                                                 (d/parse-integer (:font-weight %))
+                                                                                 (= "italic" (:font-style %))))
+                                       (:content shape))
+
+                  :content
+                  (thtx/content value))]
     (cond-> {:content content}
       (= (:name shape) (generated-name (:content shape)))
       (assoc :name (generated-name content)))))
@@ -204,9 +235,12 @@
   (merge shape (text-edit-commit shape edit value)))
 
 (defn text-span-value
-  "The `edit` (`:text` or `:font-size`) of `shape`'s first span."
+  "The `edit` (see `text-edits`) of `shape`: of its first span, or for
+   `:content` its whole text in the notation of `app.common.test-helpers.texts`."
   [shape edit]
-  (get-in shape (conj first-span edit)))
+  (if (= edit :content)
+    (thtx/view (:content shape))
+    (get-in shape (conj first-span edit))))
 
 (defrecord EditText [target edit value]
   IComponentOperation
@@ -229,9 +263,9 @@
           (tm/record-application this {:target target :edit edit :value value})))))
 
 (defn edit-text
-  "Constructor for the text edit operation: set the `edit` (`:text` or
-   `:font-size`) of the first span of the text bound to `target` to `value`.
-   On the frontend it dispatches the real `v2-update-text-shape-content`."
+  "Constructor for the text edit operation: set the `edit` (see
+   `text-edits`) of the text bound to `target` to `value`. On the frontend it
+   dispatches the real `v2-update-text-shape-content`."
   [target edit value]
   (tm/assign-id (->EditText target edit value)))
 
@@ -345,9 +379,11 @@
 (extend-type EditText
   IPropertyCheck
   (applied-property [node] (:edit node))
-  (applied-value [node] (:value node))
+  (applied-value [node]
+    (cond-> (:value node)
+      (= :content (:edit node)) (thtx/normalize)))
   (has-property-of [node shape]
-    (= (:value node) (text-span-value shape (:edit node)))))
+    (= (applied-value node) (text-span-value shape (:edit node)))))
 
 ;; ===========================================================================
 ;; Scenario building blocks

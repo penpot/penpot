@@ -19,7 +19,8 @@
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.test-helpers.shapes :as ths]))
+   [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]))
 
 ;; The fill the labeled setups give the main child.
 (def labeled-fill "#abcdef")
@@ -114,6 +115,28 @@
                                           :frame-params {:width 100 :height 100}
                                           ;; the name a new text gets from its content
                                           :child-params {:name "hello world"})
+                 (thc/make-component :component1 :main-root)
+                 (thc/instantiate-component :component1 :copy-root
+                                            :children-labels [:copy-text]))]
+    (tm/make-situation file {:main-instance :main-text
+                             :copy-instance :copy-text
+                             :main-root     :main-root
+                             :copy-root     :copy-root})))
+
+(def two-style-text
+  "The text of `two-style-text-component-with-copy`, in the notation of
+   `app.common.test-helpers.texts`."
+  [[["Price: "] ["$10" {:weight 700}]]])
+
+(defn two-style-text-component-with-copy
+  "As `simple-text-component-with-copy`, with the text \"Price: $10\" in two
+   styles (`two-style-text`), written as the editors write it."
+  []
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-frame-with-text :main-root :main-text "Price: $10"
+                                          :frame-params {:width 100 :height 100}
+                                          :child-params {:name "Price: $10"
+                                                         :content (thtx/content two-style-text)})
                  (thc/make-component :component1 :main-root)
                  (thc/instantiate-component :component1 :copy-root
                                             :children-labels [:copy-text]))]
