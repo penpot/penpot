@@ -137,6 +137,7 @@
 (declare sync-shape-recursive)
 (declare direct-sync)
 (declare inverse-sync)
+(declare mark-local-changes)
 
 (declare compare-children)
 (declare add-shape-to-instance)
@@ -760,18 +761,21 @@
                          (generate-rename-component (:component-id shape-inst) clean-name library))
 
         changes        (if component
-                         (sync-shape-recursive changes
-                                               inverse-sync
-                                               {:container     container
-                                                :component     component
-                                                :library       library
-                                                :file          file
-                                                :libraries     libraries
-                                                :root-inst     root-inst
-                                                :root-main     root-main
-                                                :initial-root? initial-root?}
-                                               shape-inst
-                                               shape-main)
+                         (let [synced-ids (volatile! #{})]
+                           (-> (sync-shape-recursive changes
+                                                     inverse-sync
+                                                     {:container     container
+                                                      :component     component
+                                                      :library       library
+                                                      :file          file
+                                                      :libraries     libraries
+                                                      :root-inst     root-inst
+                                                      :root-main     root-main
+                                                      :initial-root? initial-root?
+                                                      :synced-ids    synced-ids}
+                                                     shape-inst
+                                                     shape-main)
+                               (mark-local-changes @synced-ids)))
                          changes)
 
         changes        (cond-> changes
@@ -890,17 +894,22 @@
       false))
 
    :after-children
-   (fn [changes {:keys [shape-inst]}]
-     ;; The inverse sync may be made on a component that is inside a
-     ;; remote library. We need to separate changes that are from
-     ;; local and remote files.
-     (let [check-local (fn [change]
-                         (cond-> change
-                           (= (:id change) (:id shape-inst))
-                           (assoc :local-change? true)))]
-       (-> changes
-           (update :redo-changes (partial mapv check-local))
-           (update :undo-changes (partial map check-local)))))})
+   (fn [changes {:keys [shape-inst synced-ids]}]
+     (vswap! synced-ids conj (:id shape-inst))
+     changes)})
+
+(defn- mark-local-changes
+  "Mark as `:local-change?` the changes of the copy shapes `ids`. The inverse
+  sync may update a component of a remote library, so the frontend commits
+  the copy's changes and the main's apart."
+  [changes ids]
+  (let [check-local (fn [change]
+                      (cond-> change
+                        (contains? ids (:id change))
+                        (assoc :local-change? true)))]
+    (-> changes
+        (update :redo-changes #(mapv check-local %))
+        (update :undo-changes #(apply list (map check-local %))))))
 
 
 ;; ---- Operation generation helpers ----
@@ -1474,19 +1483,16 @@
                                     container
                                     {:type :reg-objects
                                      :shapes all-parents}))
-        ;; Conj reg before mod, so undo restores the shape and then its
-        ;; parents. Do not append with concat: it nests one lazy seq per
-        ;; shape and overflows the stack on big syncs.
-        (update :undo-changes conj
-                (make-change
-                 container
-                 {:type :reg-objects
-                  :shapes all-parents})
-                (make-change
-                 container
-                 {:type :mod-obj
-                  :id (:id dest-shape)
-                  :operations (vec uoperations)}))
+        ;; undone as the shape first, then its parents
+        (update :undo-changes conj (make-change
+                                    container
+                                    {:type :reg-objects
+                                     :shapes all-parents}))
+        (update :undo-changes conj (make-change
+                                    container
+                                    {:type :mod-obj
+                                     :id (:id dest-shape)
+                                     :operations (vec uoperations)}))
         (pcb/apply-changes-local))))
 
 
