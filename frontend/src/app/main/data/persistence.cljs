@@ -27,6 +27,7 @@
 
 (declare ^:private run-persistence-task)
 (declare ^:private persist-commit)
+(declare ^:private resume-persistence)
 
 (log/set-level! :warn)
 
@@ -242,6 +243,23 @@
                      (= run-id (:run-id pstate)))
             (rx/of (update-status :saving)
                    (run-persistence-task))))))))
+
+(defn- drop-file-commits
+  "Removes every queued commit belonging to `file-id`, together with its
+  index entry."
+  [pstate file-id]
+  (if-not file-id
+    pstate
+    (let [dropped (into #{}
+                        (keep (fn [commit-id]
+                                (when (= file-id (get-in pstate [:index commit-id :file-id]))
+                                  commit-id)))
+                        (:queue pstate))]
+      (if (empty? dropped)
+        pstate
+        (-> pstate
+            (update :queue #(into (empty %) (remove dropped) %))
+            (update :index #(apply dissoc % dropped)))))))
 
 (defn- persistence-failed
   [commit-id cause]
@@ -508,29 +526,99 @@
     (watch [_ _ _]
       (rx/of (run-persistence-task)))))
 
+(defn- release-failed-file
+  "Drops the queued commits of the file whose save failed terminally.
+
+  This runs when the user opens a file again, not at failure time. The
+  failure itself stays visible, because `wait-persisted-or-error` must keep
+  rejecting: callers use it to avoid snapshotting a file whose edits were
+  never saved. What must not survive is the halt. Left in place, the failed
+  commits sit at the head of the queue forever and, because the queue is
+  shared, they also block the pending edits of every other file."
+  []
+  (ptk/reify ::release-failed-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [commit-id (get-in state [:persistence :error :commit-id])
+            file-id   (get-in state [:persistence :index commit-id :file-id])]
+        (update state :persistence #(drop-file-commits % file-id))))))
+
+(defn- queue-needs-a-runner?
+  "True when the queue still holds commits that nobody is sending.
+
+  The runner does not survive a subscription teardown, so both
+  initialization and recovery hit this. A halted queue is excluded: the
+  halt is lifted by `recover-persistence`, which has its own triggers. A
+  retrying episode is excluded too: its backoff timer outlives the
+  subscription and owns the recovery, so resuming here would spend the
+  budget twice."
+  [{:keys [queue status]}]
+  (and (seq queue)
+       (not= :error status)
+       (not= :retrying status)))
+
+(defn- initialize-persistence-state
+  "Brings persistence to a coherent starting shape when the workspace
+  mounts.
+
+  Deliberately leaves a halted or retrying queue alone. Lifting a halt is
+  `recover-persistence`'s job, and it waits for the user to open a file, so
+  doing it here would release edits the moment the view mounts rather than
+  when the user acts on them."
+  []
+  (ptk/reify ::initialize-persistence-state
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [queue status run-id]} (:persistence state)]
+        (cond
+          ;; A commit left queued by a previous session, with no runner.
+          (queue-needs-a-runner? (:persistence state))
+          (rx/of (resume-persistence))
+
+          ;; Nothing queued and nothing in flight: there is nothing to save.
+          (and (empty? queue)
+               (not= status :error)
+               (or run-id (#{:pending :saving} status)))
+          (rx/of (update-status :saved))
+
+          :else
+          (rx/empty))))))
+
 (defn- recover-persistence
+  "Lifts a halted queue when a file is opened again or the role changes.
+
+  Every terminal failure reaching this point is permanent for that file:
+  permission lost, file gone, or changes the server refuses. None of them
+  can succeed on a resend, so opening a file releases them instead of
+  replaying them. Retaining them until here is deliberate: it is what keeps
+  `wait-persisted-or-error` rejecting, which is what stops
+  `workspace/versions.cljs` from building a snapshot out of unsaved edits.
+
+  A lost permission is not a temporary condition. The backend raises
+  `:not-found` for it, and replaying the save to find that out routes the
+  user to the exception page."
   []
   (ptk/reify ::recover-persistence
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [queue index status error run-id]} (:persistence state)
-            commit (get index (peek queue))]
+      (let [{:keys [queue status run-id]} (:persistence state)]
         (cond
-          ;; A retrying episode owns its recovery through the backoff
+          ;; A live retry episode owns its recovery through the backoff
           ;; scheduler; resuming here would bypass the attempt budget.
-          (and (seq queue)
-               (not= status :retrying)
-               (or (not= status :error)
-                   (and (= :save-permission-denied (:code error))
-                        (not (::request-id commit))
-                        (= (:file-id commit) (:current-file-id state))
-                        (dm/get-in state [:permissions :can-edit]))))
+          (= :retrying status)
+          (rx/empty)
+
+          (= :error status)
+          (rx/of (release-failed-file) (resume-persistence))
+
+          (queue-needs-a-runner? (:persistence state))
           (rx/of (resume-persistence))
 
-          (and (empty? queue)
-               (not= status :error)
-               (or run-id (#{:pending :saving} status)))
-          (rx/of (update-status :saved)))))))
+          (and (empty? queue) (or run-id (#{:pending :saving} status)))
+          (rx/of (update-status :saved))
+
+          :else
+          (rx/empty))))))
 
 (def ^:private xf-mapcat-undo
   (mapcat :undo-changes))
@@ -601,7 +689,7 @@
                   (rx/filter #(= % ::force-persist))))]
 
         (rx/merge
-         (rx/of (recover-persistence))
+         (rx/of (initialize-persistence-state))
 
          (->> stream
               (rx/filter #(or (ptk/type? ::dc/change-team-role %)

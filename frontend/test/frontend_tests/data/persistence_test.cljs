@@ -477,11 +477,10 @@
           (rx/end! response))))))
 
 ;; Scenario: edit permission is revoked with an edit queued. The save fails
-;; without sending anything, the queue keeps the edit, and the user is
-;; notified once; further edits keep queueing behind the failure instead of
-;; replacing it. Proves: permission loss fails safe — no send, no discard,
-;; one flash.
-(t/deftest ^:async permission-loss-fails-without-discarding-queued-edits
+;; without sending anything, the queue keeps the edit and the user is
+;; notified once, so `wait-persisted-or-error` still rejects and nothing is
+;; snapshotted from unsaved state. Proves: permission loss fails safe.
+(t/deftest ^:async permission-loss-retains-the-queue-and-notifies-once
   (await
    (with-persistence
      (^:async fn [{:keys [file-id requests failures store]}]
@@ -492,37 +491,76 @@
                                     (= 1 (count (get-in @store [:persistence :queue]))))
                               "permission loss fails the save"))
        (t/is (= :error (get-in @store [:persistence :status])))
-       (t/is (= 1 (count (get-in @store [:persistence :queue]))))
+       (t/is (= 1 (count (get-in @store [:persistence :queue])))
+             "the undeliverable edit is retained, so waiters keep rejecting")
        (t/is (empty? @requests))
-       (t/is (= 1 (count @failures)))
-       (ptk/emit! store (local-commit file-id) ::dps/force-persist
-                  (#'dps/update-status :pending))
-       (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
-                                    (= 2 (count (get-in @store [:persistence :queue]))))
-                              "second edit queues behind the failure"))
-       (t/is (= :error (get-in @store [:persistence :status])))
-       (t/is (= 2 (count (get-in @store [:persistence :queue]))))))))
+       (t/is (= 1 (count @failures)))))))
 
-;; Scenario: a request with two queued commits fails terminally at the
-;; transport. Both edits stay queued as failed; reinitializing persistence
-;; must not replay the dead request. Proves: failed requests preserve the
-;; queue and are never retried on initialization.
-(t/deftest ^:async failed-request-retains-the-queue-and-is-not-retried-on-initialization
+;; Scenario: the same terminal failure, then the user opens a file again.
+;; Opening a file releases the edit that can never be saved and settles the
+;; editor, instead of leaving it halted until a reload. Proves: the halt does
+;; not outlive the visit that caused it.
+(t/deftest ^:async opening-a-file-again-releases-a-terminal-failure
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (ptk/emit! store (local-commit file-id) ::dps/force-persist
-                  (local-commit file-id) ::dps/force-persist)
-       (.error response (ex-info "Validation failed" {:type :validation}))
-       (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                              "failed request errors the save"))
-       (ptk/emit! store (dps/initialize-persistence))
+     (^:async fn [{:keys [file-id requests failures store]}]
+       (ptk/emit! store (local-commit file-id)
+                  #(assoc-in % [:permissions :can-edit] false)
+                  ::dps/force-persist)
        (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
-                                    (= 2 (count (get-in @store [:persistence :queue]))))
-                              "initialization preserves the failed queue"))
-       (t/is (= :error (get-in @store [:persistence :status])))
-       (t/is (= 2 (count (get-in @store [:persistence :queue]))))
-       (t/is (= 1 (count @requests)))))))
+                                    (= 1 (count (get-in @store [:persistence :queue]))))
+                              "the save fails terminally"))
+       ;; The user acts again: a team-role change is one of the two real
+       ;; recovery triggers (the other is opening a file, whose event does
+       ;; real work and is not usable as a bare signal here).
+       (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+       (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                    (empty? (get-in @store [:persistence :queue])))
+                              "re-entering the file settles the queue"))
+       (t/is (nil? (get-in @store [:persistence :error]))
+             "the halt is cleared once the user comes back")
+       (t/is (empty? @requests)
+             "the edit that cannot be saved is not replayed on re-entry")
+       (t/is (= 1 (count @failures)) "the user is still notified exactly once")))))
+
+;; Scenario: two files have pending edits and the first send fails
+;; terminally. Opening a file again releases the failed file, the other file
+;; still saves, and the editor settles saved instead of staying halted.
+;; Proves: one file that cannot be saved does not block every other file.
+(t/deftest ^:async terminal-failure-does-not-block-other-files
+  (let [files (into [] (repeatedly 2 uuid/next))
+        sends (atom 0)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [requests store]}]
+         (ptk/emit! store
+                    #(assoc % :files (into (:files %)
+                                           (map (fn [id] [id {:id id :revn 0}]))
+                                           files))
+                    (local-commit (nth files 0))
+                    (local-commit (nth files 1))
+                    ::dps/force-persist)
+         (await (async/wait-for #(seq @requests) "the first file is sent"))
+         (let [failed-file (get-in (second (first @requests)) [:id])]
+           (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
+                                        (not (empty? (get-in @store [:persistence :queue]))))
+                                  "the terminal failure retains the queue"))
+           ;; The user acts again: recovery releases the failed file and drains
+           ;; the rest.
+           (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+           (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                        (empty? (get-in @store [:persistence :queue])))
+                                  "the released file frees the rest of the queue"))
+           (t/is (= 2 (count @requests))
+                 "the other file was saved after the failed one was released")
+           (t/is (= 1 (count (filter #(= failed-file (get-in (second %) [:id])) @requests)))
+                 "the failed file is sent once, never replayed")))
+       (fn [_ _]
+         ;; Fail the first send terminally and answer the rest inline, so no
+         ;; hot-subject race can swallow the answer.
+         (if (= 1 (swap! sends inc))
+           (rx/throw (ex-info "rejected" {:type :validation :code :invalid-data}))
+           (rx/of {:revn 1})))))))
 
 (defn- check-save-failure-warning
   "Fails a queued save with `cause-type` and asserts the hint shown to the
@@ -687,35 +725,53 @@
 (t/deftest ^:async save-error-does-not-resend-an-active-request
   (await (check-active-request-not-resent [(ptk/data-event ::dps/error)])))
 
-;; Scenario: two commits go out, permission is lost mid-flight (first request
-;; fails, one edit stays queued as failed), then permission is restored with
-;; a team-role change. Only the unsent edit is resent; once answered, the
-;; file saves with an empty queue. Proves: restoration resumes exactly the
-;; unsent edits.
-(t/deftest ^:async permission-restoration-resumes-only-unsent-edits
+;; Scenario: permission is lost mid-flight, so the save fails terminally.
+;; Even if the permission comes back, recovery releases the undeliverable
+;; edits instead of replaying them. The backend raises `:not-found` for a
+;; lost edit permission, so a resend would only route the user to the
+;; exception page. Proves: permission loss is treated as permanent, like
+;; every other terminal failure.
+(t/deftest ^:async permission-loss-is-released-not-resumed
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (ptk/emit! store (local-commit file-id) ::dps/force-persist
-                  (local-commit file-id) ::dps/force-persist
-                  #(assoc-in % [:permissions :can-edit] false))
-       (rx/push! response {:revn 1})
+     (^:async fn [{:keys [file-id requests store]}]
+       (ptk/emit! store (local-commit file-id)
+                  #(assoc-in % [:permissions :can-edit] false)
+                  ::dps/force-persist)
        (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
                                     (= 1 (count (get-in @store [:persistence :queue]))))
                               "permission loss fails the save"))
-       (t/is (= :error (get-in @store [:persistence :status])))
-       (t/is (= 1 (count (get-in @store [:persistence :queue]))))
-       (ptk/emit! store
-                  #(assoc-in % [:permissions :can-edit] true)
+       ;; Permission comes back and a file is opened again.
+       (ptk/emit! store #(assoc-in % [:permissions :can-edit] true)
                   (ptk/data-event :app.main.data.common/change-team-role))
-       (await (async/wait-for #(= 2 (count @requests)) "restoration resends"))
-       (t/is (= 2 (count @requests)))
-       (rx/push! response {:revn 2})
        (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
                                     (empty? (get-in @store [:persistence :queue])))
-                              "resumed save lands"))
-       (t/is (= :saved (get-in @store [:persistence :status])))
-       (t/is (empty? (get-in @store [:persistence :queue])))))))
+                              "recovery releases the undeliverable edit"))
+       (t/is (empty? @requests)
+             "the undeliverable edit is never replayed, not even once the
+              permission is back")
+       (t/is (not= :error (get-in @store [:persistence :status]))
+             "the editor is not left halted")))))
+
+;; Scenario: a terminal failure is waiting, and persistence is re-initialized.
+;; Initialization must not lift the halt: only opening a file does. Otherwise
+;; the edits would be released the moment the workspace view mounts, instead
+;; of when the user acts on them. Proves: the init/recovery split holds.
+(t/deftest ^:async initialization-does-not-lift-a-halt
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response store]}]
+       (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+       (.error response (ex-info "Validation failed" {:type :validation}))
+       (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
+                                    (= 1 (count (get-in @store [:persistence :queue]))))
+                              "the save fails terminally"))
+       (ptk/emit! store (dps/initialize-persistence))
+       (await (async/settle))
+       (t/is (= :error (get-in @store [:persistence :status]))
+             "initialization leaves the halt alone")
+       (t/is (= 1 (count (get-in @store [:persistence :queue])))
+             "and keeps the undeliverable edits queued until the user acts")))))
 
 ;; Scenario: the answer arrives but no runner is tracking the request
 ;; anymore. The acknowledged commit stays queued instead of being dropped;
@@ -841,16 +897,3 @@
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the second save turns the guard off"))
        (t/is (empty? (get-in @store [:persistence :queue])))))))
-
-;; Scenario: the save fails terminally. The edit stays queued, and so does
-;; the guard. Proves: retained edits are not dropped silently on leave.
-(t/deftest ^:async failed-save-keeps-the-leave-page-guard
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id store tasks]}]
-       (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-       (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                              "the save fails"))
-       (t/is (= 1 (count (get-in @store [:persistence :queue]))))
-       (t/is (contains? @tasks :persistence) "the guard stays on for retained edits"))
-     (fn [_ _] (rx/throw (ex-info "invalid" {:type :validation}))))))
