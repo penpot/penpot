@@ -239,3 +239,10 @@
   (let [res (tsc/process-tokens {"a" "lighten(red, 0.1)"})]
     (t/is (= "Color.Oklch" (sym/full-type-name (get-in res [:tokens "a"]))))
     (t/is (= "Color.Hex" (sym/full-type-name (tsc/color->hex (get-in res [:tokens "a"])))))))
+
+(t/deftest long-reference-chains-test
+  ;; Resolution recurses per reference: node overflows its stack at about
+  ;; 20000 links, far beyond real token files.
+  (let [n 1000
+        tokens (into {"t0" "1"} (map (fn [i] [(str "t" i) (str "{t" (dec i) "} + 1")])) (range 1 n))]
+    (t/is (= (str n) (value (process tokens) (str "t" (dec n)))))))
