@@ -27,6 +27,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.path.segment :as segment]
@@ -2767,6 +2768,42 @@
         (pcb/with-objects (:objects container))
         (generate-detach-instance container libraries id))))
 
+(defn- added-subtree
+  "The shapes the changes add under the shape `id`, itself included."
+  [changes id]
+  (let [added (->> (:redo-changes changes)
+                   (filter #(= :add-obj (:type %)))
+                   (map :obj)
+                   (d/index-by :id))]
+    (->> (vals added)
+         (filter #(or (= (:id %) id)
+                      (contains? (set (cfh/get-parent-ids added (:id %))) id))))))
+
+(defn- generate-keep-orientation
+  "Give the new head of a swap, and its subtree, the flips and the rotation
+  of the shape it replaces, around the head's own center. They come from
+  its parent, as when the parent is rotated, and are not overrides."
+  [changes new-shape shape]
+  (let [angle   (d/nilv (:rotation shape) 0)
+        flip-x? (true? (:flip-x shape))
+        flip-y? (true? (:flip-y shape))]
+    (if (and (mth/almost-zero? angle) (not flip-x?) (not flip-y?))
+      changes
+      (let [center (gsh/shape->center new-shape)
+            flip   (when (or flip-x? flip-y?)
+                     (ctm/resize-modifiers (gpt/point (if flip-x? -1 1) (if flip-y? -1 1)) center))
+            orient (fn [shape]
+                     (cond-> shape
+                       (some? flip)
+                       (gsh/transform-shape flip)
+
+                       (not (mth/almost-zero? angle))
+                       (as-> shape (gsh/transform-shape shape (ctm/rotation-modifiers shape center angle)))))]
+        (pcb/update-shapes changes
+                           (map :id (added-subtree changes (:id new-shape)))
+                           orient
+                           {:ignore-touched true})))))
+
 (defn- main-ref-ids
   "Map the shapes of a main subtree to the shapes of a copy of it: for each
   shape in the subtree of `head`, follow its ref chain until a shape whose id
@@ -2801,13 +2838,8 @@
         swapped?  (or (nil? ref-shape)
                       (not= (:component-id ref-shape) (:component-id new-shape))
                       (not= (:component-file ref-shape) (:component-file new-shape)))
-        new-ids   (->> (:redo-changes changes)
-                       (filter #(= :add-obj (:type %)))
-                       (map :obj)
-                       (d/index-by :id))
-        children  (->> (vals new-ids)
-                       (filter #(contains? (set (cfh/get-parent-ids new-ids (:id %)))
-                                           (:id new-shape))))
+        children  (->> (added-subtree changes (:id new-shape))
+                       (remove #(= (:id %) (:id new-shape))))
         ref-map   (when-not swapped?
                     (main-ref-ids file* (:container (meta ref-shape)) libraries ref-shape
                                   (into #{} (map :shape-ref) children)))]
@@ -2852,7 +2884,10 @@
         [new-shape changes]
         (if inside-copy?
           (generate-swap-in-copy changes new-shape shape file page libraries)
-          [new-shape changes])]
+          [new-shape changes])
+
+        changes
+        (generate-keep-orientation changes new-shape shape)]
 
     [new-shape (-> changes
                    ;; Restore the properties
