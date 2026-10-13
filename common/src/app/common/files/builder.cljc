@@ -8,10 +8,10 @@
   "Internal implementation of file builder. Mainly used as base impl
   for penpot library"
   (:require
-   ;; [app.common.features :as cfeat]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.files.changes :as ch]
    [app.common.files.helpers :as cph]
    [app.common.files.migrations :as fmig]
@@ -192,32 +192,11 @@
   (-> (get-current-objects state)
       (get shape-id)))
 
-;; WORKAROUND: A copy of features from staging for make the library
-;; generate files compatible with version released right now. This
-;; should be removed and replaced with cfeat/default-features when 2.8
-;; version is released
-
-(def default-features
-  #{"fdata/shape-data-type"
-    "styles/v2"
-    "layout/grid"
-    "components/v2"
-    "plugins/runtime"
-    "design-tokens/v1"
-    "variants/v1"})
-
-;; WORKAROUND: the same as features
-(def available-migrations
-  (-> fmig/available-migrations
-      (disj "003-convert-path-content")
-      (disj "0002-clean-shape-interactions")
-      (disj "0003-fix-root-shape")))
-
 (defn add-file
   [state params]
   (let [params (-> params
-                   (assoc :features default-features)
-                   (assoc :migrations available-migrations)
+                   (assoc :features cfeat/default-features)
+                   (assoc :migrations fmig/available-migrations)
                    (update :id default-uuid))
         file   (types.file/make-file params :create-page false)]
     (-> state

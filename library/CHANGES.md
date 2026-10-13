@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## Unreleased
+
+- Generate files with the features and migrations of the Penpot version
+  the library is built with, instead of a fixed set from Penpot 2.7. The
+  files need that Penpot version or a later one to open.
+
+
 ## 1.2.0
 
 - Update deps and build it with penpot 2.18.3
