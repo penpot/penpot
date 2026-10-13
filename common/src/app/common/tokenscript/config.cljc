@@ -5,15 +5,15 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.tokenscript.config
-  "Interpreter configuration: an immutable map holding the schema
-  registries and language options.
+  "Interpreter configuration: an immutable `Config` record holding the
+  schema registries and language options.
 
-    {:language-options {:max-iterations 1000}
-     :colors    color registry
-     :units     unit registry
-     :functions function registry
-     :tokens    token type registry
-     :inline-constants {name value}}
+    language-options  {:max-iterations 1000}
+    colors            color registry
+    units             unit registry
+    functions         function registry
+    tokens            token type registry
+    inline-constants  {name value}
 
   Build one with `make-config` and extend it with `register-schemas`."
   (:require
@@ -30,22 +30,20 @@
 (def default-language-options
   {:max-iterations 1000})
 
+(defrecord Config [language-options colors units functions tokens inline-constants])
+
 (defn make-config
   "Creates a config with the default color (hex) and unit registries.
   Options: `:language-options`, and registry overrides `:colors`,
   `:units`, `:functions`, `:tokens`."
   ([] (make-config nil))
   ([{:keys [language-options colors units functions tokens]}]
-   {:language-options (merge default-language-options language-options)
-    :colors (or colors (colors/default-registry))
-    :units (or units (units/default-registry))
-    :functions (or functions (functions/empty-registry))
-    :tokens (or tokens (token-types/empty-registry))
-    :inline-constants {}}))
-
-(defn config?
-  [v]
-  (and (map? v) (contains? v :colors) (contains? v :units)))
+   (->Config (merge default-language-options language-options)
+             (or colors (colors/default-registry))
+             (or units (units/default-registry))
+             (or functions (functions/empty-registry))
+             (or tokens (token-types/empty-registry))
+             {})))
 
 (defn register-schema
   "Registers one schema (`{:uri .. :schema ..}`) by its `:type`:
