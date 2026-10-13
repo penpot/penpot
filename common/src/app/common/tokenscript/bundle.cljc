@@ -8,8 +8,8 @@
   "Tokenscript schemas shipped with Penpot: the color spaces,
   functions and constants in common/resources/tokenscript/schemas.
 
-  GENERATED FILE by `clojure -M:dev -m tokenscript-bundle`
-  (common/dev/tokenscript_bundle.clj); do not edit by hand.")
+  GENERATED FILE by `clojure -M:dev -m app.common.tokenscript.bundler`,
+  do not edit by hand.")
 
 (def schemas
   [{:uri "/api/v1/core/css-color/0/"

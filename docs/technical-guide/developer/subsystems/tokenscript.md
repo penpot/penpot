@@ -127,14 +127,14 @@ unchanged, so they can be compared with that package; the `css-*`
 functions are Penpot's.
 
 `app.common.tokenscript.bundle` is generated from these files with the
-bundler in `common/dev/tokenscript_bundle.clj`, which inlines the
+bundler `app.common.tokenscript.bundler`, which inlines the
 scripts and fails when a script does not parse or a schema references
 one that is not bundled:
 
 ```bash
 cd common
-clojure -M:dev -m tokenscript-bundle           # regenerate the bundle
-clojure -M:dev -m tokenscript-bundle --check   # fail when it is stale
+clojure -M:dev -m app.common.tokenscript.bundler          # regenerate
+clojure -M:dev -m app.common.tokenscript.bundler --check  # fail when stale
 ```
 
 `common-tests.tokenscript.bundle-test` also fails when the bundle is

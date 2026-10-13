@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns tokenscript-bundle
+(ns app.common.tokenscript.bundler
   "Builds `app.common.tokenscript.bundle` from the schema sources in
   `resources/tokenscript/schemas`:
 
-    clojure -M:dev -m tokenscript-bundle           ; writes the bundle
-    clojure -M:dev -m tokenscript-bundle --check   ; fails when it is stale
+    clojure -M:dev -m app.common.tokenscript.bundler           ; writes the bundle
+    clojure -M:dev -m app.common.tokenscript.bundler --check   ; fails when it is stale
 
   Every schema is a directory with a `schema.json` and the tokenscript
   files it references (`\"script\": \"./initializer.tokenscript\"`):
@@ -175,8 +175,8 @@
   \"Tokenscript schemas shipped with Penpot: the color spaces,
   functions and constants in common/resources/tokenscript/schemas.
 
-  GENERATED FILE by `clojure -M:dev -m tokenscript-bundle`
-  (common/dev/tokenscript_bundle.clj); do not edit by hand.\")
+  GENERATED FILE by `clojure -M:dev -m app.common.tokenscript.bundler`,
+  do not edit by hand.\")
 
 (def schemas
   ")
@@ -199,7 +199,7 @@
     (if (some #{"--check"} args)
       (if (= source (slurp bundle-file))
         (println "tokenscript bundle is up to date")
-        (do (println (str bundle-file " is stale, run: clojure -M:dev -m tokenscript-bundle"))
+        (do (println (str bundle-file " is stale, run: clojure -M:dev -m app.common.tokenscript.bundler"))
             (System/exit 1)))
       (do (spit bundle-file source)
           (println "wrote" bundle-file)))

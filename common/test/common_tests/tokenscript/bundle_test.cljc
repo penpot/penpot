@@ -6,7 +6,7 @@
 
 (ns common-tests.tokenscript.bundle-test
   (:require
-   #?(:clj [tokenscript-bundle :as bundler])
+   #?(:clj [app.common.tokenscript.bundler :as bundler])
    [app.common.tokenscript :as tsc]
    [app.common.tokenscript.colors :as colors]
    [app.common.tokenscript.config :as config]
@@ -19,7 +19,7 @@
    (t/deftest bundle-up-to-date-test
      (t/is (= (bundler/bundle-source)
               (slurp bundler/bundle-file))
-           "bundle.cljc is stale, run: clojure -M:dev -m tokenscript-bundle")))
+           "bundle.cljc is stale, run: clojure -M:dev -m app.common.tokenscript.bundler")))
 
 (t/deftest bundled-uris-test
   (t/testing "bundled schemas are identified by path URIs"
