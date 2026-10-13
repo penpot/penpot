@@ -195,7 +195,7 @@ Two pure runners (no store, JVM + CLJS):
   (`op-ready`: the token shows on the shape) that must hold before it awaits the pending work.
 - `n/paste-to-root target`: the clipboard's copy (shape-refs of nested heads advanced, the skipped ref
   chain's touched merged) and paste at the root; the interpreter pastes `thp/simulate-copy-shape`'s data.
-  The node, that helper and `copy-selected` all advance through `cll/advance-copied-objects`. A duplicate inside a copy is
+  The node, that helper and `copy-selected` all advance through `cld/advance-copied-objects` (`app.common.logic.duplicate`). A duplicate inside a copy is
   refused by `ctk/allow-duplicate?`, and an alt-duplication with no move makes the next edit join
   its undo group (it expects the drag's move), so neither models a move out of a main.
 - `n/undo-before-sync` (frontend-only) emits an edit and `dwu/undo` in one step, so the undo

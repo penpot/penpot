@@ -17,6 +17,8 @@
    [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.duplicate :as cld]
+   [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
@@ -804,7 +806,7 @@
     (let [the-file (tm/file situation)
           shape-id (tm/target-shape-id situation target)
           page     (thf/current-page the-file)
-          changes  (cll/generate-detach-component (pcb/empty-changes)
+          changes  (cli/generate-detach-component (pcb/empty-changes)
                                                   shape-id
                                                   (:data the-file)
                                                   (:id page)
@@ -935,7 +937,7 @@
           component-id (deleted-component-id situation deletion)
           component    (get-in data [:components component-id])
           page         (get-in data [:pages-index (:main-instance-page component)])
-          changes      (cll/generate-restore-component (pcb/empty-changes)
+          changes      (cli/generate-restore-component (pcb/empty-changes)
                                                        data
                                                        component-id
                                                        (:id the-file)
@@ -996,14 +998,14 @@
                      (throw (ex-info "The shape cannot be duplicated (inside a copy)"
                                      {:type ::duplicate-refused :target target})))
           changes  (-> (pcb/empty-changes nil)
-                       (cll/generate-duplicate-changes objects
+                       (cld/generate-duplicate-changes objects
                                                        page
                                                        #{shape-id}
                                                        (gpt/point 0 0)
                                                        (libraries situation)
                                                        (:data the-file)
                                                        (:id the-file))
-                       (cll/generate-duplicate-changes-update-indices objects #{shape-id}))
+                       (cld/generate-duplicate-changes-update-indices objects #{shape-id}))
           file'    (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
@@ -1035,7 +1037,7 @@
 (defn- copied-objects
   "The subtree of `id` as the clipboard copies it."
   [file page libraries id]
-  (cll/advance-copied-objects file
+  (cld/advance-copied-objects file
                               page
                               libraries
                               (into {} (map (juxt :id identity))
@@ -1060,7 +1062,7 @@
           copied    (-> (copied-objects the-file page libs id)
                         (update id assoc :parent-id uuid/zero :frame-id uuid/zero))
           changes   (-> (pcb/empty-changes nil (:id page))
-                        (cll/generate-duplicate-changes (merge (:objects page) copied)
+                        (cld/generate-duplicate-changes (merge (:objects page) copied)
                                                         page
                                                         #{id}
                                                         (gpt/point 0 0)
