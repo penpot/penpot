@@ -47,10 +47,10 @@ dictionary of the tokens directly below it.
 | Namespace | Role |
 |---|---|
 | `app.common.tokenscript` | Resolves token sets with the bundled schemas: `default-config`, `build`, `process-tokens`, `color->hex`. Anything else is used from the namespaces below. |
-| `app.common.tokenscript.lexer`, `.parser`, `.ast` | Source text to AST. The lexer is a pure function over a state map; the parser is a recursive descent parser. |
+| `app.common.tokenscript.lexer`, `.parser`, `.ast` | Source text to AST. The lexer is a pure function over a `LexerState` record; the parser is a recursive descent parser. |
 | `app.common.tokenscript.interpreter`, `.operations` | Tree walking evaluator. Also executes the scripts registered in the config (color initializers and conversions, unit conversions, dynamic functions). |
 | `app.common.tokenscript.symbols` | Runtime values. Scalars are immutable records; lists, dictionaries and tokens keep their content in a volatile because the language mutates them in place (`list.append(x)`). |
-| `app.common.tokenscript.config`, `.colors`, `.units`, `.functions`, `.token-types`, `.registry` | Schema registries. A config is an immutable map; schemas are registered with `config/register-schemas`. Scripts are parsed once at registration. |
+| `app.common.tokenscript.config`, `.colors`, `.units`, `.functions`, `.token-types`, `.registry` | Schema registries. A config is an immutable `Config` record holding one registry record per kind, each implementing `registry/ISchemaRegistry`; schemas are registered with `config/register-schemas`. Scripts are parsed once at registration. |
 | `app.common.tokenscript.processor`, `.token-data` | Token set resolution: dependency graph, structured tokens, group references, cycle detection, incremental updates. |
 | `app.common.tokenscript.validation` | Validation of token values against token type schemas. |
 | `app.common.tokenscript.errors` | Error codes and messages. Errors are `ex-info` with a data map; the processor stores the same maps as issues. |
@@ -87,8 +87,9 @@ determine the result:
 - Parsed token values, keyed by the value text
   (`processor/cached-parse`, up to 50 000 entries). Every build re-reads
   all tokens, but on a set or theme switch most values were parsed before.
-- URI resolution and conversion paths between schemas, per registry
-  instance (`registry/memoized`). Without it every color conversion ran a
+- URI resolution and conversion paths between schemas, in the `cache`
+  field of each registry (`registry/memoized`), replaced whenever a spec
+  or conversion is added. Without it every color conversion ran a
   breadth first search over the schema graph.
 - Parsed schema URIs (`schema-uri/parse-uri`).
 - The evaluated inline constants, per config.
