@@ -21,27 +21,22 @@
   [k]
   (if (keyword? k) (name k) (str k)))
 
-(defn- lookup
-  "Value of the first present key among `ks` (keyword or string forms)."
-  [m ks]
-  (some (fn [k]
-          (let [entry (or (find m (keyword k)) (find m k) (find m (str "$" k)) (find m (keyword (str "$" k))))]
-            (when entry (val entry))))
-        ks))
+(def ^:private field-keys
+  "Keys a token data field may have in the input, in order of precedence:
+  `:value`, `\"value\"`, `\"$value\"` and `:$value` (DTCG)."
+  (into {}
+        (map (fn [k] [k [(keyword k) k (str "$" k) (keyword (str "$" k))]]))
+        ["value" "type" "metadata" "unit"]))
+
+(defn- field
+  "Value of the token data field `k` in `m`, see `field-keys`."
+  [m k]
+  (some-> (some #(find m %) (field-keys k)) val))
 
 (defn token-data?
   [v]
   (and (map? v)
-       (some #(or (contains? v %) (contains? v (keyword %))) ["value" "$value" :value :$value])
-       true))
-
-(defn- lookup-key
-  "Like `(lookup m [k])`, trying the keyword `kw` first without building
-  it."
-  [m kw k]
-  (if-let [entry (find m kw)]
-    (val entry)
-    (lookup m [k])))
+       (boolean (some #(contains? v %) (field-keys "value")))))
 
 (defn- normalized?
   "Whether `v` is already token data as `normalize` returns it."
@@ -57,20 +52,13 @@
   "Coerces any accepted token input into token data."
   [v]
   (cond
-    (normalized? v) v
-
-    ;; Fast path for `{:value .. :type ..}` maps with other keys
-    (and (map? v) (contains? v :value))
-    (let [type (lookup-key v :type "type")
-          metadata (lookup-key v :metadata "metadata")]
-      (cond-> {:value (get v :value)}
-        (some? type) (assoc :type (key-name type))
-        (some? metadata) (assoc :metadata metadata)))
+    (normalized? v)
+    v
 
     (token-data? v)
-    (let [type (lookup v ["type"])
-          metadata (lookup v ["metadata"])]
-      (cond-> {:value (lookup v ["value"])}
+    (let [type (field v "type")
+          metadata (field v "metadata")]
+      (cond-> {:value (field v "value")}
         (some? type) (assoc :type (key-name type))
         (some? metadata) (assoc :metadata metadata)))
 
@@ -128,9 +116,9 @@
   {:predicate (fn [v]
                 (and (map? v)
                      (= 2 (count v))
-                     (number? (lookup v ["value"]))
-                     (string? (lookup v ["unit"]))))
-   :->symbol (fn [v] (sym/number-with-unit (lookup v ["value"]) (lookup v ["unit"])))})
+                     (number? (field v "value"))
+                     (string? (field v "unit"))))
+   :->symbol (fn [v] (sym/number-with-unit (field v "value") (field v "unit")))})
 
 (def default-object-parsers [])
 
