@@ -51,14 +51,18 @@
                                              {::db/remove-deleted false}))))
         (let [events (cascade-events audit-mock)]
           (t/is (= 1 (count events)))
+          (t/is (= "action" (:type (first events))))
           (let [props (:props (first events))]
             (t/is (= "team" (name (:object props))))
             (t/is (= (:id team) (:id props)))
             (t/is (= deleted-at (:deleted-at props)))
-            (t/is (= #{(:id team)} (set (:team-ids props))))
+            (t/is (not (contains? props :team-ids)))
+            (t/is (not (contains? props :project-ids)))
+            (t/is (not (contains? props :file-ids)))
+            (t/is (= #{(:id team)} (set (get-in props [:cascade :team-ids]))))
             (t/is (= #{(:default-project-id team) (:id project)}
-                     (set (:project-ids props))))
-            (t/is (= #{(:id file)} (set (:file-ids props))))))))))
+                     (set (get-in props [:cascade :project-ids]))))
+            (t/is (= #{(:id file)} (set (get-in props [:cascade :file-ids]))))))))))
 
 (t/deftest delete-object-file-cascade-emits-event
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
@@ -75,12 +79,13 @@
                                       :deleted-at deleted-at})
         (let [events (cascade-events audit-mock)]
           (t/is (= 1 (count events)))
+          (t/is (= "action" (:type (first events))))
           (let [props (:props (first events))]
             (t/is (= "file" (name (:object props))))
             (t/is (= (:id file) (:id props)))
-            (t/is (= [] (:team-ids props)))
-            (t/is (= [] (:project-ids props)))
-            (t/is (= [(:id file)] (:file-ids props)))))))))
+            (t/is (= [] (get-in props [:cascade :team-ids])))
+            (t/is (= [] (get-in props [:cascade :project-ids])))
+            (t/is (= [(:id file)] (get-in props [:cascade :file-ids])))))))))
 
 (t/deftest delete-object-missing-row-emits-nothing
   ;; A cascade over an unknown id marks nothing, so there is nothing to report.

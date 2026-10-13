@@ -9,7 +9,6 @@
   (:require
    [app.common.logging :as l]
    [app.common.time :as ct]
-   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.loggers.audit :as audit]
@@ -193,14 +192,13 @@
                     (binding [*cascade* (atom {:teams [] :projects [] :files []})]
                       (delete-object cfg props)
                       (let [{:keys [teams projects files]} @*cascade*]
-                        (when (and (contains? cf/flags :audit-log)
-                                   (or (seq teams) (seq projects) (seq files)))
+                        (when (or (seq teams) (seq projects) (seq files))
                           (audit/submit cfg {:name "delete-object-with-cascade"
-                                             :type "command"
+                                             :type "action"
                                              :props {:object (:object props)
                                                      :id (:id props)
                                                      :deleted-at (:deleted-at props)
-                                                     :team-ids teams
-                                                     :project-ids projects
-                                                     :file-ids files}
+                                                     :cascade {:team-ids teams
+                                                               :project-ids projects
+                                                               :file-ids files}}
                                              :context {:triggered-by "delete-object"}})))))))))
