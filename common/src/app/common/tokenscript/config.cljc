@@ -18,7 +18,6 @@
   Build one with `make-config` and extend it with `register-schemas`."
   (:require
    [app.common.tokenscript.colors :as colors]
-   [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.functions :as functions]
    [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.symbols :as sym]
@@ -69,29 +68,17 @@
   error messages."
   ["number" "string" "boolean" "numberwithunit" "color" "null" "list" "dictionary" "token"])
 
-(defn type-defined?
+(defn empty-of-type
+  "Empty (null) value of the declared type `base-type.sub-type`, e.g.
+  `Color.RGB` -> a null RGB color. Nil when the type is not defined."
   [config base-type sub-type]
   (let [base (str/lower-case base-type)]
     (cond
-      (= base "color") (if sub-type
-                         (some? (colors/spec-by-type (:colors config) sub-type))
-                         true)
-      (some? sub-type) false
-      :else (contains? sym/empty-constructors base))))
-
-(defn get-type
-  "Empty symbol for a declared type, e.g. `Color.RGB` -> a null RGB color."
-  [config base-type sub-type]
-  (let [base (str/lower-case base-type)]
-    (if (= base "color")
-      (if sub-type
-        (do
-          (when-not (colors/spec-by-type (:colors config) sub-type)
-            (err/raise :config/no-spec-found {:data {:spec-name sub-type}}))
-          (sym/color nil sub-type))
-        (sym/color nil))
-      (or (sym/empty-of-type base)
-          (err/raise :config/no-type-found {:data {:type-name base-type}})))))
+      (= base "color") (cond
+                         (nil? sub-type) (sym/color nil)
+                         (colors/spec-by-type (:colors config) sub-type) (sym/color nil sub-type))
+      (some? sub-type) nil
+      :else (sym/empty-of-type base))))
 
 (defn max-iterations
   [config]

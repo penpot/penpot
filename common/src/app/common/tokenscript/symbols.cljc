@@ -97,7 +97,8 @@
 (defn type-equals?
   "Case insensitive type name comparison."
   [a b]
-  (= (some-> a str/lower-case) (some-> b str/lower-case)))
+  (or (= a b)
+      (= (some-> a str/lower-case) (some-> b str/lower-case))))
 
 (defn qualified-type-name
   "`Color.Hex` for base `color` and sub type `hex`."
@@ -1073,7 +1074,7 @@
 
 (defn- method-definition
   [s method-name]
-  (get (get method-tables (type-name s)) (str/lower-case method-name)))
+  (u/get-lower-case (get method-tables (type-name s)) method-name))
 
 (defn- accepts?
   [{:keys [args]} n]

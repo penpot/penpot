@@ -236,8 +236,6 @@
      (str "Error executing dynamic function '" (or function-name "unknown") "'" (when error (str ": " error))))
 
    ;; Config
-   :config/no-spec-found (fn [{:keys [spec-name]}] (str "No spec found for " spec-name))
-   :config/no-type-found (fn [{:keys [type-name]}] (str "No type found for " type-name))
    :config/invalid-specification
    (fn [{:keys [kind uri error]}] (str "Invalid " kind " specification for " uri ": " error))
 

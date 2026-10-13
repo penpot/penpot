@@ -27,6 +27,7 @@
    [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.units :as units]
+   [app.common.tokenscript.util :as u]
    [clojure.string :as str]))
 
 ;; Context --------------------------------------------------------------------
@@ -54,7 +55,7 @@
 
 (defn- lookup-var
   [{:keys [table]} name]
-  (get @table (str/lower-case name)))
+  (u/get-lower-case @table name))
 
 (defn- var-defined?
   [ctx name]
@@ -492,21 +493,20 @@
     (when (var-defined? ctx name)
       (err/raise :interpreter/variable-already-defined {:token token :data {:name name}}))
     (let [base-type (:name (:base-type type-decl))
-          sub-type (:name (first (:sub-types type-decl)))]
-      (when-not (config/type-defined? config base-type sub-type)
-        (err/raise :interpreter/invalid-variable-type
+          sub-type (:name (first (:sub-types type-decl)))
+          constructor (or (config/empty-of-type config base-type sub-type)
+                          (err/raise :interpreter/invalid-variable-type
+                                     {:token token
+                                      :data {:type-name (sym/qualified-type-name base-type sub-type)
+                                             :valid-types (str/join ", " config/valid-type-names)}}))
+          value (if assignment-expr (eval-node ctx assignment-expr) constructor)
+          coerced (coerce-value constructor value)]
+      (when (nil? coerced)
+        (err/raise :interpreter/invalid-value-for-variable
                    {:token token
-                    :data {:type-name (sym/qualified-type-name base-type sub-type)
-                           :valid-types (str/join ", " config/valid-type-names)}}))
-      (let [constructor (config/get-type config base-type sub-type)
-            value (if assignment-expr (eval-node ctx assignment-expr) constructor)
-            coerced (coerce-value constructor value)]
-        (when (nil? coerced)
-          (err/raise :interpreter/invalid-value-for-variable
-                     {:token token
-                      :data {:value (sym/to-string value config) :type base-type :name name}}))
-        (set-var ctx name coerced)
-        nil))))
+                    :data {:value (sym/to-string value config) :type base-type :name name}}))
+      (set-var ctx name coerced)
+      nil)))
 
 (defn- eval-reassign
   [ctx {:keys [identifiers value] :as node}]

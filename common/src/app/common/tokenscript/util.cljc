@@ -53,6 +53,15 @@
              (or (== cp 160) (== cp 5760) (<= 8192 cp 8202) (== cp 8232) (== cp 8233)
                  (== cp 8239) (== cp 8287) (== cp 12288) (== cp 65279))))))
 
+(defn get-lower-case
+  "`(get m (str/lower-case k))` for maps keyed by lower case names. Names
+  are mostly written in lower case already, so they are tried as is
+  first: lower-casing runs on every variable and method lookup."
+  [m k]
+  (if-some [v (get m k)]
+    v
+    (get m (str/lower-case k))))
+
 (defn capitalize
   "Upper-cases the first char and lower-cases the rest, like the TS
   `capitalize` helper (differs from `str/capitalize` for empty input)."

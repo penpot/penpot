@@ -39,15 +39,18 @@
   common unit with `convert` (a fn of a vector of operands). Conversion
   failures fall back to the raw values."
   [f a b convert]
-  (let [converted (when convert
-                    (try
-                      (let [c (convert [a b])]
-                        (when (= 2 (count c)) c))
-                      (catch #?(:clj Throwable :cljs :default) _ nil)))
-        [a b] (or converted [a b])
-        [va ua] (decompose a)
-        [vb ub] (decompose b)]
-    (recompose (f va vb) [ua ub])))
+  (if (and (sym/number? a) (sym/number? b))
+    ;; Plain numbers, most of the arithmetic of schema scripts
+    (sym/number (f (:value a) (:value b)))
+    (let [converted (when convert
+                      (try
+                        (let [c (convert [a b])]
+                          (when (= 2 (count c)) c))
+                        (catch #?(:clj Throwable :cljs :default) _ nil)))
+          [a b] (or converted [a b])
+          [va ua] (decompose a)
+          [vb ub] (decompose b)]
+      (recompose (f va vb) [ua ub]))))
 
 (defn- apply-power
   [f a b]
