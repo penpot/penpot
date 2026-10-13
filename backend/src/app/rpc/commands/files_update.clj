@@ -40,12 +40,8 @@
    [clojure.set :as set]))
 
 (declare ^:private get-lagged-changes)
-(declare ^:private commit-key)
-(declare ^:private claim-commit!)
-(declare ^:private release-commit!)
 (declare ^:private record-commit!)
 (declare ^:private get-repeated-commit-result)
-(declare ^:private update-file-tx)
 (declare ^:private send-notifications!)
 (declare ^:private update-file)
 (declare ^:private update-file*)
@@ -53,23 +49,13 @@
 (declare ^:private take-snapshot?)
 (declare ^:private invalidate-caches!)
 
-(def ^:private commit-retention
-  "How long a commit id is remembered. A client stops retrying a save at this
-  same age, so a retry never outlives the record that makes it safe to send."
-  (ct/duration {:hours 24}))
-
-(def ^:private commit-pending-ttl
-  "How long a save in progress holds its commit id. Bounds how long a repeat
-  is turned away when the save never recorded its outcome."
-  (ct/duration {:minutes 1}))
-
-(def ^:private commit-await-ms
-  "How long a repeat waits for the outcome of the save holding its commit id."
-  2000)
-
-(def ^:private commit-poll-ms 50)
-
-(def ^:private pending-commit "pending")
+(def commit-retention
+  "How long a commit record is kept, so a repeated save is answered
+  instead of applied twice. A client keeps sending a failed save for 24h
+  from its first failure (`retry-give-up-ms` in the frontend persistence),
+  and that failure comes after the save started, so the record must last
+  longer than the client's window. `objects-gc` deletes older records."
+  (ct/duration {:hours 48}))
 
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file!)
@@ -165,42 +151,21 @@
    ::sm/params schema:update-file
    ::sm/result schema:update-file-result
    ::doc/module :files
-   ::doc/added "1.17"}
-  [cfg {:keys [id commit-id] :as params}]
-  ;; A save whose answer never reached the client is sent again with the
-  ;; same commit id; it must not be applied twice.
-  (let [key      (some->> commit-id (commit-key id))
-        claimed? (volatile! false)
-        result   (try
-                   (db/tx-run! cfg update-file-tx params key claimed?)
-                   (catch Throwable cause
-                     (when @claimed?
-                       (release-commit! cfg key))
-                     (throw cause)))]
-    ;; Recorded once the transaction commits, so the record never vouches
-    ;; for changes that were rolled back.
-    (when @claimed?
-      (record-commit! cfg key (:revn result)))
-    result))
-
-(defn- update-file-tx
-  "Applies a save under the file lock. A save repeating a recorded commit id
-  is answered without applying it again; otherwise `claimed?` is set once
-  the commit id is held for this save."
+   ::doc/added "1.17"
+   ::db/transaction true}
   [{:keys [::mtx/metrics ::db/conn] :as cfg}
-   {:keys [::rpc/profile-id id changes changes-with-metadata] :as params}
-   key claimed?]
+   {:keys [::rpc/profile-id id commit-id changes changes-with-metadata] :as params}]
 
   (files/check-edition-permissions! conn profile-id id)
   (db/xact-lock! conn id)
 
-  (if-let [result (some->> key (get-repeated-commit-result cfg params))]
+  ;; A save whose answer never reached the client is sent again with the
+  ;; same commit id; it must not be applied twice. The record of a commit
+  ;; is written in this same transaction, so it exists exactly when the
+  ;; changes do, and the file lock makes a repeat wait for it.
+  (if-let [result (some->> commit-id (get-repeated-commit-result cfg params))]
     result
-    (let [_        (when key
-                     (claim-commit! cfg key)
-                     (vreset! claimed? true))
-
-          file     (get-file cfg id)
+    (let [file     (get-file cfg id)
           team     (teams/get-team conn
                                    :profile-id profile-id
                                    :team-id (:team-id file))
@@ -261,9 +226,12 @@
       (binding [l/*context* (some-> (meta params)
                                     (get :app.http/request)
                                     (errors/request->context))]
-        (-> (update-file* cfg params)
-            (rph/with-defer #(let [elapsed (tpoint)]
-                               (l/trace :hint "update-file" :time (ct/format-duration elapsed)))))))))
+        (let [result (update-file* cfg params)]
+          (when commit-id
+            (record-commit! conn id commit-id (:revn result)))
+          (rph/with-defer result
+            #(let [elapsed (tpoint)]
+               (l/trace :hint "update-file" :time (ct/format-duration elapsed)))))))))
 
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
@@ -511,82 +479,31 @@
        (mapv (fn [row]
                (update row :changes blob/decode)))))
 
-(defn- commit-key
-  "Redis key of a commit id. A commit id is only unique within one file, and
-  the tenant keeps servers sharing a redis instance apart."
-  [file-id commit-id]
-  (str "penpot.file-commit." (cf/get :tenant) "." file-id "." commit-id))
-
-(defn- with-commit-store
-  "Runs `f` with a redis connection. Without redis the save goes ahead
-  unrecorded, which only loses the protection against repeats."
-  [cfg hint key f]
-  (try
-    (rds/run! cfg (fn [{:keys [::rds/conn]}] (f conn)))
-    (catch Exception cause
-      (l/warn :hint hint :key key :cause cause)
-      nil)))
-
-(defn- claim-commit!
-  "Holds the commit id for the save about to run. Raises when another save
-  already holds it."
-  [cfg key]
-  (let [result (with-commit-store cfg "unable to claim commit id" key
-                 (fn [conn]
-                   (or (rds/set conn key pending-commit
-                                {:nx true :ex commit-pending-ttl})
-                       ::held)))]
-    (when (= ::held result)
-      (ex/raise :type :validation
-                :code :commit-in-progress
-                :hint "Another save with this commit id is in progress."))))
-
-(defn- release-commit!
-  [cfg key]
-  (with-commit-store cfg "unable to release commit id" key
-    (fn [conn] (rds/del conn key))))
-
 (defn- record-commit!
-  "Remembers the revision a save answered with, for its repeats to answer."
-  [cfg key revn]
-  (with-commit-store cfg "unable to record commit id" key
-    (fn [conn] (rds/set conn key (str revn) {:ex commit-retention}))))
+  "Remembers the revision a save answered with, for its repeats to answer.
+  Runs in the transaction of the save. `objects-gc` deletes records older
+  than `commit-retention`."
+  [conn file-id commit-id revn]
+  (db/insert! conn :file-commit
+              {:file-id file-id
+               :commit-id commit-id
+               :revn revn}
+              {::db/return-keys false}))
 
-(defn- await-commit-revn
-  "The revision recorded for a commit id, or nil when no save holds it.
-
-  This runs under the file lock, so a commit id still pending belongs to a
-  save that has just committed or failed and is about to say so; its outcome
-  is awaited for a moment. Raises when it does not come in time."
-  [cfg key]
-  (loop [waited 0]
-    (let [value (with-commit-store cfg "unable to read commit id" key
-                  (fn [conn] (rds/get conn key)))]
-      (cond
-        (nil? value)
-        nil
-
-        (not= pending-commit value)
-        (parse-long value)
-
-        (< waited commit-await-ms)
-        (do (Thread/sleep ^long commit-poll-ms)
-            (recur (+ waited commit-poll-ms)))
-
-        :else
-        (ex/raise :type :validation
-                  :code :commit-in-progress
-                  :hint "Another save with this commit id is in progress.")))))
-
-(def ^:private sql:file-for-repeated-commit
-  "select f.vern,
+(def ^:private sql:repeated-commit
+  "select c.revn as commit_revn,
+          f.revn,
+          f.vern,
           f.name,
           f.features,
           f.project_id,
           p.team_id
-     from file as f
+     from file_commit as c
+    inner join file as f on (f.id = c.file_id)
     inner join project as p on (p.id = f.project_id)
-    where f.id = ?")
+    where c.file_id = ?
+      and c.commit_id = ?
+      and f.deleted_at is null")
 
 (defn- get-repeated-commit-result
   "Answers a save this server already applied, under the same commit id,
@@ -595,23 +512,22 @@
   Raises a version conflict when the file has been rolled back since: the
   record outlives the change it made, and answering would make the client
   discard an edit the file does not carry."
-  [{:keys [::db/conn] :as cfg} {:keys [id vern]} key]
-  (when-let [revn (await-commit-revn cfg key)]
-    (let [row (db/exec-one! conn [sql:file-for-repeated-commit id])]
-      (when (not= vern (:vern row))
-        (ex/raise :type :validation
-                  :code :vern-conflict
-                  :hint "A different version has been restored for the file."
-                  :context {:incoming-vern vern
-                            :stored-vern (:vern row)}))
+  [{:keys [::db/conn]} {:keys [id vern revn]} commit-id]
+  (when-let [row (db/exec-one! conn [sql:repeated-commit id commit-id])]
+    (when (not= vern (:vern row))
+      (ex/raise :type :validation
+                :code :vern-conflict
+                :hint "A different version has been restored for the file."
+                :context {:incoming-revn revn
+                          :stored-revn (:revn row)}))
 
-      (with-meta {:revn revn}
-        {::audit/replace-props
-         {:id         id
-          :name       (:name row)
-          :features   (db/decode-pgarray (:features row) #{})
-          :project-id (:project-id row)
-          :team-id    (:team-id row)}}))))
+    (with-meta {:revn (:commit-revn row)}
+      {::audit/replace-props
+       {:id         id
+        :name       (:name row)
+        :features   (db/decode-pgarray (:features row) #{})
+        :project-id (:project-id row)
+        :team-id    (:team-id row)}})))
 
 (defn- send-notifications!
   [cfg {:keys [team changes session-id] :as params} file]

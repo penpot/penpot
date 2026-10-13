@@ -7911,6 +7911,34 @@ msgstr "UPDATES"
 msgid "workspace.notification-pill.detail"
 msgstr "Details"
 
+#: src/app/main/data/persistence.cljs
+msgid "workspace.outbox.copy-name"
+msgstr "%s (recovered changes)"
+
+#: src/app/main/data/persistence.cljs
+msgid "workspace.outbox.discard"
+msgstr "Discard"
+
+#: src/app/main/data/persistence.cljs
+msgid "workspace.outbox.recovered"
+msgstr "Recovered %s unsaved changes from a previous session."
+
+#: src/app/main/data/persistence.cljs
+msgid "workspace.outbox.restore-as-copy"
+msgstr "Restore as a copy"
+
+#: src/app/main/data/persistence.cljs
+msgid "workspace.outbox.restore-failed"
+msgstr "The unsaved changes could not be restored. They are still kept and will be offered again next time you open this file."
+
+#: src/app/main/data/persistence.cljs
+msgid "workspace.outbox.restore-offer"
+msgstr "%s unsaved changes from a previous session can no longer be added to this file safely. Restore them in a copy of the file?"
+
+#: src/app/main/data/persistence.cljs
+msgid "workspace.outbox.restored-copy"
+msgstr "Unsaved changes restored in \"%s\"."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "Click the + button to add interactions."

@@ -16,13 +16,16 @@
    [app.main.data.common :as-alias dc]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence.outbox :as obx]
    [app.main.data.workspace :as-alias dw]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]))
+   [clojure.walk :as walk]
+   [potok.v2.core :as ptk]
+   [promesa.core :as p]))
 
 (declare ^:private run-persistence-task)
 (declare ^:private persist-commit)
@@ -43,8 +46,9 @@
   30000)
 
 (def retry-give-up-ms
-  "How long a failing queue keeps being sent. Matches how long the backend
-  remembers a commit id."
+  "How long a failing queue keeps being sent. Must stay shorter than how
+  long the backend keeps a commit record (`commit-retention` in
+  `app.rpc.commands.files-update`), or a resend could be applied twice."
   (* 24 60 60 1000))
 
 (def ^:private saving-stall-timeout-ms (* 5 60 1000))
@@ -127,10 +131,8 @@
                     (dissoc :run-id :last-progress-at :stall-reported))))))))
 
 (def ^:private transient-codes
-  "Save failures a later attempt can get past: an unusable save response, and
-  a repeat the backend turned away while the save it repeats was running."
-  #{:invalid-save-response
-    :commit-in-progress})
+  "Save failures a later attempt can get past: an unusable save response."
+  #{:invalid-save-response})
 
 (defn transient-error?
   "True when a save failure is worth retrying with backoff: a transient
@@ -165,6 +167,16 @@
   (let [since (:failing-since pstate)]
     (or (nil? since)
         (< (- (inst-ms (ct/now)) since) retry-give-up-ms))))
+
+(defn- resumable-failure?
+  "True when a new edit may send a failed queue again: the failure was
+  transient, or edit permission was lost and is back. A save the backend
+  rejected outright would only fail the same way again."
+  [state]
+  (let [error (dm/get-in state [:persistence :error])]
+    (or (transient-error? error)
+        (and (= :save-permission-denied (:code error))
+             (dm/get-in state [:permissions :can-edit])))))
 
 (defn- report-stalled-persistence
   [now]
@@ -237,7 +249,15 @@
                                        (update :index dissoc commit-id)
                                        (assoc :last-progress-at (inst-ms (ct/now)))
                                        (dissoc :stall-reported :failing-since :recovering
-                                               :attempts :retry-token :retry-for)))))))
+                                               :attempts :retry-token :retry-for)))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (obx/delete! [commit-id]))))
+
+(defn- profile-id
+  [state]
+  (dm/get-in state [:profile :id]))
 
 (defn- append-commit
   "Event used internally to append the current change to the
@@ -256,15 +276,25 @@
                       (update :queue queue-conj id)
                       (update :index assoc id commit)))))
 
+      ptk/EffectEvent
+      (effect [_ state _]
+        ;; Durable copy of the queued commit, dropped by `discard-commit`
+        ;; once the backend acknowledges it.
+        (when-let [profile-id (profile-id state)]
+          (obx/put! (obx/commit->row (update commit :created-at d/nilv (ct/now))
+                                     profile-id
+                                     (:session-id state)))))
+
       ptk/WatchEvent
       (watch [_ state _]
         (let [pstate (:persistence state)]
           (cond
             ;; A new edit restarts a failed queue from its head, while the
             ;; backend still recognizes the head's commit id and so cannot
-            ;; apply it twice.
+            ;; apply it twice, unless the failure would only repeat.
             (= :error (:status pstate))
-            (when (retry-window-open? pstate)
+            (when (and (retry-window-open? pstate)
+                       (resumable-failure? state))
               (rx/of (resume-persistence)))
 
             ;; A `:retrying` episode keeps its run id, so a new edit only
@@ -599,9 +629,246 @@
           (rx/of (run-persistence-task))
           (rx/empty))))))
 
+;; --- Outbox recovery
+;;
+;; Commits a previous page queued and never saw acknowledged stay in the
+;; outbox. When the workspace opens their file they are sent again under
+;; their original commit ids, so one that did reach the backend is answered
+;; instead of applied twice, and the file is reloaded to show them. Commits
+;; that can no longer be sent safely are offered as a copy of the file.
+
+(def outbox-replay-window-ms
+  "How old a stored commit may be and still be sent again to its file. A
+  commit is applied, if at all, after it was created, and the backend
+  remembers its id for `commit-retention` (48h) from then: within this
+  window a resend is recognized, past it the commit could apply twice."
+  (* 24 60 60 1000))
+
+(defn classify-outbox-row
+  "What to do with a stored commit when `file` opens: `:replay` sends it to
+  the file again, `:restore` keeps it for the restore-as-a-copy offer."
+  [{:keys [commit created-at]} file now]
+  (cond
+    ;; The file was restored to another version: the edits were made on
+    ;; content that is gone.
+    (not= (d/nilv (:file-vern commit) 0) (d/nilv (:vern file) 0)) :restore
+    ;; The backend may have forgotten the commit id.
+    (> (- now created-at) outbox-replay-window-ms) :restore
+    :else :replay))
+
+(defn- orphaned-row?
+  "True when no running page will send `row`: its session has gone, or it is
+  this page's own row but no longer in the queue (the workspace was
+  reloaded without reloading the page)."
+  [row live-sessions session-id queued-ids]
+  (if (= session-id (:session-id row))
+    (not (contains? queued-ids (:id row)))
+    (not (contains? live-sessions (:session-id row)))))
+
+(def ^:private outbox-dialog-tag :outbox-restore)
+
+(defn reload-file
+  "The event that reloads the workspace file, to show replayed commits."
+  []
+  (ptk/event ::dw/reload-current-file))
+
+(defn- remap-file-id
+  "Points the references to `from` inside `changes` (components of the file
+  itself) to `to`, as `duplicate-file` does for the copied file data."
+  [changes from to]
+  (walk/postwalk #(if (= % from) to %) changes))
+
+(defn- discard-outbox-rows
+  [rows]
+  (ptk/reify ::discard-outbox-rows
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/from (obx/delete! (map :id rows)))
+           (rx/map (fn [_] (ntf/hide :tag outbox-dialog-tag)))))))
+
+(defn restore-outbox-as-copy
+  "Duplicates the file and applies the stored commits to the copy, in one
+  save. The original file is never touched."
+  [file rows]
+  (ptk/reify ::restore-outbox-as-copy
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:id file)
+            changes (into [] (mapcat (comp :changes :commit)) rows)
+            name    (tr "workspace.outbox.copy-name" (:name file))]
+        (rx/concat
+         (rx/of (ntf/hide :tag outbox-dialog-tag))
+         (->> (rp/cmd! :duplicate-file {:file-id file-id :name name})
+              (rx/mapcat
+               (fn [copy]
+                 (rp/cmd! :update-file
+                          {:id (:id copy)
+                           :revn (:revn copy 0)
+                           :vern (:vern copy 0)
+                           :session-id (:session-id state)
+                           :commit-id (uuid/next)
+                           :changes (remap-file-id changes file-id (:id copy))
+                           :features (:features copy)})))
+              (rx/take 1)
+              (rx/mapcat (fn [_] (rx/from (obx/delete! (map :id rows)))))
+              (rx/map (fn [_]
+                        (ntf/show {:content (tr "workspace.outbox.restored-copy" name)
+                                   :type :toast
+                                   :level :success
+                                   :timeout 8000})))
+              (rx/catch
+               (fn [cause]
+                 (log/err :hint "restore outbox as copy failed" :cause cause)
+                 ;; The rows stay stored: the offer comes back next time the
+                 ;; file opens.
+                 (rx/of (ntf/show {:content (tr "workspace.outbox.restore-failed")
+                                   :type :toast
+                                   :level :error
+                                   :timeout nil}))))))))))
+
+(defn- offer-outbox-restore
+  [file rows]
+  (ptk/reify ::offer-outbox-restore
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [output-s (rx/subject)]
+        (rx/merge
+         output-s
+         (rx/of (ntf/dialog
+                 :content (tr "workspace.outbox.restore-offer" (count rows))
+                 :controls :inline-actions
+                 :cancel {:label (tr "workspace.outbox.discard")
+                          :callback #(do (rx/push! output-s (discard-outbox-rows rows))
+                                         (rx/end! output-s))}
+                 :accept {:label (tr "workspace.outbox.restore-as-copy")
+                          :callback #(do (rx/push! output-s (restore-outbox-as-copy file rows))
+                                         (rx/end! output-s))}
+                 :tag outbox-dialog-tag)))))))
+
+(defn- replay-outbox-rows
+  "Sends `rows` to `file` one at a time, oldest first, each under its
+  original commit id. A transport failure stops the replay and keeps the
+  remaining rows for the next time the file opens; a rejected commit sends
+  it and the rest to the restore-as-a-copy offer. Once anything was sent,
+  the file is reloaded to show it."
+  [file rows replayed]
+  (ptk/reify ::replay-outbox-rows
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [file-id (:id file)
+            [{:keys [commit] :as row} & more] rows
+            ;; Loading the workspace hides any notification, so what is shown
+            ;; after a reload waits for the reloaded workspace.
+            done    (fn [& [rejected]]
+                      (let [notices (cond-> []
+                                      (pos? replayed)
+                                      (conj (ntf/show {:content (tr "workspace.outbox.recovered" replayed)
+                                                       :type :toast
+                                                       :level :info
+                                                       :timeout 5000}))
+                                      (seq rejected)
+                                      (conj (offer-outbox-restore file (vec rejected))))]
+                        (cond
+                          (pos? replayed)
+                          (rx/merge
+                           (->> stream
+                                (rx/filter (ptk/type? ::dw/workspace-initialized))
+                                (rx/take 1)
+                                (rx/mapcat (fn [_] (rx/from notices))))
+                           (rx/of (reload-file)))
+
+                          (seq notices)
+                          (rx/from notices)
+
+                          :else
+                          (rx/empty))))]
+        (if (nil? row)
+          (done)
+          (->> (rp/cmd! :update-file
+                        {:id file-id
+                         :revn (max (:revn file 0) (get @revn-data file-id 0))
+                         :vern (d/nilv (:file-vern commit) 0)
+                         :session-id (:session-id state)
+                         :origin (:origin commit)
+                         :created-at (:created-at commit)
+                         :commit-id (:id commit)
+                         :changes (vec (:changes commit))
+                         :features (:features commit)})
+               (rx/take 1)
+               (rx/mapcat (fn [{:keys [revn]}]
+                            (rx/concat
+                             ;; Deleted before going on: the reload scans
+                             ;; the outbox again.
+                             (->> (rx/from (obx/delete! [(:id row)]))
+                                  (rx/ignore))
+                             (rx/of (update-file-revn file-id revn)
+                                    (replay-outbox-rows file more (inc replayed))))))
+               (rx/catch
+                (fn [cause]
+                  (log/wrn :hint "outbox replay stopped" :cause cause)
+                  (if (transient-error? (ex-data cause))
+                    (done)
+                    (done rows))))))))))
+
+(defn- recover-outbox
+  []
+  (ptk/reify ::recover-outbox
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-id (profile-id state)
+            session-id (:session-id state)
+            file-id    (:current-file-id state)
+            file       (dsh/lookup-file state file-id)
+            queued-ids (into #{} (keys (dm/get-in state [:persistence :index])))]
+        ;; Without Web Locks a row of a tab still open cannot be told from an
+        ;; abandoned one; sending it from here could race its owner.
+        (when (and profile-id file (obx/locks-available?))
+          (->> (rx/from
+                ;; One tab at a time adopts abandoned rows, so two tabs
+                ;; opening the file never send the same rows.
+                (obx/with-lock
+                  (str "penpot-outbox:" profile-id)
+                  (fn []
+                    (p/let [rows (obx/rows profile-id)
+                            live (obx/live-sessions)
+                            rows (filterv #(and (= file-id (:file-id %))
+                                                (orphaned-row? % (or live #{}) session-id queued-ids))
+                                          rows)]
+                      (when (seq rows)
+                        (p/then (obx/claim! (map :id rows) session-id)
+                                (constantly rows)))))))
+               (rx/filter seq)
+               (rx/mapcat
+                (fn [rows]
+                  (let [now                     (inst-ms (ct/now))
+                        {:keys [restore replay]} (group-by #(classify-outbox-row % file now) rows)]
+                    (rx/from
+                     (cond-> []
+                       (seq restore) (conj (offer-outbox-restore file restore))
+                       (seq replay)  (conj (replay-outbox-rows file replay 0)))))))
+               (rx/catch (fn [cause]
+                           (log/err :hint "outbox recovery failed" :cause cause)
+                           (rx/empty)))))))))
+
+(defn- has-unsaved-changes?
+  [pstate]
+  (boolean (seq (:queue pstate))))
+
+(defn- on-before-unload
+  "Asks the browser to confirm leaving while edits are still unsaved. The
+  outbox keeps them either way; this only spares a recovery on next open."
+  [^js event]
+  (when (has-unsaved-changes? @refs/persistence)
+    (.preventDefault event)
+    (set! (.-returnValue event) "")))
+
 (defn initialize-persistence
   []
   (ptk/reify ::initialize-persistence
+    ptk/EffectEvent
+    (effect [_ state _]
+      (obx/hold-session-lock! (:session-id state)))
+
     ptk/WatchEvent
     (watch [_ _ stream]
       (log/debug :hint "initialize persistence")
@@ -631,6 +898,26 @@
                               (ptk/type? ::dw/workspace-initialized %)))
               (rx/map (fn [_] (recover-persistence)))
               (rx/take-until stoper-s))
+
+         (->> stream
+              (rx/filter (ptk/type? ::dw/workspace-initialized))
+              (rx/map (fn [_] (recover-outbox)))
+              (rx/take-until stoper-s))
+
+         (or (when (exists? js/document)
+               (rx/merge
+                ;; A hidden tab may be closed or discarded without notice:
+                ;; flush the edit buffer into the queue, and so into the
+                ;; outbox, instead of waiting out its debounce.
+                (->> (rx/from-event js/document "visibilitychange")
+                     (rx/filter #(= "hidden" (.-visibilityState js/document)))
+                     (rx/map (constantly ::force-persist))
+                     (rx/take-until stoper-s))
+                (->> (rx/from-event js/window "beforeunload")
+                     (rx/tap on-before-unload)
+                     (rx/ignore)
+                     (rx/take-until stoper-s))))
+             (rx/empty))
 
          (->> (rx/interval saving-check-interval-ms)
               (rx/map (fn [_] (check-persistence)))

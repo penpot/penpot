@@ -15,6 +15,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence.outbox :as obx]
    [app.main.data.profile :as dp]
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as ws]
@@ -260,6 +261,13 @@
   (ptk/reify ::logout
     ev/Event
     (-data [_] {})
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      ;; Edits kept for recovery must not outlive the session on a shared
+      ;; browser.
+      (when-let [profile-id (or (:profile-id state) (get-in state [:profile :id]))]
+        (obx/delete-profile! profile-id)))
 
     ptk/WatchEvent
     (watch [_ state _]

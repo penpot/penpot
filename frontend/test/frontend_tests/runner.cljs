@@ -12,6 +12,7 @@
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.nitrate-test]
+   [frontend-tests.data.persistence-outbox-test]
    [frontend-tests.data.persistence-retry-test]
    [frontend-tests.data.persistence-test]
    [frontend-tests.data.profile-test]
@@ -136,6 +137,7 @@
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.nitrate-test
+   'frontend-tests.data.persistence-outbox-test
    'frontend-tests.data.persistence-retry-test
    'frontend-tests.data.persistence-test
    'frontend-tests.data.profile-test

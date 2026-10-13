@@ -12,6 +12,7 @@
    [app.common.time :as ct]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.rpc.commands.files-update :as files-update]
    [app.storage :as sto]
    [app.tasks.delete-object :as dobj]
    [integrant.core :as ig]))
@@ -336,6 +337,25 @@
                    (+ total affected)))
                0)))
 
+(def ^:private sql:delete-file-commits
+  "DELETE FROM file_commit
+    WHERE (file_id, commit_id) IN (
+          SELECT file_id, commit_id
+            FROM file_commit
+           WHERE created_at <= ?
+           ORDER BY created_at ASC
+           LIMIT ?
+             FOR UPDATE
+            SKIP LOCKED)")
+
+(defn- delete-file-commits!
+  "Deletes a chunk of update-file commit records older than
+  `files-update/commit-retention`."
+  [{:keys [::db/conn ::timestamp ::chunk-size]}]
+  (let [threshold (ct/minus timestamp files-update/commit-retention)]
+    (-> (db/exec-one! conn [sql:delete-file-commits threshold chunk-size])
+        (db/get-update-count))))
+
 (def ^:private deletion-proc-vars
   ;; NOTE: upload sessions go first: deleting a profile cascades to its
   ;; sessions, which would hit the upload_session_chunk NO ACTION foreign key
@@ -347,6 +367,7 @@
    #'delete-file-thumbnails!
    #'delete-file-data!
    #'delete-file-changes!
+   #'delete-file-commits!
    #'delete-files!
    #'delete-projects!
    #'delete-fonts!
