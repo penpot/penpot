@@ -14,6 +14,8 @@
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
+   [app.common.logic.duplicate :as cld]
+   [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.tokens :as clo]
@@ -354,7 +356,7 @@
              parents  (into #{} (map :parent-id) shapes)]
          (when-not (empty? shapes)
            (let [[root component-id changes]
-                 (cll/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id
+                 (cli/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id
                                              cfsh/prepare-create-artboard-from-selection)]
              (when id-ref
                (reset! id-ref component-id))
@@ -474,7 +476,7 @@
 
              [main-instance changes]
              (-> (pcb/empty-changes it nil)
-                 (cll/generate-duplicate-component library component-id new-component-id))]
+                 (cld/generate-duplicate-component library component-id new-component-id))]
          (rx/of
           (ptk/data-event :layout/update {:page-id (:main-instance-page (get-in library [:data :components component-id]))
                                           :ids [(:id main-instance)]})
@@ -533,7 +535,7 @@
             objects      (:objects comp-page)
 
             changes (-> (pcb/empty-changes it)
-                        (cll/generate-restore-component ldata component-id library-id comp-page objects))
+                        (cli/generate-restore-component ldata component-id library-id comp-page objects))
 
             page-id
             (->> changes :redo-changes (keep :page-id) first)
@@ -580,7 +582,7 @@
              current-file-id (:current-file-id state)
 
              [new-shape changes]
-             (cll/generate-instantiate-component changes
+             (cli/generate-instantiate-component changes
                                                  objects
                                                  file-id
                                                  component-id
@@ -624,7 +626,7 @@
             libraries (dsh/lookup-libraries state)
 
             changes   (-> (pcb/empty-changes it)
-                          (cll/generate-detach-component id fdata page-id libraries))]
+                          (cli/generate-detach-component id fdata page-id libraries))]
 
         (rx/of (dch/commit-changes changes))))))
 
@@ -666,7 +668,7 @@
             changes (when can-detach?
                       (reduce
                        (fn [changes id]
-                         (cll/generate-detach-component changes id fdata page-id libraries))
+                         (cli/generate-detach-component changes id fdata page-id libraries))
                        (pcb/empty-changes it)
                        selected))]
 

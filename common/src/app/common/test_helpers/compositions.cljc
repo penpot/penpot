@@ -10,8 +10,10 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.logic.duplicate :as cld]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.swap :as clsw]
    [app.common.logic.variants :as clv]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.files :as thf]
@@ -427,18 +429,18 @@
         orig-shapes (when keep-touched? (cfh/get-children-with-self (:objects page) (:id shape)))
 
         [new-shape _all-parents changes]
-        (cll/generate-component-swap (pcb/empty-changes)
-                                     (:objects page)
-                                     shape
-                                     (:data library)
-                                     page
-                                     libraries
-                                     (->  (thc/get-component library component-tag)
-                                          :id)
-                                     0
-                                     nil
-                                     {}
-                                     (true? keep-touched?))
+        (clsw/generate-component-swap (pcb/empty-changes)
+                                      (:objects page)
+                                      shape
+                                      (:data library)
+                                      page
+                                      libraries
+                                      (->  (thc/get-component library component-tag)
+                                           :id)
+                                      0
+                                      nil
+                                      {}
+                                      (true? keep-touched?))
 
         [changes _] (if keep-touched?
                       (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries (:data file))
@@ -569,14 +571,14 @@
         shape (ths/get-shape file shape-tag :page-label page-label)
         changes
         (-> (pcb/empty-changes nil)
-            (cll/generate-duplicate-changes (:objects page)         ;; objects
+            (cld/generate-duplicate-changes (:objects page)         ;; objects
                                             page                    ;; page
                                             #{(:id shape)}          ;; ids
                                             (gpt/point 0 0)         ;; delta
                                             {(:id  file) file}      ;; libraries
                                             (:data file)            ;; library-data
                                             (:id file))             ;; file-id
-            (cll/generate-duplicate-changes-update-indices (:objects page)  ;; objects
+            (cld/generate-duplicate-changes-update-indices (:objects page)  ;; objects
                                                            #{(:id shape)}))
         file' (thf/apply-changes file changes :validate? (not propagate-fn))]
     (if propagate-fn

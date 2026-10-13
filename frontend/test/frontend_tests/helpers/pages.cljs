@@ -13,7 +13,8 @@
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.duplicate :as cld]
+   [app.common.logic.instances :as cli]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -137,7 +138,7 @@
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
-        (cll/generate-add-component (pcb/empty-changes nil)
+        (cli/generate-add-component (pcb/empty-changes nil)
                                     shapes
                                     (:objects page)
                                     (:id page)
@@ -160,7 +161,7 @@
                        (pcb/with-objects objects))
 
          [new-shape changes]
-         (cll/generate-instantiate-component changes
+         (cli/generate-instantiate-component changes
                                              objects
                                              file-id
                                              component-id
@@ -226,7 +227,7 @@
           ;; When copying an instance that is nested inside another one, we need to
           ;; advance the shape refs to one or more levels of remote mains.
           (advance-copies [data]
-            (update data :objects #(cll/advance-copied-objects file page libraries % selected)))]
+            (update data :objects #(cld/advance-copied-objects file page libraries % selected)))]
 
     (let [file-id  (:id file)
           frame-id (cfh/common-parent-frame objects selected)

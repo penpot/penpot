@@ -12,9 +12,9 @@ Frontend entry points under `frontend/src/app/main/data/workspace/`:
 
 For a single swap with `keep-touched? = true`:
 
-1. `cll/generate-component-swap` in `common/src/app/common/logic/libraries.cljc` builds the base changes: remove old shape and instantiate the target component in its place through `generate-new-shape-for-swap`, `generate-instantiate-component`, and `make-component-instance`.
+1. `clsw/generate-component-swap` in `common/src/app/common/logic/swap.cljc` builds the base changes: remove old shape and instantiate the target component in its place through `generate-new-shape-for-swap`, `generate-instantiate-component`, and `make-component-instance`.
 2. `clv/generate-keep-touched` in `common/src/app/common/logic/variants.cljc` walks pre-swap children, augments each with chain-derived touched flags through `add-touched-from-ref-chain`, finds the equivalent target shape through `find-shape-ref-child-of`, then calls `update-attrs-on-switch`.
-3. `update-attrs-on-switch` in `app.common.logic.libraries` decides which touched attrs from the previous shape should be copied onto the freshly instantiated target shape.
+3. `update-attrs-on-switch` in `app.common.logic.swap` decides which touched attrs from the previous shape should be copied onto the freshly instantiated target shape.
 
 ## update-attrs-on-switch hazards
 
