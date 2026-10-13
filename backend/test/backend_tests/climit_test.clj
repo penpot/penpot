@@ -650,18 +650,19 @@
 (t/deftest republish-writes-the-current-waiting-count
   ;; A call that never comes back keeps the count up, but if it is also the
   ;; last thing that happened nothing rewrites that series and it goes stale in
-  ;; the scrape. The republish is what keeps it visible.
-  (th/with-climit [climit {:test-republish/by-profile {:permits 1 :timeout 3000}}]
-    (let [name (limiter-name :test-republish/by-profile)]
+  ;; the scrape. The republish is what keeps it visible. The counters are built
+  ;; on their own: with a component, its sampler would also publish the same
+  ;; count the moment its first tick lands inside the window.
+  (let [counters (#'climit/create-waiting-counters)
+        name     (limiter-name :test-republish/by-profile)
+        counter  ^java.util.concurrent.atomic.AtomicLong (#'climit/waiting-counter counters name)]
 
-      (.set ^java.util.concurrent.atomic.AtomicLong
-       (#'climit/waiting-counter (:counters climit) name)
-            3)
+    (.set counter 3)
 
-      (record-metrics
-       (fn []
-         (#'climit/republish-waiting (th/metrics-stub) (:counters climit))
-         (t/is (= [3] (waiting-value-of name))))))))
+    (record-metrics
+     (fn []
+       (#'climit/republish-waiting (th/metrics-stub) counters)
+       (t/is (= [3] (waiting-value-of name)))))))
 
 (t/deftest halting-the-component-stops-the-republisher
   ;; The republisher is a daemon thread started with the component: halting it

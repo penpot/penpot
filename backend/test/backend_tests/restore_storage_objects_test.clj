@@ -24,11 +24,14 @@
 ;; hits the foreign key and skips them forever.
 
 (defn- put-object!
-  [bucket]
-  (sto/put-object! (::sto/storage th/*system*)
-                   {::sto/content (sto/content "sobject")
-                    :content-type "text/plain"
-                    :bucket bucket}))
+  ([bucket]
+   (put-object! bucket {}))
+  ([bucket metadata]
+   (sto/put-object! (::sto/storage th/*system*)
+                    (merge {::sto/content (sto/content "sobject")
+                            :content-type "text/plain"
+                            :bucket bucket}
+                           metadata))))
 
 (defn- find-object
   [id]
@@ -86,8 +89,11 @@
   (let [profile  (th/create-profile* 1)
         file     (th/create-file* 1 {:profile-id (:id profile)
                                      :project-id (:default-project-id profile)})
-        sobject  (:id (put-object! "file-data"))
-        data-id  (uuid/next)]
+        data-id  (uuid/next)
+        ;; file-data objects carry the ids of their row: the GC resolves the
+        ;; reference with that pair.
+        sobject  (:id (put-object! "file-data" {:file-id (:id file)
+                                                :id data-id}))]
 
     (th/db-update! :file {:deleted-at (ct/in-past {:days 1})} {:id (:id file)})
     (th/db-insert! :file-data
