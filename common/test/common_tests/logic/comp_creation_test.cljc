@@ -264,10 +264,12 @@
         file' (thf/apply-changes file changes)
 
         ;; ==== Get
-        component' (thc/get-component file' :component1)]
+        component'  (thc/get-component file' :component1)
+        main1-root' (ths/get-shape file' :main1-root)]
 
     ;; ==== Check
-    (t/is (= (:name component') "Test component after"))))
+    (t/is (= (:name component') "Test component after"))
+    (t/is (= (:name main1-root') "Test component after"))))
 
 (t/deftest test-duplicate-component
   (let [;; ==== Setup

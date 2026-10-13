@@ -588,12 +588,16 @@
         objects        (:objects page)
         file-data      (:data file)
         first-child    (get objects (first shapes))
-        prop-names     (cfv/extract-properties-names first-child file-data)]
-    (when-not (= container-name (cpn/clean-path container-name))
+        prop-names     (cfv/extract-properties-names first-child file-data)
+        clean-path     (cpn/clean-path container-name)
+        clean-path     (if (str/blank? clean-path)
+                         "(empty)" ;; this may occur if the name contains only separators
+                         clean-path)]
+    (when-not (= container-name clean-path)
       (report-error :variant-container-bad-name
                     (str/ffmt "Variant container % has a bad name %" shape-id container-name)
                     shape file page
-                    :clean-name (cpn/clean-path container-name)))
+                    :clean-name clean-path))
     (run! (fn [child-id]
             (when-let [child (get objects child-id)]
               (if (not (ctk/is-variant? child))

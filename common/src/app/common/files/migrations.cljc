@@ -33,11 +33,12 @@
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
    [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
-   [app.common.types.token :as ctt]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -2171,7 +2172,7 @@
               (if (some? token)
                 (update shape :applied-tokens
                         (fn [applied]
-                          (-> (zipmap ctt/per-side-stroke-width-keys (repeat token))
+                          (-> (zipmap cto/per-side-stroke-width-keys (repeat token))
                               (merge applied)
                               (dissoc :stroke-width))))
                 shape)))
@@ -2237,7 +2238,10 @@
                           ;; Variant container must have a normalized name
                           (ctk/is-variant-container? shape)
                           (let [name       (:name shape)
-                                clean-name (cpn/clean-path name)]
+                                clean-name (cpn/clean-path name)
+                                clean-name (if (str/blank? clean-name)
+                                             "(empty)" ;; this may occur if the name contains only separators
+                                             clean-name)]
                             (if (= name clean-name)
                               shape
                               (assoc shape :name clean-name)))
@@ -2264,7 +2268,7 @@
                           :else shape)]
 
               (reduce update-shape
-                      (ctn/set-shape container shape)
+                      (ctt/set-shape container shape)
                       (:shapes shape))))
 
           (update-container

@@ -103,8 +103,8 @@
                      (str/capital (d/name type)))))
 
     :always
-    (-> (update :name unique-name state)
-        (update :name cpn/clean-path))))
+    (-> (update :name cpn/clean-path)
+        (update :name unique-name state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS

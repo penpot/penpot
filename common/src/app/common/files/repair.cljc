@@ -771,7 +771,7 @@
         all-component-ids
         (map :component-id all-main-instances)]
 
-    (log/debug :hint "repairing shape :variant-component-bad-name" :id (:id shape) :name (:name shape) :page-id page-id)
+    (log/debug :hint "repairing shape :variant-container-bad-name" :id (:id shape) :name (:name shape) :page-id page-id)
     (as-> (pcb/empty-changes nil page-id) $
       (pcb/with-file-data $ file-data)
       (pcb/with-library-data $ file-data)
@@ -835,6 +835,7 @@
     (log/debug :hint "repairing shape :variant-component-bad-id" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
+        (pcb/with-library-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape)
         (pcb/update-component (:component-id shape) repair-component))))
 

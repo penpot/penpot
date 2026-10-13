@@ -87,7 +87,7 @@
       (t/is (= (thi/id :variant1) (:variant-id root1'))))))
 
 (t/deftest repair-invalid-variant-id-variant-component-bad-id
-  (t/testing "detect and repair a variant component whose variant id does not match the container's id"
+  (t/testing "detect and repair a variant main whose variant id does not match the container's id"
     (let [file    (-> (thf/sample-file :file1 :page-label :page1)
                       (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
                       (ths/update-shape :root1 :variant-id (uuid/next)))
@@ -104,7 +104,25 @@
       (t/is (= :variant-component-bad-id (:code (second errors))))
 
       (t/is (nil? errors'))
-      (t/is (= (thi/id :variant1) (:variant-id root1'))))))
+      (t/is (= (thi/id :variant1) (:variant-id root1')))))
+
+  (t/testing "detect and repair a variant component whose variant id does not match the container's id"
+    (let [file         (-> (thf/sample-file :file1 :page-label :page1)
+                           (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                           (thc/update-component :component1 {:variant-id (uuid/next)}))
+
+          errors       (cfv/validate-file file {})
+          changes      (cfr/repair-file file {} errors)
+          file'        (thf/apply-changes file {:redo-changes changes} :validate? false)
+          errors'      (cfv/validate-file file' {})
+
+          component1'  (thc/get-component file' :component1)]
+
+      (t/is (= 1 (count errors)))
+      (t/is (= :variant-component-bad-id (:code (first errors))))
+
+      (t/is (nil? errors'))
+      (t/is (= (thi/id :variant1) (:variant-id component1'))))))
 
 (t/deftest repair-invalid-variant-properties
   (t/testing "detect and repair a second variant component whose properties do not match the first variant component's properties"
