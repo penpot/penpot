@@ -370,7 +370,7 @@ msgstr "(copy)"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:314
 msgid "dashboard.create-branch"
-msgstr "Create branch…"
+msgstr "Create branch"
 
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:223, src/app/main/ui/dashboard/organization_team_switch.cljs:304
 msgid "dashboard.create-new-organization"
@@ -7062,7 +7062,7 @@ msgstr "Archive"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1152
 msgid "workspace.branches.menu.create"
-msgstr "Create branch…"
+msgstr "Create branch"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:682
 msgid "workspace.branches.menu.info"
@@ -7169,11 +7169,11 @@ msgstr "Modified"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:242
 msgid "workspace.branches.switcher.all"
-msgstr "All branches…"
+msgstr "All branches"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:238
 msgid "workspace.branches.switcher.new"
-msgstr "New branch…"
+msgstr "New branch"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:309
 msgid "workspace.branches.switcher.tooltip"

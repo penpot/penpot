@@ -24,6 +24,11 @@
   padding: var(--sp-xs) var(--sp-m) var(--sp-s);
 }
 
+.status-note {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
 // --- Popover
 
 .popover {

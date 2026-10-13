@@ -6400,15 +6400,15 @@ msgstr "Ramas · %s"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1152
 msgid "workspace.branches.menu.create"
-msgstr "Crear rama…"
+msgstr "Crear rama"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:242
 msgid "workspace.branches.switcher.all"
-msgstr "Todas las ramas…"
+msgstr "Todas las ramas"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:238
 msgid "workspace.branches.switcher.new"
-msgstr "Nueva rama…"
+msgstr "Nueva rama"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:309
 msgid "workspace.branches.switcher.tooltip"

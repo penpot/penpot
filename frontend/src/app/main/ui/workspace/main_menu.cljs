@@ -1125,7 +1125,7 @@
       (when (contains? cf/flags :branching)
         [:*
          [:div {:class (stl/css :separator)}]
-         [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
+         [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item :shortcut-item)
                                   :on-click    show-branches
                                   :on-key-down (fn [event]
                                                  (when (kbd/enter? event)

@@ -22,6 +22,8 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.branch-chip :refer [branch-chip*]]
    [app.main.ui.ds.product.branch-row :refer [branch-row*]]
    [app.main.ui.ds.product.branch-status :refer [branch-status*]]
@@ -67,6 +69,17 @@
                         :review review
                         :approvals approvals
                         :reviewers reviewers}]))
+
+(defn- in-sync?
+  "True when a branch has nothing to report against main: no changes on
+  either side, no conflicts, no open review and a comparison that worked."
+  [row pr]
+  (and (nil? pr)
+       (not (:diff-error row))
+       (some? (:ahead row))
+       (zero? (:ahead row))
+       (zero? (or (:behind row) 0))
+       (zero? (or (:conflicts row) 0))))
 
 ;; --- Popover
 
@@ -263,8 +276,27 @@
                                   (tr "workspace.branches.header-badge-tooltip" (:name current)))
                          :on-click on-toggle}]
 
-       (when (and (some? ctx) (not merged?))
-         [:> row-status* {:row ctx :pr (get prs-by-branch (:id ctx))}])
+       ;; the right side never stays empty: a plain note says where the
+       ;; file stands until there are changes to count
+       (let [pr (get prs-by-branch (:id ctx))]
+         (cond
+           (nil? ctx)
+           [:> text* {:as "span"
+                      :typography t/body-small
+                      :class (stl/css :status-note)}
+            (tr "workspace.branches.main-subtitle")]
+
+           ^boolean merged?
+           nil
+
+           (in-sync? ctx pr)
+           [:> text* {:as "span"
+                      :typography t/body-small
+                      :class (stl/css :status-note)}
+            (tr "workspace.branches.banner.status.up-to-date")]
+
+           :else
+           [:> row-status* {:row ctx :pr pr}]))
 
        [:& dropdown {:show open? :on-close on-close :container bar-ref}
         [:> switcher-popover* {:file file

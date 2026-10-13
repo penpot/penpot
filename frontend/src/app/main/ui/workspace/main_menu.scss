@@ -27,11 +27,14 @@
 .menu {
   top: $sz-48;
   left: calc(var(--left-sidebar-width) - px2rem(44));
-  inline-size: $sz-192;
+
+  // wide enough for a top-level entry with its shortcut keys
+  inline-size: $sz-224;
 }
 
+// submenus open right after the menu's edge
 .sub-menu {
-  left: calc(var(--left-sidebar-width) + px2rem(150));
+  left: calc(var(--left-sidebar-width) + px2rem(182));
   min-width: $sz-364;
 
   &.pos-1 {
@@ -120,6 +123,18 @@
 
 .item-name {
   grid-area: name;
+}
+
+// a top-level entry with a shortcut instead of a submenu arrow: the keys
+// keep their size and the name gives way
+.shortcut-item {
+  gap: var(--sp-s);
+
+  .item-name {
+    @include text-ellipsis;
+
+    min-inline-size: 0;
+  }
 }
 
 .plugin-name {
