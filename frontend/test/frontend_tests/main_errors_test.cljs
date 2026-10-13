@@ -131,6 +131,33 @@
   [events]
   (filter #(= ::ev/event (ptk/type %)) events))
 
+(defn- ^:async report-names
+  "Drives `flash-persistence` with an `ex-data` map of `cause-data` and
+  returns the audit event names it emitted, in order.
+
+  The report generator is stubbed and the scheduler runs its callback
+  inline, so the whole flash body completes before returning. The emitter
+  is the only observable."
+  [cause-data]
+  (let [events (atom [])
+        cause  (ex-info "Save failed" (assoc cause-data :hint "Save failed"))]
+    ;; The governor is global and remembers fingerprints for two minutes, so
+    ;; a second identical report would be suppressed. Clear it per case.
+    (errors/reset-report-governor!)
+    (await
+     (mock/with-mocks*
+       {errors/generate-report (fn [_ & _] "generated error report")
+        st/emit!               (mock/stub (fn [& emitted]
+                                            (swap! events into emitted)))
+        ;; `schedule` is multi-arity, so the mock needs every arity the
+        ;; flash body may call it with.
+        tm/schedule            (mock/stub (fn
+                                            ([] nil)
+                                            ([callback] (callback))
+                                            ([_ms callback] (callback))))}
+       (errors/flash-persistence cause)))
+    (mapv #(-> % deref ::ev/name) (report-events @events))))
+
 ;; ---------------------------------------------------------------------------
 ;; Environment failures
 ;;
@@ -764,25 +791,45 @@
         (t/is (= [::dw/reload-current-file] (mapv ptk/type @events)))
         (t/is (empty? @scheduled) "A restored version shows no save notification")))))
 
-(t/deftest ^:async other-validation-failures-during-save-keep-the-notification
-  (t/testing "a validation failure without a recovery of its own is still notified"
-    (let [events    (atom [])
-          scheduled (atom [])]
-      (await
-       (mock/with-mocks*
-         {errors/generate-report (fn [_ & _] "generated error report")
-          errors/submit-report   (fn [& _])
-          st/emit!               (mock/stub (fn [& emitted]
-                                              (swap! events into emitted)))
-          tm/schedule            (mock/stub (fn [callback]
-                                              (swap! scheduled conj callback)))}
-         (errors/flash-persistence (ex-info "Invalid data" {:type :validation
-                                                            :code :invalid-data}))
-         (doseq [callback @scheduled] (callback))
-         (await (async/settle))
-         ;; The report is emitted first and the toast right after: one
-         ;; audit event plus the sticky toast carrying the report link.
-         (t/is (= 1 (count (report-events @events))))
-         (let [state (ptk/update (last @events) {})]
-           (t/is (nil? (get-in state [:notification :timeout])))
-           (t/is (some? (get-in state [:notification :links 0])))))))))
+(t/deftest ^:async save-failure-report-type-follows-the-cause
+  ;; The user still gets the same sticky toast and report link; only the audit
+  ;; event name changes, and that is what decides whether the incident reaches
+  ;; the internal reports and the alerts.
+  (t/testing "a validation failure is a defect, so it reports unhandled"
+    (t/is (= ["unhandled-exception"]
+             (await (report-names {:type :validation :code :invalid-data})))))
+
+  (t/testing "the wrapped shape reads the cause, not the wrapper"
+    ;; This is the shape that actually reaches flash-persistence:
+    ;; persistence-failed sets :type :persistence and keeps the real type
+    ;; under :cause-type. Reading :type alone would match the wrapper and
+    ;; leave the cause as handled.
+    (t/is (= ["unhandled-exception"]
+             (await (report-names {:type :persistence
+                                   :cause-type :validation
+                                   :code :invalid-data})))))
+
+  (t/testing "environment failures stay handled after the retry budget"
+    ;; They land here once the backoff is spent, and the user's connection is
+    ;; not our bug, so they must not alert.
+    (doseq [cause-type [:network :offline :bad-gateway :service-unavailable]]
+      (t/is (= ["handled-exception"]
+               (await (report-names {:type :persistence
+                                     :cause-type cause-type})))
+            (str cause-type " is an environment failure, not a defect"))))
+
+  (t/testing "an unclassified failure keeps the handled path"
+    (t/is (= ["handled-exception"]
+             (await (report-names {:type :persistence
+                                   :cause-type :unknown-thing})))))
+
+  (t/testing "a bare :type still classifies, without a wrapper"
+    (t/is (= ["unhandled-exception"]
+             (await (report-names {:type :validation})))))
+
+  (t/testing "a server-side or internal defect reports unhandled"
+    (doseq [cause-type [:server-error :internal]]
+      (t/is (= ["unhandled-exception"]
+               (await (report-names {:type :persistence
+                                     :cause-type cause-type})))
+            (str cause-type " is our bug")))))

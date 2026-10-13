@@ -523,6 +523,27 @@
       ;; The retained changes no longer apply to the restored version.
       (= :vern-conflict code)))
 
+(def ^:private unhandled-persistence-types
+  "Save failure causes that are application defects, not expected
+  outcomes: the client asked for something the server refused, or the
+  server or our own code broke. They must reach the internal reports and
+  the alerts, so they are reported as unhandled.
+  Environment failures are deliberately absent: the user's connection is
+  not our bug, and they land here once the retry budget is spent.
+  `:assertion` is absent on purpose too, because its own handler already
+  reports it as handled."
+  #{:validation :server-error :internal})
+
+(defn- persistence-report-type
+  "The audit event name a save failure gets. `persistence-failed` wraps the
+  original cause under `:type :persistence` and keeps the real type in
+  `:cause-type`, so `:cause-type` wins: reading `:type` alone would match the
+  wrapper and never the cause."
+  [{:keys [type cause-type]}]
+  (if (contains? unhandled-persistence-types (or cause-type type))
+    :unhandled
+    :handled))
+
 (defn flash-persistence
   [cause]
   (let [data (ex-data cause)]
@@ -532,7 +553,7 @@
       (on-error (-> (exception->error-data cause)
                     (assoc :type (or (:cause-type data) (:type data)))))
       (flash :cause cause
-             :type :handled
+             :type (persistence-report-type data)
              :timeout nil
              :report-link? true
              :hint (tr "errors.save-failed")))))
