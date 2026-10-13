@@ -861,6 +861,7 @@
     [:div {:class [class (stl/css-case :input-wrapper true
                                        :scrubbable scrubbable?)]
            :ref wrapper-ref
+           :data-testid "numeric-input-wrapper"
            :on-pointer-down on-scrub-pointer-down
            :on-pointer-move on-scrub-pointer-move
            :on-pointer-up on-scrub-pointer-up
