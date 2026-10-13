@@ -514,33 +514,24 @@
         ;; be more efficient than using reduce and continuous data
         ;; desturcturing.
 
-        ;; Sets the correct components metadata for the moved shapes
-        ;; `shapes-to-detach` Detach from a component instance a shape that was inside a component and is moved outside
+        ;; Sets the correct components metadata for the moved copy heads
         ;; `shapes-to-deroot` Removes the root flag from a component instance moved inside another component
         ;; `shapes-to-reroot` Adds a root flag when a nested component instance is moved outside
-        [shapes-to-detach shapes-to-deroot shapes-to-reroot]
-        (reduce (fn [[shapes-to-detach shapes-to-deroot shapes-to-reroot] id]
+        [shapes-to-deroot shapes-to-reroot]
+        (reduce (fn [[shapes-to-deroot shapes-to-reroot] id]
                   (let [shape                  (get objects id)
                         parent                 (get objects parent-id)
-                        component-shape        (ctn/get-component-shape objects shape)
                         component-shape-parent (ctn/get-component-shape objects parent {:allow-main? true})
                         root-parent            (ctn/get-instance-root objects parent)
 
-                        detach? (and (ctk/in-component-copy-not-head? shape)
-                                     (not= (:id component-shape)
-                                           (:id component-shape-parent)))
                         deroot? (and (ctk/instance-root? shape)
                                      root-parent)
                         reroot? (and (ctk/subinstance-head? shape)
-                                     (not component-shape-parent))
+                                     (not component-shape-parent))]
 
-                        ids-to-detach (when detach?
-                                        (cons id (cfh/get-children-ids objects id)))]
-
-                    [(cond-> shapes-to-detach detach? (into ids-to-detach))
-                     (cond-> shapes-to-deroot deroot? (conj id))
+                    [(cond-> shapes-to-deroot deroot? (conj id))
                      (cond-> shapes-to-reroot reroot? (conj id))]))
-                [[] [] []]
+                [[] []]
                 (->> ids
                      (mapcat #(ctn/get-child-heads objects %))
                      (map :id)))
@@ -598,9 +589,6 @@
         (pcb/update-shapes groups-to-unmask
                            (fn [shape]
                              (assoc shape :masked-group false)))
-
-        ;; Detach shapes moved out of their component
-        (pcb/update-shapes shapes-to-detach ctk/detach-shape)
 
         ;; Make non root a component moved inside another one
         (pcb/update-shapes shapes-to-deroot
