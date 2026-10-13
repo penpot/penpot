@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.comp-processors :as cfcp]
    [app.common.files.helpers :as cfh]
    [app.common.files.swap-slots :as cfss]
    [app.common.files.variant :as cfv]
@@ -19,6 +20,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.text :as cttx]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -61,6 +63,7 @@
     :non-deleted-component-cannot-have-objects
     :instance-head-not-frame
     :invalid-text-touched
+    :legacy-text-touched
     :misplaced-slot
     :misplaced-swap-group
     :ref-not-in-near-main
@@ -457,17 +460,20 @@
                   shape file page)))
 
 (defn- check-valid-touched
-  "Validate that the text touched flags are coherent."
+  "Validate that the text touched flags are coherent: a text override group
+  implies `:content-group`, and the groups of files older than the feature
+  components/text-overrides are gone."
   [shape file page]
-  (let [touched-groups (or (:touched shape) #{})
+  (let [touched-groups   (or (:touched shape) #{})
         content-touched? (touched-groups :content-group)
-        text-touched?    (or (touched-groups :text-content-text)
-                             (touched-groups :text-content-attribute)
-                             (touched-groups :text-content-structure))]
-    ;; For now we only check this combination, that has been reported in some bugs
+        text-touched?    (some cttx/text-groups touched-groups)]
     (when (and text-touched? (not content-touched?))
       (report-error :invalid-text-touched
                     "This thape has text type touched but not content touched"
+                    shape file page))
+    (when (cfcp/legacy-text-touched? shape)
+      (report-error :legacy-text-touched
+                    "This shape has the text touched groups of older files"
                     shape file page))))
 
 (defn- check-shape-main-root-top

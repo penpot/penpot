@@ -21,6 +21,8 @@
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.shapes :as cths]
+   [app.common.test-helpers.texts :as cthtx]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.component :as ctk]
@@ -2679,14 +2681,14 @@
                     ;; the library is not linked yet: the swap is left as it is
                     (let [imported (bfc/process-imported-file cfg file)]
                       (bfc/insert-file! cfg imported)
-                      (t/is (= #{(:id file)} (:deferred-swaps @bfc/*state*)))
+                      (t/is (= #{(:id file)} (:deferred @bfc/*state*)))
                       (t/is (contains? (:features imported) "components/swap-group"))
                       (t/is (some? (-> imported :data :pages-index (get page-id) :objects
                                        (get (cthi/id :outer-star)) cfss/get-swap-slot))))
 
                     (db/insert! cfg :file-library-rel {:file-id (:id file)
                                                        :library-file-id (:id library)})
-                    (bfc/convert-deferred-swaps! cfg)
+                    (bfc/convert-deferred! cfg)
 
                     (let [head (-> (bfc/get-file cfg (:id file) :migrate? false :realize? true)
                                    :data :pages-index (get page-id) :objects
@@ -2694,3 +2696,45 @@
                       (t/is (= (cthi/id :inner-star) (:shape-ref head)))
                       (t/is (ctk/swapped? head))
                       (t/is (nil? (cfss/get-swap-slot head)))))))))
+
+(t/deftest import-recomputes-deferred-text-overrides-once-libraries-are-linked
+  (cthi/reset-idmap!)
+  (let [profile    (th/create-profile* 1)
+        project-id (:default-project-id profile)
+        old-migs   (disj fmg/available-migrations "0033-recompute-text-overrides")
+        main       [[["Price: "] ["$10" {:weight 700}]]]
+        library    (-> (cthf/sample-file :library)
+                       (cthtx/add-text-component-with-copy main))
+        ;; a file with a copy of the library's text, recolored, with the
+        ;; style flag of older files
+        file       (-> (cthf/sample-file :file1)
+                       (cthc/instantiate-component :component1 :lib-copy
+                                                   :library library
+                                                   :children-labels [:lib-copy-text])
+                       (cths/update-shape :lib-copy-text :content
+                                          (cthtx/content [[["Price: " {:color :red}] ["$10" {:weight 700 :color :red}]]]))
+                       (cths/update-shape :lib-copy-text :touched #{:content-group :text-content-attribute})
+                       (assoc :project-id project-id)
+                       (assoc :migrations old-migs)
+                       (update :features disj "components/text-overrides"))
+        page-id    (-> file :data :pages first)
+        touched    #(-> % :data :pages-index (get page-id) :objects (get (cthi/id :lib-copy-text)) :touched)]
+
+    (db/tx-run! th/*system*
+                (fn [cfg]
+                  (binding [bfc/*state* (volatile! {:index {}})]
+                    (bfc/insert-file! cfg (assoc library :project-id project-id))
+
+                    ;; the library is not linked yet: the flag is left as it is
+                    (let [imported (bfc/process-imported-file cfg file)]
+                      (bfc/insert-file! cfg imported)
+                      (t/is (= #{(:id file)} (:deferred @bfc/*state*)))
+                      (t/is (contains? (:features imported) "components/text-overrides"))
+                      (t/is (= #{:content-group :text-content-attribute} (touched imported))))
+
+                    (db/insert! cfg :file-library-rel {:file-id (:id file)
+                                                       :library-file-id (:id library)})
+                    (bfc/convert-deferred! cfg)
+
+                    (t/is (= #{:content-group :text-content-fills}
+                             (touched (bfc/get-file cfg (:id file) :migrate? false :realize? true)))))))))
