@@ -33,17 +33,14 @@
 (defrecord Config [language-options colors units functions tokens inline-constants])
 
 (defn make-config
-  "Creates a config with the default color (hex) and unit registries.
-  Options: `:language-options`, and registry overrides `:colors`,
-  `:units`, `:functions`, `:tokens`."
-  ([] (make-config nil))
-  ([{:keys [language-options colors units functions tokens]}]
-   (->Config (merge default-language-options language-options)
-             (or colors (colors/default-registry))
-             (or units (units/default-registry))
-             (or functions (functions/empty-registry))
-             (or tokens (token-types/empty-registry))
-             {})))
+  "Creates a config with the default color (hex) and unit registries."
+  []
+  (->Config default-language-options
+            (colors/default-registry)
+            (units/default-registry)
+            (functions/empty-registry)
+            (token-types/empty-registry)
+            {}))
 
 (defn register-schema
   "Registers one schema (`{:uri .. :schema ..}`) by its `:type`:

@@ -88,7 +88,7 @@
                                registry)))
                          (colors/default-registry)
                          schemas)]
-    (config/make-config {:colors registry})))
+    (assoc (config/make-config) :colors registry)))
 
 ;; Cases ----------------------------------------------------------------------
 
