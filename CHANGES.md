@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2.18.4
+
+### :bug: Bugs fixed
+
+- Fix storage GC deleting nothing when one pending object is still referenced [#12276](https://github.com/penpot/penpot/issues/12276) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix objects GC stopping file deletion when one file still has a child row [#12277](https://github.com/penpot/penpot/issues/12277) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix file restore leaving its storage objects marked for deletion [#12278](https://github.com/penpot/penpot/issues/12278) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix backend workers staying parked forever when nested calls take the same concurrency limits [#12279](https://github.com/penpot/penpot/issues/12279) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix one profile's activity blocking the audit events of every other profile [#12280](https://github.com/penpot/penpot/issues/12280) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+
+### :sparkles: New features & Enhancements
+
+- Add a graceful instance drain through the /readyz endpoint [#12281](https://github.com/penpot/penpot/issues/12281) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Add an accumulated queue gauge to the CLIMIT metrics [#12282](https://github.com/penpot/penpot/issues/12282) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+
 ## 2.18.3
 
 ### :bug: Bugs fixed
