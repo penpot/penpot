@@ -8,7 +8,7 @@
   "The reporter that turns log records into a counter."
   (:require
    [app.common.logging :as l]
-   [app.loggers.metrics :as loggers.metrics]
+   [app.loggers.metrics] ;; registers the integrant methods of the reporter key
    [app.main :as main]
    [app.metrics :as mtx]
    [clojure.test :as t]
@@ -74,6 +74,18 @@
       (finally
         (halt-reporter! reporter)))))
 
+(t/deftest fatal-is-counted
+  (let [metrics  (init-metrics)
+        reporter (init-reporter metrics)]
+    (try
+      ;; No macro of the logging emits `:fatal`; this is the only way a record
+      ;; gets that level.
+      (l/log :fatal :hint "algo muy malo" ::l/sync? true)
+      (t/is (= 1.0 (sample metrics logger "fatal")))
+
+      (finally
+        (halt-reporter! reporter)))))
+
 (t/deftest halting-the-reporter-stops-counting
   (let [metrics  (init-metrics)
         reporter (init-reporter metrics)]
@@ -88,9 +100,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest a-failing-publication-does-not-break-the-logging
-  ;; The watcher runs inside the logging path: an exception there would reach
-  ;; whoever was logging, and in production it would take the logging executor
-  ;; down with it.
+  ;; The watcher fires from the `swap!` of the log record, inside the logging
+  ;; path. With `::l/sync?` an exception here would reach whoever was logging;
+  ;; on the async path it would end in the executor's uncaught handler, which
+  ;; is outside the application's logging, taking that log line out of Loki and
+  ;; out of this counter.
   (let [metrics  (init-metrics)
         reporter (init-reporter metrics)]
     (try

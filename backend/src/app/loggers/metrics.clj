@@ -25,9 +25,12 @@
   [_ {::mtx/keys [metrics]}]
   (add-watch l/log-record ::reporter
              (fn [_ _ _ record]
-               ;; This runs inside the logging path (the watcher fires from the
-               ;; `swap!` of the log record): an exception here would reach
-               ;; whoever was logging, so it is swallowed on purpose.
+               ;; This runs inside the logging path: the watcher fires from
+               ;; the `swap!` of the log record, so an exception here would
+               ;; reach whoever was logging on the synchronous path, and on
+               ;; the async one it would die in the executor's uncaught
+               ;; handler, taking that log line out of Loki. Swallowed on
+               ;; purpose either way.
                (try
                  (let [level (::l/level record)]
                    (when (contains? counted-levels level)

@@ -52,7 +52,7 @@
 (def default-metrics
   {:log-events
    {::mdef/name "penpot_log_events_total"
-    ::mdef/help "Log records emitted by the application, by logger and level."
+    ::mdef/help "Log records at WARN, ERROR and FATAL emitted by the application, by logger and level."
     ::mdef/labels ["logger" "level"]
     ::mdef/type :counter}
 
