@@ -80,5 +80,5 @@
                  (thtx/add-text-component-with-copy [[["Hello world"]]])
                  (thtx/set-text :copy-child [[["Hello world" {:color :red}]]]))]
     (t/is (= [[["Hello world" {:color :red}]]] (thtx/text-of file :copy-child)))
-    (t/is (= #{:content-group :text-content-attribute}
+    (t/is (= #{:content-group :text-content-fills}
              (:touched (ths/get-shape file :copy-child))))))

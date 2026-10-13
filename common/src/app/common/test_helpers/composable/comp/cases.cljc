@@ -654,11 +654,11 @@
 
 (defn text-override-merges-with-main-text-change
   "Case Y. A main text changes its characters or its font size; before that,
-   optionally, its copy changes one of them. Sync merges per text subgroup: the
-   copy keeps what it edited and takes the rest from the main. So the copy
-   shows its own characters if it edited them, else the main's, and the same
-   for the font size. An edited copy has `:content-group` and the subgroup of
-   its edit touched; an unedited one has nothing touched. The text starts with
+   optionally, its copy changes one of them. Sync merges per text override
+   group: the copy keeps what it edited and takes the rest from the main. So
+   the copy shows its own characters if it edited them, else the main's, and
+   the same for the font size. An edited copy has `:content-group` and the
+   group of its edit touched; an unedited one has nothing touched. The text starts with
    the name generated from its content, so an edit of its characters renames
    it, an automatic rename that must not touch `:name-group` (decision (d))."
   []
@@ -666,7 +666,7 @@
                               (n/edit-text :copy-instance :font-size "32")])
         main-edit (tm/one-of [(n/edit-text :main-instance :text "main text")
                               (n/edit-text :main-instance :font-size "24")])
-        subgroup  {:text :text-content-text :font-size :text-content-attribute}]
+        subgroup  {:text :text-content-text :font-size :text-content-size}]
     {:setup     setup/simple-text-component-with-copy
      :operation (tm/in-sequence [(tm/optional copy-edit) main-edit])
      :asserter  (fn [s]
@@ -728,8 +728,12 @@
                         main-node (tm/get-choice s main-edit)
                         same?     (= (:edit copy-node) (:edit main-node))
                         main-text ((text-restyle main-node) setup/two-style-text)
-                        merged    ((text-restyle copy-node) main-text)
-                        as-it-was ((text-restyle copy-node) setup/two-style-text)
+                        merged    (cond-> ((text-restyle copy-node) main-text)
+                                    ;; the weight, from the main, keeps the
+                                    ;; bold's variant id, for the frontend to
+                                    ;; pick the copy's family's
+                                    (and (= :font-family (:edit copy-node)) (not same?))
+                                    (update-in [0 1 1] assoc :font-variant-id "bold"))
                         copy      (setup/copy-instance s)
                         main      (setup/main-instance s)
                         text-of   #(n/text-span-value % :content)]
@@ -742,22 +746,14 @@
 
                       (tm/applied? s push)
                       (do
-                        (if same?
-                          (t/is (= (thtx/normalize merged) (text-of main)))
-                          ;; the copy pushes all of its styles, since all
-                          ;; of them stayed as the copy left them
-                          (tm/known-failure "F72" (thtx/normalize merged) (thtx/normalize as-it-was)
-                                            (text-of main)))
+                        (t/is (= (thtx/normalize merged) (text-of main)))
                         (t/is (= (text-of main) (text-of copy)))
                         (t/is (empty? (:touched copy))))
 
                       :else
                       (do
                         (t/is (= (thtx/normalize main-text) (text-of main)))
-                        (if same?
-                          (t/is (= (thtx/normalize merged) (text-of copy)))
-                          (tm/known-failure "F72" (thtx/normalize merged) (thtx/normalize as-it-was)
-                                            (text-of copy)))))))}))
+                        (t/is (= (thtx/normalize merged) (text-of copy)))))))}))
 
 ;; ---------------------------------------------------------------------------
 ;; Swap outcomes

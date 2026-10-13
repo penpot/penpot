@@ -86,6 +86,7 @@
    [common-tests.logic.swap-missing-library-test]
    [common-tests.logic.text-editor-output-test]
    [common-tests.logic.text-notation-test]
+   [common-tests.logic.text-override-operations-test]
    [common-tests.logic.text-override-rule-test]
    [common-tests.logic.text-override-switch-test]
    [common-tests.logic.text-override-sync-test]
@@ -128,6 +129,7 @@
    [common-tests.types.shape-layout-test]
    [common-tests.types.shape-test]
    [common-tests.types.stroke-test]
+   [common-tests.types.text-letters-test]
    [common-tests.types.text-test]
    [common-tests.types.token-test]
    [common-tests.types.tokens-lib-test]
@@ -214,6 +216,7 @@
    'common-tests.logic.swap-missing-library-test
    'common-tests.logic.text-editor-output-test
    'common-tests.logic.text-notation-test
+   'common-tests.logic.text-override-operations-test
    'common-tests.logic.text-override-rule-test
    'common-tests.logic.text-override-switch-test
    'common-tests.logic.text-override-sync-test
@@ -256,6 +259,7 @@
    'common-tests.types.shape-layout-test
    'common-tests.types.shape-test
    'common-tests.types.stroke-test
+   'common-tests.types.text-letters-test
    'common-tests.types.text-test
    'common-tests.types.token-test
    'common-tests.types.tokens-lib-test

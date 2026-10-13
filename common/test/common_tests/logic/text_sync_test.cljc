@@ -15,6 +15,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.types.text :as txt]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -173,8 +174,9 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; The attr doesn't change, because it was touched
-    (t/is (= "14" (:font-size line)))
+    ;; Each style is an override of its own: the copy's weight does not
+    ;; keep the main's size out
+    (t/is (= "32" (:font-size line)))
     (t/is (= "hello world" (:text line)))))
 
 (t/deftest sync-updated-attr-copy-when-changed-text
@@ -269,8 +271,9 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; The attr doesn't change, because it was touched
-    (t/is (= "14" (:font-size line)))
+    ;; Each style is an override of its own: the copy's weight does not
+    ;; keep the main's size out
+    (t/is (= "32" (:font-size line)))
     ;; The text is updated because only attrs were touched
     (t/is (= "Bye" (:text line)))))
 
@@ -463,8 +466,9 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; The attr doesn't change, because it was touched
-    (t/is (= "14" (:font-size line)))
+    ;; Letters and a style overridden keep the other styles following the
+    ;; main
+    (t/is (= "32" (:font-size line)))
     (t/is (= "Hi" (:text line)))))
 
 (t/deftest sync-updated-both-copy-when-changed-text
@@ -563,8 +567,9 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; The attr doesn't change, because it was touched
-    (t/is (= "14" (:font-size line)))
+    ;; Letters and a style overridden keep the other styles following the
+    ;; main
+    (t/is (= "32" (:font-size line)))
     ;; The text doesn't change, because it was touched
     (t/is (= "Hi" (:text line)))))
 
@@ -616,9 +621,10 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; The attr is updated because all the attrs on the structure are equal
+    ;; The style follows the main, as the copy only changed its letters
     (t/is (= "32" (:font-size line)))
-    (t/is (= "hello world" (:text line)))))
+    ;; The copy keeps its letters
+    (t/is (= "hello worldhello world" (txt/content->text (:content copy-child'))))))
 
 (t/deftest sync-updated-structure-same-attrs-copy-when-changed-text
   (let [;; ==== Setup
@@ -666,8 +672,8 @@
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
     (t/is (= "14" (:font-size line)))
-    ;; The text doesn't change, because the structure was touched
-    (t/is (= "hello world" (:text line)))))
+    ;; The copy keeps its letters
+    (t/is (= "hello worldhello world" (txt/content->text (:content copy-child'))))))
 
 (t/deftest sync-updated-structure-same-attrs-copy-when-changed-both
   (let [;; ==== Setup
@@ -718,10 +724,10 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; The attr is updated because all the attrs on the structure are equal
+    ;; The style follows the main, as the copy only changed its letters
     (t/is (= "32" (:font-size line)))
-    ;; The text doesn't change, because the structure was touched
-    (t/is (= "hello world" (:text line)))))
+    ;; The copy keeps its letters
+    (t/is (= "hello worldhello world" (txt/content->text (:content copy-child'))))))
 
 (t/deftest sync-updated-structure-diff-attrs-copy-when-changed-attribute
   (let [;; ==== Setup
@@ -772,8 +778,8 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; The attr doesn't change, because not all the attrs on the structure are equal
-    (t/is (= "14" (:font-size line)))
+    ;; The copy's own letters and weight do not keep the main's size out
+    (t/is (= "32" (:font-size line)))
     (t/is (= "hello world" (:text line)))))
 
 (t/deftest sync-updated-structure-diff-attrs-copy-when-changed-text
@@ -823,7 +829,7 @@
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
     (t/is (= "14" (:font-size line)))
-    ;; The text doesn't change, because the structure was touched
+    ;; The copy keeps its letters
     (t/is (= "hello world" (:text line)))))
 
 (t/deftest sync-updated-structure-diff-attrs-copy-when-changed-both
@@ -876,9 +882,9 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; The attr doesn't change, because not all the attrs on the structure are equal
-    (t/is (= "14" (:font-size line)))
-    ;; The text doesn't change, because the structure was touched
+    ;; The copy's own letters and weight do not keep the main's size out
+    (t/is (= "32" (:font-size line)))
+    ;; The copy keeps its letters
     (t/is (= "hello world" (:text line)))))
 
 (t/deftest sync-copy-touched-only-in-content-group
