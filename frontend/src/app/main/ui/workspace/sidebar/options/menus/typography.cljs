@@ -331,6 +331,7 @@
                       #(do {:term "" :backends #{}}))
         state        (deref state*)
 
+        root         (mf/use-ref)
         flist        (mf/use-ref)
         input        (mf/use-ref)
 
@@ -411,6 +412,25 @@
       (let [key (events/listen js/document "keydown" on-key-down)]
         #(events/unlistenByKey key)))
 
+    ;; Close on an outside click. Starts on the next tick to skip the
+    ;; opening click; detached targets (a just-selected row) are ignored
+    (mf/with-effect [on-close]
+      (let [listening? (volatile! false)
+            on-click   (fn [event]
+                         (let [target (dom/get-target event)
+                               node   (mf/ref-val root)]
+                           (when (and @listening?
+                                      (some? node)
+                                      (.-isConnected ^js target)
+                                      (not (dom/child? target node)))
+                             (on-close))))
+            task       (tm/schedule #(vreset! listening? true))
+            keys       [(events/listen js/document "click" on-click)
+                        (events/listen js/document "contextmenu" on-click)]]
+        (fn []
+          (tm/dispose! task)
+          (run! events/unlistenByKey keys))))
+
     ;; Materialize the preview sprite into the DOM only while the picker is open
     ;; (markup is prefetched on workspace load), removing it on close so its
     ;; ~2000 nodes aren't kept around idle. The attachment is deferred so the
@@ -451,7 +471,8 @@
             (dom/scroll-to-position node offset)))))
 
     [:div {:class [(stl/css-case :font-selector true
-                                 :fonts-on-modal (not full-size?))]}
+                                 :fonts-on-modal (not full-size?))]
+           :ref root}
      [:div {:class (stl/css-case :font-selector-dropdown true
                                  :font-selector-dropdown-full-size full-size?)}
       [:div {:class (stl/css :header)}
