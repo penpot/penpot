@@ -136,7 +136,7 @@ case "$CARGO_PROFILE_DIR" in
         #        -gseparate-dwarf
         #        -gsplit-dwarf
         #        -gsource-map
-        export EMCC_CFLAGS="-g -sASSERTIONS=1 -sVERBOSE=1 $EMCC_CFLAGS";
+        export EMCC_CFLAGS="-g -sASSERTIONS=1 $EMCC_CFLAGS";
         ;;
 esac
 
