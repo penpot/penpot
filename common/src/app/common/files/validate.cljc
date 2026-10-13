@@ -118,6 +118,19 @@
              {}
              objects))
 
+(defn- listed-in-parent?
+  "Check if `parent` lists `shape-id` in its `:shapes`. A `nil` parent
+  lists nothing.
+
+  Fast path: O(1) set lookup when `*children-sets*` is pre-computed for
+  the current page. Falls back to an O(k) linear scan via `some` when
+  the var is unbound (e.g. in isolated single-shape validation calls
+  outside a full page pass)."
+  [parent shape-id]
+  (if-let [cs *children-sets*]
+    (contains? (get cs (:id parent)) shape-id)
+    (some #(= shape-id %) (:shapes parent))))
+
 (defn- find-ref-shape*
   "Cached wrapper around `ctf/find-ref-shape` with `:include-deleted? true`.
   When `*ref-shape-cache*` is bound, each shape-id is resolved at most once
@@ -195,13 +208,7 @@
                     shape file page)
       (do
         (when-not (cfh/root? shape)
-          ;; Fast path: O(1) set lookup when `*children-sets*` is pre-computed
-          ;; for the current page.  Falls back to an O(k) linear scan via
-          ;; `some` when the var is unbound (e.g. in isolated single-shape
-          ;; validation calls outside a full page pass).
-          (when-not (if-let [cs *children-sets*]
-                      (contains? (get cs (:id parent)) shape-id)
-                      (some #(= shape-id %) (:shapes parent)))
+          (when-not (listed-in-parent? parent shape-id)
             (report-error :child-not-in-parent
                           (str/ffmt "Shape % not in parent's children list" shape-id)
                           shape file page)))
@@ -809,17 +816,16 @@
   orphaned shapes were silently skipped.  The `reduce-kv` approach
   builds a plain vector of IDs and never yields `nil` entries."
   [{:keys [objects] :as _page}]
-  (let [children-sets (or *children-sets* (build-children-sets objects))]
-    (persistent!
-     (reduce-kv (fn [result id shape]
-                  ;; A missing parent has no entry in `children-sets`,
-                  ;; so this also covers shapes whose parent does not exist
-                  (if (and (not (cfh/root? shape))
-                           (not (contains? (get children-sets (:parent-id shape)) id)))
-                    (conj! result id)
-                    result))
-                (transient [])
-                objects))))
+  (persistent!
+   (reduce-kv (fn [result id shape]
+                ;; A missing parent is `nil`, which lists nothing, so this
+                ;; also covers shapes whose parent does not exist
+                (if (and (not (cfh/root? shape))
+                         (not (listed-in-parent? (get objects (:parent-id shape)) id)))
+                  (conj! result id)
+                  result))
+              (transient [])
+              objects)))
 
 (defn check-tokens
   "Check tokens in the file. The internal structure should be correct because

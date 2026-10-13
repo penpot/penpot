@@ -232,21 +232,23 @@
 (t/deftest repair-child-not-in-parent
   (t/testing "detect and repair shapes whose parent exists but does not list them"
     (let [file    (-> (thf/sample-file :file1 :page-label :page1)
-                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
-                      (ths/update-shape :variant1 :shapes []))
+                      (ths/add-sample-shape :frame1 :type :frame)
+                      (ths/add-sample-shape :shape1 :parent-label :frame1)
+                      (ths/add-sample-shape :shape2 :parent-label :frame1)
+                      (ths/update-shape :frame1 :shapes []))
 
           errors  (cfv/validate-file file {})
           changes (cfr/repair-file file {} errors)
           file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
           errors' (cfv/validate-file file' {})
 
-          variant1' (ths/get-shape file' :variant1 :page-label :page1)]
+          frame1' (ths/get-shape file' :frame1 :page-label :page1)]
 
       (t/is (= #{:child-not-in-parent} (into #{} (map :code) errors)))
-      (t/is (= #{(thi/id :root1) (thi/id :root2)} (into #{} (map :shape-id) errors)))
+      (t/is (= #{(thi/id :shape1) (thi/id :shape2)} (into #{} (map :shape-id) errors)))
 
       (t/is (nil? errors'))
-      (t/is (= #{(thi/id :root1) (thi/id :root2)} (set (:shapes variant1')))))))
+      (t/is (= #{(thi/id :shape1) (thi/id :shape2)} (set (:shapes frame1')))))))
 
 (t/deftest repair-parent-not-found
   (t/testing "detect and repair shapes whose parent does not exist"
