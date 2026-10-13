@@ -10,18 +10,15 @@
    renderer). The DOM editor is only on together with the WASM one, which
    the viewport prefers, so no session runs it. Each fixture is the
    `:content` of one commit, built key for key as the editor wrote it.
-   Replaying the commits on a copy gives the touched groups the workspace
-   showed, less `:name-group`, which the automatic rename of the frontend
-   adds (F27)."
+   Replaying the commits on a copy gives the touched groups they set, less
+   `:name-group`, which the automatic rename of the frontend adds (F27)."
   (:require
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.texts :as thtx]
-   [app.common.types.text :as txt]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -122,12 +119,10 @@
                          :v1   #{:content-group :text-content-text}}
    :select-all-and-type {:wasm #{:content-group :text-content-text}
                          :v1   #{:content-group :text-content-text}}
-   ;; the WASM editor commits the new paragraph and then each key in it
-   :enter-and-type      {:wasm #{:content-group :text-content-text :text-content-structure}
-                         :v1   #{:content-group :text-content-structure}}
-   ;; the v1 editor also writes the run styles on the paragraph
-   :bold-a-word         {:wasm #{:content-group :text-content-structure}
-                         :v1   #{:content-group :text-content-attribute :text-content-structure}}})
+   :enter-and-type      {:wasm #{:content-group :text-content-text}
+                         :v1   #{:content-group :text-content-text}}
+   :bold-a-word         {:wasm #{:content-group :text-content-weight}
+                         :v1   #{:content-group :text-content-weight}}})
 
 (defn- copy-text-after
   "The copy text of a main written as `main`, once the copy gets `commits`."
@@ -167,9 +162,19 @@
                 "a style change sets no text override")
           nil)))))
 
-(t/deftest a-text-in-one-style-from-either-editor-is-uniform
-  ;; WASM: the paragraph has a direction its runs lack; v1: the paragraph has
-  ;; typography refs (nil) its runs lack
-  (doseq [content [main-text v1-new-text]]
-    (tm/known-failure "F79" true false
-                      (txt/equal-attrs? content (txt/get-first-paragraph-text-attrs content)))))
+(t/deftest a-copy-that-bolds-a-word-takes-the-main-new-line
+  ;; the main's new line follows the bold letter before it
+  (doseq [[editor commits] (:bold-a-word edits)]
+    (t/testing (str "bolded in the " editor " editor")
+      (let [file  (-> (thf/sample-file :file1)
+                      (tho/add-frame-with-text :main-root :main-child ""
+                                               :child-params {:content main-text})
+                      (thc/make-component :component1 :main-root)
+                      (thc/instantiate-component :component1 :copy-root
+                                                 {:children-labels [:copy-child]}))
+            file' (-> (reduce #(thtx/set-content %1 :copy-child %2) file commits)
+                      (thtx/set-content :main-child (text (paragraph (run "Hello world"))
+                                                          (paragraph (run "Second line"))))
+                      (tho/propagate-component-changes :component1))]
+        (t/is (= [[["Hello "] ["world" {:weight 700}]] [["Second line" {:weight 700}]]]
+                 (thtx/text-of file' :copy-child)))))))

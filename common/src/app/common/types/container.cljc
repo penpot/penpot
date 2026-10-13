@@ -566,33 +566,48 @@
 
 ;; --- SHAPE UPDATE
 
+(def ^:private token-attr->text-groups
+  "Token attribute set in the content of a text -> the text override groups
+   of the styles it sets."
+  {:font-family     #{:text-content-family}
+   :font-weight     #{:text-content-weight}
+   :font-size       #{:text-content-size}
+   :line-height     #{:text-content-line-height}
+   :letter-spacing  #{:text-content-spacing}
+   :text-case       #{:text-content-case}
+   :text-decoration #{:text-content-decoration}
+   :fill            #{:text-content-fills}
+   :typography      #{:text-content-family :text-content-weight :text-content-size
+                      :text-content-line-height :text-content-spacing :text-content-case
+                      :text-content-decoration}})
+
 (defn- get-token-groups
   "Get the sync attrs groups that are affected by changes in applied tokens.
 
    If any token has been applied or unapplied in the shape, calculate the corresponding
-   attributes and get the groups. If some of the attributes are to be applied in the
-   content nodes of a text shape, also return the content groups (only for attributes,
-   so the text is not touched)."
+   attributes and get the groups. Tokens set in the content nodes of a text shape give
+   `:content-group` and the text override groups of the styles they set."
   [shape new-applied-tokens]
-  (let [old-applied-tokens     (d/nilv (:applied-tokens shape) #{})
-        changed-token-attrs    (filter #(not= (get old-applied-tokens %) (get new-applied-tokens %))
-                                       ctt/all-keys)
-        shape-type             (get shape :type)
-        text-shape?            (= shape-type :text)
-        attrs-in-text-content? (some #(ctt/attrs-in-text-content %)
-                                     changed-token-attrs)
+  (let [old-applied-tokens  (d/nilv (:applied-tokens shape) #{})
+        changed-token-attrs (filter #(not= (get old-applied-tokens %) (get new-applied-tokens %))
+                                    ctt/all-keys)
+        shape-type          (get shape :type)
+        text-shape?         (= shape-type :text)
+        in-content?         #(and text-shape? (contains? ctt/attrs-in-text-content %))
 
-        changed-groups         (into #{}
-                                     (comp (map ctt/token-attr->shape-attr)
-                                           (keep #(ctk/resolve-sync-group shape-type %)))
-                                     changed-token-attrs)
+        shape-groups        (into #{}
+                                  (comp (remove in-content?)
+                                        (map ctt/token-attr->shape-attr)
+                                        (keep #(ctk/resolve-sync-group shape-type %)))
+                                  changed-token-attrs)
 
-        changed-groups      (if (and text-shape?
-                                     (d/not-empty? changed-groups)
-                                     attrs-in-text-content?)
-                              (conj changed-groups :content-group :text-content-attribute)
-                              changed-groups)]
-    changed-groups))
+        text-groups         (into #{}
+                                  (comp (filter in-content?)
+                                        (mapcat token-attr->text-groups))
+                                  changed-token-attrs)]
+    (cond-> shape-groups
+      (seq text-groups)
+      (into (conj text-groups :content-group)))))
 
 (defn set-shape-attr
   "Assign attribute to shape with touched logic.
@@ -636,29 +651,34 @@
              (not equal?)
              (not (and ignore-geometry is-geometry?)))
 
-        content-diff-type
-        (when (and (= type :text) (= attr :content))
-          (cttx/get-diff-type (:content shape) val))
+        ;; Depending on the origin of the attribute change, we need or not to
+        ;; set the "touched" flag for the group the attribute belongs to.
+        ;; In some cases we need to ignore touched only if the attribute is
+        ;; geometric (position, width or transformation).
+        may-touch?
+        (and in-copy?
+             (not ignore?)
+             (not (and ignore-geometry is-geometry?)))
+
+        ;; a text's content touches the groups of what the edit changes
+        ;; in it, and none when it changes nothing a copy can override
+        content-groups
+        (when (and may-touch? group (not equal?))
+          (if (and (= type :text) (= attr :content))
+            (let [groups (cttx/changed-groups (:content shape) val)]
+              (cond-> groups (seq groups) (conj group)))
+            #{group}))
 
         token-groups
-        (if (= attr :applied-tokens)
+        (if (and may-touch? (= attr :applied-tokens))
           (get-token-groups shape val)
           #{})
 
         groups
-        (cond-> token-groups
-          (and group (not equal?))
-          (set/union #{group} content-diff-type))]
+        (set/union token-groups content-groups)]
 
     (cond-> shape
-      ;; Depending on the origin of the attribute change, we need or not to
-      ;; set the "touched" flag for the group the attribute belongs to.
-      ;; In some cases we need to ignore touched only if the attribute is
-      ;; geometric (position, width or transformation).
-      (and in-copy?
-           (not-empty groups)
-           (not ignore?)
-           (not (and ignore-geometry is-geometry?)))
+      (not-empty groups)
       (-> (update :touched (fn [touched]
                              (reduce #(ctk/set-touched-group %1 %2)
                                      touched

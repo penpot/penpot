@@ -24,6 +24,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.modifiers :as ctm]
    [app.common.types.path.segment :as segment]
+   [app.common.types.text :as txt]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -377,6 +378,17 @@
 (def text-path-0 [:content :children 0 :children 0 :children 0 :text])
 (def text-path-1 [:content :children 0 :children 0 :children 1 :text])
 (def text-lines-path [:content :children 0 :children 0 :children])
+
+(defn- runs
+  "The letters and font size of the text `shape`, by font size."
+  [shape]
+  (reduce (fn [acc [letters size]]
+            (let [[prev-letters prev-size] (peek acc)]
+              (if (= prev-size size)
+                (conj (pop acc) [(str prev-letters letters) size])
+                (conj acc [letters size]))))
+          []
+          (map (juxt :text :font-size) (txt/node-seq txt/is-text-node? (:content shape)))))
 
 (defn- update-attr
   [file label path value]
@@ -961,16 +973,9 @@
     (t/is (= (get-in copy-structure-clean-t font-size-path-1) "14"))
     (t/is (= (get-in copy-structure-clean-t text-path-1) "new line 2"))
 
-    ;; After the switch, first line:
-    ;;   * font size 14 (value of c02, because there was no override)
-    ;;   * text "new line 1" (the override is preserved)
-    ;; Second line:
-    ;;   * font size 14 (value of c02, because there was no override)
-    ;;   * text "new line 2" (the override is preserved)
-    (t/is (= (get-in copy-structure-clean-t' font-size-path-0) "14"))
-    (t/is (= (get-in copy-structure-clean-t' text-path-0) "new line 1"))
-    (t/is (= (get-in copy-structure-clean-t' font-size-path-1) "14"))
-    (t/is (= (get-in copy-structure-clean-t' text-path-1) "new line 2"))
+    ;; After the switch, the letters are preserved, and the size is c02's
+    ;; (there was no override)
+    (t/is (= [["new line 1new line 2" "14"]] (runs copy-structure-clean-t')))
 
     ;;;;;;;;;;; Copy structure unif
     ;; Before the switch, first line:
@@ -984,16 +989,8 @@
     (t/is (= (get-in copy-structure-unif-t font-size-path-1) "25"))
     (t/is (= (get-in copy-structure-unif-t text-path-1) "new line 2"))
 
-    ;; After the switch, first line:
-    ;;   * font size 25 (the override is preserved)
-    ;;   * text "new line 1" (the override is preserved)
-    ;; Second line:
-    ;;   * font size 25 (the override is preserved)
-    ;;   * text "new line 2" (the override is preserved)
-    (t/is (= (get-in copy-structure-unif-t' font-size-path-0) "25"))
-    (t/is (= (get-in copy-structure-unif-t' text-path-0) "new line 1"))
-    (t/is (= (get-in copy-structure-unif-t' font-size-path-1) "25"))
-    (t/is (= (get-in copy-structure-unif-t' text-path-1) "new line 2"))
+    ;; After the switch, the letters and the size are preserved
+    (t/is (= [["new line 1new line 2" "25"]] (runs copy-structure-unif-t')))
 
     ;;;;;;;;;;; Copy structure mixed
     ;; Before the switch, first line:
@@ -1090,16 +1087,9 @@
     (t/is (= (get-in copy-structure-clean-t font-size-path-1) "14"))
     (t/is (= (get-in copy-structure-clean-t text-path-1) "new line 2"))
 
-    ;; After the switch, first line:
-    ;;   * font size 50 (value of c02, because there was no override)
-    ;;   * text "new line 1" (the override is preserved)
-    ;; Second line:
-    ;;   * font size 50 (value of c02, because there was no override)
-    ;;   * text "new line 2" (the override is preserved)
-    (t/is (= (get-in copy-structure-clean-t' font-size-path-0) "50"))
-    (t/is (= (get-in copy-structure-clean-t' text-path-0) "new line 1"))
-    (t/is (= (get-in copy-structure-clean-t' font-size-path-1) "50"))
-    (t/is (= (get-in copy-structure-clean-t' text-path-1) "new line 2"))
+    ;; After the switch, the letters are preserved and the size is c02's
+    ;; (there was no override)
+    (t/is (= [["new line 1new line 2" "50"]] (runs copy-structure-clean-t')))
 
     ;;;;;;;;;;; Copy structure unif
     ;; Before the switch, first line:
@@ -1113,16 +1103,9 @@
     (t/is (= (get-in copy-structure-unif-t font-size-path-1) "25"))
     (t/is (= (get-in copy-structure-unif-t text-path-1) "new line 2"))
 
-    ;; After the switch, first line:
-    ;;   * font size 50 (the override is not preserved)
-    ;;   * text "new line 1" (the override is preserved)
-    ;; Second line:
-    ;;   * font size 50 (the override is not preserved)
-    ;;   * text "new line 2" (the override is preserved)
-    (t/is (= (get-in copy-structure-unif-t' font-size-path-0) "50"))
-    (t/is (= (get-in copy-structure-unif-t' text-path-0) "new line 1"))
-    (t/is (= (get-in copy-structure-unif-t' font-size-path-1) "50"))
-    (t/is (= (get-in copy-structure-unif-t' text-path-1) "new line 2"))
+    ;; After the switch, the letters are preserved and the size is c02's
+    ;; (the variants differ in it)
+    (t/is (= [["new line 1new line 2" "50"]] (runs copy-structure-unif-t')))
 
     ;;;;;;;;;;; Copy structure mixed
     ;; Before the switch, first line:
@@ -1136,13 +1119,9 @@
     (t/is (= (get-in copy-structure-mixed-t font-size-path-1) "40"))
     (t/is (= (get-in copy-structure-mixed-t text-path-1) "new line 2"))
 
-    ;; After the switch, first line:
-    ;;   * font size 50 (the override is not preserved)
-    ;;   * text "hello world" (the override is not preserved)
-    ;; No second line
-    (t/is (= (get-in copy-structure-mixed-t' font-size-path-0) "50"))
-    (t/is (= (get-in copy-structure-mixed-t' text-path-0) "hello world"))
-    (t/is (nil? (get-in copy-structure-mixed-t' font-size-path-1)))))
+    ;; After the switch, the letters are preserved (the variants have the
+    ;; same) and the size is c02's (the variants differ in it)
+    (t/is (= [["new line 1new line 2" "50"]] (runs copy-structure-mixed-t')))))
 
 ;; ============================================================
 ;; TEXT STRUCTURE OVERRIDES (different text)
@@ -1261,13 +1240,11 @@
     (t/is (= (get-in copy-structure-mixed-t font-size-path-1) "40"))
     (t/is (= (get-in copy-structure-mixed-t text-path-1) "new line 2"))
 
-    ;; After the switch, first line:
-    ;;   * font size 14 (the override is not preserved)
-    ;;   * text "bye" (the override is not preserved)
-    ;; No second line
-    (t/is (= (get-in copy-structure-mixed-t' font-size-path-0) "14"))
-    (t/is (= (get-in copy-structure-mixed-t' text-path-0) "bye"))
-    (t/is (nil? (get-in copy-structure-mixed-t' font-size-path-1)))))
+    ;; After the switch, the letters are c02's (the variants differ in them)
+    ;; and the sizes are preserved (the variants agree on them): "bye"
+    ;; shares no letters with the copy, so it takes the size of the copy's
+    ;; first letter
+    (t/is (= [["bye" "35"]] (runs copy-structure-mixed-t')))))
 
 ;; ============================================================
 ;; TEXT STRUCTURE OVERRIDES (different text AND property)
@@ -3254,10 +3231,9 @@
     (t/is (mth/close? 28 (:height content)))))
 
 (t/deftest test-switch-to-a-main-with-another-text-structure
-  ;; The second variant's text has two lines where the first has one, so
-  ;; the copy's text cannot keep its own structure. With uniform styles and
-  ;; mains that agree on them, a style override is carried onto the new
-  ;; variant's lines; when the mains disagree on the style, it is dropped.
+  ;; The second variant's text has other letters, so the copy takes them.
+  ;; A style override the mains agree on is carried onto them; when the
+  ;; mains disagree on the style, it is dropped.
   (let [setup    (fn [main-font-size]
                    (-> (thf/sample-file :file1)
                        (thv/add-variant-with-text
@@ -3274,10 +3250,7 @@
                        (copy-child :copy02)))
         agree    (switched (setup nil))
         disagree (switched (setup "50"))]
-    (t/is (= "new line 1" (get-in agree text-path-0)))
-    (t/is (= "new line 2" (get-in agree text-path-1)))
-    (t/is (= "25" (get-in agree font-size-path-0)))
-    (t/is (= "25" (get-in agree font-size-path-1)))
+    (t/is (= [["new line 1new line 2" "25"]] (runs agree)))
     ;; the carried style stays an override
     (t/is (contains? (:touched agree) :content-group))
 
