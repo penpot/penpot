@@ -6356,6 +6356,22 @@ msgstr "Transformar texto"
 msgid "workspace.assets.ungroup"
 msgstr "Desagrupar"
 
+#: src/app/main/ui/workspace/main_menu.cljs:1152
+msgid "workspace.branches.menu.create"
+msgstr "Crear rama…"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:242
+msgid "workspace.branches.switcher.all"
+msgstr "Todas las ramas…"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:238
+msgid "workspace.branches.switcher.new"
+msgstr "Nueva rama…"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:309
+msgid "workspace.branches.switcher.tooltip"
+msgstr "Cambiar de rama"
+
 #: src/app/main/data/workspace/clipboard.cljs:1170
 msgid "workspace.clipboard.copying"
 msgstr "Copiando imagen…"

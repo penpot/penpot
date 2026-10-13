@@ -11,7 +11,7 @@
   grid-auto-rows: max-content;
 
   // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
-  height: calc(100vh - deprecated.$s-92);
+  height: calc(100vh - deprecated.$s-92 - var(--branch-bar-block-size, 0px));
   scrollbar-gutter: stable;
   overflow-y: auto;
   padding-top: deprecated.$s-8;

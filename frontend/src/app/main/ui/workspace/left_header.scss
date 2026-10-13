@@ -6,6 +6,12 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 
+.workspace-header-left-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
 .workspace-header-left {
   display: flex;
   align-items: center;
@@ -80,18 +86,6 @@
   &:focus {
     outline: none;
   }
-}
-
-.branch-badge {
-  @include deprecated.flex-center;
-
-  flex-shrink: 0;
-  width: deprecated.$s-16;
-  height: deprecated.$s-16;
-  margin-right: deprecated.$s-6;
-  border-radius: deprecated.$br-4;
-  background-color: var(--button-secondary-background-color-rest);
-  color: var(--button-secondary-foreground-color-rest);
 }
 
 // pull request review: accent-colored so an active review stands out from

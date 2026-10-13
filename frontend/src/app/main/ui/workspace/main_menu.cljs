@@ -41,6 +41,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks.resize :as r]
+   [app.main.ui.workspace.branch-switcher :as bsw]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -629,18 +630,6 @@
            (when (kbd/enter? event)
              (on-show-version-history event))))
 
-        on-show-branches
-        (mf/use-fn
-         (fn [_]
-           (st/emit! (dwb/show-branches-panel))))
-
-        on-show-branches-key-down
-        (mf/use-fn
-         (mf/deps on-show-branches)
-         (fn [event]
-           (when (kbd/enter? event)
-             (on-show-branches event))))
-
         on-pin-version
         (mf/use-fn
          (fn [_]
@@ -730,15 +719,6 @@
          [:span {:class (stl/css :item-name)}
           (tr "dashboard.show-version-history")]
          [:> shortcuts* {:id :toggle-history}]]
-
-        (when (contains? cf/flags :branching)
-          [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
-                                   :on-click    on-show-branches
-                                   :on-key-down on-show-branches-key-down
-                                   :id          "file-menu-show-branches"}
-           [:span {:class (stl/css :item-name)}
-            (tr "workspace.branches.menu")]
-           [:> shortcuts* {:id :open-branches}]])
 
         [:div {:class (stl/css :separator)}]])
 
@@ -913,6 +893,7 @@
         selected-sub-menu* (mf/use-state nil)
         selected-sub-menu  (deref selected-sub-menu*)
         mcp                (mf/deref refs/mcp)
+        has-branches?      (mf/deref bsw/has-branches)
 
         toggle-menu
         (mf/use-fn
@@ -1000,6 +981,16 @@
             (ev/event {::ev/name "open-plugins-manager"
                        ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
+
+        ;; the switcher when the file has branches; the create dialog when
+        ;; it has none, since the switcher only exists once a branch does
+        show-branches
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)
+           (reset! selected-sub-menu* nil)
+           (st/emit! (dwb/show-branches))))
 
         show-shortcuts
         (mf/use-fn
@@ -1144,6 +1135,22 @@
         (tr "workspace.header.menu.option.help-info")]
        [:> icon* {:icon-id i/arrow-right
                   :class (stl/css :item-arrow)}]]
+
+      (when (contains? cf/flags :branching)
+        [:*
+         [:div {:class (stl/css :separator)}]
+         [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
+                                  :on-click    show-branches
+                                  :on-key-down (fn [event]
+                                                 (when (kbd/enter? event)
+                                                   (show-branches event)))
+                                  :on-pointer-enter close-sub-menu
+                                  :id          "file-menu-branches"}
+          [:span {:class (stl/css :item-name)}
+           (if ^boolean has-branches?
+             (tr "workspace.branches.menu")
+             (tr "workspace.branches.menu.create"))]
+          [:> shortcuts* {:id :open-branches}]]])
 
       (when (or (and (contains? cf/flags :subscriptions)
                      (not= "enterprise" subscription-type))

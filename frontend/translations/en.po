@@ -7018,6 +7018,10 @@ msgstr "Branches"
 msgid "workspace.branches.menu.archive"
 msgstr "Archive"
 
+#: src/app/main/ui/workspace/main_menu.cljs:1152
+msgid "workspace.branches.menu.create"
+msgstr "Create branch…"
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:682
 msgid "workspace.branches.menu.info"
 msgstr "Branch info"
@@ -7121,7 +7125,19 @@ msgstr "Deleted"
 msgid "workspace.branches.status.modified"
 msgstr "Modified"
 
-#: src/app/main/ui/workspace/sidebar.cljs:261
+#: src/app/main/ui/workspace/branch_switcher.cljs:242
+msgid "workspace.branches.switcher.all"
+msgstr "All branches…"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:238
+msgid "workspace.branches.switcher.new"
+msgstr "New branch…"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:309
+msgid "workspace.branches.switcher.tooltip"
+msgstr "Switch branch"
+
+#, unused
 msgid "workspace.branches.tab"
 msgstr "Branches"
 

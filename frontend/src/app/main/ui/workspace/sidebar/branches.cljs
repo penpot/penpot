@@ -1053,6 +1053,27 @@
        [:> i/icon* {:icon-id i/help :size "s"}]
        [:span (tr "workspace.branches.limits.link")]]]]))
 
+;; --- All branches dialog (the full list, with each branch's options)
+
+(mf/defc branches-list-dialog*
+  {::mf/register modal/components
+   ::mf/register-as :branches-list}
+  []
+  (let [on-close (mf/use-fn #(st/emit! (modal/hide)))]
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-container :branches-list-container)}
+      [:div {:class (stl/css :modal-header)}
+       [:div {:class (stl/css :modal-header-icon)}
+        [:> i/icon* {:icon-id i/git-branch}]]
+       [:div {:class (stl/css :modal-header-text)}
+        [:h2 {:class (stl/css :modal-title)} (tr "workspace.branches.menu")]]
+       [:> button* {:variant "ghost"
+                    :icon i/close
+                    :aria-label (tr "labels.close")
+                    :on-click on-close}]]
+      [:div {:class (stl/css :branches-list-content)}
+       [:> branches-toolbox* {}]]]]))
+
 ;; --- Compare changes dialog (read-only 3-way diff)
 
 (mf/defc compare-value-chip*

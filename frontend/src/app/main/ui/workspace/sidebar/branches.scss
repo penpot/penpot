@@ -1480,6 +1480,17 @@
   @include t.use-typography("body-small");
 }
 
+// --- All branches dialog: the panel at a fixed height, so its list scrolls
+
+.branches-list-container {
+  inline-size: $sz-512;
+}
+
+.branches-list-content {
+  block-size: $sz-480;
+  min-block-size: 0;
+}
+
 // --- Lifecycle: kebab menu, rename, archived section
 
 .branch-entry.is-archived {
