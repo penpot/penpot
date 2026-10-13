@@ -86,7 +86,8 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [clojure.walk :as walk]))
 
 (def ^:private red "#ff0000")
 (def ^:private green "#00ff00")
@@ -705,6 +706,15 @@
                                                  thtx/colors))
       :font-family #(thtx/restyle % :family value))))
 
+(defn- without-variants
+  "`text` in the notation with no `:font-variant-id`."
+  [text]
+  (walk/postwalk #(cond-> % (map? %) (dissoc :font-variant-id)) text))
+
+(defn- normalize
+  [text]
+  (without-variants (thtx/normalize text)))
+
 (defn text-style-override-against-main-style-change
   "Case BA. A main text in two styles (\"Price: \" and a bold \"$10\") and
    its copy. The copy changes the fill or the font family of all of its text,
@@ -726,34 +736,32 @@
      :asserter  (fn [s]
                   (let [copy-node (tm/get-choice s copy-edit)
                         main-node (tm/get-choice s main-edit)
-                        same?     (= (:edit copy-node) (:edit main-node))
                         main-text ((text-restyle main-node) setup/two-style-text)
-                        merged    (cond-> ((text-restyle copy-node) main-text)
-                                    ;; the weight, from the main, keeps the
-                                    ;; bold's variant id, for the frontend to
-                                    ;; pick the copy's family's
-                                    (and (= :font-family (:edit copy-node)) (not same?))
-                                    (update-in [0 1 1] assoc :font-variant-id "bold"))
+                        merged    ((text-restyle copy-node) main-text)
                         copy      (setup/copy-instance s)
                         main      (setup/main-instance s)
-                        text-of   #(n/text-span-value % :content)]
+                        ;; the variant id is left out: with the family from
+                        ;; one side and the weight from the other, the
+                        ;; frontend picks the family's closest variant, and
+                        ;; the pure runner has no fonts to pick from
+                        text-of   #(without-variants (n/text-span-value % :content))]
                     (cond
                       (tm/applied? s reset)
                       (do
-                        (t/is (= (thtx/normalize main-text) (text-of copy)))
-                        (t/is (= (thtx/normalize main-text) (text-of main)))
+                        (t/is (= (normalize main-text) (text-of copy)))
+                        (t/is (= (normalize main-text) (text-of main)))
                         (t/is (empty? (:touched copy))))
 
                       (tm/applied? s push)
                       (do
-                        (t/is (= (thtx/normalize merged) (text-of main)))
+                        (t/is (= (normalize merged) (text-of main)))
                         (t/is (= (text-of main) (text-of copy)))
                         (t/is (empty? (:touched copy))))
 
                       :else
                       (do
-                        (t/is (= (thtx/normalize main-text) (text-of main)))
-                        (t/is (= (thtx/normalize merged) (text-of copy)))))))}))
+                        (t/is (= (normalize main-text) (text-of main)))
+                        (t/is (= (normalize merged) (text-of copy)))))))}))
 
 ;; ---------------------------------------------------------------------------
 ;; Swap outcomes

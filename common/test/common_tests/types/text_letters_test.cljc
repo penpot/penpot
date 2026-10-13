@@ -107,3 +107,10 @@
   (t/is (not (cttx/same-style? {:font-size "14"} {:font-size "18"})))
   (t/is (not (cttx/same-style? {:font-variant-id "700"} {:font-variant-id "700italic"})))
   (t/is (not (cttx/same-style? {:fills [{:fill-color "#000000" :fill-opacity 1}]} {}))))
+
+(t/deftest font-variants-of-the-nodes-that-name-a-font
+  (let [content (thtx/content [[["Price: "] ["$10" {:weight 700}]]])
+        fixed   (cttx/update-font-variants content #(when (= "bold" (:font-variant-id %)) "700"))]
+    (t/is (= [[["Price: "] ["$10" {:weight 700 :font-variant-id "700"}]]] (thtx/view fixed)))
+    (t/testing "the paragraph, which holds its first run's styles, keeps them"
+      (t/is (= "regular" (get-in fixed [:children 0 :children 0 :font-variant-id]))))))
