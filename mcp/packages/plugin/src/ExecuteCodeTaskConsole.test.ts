@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ExecuteCodeTaskConsole } from "./task-handlers/ExecuteCodeTaskHandler.ts";
+import { ExecuteCodeTaskConsole } from "./ExecuteCodeTaskConsole.ts";
 
 test("formats plain objects and primitives", () => {
     const console = new ExecuteCodeTaskConsole();
