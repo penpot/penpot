@@ -35,6 +35,7 @@
    [clojure.string :as str]
    [linked.map :as lkm]))
 
+
 ;; Protocols ------------------------------------------------------------------
 
 (defprotocol ISymbol
@@ -57,8 +58,8 @@
   (valid-value? [_ v] "Whether `v` is an acceptable value for a variable holding the symbol."))
 
 (defprotocol IScriptable
-  "Members of a symbol reachable from scripts: `x.method()` and `x.attribute`."
-  (method-table [_] "Script methods by lower case name, see `call-method`.")
+  "Members of a symbol reachable from scripts: `x.attribute`. Script
+  methods (`x.method()`) are looked up by type name, see `call-method`."
   (has-attribute? [_ attribute-name] "Whether `x.attribute-name` is defined.")
   (get-attribute [_ attribute-name]
     "Value of `x.attribute-name` or nil. Raises for unknown attributes on
@@ -89,16 +90,6 @@
   (value-list [_] "List symbol with the values.")
   (key-exists? [_ key] "Boolean symbol.")
   (clear! [_]))
-
-(declare null number string boolean list symbol? null? number? string? boolean?
-         number-with-unit? color? list? hex-color? symbol-type-equals? format-entries
-         format-color items->string items->data entries->data copy-entries color-equals?
-         container-equals? scalar-equals? attribute-not-found expect-string-value
-         list-append* list-extend* list-insert* list-delete* list-update* list-get*
-         list-index* list-join* dict-get* dict-set* dict-delete* dict-keys* dict-values*
-         dict-key-exists* expect-list-content expect-map-content
-         number-methods string-methods list-methods number-with-unit-methods
-         dictionary-methods token-methods color-methods)
 
 ;; Names ----------------------------------------------------------------------
 
@@ -166,500 +157,6 @@
                hex)]
     (str hex6 alpha-hex)))
 
-;; Records --------------------------------------------------------------------
-;;
-;; Inside a record body the `value` field shadows the `value` function, so
-;; the bodies stay short and delegate to the helpers further down.
-
-(defrecord NullSymbol []
-  ISymbol
-  (type-name [_] "Null")
-  (full-type-name [_] "Null")
-  (value [_] nil)
-  (to-string- [_ _] "null")
-  (data- [_ _] nil)
-  (deep-copy [this] this)
-  (clone-if-mutable [this] this)
-  (equals? [_ other] (null? other))
-  (valid-value? [_ v] (nil? v))
-
-  IScriptable
-  (method-table [_] {})
-  (has-attribute? [_ _] false)
-  (get-attribute [this attribute-name] (attribute-not-found this attribute-name)))
-
-(defrecord NumberSymbol [value]
-  ISymbol
-  (type-name [_] "Number")
-  (full-type-name [_] "Number")
-  (value [_] value)
-  (to-string- [_ _] (u/num->str value))
-  (data- [_ _] value)
-  (deep-copy [this] this)
-  (clone-if-mutable [this] this)
-  (equals? [this other] (scalar-equals? this other))
-  (valid-value? [_ v] (or (clojure.core/number? v) (number? v)))
-
-  IScriptable
-  (method-table [_] number-methods)
-  (has-attribute? [_ attribute-name] (= attribute-name "value"))
-  (get-attribute [this attribute-name]
-    (if (= attribute-name "value")
-      (number value)
-      (attribute-not-found this attribute-name))))
-
-(defrecord StringSymbol [value]
-  ISymbol
-  (type-name [_] "String")
-  (full-type-name [_] "String")
-  (value [_] value)
-  (to-string- [_ _] (if (nil? value) "null" value))
-  (data- [_ _] value)
-  (deep-copy [this] this)
-  (clone-if-mutable [this] this)
-  (equals? [this other] (scalar-equals? this other))
-  (valid-value? [_ v] (or (clojure.core/string? v) (string? v)))
-
-  IScriptable
-  (method-table [_] string-methods)
-  (has-attribute? [_ _] false)
-  (get-attribute [this attribute-name] (attribute-not-found this attribute-name))
-
-  ISized
-  (length [this]
-    (expect-string-value this)
-    (number (count value))))
-
-(defrecord BooleanSymbol [value]
-  ISymbol
-  (type-name [_] "Boolean")
-  (full-type-name [_] "Boolean")
-  (value [_] value)
-  (to-string- [_ _] (if (nil? value) "null" (str value)))
-  (data- [_ _] value)
-  (deep-copy [this] this)
-  (clone-if-mutable [this] this)
-  (equals? [this other] (scalar-equals? this other))
-  (valid-value? [_ v] (or (clojure.core/boolean? v) (boolean? v)))
-
-  IScriptable
-  (method-table [_] {})
-  (has-attribute? [_ _] false)
-  (get-attribute [this attribute-name] (attribute-not-found this attribute-name)))
-
-(defrecord NumberWithUnitSymbol [value unit]
-  ISymbol
-  (type-name [_] "NumberWithUnit")
-  (full-type-name [_] (str "NumberWithUnit." (u/capitalize unit)))
-  (value [_] value)
-  (to-string- [_ _] (str (u/num->str value) unit))
-  (data- [this opts]
-    (if (:stringify? opts)
-      (to-string- this nil)
-      {:value value :unit unit}))
-  (deep-copy [this] this)
-  (clone-if-mutable [this] this)
-  (equals? [_ other]
-    (and (number-with-unit? other)
-         (= value (:value other))
-         (= (str/lower-case unit) (str/lower-case (:unit other)))))
-  (valid-value? [_ v] (number-with-unit? v))
-
-  IScriptable
-  (method-table [_] number-with-unit-methods)
-  (has-attribute? [_ attribute-name] (= attribute-name "value"))
-  (get-attribute [this attribute-name]
-    (if (= attribute-name "value")
-      (number value)
-      (attribute-not-found this attribute-name))))
-
-(defrecord ColorSymbol [value sub-type alpha]
-  ISymbol
-  (type-name [_] "Color")
-  (full-type-name [_] (qualified-type-name "Color" sub-type))
-  (value [_] value)
-  (to-string- [this config]
-    (cond
-      (some? config) (format-color config this)
-      (map? value) (format-entries value config)
-      (clojure.core/string? value) (if (some? alpha) (format-hex8 value alpha) value)
-      :else ""))
-  (data- [this opts]
-    (cond
-      (:stringify? opts) (to-string- this nil)
-      (clojure.core/string? value) {:type (or sub-type "hex") :value value :alpha alpha}
-      (map? value) (into {:type (or sub-type "unknown") :alpha alpha} (entries->data value opts))
-      :else {:type (or sub-type "unknown") :value nil :alpha alpha}))
-  (deep-copy [this]
-    (if (map? value)
-      (ColorSymbol. (into {} (map (fn [[k v]] [k (deep-copy v)])) value) sub-type alpha)
-      this))
-  (clone-if-mutable [this] this)
-  (equals? [this other] (color-equals? this other))
-  (valid-value? [_ v] (or (color? v) (nil? v) (map? v) (valid-hex? v)))
-
-  IScriptable
-  (method-table [_] color-methods)
-  (has-attribute? [_ attribute-name]
-    (or (contains? #{"to" "alpha"} attribute-name)
-        (and (map? value) (contains? value attribute-name))))
-  (get-attribute [this attribute-name]
-    (case attribute-name
-      "to" this
-      "alpha" (if (some? alpha) (number alpha) (null))
-      (if (and (map? value) (contains? value attribute-name))
-        (get value attribute-name)
-        (err/raise :symbols/attribute-not-found {:data {:attribute-name attribute-name :type "Color"}})))))
-
-(defrecord ListSymbol [value implicit?]
-  ISymbol
-  (type-name [_] "List")
-  (full-type-name [_] (if implicit? (qualified-type-name "List" "Implicit") "List"))
-  (value [_] @value)
-  (to-string- [_ config] (items->string @value implicit? config))
-  (data- [_ opts] (items->data @value opts))
-  (deep-copy [_] (ListSymbol. (volatile! (mapv deep-copy @value)) implicit?))
-  (clone-if-mutable [this] (deep-copy this))
-  (equals? [this other] (container-equals? this other))
-  (valid-value? [_ v] (or (vector? v) (list? v)))
-
-  IScriptable
-  (method-table [_] list-methods)
-  (has-attribute? [_ _] false)
-  (get-attribute [this attribute-name] (attribute-not-found this attribute-name))
-
-  ISized
-  (length [_] (number (count @value)))
-
-  IListSymbol
-  (append! [this item] (list-append* value item) this)
-  (extend! [this items] (list-extend* value items) this)
-  (insert! [this index item] (list-insert* value index item) this)
-  (delete-at! [this index] (list-delete* value index) this)
-  (update-at! [this index item] (list-update* value index item) this)
-  (nth-item [_ index] (list-get* @value index))
-  (item-index [_ item] (list-index* @value item))
-  (join [this config] (join this config nil))
-  (join [_ config separator] (list-join* @value separator config)))
-
-(defrecord DictionarySymbol [value]
-  ISymbol
-  (type-name [_] "Dictionary")
-  (full-type-name [_] "Dictionary")
-  (value [_] @value)
-  (to-string- [_ config] (format-entries @value config))
-  (data- [_ opts] (entries->data @value opts))
-  (deep-copy [_] (DictionarySymbol. (volatile! (copy-entries @value))))
-  (clone-if-mutable [this] (deep-copy this))
-  (equals? [this other] (container-equals? this other))
-  (valid-value? [_ v] (or (map? v) (nil? v)))
-
-  IScriptable
-  (method-table [_] dictionary-methods)
-  (has-attribute? [_ attribute-name] (contains? @value attribute-name))
-  (get-attribute [_ attribute-name] (get @value attribute-name))
-
-  ISized
-  (length [_] (number (count @value)))
-
-  IDictionarySymbol
-  (get-key [_ key] (dict-get* @value key))
-  (set-key! [this key v] (dict-set* value key v) this)
-  (delete-key! [this key] (dict-delete* value key) this)
-  (key-list [_] (dict-keys* @value))
-  (value-list [_] (dict-values* @value))
-  (key-exists? [_ key] (dict-key-exists* @value key))
-  (clear! [this] (vreset! value lkm/empty-linked-map) this))
-
-(defrecord TokenSymbol [sub-type value metadata]
-  ISymbol
-  (type-name [_] "Token")
-  (full-type-name [_] (qualified-type-name "Token" sub-type))
-  (value [_] @value)
-  (to-string- [_ config]
-    (let [v @value]
-      (if (map? v) (format-entries v config) (items->string v false config))))
-  (data- [_ opts]
-    (let [v @value]
-      (if (map? v) (entries->data v opts) (items->data v opts))))
-  (deep-copy [_]
-    (let [v @value]
-      (TokenSymbol. sub-type (volatile! (if (map? v) (copy-entries v) (mapv deep-copy v))) metadata)))
-  (clone-if-mutable [this] (deep-copy this))
-  (equals? [this other] (container-equals? this other))
-  (valid-value? [_ v] (or (map? v) (vector? v) (nil? v)))
-
-  IScriptable
-  (method-table [_] token-methods)
-  (has-attribute? [_ attribute-name]
-    (or (contains? #{"subType" "type"} attribute-name)
-        (let [v @value] (and (map? v) (contains? v attribute-name)))))
-  (get-attribute [_ attribute-name]
-    (case attribute-name
-      "subType" (string sub-type)
-      "type" (string "Token")
-      (let [v @value] (when (map? v) (get v attribute-name)))))
-
-  ISized
-  (length [_] (number (count @value)))
-
-  IListSymbol
-  (append! [this item] (expect-list-content this "append") (list-append* value item) this)
-  (extend! [this items] (expect-list-content this "extend") (list-extend* value items) this)
-  (insert! [this index item] (expect-list-content this "insert") (list-insert* value index item) this)
-  (delete-at! [this index] (expect-list-content this "delete") (list-delete* value index) this)
-  (update-at! [this index item] (expect-list-content this "update") (list-update* value index item) this)
-  (nth-item [this index] (expect-list-content this "get") (list-get* @value index))
-  (item-index [this item] (expect-list-content this "get index") (list-index* @value item))
-  (join [this config] (join this config nil))
-  (join [this config separator] (expect-list-content this "join") (list-join* @value separator config))
-
-  IDictionarySymbol
-  (get-key [this key] (expect-map-content this "get") (dict-get* @value key))
-  (set-key! [this key v] (expect-map-content this "set key") (dict-set* value key v) this)
-  (delete-key! [this key] (expect-map-content this "delete key") (dict-delete* value key) this)
-  (key-list [this] (expect-map-content this "get keys") (dict-keys* @value))
-  (value-list [_] (let [v @value] (if (map? v) (dict-values* v) (list v false))))
-  (key-exists? [this key] (expect-map-content this "key exists") (dict-key-exists* @value key))
-  (clear! [this] (expect-map-content this "clear") (vreset! value lkm/empty-linked-map) this))
-
-;; Values from the host (nil, strings and other data) render and convert as
-;; themselves; they have no type, methods or attributes.
-(extend-protocol ISymbol
-  nil
-  (type-name [_] "Unknown")
-  (full-type-name [_] "Unknown")
-  (value [_] nil)
-  (to-string- [_ _] "null")
-  (data- [_ _] nil)
-  (deep-copy [_] nil)
-  (clone-if-mutable [_] nil)
-  (equals? [_ _] false)
-  (valid-value? [_ _] false)
-
-  #?(:clj String :cljs string)
-  (type-name [_] "Unknown")
-  (full-type-name [_] "Unknown")
-  (value [_] nil)
-  (to-string- [s _] s)
-  (data- [s _] s)
-  (deep-copy [s] s)
-  (clone-if-mutable [s] s)
-  (equals? [_ _] false)
-  (valid-value? [_ _] false)
-
-  #?(:clj Object :cljs default)
-  (type-name [_] "Unknown")
-  (full-type-name [_] "Unknown")
-  (value [x] (let [v (get x :value)] (if (volatile? v) @v v)))
-  (to-string- [x _] (str x))
-  (data- [x _] x)
-  (deep-copy [x] x)
-  (clone-if-mutable [x] x)
-  (equals? [_ _] false)
-  (valid-value? [_ _] false))
-
-(extend-protocol IScriptable
-  nil
-  (method-table [_] {})
-  (has-attribute? [_ _] false)
-  (get-attribute [this attribute-name] (attribute-not-found this attribute-name))
-
-  #?(:clj Object :cljs default)
-  (method-table [_] {})
-  (has-attribute? [_ _] false)
-  (get-attribute [this attribute-name] (attribute-not-found this attribute-name)))
-
-;; Predicates -----------------------------------------------------------------
-
-(defn symbol?
-  [v]
-  (or (instance? NullSymbol v)
-      (instance? NumberSymbol v)
-      (instance? StringSymbol v)
-      (instance? BooleanSymbol v)
-      (instance? NumberWithUnitSymbol v)
-      (instance? ColorSymbol v)
-      (instance? ListSymbol v)
-      (instance? DictionarySymbol v)
-      (instance? TokenSymbol v)))
-
-(defn null? [v] (instance? NullSymbol v))
-(defn number? [v] (instance? NumberSymbol v))
-(defn string? [v] (instance? StringSymbol v))
-(defn boolean? [v] (instance? BooleanSymbol v))
-(defn number-with-unit? [v] (instance? NumberWithUnitSymbol v))
-(defn color? [v] (instance? ColorSymbol v))
-(defn list? [v] (instance? ListSymbol v))
-(defn dictionary? [v] (instance? DictionarySymbol v))
-(defn token? [v] (instance? TokenSymbol v))
-
-(defn numeric?
-  "Number or NumberWithUnit symbol."
-  [v]
-  (or (number? v) (number-with-unit? v)))
-
-;; Constructors ---------------------------------------------------------------
-
-(defn null
-  []
-  (->NullSymbol))
-
-(defn number
-  "Number symbol from a number, another numeric symbol or nil."
-  [v]
-  (cond
-    (clojure.core/number? v) (->NumberSymbol (double v))
-    (numeric? v) (->NumberSymbol (value v))
-    (nil? v) (->NumberSymbol nil)
-    :else (err/raise :symbols/value-must-be-type
-                     {:data {:expected-type "int or float" :actual-type (u/typeof v)}})))
-
-(defn string
-  [v]
-  (cond
-    (clojure.core/string? v) (->StringSymbol v)
-    (string? v) (->StringSymbol (:value v))
-    (nil? v) (->StringSymbol nil)
-    :else (err/raise :symbols/value-must-be-type
-                     {:data {:expected-type "string" :actual-type (u/typeof v)}})))
-
-(defn boolean
-  [v]
-  (cond
-    (clojure.core/boolean? v) (->BooleanSymbol v)
-    (boolean? v) (->BooleanSymbol (:value v))
-    (nil? v) (->BooleanSymbol nil)
-    :else (err/raise :symbols/value-must-be-type
-                     {:data {:expected-type "boolean" :actual-type (u/typeof v)}})))
-
-(defn number-with-unit
-  [v unit]
-  (let [safe (cond
-               (clojure.core/number? v) (double v)
-               (number? v) (:value v)
-               (nil? v) nil
-               :else (err/raise :symbols/value-must-be-type
-                                {:data {:expected-type "number or NumberSymbol" :actual-type (u/typeof v)}}))]
-    (when-not (contains? lex/supported-format-set unit)
-      (err/raise :symbols/attribute-not-found {:data {:attribute-name unit :type "Unit"}}))
-    (->NumberWithUnitSymbol safe unit)))
-
-(defn color
-  "Color symbol. `v` is a hex string (sub type `Hex`), a map of channel
-  name to symbol (dynamic color with a sub type), or nil."
-  ([v] (color v nil nil))
-  ([v sub-type] (color v sub-type nil))
-  ([v sub-type alpha]
-   (let [hex? (and (or (nil? sub-type) (= "hex" (str/lower-case sub-type)))
-                   (clojure.core/string? v))
-         dynamic? (and (clojure.core/string? sub-type) (map? v))]
-     (when-not (or (nil? v) hex? dynamic?)
-       (err/raise :symbols/invalid-color-value {:data {:value (str v) :type (u/typeof v)}}))
-     (when (and hex? (not (valid-hex? v)))
-       (err/raise :symbols/invalid-hex-color {:data {:value (str v)}}))
-     (ensure-valid-alpha alpha)
-     (->ColorSymbol v (if hex? "Hex" sub-type) alpha))))
-
-(defn list
-  "List symbol from a sequence of symbols."
-  ([elements] (list elements false))
-  ([elements implicit?]
-   (->ListSymbol (volatile! (vec elements)) (clojure.core/boolean implicit?))))
-
-(defn- ordered-map
-  [m]
-  (if (nil? m)
-    lkm/empty-linked-map
-    (into lkm/empty-linked-map m)))
-
-(defn dictionary
-  "Dictionary symbol from a map of string keys to symbols. Entries keep
-  insertion order."
-  [m]
-  (cond
-    (dictionary? m) (->DictionarySymbol (volatile! (value m)))
-    (or (nil? m) (map? m)) (->DictionarySymbol (volatile! (ordered-map m)))
-    :else (err/raise :symbols/value-must-be-type
-                     {:data {:expected-type "dict" :actual-type (u/typeof m)}})))
-
-(defn token
-  "Token symbol: a typed record (map) or list of symbols."
-  ([sub-type v] (token sub-type v nil))
-  ([sub-type v metadata]
-   (let [safe (cond
-                (token? v) (value v)
-                (map? v) (ordered-map v)
-                (sequential? v) (vec v)
-                (nil? v) lkm/empty-linked-map
-                :else (err/raise :symbols/value-must-be-type
-                                 {:data {:expected-type "Record or List" :actual-type (u/typeof v)}}))]
-     (->TokenSymbol sub-type (volatile! safe) metadata))))
-
-(def empty-constructors
-  "Lower case type name to a constructor of the empty (null) symbol."
-  {"number" #(number nil)
-   "string" #(string nil)
-   "boolean" #(boolean nil)
-   "numberwithunit" #(number-with-unit nil "px")
-   "color" #(color nil)
-   "null" null
-   "list" #(list nil)
-   "dictionary" #(dictionary nil)
-   "token" #(token "unknown" nil)})
-
-(def nullable-type-names
-  #{"number" "string" "boolean" "numberwithunit" "color" "null"})
-
-(defn nullable?
-  [s]
-  (contains? nullable-type-names (str/lower-case (type-name s))))
-
-(defn null-value?
-  "True for nullable symbols holding a nil value (and the null symbol)."
-  [s]
-  (or (null? s) (and (nullable? s) (nil? (value s)))))
-
-(defn empty-of-type
-  [type-name]
-  (when-let [ctor (get empty-constructors (str/lower-case type-name))]
-    (ctor)))
-
-;; Type checks and equality ---------------------------------------------------
-
-(defn hex-color?
-  [c]
-  (and (color? c) (type-equals? (:sub-type c) "hex")))
-
-(defn symbol-type-equals?
-  "Type compatibility used for variable assignment. Colors without a sub
-  type are compatible with hex colors."
-  [a b]
-  (if (and (color? a) (color? b))
-    (or (and (nil? (:sub-type a)) (hex-color? b))
-        (and (hex-color? a) (nil? (:sub-type b)))
-        (type-equals? (:sub-type a) (:sub-type b)))
-    (type-equals? (type-name a) (type-name b))))
-
-(defn- scalar-equals?
-  [a b]
-  (and (symbol? b) (symbol-type-equals? a b) (= (:value a) (:value b))))
-
-(defn- container-equals?
-  [a b]
-  (and (symbol-type-equals? a b) (identical? (:value a) (:value b))))
-
-(defn- color-equals?
-  [a b]
-  (and (color? b)
-       (symbol-type-equals? a b)
-       (= (:alpha a) (:alpha b))
-       (let [va (:value a) vb (:value b)]
-         (if (and (map? va) (map? vb))
-           (and (= (count va) (count vb))
-                (every? (fn [[k v]] (and (contains? vb k) (equals? v (get vb k)))) va))
-           (= va vb)))))
-
 ;; String conversion ----------------------------------------------------------
 
 (defn to-string
@@ -724,24 +221,6 @@
   (str/join (if implicit? " " ", ")
             (map #(if (nil? (value %)) "null" (to-string % config)) items)))
 
-(defn result-type-name
-  "Type name of an interpreter result (symbol, string or nil)."
-  [result]
-  (cond
-    (nil? result) "Null"
-    (clojure.core/string? result) "String"
-    (symbol? result) (full-type-name result)
-    :else "Unknown"))
-
-(defn ->string-result
-  "String form of an interpreter result."
-  ([result] (->string-result result nil))
-  ([result config]
-   (cond
-     (clojure.core/string? result) result
-     (symbol? result) (to-string result config)
-     :else (str result))))
-
 ;; Data conversion ------------------------------------------------------------
 
 (defn ->data
@@ -773,32 +252,277 @@
   [entries]
   (into lkm/empty-linked-map (map (fn [[k v]] [k (deep-copy v)])) entries))
 
-(defn data->symbol
-  "Converts plain data (numbers, strings, booleans, nil, vectors, maps)
-  into symbols. Hex strings become hex colors. Symbols pass through."
+;; Checks ---------------------------------------------------------------------
+
+(defn- attribute-not-found
+  [s attribute-name]
+  (err/raise :symbols/attribute-not-found {:data {:attribute-name attribute-name :type (type-name s)}}))
+
+(defn- expect-string-value
+  [s]
+  (when (nil? (:value s))
+    (err/raise :symbols/value-is-null {:data {:expected-type "string"}})))
+
+(defn- expect-list-content
+  [t operation]
+  (when (map? (value t))
+    (err/raise :symbols/cannot-operation-on-token-type {:data {:operation operation :value-type "Dictionary"}})))
+
+(defn- expect-map-content
+  [t operation]
+  (when-not (map? (value t))
+    (err/raise :symbols/cannot-operation-on-token-type {:data {:operation operation :value-type "List"}})))
+
+;; Equality -------------------------------------------------------------------
+
+(defn- color-sub-types-match?
+  "Colors without a sub type are compatible with hex colors."
+  [a b]
+  (or (and (nil? a) (type-equals? b "hex"))
+      (and (type-equals? a "hex") (nil? b))
+      (type-equals? a b)))
+
+(defn- scalar-equals?
+  [a b]
+  (and (= (type-name a) (type-name b)) (= (:value a) (:value b))))
+
+(defn- container-equals?
+  [a b]
+  (and (= (type-name a) (type-name b)) (identical? (:value a) (:value b))))
+
+(defn- color-equals?
+  "Equality of two color symbols."
+  [a b]
+  (and (color-sub-types-match? (:sub-type a) (:sub-type b))
+       (= (:alpha a) (:alpha b))
+       (let [va (:value a) vb (:value b)]
+         (if (and (map? va) (map? vb))
+           (and (= (count va) (count vb))
+                (every? (fn [[k v]] (and (contains? vb k) (equals? v (get vb k)))) va))
+           (= va vb)))))
+
+;; Records --------------------------------------------------------------------
+;;
+;; Each record is followed by its predicate and constructor. A record body
+;; only uses what is defined above it, which is why the containers come
+;; last, and refers to its own type through the class. Inside a body the
+;; `value` field shadows the `value` function.
+
+(defrecord NullSymbol []
+  ISymbol
+  (type-name [_] "Null")
+  (full-type-name [_] "Null")
+  (value [_] nil)
+  (to-string- [_ _] "null")
+  (data- [_ _] nil)
+  (deep-copy [this] this)
+  (clone-if-mutable [this] this)
+  (equals? [_ other] (instance? NullSymbol other))
+  (valid-value? [_ v] (nil? v))
+
+  IScriptable
+  (has-attribute? [_ _] false)
+  (get-attribute [this attribute-name] (attribute-not-found this attribute-name)))
+
+(defn null? [v] (instance? NullSymbol v))
+
+(defn null
+  []
+  (->NullSymbol))
+
+(defrecord NumberSymbol [value]
+  ISymbol
+  (type-name [_] "Number")
+  (full-type-name [_] "Number")
+  (value [_] value)
+  (to-string- [_ _] (u/num->str value))
+  (data- [_ _] value)
+  (deep-copy [this] this)
+  (clone-if-mutable [this] this)
+  (equals? [this other] (scalar-equals? this other))
+  (valid-value? [_ v] (or (clojure.core/number? v) (instance? NumberSymbol v)))
+
+  IScriptable
+  (has-attribute? [_ attribute-name] (= attribute-name "value"))
+  (get-attribute [this attribute-name]
+    (if (= attribute-name "value")
+      this
+      (attribute-not-found this attribute-name))))
+
+(defn number? [v] (instance? NumberSymbol v))
+
+(defrecord NumberWithUnitSymbol [value unit]
+  ISymbol
+  (type-name [_] "NumberWithUnit")
+  (full-type-name [_] (str "NumberWithUnit." (u/capitalize unit)))
+  (value [_] value)
+  (to-string- [_ _] (str (u/num->str value) unit))
+  (data- [this opts]
+    (if (:stringify? opts)
+      (to-string- this nil)
+      {:value value :unit unit}))
+  (deep-copy [this] this)
+  (clone-if-mutable [this] this)
+  (equals? [_ other]
+    (and (instance? NumberWithUnitSymbol other)
+         (= value (:value other))
+         (= (str/lower-case unit) (str/lower-case (:unit other)))))
+  (valid-value? [_ v] (instance? NumberWithUnitSymbol v))
+
+  IScriptable
+  (has-attribute? [_ attribute-name] (= attribute-name "value"))
+  (get-attribute [this attribute-name]
+    (if (= attribute-name "value")
+      (->NumberSymbol value)
+      (attribute-not-found this attribute-name))))
+
+(defn number-with-unit? [v] (instance? NumberWithUnitSymbol v))
+
+(defn numeric?
+  "Number or NumberWithUnit symbol."
+  [v]
+  (or (number? v) (number-with-unit? v)))
+
+(defn number
+  "Number symbol from a number, another numeric symbol or nil."
   [v]
   (cond
-    (symbol? v) v
-    (nil? v) (null)
-    (clojure.core/number? v) (number v)
-    (clojure.core/string? v) (if (valid-hex? v) (color v "Hex") (string v))
-    (clojure.core/boolean? v) (boolean v)
-    (sequential? v) (list (mapv data->symbol v) false)
-    (map? v) (dictionary (into lkm/empty-linked-map
-                               (map (fn [[k v]] [(if (keyword? k) (name k) (str k)) (data->symbol v)]))
-                               v))
+    (clojure.core/number? v) (->NumberSymbol (double v))
+    (numeric? v) (->NumberSymbol (value v))
+    (nil? v) (->NumberSymbol nil)
     :else (err/raise :symbols/value-must-be-type
-                     {:data {:expected-type "valid TokenScript type" :actual-type (u/typeof v)}})))
+                     {:data {:expected-type "int or float" :actual-type (u/typeof v)}})))
+
+(defn number-with-unit
+  [v unit]
+  (let [safe (cond
+               (clojure.core/number? v) (double v)
+               (number? v) (:value v)
+               (nil? v) nil
+               :else (err/raise :symbols/value-must-be-type
+                                {:data {:expected-type "number or NumberSymbol" :actual-type (u/typeof v)}}))]
+    (when-not (contains? lex/supported-format-set unit)
+      (err/raise :symbols/attribute-not-found {:data {:attribute-name unit :type "Unit"}}))
+    (->NumberWithUnitSymbol safe unit)))
+
+(defrecord StringSymbol [value]
+  ISymbol
+  (type-name [_] "String")
+  (full-type-name [_] "String")
+  (value [_] value)
+  (to-string- [_ _] (if (nil? value) "null" value))
+  (data- [_ _] value)
+  (deep-copy [this] this)
+  (clone-if-mutable [this] this)
+  (equals? [this other] (scalar-equals? this other))
+  (valid-value? [_ v] (or (clojure.core/string? v) (instance? StringSymbol v)))
+
+  IScriptable
+  (has-attribute? [_ _] false)
+  (get-attribute [this attribute-name] (attribute-not-found this attribute-name))
+
+  ISized
+  (length [this]
+    (expect-string-value this)
+    (number (count value))))
+
+(defn string? [v] (instance? StringSymbol v))
+
+(defn string
+  [v]
+  (cond
+    (clojure.core/string? v) (->StringSymbol v)
+    (string? v) (->StringSymbol (:value v))
+    (nil? v) (->StringSymbol nil)
+    :else (err/raise :symbols/value-must-be-type
+                     {:data {:expected-type "string" :actual-type (u/typeof v)}})))
+
+(defrecord BooleanSymbol [value]
+  ISymbol
+  (type-name [_] "Boolean")
+  (full-type-name [_] "Boolean")
+  (value [_] value)
+  (to-string- [_ _] (if (nil? value) "null" (str value)))
+  (data- [_ _] value)
+  (deep-copy [this] this)
+  (clone-if-mutable [this] this)
+  (equals? [this other] (scalar-equals? this other))
+  (valid-value? [_ v] (or (clojure.core/boolean? v) (instance? BooleanSymbol v)))
+
+  IScriptable
+  (has-attribute? [_ _] false)
+  (get-attribute [this attribute-name] (attribute-not-found this attribute-name)))
+
+(defn boolean? [v] (instance? BooleanSymbol v))
+
+(defn boolean
+  [v]
+  (cond
+    (clojure.core/boolean? v) (->BooleanSymbol v)
+    (boolean? v) (->BooleanSymbol (:value v))
+    (nil? v) (->BooleanSymbol nil)
+    :else (err/raise :symbols/value-must-be-type
+                     {:data {:expected-type "boolean" :actual-type (u/typeof v)}})))
+
+(defrecord ColorSymbol [value sub-type alpha]
+  ISymbol
+  (type-name [_] "Color")
+  (full-type-name [_] (qualified-type-name "Color" sub-type))
+  (value [_] value)
+  (to-string- [this config]
+    (cond
+      (some? config) (format-color config this)
+      (map? value) (format-entries value config)
+      (clojure.core/string? value) (if (some? alpha) (format-hex8 value alpha) value)
+      :else ""))
+  (data- [this opts]
+    (cond
+      (:stringify? opts) (to-string- this nil)
+      (clojure.core/string? value) {:type (or sub-type "hex") :value value :alpha alpha}
+      (map? value) (into {:type (or sub-type "unknown") :alpha alpha} (entries->data value opts))
+      :else {:type (or sub-type "unknown") :value nil :alpha alpha}))
+  (deep-copy [this]
+    (if (map? value)
+      (ColorSymbol. (into {} (map (fn [[k v]] [k (deep-copy v)])) value) sub-type alpha)
+      this))
+  (clone-if-mutable [this] this)
+  (equals? [this other] (and (instance? ColorSymbol other) (color-equals? this other)))
+  (valid-value? [_ v] (or (instance? ColorSymbol v) (nil? v) (map? v) (valid-hex? v)))
+
+  IScriptable
+  (has-attribute? [_ attribute-name]
+    (or (contains? #{"to" "alpha"} attribute-name)
+        (and (map? value) (contains? value attribute-name))))
+  (get-attribute [this attribute-name]
+    (case attribute-name
+      "to" this
+      "alpha" (if (some? alpha) (number alpha) (null))
+      (if (and (map? value) (contains? value attribute-name))
+        (get value attribute-name)
+        (err/raise :symbols/attribute-not-found {:data {:attribute-name attribute-name :type "Color"}})))))
+
+(defn color? [v] (instance? ColorSymbol v))
+
+(defn color
+  "Color symbol. `v` is a hex string (sub type `Hex`), a map of channel
+  name to symbol (dynamic color with a sub type), or nil."
+  ([v] (color v nil nil))
+  ([v sub-type] (color v sub-type nil))
+  ([v sub-type alpha]
+   (let [hex? (and (or (nil? sub-type) (= "hex" (str/lower-case sub-type)))
+                   (clojure.core/string? v))
+         dynamic? (and (clojure.core/string? sub-type) (map? v))]
+     (when-not (or (nil? v) hex? dynamic?)
+       (err/raise :symbols/invalid-color-value {:data {:value (str v) :type (u/typeof v)}}))
+     (when (and hex? (not (valid-hex? v)))
+       (err/raise :symbols/invalid-hex-color {:data {:value (str v)}}))
+     (ensure-valid-alpha alpha)
+     (->ColorSymbol v (if hex? "Hex" sub-type) alpha))))
 
 ;; List and dictionary content ------------------------------------------------
 ;;
 ;; Shared by lists, dictionaries and tokens. Mutating helpers take the
 ;; volatile holding the content, the others the content itself.
-
-(defn- expect-number-value
-  [s expected]
-  (when (nil? (value s))
-    (err/raise :symbols/value-is-null {:data {:expected-type expected}})))
 
 (defn- index-of-symbol
   [s]
@@ -807,13 +531,6 @@
 (defn- out-of-bounds?
   [coll idx]
   (or (< idx 0) (>= idx (count coll))))
-
-(defn- expect-string-key
-  [k]
-  (cond
-    (clojure.core/string? k) k
-    (and (string? k) (some? (:value k))) (:value k)
-    :else (err/raise :symbols/key-must-be-string {:data {:type (u/typeof k)}})))
 
 (defn- vec-insert
   [v idx item]
@@ -828,9 +545,11 @@
   (vswap! items conj (clone-if-mutable item)))
 
 (defn- list-extend*
+  "Appends `more`, splicing the items of lists. Lists are recognized by
+  type name: the list record is defined after this helper."
   [items more]
   (doseq [item more]
-    (if (list? item)
+    (if (= "List" (type-name item))
       (vswap! items into (map clone-if-mutable (value item)))
       (vswap! items conj (clone-if-mutable item)))))
 
@@ -872,6 +591,51 @@
   (let [sep (let [v (some-> separator value)] (if (or (nil? v) (= v "")) "" (str v)))]
     (string (str/join sep (map #(if (nil? (value %)) "null" (to-string % config)) items)))))
 
+(defrecord ListSymbol [value implicit?]
+  ISymbol
+  (type-name [_] "List")
+  (full-type-name [_] (if implicit? (qualified-type-name "List" "Implicit") "List"))
+  (value [_] @value)
+  (to-string- [_ config] (items->string @value implicit? config))
+  (data- [_ opts] (items->data @value opts))
+  (deep-copy [_] (ListSymbol. (volatile! (mapv deep-copy @value)) implicit?))
+  (clone-if-mutable [this] (deep-copy this))
+  (equals? [this other] (container-equals? this other))
+  (valid-value? [_ v] (or (vector? v) (instance? ListSymbol v)))
+
+  IScriptable
+  (has-attribute? [_ _] false)
+  (get-attribute [this attribute-name] (attribute-not-found this attribute-name))
+
+  ISized
+  (length [_] (number (count @value)))
+
+  IListSymbol
+  (append! [this item] (list-append* value item) this)
+  (extend! [this items] (list-extend* value items) this)
+  (insert! [this index item] (list-insert* value index item) this)
+  (delete-at! [this index] (list-delete* value index) this)
+  (update-at! [this index item] (list-update* value index item) this)
+  (nth-item [_ index] (list-get* @value index))
+  (item-index [_ item] (list-index* @value item))
+  (join [this config] (join this config nil))
+  (join [_ config separator] (list-join* @value separator config)))
+
+(defn list? [v] (instance? ListSymbol v))
+
+(defn list
+  "List symbol from a sequence of symbols."
+  ([elements] (list elements false))
+  ([elements implicit?]
+   (->ListSymbol (volatile! (vec elements)) (clojure.core/boolean implicit?))))
+
+(defn- expect-string-key
+  [k]
+  (cond
+    (clojure.core/string? k) k
+    (and (string? k) (some? (:value k))) (:value k)
+    :else (err/raise :symbols/key-must-be-string {:data {:type (u/typeof k)}})))
+
 (defn- dict-get*
   [entries k]
   (let [v (get entries (expect-string-key k))]
@@ -897,15 +661,117 @@
   [entries k]
   (boolean (contains? entries (expect-string-key k))))
 
-(defn- expect-list-content
-  [t operation]
-  (when (map? (value t))
-    (err/raise :symbols/cannot-operation-on-token-type {:data {:operation operation :value-type "Dictionary"}})))
+(defn- ordered-map
+  [m]
+  (if (nil? m)
+    lkm/empty-linked-map
+    (into lkm/empty-linked-map m)))
 
-(defn- expect-map-content
-  [t operation]
-  (when-not (map? (value t))
-    (err/raise :symbols/cannot-operation-on-token-type {:data {:operation operation :value-type "List"}})))
+(defrecord DictionarySymbol [value]
+  ISymbol
+  (type-name [_] "Dictionary")
+  (full-type-name [_] "Dictionary")
+  (value [_] @value)
+  (to-string- [_ config] (format-entries @value config))
+  (data- [_ opts] (entries->data @value opts))
+  (deep-copy [_] (DictionarySymbol. (volatile! (copy-entries @value))))
+  (clone-if-mutable [this] (deep-copy this))
+  (equals? [this other] (container-equals? this other))
+  (valid-value? [_ v] (or (map? v) (nil? v)))
+
+  IScriptable
+  (has-attribute? [_ attribute-name] (contains? @value attribute-name))
+  (get-attribute [_ attribute-name] (get @value attribute-name))
+
+  ISized
+  (length [_] (number (count @value)))
+
+  IDictionarySymbol
+  (get-key [_ key] (dict-get* @value key))
+  (set-key! [this key v] (dict-set* value key v) this)
+  (delete-key! [this key] (dict-delete* value key) this)
+  (key-list [_] (dict-keys* @value))
+  (value-list [_] (dict-values* @value))
+  (key-exists? [_ key] (dict-key-exists* @value key))
+  (clear! [this] (vreset! value lkm/empty-linked-map) this))
+
+(defn dictionary? [v] (instance? DictionarySymbol v))
+
+(defn dictionary
+  "Dictionary symbol from a map of string keys to symbols. Entries keep
+  insertion order."
+  [m]
+  (cond
+    (dictionary? m) (->DictionarySymbol (volatile! (value m)))
+    (or (nil? m) (map? m)) (->DictionarySymbol (volatile! (ordered-map m)))
+    :else (err/raise :symbols/value-must-be-type
+                     {:data {:expected-type "dict" :actual-type (u/typeof m)}})))
+
+(defrecord TokenSymbol [sub-type value metadata]
+  ISymbol
+  (type-name [_] "Token")
+  (full-type-name [_] (qualified-type-name "Token" sub-type))
+  (value [_] @value)
+  (to-string- [_ config]
+    (let [v @value]
+      (if (map? v) (format-entries v config) (items->string v false config))))
+  (data- [_ opts]
+    (let [v @value]
+      (if (map? v) (entries->data v opts) (items->data v opts))))
+  (deep-copy [_]
+    (let [v @value]
+      (TokenSymbol. sub-type (volatile! (if (map? v) (copy-entries v) (mapv deep-copy v))) metadata)))
+  (clone-if-mutable [this] (deep-copy this))
+  (equals? [this other] (container-equals? this other))
+  (valid-value? [_ v] (or (map? v) (vector? v) (nil? v)))
+
+  IScriptable
+  (has-attribute? [_ attribute-name]
+    (or (contains? #{"subType" "type"} attribute-name)
+        (let [v @value] (and (map? v) (contains? v attribute-name)))))
+  (get-attribute [_ attribute-name]
+    (case attribute-name
+      "subType" (string sub-type)
+      "type" (string "Token")
+      (let [v @value] (when (map? v) (get v attribute-name)))))
+
+  ISized
+  (length [_] (number (count @value)))
+
+  IListSymbol
+  (append! [this item] (expect-list-content this "append") (list-append* value item) this)
+  (extend! [this items] (expect-list-content this "extend") (list-extend* value items) this)
+  (insert! [this index item] (expect-list-content this "insert") (list-insert* value index item) this)
+  (delete-at! [this index] (expect-list-content this "delete") (list-delete* value index) this)
+  (update-at! [this index item] (expect-list-content this "update") (list-update* value index item) this)
+  (nth-item [this index] (expect-list-content this "get") (list-get* @value index))
+  (item-index [this item] (expect-list-content this "get index") (list-index* @value item))
+  (join [this config] (join this config nil))
+  (join [this config separator] (expect-list-content this "join") (list-join* @value separator config))
+
+  IDictionarySymbol
+  (get-key [this key] (expect-map-content this "get") (dict-get* @value key))
+  (set-key! [this key v] (expect-map-content this "set key") (dict-set* value key v) this)
+  (delete-key! [this key] (expect-map-content this "delete key") (dict-delete* value key) this)
+  (key-list [this] (expect-map-content this "get keys") (dict-keys* @value))
+  (value-list [_] (let [v @value] (if (map? v) (dict-values* v) (list v false))))
+  (key-exists? [this key] (expect-map-content this "key exists") (dict-key-exists* @value key))
+  (clear! [this] (expect-map-content this "clear") (vreset! value lkm/empty-linked-map) this))
+
+(defn token? [v] (instance? TokenSymbol v))
+
+(defn token
+  "Token symbol: a typed record (map) or list of symbols."
+  ([sub-type v] (token sub-type v nil))
+  ([sub-type v metadata]
+   (let [safe (cond
+                (token? v) (value v)
+                (map? v) (ordered-map v)
+                (sequential? v) (vec v)
+                (nil? v) lkm/empty-linked-map
+                :else (err/raise :symbols/value-must-be-type
+                                 {:data {:expected-type "Record or List" :actual-type (u/typeof v)}}))]
+     (->TokenSymbol sub-type (volatile! safe) metadata))))
 
 (defn- token-get
   "`get(keyOrIndex)` of tokens: a key for records, an index for lists."
@@ -922,16 +788,151 @@
                    {:data {:operation "List get" :value-type "non-Number index"}}))
       (nth-item t i))))
 
+;; Host values ----------------------------------------------------------------
+
+;; Values from the host (nil, strings and other data) render and convert as
+;; themselves; they have no type, methods or attributes.
+(extend-protocol ISymbol
+  nil
+  (type-name [_] "Unknown")
+  (full-type-name [_] "Unknown")
+  (value [_] nil)
+  (to-string- [_ _] "null")
+  (data- [_ _] nil)
+  (deep-copy [_] nil)
+  (clone-if-mutable [_] nil)
+  (equals? [_ _] false)
+  (valid-value? [_ _] false)
+
+  #?(:clj String :cljs string)
+  (type-name [_] "Unknown")
+  (full-type-name [_] "Unknown")
+  (value [_] nil)
+  (to-string- [s _] s)
+  (data- [s _] s)
+  (deep-copy [s] s)
+  (clone-if-mutable [s] s)
+  (equals? [_ _] false)
+  (valid-value? [_ _] false)
+
+  #?(:clj Object :cljs default)
+  (type-name [_] "Unknown")
+  (full-type-name [_] "Unknown")
+  (value [x] (let [v (get x :value)] (if (volatile? v) @v v)))
+  (to-string- [x _] (str x))
+  (data- [x _] x)
+  (deep-copy [x] x)
+  (clone-if-mutable [x] x)
+  (equals? [_ _] false)
+  (valid-value? [_ _] false))
+
+(extend-protocol IScriptable
+  nil
+  (has-attribute? [_ _] false)
+  (get-attribute [this attribute-name] (attribute-not-found this attribute-name))
+
+  #?(:clj Object :cljs default)
+  (has-attribute? [_ _] false)
+  (get-attribute [this attribute-name] (attribute-not-found this attribute-name)))
+
+;; Types ----------------------------------------------------------------------
+
+(defn symbol?
+  [v]
+  (or (instance? NullSymbol v)
+      (instance? NumberSymbol v)
+      (instance? StringSymbol v)
+      (instance? BooleanSymbol v)
+      (instance? NumberWithUnitSymbol v)
+      (instance? ColorSymbol v)
+      (instance? ListSymbol v)
+      (instance? DictionarySymbol v)
+      (instance? TokenSymbol v)))
+
+(defn hex-color?
+  [c]
+  (and (color? c) (type-equals? (:sub-type c) "hex")))
+
+(defn symbol-type-equals?
+  "Type compatibility used for variable assignment. Colors without a sub
+  type are compatible with hex colors."
+  [a b]
+  (if (and (color? a) (color? b))
+    (color-sub-types-match? (:sub-type a) (:sub-type b))
+    (type-equals? (type-name a) (type-name b))))
+
+(def empty-constructors
+  "Lower case type name to a constructor of the empty (null) symbol."
+  {"number" #(number nil)
+   "string" #(string nil)
+   "boolean" #(boolean nil)
+   "numberwithunit" #(number-with-unit nil "px")
+   "color" #(color nil)
+   "null" null
+   "list" #(list nil)
+   "dictionary" #(dictionary nil)
+   "token" #(token "unknown" nil)})
+
+(def nullable-type-names
+  #{"number" "string" "boolean" "numberwithunit" "color" "null"})
+
+(defn nullable?
+  [s]
+  (contains? nullable-type-names (str/lower-case (type-name s))))
+
+(defn null-value?
+  "True for nullable symbols holding a nil value (and the null symbol)."
+  [s]
+  (or (null? s) (and (nullable? s) (nil? (value s)))))
+
+(defn empty-of-type
+  [type-name]
+  (when-let [ctor (get empty-constructors (str/lower-case type-name))]
+    (ctor)))
+
+;; Results --------------------------------------------------------------------
+
+(defn result-type-name
+  "Type name of an interpreter result (symbol, string or nil)."
+  [result]
+  (cond
+    (nil? result) "Null"
+    (clojure.core/string? result) "String"
+    (symbol? result) (full-type-name result)
+    :else "Unknown"))
+
+(defn ->string-result
+  "String form of an interpreter result."
+  ([result] (->string-result result nil))
+  ([result config]
+   (cond
+     (clojure.core/string? result) result
+     (symbol? result) (to-string result config)
+     :else (str result))))
+
+(defn data->symbol
+  "Converts plain data (numbers, strings, booleans, nil, vectors, maps)
+  into symbols. Hex strings become hex colors. Symbols pass through."
+  [v]
+  (cond
+    (symbol? v) v
+    (nil? v) (null)
+    (clojure.core/number? v) (number v)
+    (clojure.core/string? v) (if (valid-hex? v) (color v "Hex") (string v))
+    (clojure.core/boolean? v) (boolean v)
+    (sequential? v) (list (mapv data->symbol v) false)
+    (map? v) (dictionary (into lkm/empty-linked-map
+                               (map (fn [[k v]] [(if (keyword? k) (name k) (str k)) (data->symbol v)]))
+                               v))
+    :else (err/raise :symbols/value-must-be-type
+                     {:data {:expected-type "valid TokenScript type" :actual-type (u/typeof v)}})))
+
 ;; Scalar operations ----------------------------------------------------------
 
-(defn- attribute-not-found
-  [s attribute-name]
-  (err/raise :symbols/attribute-not-found {:data {:attribute-name attribute-name :type (type-name s)}}))
-
-(defn- expect-string-value
-  [s]
-  (when (nil? (:value s))
-    (err/raise :symbols/value-is-null {:data {:expected-type "string"}})))
+(defn- expect-number-value
+  [s expected]
+  (when (nil? (value s))
+    (err/raise :symbols/value-is-null {:data {:expected-type expected}})))
 
 (defn number->string-symbol
   "`to_string([radix])` for numbers. Hexadecimal conversion rounds
@@ -1016,62 +1017,64 @@
 ;;   :rest?    pass all the arguments as one sequence
 ;;   :config?  pass the interpreter config before the arguments
 
-(def ^:private number-methods
-  {"to_string" {:fn number->string-symbol :args [0 1]}})
+(def ^:private method-tables
+  "Script methods by type name, then by lower case method name."
+  {"Number"
+   {"to_string" {:fn number->string-symbol :args [0 1]}}
 
-(def ^:private string-methods
-  {"upper" {:fn string-upper}
-   "lower" {:fn string-lower}
-   "length" {:fn length}
-   "concat" {:fn string-concat :args 1}
-   "split" {:fn string-split :args [0 1]}
-   "trim" {:fn string-trim}})
+   "NumberWithUnit"
+   {"to_string" {:fn unit->string-symbol :args [0 1]}
+    "to_number" {:fn unit->number-symbol}}
 
-(def ^:private list-methods
-  {"append" {:fn append! :args 1}
-   "extend" {:fn extend! :rest? true}
-   "insert" {:fn insert! :args 2}
-   "delete" {:fn delete-at! :args 1}
-   "length" {:fn length}
-   "index" {:fn item-index :args 1}
-   "get" {:fn nth-item :args 1}
-   "update" {:fn update-at! :args 2}
-   "join" {:fn join :args [0 1] :config? true}})
+   "String"
+   {"upper" {:fn string-upper}
+    "lower" {:fn string-lower}
+    "length" {:fn length}
+    "concat" {:fn string-concat :args 1}
+    "split" {:fn string-split :args [0 1]}
+    "trim" {:fn string-trim}}
 
-(def ^:private number-with-unit-methods
-  {"to_string" {:fn unit->string-symbol :args [0 1]}
-   "to_number" {:fn unit->number-symbol}})
+   "Color"
+   {"to_string" {:fn color->string-symbol :config? true}}
 
-(def ^:private dictionary-methods
-  {"get" {:fn get-key :args 1}
-   "set" {:fn set-key! :args 2}
-   "delete" {:fn delete-key! :args 1}
-   "keys" {:fn key-list}
-   "values" {:fn value-list}
-   "key_exists" {:fn key-exists? :args 1}
-   "length" {:fn length}
-   "clear" {:fn clear!}})
+   "List"
+   {"append" {:fn append! :args 1}
+    "extend" {:fn extend! :rest? true}
+    "insert" {:fn insert! :args 2}
+    "delete" {:fn delete-at! :args 1}
+    "length" {:fn length}
+    "index" {:fn item-index :args 1}
+    "get" {:fn nth-item :args 1}
+    "update" {:fn update-at! :args 2}
+    "join" {:fn join :args [0 1] :config? true}}
 
-(def ^:private token-methods
-  {"get" {:fn token-get :args 1}
-   "set" {:fn set-key! :args 2}
-   "keys" {:fn key-list}
-   "values" {:fn value-list}
-   "length" {:fn length}
-   "append" {:fn append! :args 1}
-   "extend" {:fn extend! :rest? true}
-   "insert" {:fn insert! :args 2}
-   "delete" {:fn delete-at! :args 1}
-   "index" {:fn item-index :args 1}
-   "update" {:fn update-at! :args 2}
-   "join" {:fn join :args [0 1] :config? true}})
+   "Dictionary"
+   {"get" {:fn get-key :args 1}
+    "set" {:fn set-key! :args 2}
+    "delete" {:fn delete-key! :args 1}
+    "keys" {:fn key-list}
+    "values" {:fn value-list}
+    "key_exists" {:fn key-exists? :args 1}
+    "length" {:fn length}
+    "clear" {:fn clear!}}
 
-(def ^:private color-methods
-  {"to_string" {:fn color->string-symbol :config? true}})
+   "Token"
+   {"get" {:fn token-get :args 1}
+    "set" {:fn set-key! :args 2}
+    "keys" {:fn key-list}
+    "values" {:fn value-list}
+    "length" {:fn length}
+    "append" {:fn append! :args 1}
+    "extend" {:fn extend! :rest? true}
+    "insert" {:fn insert! :args 2}
+    "delete" {:fn delete-at! :args 1}
+    "index" {:fn item-index :args 1}
+    "update" {:fn update-at! :args 2}
+    "join" {:fn join :args [0 1] :config? true}}})
 
 (defn- method-definition
   [s method-name]
-  (get (method-table s) (str/lower-case method-name)))
+  (get (get method-tables (type-name s)) (str/lower-case method-name)))
 
 (defn- accepts?
   [{:keys [args]} n]
