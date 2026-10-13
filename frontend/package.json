@@ -39,6 +39,7 @@
     "test:storybook": "vitest run --project=storybook",
     "watch:test": "mkdir -p target/tests && concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests --exec 'node target/tests/test.js'\"",
     "test:e2e": "playwright test --project default",
+    "test:e2e:real-backend": "playwright test -c playwright.real-backend.config.js",
     "translations": "node ./scripts/translations.js",
     "watch:app:assets": "node ./scripts/watch.js",
     "watch:app:libs": "node ./scripts/build-libs.js --watch",
