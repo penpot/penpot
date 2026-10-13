@@ -67,6 +67,24 @@ rewrites the baseline (only on purpose, saying why). It takes about 4 minutes. E
 touches sync, swap or change application runs it and quotes the table in its message. The lower
 quantile is compared because the mean moves with background load (devenv watchers) and GC.
 
+## Golden master
+
+`common-tests.logic.golden-master-test` (JVM only) records the exact files the pure runner's
+composable cases and the benchmark worlds produce: per variant, the state after each user, undo
+and redo step (the runner's `:observe` option), then the final files with the round trip's
+failure signatures. The frontend interpreter records its own for `comp.sync-test` and the
+completion contract. Shared code: `app.common.test-helpers.golden-master` (alias `thgm`): ids
+named by test label or `:unlabelled/<n>` in tree order, grid cells `:cell/<shape>.<row>.<col>`,
+timestamps `:inst`, written as sorted `path value` lines. Only digests are committed
+(`golden_master.edn` next to each test); full lines go to `tmp/golden-master/` and
+`tmp/golden-master-frontend/` (`recorded/`, and `actual/` per differing state): read a change with
+`diff -r tmp/golden-master/recorded tmp/golden-master/actual`. `recorded/` exists only on the
+machine that recorded; elsewhere re-record at the parent commit to get it. A refactor must keep
+the golden master; a behavior change records it again on purpose
+(`PENPOT_GOLDEN_MASTER=record`, from `common/` for the JVM test, from `frontend/` for
+`node target/tests/test.js --focus <ns>`; the frontend file is updated per namespace) and says
+why in the commit. A new shared case goes into the test's `case-fns` and is recorded.
+
 ## Geometry setup caution
 
 For geometry-sensitive tests, read `mem:common/geometry-invariants` before positioning shapes. Use geometry-preserving helpers or production change helpers rather than direct single-field edits.
