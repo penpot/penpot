@@ -102,6 +102,13 @@
                  (= (:component-file %) (:component-file related-shape-in-new)))
             (ctk/remove-swap-group)))
 
+        ;; and its placement, as sync would give it
+        (cll/generate-take-placement orig-swapped-child
+                                     related-shape-in-new
+                                     objects
+                                     (and (ctsl/any-layout-immediate-child? objects related-shape-in-new)
+                                          (not (ctsl/position-absolute? orig-swapped-child))))
+
         ;; Delete new non-swapped item
         (cls/generate-delete-shapes ldata page objects (d/ordered-set (:id related-shape-in-new)) {:allow-altering-copies true})
         second)))

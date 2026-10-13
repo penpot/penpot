@@ -2416,19 +2416,20 @@
                 (assoc attr (get origin attr)))))
           dest))))
 
-(defn- update-swapped-placement
-  "Synchronizes a swapped copy head with the main shape it replaces, in the
-  attributes that place it in its parent: position, constraints and layout
-  item attributes. Its content comes from its own component. A position set
-  by a layout is left to the layout."
-  [changes shape-inst shape-main root-inst root-main container]
-  (let [objects    (:objects container)
-        touched    (get shape-inst :touched #{})
+(defn generate-take-placement
+  "Give the swapped copy head `shape-inst` the placement of `placed`, the
+  shape whose position it takes, expressed in the same coordinates: the
+  attributes that place it in its parent (position, constraints and layout
+  item attributes) that the user did not change. Its content comes from its
+  own component. With `layout-placed?`, the position is left to the layout.
+  `objects` holds the subtree of `shape-inst`, which moves with it."
+  [changes shape-inst placed objects layout-placed?]
+  (let [touched    (get shape-inst :touched #{})
         untouched? (fn [attr]
                      (not (touched (ctk/resolve-sync-group (:type shape-inst) attr))))
 
         placement  (reduce (fn [attrs attr]
-                             (let [value (get shape-main attr)]
+                             (let [value (get placed attr)]
                                (if (and (untouched? attr)
                                         (not= value (get shape-inst attr)))
                                  (assoc attrs attr value)
@@ -2439,12 +2440,10 @@
         position   (fn [shape]
                      (gpt/point (dm/get-in shape [:selrect :x])
                                 (dm/get-in shape [:selrect :y])))
-        delta      (gpt/subtract (position (reposition-shape shape-main root-main root-inst))
-                                 (position shape-inst))
+        delta      (gpt/subtract (position placed) (position shape-inst))
         move?      (and (untouched? :x)
-                        (not (gpt/almost-zero? delta))
-                        (or (not (ctsl/any-layout-immediate-child? objects shape-inst))
-                            (ctsl/position-absolute? shape-inst)))]
+                        (not layout-placed?)
+                        (not (gpt/almost-zero? delta)))]
     (cond-> changes
       (seq placement)
       (pcb/update-shapes [(:id shape-inst)]
@@ -2461,6 +2460,18 @@
       (pcb/update-shapes (cfh/get-children-ids-with-self objects (:id shape-inst))
                          #(gsh/move % delta)
                          {:ignore-touched true}))))
+
+(defn- update-swapped-placement
+  "Synchronizes a swapped copy head with the main shape it replaces, in the
+  attributes that place it in its parent."
+  [changes shape-inst shape-main root-inst root-main container]
+  (let [objects (:objects container)]
+    (generate-take-placement changes
+                             shape-inst
+                             (reposition-shape shape-main root-main root-inst)
+                             objects
+                             (and (ctsl/any-layout-immediate-child? objects shape-inst)
+                                  (not (ctsl/position-absolute? shape-inst))))))
 
 (defn- update-flex-child-copy-attrs
   "Synchronizes the attributes inside the flex-child items (main->copy)"
