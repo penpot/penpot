@@ -226,7 +226,7 @@
 (defn- token-errors
   [issues value]
   (->> issues
-       (filter #(or (tse/error-map? %) (= :error (:severity %))))
+       (filter tse/error-map?)
        (map #(issue->error % value))
        (seq)))
 

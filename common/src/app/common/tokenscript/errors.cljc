@@ -244,6 +244,9 @@
    ;; Processor
    :processor/token-not-found (fn [{:keys [token-name]}] (str "Token '" token-name "' not found"))
    :processor/token-already-exists (fn [{:keys [token-name]}] (str "Token '" token-name "' already exists."))
+   :processor/invalid-token-name
+   (fn [{:keys [token-name]}]
+     (str "token \"" token-name "\" contains invalid characters in name (spaces, braces, or brackets are not allowed)"))
    :processor/circular-dependency
    (fn [{:keys [tokens]}] (str "Circular dependency detected: " (join-list tokens)))
    :processor/sub-field-not-resolved (fn [{:keys [field-path]}] (str "Sub-field '" field-path "' not resolved"))

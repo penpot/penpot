@@ -12,6 +12,7 @@
    [app.common.tokenscript.processor :as proc]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.token-data :as td]
+   [clojure.string :as str]
    [clojure.test :as t]
    [common-tests.tokenscript.helpers :as h]))
 
@@ -120,7 +121,8 @@
       (let [[field-issue parent-issue] (get-in res [:issues "shadow"])]
         (t/is (= ["blur"] (:path field-issue)))
         (t/is (= :processor/dependency-error (:code field-issue)))
-        (t/is (= :error (:severity field-issue)))
+        (t/is (err/error-map? field-issue))
+        (t/is (str/starts-with? (:hint field-issue) "Error at blur: "))
         (t/is (= :processor/dependency-error (:code parent-issue)))))))
 
 (t/deftest object-parsers-test
@@ -131,7 +133,7 @@
 
 (t/deftest token-name-validation-test
   (let [res (process {"bad name" "1" "ok.name" "2"})]
-    (t/is (= ["INVALID_TOKEN_NAME"] (codes res "bad name")))
+    (t/is (= [:processor/invalid-token-name] (codes res "bad name")))
     (t/is (= "1" (value res "bad name")) "the token still resolves")
     (t/is (nil? (get-in res [:issues "ok.name"])))))
 

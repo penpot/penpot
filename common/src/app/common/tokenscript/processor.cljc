@@ -44,22 +44,9 @@
    [clojure.string :as str]))
 
 ;; Issues ---------------------------------------------------------------------
-
-(defn issue
-  "A non error issue (validation problem, invalid name)."
-  [code severity message token-name data]
-  {:type :tokenscript/issue
-   :code code
-   :severity severity
-   :message message
-   :token-name token-name
-   :data data})
-
-(defn error-issue?
-  "Issues that make a token unusable: language errors and `:error`
-  severity issues."
-  [i]
-  (or (err/error-map? i) (= :error (:severity i))))
+;;
+;; The issues of a token are error maps, which make it unusable, and
+;; validation warnings (`:tokenscript/issue`, see `validation/type-issues`).
 
 (defn- dependency-error
   "Error for `token-name` caused by its dependency `dep` failing with
@@ -75,21 +62,18 @@
                            :chain chain
                            :cause root-cause}})))
 
-(defn- error->field-issue
-  "Error of a structured token field reported on the parent token with
-  the field path."
+(defn- field-error
+  "Error of a structured token field, reported on the parent token with
+  the field `:path`."
   [error parent field-path]
-  (let [path (td/parse-field-path field-path)]
-    (cond-> {:type :tokenscript/issue
-             :code (:code error)
-             :severity :error
-             :message (if (seq path)
-                        (str "Error at " (str/join "." (map str path)) ": " (:message error))
-                        (:message error))
-             :token-name parent
-             :path path
-             :data (:data error)}
-      (:line error) (assoc :line (:line error)))))
+  (let [path (td/parse-field-path field-path)
+        at-path (if (seq path)
+                  #(str "Error at " (str/join "." (map str path)) ": " %)
+                  identity)]
+    (-> error
+        (assoc :token-name parent :path path)
+        (update :hint at-path)
+        (update :message at-path))))
 
 (defn- exception->error
   [e]
@@ -190,7 +174,7 @@
   on their parent with the field path."
   [st name error]
   (if-let [{:keys [parent field-path]} (get (:sub-fields st) name)]
-    (add-issue st parent (error->field-issue error parent field-path))
+    (add-issue st parent (field-error error parent field-path))
     (add-issue st name error)))
 
 (defn- lint
@@ -361,9 +345,7 @@
   [st name {:keys [value] :as data}]
   (let [st (if (td/valid-token-path? name)
              st
-             (add-issue st name (issue "INVALID_TOKEN_NAME" :error
-                                       (str "token \"" name "\" contains invalid characters in name (spaces, braces, or brackets are not allowed)")
-                                       name {:path name})))]
+             (add-issue st name (err/error-map :processor/invalid-token-name {:data {:token-name name}})))]
     (cond
       (and (string? value) (contains? lex/uninterpreted-keyword-set value))
       (resolve-early st name (sym/string value))
@@ -860,7 +842,7 @@
 (defn token-error
   "First error issue of a token, or nil."
   [res name]
-  (some #(when (error-issue? %) %) (get-in res [:issues name])))
+  (some #(when (err/error-map? %) %) (get-in res [:issues name])))
 
 (defn issue-with-code?
   "Whether any token (or `name` when given) has an issue with `code`."
