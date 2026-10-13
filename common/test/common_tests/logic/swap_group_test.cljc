@@ -583,3 +583,39 @@
         child (ths/get-shape-by-id file' (first (:shapes copy)))]
     (t/is (== 30 (mth/precision (:rotation copy) 2)))
     (t/is (== 30 (mth/precision (:rotation child) 2)))))
+
+(t/deftest swapped-head-follows-the-rotation-of-the-replaced-child
+  (let [file  (-> (setup-sized)
+                  (tho/swap-component-in-shape :copy-star :heart))
+        file' (-> file
+                  (transform-subtree :card-star #(ctm/rotation-modifiers %1 %2 30))
+                  (ths/update-shape :card-main :opacity 0.9)
+                  (propagate :card)
+                  (thf/validate-file!))
+        head  (ths/get-shape file' :copy-star)]
+    (t/is (== 30 (:rotation (orientation file' :card-star))))
+    (t/is (== 30 (:rotation (orientation file' :copy-star))))
+    (t/is (== 30 (mth/precision (:rotation (ths/get-shape-by-id file' (first (:shapes head)))) 2)))
+    (t/is (ctk/swapped? head))
+    (t/is (not (ctk/touched-group? head :geometry-group)))))
+
+(t/deftest swapped-head-follows-the-flip-of-the-replaced-child
+  (let [file' (-> (setup-sized)
+                  (tho/swap-component-in-shape :copy-star :heart)
+                  (transform-subtree :card-star (fn [_ center] (ctm/resize-modifiers (gpt/point -1 1) center)))
+                  (ths/update-shape :card-main :opacity 0.9)
+                  (propagate :card)
+                  (thf/validate-file!))]
+    (t/is (:flip-x (orientation file' :card-star)))
+    (t/is (:flip-x (orientation file' :copy-star)))))
+
+(t/deftest rotated-swapped-head-keeps-its-rotation
+  ;; the user rotated the swapped head: the main's rotation does not reach it
+  (let [file' (-> (setup-sized)
+                  (tho/swap-component-in-shape :copy-star :heart)
+                  (transform-subtree :copy-star #(ctm/rotation-modifiers %1 %2 10))
+                  (transform-subtree :card-star #(ctm/rotation-modifiers %1 %2 30))
+                  (ths/update-shape :card-main :opacity 0.9)
+                  (propagate :card)
+                  (thf/validate-file!))]
+    (t/is (== 10 (:rotation (orientation file' :copy-star))))))
