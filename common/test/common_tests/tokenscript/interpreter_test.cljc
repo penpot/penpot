@@ -174,7 +174,12 @@
     (t/is (= "Color.Oklch" (sym/result-type-name (h/evaluate "lighten(#ff0000, 0.2)" nil opts))))
     (t/is (= "#ff0000" (h/ev "#ff0000.to.oklch().to.hex()" nil opts)))
     (t/is (= "rgb(0, 255, 255)" (h/ev "invert(#ff0000)" nil opts)))
-    (t/is (= :interpreter/method-not-found (h/error-code #(h/evaluate "#fff.to.hsl()"))) "without the hsl schema"))
+    (t/is (= :interpreter/method-not-found (h/error-code #(h/evaluate "#fff.to.hsl()"))) "without the hsl schema")
+    (t/testing "conversions are cached, but -0.0 is not taken for 0.0"
+      (let [lab->oklch #(str "variable c: Color.OKLab; c.l = 0.5; c.a = " % "; c.b = 0; return c.to.oklch();")]
+        (t/is (= "oklch(0.5, 0, 0)" (h/ev (lab->oklch "0") nil opts)))
+        (t/is (= "oklch(0.5, 0, 0)" (h/ev (lab->oklch "0") nil opts)))
+        (t/is (= "oklch(0.5, 0, 180)" (h/ev (lab->oklch "-0") nil opts))))))
   (t/testing "named css colors are inline constants of the processor, not of the interpreter"
     (t/is (= "red" (h/ev "red" nil {:config (h/full-config)}))
           "bare identifiers fall back to strings")))

@@ -123,9 +123,7 @@
   [source-uri target-uri]
   (str "No conversion path found from '" source-uri "' to '" target-uri "'"))
 
-(defn convert-color
-  "Converts `color` to the color space registered under `target-uri`,
-  chaining conversions when needed. Alpha is preserved."
+(defn- convert-color*
   [config color target-uri]
   (let [registry (:colors config)
         source-uri (or (when-let [sub (:sub-type color)] (colors/uri-by-type registry sub))
@@ -137,6 +135,50 @@
           (assoc :alpha (:alpha color)))
       (catch #?(:clj Throwable :cljs :default) e
         (err/raise :color/conversion-error {:data {:error (err/describe e)}})))))
+
+;; A conversion only depends on the config, the color and the target, and
+;; token sets convert the same colors again and again: a palette color for
+;; every function applied to it, and every color again on the next build
+;; after a set or theme change. The results for the last config are kept.
+(def ^:private max-cached-conversions 10000)
+
+(defonce ^:private conversion-cache (atom {:config nil :entries {}}))
+
+(defn- negative-zero?
+  [v]
+  (and (number? v) (zero? v) (neg? (/ 1.0 v))))
+
+(defn- cacheable-color?
+  "Colors usable as cache keys. `-0.0` equals and hashes like `0.0` but
+  converts differently (hue angles), and containers are mutable."
+  [{:keys [value alpha]}]
+  (and (not (negative-zero? alpha))
+       (or (string? value)
+           (every? (fn [channel]
+                     (not (or (sym/list? channel) (sym/dictionary? channel) (sym/token? channel)
+                              (negative-zero? (sym/value channel)))))
+                   (vals value)))))
+
+(defn convert-color
+  "Converts `color` to the color space registered under `target-uri`,
+  chaining conversions when needed. Alpha is preserved."
+  [config color target-uri]
+  (if-not (cacheable-color? color)
+    (convert-color* config color target-uri)
+    (let [k [color target-uri]
+          {cached-config :config entries :entries} @conversion-cache
+          hit (when (identical? cached-config config) (find entries k))]
+      (if hit
+        (val hit)
+        (let [result (convert-color* config color target-uri)]
+          (swap! conversion-cache
+                 (fn [{cached-config :config entries :entries}]
+                   (let [entries (if (and (identical? cached-config config)
+                                          (< (count entries) max-cached-conversions))
+                                   entries
+                                   {})]
+                     {:config config :entries (assoc entries k result)})))
+          result)))))
 
 (defn color->type
   "Converts `color` to the color space named `target-type` (e.g. `hsl`).
