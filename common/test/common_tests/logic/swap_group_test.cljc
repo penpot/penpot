@@ -9,6 +9,7 @@
   the main child it replaces, its component gives the content, and the
   touched group :swap-group marks the swap."
   (:require
+   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
@@ -16,6 +17,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
+   [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -24,6 +26,7 @@
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -508,3 +511,75 @@
     (t/is (ctk/swapped? (ths/get-shape file'' :copy-child)))
     (t/is (not= (position file :copy-child) (position file' :copy-child)))
     (t/is (= (position file :copy-child) (position file'' :copy-child)))))
+
+(defn- transform-subtree
+  "Apply the modifiers `f` gives for each shape to the shape and its children,
+  as rotating or flipping it in the editor does."
+  [file label f]
+  (let [page    (thf/current-page file)
+        objects (:objects page)
+        shape   (get objects (thi/id label))
+        center  (gsh/shape->center shape)
+        ids     (set (cfh/get-children-ids-with-self objects (:id shape)))
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            ids
+                                            #(gsh/transform-shape % (f % center))
+                                            objects
+                                            {})]
+    (thf/apply-changes file changes)))
+
+(defn- setup-sized
+  []
+  ;; :star and :heart are 40x40 frames with a 30x30 child; :holder is a plain
+  ;; frame with a copy of :star; :copy is a copy of :card, which nests :star
+  (-> (thf/sample-file :file1)
+      (tho/add-simple-component :star :star-main :star-rect
+                                :root-params {:width 40 :height 40}
+                                :child-params {:width 30 :height 30})
+      (tho/add-simple-component :heart :heart-main :heart-rect
+                                :root-params {:width 40 :height 40}
+                                :child-params {:width 30 :height 30 :type :circle})
+      (tho/add-frame :holder :width 200 :height 100)
+      (thc/instantiate-component :star :plain-star :parent-label :holder)
+      (tho/add-frame :card-main :width 200 :height 100)
+      (thc/instantiate-component :star :card-star :parent-label :card-main)
+      (thc/make-component :card :card-main)
+      (thc/instantiate-component :card :copy :children-labels [:copy-star])))
+
+(defn- orientation
+  [file label]
+  (let [shape (ths/get-shape file label)]
+    {:rotation (mth/precision (d/nilv (:rotation shape) 0) 2)
+     :flip-x   (true? (:flip-x shape))
+     :center   (let [c (gsh/shape->center shape)] [(mth/precision (:x c) 2) (mth/precision (:y c) 2)])}))
+
+(t/deftest swap-keeps-the-rotation-of-the-replaced-shape
+  (doseq [[parent child] [[:holder :plain-star] [:copy :copy-star]]]
+    (let [file  (transform-subtree (setup-sized) parent #(ctm/rotation-modifiers %1 %2 30))
+          file' (tho/swap-component-in-shape file child :heart)
+          head  (ths/get-shape file' child)]
+      (t/is (== 30 (:rotation (orientation file child))))
+      (t/is (= (orientation file child) (orientation file' child)))
+      (t/is (== 30 (mth/precision (:rotation (ths/get-shape-by-id file' (first (:shapes head)))) 2)))
+      (t/is (not (ctk/touched-group? head :geometry-group))))))
+
+(t/deftest swap-keeps-the-flip-of-the-replaced-shape
+  (let [file  (transform-subtree (setup-sized) :copy
+                                 (fn [_ center] (ctm/resize-modifiers (gpt/point -1 1) center)))
+        file' (tho/swap-component-in-shape file :copy-star :heart)]
+    (t/is (:flip-x (orientation file :copy-star)))
+    (t/is (= (orientation file :copy-star) (orientation file' :copy-star)))))
+
+(t/deftest switch-keeps-the-rotation-of-a-rotated-copy
+  (let [file  (-> (thf/sample-file :file1)
+                  (tho/add-simple-component :star :star-main :star-rect
+                                            :root-params {:width 40 :height 40}
+                                            :child-params {:width 30 :height 30})
+                  (thv/add-variant-with-copy :variant :c01 :m01 :c02 :m02 :child1 :child2 :star)
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-child])
+                  (transform-subtree :copy01 #(ctm/rotation-modifiers %1 %2 30)))
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+        copy  (ths/get-shape file' :copy01)
+        child (ths/get-shape-by-id file' (first (:shapes copy)))]
+    (t/is (== 30 (mth/precision (:rotation copy) 2)))
+    (t/is (== 30 (mth/precision (:rotation child) 2)))))
