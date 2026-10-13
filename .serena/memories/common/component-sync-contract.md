@@ -31,7 +31,7 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 - Duplicate a copy: the new subtree keeps the source's values and touched; if its nesting level changes, touched is inherited as in detach. Paste and move out of a copy follow the same rule.
 - Swap without keep-touched: the new subtree is clean and keeps `swap-keep-attrs` values; the new head keeps the old shape's id. Inside a copy it keeps the old `:shape-ref` and gets `:swap-group` (none when the new component is the near main's); inside a main it is a plain nested copy.
 - Variant switch with keep-touched: an attr is carried from the old copy only when its group is touched and the old and new mains hold the same value for it. Resulting touched = groups of carried attrs (+ `:swap-group` when the head is inside a copy). A value equal to the new main is not carried and not touched.
-- Delete component: copies keep their data and do not sync. Restore brings sync back.
+- Delete component: copies keep their data. The deleted main cannot be edited, so it starts no sync, but changes from components nested in it still pass through: sync updates its stored shapes (`:objects` of the deleted component), its copies, and the components that nest it. Restore brings back an up-to-date main.
 - Undo/redo: restores the exact prior state, `:touched` and `:remote-synced` included, of the op and the sync it caused together (same undo group, one step). Undo never needs a re-sync.
 
 ## Geometry ownership
