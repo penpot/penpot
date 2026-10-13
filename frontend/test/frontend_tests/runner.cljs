@@ -32,8 +32,8 @@
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-edit-watchers-test]
-   [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-font-variants-test]
+   [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-libraries-test]
    [frontend-tests.data.workspace-library-links-test]
    [frontend-tests.data.workspace-library-updates-test]
@@ -62,7 +62,6 @@
    [frontend-tests.logic.copying-and-duplicating-test]
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
-   [frontend-tests.logic.ignore-tree-test]
    [frontend-tests.logic.nudge-selected-shapes-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.logic.path-actions-test]
@@ -231,7 +230,6 @@
    'frontend-tests.logic.copying-and-duplicating-test
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test
-   'frontend-tests.logic.ignore-tree-test
    'frontend-tests.logic.nudge-selected-shapes-test
    'frontend-tests.logic.path-actions-test
    'frontend-tests.logic.path-clipboard-test

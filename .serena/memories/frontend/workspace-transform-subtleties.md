@@ -9,7 +9,7 @@
 
 ## Component-copy touched suppression
 
-- `calculate-ignore-tree` walks modified shapes and descendants to decide per copy-shape `ignore-geometry?`.
+- `clp/calculate-ignore-tree` (common, `app.common.logic.placement`) walks modified shapes and descendants to decide per copy-shape `ignore-geometry?`; both renderers call it, with `clp/modifiers-transform` (SVG) or `clp/matrices-transform` (WASM).
 - `check-delta` compares a copy's relative position/rotation to its component root before and after transform. If relative movement is under about 1px and size/rotation are effectively unchanged, geometry touching is suppressed.
 - This logic is why pure translations of component copies can avoid marking every descendant as geometry-touched, while resizes/rotations still propagate touched state.
 

@@ -16,10 +16,9 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
+   [app.common.logic.placement :as clp]
    [app.common.math :as mth]
    [app.common.render-wasm.api.select :as wselect]
-   [app.common.types.component :as ctk]
-   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
@@ -63,46 +62,6 @@
   (when (wasm-gesture/try-end-interactive-transform!)
     (wasm.api/set-modifiers-end)))
 
-(def ^:private transform-attrs
-  #{:selrect
-    :points
-    :x
-    :y
-    :r1
-    :r2
-    :r3
-    :r4
-    :shadow
-    :blur
-    :background-blur
-    :strokes
-    :width
-    :height
-    :content
-    :transform
-    :transform-inverse
-    :rotation
-    :flip-x
-    :flip-y
-    :grow-type
-    :position-data
-    :layout-gap
-    :layout-padding
-    :layout-item-h-sizing
-    :layout-item-max-h
-    :layout-item-max-w
-    :layout-item-min-h
-    :layout-item-min-w
-    :layout-item-v-sizing
-    :layout-padding-type
-    :layout-item-margin
-    :layout-item-margin-type
-    :layout-grid-cells
-    :layout-grid-columns
-    :layout-grid-rows
-    :fills
-    :fill-image})
-
 ;; -- temporary modifiers -------------------------------------------
 
 ;; During an interactive transformation of shapes (e.g. when resizing or rotating
@@ -118,193 +77,6 @@
 ;; When the interaction is finished (e.g. user releases mouse button), the
 ;; apply-modifiers event is done, that consolidates all modifiers into the base
 ;; geometric attributes of the shapes.
-
-(defn- check-delta
-  "If the shape is a component instance, check whether the transformation is a
-  free change that must not mark the shape as touched.
-
-  For the instance ROOT, position is free placement, but its rotation and flips
-  are inherited content: transforming the copy as a whole overrides them, so a
-  change there marks the root as touched.
-
-  For DESCENDANTS, position, size, rotation and flips are compared RELATIVE TO
-  THE ROOT: a transformation of the whole instance preserves them all and does
-  not mark the descendants as touched; editing an individual shape does."
-  [shape root transformed-shape transformed-root]
-  (let [is-root?     (and (some? root)
-                          (= (dm/get-prop shape :id) (dm/get-prop root :id)))
-
-        center       (fn [shape]
-                       (grc/rect->center (:selrect shape)))
-
-        rel-pos      (fn [shape root]
-                       (when root
-                         ;; vector from the root center to the shape center,
-                         ;; expressed in the root's local (untransformed) axes
-                         (-> (gpt/subtract (center shape) (center root))
-                             (gpt/transform (:transform-inverse root (gmt/matrix))))))
-
-        orientation  (fn [shape root]
-                       ;; the shape's rotation/flip orientation taken from its
-                       ;; transform matrix, so it is reliable regardless of how the
-                       ;; transform was applied (the WASM apply-transform path does
-                       ;; not refresh the :rotation attribute). For the ROOT the
-                       ;; absolute orientation; for a DESCENDANT the orientation
-                       ;; relative to the root — invariant when the whole instance
-                       ;; is rotated or flipped as a unit.
-                       (let [t (:transform shape (gmt/matrix))]
-                         (if is-root?
-                           t
-                           (gmt/multiply (:transform-inverse root (gmt/matrix)) t))))
-
-        pos-before   (rel-pos shape root)
-        pos-after    (rel-pos transformed-shape transformed-root)
-
-        distance
-        (if (and pos-before pos-after)
-          (gpt/distance-vector pos-before pos-after)
-          (gpt/point 0 0))
-
-        orientation-unchanged?
-        (gmt/close? (orientation shape root)
-                    (orientation transformed-shape transformed-root))
-
-        selrect (:selrect shape)
-        transformed-selrect (:selrect transformed-shape)]
-
-    ;; There are cases in that the coordinates change slightly (e.g. when rounding
-    ;; to pixel, or when recalculating text positions in different zoom levels).
-    ;; To take this into account, we ignore movements smaller than 1 pixel.
-    ;;
-    ;; When the change is a resize, also has a transformation that may have the
-    ;; shape position unchanged. But in this case we do not want to ignore it.
-    (and (and (< (:x distance) 1) (< (:y distance) 1))
-         (mth/close? (:width selrect) (:width transformed-selrect))
-         (mth/close? (:height selrect) (:height transformed-selrect))
-         orientation-unchanged?)))
-
-(defn calculate-ignore-tree
-  "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
-  [modif-tree objects]
-
-  (letfn [(get-ignore-tree
-            ([ignore-tree shape]
-             (let [shape-id (dm/get-prop shape :id)
-                   transformed-shape (gsh/transform-shape shape (dm/get-in modif-tree [shape-id :modifiers]))
-
-                   root
-                   (if (:component-root shape)
-                     shape
-                     (ctn/get-component-shape objects shape {:allow-main? true}))
-
-                   transformed-root
-                   (if (:component-root shape)
-                     transformed-shape
-                     (gsh/transform-shape root (dm/get-in modif-tree [(:id root) :modifiers])))]
-
-               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
-
-            ([ignore-tree shape root transformed-root]
-             (let [shape-id (dm/get-prop shape :id)
-                   transformed-shape (gsh/transform-shape shape (dm/get-in modif-tree [shape-id :modifiers]))]
-               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
-
-            ([ignore-tree shape transformed-shape root transformed-root]
-             (let [shape-id (dm/get-prop shape :id)
-
-                   ignore-tree
-                   (cond-> ignore-tree
-                     (and (some? root) (ctk/in-component-copy? shape))
-                     (assoc
-                      shape-id
-                      (check-delta shape root transformed-shape transformed-root)))
-
-                   set-child
-                   (fn [ignore-tree child]
-                     (get-ignore-tree ignore-tree child root transformed-root))]
-
-               (->> (:shapes shape)
-                    (map (d/getf objects))
-                    (reduce set-child ignore-tree)))))]
-
-    ;; we check twice because we want only to search parents of components but once the
-    ;; tree is traversed we only want to process the objects in components
-    (->> (keys modif-tree)
-         (map #(get objects %))
-         (reduce get-ignore-tree nil))))
-
-(defn- cached-transform
-  [transforms]
-  (let [cache (js/Map.)]
-    (fn [shape]
-      (let [id     (dm/get-prop shape :id)
-            cached (.get cache id)]
-        (if (and (some? cached) (identical? shape (aget cached 0)))
-          (aget cached 1)
-          (let [result (gsh/apply-transform shape (get transforms id))]
-            (.set cache id #js [shape result])
-            result))))))
-
-(defn calculate-ignore-tree-wasm
-  "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
-  ([transforms objects]
-   (calculate-ignore-tree-wasm transforms objects (cached-transform transforms)))
-  ([transforms objects transform]
-   (let [order (into {} (map-indexed (fn [i id] [id i])) (keys transforms))
-
-         component-shape
-         (fn [shape parent parent-component]
-           (cond
-             (cfh/root? shape) nil
-             (ctk/instance-root? shape) shape
-             (and (ctk/instance-head? shape) (not (ctk/in-component-copy? parent))) shape
-             :else parent-component))
-
-         walk
-         (fn walk [ignore-tree shape component latest]
-           (let [index  (get order (dm/get-prop shape :id))
-                 latest (if (and (some? index) (or (nil? latest) (> index (nth latest 0))))
-                          (if (some? component)
-                            [index component (transform component)]
-                            latest)
-                          latest)
-                 ignore-tree
-                 (if (and (some? latest) (ctk/in-component-copy? shape))
-                   (let [[_ root transformed-root] latest]
-                     (assoc ignore-tree
-                            (dm/get-prop shape :id)
-                            (check-delta shape root (transform shape) transformed-root)))
-                   ignore-tree)]
-             (reduce (fn [ignore-tree child]
-                       (walk ignore-tree child (component-shape child shape component) latest))
-                     ignore-tree
-                     (map (d/getf objects) (:shapes shape)))))
-
-         under-transform (volatile! {})
-
-         under-transform?
-         (fn under-transform? [id]
-           (let [parent-id (dm/get-in objects [id :parent-id])]
-             (cond
-               (or (nil? parent-id) (= parent-id id)) false
-               (contains? order parent-id) true
-               :else
-               (let [cached (get @under-transform parent-id ::none)]
-                 (if (= cached ::none)
-                   (let [result (under-transform? parent-id)]
-                     (vswap! under-transform assoc parent-id result)
-                     result)
-                   cached)))))]
-     (->> (keys transforms)
-          (remove under-transform?)
-          (keep #(get objects %))
-          (reduce (fn [ignore-tree shape]
-                    (let [parent (get objects (:parent-id shape))]
-                      (walk ignore-tree
-                            shape
-                            (component-shape shape parent (ctn/get-component-shape objects parent {:allow-main? true}))
-                            nil)))
-                  nil)))))
 
 (defn assoc-position-data
   [shape position-data old-shape]
@@ -907,10 +679,10 @@
                   (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel? snap-ignore-axis)))
 
                 transform-shape
-                (cached-transform transforms)
+                (clp/matrices-transform transforms)
 
                 ignore-tree
-                (calculate-ignore-tree-wasm transforms objects transform-shape)
+                (clp/calculate-ignore-tree objects (keys transforms) transform-shape)
 
                 options
                 (-> params
@@ -919,7 +691,7 @@
                     (assoc :translation? translation?)
                     ;; Attributes that can change in the transform. This
                     ;; way we don't have to check all the attributes
-                    (assoc :attrs transform-attrs))
+                    (assoc :attrs clp/transform-attrs))
 
                 modif-tree
                 (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
@@ -1061,7 +833,8 @@
                   ids)
 
             ignore-tree
-            (calculate-ignore-tree object-modifiers objects)
+            (clp/calculate-ignore-tree objects (keys object-modifiers)
+                                       (clp/modifiers-transform object-modifiers))
 
             options
             (-> options
@@ -1069,7 +842,7 @@
                 (assoc :ignore-tree ignore-tree)
                 ;; Attributes that can change in the transform. This
                 ;; way we don't have to check all the attributes
-                (assoc :attrs transform-attrs))
+                (assoc :attrs clp/transform-attrs))
 
             update-shape
             (fn [shape]
