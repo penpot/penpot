@@ -789,23 +789,27 @@
         (vary-meta dissoc ::fmg/migrated))))
 
 (defn process-imported-file
-  "Process a file read from a binfile. The swap slots whose near main is in a
-  library not linked yet are left for `convert-deferred-swaps!`."
+  "Process a file read from a binfile. The swap slots and old text overrides
+  whose near main is in a library not linked yet are left for
+  `convert-deferred!`."
   [cfg {:keys [id] :as file}]
-  (let [file (binding [cfcp/*defer-unreachable-swaps* true]
-               (process-file cfg file))]
-    (when (::cfcp/deferred-swaps (meta (:data file)))
-      (vswap! *state* update :deferred-swaps (fnil conj #{}) id))
+  (let [file (binding [cfcp/*defer-unreachable* true]
+               (process-file cfg file))
+        data (meta (:data file))]
+    (when (or (::cfcp/deferred-swaps data) (::cfcp/deferred-texts data))
+      (vswap! *state* update :deferred (fnil conj #{}) id))
     file))
 
-(defn convert-deferred-swaps!
-  "Convert the swap slots the import left in its files, once the libraries
-  of the files are linked."
+(defn convert-deferred!
+  "Convert the swap slots and old text overrides the import left in its
+  files, once the libraries of the files are linked."
   [cfg]
-  (doseq [file-id (:deferred-swaps @*state*)]
+  (doseq [file-id (:deferred @*state*)]
     (let [file (get-file cfg file-id :realize? true :migrate? false)
           libs (get-resolved-file-libraries cfg file)]
-      (update-file! cfg (update file :data cfcp/convert-swap-slots libs)))))
+      (update-file! cfg (update file :data #(-> %
+                                                (cfcp/convert-swap-slots libs)
+                                                (cfcp/convert-text-overrides libs)))))))
 
 (defn- encode-file
   [cfg {:keys [id features] :as file}]

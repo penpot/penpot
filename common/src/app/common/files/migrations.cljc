@@ -2305,6 +2305,14 @@
                     {})]
     (cfcp/convert-swap-slots data libraries)))
 
+(defmethod migrate-data "0035-recompute-text-overrides"
+  [data _]
+  (some-> cfeat/*new* (swap! conj "components/text-overrides"))
+  (let [libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (cfcp/convert-text-overrides data libraries)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2396,4 +2404,5 @@
          "0031-migrate-stroke-width-token-attr"
          "0032-fix-children-not-in-parent"
          "0033-normalize-main-instance-names"
-         "0034-convert-swap-slots-to-swap-groups"]))
+         "0034-convert-swap-slots-to-swap-groups"
+         "0035-recompute-text-overrides"]))

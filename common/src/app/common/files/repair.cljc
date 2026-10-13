@@ -587,6 +587,18 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :legacy-text-touched
+  [_ {:keys [shape page-id] :as error} file-data libraries]
+  (let [page (ctpl/get-page file-data page-id)
+        file {:id (:id file-data) :data file-data}
+        ref  (when (ctk/in-component-copy? shape)
+               (ctf/find-ref-shape file (ctn/make-container page :page) libraries shape
+                                   :include-deleted? true))]
+    (log/debug :hint "repairing shape :legacy-text-touched" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] #(assoc % :touched (cfcp/recompute-text-touched % ref))))))
+
 (defmethod repair-error :misplaced-slot
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [repair-shape

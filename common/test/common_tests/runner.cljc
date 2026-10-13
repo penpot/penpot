@@ -26,6 +26,7 @@
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.convert-swap-slots-test]
+   [common-tests.files.convert-text-overrides-test]
    [common-tests.files.helpers-test]
    [common-tests.files.repair-components-test]
    [common-tests.files.repair-test]
@@ -149,6 +150,7 @@
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
    'common-tests.files.convert-swap-slots-test
+   'common-tests.files.convert-text-overrides-test
    'common-tests.files.helpers-test
    'common-tests.files.repair-components-test
    'common-tests.files.repair-test
