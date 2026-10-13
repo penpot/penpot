@@ -7,7 +7,7 @@
 (ns common-tests.logic.chained-propagation-test
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.instances :as cli]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -114,7 +114,7 @@
           (restore-comp-5 [file]
             (let [page (thf/current-page file)]
               (thf/apply-changes file
-                                 (cll/generate-restore-component (pcb/empty-changes)
+                                 (cli/generate-restore-component (pcb/empty-changes)
                                                                  (:data file)
                                                                  (thi/id :comp-5)
                                                                  (:id file)

@@ -8,7 +8,8 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.duplicate :as cld]
+   [app.common.logic.instances :as cli]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -217,14 +218,14 @@
 
         ;; ==== Action
         changes                (-> (pcb/empty-changes nil)
-                                   (cll/generate-duplicate-changes (:objects page)         ;; objects
+                                   (cld/generate-duplicate-changes (:objects page)         ;; objects
                                                                    page                    ;; page
                                                                    #{(:id blue1)}          ;; ids
                                                                    (gpt/point 0 0)         ;; delta
                                                                    {(:id  file) file}      ;; libraries
                                                                    (:data file)            ;; library-data
                                                                    (:id file))             ;; file-id
-                                   (cll/generate-duplicate-changes-update-indices (:objects page)  ;; objects
+                                   (cld/generate-duplicate-changes-update-indices (:objects page)  ;; objects
                                                                                   #{(:id blue1)})) ;; ids
 
 
@@ -267,14 +268,14 @@
 
         ;; Duplicate yellow
         changes'               (-> (pcb/empty-changes nil)
-                                   (cll/generate-duplicate-changes (:objects page')          ;; objects
+                                   (cld/generate-duplicate-changes (:objects page')          ;; objects
                                                                    page'                     ;; page
                                                                    #{(:id yellow')}          ;; ids
                                                                    (gpt/point 0 0)           ;; delta
                                                                    {(:id  file') file'}      ;; libraries
                                                                    (:data file')             ;; library-data
                                                                    (:id file'))              ;; file-id
-                                   (cll/generate-duplicate-changes-update-indices (:objects page')   ;; objects
+                                   (cld/generate-duplicate-changes-update-indices (:objects page')   ;; objects
                                                                                   #{(:id yellow')})) ;; ids
 
         file''                  (thf/apply-changes file' changes')
@@ -489,14 +490,14 @@
 
         ;; ==== Action
         changes                (-> (pcb/empty-changes nil)
-                                   (cll/generate-duplicate-changes (:objects page)         ;; objects
+                                   (cld/generate-duplicate-changes (:objects page)         ;; objects
                                                                    page                    ;; page
                                                                    #{(:id green-copy)}     ;; ids
                                                                    (gpt/point 0 0)         ;; delta
                                                                    {(:id  file) file}      ;; libraries
                                                                    (:data file)            ;; library-data
                                                                    (:id file))             ;; file-id
-                                   (cll/generate-duplicate-changes-update-indices (:objects page)       ;; objects
+                                   (cld/generate-duplicate-changes-update-indices (:objects page)       ;; objects
                                                                                   #{(:id green-copy)})) ;; ids
 
 
@@ -549,7 +550,7 @@
         blue2                  (ths/get-shape file :blue2)
 
         ;; ==== Action
-        changes                (cll/generate-detach-component (pcb/empty-changes)
+        changes                (cli/generate-detach-component (pcb/empty-changes)
                                                               (:id green-copy)
                                                               (:data file)
                                                               (:id page)

@@ -14,7 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.duplicate :as cld]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.uuid :as uuid]
@@ -488,8 +488,8 @@
                 library-data    (dsh/lookup-file-data state file-id)
 
                 changes         (-> (pcb/empty-changes it)
-                                    (cll/generate-duplicate-changes objects page ids delta libraries library-data file-id {:alt-duplication? alt-duplication?})
-                                    (cll/generate-duplicate-changes-update-indices objects ids))
+                                    (cld/generate-duplicate-changes objects page ids delta libraries library-data file-id {:alt-duplication? alt-duplication?})
+                                    (cld/generate-duplicate-changes-update-indices objects ids))
 
                 tags            (or (:tags changes) #{})
 

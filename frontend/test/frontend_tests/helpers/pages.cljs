@@ -13,7 +13,8 @@
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.duplicate :as cld]
+   [app.common.logic.instances :as cli]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -138,7 +139,7 @@
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
-        (cll/generate-add-component (pcb/empty-changes nil)
+        (cli/generate-add-component (pcb/empty-changes nil)
                                     shapes
                                     (:objects page)
                                     (:id page)
@@ -161,7 +162,7 @@
                        (pcb/with-objects objects))
 
          [new-shape changes]
-         (cll/generate-instantiate-component changes
+         (cli/generate-instantiate-component changes
                                              objects
                                              file-id
                                              component-id
