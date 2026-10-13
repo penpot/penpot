@@ -35,15 +35,16 @@
 
 ;; Context --------------------------------------------------------------------
 ;;
-;; A context is `{:config .. :refs .. :table (volatile! {})}`. `:refs` is a
-;; map (or any function) from reference path to value; `:table` holds the
-;; script variables, keyed by lower case name.
+;; `refs` is a map (or any function) from reference path to value; `table`
+;; is a volatile holding the script variables, keyed by lower case name.
+
+(defrecord Context [config refs table])
 
 (defn- make-ctx
   [{:keys [references config table]}]
-  {:config (or config (config/make-config))
-   :refs (or references {})
-   :table (volatile! (or table {}))})
+  (->Context (or config (config/make-config))
+             (or references {})
+             (volatile! (or table {}))))
 
 (defn- lookup-reference
   "Reference value as a symbol, nil when the path is not defined. A map
@@ -661,7 +662,7 @@
      (case (:node ast)
        ;; Most token values are a single reference or literal: evaluate
        ;; them without building a context (config, variable table).
-       :reference (eval-reference {:refs (or (:references opts) {})} ast)
+       :reference (eval-reference (->Context nil (or (:references opts) {}) nil) ast)
        (:num :string :hex-color :boolean :null) (eval-node nil ast)
        (unwrap-return (eval-node (make-ctx opts) ast))))))
 
