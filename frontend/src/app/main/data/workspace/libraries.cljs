@@ -26,6 +26,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
+   [app.common.types.text :as cttx]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -53,6 +54,7 @@
    [app.main.data.workspace.zoom :as dwz]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -980,6 +982,32 @@
           (rx/of (dwt.wasm/render-thumbnail file-id page-id root-id :persist? true)))
         (rx/of (update-component-thumbnail-sync state component-id file-id "component"))))))
 
+(defn- closest-font-variant
+  "The id of the variant of the family of the text node `node` closest to its
+   weight and style, when its variant is not one of the family's."
+  [node]
+  (when-let [font (fonts/get-font-data (:font-id node))]
+    (when-not (d/seek #(= (:id %) (:font-variant-id node)) (:variants font))
+      (:id (fonts/find-closest-variant font (:font-weight node) (:font-style node))))))
+
+(defn fix-font-variants
+  "`changes` with each text content they set given variants of its own
+   families: a sync or a variant switch can take a copy text's family from
+   one side and its weight from the other (`mem:common/component-sync-contract`)."
+  [changes]
+  (let [fix-operation
+        (fn [{:keys [type attr val] :as operation}]
+          (if (and (= type :set) (= attr :content) (cttx/is-root-node? val))
+            (update operation :val cttx/update-font-variants closest-font-variant)
+            operation))]
+    (update changes :redo-changes
+            (fn [redo-changes]
+              (mapv (fn [change]
+                      (cond-> change
+                        (= :mod-obj (:type change))
+                        (update :operations #(mapv fix-operation %))))
+                    redo-changes)))))
+
 (defn component-swap
   "Swaps a component with another one"
   [shape file-id id-new-component keep-touched?]
@@ -1016,7 +1044,7 @@
             update-layout-ids (concat update-layout-ids new-children-ids)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
+         (dch/commit-changes (fix-font-variants changes))
          (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
          (when (and (features/active-feature? state "render-wasm/v1")
                     (seq new-text-ids))
@@ -1138,15 +1166,16 @@
                libraries       (dsh/lookup-libraries state)
                current-file-id (:current-file-id state)
 
-               changes         (cll/generate-sync-file-changes
-                                (pcb/empty-changes it)
-                                undo-group
-                                asset-type
-                                file-id
-                                asset-id
-                                library-id
-                                libraries
-                                current-file-id)
+               changes         (-> (cll/generate-sync-file-changes
+                                    (pcb/empty-changes it)
+                                    undo-group
+                                    asset-type
+                                    file-id
+                                    asset-id
+                                    library-id
+                                    libraries
+                                    current-file-id)
+                                   (fix-font-variants))
 
                find-frames     (fn [change]
                                  (->> (ch/frames-changed ldata change)
