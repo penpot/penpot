@@ -20,6 +20,7 @@
    [app.common.tokenscript.colors :as colors]
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.functions :as functions]
+   [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.token-types :as token-types]
    [app.common.tokenscript.units :as units]
@@ -38,8 +39,8 @@
    {:language-options (merge default-language-options language-options)
     :colors (or colors (colors/default-registry))
     :units (or units (units/default-registry))
-    :functions (or functions (functions/default-registry))
-    :tokens (or tokens token-types/empty-registry)
+    :functions (or functions (functions/empty-registry))
+    :tokens (or tokens (token-types/empty-registry))
     :inline-constants {}}))
 
 (defn config?
@@ -52,10 +53,10 @@
   [config {:keys [uri schema]}]
   (let [schema (walk/keywordize-keys schema)]
     (case (:type schema)
-      "color" (update config :colors colors/register uri schema)
-      "function" (update config :functions functions/register (:keyword schema) schema)
-      "token" (update config :tokens token-types/register uri schema)
-      "unit" (update config :units units/register uri schema)
+      "color" (update config :colors reg/register uri schema)
+      "function" (update config :functions reg/register uri schema)
+      "token" (update config :tokens reg/register uri schema)
+      "unit" (update config :units reg/register uri schema)
       "constants" (if (:inline schema)
                     (update config :inline-constants
                             into

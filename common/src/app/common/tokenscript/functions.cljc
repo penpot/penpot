@@ -12,14 +12,16 @@
   tokenscript scripts registered from `:type \"function\"` schemas; their
   execution lives in the interpreter.
 
-  Registry shape:
+  `FunctionRegistry` fields:
 
-    {:specs {keyword spec} :spec-types {name keyword}
-     :dynamic {keyword {:ast .. :spec ..}}}"
+    specs       {keyword spec}
+    spec-types  {name keyword}
+    dynamic     {keyword {:ast .. :spec .. :keyword ..}}"
   (:require
    [app.common.math :as mth]
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.parser :as parser]
+   [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.util :as u]
    [clojure.string :as str]
@@ -237,35 +239,38 @@
 
 ;; Registry -------------------------------------------------------------------
 
-(def empty-registry
-  {:specs {} :spec-types {} :dynamic {}})
-
-(defn default-registry
-  []
-  empty-registry)
-
 (defn- normalize-spec
-  [name spec]
+  [uri spec]
   (let [spec (walk/keywordize-keys spec)]
     (when-not (and (map? spec)
                    (string? (:name spec))
                    (string? (:keyword spec))
                    (string? (get-in spec [:script :script])))
       (err/raise :config/invalid-specification
-                 {:data {:kind "function" :uri name :error "expected a map with :name, :keyword and :script"}}))
+                 {:data {:kind "function" :uri uri :error "expected a map with :name, :keyword and :script"}}))
     spec))
 
-(defn register
-  "Registers a function specification. The keyword becomes the callable
-  name."
-  [registry name spec]
-  (let [spec (normalize-spec name spec)
+(defn- register-spec
+  "The keyword of the spec becomes the callable name."
+  [registry uri spec]
+  (let [spec (normalize-spec uri spec)
         keyword (str/lower-case (:keyword spec))
         ast (:ast (parser/parse (get-in spec [:script :script])))]
     (-> registry
         (assoc-in [:specs keyword] spec)
         (assoc-in [:spec-types (str/lower-case (:name spec))] keyword)
         (assoc-in [:dynamic keyword] {:ast ast :spec spec :keyword keyword}))))
+
+(defrecord FunctionRegistry [specs spec-types dynamic]
+  reg/ISchemaRegistry
+  (register [this uri spec]
+    (register-spec this uri spec)))
+
+(defn empty-registry
+  "Registry of schema functions. Specs are keyed by lower case keyword;
+  the builtins (`builtin-functions`) are not part of it."
+  []
+  (->FunctionRegistry {} {} {}))
 
 (defn dynamic-function
   [registry name]

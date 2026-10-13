@@ -25,6 +25,7 @@
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.interpreter :as interp]
    [app.common.tokenscript.parser :as parser]
+   [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.schema-uri :as suri]
    [app.common.tokenscript.symbols :as sym]
    [app.common.tokenscript.util :as u]
@@ -83,7 +84,7 @@
   (let [registry (reduce (fn [registry uri]
                            (let [file (schema-file specs-dir uri)]
                              (if (and file (file-exists? file))
-                               (colors/register registry uri (json/decode (read-file file) :key-fn keyword))
+                               (reg/register registry uri (json/decode (read-file file) :key-fn keyword))
                                registry)))
                          (colors/default-registry)
                          schemas)]

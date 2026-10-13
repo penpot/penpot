@@ -12,8 +12,9 @@
   that receives `{input}` and returns `true` or an error code string.
   Validation execution lives in `app.common.tokenscript.validation`.
 
-  Registry shape: the common registry plus
-  `:validation {lower-type {:script .. :ast ..}}`."
+  `TokenTypeRegistry` has the common registry fields (see
+  `app.common.tokenscript.registry`) plus `validation`
+  (`{lower-type {:script .. :ast ..}}`)."
   (:require
    [app.common.tokenscript.ast :as ast]
    [app.common.tokenscript.errors :as err]
@@ -24,9 +25,6 @@
    [clojure.walk :as walk]))
 
 (def valid-schema-types ["number" "string" "token" "object" "list"])
-
-(def empty-registry
-  (assoc reg/empty-registry :validation {}))
 
 (defn spec-name
   [spec]
@@ -54,8 +52,7 @@
   (let [script (if (string? validation) validation (:script validation))]
     (assoc-in registry [:validation (str/lower-case token-type)] (parse-validation script))))
 
-(defn register
-  "Registers a token type specification under `uri`."
+(defn- register-spec
   [registry uri spec]
   (let [uri (suri/normalize uri)
         spec (normalize-spec uri spec)
@@ -63,6 +60,15 @@
     (if-let [validation (:validation spec)]
       (register-validation registry (:name spec) validation)
       registry)))
+
+(defrecord TokenTypeRegistry [specs spec-types validation cache]
+  reg/ISchemaRegistry
+  (register [this uri spec]
+    (register-spec this uri spec)))
+
+(defn empty-registry
+  []
+  (->TokenTypeRegistry {} {} {} (reg/new-cache)))
 
 (defn spec
   [registry uri]

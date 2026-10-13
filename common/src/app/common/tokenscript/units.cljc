@@ -12,7 +12,9 @@
   a `to_absolute` script evaluated against another operand. Script
   execution lives in the interpreter.
 
-  Registry shape: the common registry plus `:keywords {UPPER-KEYWORD uri}`."
+  `UnitRegistry` has the common registry fields (see
+  `app.common.tokenscript.registry`) plus `keywords`
+  (`{UPPER-KEYWORD uri}`)."
   (:require
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.parser :as parser]
@@ -67,9 +69,6 @@
 
 (def valid-unit-types ["absolute" "relative"])
 
-(def empty-registry
-  (assoc reg/empty-registry :keywords {}))
-
 (defn spec-name
   [spec]
   (str/lower-case (:name spec)))
@@ -87,30 +86,28 @@
     (cond-> (update spec :conversions #(vec (or % [])))
       (:to_absolute spec) (assoc-in [:to_absolute :ast] (:ast (parser/parse (get-in spec [:to_absolute :script])))))))
 
-(defn- register-conversions
-  [registry uri spec]
-  (reduce (fn [registry {:keys [source target script]}]
-            (let [source-uri (suri/normalize (if (= source "$self") uri source))
-                  target-uri (suri/normalize (if (= target "$self") uri target))
-                  ast (:ast (parser/parse (:script script)))]
-              (reg/add-conversion registry source-uri target-uri
-                                  {:ast ast :source-uri source-uri :target-uri target-uri})))
-          registry
-          (:conversions spec)))
-
-(defn register
-  "Registers a unit specification under `uri`."
+(defn- register-spec
   [registry uri spec]
   (let [uri (suri/normalize uri)
         spec (normalize-spec uri spec)]
     (-> registry
         (reg/add-spec uri spec (spec-name spec))
         (assoc-in [:keywords (str/upper-case (:keyword spec))] uri)
-        (register-conversions uri spec))))
+        (reg/add-conversions uri (:conversions spec)))))
+
+(defrecord UnitRegistry [specs spec-types conversions keywords cache]
+  reg/ISchemaRegistry
+  (register [this uri spec]
+    (register-spec this uri spec)))
+
+(defn empty-registry
+  []
+  (->UnitRegistry {} {} {} {} (reg/new-cache)))
 
 (defn default-registry
+  "Registry with the built in units (`px`, `rem`, `%`, `s`, `ms`, `ch`)."
   []
-  (reduce (fn [registry [uri spec]] (register registry uri spec)) empty-registry default-specs))
+  (reduce (fn [registry [uri spec]] (reg/register registry uri spec)) (empty-registry) default-specs))
 
 (defn spec
   [registry uri]

@@ -29,6 +29,7 @@
   (:refer-clojure :exclude [list boolean number symbol? number? string? boolean? list?])
   (:require
    [app.common.math :as mth]
+   [app.common.tokenscript.colors :as colors]
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.lexer :as lex]
    [app.common.tokenscript.util :as u]
@@ -169,9 +170,7 @@
   "Spec registered for the color sub type in `config`, if any."
   [config c]
   (when-let [sub (:sub-type c)]
-    (let [registry (:colors config)
-          uri (get (:spec-types registry) (str/lower-case sub))]
-      (get (:specs registry) uri))))
+    (colors/spec-by-type (:colors config) sub)))
 
 (defn- format-number
   [n places remove-trailing-zeros?]

@@ -62,4 +62,20 @@
                          :conversions [{:source "$self"
                                         :target "https://other.org/api/v1/core/rgb-color/0/"
                                         :script {:script "variable c: Color.Rgb; c.r = {input}.v; c.g = {input}.v; c.b = {input}.v; return c;"}}]}})]
-      (t/is (seq (reg/conversion-steps (:colors cfg) "/api/v1/core/gray-color/0/" "/api/v1/core/hex-color/0/"))))))
+      (t/is (seq (reg/conversion-steps (:colors cfg) "/api/v1/core/gray-color/0/" "/api/v1/core/hex-color/0/")))))
+
+  (t/testing "a registry built from another one does not reuse its cached lookups"
+    (let [gray "/api/v1/core/gray-color/0/"
+          hex "/api/v1/core/hex-color/0/"
+          before (colors/default-registry)
+          _ (t/is (nil? (reg/conversion-steps before gray hex)))
+          after (reg/register before gray
+                              {:name "Gray"
+                               :type "color"
+                               :schema {:type "object" :properties {:v {:type "number"}} :order ["v"]}
+                               :initializers []
+                               :conversions [{:source "$self"
+                                              :target hex
+                                              :script {:script "variable c: Color.Hex; c.value = \"#000000\"; return c;"}}]})]
+      (t/is (= 1 (count (reg/conversion-steps after gray hex))))
+      (t/is (nil? (reg/conversion-steps before gray hex))))))

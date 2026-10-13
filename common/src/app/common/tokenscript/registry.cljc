@@ -8,11 +8,14 @@
   "Shared registry logic for the color, unit, function and token schema
   managers.
 
-  A registry is a map
+  Each manager has its own registry record implementing
+  `ISchemaRegistry`. The functions here work on the fields the records
+  share:
 
-    {:specs       {uri spec}
-     :spec-types  {lower-case-name uri}
-     :conversions {source-uri {target-uri conversion}}}
+    specs        {uri spec}
+    spec-types   {lower-case-name uri}
+    conversions  {source-uri {target-uri conversion}}
+    cache        memoized lookups, see `new-cache`
 
   URIs are stored and looked up in their path form (see
   `app.common.tokenscript.schema-uri/normalize`), so a schema referenced
@@ -23,38 +26,35 @@
   over the registered conversion edges, so a chain of conversions can be
   used when no direct one exists.
 
-  URI resolution and conversion paths are memoized per registry value:
-  they run on every color or unit conversion but only depend on the
-  registry."
+  URI resolution and conversion paths are memoized per registry: they
+  run on every color or unit conversion but only depend on the specs and
+  conversions."
   (:require
+   [app.common.tokenscript.parser :as parser]
    [app.common.tokenscript.schema-uri :as suri]))
 
-(def empty-registry
-  {:specs {}
-   :spec-types {}
-   :conversions {}})
+(defprotocol ISchemaRegistry
+  "A registry of one kind of schema: color spaces, units, functions or
+  token types."
+  (register [_ uri spec]
+    "Registry with `spec` registered under `uri`. Raises
+    `:config/invalid-specification` when the spec is malformed."))
 
 ;; Memoization ----------------------------------------------------------------
 ;;
-;; Registries are immutable and built once per config, so results are cached
-;; per registry instance (by identity). Only a handful of registries are live
-;; at a time (colors, units, functions, token types of the active config).
+;; The `cache` field of a registry holds the results of `resolve-uri`,
+;; `conversion-path` and `conversion-steps`. `add-spec` and
+;; `add-conversion` give the new registry a new cache, so a registry never
+;; sees results computed for the one it was built from.
 
-(def ^:private max-cached-registries 16)
-
-(defonce ^:private registry-caches (atom []))
-
-(defn- registry-cache
-  [registry]
-  (or (some (fn [[r cache]] (when (identical? r registry) cache)) @registry-caches)
-      (let [cache (atom {})]
-        (swap! registry-caches #(vec (take max-cached-registries (cons [registry cache] %))))
-        cache)))
+(defn new-cache
+  []
+  (atom {}))
 
 (defn- memoized
   "Value of `(f)` cached under `k` for `registry`."
   [registry k f]
-  (let [cache (registry-cache registry)
+  (let [cache (:cache registry)
         m @cache]
     (if (contains? m k)
       (get m k)
@@ -67,11 +67,27 @@
   (let [uri (suri/normalize uri)]
     (-> registry
         (assoc-in [:specs uri] spec)
-        (assoc-in [:spec-types name] uri))))
+        (assoc-in [:spec-types name] uri)
+        (assoc :cache (new-cache)))))
 
 (defn add-conversion
   [registry source-uri target-uri conversion]
-  (assoc-in registry [:conversions (suri/normalize source-uri) (suri/normalize target-uri)] conversion))
+  (-> registry
+      (assoc-in [:conversions (suri/normalize source-uri) (suri/normalize target-uri)] conversion)
+      (assoc :cache (new-cache))))
+
+(defn add-conversions
+  "Parses and adds the conversion scripts of the spec registered under
+  `uri`. `$self` in a source or target stands for `uri`."
+  [registry uri conversions]
+  (reduce (fn [registry {:keys [source target script]}]
+            (let [source-uri (suri/normalize (if (= source "$self") uri source))
+                  target-uri (suri/normalize (if (= target "$self") uri target))
+                  ast (:ast (parser/parse (:script script)))]
+              (add-conversion registry source-uri target-uri
+                              {:ast ast :source-uri source-uri :target-uri target-uri})))
+          registry
+          conversions))
 
 (defn- latest-version-uri
   [registry uri]
