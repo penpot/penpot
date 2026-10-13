@@ -50,7 +50,13 @@
   (:gen-class))
 
 (def default-metrics
-  {:update-file-changes
+  {:log-events
+   {::mdef/name "penpot_log_events_total"
+    ::mdef/help "Log records emitted by the application, by logger and level."
+    ::mdef/labels ["logger" "level"]
+    ::mdef/type :counter}
+
+   :update-file-changes
    {::mdef/name "penpot_rpc_update_file_changes_total"
     ::mdef/help "A total number of changes submitted to update-file."
     ::mdef/type :counter}
@@ -533,6 +539,9 @@
 
    :app.loggers.database/reporter
    {::db/pool (ig/ref ::db/pool)}
+
+   :app.loggers.metrics/reporter
+   {::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::sto/storage
    {::db/pool      (ig/ref ::db/pool)
