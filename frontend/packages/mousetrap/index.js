@@ -1078,6 +1078,17 @@ Mousetrap.prototype.handleKey = function () {
 };
 
 /**
+ * the key name a keydown event is matched against, so a shortcut recorder can
+ * store exactly what this matcher will see
+ *
+ * @param {Event} e
+ * @return {string}
+ */
+export function characterFromEvent(e) {
+  return _characterFromEvent(e);
+}
+
+/**
  * allow custom key mappings
  */
 export function addKeycodes(object) {

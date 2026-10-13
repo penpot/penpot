@@ -7,6 +7,7 @@
 (ns app.main.ui.shortcuts
   (:require-macros [app.main.style :as stl])
   (:require
+   ["@penpot/mousetrap" :as mousetrap]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
@@ -47,27 +48,13 @@
    " "          "space"})
 
 ;; Mousetrap (the runtime shortcut matcher, vendored at
-;; frontend/packages/mousetrap) resolves a keydown positionally - via keyCode
-;; - ONLY for this punctuation set (its _KEYCODE_MAP); it falls back to
-;; `event.key.toLowerCase()` (glyph-based) for letters and digits, which
-;; aren't in that map. Recording punctuation from `code` therefore matches
-;; what Mousetrap triggers regardless of layout (e.g. the key next to Right
-;; Shift on a US layout is always "Period", whatever glyph it types on a
-;; given ISO layout). With modifiers, letters and digits come from keyCode
-;; like Mousetrap's keydown match (see `letter-or-digit`); otherwise from the
-;; glyph, like its keypress match.
-(def ^:private code-name-map
-  {"Minus"        "-"
-   "Equal"        "="
-   "BracketLeft"  "["
-   "BracketRight" "]"
-   "Backslash"    "\\"
-   "Semicolon"    ";"
-   "Quote"        "'"
-   "Backquote"    "`"
-   "Comma"        ","
-   "Period"       "."
-   "Slash"        "/"})
+;; frontend/packages/mousetrap) matches a printable key without modifiers on
+;; keypress, by the glyph it types. Anything else (modifiers, named keys,
+;; numpad) is matched on keydown, by `characterFromEvent`: its named-key map,
+;; then keyCode for punctuation, letters and digits, then `event.key`. The
+;; recorder asks Mousetrap for that same name, so a recorded shortcut always
+;; matches, whatever the layout (the Spanish "+" key has code "BracketRight"
+;; but keyCode 187, which Mousetrap reads as "=").
 
 (defn- event->native
   "Unwraps a goog.events.BrowserEvent to the native event, since the
@@ -77,25 +64,35 @@
     (or (.getBrowserEvent event) event)
     event))
 
-(defn- letter-or-digit
-  "Letter or digit named by keyCode when a modifier is held, ignoring the glyph
-  it makes the key type (Option+Shift+5 types \"ﬁ\" on macOS)."
+(defn- modified?
   [^js event]
-  (let [key-code (.-keyCode event)]
-    (when (and (or (.-ctrlKey event) (.-metaKey event)
-                   (.-altKey event) (.-shiftKey event))
-               (or (<= 48 key-code 57)
-                   (<= 65 key-code 90)))
-      (.toLowerCase (js/String.fromCharCode key-code)))))
+  (or (.-ctrlKey event) (.-metaKey event) (.-altKey event) (.-shiftKey event)))
+
+(defn- mousetrap-key
+  "Key name Mousetrap's keydown match resolves for `event`."
+  [^js event]
+  (let [native   (event->native event)
+        key-code (or (.-keyCode event) (some-> native .-keyCode))]
+    (mousetrap/characterFromEvent
+     #js {:type    "keydown"
+          :which   key-code
+          :keyCode key-code
+          :code    (some-> native .-code)
+          :key     (.-key event)})))
 
 (defn- normalize-key
   [^js event]
-  (let [key  (.-key event)]
+  (let [key (.-key event)]
     (when (and key (not (contains? modifier-keys key)))
       (or (get key-name-map key)
-          (get code-name-map (.-code (event->native event)))
-          (letter-or-digit event)
-          (some-> key .toLowerCase)))))
+          (let [mkey (mousetrap-key event)]
+            ;; A single glyph without modifiers is matched on keypress, as
+            ;; typed; numpad digits keep their "num" name
+            (if (and (not (modified? event))
+                     (= 1 (count key))
+                     (not (str/starts-with? mkey "num")))
+              (.toLowerCase key)
+              mkey))))))
 
 (defn- event->modifier-parts
   [^js event]

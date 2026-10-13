@@ -50,7 +50,7 @@
            (keyboard-event->mousetrap
             (key-event {:key "ñ" :code "" :keyCode 0})))))
 
-(t/deftest records-shift-punctuation-from-code
+(t/deftest records-shift-punctuation-from-key-code
   ;; Shift+. types ":" and Shift+= types "+" (US); the key is recorded
   (t/is (= "shift+."
            (keyboard-event->mousetrap
@@ -58,3 +58,24 @@
   (t/is (= "shift+="
            (keyboard-event->mousetrap
             (key-event {:key "+" :code "Equal" :keyCode 187 :shiftKey true})))))
+
+(t/deftest records-spanish-plus-key-as-mousetrap-matches-it
+  ;; The Spanish "+" key sits where US has "]" (code "BracketRight") but has
+  ;; keyCode 187, which Mousetrap reads as "="
+  (t/testing "alone it types \"+\", matched as typed"
+    (t/is (= "+"
+             (keyboard-event->mousetrap
+              (key-event {:key "+" :code "BracketRight" :keyCode 187})))))
+  (t/testing "with modifiers it is matched by keyCode, not by code"
+    (t/is (= "alt+="
+             (keyboard-event->mousetrap
+              (key-event {:key "+" :code "BracketRight" :keyCode 187 :altKey true}))))
+    (t/is (= "shift+="
+             (keyboard-event->mousetrap
+              (key-event {:key "*" :code "BracketRight" :keyCode 187 :shiftKey true}))))))
+
+(t/deftest records-numpad-digit-by-name
+  ;; Mousetrap names numpad digits "num0".."num9", with or without modifiers
+  (t/is (= "num5"
+           (keyboard-event->mousetrap
+            (key-event {:key "5" :code "Numpad5" :keyCode 101})))))
