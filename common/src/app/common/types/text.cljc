@@ -913,10 +913,17 @@
    and on a paragraph when it has one or no run of it has."
   [dst placed drop-typo?]
   (let [run-units   (filterv #(= :run (get-in style-units [% :level])) (keys placed))
+        ;; a run that already shows the placed style keeps its own values;
+        ;; but its variant id names a font of its own family, so with a new
+        ;; family it takes the placed one
+        family?     (contains? placed :text-content-family)
         write-run   (fn [node styles]
                       (cond-> (reduce (fn [node [unit style]]
-                                        (write-style node style (get-in style-units [unit :attrs])
-                                                     (= unit :text-content-line-height)))
+                                        (let [attrs (get-in style-units [unit :attrs])]
+                                          (if (and (= (style-key unit (select-keys node attrs)) (style-key unit style))
+                                                   (not (and family? (= unit :text-content-weight))))
+                                            node
+                                            (write-style node style attrs (= unit :text-content-line-height)))))
                                       node
                                       (map vector run-units styles))
                         drop-typo? drop-typography))
@@ -1100,6 +1107,20 @@
                   (keys style-units))
       (not same-letters?)
       (conj :text-content-text))))
+
+(defn update-font-variants
+  "`content` with the variant id of each node that names a font set to
+   `(variant-of node)`, when that gives one. Sync and the variant switch
+   can take a text's family from one side and its weight from the other,
+   leaving a variant id of another family; the frontend, which knows the
+   fonts, picks the family's closest variant through this."
+  [content variant-of]
+  (transform-nodes #(and (is-content-node? %) (some? (:font-id %)))
+                   (fn [node]
+                     (if-some [variant-id (variant-of node)]
+                       (assoc node :font-variant-id variant-id)
+                       node))
+                   content))
 
 (defn content-has-text?
   [content search]
