@@ -12,7 +12,6 @@
    are written in the notation of `app.common.test-helpers.texts`."
   (:require
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -65,35 +64,14 @@
    :new-line   [[[["Add to cart"]] [["Free shipping"]]] #{:letters}]
    :bold-word  [[[["Add to "] ["cart" {:weight 700}]]] #{:weight}]})
 
-(def ^:private known-failures
-  "Copy edit -> [bug, how the copy ends, the variants it fails against].
-   `:variant`: the copy takes the new variant's text whole; a text in the
-   notation: the copy ends with that text."
-  {:letters           [["F81" :variant #{:bold-word}]]
-   :new-paragraph     [["F79" :variant #{:size :color}]
-                       ["F81" :variant #{:bold-word}]]
-   :color             [["F77" :variant #{:size}]
-                       ["F79" :variant #{:new-line}]
-                       ["F81" :variant #{:bold-word}]]
-   :family            [["F77" :variant #{:size :color}]
-                       ["F79" :variant #{:new-line}]
-                       ["F81" :variant #{:bold-word}]]
-   :size              [["F77" :variant #{:color}]
-                       ["F79" :variant #{:new-line}]
-                       ["F81" :variant #{:bold-word}]]
-   :weight            [["F77" :variant #{:size :color}]
-                       ["F79" :variant #{:new-line}]]
-   :letters-and-color [["F77" [[["Buy now" {:size 24}]]] #{:size}]
-                       ["F79" :variant #{:new-line}]
-                       ["F81" :variant #{:bold-word}]]
-   :align             [["F76" :variant (disj (set (keys variants)) :same)]]
-   :valign            [["F76" :variant (disj (set (keys variants)) :same)]]})
-
-(defn- known-failure
-  [copy-edit variant]
-  (some (fn [[bug ends variants]]
-          (when (contains? variants variant) [bug ends]))
-        (get known-failures copy-edit)))
+(def ^:private by-the-rules
+  "Copy edit and variant -> what the copy holds, where the copy's edit
+   applied over the new variant's text is not what the rules give."
+  {;; the new line follows the bold "t" before it
+   [:new-paragraph :bold-word] [[["Add to "] ["cart" {:weight 700}]] [["Ends Sunday" {:weight 700}]]]
+   ;; the bold keeps its variant id, for the frontend to pick Roboto's
+   [:family :bold-word]        [[["Add to " {:family "Roboto"}]
+                                 ["cart" {:family "Roboto" :weight 700 :font-variant-id "bold"}]]]})
 
 (t/deftest whole-text-copy-edits-across-a-switch
   (doseq [[copy-title overrides] copy-edits
@@ -101,13 +79,9 @@
     (t/testing (str "copy " copy-title ", variant " variant-title)
       (let [copy-text (reduce (fn [text f] (f text)) small (vals overrides))
             carried   (remove (comp disagree key) overrides)
-            expected  (thtx/normalize (reduce (fn [text [_ f]] (f text)) new carried))
-            actual    (switch-text small copy-text new)]
-        (if-let [[bug ends] (known-failure copy-title variant-title)]
-          (tm/known-failure bug expected
-                            (thtx/normalize (if (= ends :variant) new ends))
-                            actual)
-          (t/is (= expected actual)))))))
+            expected  (or (get by-the-rules [copy-title variant-title])
+                          (reduce (fn [text [_ f]] (f text)) new carried))]
+        (t/is (= (thtx/normalize expected) (switch-text small copy-text new)))))))
 
 
 ;; ---- Cards
@@ -118,23 +92,17 @@
   ;; all of it takes the weight of its first letter
   (let [old [[["Add to cart" {:weight 600}]]]
         new [[["Add to " {:weight 600}] ["cart" {:weight 700}]]]]
-    (tm/known-failure "F81"
-                      [[["Buy now" {:weight 600}]]]
-                      new
-                      (switch-text old [[["Buy now" {:weight 600}]]] new))))
+    (t/is (= [[["Buy now" {:weight 600}]]]
+             (switch-text old [[["Buy now" {:weight 600}]]] new)))))
 
 (t/deftest recolored-copy-keeps-its-color-from-small-to-large
   (let [old [[["Add to cart" {:weight 600}]]]
         new [[["Add to cart" {:weight 600 :size 24}]]]]
-    (tm/known-failure "F77"
-                      [[["Add to cart" {:weight 600 :size 24 :color :red}]]]
-                      new
-                      (switch-text old [[["Add to cart" {:weight 600 :color :red}]]] new))))
+    (t/is (= [[["Add to cart" {:weight 600 :size 24 :color :red}]]]
+             (switch-text old [[["Add to cart" {:weight 600 :color :red}]]] new)))))
 
 (t/deftest copy-that-bolds-a-word-keeps-it-from-small-to-large
   (let [old [[["Hello world"]]]
         new [[["Hello world" {:size 24}]]]]
-    (tm/known-failure "F77"
-                      [[["Hello" {:weight 700 :size 24}] [" world" {:size 24}]]]
-                      new
-                      (switch-text old [[["Hello" {:weight 700}] [" world"]]] new))))
+    (t/is (= [[["Hello" {:weight 700 :size 24}] [" world" {:size 24}]]]
+             (switch-text old [[["Hello" {:weight 700}] [" world"]]] new)))))

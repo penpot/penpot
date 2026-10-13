@@ -1713,9 +1713,16 @@
              ;; We don't update the flex-child attrs
              (remove #(= :layout-grid-cells %)))
 
+        ;; the styles of a text live in its content, so its tokens follow
+        ;; the text override groups
+        text?   (cfh/text-shape? dest-shape)
+        touched (cond-> touched
+                  text? (-> set (into (txt/text-overrides touched))))
+
         applied-tokens
         (reduce (fn [applied-tokens attr]
-                  (let [sync-group  (or (ctk/resolve-sync-group (:type origin-shape) attr)
+                  (let [sync-group  (or (when text? (txt/style-unit-of attr))
+                                        (ctk/resolve-sync-group (:type origin-shape) attr)
                                         (ctk/resolve-sync-group (:type dest-shape) attr))
                         token-attrs (cto/shape-attr->token-attrs attr)]
                     (if  (and (or (not omit-touched?) (not (touched sync-group)))
@@ -1755,60 +1762,15 @@
 
 
 (defn- text-change-value
+  "The content of a copy text after a sync: its own letters and styles where
+   its touched groups say so, the rest from the main's content."
   [touched-content   ;; The :content of the copy text before updating
    untouched-content ;; The :content of the main component
    touched]
-
-  (let [main-comps-diff (txt/get-diff-type touched-content untouched-content)
-        diff-structure? (contains? main-comps-diff :text-content-structure)
-
-        touched-attrs       (txt/get-first-paragraph-text-attrs touched-content)
-        ;; Have touched content an uniform style?
-        thed-unif-style?    (txt/equal-attrs? touched-content touched-attrs)
-
-        untouched-attrs     (txt/get-first-paragraph-text-attrs untouched-content)
-        ;; Have untouched content an uniform style?
-        untched-unif-style? (txt/equal-attrs? untouched-content untouched-attrs)]
-    (cond
-      ;; Both text and attrs has been touched, keep the
-      ;; touched-content
-      (and (touched :text-content-text) (touched :text-content-attribute))
-      touched-content
-
-      (touched :text-content-structure)
-      ;; Special case for adding or removing paragraphs:
-      ;; If the structure has been touched, but the attrs don't,
-      ;; and both have uniform attributes, we keep the touched-content structure and
-      ;; texts, updating its attrs to make them like the untouched-content
-      (if (and (not (touched :text-content-attribute)) thed-unif-style? untched-unif-style?)
-        (txt/copy-attrs-keys touched-content untouched-attrs)
-        ;; In other case, we keep the touched content
-        touched-content)
-
-      (touched :text-content-text)
-      ;; Keep the texts touched in touched-content, so copy the
-      ;; texts from touched-content into untouched-content
-      (txt/copy-text-keys touched-content untouched-content)
-
-      (touched :text-content-attribute)
-      ;; The untouched content has a different structure, but the touched content had't
-      ;; touched the structure
-      (if diff-structure?
-        ;; If both have uniform attributes, we keep the untouched-content structure and
-        ;; texts, updating its attrs to make them like the touched-content
-        (if (and thed-unif-style? untched-unif-style?)
-          (txt/copy-attrs-keys untouched-content touched-attrs)
-          ;; In other case, we keep the touched content
-          touched-content)
-
-        ;; Keep the attrs touched in touched-content, so copy the
-        ;; texts from untouched-content into touched-content
-        (txt/copy-text-keys untouched-content touched-content))
-
-
-      ;; Nothing is touched
-      :else
-      untouched-content)))
+  (let [groups (txt/text-overrides touched)]
+    (if (empty? groups)
+      untouched-content
+      (txt/merge-overrides touched-content untouched-content groups))))
 
 (defn- add-update-attr-operations
   [attr dest-shape roperations uoperations attr-val]
@@ -2008,89 +1970,18 @@
 
 
 (defn- switch-text-change-value
-  [prev-content         ; The :content of the text before the switch
-   current-content      ; The :content of the text after the switch (a clean copy)
-   ref-content touched] ; The :content of the referenced text on the main component before the switch
-  (let [;; We need the differences between the contents on the main
-        ;; components. current-content is the content of a clean copy,
-        ;; so for all effects its the same as the content on its main
-        main-comps-diff      (txt/get-diff-type ref-content current-content)
-        can-keep-text?       (not (contains? main-comps-diff :text-content-text))
-        can-keep-attr?       (not (contains? main-comps-diff :text-content-attribute))
-        main-diff-structure? (contains? main-comps-diff :text-content-structure)
-
-        current-attrs        (txt/get-first-paragraph-text-attrs current-content)
-        ;; Have current content an uniform style?
-        curr-unif-style?     (txt/equal-attrs? current-content current-attrs)
-        prev-attrs           (txt/get-first-paragraph-text-attrs prev-content)
-        ;; Have prev content an uniform style?
-        prev-unif-style?     (txt/equal-attrs? prev-content prev-attrs)
-        ref-attrs            (txt/get-first-paragraph-text-attrs ref-content)
-        ;; Have ref content an uniform style?
-        ref-unif-style?      (txt/equal-attrs? ref-content ref-attrs)]
-    (cond
-      ;; When the main components have a difference in structure
-      ;; (different number of paragraph or text entries)
-      main-diff-structure?
-      ;; Special case for adding or removing paragraphs:
-      ;; If the structure has changed between ref-content and current-content,
-      ;; but each one have uniform attributes, and the attrs on the main
-      ;; components were equal, we keep the touched-content structure and
-      ;; texts, updating its attrs to make them like the current-content
-      (if (and curr-unif-style?
-               ref-unif-style?
-               prev-unif-style?
-               (= ref-attrs current-attrs))
-        (txt/copy-attrs-keys current-content prev-attrs)
-        ;; In any other case of structure change, we discard all
-        ;; the overrides and keep the content of the current-shape
-        current-content)
-
-      ;; When the main components are equal, we keep the updated
-      ;; content from previous-shape as is
-      (and can-keep-text? can-keep-attr?)
-      prev-content
-
-      ;; When we can't keep anything, we discard all the
-      ;; overrides and keep the content of the current-shape
-      (and (not can-keep-text?) (not can-keep-attr?))
+  "The content of a copy text after a variant switch: each of its text
+   overrides that the old and the new main agree on is carried over the
+   new main's content."
+  [prev-content    ;; The :content of the text before the switch
+   current-content ;; The :content of the text after the switch (a clean copy)
+   ref-content     ;; The :content of the referenced text on the main component before the switch
+   touched]
+  (let [carried (set/difference (txt/text-overrides touched)
+                                (txt/override-groups ref-content current-content))]
+    (if (empty? carried)
       current-content
-
-      ;; Special case for added or removed paragraphs:
-      ;; If the structure has changed on current-content, but it has uniform attributes
-      ;; and the previous-content also has uniform attributes, and we can keep the changes
-      ;; on the text, we keep the touched-content structure and texts, updating
-      ;; its attrs to make them like the current-content
-      (and (touched :text-content-structure)
-           curr-unif-style?
-           prev-unif-style?)
-      (if can-keep-text?
-        (txt/copy-attrs-keys prev-content current-attrs)
-        (txt/copy-attrs-keys current-content prev-attrs))
-
-      ;; In any other case of structure change, we discard all
-      ;; the overrides and keep the content of the current-shape
-      (touched :text-content-structure)
-      current-content
-
-      ;; When there is a change on :text-content-text,
-      ;; and and we can keep it, we copy the texts from
-      ;; previous-shape over the attrs of current-shape
-      (and
-       (touched :text-content-text) can-keep-text?)
-      (txt/copy-text-keys prev-content current-content)
-
-      ;; When there is a change on :text-content-attribute,
-      ;; and we can keep it, we copy the texts from current-shape
-      ;; over the attrs of previous-shape
-      (and
-       (touched :text-content-attribute) can-keep-attr?)
-      (txt/copy-text-keys current-content prev-content)
-
-      ;; In any other case, we discard all the overrides
-      ;; and keep the content of the current-shape
-      :else
-      current-content)))
+      (txt/merge-overrides prev-content current-content carried))))
 
 
 (defn- switch-fixed-layout-geom-change-value
@@ -2398,12 +2289,11 @@
               updated-sync-groups (into #{}
                                         (keep #(ctk/resolve-sync-group (:type previous-shape) %))
                                         updated-attrs)
-              text-sub-touched #{:text-content-text :text-content-attribute :text-content-structure}
+              new-content (some #(when (= (:attr %) :content) (:val %)) roperations)
               new-touched (set/union (or (:touched current-shape) #{})
                                      updated-sync-groups
-                                     (when (contains? updated-sync-groups :content-group)
-                                       (set/intersection (or (:touched previous-shape) #{})
-                                                         text-sub-touched)))
+                                     (when (and (cfh/text-shape? current-shape) (some? new-content))
+                                       (txt/override-groups (:content current-shape) new-content)))
               roperations (into [{:type :set-touched :touched new-touched}] roperations)
               uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
           (cond-> changes
