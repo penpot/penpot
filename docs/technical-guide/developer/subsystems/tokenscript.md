@@ -53,7 +53,7 @@ dictionary of the tokens directly below it.
 | `app.common.tokenscript.config`, `.colors`, `.units`, `.functions`, `.token-types`, `.registry` | Schema registries. A config is an immutable `Config` record holding one registry record per kind, each implementing `registry/ISchemaRegistry`; schemas are registered with `config/register-schemas`. Scripts are parsed once at registration. |
 | `app.common.tokenscript.processor`, `.token-data` | Token set resolution: dependency graph, structured tokens, group references, cycle detection, incremental updates. |
 | `app.common.tokenscript.validation` | Validation of token values against token type schemas. |
-| `app.common.tokenscript.errors` | Error codes and messages. Errors are `ex-info` with a data map; the processor stores the same maps as issues. |
+| `app.common.tokenscript.errors` | Error codes and messages. Errors are `ex-info` with an error map as data; the processor stores the same maps as the issues of failed tokens. |
 | `app.common.tokenscript.schemas` | The schemas shipped with Penpot, read from the resources. |
 
 ### Processor
@@ -76,6 +76,12 @@ resolved. Errors never throw; a token depending on a failed token gets a
 `:processor/dependency-error`. Its data holds the `:chain` of token
 names down to the failing token and the root cause error map as
 `:cause`, so callers can match on the root cause's code.
+
+The issues of a token are error maps (`errors/error-map?`), which make
+the token unusable, and validation warnings against its token type
+schema (`:type :tokenscript/issue`, `:severity :warning`). An error in
+a field of a structured token is reported on the token with the field
+`:path`.
 
 `processor/create-token`, `update-token`, `rename-token`,
 `delete-token` and `resolve-value` work on the returned `:state`, e.g.
