@@ -448,6 +448,54 @@
                     :include-deleted? include-deleted?
                     :with-context? with-context?)))
 
+(defn- descendant-refs
+  "Map each main shape in `main-ids` to the shape of the subtree of the main
+  shape `position` (found with context) that copies it, following the ref
+  chain of each shape of that subtree."
+  [file libraries position main-ids]
+  (let [container (:container (meta position))
+        ref-in-main
+        (fn [shape]
+          (loop [shape shape container container visited #{}]
+            (when (and (some? shape) (not (contains? visited (:id shape))))
+              (if (contains? main-ids (:id shape))
+                (:id shape)
+                (let [ref (find-ref-shape file container libraries shape
+                                          :include-deleted? true
+                                          :with-context? true)]
+                  (recur ref (:container (meta ref)) (conj visited (:id shape))))))))]
+    (into {}
+          (keep (fn [shape]
+                  (when-let [main-id (ref-in-main shape)]
+                    [main-id (:id shape)])))
+          (cfh/get-children-with-self (:objects container) (:id position)))))
+
+(defn take-position
+  "A function that updates each shape of the subtree of the copy head `head`
+  in `objects` so that the head takes the position of the main shape `ref-id`.
+  `position` is that shape, found with context, or nil when it cannot be
+  reached. The head refers to it, and is swapped while its component differs
+  from the one of `position`; otherwise it is a plain copy of `position`, and
+  its descendants refer to the descendants of `position`."
+  [file libraries objects head ref-id position]
+  (let [swapped? (or (nil? position)
+                     (not= (:component-id position) (:component-id head))
+                     (not= (:component-file position) (:component-file head)))
+        main-ids (when-not swapped?
+                   (into #{}
+                         (keep #(:shape-ref (get objects %)))
+                         (cfh/get-children-ids objects (:id head))))
+        ref-map  (when (seq main-ids)
+                   (descendant-refs file libraries position main-ids))]
+    (fn [shape]
+      (if (= (:id shape) (:id head))
+        (if swapped?
+          (-> (assoc shape :shape-ref ref-id)
+              (update :touched (fnil conj #{}) :swap-group))
+          (-> (assoc shape :shape-ref ref-id)
+              (ctk/remove-swap-group)))
+        (d/update-when shape :shape-ref #(get ref-map % %))))))
+
 (defn swapped-subhead?
   "Whether `shape` references outside its near main parent and needs a swap slot.
   Same-parent positional differences are synchronized as reorders."

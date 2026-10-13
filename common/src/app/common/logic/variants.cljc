@@ -75,7 +75,7 @@
    (related-shape-in-new), move the orig-swapped-child into the parent of
    related-shape-in-new, make it take the place of related-shape-in-new, and
    then delete related-shape-in-new"
-  [changes related-shape-in-new orig-swapped-child ldata page]
+  [changes related-shape-in-new orig-swapped-child ldata page libraries]
   (let [;; Before to the swap, temporary move the previous
         ;; shape to the root panel to avoid problems when
         ;; the previous parent is deleted.
@@ -84,30 +84,34 @@
                            (pcb/with-objects (:objects page))
                            (pcb/change-parent uuid/zero [orig-swapped-child] 0 {:allow-altering-copies true}))
 
-        objects         (pcb/get-objects changes)
-        current-parent  (get objects (:parent-id related-shape-in-new))
-        pos             (d/index-of (:shapes current-parent) (:id related-shape-in-new))]
+        ;; the child at the root, where the undo of the next move takes it
+        child-at-root  (get (pcb/get-objects before-changes) (:id orig-swapped-child))
 
-    (-> (pcb/concat-changes before-changes changes)
+        current-parent (get (pcb/get-objects changes) (:parent-id related-shape-in-new))
+        pos            (d/index-of (:shapes current-parent) (:id related-shape-in-new))
 
-        ;; Move the previous shape to the new parent. It comes from the root,
-        ;; where the undo must take it back before the new copy is deleted
-        (pcb/change-parent (:parent-id related-shape-in-new)
-                           [(assoc orig-swapped-child :parent-id uuid/zero)]
-                           pos
-                           {:allow-altering-copies true})
+        ;; Move the previous shape to the new parent
+        changes        (-> (pcb/concat-changes before-changes changes)
+                           (pcb/change-parent (:parent-id related-shape-in-new) [child-at-root] pos
+                                              {:allow-altering-copies true}))
 
-        ;; Take the place of the related shape; it stays a swap while its
-        ;; component differs from that one
+        objects        (pcb/get-objects changes)
+        child-id       (:id orig-swapped-child)
+        file           {:id (:id ldata) :data ldata}
+        position       (ctf/find-ref-shape file (assoc page :objects objects) libraries related-shape-in-new
+                                           :include-deleted? true
+                                           :with-context? true)]
+
+    (-> changes
+        ;; Take the place of the related shape
         (pcb/update-shapes
-         [(:id orig-swapped-child)]
-         #(cond-> (assoc % :shape-ref (:shape-ref related-shape-in-new))
-            (and (= (:component-id %) (:component-id related-shape-in-new))
-                 (= (:component-file %) (:component-file related-shape-in-new)))
-            (ctk/remove-swap-group)))
+         (cfh/get-children-ids-with-self objects child-id)
+         (ctf/take-position file libraries objects (get objects child-id)
+                            (:shape-ref related-shape-in-new) position)
+         {:ignore-touched true})
 
         ;; and its placement, as sync would give it
-        (cll/generate-take-placement orig-swapped-child
+        (cll/generate-take-placement (get objects child-id)
                                      related-shape-in-new
                                      objects
                                      (and (ctsl/any-layout-immediate-child? objects related-shape-in-new)
@@ -242,7 +246,7 @@
                    (if swapped?
                      ;; If the orig-child-touched was swapped, keep it
                      (keep-swapped-item changes related-shape-in-new orig-child-touched
-                                        ldata page)
+                                        ldata page libraries)
                      ;; If the orig-child-touched wasn't swapped, copy
                      ;; the touched attributes into it
                      (cll/update-attrs-on-switch

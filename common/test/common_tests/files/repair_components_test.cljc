@@ -405,6 +405,24 @@
     (t/is (= (thi/id :nested-a) (:shape-ref swapped)))
     (t/is (ctk/swapped? swapped))))
 
+(t/deftest ref-not-in-near-main-with-the-component-of-the-position
+  ;; a nested copy that refers to the root of its own component, which is
+  ;; the component of the free position at its index
+  (let [base     (two-nested)
+        child-id (first (:shapes (ths/get-shape base :copy-a)))
+        file     (-> base
+                     (ths/update-shape :copy-a :shape-ref (thi/id :main1-root))
+                     (ths/update-shape-by-id child-id :shape-ref (thi/id :main1-child)))
+        [found file' errors] (repair file)
+        copy-a   (ths/get-shape file' :copy-a)]
+    (t/is (contains? found :ref-not-in-near-main))
+    (t/is (nil? errors))
+    ;; it is a plain copy of that position, children included
+    (t/is (= (thi/id :nested-a) (:shape-ref copy-a)))
+    (t/is (not (ctk/swapped? copy-a)))
+    (t/is (= (first (:shapes (ths/get-shape file' :nested-a)))
+             (:shape-ref (ths/get-shape-by-id file' child-id))))))
+
 (t/deftest duplicate-ref
   ;; two children of the copy take the position of the same main shape
   (let [file (ths/update-shape (two-nested) :copy-b :shape-ref (thi/id :nested-a))

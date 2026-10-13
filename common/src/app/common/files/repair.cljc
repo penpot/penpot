@@ -601,28 +601,21 @@
 (defmethod repair-error :ref-not-in-near-main
   [_ {:keys [shape page-id] :as error} file-data libraries]
   (let [page     (ctpl/get-page file-data page-id)
-        replaced (cfcp/find-replaced-shape {:id (:id file-data) :data file-data}
-                                           (ctn/make-container page :page)
-                                           libraries
-                                           shape)
-
-        reassign-shape
-        (fn [shape]
-          (log/debug :hint "  -> reassign shape-ref to" :shape-ref (:id replaced))
-          (cond-> (assoc shape :shape-ref (:id replaced))
-            (or (not= (:component-id shape) (:component-id replaced))
-                (not= (:component-file shape) (:component-file replaced)))
-            (update :touched (fnil conj #{}) :swap-group)))]
+        file     {:id (:id file-data) :data file-data}
+        objects  (:objects page)
+        replaced (cfcp/find-replaced-shape file (ctn/make-container page :page) libraries shape)]
 
     (log/debug :hint "repairing shape :ref-not-in-near-main" :id (:id shape) :name (:name shape) :page-id page-id)
     (if (some? replaced)
-      (-> (pcb/empty-changes nil page-id)
-          (pcb/with-file-data file-data)
-          (pcb/update-shapes [(:id shape)] reassign-shape))
+      (do (log/debug :hint "  -> take the position of" :shape-ref (:id replaced))
+          (-> (pcb/empty-changes nil page-id)
+              (pcb/with-file-data file-data)
+              (pcb/update-shapes (cfh/get-children-ids-with-self objects (:id shape))
+                                 (ctf/take-position file libraries objects shape (:id replaced) replaced))))
       ;; no position to take: the copy keeps its content, detached
       (-> (pcb/empty-changes nil page-id)
           (pcb/with-file-data file-data)
-          (pcb/update-shapes (cfh/get-children-ids-with-self (:objects page) (:id shape))
+          (pcb/update-shapes (cfh/get-children-ids-with-self objects (:id shape))
                              ctk/detach-shape)))))
 
 (defmethod repair-error :duplicate-ref
