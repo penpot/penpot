@@ -18,6 +18,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -539,3 +540,44 @@
     ;; A position-only change in the main component must not propagate to copies
     ;; and therefore must produce no redo-changes.
     (t/is (empty? (:redo-changes sync-changes)))))
+
+(t/deftest test-update-main-from-a-copy-with-reordered-children
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-component-with-many-children-and-copy :component1
+                                                                   :main-root
+                                                                   [:main-child1 :main-child2]
+                                                                   :copy-root
+                                                                   :copy-root-params {:children-labels [:copy-child1 :copy-child2]}))
+        page    (thf/current-page file)
+
+        ;; The UI never reorders the children of a copy, so the order is
+        ;; set directly: the copy holds them in the reverse order of the main.
+        file    (update-in file [:data :pages-index (:id page) :objects (thi/id :copy-root) :shapes]
+                           (comp vec reverse))
+
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id :copy-child2)}
+                                            #(assoc % :hidden true)
+                                            (:objects page)
+                                            {})
+        file    (thf/apply-changes file changes)
+
+        ;; ==== Action
+        page      (thf/current-page file)
+        container (ctn/make-container page :page)
+        changes   (-> (pcb/empty-changes)
+                      (pcb/with-container container)
+                      (cll/generate-sync-shape-inverse (:data file)
+                                                       {(:id file) file}
+                                                       container
+                                                       (thi/id :copy-root)))
+        file'     (thf/apply-changes file changes)
+
+        ;; ==== Get
+        main-root'   (ths/get-shape file' :main-root)
+        main-child2' (ths/get-shape file' :main-child2)]
+
+    ;; ==== Check
+    (t/is (true? (:hidden main-child2')))
+    (t/is (= [(thi/id :main-child2) (thi/id :main-child1)] (:shapes main-root')))))
