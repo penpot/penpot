@@ -5,7 +5,6 @@ use crate::{
     utils::Browser,
 };
 
-use core::f32;
 use macros::ToJs;
 use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
 use skia_safe::{
