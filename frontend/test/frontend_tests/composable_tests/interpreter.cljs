@@ -22,8 +22,10 @@
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.golden-master :as thgm]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.workspace :as dw]
@@ -79,17 +81,27 @@
 
 (declare uninstall!)
 
+;; Whether shapes were WASM shape proxies before the running test. A test that
+;; starts the WASM renderer leaves `cts/wasm-enabled?` on for the tests after
+;; it, and a proxy leaves out the attributes that are nil or false, so the
+;; cases run on shape records whatever ran before them.
+(defonce ^:private wasm-shapes-before (atom nil))
+
 (def fixture
   "An `:each` fixture for tests that run the component watcher: a fresh label
-   map and no thumbnail rendering, and the watchers `install!` starts stopped
-   at the end. Its `:after` runs after an async test's `done`, so it covers
-   the whole test."
+   map, no thumbnail rendering and shapes as records (see
+   `wasm-shapes-before`), and the watchers `install!` starts stopped at the
+   end. Its `:after` runs after an async test's `done`, so it covers the
+   whole test."
   {:before (fn []
              (cthi/reset-idmap!)
-             (install-thumbnail-noop!))
+             (install-thumbnail-noop!)
+             (reset! wasm-shapes-before cts/wasm-enabled?)
+             (set! cts/wasm-enabled? false))
    :after  (fn []
              (uninstall!)
-             (restore-thumbnail!))})
+             (restore-thumbnail!)
+             (set! cts/wasm-enabled? @wasm-shapes-before))})
 
 ;; --------------------------------------------------------------------------
 ;; Operations as workspace events
@@ -606,6 +618,65 @@
   [op]
   (pr-str (dissoc (into {} op) ::tm/id)))
 
+;; --------------------------------------------------------------------------
+;; Golden master: the store's files after each user, undo and redo step and
+;; at the end of each variant (see `app.common.test-helpers.golden-master`).
+;; `golden_master.edn` next to this file keeps the digests, the full lines go
+;; to `tmp/golden-master-frontend/` at the repository root. Record from
+;; `frontend/` with `PENPOT_GOLDEN_MASTER=record node target/tests/test.js
+;; --focus frontend-tests.composable-tests.comp.sync-test`, only on purpose.
+;; --------------------------------------------------------------------------
+
+(def ^:private golden-digests-path "test/frontend_tests/composable_tests/golden_master.edn")
+
+(def ^:private golden-lines-dir "../tmp/golden-master-frontend")
+
+(def ^:private golden-kinds #{:user :frontend-only :undo :redo})
+
+;; The states of the running variant.
+(defonce ^:private golden-steps (atom []))
+
+(defn- golden-recording?
+  []
+  (= "record" (.. js/process -env -PENPOT_GOLDEN_MASTER)))
+
+(defn- store-files
+  "The current file, then the other files of the store."
+  []
+  (let [st @st/state]
+    (cons (current-file)
+          (->> (vals (:files st))
+               (remove #(= (:id %) (:current-file-id st)))))))
+
+(defn- golden-state
+  [extra]
+  (thgm/state-lines (store-files) extra
+                    {:position-data? (not (features/active-feature? @st/state "render-wasm/v1"))}))
+
+(defn- observe-golden-step!
+  []
+  (swap! golden-steps conj (golden-state nil)))
+
+(defn- golden-variant
+  "The golden master entry of a variant that ended with `situation` (nil when
+   a step failed)."
+  [situation]
+  (if situation
+    (let [failures (into #{} (map (juxt :phase :signature)) (uc/failures situation))]
+      {:transcript (thgm/transcript situation (thgm/id-names (store-files)))
+       :states     (conj @golden-steps (golden-state {:undo-failures failures}))})
+    {:transcript "the variant failed" :states []}))
+
+(defn- check-golden-master!
+  "Record or compare the golden master `variants` of the case `group`."
+  [group variants]
+  (if (golden-recording?)
+    (thgm/write-digests! golden-digests-path
+                         (assoc (or (thgm/read-digests golden-digests-path) {})
+                                group (thgm/record-group! golden-lines-dir group variants)))
+    (thgm/compare-group! golden-lines-dir group variants
+                         (get (thgm/read-digests golden-digests-path) group))))
+
 (defn- run-ops
   "Run the op units `ops` in order, each `sync-op?` one on the live file and
    the others as events awaited with `await-step`. Resolves with the final
@@ -623,7 +694,10 @@
           before       (when check-step? (snapshot))
           index-before (undo-index)]
       (if (sync-op? op)
-        (run-ops (run-sync-op situation op) (rest ops))
+        (let [situation (run-sync-op situation op)]
+          (when (contains? golden-kinds kind)
+            (observe-golden-step!))
+          (run-ops situation (rest ops)))
         (do
           (reset! step-errors [])
           (.then (await-step (op-events op situation) step-timeout-ms (op-ready op situation))
@@ -645,6 +719,8 @@
 
                        :else
                        (let [situation (record-op situation op)]
+                         (when (contains? golden-kinds kind)
+                           (observe-golden-step!))
                          (cond
                            check-step?
                            ;; go on from the redone file, as the pure runner does
@@ -729,6 +805,7 @@
   [setup ops undo-check?]
   ;; a fresh label map per variant, as `tm/run-each` does
   (cthi/reset-idmap!)
+  (reset! golden-steps [])
   (let [situation (-> (setup)
                       (assoc ::undo-check? undo-check?)
                       (uc/with-runner :frontend)
@@ -771,11 +848,14 @@
        (let [variants (tm/enumerate operation)
              on-error @st/on-error
              applied  (atom #{})
+             group    (-> (t/get-current-env) :testing-vars first meta :name keyword)
+             golden   (atom [])
              judge    (fn [variant]
                         (let [made (assertions-made)]
                           (-> (js/Promise.resolve)
                               (.then #(run-variant setup (tm/sequence-ops variant) (uc/enabled? case-map)))
                               (.then (fn [situation]
+                                       (swap! golden conj (golden-variant situation))
                                        (when situation
                                          (t/testing (str "operations:\n  " (tm/describe-applied situation))
                                            (when asserter
@@ -790,6 +870,7 @@
          (reset! st/on-error (fn [e] (swap! step-errors conj e) (on-error e)))
          (-> (reduce (fn [p variant] (.then p #(judge variant))) (js/Promise.resolve) variants)
              (.then #(uc/check-marks-applied! case-map :frontend @applied))
+             (.then #(check-golden-master! group @golden))
              (.catch (fn [e] (t/report {:type :error :message "the case raised an error"
                                         :expected nil :actual e})))
              (.finally (fn []
