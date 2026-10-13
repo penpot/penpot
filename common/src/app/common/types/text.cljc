@@ -985,7 +985,7 @@
   [src-ks dst-ks]
   (if (map? src-ks)
     (= src-ks dst-ks)
-    (= 1 (count (into (set src-ks) dst-ks)))))
+    (<= (count (into (set src-ks) dst-ks)) 1)))
 
 (defn merge-overrides
   "The content of a copy text whose content is `copy` and whose main's is

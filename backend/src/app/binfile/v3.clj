@@ -1255,7 +1255,7 @@
 
     (let [resolution (resolve-and-link-libraries cfg files-info)]
 
-      (bfc/convert-deferred-swaps! cfg)
+      (bfc/convert-deferred! cfg)
       (bfm/apply-pending-migrations! cfg)
       {:file-ids   file-ids
        :resolution resolution})))
