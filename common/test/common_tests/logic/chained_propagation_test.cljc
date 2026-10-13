@@ -89,17 +89,37 @@
 
                 (tho/add-frame :frame-comp-6)
                 (thc/instantiate-component :comp-5 :copy-comp-5  :parent-label :frame-comp-6 :children-labels [:comp-4-comp-5])
-                (thc/make-component :comp-6 :frame-comp-6)))
+                (thc/make-component :comp-6 :frame-comp-6)
+
+                (thc/instantiate-component :comp-5 :loose-copy-comp-5)))
 
           (propagate-all-component-changes [file]
             (-> file
                 (tho/propagate-component-changes :comp-4)
                 (tho/propagate-component-changes :comp-5)))
 
+          (stored-fill-color [file]
+            (let [component (thc/get-component file :comp-5 :include-deleted? true)]
+              (when (:deleted component)
+                (->> (vals (:objects component))
+                     (some #(when (= :rect (:type %))
+                              (-> % :fills first :fill-color)))))))
+
           (fill-colors [file]
             [(tho/bottom-fill-color file :frame-comp-4)
              (tho/bottom-fill-color file :frame-comp-5)
-             (tho/bottom-fill-color file :frame-comp-6)])
+             (tho/bottom-fill-color file :frame-comp-6)
+             (tho/bottom-fill-color file :loose-copy-comp-5)])
+
+          (restore-comp-5 [file]
+            (let [page (thf/current-page file)]
+              (thf/apply-changes file
+                                 (cll/generate-restore-component (pcb/empty-changes)
+                                                                 (:data file)
+                                                                 (thi/id :comp-5)
+                                                                 (:id file)
+                                                                 page
+                                                                 (:objects page)))))
 
           (validate [file validator]
             (validator file)
@@ -108,9 +128,15 @@
     (-> (setup)
         ;; Delete Comp5.
         (tho/delete-shape :frame-comp-5)
-        (validate #(t/is (= (fill-colors %) ["#b1b2b5" nil "#b1b2b5"])))
+        (validate #(t/is (= (fill-colors %) ["#b1b2b5" nil "#b1b2b5" "#b1b2b5"])))
 
         ;; Change the color of Comp4
-        ;; Desired result: Comp6 change color
+        ;; Desired result: the deleted Comp5 keeps passing the change on, to
+        ;; its stored main, its copy and Comp6
         (tho/update-bottom-color :frame-comp-4 "#FF0000" :propagate-fn propagate-all-component-changes)
-        (validate #(t/is (= (fill-colors %) ["#FF0000" nil "#FF0000"]))))))
+        (validate #(t/is (= (fill-colors %) ["#FF0000" nil "#FF0000" "#FF0000"])))
+        (validate #(t/is (= (stored-fill-color %) "#FF0000")))
+
+        ;; Restore Comp5: its main comes back up to date
+        (restore-comp-5)
+        (validate #(t/is (= (fill-colors %) ["#FF0000" "#FF0000" "#FF0000" "#FF0000"]))))))
