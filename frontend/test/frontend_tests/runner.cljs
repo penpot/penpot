@@ -50,6 +50,7 @@
    [frontend-tests.data.workspace-layout-other-page-test]
    [frontend-tests.data.workspace-libraries-link-test]
    [frontend-tests.data.workspace-libraries-load-test]
+   [frontend-tests.data.workspace-font-variants-test]
    [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-libraries-test]
    [frontend-tests.data.workspace-library-links-test]
@@ -296,6 +297,7 @@
    'frontend-tests.data.workspace-layout-other-page-test
    'frontend-tests.data.workspace-libraries-link-test
    'frontend-tests.data.workspace-libraries-load-test
+   'frontend-tests.data.workspace-font-variants-test
    'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-libraries-test
    'frontend-tests.data.workspace-library-links-test
