@@ -350,6 +350,23 @@
     ;; stops after the direct parent
     (tm/known-failure "F63" true false (ctc/has-any-copy-parent? objects rect))))
 
+(t/deftest nesting-level-delta-of-a-move-between-copies
+  ;; :copy2-root          #--> [Component :component2]
+  ;;     :copy-nested     @--> [Component :component1]
+  ;;         :copy-rect
+  (let [file    (tho/add-nested-component-with-copy (thf/sample-file :file1)
+                                                    :component1 :main1-root :main1-child
+                                                    :component2 :main2-root :nested-head
+                                                    :copy2-root
+                                                    :copy2-root-params {:children-labels [:copy-nested :copy-rect]})
+        objects (:objects (thf/current-page file))
+        delta   #(ctc/get-nesting-level-delta objects
+                                              (ths/get-shape file :copy-rect)
+                                              (get objects %))]
+    (t/is (= 0 (delta (thi/id :copy-nested))))
+    (t/is (= 1 (delta (thi/id :copy2-root))))
+    (t/is (= 2 (delta uuid/zero)))))
+
 (t/deftest container-of-a-component
   (let [file      (placement-file)
         container (ctc/get-container (:data file) :component (thi/id :c1))]

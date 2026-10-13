@@ -3260,7 +3260,7 @@
                                 (cfh/get-children-ids-with-self objects (:id shape))))
         advance-copy  (fn [objects shape]
                         (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-                          (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
+                          (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape (get-in page [:objects uuid/zero]))]
                             (cond
                               (not (pos? level-delta))
                               objects
