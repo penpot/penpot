@@ -199,6 +199,66 @@ describe('Component instances', () => {
     }
   });
 
+  test('restore restores a deleted component without changing the view', async (ctx) => {
+    const originalPage = ctx.penpot.currentPage;
+    expect(originalPage).not.toBeNull();
+    if (!originalPage) return;
+
+    const comp = makeComponent(ctx);
+    const main = comp.mainInstance() as Board;
+    const mainId = main.id;
+    const childIds = main.children.map((child) => child.id);
+    const inst = comp.instance();
+    ctx.board.appendChild(inst);
+    comp.remove();
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(
+      ctx.penpot.library.local.components.some((c) => c.id === comp.id),
+    ).toBe(false);
+    expect(originalPage.getShapeById(mainId)).toBeNull();
+
+    const otherPage = ctx.penpot.createPage();
+    try {
+      await ctx.penpot.openPage(otherPage);
+      const selected = ctx.penpot.createRectangle();
+      (otherPage.root as Board).appendChild(selected);
+      ctx.penpot.selection = [selected];
+      ctx.penpot.viewport.zoom = 2;
+      ctx.penpot.viewport.center = { x: 300, y: 200 };
+      await ctx.penpot.waitForLayoutUpdate();
+
+      const zoom = ctx.penpot.viewport.zoom;
+      const center = ctx.penpot.viewport.center;
+      const deleted = inst.component();
+      expect(deleted).not.toBeNull();
+      if (!deleted) return;
+
+      deleted.restore();
+      await waitFor(() =>
+        ctx.penpot.library.local.components.some((c) => c.id === comp.id),
+      );
+      await ctx.penpot.waitForLayoutUpdate();
+
+      expect(
+        ctx.penpot.library.local.components.some((c) => c.id === comp.id),
+      ).toBe(true);
+      expect(originalPage.getShapeById(mainId)?.id).toBe(mainId);
+      expect(
+        (deleted.mainInstance() as Board).children.map((child) => child.id),
+      ).toEqual(childIds);
+      expect(ctx.penpot.currentPage?.id).toBe(otherPage.id);
+      expect(ctx.penpot.selection.map((shape) => shape.id)).toEqual([
+        selected.id,
+      ]);
+      expect(ctx.penpot.viewport.zoom).toBeCloseTo(zoom);
+      expect(ctx.penpot.viewport.center.x).toBeCloseTo(center.x);
+      expect(ctx.penpot.viewport.center.y).toBeCloseTo(center.y);
+    } finally {
+      await ctx.penpot.openPage(originalPage);
+      otherPage.remove();
+    }
+  });
+
   test('detach turns an instance into a basic shape', (ctx) => {
     const inst = instanceOf(ctx);
     inst.detach();
@@ -317,5 +377,179 @@ describe('Component instances', () => {
     const inst = instanceOf(ctx);
     inst.detach();
     expect(inst.isComponentInstance()).toBeFalsy();
+  });
+});
+
+describe('Component assets', () => {
+  test('duplicate creates an independent component with its annotation', async (ctx) => {
+    const source = makeComponent(ctx);
+    source.annotation = 'Button usage';
+    const original = source.mainInstance() as Board;
+    const duplicate = source.duplicate();
+    await ctx.penpot.waitForLayoutUpdate();
+    const main = duplicate.mainInstance() as Board;
+    ctx.board.appendChild(main);
+
+    expect(duplicate.id).not.toBe(source.id);
+    expect(main.id).not.toBe(original.id);
+    expect(main.isComponentMainInstance()).toBe(true);
+    expect(main.component()?.id).toBe(duplicate.id);
+    expect(main.children).toHaveLength(original.children.length);
+    expect(main.children[0].id).not.toBe(original.children[0].id);
+    expect(duplicate.annotation).toBe('Button usage');
+    duplicate.name = 'Duplicate button';
+    expect(source.name).not.toBe(duplicate.name);
+  });
+
+  test('annotations can be created, edited, and removed', async (ctx) => {
+    const comp = makeComponent(ctx);
+    expect(comp.annotation).toBeNull();
+    comp.annotation = 'Use for primary actions';
+    expect(comp.annotation).toBe('Use for primary actions');
+    comp.annotation = 'Use for secondary actions';
+    expect(comp.annotation).toBe('Use for secondary actions');
+    expect(() => {
+      comp.annotation = 42 as unknown as string;
+    }).toThrow();
+    expect(() => {
+      comp.annotation = 'x'.repeat(301);
+    }).toThrow();
+    expect(comp.annotation).toBe('Use for secondary actions');
+    comp.annotation = null;
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(comp.annotation).toBeNull();
+  });
+
+  test('deletedComponents lists and restores a component without surviving copies', async (ctx) => {
+    const comp = makeComponent(ctx);
+    const mainId = comp.mainInstance().id;
+    const page = ctx.penpot.currentPage;
+    comp.remove();
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(page?.getShapeById(mainId)).toBeNull();
+    expect(
+      ctx.penpot.library.local.components.some((c) => c.id === comp.id),
+    ).toBe(false);
+
+    const deleted = ctx.penpot.library.local.deletedComponents.find(
+      (c) => c.id === comp.id,
+    );
+    expect(deleted).toBeDefined();
+    if (!deleted) return;
+    deleted.remove();
+    deleted.restore();
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(page?.getShapeById(mainId)?.id).toBe(mainId);
+    expect(
+      ctx.penpot.library.local.components.some((c) => c.id === comp.id),
+    ).toBe(true);
+    expect(
+      ctx.penpot.library.local.deletedComponents.some((c) => c.id === comp.id),
+    ).toBe(false);
+  });
+
+  test('updateMain applies a copy override to the main and other copies', async (ctx) => {
+    const childColor = (board: Board) => {
+      const fill = board.children[0].fills[0];
+      return typeof fill === 'string' ? fill : fill?.fillColor;
+    };
+    const comp = makeComponent(ctx);
+    const main = comp.mainInstance() as Board;
+    const copy = comp.instance() as Board;
+    const other = comp.instance() as Board;
+    ctx.board.appendChild(copy);
+    ctx.board.appendChild(other);
+    copy.children[0].fills = [{ fillColor: '#ff0000', fillOpacity: 1 }];
+    copy.updateMain();
+    await ctx.penpot.waitForLayoutUpdate();
+    await waitFor(() => childColor(main) === '#ff0000');
+    expect(childColor(main)).toBe('#ff0000');
+    expect(childColor(other)).toBe('#ff0000');
+
+    main.children[0].fills = [{ fillColor: '#00ff00', fillOpacity: 1 }];
+    await waitFor(() => childColor(copy) === '#00ff00');
+    expect(childColor(copy)).toBe('#00ff00');
+  });
+
+  test('updateMain rejects plain shapes, main instances, and copy children', (ctx) => {
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+    expect(() => rect.updateMain()).toThrow();
+    const comp = makeComponent(ctx);
+    expect(() => comp.mainInstance().updateMain()).toThrow();
+    const copy = comp.instance() as Board;
+    ctx.board.appendChild(copy);
+    expect(() => copy.children[0].updateMain()).toThrow();
+  });
+
+  test('deleted components reject duplication, annotation edits, and updateMain', async (ctx) => {
+    const comp = makeComponent(ctx);
+    const copy = comp.instance();
+    ctx.board.appendChild(copy);
+    comp.remove();
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(() => comp.duplicate()).toThrow('deleted component');
+    expect(() => {
+      comp.annotation = 'Usage';
+    }).toThrow('deleted component');
+    expect(() => copy.updateMain()).toThrow('main component');
+  });
+
+  test('updateMain rejects a copy on an inactive page and inside another copy', async (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const outerCopy = main.component()?.instance() as Board;
+    ctx.board.appendChild(outerCopy);
+    expect(() => outerCopy.children[0].updateMain()).toThrow(
+      'inside another component copy',
+    );
+
+    const original = ctx.penpot.currentPage;
+    expect(original).not.toBeNull();
+    if (!original) return;
+    const page = ctx.penpot.createPage();
+    try {
+      await ctx.penpot.openPage(page);
+      expect(() => outerCopy.updateMain()).toThrow('not currently active');
+    } finally {
+      await ctx.penpot.openPage(original);
+      page.remove();
+    }
+  });
+
+  test('component assets can be edited without activating their main instance page', async (ctx) => {
+    const original = ctx.penpot.currentPage;
+    expect(original).not.toBeNull();
+    if (!original) return;
+    const comp = makeComponent(ctx);
+    const mainId = comp.mainInstance().id;
+    const page = ctx.penpot.createPage();
+    try {
+      await ctx.penpot.openPage(page);
+      const selected = ctx.penpot.createRectangle();
+      (page.root as Board).appendChild(selected);
+      ctx.penpot.selection = [selected];
+      const zoom = ctx.penpot.viewport.zoom;
+      const center = ctx.penpot.viewport.center;
+
+      comp.annotation = 'Edited from another page';
+      const duplicate = comp.duplicate();
+      await ctx.penpot.waitForLayoutUpdate();
+      expect(original.getShapeById(duplicate.mainInstance().id)).not.toBeNull();
+      expect(comp.annotation).toBe('Edited from another page');
+      duplicate.remove();
+      comp.remove();
+      await ctx.penpot.waitForLayoutUpdate();
+      expect(original.getShapeById(mainId)).toBeNull();
+      expect(ctx.penpot.currentPage?.id).toBe(page.id);
+      expect(ctx.penpot.selection.map((shape) => shape.id)).toEqual([
+        selected.id,
+      ]);
+      expect(ctx.penpot.viewport.zoom).toBeCloseTo(zoom);
+      expect(ctx.penpot.viewport.center.x).toBeCloseTo(center.x);
+      expect(ctx.penpot.viewport.center.y).toBeCloseTo(center.y);
+    } finally {
+      await ctx.penpot.openPage(original);
+      page.remove();
+    }
   });
 });

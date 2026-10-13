@@ -1587,6 +1587,38 @@
                                                target-id
                                                true)))))
 
+           :updateMain
+           (fn []
+             (let [shape     (u/locate-shape file-id page-id id)
+                   objects   (u/locate-objects file-id page-id)
+                   component (when (:component-id shape)
+                               (u/locate-library-component (:component-file shape) (:component-id shape)))]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'content:write' permission")
+
+                 (not (r/check-permission plugin-id "library:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'library:write' permission")
+
+                 (not= file-id (:current-file-id @st/state))
+                 (u/not-valid plugin-id :updateMain "Can only update a component from a copy in the current file")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :updateMain "Cannot modify a page that is not currently active")
+
+                 (not (and (ctk/instance-head? shape) (ctk/in-component-copy? shape)))
+                 (u/not-valid plugin-id :updateMain "The shape is not a component copy head")
+
+                 (u/inside-component-copy? objects shape)
+                 (u/not-valid plugin-id :updateMain "Cannot update the main from a shape inside another component copy")
+
+                 (or (nil? component) (:deleted component))
+                 (u/not-valid plugin-id :updateMain "The main component does not exist or is deleted")
+
+                 :else
+                 (st/emit! (-> (dwl/update-component-sync id (:component-file shape))
+                               (se/add-event plugin-id))))))
+
            :resetOverrides
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]

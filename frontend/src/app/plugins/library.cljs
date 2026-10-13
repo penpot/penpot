@@ -19,6 +19,7 @@
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.variants :as dwv]
@@ -845,12 +846,81 @@
 
     :remove
     (fn []
-      (cond
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
+      (let [component (u/locate-library-component file-id id)]
+        (cond
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
 
-        :else
-        (st/emit! (dwl/delete-component {:id id}))))
+          (not= file-id (:current-file-id @st/state))
+          (u/not-valid plugin-id :remove "Can only remove components from the current file's library")
+
+          (nil? component)
+          (u/not-valid plugin-id :remove "Component does not exist")
+
+          (not (:deleted component))
+          (st/emit! (-> (dwl/delete-component {:id id})
+                        (se/add-event plugin-id))))))
+
+    :annotation
+    {:get (fn [] (:annotation (u/locate-library-component file-id id)))
+     :set
+     (fn [value]
+       (let [component (u/locate-library-component file-id id)]
+         (cond
+           (not (r/check-permission plugin-id "library:write"))
+           (u/not-valid plugin-id :annotation "Plugin doesn't have 'library:write' permission")
+
+           (not= file-id (:current-file-id @st/state))
+           (u/not-valid plugin-id :annotation "Can only edit annotations in the current file's library")
+
+           (nil? component)
+           (u/not-valid plugin-id :annotation "Component does not exist")
+
+           (:deleted component)
+           (u/not-valid plugin-id :annotation "Cannot edit a deleted component")
+
+           (not (or (nil? value) (and (string? value) (<= (count value) 300))))
+           (u/not-valid plugin-id :annotation "Expected null or a string of at most 300 characters")
+
+           :else
+           (st/emit! (-> (dw/update-component-annotation id value)
+                         (se/add-event plugin-id))))))}
+
+    :duplicate
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (cond
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :duplicate "Plugin doesn't have 'library:write' permission")
+
+          (not= file-id (:current-file-id @st/state))
+          (u/not-valid plugin-id :duplicate "Can only duplicate components in the current file's library")
+
+          (nil? component)
+          (u/not-valid plugin-id :duplicate "Component does not exist")
+
+          (:deleted component)
+          (u/not-valid plugin-id :duplicate "Cannot duplicate a deleted component")
+
+          :else
+          (let [new-id (uuid/next)]
+            (st/emit! (-> (dwl/duplicate-component file-id id new-id)
+                          (se/add-event plugin-id)))
+            (lib-component-proxy plugin-id file-id new-id)))))
+
+    :restore
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (cond
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :restore "Plugin doesn't have 'library:write' permission")
+
+          (nil? component)
+          (u/not-valid plugin-id :restore "Component does not exist")
+
+          (:deleted component)
+          (st/emit! (-> (dwl/restore-component file-id id)
+                        (se/add-event plugin-id))))))
 
     :instance
     (fn []
@@ -1078,6 +1148,16 @@
                              (remove (comp #(cfv/is-secondary-variant? % data) second))
                              (map first)
                              (map #(lib-component-proxy plugin-id file-id %)))]
+         (apply array components)))}
+
+    :deletedComponents
+    {:get
+     (fn []
+       (let [components (->> (u/locate-file file-id)
+                             :data
+                             :components
+                             (filter (comp :deleted second))
+                             (map #(lib-component-proxy plugin-id file-id (first %))))]
          (apply array components)))}
 
     :tokens

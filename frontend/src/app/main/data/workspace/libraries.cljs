@@ -531,7 +531,8 @@
              (-> (pcb/empty-changes it nil)
                  (cll/generate-duplicate-component library component-id new-component-id))]
          (rx/of
-          (ptk/data-event :layout/update {:ids [(:id main-instance)]})
+          (ptk/data-event :layout/update {:page-id (:main-instance-page (get-in library [:data :components component-id]))
+                                          :ids [(:id main-instance)]})
           (dch/commit-changes changes)))))))
 
 (defn delete-component
