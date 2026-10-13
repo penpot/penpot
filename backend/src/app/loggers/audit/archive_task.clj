@@ -80,7 +80,6 @@
     "add-member-to-organization"
     "add-team-to-organization"
     "cancel-organization-invitation"
-    "change-organization-advanced-permission"
     "create-export-binfile-job"
     "create-file"
     "create-organization"
