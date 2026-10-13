@@ -298,7 +298,7 @@
                       (assoc-in [:data :tokens-status] (with-active-theme source)))
         store     (ths/setup-store file {:libraries [source other]})
         plugin-id (str uuid/zero)
-        message   "Cannot change active themes or sets of an external library"
+        message   "Cannot change activation through a connected library; use penpot.library.local.tokens"
         errors    (atom [])]
     (await
      (mock/with-mocks* {st/state store

@@ -23356,7 +23356,10 @@ LibraryContext:
 
         Example
         ```
-        const source = await penpot.library.connectLibrary('library-id');penpot.library.tokensSource = source;// Restore local tokens:penpot.library.tokensSource = penpot.library.local;
+        const source = await penpot.library.connectLibrary('library-id');
+        penpot.library.tokensSource = source;
+        // Restore local tokens:
+        penpot.library.tokensSource = penpot.library.local;
         ```
     Methods:
       availableLibraries: |-

@@ -512,7 +512,7 @@
           (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
           (not (u/editable-tokens-status? file-id))
-          (u/not-valid plugin-id :active "Cannot change active themes or sets of an external library")
+          (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
           :else
           (st/emit! (dwtl/set-enabled-token-set id value))))}
@@ -524,7 +524,7 @@
          (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
 
          (not (u/editable-tokens-status? file-id))
-         (u/not-valid plugin-id :toggleActive "Cannot change active themes or sets of an external library")
+         (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
          :else
          (st/emit! (dwtl/toggle-token-set id))))
@@ -743,7 +743,7 @@
          (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
          (not (u/editable-tokens-status? file-id))
-         (u/not-valid plugin-id :active "Cannot change active themes or sets of an external library")
+         (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
          :else
          (st/emit! (dwtl/set-token-theme-active id value))))}
@@ -755,7 +755,7 @@
         (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
 
         (not (u/editable-tokens-status? file-id))
-        (u/not-valid plugin-id :toggleActive "Cannot change active themes or sets of an external library")
+        (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
         :else
         (st/emit! (dwtl/toggle-token-theme-active id))))

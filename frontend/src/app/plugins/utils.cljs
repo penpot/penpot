@@ -304,8 +304,8 @@
     (throw (js/Error. (dm/str "[PENPOT PLUGIN] Cannot modify tokens in an external library")))))
 
 (defn editable-tokens-status?
-  "True when the tokens catalog of `file-id` belongs to the current file,
-   the only file whose active themes and sets a plugin can change."
+  "True when the proxy belongs to the current file, whose activation status
+   is editable even when its tokens come from an external source."
   [file-id]
   (current-file? file-id))
 
