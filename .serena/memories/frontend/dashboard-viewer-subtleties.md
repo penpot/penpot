@@ -9,6 +9,7 @@
 
 ## Viewer
 
+- `app.main.ui.ui` parses the viewer's `file-id` query param with `uuid/parse*`, so a missing or malformed id arrives as nil. `viewer-page*` calls `check-file-id!` (same namespace) during render, before mounting `viewer*`: it raises `ex/raise :type :not-found :code :missing-file-id`, which the error boundary turns into the not-found page. Without the guard the `dv/initialize` assertion fails on the nil file-id and the user gets an internal-error page. Test: `frontend-tests.ui.viewer-test/check-file-id-raises-not-found-for-invalid-file-id`.
 - Viewer initialization sets `:current-file-id`, `:current-share-id`, and `:viewer-local`, then fetches the view-only bundle. Comment threads are fetched only for logged-in users.
 - Viewer bundle fetch sends the full supported feature set because anonymous shared viewers may not know team-enabled features.
 - View-only bundles can contain pointer values in `:pages-index` and file data. Viewer resolves those fragments with `:get-file-fragment` before storing the bundle.
