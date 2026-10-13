@@ -925,48 +925,53 @@
     (update-component-thumbnail-sync
      @st/state component-id file-id "component")))
 
+(defn- component-sync-events
+  "The events that sync the copies of the component `component-id` of the
+  library `file-id`: in the current file, and in the library when it is
+  another file."
+  [state component-id file-id undo-group]
+  (let [current-file-id (:current-file-id state)]
+    [(sync-file current-file-id file-id :components component-id undo-group)
+     (when (not= current-file-id file-id)
+       (sync-file file-id file-id :components component-id undo-group))]))
+
 (defn update-component-sync
+  "Update the main of the copy `shape-id` from the copy (see
+  `update-component`), in one undo entry with the sync of its copies."
   ([shape-id file-id] (update-component-sync shape-id file-id nil))
   ([shape-id file-id undo-group]
    (ptk/reify ::update-component-sync
      ptk/WatchEvent
      (watch [_ state _]
-       (let [current-file-id (:current-file-id state)
-             current-file?   (= current-file-id file-id)
+       (let [page         (dsh/lookup-page state)
+             shape        (ctn/get-shape page shape-id)
+             component-id (:component-id shape)
+             undo-id      (js/Symbol)]
+         (apply rx/of
+                (concat
+                 [(dwu/start-undo-transaction undo-id)
+                  (update-component shape-id undo-group)
 
-             page            (dsh/lookup-page state)
-             shape           (ctn/get-shape page shape-id)
-             component-id    (:component-id shape)
-             undo-id         (js/Symbol)]
-         (rx/of
-          (dwu/start-undo-transaction undo-id)
-          (update-component shape-id undo-group)
-
-          ;; These calls are necessary for properly sync thumbnails
-          ;; when a main component does not live in the same page.
-          (update-component-thumbnail-sync state component-id file-id "frame")
-          (update-component-thumbnail-sync state component-id file-id "component")
-
-          (sync-file current-file-id file-id :components component-id undo-group)
-          (when (not current-file?)
-            (sync-file file-id file-id :components component-id undo-group))
-          (dwu/commit-undo-transaction undo-id)))))))
+                  ;; These calls are necessary for properly sync thumbnails
+                  ;; when a main component does not live in the same page.
+                  (update-component-thumbnail-sync state component-id file-id "frame")
+                  (update-component-thumbnail-sync state component-id file-id "component")]
+                 (component-sync-events state component-id file-id undo-group)
+                 [(dwu/commit-undo-transaction undo-id)])))))))
 
 (defn launch-component-sync
-  "Launch a sync of the current file and of the library file of the given component."
-  ([component-id file-id] (launch-component-sync component-id file-id nil))
-  ([component-id file-id undo-group]
-   (ptk/reify ::launch-component-sync
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [current-file-id (:current-file-id state)
-             undo-id         (js/Symbol)]
-         (rx/of
-          (dwu/start-undo-transaction undo-id)
-          (sync-file current-file-id file-id :components component-id undo-group)
-          (when (not= current-file-id file-id)
-            (sync-file file-id file-id :components component-id undo-group))
-          (dwu/commit-undo-transaction undo-id)))))))
+  "Launch a sync of the current file and of the library file of the given
+  component, in one undo entry."
+  [component-id file-id undo-group]
+  (ptk/reify ::launch-component-sync
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [undo-id (js/Symbol)]
+        (apply rx/of
+               (concat
+                [(dwu/start-undo-transaction undo-id)]
+                (component-sync-events state component-id file-id undo-group)
+                [(dwu/commit-undo-transaction undo-id)]))))))
 
 (defn update-component-thumbnail
   "Update the thumbnail of the component with the given id, in the
