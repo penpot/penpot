@@ -134,10 +134,13 @@
 
 ;; redo-changes is a vector and :undo-changes is a list
 (defn concat-changes
+  "`changes1` followed by `changes2`: the redo changes of the second after
+  those of the first, its undo changes before. The undo list is built at
+  once, so joining many changes nests no lazy sequences."
   [changes1 changes2]
   (-> changes1
       (update :redo-changes d/concat-vec (:redo-changes changes2))
-      (update :undo-changes #(concat (:undo-changes changes2) %))))
+      (update :undo-changes #(reduce conj (or % '()) (reverse (:undo-changes changes2))))))
 
 ; TODO: remove this when not needed
 (defn- assert-page-id!

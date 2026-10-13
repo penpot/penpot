@@ -73,6 +73,7 @@
    [common-tests.logic.composable-sync-test]
    [common-tests.logic.copying-and-duplicating-test]
    [common-tests.logic.duplicated-pages-test]
+   [common-tests.logic.large-sync-undo-test]
    [common-tests.logic.library-asset-sync-test]
    [common-tests.logic.move-shapes-test]
    [common-tests.logic.multiple-nesting-levels-test]
@@ -198,6 +199,7 @@
    'common-tests.logic.composable-sync-test
    'common-tests.logic.copying-and-duplicating-test
    'common-tests.logic.duplicated-pages-test
+   'common-tests.logic.large-sync-undo-test
    'common-tests.logic.library-asset-sync-test
    'common-tests.logic.move-shapes-test
    'common-tests.logic.multiple-nesting-levels-test
