@@ -186,7 +186,7 @@
 
 (t/deftest unreachable-near-main-can-be-left-for-later
   (let [[library file] (setup-library)
-        file'          (binding [cfcp/*defer-unreachable-swaps* true]
+        file'          (binding [cfcp/*defer-unreachable* true]
                          (convert file))]
     (t/is (= (swap-state file :outer-star) (swap-state file' :outer-star)))
     (t/is (::cfcp/deferred-swaps (meta (:data file'))))

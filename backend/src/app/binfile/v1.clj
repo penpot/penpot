@@ -479,7 +479,7 @@
                     (read-section options))))
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
-        (bfc/convert-deferred-swaps! cfg)
+        (bfc/convert-deferred! cfg)
         (bfm/apply-pending-migrations! cfg)
 
         ;; Knowing that the ids of the created files are in index,
