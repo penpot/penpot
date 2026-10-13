@@ -90,8 +90,12 @@
 
     (-> (pcb/concat-changes before-changes changes)
 
-        ;; Move the previous shape to the new parent
-        (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
+        ;; Move the previous shape to the new parent. It comes from the root,
+        ;; where the undo must take it back before the new copy is deleted
+        (pcb/change-parent (:parent-id related-shape-in-new)
+                           [(assoc orig-swapped-child :parent-id uuid/zero)]
+                           pos
+                           {:allow-altering-copies true})
 
         ;; Take the place of the related shape; it stays a swap while its
         ;; component differs from that one

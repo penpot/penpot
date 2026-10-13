@@ -15,6 +15,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -486,3 +487,24 @@
         file' (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})]
     (t/is (ctk/swapped? (ths/get-shape file' :copy-child)))
     (t/is (= (rel file' :child2 :m02) (rel file' :copy-child :copy01)))))
+
+(t/deftest undo-of-a-switch-brings-the-swap-back
+  (let [file      (-> (setup-variants)
+                      (move-shape :child2 30 5))
+        page      (thf/current-page file)
+        shape     (ths/get-shape file :copy01)
+        libraries {(:id file) file}
+        orig      (cfh/get-children-with-self (:objects page) (:id shape))
+        [new-shape _ changes]
+        (cll/generate-component-swap (pcb/empty-changes nil (:id page))
+                                     (:objects page) shape (:data file) page libraries
+                                     (:id (thc/get-component file :c02)) 0 nil {} true)
+        [changes _] (clv/generate-keep-touched changes new-shape shape orig page libraries (:data file))
+        file'     (thf/apply-changes file changes)
+        file''    (thf/apply-undo-changes file' changes)]
+    (t/is (= [(thi/id :copy-child)] (:shapes (ths/get-shape file' :copy01))))
+    (t/is (= [(thi/id :copy-child)] (:shapes (ths/get-shape file'' :copy01))))
+    (t/is (= (thi/id :child1) (:shape-ref (ths/get-shape file'' :copy-child))))
+    (t/is (ctk/swapped? (ths/get-shape file'' :copy-child)))
+    (t/is (not= (position file :copy-child) (position file' :copy-child)))
+    (t/is (= (position file :copy-child) (position file'' :copy-child)))))
