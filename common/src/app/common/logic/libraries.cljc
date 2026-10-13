@@ -1379,28 +1379,23 @@
                                                (:id component-parent-shape)))
 
         ;; A swapped head pushed to the main replaces the main child it refers to.
-        ;; Inside a copy of the main it is a swap of that child's position;
+        ;; Inside a copy of the main it takes the position of that child;
         ;; elsewhere it is a plain copy of its own component.
         swap-in-copy?    (and (ctk/swapped? shape)
                               (seq (ctn/get-parent-copy-heads (:objects component-container)
                                                               component-parent-shape)))
-        new-swap-ref     (when (ctk/swapped? shape)
-                           (if swap-in-copy?
-                             (:shape-ref (ctn/get-shape component-container (:shape-ref shape)))
-                             (swap-content-root-id libraries shape)))
+        replaced         (when swap-in-copy?
+                           (ctn/get-shape component-container (:shape-ref shape)))
 
         update-new-shape (fn [new-shape original-shape]
                            (cond-> (reposition-shape new-shape
                                                      root-instance
                                                      root-main)
                              (and (= (:id original-shape) (:id shape))
-                                  (ctk/swapped? shape))
-                             (assoc :shape-ref new-swap-ref)
-
-                             (and (= (:id original-shape) (:id shape))
                                   (ctk/swapped? shape)
                                   (not swap-in-copy?))
-                             (ctk/remove-swap-group)))
+                             (-> (assoc :shape-ref (swap-content-root-id libraries shape))
+                                 (ctk/remove-swap-group))))
 
         ;; the copy now follows the main, swap included
         update-original-shape (fn [original-shape new-shape]
@@ -1408,7 +1403,7 @@
                                     (assoc :shape-ref (:id new-shape))
                                     (ctk/remove-swap-group)))
 
-        [_new-shape new-shapes updated-shapes]
+        [new-head new-shapes updated-shapes]
         (ctst/clone-shape shape
                           (:id component-parent-shape)
                           (get page :objects)
@@ -1417,6 +1412,16 @@
                           :frame-id (if (cfh/frame-shape? component-parent-shape)
                                       (:id component-parent-shape)
                                       (:frame-id component-parent-shape)))
+
+        new-shapes
+        (if swap-in-copy?
+          (let [objects  (d/index-by :id new-shapes)
+                position (ctf/find-ref-shape nil component-container libraries replaced
+                                             :include-deleted? true
+                                             :with-context? true)]
+            (mapv (ctf/take-position nil libraries objects new-head (:shape-ref replaced) position)
+                  new-shapes))
+          new-shapes)
 
         add-obj-change (fn [changes shape']
                          (update changes :redo-changes conj
@@ -2824,17 +2829,6 @@
           rotate?
           (as-> shape (gsh/transform-shape shape (ctm/rotation-modifiers shape center angle))))))))
 
-(defn- added-subtree
-  "The shapes the changes add under the shape `id`, itself included."
-  [changes id]
-  (let [added (->> (:redo-changes changes)
-                   (filter #(= :add-obj (:type %)))
-                   (map :obj)
-                   (d/index-by :id))]
-    (->> (vals added)
-         (filter #(or (= (:id %) id)
-                      (contains? (set (cfh/get-parent-ids added (:id %))) id))))))
-
 (defn- generate-keep-orientation
   "Give the new head of a swap, and its subtree, the flips and the rotation
   of the shape it replaces, around the head's own center. They come from
@@ -2842,61 +2836,24 @@
   [changes new-shape shape]
   (if-let [orient (orient-like new-shape shape (gsh/shape->center new-shape))]
     (pcb/update-shapes changes
-                       (map :id (added-subtree changes (:id new-shape)))
+                       (cfh/get-children-ids-with-self (pcb/get-objects changes) (:id new-shape))
                        orient
                        {:ignore-touched true})
     changes))
 
-(defn- main-ref-ids
-  "Map the shapes of a main subtree to the shapes of a copy of it: for each
-  shape in the subtree of `head`, follow its ref chain until a shape whose id
-  is in `main-ids`, and map that id to the shape's id."
-  [file container libraries head main-ids]
-  (let [ref-in-main
-        (fn [shape]
-          (loop [shape shape container container steps 0]
-            (when (and (some? shape) (< steps 64))
-              (if (contains? main-ids (:id shape))
-                (:id shape)
-                (let [ref (ctf/find-ref-shape file container libraries shape
-                                              :include-deleted? true
-                                              :with-context? true)]
-                  (recur ref (:container (meta ref)) (inc steps)))))))]
-    (into {}
-          (keep (fn [shape]
-                  (when-let [main-id (ref-in-main shape)]
-                    [main-id (:id shape)])))
-          (cfh/get-children-with-self (:objects container) (:id head)))))
-
 (defn- generate-swap-in-copy
-  "A swap inside a copy keeps the position: the new head refers to the main
-  shape the old one referred to. It is marked as swapped while its component
-  differs from that shape's; otherwise it is a plain nested copy of it, and
-  its children refer to that shape's children."
+  "A swap inside a copy keeps the position: the new head takes the place of
+  the main shape the old one referred to."
   [changes new-shape shape file page libraries]
-  (let [file*     {:id (:id file) :data file}
-        ref-shape (ctf/find-ref-shape file* page libraries shape
-                                      :include-deleted? true
-                                      :with-context? true)
-        swapped?  (or (nil? ref-shape)
-                      (not= (:component-id ref-shape) (:component-id new-shape))
-                      (not= (:component-file ref-shape) (:component-file new-shape)))
-        children  (->> (added-subtree changes (:id new-shape))
-                       (remove #(= (:id %) (:id new-shape))))
-        ref-map   (when-not swapped?
-                    (main-ref-ids file* (:container (meta ref-shape)) libraries ref-shape
-                                  (into #{} (map :shape-ref) children)))]
-    [(cond-> (assoc new-shape :shape-ref (:shape-ref shape))
-       swapped?
-       (update :touched (fnil conj #{}) :swap-group))
-     (cond-> (pcb/update-shapes changes
-                                [(:id new-shape)]
-                                #(assoc % :shape-ref (:shape-ref shape))
-                                {:ignore-touched true})
-       (seq ref-map)
-       (pcb/update-shapes (map :id children)
-                          #(d/update-when % :shape-ref (fn [ref] (get ref-map ref ref)))
-                          {:ignore-touched true}))]))
+  (let [file*    {:id (:id file) :data file}
+        objects  (pcb/get-objects changes)
+        position (ctf/find-ref-shape file* page libraries shape
+                                     :include-deleted? true
+                                     :with-context? true)]
+    (pcb/update-shapes changes
+                       (cfh/get-children-ids-with-self objects (:id new-shape))
+                       (ctf/take-position file* libraries objects new-shape (:shape-ref shape) position)
+                       {:ignore-touched true})))
 
 (defn generate-new-shape-for-swap
   [changes shape file page libraries id-new-component index target-cell keep-props-values]
@@ -2924,10 +2881,13 @@
                                         {(:id shape) (:id shape)} ;; keep the id of the original shape
                                         {:force-frame? true})
 
-        [new-shape changes]
-        (if inside-copy?
-          (generate-swap-in-copy changes new-shape shape file page libraries)
-          [new-shape changes])
+        changes
+        (cond-> changes
+          inside-copy?
+          (generate-swap-in-copy new-shape shape file page libraries))
+
+        new-shape
+        (get (pcb/get-objects changes) (:id new-shape))
 
         changes
         (generate-keep-orientation changes new-shape shape)]
