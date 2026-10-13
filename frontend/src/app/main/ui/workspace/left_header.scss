@@ -117,6 +117,10 @@
     animation: jump 0.3s ease-out;
   }
 
+  &.retrying-status {
+    background-color: var(--status-widget-background-color-warning);
+  }
+
   &.error-status {
     background-color: var(--status-widget-background-color-error);
   }
