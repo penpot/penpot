@@ -239,6 +239,9 @@ synchronously); an async hop without a pending task makes steps resolve early. T
 `frontend-tests.composable-tests.completion-contract-test` (slowed-down sync via a mocked
 `dwl/sync-file`), `frontend-tests.data.workspace-sync-barrier-test`. Re-reads `:file` each step
 so the shared accessors keep working.
+WASM-SHAPE IMMUNITY: a test that starts the WASM renderer leaves `cts/wasm-enabled?` on, which
+makes every later shape a proxy that leaves out nil and false attributes; `fixture` turns it off
+for the composable tests and restores it after, so they run on records in any order.
 STORE-SWAP IMMUNITY: other test namespaces `set!` `st/state`/`st/stream` and never restore, while
 the `app.main.refs` lenses stay bound to the ORIGINAL atoms — propagation then dies silently. The
 interpreter captures the atoms at namespace-load time and re-`set!`s them per variant.
@@ -247,6 +250,11 @@ Running (JVM): `cd common && clojure -M:dev:test --focus common-tests.logic.comp
 Running (frontend): `cd frontend && pnpm run build:test`, then
 `node target/tests/test.js --focus frontend-tests.composable-tests.comp.sync-test`
 (var-level focus for one case).
+
+**Golden master:** `check` records the store's files after each user, frontend-only, undo
+and redo step and at the end of each variant, keyed by the test var's name, and compares them
+with `golden_master.edn` next to the interpreter (see `mem:common/testing`, "Golden master").
+A new case fails until recorded with `PENPOT_GOLDEN_MASTER=record`.
 
 **Fidelity warning:** the harness drives a MINIMALLY-ASSEMBLED app: no file loading, no
 persistence, no viewport. Edit-reacting subscriptions come from the shared events above; a NEW

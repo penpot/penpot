@@ -82,7 +82,8 @@
 ;; A world is `{:key :describe :run :reds}`; `run` is the timed work, a
 ;; function of no arguments returning `[file passes]`, and `reds` how many
 ;; rects the resulting file must have red, so a world that synced nothing
-;; fails instead of timing nothing.
+;; fails instead of timing nothing. A world whose file uses libraries lists
+;; them under `:libraries`.
 
 (defn- red-rects
   [file]
@@ -201,20 +202,28 @@
                                                                     libraries
                                                                     (:id file))]
                         [(apply-changes file changes) 1]))]
-    {:key      :library-update-into-copies
-     :describe "a library main changed; a file with 500 copies updates"
-     :run      update
-     :reds     500}))
+    {:key       :library-update-into-copies
+     :describe  "a library main changed; a file with 500 copies updates"
+     :run       update
+     :reds      500
+     :libraries [library]}))
+
+(defn world-builders
+  "One function of no arguments per world, building it. Each world builds
+   its file with test labels, so the golden master builds one world at a
+   time and reads its labels before the next one replaces them."
+  []
+  [#(main-edit-into-copies 10)
+   #(main-edit-into-copies 100)
+   #(main-edit-into-copies 1000)
+   deepest-edit-through-three-levels
+   edit-through-a-chain-of-dependents
+   variant-switch-into-copies
+   library-update-into-copies])
 
 (defn- worlds
   []
-  [(main-edit-into-copies 10)
-   (main-edit-into-copies 100)
-   (main-edit-into-copies 1000)
-   (deepest-edit-through-three-levels)
-   (edit-through-a-chain-of-dependents)
-   (variant-switch-into-copies)
-   (library-update-into-copies)])
+  (mapv #(%) (world-builders)))
 
 ;; ---- Measuring
 
