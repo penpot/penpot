@@ -37,31 +37,12 @@
     (number? (sym/value arg)) (sym/value arg)
     :else (err/raise :functions/expects-number-arguments {:data {:function-name function-name}})))
 
-(defn- over
-  "Applies `f` to the numeric value of `arg`, preserving its unit."
-  [arg f function-name]
-  (let [result (f (extract-number arg function-name))]
-    (if (sym/number-with-unit? arg)
-      (sym/number-with-unit result (:unit arg))
-      (sym/number result))))
-
-(defn- over-two
-  [a b f function-name]
-  (let [result (f (extract-number a function-name) (extract-number b function-name))]
-    (if (sym/number-with-unit? a)
-      (sym/number-with-unit result (:unit a))
-      (sym/number result))))
-
-(defn- over-many
-  [args f function-name min-args]
-  (when (and min-args (< (count args) min-args))
-    (err/raise :functions/requires-min-arguments {:data {:function-name function-name :min-args min-args}}))
-  (let [nums (mapv #(extract-number % function-name) args)
-        result (f nums)
-        unit-arg (first (filter sym/number-with-unit? args))]
-    (if unit-arg
-      (sym/number-with-unit result (:unit unit-arg))
-      (sym/number result))))
+(defn- with-unit-of
+  "Number symbol for `n`, with the unit of `arg` when it has one."
+  [arg n]
+  (if (sym/number-with-unit? arg)
+    (sym/number-with-unit n (:unit arg))
+    (sym/number n)))
 
 (defn- out-of-range
   [function-name constraint]
@@ -72,102 +53,108 @@
   (err/raise :functions/expects-type-argument
              {:data {:function-name function-name :expected-type expected :argument-position position}}))
 
-(defn- hypot
-  [nums]
-  (mth/sqrt (reduce + 0.0 (map #(* % %) nums))))
+(defn- check-divisor
+  [function-name y]
+  (when (zero? y)
+    (err/raise :functions/division-by-zero {:data {:function-name function-name}})))
 
-(defn- first-arg
-  [args]
-  (first args))
+(defn- unary
+  "Function of one number keeping its unit. Raises with `constraint` when
+  `out-of-domain?` holds for the argument."
+  ([name f] (unary name f nil nil))
+  ([name f out-of-domain? constraint]
+   (fn [[arg]]
+     (let [v (extract-number arg name)]
+       (when (and out-of-domain? (out-of-domain? v))
+         (out-of-range name constraint))
+       (with-unit-of arg (f v))))))
+
+(defn- binary
+  "Function of two numbers keeping the unit of the first."
+  [name f]
+  (fn [[a b]]
+    (with-unit-of a (f (extract-number a name) (extract-number b name)))))
+
+(defn- variadic
+  "Function of the vector of one or more numbers keeping the first unit
+  among them."
+  [name f]
+  (fn [args]
+    (when (empty? args)
+      (err/raise :functions/requires-min-arguments {:data {:function-name name :min-args 1}}))
+    (let [result (f (mapv #(extract-number % name) args))]
+      (with-unit-of (some #(when (sym/number-with-unit? %) %) args) result))))
+
+(defn- log-fn
+  "`log(x)` and `log(x, base)`."
+  [[arg base]]
+  (let [v (extract-number arg "log")]
+    (when (<= v 0) (out-of-range "log" "positive"))
+    (with-unit-of arg
+      (if (nil? base)
+        (Math/log v)
+        (let [b (extract-number base "log")]
+          (when (or (<= b 0) (== b 1))
+            (err/raise :functions/invalid-base
+                       {:data {:function-name "log" :constraint "positive and not equal to 1"}}))
+          (/ (Math/log v) (Math/log b)))))))
+
+(defn- round-to-fn
+  [[arg precision]]
+  (let [p (if (some? precision) (extract-number precision "round_to") 0)
+        v (extract-number arg "round_to")]
+    (with-unit-of arg
+      (if (zero? p)
+        (u/js-round v)
+        (let [factor (mth/pow 10 p)]
+          (/ (u/js-round (* v factor)) factor))))))
+
+(def ^:private unary-functions
+  "`[name f]` or `[name f out-of-domain? constraint]`, see `unary`."
+  [["round" u/js-round]
+   ["abs" mth/abs]
+   ["sqrt" mth/sqrt]
+   ["floor" mth/floor]
+   ["ceil" mth/ceil]
+   ;; Not mth/cubicroot: pow(x, 1/3) is inexact (27 -> 3.0000000000000004)
+   ["cbrt" #(Math/cbrt %)]
+   ["trunc" u/js-trunc]
+   ["exp" #(Math/exp %)]
+   ["expm1" #(Math/expm1 %)]
+   ["sin" mth/sin]
+   ["cos" mth/cos]
+   ["tan" mth/tan]
+   ["atan" #(Math/atan %)]
+   ["asin" #(Math/asin %) #(not (<= -1 % 1)) "between -1 and 1"]
+   ["acos" #(Math/acos %) #(not (<= -1 % 1)) "between -1 and 1"]
+   ["sinh" #(Math/sinh %)]
+   ["cosh" #(Math/cosh %)]
+   ["tanh" #(Math/tanh %)]
+   ["asinh" #(Math/log (+ % (Math/sqrt (+ (* % %) 1))))]
+   ["acosh" #(Math/log (+ % (Math/sqrt (- (* % %) 1)))) #(< % 1) "greater than or equal to 1"]
+   ["atanh" #(* 0.5 (Math/log (/ (+ 1 %) (- 1 %)))) #(or (<= % -1) (>= % 1)) "between -1 and 1 (exclusive)"]
+   ["ln" #(Math/log %) #(<= % 0) "positive"]
+   ["log10" #(Math/log10 %) #(<= % 0) "positive"]
+   ["log2" #(/ (Math/log %) (Math/log 2)) #(<= % 0) "positive"]
+   ["log1p" #(Math/log (+ 1 %)) #(< % -1) "greater than or equal to -1"]])
 
 (def math-functions
   "Built in math functions keyed by lower case name. Each takes the
   vector of argument symbols."
-  {"min" (fn [args] (over-many args #(reduce min %) "min" 1))
-   "max" (fn [args] (over-many args #(reduce max %) "max" 1))
-   "mod" (fn [[a b]] (over-two a b (fn [x y]
-                                     (when (zero? y)
-                                       (err/raise :functions/division-by-zero {:data {:function-name "mod"}}))
-                                     (rem (+ (rem x y) y) y))
-                               "mod"))
-   "average" (fn [args] (over-many args #(/ (reduce + 0.0 %) (count %)) "average" 1))
-   "round" (fn [args] (over (first-arg args) u/js-round "round"))
-   "abs" (fn [args] (over (first-arg args) mth/abs "abs"))
-   "sqrt" (fn [args] (over (first-arg args) mth/sqrt "sqrt"))
-   "floor" (fn [args] (over (first-arg args) mth/floor "floor"))
-   "ceil" (fn [args] (over (first-arg args) mth/ceil "ceil"))
-   ;; Not mth/cubicroot: pow(x, 1/3) is inexact (27 -> 3.0000000000000004)
-   "cbrt" (fn [args] (over (first-arg args) #(Math/cbrt %) "cbrt"))
-   "sign" (fn [args] (sym/number (u/js-sign (extract-number (first-arg args) "sign"))))
-   "trunc" (fn [args] (over (first-arg args) u/js-trunc "trunc"))
-   "exp" (fn [args] (over (first-arg args) #(Math/exp %) "exp"))
-   "expm1" (fn [args] (over (first-arg args) #(Math/expm1 %) "expm1"))
-   "pow" (fn [[a b]] (over-two a b mth/pow "pow"))
-   "round_to" (fn [[v precision]]
-                (let [p (if (some? precision) (extract-number precision "round_to") 0)]
-                  (over v
-                        (if (zero? p)
-                          u/js-round
-                          (fn [x] (let [factor (mth/pow 10 p)] (/ (u/js-round (* x factor)) factor))))
-                        "round_to")))
-   "hypot" (fn [args] (over-many args hypot "hypot" 1))
-   "remainder" (fn [[a b]] (over-two a b (fn [x y]
-                                           (when (zero? y)
-                                             (err/raise :functions/division-by-zero {:data {:function-name "remainder"}}))
-                                           (rem x y))
-                                     "remainder"))
-   "sin" (fn [args] (over (first-arg args) mth/sin "sin"))
-   "cos" (fn [args] (over (first-arg args) mth/cos "cos"))
-   "tan" (fn [args] (over (first-arg args) mth/tan "tan"))
-   "atan" (fn [args] (over (first-arg args) #(Math/atan %) "atan"))
-   "asin" (fn [args]
-            (let [v (extract-number (first-arg args) "asin")]
-              (when-not (<= -1 v 1) (out-of-range "asin" "between -1 and 1"))
-              (over (first-arg args) #(Math/asin %) "asin")))
-   "acos" (fn [args]
-            (let [v (extract-number (first-arg args) "acos")]
-              (when-not (<= -1 v 1) (out-of-range "acos" "between -1 and 1"))
-              (over (first-arg args) #(Math/acos %) "acos")))
-   "atan2" (fn [[y x]] (sym/number (mth/atan2 (extract-number y "atan2") (extract-number x "atan2"))))
-   "sinh" (fn [args] (over (first-arg args) #(Math/sinh %) "sinh"))
-   "cosh" (fn [args] (over (first-arg args) #(Math/cosh %) "cosh"))
-   "tanh" (fn [args] (over (first-arg args) #(Math/tanh %) "tanh"))
-   "asinh" (fn [args] (over (first-arg args) (fn [x] (Math/log (+ x (Math/sqrt (+ (* x x) 1))))) "asinh"))
-   "acosh" (fn [args]
-             (let [v (extract-number (first-arg args) "acosh")]
-               (when (< v 1) (out-of-range "acosh" "greater than or equal to 1"))
-               (over (first-arg args) (fn [x] (Math/log (+ x (Math/sqrt (- (* x x) 1))))) "acosh")))
-   "atanh" (fn [args]
-             (let [v (extract-number (first-arg args) "atanh")]
-               (when (or (<= v -1) (>= v 1)) (out-of-range "atanh" "between -1 and 1 (exclusive)"))
-               (over (first-arg args) (fn [x] (* 0.5 (Math/log (/ (+ 1 x) (- 1 x))))) "atanh")))
-   "log" (fn [[arg base]]
-           (let [v (extract-number arg "log")]
-             (when (<= v 0) (out-of-range "log" "positive"))
-             (if (nil? base)
-               (over arg #(Math/log %) "log")
-               (let [b (extract-number base "log")]
-                 (when (or (<= b 0) (== b 1))
-                   (err/raise :functions/invalid-base
-                              {:data {:function-name "log" :constraint "positive and not equal to 1"}}))
-                 (over arg (fn [x] (/ (Math/log x) (Math/log b))) "log")))))
-   "ln" (fn [args]
-          (let [v (extract-number (first-arg args) "ln")]
-            (when (<= v 0) (out-of-range "ln" "positive"))
-            (over (first-arg args) #(Math/log %) "ln")))
-   "log10" (fn [args]
-             (let [v (extract-number (first-arg args) "log10")]
-               (when (<= v 0) (out-of-range "log10" "positive"))
-               (over (first-arg args) #(Math/log10 %) "log10")))
-   "log2" (fn [args]
-            (let [v (extract-number (first-arg args) "log2")]
-              (when (<= v 0) (out-of-range "log2" "positive"))
-              (over (first-arg args) (fn [x] (/ (Math/log x) (Math/log 2))) "log2")))
-   "log1p" (fn [args]
-             (let [v (extract-number (first-arg args) "log1p")]
-               (when (< v -1) (out-of-range "log1p" "greater than or equal to -1"))
-               (over (first-arg args) (fn [x] (Math/log (+ 1 x))) "log1p")))
-   "pi" (fn [_] (sym/number Math/PI))})
+  (into {"min" (variadic "min" #(reduce min %))
+         "max" (variadic "max" #(reduce max %))
+         "average" (variadic "average" #(/ (reduce + 0.0 %) (count %)))
+         "hypot" (variadic "hypot" #(mth/sqrt (reduce + 0.0 (map (fn [x] (* x x)) %))))
+         "mod" (binary "mod" (fn [x y] (check-divisor "mod" y) (rem (+ (rem x y) y) y)))
+         "remainder" (binary "remainder" (fn [x y] (check-divisor "remainder" y) (rem x y)))
+         "pow" (binary "pow" mth/pow)
+         "round_to" round-to-fn
+         "log" log-fn
+         "sign" (fn [[arg]] (sym/number (u/js-sign (extract-number arg "sign"))))
+         "atan2" (fn [[y x]] (sym/number (mth/atan2 (extract-number y "atan2") (extract-number x "atan2"))))
+         "pi" (fn [_] (sym/number Math/PI))}
+        (map (fn [[name & spec]] [name (apply unary name spec)]))
+        unary-functions))
 
 ;; Other built ins -------------------------------------------------------------
 
