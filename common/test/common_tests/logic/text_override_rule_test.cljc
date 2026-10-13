@@ -10,13 +10,22 @@
   (:require
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.texts :as thtx]
+   [app.common.types.text :as txt]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
 
 (defn- overrides
+  "The overrides of `copy` against `main` by the reference rule, checked
+   against the production one (`txt/override-groups`)."
   [main copy]
-  (thtx/override-units (thtx/content main) (thtx/content copy)))
+  (let [main  (thtx/content main)
+        copy  (thtx/content copy)
+        units (thtx/override-units main copy)]
+    (t/is (= (into #{} (map #(keyword (str "text-content-" (name (get {:letters :text} % %))))) units)
+             (txt/override-groups main copy))
+          "the production rule agrees")
+    units))
 
 (t/deftest shared-letters-come-in-stretches-of-three
   (t/is (= {0 0 1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10}

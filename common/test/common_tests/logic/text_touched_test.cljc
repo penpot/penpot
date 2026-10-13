@@ -30,13 +30,13 @@
         changes     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                                 #{(:id copy-child)}
                                                 (fn [shape]
-                                                  (assoc-in shape [:content :children 0 :children 0 :font-size] "32"))
+                                                  (assoc-in shape [:content :children 0 :children 0 :children 0 :font-size] "32"))
                                                 (:objects page)
                                                 {})
 
         file'       (thf/apply-changes file changes)
         copy-child' (ths/get-shape file' :copy-child)]
-    (t/is (= #{:content-group :text-content-attribute} (:touched copy-child')))))
+    (t/is (= #{:content-group :text-content-size} (:touched copy-child')))))
 
 (t/deftest test-text-copy-changed-text
   (let [;; ==== Setup
@@ -51,7 +51,7 @@
         changes     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                                 #{(:id copy-child)}
                                                 (fn [shape]
-                                                  (assoc-in shape [:content :children 0 :children 0 :text] "Bye"))
+                                                  (assoc-in shape [:content :children 0 :children 0 :children 0 :text] "Bye"))
                                                 (:objects page)
                                                 {})
 
@@ -73,14 +73,14 @@
                                                 #{(:id copy-child)}
                                                 (fn [shape]
                                                   (-> shape
-                                                      (assoc-in [:content :children 0 :children 0 :font-size] "32")
-                                                      (assoc-in [:content :children 0 :children 0 :text] "Bye")))
+                                                      (assoc-in [:content :children 0 :children 0 :children 0 :font-size] "32")
+                                                      (assoc-in [:content :children 0 :children 0 :children 0 :text] "Bye")))
                                                 (:objects page)
                                                 {})
 
         file'       (thf/apply-changes file changes)
         copy-child' (ths/get-shape file' :copy-child)]
-    (t/is (= #{:content-group :text-content-attribute :text-content-text} (:touched copy-child')))))
+    (t/is (= #{:content-group :text-content-size :text-content-text} (:touched copy-child')))))
 
 (t/deftest test-text-copy-changed-structure-same-attrs
   (let [;; ==== Setup
@@ -103,7 +103,8 @@
 
         file'       (thf/apply-changes file changes)
         copy-child' (ths/get-shape file' :copy-child)]
-    (t/is (= #{:content-group :text-content-structure} (:touched copy-child')))))
+    ;; a new line in the style of the one before changes the letters only
+    (t/is (= #{:content-group :text-content-text} (:touched copy-child')))))
 
 (t/deftest test-text-copy-changed-structure-diff-attrs
   (let [;; ==== Setup
@@ -120,7 +121,7 @@
                                                 (fn [shape]
                                                   (let [line (-> shape
                                                                  (get-in [:content :children 0 :children 0])
-                                                                 (assoc :font-size "32"))]
+                                                                 (assoc-in [:children 0 :font-size] "32"))]
                                                     (update-in shape [:content :children 0 :children]
                                                                #(conj % line))))
                                                 (:objects page)
@@ -128,5 +129,6 @@
 
         file'       (thf/apply-changes file changes)
         copy-child' (ths/get-shape file' :copy-child)]
-    (t/is (= #{:content-group :text-content-structure} (:touched copy-child')))))
+    ;; a new line in a new style changes the letters and that style
+    (t/is (= #{:content-group :text-content-text :text-content-size} (:touched copy-child')))))
 

@@ -21,7 +21,6 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -94,38 +93,13 @@
    :valign        #(thtx/set-valign % "center")
    :typography    #(thtx/apply-typography % :body body)})
 
-(def ^:private style-edits
-  #{:color :family :size :weight :spacing :decoration :case :line-height
-    :align :direction :valign :typography})
-
-(def ^:private known-failures
-  "Copy edit -> [bug, how the copy ends, the main edits it fails against].
-   `:as-it-was`: the sync leaves the copy as the copy edit left it.
-   `:main`: the copy takes the main's text whole."
-  (let [one-style (fn [own]
-                    [["F72" :as-it-was (disj style-edits own)]
-                     ["F79" :as-it-was #{:new-paragraph}]])]
-    {:color             (one-style :color)
-     :family            (one-style :family)
-     :size              (one-style :size)
-     :weight            (one-style :weight)
-     :spacing           (one-style :spacing)
-     :decoration        (one-style :decoration)
-     :case              (one-style :case)
-     :line-height       (one-style :line-height)
-     :typography        [["F72" :as-it-was #{:color :decoration :align :direction :valign}]
-                         ["F79" :as-it-was #{:new-paragraph}]]
-     :new-paragraph     [["F79" :as-it-was style-edits]]
-     :letters-and-color [["F73" :as-it-was (disj style-edits :color)]]
-     :align             [["F76" :main (set (keys main-edits))]]
-     :direction         [["F76" :main (disj (set (keys main-edits)) :direction)]]
-     :valign            [["F76" :main (set (keys main-edits))]]}))
-
-(defn- known-failure
-  [copy-edit main-edit]
-  (some (fn [[bug ends main-edits]]
-          (when (contains? main-edits main-edit) [bug ends]))
-        (get known-failures copy-edit)))
+(defn- weight-variant
+  "`expected` with the variant id of `weight-side`'s first run, when the
+   family comes from the other side: sync keeps the variant id with the
+   weight, and the frontend then picks the family's closest variant."
+  [expected weight-side]
+  (thtx/restyle expected :font-variant-id
+                (get-in (thtx/content weight-side) [:children 0 :children 0 :children 0 :font-variant-id])))
 
 (t/deftest whole-text-copy-edits-against-main-edits
   ;; Whole-text edits commute with the rules: the copy keeps what it
@@ -135,14 +109,10 @@
           [main-title main-edit] main-edits]
     (t/testing (str "copy " copy-title ", main " main-title)
       (let [actual   (sync-text base (copy-edit base) (main-edit base))
-            expected (thtx/normalize (copy-edit (main-edit base)))]
-        (if-let [[bug ends] (known-failure copy-title main-title)]
-          (tm/known-failure bug expected
-                            (thtx/normalize (case ends
-                                              :as-it-was (copy-edit base)
-                                              :main      (main-edit base)))
-                            actual)
-          (t/is (= expected actual)))))))
+            expected (cond-> (copy-edit (main-edit base))
+                       (and (= copy-title :weight) (#{:family :typography} main-title))
+                       (weight-variant (copy-edit base)))]
+        (t/is (= (thtx/normalize expected) actual))))))
 
 ;; ---- One style no longer blocks the others
 
@@ -151,30 +121,21 @@
         copy   [[["Add to cart" {:weight 600 :color :red}]]]
         main'  [[["Add to cart" {:weight 600 :family "Roboto" :size 18}]]]
         actual (sync-text main copy main')]
-    (tm/known-failure "F72"
-                      [[["Add to cart" {:family "Roboto" :weight 600 :size 18 :color :red}]]]
-                      copy
-                      actual)))
+    (t/is (= [[["Add to cart" {:family "Roboto" :weight 600 :size 18 :color :red}]]] actual))))
 
 (t/deftest relabeled-and-recolored-copy-takes-the-main-size
   (let [main   [[["Add to cart" {:weight 600}]]]
         copy   [[["Buy now" {:weight 600 :color :red}]]]
         main'  [[["Add to cart" {:weight 600 :size 18}]]]
         actual (sync-text main copy main')]
-    (tm/known-failure "F73"
-                      [[["Buy now" {:weight 600 :size 18 :color :red}]]]
-                      copy
-                      actual)))
+    (t/is (= [[["Buy now" {:weight 600 :size 18 :color :red}]]] actual))))
 
 (t/deftest centered-copy-stays-centered
   (let [main   [[["Free shipping"]]]
         copy   [[{:align "center"} ["Free shipping"]]]
         main'  [[["Free shipping" {:size 18}]]]
         actual (sync-text main copy main')]
-    (tm/known-failure "F76"
-                      [[{:align "center"} ["Free shipping" {:size 18}]]]
-                      main'
-                      actual)))
+    (t/is (= [[{:align "center"} ["Free shipping" {:size 18}]]] actual))))
 
 (t/deftest copy-with-a-font-size-token-takes-the-main-color
   (let [main  [[["Add to cart" {:weight 600}]]]
@@ -194,57 +155,43 @@
         file' (-> file
                   (thtx/set-text :main-child [[["Add to cart" {:weight 600 :color :blue}]]])
                   (tho/propagate-component-changes :component1))]
-    (tm/known-failure "F72"
-                      [[["Add to cart" {:weight 600 :size 16 :color :blue}]]]
-                      [[["Add to cart" {:weight 600 :size 16}]]]
-                      (thtx/text-of file' :copy-child))))
+    (t/is (= [[["Add to cart" {:weight 600 :size 16 :color :blue}]]]
+             (thtx/text-of file' :copy-child)))))
 
 ;; ---- Bolding a word
 
 (def ^:private hello-bold [[["Hello" {:weight 700}] [" world"]]])
 
 (t/deftest copy-that-bolds-a-word-takes-the-main-color
-  (tm/known-failure "F74"
-                    [[["Hello" {:weight 700 :color :blue}] [" world" {:color :blue}]]]
-                    hello-bold
-                    (sync-text [[["Hello world"]]] hello-bold [[["Hello world" {:color :blue}]]])))
+  (t/is (= [[["Hello" {:weight 700 :color :blue}] [" world" {:color :blue}]]]
+           (sync-text [[["Hello world"]]] hello-bold [[["Hello world" {:color :blue}]]]))))
 
 (t/deftest copy-that-bolds-a-word-takes-the-main-letters
   ;; "Hello" is shared, so it stays bold; " there" follows the space
-  (tm/known-failure "F74"
-                    [[["Hello" {:weight 700}] [" there"]]]
-                    hello-bold
-                    (sync-text [[["Hello world"]]] hello-bold [[["Hello there"]]])))
+  (t/is (= [[["Hello" {:weight 700}] [" there"]]]
+           (sync-text [[["Hello world"]]] hello-bold [[["Hello there"]]]))))
 
 (t/deftest copy-that-bolds-a-word-takes-the-main-family
-  (tm/known-failure "F74"
-                    [[["Hello" {:family "Roboto" :weight 700}] [" world" {:family "Roboto"}]]]
-                    hello-bold
-                    (sync-text [[["Hello world"]]] hello-bold [[["Hello world" {:family "Roboto"}]]])))
+  ;; the bold keeps its variant id, for the frontend to pick Roboto's bold
+  (t/is (= [[["Hello" {:family "Roboto" :weight 700 :font-variant-id "bold"}] [" world" {:family "Roboto"}]]]
+           (sync-text [[["Hello world"]]] hello-bold [[["Hello world" {:family "Roboto"}]]]))))
 
 (t/deftest copy-that-bolds-a-word-the-main-replaces-loses-the-bold
   ;; "Goodbye" shares no stretch of 3 letters with "Hello", so it takes the
   ;; style of the first shared letter after it, the regular space
-  (tm/known-failure "F74"
-                    [[["Goodbye world"]]]
-                    hello-bold
-                    (sync-text [[["Hello world"]]] hello-bold [[["Goodbye world"]]])))
+  (t/is (= [[["Goodbye world"]]]
+           (sync-text [[["Hello world"]]] hello-bold [[["Goodbye world"]]]))))
 
 (t/deftest copy-that-bolds-a-word-the-main-changes-by-one-letter
   ;; "llo world" is shared; "Ha" at the start takes the bold "l" after it
-  (tm/known-failure "F74"
-                    [[["Hallo" {:weight 700}] [" world"]]]
-                    hello-bold
-                    (sync-text [[["Hello world"]]] hello-bold [[["Hallo world"]]])))
+  (t/is (= [[["Hallo" {:weight 700}] [" world"]]]
+           (sync-text [[["Hello world"]]] hello-bold [[["Hallo world"]]]))))
 
 (t/deftest copy-that-bolds-a-letter-of-a-short-label
   ;; a lone shared letter carries nothing: with no stretch of 3 shared, all
   ;; letters take the style of the copy's first letter
   (let [copy [[["O"] ["K" {:weight 700}]]]]
-    (tm/known-failure "F74"
-                      [[["Ok"]]]
-                      copy
-                      (sync-text [[["OK"]]] copy [[["Ok"]]]))))
+    (t/is (= [[["Ok"]]] (sync-text [[["OK"]]] copy [[["Ok"]]])))))
 
 (t/deftest copy-that-bolds-a-word-keeps-its-weights-when-the-main-is-light
   ;; an override covers the whole text, so "world" stays regular
@@ -259,19 +206,15 @@
   ;; the family has one value across the main, so it applies everywhere;
   ;; "Sale" shares nothing with "Price: $10" and takes the main's first
   ;; letter's weight
-  (tm/known-failure "F74"
-                    [[["Sale" {:family "Roboto"}]]]
-                    [[["Sale"]]]
-                    (sync-text price [[["Sale"]]]
-                               [[["Price: " {:family "Roboto"}] ["$10" {:family "Roboto" :weight 700}]]])))
+  (t/is (= [[["Sale" {:family "Roboto"}]]]
+           (sync-text price [[["Sale"]]]
+                      [[["Price: " {:family "Roboto"}] ["$10" {:family "Roboto" :weight 700}]]]))))
 
 (t/deftest copy-that-removes-a-run-takes-the-main-color
   (let [copy [[["$10" {:weight 700}]]]]
-    (tm/known-failure "F74"
-                      [[["$10" {:weight 700 :color :blue}]]]
-                      copy
-                      (sync-text price copy
-                                 [[["Price: " {:color :blue}] ["$10" {:weight 700 :color :blue}]]]))))
+    (t/is (= [[["$10" {:weight 700 :color :blue}]]]
+             (sync-text price copy
+                        [[["Price: " {:color :blue}] ["$10" {:weight 700 :color :blue}]]])))))
 
 (t/deftest copy-with-new-letters-in-a-run-takes-the-main-family
   (t/is (= [[["Price: " {:family "Roboto"}] ["$20" {:family "Roboto" :weight 700}]]]
@@ -287,35 +230,29 @@
 
 (t/deftest copy-with-added-letters-takes-a-partial-color
   ;; "world" is shared, so it turns red; "!!!" follows the "d" before it
-  (tm/known-failure "F78"
-                    [[["Hello "] ["world!!!" {:color :red}]]]
-                    [[["Hello world!!!"]]]
-                    (sync-text [[["Hello world"]]] [[["Hello world!!!"]]]
-                               [[["Hello "] ["world" {:color :red}]]])))
+  (t/is (= [[["Hello "] ["world!!!" {:color :red}]]]
+           (sync-text [[["Hello world"]]] [[["Hello world!!!"]]]
+                      [[["Hello "] ["world" {:color :red}]]]))))
 
 (t/deftest copy-with-a-new-price-takes-the-main-bold-on-the-right-letters
   ;; "Price: $" is shared; "20" follows the bold "$"
-  (tm/known-failure "F78"
-                    [[["Price" {:weight 700}] [": "] ["$20" {:weight 700}]]]
-                    [[["Price: " {:weight 700}] ["$20"]]]
-                    (sync-text price [[["Price: "] ["$20" {:weight 700}]]]
-                               [[["Price" {:weight 700}] [": "] ["$10" {:weight 700}]]])))
+  (t/is (= [[["Price" {:weight 700}] [": "] ["$20" {:weight 700}]]]
+           (sync-text price [[["Price: "] ["$20" {:weight 700}]]]
+                      [[["Price" {:weight 700}] [": "] ["$10" {:weight 700}]]]))))
 
 (t/deftest copy-that-adds-a-line-to-a-two-style-title-takes-the-main-family
   ;; the new line follows the regular "sale" before it, across the break
   (let [main [[["Summer " {:weight 700}] ["sale"]]]
         copy [[["Summer " {:weight 700}] ["sale"]]
               [["Ends Sunday"]]]]
-    (tm/known-failure "F74"
-                      [[["Summer " {:family "Roboto" :weight 700}] ["sale" {:family "Roboto"}]]
-                       [["Ends Sunday" {:family "Roboto"}]]]
-                      copy
-                      (sync-text main copy
-                                 [[["Summer " {:family "Roboto" :weight 700}] ["sale" {:family "Roboto"}]]]))))
+    (t/is (= [[["Summer " {:family "Roboto" :weight 700}] ["sale" {:family "Roboto"}]]
+              [["Ends Sunday" {:family "Roboto"}]]]
+             (sync-text main copy
+                        [[["Summer " {:family "Roboto" :weight 700}] ["sale" {:family "Roboto"}]]])))))
 
 (t/deftest copy-with-a-new-line-in-content-without-fills-takes-the-main-color
-  ;; `txt/change-text` writes nodes with no :fills, and the merge only
-  ;; writes the keys the copy's nodes have
+  ;; `txt/change-text` writes nodes with no :fills; the main's still reach
+  ;; them
   (let [file  (-> (sample-file)
                   (tho/add-frame-with-text :main-root :main-child "hello world")
                   (thc/make-component :component1 :main-root)
@@ -336,10 +273,8 @@
                                                                     (fn [node] (assoc node :fills blue))
                                                                     %))))
                   (tho/propagate-component-changes :component1))]
-    (tm/known-failure "F75"
-                      [[["hello world" {:color :blue}]] [["second line" {:color :blue}]]]
-                      [[["hello world" {:fills nil}]] [["second line" {:fills nil}]]]
-                      (thtx/text-of file' :copy-child))))
+    (t/is (= [[["hello world" {:color :blue}]] [["second line" {:color :blue}]]]
+             (thtx/text-of file' :copy-child)))))
 
 ;; ---- Typographies and library colors
 
@@ -351,15 +286,11 @@
         kept  (thtx/apply-typography [[["Read the guide"]]] :body (assoc body :size 20))
         main' (thtx/restyle main :color :blue)]
     (t/testing "detached in the panel before resizing"
-      (tm/known-failure "F72"
-                        (thtx/normalize (thtx/restyle copy :color :blue))
-                        (thtx/normalize copy)
-                        (sync-text main copy main')))
+      (t/is (= (thtx/normalize (thtx/restyle copy :color :blue))
+               (sync-text main copy main'))))
     (t/testing "resized keeping the typography (plugin API)"
-      (tm/known-failure "F72"
-                        (thtx/normalize (thtx/restyle copy :color :blue))
-                        (thtx/normalize kept)
-                        (sync-text main kept main')))))
+      (t/is (= (thtx/normalize (thtx/restyle copy :color :blue))
+               (sync-text main kept main'))))))
 
 (t/deftest copy-that-detached-a-typography-takes-a-library-change-through-its-main
   (let [body-attrs {:font-id "sourcesanspro" :font-family "sourcesanspro" :font-variant-id "regular"
@@ -379,10 +310,8 @@
         file' (-> file
                   (sync :typographies (thi/id :body))
                   (sync :components (thi/id :component1)))]
-    (tm/known-failure "F72"
-                      [[["Read the guide" {:family "Roboto" :size 16}]]]
-                      [[["Read the guide" {:size 16}]]]
-                      (thtx/text-of file' :copy-child))))
+    (t/is (= [[["Read the guide" {:family "Roboto" :size 16}]]]
+             (thtx/text-of file' :copy-child)))))
 
 (t/deftest untouched-copy-with-a-library-color-takes-the-main-size
   ;; the library color sync writes the copy's runs; it is derived, so the
@@ -446,23 +375,21 @@
 
    ["changes the family"
     [[["Hello world" {:family "Roboto"}]]]
-    [[["Hello" {:family "Roboto" :weight 700}] [" world!!!" {:family "Roboto"}]]]]
+    ;; the bold keeps its variant id, for the frontend to pick Roboto's
+    [[["Hello" {:family "Roboto" :weight 700 :font-variant-id "bold"}] [" world!!!" {:family "Roboto"}]]]]
 
    ["applies a typography"
     (thtx/apply-typography [[["Hello world"]]] :heading heading)
     ;; the weight is the copy's, so the typography goes
     [[{:line-height 1.4}
-      ["Hello" {:family "Inter" :weight 700 :size 24 :spacing 1 :case "uppercase"}]
+      ["Hello" {:family "Inter" :weight 700 :font-variant-id "bold" :size 24 :spacing 1 :case "uppercase"}]
       [" world!!!" {:family "Inter" :size 24 :spacing 1 :case "uppercase"}]]]]])
 
 (t/deftest copy-that-bolds-a-word-and-adds-letters-against-main-edits
   (doseq [[title main' expected] worked-example]
     (t/testing (str "the main " title)
-      (let [actual   (sync-text [[["Hello world"]]] worked-copy main')
-            expected (thtx/normalize expected)]
-        (if (= expected (thtx/normalize worked-copy))
-          (t/is (= expected actual))
-          (tm/known-failure "F73" expected (thtx/normalize worked-copy) actual))))))
+      (t/is (= (thtx/normalize expected)
+               (sync-text [[["Hello world"]]] worked-copy main'))))))
 
 ;; ---- The same as today
 
