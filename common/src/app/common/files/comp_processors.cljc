@@ -16,7 +16,9 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.shape.layout :as ctsl]))
+   [app.common.types.shape.layout :as ctsl]
+   [app.common.types.text :as cttx]
+   [clojure.set :as set]))
 
 (log/set-level! :warn)
 
@@ -256,9 +258,11 @@
           next-data
           (recur next-data (inc iteration)))))))
 
-(def ^:dynamic *defer-unreachable-swaps*
-  "When true, `convert-swap-slots` leaves as they are the swap slots whose
-  near main it cannot reach, for a later pass with more libraries."
+(def ^:dynamic *defer-unreachable*
+  "When true, the conversions of older forms that need a copy's near main
+  (`convert-swap-slots`, `convert-text-overrides`) leave as they are the
+  shapes whose near main they cannot reach, for a later pass with more
+  libraries."
   false)
 
 (defn- find-swap-position
@@ -353,7 +357,7 @@
   other slot (a swap in a main, or a slot a copy inherited) is dropped.
 
   Every pairing is found on the data as it was. With
-  `*defer-unreachable-swaps*`, a slot whose near main cannot be reached is
+  `*defer-unreachable*`, a slot whose near main cannot be reached is
   left, and the data carries `::deferred-swaps` in its metadata."
   [file-data libraries]
   (let [file      {:id (:id file-data) :data file-data}
@@ -373,7 +377,7 @@
                   (not (swap-made-in-copy? shape slot parent-ref file libraries))
                   shape'
 
-                  (and (nil? parent-ref) *defer-unreachable-swaps*)
+                  (and (nil? parent-ref) *defer-unreachable*)
                   (do (vreset! deferred? true)
                       shape)
 
@@ -401,3 +405,66 @@
     (cond-> file-data
       @deferred?
       (vary-meta assoc ::deferred-swaps true))))
+
+(def ^:private legacy-text-groups
+  #{:text-content-attribute :text-content-structure})
+
+(defn legacy-text-touched?
+  "Whether `shape` holds the text override groups of files older than the
+  feature components/text-overrides."
+  [shape]
+  (boolean (some legacy-text-groups (:touched shape))))
+
+(defn recompute-text-touched
+  "The touched groups of a copy text `shape` that holds the text override
+  groups of files older than the feature components/text-overrides, given
+  its near main `ref`: each text override group the old ones allowed
+  (`cttx/text-overrides`) where the copy differs from `ref`, or all of them
+  when `ref` is nil. A shape that is not a copy keeps none."
+  [shape ref]
+  (let [touched (:touched shape)
+        allowed (if (ctk/in-component-copy? shape)
+                  (cttx/text-overrides touched)
+                  #{})
+        groups  (if (some? ref)
+                  (set/intersection allowed (cttx/override-groups (:content ref) (:content shape)))
+                  allowed)]
+    (cond-> (set/difference touched cttx/text-groups legacy-text-groups #{:content-group})
+      (seq groups)
+      (into (conj groups :content-group)))))
+
+(defn convert-text-overrides
+  "Store the text overrides of the file's copies per letters and per style.
+  Files older than the feature components/text-overrides mark a copy text
+  with `:text-content-attribute` (any style) and `:text-content-structure`
+  (the number of paragraphs or runs); now it holds `:text-content-text` and
+  one group per style unit (`cttx/style-units`). Each copy text with the
+  old groups is compared with its near main, and takes the groups the old
+  ones allowed where it differs. When the near main cannot be reached it
+  takes every group they allowed, so that it loses no override; with
+  `*defer-unreachable*` it is left, and the data carries
+  `::deferred-texts` in its metadata."
+  [file-data libraries]
+  (let [file      {:id (:id file-data) :data file-data}
+        deferred? (volatile! false)
+
+        convert-container
+        (fn [container]
+          (reduce (fn [container shape]
+                    (if-not (legacy-text-touched? shape)
+                      container
+                      (let [ref (when (ctk/in-component-copy? shape)
+                                  (ctf/find-ref-shape file container libraries shape
+                                                      :include-deleted? true))]
+                        (if (and (nil? ref) (ctk/in-component-copy? shape) *defer-unreachable*)
+                          (do (vreset! deferred? true)
+                              container)
+                          (assoc-in container [:objects (:id shape) :touched]
+                                    (recompute-text-touched shape ref))))))
+                  container
+                  (vals (:objects container))))
+
+        file-data (ctf/update-containers file-data convert-container)]
+    (cond-> file-data
+      @deferred?
+      (vary-meta assoc ::deferred-texts true))))

@@ -315,6 +315,14 @@
     (t/is (nil? errors))
     (t/is (contains? (:touched (ths/get-shape file' :copy-child)) :content-group))))
 
+(t/deftest legacy-text-touched
+  ;; the copy has the main's content, so the old flag stands for nothing
+  (let [[found file' errors] (repair (ths/update-shape (simple) :copy-child :touched
+                                                       #{:content-group :text-content-attribute}))]
+    (t/is (= #{:legacy-text-touched} found))
+    (t/is (nil? errors))
+    (t/is (empty? (:touched (ths/get-shape file' :copy-child))))))
+
 ;; ---- Nesting
 
 (t/deftest root-main-not-allowed
