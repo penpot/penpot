@@ -368,7 +368,7 @@ msgstr "Clear trash"
 msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:314
+#, unused
 msgid "dashboard.create-branch"
 msgstr "Create branch"
 

@@ -35,11 +35,18 @@
   }
 }
 
+// out of the flow, under the badge: the badge never moves when it opens,
+// and the popover is only as wide as its longest branch name allows
 .branches-popover {
+  position: absolute;
+  inset-block-start: calc(100% + var(--sp-xs));
+  inset-inline-start: 0;
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxs);
-  inline-size: $sz-284;
+  inline-size: max-content;
+  min-inline-size: $sz-224;
+  max-inline-size: $sz-284;
   padding: var(--sp-s);
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
@@ -64,35 +71,4 @@
   list-style: none;
   max-block-size: $sz-284;
   overflow-y: auto;
-}
-
-.branches-popover-divider {
-  inline-size: 100%;
-  margin: var(--sp-xs) 0;
-  border: none;
-  border-block-start: $b-1 solid var(--color-background-quaternary);
-}
-
-.branches-popover-action {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-  inline-size: 100%;
-  min-block-size: $sz-32;
-  padding: var(--sp-xs) var(--sp-s);
-  border: none;
-  border-radius: $br-8;
-  background: none;
-  color: var(--color-foreground-primary);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--color-background-quaternary);
-  }
-
-  &:focus-visible {
-    outline: $b-1 solid var(--color-accent-primary);
-  }
 }
