@@ -81,6 +81,9 @@
 (t/deftest case-y-text-override-merges-with-main-text-change
   (t/async done (ftm/check done (cases/text-override-merges-with-main-text-change))))
 
+(t/deftest case-ba-text-style-override-against-main-style-change
+  (t/async done (ftm/check done (cases/text-style-override-against-main-style-change))))
+
 (t/deftest case-n-geometry-sync-with-rotated-instances
   (t/async done (ftm/check done (cases/geometry-sync-with-rotated-instances))))
 
