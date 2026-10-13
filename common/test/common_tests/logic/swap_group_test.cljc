@@ -14,8 +14,11 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.duplicate :as cld]
+   [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.swap :as clsw]
    [app.common.logic.variants :as clv]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
@@ -220,7 +223,7 @@
 (defn- detach
   [file label]
   (let [page    (thf/current-page file)
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -234,7 +237,7 @@
   (let [page    (thf/current-page file)
         objects (:objects page)
         ids     (cfh/get-children-ids-with-self objects (thi/id label))]
-    (cll/advance-copied-objects file
+    (cld/advance-copied-objects file
                                 page
                                 {(:id file) file}
                                 (select-keys objects ids)
@@ -541,9 +544,9 @@
         libraries {(:id file) file}
         orig      (cfh/get-children-with-self (:objects page) (:id shape))
         [new-shape _ changes]
-        (cll/generate-component-swap (pcb/empty-changes nil (:id page))
-                                     (:objects page) shape (:data file) page libraries
-                                     (:id (thc/get-component file :c02)) 0 nil {} true)
+        (clsw/generate-component-swap (pcb/empty-changes nil (:id page))
+                                      (:objects page) shape (:data file) page libraries
+                                      (:id (thc/get-component file :c02)) 0 nil {} true)
         [changes _] (clv/generate-keep-touched changes new-shape shape orig page libraries (:data file))
         file'     (thf/apply-changes file changes)
         file''    (thf/apply-undo-changes file' changes)]

@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
+   [app.common.logic.swap :as clsw]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -154,7 +155,7 @@
         libraries         {(:id library) library
                            (:id file) file}
         id-new            (:id (thc/get-component library new-component-label))
-        [_ _ changes]     (cll/generate-component-swap
+        [_ _ changes]     (clsw/generate-component-swap
                            (pcb/empty-changes nil (:id page))
                            (:objects page)
                            shape

@@ -34,9 +34,9 @@ To inspect operations within the latest `:mod-obj`:
 To capture what `update-attrs-on-switch` saw during a real UI swap, patch it temporarily in `cljs_repl`:
 
 ```clojure
-(def orig (deref #'app.common.logic.libraries/update-attrs-on-switch))
+(def orig (deref #'app.common.logic.swap/update-attrs-on-switch))
 (def trace-buf (atom []))
-(set! app.common.logic.libraries/update-attrs-on-switch
+(set! app.common.logic.swap/update-attrs-on-switch
       (fn [& args]
         (swap! trace-buf conj
                (let [[_ curr prev _ _ origin _] args]
@@ -45,7 +45,7 @@ To capture what `update-attrs-on-switch` saw during a real UI swap, patch it tem
                   :origin-ref (select-keys origin [:id :name :x :y :width :height :selrect])}))
         (apply orig args)))
 ;; trigger UI action, then inspect @trace-buf
-(set! app.common.logic.libraries/update-attrs-on-switch orig)
+(set! app.common.logic.swap/update-attrs-on-switch orig)
 ```
 
 Runtime patching is faster than adding temporary source instrumentation and avoids recompilation cleanup. Restore the var or reload the frontend when finished.

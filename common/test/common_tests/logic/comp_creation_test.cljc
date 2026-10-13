@@ -11,6 +11,8 @@
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
+   [app.common.logic.duplicate :as cld]
+   [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
@@ -38,7 +40,7 @@
 
         ;; ==== Action
         [_ component-id changes]
-        (cll/generate-add-component (pcb/empty-changes)
+        (cli/generate-add-component (pcb/empty-changes)
                                     [frame1]
                                     (:objects page)
                                     (:id page)
@@ -70,7 +72,7 @@
 
         ;; ==== Action
         [_ component-id changes]
-        (cll/generate-add-component (pcb/empty-changes)
+        (cli/generate-add-component (pcb/empty-changes)
                                     [shape1]
                                     (:objects page)
                                     (:id page)
@@ -104,7 +106,7 @@
 
           ;; ==== Action
           [_ component-id changes]
-          (cll/generate-add-component (pcb/empty-changes)
+          (cli/generate-add-component (pcb/empty-changes)
                                       [frame1]
                                       (:objects page)
                                       (:id page)
@@ -136,7 +138,7 @@
 
         ;; ==== Action
         [_ component-id changes]
-        (cll/generate-add-component (pcb/empty-changes)
+        (cli/generate-add-component (pcb/empty-changes)
                                     [shape1 shape2]
                                     (:objects page)
                                     (:id page)
@@ -174,7 +176,7 @@
 
         ;; ==== Action
         [_ component-id changes]
-        (cll/generate-add-component (pcb/empty-changes)
+        (cli/generate-add-component (pcb/empty-changes)
                                     [frame1 frame2]
                                     (:objects page)
                                     (:id page)
@@ -212,7 +214,7 @@
 
         ;; ==== Action
         [_ component-id changes]
-        (cll/generate-add-component (pcb/empty-changes)
+        (cli/generate-add-component (pcb/empty-changes)
                                     [frame1]
                                     (:objects page)
                                     (:id page)
@@ -251,7 +253,7 @@
 
         ;; ==== Action
         [_ component2-id changes]
-        (cll/generate-add-component (pcb/empty-changes)
+        (cli/generate-add-component (pcb/empty-changes)
                                     [copy1-root]
                                     (:objects page)
                                     (:id page)
@@ -315,7 +317,7 @@
 
         ;; ==== Action
         [_ changes]
-        (cll/generate-duplicate-component (pcb/empty-changes)
+        (cld/generate-duplicate-component (pcb/empty-changes)
                                           file
                                           (:id component)
                                           (uuid/next)
@@ -363,7 +365,7 @@
 
         ;; ==== Action
         [new-shape _]
-        (cll/generate-duplicate-component (pcb/empty-changes)
+        (cld/generate-duplicate-component (pcb/empty-changes)
                                           file
                                           (:id component)
                                           (uuid/next)
@@ -391,7 +393,7 @@
 
         ;; ==== Action
         [new-shape _]
-        (cll/generate-duplicate-component (pcb/empty-changes)
+        (cld/generate-duplicate-component (pcb/empty-changes)
                                           file
                                           (:id component)
                                           (uuid/next)
@@ -465,7 +467,7 @@
         file-deleted (thf/apply-changes file changes)
         page-deleted (thf/current-page file-deleted)
 
-        changes (cll/generate-restore-component (pcb/empty-changes)
+        changes (cli/generate-restore-component (pcb/empty-changes)
                                                 (:data file-deleted)
                                                 (thi/id :component1)
                                                 (:id file-deleted)
@@ -507,7 +509,7 @@
                                                 {})
         file        (-> (thf/apply-changes file changes)
                         (ctf/update-file-data #(ctpl/delete-page % (:id page2))))
-        changes     (cll/generate-restore-component (pcb/empty-changes)
+        changes     (cli/generate-restore-component (pcb/empty-changes)
                                                     (:data file)
                                                     (thi/id :component1)
                                                     (:id file)
@@ -557,7 +559,7 @@
 
         ;; ==== Action
         [new-shape changes]
-        (cll/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))  ;; This may not be moved to generate
+        (cli/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))  ;; This may not be moved to generate
                                                 (pcb/with-objects (:objects page))) ;; because in some cases the objects
                                             (:objects page)                         ;; not the same as those on the page
                                             (:id file)
@@ -600,7 +602,7 @@
 
         ;; ==== Action
         [new-shape changes]
-        (cll/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
+        (cli/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
                                                 (pcb/with-objects (:objects page)))
                                             (:objects page)
                                             (:id library)
@@ -645,7 +647,7 @@
 
         ;; ==== Action
         [new-shape changes]
-        (cll/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
+        (cli/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
                                                 (pcb/with-objects (:objects page)))
                                             (:objects page)
                                             (:id file)
@@ -691,7 +693,7 @@
 
         ;; ==== Action
         [new-shape changes]
-        (cll/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
+        (cli/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
                                                 (pcb/with-objects (:objects page)))
                                             (:objects page)
                                             (:id library)
@@ -733,7 +735,7 @@
         copy1-root (ths/get-shape file :copy1-root)
 
         ;; ==== Action
-        changes (cll/generate-detach-component (pcb/empty-changes)
+        changes (cli/generate-detach-component (pcb/empty-changes)
                                                (:id copy1-root)
                                                (:data file)
                                                (:id page)

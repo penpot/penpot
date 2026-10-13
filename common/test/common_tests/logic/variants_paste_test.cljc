@@ -11,7 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.duplicate :as cld]
    [app.common.logic.variant-properties :as clvp]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -57,7 +57,7 @@
         (pcb/with-page-id (:id page-b))
         (pcb/with-library-data (:data file-b))
         (pcb/with-objects all-objects)
-        (cll/generate-duplicate-changes all-objects
+        (cld/generate-duplicate-changes all-objects
                                         page-b
                                         (set source-ids)
                                         (gpt/point 0 0)

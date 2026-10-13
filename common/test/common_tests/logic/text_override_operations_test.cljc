@@ -12,7 +12,7 @@
    notation of `app.common.test-helpers.texts`."
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.instances :as cli]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -50,7 +50,7 @@
                                               {:children-labels [:copy-label :copy-label-text]}))
         page   (thf/current-page file)
         file'  (thf/apply-changes file
-                                  (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                  (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                                     (pcb/with-page page)
                                                                     (pcb/with-objects (:objects page)))
                                                                 page

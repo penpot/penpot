@@ -7,7 +7,7 @@
 (ns common-tests.logic.comp-detach-with-nested-test
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.logic.libraries :as cll]
+   [app.common.logic.instances :as cli]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -74,7 +74,7 @@
         page (thf/current-page file)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -116,7 +116,7 @@
         page (thf/current-page file)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -158,7 +158,7 @@
         page (thf/current-page file)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -196,7 +196,7 @@
         page (thf/current-page file)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -241,7 +241,7 @@
         page (thf/current-page file)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -286,7 +286,7 @@
         copy-nested2-ellipse (ths/get-shape file :copy-nested2-ellipse)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -330,7 +330,7 @@
         copy-nested2-ellipse (ths/get-shape file :copy-nested2-ellipse)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -375,7 +375,7 @@
         copy-nested2-rectangle (ths/get-shape file :copy-nested2-rectangle)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -420,7 +420,7 @@
         copy-nested2-rectangle (ths/get-shape file :copy-nested2-rectangle)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
@@ -458,7 +458,7 @@
         page (thf/current-page file)
 
         ;; ==== Action
-        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+        changes (cli/generate-detach-instance (-> (pcb/empty-changes nil)
                                                   (pcb/with-page page)
                                                   (pcb/with-objects (:objects page)))
                                               page
