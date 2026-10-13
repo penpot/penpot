@@ -1803,7 +1803,7 @@ msgstr "The registration is currently disabled."
 #: src/app/main/errors.cljs:216
 msgid "errors.save-failed"
 msgstr ""
-"Autosave is not working due to an error. Contact support to report the error and reload to continue from your last saved version."
+"Autosave has stopped for this session, so your changes since the last successful save cannot be saved. Download the report to help us fix it, then reload the page, or leave this file and open it again, to keep editing."
 
 #: src/app/main/data/persistence.cljs:310
 msgid "errors.save-retrying"

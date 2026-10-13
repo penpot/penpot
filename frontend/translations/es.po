@@ -1766,7 +1766,7 @@ msgstr "El registro está actualmente desactivado."
 #: src/app/main/errors.cljs:216
 msgid "errors.save-failed"
 msgstr ""
-"El autoguardado se ha detenido debido a un error. Contacta soporte para informar del error y recarga para continuar desde los últimos cambios guardados."
+"El autoguardado se ha detenido en esta sesión, así que los cambios desde el último guardado correcto no se podrán guardar. Descarga el informe para ayudarnos a arreglarlo y recarga la página, o sal de este fichero y vuelve a abrirlo, para seguir editando."
 
 #: src/app/main/errors.cljs:337
 msgid "errors.svg-parser.invalid-svg"

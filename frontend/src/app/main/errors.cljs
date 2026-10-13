@@ -460,7 +460,7 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout report-link?]
+  [& {:keys [type hint cause timeout report-link? links]
       :or {type :handled timeout 5000}}]
   (js/Promise.
    (fn [resolve _reject]
@@ -473,16 +473,23 @@
               link-report (when report-link?
                             (or report
                                 (when (ex/exception? cause)
-                                  (generate-report cause {:format (report-format cause)}))))]
+                                  (generate-report cause {:format (report-format cause)}))))
+              ;; The download link comes first because `:report-link?` is
+              ;; what puts the report on the toast at all; caller links are
+              ;; the recovery actions and follow it.
+              all-links   (cond-> []
+                            link-report
+                            (conj {:label (tr "labels.download" "report.txt")
+                                   :callback (partial download-report! link-report)})
+                            (seq links) (into links))]
           (try (st/emit!
                 (ntf/show
                  (cond-> {:content (or ^boolean hint (tr "errors.generic"))
                           :type :toast
                           :level :error
                           :timeout timeout}
-                   link-report
-                   (assoc :links [{:label (tr "labels.download" "report.txt")
-                                   :callback (partial download-report! link-report)}]))))
+                   (seq all-links)
+                   (assoc :links all-links))))
                (catch :default err
                  (.error js/console "error on emitting toast" err)))
           (resolve report)))))))
@@ -544,6 +551,19 @@
     :unhandled
     :handled))
 
+(defn- reload-page-link
+  "Recovery action for a save failure: reload the window.
+
+  Persistence stops for the session once a save fails terminally, and
+  reloading is the only way to get a fresh one without the user having to
+  know they can also leave the file and come back. `location.reload` is the
+  pattern used elsewhere in the app for a full restart."
+  []
+  {:label (tr "labels.reload-page")
+   :callback (fn [event]
+               (dom/prevent-default event)
+               (js/location.reload))})
+
 (defn flash-persistence
   [cause]
   (let [data (ex-data cause)]
@@ -556,6 +576,7 @@
              :type (persistence-report-type data)
              :timeout nil
              :report-link? true
+             :links [(reload-page-link)]
              :hint (tr "errors.save-failed")))))
 
 (defmethod ptk/handle-error :persistence

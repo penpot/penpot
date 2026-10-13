@@ -688,7 +688,44 @@
          ((:callback download) nil)
          (t/is (= [["report" "text/plain" "blob:report"]] @downloads))
          (doseq [callback @idle-callbacks] (callback))
-         (t/is (= ["blob:report"] @revoked)))))))
+         (t/is (= ["blob:report"] @revoked))
+         ;; Autosave is stopped for the whole session, so the toast also
+         ;; offers the only action that restarts it without the user having
+         ;; to know they could leave the file and come back.
+         (let [reload (get-in state [:notification :links 1])]
+           (t/is (= "labels.reload-page:" (:label reload))
+                 "the `tr` stub renders a one-argument key with a trailing colon")
+           (t/is (fn? (:callback reload)) "the reload link has a callback")))))))
+
+;; Scenario: a save fails terminally. The toast offers the report download
+;; and a reload. Proves: the recovery action reaches the user.
+;;
+;; The reload callback itself is not invoked here: `js/location` does not
+;; exist under the test runner, so the link is verified by its label and by
+;; being a callable, not by calling it.
+(t/deftest ^:async save-failure-toast-offers-a-reload-action
+  (let [events (atom [])]
+    (await
+     (mock/with-mocks*
+       {errors/generate-report (fn [_ & _] "generated error report")
+        st/emit!               (mock/stub (fn [& emitted]
+                                            (swap! events into emitted)))
+        tm/schedule            (mock/stub (fn [callback] (callback)))}
+       (errors/flash-persistence (ex-info "Save failed"
+                                          {:type :validation :hint "Save failed"}))
+       (await (async/settle))
+       ;; The report is emitted first and the toast right after, so the toast
+       ;; is the last event collected.
+       (let [state (ptk/update (last @events) {})
+             links (get-in state [:notification :links])]
+         ;; `tr` is not stubbed here, and the test runner does not load the
+         ;; catalogue, so a key comes back verbatim without its arguments.
+         (t/is (= ["labels.download" "labels.reload-page"] (mapv :label links))
+               "the toast carries the report and a reload, download first")
+         (t/is (every? #(fn? (:callback %)) links)
+               "both actions are callable")
+         (t/is (nil? (get-in state [:notification :timeout]))
+               "the toast stays until the user acts on it"))))))
 
 (t/deftest ^:async persistence-waiters-do-not-report-an-already-handled-failure
   (let [reports  (atom [])
