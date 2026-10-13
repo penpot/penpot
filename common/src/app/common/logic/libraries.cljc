@@ -1256,13 +1256,13 @@
 
                 :else
                 (if inverse?
-                  (let [is-main? (ctk/is-main-of? child-inst child-main')]
+                  (let [synced? (synced-pair? child-main' child-inst)]
                     (recur (next children-inst)
                            (remove #(= (:id %) (:id child-main')) children-main)
                            (cond-> changes
-                             is-main?
+                             synced?
                              (both-cb child-inst child-main')
-                             (not is-main?)
+                             (not synced?)
                              (swapped-cb child-inst child-main')
                              :always
                              (moved-cb child-inst child-main'))))
