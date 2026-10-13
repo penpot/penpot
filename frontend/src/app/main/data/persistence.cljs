@@ -651,7 +651,7 @@
   (cond
     ;; The file was restored to another version: the edits were made on
     ;; content that is gone.
-    (not= (:file-vern commit) (:vern file 0)) :restore
+    (not= (d/nilv (:file-vern commit) 0) (d/nilv (:vern file) 0)) :restore
     ;; The backend may have forgotten the commit id.
     (> (- now created-at) outbox-replay-window-ms) :restore
     :else :replay))
@@ -754,22 +754,40 @@
   [file rows replayed]
   (ptk/reify ::replay-outbox-rows
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ state stream]
       (let [file-id (:id file)
             [{:keys [commit] :as row} & more] rows
-            done    (fn []
-                      (when (pos? replayed)
-                        (rx/of (ntf/show {:content (tr "workspace.outbox.recovered" replayed)
-                                          :type :toast
-                                          :level :info
-                                          :timeout 5000})
-                               (reload-file))))]
+            ;; Loading the workspace hides any notification, so what is shown
+            ;; after a reload waits for the reloaded workspace.
+            done    (fn [& [rejected]]
+                      (let [notices (cond-> []
+                                      (pos? replayed)
+                                      (conj (ntf/show {:content (tr "workspace.outbox.recovered" replayed)
+                                                       :type :toast
+                                                       :level :info
+                                                       :timeout 5000}))
+                                      (seq rejected)
+                                      (conj (offer-outbox-restore file (vec rejected))))]
+                        (cond
+                          (pos? replayed)
+                          (rx/merge
+                           (->> stream
+                                (rx/filter (ptk/type? ::dw/workspace-initialized))
+                                (rx/take 1)
+                                (rx/mapcat (fn [_] (rx/from notices))))
+                           (rx/of (reload-file)))
+
+                          (seq notices)
+                          (rx/from notices)
+
+                          :else
+                          (rx/empty))))]
         (if (nil? row)
           (done)
           (->> (rp/cmd! :update-file
                         {:id file-id
                          :revn (max (:revn file 0) (get @revn-data file-id 0))
-                         :vern (:file-vern commit)
+                         :vern (d/nilv (:file-vern commit) 0)
                          :session-id (:session-id state)
                          :origin (:origin commit)
                          :created-at (:created-at commit)
@@ -788,9 +806,9 @@
                (rx/catch
                 (fn [cause]
                   (log/wrn :hint "outbox replay stopped" :cause cause)
-                  (cond->> (or (done) (rx/empty))
-                    (not (transient-error? (ex-data cause)))
-                    (rx/concat (rx/of (offer-outbox-restore file rows))))))))))))
+                  (if (transient-error? (ex-data cause))
+                    (done)
+                    (done rows))))))))))
 
 (defn- recover-outbox
   []

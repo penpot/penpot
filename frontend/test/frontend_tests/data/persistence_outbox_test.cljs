@@ -138,7 +138,14 @@
            (t/is (= (:id row) (:commit-id params)) "original commit id")
            (t/is (= 5 (:revn params)) "current revn of the file")
            (t/is (= (get-in row [:commit :changes]) (:changes params))))
-         (t/is (empty? (stored-rows backend)))))
+         (t/is (empty? (stored-rows backend)))
+         ;; Loading the workspace hides notifications: the notice waits for
+         ;; the reloaded workspace instead of being wiped by it.
+         (t/is (nil? (get-in @store [:notification :content])))
+         (open-file! store)
+         (await (async/wait-for #(some? (get-in @store [:notification :content]))
+                                "notice shown after the reload"))
+         (t/is (= :info (get-in @store [:notification :level])))))
      (fn [_ _] (rx/of {:revn 6})))))
 
 ;; Scenario: a row whose session still holds its lock (another open tab).
@@ -235,4 +242,7 @@
     (t/is (= :replay (dps/classify-outbox-row (row 2 1000) file now)))
     (t/is (= :restore (dps/classify-outbox-row (row 1 1000) file now)) "version restored")
     (t/is (= :restore (dps/classify-outbox-row (row 2 (inc dps/outbox-replay-window-ms)) file now))
-          "older than the replay window")))
+          "older than the replay window")
+    (t/is (= :replay (dps/classify-outbox-row (row nil 1000) {:vern nil} now))
+          "a missing version is version 0 on both sides")
+    (t/is (= :replay (dps/classify-outbox-row (row nil 1000) {:vern 0} now)))))
