@@ -196,7 +196,7 @@
         ;; Calculate how many parent heads share in common the original
         ;; shape and the new parent.
         pairs        (map vector orig-heads dest-heads)
-        common-count (count (take-while (fn [a b] (= a b)) pairs))]
+        common-count (count (take-while (fn [[a b]] (= (:id a) (:id b))) pairs))]
 
     (- (count orig-heads) common-count)))
 
