@@ -18,7 +18,7 @@ Variant masters are main instances and component roots. Their descendants may th
 
 ## :touched flags
 
-`:touched` is a set of override-group keywords such as `:geometry-group`, `:fill-group`, and `:text-content-group`. It means a copy diverged from its master for attrs in that sync group.
+`:touched` is a set of override-group keywords such as `:geometry-group` and `:fill-group`. It means a copy diverged from its master for attrs in that sync group. A copy text adds `:content-group` plus one group for its letters (`:text-content-text`) and one per style unit (`:text-content-fills`, `-size`, ...; list and merge rules in `mem:common/component-sync-contract`, unit table `cttx/style-units`). Files older than the feature `components/text-overrides` used `:text-content-attribute`/`:text-content-structure` instead; the migration recomputes them against the near main.
 
 The intended per-operation rules (which writes touch, what sync, reset, update-main, detach and switch do to touched groups) are in `mem:common/component-sync-contract`.
 

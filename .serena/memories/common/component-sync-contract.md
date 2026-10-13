@@ -5,7 +5,7 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 ## Definitions
 
 - Near main: the shape a copy shape's `:shape-ref` points at (inside the main of the closest enclosing copy head). Sync, reset and the override rule compare against it.
-- Touched group: a `ctk/sync-attrs` group in `:touched`, plus text subgroups `:text-content-text|attribute|structure` and `:swap-group`. Meaning: the user authored this group's value on this shape, so sync must not overwrite it. `:swap-group` on a copy sub-head: the user chose its component, so sync must not put the near main's back.
+- Touched group: a `ctk/sync-attrs` group in `:touched`, plus the text groups (see Text overrides) and `:swap-group`. Meaning: the user authored this group's value on this shape, so sync must not overwrite it. `:swap-group` on a copy sub-head: the user chose its component, so sync must not put the near main's back.
 - Authored write: a value the user set on that shape: sidebar edit, direct canvas transform of that shape, text content edit, explicit rename, applying a token to it.
 - Derived write: a value computed from other shapes or from measurement: children placed by a transformed parent, constraint resize, layout reflow, text auto-grow, `:position-data`, automatic naming, token value propagation, library color/typography sync, repair, sync itself. Derived writes never touch.
 - Expected geometry of a copy shape: the near main's geometry placed relative to the copy's parent and resized through the shape's constraints (`app.common.geom.shapes.constraints`), with layout-owned and grow-owned dimensions left to layout/measurement.
@@ -19,7 +19,7 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 
 ## Per operation
 
-- Edit on a copy shape (authored): sets the attr's group (text content: `:content-group` + diff subgroups), clears `:remote-synced`. Descendants moved/resized only because of it stay untouched.
+- Edit on a copy shape (authored): sets the attr's group (text content: `:content-group` + the text groups it changes), clears `:remote-synced`. Descendants moved/resized only because of it stay untouched.
 - Rename: an explicit rename touches `:name-group` on root or child. Automatic renames (text name following its content) are derived. Untouched names sync from the near main; a touched root name on update-main renames the component.
 - Edit on a main: no touched change on the main; triggers sync.
 - Sync main→copy: every untouched group gets the near main's value (geometry: expected geometry); touched groups keep their values; never sets or clears `:touched`. Main child added → added clean to copies. Main child deleted → copy child removed, overrides or not. Main reorder → copies follow. A swapped sub-head pairs with the main child it replaces (its `:shape-ref`) and takes only that child's placement (position, rotation, flips, constraints, `layout-item-*`); everything else syncs from its own component's main. A main child deleted → its swapped copies go with it. A swap made in the main reaches copies without `:swap-group` and spares those with it.
@@ -30,9 +30,18 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 - Instantiate / nest a copy: the new subtree has no touched groups.
 - Duplicate a copy: the new subtree keeps the source's values and touched; if its nesting level changes, touched is inherited as in detach. Paste and move out of a copy follow the same rule.
 - Swap without keep-touched: the new subtree is clean and keeps `swap-keep-attrs` values; the new head keeps the old shape's id. Inside a copy it keeps the old `:shape-ref` and gets `:swap-group` (none when the new component is the near main's); inside a main it is a plain nested copy.
-- Variant switch with keep-touched: an attr is carried from the old copy only when its group is touched and the old and new mains hold the same value for it. Resulting touched = groups of carried attrs (+ `:swap-group` when the head is inside a copy). A value equal to the new main is not carried and not touched.
+- Variant switch with keep-touched: an attr is carried from the old copy only when its group is touched and the old and new mains hold the same value for it. Resulting touched = groups of carried attrs (+ `:swap-group` when the head is inside a copy). A value equal to the new main is not carried and not touched. Texts: the same per text group (letters carried only when both mains have the same letters; a style group when both mains agree on it once placed on each other's letters).
 - Delete component: copies keep their data. The deleted main cannot be edited, so it starts no sync, but changes from components nested in it still pass through: sync updates its stored shapes (`:objects` of the deleted component), its copies, and the components that nest it. Restore brings back an up-to-date main.
 - Undo/redo: restores the exact prior state, `:touched` and `:remote-synced` included, of the op and the sync it caused together (same undo group, one step). Undo never needs a re-sync.
+
+## Text overrides
+
+- A text is letters (with line breaks) and a style per letter, all in `:content`. Its groups: `:text-content-text` (letters and line breaks) and one per style unit: `-family` (family, font id), `-weight` (weight, style, variant id), `-size`, `-line-height`, `-spacing`, `-decoration`, `-case`, `-fills`, `-typography` (typography reference), `-align`, `-direction` (paragraphs), `-valign` (root). Any of them implies `:content-group`. Splitting runs by styling is a style change, never a text override; an override covers the whole text, not single letters.
+- Touch: compare old and new content. Letters differ -> `:text-content-text`. A style unit is touched when a shared letter changes its value or, if the letters changed, when a value appears that the text did not have (typed letters take a neighbour's style and touch nothing). A token on the copy touches the units of the attributes it sets.
+- Merge (sync, and switch with the carried units): letters from the copy if overridden, else from the main. Each unit from the copy if overridden, else from the main (the source), placed on the result letters: (1) a source with one value across the text applies to every letter; (2) else letters both texts share (stretches of 3+ equal letters, by a letter diff) take the source's value; (3) else the value of the letter before, across line breaks; letters at the start take the first shared letter after them; with nothing shared, the source's first letter. Paragraph units follow the paragraph of the first shared letter, else the paragraph before. Adjacent runs with equal styles join.
+- Typography reference: kept on the result only when every unit the typography sets comes from the same side as the reference; a run that loses it still follows typography updates through its main.
+- Family and weight from different sides: sync keeps the weight side's variant id; the frontend then picks the closest variant of the family.
+- Library color and typography syncs are derived writes: they never touch.
 
 ## Geometry ownership
 
