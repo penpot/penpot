@@ -383,7 +383,7 @@
 
 ;; Resolution phase -----------------------------------------------------------
 
-(declare resolve-name)
+(declare ^:private resolve-name)
 
 (defn- token?
   [st name]

@@ -26,7 +26,7 @@
 
 (def valid-schema-types ["number" "string" "token" "object" "list"])
 
-(defn spec-name
+(defn- spec-name
   [spec]
   (str/lower-case (:name spec)))
 

@@ -52,7 +52,7 @@
     (and (sym/token? value) (map? (sym/value value))) (sym/value value)
     :else nil))
 
-(declare validate*)
+(declare ^:private validate*)
 
 (defn- validate-properties
   [config m properties visited path depth]

@@ -69,7 +69,7 @@
 
 (def valid-unit-types ["absolute" "relative"])
 
-(defn spec-name
+(defn- spec-name
   [spec]
   (str/lower-case (:name spec)))
 

@@ -154,9 +154,7 @@
   [tok]
   {:node :identifier :name (:value tok) :token tok})
 
-;; Grammar ---------------------------------------------------------------------
-
-(declare expr list-expr implicit-list-expr statement block)
+;; Grammar: expressions --------------------------------------------------------
 
 (defn- try-recover-missing-operand
   "In tolerant mode, an operator followed by EOF yields a partial node."
@@ -164,56 +162,6 @@
   (when (and (tolerant? p) (= :eof (current-type p)))
     (add-incomplete p {:type :missing-operand :start-pos (:pos op-token) :end-pos (:end-pos op-token)})
     {:node :partial-bin-op :left left :op-token op-token :token op-token}))
-
-(defn- type-declaration
-  [p]
-  (let [base-tok (eat-identifier p)
-        sub-types (loop [acc []]
-                    (if (= :dot (current-type p))
-                      (do (eat p :dot)
-                          (recur (conj acc (identifier-node (eat-identifier p)))))
-                      acc))]
-    {:node :type-decl :base-type (identifier-node base-tok) :sub-types sub-types :token base-tok}))
-
-(defn- statements-list
-  [p]
-  (let [tok (current p)
-        statements (loop [acc []]
-                     (if (contains? #{:eof :rblock} (current-type p))
-                       acc
-                       (let [acc (conj acc (statement p))]
-                         (if (= :semicolon (current-type p))
-                           (do (eat p :semicolon) (recur acc))
-                           (if (contains? #{:eof :rblock} (current-type p))
-                             acc
-                             (recur acc))))))]
-    (if (= 1 (count statements))
-      (first statements)
-      {:node :statement-list :statements statements :token tok})))
-
-(defn- assign-variable
-  [p]
-  (let [tok (eat p :reserved-keyword)
-        var-name (identifier-node (eat-identifier p))
-        _ (eat p :colon)
-        type-decl (type-declaration p)]
-    (if (= :assign (current-type p))
-      (do (eat p :assign)
-          {:node :assign :var-name var-name :type-decl type-decl
-           :assignment-expr (list-expr p) :token tok})
-      {:node :assign :var-name var-name :type-decl type-decl :assignment-expr nil :token tok})))
-
-(defn- reassign-variable
-  ([p] (reassign-variable p nil))
-  ([p name-tok]
-   (let [name-tok (or name-tok (eat-identifier p))
-         identifiers (loop [acc [(identifier-node name-tok)]]
-                       (if (= :dot (current-type p))
-                         (do (eat p :dot)
-                             (recur (conj acc (identifier-node (eat-identifier p)))))
-                         acc))]
-     (eat p :assign)
-     {:node :reassign :identifiers identifiers :value (list-expr p) :token name-tok})))
 
 (defn- format-node
   [p node]
@@ -235,117 +183,6 @@
           (format-node p node)
           node)))))
 
-(defn- condition-expr
-  [p]
-  (when (= :string (current-type p))
-    (when-let [nt (peek-token p)]
-      (when (= :assign (:type nt))
-        (err/raise :parser/condition-must-be-boolean {:token (current p)}))))
-  (expr p))
-
-(defn- return-statement
-  [p]
-  (let [tok (eat p :reserved-keyword)]
-    {:node :return :expr (list-expr p) :token tok}))
-
-(defn- while-statement
-  [p]
-  (let [tok (eat p :reserved-keyword)]
-    (eat p :lparen)
-    (let [condition (condition-expr p)]
-      (eat p :rparen)
-      {:node :while :condition condition :body (:statements (block p)) :token tok})))
-
-(defn- expect-identifier-value
-  [p expected]
-  (when-not (identifier-token? p)
-    (err/raise :parser/expected-token-type
-               {:token (current p)
-                :data {:expected expected :got (lex/token-type-name (current-type p))}}))
-  (let [tok (eat p (current-type p))]
-    (:value tok)))
-
-(defn- for-statement
-  [p]
-  (let [tok (eat p :reserved-keyword)
-        item-var (expect-identifier-value p "identifier")
-        index-var (when (= :comma (current-type p))
-                    (eat p :comma)
-                    (expect-identifier-value p "identifier"))]
-    (when-not (and (identifier-token? p) (= "in" (:value (current p))))
-      (err/raise :parser/expected-token-type
-                 {:token (current p)
-                  :data {:expected "'in'" :got (str (:value (current p)))}}))
-    (eat p (current-type p))
-    (let [collection (expr p)
-          body (:statements (block p))]
-      (when (= :semicolon (current-type p))
-        (eat p :semicolon))
-      {:node :for-each :item-var item-var :index-var index-var
-       :collection collection :body body :token tok})))
-
-(defn- if-statement
-  [p]
-  (let [tok (eat p :reserved-keyword)
-        condition-clause (fn []
-                           (eat p :lparen)
-                           (let [c (condition-expr p)]
-                             (eat p :rparen)
-                             {:node :if-condition :condition c :body (:statements (block p)) :token tok}))
-        first-clause (condition-clause)
-        conditions (loop [acc [first-clause]]
-                     (let [cur (current p)]
-                       (if (and (= :reserved-keyword (:type cur)) (= "elif" (:value cur)))
-                         (do (eat p :reserved-keyword)
-                             (recur (conj acc (condition-clause))))
-                         acc)))
-        else-body (let [cur (current p)]
-                    (when (and (= :reserved-keyword (:type cur)) (= "else" (:value cur)))
-                      (eat p :reserved-keyword)
-                      (:statements (block p))))]
-    {:node :if :conditions conditions :else-body else-body :token tok}))
-
-(defn- block
-  [p]
-  (eat p :lblock)
-  (let [statements (statements-list p)]
-    (eat p :rblock)
-    {:node :block :statements statements}))
-
-(defn- explicit-list
-  [p]
-  (let [tok (eat p :lblock)
-        elements (if (= :rblock (current-type p))
-                   []
-                   (loop [acc [(expr p)]]
-                     (if (= :comma (current-type p))
-                       (do (eat p :comma) (recur (conj acc (expr p))))
-                       acc)))]
-    (eat p :rblock)
-    {:node :list :elements elements :token tok}))
-
-(defn- implicit-list-expr
-  [p]
-  (let [tok (current p)
-        elements (loop [acc [(expr p)]]
-                   (case (current-type p)
-                     (:comma :rparen :eof :semicolon) acc
-                     (recur (conj acc (expr p)))))]
-    (if (= 1 (count elements))
-      (first elements)
-      {:node :implicit-list :elements elements :token tok})))
-
-(defn- list-expr
-  [p]
-  (let [tok (current p)
-        elements (loop [acc [(implicit-list-expr p)]]
-                   (if (= :comma (current-type p))
-                     (do (eat p :comma) (recur (conj acc (implicit-list-expr p))))
-                     acc))]
-    (if (= 1 (count elements))
-      (first elements)
-      {:node :list :elements elements :token tok})))
-
 (defn- bin-op-loop
   "Left associative binary operator loop over `operand-fn` for tokens
   accepted by `op?`."
@@ -359,7 +196,9 @@
             (recur {:node :bin-op :left node :op-token tok :right (operand-fn p) :token tok})))
         node))))
 
-(declare factor)
+;; Primary expressions contain whole expressions: parentheses, lists and
+;; function arguments.
+(declare ^:private factor)
 
 ;; Operator predicates use `case`: they run at every precedence level for
 ;; every token.
@@ -404,6 +243,40 @@
 (defn- expr
   [p]
   (bin-op-loop p logic-term logic-op?))
+
+(defn- implicit-list-expr
+  [p]
+  (let [tok (current p)
+        elements (loop [acc [(expr p)]]
+                   (case (current-type p)
+                     (:comma :rparen :eof :semicolon) acc
+                     (recur (conj acc (expr p)))))]
+    (if (= 1 (count elements))
+      (first elements)
+      {:node :implicit-list :elements elements :token tok})))
+
+(defn- list-expr
+  [p]
+  (let [tok (current p)
+        elements (loop [acc [(implicit-list-expr p)]]
+                   (if (= :comma (current-type p))
+                     (do (eat p :comma) (recur (conj acc (implicit-list-expr p))))
+                     acc))]
+    (if (= 1 (count elements))
+      (first elements)
+      {:node :list :elements elements :token tok})))
+
+(defn- explicit-list
+  [p]
+  (let [tok (eat p :lblock)
+        elements (if (= :rblock (current-type p))
+                   []
+                   (loop [acc [(expr p)]]
+                     (if (= :comma (current-type p))
+                       (do (eat p :comma) (recur (conj acc (expr p))))
+                       acc)))]
+    (eat p :rblock)
+    {:node :list :elements elements :token tok}))
 
 (defn- function-call
   [p name-tok]
@@ -606,6 +479,138 @@
 
       :else
       (parse-error p :parser/unexpected-token {:token (str (:value tok))}))))
+
+;; Grammar: statements ---------------------------------------------------------
+
+;; Blocks contain statements.
+(declare ^:private statement)
+
+(defn- statements-list
+  [p]
+  (let [tok (current p)
+        statements (loop [acc []]
+                     (if (contains? #{:eof :rblock} (current-type p))
+                       acc
+                       (let [acc (conj acc (statement p))]
+                         (if (= :semicolon (current-type p))
+                           (do (eat p :semicolon) (recur acc))
+                           (if (contains? #{:eof :rblock} (current-type p))
+                             acc
+                             (recur acc))))))]
+    (if (= 1 (count statements))
+      (first statements)
+      {:node :statement-list :statements statements :token tok})))
+
+(defn- block
+  [p]
+  (eat p :lblock)
+  (let [statements (statements-list p)]
+    (eat p :rblock)
+    {:node :block :statements statements}))
+
+(defn- type-declaration
+  [p]
+  (let [base-tok (eat-identifier p)
+        sub-types (loop [acc []]
+                    (if (= :dot (current-type p))
+                      (do (eat p :dot)
+                          (recur (conj acc (identifier-node (eat-identifier p)))))
+                      acc))]
+    {:node :type-decl :base-type (identifier-node base-tok) :sub-types sub-types :token base-tok}))
+
+(defn- condition-expr
+  [p]
+  (when (= :string (current-type p))
+    (when-let [nt (peek-token p)]
+      (when (= :assign (:type nt))
+        (err/raise :parser/condition-must-be-boolean {:token (current p)}))))
+  (expr p))
+
+(defn- assign-variable
+  [p]
+  (let [tok (eat p :reserved-keyword)
+        var-name (identifier-node (eat-identifier p))
+        _ (eat p :colon)
+        type-decl (type-declaration p)]
+    (if (= :assign (current-type p))
+      (do (eat p :assign)
+          {:node :assign :var-name var-name :type-decl type-decl
+           :assignment-expr (list-expr p) :token tok})
+      {:node :assign :var-name var-name :type-decl type-decl :assignment-expr nil :token tok})))
+
+(defn- reassign-variable
+  ([p] (reassign-variable p nil))
+  ([p name-tok]
+   (let [name-tok (or name-tok (eat-identifier p))
+         identifiers (loop [acc [(identifier-node name-tok)]]
+                       (if (= :dot (current-type p))
+                         (do (eat p :dot)
+                             (recur (conj acc (identifier-node (eat-identifier p)))))
+                         acc))]
+     (eat p :assign)
+     {:node :reassign :identifiers identifiers :value (list-expr p) :token name-tok})))
+
+(defn- return-statement
+  [p]
+  (let [tok (eat p :reserved-keyword)]
+    {:node :return :expr (list-expr p) :token tok}))
+
+(defn- while-statement
+  [p]
+  (let [tok (eat p :reserved-keyword)]
+    (eat p :lparen)
+    (let [condition (condition-expr p)]
+      (eat p :rparen)
+      {:node :while :condition condition :body (:statements (block p)) :token tok})))
+
+(defn- expect-identifier-value
+  [p expected]
+  (when-not (identifier-token? p)
+    (err/raise :parser/expected-token-type
+               {:token (current p)
+                :data {:expected expected :got (lex/token-type-name (current-type p))}}))
+  (let [tok (eat p (current-type p))]
+    (:value tok)))
+
+(defn- for-statement
+  [p]
+  (let [tok (eat p :reserved-keyword)
+        item-var (expect-identifier-value p "identifier")
+        index-var (when (= :comma (current-type p))
+                    (eat p :comma)
+                    (expect-identifier-value p "identifier"))]
+    (when-not (and (identifier-token? p) (= "in" (:value (current p))))
+      (err/raise :parser/expected-token-type
+                 {:token (current p)
+                  :data {:expected "'in'" :got (str (:value (current p)))}}))
+    (eat p (current-type p))
+    (let [collection (expr p)
+          body (:statements (block p))]
+      (when (= :semicolon (current-type p))
+        (eat p :semicolon))
+      {:node :for-each :item-var item-var :index-var index-var
+       :collection collection :body body :token tok})))
+
+(defn- if-statement
+  [p]
+  (let [tok (eat p :reserved-keyword)
+        condition-clause (fn []
+                           (eat p :lparen)
+                           (let [c (condition-expr p)]
+                             (eat p :rparen)
+                             {:node :if-condition :condition c :body (:statements (block p)) :token tok}))
+        first-clause (condition-clause)
+        conditions (loop [acc [first-clause]]
+                     (let [cur (current p)]
+                       (if (and (= :reserved-keyword (:type cur)) (= "elif" (:value cur)))
+                         (do (eat p :reserved-keyword)
+                             (recur (conj acc (condition-clause))))
+                         acc)))
+        else-body (let [cur (current p)]
+                    (when (and (= :reserved-keyword (:type cur)) (= "else" (:value cur)))
+                      (eat p :reserved-keyword)
+                      (:statements (block p))))]
+    {:node :if :conditions conditions :else-body else-body :token tok}))
 
 (defn- property-reassignment?
   "Looks ahead for `ident.prop = ...` style reassignments."

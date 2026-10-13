@@ -29,10 +29,6 @@
    [app.common.tokenscript.units :as units]
    [clojure.string :as str]))
 
-(declare interpret)
-(declare convert-to-common-format)
-(declare color->type)
-
 ;; Context --------------------------------------------------------------------
 ;;
 ;; `refs` is a map (or any function) from reference path to value; `table`
@@ -90,11 +86,18 @@
   (if (return? v) (.-value ^Return v) v))
 
 ;; Runtime: schema script execution ---------------------------------------------
+;;
+;; Schema scripts run function calls, which can run schema scripts again:
+;; the one cycle of the evaluator.
+
+(declare ^:private eval-node)
 
 (defn- run-script
-  "Interprets a registered script AST with the given references."
+  "Evaluates a registered script AST with `references` under `config`."
   [config ast references]
-  (interpret ast {:references references :config config}))
+  (if (nil? ast)
+    ""
+    (unwrap-return (eval-node (make-ctx {:config config :references references}) ast))))
 
 (defn execute-initializer
   "Runs the color initializer registered for `keyword` with `args`."
@@ -186,8 +189,8 @@
             ast (get-in spec [:to_absolute :ast])]
         (when-not ast
           (err/raise :unit/no-to-absolute-script {:data {:unit (:unit relative)}}))
-        (let [result (interpret ast {:references {"relative_value" (sym/number (:value relative))
-                                                  "other_value" (sym/number (sym/value base))}})
+        (let [result (run-script config ast {"relative_value" (sym/number (:value relative))
+                                             "other_value" (sym/number (sym/value base))})
               v (cond
                   (sym/number? result) (sym/value result)
                   (number? result) result
@@ -260,7 +263,7 @@
 (defn- call-dynamic-function
   [config {:keys [ast keyword]} args]
   (try
-    (let [result (interpret ast {:references {"input" (sym/list args false)} :config config})]
+    (let [result (run-script config ast {"input" (sym/list args false)})]
       (cond
         (nil? result) (err/raise :functions/function-returned-null {:data {:function-name keyword}})
         (string? result) (sym/string result)
@@ -324,8 +327,6 @@
             (assoc color :value (assoc (or (:value color) {}) attr value))))))))
 
 ;; Evaluation ---------------------------------------------------------------------
-
-(declare eval-node)
 
 (defn- eval-bin-op
   [ctx {:keys [left right op-token] :as node}]

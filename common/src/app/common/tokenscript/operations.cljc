@@ -128,7 +128,7 @@
     (when (and (sym/number-with-unit? a) (sym/number-with-unit? b) (not= (:unit a) (:unit b)))
       (err/raise :operations/cannot-compare-units {:data {:unit-a (:unit a) :unit-b (:unit b)}}))))
 
-(defn equality
+(defn- equality
   "`==` / `!=`."
   [op a b]
   (when-not (or (sym/null? a) (sym/null? b))
@@ -144,7 +144,7 @@
     (and (boolean? va) (boolean? vb)) (compare (if va 1 0) (if vb 1 0))
     :else (compare (str va) (str vb))))
 
-(defn ordering
+(defn- ordering
   "`>`, `<`, `>=`, `<=`."
   [op a b]
   (when (or (sym/null? a) (sym/null? b) (nil? (sym/value a)) (nil? (sym/value b)))

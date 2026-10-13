@@ -40,7 +40,7 @@
    "color" "COLOR"
    "unit" "UNIT"})
 
-(defn code->kind
+(defn- code->kind
   "Maps an error code to the error kind (the TS error class)."
   [code]
   (case (namespace code)
