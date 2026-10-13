@@ -31,7 +31,6 @@ Some legacy code violates this layering; do not copy those violations into new c
 Model, schema, and persistence shape:
 - File/page/shape/component attr changes, import/export surfaces, inspector/codegen, and cross-module checklist: `mem:common/data-model-change-checklist`.
 - Token data structures, token import/export, active theme/set semantics, and schema/coercion behavior: `mem:common/tokens-schema-subtleties`.
-- Token value expressions, the tokenscript interpreter and the token processor (`app.common.tokenscript.*`): `mem:common/tokenscript`.
 
 Geometry and layout:
 - Shape geometry invariants, redundant geometry fields, and geometry-sensitive tests: `mem:common/geometry-invariants`.
