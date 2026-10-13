@@ -54,7 +54,7 @@ dictionary of the tokens directly below it.
 | `app.common.tokenscript.processor`, `.token-data` | Token set resolution: dependency graph, structured tokens, group references, cycle detection, incremental updates. |
 | `app.common.tokenscript.validation` | Validation of token values against token type schemas. |
 | `app.common.tokenscript.errors` | Error codes and messages. Errors are `ex-info` with a data map; the processor stores the same maps as issues. |
-| `app.common.tokenscript.bundle` | Generated: the schemas shipped with Penpot. |
+| `app.common.tokenscript.schemas` | The schemas shipped with Penpot, read from the resources. |
 
 ### Processor
 
@@ -127,19 +127,19 @@ spaces, the color functions and the named colors come from
 unchanged, so they can be compared with that package; the `css-*`
 functions are Penpot's.
 
-`app.common.tokenscript.bundle` is generated from these files with the
-bundler `app.common.tokenscript.bundler`, which inlines the
-scripts and fails when a script does not parse or a schema references
-one that is not bundled:
+`app.common.tokenscript.schemas/schemas` returns these schemas with the
+script references replaced by the script text. Nothing is generated:
 
-```bash
-cd common
-clojure -M:dev -m app.common.tokenscript.bundler          # regenerate
-clojure -M:dev -m app.common.tokenscript.bundler --check  # fail when stale
-```
+- On the JVM the files are read from the classpath on first use.
+- In ClojureScript the `inline-json` macro reads them at compile time
+  and embeds them in the build as a minified JSON string, decoded on
+  first use. The macro fails the build when a script does not parse, a
+  schema references one that is not shipped, or two functions share a
+  keyword. Under shadow-cljs the files it reads are recorded like
+  `shadow.resource/inline` does, so editing a schema recompiles the
+  namespace.
 
-`common-tests.tokenscript.bundle-test` also fails when the bundle is
-stale.
+`common-tests.tokenscript.schemas-test` runs the same checks on the JVM.
 
 Schemas are identified by path URIs and never fetched. URIs with a host,
 as other tokenscript tools write them

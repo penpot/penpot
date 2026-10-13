@@ -4,28 +4,35 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns common-tests.tokenscript.bundle-test
+(ns common-tests.tokenscript.schemas-test
   (:require
-   #?(:clj [app.common.tokenscript.bundler :as bundler])
    [app.common.tokenscript :as tsc]
-   [app.common.tokenscript.bundle :as bundle]
    [app.common.tokenscript.colors :as colors]
    [app.common.tokenscript.config :as config]
    [app.common.tokenscript.registry :as reg]
    [app.common.tokenscript.schema-uri :as suri]
+   [app.common.tokenscript.schemas :as schemas]
    [clojure.string :as str]
    [clojure.test :as t]))
 
 #?(:clj
-   (t/deftest bundle-up-to-date-test
-     (t/is (= (bundler/bundle-source)
-              (slurp bundler/bundle-file))
-           "bundle.cljc is stale, run: clojure -M:dev -m app.common.tokenscript.bundler")))
+   (t/deftest schemas-check-test
+     (t/testing "the shipped scripts parse and every referenced schema is shipped"
+       (t/is (= (schemas/schemas) (schemas/check-schemas! (schemas/schemas)))))))
 
-(t/deftest bundled-uris-test
-  (t/testing "bundled schemas are identified by path URIs"
-    (doseq [{:keys [uri]} bundle/schemas]
-      (t/is (str/starts-with? uri "/api/v1/") uri))))
+(t/deftest shipped-schemas-test
+  (t/testing "shipped schemas are identified by path URIs"
+    (doseq [{:keys [uri]} (schemas/schemas)]
+      (t/is (str/starts-with? uri "/api/v1/") uri)))
+
+  (t/testing "script file references are replaced by the script text"
+    (doseq [{:keys [uri schema]} (schemas/schemas)
+            :let [scripts (case (:type schema)
+                            "color" (map :script (concat (:initializers schema) (:conversions schema)))
+                            "function" [(:script schema)]
+                            nil)]
+            {:keys [script]} scripts]
+      (t/is (and (string? script) (not (str/ends-with? script ".tokenscript"))) uri))))
 
 (t/deftest uri-host-test
   (t/testing "the host of an absolute URI is not part of its identity"

@@ -28,13 +28,13 @@
             \"double\" {:value \"{base} * 2px\"}})
     ;; => {:tokens {...} :issues nil :graph {...} :state ...}"
   (:require
-   [app.common.tokenscript.bundle :as bundle]
    [app.common.tokenscript.config :as config]
    [app.common.tokenscript.interpreter :as interp]
-   [app.common.tokenscript.processor :as processor]))
+   [app.common.tokenscript.processor :as processor]
+   [app.common.tokenscript.schemas :as schemas]))
 
 (def ^:private default-config*
-  (delay (config/register-schemas (config/make-config) bundle/schemas)))
+  (delay (config/register-schemas (config/make-config) (schemas/schemas))))
 
 (defn default-config
   "Config with the bundled Penpot schemas (color spaces, color functions
