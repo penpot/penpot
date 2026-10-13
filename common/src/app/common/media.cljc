@@ -99,26 +99,34 @@
     (str/replace filename image-extensions-re "")))
 
 (defn parse-font-weight
+  "Parses a font variant/subfamily string into a numeric weight.
+  A nil or non-string variant means the font carries no subfamily
+  metadata, so it defaults to 400 (regular), the same as a blank string."
   [variant]
-  (cond
-    (re-seq #"(?i)(?:^|[-_\s])(hairline|thin)(?=(?:[-_\s]|$|italic\b))" variant)               100
-    (re-seq #"(?i)(?:^|[-_\s])(extra\s*light|ultra\s*light)(?=(?:[-_\s]|$|italic\b))" variant) 200
-    (re-seq #"(?i)(?:^|[-_\s])(light)(?=(?:[-_\s]|$|italic\b))" variant)                       300
-    (re-seq #"(?i)(?:^|[-_\s])(normal|regular)(?=(?:[-_\s]|$|italic\b))" variant)              400
-    (re-seq #"(?i)(?:^|[-_\s])(medium)(?=(?:[-_\s]|$|italic\b))" variant)                      500
-    (re-seq #"(?i)(?:^|[-_\s])(semi\s*bold|demi\s*bold)(?=(?:[-_\s]|$|italic\b))" variant)     600
-    (re-seq #"(?i)(?:^|[-_\s])(extra\s*bold|ultra\s*bold)(?=(?:[-_\s]|$|italic\b))" variant)   800
-    (re-seq #"(?i)(?:^|[-_\s])(bold)(?=(?:[-_\s]|$|italic\b))" variant)                        700
-    (re-seq #"(?i)(?:^|[-_\s])(extra\s*black|ultra\s*black)(?=(?:[-_\s]|$|italic\b))" variant) 950
-    (re-seq #"(?i)(?:^|[-_\s])(black|heavy|solid)(?=(?:[-_\s]|$|italic\b))" variant)           900
-    :else                                                                                      400))
+  (let [variant (if (string? variant) variant "")]
+    (cond
+      (re-seq #"(?i)(?:^|[-_\s])(hairline|thin)(?=(?:[-_\s]|$|italic\b))" variant)               100
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*light|ultra\s*light)(?=(?:[-_\s]|$|italic\b))" variant) 200
+      (re-seq #"(?i)(?:^|[-_\s])(light)(?=(?:[-_\s]|$|italic\b))" variant)                       300
+      (re-seq #"(?i)(?:^|[-_\s])(normal|regular)(?=(?:[-_\s]|$|italic\b))" variant)              400
+      (re-seq #"(?i)(?:^|[-_\s])(medium)(?=(?:[-_\s]|$|italic\b))" variant)                      500
+      (re-seq #"(?i)(?:^|[-_\s])(semi\s*bold|demi\s*bold)(?=(?:[-_\s]|$|italic\b))" variant)     600
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*bold|ultra\s*bold)(?=(?:[-_\s]|$|italic\b))" variant)   800
+      (re-seq #"(?i)(?:^|[-_\s])(bold)(?=(?:[-_\s]|$|italic\b))" variant)                        700
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*black|ultra\s*black)(?=(?:[-_\s]|$|italic\b))" variant) 950
+      (re-seq #"(?i)(?:^|[-_\s])(black|heavy|solid)(?=(?:[-_\s]|$|italic\b))" variant)           900
+      :else                                                                                      400)))
 
 (defn parse-font-style
+  "Parses a font variant/subfamily string into \"italic\" or \"normal\".
+  A nil or non-string variant means the font carries no subfamily
+  metadata, so it defaults to \"normal\"."
   [variant]
-  (if (or (re-seq #"(?i)(?:^|[-_\s])(italic)(?:[-_\s]|$)" variant)
-          (re-seq #"(?i)italic$" variant))
-    "italic"
-    "normal"))
+  (let [variant (if (string? variant) variant "")]
+    (if (or (re-seq #"(?i)(?:^|[-_\s])(italic)(?:[-_\s]|$)" variant)
+            (re-seq #"(?i)italic$" variant))
+      "italic"
+      "normal")))
 
 (defn font-weight->name
   [weight]
