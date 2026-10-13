@@ -120,6 +120,20 @@
 - Delete selected path handles with Backspace or Delete [#11858](https://github.com/penpot/penpot/issues/11858) (PR: [#11896](https://github.com/penpot/penpot/pull/11896))
 - Use the tooltip component in the token pill info [#11886](https://github.com/penpot/penpot/issues/11886) (PR: [#11900](https://github.com/penpot/penpot/pull/11900))
 - Hide the duplicate cursor when alt-dragging a shape that cannot be duplicated (by @0xTHAC0) [#11905](https://github.com/penpot/penpot/issues/11905) (PR: [#11195](https://github.com/penpot/penpot/pull/11195))
+## 2.18.4
+
+### :bug: Bugs fixed
+
+- Fix storage GC deleting nothing when one pending object is still referenced [#12276](https://github.com/penpot/penpot/issues/12276) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix objects GC stopping file deletion when one file still has a child row [#12277](https://github.com/penpot/penpot/issues/12277) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix file restore leaving its storage objects marked for deletion [#12278](https://github.com/penpot/penpot/issues/12278) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix backend workers staying parked forever when nested calls take the same concurrency limits [#12279](https://github.com/penpot/penpot/issues/12279) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix one profile's activity blocking the audit events of every other profile [#12280](https://github.com/penpot/penpot/issues/12280) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+
+### :sparkles: New features & Enhancements
+
+- Add a graceful instance drain through the /readyz endpoint [#12281](https://github.com/penpot/penpot/issues/12281) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Add an accumulated queue gauge to the CLIMIT metrics [#12282](https://github.com/penpot/penpot/issues/12282) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
 
 ## 2.18.3
 

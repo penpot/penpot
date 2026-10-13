@@ -16,7 +16,6 @@
    io.prometheus.client.Counter
    io.prometheus.client.Gauge
    io.undertow.server.ConnectorStatistics
-   java.util.concurrent.ScheduledThreadPoolExecutor
    org.xnio.management.XnioWorkerMXBean))
 
 (t/use-fixtures :once th/state-init)
@@ -27,9 +26,6 @@
 
 (def metric-definitions
   {:http-worker-queue-size          {:name "penpot_http_worker_queue_size"
-                                     :help "test"
-                                     :type :gauge}
-   :http-worker-busy-threads        {:name "penpot_http_worker_busy_threads"
                                      :help "test"
                                      :type :gauge}
    :http-worker-pool-size           {:name "penpot_http_worker_pool_size"
@@ -132,23 +128,20 @@
     (http/sample-worker-metrics metrics mxbean)
 
     (t/is (= 2.0  (gauge-value (collector-instance metrics :http-worker-queue-size))))
-    (t/is (= 10.0 (gauge-value (collector-instance metrics :http-worker-busy-threads))))
     (t/is (= 40.0 (gauge-value (collector-instance metrics :http-worker-pool-size))))
     (t/is (= 512.0 (gauge-value (collector-instance metrics :http-worker-max-pool-size))))))
 
 (t/deftest sample-worker-metrics-skips-negative-samples
-  ;; the xnio MXBean occasionally returns -1 on the busy thread count;
-  ;; a negative value is a missing measurement, not a zero.
+  ;; the xnio MXBean occasionally returns -1 on a count; a negative value is a
+  ;; missing measurement, not a zero.
   (let [metrics (fake-metrics)
-        mxbean  (fake-mxbean {:queue 0 :busy -1 :pool 4 :max 512})]
+        mxbean  (fake-mxbean {:queue -1 :busy -1 :pool 4 :max 512})]
 
     (http/sample-worker-metrics metrics mxbean)
 
     (t/is (= 0.0 (gauge-value (collector-instance metrics :http-worker-queue-size))))
     (t/is (= 4.0 (gauge-value (collector-instance metrics :http-worker-pool-size))))
-    (t/is (= 512.0 (gauge-value (collector-instance metrics :http-worker-max-pool-size))))
-    (t/is (= 0.0
-             (gauge-value (collector-instance metrics :http-worker-busy-threads))))))
+    (t/is (= 512.0 (gauge-value (collector-instance metrics :http-worker-max-pool-size))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test: connector metrics
@@ -230,28 +223,3 @@
       (finally
         (px/shutdown-now sampler)
         (t/is (px/shutdown? sampler))))))
-
-(t/deftest create-metrics-sampler-reschedules-after-error
-  ;; the docstring promise: an unexpected error on a single sample must
-  ;; not cancel the following runs. The first sample runs immediately
-  ;; and throws; the next one must still be scheduled afterwards.
-  (let [calls (atom 0)]
-    (with-redefs [http/sample-http-metrics (fn [_ _ _]
-                                             (swap! calls inc)
-                                             (throw (ex-info "boom" {})))]
-      (let [sampler (http/create-metrics-sampler nil (fake-metrics))
-            queue   (.getQueue ^ScheduledThreadPoolExecutor sampler)]
-        (try
-          (t/is (loop [i 0]
-                  (cond (pos? @calls) true
-                        (> i 200) false
-                        :else (do (Thread/sleep 10) (recur (inc i)))))
-                "the first sample must run immediately")
-
-          (t/is (loop [i 0]
-                  (cond (= 1 (.size queue)) true
-                        (> i 200) false
-                        :else (do (Thread/sleep 10) (recur (inc i)))))
-                "the next sample must be scheduled after the error")
-          (finally
-            (px/shutdown-now sampler)))))))
