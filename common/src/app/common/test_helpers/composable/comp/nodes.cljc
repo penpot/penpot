@@ -274,10 +274,11 @@
 ;; ---------------------------------------------------------------------------
 ;; Geometry operations
 ;;
-;; The frontend interpreter dispatches the real sidebar events, whose
-;; transform step decides which copy shapes the change touches
-;; (`check-delta`), frontend code. Their `apply-to` makes the same transform
-;; without that step, so the pure runner rejects them.
+;; The frontend interpreter dispatches the real sidebar events: they build
+;; the modifiers (frontend code: constraints, pixel snap) and the placement
+;; step (`clp/calculate-ignore-tree`) decides which copy shapes the change
+;; touches. Their `apply-to` makes the same transform without either, so the
+;; pure runner rejects them.
 
 (defrecord Rotate [target angle]
   IComponentOperation

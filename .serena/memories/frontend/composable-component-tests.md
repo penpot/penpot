@@ -110,7 +110,7 @@ Two pure runners (no store, JVM + CLJS):
   (`:component-id-mismatch`), nor with `{:sync? false}`. Assembly ops (create/instantiate/nest/variant
   container): no sync, no undo group. `n/reset` (`reset-copy-instance` resets a lineage's latest copy) is a user op (sync +
   undo); the interpreter sends `dwl/reset-component`. `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`/`MoveShape`
-  are `:frontend-only` and throw `::runner/frontend-only` (the placement step is frontend code). Swap and switch nodes use the production
+  are `:frontend-only` and throw `::runner/frontend-only` (their modifiers come from frontend events; the placement step itself is common, `app.common.logic.placement`). Swap and switch nodes use the production
   `clv/generate-component-swap-in-place` (+ `clv/find-switch-target` for switch), the same code the
   frontend events call. Not modelled: the `:modified-at` bump, and the swap/switch event follow-ups
   (token propagation, WASM text resize, layout update). Tests:
