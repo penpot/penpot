@@ -8,6 +8,7 @@
   (:require
    #?(:clj [app.common.tokenscript.bundler :as bundler])
    [app.common.tokenscript :as tsc]
+   [app.common.tokenscript.bundle :as bundle]
    [app.common.tokenscript.colors :as colors]
    [app.common.tokenscript.config :as config]
    [app.common.tokenscript.registry :as reg]
@@ -23,7 +24,7 @@
 
 (t/deftest bundled-uris-test
   (t/testing "bundled schemas are identified by path URIs"
-    (doseq [{:keys [uri]} tsc/bundled-schemas]
+    (doseq [{:keys [uri]} bundle/schemas]
       (t/is (str/starts-with? uri "/api/v1/") uri))))
 
 (t/deftest uri-host-test

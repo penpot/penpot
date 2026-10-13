@@ -46,11 +46,11 @@ dictionary of the tokens directly below it.
 
 | Namespace | Role |
 |---|---|
-| `app.common.tokenscript` | Entry point: default config, `evaluate`, `process-tokens`, incremental operations. |
+| `app.common.tokenscript` | Resolves token sets with the bundled schemas: `default-config`, `build`, `process-tokens`, `color->hex`. Anything else is used from the namespaces below. |
 | `app.common.tokenscript.lexer`, `.parser`, `.ast` | Source text to AST. The lexer is a pure function over a state map; the parser is a recursive descent parser. |
 | `app.common.tokenscript.interpreter`, `.operations` | Tree walking evaluator. Also executes the scripts registered in the config (color initializers and conversions, unit conversions, dynamic functions). |
 | `app.common.tokenscript.symbols` | Runtime values. Scalars are immutable records; lists, dictionaries and tokens keep their content in a volatile because the language mutates them in place (`list.append(x)`). |
-| `app.common.tokenscript.config`, `.colors`, `.units`, `.functions`, `.token-types`, `.registry` | Schema registries. A config is an immutable map; schemas are registered with `register-schemas`. Scripts are parsed once at registration. |
+| `app.common.tokenscript.config`, `.colors`, `.units`, `.functions`, `.token-types`, `.registry` | Schema registries. A config is an immutable map; schemas are registered with `config/register-schemas`. Scripts are parsed once at registration. |
 | `app.common.tokenscript.processor`, `.token-data` | Token set resolution: dependency graph, structured tokens, group references, cycle detection, incremental updates. |
 | `app.common.tokenscript.validation` | Validation of token values against token type schemas. |
 | `app.common.tokenscript.errors` | Error codes and messages. Errors are `ex-info` with a data map; the processor stores the same maps as issues. |
@@ -75,10 +75,11 @@ the recursion and cycles are detected with the set of tokens being
 resolved. Errors never throw; a token depending on a failed token gets a
 `:processor/dependency-error` with the chain and the root cause.
 
-`update-token`, `create-token`, `delete-token` and `resolve-value` work
-on the returned `:state`. Updates re-resolve only the tokens that can
-observe the change (dependents, tokens under a changed group prefix,
-tokens that previously had issues) and keep the other values.
+`processor/update-token`, `create-token`, `delete-token` and
+`resolve-value` work on the returned `:state`. Updates re-resolve only
+the tokens that can observe the change (dependents, tokens under a
+changed group prefix, tokens that previously had issues) and keep the
+other values.
 
 Caches that live across builds, all keyed by inputs that fully
 determine the result:
@@ -147,7 +148,8 @@ form when they are registered or looked up, so external schemas still
 connect to the bundled ones.
 
 Additional schemas (for example user defined functions in the future)
-are plain maps registered with `app.common.tokenscript/register-schemas`.
+are plain maps registered with
+`app.common.tokenscript.config/register-schemas`.
 
 ### CSS color functions
 
