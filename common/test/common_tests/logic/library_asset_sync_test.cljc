@@ -145,3 +145,10 @@
                   (sync-file :components (thi/id :component1)))]
     ;; the touched text attributes block it
     (tm/known-failure "F3" "40" "24" (font-size-of (ths/get-shape file' :copy-child)))))
+
+(t/deftest library-typography-sync-writes-only-text-styles
+  ;; the sync merges the whole typography into each node, its own
+  ;; :modified-at included
+  (let [file' (change-library-typography (component-using-typography) "24")
+        node  (get-in (ths/get-shape file' :main-child) [:content :children 0 :children 0 :children 0])]
+    (tm/known-failure "F80" false true (contains? node :modified-at))))

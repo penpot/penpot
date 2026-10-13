@@ -80,6 +80,7 @@
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.texts :as thtx]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape-tree :as ctst]
@@ -693,6 +694,70 @@
                       :else
                       (t/is (= #{:content-group (subgroup (:edit edited))}
                                (:touched copy))))))}))
+
+(defn- text-restyle
+  "The restyle of a text in the notation that the `:fills` or `:font-family`
+   text edit `node` makes."
+  [node]
+  (let [{:keys [edit value]} node]
+    (case edit
+      :fills       #(thtx/restyle % :color (some (fn [[k v]] (when (= v (:fill-color (first value))) k))
+                                                 thtx/colors))
+      :font-family #(thtx/restyle % :family value))))
+
+(defn text-style-override-against-main-style-change
+  "Case BA. A main text in two styles (\"Price: \" and a bold \"$10\") and
+   its copy. The copy changes the fill or the font family of all of its text,
+   then the main changes one of them and syncs, then optionally the copy is
+   reset or updates the main. Each style is an override of its own (decision
+   (k)): after the sync the copy keeps its style and takes the main's other
+   one. A reset makes the copy equal to the main and clears its overrides.
+   An update main gives the main the copy's style, keeps the main's other
+   one, and clears the copy's overrides."
+  []
+  (let [copy-edit (tm/one-of [(n/edit-text :copy-instance :fills [{:fill-color "#FF0000" :fill-opacity 1}])
+                              (n/edit-text :copy-instance :font-family "Roboto")])
+        main-edit (tm/one-of [(n/edit-text :main-instance :fills [{:fill-color "#0000FF" :fill-opacity 1}])
+                              (n/edit-text :main-instance :font-family "Inter")])
+        reset     (n/reset :copy-root)
+        push      (n/update-main :copy-root)]
+    {:setup     setup/two-style-text-component-with-copy
+     :operation (tm/in-sequence [copy-edit main-edit (tm/optional (tm/one-of [reset push]))])
+     :asserter  (fn [s]
+                  (let [copy-node (tm/get-choice s copy-edit)
+                        main-node (tm/get-choice s main-edit)
+                        same?     (= (:edit copy-node) (:edit main-node))
+                        main-text ((text-restyle main-node) setup/two-style-text)
+                        merged    ((text-restyle copy-node) main-text)
+                        as-it-was ((text-restyle copy-node) setup/two-style-text)
+                        copy      (setup/copy-instance s)
+                        main      (setup/main-instance s)
+                        text-of   #(n/text-span-value % :content)]
+                    (cond
+                      (tm/applied? s reset)
+                      (do
+                        (t/is (= (thtx/normalize main-text) (text-of copy)))
+                        (t/is (= (thtx/normalize main-text) (text-of main)))
+                        (t/is (empty? (:touched copy))))
+
+                      (tm/applied? s push)
+                      (do
+                        (if same?
+                          (t/is (= (thtx/normalize merged) (text-of main)))
+                          ;; the copy pushes all of its styles, since all
+                          ;; of them stayed as the copy left them
+                          (tm/known-failure "F72" (thtx/normalize merged) (thtx/normalize as-it-was)
+                                            (text-of main)))
+                        (t/is (= (text-of main) (text-of copy)))
+                        (t/is (empty? (:touched copy))))
+
+                      :else
+                      (do
+                        (t/is (= (thtx/normalize main-text) (text-of main)))
+                        (if same?
+                          (t/is (= (thtx/normalize merged) (text-of copy)))
+                          (tm/known-failure "F72" (thtx/normalize merged) (thtx/normalize as-it-was)
+                                            (text-of copy)))))))}))
 
 ;; ---------------------------------------------------------------------------
 ;; Swap outcomes
