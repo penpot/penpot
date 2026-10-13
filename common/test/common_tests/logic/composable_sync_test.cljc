@@ -101,6 +101,9 @@
 (t/deftest case-y-text-override-merges-with-main-text-change
   (check (cases/text-override-merges-with-main-text-change)))
 
+(t/deftest case-ba-text-style-override-against-main-style-change
+  (check (cases/text-style-override-against-main-style-change)))
+
 (t/deftest case-aa-copy-swap-survives-main-changes
   (check (cases/copy-swap-survives-main-changes)))
 
