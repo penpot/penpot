@@ -115,6 +115,7 @@
 (declare update-flex-child-main-attrs)
 (declare update-flex-child-copy-attrs)
 (declare update-swapped-placement)
+(declare orient-like)
 (declare reposition-shape)
 (declare make-change)
 
@@ -2420,9 +2421,10 @@
 (defn generate-take-placement
   "Give the swapped copy head `shape-inst` the placement of `placed`, the
   shape whose position it takes, expressed in the same coordinates: the
-  attributes that place it in its parent (position, constraints and layout
-  item attributes) that the user did not change. Its content comes from its
-  own component. With `layout-placed?`, the position is left to the layout.
+  attributes that place it in its parent (position, rotation, flips,
+  constraints and layout item attributes) that the user did not change. Its
+  content comes from its own component. With `layout-placed?`, the position
+  is left to the layout.
   `objects` holds the subtree of `shape-inst`, which moves with it."
   [changes shape-inst placed objects layout-placed?]
   (let [touched    (get shape-inst :touched #{})
@@ -2444,7 +2446,9 @@
         delta      (gpt/subtract (position placed) (position shape-inst))
         move?      (and (untouched? :x)
                         (not layout-placed?)
-                        (not (gpt/almost-zero? delta)))]
+                        (not (gpt/almost-zero? delta)))
+        orient     (when (untouched? :rotation)
+                     (orient-like shape-inst placed (gsh/shape->center shape-inst)))]
     (cond-> changes
       (seq placement)
       (pcb/update-shapes [(:id shape-inst)]
@@ -2457,9 +2461,11 @@
                                       placement))
                          {:ignore-touched true})
 
-      move?
+      (or move? (some? orient))
       (pcb/update-shapes (cfh/get-children-ids-with-self objects (:id shape-inst))
-                         #(gsh/move % delta)
+                         #(cond-> %
+                            (some? orient) (orient)
+                            move?          (gsh/move delta))
                          {:ignore-touched true}))))
 
 (defn- update-swapped-placement
@@ -2768,6 +2774,28 @@
         (pcb/with-objects (:objects container))
         (generate-detach-instance container libraries id))))
 
+(defn- orient-like
+  "A function that turns each shape of the subtree of `head` around `center`,
+  so that `head` takes the flips and then the rotation of `target`; nil when
+  they already agree."
+  [head target center]
+  (let [flip-x? (not= (true? (:flip-x head)) (true? (:flip-x target)))
+        flip-y? (not= (true? (:flip-y head)) (true? (:flip-y target)))
+        flip    (when (or flip-x? flip-y?)
+                  (ctm/resize-modifiers (gpt/point (if flip-x? -1 1) (if flip-y? -1 1)) center))
+        head'   (cond-> head (some? flip) (gsh/transform-shape flip))
+        angle   (- (d/nilv (:rotation target) 0) (d/nilv (:rotation head') 0))
+        rotate? (not (mth/close? (mod angle 360) 0 0.01))
+        angle   (if (> angle 180) (- angle 360) angle)]
+    (when (or (some? flip) rotate?)
+      (fn [shape]
+        (cond-> shape
+          (some? flip)
+          (gsh/transform-shape flip)
+
+          rotate?
+          (as-> shape (gsh/transform-shape shape (ctm/rotation-modifiers shape center angle))))))))
+
 (defn- added-subtree
   "The shapes the changes add under the shape `id`, itself included."
   [changes id]
@@ -2784,25 +2812,12 @@
   of the shape it replaces, around the head's own center. They come from
   its parent, as when the parent is rotated, and are not overrides."
   [changes new-shape shape]
-  (let [angle   (d/nilv (:rotation shape) 0)
-        flip-x? (true? (:flip-x shape))
-        flip-y? (true? (:flip-y shape))]
-    (if (and (mth/almost-zero? angle) (not flip-x?) (not flip-y?))
-      changes
-      (let [center (gsh/shape->center new-shape)
-            flip   (when (or flip-x? flip-y?)
-                     (ctm/resize-modifiers (gpt/point (if flip-x? -1 1) (if flip-y? -1 1)) center))
-            orient (fn [shape]
-                     (cond-> shape
-                       (some? flip)
-                       (gsh/transform-shape flip)
-
-                       (not (mth/almost-zero? angle))
-                       (as-> shape (gsh/transform-shape shape (ctm/rotation-modifiers shape center angle)))))]
-        (pcb/update-shapes changes
-                           (map :id (added-subtree changes (:id new-shape)))
-                           orient
-                           {:ignore-touched true})))))
+  (if-let [orient (orient-like new-shape shape (gsh/shape->center new-shape))]
+    (pcb/update-shapes changes
+                       (map :id (added-subtree changes (:id new-shape)))
+                       orient
+                       {:ignore-touched true})
+    changes))
 
 (defn- main-ref-ids
   "Map the shapes of a main subtree to the shapes of a copy of it: for each
