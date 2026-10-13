@@ -99,8 +99,9 @@
 (declare uses-assets?)
 
 (declare generate-sync-shape-direct)
-(declare generate-sync-shape-direct-recursive)
-(declare generate-sync-shape-inverse-recursive)
+(declare sync-shape-recursive)
+(declare direct-sync)
+(declare inverse-sync)
 
 (declare compare-children)
 (declare add-shape-to-instance)
@@ -816,34 +817,28 @@
         component  (ctkl/get-component library (:component-id shape-inst) true)]
     (if (and (ctk/in-component-copy? shape-inst)
              (or (ctf/direct-copy? shape-inst component container nil libraries) reset?)) ; In a normal sync, we don't want to sync remote mains, only direct/near
-      (let [shape-main (when component
-                         (if reset?
+      (if component
+        (let [shape-main (if reset?
                            ;; the reset is against the ref-shape, not against the original shape of the component
                            (ctf/find-ref-shape file container libraries shape-inst)
-                           (ctf/get-content-ref-shape library component shape-inst)))
+                           (ctf/get-content-ref-shape library component shape-inst))]
+          (sync-shape-recursive changes
+                                direct-sync
+                                {:container     container
+                                 :component     component
+                                 :library       library
+                                 :file          file
+                                 :libraries     libraries
+                                 :root-inst     shape-inst
+                                 :root-main     shape-main
+                                 :reset?        reset?
+                                 :initial-root? (:component-root shape-inst)}
+                                shape-inst
+                                shape-main))
 
-            initial-root?  (:component-root shape-inst)
-
-            root-inst      shape-inst
-            root-main      shape-main]
-
-        (if component
-          (generate-sync-shape-direct-recursive changes
-                                                container
-                                                shape-inst
-                                                component
-                                                library
-                                                file
-                                                libraries
-                                                shape-main
-                                                root-inst
-                                                root-main
-                                                reset?
-                                                initial-root?)
-
-          ;; If the component is not found, because the master component has been
-          ;; deleted or the library unlinked, do nothing.
-          changes))
+        ;; If the component is not found, because the master component has been
+        ;; deleted or the library unlinked, do nothing.
+        changes)
       changes)))
 
 (defn- find-main-container
@@ -873,156 +868,180 @@
             (recur shape-inst' next-data component')
             nil))))))
 
-(defn- generate-sync-shape-direct-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root?]
+(defn- sync-shape-recursive
+  "Synchronize `shape-inst`, a shape of a copy, with `shape-main`, the main
+  shape it refers to, then pair their children (`compare-children`) and walk
+  each pair. `direction` says which way the values go and what each case
+  writes: `direct-sync` (main to copy, a normal sync or a reset) or
+  `inverse-sync` (copy to main). `ctx` holds what stays the same along the
+  walk: the copy's `:container`, the `:component`, its `:library`, `:file`
+  and `:libraries`, the roots `:root-inst` and `:root-main`, `:reset?` and
+  `:initial-root?`.
+
+  Each function of `direction` takes the changes and a step, which is `ctx`
+  plus the pair (`:shape-inst`, `:shape-main`), the container of the main
+  shape (`:main-container`) and their children (`:children-inst`,
+  `:children-main`):
+    - `:sync-shape` syncs the pair itself;
+    - `:only-inst`, `:only-main`, `:swapped` and `:moved` handle the
+      children `compare-children` does not walk (see its callbacks);
+    - `:after-children` runs once the children are done.
+  `:main-container` (ctx, shape-inst, shape-main -> container) finds the
+  container of the main shape, and `:inverse?` goes to `compare-children`."
+  [changes direction {:keys [container reset?] :as ctx} shape-inst shape-main]
   (shape-log :debug (:id shape-inst) container
-             :msg "Sync shape direct recursive"
+             :msg (if (:inverse? direction) "Sync shape inverse recursive" "Sync shape direct recursive")
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
-             :component (:name component))
+             :component (:name (:component ctx)))
 
   (if (nil? shape-main)
     ;; This should not occur, but protect against it in any case
     changes
-    (let [omit-touched?        (not reset?)
-          clear-remote-synced? (and initial-root? reset?)
-          set-remote-synced?   (and (not initial-root?) reset?)
-          changes
-          (cond-> changes
-            :always
-            (update-attrs shape-inst
-                          shape-main
-                          root-inst
-                          root-main
+    (let [main-container ((:main-container direction) ctx shape-inst shape-main)
+          step           (assoc ctx
+                                :shape-inst     shape-inst
+                                :shape-main     shape-main
+                                :main-container main-container
+                                :children-inst  (vec (ctn/get-direct-children container shape-inst))
+                                :children-main  (vec (ctn/get-direct-children main-container shape-main)))
+          walk           (fn [changes child-inst child-main]
+                           (sync-shape-recursive changes direction ctx child-inst child-main))]
+      (as-> changes $
+        ((:sync-shape direction) $ step)
+        (compare-children $
+                          shape-inst
+                          (:children-inst step)
+                          (:children-main step)
                           container
-                          omit-touched?)
+                          (partial (:only-inst direction) step)
+                          (partial (:only-main direction) step)
+                          walk
+                          (partial (:swapped direction) step)
+                          (partial (:moved direction) step)
+                          (:inverse? direction)
+                          (or (:inverse? direction) reset?))
+        ((:after-children direction) $ step)))))
 
-            (ctsl/flex-layout? shape-main)
-            (update-flex-child-copy-attrs shape-main
-                                          shape-inst
-                                          library
-                                          component
-                                          container
-                                          omit-touched?)
+(def ^:private direct-sync
+  "Sync from a main into its copy (see `sync-shape-recursive`). A normal sync
+  leaves the copy's overrides (touched groups) as they are; a reset
+  (`:reset?`) overwrites them and clears them. A reset that starts below the
+  copy root sets `:remote-synced`."
+  {:inverse?
+   false
 
-            reset?
-            (change-touched shape-inst
-                            shape-main
-                            container
-                            {:reset-touched? true})
+   :main-container
+   (fn [{:keys [container library file libraries component]} shape-inst shape-main]
+     (find-main-container container shape-inst shape-main library file libraries component))
 
-            clear-remote-synced?
-            (change-remote-synced shape-inst container nil)
+   :sync-shape
+   (fn [changes {:keys [shape-inst shape-main container library component root-inst root-main
+                        reset? initial-root?]}]
+     (let [omit-touched? (not reset?)]
+       (cond-> changes
+         :always
+         (update-attrs shape-inst
+                       shape-main
+                       root-inst
+                       root-main
+                       container
+                       omit-touched?)
 
-            set-remote-synced?
-            (change-remote-synced shape-inst container true))
+         (ctsl/flex-layout? shape-main)
+         (update-flex-child-copy-attrs shape-main
+                                       shape-inst
+                                       library
+                                       component
+                                       container
+                                       omit-touched?)
 
-          component-container (find-main-container container shape-inst shape-main library file libraries component)
+         reset?
+         (change-touched shape-inst
+                         shape-main
+                         container
+                         {:reset-touched? true})
 
-          children-inst       (vec (ctn/get-direct-children container shape-inst))
-          children-main       (vec (ctn/get-direct-children component-container shape-main))
+         (and initial-root? reset?)
+         (change-remote-synced shape-inst container nil)
 
-          only-inst (fn [changes child-inst]
-                      (shape-log :trace (:id child-inst) container
-                                 :msg "Only inst"
-                                 :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
-                      (if-not (and omit-touched?
-                                   (contains? (:touched shape-inst)
-                                              :shapes-group))
-                        (remove-shape changes
-                                      child-inst
-                                      container
-                                      omit-touched?)
-                        changes))
+         (and (not initial-root?) reset?)
+         (change-remote-synced shape-inst container true))))
 
-          only-main (fn [changes child-main]
-                      (shape-log :trace (:id child-main) component-container
-                                 :msg "Only main"
-                                 :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                      (if-not (and omit-touched?
-                                   (contains? (:touched shape-inst)
-                                              :shapes-group))
-                        (add-shape-to-instance changes
-                                               child-main
-                                               (d/index-of children-main
-                                                           child-main)
-                                               component-container
-                                               container
-                                               root-inst
-                                               root-main
-                                               omit-touched?
-                                               set-remote-synced?)
-                        changes))
+   :only-inst
+   (fn [{:keys [shape-inst container reset?]} changes child-inst]
+     (shape-log :trace (:id child-inst) container
+                :msg "Only inst"
+                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
+     (if-not (and (not reset?)
+                  (contains? (:touched shape-inst)
+                             :shapes-group))
+       (remove-shape changes
+                     child-inst
+                     container
+                     (not reset?))
+       changes))
 
-          both (fn [changes child-inst child-main]
-                 (shape-log :trace (:id child-inst) container
-                            :msg "Both"
-                            :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                            :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                 (generate-sync-shape-direct-recursive changes
-                                                       container
-                                                       child-inst
-                                                       component
-                                                       library
-                                                       file
-                                                       libraries
-                                                       child-main
-                                                       root-inst
-                                                       root-main
-                                                       reset?
-                                                       initial-root?))
+   :only-main
+   (fn [{:keys [shape-inst container main-container children-main root-inst root-main reset?
+                initial-root?]}
+        changes child-main]
+     (shape-log :trace (:id child-main) main-container
+                :msg "Only main"
+                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+     (if-not (and (not reset?)
+                  (contains? (:touched shape-inst)
+                             :shapes-group))
+       (add-shape-to-instance changes
+                              child-main
+                              (d/index-of children-main
+                                          child-main)
+                              main-container
+                              container
+                              root-inst
+                              root-main
+                              (not reset?)
+                              (and (not initial-root?) reset?))
+       changes))
 
-          swapped (fn [changes child-inst child-main]
-                    (shape-log :trace (:id child-inst) container
-                               :msg "Swapped"
-                               :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                               :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                    (if (ctk/swapped? child-inst)
-                      (update-swapped-placement changes
-                                                child-inst
-                                                child-main
-                                                root-inst
-                                                root-main
-                                                container)
-                      changes))
+   :swapped
+   (fn [{:keys [container root-inst root-main]} changes child-inst child-main]
+     (shape-log :trace (:id child-inst) container
+                :msg "Swapped"
+                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
+                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+     (if (ctk/swapped? child-inst)
+       (update-swapped-placement changes
+                                 child-inst
+                                 child-main
+                                 root-inst
+                                 root-main
+                                 container)
+       changes))
 
-          moved (fn [changes child-inst child-main]
-                  (shape-log :trace (:id child-inst) container
-                             :msg "Move"
-                             :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                             :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                  (move-shape
-                   changes
-                   child-inst
-                   (d/index-of children-inst child-inst)
-                   (d/index-of children-main child-main)
-                   container
-                   omit-touched?))
+   :moved
+   (fn [{:keys [container children-inst children-main reset?]} changes child-inst child-main]
+     (shape-log :trace (:id child-inst) container
+                :msg "Move"
+                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
+                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+     (move-shape
+      changes
+      child-inst
+      (d/index-of children-inst child-inst)
+      (d/index-of children-main child-main)
+      container
+      (not reset?)))
 
-          changes
-          (compare-children changes
-                            shape-inst
-                            children-inst
-                            children-main
-                            container
-                            only-inst
-                            only-main
-                            both
-                            swapped
-                            moved
-                            false
-                            reset?)
-
-          changes
-          (cond-> changes
-            (ctsl/grid-layout? shape-inst)
-            (update-grid-copy-attrs
-             (:id shape-inst)
-             shape-main
-             library
-             component
-             omit-touched?))]
-
-      changes)))
+   :after-children
+   (fn [changes {:keys [shape-inst shape-main library component reset?]}]
+     (cond-> changes
+       (ctsl/grid-layout? shape-inst)
+       (update-grid-copy-attrs
+        (:id shape-inst)
+        shape-main
+        library
+        component
+        (not reset?))))})
 
 (defn generate-rename-component
   "Generate the changes for rename the component with the given id, in the current file library."
@@ -1041,163 +1060,129 @@
         library        (dm/get-in libraries [(:component-file shape-inst) :data])
         component      (ctkl/get-component library (:component-id shape-inst))
 
-        shape-main     (when component
-                         (ctf/find-remote-shape container libraries shape-inst))
-
-        initial-root?  (:component-root shape-inst)
-
-        root-inst      shape-inst
-        root-main      (ctf/get-component-root library component)
-
         changes        (cond-> changes
                          (and component (contains? (:touched shape-inst) :name-group))
                          (generate-rename-component (:component-id shape-inst) (:name shape-inst) library))]
 
     (if component
-      (generate-sync-shape-inverse-recursive changes
-                                             container
-                                             shape-inst
-                                             component
-                                             library
-                                             file
-                                             libraries
-                                             shape-main
-                                             root-inst
-                                             root-main
-                                             initial-root?)
+      (sync-shape-recursive changes
+                            inverse-sync
+                            {:container     container
+                             :component     component
+                             :library       library
+                             :file          file
+                             :libraries     libraries
+                             :root-inst     shape-inst
+                             :root-main     (ctf/get-component-root library component)
+                             :initial-root? (:component-root shape-inst)}
+                            shape-inst
+                            (ctf/find-remote-shape container libraries shape-inst))
       changes)))
 
-(defn- generate-sync-shape-inverse-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root?]
-  (shape-log :trace (:id shape-inst) container
-             :msg "Sync shape inverse recursive"
-             :shape (str (:name shape-inst))
-             :component (:name component))
+(def ^:private inverse-sync
+  "Sync from a copy into its main, the update main of a copy (see
+  `sync-shape-recursive`). The copy's values, overrides included, go into
+  the main; the copy's touched groups move to the main (the copy keeps a
+  swap). Started below the copy root, it sets the copy's `:remote-synced`."
+  {:inverse?
+   true
 
-  (if (nil? shape-main)
-    ;; This should not occur, but protect against it in any case
-    changes
-    (let [component-container  (ctf/get-component-container library component)
+   :main-container
+   (fn [{:keys [library component]} _ _]
+     (ctf/get-component-container library component))
 
-          omit-touched?        false
-          set-remote-synced?   (not initial-root?)
-          clear-remote-synced? initial-root?
+   :sync-shape
+   (fn [changes {:keys [shape-inst shape-main container main-container root-inst root-main
+                        initial-root?]}]
+     (cond-> changes
+       :always
+       (-> (update-attrs shape-main
+                         shape-inst
+                         root-main
+                         root-inst
+                         main-container
+                         false)
+           (change-touched shape-inst
+                           shape-main
+                           container
+                           {:reset-touched? true :keep-swap? true})
+           (change-touched shape-main
+                           shape-inst
+                           main-container
+                           {:copy-touched? true}))
 
-          changes (cond-> changes
-                    :always
-                    (-> (update-attrs shape-main
-                                      shape-inst
-                                      root-main
-                                      root-inst
-                                      component-container
-                                      omit-touched?)
-                        (change-touched shape-inst
-                                        shape-main
-                                        container
-                                        {:reset-touched? true :keep-swap? true})
-                        (change-touched shape-main
-                                        shape-inst
-                                        component-container
-                                        {:copy-touched? true}))
+       (ctsl/flex-layout? shape-main)
+       (update-flex-child-main-attrs shape-main
+                                     shape-inst
+                                     main-container
+                                     container
+                                     false)
 
-                    (ctsl/flex-layout? shape-main)
-                    (update-flex-child-main-attrs shape-main
-                                                  shape-inst
-                                                  component-container
-                                                  container
-                                                  omit-touched?)
+       (ctsl/grid-layout? shape-main)
+       (update-grid-main-attrs shape-main
+                               shape-inst
+                               main-container
+                               container
+                               false)
 
-                    (ctsl/grid-layout? shape-main)
-                    (update-grid-main-attrs shape-main
-                                            shape-inst
-                                            component-container
-                                            container
-                                            omit-touched?)
+       initial-root?
+       (change-remote-synced shape-inst container nil)
 
-                    clear-remote-synced?
-                    (change-remote-synced shape-inst container nil)
+       (not initial-root?)
+       (change-remote-synced shape-inst container true)))
 
-                    set-remote-synced?
-                    (change-remote-synced shape-inst container true))
+   :only-inst
+   (fn [{:keys [component container main-container children-inst root-inst root-main libraries]}
+        changes child-inst]
+     (add-shape-to-main changes
+                        child-inst
+                        (d/index-of children-inst
+                                    child-inst)
+                        component
+                        main-container
+                        container
+                        root-inst
+                        root-main
+                        libraries))
 
-          children-inst   (mapv #(ctn/get-shape container %)
-                                (:shapes shape-inst))
-          children-main   (mapv #(ctn/get-shape component-container %)
-                                (:shapes shape-main))
-
-          only-inst (fn [changes child-inst]
-                      (add-shape-to-main changes
-                                         child-inst
-                                         (d/index-of children-inst
-                                                     child-inst)
-                                         component
-                                         component-container
-                                         container
-                                         root-inst
-                                         root-main
-                                         libraries))
-
-          only-main (fn [changes child-main]
-                      (remove-shape changes
-                                    child-main
-                                    component-container
-                                    false))
-
-          both (fn [changes child-inst child-main]
-                 (generate-sync-shape-inverse-recursive changes
-                                                        container
-                                                        child-inst
-                                                        component
-                                                        library
-                                                        file
-                                                        libraries
-                                                        child-main
-                                                        root-inst
-                                                        root-main
-                                                        initial-root?))
-
-          swapped (fn [changes child-inst child-main]
-                    (shape-log :trace (:id child-inst) container
-                               :msg "Match slot"
-                               :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                               :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                    ;; For now we don't make any sync here.
-                    changes)
-
-          moved (fn [changes child-inst child-main]
-                  (move-shape
-                   changes
+   :only-main
+   (fn [{:keys [main-container]} changes child-main]
+     (remove-shape changes
                    child-main
-                   (d/index-of children-main child-main)
-                   (d/index-of children-inst child-inst)
-                   component-container
+                   main-container
                    false))
 
-          changes
-          (compare-children changes
-                            shape-inst
-                            children-inst
-                            children-main
-                            container
-                            only-inst
-                            only-main
-                            both
-                            swapped
-                            moved
-                            true
-                            true)
+   :swapped
+   (fn [{:keys [container]} changes child-inst child-main]
+     (shape-log :trace (:id child-inst) container
+                :msg "Match slot"
+                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
+                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+     ;; For now we don't make any sync here.
+     changes)
 
-          ;; The inverse sync may be made on a component that is inside a
-          ;; remote library. We need to separate changes that are from
-          ;; local and remote files.
-          check-local (fn [change]
-                        (cond-> change
-                          (= (:id change) (:id shape-inst))
-                          (assoc :local-change? true)))]
+   :moved
+   (fn [{:keys [main-container children-inst children-main]} changes child-inst child-main]
+     (move-shape
+      changes
+      child-main
+      (d/index-of children-main child-main)
+      (d/index-of children-inst child-inst)
+      main-container
+      false))
 
-      (-> changes
-          (update :redo-changes (partial mapv check-local))
-          (update :undo-changes (partial map check-local))))))
+   :after-children
+   (fn [changes {:keys [shape-inst]}]
+     ;; The inverse sync may be made on a component that is inside a
+     ;; remote library. We need to separate changes that are from
+     ;; local and remote files.
+     (let [check-local (fn [change]
+                         (cond-> change
+                           (= (:id change) (:id shape-inst))
+                           (assoc :local-change? true)))]
+       (-> changes
+           (update :redo-changes (partial mapv check-local))
+           (update :undo-changes (partial map check-local)))))})
 
 
 ;; ---- Operation generation helpers ----
@@ -1761,16 +1746,14 @@
         (pcb/apply-changes-local))))
 
 
-(defn- text-change-value
-  "The content of a copy text after a sync: its own letters and styles where
-   its touched groups say so, the rest from the main's content."
-  [touched-content   ;; The :content of the copy text before updating
-   untouched-content ;; The :content of the main component
-   touched]
-  (let [groups (txt/text-overrides touched)]
-    (if (empty? groups)
-      untouched-content
-      (txt/merge-overrides touched-content untouched-content groups))))
+(defn- text-content-with-overrides
+  "The content of a text that takes the overrides `groups` (text override
+   groups, see `txt/text-overrides`) from `own-content` and everything else
+   from `source-content`."
+  [own-content source-content groups]
+  (if (empty? groups)
+    source-content
+    (txt/merge-overrides own-content source-content groups)))
 
 (defn- add-update-attr-operations
   [attr dest-shape roperations uoperations attr-val]
@@ -1813,6 +1796,90 @@
                        {:ignore-touched true})
     changes))
 
+(defn- attr-operations
+  "The redo and undo `:set` operations, as `[roperations uoperations]`, that
+   copy attributes into `dest-shape`. For each of `updatable-attrs`,
+   `attr-ops` gives the `[attr value]` pairs to set, in order: none to
+   leave it alone, and possibly some derived attributes before it."
+  [dest-shape attr-ops]
+  (reduce (fn [operations attr]
+            (reduce (fn [[roperations uoperations] [attr value]]
+                      (add-update-attr-operations attr dest-shape roperations uoperations value))
+                    operations
+                    (attr-ops attr)))
+          [[] '()]
+          updatable-attrs))
+
+(defn- sync-attr-operations
+  "The `[attr value]` pairs that sync `attr` from `origin-shape`, a main
+   shape placed like `dest-shape`, into `dest-shape`, its copy. With
+   `omit-touched?`, an attribute whose group is in `touched` (the copy's
+   overrides) is left as it is; a text's content then takes the main's
+   letters and styles the copy did not override."
+  [dest-shape origin-shape touched omit-touched? attr]
+  (let [sync-group
+        (or (ctk/resolve-sync-group (:type origin-shape) attr)
+            (ctk/resolve-sync-group (:type dest-shape) attr))
+
+        ;; position-data is a special case because can be affected by
+        ;; :geometry-group and :content-group so, if the
+        ;; position-data changes but the geometry is touched
+        ;; we need to reset the position-data so it's
+        ;; calculated again
+        reset-pos-data?
+        (and (cfh/text-shape? origin-shape)
+             (= attr :position-data)
+             (not= (:position-data origin-shape) (:position-data dest-shape))
+             (touched :geometry-group))
+
+        ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
+        ;; and attrs (bold, font, etc) are in the same attr :content.
+        ;; If only one of them is touched, we want to address this case and
+        ;; only update the untouched one
+        text-content-change?
+        (and omit-touched?
+             (cfh/text-shape? origin-shape)
+             (= :content attr)
+             (touched sync-group))
+
+        skip?
+        (or (= (get origin-shape attr) (get dest-shape attr))
+            (and (touched sync-group)
+                 omit-touched?
+                 ;; When it is a text-partial-change, we should generate operations
+                 ;; even when omit-touched? is true, but updating only the text or
+                 ;; the attributes, omiting the other part
+                 (not text-content-change?)))
+
+        attr-val
+        (when-not skip?
+          (cond
+            ;; If position data changes and the geometry group is touched
+            ;; we need to put to nil so we can regenerate it
+            reset-pos-data?
+            nil
+
+            text-content-change?
+            (text-content-with-overrides (:content dest-shape)
+                                         (:content origin-shape)
+                                         (txt/text-overrides touched))
+
+            :else
+            (get origin-shape attr)))]
+
+    (cond
+      ;; If the final attr-value is the actual value, skip
+      (or skip? (= attr-val (get dest-shape attr)))
+      []
+
+      ;; On a text-partial-change, we want to force a position-data reset
+      ;; so it's calculated again
+      text-content-change?
+      [[:position-data nil] [attr attr-val]]
+
+      :else
+      [[attr attr-val]])))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1841,94 +1908,21 @@
         ;; In case of subinstances, the comparison is always done with the
         ;; near component, because this is that we are syncing with.
         origin-shape (reposition-shape origin-shape origin-root dest-root)
-        touched      (get dest-shape :touched #{})]
+        touched      (get dest-shape :touched #{})
 
-    (loop [attrs updatable-attrs
-           roperations []
-           uoperations '()]
+        [roperations uoperations]
+        (attr-operations dest-shape
+                         #(sync-attr-operations dest-shape origin-shape touched omit-touched? %))]
 
-      (let [attr (first attrs)]
-
-        (if (nil? attr)
-          (cond-> changes
-            (seq roperations)
-            (add-update-attr-changes dest-shape container roperations uoperations)
-            :always
-            (check-detached-main dest-shape origin-shape)
-            :always
-            (check-swapped-main dest-shape origin-shape)
-            :always
-            (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
-
-          (let [sync-group
-                (or (ctk/resolve-sync-group (:type origin-shape) attr)
-                    (ctk/resolve-sync-group (:type dest-shape) attr))
-
-                ;; position-data is a special case because can be affected by
-                ;; :geometry-group and :content-group so, if the
-                ;; position-data changes but the geometry is touched
-                ;; we need to reset the position-data so it's
-                ;; calculated again
-                reset-pos-data?
-                (and (cfh/text-shape? origin-shape)
-                     (= attr :position-data)
-                     (not= (:position-data origin-shape) (:position-data dest-shape))
-                     (touched :geometry-group))
-
-                ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
-                ;; and attrs (bold, font, etc) are in the same attr :content.
-                ;; If only one of them is touched, we want to address this case and
-                ;; only update the untouched one
-                text-content-change?
-                (and omit-touched?
-                     (cfh/text-shape? origin-shape)
-                     (= :content attr)
-                     (touched sync-group))
-
-                skip-operations?
-                (or (= (get origin-shape attr) (get dest-shape attr))
-                    (and (touched sync-group)
-                         omit-touched?
-                         ;; When it is a text-partial-change, we should generate operations
-                         ;; even when omit-touched? is true, but updating only the text or
-                         ;; the attributes, omiting the other part
-                         (not text-content-change?)))
-
-                attr-val
-                (when-not skip-operations?
-                  (cond
-                    ;; If position data changes and the geometry group is touched
-                    ;; we need to put to nil so we can regenerate it
-                    reset-pos-data?
-                    nil
-
-                    text-content-change?
-                    (text-change-value (:content dest-shape)
-                                       (:content origin-shape)
-                                       touched)
-
-                    :else
-                    (get origin-shape attr)))
-
-                ;; If the final attr-value is the actual value, skip
-                skip-operations?
-                (or skip-operations?
-                    (= attr-val (get dest-shape attr)))
-
-                ;; On a text-partial-change, we want to force a position-data reset
-                ;; so it's calculated again
-                [roperations uoperations]
-                (if (and text-content-change? (not skip-operations?))
-                  (add-update-attr-operations :position-data dest-shape roperations uoperations nil)
-                  [roperations uoperations])
-
-                [roperations' uoperations']
-                (if skip-operations?
-                  [roperations uoperations]
-                  (add-update-attr-operations attr dest-shape roperations uoperations attr-val))]
-            (recur (next attrs)
-                   roperations'
-                   uoperations')))))))
+    (cond-> changes
+      (seq roperations)
+      (add-update-attr-changes dest-shape container roperations uoperations)
+      :always
+      (check-detached-main dest-shape origin-shape)
+      :always
+      (check-swapped-main dest-shape origin-shape)
+      :always
+      (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))))
 
 (defn- set-path-new-values
   [current-shape prev-shape transform]
@@ -1967,21 +1961,6 @@
 
         shape     (set-path-new-values current-shape prev-shape transform)]
     (get shape attr)))
-
-
-(defn- switch-text-change-value
-  "The content of a copy text after a variant switch: each of its text
-   overrides that the old and the new main agree on is carried over the
-   new main's content."
-  [prev-content    ;; The :content of the text before the switch
-   current-content ;; The :content of the text after the switch (a clean copy)
-   ref-content     ;; The :content of the referenced text on the main component before the switch
-   touched]
-  (let [carried (set/difference (txt/text-overrides touched)
-                                (txt/override-groups ref-content current-content))]
-    (if (empty? carried)
-      current-content
-      (txt/merge-overrides prev-content current-content carried))))
 
 
 (defn- switch-fixed-layout-geom-change-value
@@ -2119,6 +2098,150 @@
                          (mth/close? (:width selrect-a) (:width selrect-b))
                          (mth/close? (:height selrect-a) (:height selrect-b)))))))))
 
+(defn- switch-attr-operations
+  "The `[attr value]` pairs that carry `attr` over a variant switch, from
+   `previous-shape`, the copy shape before the switch placed like
+   `current-shape`, into `current-shape`, its clean copy of the new
+   variant. Only an override (a group in `touched`) is carried, and only
+   where `origin-ref-shape`, the main shape before the switch, and the new
+   copy agree on the attribute (decision (a) of the component contract);
+   geometry carries the override's size at the new position."
+  [current-shape previous-shape origin-ref-shape touched text-auto? attr]
+  (let [sync-group
+        (ctk/resolve-sync-group (:type previous-shape) attr)
+
+        skip?
+        (or
+         ;; For auto text, avoid copying geometry-driven attrs on switch.
+         (and text-auto?
+              (contains? #{:points :selrect :width :height :position-data} attr))
+
+         ;; If the attribute is not valid for the destiny, don't copy it
+         (not (cts/is-allowed-switch-keep-attr? attr (:type current-shape)))
+
+         ;; If the values are already equal, don't copy them
+         (= (get previous-shape attr) (get current-shape attr))
+
+         ;; If :selrect/:points values are already equal ignoring displacement,
+         ;; don't copy them
+         (equal-geometry? previous-shape origin-ref-shape attr)
+
+         ;; If the attr is not touched, don't copy it
+         (not (touched sync-group))
+
+         ;; If both variants (origin and destiny) don't have the same value
+         ;; for that attribute, don't copy it.
+         ;; Exceptions: :points :selrect and :content can be different
+         ;;
+         ;; Sample:
+         ;; 1. We have a variant with C1 (bg red) and C2 (bg blue).
+         ;; 2. We make a copy of C1 called Copy.
+         ;; 3. We set Copy’s bg to green (so it it has an override on the bg).
+         ;; 4. We switch Copy to use C2 as base.
+         ;; 5. The bg of Copy now is blue (we ignore the override)
+         (and
+          (not (contains? #{:points :selrect :content} attr))
+          (not= (get origin-ref-shape attr) (get current-shape attr)))
+
+         ;; The :content attr cant't be copied to elements of different type
+         (and (= attr :content) (not= (:type previous-shape) (:type current-shape))))
+
+        ;; On texts, both text (the actual letters)
+        ;; and attrs (bold, font, etc) are in the same attr :content.
+        ;; If only one of them is touched, we want to address this case and
+        ;; only update the untouched one
+        text-change?
+        (and (not skip?)
+             (cfh/text-shape? current-shape)
+             (cfh/text-shape? previous-shape)
+             (= :content attr)
+             (touched sync-group))
+
+        path-change?
+        (and (= :path (:type current-shape))
+             (contains? #{:points :selrect :content} attr))
+
+        ;; position-data is a special case because can be affected by :geometry-group and :content-group
+        ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
+        ;; so it's calculated again
+        reset-pos-data?
+        (and (not skip?)
+             (cfh/text-shape? previous-shape)
+             (or (= attr :position-data) (= attr :selrect))
+             (not= (:position-data previous-shape) (:position-data current-shape))
+             (touched :geometry-group))
+
+        skip?
+        (or skip?
+            ;; If we are going to reset the position data, skip the selrect attr
+            (and reset-pos-data? (= attr :selrect))
+            ;; Avoid copying composite geometry attrs (:selrect/:points) when the
+            ;; variant dimensions differ but neither sizing is :fix. Without this,
+            ;; :width/:height are correctly skipped by the check above
+            ;; but :selrect/:points would still carry the old override dimensions,
+            ;; leaving the shape in an inconsistent state. When :fix sizing is
+            ;; present, switch-fixed-layout-geom-change-value handles the composite
+            ;; attrs and must NOT be bypassed. Path shapes are also handled
+            ;; separately via switch-path-change-value.
+            (and (contains? #{:selrect :points} attr)
+                 (not path-change?)
+                 (not (or (= :fix (:layout-item-h-sizing previous-shape))
+                          (= :fix (:layout-item-v-sizing previous-shape))))
+                 (or (not= (get origin-ref-shape :width) (get current-shape :width))
+                     (not= (get origin-ref-shape :height) (get current-shape :height)))))
+
+        attr-val
+        (when-not skip?
+          (cond
+            ;; If position data changes and the geometry group is touched
+            ;; we need to put to nil so we can regenerate it
+            reset-pos-data?
+            nil
+
+            ;; Each text override that the old and the new main agree on is
+            ;; carried over the new main's content
+            text-change?
+            (text-content-with-overrides (:content previous-shape)
+                                         (:content current-shape)
+                                         (set/difference (txt/text-overrides touched)
+                                                         (txt/override-groups (:content origin-ref-shape)
+                                                                              (:content current-shape))))
+
+            path-change?
+            (switch-path-change-value previous-shape
+                                      current-shape
+                                      origin-ref-shape
+                                      attr)
+
+            (and (or (= :fix (:layout-item-h-sizing previous-shape))
+                     (= :fix (:layout-item-v-sizing previous-shape)))
+                 (contains? #{:points :selrect :width :height} attr))
+            (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
+
+            (and (contains? #{:points :selrect} attr)
+                 (not path-change?))
+            (switch-geom-change-value previous-shape current-shape attr)
+
+            :else
+            (get previous-shape attr)))]
+
+    ;; If the final attr-value is the actual value, skip
+    (if (or skip? (= attr-val (get current-shape attr)))
+      []
+      (cond-> []
+        ;; On a text-change, we want to force a position-data reset
+        ;; so it's calculated again
+        text-change?
+        (conj [:position-data nil])
+
+        ;; On a rotation operation we need to keep also the transformation matrixes
+        (= attr :rotation)
+        (conj [:transform (:transform previous-shape)]
+              [:transform-inverse (:transform-inverse previous-shape)])
+
+        :always
+        (conj [attr attr-val])))))
+
 (defn update-attrs-on-switch
   "Copy attributes that have changed in the shape previous to the switch
    to the current shape (post switch). Used only on variants switch"
@@ -2135,171 +2258,30 @@
         previous-shape (reposition-shape previous-shape prev-root current-root)
         touched        (get previous-shape :touched #{})
         text-auto?     (and (cfh/text-shape? current-shape)
-                            (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
+                            (contains? #{:auto-height :auto-width} (:grow-type current-shape)))
 
-    (loop [attrs       updatable-attrs
-           roperations []
-           uoperations '()]
-      (if-let [attr (first attrs)]
-        (let [sync-group
-              (ctk/resolve-sync-group (:type previous-shape) attr)
+        [roperations uoperations]
+        (attr-operations current-shape
+                         #(switch-attr-operations current-shape previous-shape origin-ref-shape
+                                                  touched text-auto? %))
 
-              skip-operations?
-              (or
-               ;; For auto text, avoid copying geometry-driven attrs on switch.
-               (and text-auto?
-                    (contains? #{:points :selrect :width :height :position-data} attr))
-
-               ;; If the attribute is not valid for the destiny, don't copy it
-               (not (cts/is-allowed-switch-keep-attr? attr (:type current-shape)))
-
-               ;; If the values are already equal, don't copy them
-               (= (get previous-shape attr) (get current-shape attr))
-
-               ;; If :selrect/:points values are already equal ignoring displacement,
-               ;; don't copy them
-               (equal-geometry? previous-shape origin-ref-shape attr)
-
-               ;; If the attr is not touched, don't copy it
-               (not (touched sync-group))
-
-               ;; If both variants (origin and destiny) don't have the same value
-               ;; for that attribute, don't copy it.
-               ;; Exceptions: :points :selrect and :content can be different
-               ;;
-               ;; Sample:
-               ;; 1. We have a variant with C1 (bg red) and C2 (bg blue).
-               ;; 2. We make a copy of C1 called Copy.
-               ;; 3. We set Copy’s bg to green (so it it has an override on the bg).
-               ;; 4. We switch Copy to use C2 as base.
-               ;; 5. The bg of Copy now is blue (we ignore the override)
-               (and
-                (not (contains? #{:points :selrect :content} attr))
-                (not= (get origin-ref-shape attr) (get current-shape attr)))
-
-               ;; The :content attr cant't be copied to elements of different type
-               (and (= attr :content) (not= (:type previous-shape) (:type current-shape))))
-
-              ;; On texts, both text (the actual letters)
-              ;; and attrs (bold, font, etc) are in the same attr :content.
-              ;; If only one of them is touched, we want to address this case and
-              ;; only update the untouched one
-              text-change?
-              (and (not skip-operations?)
-                   (cfh/text-shape? current-shape)
-                   (cfh/text-shape? previous-shape)
-                   (= :content attr)
-                   (touched sync-group))
-
-              path-change?
-              (and (= :path (:type current-shape))
-                   (contains? #{:points :selrect :content} attr))
-
-              ;; position-data is a special case because can be affected by :geometry-group and :content-group
-              ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
-              ;; so it's calculated again
-              reset-pos-data? (and
-                               (not skip-operations?)
-                               (cfh/text-shape? previous-shape)
-                               (or (= attr :position-data) (= attr :selrect))
-                               (not= (:position-data previous-shape) (:position-data current-shape))
-                               (touched :geometry-group))
-
-              skip-operations? (or skip-operations?
-                                   ;; If we are going to reset the position data, skip the selrect attr
-                                   (and reset-pos-data? (= attr :selrect))
-                                   ;; Avoid copying composite geometry attrs (:selrect/:points) when the
-                                   ;; variant dimensions differ but neither sizing is :fix. Without this,
-                                   ;; :width/:height are correctly skipped by the check above
-                                   ;; but :selrect/:points would still carry the old override dimensions,
-                                   ;; leaving the shape in an inconsistent state. When :fix sizing is
-                                   ;; present, switch-fixed-layout-geom-change-value handles the composite
-                                   ;; attrs and must NOT be bypassed. Path shapes are also handled
-                                   ;; separately via switch-path-change-value.
-                                   (and (contains? #{:selrect :points} attr)
-                                        (not path-change?)
-                                        (not (or (= :fix (:layout-item-h-sizing previous-shape))
-                                                 (= :fix (:layout-item-v-sizing previous-shape))))
-                                        (or (not= (get origin-ref-shape :width) (get current-shape :width))
-                                            (not= (get origin-ref-shape :height) (get current-shape :height)))))
-              attr-val
-              (when-not skip-operations?
-                (cond
-                  ;; If position data changes and the geometry group is touched
-                  ;; we need to put to nil so we can regenerate it
-                  reset-pos-data?
-                  nil
-
-                  text-change?
-                  (switch-text-change-value (:content previous-shape)
-                                            (:content current-shape)
-                                            (:content origin-ref-shape)
-                                            touched)
-
-                  path-change?
-                  (switch-path-change-value previous-shape
-                                            current-shape
-                                            origin-ref-shape
-                                            attr)
-
-                  (and (or (= :fix (:layout-item-h-sizing previous-shape))
-                           (= :fix (:layout-item-v-sizing previous-shape)))
-                       (contains? #{:points :selrect :width :height} attr))
-                  (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
-
-                  (and (contains? #{:points :selrect} attr)
-                       (not path-change?))
-                  (switch-geom-change-value previous-shape current-shape attr)
-
-                  :else
-                  (get previous-shape attr)))
-
-              ;; If the final attr-value is the actual value, skip
-              skip-operations? (or skip-operations?
-                                   (= attr-val (get current-shape attr)))
-
-              ;; On a text-change, we want to force a position-data reset
-              ;; so it's calculated again
-              [roperations uoperations]
-              (if (and (not skip-operations?) text-change?)
-                (add-update-attr-operations :position-data current-shape roperations uoperations nil)
-                [roperations uoperations])
-
-              ;; On a rotation operation we need to keep also the transformation matrixes
-              [roperations uoperations]
-              (if (and (not skip-operations?) (= attr :rotation))
-                (let [[roperations uoperations]
-                      (add-update-attr-operations
-                       :transform current-shape roperations uoperations (:transform previous-shape))]
-                  (add-update-attr-operations
-                   :transform-inverse current-shape roperations uoperations (:transform-inverse previous-shape)))
-                [roperations uoperations])
-
-              [roperations' uoperations']
-              (if skip-operations?
-                [roperations uoperations]
-                (add-update-attr-operations attr current-shape roperations uoperations attr-val))]
-          (recur (next attrs)
-                 roperations'
-                 uoperations'))
-
-        (let [updated-attrs (into #{} (comp (filter #(= :set (:type %)))
-                                            (map :attr))
-                                  roperations)
-              updated-sync-groups (into #{}
-                                        (keep #(ctk/resolve-sync-group (:type previous-shape) %))
-                                        updated-attrs)
-              new-content (some #(when (= (:attr %) :content) (:val %)) roperations)
-              new-touched (set/union (or (:touched current-shape) #{})
-                                     updated-sync-groups
-                                     (when (and (cfh/text-shape? current-shape) (some? new-content))
-                                       (txt/override-groups (:content current-shape) new-content)))
-              roperations (into [{:type :set-touched :touched new-touched}] roperations)
-              uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
-          (cond-> changes
-            (> (count roperations) 1)
-            (-> (add-update-attr-changes current-shape container roperations uoperations)
-                (generate-update-tokens container current-shape previous-shape touched false updated-attrs))))))))
+        updated-attrs (into #{} (comp (filter #(= :set (:type %)))
+                                      (map :attr))
+                            roperations)
+        updated-sync-groups (into #{}
+                                  (keep #(ctk/resolve-sync-group (:type previous-shape) %))
+                                  updated-attrs)
+        new-content (some #(when (= (:attr %) :content) (:val %)) roperations)
+        new-touched (set/union (or (:touched current-shape) #{})
+                               updated-sync-groups
+                               (when (and (cfh/text-shape? current-shape) (some? new-content))
+                                 (txt/override-groups (:content current-shape) new-content)))
+        roperations (into [{:type :set-touched :touched new-touched}] roperations)
+        uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
+    (cond-> changes
+      (> (count roperations) 1)
+      (-> (add-update-attr-changes current-shape container roperations uoperations)
+          (generate-update-tokens container current-shape previous-shape touched false updated-attrs)))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if
