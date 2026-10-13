@@ -67,16 +67,17 @@
 
 (defn- dependency-error
   "Error for `token-name` caused by its dependency `dep` failing with
-  `cause`, carrying the full chain back to the root cause."
+  `cause`. Carries the chain of token names down to the failing token
+  and the error map of the root cause."
   [token-name dep cause]
   (let [[chain root-cause] (if (= :processor/dependency-error (:code cause))
-                             [(into [token-name] (str/split (str (get-in cause [:data :chain])) #" → "))
-                              (get-in cause [:data :root-cause])]
-                             [[token-name dep] (:message cause)])]
+                             [(into [token-name] (get-in cause [:data :chain]))
+                              (get-in cause [:data :cause])]
+                             [[token-name dep] cause])]
     (err/error-map :processor/dependency-error
                    {:data {:token-name token-name
-                           :chain (str/join " → " chain)
-                           :root-cause root-cause}})))
+                           :chain chain
+                           :cause root-cause}})))
 
 (defn- error->field-issue
   "Error of a structured token field reported on the parent token with

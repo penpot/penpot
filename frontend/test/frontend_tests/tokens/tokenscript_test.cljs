@@ -55,13 +55,17 @@
                               {:name "b" :value "{a} + 1" :type :border-radius}
                               {:name "x" :value "{y}" :type :border-radius}
                               {:name "y" :value "{x}" :type :border-radius}
+                              {:name "z" :value "{x} + 1" :type :border-radius}
                               {:name "bad" :value "1 ´ 2" :type :border-radius}))]
     (t/is (= :error.style-dictionary/missing-reference (get-in resolved ["a" :errors 0 :error/code])))
     (t/is (= ["missing"] (get-in resolved ["a" :errors 0 :error/value])))
     (t/is (= :error.style-dictionary/missing-reference (get-in resolved ["b" :errors 0 :error/code]))
           "dependents report the missing token")
+    (t/is (= ["missing"] (get-in resolved ["b" :errors 0 :error/value])))
     (t/is (= :error.token/circular-reference (get-in resolved ["x" :errors 0 :error/code])))
     (t/is (= :error.token/circular-reference (get-in resolved ["y" :errors 0 :error/code])))
+    (t/is (= :error.token/circular-reference (get-in resolved ["z" :errors 0 :error/code]))
+          "dependents of a cycle report the cycle")
     (t/is (= :error.style-dictionary/invalid-token-value (get-in resolved ["bad" :errors 0 :error/code])))))
 
 ;; A token named "a" and a token named "a.b" can coexist: `{a}` resolves

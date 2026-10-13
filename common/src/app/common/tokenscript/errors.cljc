@@ -248,8 +248,9 @@
    (fn [{:keys [tokens]}] (str "Circular dependency detected: " (join-list tokens)))
    :processor/sub-field-not-resolved (fn [{:keys [field-path]}] (str "Sub-field '" field-path "' not resolved"))
    :processor/dependency-error
-   (fn [{:keys [token-name chain root-cause]}]
-     (str "Token '" token-name "' failed due to dependency error: " chain "\nRoot cause: " root-cause))
+   (fn [{:keys [token-name chain cause]}]
+     (str "Token '" token-name "' failed due to dependency error: " (str/join " → " chain)
+          "\nRoot cause: " (:message cause)))
    :processor/no-themes-found (fn [{:keys [theme-name]}] (str "No themes found for theme \"" theme-name "\""))
    :processor/theme-not-found
    (fn [{:keys [theme-name available-themes]}]

@@ -73,7 +73,9 @@ Resolution is a memoized depth first walk: resolving a token first
 resolves everything it references, so the evaluation order comes out of
 the recursion and cycles are detected with the set of tokens being
 resolved. Errors never throw; a token depending on a failed token gets a
-`:processor/dependency-error` with the chain and the root cause.
+`:processor/dependency-error`. Its data holds the `:chain` of token
+names down to the failing token and the root cause error map as
+`:cause`, so callers can match on the root cause's code.
 
 `processor/update-token`, `create-token`, `delete-token` and
 `resolve-value` work on the returned `:state`. Updates re-resolve only

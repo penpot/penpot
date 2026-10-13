@@ -35,13 +35,7 @@
   (let [cfg (tsc/default-config)]
     (sym/to-string (tsc/color->hex cfg color) cfg)))
 
-(declare symbol->value)
-
-(defn- entries->map
-  [entries]
-  (into {} (map (fn [[k v]] [(keyword k) (symbol->value v)])) entries))
-
-(defn symbol->value
+(defn- symbol->value
   "Converts a resolved tokenscript value into the shape used by shape
   attributes and the token forms:
 
@@ -52,30 +46,25 @@
       vectors
     - null: nil"
   [v]
-  (cond
-    (nil? v) nil
-    (sym/null? v) nil
-    (sym/token? v) (let [content (sym/value v)]
-                     (if (map? content)
-                       (entries->map content)
-                       (mapv symbol->value content)))
-    (sym/list? v) (mapv symbol->value (sym/value v))
-    (sym/dictionary? v) (entries->map (sym/value v))
-    (sym/color? v) (color->hex-string v)
-    (sym/number-with-unit? v) (let [n (sym/value v)]
-                                (case (:unit v)
-                                  "rem" (* n 16)
-                                  "%" (/ n 100)
-                                  n))
-    (sym/symbol? v) (sym/value v)
-    :else v))
-
-(defn format-value
-  "String form of a resolved tokenscript value, for display."
-  [v]
-  (if (sym/symbol? v)
-    (sym/to-string v (tsc/default-config))
-    (str v)))
+  (let [entries->map (fn [entries]
+                       (into {} (map (fn [[k v]] [(keyword k) (symbol->value v)])) entries))]
+    (cond
+      (nil? v) nil
+      (sym/null? v) nil
+      (sym/token? v) (let [content (sym/value v)]
+                       (if (map? content)
+                         (entries->map content)
+                         (mapv symbol->value content)))
+      (sym/list? v) (mapv symbol->value (sym/value v))
+      (sym/dictionary? v) (entries->map (sym/value v))
+      (sym/color? v) (color->hex-string v)
+      (sym/number-with-unit? v) (let [n (sym/value v)]
+                                  (case (:unit v)
+                                    "rem" (* n 16)
+                                    "%" (/ n 100)
+                                    n))
+      (sym/symbol? v) (sym/value v)
+      :else v)))
 
 ;; Value validation -----------------------------------------------------------
 ;;
@@ -206,22 +195,21 @@
 (defn- missing-reference-of
   "Missing token name behind an issue, if the root cause is a missing
   token."
-  [issue]
-  (let [{:keys [root-cause chain token-name]} (:data issue)]
-    (case (:code issue)
-      :processor/token-not-found token-name
-      :interpreter/unknown-reference (get-in issue [:data :reference])
-      :processor/dependency-error (when (and (string? root-cause) (str/starts-with? root-cause "Token '"))
-                                    (last (str/split (str chain) #" → ")))
-      nil)))
+  [{:keys [code data]}]
+  (case code
+    :processor/token-not-found (:token-name data)
+    :interpreter/unknown-reference (:reference data)
+    :processor/dependency-error (let [cause (:cause data)]
+                                  (when (= :processor/token-not-found (:code cause))
+                                    (get-in cause [:data :token-name])))
+    nil))
 
 (defn- circular?
-  [issue]
-  (or (= :processor/circular-dependency (:code issue))
-      (and (= :processor/dependency-error (:code issue))
-           (str/starts-with? (str (get-in issue [:data :root-cause])) "Circular dependency"))))
+  [{:keys [code data]}]
+  (or (= :processor/circular-dependency code)
+      (= :processor/circular-dependency (get-in data [:cause :code]))))
 
-(defn issue->error
+(defn- issue->error
   "Maps a tokenscript issue to a Penpot token error."
   [issue value]
   (cond

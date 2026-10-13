@@ -62,9 +62,12 @@
     (t/is (= "{a} + invalid syntax !@#" (value res "bad")) "failed tokens keep their original value")
     (t/is (= [:lexer/invalid-character] (codes res "bad")))
     (t/is (= [:processor/dependency-error] (codes res "miss")))
-    (t/is (= "miss → nope" (get-in res [:issues "miss" 0 :data :chain])))
-    (t/is (= "Token 'nope' not found" (get-in res [:issues "miss" 0 :data :root-cause])))
-    (t/is (= "miss2 → miss → nope" (get-in res [:issues "miss2" 0 :data :chain])) "chains accumulate")
+    (t/is (= ["miss" "nope"] (get-in res [:issues "miss" 0 :data :chain])))
+    (t/is (= :processor/token-not-found (get-in res [:issues "miss" 0 :data :cause :code])))
+    (t/is (= ["miss2" "miss" "nope"] (get-in res [:issues "miss2" 0 :data :chain])) "chains accumulate")
+    (t/is (= :processor/token-not-found (get-in res [:issues "miss2" 0 :data :cause :code])) "the root cause is kept")
+    (t/is (= "Token 'miss2' failed due to dependency error: miss2 → miss → nope\nRoot cause: Token 'nope' not found"
+             (get-in res [:issues "miss2" 0 :message])))
     (t/is (not (contains? (:resolved res) "nope")) "missing tokens are not invented")
     (t/is (= #{"miss" "miss2"} (proc/broken-references res)))
     (t/is (err/error-map? (proc/token-error res "bad")))
@@ -76,7 +79,7 @@
     (t/is (= [:processor/circular-dependency] (codes res "y")))
     (t/is (= [:processor/circular-dependency] (codes res "self")))
     (t/is (= [:processor/dependency-error] (codes res "z")) "dependents of a cycle get a dependency error")
-    (t/is (= "Circular dependency detected: x" (get-in res [:issues "z" 0 :data :root-cause])))))
+    (t/is (= :processor/circular-dependency (get-in res [:issues "z" 0 :data :cause :code])))))
 
 (t/deftest group-references-test
   (let [res (process {"color.primary" "#FF0000"
