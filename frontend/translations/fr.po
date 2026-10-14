@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-10-15 08:51+0000\n"
-"Last-Translator: moeenio <moeenio0@users.noreply.hosted.weblate.org>\n"
+"Last-Translator: imagoiq <imagoiq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -566,7 +566,7 @@ msgstr "Information sur la configuration de l'exportation dans Penpot."
 
 #: src/app/main/ui/exports/assets.cljs:178
 msgid "dashboard.export-shapes.no-elements"
-msgstr "Il n'y a pas de formes avec des paramètres d'exportation."
+msgstr "Aucun élément ne comporte de paramètres d'exportation."
 
 #: src/app/main/ui/exports/assets.cljs:189
 msgid "dashboard.export-shapes.title"
@@ -2396,7 +2396,7 @@ msgstr "Copier dans le Presse-papiers"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:67, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:183
 msgid "inspect.tabs.styles.toggle-style"
-msgstr "Afficher/Masquer le panneau %s"
+msgstr "Afficher/cacher le panneau %s"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:26
 msgid "inspect.tabs.styles.token-panel"
@@ -2975,7 +2975,7 @@ msgstr "Cacher"
 
 #: src/app/main/ui/viewer/comments.cljs:115, src/app/main/ui/workspace/comments.cljs:76
 msgid "labels.hide-resolved-comments"
-msgstr "Masquer les commentaires résolus"
+msgstr "Cacher les commentaires résolus"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
@@ -4092,8 +4092,8 @@ msgstr "Quitter l'organisation %s ?"
 #: src/app/main/ui/delete_shared.cljs:54
 msgid "modals.move-shared-confirm.accept"
 msgid_plural "modals.move-shared-confirm.accept"
-msgstr[0] "Déplacement"
-msgstr[1] "Déplacements"
+msgstr[0] "Déplacer"
+msgstr[1] "Déplacer"
 
 #: src/app/main/ui/delete_shared.cljs:49
 msgid "modals.move-shared-confirm.message"
@@ -4233,11 +4233,11 @@ msgstr ""
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:121
 msgid "nitrate.code-activation.footer-after"
-msgstr " et contactez-nous :"
+msgstr "Envoyez le fichier à"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:126
 msgid "nitrate.code-activation.footer-before"
-msgstr "Besoin d'un code ? Téléchargez votre "
+msgstr "et nous vous enverrons votre code."
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:119
 msgid "nitrate.code-activation.footer-download"
@@ -4855,7 +4855,7 @@ msgstr "Mettre au premier plan"
 
 #: src/app/main/data/workspace/shortcuts.cljs:86
 msgid "shortcuts.clear-undo"
-msgstr "Rétablir"
+msgstr "Effacer l'historique d'annulation"
 
 #: src/app/main/data/workspace/path/shortcuts.cljs:127, src/app/main/data/workspace/shortcuts.cljs:93
 msgid "shortcuts.copy"
@@ -5035,7 +5035,7 @@ msgstr "Répartir horizontalement"
 
 #: src/app/main/data/workspace/shortcuts.cljs:681
 msgid "shortcuts.hide-ui"
-msgstr "Afficher/masquer l'interface utilisateur"
+msgstr "Afficher/cacher l'interface utilisateur"
 
 #: src/app/main/ui/settings/shortcuts.cljs:536
 msgid "shortcuts.import-export"
@@ -5314,11 +5314,11 @@ msgstr "Afficher les mesures"
 
 #: src/app/main/data/workspace/shortcuts.cljs:592
 msgid "shortcuts.show-pixel-grid"
-msgstr "Afficher/masquer la grille de pixels"
+msgstr "Afficher/cacher la grille de pixels"
 
 #: src/app/main/data/workspace/shortcuts.cljs:630
 msgid "shortcuts.show-shortcuts"
-msgstr "Afficher/masquer les raccourcis"
+msgstr "Afficher/cacher les raccourcis"
 
 #: src/app/main/data/workspace/path/shortcuts.cljs:119
 msgid "shortcuts.snap-nodes"
@@ -5415,7 +5415,7 @@ msgstr "Activer/désactiver la palette de couleurs"
 
 #: src/app/main/data/workspace/shortcuts.cljs:439
 msgid "shortcuts.toggle-comments-visibility"
-msgstr "Afficher/masquer les commentaires"
+msgstr "Afficher/cacher les commentaires"
 
 #: src/app/main/data/workspace/shortcuts.cljs:488
 msgid "shortcuts.toggle-focus-mode"
@@ -5427,7 +5427,7 @@ msgstr "Activer/désactiver le plein écran"
 
 #: src/app/main/data/workspace/shortcuts.cljs:569
 msgid "shortcuts.toggle-guides"
-msgstr "Afficher/Masquer les repères"
+msgstr "Afficher/cacher les repères"
 
 #: src/app/main/data/workspace/shortcuts.cljs:653
 msgid "shortcuts.toggle-history"
@@ -5455,7 +5455,7 @@ msgstr "Verrouiller les proportions"
 
 #: src/app/main/data/workspace/shortcuts.cljs:555
 msgid "shortcuts.toggle-rulers"
-msgstr "Afficher/Masquer les règles"
+msgstr "Afficher/cacher les règles"
 
 #: src/app/main/data/workspace/shortcuts.cljs:621
 msgid "shortcuts.toggle-snap-guides"
@@ -5467,7 +5467,7 @@ msgstr "Aligner sur les repères de règles"
 
 #: src/app/main/data/workspace/shortcuts.cljs:671
 msgid "shortcuts.toggle-textpalette"
-msgstr "Afficher/masquer la palette de texte"
+msgstr "Afficher/cacher la palette de texte"
 
 #: src/app/main/data/dashboard/shortcuts.cljs:20, src/app/main/data/viewer/shortcuts.cljs:26, src/app/main/data/workspace/shortcuts.cljs:822
 msgid "shortcuts.toggle-theme"
@@ -5475,7 +5475,7 @@ msgstr "Changer de thème"
 
 #: src/app/main/data/workspace/shortcuts.cljs:453
 msgid "shortcuts.toggle-visibility"
-msgstr "Afficher/Masquer"
+msgstr "Afficher/cacher"
 
 #: src/app/main/data/viewer/shortcuts.cljs:55
 msgid "shortcuts.toggle-zoom-style"
@@ -6557,31 +6557,31 @@ msgstr "Rechercher et remplacer"
 
 #: src/app/main/ui/workspace/main_menu.cljs:465
 msgid "workspace.header.menu.hide-artboard-names"
-msgstr "Masquer le nom des plans de travail"
+msgstr "Cacher le nom des plans de travail"
 
 #: src/app/main/ui/workspace/main_menu.cljs:426
 msgid "workspace.header.menu.hide-comments"
-msgstr "Masquer les commentaires"
+msgstr "Cacher les commentaires"
 
 #: src/app/main/ui/workspace/main_menu.cljs:401
 msgid "workspace.header.menu.hide-guides"
-msgstr "Masquer les repères"
+msgstr "Cacher les repères"
 
 #: src/app/main/ui/workspace/main_menu.cljs:440
 msgid "workspace.header.menu.hide-palette"
-msgstr "Masquer la palette de couleurs"
+msgstr "Cacher la palette de couleurs"
 
 #: src/app/main/ui/workspace/main_menu.cljs:477
 msgid "workspace.header.menu.hide-pixel-grid"
-msgstr "Masquer la grille de pixels"
+msgstr "Cacher la grille de pixels"
 
 #: src/app/main/ui/workspace/main_menu.cljs:387
 msgid "workspace.header.menu.hide-rules"
-msgstr "Masquer les règles"
+msgstr "Cacher les règles"
 
 #: src/app/main/ui/workspace/main_menu.cljs:452
 msgid "workspace.header.menu.hide-textpalette"
-msgstr "Masquer la palette de polices"
+msgstr "Cacher la palette de polices"
 
 #: src/app/main/ui/workspace/main_menu.cljs:415
 msgid "workspace.header.menu.lock-guides"
@@ -6823,7 +6823,7 @@ msgstr "Enregistrer le style de couleur"
 
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs:338
 msgid "workspace.libraries.colors.toggle-color-palette"
-msgstr "Afficher/masquer la palette de couleurs"
+msgstr "Afficher/cacher la palette de couleurs"
 
 #: src/app/main/ui/workspace/libraries.cljs:120, src/app/main/ui/workspace/libraries.cljs:149, src/app/main/ui/workspace/libraries.cljs:191
 msgid "workspace.libraries.components"
@@ -6994,7 +6994,7 @@ msgstr "Activer/Désactiver le flou"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
 msgid "workspace.options.blur-options.toggle-more-options"
-msgstr "Afficher/masquer plus d'options"
+msgstr "Afficher/cacher plus d'options"
 
 #: src/app/main/ui/exports/assets.cljs:332
 msgid "workspace.options.cancel-export"
@@ -7391,7 +7391,7 @@ msgstr "Repères"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:231
 msgid "workspace.options.guides.toggle-guide"
-msgstr "Afficher/Masquer le repère"
+msgstr "Afficher/cacher le repère"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:583, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:602
 msgid "workspace.options.height"
@@ -7987,7 +7987,7 @@ msgstr "Solide"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:384
 msgid "workspace.options.stroke.toggle-stroke"
-msgstr "Afficher/masquer le contour"
+msgstr "Afficher/cacher le contour"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:135
 msgid "workspace.options.text-options.align-bottom"
@@ -8439,11 +8439,11 @@ msgstr "Groupe"
 
 #: src/app/main/ui/workspace/context_menu.cljs:571, src/app/main/ui/workspace/sidebar/layer_item.cljs:190
 msgid "workspace.shape.menu.hide"
-msgstr "Masquer"
+msgstr "Cacher"
 
 #: src/app/main/ui/workspace/context_menu.cljs:853, src/app/main/ui/workspace/main_menu.cljs:489
 msgid "workspace.shape.menu.hide-ui"
-msgstr "Afficher/Masquer l'interface"
+msgstr "Afficher/cacher l'interface"
 
 #: src/app/main/ui/workspace/context_menu.cljs:539, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:95
 msgid "workspace.shape.menu.intersection"
