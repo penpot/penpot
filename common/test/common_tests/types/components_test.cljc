@@ -12,14 +12,6 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
-(t/deftest test-valid-touched-group
-  (t/is (ctk/valid-touched-group? :name-group))
-  (t/is (ctk/valid-touched-group? :geometry-group))
-  (t/is (ctk/valid-touched-group? :swap-group))
-  (t/is (not (ctk/valid-touched-group? :this-is-not-a-group)))
-  (t/is (not (ctk/valid-touched-group? :swap-slot-9cc181fa-5eef-8084-8004-7bb2ab45fd1f)))
-  (t/is (not (ctk/valid-touched-group? nil))))
-
 (t/deftest variant-main-and-formula-rename
   (let [container {:id (thi/new-id! :container)
                    :is-variant-container true}

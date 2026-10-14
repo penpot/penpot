@@ -165,7 +165,8 @@
       file-data)))
 
 (defn fix-missing-swap-slots
-  "Locate shapes that have been swapped (see `ctf/swapped-subhead?`) but don't have a swap slot.
+  "Locate shapes that have been swapped (their ref is outside the near main, see
+   `ctf/ref-outside-near-main?`) but don't have a swap slot.
    In this case, add one pointing to the near match."
   [file-data libraries]
   (try
@@ -175,7 +176,7 @@
        (if (ctk/subcopy-head? shape)
          (let [container (:container (meta shape))
                file {:id (:id file-data) :data file-data}
-               swapped? (ctf/swapped-subhead?
+               swapped? (ctf/ref-outside-near-main?
                          shape container
                          #(ctf/find-ref-shape file container libraries % :include-deleted? true))
                near-match (when swapped?
