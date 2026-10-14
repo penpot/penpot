@@ -66,6 +66,23 @@
     (f page-id objects)
     (rx/empty)))
 
+(defn- variant-changes
+  "The empty changes of the page that holds the mains `opts` names (see
+  `get-variant-mains-page`), with its objects and the data of the file, or
+  nil when the file has no such page. Without `opts`, of the current page."
+  ([it state]
+   (let [page-id (:current-page-id state)
+         data    (dsh/lookup-file-data state)]
+     (-> (pcb/empty-changes it page-id)
+         (pcb/with-library-data data)
+         (pcb/with-objects (:objects (dsh/get-page data page-id))))))
+  ([it state opts]
+   (let [data (dsh/lookup-file-data state)]
+     (when-let [{:keys [page-id objects]} (get-variant-mains-page data opts)]
+       (-> (pcb/empty-changes it page-id)
+           (pcb/with-library-data data)
+           (pcb/with-objects objects))))))
+
 (defn update-properties-names-and-values
   "Compares the previous properties with the updated ones and executes the correspondent action
    for each one depending on if it needs to be removed, updated or added"
@@ -77,51 +94,41 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)]
-        (with-main-page data {:component-id component-id}
-          (fn [page-id objects]
-            (let [updated-properties   (ctv/update-number-in-repeated-prop-names updated-properties)
+      (when-let [changes (variant-changes it state {:component-id component-id})]
+        (let [updated-properties   (ctv/update-number-in-repeated-prop-names updated-properties)
 
-                  properties-to-remove (ctv/find-properties-to-remove previous-properties updated-properties)
-                  properties-to-add    (ctv/find-properties-to-add previous-properties updated-properties)
-                  properties-to-update (ctv/find-properties-to-update previous-properties updated-properties)
+              properties-to-remove (ctv/find-properties-to-remove previous-properties updated-properties)
+              properties-to-add    (ctv/find-properties-to-add previous-properties updated-properties)
+              properties-to-update (ctv/find-properties-to-update previous-properties updated-properties)
 
-                  changes (-> (pcb/empty-changes it page-id)
-                              (pcb/with-objects objects)
-                              (pcb/with-library-data data))
+              changes (reduce
+                       (fn [changes {:keys [name]}]
+                         (-> changes
+                             (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) "")))
+                       changes
+                       properties-to-remove)
 
-                  changes (reduce
-                           (fn [changes {:keys [name]}]
-                             (-> changes
-                                 (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) "")))
-                           changes
-                           properties-to-remove)
+              changes (reduce
+                       (fn [changes {:keys [name value]}]
+                         (-> changes
+                             (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) value)))
+                       changes
+                       properties-to-update)
 
-                  changes (reduce
-                           (fn [changes {:keys [name value]}]
-                             (-> changes
-                                 (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) value)))
-                           changes
-                           properties-to-update)
+              changes (reduce
+                       (fn [changes [idx {:keys [name value]}]]
+                         (-> changes
+                             (clvp/generate-add-new-property variant-id {:property-name name})
+                             (clvp/generate-update-property-value component-id (+ idx (count previous-properties)) value)))
+                       changes
+                       (map-indexed vector properties-to-add))]
 
-                  changes (reduce
-                           (fn [changes [idx {:keys [name value]}]]
-                             (-> changes
-                                 (clvp/generate-add-new-property variant-id {:property-name name})
-                                 (clvp/generate-update-property-value component-id (+ idx (count previous-properties)) value)))
-                           changes
-                           (map-indexed vector properties-to-add))
-
-                  undo-id (js/Symbol)]
-
-              (rx/of
-               (when (or (seq properties-to-remove) (seq properties-to-update))
-                 (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:rename-in-layers"}))
-               (when (seq properties-to-add)
-                 (ev/event {::ev/name "variant-add-property" ::ev/origin "workspace:rename-in-layers"}))
-               (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (dwu/commit-undo-transaction undo-id)))))))))
+          (rx/of
+           (when (or (seq properties-to-remove) (seq properties-to-update))
+             (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:rename-in-layers"}))
+           (when (seq properties-to-add)
+             (ev/event {::ev/name "variant-add-property" ::ev/origin "workspace:rename-in-layers"}))
+           (dch/commit-changes changes)))))))
 
 (defn update-property-name
   "Update the variant property name on the position pos
@@ -145,25 +152,17 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)]
-        (with-main-page data {:variant-id variant-id}
-          (fn [page-id objects]
-            (let [related-components (cfv/find-variant-components data objects variant-id)
-                  props              (-> related-components last :variant-properties)
-                  valid-pos?         (> (count props) pos)
-                  prop-name          (when valid-pos? (-> props (nth pos) :name))
-                  changes            (when valid-pos?
-                                       (-> (pcb/empty-changes it page-id)
-                                           (pcb/with-objects objects)
-                                           (pcb/with-library-data data)
-                                           (clvp/generate-update-property-name variant-id pos new-name)))
-                  undo-id            (js/Symbol)]
-              (when (and valid-pos? (not= prop-name new-name))
-                (rx/of
-                 (dwu/start-undo-transaction undo-id)
-                 (dch/commit-changes changes)
-                 (dwu/commit-undo-transaction undo-id)
-                 (ev/event {::ev/name "variant-edit-property-name" ::ev/origin trigger}))))))))))
+      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+        (let [data       (dsh/lookup-file-data state)
+              props      (-> (cfv/find-variant-components data (pcb/get-objects changes) variant-id)
+                             last
+                             :variant-properties)
+              valid-pos? (> (count props) pos)
+              prop-name  (when valid-pos? (-> props (nth pos) :name))]
+          (when (and valid-pos? (not= prop-name new-name))
+            (rx/of
+             (dch/commit-changes (clvp/generate-update-property-name changes variant-id pos new-name))
+             (ev/event {::ev/name "variant-edit-property-name" ::ev/origin trigger}))))))))
 
 (defn update-property-value
   "Updates the variant property value on the position pos in a component"
@@ -171,18 +170,8 @@
   (ptk/reify ::update-property-value
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)]
-        (with-main-page data {:component-id component-id}
-          (fn [page-id objects]
-            (let [changes (-> (pcb/empty-changes it page-id)
-                              (pcb/with-library-data data)
-                              (pcb/with-objects objects)
-                              (clvp/generate-update-property-value component-id pos value))
-                  undo-id (js/Symbol)]
-              (rx/of
-               (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (dwu/commit-undo-transaction undo-id)))))))))
+      (when-let [changes (variant-changes it state {:component-id component-id})]
+        (rx/of (dch/commit-changes (clvp/generate-update-property-value changes component-id pos value)))))))
 
 (defn update-error
   "Sets or unsets an error for a component"
@@ -192,18 +181,8 @@
    (ptk/reify ::update-error
      ptk/WatchEvent
      (watch [it state _]
-       (let [data (dsh/lookup-file-data state)]
-         (with-main-page data {:component-id component-id}
-           (fn [page-id objects]
-             (let [changes (-> (pcb/empty-changes it page-id)
-                               (pcb/with-library-data data)
-                               (pcb/with-objects objects)
-                               (clvp/generate-set-variant-error component-id value))
-                   undo-id (js/Symbol)]
-               (rx/of
-                (dwu/start-undo-transaction undo-id)
-                (dch/commit-changes changes)
-                (dwu/commit-undo-transaction undo-id))))))))))
+       (when-let [changes (variant-changes it state {:component-id component-id})]
+         (rx/of (dch/commit-changes (clvp/generate-set-variant-error changes component-id value))))))))
 
 (defn remove-property
   "Remove the variant property on the position pos
@@ -212,18 +191,8 @@
   (ptk/reify ::remove-property
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)]
-        (with-main-page data {:variant-id variant-id}
-          (fn [page-id objects]
-            (let [changes (-> (pcb/empty-changes it page-id)
-                              (pcb/with-library-data data)
-                              (pcb/with-objects objects)
-                              (clvp/generate-remove-property variant-id pos))
-                  undo-id (js/Symbol)]
-              (rx/of
-               (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (dwu/commit-undo-transaction undo-id)))))))))
+      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+        (rx/of (dch/commit-changes (clvp/generate-remove-property changes variant-id pos)))))))
 
 (defn remove-empty-properties
   "Remove every empty property for all components when their respective values are empty
@@ -232,35 +201,30 @@
   (ptk/reify ::remove-empty-properties
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)]
-        (with-main-page data {:variant-id variant-id}
-          (fn [page-id objects]
-            (let [properties-empty-pos (->> (cfv/extract-properties-values data objects variant-id)
-                                            (map-indexed
-                                             (fn [i {:keys [value]}]
-                                               [i (->> value
-                                                       (remove empty?)
-                                                       empty?)]))
-                                            (reverse))
-                  changes              (-> (pcb/empty-changes it page-id)
-                                           (pcb/with-library-data data)
-                                           (pcb/with-objects objects))
-                  changes              (reduce
-                                        (fn [changes [pos property-empty?]]
-                                          (if property-empty?
-                                            (-> changes
-                                                (clvp/generate-remove-property variant-id pos))
-                                            changes))
-                                        changes
-                                        properties-empty-pos)
-                  undo-id              (js/Symbol)]
+      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+        (let [data (dsh/lookup-file-data state)
 
-              (when (seq (:redo-changes changes))
-                (rx/of
-                 (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:rename-in-layers"})
-                 (dwu/start-undo-transaction undo-id)
-                 (dch/commit-changes changes)
-                 (dwu/commit-undo-transaction undo-id))))))))))
+              properties-empty-pos (->> (cfv/extract-properties-values data (pcb/get-objects changes) variant-id)
+                                        (map-indexed
+                                         (fn [i {:keys [value]}]
+                                           [i (->> value
+                                                   (remove empty?)
+                                                   empty?)]))
+                                        (reverse))
+
+              changes (reduce
+                       (fn [changes [pos property-empty?]]
+                         (if property-empty?
+                           (-> changes
+                               (clvp/generate-remove-property variant-id pos))
+                           changes))
+                       changes
+                       properties-empty-pos)]
+
+          (when (seq (:redo-changes changes))
+            (rx/of
+             (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:rename-in-layers"})
+             (dch/commit-changes changes))))))))
 
 (defn add-new-property
   "Add a new variant property to all the components with this variant-id"
@@ -268,37 +232,17 @@
   (ptk/reify ::add-new-property
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)]
-        (with-main-page data {:variant-id variant-id}
-          (fn [page-id objects]
-            (let [changes (-> (pcb/empty-changes it page-id)
-                              (pcb/with-library-data data)
-                              (pcb/with-objects objects)
-                              (clvp/generate-add-new-property variant-id options))
-                  undo-id (js/Symbol)]
-              (rx/of
-               (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (dwu/commit-undo-transaction undo-id)))))))))
+      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+        (rx/of (dch/commit-changes (clvp/generate-add-new-property changes variant-id options)))))))
 
-(defn reorder-variant-poperties
+(defn reorder-variant-properties
   "Reorder properties by moving a property from some position to some space between positions"
   [variant-id from-pos to-space-between-pos]
   (ptk/reify ::reorder-variant-properties
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)]
-        (with-main-page data {:variant-id variant-id}
-          (fn [page-id objects]
-            (let [changes (-> (pcb/empty-changes it page-id)
-                              (pcb/with-library-data data)
-                              (pcb/with-objects objects)
-                              (clvp/generate-reorder-variant-poperties variant-id from-pos to-space-between-pos))
-                  undo-id (js/Symbol)]
-              (rx/of
-               (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (dwu/commit-undo-transaction undo-id)))))))))
+      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+        (rx/of (dch/commit-changes (clvp/generate-reorder-variant-properties changes variant-id from-pos to-space-between-pos)))))))
 
 (defn- define-variant-container
   "Read page objects after the artboard exists, then commit the defining
@@ -307,15 +251,9 @@
   (ptk/reify ::define-variant-container
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (:current-page-id state)
-            data    (dsh/lookup-file-data state)
-            objects (dsh/lookup-page-objects state page-id)
-            changes (-> (pcb/empty-changes it page-id)
-                        (pcb/with-objects objects)
-                        (pcb/with-library-data data)
-                        (clv/generate-define-variant-container
-                         variant-id main-id component-id name))]
-        (rx/of (dch/commit-changes changes))))))
+      (rx/of (dch/commit-changes (-> (variant-changes it state)
+                                     (clv/generate-define-variant-container
+                                      variant-id main-id component-id name)))))))
 
 (defn- focus-property
   [variant-id]

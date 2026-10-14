@@ -1499,7 +1499,7 @@
                  (clvp/generate-add-new-property changes variant-id opts))
     :remove    (apply clvp/generate-remove-property changes args)
     :rename    (apply clvp/generate-update-property-name changes args)
-    :reorder   (apply clvp/generate-reorder-variant-poperties changes args)
+    :reorder   (apply clvp/generate-reorder-variant-properties changes args)
     :set-value (apply clvp/generate-update-property-value changes args)))
 
 (defrecord EditVariantProperty [set-name edit params]
