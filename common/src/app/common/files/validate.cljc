@@ -416,8 +416,8 @@
   "Validate that a nested copy head refers to a child of the near main of
   its parent: the shape whose position it takes."
   [shape file page libraries]
-  (when (ctf/swapped-subhead? shape page #(ctf/find-content-ref-shape file page libraries %
-                                                                      :include-deleted? true))
+  (when (ctf/ref-outside-near-main? shape page #(ctf/find-content-ref-shape file page libraries %
+                                                                            :include-deleted? true))
     (report-error :ref-not-in-near-main
                   (str/ffmt "Referenced shape % is not a child of the near main of the parent" (:shape-ref shape))
                   shape file page)))
