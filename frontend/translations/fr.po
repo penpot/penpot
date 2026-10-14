@@ -1,7 +1,8 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-10-15 08:51+0000\n"
-"Last-Translator: imagoiq <imagoiq@users.noreply.hosted.weblate.org>\n"
+"Last-Translator: Philippe Accorsi "
+"<philippeaccorsi@users.noreply.hosted.weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -5487,7 +5488,7 @@ msgstr "Activer/désactiver le soulignement"
 
 #: src/app/main/data/workspace/grid_layout/shortcuts.cljs:43, src/app/main/data/workspace/path/shortcuts.cljs:194, src/app/main/data/workspace/shortcuts.cljs:72
 msgid "shortcuts.undo"
-msgstr "Annuler"
+msgstr "Annuler la dernière action"
 
 #: src/app/main/data/workspace/shortcuts.cljs:209
 msgid "shortcuts.ungroup"
