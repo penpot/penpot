@@ -223,8 +223,12 @@ Commit messages must follow this format:
 - Keep the subject to **70 characters** or fewer
 - **Wrap body lines at 76 characters or fewer** (trailers and URLs excepted)
 - Separate the subject from the body with a **blank line**
+- Never add a `Co-authored-by` trailer — it is forbidden and fails
+  `./scripts/check-commit`
 
 You can check a commit against these rules with `./scripts/check-commit`.
+CI runs the same script on every new commit in
+`.github/workflows/commit-checker.yml`, so violations fail the build.
 
 ### Examples
 
