@@ -865,7 +865,7 @@
                  (-> (pcb/empty-changes it)
                      (pcb/set-undo-group undo-group)
                      (pcb/with-container container)
-                     (cll/generate-sync-shape-inverse fdata libraries container id))
+                     (cll/generate-sync-shape-inverse libraries container id))
 
                  ldata     (->> (:component-file shape)
                                 (dsh/lookup-file-data state))

@@ -21,7 +21,6 @@
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.types.component :as ctk]
-   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.path.segment :as segment]
    [app.common.types.shape :as cts]
@@ -67,6 +66,29 @@
     (get shape attr)))
 
 
+(defn- sized-geometry-value
+  "The value of `attr`, `:selrect` or `:points`, of `shape` resized to
+  `width` and `height`, at the same position and with the same transform."
+  [shape width height attr]
+  (let [{:keys [x y] :as selrect} (:selrect shape)
+        selrect (assoc selrect
+                       :width width
+                       :height height
+                       :x1 x
+                       :y1 y
+                       :x2 (+ x width)
+                       :y2 (+ y height))]
+    (case attr
+      :selrect
+      selrect
+
+      :points
+      (-> selrect
+          (grc/rect->points)
+          (gsh/transform-points
+           (grc/rect->center selrect)
+           (or (:transform shape) (gmt/matrix)))))))
+
 (defn- switch-fixed-layout-geom-change-value
   [prev-shape           ; The shape before the switch
    current-shape        ; The shape after the switch (a clean copy)
@@ -74,59 +96,22 @@
    attr]
   ;; When there is a layout with fixed h or v sizing, we need
   ;; to keep the width/height (and recalculate selrect and points)
-  (let [prev-width     (-> prev-shape :selrect :width)
-        current-width  (-> current-shape :selrect :width)
-        origin-width   (-> origin-shape :selrect :width)
-
-        prev-height    (-> prev-shape :selrect :height)
-        current-height (-> current-shape :selrect :height)
-        origin-height  (-> origin-shape :selrect :height)
-
-        x              (-> current-shape :selrect :x)
-        y              (-> current-shape :selrect :y)
-
-
-        h-sizing       (:layout-item-h-sizing prev-shape)
-        v-sizing       (:layout-item-v-sizing prev-shape)
-
-        final-width    (if (= :fix h-sizing)
-                         current-width
-                         (if (= origin-width current-width)
-                           prev-width       ;; same-size: preserve override
-                           current-width))  ;; different-size: use new component's
-
-        final-height   (if (= :fix v-sizing)
-                         current-height
-                         (if (= origin-height current-height)
-                           prev-height      ;; same-size: preserve override
-                           current-height)) ;; different-size: use new component's
-
-        selrect        (assoc (:selrect current-shape)
-                              :width final-width
-                              :height final-height
-                              :x x
-                              :y y
-                              :x1 x
-                              :y1 y
-                              :x2 (+ x final-width)
-                              :y2 (+ y final-height))]
-
+  (let [size (fn [dimension sizing]
+               (let [prev    (-> prev-shape :selrect dimension)
+                     current (-> current-shape :selrect dimension)
+                     origin  (-> origin-shape :selrect dimension)]
+                 (cond
+                   (= :fix (sizing prev-shape)) current
+                   ;; same-size: preserve override
+                   (= origin current)           prev
+                   ;; different-size: use new component's
+                   :else                        current)))
+        width  (size :width :layout-item-h-sizing)
+        height (size :height :layout-item-v-sizing)]
     (case attr
-      :width
-      final-width
-
-      :height
-      final-height
-
-      :selrect
-      selrect
-
-      :points
-      (-> selrect
-          (grc/rect->points)
-          (gsh/transform-points
-           (grc/rect->center selrect)
-           (or (:transform current-shape) (gmt/matrix)))))))
+      :width  width
+      :height height
+      (sized-geometry-value current-shape width height attr))))
 
 
 (defn- switch-geom-change-value
@@ -134,31 +119,10 @@
   ;; Composite geometry stores absolute coordinates. When preserving a size
   ;; override across variants, keep the target variant's position and only carry
   ;; the previous dimensions; otherwise :x/:y can disagree with :selrect/:points.
-  (let [prev-selrect (:selrect prev-shape)
-        current-selrect (:selrect current-shape)
-        final-width (:width prev-selrect)
-        final-height (:height prev-selrect)
-        x (:x current-selrect)
-        y (:y current-selrect)
-        selrect (assoc current-selrect
-                       :width final-width
-                       :height final-height
-                       :x x
-                       :y y
-                       :x1 x
-                       :y1 y
-                       :x2 (+ x final-width)
-                       :y2 (+ y final-height))]
-    (case attr
-      :selrect
-      selrect
-
-      :points
-      (-> selrect
-          (grc/rect->points)
-          (gsh/transform-points
-           (grc/rect->center selrect)
-           (or (:transform current-shape) (gmt/matrix)))))))
+  (sized-geometry-value current-shape
+                        (-> prev-shape :selrect :width)
+                        (-> prev-shape :selrect :height)
+                        attr))
 
 
 (defn- equal-geometry?
@@ -214,7 +178,7 @@
   (let [sync-group
         (ctk/resolve-sync-group (:type previous-shape) attr)
 
-        skip?
+        skip-attr?
         (or
          ;; For auto text, avoid copying geometry-driven attrs on switch.
          (and text-auto?
@@ -255,7 +219,7 @@
         ;; If only one of them is touched, we want to address this case and
         ;; only update the untouched one
         text-change?
-        (and (not skip?)
+        (and (not skip-attr?)
              (cfh/text-shape? current-shape)
              (cfh/text-shape? previous-shape)
              (= :content attr)
@@ -269,14 +233,14 @@
         ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
         ;; so it's calculated again
         reset-pos-data?
-        (and (not skip?)
+        (and (not skip-attr?)
              (cfh/text-shape? previous-shape)
              (or (= attr :position-data) (= attr :selrect))
              (not= (:position-data previous-shape) (:position-data current-shape))
              (touched :geometry-group))
 
         skip?
-        (or skip?
+        (or skip-attr?
             ;; If we are going to reset the position data, skip the selrect attr
             (and reset-pos-data? (= attr :selrect))
             ;; Avoid copying composite geometry attrs (:selrect/:points) when the
@@ -305,11 +269,11 @@
             ;; Each text override that the old and the new main agree on is
             ;; carried over the new main's content
             text-change?
-            (cll/text-content-with-overrides (:content previous-shape)
-                                             (:content current-shape)
-                                             (set/difference (txt/text-overrides touched)
-                                                             (txt/override-groups (:content origin-ref-shape)
-                                                                                  (:content current-shape))))
+            (txt/merge-overrides (:content previous-shape)
+                                 (:content current-shape)
+                                 (set/difference (txt/text-overrides touched)
+                                                 (txt/override-groups (:content origin-ref-shape)
+                                                                      (:content current-shape))))
 
             path-change?
             (switch-path-change-value previous-shape
@@ -369,9 +333,7 @@
                              #(switch-attr-operations current-shape previous-shape origin-ref-shape
                                                       touched text-auto? %))
 
-        updated-attrs (into #{} (comp (filter #(= :set (:type %)))
-                                      (map :attr))
-                            roperations)
+        updated-attrs (into #{} (map :attr) roperations)
         updated-sync-groups (into #{}
                                   (keep #(ctk/resolve-sync-group (:type previous-shape) %))
                                   updated-attrs)
@@ -452,15 +414,12 @@
 
     [new-shape (-> changes
                    ;; Restore the properties
-                   (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values))
+                   (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values)
+                                      {:ignore-touched true})
 
                    ;; We need to set the same index as the original shape
                    (pcb/change-parent (:parent-id shape) [new-shape] index {:allow-altering-copies true
-                                                                            :ignore-touched true})
-                   (cll/change-touched new-shape
-                                       shape
-                                       (ctn/make-container page :page)
-                                       {}))]))
+                                                                            :ignore-touched true}))]))
 
 (defn generate-component-swap
   [changes objects shape file page libraries id-new-component

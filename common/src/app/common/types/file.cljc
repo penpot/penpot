@@ -499,8 +499,9 @@
         (d/update-when shape :shape-ref #(get ref-map % %))))))
 
 (defn swapped-subhead?
-  "Whether `shape` references outside its near main parent and needs a swap slot.
-  Same-parent positional differences are synchronized as reorders."
+  "Whether `shape` refers to a main shape that is not a child of the main
+  shape its parent refers to (`find-parent-ref-shape`). Same-parent
+  positional differences are synchronized as reorders."
   [shape container find-parent-ref-shape]
   (let [parent-shape     (ctst/get-shape container (:parent-id shape))
         parent-ref-shape (when parent-shape
