@@ -802,4 +802,6 @@ class Mousetrap {
  */
 const instance = new Mousetrap(globalDocument);
 
+export { Mousetrap };
+
 export default instance;
