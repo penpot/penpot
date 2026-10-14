@@ -67,6 +67,11 @@ If AI-assisted content is used, it must be carefully reviewed and verified by a 
 Report bugs via [GitHub Issues](https://github.com/penpot/penpot/issues).
 Before filing, search existing issues to avoid duplicates.
 
+> **Note:** Every new issue starts under the `needs triage` label until the
+> product team reviews it. Issues under `needs triage` or `internal` are not
+> open to contributions — do not start work on them. Wait for a maintainer to
+> confirm it in the issue itself.
+
 Include the following when possible:
 
 1. Steps to reproduce the error.
@@ -164,10 +169,15 @@ To save time on both sides, please avoid submitting PRs that:
 - Submit AI-generated code without human review.
 - Skip local syntax and formatting checks before submitting.
 - Skip the [discussion step](#workflow) for non-bug-fix changes.
+- Open a PR for an issue under `needs triage` or `internal`. We may close
+  these PRs without review, without an explanation and without a reply.
 
 ### Good first issues
 
 We use the `good first issue` label to mark issues appropriate for newcomers.
+An issue is open to contributions only after a maintainer says so in the issue
+itself. Issues under `needs triage` or `internal` stay closed, however simple
+they look.
 
 ## Commit Guidelines
 
@@ -213,8 +223,12 @@ Commit messages must follow this format:
 - Keep the subject to **70 characters** or fewer
 - **Wrap body lines at 76 characters or fewer** (trailers and URLs excepted)
 - Separate the subject from the body with a **blank line**
+- Never add a `Co-authored-by` trailer — it is forbidden and fails
+  `./scripts/check-commit`
 
 You can check a commit against these rules with `./scripts/check-commit`.
+CI runs the same script on every new commit in
+`.github/workflows/commit-checker.yml`, so violations fail the build.
 
 ### Examples
 

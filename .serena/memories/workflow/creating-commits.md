@@ -37,8 +37,10 @@ that breaks them is wrong, even if the code is right.
   - For another commit: `./scripts/check-commit -c <ref>`
 - **NEVER** hand-wave the body as "one long line". If a line exceeds 76,
   break it at a space.
+- **NEVER add a `Co-authored-by:` trailer.** It is forbidden; `scripts/check-commit` fails the commit when any line matches it (case-insensitive).
+- CI runs `scripts/check-commit` on every new commit (`mem:workflow/creating-commits` is enforced by `.github/workflows/commit-checker.yml`), so a forbidden trailer fails the build.
 - Exceptions inside the body (do not wrap these): `Signed-off-by:`,
-  `Co-authored-by:`, `AI-assisted-by:` trailers, and lines carrying a URL.
+  `AI-assisted-by:` trailers, and lines carrying a URL.
 
 **AI-assisted-by trailer rules:**
 - Use only the model name, e.g. `mimo-v2.5`, `deepseek-v4-flash`

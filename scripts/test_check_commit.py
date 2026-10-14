@@ -106,6 +106,35 @@ class BodyLineLengthTests(unittest.TestCase):
         self.assertIn("line 4", error)
 
 
+class ForbiddenTrailerTests(unittest.TestCase):
+    def assert_ok(self, message):
+        ok, error = check_commit.check_no_co_authored_by(message)
+        self.assertTrue(ok, error)
+        self.assertIsNone(error)
+
+    def assert_fail(self, message):
+        ok, error = check_commit.check_no_co_authored_by(message)
+        self.assertFalse(ok)
+        self.assertIsNotNone(error)
+        return error
+
+    def test_body_without_trailer_passes(self):
+        self.assert_ok(":bug: Fix crash\n\nBody.\n\nSigned-off-by: Someone <someone@example.com>\n")
+
+    def test_co_authored_by_fails(self):
+        error = self.assert_fail(":bug: Fix crash\n\nBody.\n\nCo-authored-by: Someone <someone@example.com>\n")
+        self.assertIn("Co-authored-by", error)
+
+    def test_co_authored_by_case_insensitive_fails(self):
+        self.assert_fail(":bug: Fix crash\n\nBody.\n\nco-authored-by: Someone <someone@example.com>\n")
+
+    def test_co_authored_by_in_body_fails(self):
+        self.assert_fail(":bug: Fix crash\n\nCo-authored-by: Someone <someone@example.com>\nBody.\n")
+
+    def test_similar_trailer_passes(self):
+        self.assert_ok(":bug: Fix crash\n\nBody.\n\nCo-developed-by: Someone <someone@example.com>\n")
+
+
 class SubjectRulesRegressionTests(unittest.TestCase):
     """Guard the pre-existing validators against accidental breakage."""
 

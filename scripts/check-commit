@@ -47,9 +47,11 @@ MERGE_PATTERN = re.compile(r"^(Merge|Revert|Reapply).+[^.]$")
 MAX_BODY_LINE = 76
 
 TRAILER_PATTERN = re.compile(
-    r"^(Signed-off-by|Co-authored-by|Co-developed-by|Reviewed-by|"
+    r"^(Signed-off-by|Co-developed-by|Reviewed-by|"
     r"Acked-by|Tested-by|Reported-by|Suggested-by|AI-assisted-by):"
 )
+
+FORBIDDEN_TRAILER_PATTERN = re.compile(r"^\s*Co-authored-by\s*:", re.IGNORECASE)
 
 URL_PATTERN = re.compile(r"https?://\S+")
 
@@ -209,6 +211,25 @@ def check_signed_off_by(message):
     return True, None
 
 
+def check_no_co_authored_by(message):
+    """Check that the forbidden Co-authored-by trailer is absent."""
+    offenders = [
+        (line_number, line)
+        for line_number, line in enumerate(message.split("\n"), start=1)
+        if FORBIDDEN_TRAILER_PATTERN.match(line)
+    ]
+    if not offenders:
+        return True, None
+    details = "\n".join(
+        f"    line {line_number}: {line!r}"
+        for line_number, line in offenders
+    )
+    return False, (
+        "The 'Co-authored-by:' trailer is forbidden and must not appear "
+        "in the commit message. Offending line(s):\n" + details
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
@@ -234,6 +255,7 @@ def main():
         ("Subject capitalized", check_subject_capitalized),
         ("Blank line after subject", check_body_blank_line),
         ("Body wrapped at 76 chars", check_body_line_length),
+        ("No Co-authored-by trailer", check_no_co_authored_by),
     ]
 
     all_ok = True
