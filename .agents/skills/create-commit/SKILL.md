@@ -61,5 +61,6 @@ subject/body limits, and the `AI-assisted-by` trailer. Follow it exactly.
 - Do not pass `--author`. Author identity comes from the local git config.
 - Do not amend a commit you did not create in this session, unless explicitly asked.
 - Do not bypass pre-commit hooks (`--no-verify`) unless explicitly asked.
+- Never add a `Co-authored-by:` trailer. It is forbidden and fails `./scripts/check-commit`.
 - Do not add untracked files that were not created in this session.
 - Do not skip the `scripts/check-commit` verification step (Iron Rule 4).
