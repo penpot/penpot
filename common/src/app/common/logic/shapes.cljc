@@ -11,6 +11,8 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.flex-layout :as flex]
+   [app.common.geom.shapes.grid-layout :as grid]
    [app.common.logic.variant-properties :as clvp]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -605,6 +607,59 @@
         ;; Remove parents when are a variant-container that becomes empty
         (cond-> (seq empty-variant-cont)
           (#(second (generate-delete-shapes % empty-variant-cont {})))))))
+
+(def initial-flex-layout
+  {:layout                 :flex
+   :layout-flex-dir        :row
+   :layout-gap-type        :multiple
+   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-align-items     :start
+   :layout-justify-content :start
+   :layout-align-content   :stretch
+   :layout-wrap-type       :nowrap
+   :layout-padding-type    :simple
+   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
+
+(def initial-grid-layout
+  {:layout :grid
+   :layout-grid-dir        :row
+   :layout-gap-type        :multiple
+   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-align-items     :start
+   :layout-justify-items   :start
+   :layout-align-content   :stretch
+   :layout-justify-content :stretch
+   :layout-padding-type    :simple
+   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}
+   :layout-grid-cells      {}
+   :layout-grid-rows       []
+   :layout-grid-columns    []})
+
+(defn layout-initializer
+  "A function of a shape and the objects that gives the shape a layout of
+  `type` (`:flex` or `:grid`), with its parameters calculated from its
+  children when `calculate-params?`. A shape that was not a board
+  (`from-frame?` false) also shows its content and hides in the viewer."
+  [type from-frame? calculate-params?]
+  (let [[initial-layout-data calculate-params]
+        (case type
+          :flex [initial-flex-layout flex/calculate-params]
+          :grid [initial-grid-layout grid/calculate-params])]
+
+    (fn [shape objects]
+      (let [shape
+            (-> shape
+                (merge initial-layout-data)
+
+                ;; If the original shape is not a frame we set clip content and show-viewer to false
+                (cond-> (not from-frame?)
+                  (assoc :show-content true :hide-in-viewer true)))
+
+            params (when calculate-params?
+                     (calculate-params objects (cfh/get-immediate-children objects (:id shape)) shape))]
+        (cond-> (merge shape params)
+          (= type :grid)
+          (-> (ctl/assign-cells objects) ctl/reorder-grid-children))))))
 
 (defn change-show-in-viewer
   [shape hide?]

@@ -155,6 +155,9 @@
 (t/deftest case-as-added-variant-is-a-switch-target
   (check (cases/added-variant-is-a-switch-target)))
 
+(t/deftest case-aw-variant-layer-rename-and-cleanup
+  (check (cases/variant-layer-rename-and-cleanup)))
+
 (t/deftest case-ay-token-on-a-main-reaches-copies
   (check (cases/token-on-a-main-reaches-copies)))
 
