@@ -65,10 +65,30 @@
    ::jobs/decoder   (sm/decoder schema:echo-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:echo-params)})
 
+(def schema:typed-result
+  "A result with a uuid keyed map, the shape that needs a declared schema
+  to survive the plain JSON round trip of the `job.result` column."
+  [:map
+   [:file-ids   [:vector ::sm/uuid]]
+   [:resolution [:map-of ::sm/uuid [:map [:id ::sm/uuid]]]]])
+
+(defmethod ig/init-key ::typed-job
+  [_ cfg]
+  {::jobs/name           :typed
+   ::jobs/schema         schema:echo-params
+   ::jobs/handler        (fn [_context params]
+                           (echo-handler cfg params))
+   ::jobs/decoder        (sm/decoder schema:echo-params sm/json-transformer)
+   ::jobs/validator      (sm/validator schema:echo-params)
+   ::jobs/result-schema  schema:typed-result
+   ::jobs/result-decoder (sm/decoder schema:typed-result sm/json-transformer)})
+
 (defn- get-job-defs
   []
-  (-> {::jobs/defs {:echo (ig/ref ::echo-job)}
-       ::echo-job  {::db/pool th/*pool*}}
+  (-> {::jobs/defs {:echo  (ig/ref ::echo-job)
+                    :typed (ig/ref ::typed-job)}
+       ::echo-job  {::db/pool th/*pool*}
+       ::typed-job {::db/pool th/*pool*}}
       (ig/expand)
       (ig/init)
       (get ::jobs/defs)))
@@ -1188,11 +1208,12 @@
 
 (defn- mk-running
   "A job already claimed by a worker, ready for a terminal transition."
-  [cfg]
-  (let [job-id (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params (make-params)})]
-    (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
-    job-id))
+  ([cfg] (mk-running cfg :echo))
+  ([cfg name]
+   (let [job-id (jobs/submit cfg {::jobs/name   name
+                                  ::jobs/params (make-params)})]
+     (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
+     job-id)))
 
 (t/deftest lifecycle-writers-require-metrics
   ;; Every one of the six writers must check the metrics instance before
@@ -1374,6 +1395,48 @@
     (t/testing "a terminal job gets no second end event"
       (t/is (= 0 (jobs/cancel cfg job-id)))
       (t/is (= ["cancelled"] (get-outcomes job-id))))))
+
+(t/deftest get-job-decodes-the-result-with-the-schema-of-the-def
+  "A result with a declared schema comes back typed. Without it, the plain
+  JSON of the column keywordizes every key and leaves every uuid as text."
+  (let [cfg     (make-cfg (get-job-defs))
+        job-id  (mk-running cfg :typed)
+        file-id (uuid/next)
+        lib-id  (uuid/next)]
+
+    (t/is (= 1 (jobs/complete cfg :job-id job-id
+                              :result {:file-ids   [lib-id]
+                                       :resolution {file-id {:id file-id}}})))
+
+    (let [result (:result (jobs/get-job cfg job-id))]
+      (t/testing "the uuid keyed map keeps the type of its key and values"
+        (t/is (= [file-id] (keys (:resolution result))))
+        (t/is (uuid? (:id (get (:resolution result) file-id)))))
+
+      (t/testing "the vector of uuids keeps the type of its elements"
+        (t/is (= [lib-id] (:file-ids result)))))))
+
+(t/deftest get-job-leaves-a-result-without-a-schema-untouched
+  (let [cfg     (make-cfg (get-job-defs))
+        job-id  (mk-running cfg)
+        file-id (uuid/next)]
+
+    (t/is (= 1 (jobs/complete cfg :job-id job-id
+                              :result {:resolution {file-id {:id file-id}}})))
+
+    (t/testing "the raw JSON shape survives: keywordized keys, uuid as text"
+      (let [result (:result (jobs/get-job cfg job-id))
+            key    (keyword (str file-id))]
+        (t/is (= [key] (keys (:resolution result))))
+        (t/is (= (str file-id) (get-in result [:resolution key :id])))))))
+
+(t/deftest get-job-reads-a-row-whose-job-def-is-gone
+  (let [job-id (mk-running (make-cfg (get-job-defs)))
+        ;; a registry that no longer knows the kind of the row (a retired
+        ;; job-def): reading its result must not raise
+        row    (jobs/get-job (make-cfg {}) job-id)]
+    (t/is (some? row))
+    (t/is (= "echo" (:name row)))))
 
 (t/deftest aborted-job-is-terminal-for-all-writers
   "An aborted job (system-side terminal set by the orphan sweep) cannot be

@@ -151,7 +151,13 @@
    ;; implementation stays [cfg params].
    [::handler ::sm/fn]
    [::decoder ::sm/fn]
-   [::validator ::sm/fn]])
+   [::validator ::sm/fn]
+   ;; A result crosses a plain JSON column on its way out of the job, so a
+   ;; uuid comes back as the text it is on disk and a uuid used as a map
+   ;; key comes back as a keyword. A def that declares its result schema
+   ;; gets the types back when the row is read (`decode-result`).
+   [::result-schema {:optional true} any?]
+   [::result-decoder {:optional true} ::sm/fn]])
 
 (def ^:private schema:job-defs
   [:map-of :keyword schema:job-def])
@@ -221,6 +227,20 @@
         (db/pgobject? params)
         db/decode-json-pgobject)
       ((::decoder job-def))))
+
+(defn decode-result
+  "Decode the raw JSON result (pgobject or decoded map) with the result
+  decoder of the job-def, when it declares one. A def without one answers
+  with the JSON the row holds: every key keywordized and every uuid as the
+  text it is on disk."
+  [job-def result]
+  (when (some? result)
+    (let [value (cond-> result
+                  (db/pgobject? result)
+                  db/decode-json-pgobject)]
+      (if-let [decoder (::result-decoder job-def)]
+        (decoder value)
+        value))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SUBMIT API
@@ -432,11 +452,21 @@
       (decode-json-col :result)
       (decode-json-col :error)))
 
+(defn- decode-result-of
+  "Decode the result of a row with the decoder of the job-def that owns it.
+  A kind the registry no longer knows (a retired job-def) answers with the
+  row untouched instead of raising."
+  [cfg row]
+  (if-let [job-def (get (get-defs cfg) (keyword (:name row)))]
+    (update row :result #(decode-result job-def %))
+    row))
+
 (defn get-job
-  "Retrieve the job row (with the raw JSON params decoded to a plain map)."
+  "Retrieve the job row, with params and result decoded to plain maps (the
+  result only when its job-def declares a result decoder)."
   [cfg job-id]
-  (some-> (db/get* cfg :job {:id job-id})
-          (decode-row)))
+  (when-let [row (db/get* cfg :job {:id job-id})]
+    (decode-result-of cfg (decode-row row))))
 
 (defn get-user-status
   "Map the internal job status to the user-facing status."
