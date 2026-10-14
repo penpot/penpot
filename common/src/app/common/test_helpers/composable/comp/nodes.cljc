@@ -851,8 +851,7 @@
           container (ctn/make-container page :page)
           changes   (-> (pcb/empty-changes)
                         (pcb/with-container container)
-                        (cll/generate-sync-shape-inverse (:data the-file)
-                                                         (libraries situation)
+                        (cll/generate-sync-shape-inverse (libraries situation)
                                                          container
                                                          shape-id)
                         (strip-local-change))

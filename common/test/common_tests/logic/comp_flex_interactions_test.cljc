@@ -89,8 +89,7 @@
         container    (ctn/make-container page :page)
         changes      (-> (pcb/empty-changes)
                          (pcb/with-container container)
-                         (cll/generate-sync-shape-inverse (:data updated-file)
-                                                          {(:id updated-file) updated-file}
+                         (cll/generate-sync-shape-inverse {(:id updated-file) updated-file}
                                                           container
                                                           (thi/id :copy-root)))
         file'        (thf/apply-changes updated-file changes)
