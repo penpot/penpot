@@ -270,14 +270,6 @@
                (filter some?))]
     (into #{} xform props1)))
 
-(defn- find-index-by-name
-  "Returns the index of the first item in props with the given name, or nil if not found."
-  [name props]
-  (some (fn [[idx item]]
-          (when (= (:name item) name)
-            idx))
-        (map-indexed vector props)))
-
 (defn- next-valid-position
   "Returns the first non-negative integer not present in the used-pos set."
   [used-pos]
@@ -290,7 +282,7 @@
   "Returns the index of the property with the given name in `props`,
   or the next available index not in `used-pos` if not found."
   [name props used-pos]
-  (or (find-index-by-name name props)
+  (or (find-index-for-property-name props name)
       (next-valid-position used-pos)))
 
 (defn merge-properties

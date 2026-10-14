@@ -14,6 +14,16 @@
    [app.common.types.variant :as ctv]
    [cuerdas.core :as str]))
 
+(defn- set-variant-properties
+  "Set the variant properties of `component` to `props`, and the variant name
+  of its main to match them."
+  [changes component props]
+  (-> changes
+      (pcb/update-component (:id component) #(assoc % :variant-properties props)
+                            {:apply-changes-local-library? true})
+      (pcb/update-shapes [(:main-instance-id component)]
+                         #(assoc % :variant-name (ctv/properties-to-name props)))))
+
 (defn generate-update-property-name
   [changes variant-id pos new-name]
   (if-let [new-name (ctv/prepare-property-name new-name)]
@@ -44,14 +54,8 @@
         props              (-> related-components first :variant-properties)]
     (if (and (seq props) (<= 0 pos) (< pos (count props)))
       (reduce (fn [changes component]
-                (let [props   (:variant-properties component)
-                      props   (d/remove-at-index props pos)
-                      main-id (:main-instance-id component)
-                      name    (ctv/properties-to-name props)]
-                  (-> changes
-                      (pcb/update-component (:id component) #(assoc % :variant-properties props)
-                                            {:apply-changes-local-library? true})
-                      (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
+                (set-variant-properties changes component
+                                        (d/remove-at-index (:variant-properties component) pos)))
               changes
               related-components)
       changes)))
@@ -60,16 +64,9 @@
 (defn generate-update-property-value
   [changes component-id pos value]
   (if-let [value (ctv/prepare-property-value value)]
-    (let [data      (pcb/get-library-data changes)
-          component (ctcl/get-component data component-id true)
-          main-id   (:main-instance-id component)
-          name      (-> (:variant-properties component)
-                        (update pos assoc :value value)
-                        ctv/properties-to-name)]
-      (-> changes
-          (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
-                                {:apply-changes-local-library? true})
-          (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+    (let [component (ctcl/get-component (pcb/get-library-data changes) component-id true)]
+      (set-variant-properties changes component
+                              (update (:variant-properties component) pos assoc :value value)))
     changes))
 
 
@@ -84,22 +81,15 @@
                                        #(assoc % :variant-error value))))))
 
 
-(defn generate-reorder-variant-poperties
+(defn generate-reorder-variant-properties
   [changes variant-id from-pos to-space-between-pos]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)]
     (reduce (fn [changes component]
-              (let [props   (:variant-properties component)
-                    props   (d/reorder props from-pos to-space-between-pos)
-                    main-id (:main-instance-id component)
-                    name    (ctv/properties-to-name props)]
-                (-> changes
-                    (pcb/update-component (:id component)
-                                          #(assoc % :variant-properties props)
-                                          {:apply-changes-local-library? true})
-                    (pcb/update-shapes [main-id]
-                                       #(assoc % :variant-name name)))))
+              (set-variant-properties changes component
+                                      (d/reorder (:variant-properties component)
+                                                 from-pos to-space-between-pos)))
             changes
             related-components)))
 

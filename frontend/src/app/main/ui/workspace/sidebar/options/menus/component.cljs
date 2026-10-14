@@ -420,7 +420,7 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [from-pos to-space-between-pos]
-           (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))]
+           (st/emit! (dwv/reorder-variant-properties variant-id from-pos to-space-between-pos))))]
 
     [:*
      [:> h/sortable-container* {}
@@ -1271,7 +1271,7 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [from-pos to-space-between-pos]
-           (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))
+           (st/emit! (dwv/reorder-variant-properties variant-id from-pos to-space-between-pos))))
 
         select-shapes-with-malformed
         (mf/use-fn
