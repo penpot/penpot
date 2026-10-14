@@ -534,12 +534,13 @@
              shape-meta (meta ref-shape)
              ref-file (:file shape-meta)
              ref-container (:container shape-meta)]
-         (when ref-shape
+         (if ref-shape
            (if-let [swap-slot (ctk/get-swap-slot ref-shape)]
              swap-slot
              (if (ctk/main-instance? ref-shape)
                (:id shape)
-               (find-swap-slot ref-shape ref-container ref-file libraries (conj viewed-ids (:id shape)))))))))))
+               (find-swap-slot ref-shape ref-container ref-file libraries (conj viewed-ids (:id shape)))))
+           (:shape-ref shape))))))) ;; If cannot locate ref-shape (e.g. in an unlinked external library), use what we have
 
 (defn match-swap-slot?
   [shape-main shape-inst container-inst container-main file libraries]
