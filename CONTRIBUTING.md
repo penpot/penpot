@@ -227,6 +227,8 @@ Commit messages must follow this format:
   `./scripts/check-commit`
 
 You can check a commit against these rules with `./scripts/check-commit`.
+CI runs the same script on every new commit in
+`.github/workflows/commit-checker.yml`, so violations fail the build.
 
 ### Examples
 
