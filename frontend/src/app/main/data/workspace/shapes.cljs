@@ -627,12 +627,7 @@
                          ids
                          :ignore-parents? ignore-parents?))
 
-            add-component-to-variant? (and
-                                       ;; Any of the shapes is a head
-                                       (some (comp ctc/instance-head? objects) ids)
-                                       ;; Any ancestor of the destination parent is a variant
-                                       (->> (cfh/get-parents-with-self objects parent-id)
-                                            (some ctc/is-variant?)))
+            add-component-to-variant? (ctn/head-into-variant? objects parent-id (map objects ids))
 
             add-new-variant? (and
                               ;; The parent is a variant container

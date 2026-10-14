@@ -676,7 +676,7 @@
         single?                    (= (count shapes) 1)
         objects                    (deref refs/workspace-page-objects)
         can-make-component         (every? true? (map #(ctn/valid-shape-for-component? objects %) shapes))
-        components-menu-entries    (cmm/generate-components-menu-entries shapes)
+        components-menu-entries    (cmm/use-components-menu-entries shapes)
         variant-container?         (and single? (ctk/is-variant-container? (first shapes)))
         all-main?                  (every? ctk/main-instance? shapes)
         any-variant?               (some ctk/is-variant? shapes)
