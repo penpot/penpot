@@ -79,15 +79,28 @@
 (defn with-allocator!
   "Invoke `(f allocator)` with a fresh Arrow `RootAllocator`.
 
-  The allocator must outlive the Ladybug connection, because Ladybug releases
-  its references to the staged buffers only when the Arrow tables are dropped —
-  which happens on connection close at the latest. Closing it first surfaces as
+  The allocator must outlive the Ladybug connection, because Ladybug keeps
+  its references to the staged buffers until the Arrow tables are dropped —
+   which happens on connection close at the latest. Nest this *outside*
+  `ladybug/with-connection!`, and close the allocator after the connection
+  and database close sequence. Closing it first surfaces as
   `IllegalStateException: Memory was leaked`, *thrown while unwinding*, which
   hides whatever actually failed. Any diagnostic here must catch inside this
   scope."
   [f]
-  (with-open [allocator (RootAllocator.)]
-    (f allocator)))
+  (let [allocator (RootAllocator.)]
+    (try
+      (let [result (f allocator)]
+        (.close allocator)
+        result)
+      (catch Throwable t
+        ;; The allocator close can itself throw a leak error while unwinding
+        ;; from the body failure; keep the original as the thrown one.
+        (try
+          (.close allocator)
+          (catch Throwable close-cause
+            (.addSuppressed t close-cause)))
+        (throw t)))))
 
 ;; ------------------------------------------------------ Ladybug type → Field
 

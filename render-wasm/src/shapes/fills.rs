@@ -74,14 +74,20 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        skia::gradient_shader::linear(
-            (start, end),
-            self.colors.as_slice(),
+        let colors4f: Vec<skia::Color4f> = self
+            .colors
+            .iter()
+            .map(|c| skia::Color4f::from(*c))
+            .collect();
+        let colors = skia::gradient::Colors::new(
+            &colors4f,
             Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
-            None,
-        )
+        );
+        let gradient =
+            skia::gradient::Gradient::new(colors, skia::gradient::Interpolation::default());
+        skia::shaders::linear_gradient((start, end), &gradient, None)
     }
 
     pub fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
@@ -106,15 +112,20 @@ impl Gradient {
         transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
         transform.pre_translate((-center.x, -center.y));
 
-        skia::gradient_shader::radial(
-            center,
-            distance,
-            self.colors.as_slice(),
+        let colors4f: Vec<skia::Color4f> = self
+            .colors
+            .iter()
+            .map(|c| skia::Color4f::from(*c))
+            .collect();
+        let colors = skia::gradient::Colors::new(
+            &colors4f,
             Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
-            Some(&transform),
-        )
+        );
+        let gradient =
+            skia::gradient::Gradient::new(colors, skia::gradient::Interpolation::default());
+        skia::shaders::radial_gradient((center, distance), &gradient, Some(&transform))
     }
 }
 
@@ -134,6 +145,8 @@ pub struct ImageFill {
     height: i32,
     keep_aspect_ratio: bool,
     transform: Option<ImageFillTransform>,
+    // Opaque media type code, kept so the frontend can read it back.
+    mtype: u16,
 }
 
 impl ImageFill {
@@ -145,6 +158,7 @@ impl ImageFill {
             height,
             keep_aspect_ratio,
             transform: None,
+            mtype: 0,
         }
     }
 
@@ -163,7 +177,12 @@ impl ImageFill {
             height,
             keep_aspect_ratio,
             transform,
+            mtype: 0,
         }
+    }
+
+    pub fn with_mtype(self, mtype: u16) -> Self {
+        Self { mtype, ..self }
     }
 
     pub fn id(&self) -> Uuid {
@@ -184,6 +203,10 @@ impl ImageFill {
 
     pub fn height(&self) -> i32 {
         self.height
+    }
+
+    pub fn mtype(&self) -> u16 {
+        self.mtype
     }
 
     pub fn transform(&self) -> Option<&ImageFillTransform> {

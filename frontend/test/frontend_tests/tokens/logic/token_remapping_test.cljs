@@ -120,6 +120,39 @@
       (let [result (dwtr/validate-token-remapping "color.primary" "brand.primary")]
         (t/is (true? (:valid? result)))))))
 
+(t/deftest test-remap-keeps-applied-attributes-per-shape
+  (t/testing "renaming a token only renames the attributes each shape already had"
+    (let [stroke-token {:id (cthi/new-id! :sw-10)
+                        :name "sw-10"
+                        :value "10"
+                        :type :stroke-width}
+          file         (-> (ctht/sample-file-with-tokens
+                            :lib-fn #(-> %
+                                         (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
+                                                                            :name "Set A"))
+                                         (ctob/add-token (cthi/id :set-a)
+                                                         (ctob/make-token stroke-token))))
+                           (ctho/add-rect :top-rect)
+                           (ctho/add-rect :all-rect)
+                           (ctht/apply-token-to-shape :top-rect "sw-10"
+                                                      [:stroke-width-top] [] nil)
+                           (ctht/apply-token-to-shape :all-rect "sw-10"
+                                                      cto/stroke-width-keys [] nil)
+                           ;; The production flow renames the token first,
+                           ;; then remaps the shapes that use it.
+                           (update-in [:data :tokens-lib]
+                                      ctob/update-token (cthi/id :set-a) (cthi/id :sw-10)
+                                      #(assoc % :name "sw-big")))
+          changes      (dwtr/build-remap-changes (:data file) "sw-10" "sw-big")
+          file'        (cthf/apply-changes file changes)
+          top-rect'    (cths/get-shape file' :top-rect)
+          all-rect'    (cths/get-shape file' :all-rect)]
+
+      (t/is (= {:stroke-width-top "sw-big"}
+               (:applied-tokens top-rect')))
+      (t/is (= (zipmap cto/stroke-width-keys (repeat "sw-big"))
+               (:applied-tokens all-rect'))))))
+
 (defn- setup-file-with-component-copy-and-token
   "Create a file containing a component, an instance copy of it, and a single
    `color.primary` token already applied to both the main and the copy shape.

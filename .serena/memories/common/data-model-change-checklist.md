@@ -6,6 +6,7 @@
 - Do not treat nil as a distinct persisted state from absence. Import/export and cleanup paths may filter nil attrs away.
 - Avoid Clojure-special naming in exported object attrs, especially boolean names ending in `?`; exported/imported data must survive JSON/SVG/Transit and external tooling.
 - Any new shape attr that participates in component sync must be listed in `app.common.types.component/sync-attrs` with the correct touched group. Attrs absent from `sync-attrs` are ignored by component synchronization.
+- Shape `:svg-attrs` is the one map whose keys are camelCase React prop names (`fillRule`, not `fill-rule`), because the SVG import path runs them through `app.common.svg/attrs->props`. The `.penpot` reader (`app.common.json/read-kebab-key`) rewrites every json key of every entry to kebab-case, nested maps included, so any code that decodes a binary file must run `:svg-attrs` back through `attrs->props` or the names are lost. `:svg-defs` and the `:content` tree of `svg-raw` shapes keep their source names and round-trip on their own.
 
 ## Cross-module update checklist
 

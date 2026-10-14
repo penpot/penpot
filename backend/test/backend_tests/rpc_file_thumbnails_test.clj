@@ -86,7 +86,7 @@
 
     ;; run the task again
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
-                (th/run-task! "storage-gc-touched" {}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 2 (:freeze res))))
 
     (let [[row1 row2 :as rows] (th/db-query :file-tagged-object-thumbnail

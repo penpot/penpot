@@ -16,12 +16,19 @@ development.
 # Default connection (penpot db, localhost)
 scripts/psql -c "SELECT version();"
 
-# Test database
+# Test database (ws0)
 scripts/psql --test -c "SELECT * FROM migrations;"
+
+# Isolated test database of another instance (ws1+)
+scripts/psql --test --ws 1 -c "SELECT * FROM migrations;"
 
 # Custom host/user/database
 scripts/psql --host myhost --user myuser --db mydb
 ```
+
+`--ws N` only applies together with `--test` (the main database is
+shared by all instances): it selects `penpot_test` on `--ws 0` and
+`penpot_test_wsN` on `--ws N`. `scripts/db-schema` accepts the same flags.
 
 `scripts/psql` must be invoked from the repo root so the path resolves.
 

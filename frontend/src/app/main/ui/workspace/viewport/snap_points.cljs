@@ -158,12 +158,13 @@
 
 (mf/defc snap-points*
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom objects selected page-id drawing focus]}]
+  [{:keys [layout zoom objects base-objects selected page-id drawing focus]}]
   (dm/assert! (set? selected))
   (let [shapes  (into [] (keep (d/getf objects)) selected)
 
         filter-shapes
-        (into selected (mapcat #(cfh/get-children-ids objects %)) selected)
+        (mf/with-memo [base-objects selected]
+          (into #{} (mapcat #(cfh/get-children-ids-with-self base-objects %)) selected))
 
         remove-snap-base?
         (mf/with-memo [layout filter-shapes objects focus]

@@ -77,15 +77,17 @@
 (defn ingest-on-connection!
   "Project `file-id` into an already open Ladybug `conn`.
 
-  Takes an `:arrow-alloc` when the caller already owns one; otherwise it makes
-  a short-lived allocator around this call. A caller that opened the connection
-  itself should pass its own, because the allocator has to be closed *after*
-  the connection — see `app.graph.arrow/with-allocator!`."
+  Takes `:arrow-alloc`, owned by the caller. The allocator must stay open
+  until the connection (and database) close — see
+  `app.graph.arrow/with-allocator!` — so a short-lived allocator made inside
+  this call would close too early and leak; the caller nests the allocator
+  outside its connection and passes it here."
   [system ^Connection conn file-id & {:keys [arrow-alloc] :as opts}]
-  (if arrow-alloc
-    (ingest-on-connection*! system conn file-id arrow-alloc opts)
-    (graph.arrow/with-allocator!
-      (fn [allocator] (ingest-on-connection*! system conn file-id allocator opts)))))
+  (when-not arrow-alloc
+    (ex/raise :type :validation
+              :code :missing-arrow-allocator
+              :hint "ingest-on-connection! requires :arrow-alloc; nest with-allocator! outside the connection"))
+  (ingest-on-connection*! system conn file-id arrow-alloc opts))
 
 (defn ingest-file!
   [system file-id & {:keys [db-path reset-db? skip-stats? skip-validation?]

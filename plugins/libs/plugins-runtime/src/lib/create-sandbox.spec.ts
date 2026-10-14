@@ -33,6 +33,7 @@ describe('createSandbox', () => {
 
   beforeEach(() => {
     mockPlugin = {
+      manifest: { scope: 'workspace' },
       code: 'console.log("Plugin running");',
       timeouts: new Set<ReturnType<typeof setTimeout>>(),
     } as unknown as Awaited<ReturnType<typeof createPluginManager>>;

@@ -171,7 +171,7 @@
   {::doc/added "1.20"
    ::sm/params schema:remove-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id]}]
   (let [snapshot (fsnap/get-minimal-snapshot conn id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
@@ -194,7 +194,7 @@
                                 :profile-id profile-id
                                 :file-id (:file-id snapshot))
           delay (ldel/get-deletion-delay team)]
-      (fsnap/delete! conn (assoc snapshot :deleted-at (ct/in-future delay))))))
+      (fsnap/delete! cfg (assoc snapshot :deleted-at (ct/in-future delay))))))
 
 ;;; Lock/unlock version endpoints
 

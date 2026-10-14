@@ -59,6 +59,27 @@
         result (bit-or result n)]
     result))
 
+(defn encode-mtype
+  "Encode an image media type as the 16-bit code shared with render-wasm."
+  [mtype]
+  (case mtype
+    "image/jpeg"    0x01
+    "image/png"     0x02
+    "image/gif"     0x03
+    "image/webp"    0x04
+    "image/svg+xml" 0x05
+    0x00))
+
+(defn decode-mtype
+  [code]
+  (case code
+    0x01 "image/jpeg"
+    0x02 "image/png"
+    0x03 "image/gif"
+    0x04 "image/webp"
+    0x05 "image/svg+xml"
+    nil))
+
 (defn- get-color-hex
   [n]
   (let [n (bit-and n 0x00ffffff)
@@ -127,12 +148,13 @@
         transform         (get image :transform)
         has-transform?    (some? transform)
         transform-flag    (if has-transform? 0x02 0x00)
-        flags             (bit-or keep-aspect-ratio transform-flag)]
+        flags             (bit-or keep-aspect-ratio transform-flag)
+        mtype             (encode-mtype (get image :mtype))]
     (buf/write-byte  buffer (+ offset  0) 0x03)
     (buf/write-uuid  buffer (+ offset  4) image-id)
     (buf/write-byte  buffer (+ offset 20) alpha)
     (buf/write-byte  buffer (+ offset 21) flags)
-    (buf/write-short buffer (+ offset 22) 0) ;; 2-byte padding (reserved for future use)
+    (buf/write-short buffer (+ offset 22) mtype)
     (buf/write-int   buffer (+ offset 24) image-width)
     (buf/write-int   buffer (+ offset 28) image-height)
     (if has-transform?
@@ -155,13 +177,7 @@
         mtype    (dm/get-in fill [:fill-image :mtype])]
 
     (when mtype
-      (let [val (case mtype
-                  "image/jpeg"    0x01
-                  "image/png"     0x02
-                  "image/gif"     0x03
-                  "image/webp"    0x04
-                  "image/svg+xml" 0x05)]
-        (buf/write-short buffer (+ offset 2) val)))
+      (buf/write-short buffer (+ offset 2) (encode-mtype mtype)))
 
     (if (and (some? ref-file)
              (some? ref-id))
@@ -235,13 +251,7 @@
                                      :y      (buf/read-float dbuffer (+ doffset 36))
                                      :width  (buf/read-float dbuffer (+ doffset 40))
                                      :height (buf/read-float dbuffer (+ doffset 44))})
-                        mtype     (buf/read-short mbuffer (+ moffset 2))
-                        mtype     (case mtype
-                                    0x01 "image/jpeg"
-                                    0x02 "image/png"
-                                    0x03 "image/gif"
-                                    0x04 "image/webp"
-                                    0x05 "image/svg+xml")]
+                        mtype     (decode-mtype (buf/read-short mbuffer (+ moffset 2)))]
                     {:fill-opacity opacity
                      :fill-image   (cond-> {:id                id
                                             :width             width

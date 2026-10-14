@@ -79,6 +79,7 @@
 .modal-msg {
   @include use-typography("body-large");
 
+  overflow-wrap: anywhere;
   color: var(--color-foreground-secondary);
 }
 

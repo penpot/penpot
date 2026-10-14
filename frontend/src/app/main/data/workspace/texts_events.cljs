@@ -7,7 +7,6 @@
 (ns app.main.data.workspace.texts-events
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.math :as mth]
    [app.common.types.text :as txt]
@@ -18,8 +17,23 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.features :as features]
+   [app.main.fonts :as fonts]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(defn editor-text-options
+  "Editor data that `dwt/current-text-values` needs for `shape-id`,
+  taken from the text editor that is active in `state`."
+  [state shape-id]
+  (let [wasm? (features/active-feature? state "text-editor-wasm/v1")
+        v2?   (features/active-feature? state "text-editor/v2")
+        state-map (if wasm?
+                    (:workspace-wasm-editor-styles state)
+                    (:workspace-editor-state state))]
+    {:editor-styles   (when wasm? (get state-map shape-id))
+     :editor-state    (when-not v2? (get state-map shape-id))
+     :editor-instance (when v2? (:workspace-editor state))}))
 
 ;; This function must be separated from app.main.data.workspace.texts to avoid a circular
 ;; dependency due main.data.workspace.libraries eventually calling app.main.data.workspace.texts.
@@ -45,13 +59,19 @@
              shape      (first shapes)
 
              values     (dwt/current-text-values
-                         {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
-                          :shape shape
-                          :attrs txt/text-node-attrs})
+                         (assoc (editor-text-options state (:id shape))
+                                :shape shape
+                                :attrs txt/text-node-attrs))
 
              multiple? (or (> 1 (count shapes))
                            (d/seek (partial = :multiple)
                                    (vals values)))
+
+             too-many-texts? (> (count shapes) 1)
+
+             font-missing? (and (not multiple?)
+                                (some? (:font-id values))
+                                (not (fonts/installed? (:font-id values))))
 
              values    (-> (d/without-nils values)
                            (select-keys
@@ -74,12 +94,14 @@
                            (cond-> (string? group-path)
                              (update :name #(str group-path " / " %))))]
 
-         (rx/concat
-          (rx/of (dwl/add-typography typ)
-                 (ev/event {::ev/name "add-asset-to-library"
-                            :asset-type "typography"}))
+         (if (or font-missing? too-many-texts?)
+           (rx/empty)
+           (rx/concat
+            (rx/of (dwl/add-typography typ)
+                   (ev/event {::ev/name "add-asset-to-library"
+                              :asset-type "typography"}))
 
-          (when (not multiple?)
-            (rx/of (dwt/update-attrs (:id shape)
-                                     {:typography-ref-id typ-id
-                                      :typography-ref-file file-id})))))))))
+            (when (not multiple?)
+              (rx/of (dwt/update-attrs (:id shape)
+                                       {:typography-ref-id typ-id
+                                        :typography-ref-file file-id}))))))))))

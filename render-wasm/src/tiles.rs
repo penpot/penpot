@@ -211,6 +211,22 @@ impl TileViewbox {
 
 pub const TILE_SIZE: f32 = 512.;
 
+/// Screen-space top-left of `tile`: `round(-offset) + tile * tile_size`.
+pub fn tile_screen_xy(tile: Tile, tile_size: f32, offset: skia::Point) -> (f32, f32) {
+    (
+        (-offset.x).round() + tile.x() as f32 * tile_size,
+        (-offset.y).round() + tile.y() as f32 * tile_size,
+    )
+}
+
+/// Screen-space top-left of `doc_rect`: `doc * scale + round(pan * scale)`.
+pub fn doc_rect_screen_xy(doc_rect: skia::Rect, pan: skia::Point, scale: f32) -> (f32, f32) {
+    (
+        doc_rect.left * scale + (pan.x * scale).round(),
+        doc_rect.top * scale + (pan.y * scale).round(),
+    )
+}
+
 #[inline(always)]
 pub fn get_tile_dimensions() -> skia::ISize {
     (TILE_SIZE as i32, TILE_SIZE as i32).into()
@@ -500,6 +516,29 @@ pub fn union_edit_dirty_rect(
 mod tests {
     use super::*;
     use skia_safe as skia;
+
+    #[test]
+    fn tile_screen_xy_keeps_neighbors_abutted_at_half_pixel_offset() {
+        let offset = skia::Point::new(103.5, 0.0);
+        let (x0, y0) = tile_screen_xy(Tile(0, 0), TILE_SIZE, offset);
+        let (x1, y1) = tile_screen_xy(Tile(1, 0), TILE_SIZE, offset);
+        let (x2, y2) = tile_screen_xy(Tile(0, 1), TILE_SIZE, offset);
+        assert_eq!(x1 - x0, TILE_SIZE);
+        assert_eq!(y2 - y0, TILE_SIZE);
+        assert_eq!(y1, y0);
+        assert_eq!(x2, x0);
+    }
+
+    #[test]
+    fn doc_rect_screen_xy_keeps_neighbors_abutted_at_half_pixel_pan() {
+        let pan = skia::Point::new(-103.5, 0.0);
+        let scale = 1.0_f32;
+        let a = skia::Rect::from_xywh(0.0, 0.0, TILE_SIZE, TILE_SIZE);
+        let b = skia::Rect::from_xywh(TILE_SIZE, 0.0, TILE_SIZE, TILE_SIZE);
+        let (x0, _) = doc_rect_screen_xy(a, pan, scale);
+        let (x1, _) = doc_rect_screen_xy(b, pan, scale);
+        assert_eq!(x1 - x0, TILE_SIZE);
+    }
 
     #[test]
     fn atlas_slot_is_full_size_when_tiles_fit() {

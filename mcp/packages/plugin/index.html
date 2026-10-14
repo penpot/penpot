@@ -23,6 +23,22 @@
                 Disconnect MCP Server
             </button>
 
+            <div id="session-id" hidden>
+                <div class="session-id-row">
+                    <span class="body-s">Session ID</span>
+                    <code id="session-id-value"></code>
+                    <button
+                        type="button"
+                        id="copy-session-id-btn"
+                        data-appearance="secondary"
+                        aria-label="Copy session ID"
+                    >
+                        Copy
+                    </button>
+                </div>
+                <span id="session-id-feedback" class="body-s" role="status"></span>
+            </div>
+
             <details class="collapsible-section" id="execution-status">
                 <summary class="collapsible-header">
                     <svg

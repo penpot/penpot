@@ -20,7 +20,9 @@
    [promesa.exec.csp :as sp])
   (:import
    com.ladybugdb.Connection
-   com.ladybugdb.Database))
+   com.ladybugdb.Database
+   org.apache.arrow.memory.BufferAllocator
+   org.apache.arrow.memory.RootAllocator))
 
 (set! *warn-on-reflection* true)
 
@@ -46,7 +48,12 @@
   (str profile-id))
 
 (defn- destroy-session!
-  [{:keys [conn db sync-ch msgbus]}]
+  "Close a session's Ladybug resources.
+
+  The Arrow allocator outlives the connection: Ladybug keeps the staged
+  buffers until its tables are dropped, no later than connection close, so
+  the allocator closes last — see `app.graph.arrow/with-allocator!`."
+  [{:keys [conn db allocator sync-ch msgbus]}]
   (when sync-ch
     (sp/close! sync-ch)
     (when msgbus
@@ -54,7 +61,9 @@
   (when conn
     (ex/ignoring (.close ^Connection conn)))
   (when db
-    (ex/ignoring (.close ^Database db))))
+    (ex/ignoring (.close ^Database db)))
+  (when allocator
+    (ex/ignoring (.close ^BufferAllocator allocator))))
 
 (defn- slim-ingest-meta
   "Drop full projection rows from session meta.
@@ -162,10 +171,15 @@
   (swap! sessions dissoc (session-key profile-id)))
 
 (defn load-session!
-  "Ingest `file-id` into a new in-memory Ladybug database for `profile-id`."
+  "Ingest `file-id` into a new in-memory Ladybug database for `profile-id`.
+
+  The session owns its Arrow allocator for its lifetime: the allocator stays
+  open until the connection and database close, so it is created here, passed
+  to ingest, and closed by `destroy-session!` — never inside ingest."
   [cfg profile-id file-id]
   (unload-session! profile-id)
-  (let [^Database db (Database.)
+  (let [^BufferAllocator allocator (RootAllocator.)
+        ^Database db (Database.)
         ^Connection conn (Connection. db)
         msgbus     (::mbus/msgbus cfg)]
     (.setQueryTimeout conn 0)
@@ -174,7 +188,8 @@
       (let [meta  (graph.ingest/ingest-on-connection! cfg conn file-id
                                                       :db-path ":memory:"
                                                       :skip-stats? true
-                                                      :skip-validation? true)
+                                                      :skip-validation? true
+                                                      :arrow-alloc allocator)
             index (graph.sync/build-index file-id (:revn meta) (:projection meta))
             ;; Discard projection rows after indexing — they are only needed
             ;; to seed the sync index and would otherwise leak heap on each Load.
@@ -185,6 +200,7 @@
             ;; binding gives no thread-safety guarantee for one Connection.
             (-> {:db db
                  :conn conn
+                 :allocator allocator
                  :lock (Object.)
                  :file-id file-id
                  :meta meta
@@ -196,7 +212,7 @@
         (swap! sessions assoc (session-key profile-id) session)
         meta)
       (catch Throwable cause
-        (destroy-session! {:conn conn :db db :msgbus msgbus})
+        (destroy-session! {:conn conn :db db :allocator allocator :msgbus msgbus})
         (throw cause)))))
 
 (defn query-session!

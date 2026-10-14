@@ -6,11 +6,9 @@
 
 (ns app.main.ui.auth.verify-token
   (:require
-   [app.common.data :as d]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.common :as dcm]
-   [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.repo :as rp]
@@ -45,33 +43,8 @@
   (st/emit! (da/login-from-token tdata)))
 
 (defmethod handle-token :team-invitation
-  [{:keys [state team-id organization-team-id organization-name invitation-token] :as tdata}]
-  (when (and (= state :created)
-             (contains? tdata :organization-member-count-before))
-    (let [direct-invitation? (some? organization-team-id)]
-      (st/emit!
-       (ev/event
-        (-> (select-keys tdata [:team-id :organization-id :role
-                                :invitation-id :member-id :profile-id
-                                :organization-member-count-before])
-            ;; The audit event keeps its own names: :user-id is the
-            ;; invitee (:member-id, backfilled by the backend with the
-            ;; accepting profile) and :user-who-send-invitation is the
-            ;; inviter (:profile-id, backfilled from `created-by`).
-            (assoc :user-id (:member-id tdata)
-                   :user-who-send-invitation (:profile-id tdata))
-            (dissoc :member-id :profile-id)
-            (d/without-nils)
-            (assoc :organization-member-add-source
-                   (if direct-invitation?
-                     "direct-organization-invitation"
-                     "team-invitation")
-                   :belongs-to-team-on-add (boolean team-id)
-                   ::ev/name "accept-organization-invitation"
-                   ::ev/origin (if direct-invitation?
-                                 "organization-invitation-acceptance"
-                                 "team-invitation-acceptance")))))))
-
+  [{:keys [state team-id organization-team-id organization-name invitation-token
+           redirect-to]}]
   (case state
     :created
     (if organization-team-id
@@ -85,7 +58,7 @@
        (ntf/success (tr "auth.notifications.team-invitation-accepted"))))
 
     :pending
-    (let [route-id (:redirect-to tdata :auth-register)]
+    (let [route-id (or redirect-to :auth-register)]
       (st/emit! (rt/nav route-id {:invitation-token invitation-token})))))
 
 (defmethod handle-token :default

@@ -1,0 +1,127 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/z-index.scss" as *;
+
+.mcp-tool {
+  position: relative;
+
+  &.dashboard {
+    --mcp-disconnected-dot-color: var(--color-foreground-secondary);
+  }
+}
+
+.toolbar-mcp-button {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.toolbar-mcp-button-label {
+  &.connected {
+    color: var(--color-accent-primary);
+  }
+}
+
+.toolbar-mcp-button-dot {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  inline-size: px2rem(6);
+  block-size: px2rem(6);
+  border-radius: 50%;
+  background-color: var(--mcp-disconnected-dot-color, var(--color-background-disabled));
+
+  &.connected {
+    background-color: var(--color-accent-primary);
+  }
+
+  // One-shot "blob" ripple that confirms the moment the tab becomes
+  // connected (e.g. after using "Switch here"). Triggered purely by the
+  // `.connected` class appearing, in sync with the color change.
+  &.connected::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-color: var(--color-accent-primary);
+    opacity: 0;
+    animation: mcp-status-blob 0.5s ease-out;
+  }
+}
+
+@keyframes mcp-status-blob {
+  from {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.5);
+  }
+}
+
+.toolbar-mcp-menu {
+  position: absolute;
+  z-index: var(--z-index-dropdown);
+  left: 0;
+  top: $sz-36;
+}
+
+// Same look as the workspace main menu (`.base-menu` in main_menu.scss).
+// The toolbar overrides `--menu-background-color`, so restore the global
+// menu value here.
+.toolbar-mcp-dropdown {
+  --menu-background-color: var(--color-background-tertiary);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin: 0;
+  padding: var(--sp-xs);
+  border: $b-2 solid var(--panel-border-color);
+  border-radius: $br-8;
+  background-color: var(--menu-background-color);
+  box-shadow: 0 0 $sz-12 0 var(--menu-shadow-color);
+}
+
+.toolbar-mcp-dropdown-info {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-s) var(--sp-m);
+  border-radius: $br-8;
+  color: var(--color-foreground-secondary);
+  background-color: var(--color-background-primary);
+  font-size: px2rem(11);
+  white-space: nowrap;
+}
+
+.toolbar-mcp-dropdown-item {
+  @include t.use-typography("body-small");
+
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: var(--sp-s) var(--sp-m);
+  border-radius: $br-8;
+  color: var(--menu-foreground-color);
+  background-color: var(--menu-background-color);
+  white-space: nowrap;
+
+  &:hover {
+    --menu-foreground-color: var(--menu-foreground-color-hover);
+    --menu-background-color: var(--menu-background-color-hover);
+  }
+}

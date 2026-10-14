@@ -1473,12 +1473,17 @@
                  (rx/filter (complement :skip-component-sync?))
                  ;; Keep waits pending while component changes are checked.
                  (rx/map start-sync-barrier)
-                 (rx/observe-on :async))
+                 (rx/share))
 
-            get-component-events
-            (fn [[event old-data]]
-              (let [{:keys [file-id changes save-undo? undo-group]} event
-                    changed-components
+            ;; Buffers commits until a timer turn passes with no new ones. The
+            ;; debounce timer (not a microtask) queues behind any timers already
+            ;; due, so a burst of commits is inspected as one batch in one task.
+            commit-batches-s
+            (rx/buffer-until (rx/debounce 0 commits-s) commits-s)
+
+            get-component-changes
+            (fn [old-data {:keys [file-id changes save-undo? undo-group]}]
+              (let [changed-components
                     (when (and old-data
                                (or (nil? file-id) (= file-id (:id old-data))))
                       (into #{}
@@ -1486,29 +1491,39 @@
                             changes))]
                 (cond
                   (empty? changed-components)
-                  (rx/empty)
+                  nil
 
                   save-undo?
                   (do
                     (log/info :hint "detected component changes"
                               :ids (map str changed-components)
                               :undo-group undo-group)
-                    (->> (rx/from changed-components)
-                         (rx/map #(component-changed
-                                   % (:id old-data) undo-group))))
+                    (map #(vector ::component-changed % undo-group)
+                         changed-components))
 
                   :else
                   ;; Undos only bump :modified-at.
-                  (->> (rx/from changed-components)
-                       (rx/map touch-component)))))
+                  (map #(vector ::touch-component %) changed-components))))
+
+            ;; One event per distinct component change in the batch
+            get-component-events
+            (fn [batch old-data]
+              (->> batch
+                   (mapcat #(get-component-changes old-data (first %)))
+                   (distinct)
+                   (map (fn [[type component-id undo-group]]
+                          (if (= type ::component-changed)
+                            (component-changed component-id (:id old-data) undo-group)
+                            (touch-component component-id))))
+                   (rx/from)))
 
             component-events-s
-            (->> commits-s
+            (->> commit-batches-s
                  (rx/with-latest-from workspace-buffer-s)
                  (rx/mapcat
-                  (fn [[[event task] old-data]]
-                    (->> (get-component-events [event old-data])
-                         (rx/finalize #(finish-sync-barrier! task)))))
+                  (fn [[batch old-data]]
+                    (->> (get-component-events batch old-data)
+                         (rx/finalize #(run! (comp finish-sync-barrier! second) batch)))))
                  ;; Close barriers left behind when the page shuts down.
                  (rx/finalize #(wrf/finish-tasks! @pending-sync-barriers*))
                  (rx/share))

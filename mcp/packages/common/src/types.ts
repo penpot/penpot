@@ -1,3 +1,17 @@
+/** Metadata identifying one connected Penpot plugin session. */
+export interface PenpotSession {
+    sessionId: string;
+    fileId: string | null;
+    fileName: string | null;
+    workspaceState?: "none" | "loading" | "ready";
+}
+
+/** First message sent by the plugin on each new WebSocket connection. */
+export interface PluginConnectionInit {
+    type: "initialize";
+    session: PenpotSession;
+}
+
 /**
  * Result of a plugin task execution.
  *

@@ -28,6 +28,51 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+(defn stroke-width-input-value
+  "Value for the global stroke width input: the width when every side is
+  equal, `:multiple` otherwise. When per side strokes are disabled (old
+  render) the input shows the top side, the one that render draws."
+  [stroke per-side-disabled]
+  (let [width  (:stroke-width stroke)
+        top    (d/nilv (:stroke-width-top stroke) width)
+        right  (d/nilv (:stroke-width-right stroke) width)
+        bottom (d/nilv (:stroke-width-bottom stroke) width)
+        left   (d/nilv (:stroke-width-left stroke) width)]
+    (cond
+      per-side-disabled
+      top
+
+      (= top right bottom left)
+      width
+
+      :else
+      :multiple)))
+
+(defn stroke-width-input-token
+  "Token for the global stroke width input: the token when every side has
+  the same one, `:multiple` when only some sides have a token, nil when no
+  side has one. When per side strokes are disabled (old render) the input
+  shows the top side token, like `stroke-width-input-value` does."
+  [applied-tokens per-side-disabled]
+  (let [top                 (get applied-tokens :stroke-width-top)
+        right               (get applied-tokens :stroke-width-right)
+        bottom              (get applied-tokens :stroke-width-bottom)
+        left                (get applied-tokens :stroke-width-left)
+        per-side            [top right bottom left]
+        per-side-has-token? (some some? per-side)]
+    (cond
+      per-side-disabled
+      top
+
+      (and (every? some? per-side) (apply = per-side))
+      top
+
+      per-side-has-token?
+      :multiple
+
+      :else
+      nil)))
+
 (mf/defc stroke-row*
   [{:keys [index
            stroke
@@ -114,35 +159,15 @@
                              (not per-side-disabled)
                              (true? (get stroke-per-side [ids index])))
 
-        all-sides-equal?
-        (mf/with-memo [stroke]
-          (let [width  (:stroke-width stroke)
-                top    (d/nilv (:stroke-width-top stroke) width)
-                right  (d/nilv (:stroke-width-right stroke) width)
-                bottom (d/nilv (:stroke-width-bottom stroke) width)
-                left   (d/nilv (:stroke-width-left stroke) width)]
-            (= top right bottom left)))
+        stroke-width-value
+        (mf/with-memo [stroke per-side-disabled]
+          (stroke-width-input-value stroke per-side-disabled))
 
-        show-multiple-placeholder? (or per-side? (not all-sides-equal?))
+        show-multiple-placeholder? (or per-side? (= :multiple stroke-width-value))
 
         applied-token-width
-        (mf/with-memo [applied-tokens]
-          (let [top    (get applied-tokens :stroke-width-top)
-                right  (get applied-tokens :stroke-width-right)
-                bottom (get applied-tokens :stroke-width-bottom)
-                left   (get applied-tokens :stroke-width-left)
-
-                per-side            [top right bottom left]
-                per-side-has-token? (some some? per-side)]
-            (cond
-              (and (every? some? per-side) (apply = per-side))
-              (first per-side)
-
-              per-side-has-token?
-              :multiple
-
-              :else
-              nil)))
+        (mf/with-memo [applied-tokens per-side-disabled]
+          (stroke-width-input-token applied-tokens per-side-disabled))
 
         per-side-toggle-label
         (if per-side-disabled
@@ -409,9 +434,7 @@
                                     :placeholder (if show-multiple-placeholder?
                                                    (tr "settings.multiple")
                                                    "--")
-                                    :value (if all-sides-equal?
-                                             (:stroke-width stroke)
-                                             :multiple)}]
+                                    :value stroke-width-value}]
         [:> select* {:default-selected (d/name stroke-alignment)
                      :options stroke-alignment-options
                      :variant "icon-only"
@@ -445,7 +468,7 @@
                     :size "s"}]
          [:> deprecated-input/numeric-input* {:value (if show-multiple-placeholder?
                                                        nil
-                                                       stroke-width)
+                                                       stroke-width-value)
                                               :min 0
                                               :placeholder (if show-multiple-placeholder?
                                                              (tr "settings.multiple")

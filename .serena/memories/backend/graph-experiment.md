@@ -135,8 +135,8 @@
 - Groups relationship loads by source and target table pair.
 - Resolves relationship endpoints with joins.
 - Does not use `createArrowRelTable` for UUID relationship endpoints.
-- Keeps the Arrow `RootAllocator` alive until Ladybug releases staged buffers.
-- Closes the allocator after the connection and database close sequence.
+- The Arrow `RootAllocator` nests outside the Ladybug connection and closes after the connection and database close sequence; Ladybug keeps staged buffers until connection close, so an inner allocator leaks.
+- `with-allocator!` keeps the body exception when the allocator close also throws, attaching the close failure as suppressed.
 
 ### `app.graph.ingest`
 
@@ -150,6 +150,7 @@
 - Writes graph metadata last.
 - Treats the final metadata write as the complete-build marker.
 - Supports a persistent database path and an open connection.
+- `ingest-on-connection!` requires a caller-owned `:arrow-alloc` that outlives the connection; it raises `:missing-arrow-allocator` without one.
 
 ### `app.graph.projection.document`
 
@@ -244,7 +245,7 @@
 - The map key is the string form of `profile-id`.
 - One profile has one graph session.
 - Loading another file first destroys the old session.
-- A session stores the Ladybug database and connection.
+- A session stores the Ladybug database, connection, and Arrow allocator; the allocator closes after the connection and database.
 - A session stores a shared lock for graph access.
 - A session stores file metadata.
 - A session stores the incremental sync index.
@@ -450,8 +451,8 @@
 
 - `:graph` is defined in `common/src/app/common/flags.cljc`.
 - The flag is off by default.
-- `com.ladybugdb/lbug` version `0.19.1` is a backend dependency.
-- `org.apache.arrow/arrow-memory-netty` version `18.2.0` supports Arrow `RootAllocator`.
+- `com.ladybugdb/lbug` version `0.20.4` is a backend dependency.
+- `org.apache.arrow/arrow-memory-netty` version `19.0.0` supports Arrow `RootAllocator`.
 - The JVM uses `--enable-native-access=ALL-UNNAMED`.
 - The JVM uses `--add-opens=java.base/java.nio=ALL-UNNAMED`.
 - The JVM uses `--sun-misc-unsafe-memory-access=allow`.
@@ -463,7 +464,7 @@
 
 ### `backend-tests.graph-sync-parity-test`
 
-- Uses two Ladybug `:memory:` databases.
+- Uses two Ladybug `:memory:` databases under one Arrow allocator outer to both; an allocator closed before its connections leaks.
 - Does not use PostgreSQL or a live graph session.
 - Projects initial file data into database A.
 - Applies changes to database A through incremental sync.
@@ -473,6 +474,7 @@
 - Reports differences by table, row key, and column.
 - Covers shape add, shape modification, shape deletion, movement, and page changes.
 - Contains a test that injects a sync defect and expects a graph difference.
+- Contains a test that `ingest-on-connection!` without `:arrow-alloc` raises `:missing-arrow-allocator`.
 - Does not cover all component change variants.
 - Does not cover every movement insertion mode.
 
@@ -530,7 +532,7 @@
 
 - Sessions have no TTL.
 - Sessions remain until unload, replacement, or process shutdown.
-- Each session owns native Ladybug memory.
+- Each session owns native Ladybug memory and its Arrow allocator.
 - Many profiles can create many native databases.
 - A profile load replaces its previous session.
 - Two browser tabs for one profile share one graph session.
@@ -590,7 +592,7 @@
 - A graph query from the console must be read-only.
 - A graph session must serialize connection access.
 - Graph routes must remain behind the `:graph` flag and `/dbg` access control.
-- The Arrow allocator must outlive all Ladybug operations that use its buffers.
+- The Arrow allocator nests outside the Ladybug connection and must outlive all Ladybug operations that use its buffers; a session owns its allocator until unload.
 - `GraphMeta` must be written after the full ingest and transforms finish.
 
 ## Key Files

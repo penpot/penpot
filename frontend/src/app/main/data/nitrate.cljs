@@ -414,7 +414,18 @@
               :subscription-status subscription-status})
             pending-id   (str (uuid/next))
             callback-url (dom/append-query-param (rt/get-current-href)
-                                                 :pending-action-id pending-id)]
+                                                 :pending-action-id pending-id)
+            ;; The permissions may have changed in Nitrate since the modal
+            ;; was opened: refresh them and explain why the action failed.
+            on-error
+            (fn [cause]
+              (if (= :not-allowed (-> cause ex-data :code))
+                (rx/of (dt/fetch-teams)
+                       (modal/show :no-permission-modal
+                                   {:type (if (= team-previous-organization-status "other-organization")
+                                            :no-organizations-change
+                                            :no-organizations-create)}))
+                (rx/throw cause)))]
         (rx/concat
          (when-not skip-audit?
            (rx/of audit-event))
@@ -423,7 +434,8 @@
                (fn [{:keys [authorized redirect-uri]}]
                  (if authorized
                    (->> (rp/cmd! ::add-team-to-organization {:team-id team-id :organization-id organization-id})
-                        (rx/map (fn [_] (modal/hide))))
+                        (rx/map (fn [_] (modal/hide)))
+                        (rx/catch on-error))
                    (if redirect-uri
                      (do
                        (ss/save-pending-action! pending-id {:type            :add-team-to-organization

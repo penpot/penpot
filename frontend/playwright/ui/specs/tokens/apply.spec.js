@@ -66,6 +66,74 @@ test.describe("Tokens: Apply token", () => {
     await expect(canvasSection.getByText("black")).toBeVisible();
   });
 
+  test("Canvas background follows its color token when the active set changes", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensUpdateCreateModal } =
+      await setupTokensFileRender(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    // Creates a set holding a "canvas-bg" color token with `value`.
+    const createSetWithCanvasToken = async (setName, value) => {
+      await createSet(tokenThemesSetsSidebar, setName);
+      const setButton = tokenThemesSetsSidebar.getByRole("button", {
+        name: setName,
+      });
+      await setButton.click();
+
+      await tokensTabPanel
+        .getByRole("button", { name: "Add Token: Color" })
+        .click();
+      await expect(tokensUpdateCreateModal).toBeVisible();
+      await tokensUpdateCreateModal.getByLabel("Name").fill("canvas-bg");
+      await tokensUpdateCreateModal.getByLabel("Value").fill(value);
+
+      const submitButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Save",
+      });
+      await expect(submitButton).toBeEnabled();
+      await submitButton.click();
+      await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+      return setButton;
+    };
+
+    const firstSet = await createSetWithCanvasToken("first-bg", "#ff0000");
+    const secondSet = await createSetWithCanvasToken("second-bg", "#00ff00");
+
+    await firstSet.getByRole("checkbox").click();
+
+    // No shape is selected, so the right sidebar shows the canvas options.
+    const canvasSection = page.getByRole("region", {
+      name: "Canvas background section",
+    });
+    await canvasSection.getByRole("button").first().click();
+
+    const colorPicker = page.getByTestId("colorpicker");
+    await expect(colorPicker).toBeVisible();
+    await colorPicker.getByTestId("opt-token-color").click();
+    await colorPicker.getByRole("button", { name: "canvas-bg" }).click();
+    await page.keyboard.press("Escape");
+    await expect(colorPicker).not.toBeVisible();
+
+    const canvas = page.getByTestId("canvas-wasm-shapes");
+    await expect(canvas).toHaveCSS("background-color", "rgb(255, 0, 0)");
+
+    await firstSet.getByRole("checkbox").click();
+    await secondSet.getByRole("checkbox").click();
+
+    await expect(canvas).toHaveCSS("background-color", "rgb(0, 255, 0)");
+    await expect(canvasSection.getByText("canvas-bg")).toBeVisible();
+
+    await firstSet.getByRole("checkbox").click();
+    await expect(canvas).toHaveCSS("background-color", "rgb(0, 255, 0)");
+
+    await secondSet.getByRole("checkbox").click();
+    await expect(canvas).toHaveCSS("background-color", "rgb(255, 0, 0)");
+    await expect(canvasSection.getByText("canvas-bg")).toBeVisible();
+  });
+
   test("User applies border-radius token to a shape from sidebar", async ({
     page,
   }) => {

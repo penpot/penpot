@@ -6,14 +6,17 @@
 
 (ns backend-tests.metrics-test
   (:require
+   [app.common.exceptions :as ex]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [clojure.test :as t]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    io.prometheus.client.Collector$MetricFamilySamples
    io.prometheus.client.Collector$MetricFamilySamples$Sample
-   io.prometheus.client.CollectorRegistry))
+   io.prometheus.client.CollectorRegistry
+   java.util.concurrent.ScheduledThreadPoolExecutor))
 
 (def ^:private valid-definitions? @#'app.metrics/valid-definitions?)
 
@@ -93,6 +96,23 @@
                     (get-collector [_ _] collector))]
     (t/is (true? (mtx/run! instance :id :x :inc 1 :labels ["ok"])))))
 
+(t/deftest instance-resolves-the-metrics-from-a-cfg
+  ;; the resolver is a map read and nothing more: it hands back the very
+  ;; instance, not a copy and not a wrapper
+  (let [metrics (ig/init-key :app.metrics/metrics {:default {}})]
+    (t/is (identical? metrics (mtx/instance {::mtx/metrics metrics})))))
+
+(t/deftest instance-raises-on-a-cfg-without-metrics
+  ;; A missing instance is a wiring bug, and the resolver is the one place
+  ;; that says so: a module that resolves it at the top of a write sees the
+  ;; failure before anything is persisted.
+  (let [cause (try
+                (mtx/instance {})
+                (catch Throwable e e))]
+    (t/is (some? cause))
+    (t/is (= :missing-metrics (:code (ex-data cause))))
+    (t/is (re-find #"::mtx/metrics" (:hint (ex-data cause))))))
+
 (t/deftest definitions-schema-accepts-all-consumed-keys
   (t/is (true? (valid-definitions?
                 {:test-timing
@@ -118,3 +138,28 @@
                         ::mdef/help "typo check"
                         ::mdef/type :histogram
                         ::mdef/bucksets [100]}}))))
+
+(t/deftest create-sampler-reschedules-after-error
+  ;; The docstring promise, tested once for both call sites: an unexpected error
+  ;; on a single sample must not cancel the following runs. The first sample
+  ;; runs immediately and throws; the next one must still be scheduled.
+  (let [calls   (atom 0)
+        sampler (mtx/create-sampler 1000 (fn []
+                                           (swap! calls inc)
+                                           (throw (ex-info "boom" {}))))]
+    (try
+      (t/is (loop [i 0]
+              (cond (pos? @calls) true
+                    (> i 200) false
+                    :else (do (Thread/sleep 10) (recur (inc i)))))
+            "the first sample must run immediately")
+
+      (let [queue (.getQueue ^ScheduledThreadPoolExecutor sampler)]
+        (t/is (loop [i 0]
+                (cond (= 1 (.size queue)) true
+                      (> i 200) false
+                      :else (do (Thread/sleep 10) (recur (inc i)))))
+              "the next sample must be scheduled after the error"))
+
+      (finally
+        (px/shutdown-now sampler)))))

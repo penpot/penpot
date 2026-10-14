@@ -1,7 +1,7 @@
 import { rpcPost, extractCookie } from "./client.mjs";
 
-export async function createDemoProfile() {
-  const res = await rpcPost("create-demo-profile", {});
+export async function createDemoProfile(params = {}) {
+  const res = await rpcPost("create-demo-profile", params);
   if (res.body.type === "validation" || res.body.type === "restriction") {
     throw new Error(
       `Failed to create demo profile: ${res.body.code} - ${res.body.hint || ""}`
@@ -31,8 +31,8 @@ export async function createAccessToken(cookie, name = "e2e-test-token") {
   return res.body;
 }
 
-export async function setupTestProfile() {
-  const { email, password } = await createDemoProfile();
+export async function setupTestProfile(params = {}) {
+  const { email, password } = await createDemoProfile(params);
   const { profile, cookie } = await login(email, password);
   return { profile, cookie, email, password };
 }

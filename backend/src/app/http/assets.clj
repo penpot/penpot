@@ -150,14 +150,22 @@
   [request]
   (some? (request-profile-id request)))
 
-(defn- tempfile-owner-match?
-  "Check if the request's profile-id matches the tempfile's stored owner.
-   Returns true if no profile-id was stored (legacy objects)."
+(def ^:private owner-scoped-buckets
+  "Buckets whose objects belong to a profile: a request from anybody else
+  must not reach them."
+  #{sto/tempfile-bucket sto/job-resource-bucket})
+
+(defn- owner-match?
+  "Check that the request belongs to the profile that owns the object.
+  A missing owner is only tolerated in `tempfile`, where objects predate
+  the metadata; the `job-resource` bucket always carries one, so an
+  object without it fails closed."
   [obj request]
-  (let [stored-profile-id (:profile-id (meta obj))
-        request-profile-id (request-profile-id request)]
-    (or (nil? stored-profile-id)
-        (= stored-profile-id request-profile-id))))
+  (let [stored  (-> obj meta :profile-id)
+        owner   (request-profile-id request)
+        legacy? (= sto/tempfile-bucket (-> obj meta :bucket))]
+    (or (and legacy? (nil? stored))
+        (= stored owner))))
 
 (defn- serve-object-measured
   "Serve `obj`, recording one asset metric per outcome. A failure is
@@ -175,7 +183,9 @@
   "Handler that serves storage objects by id.
    For non-public buckets (e.g. profile), requires authentication
    via session cookie or access token.
-   For tempfile bucket, also requires ownership (profile-id match)."
+   For the owner-scoped buckets (tempfile, job-resource), also requires
+   ownership: the request must come from the profile the object belongs
+   to."
   [{:keys [::sto/storage] :as cfg} request]
   (let [id  (get-id request)
         obj (sto/get-object storage id)]
@@ -193,8 +203,8 @@
 
       ;; The response stays 404 to avoid leaking existence, but the
       ;; metric records the internal 401 outcome.
-      (and (= (-> obj meta :bucket) sto/tempfile-bucket)
-           (not (tempfile-owner-match? obj request)))
+      (and (contains? owner-scoped-buckets (-> obj meta :bucket))
+           (not (owner-match? obj request)))
       (do
         (emit-asset! cfg "by-id" obj 401)
         {::yres/status 404})

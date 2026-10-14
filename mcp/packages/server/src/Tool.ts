@@ -20,6 +20,16 @@ export class EmptyToolArgs {
  * @template TArgs - The strongly-typed arguments class for this tool
  */
 export abstract class Tool<TArgs extends object> {
+    public static readonly SESSION_ID_SCHEMA = z
+        .string()
+        .min(1)
+        .max(128)
+        .optional()
+        .describe(
+            "Penpot session to use. Optional when exactly one session is connected. " +
+                "If several sessions are listed in an error, ask the user to select one and pass its sessionId."
+        );
+
     private readonly logger = createLogger("Tool");
 
     /** monotonically increasing counter for unique tool execution IDs */

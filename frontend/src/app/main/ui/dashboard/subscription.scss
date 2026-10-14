@@ -255,12 +255,19 @@
 }
 
 .nitrate-current-plan {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-sizing: border-box;
+  inline-size: calc(100% - 2 * var(--sp-m));
   border-radius: var(--sp-s);
   margin-block: var(--sp-s) var(--sp-m);
   margin-inline: var(--sp-m);
   background: var(--color-background-tertiary);
   border: $b-1 solid var(--color-background-quaternary);
   padding: var(--sp-m) var(--sp-l);
+  text-align: start;
+  cursor: pointer;
 }
 
 .nitrate-current-plan-label {
@@ -273,9 +280,5 @@
 .nitrate-current-plan-text {
   @include t.use-typography("body-medium");
 
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
   color: var(--color-foreground-primary);
 }

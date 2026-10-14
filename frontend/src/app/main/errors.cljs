@@ -719,6 +719,15 @@
                   :level :error
                   :timeout 3000})))
 
+    ;; Rejected profile write: notify and keep the app running
+    (= code :props-too-large)
+    (let [message (tr "errors.profile-props-too-large")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 5000})))
+
     (= code :snapshot-already-locked)
     (let [message (tr "errors.version-already-locked")]
       (st/async-emit!

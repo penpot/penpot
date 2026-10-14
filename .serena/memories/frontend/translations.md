@@ -7,10 +7,11 @@ high-coverage support reference, never the base.
 ## Workflow
 
 - Canonicalize with `node ./scripts/translations.js sync -l <locale>` from `frontend/`: sorts entries, syncs `#:` comments from `en`, deletes keys missing in `en`.
+- `sync` never ADDS a key missing in the locale: it only syncs comments (for keys that already exist) and drops keys absent from `en`. A key added to `en` alone stays missing in `es` and its text silently falls back to English. Every new key is born in `en` AND `es` in the same change; compare the `msgid` sets to check (`comm -23 <(grep '^msgid ' en.po | sort -u) <(grep '^msgid ' es.po | sort -u)` must be empty).
 - `sync` copies ALL comment flags from `en`, including `#, fuzzy`. Translated entries must NOT stay fuzzy: strip the flag after translating (mirror `es.po`, which keeps fuzzy only on genuinely untranslated entries). Fuzzy entries are excluded from `msgfmt --statistics` translated counts.
 - Canonical files carry NO `#~` obsolete blocks (`en`/`es` have zero). Drop them; `sync` does not resurrect them.
-- Definition of done: `msgfmt --check <locale>.po` exit 0 and `msgfmt --statistics` shows 0 fuzzy, 0 untranslated.
-- `rehash` scans `frontend/src` AND `common/src` for `(tr "key"` occurrences (any line counts, including `;;` comments) and refreshes `#:` refs in `en`, marking unreferenced keys `#, unused`.
+- Definition of done: `msgfmt --check <locale>.po` exit 0, `msgfmt --statistics` shows 0 fuzzy, 0 untranslated, and the locale's `msgid` set is identical to `en.po`'s (no key missing, none extra).
+- `rehash` scans `frontend/src` AND `common/src` for `(tr "key"` occurrences (any line counts, including `;;` comments) and refreshes `#:` refs in `en`, marking unreferenced keys `#, unused`. The refs in `en` are broadly stale, so a repo-wide `rehash` rewrites hundreds of lines (measured: ~487 on `en` alone): it is a maintenance action on its own, never a step to run inside a change that only adds or edits a key.
 - Dynamic keys are invisible to `rehash`: eliminate them instead of
   declaring them. Preference order: literal `(tr "key")` args only;
   never put a branch inside `tr`, hoist it out (`(if cond (tr "a") (tr "b"))`);
@@ -28,6 +29,12 @@ high-coverage support reference, never the base.
 
 ## Entry rules
 
+- Placement: a key names the feature that renders it (`dashboard.import.*`,
+  `files-export-modal.*`, `jobs.*`); `labels.*` is the bucket for the short
+  generic words reused across screens (Accept, Cancel, Download…), never the
+  home of a feature's own vocabulary. Keep a feature's strings together: the
+  durable jobs write their progress stages as `jobs.progress.stage.*` and
+  their row statuses as `jobs.*`, not half in `labels.*`.
 - Keys resolved dynamically from server-provided data carry a `#, backend`
   flag (set it in `en`, `sync` copies it to the locales): do not remove or
   rename these entries, and keep their `%s` placeholders (the backend only
@@ -40,13 +47,26 @@ high-coverage support reference, never the base.
 - Preserve verbatim: `%s`/`%d`, `{var}`/`{{...}}`, markdown `[text](%s)`, HTML tags, `\n` positions, brand names (Penpot), key names (Ctrl/Shift/Alt), technical terms (SVG, CSS, HSV, RGB).
 
 ## Catalan (ca) conventions
-
 - Normative IEC/Termcat Catalan. Address the user in VOSALTRES (2nd person plural): "Deseu", "Creeu", "Ja teniu un compte?". Buttons/menus use short imperatives ("Crea", "Mou", "Restaura").
 - Established glossary (reuse exactly, do not re-coin): layer=capa, board=tauler, stroke=traç, fill=Emplenat, blur=Difuminat, shadow=Ombra, clipboard=porta-retalls, delete=Elimina, rename=Canvia el nom, shortcut=drecera, grid=graella (keep "grid" where the file already does, e.g. grid-layout editing), plugins/extensions UI=extensions, layout=Disposició, gradient=Degradat, wireframing kept as loanword.
 - Ela geminada uses the middle dot: Cancel·la, paral·lel, al·lega.
 - ALL-CAPS source stays ALL-CAPS in Catalan; keep `$175`-style amounts in IEC format (`175 $/mes`) only where `es` already adapts.
 - Shortcut/action names (`shortcuts.*`) are noun/infinitive labels, not sentences. Error strings are direct, no hedging.
 - Same English source in different contexts may legitimately differ (verb "Copia" vs noun "Còpia"; "Desactivat" vs "Deshabilitada" agreeing with "drecera"). Normalize only true duplicates.
+
+## Russian (ru) conventions
+
+- Formal address with capital ВЫ ("Вы уверены…", "Вы собираетесь…"). Buttons/menus use infinitives ("Создать", "Удалить", "Дублировать"), never imperatives.
+- Established glossary (reuse exactly, do not re-coin): layer=слой, board=доска (EN `board` is NEVER кадр — normalized in lote1: toolbar/viewer/shape-menu/header-menu/export-frames/undo/num-of-frames), path/draw tool=контур, stroke=обводка, fill=заливка, blur=размытие, shadow=тень, grid=сетка, clipboard=буфер обмена, shortcuts=сочетания клавиш (normalized in lote1: title/show-shortcuts/not-found), plugin=плагин, layout=макет (`labels.layout` fixed in lote1), gradient=градиент, token=токен, set=набор, theme=тема, file=файл, project=проект, team=команда, library=библиотека, component=компонент.
+- No external RU style guide applies verbatim (Mozilla ru guide is marketing-only, GNOME glossary unmaintained, Adobe uses монтажная область for artboard but `ru.po` majority already says доска — keep доска for consistency).
+- `words.ru.txt` `[function]` DELIBERATELY omits 1-letter words (в/с/к/о/у/а/и) and ending-colliding particles (на/по/не/ли/же/бы/его/их/те/или…): Russian inflects (проект→проекта, запросили=запрос+или), so listing them flags every inflected noun/verb. Never "complete" that list; put tripped valid words in `[ok]`.
+- Never abbreviate т. д. / т. е. in `ru.po`: the lone т/д tokens poison the glue detector's frequency map and flag short words (тон→т+он). Write и так далее out.
+- Tokens-domain glossary (lote2, reuse): alias=алиас, remap=переназначить, viewport=вьюпорт, set=набор, theme=тема, spread (shadow)=распространение, margins=внешние отступы, paddings=внутренние отступы, gaps=промежутки, type identifiers stay in English (Line Height, Font Size, innerShadow/dropShadow, none/Uppercase/Lowercase/Capitalize, thin/light/regular/bold/Italic).
+- Editor-domain glossary (lote3, reuse): variant=вариант, property=свойство, guide=направляющая, board guide=направляющая доски, MCP server=MCP-сервер, size preset=пресет размера, border-radius section=скругление, path handler=маркер, canvas=холст, render=рендер/рендеринг, plugin (never extensión)=плагин.
+- Avoid standalone те (those) in phrasing ("те же" → "такие же"): one lone те validates те+мы splits and flags every темы. Same poisoning class as т. д.
+- `words.ru.txt` `[function]` also omits пока (dropped in lote4): with standalone за anywhere in the file, пока+за flags показа. Rare-typo detection loss accepted.
+- Billing-domain glossary (lote4, reuse): plan names follow shipped `ru.po`, NOT es: Enterprise=Корпоративный, Professional=Профессиональный, Unlimited=Безлимитный, trial=пробный; subscription=подписка, storage=хранилище, seat editors=редакторы, viewer role=наблюдатель, amounts as `175 $/мес.` / `10 ГБ`; access token=токен доступа, MCP key=MCP-ключ (regenerate=перевыпустить), markdown `[text|target:self](%s)` kept verbatim.
+- Closing-domain glossary (lote5, reuse): shortcut noun everywhere=сочетание (shortcuts section titles are noun/infinitive labels, never ярлыки); node=узел, segment=сегмент, measurements=размеры; WebGL unavailable flow uses гайд/руководство по неполадкам + рендеринг WebGL выключен/включён; `ru.po` reached 2275/2275 keys (100%) with 0 fuzzy, 0 untranslated per `msgfmt --statistics`.
 
 ## QA before commit
 

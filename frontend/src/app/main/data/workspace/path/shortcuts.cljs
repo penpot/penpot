@@ -157,6 +157,7 @@
                      :label (fn [] (tr "shortcuts.deselect-all"))
                      :command (ds/c-mod "shift+a")
                      :subsections [:path-editor]
+                     :overwrite true
                      :fn #(st/emit! (drp/deselect-all))}
 
    :flip-horizontal {:tooltip (ds/shift "H")

@@ -20,6 +20,7 @@
    [app.db.sql :as sql]
    [app.email :as eml]
    [app.features.logical-deletion :as ldel]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media.validation :as media.v]
@@ -28,12 +29,12 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
    [app.storage :as sto]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [clojure.set :as set]))
 
 ;; --- Helpers & Specs
@@ -735,6 +736,37 @@
 
 ;; --- Mutation: Leave Team
 
+;; Remove every team-scoped relation of a profile that leaves (or is
+;; removed from) a team. File and project roles hang from the team
+;; membership: keeping them would let the former member keep reading
+;; and editing files through `sql:file-permissions`. Pins are personal
+;; state of the same team, so they go too. Other teams are untouched,
+;; and rejoining grants fresh roles. Runs inside the caller's
+;; transaction.
+(def ^:private sql:delete-team-file-rels
+  "DELETE FROM file_profile_rel AS fpr
+    USING file AS f
+    INNER JOIN project AS p ON (p.id = f.project_id)
+    WHERE fpr.file_id = f.id
+      AND p.team_id = ?
+      AND fpr.profile_id = ?")
+
+(def ^:private sql:delete-team-project-rels
+  "DELETE FROM project_profile_rel AS ppr
+    USING project AS p
+    WHERE ppr.project_id = p.id
+      AND p.team_id = ?
+      AND ppr.profile_id = ?")
+
+(defn- delete-team-rels
+  [conn profile-id team-id]
+  (db/exec! conn [sql:delete-team-file-rels team-id profile-id])
+  (db/exec! conn [sql:delete-team-project-rels team-id profile-id])
+  (db/delete! conn :team-project-profile-rel {:profile-id profile-id
+                                              :team-id team-id})
+  (db/delete! conn :team-profile-rel {:profile-id profile-id
+                                      :team-id team-id}))
+
 (defn leave-team
   [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id id reassign-to]}]
   (let [perms   (get-permissions conn profile-id id)
@@ -785,9 +817,7 @@
                 :code :owner-cant-leave-team
                 :hint "releasing owner before leave"))
 
-    (db/delete! conn :team-profile-rel
-                {:profile-id profile-id
-                 :team-id id})
+    (delete-team-rels conn profile-id id)
 
     nil))
 
@@ -838,22 +868,27 @@
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
 
-    (let [delay (ldel/get-deletion-delay team)
-          team  (db/update! conn :team
-                            {:deleted-at (ct/in-future delay)}
-                            {:id team-id}
-                            {::db/return-keys true})]
+    (let [delay           (ldel/get-deletion-delay team)
+          organization-id (dm/get-in team [:organization :id])
+          team-name       (:name team)
+          team            (db/update! conn :team
+                                      {:deleted-at (ct/in-future delay)}
+                                      {:id team-id}
+                                      {::db/return-keys true})]
 
       ;; Api call to nitrate
       (when (contains? cf/flags :admin-console)
         (nitrate/call cfg :delete-team {:profile-id profile-id :team-id team-id}))
 
-      (wrk/submit! {::db/conn conn
-                    ::wrk/task :delete-object
-                    ::wrk/params {:object :team
-                                  :deleted-at (:deleted-at team)
-                                  :id team-id}})
-      team)))
+      (jobs/submit cfg
+                   {::jobs/name :delete-object
+                    ::jobs/params {:object :team
+                                   :deleted-at (:deleted-at team)
+                                   :id team-id}})
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:organization-id organization-id
+                        :team-id team-id
+                        :team-name team-name}}))))
 
 (def ^:private schema:delete-team
   [:map {:title "delete-team"}
@@ -865,8 +900,7 @@
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]
-  (delete-team cfg {:team-id id :profile-id profile-id})
-  nil)
+  (delete-team cfg {:team-id id :profile-id profile-id}))
 
 ;; --- Mutation: Team Update Role
 
@@ -969,8 +1003,7 @@
       (ex/raise :type :validation
                 :code :cant-remove-owner))
 
-    (db/delete! conn :team-profile-rel {:profile-id member-id
-                                        :team-id team-id})
+    (delete-team-rels conn member-id team-id)
 
     ;; A removed member that owns the organization of this team keeps
     ;; read-only access to it, so instead of kicking them out we degrade

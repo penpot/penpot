@@ -179,6 +179,16 @@ function _addEvent(object, type, callback) {
 }
 
 /**
+ * true for the letter (A-Z) and main-row digit (0-9) keycodes
+ *
+ * @param {number} which
+ * @return {boolean}
+ */
+function _isLetterOrDigit(which) {
+  return (which >= 48 && which <= 57) || (which >= 65 && which <= 90);
+}
+
+/**
  * takes the event and returns the key character
  *
  * @param {Event} e
@@ -220,6 +230,12 @@ function _characterFromEvent(e) {
 
   if (_KEYCODE_MAP[e.which]) {
     return _KEYCODE_MAP[e.which];
+  }
+
+  // keydown bindings name the key, not the glyph it types under modifiers
+  // ("ﬁ" for Option+Shift+5, ")" for Shift+0)
+  if (_isLetterOrDigit(e.which)) {
+    return String.fromCharCode(e.which).toLowerCase();
   }
 
   // if it is not in the special map

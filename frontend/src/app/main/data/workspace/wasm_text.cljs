@@ -14,8 +14,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.text :as ctt]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.modifiers :as dwm]
@@ -40,7 +40,7 @@
    ;; text shape is being edited): there is no design state to query, and
    ;; returning nil makes callers skip the WASM resize/modifier path.
    (when (and id (wasm.api/initialized?))
-     (wasm.api/use-shape id)
+     (wselect/use-shape id)
      ;; While the WASM text editor is actively editing it already holds the live
      ;; content and layout. Re-pushing the content here calls `_clear_shape_text`
      ;; + `_update_shape_text_layout`, which resets the editor and drops every
@@ -64,16 +64,12 @@
   ([shape]
    (resize-wasm-text-modifiers shape (:content shape)))
 
-  ([{:keys [id points selrect grow-type] :as shape} content]
+  ([{:keys [id points selrect] :as shape} content]
    (when-let [new-size (get-wasm-text-new-size shape content)]
      (let [width-scale  (/ (:width new-size) (:width selrect))
            height-scale (/ (:height new-size) (:height selrect))
            resize-v     (gpt/point width-scale height-scale)
-           ;; Rtl text grows leftward, so anchor it on the top-right.
-           origin       (if (and (= :auto-width grow-type)
-                                 (ctt/rtl-content? content))
-                          (second points)
-                          (first points))]
+           origin       (first points)]
        {id
         {:modifiers
          (ctm/resize-modifiers
