@@ -57,6 +57,16 @@ describe("canonical key normalization", () => {
     assert.equal(fired("?", { key: "?", code: "Slash" }), 1);
   });
 
+  it("without a layout map, punctuation resolves by glyph", () => {
+    // Spanish layout: Shift + the physical "+" key (BracketRight) types "*".
+    assert.equal(fired("shift+*", { key: "*", code: "BracketRight", shiftKey: true }), 1);
+    assert.equal(fired("shift+]", { key: "*", code: "BracketRight", shiftKey: true }), 0);
+    assert.equal(fired("+", { key: "+", code: "BracketRight" }), 1);
+    // US layout: Shift + BracketRight types "}".
+    assert.equal(fired("shift+}", { key: "}", code: "BracketRight", shiftKey: true }), 1);
+    assert.equal(fired("shift+]", { key: "}", code: "BracketRight", shiftKey: true }), 0);
+  });
+
   it("lowercases function keys", () => {
     assert.equal(fired("f1", { key: "F1", code: "F1" }), 1);
     assert.equal(fired("f13", { key: "F13", code: "F13" }), 1);

@@ -92,48 +92,32 @@ const _SPECIAL_ALIASES = {
 };
 
 /**
- * takes the event and returns the canonical key
+ * Physical codes treated positionally. Letters and digits resolve by
+ * glyph (`event.key`), but punctuation resolves by position (`event.code`)
+ * through the layout map, so the same physical key matches on every
+ * layout with and without `Shift`. Without a map the typed glyph applies.
  *
- * `event.key` is the source of truth: single characters lowercase so
- * `Shift+Z` matches a `ctrl+shift+z` bind, `" "` maps to `space`, and
- * named keys map through `_KEY_NAMES`. Numpad digits stay positional
- * (`num0`..`num9`) so they keep their own bindings.
- *
- * @param {Event} e
- * @return {string|null}
+ * @type {Set<string>}
  */
-function _characterFromEvent(e) {
-  // Numpad digits as "num0".."num9" — keeps them separate from main-row bindings across NumLock states and event types.
-  if (e.code && e.code.indexOf("Numpad") === 0) {
-    const suffix = e.code.substring(6);
-    if (suffix.length === 1 && suffix >= "0" && suffix <= "9") {
-      return "num" + suffix;
-    }
-  }
+const _PUNCTUATION_CODES = new Set([
+  "Minus",
+  "Equal",
+  "BracketLeft",
+  "BracketRight",
+  "Backslash",
+  "Semicolon",
+  "Quote",
+  "Backquote",
+  "Comma",
+  "Period",
+  "Slash",
+]);
 
-  const key = e.key;
-  if (typeof key !== "string" || key === "") {
-    return null;
-  }
-
-  if (_KEY_NAMES[key]) {
-    return _KEY_NAMES[key];
-  }
-
-  if (key.length === 1) {
-    return key.toLowerCase();
-  }
-
-  if (/^F\d{1,2}$/.test(key)) {
-    return key.toLowerCase();
-  }
-
-  if (key === "Dead") {
-    return null;
-  }
-
-  return key.toLowerCase();
-}
+/**
+ * Resolves an event to its canonical key. Implemented as
+ * `Mousetrap#_characterFromEvent` so punctuation can consult the
+ * instance layout map (see `setLayoutMap`).
+ */
 
 /**
  * checks if two arrays are equal
@@ -298,6 +282,15 @@ class Mousetrap {
      */
     this._nextExpectedAction = false;
 
+    /**
+     * layout map for positional punctuation resolution, as returned by
+     * `navigator.keyboard.getLayoutMap()` (an object with `.get(code)`).
+     * `null` means glyph fallback. Set via `setLayoutMap`.
+     *
+     * @type {Object|null}
+     */
+    this._layoutMap = null;
+
     if (targetElement) {
       targetElement.addEventListener("keydown", (e) => this._handleKeyEvent(e));
       targetElement.addEventListener("keyup", (e) => this._handleKeyEvent(e));
@@ -370,6 +363,85 @@ class Mousetrap {
     this._callbacks = {};
     this._directMap = {};
     return this;
+  }
+
+  /**
+   * sets the keyboard layout map used for positional punctuation
+   * resolution (the same map the shortcut recorder uses).
+   *
+   * Pass the `KeyboardLayoutMap` from
+   * `navigator.keyboard.getLayoutMap()`, or `null` to go back to the
+   * glyph fallback. Read live at dispatch time, so call it whenever
+   * the map resolves without rebinding.
+   *
+   * @param {Object|null} map - object with `.get(code)`, or null
+   * @returns void
+   */
+  setLayoutMap(map) {
+    this._layoutMap = map;
+    return this;
+  }
+
+  /**
+   * takes the event and returns the canonical key
+   *
+   * Letters, digits and named keys resolve by glyph: single characters
+   * lowercase so `Shift+Z` matches a `ctrl+shift+z` bind, `" "` maps to
+   * `space`, and named keys map through `_KEY_NAMES`. Punctuation
+   * resolves positionally via the layout map (see `setLayoutMap`),
+   * falling back to the glyph when no map is set. Numpad digits stay
+   * positional (`num0`..`num9`) so they keep their own bindings.
+   *
+   * @param {Event} e
+   * @return {string|null}
+   */
+  _characterFromEvent(e) {
+    // Numpad digits as "num0".."num9" — keeps them separate from main-row bindings across NumLock states and event types.
+    if (e.code && e.code.indexOf("Numpad") === 0) {
+      const suffix = e.code.substring(6);
+      if (suffix.length === 1 && suffix >= "0" && suffix <= "9") {
+        return "num" + suffix;
+      }
+    }
+
+    // Punctuation is positional: with a layout map the primary
+    // (unshifted) character of the physical key wins, so `Shift+*` on a
+    // Spanish layout (code `BracketRight`) resolves to `+` like the
+    // recorder stores. Without a map the typed glyph applies.
+    if (e.code && _PUNCTUATION_CODES.has(e.code) && this._layoutMap) {
+      let mapped = null;
+      try {
+        mapped = this._layoutMap.get(e.code);
+      } catch {
+        mapped = null;
+      }
+      if (typeof mapped === "string" && mapped !== "") {
+        return mapped.toLowerCase();
+      }
+    }
+
+    const key = e.key;
+    if (typeof key !== "string" || key === "") {
+      return null;
+    }
+
+    if (_KEY_NAMES[key]) {
+      return _KEY_NAMES[key];
+    }
+
+    if (key.length === 1) {
+      return key.toLowerCase();
+    }
+
+    if (/^F\d{1,2}$/.test(key)) {
+      return key.toLowerCase();
+    }
+
+    if (key === "Dead") {
+      return null;
+    }
+
+    return key.toLowerCase();
   }
 
   /**
@@ -620,7 +692,7 @@ class Mousetrap {
       // this is so if you finish a sequence and
       // release the key the final key will not trigger a keyup
       if (action !== "keyup") {
-        this._ignoreNextKeyup = _characterFromEvent(e);
+        this._ignoreNextKeyup = this._characterFromEvent(e);
       }
 
       // weird race condition if a sequence ends with the key
@@ -779,7 +851,7 @@ class Mousetrap {
    * @returns void
    */
   _handleKeyEvent(e) {
-    const character = _characterFromEvent(e);
+    const character = this._characterFromEvent(e);
     // no character found then stop
     if (!character) {
       return;

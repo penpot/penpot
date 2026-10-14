@@ -17,6 +17,26 @@
 
 (log/set-level! :warn)
 
+;; Keyboard layout map shared by the shortcut recorder
+;; (`app.main.ui.shortcuts`) and the Mousetrap dispatcher: punctuation
+;; resolves by physical position through this map, so recording and
+;; dispatch use the same token. `nil` until `getLayoutMap` resolves (or
+;; when the browser has no keyboard API); both sides then fall back to
+;; the typed glyph, which keeps them consistent with and without a map.
+(defonce layout-map (atom nil))
+
+(let [navigator (when (exists? js/navigator) js/navigator)
+      keyboard  (when (some? navigator) (.-keyboard ^js navigator))]
+  (when (and (some? keyboard)
+             (exists? (.-getLayoutMap ^js keyboard)))
+    (-> (.getLayoutMap ^js keyboard)
+        (.then (fn [m]
+                 (cljs.core/reset! layout-map m)
+                 (.setLayoutMap mousetrap m))
+               (fn [_]
+                 (cljs.core/reset! layout-map nil)
+                 (.setLayoutMap mousetrap nil))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

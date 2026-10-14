@@ -31,38 +31,12 @@
    [goog.events :as events]
    [rumext.v2 :as mf]))
 
-(defonce ^:private layout-map (atom nil))
-
-(let [navigator (when (exists? js/navigator) js/navigator)
-      keyboard  (when (some? navigator) (.-keyboard ^js navigator))]
-  (when (and (some? keyboard)
-             (exists? (.-getLayoutMap ^js keyboard)))
-    (-> (.getLayoutMap ^js keyboard)
-        (.then (fn [m] (reset! layout-map m))
-               (fn [_] (reset! layout-map nil))))))
-
 (def ^:private modifier-keys
   #{"Control" "Shift" "Alt" "Meta"})
 
 (def ^:private punctuation-codes
   #{"Minus" "Equal" "BracketLeft" "BracketRight" "Backslash"
     "Semicolon" "Quote" "Backquote" "Comma" "Period" "Slash"})
-
-;; American fallback for punctuation when `getLayoutMap` is unavailable.
-;; Mousetrap resolves these positionally too (via the layout map on the
-;; recorder side), so recording stays consistent across layouts.
-(def ^:private code-fallback-map
-  {"Minus"        "-"
-   "Equal"        "="
-   "BracketLeft"  "["
-   "BracketRight" "]"
-   "Backslash"    "\\"
-   "Semicolon"    ";"
-   "Quote"        "'"
-   "Backquote"    "`"
-   "Comma"        ","
-   "Period"       "."
-   "Slash"        "/"})
 
 (def ^:private key-name-map
   {"ArrowUp"    "up"
@@ -125,21 +99,23 @@
       (str "num" suffix))))
 
 (defn- punctuation-alias
+  "Resolves punctuation by physical position through the shared layout
+   map (`app.main.data.shortcuts/layout-map`, also pushed into Mousetrap),
+   so recording and dispatch use the same token. Without a map the typed
+   glyph applies, which keeps both sides consistent."
   [code key]
-  (let [mapped (when (some? @layout-map)
-                 (.get ^js @layout-map code))]
+  (let [mapped (when (some? @ds/layout-map)
+                 (.get ^js @ds/layout-map code))]
     (if (string? mapped)
       (str/lower mapped)
-      (or (get code-fallback-map code)
-          (when (= 1 (count key))
-            (str/lower key))
-          (str/lower key)))))
+      (str/lower key))))
 
 (defn- normalize-key
   "Normalizes `event.key` to the lowercase canonical token mousetrap
-   matches on. Letters and digits stay glyph-based (`a`, not `q` on
-   AZERTY); punctuation resolves positionally via `getLayoutMap` (or the
-   American fallback) so `Shift+Period` records `shift+.` on every layout."
+   matches on. Letters, digits and named keys resolve by glyph (`a`, not
+   `q` on AZERTY); punctuation resolves by physical position through the
+   layout map, so `Shift+*` on a Spanish layout records `shift++`, the
+   primary key the user sees."
   [^js event]
   (let [native (event->native event)
         key    (.-key ^js event)
