@@ -10,15 +10,8 @@
    override on a copy."
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.files.helpers :as cfh]
    [app.common.types.library :as ctl]
    [app.common.types.text :as txt]))
-
-(defn- make-change
-  [container change]
-  (if (cfh/page? container)
-    (assoc change :page-id (:id container))
-    (assoc change :component-id (:id container))))
 
 (defn generate-sync-colors
   "Copy into `shape` the value of each color of the library `library-id` that
@@ -34,41 +27,19 @@
   [changes shape container update-node]
   (let [old-content (:content shape)
         new-content (txt/transform-nodes update-node old-content)
-
-        redo-change
-        (make-change
-         container
-         {:type :mod-obj
-          :id (:id shape)
-          :operations [{:type :set
-                        :attr :content
-                        :val new-content
-                        :ignore-touched true}
-                       {:type :set
-                        :attr :position-data
-                        :val nil}]})
-
-        undo-change
-        (make-change
-         container
-         {:type :mod-obj
-          :id (:id shape)
-          :operations [{:type :set
-                        :attr :content
-                        :val old-content
-                        :ignore-touched true}
-                       {:type :set
-                        :attr :position-data
-                        :val nil}]})
-
-        changes'    (-> changes
-                        (update :redo-changes conj redo-change)
-                        (update :undo-changes conj undo-change))]
-
+        set-content (fn [content]
+                      {:type :mod-obj
+                       :id (:id shape)
+                       :operations [{:type :set
+                                     :attr :content
+                                     :val content
+                                     :ignore-touched true}
+                                    {:type :set
+                                     :attr :position-data
+                                     :val nil}]})]
     (if (= new-content old-content)
       changes
-      (-> changes'
-          (pcb/apply-changes-local)))))
+      (pcb/add-changes changes container [(set-content new-content)] [(set-content old-content)]))))
 
 (defn generate-sync-typographies
   "Copy into the text `shape` the text styles of each typography of the
