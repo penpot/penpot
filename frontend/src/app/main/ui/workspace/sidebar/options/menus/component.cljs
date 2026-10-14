@@ -1009,7 +1009,7 @@
          (fn []
            (swap! state* update :render inc)))
 
-        menu-entries (cmm/generate-components-menu-entries shapes {:for-design-tab? true})
+        menu-entries (cmm/use-components-menu-entries shapes {:for-design-tab? true})
         path         (->> component (:path) (cpn/split-path) (cpn/join-path-with-dot))]
 
     (when (seq shapes)

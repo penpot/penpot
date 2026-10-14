@@ -55,6 +55,17 @@ Some naming conventions:
   (->> (split-path path)
        (join-path)))
 
+(defn clean-valid-name
+  "The path string `name` with its empty items removed (`clean-path`), or nil
+  when it is not a valid name: blank, or ending in a separator."
+  [name]
+  (let [name  (str/trim name)
+        clean (clean-path name)]
+    (when (and (not (str/ends-with? name "/"))
+               (string? clean)
+               (not (str/blank? clean)))
+      clean)))
+
 (defn merge-path-item
   "Put the item at the end of the path."
   [path name]

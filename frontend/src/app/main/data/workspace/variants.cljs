@@ -28,7 +28,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -620,20 +619,10 @@
                      ;; microtask of previous events execute before the
                      ;; commit
                      (->> (rx/of (dwu/commit-undo-transaction undo-id))
-                          (rx/observe-on :async)))))))
-
-            redirect-to-page
-            (fn [page-id]
-              (rx/merge
-               (->> stream
-                    (rx/filter (ptk/type? ::dwpg/initialize-page))
-                    (rx/take 1)
-                    (rx/observe-on :async)
-                    (rx/mapcat (fn [_] (combine page-id))))
-               (rx/of (dcm/go-to-workspace :page-id page-id))))]
+                          (rx/observe-on :async)))))))]
 
         (if (and page-id (not= page-id current-page))
-          (redirect-to-page page-id)
+          (dwl/go-to-page-then stream page-id #(combine page-id))
           (combine current-page))))))
 
 (defn valid-components-for-variants?

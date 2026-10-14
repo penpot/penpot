@@ -761,15 +761,11 @@
      (watch [_ state _]
        (when-let [shape-id (d/nilv shape-id (dm/get-in state [:workspace-local :shape-for-rename]))]
          (let [shape        (dsh/lookup-shape state shape-id)
-               name         (str/trim name)
-               clean-name   (cpn/clean-path name)
-               valid?       (and (not (str/ends-with? name "/"))
-                                 (string? clean-name)
-                                 (not (str/blank? clean-name)))
+               clean-name   (cpn/clean-valid-name name)
                component-id (:component-id shape)
                undo-id (js/Symbol)]
 
-           (when valid?
+           (when (some? clean-name)
              (if (ctc/is-variant-container? shape)
                ;; Rename the full variant when it is a variant container
                (rx/of (dwva/rename-variant shape-id clean-name))

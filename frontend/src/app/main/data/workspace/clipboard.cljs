@@ -975,12 +975,7 @@
                                  (pcb/update-shapes [parent-id]
                                                     #(ctl/add-children-to-cell % selected all-objects drop-cell)))
 
-                  add-component-to-variant? (and
-                                             ;; Any of the shapes is a head
-                                             (some ctk/instance-head? orig-shapes)
-                                             ;; Any ancestor of the destination parent is a variant
-                                             (->> (cfh/get-parents-with-self page-objects parent-id)
-                                                  (some ctk/is-variant?)))
+                  add-component-to-variant? (ctn/head-into-variant? page-objects parent-id orig-shapes)
                   undo-id      (js/Symbol)]
 
               (rx/concat
