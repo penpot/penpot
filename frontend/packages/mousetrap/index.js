@@ -387,7 +387,10 @@ class Mousetrap {
    *
    * Letters, digits and named keys resolve by glyph: single characters
    * lowercase so `Shift+Z` matches a `ctrl+shift+z` bind, `" "` maps to
-   * `space`, and named keys map through `_KEY_NAMES`. Punctuation
+   * `space`, and named keys map through `_KEY_NAMES`. The exception is a
+   * digit row key held with `Shift`, which resolves to the digit itself
+   * (`Digit0` types ")" on US layouts but "0" on AZERTY, so `shift+0`
+   * must mean the physical digit key everywhere). Punctuation
    * resolves positionally via the layout map (see `setLayoutMap`),
    * falling back to the glyph when no map is set. Numpad digits stay
    * positional (`num0`..`num9`) so they keep their own bindings.
@@ -423,6 +426,14 @@ class Mousetrap {
     const key = e.key;
     if (typeof key !== "string" || key === "") {
       return null;
+    }
+
+    // Shifted digits resolve to the digit itself: with `Shift` held,
+    // `Digit0` types ")" on US layouts but "0" on AZERTY, so the glyph
+    // can't be the token. `shift+0` means the physical digit key
+    // everywhere, like `shift+z` means `z` regardless of `Shift`.
+    if (e.shiftKey && e.code && /^Digit[0-9]$/.test(e.code) && key.length === 1) {
+      return e.code.charAt(5);
     }
 
     if (_KEY_NAMES[key]) {

@@ -437,12 +437,31 @@
                 (mock-wrapped-keydown {:key "Z" :code "KeyZ"
                                        :ctrl true :shift true})))))))
 
-(t/deftest mousetrap-star-is-not-remapped-to-digit
-  (t/testing "no US Shift remap: \"*\" stays \"*\" instead of becoming \"8\""
+(t/deftest mousetrap-shifted-digit-resolves-to-digit
+  (t/testing "a digit row key held with Shift records the digit itself: US
+              Shift+0 types \")\" but records \"shift+0\", so the physical
+              digit key means the same on every layout (production keyCode
+              behavior)"
     (with-redefs [cf/check-platform? (constantly false)]
-      (t/is (= "shift+*"
+      (t/is (= "shift+0"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key ")" :code "Digit0" :shift true}))))
+      (t/is (= "shift+1"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "!" :code "Digit1" :shift true}))))
+      (t/is (= "shift+2"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "@" :code "Digit2" :shift true}))))
+      (t/is (= "shift+8"
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key "*" :code "Digit8" :shift true})))))))
+
+(t/deftest mousetrap-shifted-digit-already-digit-unchanged
+  (t/testing "AZERTY Shift+Digit0 already types \"0\": unchanged"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+0"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "0" :code "Digit0" :shift true})))))))
 
 (t/deftest mousetrap-space-and-named-keys
   (t/testing "\" \" records as space and named keys stay lowercase"

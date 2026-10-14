@@ -52,9 +52,21 @@ describe("canonical key normalization", () => {
     assert.equal(fired("a", { key: "A", code: "KeyA" }), 1);
   });
 
-  it("keeps glyphs as-is instead of the old US Shift remap", () => {
-    assert.equal(fired("shift+*", { key: "*", code: "Digit8", shiftKey: true }), 1);
-    assert.equal(fired("?", { key: "?", code: "Slash" }), 1);
+  it("resolves a shifted digit row key to the digit itself", () => {
+    // US Shift+0 types ")", AZERTY Shift+0 types "0": shift+0 must mean
+    // the physical digit key on every layout (production keyCode behavior).
+    assert.equal(fired("shift+0", { key: ")", code: "Digit0", shiftKey: true }), 1);
+    assert.equal(fired("shift+1", { key: "!", code: "Digit1", shiftKey: true }), 1);
+    assert.equal(fired("shift+2", { key: "@", code: "Digit2", shiftKey: true }), 1);
+    assert.equal(fired("shift+8", { key: "*", code: "Digit8", shiftKey: true }), 1);
+    // ...so the shifted glyphs are not bindable tokens for digit codes.
+    assert.equal(fired("shift+)", { key: ")", code: "Digit0", shiftKey: true }), 0);
+    assert.equal(fired("shift+*", { key: "*", code: "Digit8", shiftKey: true }), 0);
+    // AZERTY shifted digits already type the digit: unchanged.
+    assert.equal(fired("shift+0", { key: "0", code: "Digit0", shiftKey: true }), 1);
+    // Unshifted digits are untouched.
+    assert.equal(fired("0", { key: "0", code: "Digit0" }), 1);
+    assert.equal(fired("&", { key: "&", code: "Digit1" }), 1);
   });
 
   it("without a layout map, punctuation resolves by glyph", () => {
@@ -65,6 +77,7 @@ describe("canonical key normalization", () => {
     // US layout: Shift + BracketRight types "}".
     assert.equal(fired("shift+}", { key: "}", code: "BracketRight", shiftKey: true }), 1);
     assert.equal(fired("shift+]", { key: "}", code: "BracketRight", shiftKey: true }), 0);
+    assert.equal(fired("?", { key: "?", code: "Slash" }), 1);
   });
 
   it("lowercases function keys", () => {

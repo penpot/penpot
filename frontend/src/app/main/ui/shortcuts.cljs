@@ -110,12 +110,28 @@
       (str/lower mapped)
       (str/lower key))))
 
+(defn- digit-code?
+  [code]
+  (and (string? code)
+       (boolean (re-matches #"Digit[0-9]" code))))
+
+(defn- digit-alias
+  "Shifted digits resolve to the digit itself: with Shift held, Digit0
+   types ) on US layouts but 0 on AZERTY, so shift+0 must mean the
+   physical digit key everywhere, like shift+z means z."
+  [^js event code key]
+  (when (and (.-shiftKey ^js event)
+             (digit-code? code)
+             (= 1 (count key)))
+    (subs code 5)))
+
 (defn- normalize-key
   "Normalizes `event.key` to the lowercase canonical token mousetrap
-   matches on. Letters, digits and named keys resolve by glyph (`a`, not
-   `q` on AZERTY); punctuation resolves by physical position through the
-   layout map, so `Shift+*` on a Spanish layout records `shift++`, the
-   primary key the user sees."
+   matches on. Letters and unshifted digits resolve by glyph (`a`, not
+   `q` on AZERTY); a digit row key held with Shift resolves to the digit
+   itself (`shift+0`, never `shift+)`); punctuation resolves by physical
+   position through the layout map, so `Shift+*` on a Spanish layout
+   records `shift++`, the primary key the user sees."
   [^js event]
   (let [native (event->native event)
         key    (.-key ^js event)
@@ -132,6 +148,8 @@
 
         :else
         (or (get key-name-map key)
+            ;; Shifted digit row: the digit itself, on every layout.
+            (digit-alias event code key)
             (str/lower key))))))
 
 (defn- event->modifier-parts
