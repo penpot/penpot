@@ -76,4 +76,4 @@
                    {:tokens-source-fallback-notification :tokens-source-fallback-local}))))
     (t/is (= ["dashboard.import.tokens-source-fallback-local"
               "dashboard.import.tokens-source-deactivated"]
-             @keys)))
+             @keys))))

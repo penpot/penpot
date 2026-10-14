@@ -867,7 +867,7 @@
       (t/is (nil? (cfv/validate-file first-imported [candidate-a])))
       (t/is (nil? (cfv/validate-file second-imported [])))
       (t/is (nil? (cfv/validate-file ordinary-imported [candidate-b])))
-        ;; a tokenless choice clears the source and stores an empty status
+      ;; a tokenless choice clears the source and stores an empty status
       (let [cleared-out (th/command! {::th/type :resolve-import-token-source
                                       ::rpc/profile-id (:id profile)
                                       :file-id (:id first-imported)
