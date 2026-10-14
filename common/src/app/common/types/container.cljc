@@ -388,6 +388,13 @@
      [(fix-parent-id new-shape)
       (map fix-parent-id new-shapes)])))
 
+(defn head-into-variant?
+  "Whether placing `shapes` under `parent-id` puts a component head inside
+  a variant."
+  [objects parent-id shapes]
+  (and (some ctk/instance-head? shapes)
+       (some ctk/is-variant? (cfh/get-parents-with-self objects parent-id))))
+
 (defn get-first-valid-parent
   "Go through the parents until we find a shape that is not a copy of a component nor
    a variant container."
