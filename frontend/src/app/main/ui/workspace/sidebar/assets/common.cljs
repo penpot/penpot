@@ -392,7 +392,9 @@
         :show-grids? true
         :is-hidden is-hidden}])))
 
-(defn generate-components-menu-entries
+(defn use-components-menu-entries
+  "The entries of the component menu of `shapes`: a hook, as it reads the
+  current file and page from the context."
   [shapes & {:keys [for-design-tab?]}]
   (let [multi               (> (count shapes) 1)
         copies              (filter ctk/in-component-copy? shapes)

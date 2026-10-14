@@ -66,6 +66,11 @@ Some naming conventions:
                (not (str/blank? clean-name)))
       clean-name)))
 
+(defn clean-valid-name
+  "Return the normalized path name when it is valid."
+  [name]
+  (normalize-path-name name))
+
 (defn merge-path-item
   "Put the item at the end of the path."
   [path name]
