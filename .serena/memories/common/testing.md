@@ -59,7 +59,8 @@ its work.
 ## Component sync benchmark
 
 `common/dev/bench/component_sync.clj` times component sync on fixed-size worlds (one main into
-10/100/1000 copies, 3 nesting levels, a chain of dependents, a variant switch, a library update).
+10/100/1000 copies, 3 nesting levels, a chain of dependents, a variant switch, a library update,
+10 copies among 20000 plain shapes).
 Each world checks its result (how many rects end red) so it never times a no-op. Run from
 `common/`: `scripts/bench-components` compares with `dev/bench/component_sync_baseline.edn` and
 exits 1 when a world's lower quantile is more than 10% slower; `scripts/bench-components record`
