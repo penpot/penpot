@@ -241,7 +241,7 @@
 
   When walking up through nested component copies, each intermediate component
   may live in a different library/file. We resolve the right file-data for each
-  component via `ctf/find-component-file` so we can locate components that span
+  component via `ctf/head-component` so we can locate components that span
   multiple libraries."
   [container-inst shape-inst shape-main library file libraries component]
   (loop [shape-inst' shape-inst
@@ -251,17 +251,11 @@
       (if (some? (ctn/get-shape container (:id shape-main)))
         container
         (let [parent      (ctn/get-shape container-inst (:parent-id shape-inst'))
-              shape-inst' (ctn/get-head-shape (:objects container-inst) parent)
-              next-file   (some-> shape-inst'
-                                  :component-file
-                                  (->> (ctf/find-component-file file libraries)))
-              next-data   (some-> next-file :data)
-              component'  (when next-data
-                            (or (ctkl/get-component next-data (:component-id shape-inst'))
-                                (ctkl/get-deleted-component next-data (:component-id shape-inst'))))]
-          (if (some? component')
-            (recur shape-inst' next-data component')
-            nil))))))
+              shape-inst' (ctn/get-head-shape (:objects container-inst) parent)]
+          (when-let [[next-data component'] (when (some? shape-inst')
+                                              (ctf/head-component file libraries shape-inst'
+                                                                  :include-deleted? true))]
+            (recur shape-inst' next-data component')))))))
 
 (defn- generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
