@@ -398,11 +398,11 @@
          (mf/deps component-ids)
          (fn [pos value]
            (when-let [value (ctv/prepare-property-value value)]
-             (doseq [id component-ids]
-               (st/emit!
-                (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:combo-design-tab"})
-                (dwv/update-property-value id pos value))
-               (st/emit! (dwv/update-error id))))))
+             (apply st/emit!
+                    (dwv/update-property-value component-ids pos value)
+                    (repeat (count component-ids)
+                            (ev/event {::ev/name "variant-edit-property-value"
+                                       ::ev/origin "workspace:combo-design-tab"}))))))
 
         update-property-name
         (mf/use-fn

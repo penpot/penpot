@@ -332,6 +332,10 @@
       :else
       (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))
 
+(defn- copy-head?
+  [shape]
+  (and (ctk/instance-head? shape) (ctk/in-component-copy? shape)))
+
 (defn shape-proxy? [p]
   (obj/type-of? p "ShapeProxy"))
 
@@ -1552,6 +1556,9 @@
                (not (u/page-active? page-id))
                (u/not-valid plugin-id :detach "Cannot modify a page that is not currently active")
 
+               (not (ctn/detachable? (u/locate-objects file-id page-id) (u/locate-shape file-id page-id id)))
+               (u/not-valid plugin-id :detach "Only a copy that is not inside another copy can be detached")
+
                :else
                (st/emit! (dwl/detach-component id))))
 
@@ -1562,7 +1569,7 @@
                    valid-component? (obj/type-of? component "LibraryComponentProxy")
                    target-file      (when valid-component? (obj/get component "$file"))
                    target-id        (when valid-component? (obj/get component "$id"))
-                   target-data      (some-> (u/locate-file target-file) :data)]
+                   target-data      (some-> target-file u/locate-file :data)]
                (cond
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :swapComponent "Plugin doesn't have 'content:write' permission")
@@ -1570,11 +1577,11 @@
                  (not (u/page-active? page-id))
                  (u/not-valid plugin-id :swapComponent "Cannot modify a page that is not currently active")
 
+                 (not (copy-head? shape))
+                 (u/not-valid plugin-id :swapComponent "The shape is not a component copy head")
+
                  (not valid-component?)
                  (u/not-valid plugin-id :swapComponent "Component not valid")
-
-                 (not (ctk/in-component-copy? shape))
-                 (u/not-valid plugin-id :swapComponent "The shape is not a component copy instance")
 
                  (clv/swap-nesting-loop? objects shape target-data target-id)
                  (u/not-valid plugin-id :swapComponent "The swap would create a component nesting loop")
@@ -1627,8 +1634,8 @@
                  (not (u/page-active? page-id))
                  (u/not-valid plugin-id :resetOverrides "Cannot modify a page that is not currently active")
 
-                 (not (ctk/in-component-copy? shape))
-                 (u/not-valid plugin-id :resetOverrides "The shape is not a component copy instance")
+                 (not (copy-head? shape))
+                 (u/not-valid plugin-id :resetOverrides "The shape is not a component copy head")
 
                  :else
                  (st/emit! (dwl/reset-component id)))))
@@ -1880,7 +1887,10 @@
                :else
                (let [shape (u/locate-shape file-id page-id id)]
                  (if (clv/valid-switch? (dsh/lookup-libraries @st/state) shape pos value)
-                   (st/emit! (-> (dwv/variants-switch {:shapes [shape] :pos pos :val value})
+                   (st/emit! (-> (dwv/variants-switch
+                                  (with-meta {:shapes [shape] :pos pos :val value}
+                                    {:on-error #(u/not-valid plugin-id :switchVariant
+                                                             "The switch would create a component nesting loop")}))
                                  (se/add-event plugin-id)))
                    (u/not-valid plugin-id :switchVariant "Shape, property, or value is not valid")))))
 
