@@ -289,9 +289,9 @@
                                       :sTypoAscender 800 :sTypoDescender 200
                                       :fsSelection 0}})
         entry (#'df/prepare-font {:font font
-                                :type "font/otf"
-                                :name "Satoshi-Regular.otf"
-                                :data (bytes->buffer [79 84 84 79 0 0 0 0])})]
+                                  :type "font/otf"
+                                  :name "Satoshi-Regular.otf"
+                                  :data (bytes->buffer [79 84 84 79 0 0 0 0])})]
     (t/is (= "Satoshi" (:font-family entry)))
     (t/is (= 400 (:font-weight entry)))
     (t/is (= "normal" (:font-style entry)))
@@ -300,9 +300,9 @@
 (t/deftest prepare-font-tolerates-missing-tables
   (let [font  (fake-ot-font {:family "Satoshi" :variant "Regular" :hhea nil :os2 nil})
         entry (#'df/prepare-font {:font font
-                                :type "font/ttf"
-                                :name "Satoshi-Regular.ttf"
-                                :data (bytes->buffer [0 1 0 0 0 0 0 0])})]
+                                  :type "font/ttf"
+                                  :name "Satoshi-Regular.ttf"
+                                  :data (bytes->buffer [0 1 0 0 0 0 0 0])})]
     (t/is (= "Satoshi" (:font-family entry)))
     (t/is (false? (:height-warning? entry)))))
 
@@ -311,8 +311,8 @@
     (t/is (= {:error "x.ttf"} (#'df/parse-font {:error "x.ttf"}))))
   (t/testing "woff2 keeps a nil font for filename-based metadata"
     (let [result (#'df/parse-font {:data (bytes->buffer [119 79 70 50])
-                                 :type "font/woff2"
-                                 :name "Satoshi-Bold.woff2"})]
+                                   :type "font/woff2"
+                                   :name "Satoshi-Bold.woff2"})]
       (t/is (nil? (:font result)))
       (t/is (nil? (:error result)))))
   (t/testing "opentype.js failures become errors instead of silent drops"
