@@ -58,11 +58,13 @@ PENPOT_PUBLIC_PATH="$(sed -E 's|^[A-Za-z][A-Za-z0-9+.-]*://[^/]*||; s|[?#].*$||'
 PENPOT_PUBLIC_PATH="/${PENPOT_PUBLIC_PATH#/}"
 export PENPOT_PUBLIC_PATH="${PENPOT_PUBLIC_PATH%/}/"
 
+# shellcheck disable=SC2016 # literal regex metacharacters
+PENPOT_PUBLIC_PATH_REGEX="$(sed -E 's/[][\.*^$(){}+?|]/\\&/g' <<< "$PENPOT_PUBLIC_PATH")"
+export PENPOT_PUBLIC_PATH_REGEX
+
 if [ "$PENPOT_PUBLIC_PATH" != "/" ]; then
-    _public_path_regex="$(sed -E 's/[][\.*^$(){}+?|]/\\&/g' <<< "$PENPOT_PUBLIC_PATH")"
     export PENPOT_PUBLIC_PATH_DIRECTIVES="location = ${PENPOT_PUBLIC_PATH%/} { absolute_redirect off; return 301 ${PENPOT_PUBLIC_PATH}\$is_args\$args; }
-        rewrite ^${_public_path_regex}(.*)\$ /\$1 last;"
-    unset _public_path_regex
+        rewrite ^${PENPOT_PUBLIC_PATH_REGEX}(.*)\$ /\$1 last;"
 else
     export PENPOT_PUBLIC_PATH_DIRECTIVES=""
 fi
@@ -79,7 +81,7 @@ envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_HTTP_SERVER_MAX_BO
 
 if [[ $PENPOT_FLAGS == *"enable-admin-console"* ]]; then
     export PENPOT_ADMIN_CONSOLE_URI=${PENPOT_ADMIN_CONSOLE_URI:-http://penpot-admin-console:3000}
-    envsubst "\$PENPOT_ADMIN_CONSOLE_URI" \
+    envsubst "\$PENPOT_ADMIN_CONSOLE_URI,\$PENPOT_PUBLIC_PATH_REGEX" \
              < /tmp/nginx-admin-console-locations.conf.template > /etc/nginx/overrides/server.d/admin-console-locations.conf
 else
     rm -f /etc/nginx/overrides/server.d/admin-console-locations.conf
