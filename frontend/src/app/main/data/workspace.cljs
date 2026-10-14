@@ -23,10 +23,8 @@
    [app.common.render-wasm.wasm :as wasm-state]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
-   [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
@@ -766,37 +764,6 @@
     (update [_ state]
       (assoc-in state [:workspace-local :shape-for-rename] id))))
 
-(defn- rename-variant-main
-  "Apply a layers-panel formula to one variant main.
-
-   A valid formula updates the property names and values. Any other
-   text keeps the current malformed path: values are cleared and the
-   text is stored as the variant error."
-  [file-id shape name]
-  (ptk/reify ::rename-variant-main
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [file-data          (dsh/lookup-file-data state file-id)
-            component-id       (:component-id shape)
-            component          (ctkl/get-component file-data component-id)
-            variant-id         (:variant-id shape)
-            variant-properties (:variant-properties component)]
-        (if (ctv/valid-properties-formula? name)
-          (rx/of (dwva/update-properties-names-and-values
-                  component-id
-                  variant-id
-                  variant-properties
-                  (ctv/properties-formula->map name))
-                 (dwva/remove-empty-properties variant-id)
-                 (dwva/update-error component-id))
-          (rx/of (dwva/update-properties-names-and-values
-                  component-id
-                  variant-id
-                  variant-properties
-                  {})
-                 (dwva/remove-empty-properties variant-id)
-                 (dwva/update-error component-id name)))))))
-
 (defn end-rename-shape
   "End the ongoing shape rename process"
   ([] (end-rename-shape nil nil))
@@ -849,8 +816,7 @@
                          (get id))
              name    (str/trim name)]
          (if (ctc/variant-formula-rename? shape name)
-           ;; update-properties-names-and-values clears :shape-for-rename.
-           (rx/of (rename-variant-main file-id shape name))
+           (rx/of (dwva/rename-member (:component-id shape) (:variant-id shape) name))
            (rx/of (end-rename-shape id name))))))))
 
 ;; --- Update Selected Shapes attrs

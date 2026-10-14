@@ -14,6 +14,8 @@
    [app.common.types.variant :as ctv]
    [cuerdas.core :as str]))
 
+(declare generate-add-new-property)
+
 (defn- set-variant-properties
   "Set the variant properties of `component` to `props`, and the variant name
   of its main to match them."
@@ -92,6 +94,46 @@
         (pcb/update-shapes [main-id] (if (nil? value)
                                        #(dissoc % :variant-error)
                                        #(assoc % :variant-error value))))))
+
+(defn generate-update-properties
+  "Change the properties of the component `component-id` of the variant
+  `variant-id` from `previous` to `updated` (both `[{:name :value}]`): a
+  property `updated` leaves out keeps its place with no value, one it adds
+  goes to every component, empty on the others."
+  [changes component-id variant-id previous updated]
+  (let [updated   (ctv/update-number-in-repeated-prop-names updated)
+        set-value (fn [changes pos value]
+                    (generate-update-property-value changes component-id pos value))]
+    (as-> changes $
+      (reduce (fn [changes {:keys [name]}]
+                (set-value changes (ctv/find-index-for-property-name previous name) ""))
+              $
+              (ctv/find-properties-to-remove previous updated))
+      (reduce (fn [changes {:keys [name value]}]
+                (set-value changes (ctv/find-index-for-property-name previous name) value))
+              $
+              (ctv/find-properties-to-update previous updated))
+      (reduce (fn [changes [idx {:keys [name value]}]]
+                (-> changes
+                    (generate-add-new-property variant-id {:property-name name})
+                    (set-value (+ idx (count previous)) value)))
+              $
+              (map-indexed vector (ctv/find-properties-to-add previous updated))))))
+
+(defn generate-rename-member
+  "Rename the component `component-id` of the variant `variant-id` as the
+  layers panel does with the text `name`: a properties formula
+  (`ctv/valid-properties-formula?`) gives its properties and clears its
+  error; any other text leaves its properties with no value and becomes its
+  error. Then the properties with no value in any component go."
+  [changes component-id variant-id name]
+  (let [previous (:variant-properties (ctcl/get-component (pcb/get-library-data changes) component-id))
+        formula? (ctv/valid-properties-formula? name)]
+    (-> changes
+        (generate-update-properties component-id variant-id previous
+                                    (if formula? (ctv/properties-formula->map name) []))
+        (generate-remove-empty-properties variant-id)
+        (generate-set-variant-error component-id (when-not formula? name)))))
 
 
 (defn generate-reorder-variant-properties

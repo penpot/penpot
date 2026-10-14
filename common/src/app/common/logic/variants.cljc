@@ -3,16 +3,21 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.variant :as cfv]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.logic.duplicate :as cld]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.swap :as clsw]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
@@ -40,6 +45,159 @@
       (clvp/generate-update-property-value new-component-id prop-num value)
       :always
       (pcb/change-parent (:parent-id shape) [new-shape] 0))))
+
+;; The board of a variant: a frame with rounded corners and a dashed purple
+;; border, which lays its members out in a row when it has a layout.
+(def ^:private variant-container-attrs
+  {:is-variant-container true
+   :r1 20
+   :r2 20
+   :r3 20
+   :r4 20
+   :layout-item-absolute true})
+
+(def ^:private variant-container-layout-attrs
+  {:layout-item-h-sizing :auto
+   :layout-item-v-sizing :auto
+   :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
+   :layout-gap     {:row-gap 0 :column-gap 20}})
+
+(def ^:private variant-container-stroke
+  {:stroke-alignment :inner
+   :stroke-style :solid
+   :stroke-color "#bb97d8"
+   :stroke-opacity 1
+   :stroke-width 2})
+
+(defn generate-transform-in-variant
+  "Turn the component of the main `main-id` into the first member of the new
+  variant `variant-id`: a board around the main, `delta` from it (by default
+  30 px up and left, or none in a layout), named after the first item of the
+  component's path, with one property per other item of the path, each item
+  its value (`Property 1`, with value `Value 1`, when the path has one item).
+  `prefix`, the first items of the path, counts as one item, and `wrapper?`
+  puts the path under `Component`. With `layout?` the board lays its members
+  out in a row and hugs them, and with `new-shape-id` a second member,
+  `new-component-id`, is added."
+  [changes main-id variant-id {:keys [delta prefix wrapper? layout? new-component-id new-shape-id]}]
+  (let [objects      (pcb/get-objects changes)
+        main         (get objects main-id)
+        component-id (:component-id main)
+        path         (cond-> (cpn/split-path (cond->> (:name main) wrapper? (str "Component/")))
+                       (seq prefix)
+                       (->> (drop (count prefix))
+                            (cons (cpn/join-path prefix))
+                            vec))
+        name         (first path)
+        num-props    (max 1 (dec (count path)))
+        delta        (or delta
+                         (if (ctsl/any-layout? (get objects (:parent-id main)))
+                           (gpt/point 0 0)
+                           (gpt/point -30 -30)))
+
+        update-shapes
+        (fn [changes ids update-fn & {:as options}]
+          (cls/generate-update-shapes changes ids update-fn (pcb/get-objects changes) options))
+
+        ;; the member is a duplicate of the main as the changes above left it,
+        ;; so the page of the library data takes their objects
+        add-member
+        (fn [changes]
+          (let [objects   (pcb/get-objects changes)
+                data      (-> (pcb/get-library-data changes)
+                              (assoc-in [:pages-index (pcb/get-page-id changes) :objects] objects))
+                component (ctkl/get-component data component-id)]
+            (-> changes
+                (pcb/with-library-data data)
+                (generate-add-new-variant (get objects main-id) variant-id new-component-id new-shape-id
+                                          (dec (count (:variant-properties component)))))))]
+    (as-> changes $
+      (cond-> $
+        (not= name (:name main))
+        ;; applied to the library data, so the updates below keep it
+        (pcb/update-component component-id
+                              #(let [[path name] (cpn/split-group-name name)]
+                                 (assoc % :path path :name name))
+                              {:apply-changes-local-library? true}))
+      (second (cfsh/prepare-create-artboard-from-selection $ variant-id nil (pcb/get-objects $)
+                                                           [main-id] nil nil false nil delta))
+      (update-shapes $ [variant-id] #(assoc % :fills (types.fills/create)))
+      (cond-> $
+        layout?
+        (-> (update-shapes [variant-id] (cls/layout-initializer :flex false true) :with-objects? true)
+            (update-shapes [main-id] #(dissoc % :constraints-h :constraints-v))))
+      (update-shapes $ [variant-id] #(merge % variant-container-attrs {:name name}
+                                            (when layout? variant-container-layout-attrs)))
+      (update-shapes $ [main-id] #(assoc % :name name :variant-id variant-id))
+      (update-shapes $ [variant-id] #(update % :strokes (fn [strokes] (into [variant-container-stroke] strokes)))
+                     :attrs [:strokes])
+      (pcb/update-component $ component-id #(assoc % :variant-id variant-id)
+                            {:apply-changes-local-library? true})
+      (reduce (fn [changes _] (clvp/generate-add-new-property changes variant-id {:fill-values? true}))
+              $
+              (range num-props))
+      ;; the other items of the path are the values of the properties
+      (reduce (fn [changes pos] (clvp/generate-update-property-value changes component-id pos (nth path (inc pos))))
+              $
+              (if (> (count path) 1) (range num-props) []))
+      (cond-> $ (some? new-shape-id) (add-member))
+      (update-shapes $ [variant-id] #(dissoc % :layout-item-absolute)))))
+
+(defn- common-prefix
+  "The items the sequences `xs` start with in common."
+  [xs]
+  (->> (apply map vector xs)
+       (take-while #(apply = %))
+       (map first)
+       vec))
+
+(defn- generate-move-into
+  "Move the shapes `ids` into `parent-id`, at `index`, as the layers panel
+  does: leaving out those whose parent moves too, and `parent-id` itself or
+  any shape it is inside."
+  [changes ids parent-id index]
+  (let [objects (pcb/get-objects changes)
+        ids     (->> (cfh/clean-loops objects ids)
+                     (remove #(cfh/is-parent? objects parent-id %)))]
+    (cls/generate-relocate changes parent-id index ids)))
+
+(defn generate-combine-as-variants
+  "Combine the components of the mains `ids` into the new variant
+  `variant-id`: the first one becomes a variant (`generate-transform-in-variant`)
+  whose board takes in the others, in the order of `ids`, each where it was,
+  pinned to the board's top left. The board goes to the end of the shape
+  the mains have in common, and is named with the path items their names
+  share, or `Component` when they share none. Its size is left to the
+  caller: the rect of the mains, 30 px larger on each side."
+  [changes ids variant-id]
+  (let [objects       (pcb/get-objects changes)
+        shapes        (mapv objects ids)
+        rect          (grc/join-rects (map :selrect shapes))
+        prefix        (common-prefix (map #(cpn/split-path (:name %)) shapes))
+        first-shape   (first shapes)
+        common-parent (->> ids
+                           (map #(reverse (cfh/get-parent-ids objects %)))
+                           (common-prefix)
+                           (last))
+        index         (-> (get objects common-parent) :shapes count inc)]
+    (as-> changes $
+      (generate-transform-in-variant $ (first ids) variant-id
+                                     {:delta    (gpt/point (- (:x rect) (:x first-shape) 30)
+                                                           (- (:y rect) (:y first-shape) 30))
+                                      :prefix   prefix
+                                      :wrapper? (empty? prefix)})
+      (generate-move-into $ (set (rest ids)) variant-id 0)
+      ;; the members in the order of `ids`: the board's children go the other
+      ;; way, and a change of parent at index 0 reverses the shapes it takes
+      (let [children (set (get-in (pcb/get-objects $) [variant-id :shapes]))
+            members  (into [] (comp (filter children) (map (pcb/get-objects $))) ids)]
+        (cond-> $
+          (> (count members) 1)
+          (pcb/change-parent variant-id members 0)))
+      (cls/generate-update-shapes $ ids
+                                  #(assoc % :constraints-h :left :constraints-v :top :fixed-scroll false)
+                                  (pcb/get-objects $) {})
+      (generate-move-into $ #{variant-id} common-parent index))))
 
 (defn- generate-path
   [path objects base-id shape]
@@ -315,6 +473,21 @@
                                (reverse))]
         (when (seq candidates)
           (apply min-key #(ctv/distance target-props (:variant-properties %)) candidates))))))
+
+(defn valid-switch?
+  "Whether the variant copy head `shape` can switch its property at position
+  `pos` to the value `val`: a member of its variant has it."
+  [libraries shape pos val]
+  (let [component (ctf/get-component libraries (:component-file shape) (:component-id shape)
+                                     :include-deleted? false)]
+    (and (ctk/instance-head? shape)
+         (ctk/in-component-copy? shape)
+         (ctk/is-variant? component)
+         (nat-int? pos)
+         (< pos (count (:variant-properties component)))
+         (string? val)
+         (or (= val (get-in component [:variant-properties pos :value]))
+             (some? (find-switch-target libraries shape pos val))))))
 
 (defn swap-nesting-loop?
   "Whether swapping, or switching, the copy head `shape` of `objects` for a
