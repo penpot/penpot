@@ -9,7 +9,9 @@
 
   Every job is defined as a job-def map returned by the `ig/init-key` of its
   module: {::name, ::schema, ::handler, ::decoder, ::validator} — decoder and
-  validator are precompiled at init time. A job-def may also carry the
+  validator are precompiled at init time. A def whose result needs its types
+  back declares the optional pair {::result-schema, ::result-decoder},
+  precompiled the same way. A job-def may also carry the
   optional metadata {::family, ::resource-role}, which the consumers of the
   job (quotes, storage helpers) read from the registry: the substrate never
   reads them. The registry of job-defs is plain integrant wiring (::jobs/defs);
@@ -24,6 +26,10 @@
 
   Params payloads are stored as plain JSON (not transit) in the `params` jsonb
   column and decoded back to typed Clojure values using the job-def decoder.
+  Results are plain JSON in the `result` jsonb column and are decoded with the
+  result decoder of the def when it declares one: a uuid comes back as the text
+  it is on disk and a uuid used as a map key as a keyword, so a def that keys a
+  result map by uuid must declare its schema.
 
   Any job that can run longer than `:jobs-lease` must call `heartbeat`
   on its loop, otherwise the dispatcher marks it `aborted` (a system-side
