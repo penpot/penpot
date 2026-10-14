@@ -6,7 +6,6 @@
 
 (ns app.common.types.component
   (:require
-   [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as-alias ct]
    [app.common.types.page :as ctp]
@@ -220,13 +219,6 @@
   (and (some? (:shape-ref shape))
        (nil? (:component-id shape))))
 
-(defn in-component-copy-not-root?
-  "Check if the shape is inside a component non-main instance and
-  is not the root shape."
-  [shape]
-  (and (some? (:shape-ref shape))
-       (nil? (:component-root shape))))
-
 (defn main-instance-of?
   "Check if this shape is the root of the main instance of the given component."
   [shape-id page-id component]
@@ -350,16 +342,3 @@
          (or (not (instance-head? shape))
              (not (in-component-copy? parent))))))
 
-(def ^:private all-touched-groups
-  (reduce-kv (fn [acc _ v]
-               (if (map? v)
-                 (into acc (vals v))
-                 (conj acc v)))
-             #{}
-             sync-attrs))
-
-(defn valid-touched-group?
-  [group]
-  (ex/ignoring
-   (or (contains? all-touched-groups group)
-       (= group :swap-group))))

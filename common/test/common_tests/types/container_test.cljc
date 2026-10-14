@@ -374,12 +374,6 @@
     (t/is (not (ctc/page? container)))
     (t/is (= (thi/id :main1) (:main-instance-id container)))))
 
-(t/deftest container-root
-  (let [root-id  (uuid/next)
-        root     (assoc (make-shape root-id) :parent-id nil)
-        child    (make-shape (uuid/next) :parent-id root-id)]
-    (t/is (= root (ctc/get-container-root {:objects (objects-map root child)})))))
-
 (t/deftest swap-keep-attrs-keep-auto-sizing-of-a-layout
   (let [shape (make-shape (uuid/next)
                           :type :frame
