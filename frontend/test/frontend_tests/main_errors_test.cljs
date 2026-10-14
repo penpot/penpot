@@ -11,6 +11,10 @@
     - stale-asset-error?          – pure predicate
     - exception->error-data       – pure transformer
     - on-error re-entrancy guard  – prevents recursive invocations
+    - events in flight            – the full report lists the events the
+      store was processing when it caught the exception; a failing stream
+      pipeline lists the emitters of the value, not its own event
+    - on-update-loop              – never throws into the scheduler's caller
     - flash schedules async report and toast – neither the report nor
       ntf/show is emitted synchronously
     - organization SSO recovery   – expired SSO sessions go back to the provider
@@ -367,6 +371,144 @@
     (errors/on-error (ex-info "test" {:type ::test-reentrant :hint "first"}))
     ;; The guard must have allowed only the first invocation through.
     (t/is (= 1 @reentrant-call-count))))
+
+;; ---------------------------------------------------------------------------
+;; Events in flight
+;;
+;; on-error records the events the store is processing when it catches an
+;; exception; the full report lists them, outermost first.
+;; ---------------------------------------------------------------------------
+
+(def ^:private in-flight-cause (atom nil))
+
+(defmethod ptk/handle-error ::test-in-flight
+  [err]
+  (reset! in-flight-cause (::errors/instance err))
+  nil)
+
+(def ^:private in-flight-heading
+  "Events in flight when the error was caught (outermost first):")
+
+(defn- in-flight-failure
+  []
+  (ex-info "in-flight failure" {:type ::test-in-flight :hint "in-flight failure"}))
+
+(defn- recursive-event
+  [n]
+  (ptk/reify ::test-in-flight-recursive
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if (pos? n)
+        (rx/of (recursive-event (dec n)))
+        (throw (in-flight-failure))))))
+
+(t/deftest ^:async report-lists-the-events-in-flight-of-a-failing-event
+  (let [store (ptk/store {:state {} :on-error errors/on-error})]
+    (try
+      (await
+       (mock/with-mocks*
+         {st/state              store
+          st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+          rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")}
+         (reset! in-flight-cause nil)
+         (st/emit!
+          (ptk/reify ::test-in-flight-outer
+            ptk/WatchEvent
+            (watch [_ _ _]
+              (rx/of (ptk/reify ::test-in-flight-inner
+                       ptk/UpdateEvent
+                       (update [_ _] (throw (in-flight-failure))))))))
+         (await (async/wait-for #(some? @in-flight-cause) "the failure reaches the handler"))
+         (let [report (errors/generate-report @in-flight-cause)
+               outer  (.indexOf report "typ:(:frontend-tests.main-errors-test/test-in-flight-outer)")
+               inner  (.indexOf report "typ:(:frontend-tests.main-errors-test/test-in-flight-inner)")]
+           (t/is (str/includes? report in-flight-heading))
+           (t/is (< -1 outer inner) "outer event listed before the failing one"))))
+      (finally
+        (rx/dispose! store)))))
+
+(t/deftest ^:async report-keeps-both-ends-of-a-long-in-flight-list
+  (let [store (ptk/store {:state {} :on-error errors/on-error})]
+    (try
+      (await
+       (mock/with-mocks*
+         {st/state              store
+          st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+          rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")}
+         (reset! in-flight-cause nil)
+         ;; 25 nested events: 10 from each end are kept
+         (st/emit! (recursive-event 24))
+         (await (async/wait-for #(some? @in-flight-cause) "the failure reaches the handler"))
+         (let [report (errors/generate-report @in-flight-cause)]
+           (t/is (str/includes? report "... 5 more ..."))
+           (t/is (= 20 (count (re-seq #"test-in-flight-recursive" report)))))))
+      (finally
+        (rx/dispose! store)))))
+
+(defn- in-flight-section
+  "The in-flight section of `report`, or nil when absent."
+  [report]
+  (let [start (.indexOf report in-flight-heading)]
+    (when (<= 0 start)
+      (subs report start (.indexOf report "Last events:" start)))))
+
+(t/deftest ^:async stream-pipeline-failure-lists-the-emitters-of-the-value
+  (let [store (ptk/store {:state {} :on-error errors/on-error})]
+    (try
+      (await
+       (mock/with-mocks*
+         {st/state              store
+          st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+          rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")}
+         (reset! in-flight-cause nil)
+         ;; The listener's pipeline fails on the trigger that the emitter emits
+         (st/emit!
+          (ptk/reify ::test-in-flight-listener
+            ptk/WatchEvent
+            (watch [_ _ stream]
+              (->> stream
+                   (rx/filter (ptk/type? ::test-in-flight-trigger))
+                   (rx/take 1)
+                   (rx/map (fn [_] (throw (in-flight-failure)))))))
+          (ptk/reify ::test-in-flight-emitter
+            ptk/WatchEvent
+            (watch [_ _ _]
+              (rx/of (ptk/data-event ::test-in-flight-trigger {})))))
+         (await (async/wait-for #(some? @in-flight-cause) "the failure reaches the handler"))
+         (let [section (in-flight-section (errors/generate-report @in-flight-cause))]
+           (t/is (str/includes? section "test-in-flight-emitter"))
+           (t/is (not (str/includes? section "test-in-flight-trigger")))
+           (t/is (not (str/includes? section "test-in-flight-listener"))))))
+      (finally
+        (rx/dispose! store)))))
+
+(t/deftest ^:async delayed-watch-failure-has-no-in-flight-section
+  (let [store (ptk/store {:state {} :on-error errors/on-error})]
+    (try
+      (await
+       (mock/with-mocks*
+         {st/state              store
+          st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+          rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")}
+         (reset! in-flight-cause nil)
+         (st/emit!
+          (ptk/reify ::test-in-flight-delayed
+            ptk/WatchEvent
+            (watch [_ _ _]
+              (->> (rx/timer 0)
+                   (rx/map (fn [_] (throw (in-flight-failure))))))))
+         (await (async/wait-for #(some? @in-flight-cause) "the failure reaches the handler"))
+         (let [report (errors/generate-report @in-flight-cause)]
+           (t/is (not (str/includes? report in-flight-heading)))
+           (t/is (str/includes? report "Last events:")))))
+      (finally
+        (rx/dispose! store)))))
+
+(t/deftest ^:async update-loop-handler-never-throws
+  (await
+   (mock/with-mocks*
+     {ptk/in-flight-events (fn [_] (throw (js/Error. "in-flight read failure")))}
+     (t/is (nil? (errors/on-update-loop {:rounds 26}))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Expired organization SSO session
