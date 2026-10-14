@@ -496,7 +496,7 @@
               (ctk/remove-swap-group)))
         (d/update-when shape :shape-ref #(get ref-map % %))))))
 
-(defn swapped-subhead?
+(defn ref-outside-near-main?
   "Whether `shape` refers to a main shape that is not a child of the main
   shape its parent refers to (`find-parent-ref-shape`). Same-parent
   positional differences are synchronized as reorders."
@@ -961,7 +961,7 @@
                                             shape
                                             :include-deleted? true)]
 
-      (str/format " %s--> %s%s%s%s%s"
+      (str/format " %s--> %s%s%s%s"
                   (cond (:component-root shape) "#"
                         (:component-id shape) "@"
                         :else "-")
@@ -983,23 +983,6 @@
 
                   (when (and show-ids component-shape)
                     (str/format " %s" (:id component-shape)))
-
-                  (if (or (:component-root shape)
-                          (nil? (:component-id shape))
-                          true)
-                    ""
-                    (let [component-id      (:component-id shape)
-                          component-file-id (:component-file shape)
-                          component-file    (when component-file-id (get libraries component-file-id nil))
-                          component         (if component-file
-                                              (ctkl/get-component (:data component-file) component-id true)
-                                              (ctkl/get-component (:data file) component-id true))]
-                      (str/format " (%s%s)"
-                                  (when component-file (str/format "<%s> "
-                                                                   (if (= (:id component-file) (:id file))
-                                                                     "local"
-                                                                     (:name component-file))))
-                                  (:name component))))
 
                   (when (and show-ids (:component-id shape))
                     (str/format " [Component %s]" (:component-id shape)))))))

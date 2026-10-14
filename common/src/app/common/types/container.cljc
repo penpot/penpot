@@ -94,10 +94,6 @@
   [container shape-id f]
   (update-in container [:objects shape-id] f))
 
-(defn get-container-root
-  [container]
-  (d/seek #(or (nil? (:parent-id %)) (= (:parent-id %) uuid/zero)) (shapes-seq container)))
-
 (defn get-direct-children
   [container shape]
   (map #(get-shape container %) (:shapes shape)))
@@ -300,7 +296,7 @@
 (defn make-component-instance
   "Generate a new instance of the component inside the given container.
 
-  Clone the shapes of the component, generating new names and ids, and
+  Clone the shapes of the component, generating new ids, and
   linking each new shape to the corresponding one of the
   component. Place the new instance coordinates in the given
   position.
@@ -324,7 +320,6 @@
          delta           (gpt/subtract position orig-pos)
 
          objects         (:objects page)
-         unames          (volatile! (cfh/get-used-names objects))
 
          component-children
          (d/index-by :id (cfh/get-children-with-self objects (:id component-shape)))
@@ -346,18 +341,9 @@
          frame           (get-shape page frame-id)
          component-frame (get-component-shape objects frame {:allow-main? true})
 
-         ids-map         (volatile! {})
-
          update-new-shape
          (fn [new-shape original-shape]
-           (let [new-name (:name new-shape)
-                 root?    (ctk/instance-root? original-shape)]
-
-             (when root?
-               (vswap! unames conj new-name))
-
-             (vswap! ids-map assoc (:id original-shape) (:id new-shape))
-
+           (let [root? (ctk/instance-root? original-shape)]
              (cond-> new-shape
                :always
                (-> (gsh/move delta)
@@ -378,8 +364,7 @@
                (nil? (:parent-id original-shape))
                (assoc :component-id (:id component)
                       :component-file (:id library-data)
-                      :component-root true
-                      :name new-name)
+                      :component-root true)
 
                (or (some? (:parent-id original-shape)) ; On v2 we have removed the parent-id for component roots
                    (some? component-frame))
@@ -395,17 +380,13 @@
                            :frame-id frame-id
                            :dest-objects (:objects page))
 
-         ;; Fix empty parent-id and remap all grid cells to the new ids.
-         remap-ids
+         ;; the root has no parent in the component; it goes to its frame
+         fix-parent-id
          (fn [shape]
-           (as-> shape $
-             (update $ :parent-id #(or % (:frame-id $)))
-             (cond-> $
-               (ctl/grid-layout? shape)
-               (ctl/remap-grid-cells @ids-map))))]
+           (update shape :parent-id #(or % (:frame-id shape))))]
 
-     [(remap-ids new-shape)
-      (map remap-ids new-shapes)])))
+     [(fix-parent-id new-shape)
+      (map fix-parent-id new-shapes)])))
 
 (defn get-first-valid-parent
   "Go through the parents until we find a shape that is not a copy of a component nor

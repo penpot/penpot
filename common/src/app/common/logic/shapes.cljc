@@ -232,6 +232,17 @@
              changes
              copy-deletions))
 
+(defn- groups-losing-mask
+  "The masked groups whose mask, their first child, is among `ids`."
+  [objects ids]
+  (into #{}
+        (keep (fn [id]
+                (let [parent (get objects (:parent-id (get objects id)))]
+                  (when (and (:masked-group parent)
+                             (= id (first (:shapes parent))))
+                    (:id parent)))))
+        ids))
+
 (defn generate-delete-shapes
   ([changes file page objects ids options]
    (generate-delete-shapes (-> changes
@@ -288,21 +299,10 @@
 
          lookup  (d/getf objects)
 
+         ;; a group whose mask is deleted becomes a plain group
          groups-to-unmask
          (when-not ignore-mask
-           (reduce (fn [group-ids id]
-                     ;; When the shape to delete is the mask of a masked group,
-                     ;; the mask condition must be removed, and it must be
-                     ;; converted to a normal group.
-                     (let [obj    (lookup id)
-                           parent (lookup (:parent-id obj))]
-                       (if (and (:masked-group parent)
-                                (= id (first (:shapes parent))))
-                         (conj group-ids (:id parent))
-                         group-ids)))
-                   #{}
-                   ids-to-delete)
-           [])
+           (groups-losing-mask objects ids-to-delete))
 
          id-to-delete? (set ids-to-delete)
 
@@ -495,46 +495,9 @@
                        removed-id?
                        result)))))
 
+        ;; a group whose mask moves out of it becomes a plain group
         groups-to-unmask
-        (reduce (fn [group-ids id]
-                  ;; When a masked group loses its mask shape, because it's
-                  ;; moved outside the group, the mask condition must be
-                  ;; removed, and it must be converted to a normal group.
-                  (let [obj (get objects id)
-                        parent (get objects (:parent-id obj))]
-                    (if (and (:masked-group parent)
-                             (= id (first (:shapes parent)))
-                             (not= (:id parent) parent-id))
-                      (conj group-ids (:id parent))
-                      group-ids)))
-                #{}
-                ids)
-
-        ;; TODO: Probably implementing this using loop/recur will
-        ;; be more efficient than using reduce and continuous data
-        ;; desturcturing.
-
-        ;; Sets the correct components metadata for the moved copy heads
-        ;; `shapes-to-deroot` Removes the root flag from a component instance moved inside another component
-        ;; `shapes-to-reroot` Adds a root flag when a nested component instance is moved outside
-        [shapes-to-deroot shapes-to-reroot]
-        (reduce (fn [[shapes-to-deroot shapes-to-reroot] id]
-                  (let [shape                  (get objects id)
-                        parent                 (get objects parent-id)
-                        component-shape-parent (ctn/get-component-shape objects parent {:allow-main? true})
-                        root-parent            (ctn/get-instance-root objects parent)
-
-                        deroot? (and (ctk/instance-root? shape)
-                                     root-parent)
-                        reroot? (and (ctk/subinstance-head? shape)
-                                     (not component-shape-parent))]
-
-                    [(cond-> shapes-to-deroot deroot? (conj id))
-                     (cond-> shapes-to-reroot reroot? (conj id))]))
-                [[] []]
-                (->> ids
-                     (mapcat #(ctn/get-child-heads objects %))
-                     (map :id)))
+        (disj (groups-losing-mask objects ids) parent-id)
 
         index-cell-data  (when to-index (ctl/get-cell-by-index parent to-index))
         cell (or cell (and index-cell-data [(:row index-cell-data) (:column index-cell-data)]))
@@ -557,7 +520,7 @@
           (-> (pcb/update-shapes ids ctl/remove-layout-item-data)
               (pcb/update-shapes ids cto/unapply-layout-item-tokens)))
 
-        ;; Remove the hide in viewer flag
+        ;; Hide in the viewer the boards moved into a board
         (cond-> (and (not= uuid/zero parent-id) (cfh/frame-shape? parent))
           (pcb/update-shapes ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true))))
 
@@ -589,16 +552,6 @@
         (pcb/update-shapes groups-to-unmask
                            (fn [shape]
                              (assoc shape :masked-group false)))
-
-        ;; Make non root a component moved inside another one
-        (pcb/update-shapes shapes-to-deroot
-                           (fn [shape]
-                             (assoc shape :component-root nil)))
-
-        ;; Make root a subcomponent moved outside its parent component
-        (pcb/update-shapes shapes-to-reroot
-                           (fn [shape]
-                             (assoc shape :component-root true)))
 
         ;; Reset constraints depending on the new parent
         (pcb/update-shapes ids

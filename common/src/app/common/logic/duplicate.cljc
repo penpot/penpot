@@ -309,13 +309,17 @@
                                               {}))]
     changes))
 
-(defn generate-duplicate-shape-change
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false nil))
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id variant-props]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false variant-props))
-
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? variant-props]
+(defn- generate-duplicate-shape-change
+  "Add to `changes` a duplicate of `obj` and its subtree in `objects`, under
+  `parent-id` and `frame-id`, and `level-delta` nesting levels shallower
+  (computed when nil). `ctx` holds what stays the same along the subtree:
+  the `:page`, the new id of each shape (`:ids-map`), the `:delta` they
+  move, the `:libraries`, the `:library-data`, the `:file-id` and the
+  `:variant-props` of a duplicated variant."
+  ([changes ctx objects obj]
+   (generate-duplicate-shape-change changes ctx objects obj nil (:frame-id obj) (:parent-id obj) false false))
+  ([changes {:keys [page ids-map delta libraries library-data file-id variant-props] :as ctx}
+    objects obj level-delta frame-id parent-id duplicating-component? child?]
    (cond
      (nil? obj)
      changes
@@ -330,7 +334,6 @@
            new-id      (ids-map (:id obj))
            parent-id   (or parent-id frame-id)
            parent      (get objects parent-id)
-           name        (:name obj)
 
            is-component-root?     (or (:saved-component-root obj)
                                       ;; Backward compatibility
@@ -365,7 +368,6 @@
            new-obj
            (-> obj
                (assoc :id new-id
-                      :name name
                       :parent-id parent-id
                       :frame-id frame-id)
 
@@ -431,24 +433,15 @@
 
        (reduce (fn [changes child]
                  (generate-duplicate-shape-change changes
+                                                  ctx
                                                   (:objects page')
-                                                  page
-                                                  unames
-                                                  update-unames!
-                                                  ids
-                                                  ids-map
                                                   child
-                                                  delta
                                                   ;; the children of a swapped head refer into its own component
                                                   (if (ctk/swapped? obj) 0 level-delta)
-                                                  libraries
-                                                  library-data
-                                                  file-id
                                                   (if frame? new-id frame-id)
                                                   new-id
                                                   duplicating-component?
-                                                  true
-                                                  variant-props))
+                                                  true))
                changes
                (map (d/getf objects) (:shapes obj)))))))
 
@@ -502,12 +495,10 @@
             (mapcat #(ctn/get-child-heads objects %) selected))))
 
 (defn generate-duplicate-changes
-  "Prepare objects to duplicate: generate new id, give them unique names,
-  move to the desired position, and recalculate parents and frames as needed."
+  "Prepare objects to duplicate: generate new ids, move them to the desired
+  position, and recalculate parents and frames as needed."
   [changes all-objects page ids delta libraries library-data file-id & {:keys [variant-props alt-duplication?]}]
   (let [shapes         (map (d/getf all-objects) ids)
-        unames         (volatile! (cfh/get-used-names (:objects page)))
-        update-unames! (fn [new-name] (vswap! unames conj new-name))
         all-ids        (reduce #(into %1 (cons %2 (cfh/get-children-ids all-objects %2))) (d/ordered-set) ids)
 
         ;; We need ids-map for remapping the grid layout. But when duplicating the guides
@@ -535,19 +526,15 @@
         changes
         (->> shapes
              (reduce #(generate-duplicate-shape-change %1
+                                                       {:page          page
+                                                        :ids-map       ids-map
+                                                        :delta         delta
+                                                        :libraries     libraries
+                                                        :library-data  library-data
+                                                        :file-id       file-id
+                                                        :variant-props variant-props}
                                                        all-objects
-                                                       page
-                                                       unames
-                                                       update-unames!
-                                                       ids
-                                                       ids-map
-                                                       %2
-                                                       delta
-                                                       nil
-                                                       libraries
-                                                       library-data
-                                                       file-id
-                                                       variant-props)
+                                                       %2)
                      changes))
 
         ;; We need to check the changes to get the ids-map
