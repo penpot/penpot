@@ -390,7 +390,7 @@
                                      (cfh/clean-loops objects))
              selected-objects   (map #(get objects %) selected)
              ;; We don't want to change the structure of component copies
-             can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))]
+             can-make-component (every? #(ctn/valid-shape-for-component? objects %) selected-objects)]
 
          (when can-make-component
            (rx/of (-> (add-component2 id-ref selected)
@@ -407,7 +407,7 @@
                                     (cfh/clean-loops objects))
             selected-objects   (map #(get objects %) selected)
             ;; We don't want to change the structure of component copies
-            can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))
+            can-make-component (every? #(ctn/valid-shape-for-component? objects %) selected-objects)
             added-components   (map (fn [id]
                                       (with-meta (add-component2 [id])
                                         {:multiple true}))
@@ -693,6 +693,18 @@
                        (assoc :update-layout update-layout?))]
         (rx/of (rt/nav :workspace params ::rt/new-window true))))))
 
+(defn go-to-page-then
+  "Open the page `page-id` and, once it is initialized, emit the events of
+  `(f)`."
+  [stream page-id f]
+  (rx/merge
+   (->> stream
+        (rx/filter (ptk/type? ::dwpg/initialize-page))
+        (rx/take 1)
+        (rx/observe-on :async)
+        (rx/mapcat (fn [_] (f))))
+   (rx/of (dcm/go-to-workspace :page-id page-id))))
+
 (defn go-to-local-component
   ;; id is the id of the component to go
   ;; additional-ids are ids of additional components on the same page
@@ -722,16 +734,6 @@
                    (when update-layout?
                      (rx/of (ptk/data-event :layout/update {:ids parent-ids})))))))
 
-            redirect-to-page
-            (fn [page-id ids]
-              (rx/merge
-               (->> stream
-                    (rx/filter (ptk/type? ::dwpg/initialize-page))
-                    (rx/take 1)
-                    (rx/observe-on :async)
-                    (rx/mapcat (fn [_] (select-and-zoom ids))))
-               (rx/of (dcm/go-to-workspace :page-id page-id))))
-
             get-main-instance-id
             (fn [id page-id]
               (let [component (dm/get-in data [:components id])]
@@ -747,7 +749,7 @@
             (when (some? page-id)
               (if (= page-id current-page-id)
                 (select-and-zoom ids)
-                (redirect-to-page page-id ids)))))))))
+                (go-to-page-then stream page-id #(select-and-zoom ids))))))))))
 
 (defn library-thumbnails-fetched
   [thumbnails]
@@ -963,23 +965,6 @@
                   ;; when a main component does not live in the same page.
                   (update-component-thumbnail-sync state component-id file-id "frame")
                   (update-component-thumbnail-sync state component-id file-id "component")]
-                 (component-sync-events state component-id file-id undo-group)
-                 [(dwu/commit-undo-transaction undo-id)])))))))
-
-(defn launch-component-sync
-  "Launch a sync of the current file and of the library file of the given
-  component, in one undo entry."
-  ([component-id file-id] (launch-component-sync component-id file-id nil))
-  ([component-id file-id undo-group]
-   (ptk/reify ::launch-component-sync
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [undo-id    (js/Symbol)
-             ;; One undo group for the syncs of both files
-             undo-group (or undo-group (uuid/next))]
-         (apply rx/of
-                (concat
-                 [(dwu/start-undo-transaction undo-id)]
                  (component-sync-events state component-id file-id undo-group)
                  [(dwu/commit-undo-transaction undo-id)])))))))
 
@@ -1508,19 +1493,19 @@
                          ;; This runs asynchronously on the next tick.
                          ;; Filter libraries to only those that would produce actual sync changes.
                          (let [libraries (dsh/lookup-libraries state)]
-                           (filter (fn [library]
-                                     (seq (:redo-changes
-                                           (cll/generate-sync-file-changes
-                                            (pcb/empty-changes)
-                                            nil
-                                            nil
-                                            file-id
-                                            nil
-                                            (:id library)
-                                            libraries
-                                            file-id
-                                            true))))
-                                   libraries-need-sync))))
+                           (filterv (fn [library]
+                                      (seq (:redo-changes
+                                            (cll/generate-sync-file-changes
+                                             (pcb/empty-changes)
+                                             nil
+                                             nil
+                                             file-id
+                                             nil
+                                             (:id library)
+                                             libraries
+                                             file-id
+                                             true))))
+                                    libraries-need-sync))))
                (rx/filter seq)
                (rx/map (fn [libraries-with-changes]
                          (let [do-more-info
@@ -1573,18 +1558,25 @@
                                     :ignore-save-lock true}))))))
 
 (defn component-changed
-  "Notify that the component with the given id has changed, so it needs to be updated
-   in the current file and in the copies. And also update its thumbnails."
+  "Notify that the component with the given id has changed: mark it modified
+  and sync its copies, in the current file and in its library, in one undo
+  entry. The watcher also updates its thumbnails."
   [component-id file-id undo-group]
   (ptk/reify ::component-changed
     cljs.core/IDeref
     (-deref [_] [component-id file-id])
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (touch-component component-id)
-       (launch-component-sync component-id file-id undo-group)))))
+    (watch [_ state _]
+      (let [undo-id    (js/Symbol)
+            ;; One undo group for the syncs of both files
+            undo-group (or undo-group (uuid/next))]
+        (apply rx/of
+               (concat
+                [(touch-component component-id)
+                 (dwu/start-undo-transaction undo-id)]
+                (component-sync-events state component-id file-id undo-group)
+                [(dwu/commit-undo-transaction undo-id)]))))))
 
 (defn watch-component-changes
   "Watch the state for changes that affect to any main instance. If a change is detected will call
