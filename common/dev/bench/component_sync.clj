@@ -27,6 +27,10 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
+   [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
+   [app.common.uuid :as uuid]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.java.shell :as shell]
@@ -109,6 +113,38 @@
       (thc/instantiate-component inner-label (keyword (str (name root-label) "-inner"))
                                  :parent-label root-label)
       (thc/make-component label root-label)))
+
+(defn- add-plain-shapes
+  "`file` with `n` plain rects at the root of its page, added in one step."
+  [file n]
+  (let [page  (thf/current-page file)
+        rects (map (fn [i]
+                     (cts/setup-shape {:type :rect :id (uuid/next) :name (str "Rect " i)
+                                       :x i :y i :width 10 :height 10
+                                       :parent-id uuid/zero :frame-id uuid/zero}))
+                   (range n))]
+    (ctf/update-file-data
+     file
+     (fn [data]
+       (ctpl/update-page data (:id page)
+                         (fn [page]
+                           (-> page
+                               (update :objects into (map (juxt :id identity)) rects)
+                               (update-in [:objects uuid/zero :shapes] into (map :id rects)))))))))
+
+(defn- main-edit-among-many-shapes
+  "One main whose child changes, synced into 10 copies in a page that also
+   holds 20000 plain shapes, which the sync must look through."
+  []
+  (let [[file ids] (-> (thf/sample-file :file1)
+                       (tho/add-simple-component :c0 :root0 :child0)
+                       (add-plain-shapes 20000)
+                       (instantiate-many :c0 "copy" 10)
+                       (edit :child0 red))]
+    {:key      :main-edit-among-many-shapes
+     :describe "a main child changes; 10 copies among 20000 plain shapes sync"
+     :run      #(sync-cascade file {} ids)
+     :reds     11}))
 
 (defn- main-edit-into-copies
   "One main whose child changes, synced into `n` copies."
@@ -219,7 +255,8 @@
    deepest-edit-through-three-levels
    edit-through-a-chain-of-dependents
    variant-switch-into-copies
-   library-update-into-copies])
+   library-update-into-copies
+   main-edit-among-many-shapes])
 
 (defn- worlds
   []
