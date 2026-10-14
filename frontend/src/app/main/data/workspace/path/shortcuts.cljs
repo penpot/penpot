@@ -59,7 +59,8 @@
 
    :add-node        {:tooltip (ds/shift "+")
                      :label (fn [] (tr "shortcuts.add-node"))
-                     :command "shift++"
+                     :command ["shift++" "shift+="]
+                     :show-command "shift++"
                      :subsections [:path-editor]
                      :section [:workspace]
                      :fn #(st/emit! (drp/add-node))}
@@ -206,7 +207,8 @@
 
    :increase-zoom   {:tooltip "+"
                      :label (fn [] (tr "shortcuts.increase-zoom"))
-                     :command "+"
+                     :command ["+" "="]
+                     :show-command "+"
                      :section [:workspace]
                      :fn #(st/emit! (dw/increase-zoom nil))}
 

@@ -575,7 +575,8 @@
 
    :toggle-alignment     {:tooltip (ds/meta "\\")
                           :label (fn [] (tr "shortcuts.toggle-alignment"))
-                          :command (ds/c-mod "\\")
+                          :command [(ds/c-mod "\\") (ds/ca-mod "\\")]
+                          :show-command (ds/c-mod "\\")
                           :subsections [:main-menu]
                           :section [:workspace]
                           :fn #(st/emit! (toggle-layout-flag :dynamic-alignment))}
@@ -677,7 +678,8 @@
 
    :hide-ui              {:tooltip "\\"
                           :label (fn [] (tr "shortcuts.hide-ui"))
-                          :command "\\"
+                          :command ["\\" "alt+\\"]
+                          :show-command "\\"
                           :subsections [:panels :basics]
                           :section [:workspace :basics]
                           :fn #(st/emit! (toggle-layout-flag :hide-ui))}
@@ -714,7 +716,8 @@
 
    :zoom-selected        {:tooltip (ds/shift "2")
                           :label (fn [] (tr "shortcuts.zoom-selected"))
-                          :command ["shift+2" "shift+num2" "@" "\""]
+                          :command ["shift+2" "shift+num2" "shift+'" "shift+\""]
+                          :show-command "shift+2"
                           :subsections [:zoom-workspace]
                           :section [:workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}
