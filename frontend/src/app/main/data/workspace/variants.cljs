@@ -200,35 +200,12 @@
   (ptk/reify ::remove-empty-properties
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (variant-changes it state {:variant-id variant-id})]
-        (let [data (dsh/lookup-file-data state)
-
-              variant-components (cfv/find-variant-components data (pcb/get-objects changes) variant-id)
-
-              properties-empty-pos (->> variant-components
-                                        (mapcat :variant-properties)
-                                        (group-by :name)
-                                        (map-indexed
-                                         (fn [i [_ v]]
-                                           [i (->> v
-                                                   (map :value)
-                                                   (remove empty?)
-                                                   empty?)]))
-                                        (reverse))
-
-              changes (reduce
-                       (fn [changes [pos property-empty?]]
-                         (if property-empty?
-                           (-> changes
-                               (clvp/generate-remove-property variant-id pos))
-                           changes))
-                       changes
-                       properties-empty-pos)]
-
-          (when (seq (:redo-changes changes))
-            (rx/of
-             (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:rename-in-layers"})
-             (dch/commit-changes changes))))))))
+      (when-let [changes (some-> (variant-changes it state {:variant-id variant-id})
+                                 (clvp/generate-remove-empty-properties variant-id))]
+        (when (seq (:redo-changes changes))
+          (rx/of
+           (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:rename-in-layers"})
+           (dch/commit-changes changes)))))))
 
 (defn add-new-property
   "Add a new variant property to all the components with this variant-id"
