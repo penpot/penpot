@@ -3,7 +3,8 @@
    [app.main.data.workspace :as workspace]
    [app.main.ui.dashboard.import :as dashboard-import]
    [app.util.i18n :as i18n]
-   [cljs.test :as t]))
+   [cljs.test :as t]
+   [frontend-tests.helpers.mock :as mock]))
 
 (t/deftest pending-token-source-uses-token-aware-resolution
   (t/is (= {:command :resolve-import-token-source
@@ -61,9 +62,9 @@
 
 (t/deftest token-source-fallback-messages-are-translated
   (let [keys (atom [])]
-    (with-redefs [i18n/tr (fn [key]
-                            (swap! keys conj key)
-                            (str "translated:" key))]
+    (with-redefs [i18n/tr (mock/stub (fn [key]
+                                       (swap! keys conj key)
+                                       (str "translated:" key)))]
       (t/is (= "translated:dashboard.import.tokens-source-fallback-local"
                (workspace/token-source-fallback-notification-message
                 :tokens-source-fallback-local)))

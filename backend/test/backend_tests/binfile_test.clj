@@ -18,7 +18,6 @@
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
-   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
@@ -114,9 +113,9 @@
   (-> (ctob/make-tokens-lib)
       (ctob/add-set (ctob/make-token-set :id set-id :name set-name))
       (ctob/add-token set-id
-                      (cto/make-token :name (str "color." set-name)
-                                      :type :color
-                                      :value "#000000"))
+                      (ctob/make-token :name (str "color." set-name)
+                                       :type :color
+                                       :value "#000000"))
       (ctob/add-theme (ctob/make-token-theme :id theme-id
                                              :name theme-name
                                              :sets #{set-name}))))
@@ -543,9 +542,9 @@
                               (ctob/add-set (ctob/make-token-set :id missing-set-id
                                                                  :name "retired"))
                               (ctob/add-token missing-set-id
-                                              (cto/make-token :name "color.retired"
-                                                              :type :color
-                                                              :value "#000000"))
+                                              (ctob/make-token :name "color.retired"
+                                                               :type :color
+                                                               :value "#000000"))
                               (ctob/add-theme (ctob/make-token-theme :id missing-theme-id
                                                                      :name "Retired"
                                                                      :sets #{"retired"})))
