@@ -19,6 +19,8 @@ desc: Learn how to create, manage and apply Penpot Design Tokens using W3C DTCG 
 <p>Penpot Design Tokens adhere to the <a href="https://design-tokens.github.io/community-group/format/" target="_blank">Design Tokens Format Module</a> and <a href="https://www.designtokens.org/glossary/" target="_blank">its definitions</a>, a draft by the <a href="https://www.w3.org/community/design-tokens/" target="_blank">W3C DTCG</a>. Penpot ensures compatibility across various disciplines, tools, and technologies by following the most standardized approach available for design tokens.</p>
 <p>Tokens can be exported from Penpot or integrated into other tools directly, without conversion. Additionally, the knowledge gained from using Design Tokens in Penpot remains valuable, regardless of whether you continue using Penpot or a different tool or technology.</p>
 
+<p>Tokens live in a file. To share them between files, keep them in a shared library and set that library as the tokens source of the other files. See <a href="/user-guide/design-systems/libraries/#tokens-from-library">Use tokens from a shared library</a>.</p>
+
 <h2 id="design-tokens-use-create">Creating a token</h2>
 <p>You can create reusable and semantic tokens to be referenced in your designs at the <strong>Tokens</strong> panel. In this panel, you’ll find all the available types of tokens in Penpot arranged alphabetically, with existing tokens being shown at the top of the list.</p>
 <figure>
@@ -194,6 +196,7 @@ desc: Learn how to create, manage and apply Penpot Design Tokens using W3C DTCG 
     <li>Clicking on a color token will apply it to the element as a fill by default.</li>
     <li>Right-clicking on a color token, allows you to select whether it should be applied as a fill or stroke color.</li>
 </ul>
+<p>You can also use a color token for the <strong>canvas background</strong>. With nothing selected, click the swatch in the <strong>Canvas background</strong> section of the Design tab, switch the color picker to <strong>Color tokens</strong> and pick a token. The background then follows the token, for example when you switch between a light and a dark theme. Use <strong>Detach token</strong> to keep the color as a plain value.</p>
 <figure>
   <img src="/img/design-tokens/08-tokens-color.webp" alt="Tokens color" />
 </figure>
@@ -343,6 +346,8 @@ desc: Learn how to create, manage and apply Penpot Design Tokens using W3C DTCG 
 
 <h3 id="design-tokens-stroke-width">Stroke Width</h3>
 <p>The stroke width token, also known as the border width token, defines the thickness of a stroke around a design element. It can be applied to boards, groups, rectangles and text elements.</p>
+<p>On rectangles and boards you can apply it to a single side. Right-click the token and choose <strong>All</strong>, <strong>Top</strong>, <strong>Right</strong>, <strong>Bottom</strong> or <strong>Left</strong>. Dimension tokens offer the same options under <strong>Stroke Width</strong>. You can also pick a token in each side field of the <a href="/user-guide/designing/color-stroke/#stroke-per-side">stroke per side</a> controls.</p>
+<p class="advice">Tokens apply only to the first stroke of a layer. Applying a token to one side requires <a href="/user-guide/first-steps/troubleshooting-webgl/">WebGL rendering</a>.</p>
 
 
 <h3 id="design-tokens-number">Number token</h3>
@@ -677,7 +682,7 @@ ExtraBold Italic
 
 <h2 id="design-tokens-import-export">Importing and Exporting Tokens</h2>
 <p>You can export Tokens from Penpot and import them from your computer to a Penpot file. Tokens can be imported from the <strong>Tools</strong> option at the bottom of the <strong>Tokens</strong> tab.</p>
-<p>You can also <a href="/user-guide/design-systems/libraries/#import-tokens-from-library">import tokens from a connected shared library</a> using the Libraries modal. That import uses the library's full token definition (sets and themes included) and replaces the tokens already in your file.</p>
+<p>To use the tokens of a shared library without copying them, set the library as the file's tokens source. See <a href="/user-guide/design-systems/libraries/#tokens-from-library">Use tokens from a shared library</a>. Import is not available while a library is the tokens source.</p>
 <p>The <strong>Import</strong> functionality allows you to upload and replace the global token set using a single file or a folder with multiple files in it.</p>
 <p>These features support JSON files formatted according to specific guidelines and preserve the ability to undo changes if needed.</p>
 <figure>
