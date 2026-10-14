@@ -7,12 +7,15 @@
 (ns backend-tests.loggers-audit-archive-task-test
   (:require
    [app.common.json :as json]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as-alias http]
    [app.jobs :as jobs]
+   [app.loggers.audit.archive-task :as archive]
    [app.setup :as-alias setup]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -348,3 +351,11 @@
           (t/is (= (:name team) (:team-name props))))
         (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
           (t/is (= 2 (count rows))))))))
+
+(t/deftest archive-params-accept-empty-cron-props
+  ;; Cron always submits (or props {}) — system deps live on the
+  ;; job-def cfg, not in params. Requiring them here blocks every tick.
+  (let [valid? (sm/validator archive/schema:audit-log-archive-params)]
+    (t/is (true? (valid? {})))
+    (t/is (true? (valid? {:enabled true})))
+    (t/is (true? (valid? {:uri (u/uri archive-uri)})))))
