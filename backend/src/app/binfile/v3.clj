@@ -1310,7 +1310,8 @@
         stored-status  (:tokens-status file-data)
         marker         (when-not provider? outcome)
         stored-marker  (get-in file [:metadata :tokens-source-fallback-notification])
-        marker-changed? (not= stored-marker marker)
+        ;; An absent marker may have been consumed; state changes still create one.
+        marker-changed? (and (some? stored-marker) (not= stored-marker marker))
         unchanged?     (and (= (cfo/get-tokens-source file-data)
                                (when provider? library-id))
                             (some? stored-status)

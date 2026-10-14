@@ -347,6 +347,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
+      ;; Consume after main-file bundle resolution, before async project/library loading.
       (if (token-source-fallback-notification-outcome (:metadata file))
         (->> (rp/cmd! :consume-tokens-source-fallback-notification
                       {:file-id file-id})

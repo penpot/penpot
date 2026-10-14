@@ -3059,6 +3059,49 @@
                   (t/is (nil? (:error again)))
                   (t/is (nil? (get-in again [:result :tokens-source-fallback-notification]))))))))))))
 
+(t/deftest repeated-token-source-resolution-preserves-consumed-notification
+  (let [profile (th/create-profile* 1)]
+    (doseq [local? [true false]]
+      (let [source-index (if local? 1 3)
+            {:keys [file]} (create-token-source-consumer! profile source-index (inc source-index)
+                                                          "Retry Notification" local?)
+            tokenless (th/create-file* (+ source-index 10)
+                                       {:profile-id (:id profile)
+                                        :project-id (:default-project-id profile)
+                                        :is-shared true})
+            params {::th/type :resolve-import-token-source
+                    ::rpc/profile-id (:id profile)
+                    :file-id (:id file)
+                    :library-id (:id tokenless)
+                    :tokens-status-names {}}
+            outcome (if local? :tokens-source-fallback-local :tokens-source-deactivated)
+            resolved (th/command! params)
+            consume-params {::th/type :consume-tokens-source-fallback-notification
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)}
+            consumed (th/command! consume-params)
+            before (bfc/get-file th/*system* (:id file))
+            repeated (th/command! params)
+            after (bfc/get-file th/*system* (:id file))
+            consumed-again (th/command! consume-params)]
+        (t/is (nil? (:error resolved)))
+        (t/is (= outcome (get-in resolved [:result :tokens-source-outcome])))
+        (t/is (nil? (:error consumed)))
+        (t/is (= outcome (get-in consumed [:result :tokens-source-fallback-notification])))
+        (t/is (nil? (get-in before [:metadata :tokens-source-fallback-notification])))
+        (t/is (nil? (:error repeated)))
+        (t/is (= outcome (get-in repeated [:result :tokens-source-outcome])))
+        (t/is (= (:metadata before) (:metadata after)))
+        (t/is (= (cfo/get-tokens-source (:data before))
+                 (cfo/get-tokens-source (:data after))))
+        (t/is (= (ctos/get-active-theme-ids (get-in before [:data :tokens-status]))
+                 (ctos/get-active-theme-ids (get-in after [:data :tokens-status]))))
+        (t/is (= (ctos/get-active-set-ids (get-in before [:data :tokens-status]))
+                 (ctos/get-active-set-ids (get-in after [:data :tokens-status]))))
+        (t/is (= (:revn before) (:revn after)))
+        (t/is (= (:modified-at before) (:modified-at after)))
+        (t/is (nil? (:error consumed-again)))
+        (t/is (nil? (get-in consumed-again [:result :tokens-source-fallback-notification])))))))
 (t/deftest link-later-fallback-notification-consumed-once
   "Fallback import/resolution persists a one-shot workspace marker that a
   read-permission + row-lock consume RPC returns and clears atomically."
