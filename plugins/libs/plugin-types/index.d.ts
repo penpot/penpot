@@ -2669,6 +2669,12 @@ export interface Library extends PluginData {
   readonly components: LibraryComponent[];
 
   /**
+   * Deleted components, including individual deleted variants.
+   * Use a component's `restore()` method to restore it.
+   */
+  readonly deletedComponents: LibraryComponent[];
+
+  /**
    * A catalog of Design Tokens in the library.
    *
    * See `TokenCatalog` type to see usage.
@@ -2763,6 +2769,39 @@ export interface LibraryColor extends LibraryElement {
  * This interface extends `LibraryElement` and includes properties specific to component elements.
  */
 export interface LibraryComponent extends LibraryElement {
+  /**
+   * The component annotation, or null when none is set.
+   * Set null to delete it. Text can contain at most 300 characters.
+   * Writing requires `library:write` permission and a live component in the
+   * current file's library.
+   */
+  annotation: string | null;
+
+  /**
+   * Duplicates this component and its main instance in the current file's library.
+   * Requires `library:write` permission. The component must not be deleted.
+   */
+  duplicate(): LibraryComponent;
+
+  /**
+   * Deletes this component and its main instance from the current file's library.
+   * Requires `library:write` permission. Does nothing if already deleted.
+   * Surviving copies keep their link so the component can be restored later.
+   */
+  remove(): void;
+
+  /**
+   * Restores this component if it has been deleted, including its main instance.
+   * Leaves the current page, selection, zoom, and viewport unchanged.
+   * Requires `library:write` permission. Does nothing if already restored.
+   *
+   * @example
+   * ```js
+   * penpot.selection[0].component()?.restore();
+   * ```
+   */
+  restore(): void;
+
   /**
    * Creates an instance of the component.
    * @return Returns a `Shape` object representing the instance of the component.
@@ -3979,6 +4018,15 @@ export interface ShapeBase extends PluginData {
    * The current shape must be a component copy instance.
    */
   resetOverrides(): void;
+
+  /**
+   * Applies this copy's overrides to its main component and synchronizes copies.
+   * Similar to the editor's "update main component" action.
+   * Requires `content:write` and `library:write` permissions.
+   * The shape must be a component copy head on the active page of the current file,
+   * outside any other component copy, with a main component that is not deleted.
+   */
+  updateMain(): void;
 
   /**
    * Switch a VariantComponent copy to the nearest one that has the specified property value
