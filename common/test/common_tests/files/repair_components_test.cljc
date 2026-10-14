@@ -8,11 +8,7 @@
   "One test per component error code of `app.common.files.validate`: each
    builds a file broken in one way, checks the codes validation reports,
    repairs it as the backend does (validate and repair until valid, at most
-   ten passes) and checks the result.
-
-   Three codes have no test because no file can produce them: the checks that
-   report `:component-not-main`, `:should-be-component-root` and
-   `:not-component-not-allowed` only run on shapes that already satisfy them."
+   ten passes) and checks the result."
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.files.repair :as cfr]
