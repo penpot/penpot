@@ -251,7 +251,7 @@
          :remove    (apply dwv/remove-property args)
          :rename    (let [[variant-id pos name] args]
                       (dwv/update-property-name variant-id pos name {:trigger "workspace:design-tab"}))
-         :reorder   (apply dwv/reorder-variant-poperties args)
+         :reorder   (apply dwv/reorder-variant-properties args)
          :set-value (apply dwv/update-property-value args))])
 
     (instance? n/Detach op)
