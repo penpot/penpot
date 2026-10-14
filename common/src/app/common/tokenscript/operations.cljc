@@ -6,7 +6,8 @@
 
 (ns app.common.tokenscript.operations
   "Binary operators: arithmetic with unit handling, comparisons and
-  boolean logic.
+  boolean logic. Their rules are listed under Operators in
+  docs/technical-guide/developer/subsystems/tokenscript/language.md.
 
   Arithmetic needs unit conversion (`1rem + 2px`), which runs scripts
   through the interpreter, so `math` takes the converter function as an

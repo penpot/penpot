@@ -43,7 +43,8 @@
 
 (defn register-schema
   "Registers one schema (`{:uri .. :schema ..}`) by its `:type`:
-  `color`, `function`, `token` or `constants`. Unknown types are ignored."
+  `color`, `function`, `token` or `constants`. Unknown types are ignored.
+  Schema formats: docs/technical-guide/developer/subsystems/tokenscript/schemas.md."
   [config {:keys [uri schema]}]
   (let [schema (walk/keywordize-keys schema)]
     (case (:type schema)

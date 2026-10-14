@@ -10,7 +10,9 @@
 
   Built ins receive the evaluated argument symbols. Dynamic functions are
   tokenscript scripts registered from `:type \"function\"` schemas; their
-  execution lives in the interpreter.
+  execution lives in the interpreter. Both are described in
+  docs/technical-guide/developer/subsystems/tokenscript/functions.md and
+  schemas.md.
 
   `FunctionRegistry` fields:
 

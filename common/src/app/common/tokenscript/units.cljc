@@ -10,7 +10,8 @@
   Units are schemas (`:type \"absolute\"` or `\"relative\"`) with a
   keyword (`px`, `rem`, `%`) and conversion scripts. Relative units carry
   a `to_absolute` script evaluated against another operand. Script
-  execution lives in the interpreter.
+  execution lives in the interpreter. See Units in
+  docs/technical-guide/developer/subsystems/tokenscript/schemas.md.
 
   `UnitRegistry` has the common registry fields (see
   `app.common.tokenscript.registry`) plus `keywords`

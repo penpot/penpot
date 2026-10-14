@@ -15,7 +15,8 @@
 (def known-divergences
   "Cases where the suite expectations differ from the behaviour of the
   reference TypeScript interpreter this implementation reproduces. Each
-  entry is the case name; see docs/technical-guide/developer/subsystems/tokenscript.md."
+  entry is the case name; see
+  docs/technical-guide/developer/subsystems/tokenscript/testing.md."
   #{;; Python style float formatting (`7.0`) and banker's rounding
     "math with mixed float and integer"
     "round down on .5 to even number"

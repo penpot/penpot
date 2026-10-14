@@ -5,10 +5,12 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.tokenscript.lexer
-  "Tokenizer for tokenscript source text.
+  "Tokenizer for tokenscript source text. Bare words, greedy strings and
+  unit adjacency are described in
+  docs/technical-guide/developer/subsystems/tokenscript/language.md.
 
-  The lexer is a pure function over a small state map so the parser can
-  peek ahead without side effects:
+  The lexer is a pure function over a `LexerState` record, so the
+  parser can peek ahead without side effects:
 
     (let [[token state'] (next-token (make-lexer \"1 + 2\"))] ...)
 

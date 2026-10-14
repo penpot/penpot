@@ -25,7 +25,9 @@
   (a list or a record), raising for the others.
 
   Script methods map a method name to one of these functions in a method
-  table per type, see `call-method`."
+  table per type, see `call-method`. The attributes and methods scripts
+  see are listed in
+  docs/technical-guide/developer/subsystems/tokenscript/language.md."
   (:refer-clojure :exclude [list boolean number symbol? number? string? boolean? list?])
   (:require
    [app.common.math :as mth]

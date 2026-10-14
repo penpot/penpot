@@ -17,7 +17,9 @@
              string.
 
   Entry point: `(parse text {:mode :inline})` returns
-  `{:ast node-or-nil :references #{...} :incomplete [...]}`."
+  `{:ast node-or-nil :references #{...} :incomplete [...]}`.
+
+  See docs/technical-guide/developer/subsystems/tokenscript/language.md."
   (:require
    [app.common.tokenscript.errors :as err]
    [app.common.tokenscript.lexer :as lex]

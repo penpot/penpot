@@ -20,7 +20,9 @@
   the classpath on first use. In ClojureScript the `inline-json` macro
   reads and checks them at compile time and embeds them as minified
   JSON, decoded on first use. URIs stay path URIs: schemas are
-  identified by them, never fetched."
+  identified by them, never fetched.
+
+  See docs/technical-guide/developer/subsystems/tokenscript/schemas.md."
   (:require
    #?@(:clj [[app.common.tokenscript.parser :as parser]
              [app.common.tokenscript.util :as u]

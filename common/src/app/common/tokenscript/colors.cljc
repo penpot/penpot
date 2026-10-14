@@ -10,7 +10,9 @@
   Color spaces are schemas (`:type \"color\"`) carrying tokenscript
   scripts: initializers (`hsl(0, 100, 50)`) and conversions between
   spaces. Registration parses the scripts once; execution happens in the
-  interpreter, which has access to the whole config.
+  interpreter, which has access to the whole config. The schema format
+  and the script contracts are described under Color spaces in
+  docs/technical-guide/developer/subsystems/tokenscript/schemas.md.
 
   `ColorRegistry` has the common registry fields (see
   `app.common.tokenscript.registry`) plus `initializers`

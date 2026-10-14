@@ -33,7 +33,7 @@
 ;; Context --------------------------------------------------------------------
 ;;
 ;; `refs` is a map (or any function) from reference path to value; `table`
-;; is a volatile holding the script variables, keyed by lower case name.
+;; is a volatile holding the script variables, keyed by `u/name-key`.
 
 (defrecord Context [config refs table])
 
@@ -685,7 +685,7 @@
 
     :references  map (or fn) from reference path to value or symbol
     :config      interpreter config (defaults to `config/make-config`)
-    :table       initial variable table (lower case name -> symbol)
+    :table       initial variable table (`u/name-key` -> symbol)
 
   Returns the result symbol, nil when the program produced no value, or
   \"\" for a nil AST."

@@ -5,7 +5,8 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.tokenscript.validation
-  "Token value validation against registered token type schemas.
+  "Token value validation against registered token type schemas, see
+  docs/technical-guide/developer/subsystems/tokenscript/validation.md.
 
   A validation result is `{:valid? bool :error code :token-type type
   :path [..]}`; `:path` points at the nested field for failures inside

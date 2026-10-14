@@ -22,7 +22,9 @@
   The processor stores the same maps as values in its issues map, so
   errors are plain data on both sides of the API. The code keyword
   namespace selects the kind; `code->compliance-code` maps a code to the
-  string identifier used by the cross-runtime compliance suite."
+  string identifier used by the cross-runtime compliance suite.
+
+  See docs/technical-guide/developer/subsystems/tokenscript/errors.md."
   (:require
    [clojure.string :as str]))
 

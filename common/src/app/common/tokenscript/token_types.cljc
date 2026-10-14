@@ -10,7 +10,8 @@
   Token type schemas (`:type \"token\"`) describe structured token values
   (typography, shadow, ...) and may carry a tokenscript validation script
   that receives `{input}` and returns `true` or an error code string.
-  Validation execution lives in `app.common.tokenscript.validation`.
+  Validation execution lives in `app.common.tokenscript.validation`; see
+  docs/technical-guide/developer/subsystems/tokenscript/validation.md.
 
   `TokenTypeRegistry` has the common registry fields (see
   `app.common.tokenscript.registry`) plus `validation`
