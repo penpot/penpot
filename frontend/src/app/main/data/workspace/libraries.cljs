@@ -616,14 +616,14 @@
     (watch [it state _]
       (let [page-id   (:current-page-id state)
             file-id   (:current-file-id state)
+            objects   (dsh/lookup-page-objects state page-id)
 
             fdata     (dsh/lookup-file-data state file-id)
-            libraries (dsh/lookup-libraries state)
+            libraries (dsh/lookup-libraries state)]
 
-            changes   (-> (pcb/empty-changes it)
-                          (cli/generate-detach-component id fdata page-id libraries))]
-
-        (rx/of (dch/commit-changes changes))))))
+        (when (ctn/detachable? objects (get objects id))
+          (rx/of (dch/commit-changes (-> (pcb/empty-changes it)
+                                         (cli/generate-detach-component id fdata page-id libraries)))))))))
 
 (defn detach-components
   "Remove all references to components in the shapes with the given ids"
