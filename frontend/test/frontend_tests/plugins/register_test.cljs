@@ -12,6 +12,12 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]))
 
+(t/deftest mcp-has-default-management-permissions
+  (t/is (preg/check-permission preg/mcp-plugin-id "manage:delete"))
+  (t/is (preg/check-permission preg/mcp-plugin-id "manage:teams"))
+  (t/is (preg/check-permission preg/mcp-plugin-id "content:write"))
+  (t/is (not (preg/check-permission preg/mcp-plugin-id "unknown:permission"))))
+
 (defn- record-cmd-mock
   "Mock rp/cmd! that records calls in mock/rpc-calls and answers
   with (response-fn cmd params)."

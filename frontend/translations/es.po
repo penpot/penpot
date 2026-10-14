@@ -8356,6 +8356,18 @@ msgstr "Leer la información de sus bibliotecas y recursos."
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Leer y modificar la información de sus bibliotecas y recursos."
 
+#: src/app/main/ui/workspace/plugins.cljs:360
+msgid "workspace.plugins.permissions.manage-delete"
+msgstr "Eliminar tus archivos y proyectos."
+
+#: src/app/main/ui/workspace/plugins.cljs:346
+msgid "workspace.plugins.permissions.manage-projects"
+msgstr "Crear, renombrar, fijar y duplicar tus proyectos."
+
+#: src/app/main/ui/workspace/plugins.cljs:353
+msgid "workspace.plugins.permissions.manage-teams"
+msgstr "Ver, crear y renombrar tus equipos, y mover proyectos entre ellos."
+
 #: src/app/main/ui/workspace/plugins.cljs:387
 msgid "workspace.plugins.permissions.title"
 msgstr "LA EXTENSIÓN '%s' SOLICITA PERMISO PARA ACCEDER:"

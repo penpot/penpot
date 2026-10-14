@@ -786,42 +786,212 @@ export interface WorkspaceContext {
   readonly teamId: string | null;
 }
 
-/** Metadata snapshot of an accessible, non-deleted project. */
-export interface ProjectSummary {
+/**
+ * A team the user belongs to. Requires `manage:teams`.
+ *
+ * Values are a snapshot taken when the team was listed; changes made through
+ * this object update it.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface Team {
   readonly id: string;
-  readonly teamId: string;
-  readonly name: string;
-  /** Whether this is the team's Drafts project. */
+  /** Whether this is the user's personal team. */
   readonly isDefault: boolean;
-  readonly fileCount: number;
+  /**
+   * The team name. Assigning renames the team; requires `manage:teams`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /**
+   * Lists the team's projects. Requires `content:read`.
+   *
+   * @example
+   * ```ts
+   * const [team] = await penpotMgmt.listTeams();
+   * const projects = await team.listProjects();
+   * ```
+   */
+  listProjects(): Promise<Project[]>;
+  /** Lists projects still recoverable from Trash. Requires `content:read`. */
+  listDeletedProjects(): Promise<Project[]>;
+  /** Lists files still recoverable from Trash. Requires `content:read`. */
+  listDeletedFiles(): Promise<ProjectFile[]>;
+  /**
+   * Creates a project in the team. Requires `manage:projects`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not change navigation.
+   *
+   * @example
+   * ```ts
+   * const project = await team.createProject({ name: 'Design system' });
+   * ```
+   */
+  createProject(options: { name: string }): Promise<Project>;
 }
 
-/** Metadata snapshot of an accessible, non-deleted file. */
-export interface FileSummary {
+/**
+ * A project in the dashboard.
+ *
+ * Values are a snapshot taken when the project was listed; changes made through
+ * this object update it.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface Project {
+  readonly id: string;
+  readonly teamId: string;
+  /** Whether this is the team's Drafts project. */
+  readonly isDefault: boolean;
+  /** Number of files when the project was listed; file operations do not update it. */
+  readonly fileCount: number;
+  /**
+   * The project name. Assigning renames the project; requires `manage:projects`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /** Whether the project is pinned in the sidebar. Assigning requires `manage:projects`. */
+  pinned: boolean;
+  /**
+   * Lists the files in the project. Requires `content:read`.
+   *
+   * @example
+   * ```ts
+   * const files = await project.listFiles();
+   * ```
+   */
+  listFiles(): Promise<ProjectFile[]>;
+  /** Lists the project's files still recoverable from Trash. Requires `content:read`. */
+  listDeletedFiles(): Promise<ProjectFile[]>;
+  /**
+   * Restores the project through its files using the dashboard's Trash operation.
+   * Requires `manage:projects` and team edit access. Does not require `manage:delete`.
+   * Rejects if the project has no recoverable files, including empty projects.
+   */
+  restore(): Promise<void>;
+  /**
+   * Creates a file with an initial page in the project. Requires `content:write`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not open the file. Use `ProjectFile.open` to edit it.
+   *
+   * @example
+   * ```ts
+   * const file = await project.createFile({ name: 'Login' });
+   * await file.open();
+   * ```
+   */
+  createFile(options: { name: string }): Promise<ProjectFile>;
+  /**
+   * Duplicates the project with all its files. Requires `manage:projects`.
+   *
+   * `name` defaults to the name the backend chooses.
+   */
+  duplicate(options?: { name?: string }): Promise<Project>;
+  /** Moves the project to another team. Requires `manage:teams`. */
+  moveTo(team: Team): Promise<void>;
+  /**
+   * Moves the project and its files to Trash. Requires `manage:delete`.
+   * They can be restored during the retention period. Cannot permanently delete.
+   */
+  remove(): Promise<void>;
+}
+
+/**
+ * A file in the dashboard, which may or may not be open.
+ *
+ * Values are a snapshot taken when the file was listed; changes made through
+ * this object update it. To read or edit its content, `open` it and use
+ * `penpot.currentFile`.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface ProjectFile {
   readonly id: string;
   readonly teamId: string;
   readonly projectId: string;
-  readonly name: string;
   /** Last modification time as an ISO 8601 string in UTC. */
   readonly modifiedAt: string;
+  /**
+   * The file name. Assigning renames the file; requires `content:write`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /**
+   * Whether the file is shared as a library with its team. Assigning requires
+   * `library:write`. A shared file is listed by
+   * `penpot.library.availableLibraries()`; unsharing copies its assets into
+   * every file that uses it and disconnects them.
+   */
+  shared: boolean;
+  /**
+   * Opens the file in this tab and resolves once its workspace and page are
+   * ready. Requires `content:read`.
+   */
+  open(): Promise<void>;
+  /**
+   * Restores the file using the dashboard's Trash operation, including its parent
+   * project if deleted. Requires `content:write` and team edit access.
+   * Rejects if the file no longer exists. Does not require `manage:delete`.
+   */
+  restore(): Promise<void>;
+  /**
+   * Moves the file to another project of the same team. Requires `content:write`.
+   * Rejects a destination that currently belongs to another team.
+   */
+  moveTo(project: Project): Promise<void>;
+  /**
+   * Duplicates the file in its project. Requires `content:write`.
+   *
+   * `name` defaults to the name the backend chooses.
+   */
+  duplicate(options?: { name?: string }): Promise<ProjectFile>;
+  /**
+   * Moves the file to Trash. Requires `manage:delete`.
+   * It can be restored during the retention period. Cannot permanently delete.
+   */
+  remove(): Promise<void>;
 }
 
 /**
  * Application management API exposed as `penpotMgmt` to global plugins.
  *
- * - Discovery and navigation require `content:read`; creation requires `content:write`.
- * - Available in the dashboard and file workspaces.
- * - Use this API to discover, create and open files; file operations on `penpot` require a ready workspace.
+ * - Lists teams, projects and files, and opens files, from the dashboard or a
+ *   file workspace. Teams, projects and files are objects with their own
+ *   properties and methods.
+ * - Listing and opening require `content:read`; teams require `manage:teams`.
+ * - File operations on `penpot` require a ready workspace.
  * - Reacquire file, page and shape objects after changing files.
  */
 export interface PenpotMgmt {
   /** Current workspace availability and metadata; usable for file operations when status is `ready`. */
   readonly workspace: WorkspaceContext;
   /**
-   * Lists accessible, non-deleted projects as metadata snapshots.
+   * Lists the teams of the user. Requires `manage:teams`.
+   *
+   * @example
+   * ```ts
+   * const teams = await penpotMgmt.listTeams();
+   * ```
+   */
+  listTeams(): Promise<Team[]>;
+  /**
+   * Creates a team with the user as owner. Requires `manage:teams`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not change navigation.
+   *
+   * @example
+   * ```ts
+   * const team = await penpotMgmt.createTeam({ name: 'Marketing' });
+   * ```
+   */
+  createTeam(options: { name: string }): Promise<Team>;
+  /**
+   * Lists the projects of a team. Requires `content:read`.
    *
    * - `teamId` defaults to the current team.
-   * - Queries the backend without opening a file or changing navigation.
    * - Rejects invalid identifiers and backend access errors.
    *
    * @example
@@ -829,55 +999,27 @@ export interface PenpotMgmt {
    * const projects = await penpotMgmt.listProjects();
    * ```
    */
-  listProjects(options?: { teamId?: string }): Promise<ProjectSummary[]>;
+  listProjects(options?: { teamId?: string }): Promise<Project[]>;
   /**
-   * Lists accessible, non-deleted files in the specified project as metadata snapshots.
-   *
-   * - Requires an explicit `projectId`.
-   * - Queries the backend without opening a file or changing navigation.
-   * - Rejects invalid identifiers and backend access errors.
+   * Lists projects still recoverable from Trash. Requires `content:read`.
+   * `teamId` defaults to the current team. Use `Project.restore` to recover them.
+   */
+  listDeletedProjects(options?: { teamId?: string }): Promise<Project[]>;
+  /**
+   * Lists files still recoverable from Trash. Requires `content:read`.
+   * `teamId` defaults to the current team. Use `ProjectFile.restore` to recover them.
+   */
+  listDeletedFiles(options?: { teamId?: string }): Promise<ProjectFile[]>;
+  /**
+   * Loads a file by id, open or not. Requires `content:read`.
    *
    * @example
    * ```ts
-   * const files = await penpotMgmt.listFiles({ projectId: project.id });
+   * const file = await penpotMgmt.getFile(penpotMgmt.workspace.fileId!);
+   * file.name = 'Checkout';
    * ```
    */
-  listFiles(options: { projectId: string }): Promise<FileSummary[]>;
-  /**
-   * Creates a project and returns its metadata snapshot. Requires `content:write`.
-   *
-   * - `teamId` defaults to the current team.
-   * - Trims `name` and requires 1 to 250 characters.
-   * - Does not change navigation or open a file.
-   * - Rejects invalid input, backend access errors and quota errors.
-   *
-   * @example
-   * ```ts
-   * const project = await penpotMgmt.createProject({ name: 'Design system' });
-   * ```
-   */
-  createProject(options: {
-    name: string;
-    teamId?: string;
-  }): Promise<ProjectSummary>;
-  /**
-   * Creates a file with an initial page and returns its metadata snapshot. Requires `content:write`.
-   *
-   * - Requires an explicit `projectId`.
-   * - Trims `name` and requires 1 to 250 characters.
-   * - Does not open the file or change navigation. Use `openFile` to edit it.
-   * - Rejects invalid input, backend access errors and quota errors.
-   *
-   * @example
-   * ```ts
-   * const file = await penpotMgmt.createFile({ projectId: project.id, name: 'Login' });
-   * await penpotMgmt.openFile(file.id, { teamId: file.teamId });
-   * ```
-   */
-  createFile(options: {
-    name: string;
-    projectId: string;
-  }): Promise<FileSummary>;
+  getFile(fileId: string): Promise<ProjectFile>;
   /**
    * Opens a file in this tab and resolves once its workspace and page are ready.
    *

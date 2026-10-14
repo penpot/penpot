@@ -90,7 +90,7 @@
 
     ;; Public properties
     :management
-    {:get (fn [] (management/create-context))}
+    {:get (fn [] (management/create-context plugin-id))}
 
     :version
     {:this true

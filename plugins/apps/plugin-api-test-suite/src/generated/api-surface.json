@@ -138,10 +138,12 @@
       "contentsave",
       "filechange",
       "finish",
+      "logout",
       "pagechange",
       "selectionchange",
       "shapechange",
-      "themechange"
+      "themechange",
+      "workspacechange"
     ],
     "Export": ["scale", "skipChildren", "suffix", "type"],
     "File": [
@@ -365,6 +367,16 @@
     "Path": ["commands", "d", "fills", "type"],
     "PathCommand": ["command", "params"],
     "Penpot": ["closePlugin", "off", "on", "ui", "utils"],
+    "PenpotMgmt": [
+      "createTeam",
+      "getFile",
+      "listProjects",
+      "listTeams",
+      "off",
+      "on",
+      "openFile",
+      "workspace"
+    ],
     "PluginData": [
       "getPluginData",
       "getPluginDataKeys",
@@ -375,6 +387,31 @@
     ],
     "Point": ["x", "y"],
     "PreviousScreen": ["type"],
+    "Project": [
+      "createFile",
+      "duplicate",
+      "fileCount",
+      "id",
+      "isDefault",
+      "listFiles",
+      "moveTo",
+      "name",
+      "pinned",
+      "remove",
+      "teamId"
+    ],
+    "ProjectFile": [
+      "duplicate",
+      "id",
+      "modifiedAt",
+      "moveTo",
+      "name",
+      "open",
+      "projectId",
+      "remove",
+      "shared",
+      "teamId"
+    ],
     "Push": ["direction", "duration", "easing", "type"],
     "Rectangle": ["fills", "type"],
     "RulerGuide": ["board", "orientation", "position", "remove"],
@@ -480,6 +517,14 @@
       "strokeWidthType"
     ],
     "SvgRaw": ["type"],
+    "Team": [
+      "createProject",
+      "id",
+      "isDefault",
+      "listProjects",
+      "name",
+      "remove"
+    ],
     "Text": [
       "align",
       "applyTypography",
@@ -538,6 +583,7 @@
       "addTheme",
       "getSetById",
       "getThemeById",
+      "isEditableTokens",
       "sets",
       "themes"
     ],
@@ -636,7 +682,8 @@
       "zoomIntoView",
       "zoomReset",
       "zoomToFitAll"
-    ]
+    ],
+    "WorkspaceContext": ["fileId", "fileName", "status", "teamId"]
   },
   "graph": {
     "ActiveUser": {
@@ -2080,6 +2127,12 @@
       }
     },
     "Context": {
+      "management": {
+        "decl": "Context",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
       "version": {
         "decl": "Context",
         "kind": "get",
@@ -2914,6 +2967,18 @@
       }
     },
     "EventsMap": {
+      "workspacechange": {
+        "decl": "EventsMap",
+        "kind": "get",
+        "type": "WorkspaceContext",
+        "array": false
+      },
+      "logout": {
+        "decl": "EventsMap",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
       "pagechange": {
         "decl": "EventsMap",
         "kind": "get",
@@ -6677,6 +6742,56 @@
         "array": false
       }
     },
+    "PenpotMgmt": {
+      "workspace": {
+        "decl": "PenpotMgmt",
+        "kind": "get",
+        "type": "WorkspaceContext",
+        "array": false
+      },
+      "listTeams": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "Team",
+        "array": true
+      },
+      "createTeam": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "Team",
+        "array": false
+      },
+      "listProjects": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "Project",
+        "array": true
+      },
+      "getFile": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": false
+      },
+      "openFile": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "on": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "off": {
+        "decl": "PenpotMgmt",
+        "kind": "method",
+        "type": null,
+        "array": false
+      }
+    },
     "PluginData": {
       "getPluginData": {
         "decl": "PluginData",
@@ -6733,6 +6848,136 @@
       "type": {
         "decl": "PreviousScreen",
         "kind": "get",
+        "type": null,
+        "array": false
+      }
+    },
+    "Project": {
+      "id": {
+        "decl": "Project",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "teamId": {
+        "decl": "Project",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "isDefault": {
+        "decl": "Project",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "fileCount": {
+        "decl": "Project",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "name": {
+        "decl": "Project",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "pinned": {
+        "decl": "Project",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "listFiles": {
+        "decl": "Project",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": true
+      },
+      "createFile": {
+        "decl": "Project",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": false
+      },
+      "duplicate": {
+        "decl": "Project",
+        "kind": "method",
+        "type": "Project",
+        "array": false
+      },
+      "moveTo": {
+        "decl": "Project",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "remove": {
+        "decl": "Project",
+        "kind": "method",
+        "type": null,
+        "array": false
+      }
+    },
+    "ProjectFile": {
+      "id": {
+        "decl": "ProjectFile",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "teamId": {
+        "decl": "ProjectFile",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "projectId": {
+        "decl": "ProjectFile",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "modifiedAt": {
+        "decl": "ProjectFile",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "name": {
+        "decl": "ProjectFile",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "shared": {
+        "decl": "ProjectFile",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "open": {
+        "decl": "ProjectFile",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "moveTo": {
+        "decl": "ProjectFile",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "duplicate": {
+        "decl": "ProjectFile",
+        "kind": "method",
+        "type": "ProjectFile",
+        "array": false
+      },
+      "remove": {
+        "decl": "ProjectFile",
+        "kind": "method",
         "type": null,
         "array": false
       }
@@ -8361,6 +8606,44 @@
         "array": true
       }
     },
+    "Team": {
+      "id": {
+        "decl": "Team",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "isDefault": {
+        "decl": "Team",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "name": {
+        "decl": "Team",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "listProjects": {
+        "decl": "Team",
+        "kind": "method",
+        "type": "Project",
+        "array": true
+      },
+      "createProject": {
+        "decl": "Team",
+        "kind": "method",
+        "type": "Project",
+        "array": false
+      },
+      "remove": {
+        "decl": "Team",
+        "kind": "method",
+        "type": null,
+        "array": false
+      }
+    },
     "Text": {
       "type": {
         "decl": "Text",
@@ -9274,6 +9557,12 @@
       }
     },
     "TokenCatalog": {
+      "isEditableTokens": {
+        "decl": "TokenCatalog",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
       "themes": {
         "decl": "TokenCatalog",
         "kind": "get",
@@ -11327,6 +11616,32 @@
       "zoomIntoView": {
         "decl": "Viewport",
         "kind": "method",
+        "type": null,
+        "array": false
+      }
+    },
+    "WorkspaceContext": {
+      "status": {
+        "decl": "WorkspaceContext",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "fileId": {
+        "decl": "WorkspaceContext",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "fileName": {
+        "decl": "WorkspaceContext",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "teamId": {
+        "decl": "WorkspaceContext",
+        "kind": "get",
         "type": null,
         "array": false
       }
