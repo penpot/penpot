@@ -13,6 +13,10 @@
   {:mean-ms 75.119, :lower-q-ms 68.931, :passes 3},
   :library-update-into-copies
   {:mean-ms 89.295, :lower-q-ms 83.083, :passes 1},
+  ;; added in Phase 3 (2026-10-14), measured on the code before the object
+  ;; scan of a sync changed, on the same machine
+  :main-edit-among-many-shapes
+  {:mean-ms 5.465, :lower-q-ms 4.837, :passes 1},
   :main-edit-into-10-copies
   {:mean-ms 1.847, :lower-q-ms 1.79, :passes 1},
   :main-edit-into-100-copies
