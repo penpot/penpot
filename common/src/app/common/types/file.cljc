@@ -1240,7 +1240,9 @@
 
 ;; Ref Chains
 (defn get-ref-chain-until-target-ref
-  "Returns a vector with the shape ref chain until target-ref, including itself"
+  "The shape `shape` of `container` and its ref chain (each shape's near
+  main, found in the container of the one before), up to the shape whose id
+  is `target-ref`, included, or to the end of the chain."
   [container libraries shape target-ref]
   (loop [chain     [shape]
          current   shape
