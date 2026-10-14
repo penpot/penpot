@@ -38,6 +38,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
+   [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dwp]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
@@ -1877,7 +1878,7 @@
 
                :else
                (let [shape (u/locate-shape file-id page-id id)]
-                 (if (dwv/valid-variant-switch? @st/state shape pos value)
+                 (if (clv/valid-switch? (dsh/lookup-libraries @st/state) shape pos value)
                    (st/emit! (-> (dwv/variants-switch {:shapes [shape] :pos pos :val value})
                                  (se/add-event plugin-id)))
                    (u/not-valid plugin-id :switchVariant "Shape, property, or value is not valid")))))

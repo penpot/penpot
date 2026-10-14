@@ -13,6 +13,7 @@
    rename of a plain component."
   (:require
    [app.common.data :as d]
+   [app.common.logic.variants :as clv]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
@@ -22,6 +23,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.uuid :as uuid]
    [app.main.data.common :as dcm]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
@@ -70,7 +72,7 @@
   (let [file   (setup-file)
         state  (state-of file)
         valid? (fn [label pos val]
-                 (dwv/valid-variant-switch? state (cths/get-shape file label) pos val))]
+                 (clv/valid-switch? (dsh/lookup-libraries state) (cths/get-shape file label) pos val))]
     (t/testing "a variant copy head and a value some member holds"
       (t/is (valid? :copy01 0 "Value2"))
       (t/is (valid? :copy01 0 "Value1")))

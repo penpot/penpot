@@ -846,63 +846,43 @@
   NOTE: It's possible that the component to update is defined in an
   external library file, so this function may cause to modify a file
   different of that the one we are currently editing."
-  ([id] (update-component id nil))
-  ([id undo-group]
-   (dm/assert! (uuid? id))
-   (ptk/reify ::update-component
-     ptk/WatchEvent
-     (watch [it state _]
-       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id) :undo-group undo-group)
-       (let [page-id       (:current-page-id state)
+  [id]
+  (dm/assert! (uuid? id))
+  (ptk/reify ::update-component
+    ptk/WatchEvent
+    (watch [it state _]
+      (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
+      (let [page-id       (:current-page-id state)
 
-             libraries     (dsh/lookup-libraries state)
-             file          (dsh/lookup-file state)
-             fdata         (:data file)
+            libraries     (dsh/lookup-libraries state)
+            file          (dsh/lookup-file state)
+            fdata         (:data file)
 
-             container     (ctn/get-container fdata :page page-id)
-             shape         (ctn/get-shape container id)]
+            container     (ctn/get-container fdata :page page-id)
+            shape         (ctn/get-shape container id)]
 
-         (when (ctk/instance-head? shape)
-           (let [changes
-                 (-> (pcb/empty-changes it)
-                     (pcb/set-undo-group undo-group)
-                     (pcb/with-container container)
-                     (cll/generate-sync-shape-inverse libraries container id))
+        (when (ctk/instance-head? shape)
+          (let [[local-changes nonlocal-changes]
+                (-> (pcb/empty-changes it)
+                    (pcb/with-container container)
+                    (cll/generate-sync-shape-inverse libraries container id)
+                    (cll/split-local-changes))]
 
-                 ldata     (->> (:component-file shape)
-                                (dsh/lookup-file-data state))
+            (log/debug :msg "UPDATE-COMPONENT finished"
+                       :js/local-changes (log-changes
+                                          (:redo-changes local-changes)
+                                          fdata)
+                       :js/nonlocal-changes (log-changes
+                                             (:redo-changes nonlocal-changes)
+                                             fdata))
 
-                 xf-filter (comp
-                            (filter :local-change?)
-                            (map #(dissoc % :local-change?)))
-
-                 local-changes (-> changes
-                                   (update :redo-changes #(into [] xf-filter %))
-                                   (update :undo-changes #(into [] xf-filter %)))
-
-                 xf-remove (comp
-                            (remove :local-change?)
-                            (map #(dissoc % :local-change?)))
-
-                 nonlocal-changes (-> changes
-                                      (update :redo-changes #(into [] xf-remove %))
-                                      (update :undo-changes #(into [] xf-remove %)))]
-
-             (log/debug :msg "UPDATE-COMPONENT finished"
-                        :js/local-changes (log-changes
-                                           (:redo-changes local-changes)
-                                           fdata)
-                        :js/nonlocal-changes (log-changes
-                                              (:redo-changes nonlocal-changes)
-                                              fdata))
-
-             (rx/of
-              (when (seq (:redo-changes local-changes))
-                (dch/commit-changes (assoc local-changes
-                                           :file-id (:id file))))
-              (when (seq (:redo-changes nonlocal-changes))
-                (dch/commit-changes (assoc nonlocal-changes
-                                           :file-id (:id ldata))))))))))))
+            (rx/of
+             (when (seq (:redo-changes local-changes))
+               (dch/commit-changes (assoc local-changes
+                                          :file-id (:id file))))
+             (when (seq (:redo-changes nonlocal-changes))
+               (dch/commit-changes (assoc nonlocal-changes
+                                          :file-id (:component-file shape)))))))))))
 
 (defn- update-component-thumbnail-sync
   [state component-id file-id tag]
@@ -936,26 +916,25 @@
 (defn update-component-sync
   "Update the main of the copy `shape-id` from the copy (see
   `update-component`), in one undo entry with the sync of its copies."
-  ([shape-id file-id] (update-component-sync shape-id file-id nil))
-  ([shape-id file-id undo-group]
-   (ptk/reify ::update-component-sync
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [page         (dsh/lookup-page state)
-             shape        (ctn/get-shape page shape-id)
-             component-id (:component-id shape)
-             undo-id      (js/Symbol)]
-         (apply rx/of
-                (concat
-                 [(dwu/start-undo-transaction undo-id)
-                  (update-component shape-id undo-group)
+  [shape-id file-id]
+  (ptk/reify ::update-component-sync
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page         (dsh/lookup-page state)
+            shape        (ctn/get-shape page shape-id)
+            component-id (:component-id shape)
+            undo-id      (js/Symbol)]
+        (apply rx/of
+               (concat
+                [(dwu/start-undo-transaction undo-id)
+                 (update-component shape-id)
 
-                  ;; These calls are necessary for properly sync thumbnails
-                  ;; when a main component does not live in the same page.
-                  (update-component-thumbnail-sync state component-id file-id "frame")
-                  (update-component-thumbnail-sync state component-id file-id "component")]
-                 (component-sync-events state component-id file-id undo-group)
-                 [(dwu/commit-undo-transaction undo-id)])))))))
+                 ;; These calls are necessary for properly sync thumbnails
+                 ;; when a main component does not live in the same page.
+                 (update-component-thumbnail-sync state component-id file-id "frame")
+                 (update-component-thumbnail-sync state component-id file-id "component")]
+                (component-sync-events state component-id file-id nil)
+                [(dwu/commit-undo-transaction undo-id)]))))))
 
 (defn update-component-thumbnail
   "Update the thumbnail of the component with the given id, in the

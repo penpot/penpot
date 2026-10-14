@@ -80,6 +80,7 @@
    :aq cases/main-change-reaches-a-copy-nested-in-a-sub-board
    :ar cases/variant-property-edits-keep-copies
    :as cases/added-variant-is-a-switch-target
+   :aw cases/variant-layer-rename-and-cleanup
    :ay cases/token-on-a-main-reaches-copies
    :az cases/copy-moved-out-of-its-main-keeps-inherited-overrides))
 

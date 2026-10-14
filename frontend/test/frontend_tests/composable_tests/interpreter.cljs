@@ -113,7 +113,6 @@
   "The workspace events of the `n/VariantAction` `op`."
   [{:keys [action params]} situation]
   (let [id     #(tm/target-shape-id situation %)
-        member #(n/member-component situation (:set-name params) (:member params))
         select #(dws/select-shapes (into (d/ordered-set) (map id) %))]
     (case action
       :transform
@@ -128,20 +127,6 @@
       :rename
       [(dwv/rename-comp-or-variant-and-main (:id (n/component-of situation (:target params)))
                                             (:name params))]
-
-      :rename-in-layers
-      (let [{:keys [id variant-id variant-properties]} (member)]
-        [(dwv/update-properties-names-and-values
-          id variant-id variant-properties
-          (mapv (fn [[name value]] {:name name :value value}) (:properties params)))])
-
-      :remove-empty
-      [(dwv/remove-empty-properties (n/variant-set-id situation (:set-name params)))]
-
-      :error
-      [(if-let [value (:value params)]
-         (dwv/update-error (:id (member)) value)
-         (dwv/update-error (:id (member))))]
 
       :shortcut
       [(select (:targets params))
@@ -252,7 +237,16 @@
          :rename    (let [[variant-id pos name] args]
                       (dwv/update-property-name variant-id pos name {:trigger "workspace:design-tab"}))
          :reorder   (apply dwv/reorder-variant-properties args)
-         :set-value (apply dwv/update-property-value args))])
+         :set-value (apply dwv/update-property-value args)
+         ;; the layers panel's rename of the member's main
+         :rename-in-layers (let [{:keys [set-name params]} op]
+                             (dw/rename-shape-or-variant (:id (n/member-root situation set-name (:member params)))
+                                                         (last args)))
+         :remove-empty (apply dwv/remove-empty-properties args)
+         :error (let [[component-id value] args]
+                  (if (some? value)
+                    (dwv/update-error component-id value)
+                    (dwv/update-error component-id))))])
 
     (instance? n/Detach op)
     [(dwl/detach-component (tm/target-shape-id situation (:target op)))]

@@ -12,9 +12,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.flex-layout :as flex]
-   [app.common.geom.shapes.grid-layout :as grid]
    [app.common.logic.duplicate :as cld]
+   [app.common.logic.shapes :as cls]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
@@ -47,55 +46,6 @@
    :layout-padding-type
    :layout-padding
    :layout-gap-type])
-
-(def initial-flex-layout
-  {:layout                 :flex
-   :layout-flex-dir        :row
-   :layout-gap-type        :multiple
-   :layout-gap             {:row-gap 0 :column-gap 0}
-   :layout-align-items     :start
-   :layout-justify-content :start
-   :layout-align-content   :stretch
-   :layout-wrap-type       :nowrap
-   :layout-padding-type    :simple
-   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
-
-(def initial-grid-layout
-  {:layout :grid
-   :layout-grid-dir        :row
-   :layout-gap-type        :multiple
-   :layout-gap             {:row-gap 0 :column-gap 0}
-   :layout-align-items     :start
-   :layout-justify-items   :start
-   :layout-align-content   :stretch
-   :layout-justify-content :stretch
-   :layout-padding-type    :simple
-   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}
-   :layout-grid-cells      {}
-   :layout-grid-rows       []
-   :layout-grid-columns    []})
-
-(defn get-layout-initializer
-  [type from-frame? calculate-params?]
-  (let [[initial-layout-data calculate-params]
-        (case type
-          :flex [initial-flex-layout flex/calculate-params]
-          :grid [initial-grid-layout grid/calculate-params])]
-
-    (fn [shape objects]
-      (let [shape
-            (-> shape
-                (merge initial-layout-data)
-
-                ;; If the original shape is not a frame we set clip content and show-viewer to false
-                (cond-> (not from-frame?)
-                  (assoc :show-content true :hide-in-viewer true)))
-
-            params (when calculate-params?
-                     (calculate-params objects (cfh/get-immediate-children objects (:id shape)) shape))]
-        (cond-> (merge shape params)
-          (= type :grid)
-          (-> (ctl/assign-cells objects) ctl/reorder-grid-children))))))
 
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
@@ -190,7 +140,7 @@
       (let [objects            (dsh/lookup-page-objects state)
             parent             (get objects id)
             undo-id            (js/Symbol)
-            layout-initializer (get-layout-initializer type from-frame? calculate-params?)]
+            layout-initializer (cls/layout-initializer type from-frame? calculate-params?)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwsh/update-shapes [id] layout-initializer {:with-objects? true})

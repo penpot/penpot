@@ -22,10 +22,8 @@
    [app.common.render-wasm.wasm :as wasm-state]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
-   [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
@@ -789,32 +787,10 @@
      (watch [_ state _]
        (let [file-id (d/nilv file-id (:current-file-id state))
              page-id (d/nilv page-id (:current-page-id state))
-
-             file-data (dsh/lookup-file-data state file-id)
-             shape
-             (-> (dsh/lookup-page-objects state file-id page-id)
-                 (get id))
-
-             is-variant? (ctc/is-variant? shape)
-             variant-id (when is-variant? (:variant-id shape))
-             variant-name (when is-variant? (:variant-name shape))
-             component-id (:component-id shape)
-             component (ctkl/get-component file-data (:component-id shape))
-             variant-properties (:variant-properties component)]
-         (cond
-           (and variant-name (ctv/valid-properties-formula? name))
-           (rx/of (dwva/update-properties-names-and-values
-                   component-id variant-id variant-properties (ctv/properties-formula->map name))
-                  (dwva/remove-empty-properties variant-id)
-                  (dwva/update-error component-id))
-
-           variant-name
-           (rx/of (dwva/update-properties-names-and-values
-                   component-id variant-id variant-properties {})
-                  (dwva/remove-empty-properties variant-id)
-                  (dwva/update-error component-id name))
-
-           :else
+             shape   (-> (dsh/lookup-page-objects state file-id page-id)
+                         (get id))]
+         (if (and (ctc/is-variant? shape) (:variant-name shape))
+           (rx/of (dwva/rename-member (:component-id shape) (:variant-id shape) name))
            (rx/of (end-rename-shape id name))))))))
 
 ;; --- Update Selected Shapes attrs

@@ -395,6 +395,19 @@
             (mark-local-changes @synced-ids)))
       changes)))
 
+(defn split-local-changes
+  "`changes` of an update main (`generate-sync-shape-inverse`) as `[local
+  main]`: the changes of the copy, in the current file, and those of the
+  main, which may live in a library; both without the mark that tells them
+  apart."
+  [changes]
+  (let [part (fn [pred]
+               (let [xf (comp (filter pred) (map #(dissoc % :local-change?)))]
+                 (-> changes
+                     (update :redo-changes #(into [] xf %))
+                     (update :undo-changes #(into [] xf %)))))]
+    [(part :local-change?) (part (complement :local-change?))]))
+
 (defn- update-main-shape
   "Push the copy shape `shape-inst` into `shape-main`, the main shape it
   pairs with: the copy's values, overrides included, go into the main, and
