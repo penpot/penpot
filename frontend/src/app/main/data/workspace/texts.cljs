@@ -1453,18 +1453,42 @@
                                            (gsh/transform-shape (ctm/change-size shape width height))))))
                                  {:undo-group (when new-shape? id)}))))))))
 
+(defn v3-sync-text-layout
+  "Previews an auto-grow text's live size in its layout, so a fit-content parent
+  follows it while typing. Geometry is committed on finalize."
+  [id]
+  (ptk/reify ::v3-sync-text-layout
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shape   (get objects id)]
+        (if (and (cfh/text-shape? shape)
+                 (not= :fixed (:grow-type shape))
+                 (ctl/any-layout-descent? objects shape))
+          (if-let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+            (rx/of (dwm/set-wasm-modifiers modifiers))
+            (rx/empty))
+          (rx/empty))))))
+
 (defn v3-sync-editor-content
   "Event pushing the WASM editor content back into the shape, or nil when there is
    nothing to sync. Every text edit commits through it, menu or keystroke alike."
   [& {:keys [finalize?]}]
   (when-let [{:keys [shape-id content]} (wasm.text-editor/text-editor-sync-content)]
-    (let [text (txt/content->text content)
-          name (when (not= text "")
-                 (txt/generate-shape-name text))]
-      (v2-update-text-shape-content shape-id content
-                                    :update-name? true
-                                    :name name
-                                    :finalize? finalize?))))
+    (let [text         (txt/content->text content)
+          name         (when (not= text "")
+                         (txt/generate-shape-name text))
+          update-event (v2-update-text-shape-content shape-id content
+                                                     :update-name? true
+                                                     :name name
+                                                     :finalize? finalize?)]
+      (if finalize?
+        update-event
+        (ptk/reify ::v3-sync-editor-content
+          ptk/WatchEvent
+          (watch [_ _ _]
+            (rx/of update-event
+                   (v3-sync-text-layout shape-id))))))))
 
 (defn- sync-editor-content-stream
   "Stream of the sync event for `reason`, after asking WASM to repaint."
