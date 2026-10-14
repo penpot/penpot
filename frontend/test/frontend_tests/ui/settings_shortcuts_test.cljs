@@ -531,3 +531,12 @@
       (t/is (= "+"
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key "+" :code "BracketRight"})))))))
+
+(t/deftest layout-map-supported-matches-keyboard-api
+  (t/testing "false without a navigator or without a keyboard API"
+    (t/is (false? (ds/layout-map-supported? nil)))
+    (t/is (false? (ds/layout-map-supported? #js {})))
+    (t/is (false? (ds/layout-map-supported? #js {:keyboard #js {}}))))
+  (t/testing "true when getLayoutMap exists (Chromium)"
+    (t/is (true? (ds/layout-map-supported?
+                  #js {:keyboard #js {:getLayoutMap (fn [] nil)}})))))

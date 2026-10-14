@@ -25,11 +25,22 @@
 ;; the typed glyph, which keeps them consistent with and without a map.
 (defonce layout-map (atom nil))
 
-(let [navigator (when (exists? js/navigator) js/navigator)
-      keyboard  (when (some? navigator) (.-keyboard ^js navigator))]
-  (when (and (some? keyboard)
-             (exists? (.-getLayoutMap ^js keyboard)))
-    (-> (.getLayoutMap ^js keyboard)
+(defn layout-map-supported?
+  "Synchronous keyboard-layout API probe: true when the browser exposes
+   navigator.keyboard.getLayoutMap (Chromium). Punctuation then resolves
+   by physical position; without it both sides fall back to the typed
+   glyph, so Shift+punctuation shortcuts may not fire."
+  ([] (layout-map-supported?
+       (when (exists? js/navigator) js/navigator)))
+  ([navigator]
+   (let [keyboard (when (some? navigator) (.-keyboard ^js navigator))]
+     (boolean
+      (and (some? keyboard)
+           (exists? (.-getLayoutMap ^js keyboard)))))))
+
+(let [navigator (when (exists? js/navigator) js/navigator)]
+  (when (layout-map-supported? navigator)
+    (-> (.getLayoutMap ^js (.-keyboard ^js navigator))
         (.then (fn [m]
                  (cljs.core/reset! layout-map m)
                  (.setLayoutMap mousetrap m))
