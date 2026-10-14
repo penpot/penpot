@@ -418,7 +418,6 @@ describe('Tokens', () => {
       expect(Object.keys(b.tokens)).toContain('paddingLeft');
     });
 
-<<<<<<< HEAD
     // The target is a text shape because the attribute set of a board excludes
     // the font-family property, so the application is filtered out there and
     // the assertions pass vacuously.
@@ -442,7 +441,8 @@ describe('Tokens', () => {
       await waitFor(() => t.fontFamily === font.fontFamily);
       expect(Object.keys(t.tokens)).toContain('fontFamilies');
       expect(t.fontFamily).toBe(font.fontFamily);
-=======
+    });
+
     test('applyToken accepts the uniform strokeWidth property', async (ctx) => {
       const set = activeSet(ctx, unique('set'));
       const token = set.addToken({
@@ -537,7 +537,6 @@ describe('Tokens', () => {
       expect(rect.strokes[0].strokeWidthTop).toBe(4);
       expect(rect.strokes[0].strokeColor).toBe('#112233');
       expect(rect.tokens).toEqual(expected);
->>>>>>> develop
     });
 
     test('duplicate and remove a token', (ctx) => {
