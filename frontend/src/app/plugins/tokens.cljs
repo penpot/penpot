@@ -112,6 +112,17 @@
     (or (= attr stroke-width-alias)
         (cto/token-attr? attr))))
 
+(defn per-side-stroke-attrs?
+  "Returns true when the plugin attrs name at least one explicit per-side stroke
+  width attribute (`strokeWidthTop/Right/Bottom/Left`). The uniform
+  `strokeWidth` alias is not considered per-side: it expands to all four sides
+  with the same token and always resolves to a uniform width."
+  [attrs]
+  (boolean
+   (some #(contains? cto/per-side-stroke-width-keys
+                     (token-attr-plugin->token-attr %))
+         attrs)))
+
 (defn- token-name-schema
   [file-id set-id token]
   (let [tokens-lib (u/locate-tokens-lib file-id)
@@ -182,23 +193,41 @@
         (get (:name token))
         (resolved-without-errors?))))
 
+(defn- per-side-stroke-attrs-restricted?
+  "Returns true when `attrs` name an explicit per-side stroke width while some
+  target shape does not support independent sides. Only boards and rectangles
+  accept them. Shapes absent from the active page are ignored, because token
+  application only touches that page."
+  [file-id shape-ids attrs]
+  (when (per-side-stroke-attrs? attrs)
+    (let [page-id (:current-page-id @st/state)]
+      (boolean
+       (some (fn [id]
+               (let [shape (u/locate-shape file-id page-id id)]
+                 (and (some? shape)
+                      (not (cto/per-side-stroke-shape? (:type shape))))))
+             shape-ids)))))
+
 (defn- apply-token-to-shapes
-  [plugin-id file-id set-id id shape-ids attrs]
+  [plugin-id code file-id set-id id shape-ids attrs]
   (cond
     (not (r/check-permission plugin-id "content:write"))
-    (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")
+    (u/not-valid plugin-id code "Plugin doesn't have 'content:write' permission")
 
     :else
     (let [token (u/locate-token file-id set-id id)]
       (cond
         (nil? token)
-        (u/not-valid plugin-id :applyToSelected id)
+        (u/not-valid plugin-id code id)
 
         (not (valid-token-resolution? file-id set-id id))
-        (u/not-valid plugin-id :applyToSelected (:value token))
+        (u/not-valid plugin-id code (:value token))
 
         (some #(not (token-attr? %)) attrs)
-        (u/not-valid plugin-id :applyToSelected attrs)
+        (u/not-valid plugin-id code attrs)
+
+        (per-side-stroke-attrs-restricted? file-id shape-ids attrs)
+        (u/not-valid plugin-id code "Per-side stroke widths require a board or rectangle")
 
         :else
         (st/emit!
@@ -444,14 +473,15 @@
               [:vector [:fn shape-proxy?]]
               [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [shapes attrs]
-           (apply-token-to-shapes plugin-id file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
+           (apply-token-to-shapes plugin-id :applyToShapes file-id set-id id
+                                  (map #(obj/get % "$id") shapes) attrs))}
 
     :applyToSelected
     {:enumerable false
      :schema [:tuple [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [attrs]
            (let [selected (get-in @st/state [:workspace-local :selected])]
-             (apply-token-to-shapes plugin-id file-id set-id id selected attrs)))}))
+             (apply-token-to-shapes plugin-id :applyToSelected file-id set-id id selected attrs)))}))
 
 ;; === Token Set
 
