@@ -31,31 +31,27 @@
    [goog.events :as events]
    [rumext.v2 :as mf]))
 
+(defonce ^:private layout-map (atom nil))
+
+(let [navigator (when (exists? js/navigator) js/navigator)
+      keyboard  (when (some? navigator) (.-keyboard ^js navigator))]
+  (when (and (some? keyboard)
+             (exists? (.-getLayoutMap ^js keyboard)))
+    (-> (.getLayoutMap ^js keyboard)
+        (.then (fn [m] (reset! layout-map m))
+               (fn [_] (reset! layout-map nil))))))
+
 (def ^:private modifier-keys
   #{"Control" "Shift" "Alt" "Meta"})
 
-(def ^:private key-name-map
-  {"ArrowUp"    "up"
-   "ArrowDown"  "down"
-   "ArrowLeft"  "left"
-   "ArrowRight" "right"
-   "Escape"     "escape"
-   "Enter"      "enter"
-   "Backspace"  "backspace"
-   "Delete"     "del"
-   "Tab"        "tab"
-   " "          "space"})
+(def ^:private punctuation-codes
+  #{"Minus" "Equal" "BracketLeft" "BracketRight" "Backslash"
+    "Semicolon" "Quote" "Backquote" "Comma" "Period" "Slash"})
 
-;; Mousetrap (the runtime shortcut matcher, vendored at
-;; frontend/packages/mousetrap) resolves a keydown positionally - via keyCode
-;; - ONLY for this punctuation set (its _KEYCODE_MAP); it falls back to
-;; `event.key.toLowerCase()` (glyph-based) for letters and digits, which
-;; aren't in that map. Recording punctuation from `code` therefore matches
-;; what Mousetrap triggers regardless of layout (e.g. the key next to Right
-;; Shift on a US layout is always "Period", whatever glyph it types on a
-;; given ISO layout). Letters/digits must stay glyph-based to match
-;; Mousetrap's own resolution for them.
-(def ^:private code-name-map
+;; American fallback for punctuation when `getLayoutMap` is unavailable.
+;; Mousetrap resolves these positionally too (via the layout map on the
+;; recorder side), so recording stays consistent across layouts.
+(def ^:private code-fallback-map
   {"Minus"        "-"
    "Equal"        "="
    "BracketLeft"  "["
@@ -68,6 +64,36 @@
    "Period"       "."
    "Slash"        "/"})
 
+(def ^:private key-name-map
+  {"ArrowUp"    "up"
+   "Up"         "up"
+   "ArrowDown"  "down"
+   "Down"       "down"
+   "ArrowLeft"  "left"
+   "Left"       "left"
+   "ArrowRight" "right"
+   "Right"      "right"
+   "Escape"     "escape"
+   "Esc"        "escape"
+   "Enter"      "enter"
+   "Backspace"  "backspace"
+   "Delete"     "del"
+   "Del"        "del"
+   "Insert"     "ins"
+   "Ins"        "ins"
+   "Tab"        "tab"
+   "Home"       "home"
+   "End"        "end"
+   "PageUp"     "pageup"
+   "PageDown"   "pagedown"
+   "CapsLock"   "capslock"
+   "Spacebar"   "space"
+   "Control"    "ctrl"
+   "Shift"      "shift"
+   "Alt"        "alt"
+   "Meta"       "meta"
+   " "          "space"})
+
 (defn- event->native
   "Unwraps a goog.events.BrowserEvent to the native event, since the
    wrapper copies `key` but not `code`."
@@ -76,30 +102,80 @@
     (or (.getBrowserEvent event) event)
     event))
 
-(defn- normalize-key
+(defn- alt-graph?
   [^js event]
-  (let [key  (.-key event)]
-    (when (and key (not (contains? modifier-keys key)))
-      (or (get key-name-map key)
-          (get code-name-map (.-code (event->native event)))
-          (some-> key .toLowerCase)))))
+  (boolean
+   (or (when (fn? (.-getModifierState event))
+         (.getModifierState event "AltGraph"))
+       (let [native (event->native event)]
+         (when (and (not (identical? native event))
+                    (fn? (.-getModifierState native)))
+           (.getModifierState native "AltGraph"))))))
+
+(defn- numpad-code?
+  [code]
+  (and (string? code)
+       (str/starts-with? code "Numpad")
+       (= 1 (count (subs code 6)))))
+
+(defn- numpad-alias
+  [code]
+  (let [suffix (subs code 6)]
+    (when (re-matches #"[0-9]" suffix)
+      (str "num" suffix))))
+
+(defn- punctuation-alias
+  [code key]
+  (let [mapped (when (some? @layout-map)
+                 (.get ^js @layout-map code))]
+    (if (string? mapped)
+      (str/lower mapped)
+      (or (get code-fallback-map code)
+          (when (= 1 (count key))
+            (str/lower key))
+          (str/lower key)))))
+
+(defn- normalize-key
+  "Normalizes `event.key` to the lowercase canonical token mousetrap
+   matches on. Letters and digits stay glyph-based (`a`, not `q` on
+   AZERTY); punctuation resolves positionally via `getLayoutMap` (or the
+   American fallback) so `Shift+Period` records `shift+.` on every layout."
+  [^js event]
+  (let [native (event->native event)
+        key    (.-key ^js event)
+        code   (.-code ^js native)]
+    (when (and (string? key) (not (contains? modifier-keys key)))
+      (cond
+        ;; Numpad digits keep their own `numN` bindings, like mousetrap.
+        (numpad-code? code)
+        (numpad-alias code)
+
+        ;; Punctuation: primary key of the physical position.
+        (contains? punctuation-codes code)
+        (punctuation-alias code key)
+
+        :else
+        (or (get key-name-map key)
+            (str/lower key))))))
 
 (defn- event->modifier-parts
   [^js event]
-  (cond-> []
-    (and (.-ctrlKey event)
-         (not (cf/check-platform? :macos)))
-    (conj "ctrl")
+  (let [alt-graph? (alt-graph? event)]
+    (cond-> []
+      (and (.-ctrlKey event)
+           (not (cf/check-platform? :macos))
+           (not alt-graph?))
+      (conj "ctrl")
 
-    (and (.-metaKey event)
-         (cf/check-platform? :macos))
-    (conj "command")
+      (and (.-metaKey event)
+           (cf/check-platform? :macos))
+      (conj "command")
 
-    (.-altKey event)
-    (conj "alt")
+      (.-altKey event)
+      (conj "alt")
 
-    (.-shiftKey event)
-    (conj "shift")))
+      (.-shiftKey event)
+      (conj "shift"))))
 
 (defn- keyboard-event->mousetrap
   [^js event]

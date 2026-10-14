@@ -117,8 +117,7 @@
 
    :snap-nodes      {:tooltip (ds/meta "'")
                      :label (fn [] (tr "shortcuts.snap-nodes"))
-                     ;;https://github.com/ccampbell/mousetrap/issues/85
-                     :command [(ds/c-mod "'") (ds/c-mod "219")]
+                     :command (ds/c-mod "'")
                      :subsections [:path-editor]
                      :section [:workspace]
                      :fn #(st/emit! (drp/toggle-snap))}

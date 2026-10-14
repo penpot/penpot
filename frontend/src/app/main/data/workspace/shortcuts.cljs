@@ -567,8 +567,7 @@
 
    :toggle-guides        {:tooltip (ds/meta "'")
                           :label (fn [] (tr "shortcuts.toggle-guides"))
-                          ;;https://github.com/ccampbell/mousetrap/issues/85
-                          :command [(ds/c-mod "'") (ds/c-mod "219")]
+                          :command (ds/c-mod "'")
                           :show-command (ds/c-mod "'")
                           :subsections [:main-menu]
                           :section [:workspace]
@@ -619,8 +618,7 @@
 
    :toggle-snap-guides      {:tooltip (ds/meta-shift "'")
                              :label (fn [] (tr "shortcuts.toggle-snap-guides"))
-                             ;;https://github.com/ccampbell/mousetrap/issues/85
-                             :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
+                             :command (ds/c-mod "shift+'")
                              :show-command (ds/c-mod "shift+'")
                              :subsections [:main-menu]
                              :section [:workspace]

@@ -21,145 +21,75 @@
  */
 const globalDocument = globalThis?.document;
 /**
- * mapping of special keycodes to their corresponding keys
+ * Canonical key names, all lowercase.
  *
- * everything in this dictionary cannot use keypress events
- * so it has to be here to map to the correct keycodes for
- * keyup/keydown events
+ * `event.key` (final character for the active layout) is the source of
+ * truth. Single printable characters are lowercased, `" "` becomes
+ * `"space"`, and named keys map through this table.modifiers pressed
+ * alone (`Shift`, `Control`, ...) normalize to `shift`, `ctrl`, `alt`,
+ * `meta` so bind-time and event-time tokens always match.
  *
  * @type {Object}
  */
-var _MAP = {
-  8: "backspace",
-  9: "tab",
-  13: "enter",
-  16: "shift",
-  17: "ctrl",
-  18: "alt",
-  20: "capslock",
-  27: "esc",
-  32: "space",
-  33: "pageup",
-  34: "pagedown",
-  35: "end",
-  36: "home",
-  37: "left",
-  38: "up",
-  39: "right",
-  40: "down",
-  45: "ins",
-  46: "del",
-  91: "meta",
-  93: "meta",
-  224: "meta",
-  219: "219",
+var _KEY_NAMES = {
+  " ": "space",
+  Spacebar: "space",
+  ArrowUp: "up",
+  Up: "up",
+  ArrowDown: "down",
+  Down: "down",
+  ArrowLeft: "left",
+  Left: "left",
+  ArrowRight: "right",
+  Right: "right",
+  Escape: "escape",
+  Esc: "escape",
+  Enter: "enter",
+  Backspace: "backspace",
+  Delete: "del",
+  Del: "del",
+  Insert: "ins",
+  Ins: "ins",
+  Tab: "tab",
+  Home: "home",
+  End: "end",
+  PageUp: "pageup",
+  PageDown: "pagedown",
+  CapsLock: "capslock",
+  Shift: "shift",
+  Control: "ctrl",
+  Alt: "alt",
+  Meta: "meta",
 };
 
 /**
- * mapping for special characters so they can support
- *
- * this dictionary is only used incase you want to bind a
- * keyup or keydown event to one of these keys
+ * Aliases accepted in bind strings, all resolving to lowercase canonical
+ * tokens. `mod` follows the platform (Meta on Apple, Ctrl elsewhere).
  *
  * @type {Object}
  */
-var _KEYCODE_MAP = {
-  106: "*",
-  107: "+",
-  109: "-",
-  110: ".",
-  111: "/",
-  186: ";",
-  187: "=",
-  188: ",",
-  189: "-",
-  190: ".",
-  191: "/",
-  192: "`",
-  219: "[",
-  220: "\\",
-  221: "]",
-  222: "'",
-};
-
-/**
- * this is a mapping of keys that require shift on a US keypad
- * back to the non shift equivelents
- *
- * this is so you can use keyup events with these keys
- *
- * note that this will only work reliably on US keyboards
- *
- * @type {Object}
- */
-var _SHIFT_MAP = {
-  "~": "`",
-  "!": "1",
-  "@": "2",
-  "#": "3",
-  $: "4",
-  "%": "5",
-  "^": "6",
-  "&": "7",
-  "*": "8",
-  "(": "9",
-  ")": "0",
-  _: "-",
-  "+": "=",
-  ":": ";",
-  '\"': "'",
-  "<": ",",
-  ">": ".",
-  "?": "/",
-  "|": "\\",
-};
-
-/**
- * this is a list of special strings you can use to map
- * to modifier keys when you specify your keyboard shortcuts
- *
- * @type {Object}
- */
-
 var globalNavigator = globalThis.navigator;
 
 var _SPECIAL_ALIASES = {
+  ctrl: "ctrl",
+  control: "ctrl",
+  alt: "alt",
   option: "alt",
+  shift: "shift",
+  meta: "meta",
   command: "meta",
-  return: "enter",
-  escape: "esc",
-  plus: "+",
   mod: /Mac|iPod|iPhone|iPad/.test(globalNavigator?.platform) ? "meta" : "ctrl",
+  return: "enter",
+  enter: "enter",
+  esc: "escape",
+  escape: "escape",
+  del: "del",
+  delete: "del",
+  ins: "ins",
+  insert: "ins",
+  space: "space",
+  plus: "+",
 };
-
-/**
- * variable to store the flipped version of _MAP from above
- * needed to check if we should use keypress or not when no action
- * is specified
- *
- * @type {Object|undefined}
- */
-var _REVERSE_MAP;
-
-/**
- * loop through the f keys, f1 to f19 and add them to the map
- * programatically
- */
-for (var i = 1; i < 20; ++i) {
-  _MAP[111 + i] = "f" + i;
-}
-
-/**
- * loop through to map numbers on the numeric keypad
- */
-for (i = 0; i <= 9; ++i) {
-  // This needs to use a string cause otherwise since 0 is falsey
-  // mousetrap will never fire for numpad 0 pressed as part of a keydown
-  // event.
-  //
-  // @see https://github.com/ccampbell/mousetrap/pull/258
-  _MAP[i + 96] = i.toString();
-}
 
 /**
  * cross browser add event method
@@ -170,19 +100,19 @@ for (i = 0; i <= 9; ++i) {
  * @returns void
  */
 function _addEvent(object, type, callback) {
-  if (object.addEventListener) {
-    object.addEventListener(type, callback, false);
-    return;
-  }
-
-  object.attachEvent("on" + type, callback);
+  object.addEventListener(type, callback, false);
 }
 
 /**
- * takes the event and returns the key character
+ * takes the event and returns the canonical key
+ *
+ * `event.key` is the source of truth: single characters lowercase so
+ * `Shift+Z` matches a `ctrl+shift+z` bind, `" "` maps to `space`, and
+ * named keys map through `_KEY_NAMES`. Numpad digits stay positional
+ * (`num0`..`num9`) so they keep their own bindings.
  *
  * @param {Event} e
- * @return {string}
+ * @return {string|null}
  */
 function _characterFromEvent(e) {
   // Numpad digits as "num0".."num9" — keeps them separate from main-row bindings across NumLock states and event types.
@@ -193,44 +123,28 @@ function _characterFromEvent(e) {
     }
   }
 
-  // for keypress events we should return the character as is
-  if (e.type == "keypress") {
-    var character = String.fromCharCode(e.which);
-
-    // if the shift key is not pressed then it is safe to assume
-    // that we want the character to be lowercase.  this means if
-    // you accidentally have caps lock on then your key bindings
-    // will continue to work
-    //
-    // the only side effect that might not be desired is if you
-    // bind something like 'A' cause you want to trigger an
-    // event when capital A is pressed caps lock will no longer
-    // trigger the event.  shift+a will though.
-    if (!e.shiftKey) {
-      character = character.toLowerCase();
-    }
-
-    return character;
+  var key = e.key;
+  if (typeof key !== "string" || key === "") {
+    return null;
   }
 
-  // for non keypress events the special maps are needed
-  if (_MAP[e.which]) {
-    return _MAP[e.which];
+  if (_KEY_NAMES[key]) {
+    return _KEY_NAMES[key];
   }
 
-  if (_KEYCODE_MAP[e.which]) {
-    return _KEYCODE_MAP[e.which];
+  if (key.length === 1) {
+    return key.toLowerCase();
   }
 
-  // if it is not in the special map
-  if (typeof e.key === "string") {
-    return e.key.toLowerCase();
+  if (/^F\d{1,2}$/.test(key)) {
+    return key.toLowerCase();
   }
 
-  // with keydown and keyup events the character seems to always
-  // come in as an uppercase character whether you are pressing shift
-  // or not.  we should make sure it is always lowercase for comparisons
-  return String.fromCharCode(e.which).toLowerCase();
+  if (key === "Dead") {
+    return null;
+  }
+
+  return key.toLowerCase();
 }
 
 /**
@@ -247,11 +161,18 @@ function _modifiersMatch(modifiers1, modifiers2) {
 /**
  * takes a key event and figures out what the modifiers are
  *
+ * On Windows `AltGr` reports `ctrlKey + altKey` as well. When the
+ * `AltGraph` modifier is active the phantom `ctrl` is dropped so typing
+ * (e.g. `]` on Spanish keyboards) does not fire `ctrl+alt` shortcuts.
+ *
  * @param {Event} e
  * @returns {Array}
  */
 function _eventModifiers(e) {
   var modifiers = [];
+  var altGraph =
+    typeof e.getModifierState === "function" &&
+    e.getModifierState("AltGraph");
 
   if (e.shiftKey) {
     modifiers.push("shift");
@@ -261,7 +182,7 @@ function _eventModifiers(e) {
     modifiers.push("alt");
   }
 
-  if (e.ctrlKey) {
+  if (e.ctrlKey && !altGraph) {
     modifiers.push("ctrl");
   }
 
@@ -279,12 +200,7 @@ function _eventModifiers(e) {
  * @returns void
  */
 function _preventDefault(e) {
-  if (e.preventDefault) {
-    e.preventDefault();
-    return;
-  }
-
-  e.returnValue = false;
+  e.preventDefault();
 }
 
 /**
@@ -294,69 +210,17 @@ function _preventDefault(e) {
  * @returns void
  */
 function _stopPropagation(e) {
-  if (e.stopPropagation) {
-    e.stopPropagation();
-    return;
-  }
-
-  e.cancelBubble = true;
+  e.stopPropagation();
 }
 
 /**
- * determines if the keycode specified is a modifier key or not
+ * determines if the key is a modifier key or not
  *
- * @param {string} key
+ * @param {string} key canonical lowercase key
  * @returns {boolean}
  */
 function _isModifier(key) {
   return key == "shift" || key == "ctrl" || key == "alt" || key == "meta";
-}
-
-/**
- * reverses the map lookup so that we can look for specific keys
- * to see what can and can't use keypress
- *
- * @return {Object}
- */
-function _getReverseMap() {
-  if (!_REVERSE_MAP) {
-    _REVERSE_MAP = {};
-    for (var key in _MAP) {
-      // pull out the numeric keypad from here cause keypress should
-      // be able to detect the keys from the character
-      if (key > 95 && key < 112) {
-        continue;
-      }
-
-      if (_MAP.hasOwnProperty(key)) {
-        _REVERSE_MAP[_MAP[key]] = key;
-      }
-    }
-  }
-  return _REVERSE_MAP;
-}
-
-/**
- * picks the best action based on the key combination
- *
- * @param {string} key - character for key
- * @param {Array} modifiers
- * @param {string=} action passed in
- */
-function _pickBestAction(key, modifiers, action) {
-  // if no action was picked in we should try to pick the one
-  // that we think would work best for this key
-  if (!action) {
-    action = _getReverseMap()[key] ? "keydown" : "keypress";
-  }
-
-  // modifier keys don't work as expected with keypress,
-  // switch to keydown
-  if (action == "keypress" && modifiers.length) {
-    action = "keydown";
-  }
-
-  return action;
 }
 
 /**
@@ -394,17 +258,13 @@ function _getKeyInfo(combination, action) {
   for (i = 0; i < keys.length; ++i) {
     key = keys[i];
 
-    // normalize key names
+    // normalize key names to lowercase canonical tokens
     if (_SPECIAL_ALIASES[key]) {
       key = _SPECIAL_ALIASES[key];
-    }
-
-    // if this is not a keypress event then we should
-    // be smart about using shift keys
-    // this will only work for US keyboards however
-    if (action && action != "keypress" && _SHIFT_MAP[key]) {
-      key = _SHIFT_MAP[key];
-      modifiers.push("shift");
+    } else if (key.length === 1) {
+      key = key.toLowerCase();
+    } else {
+      key = (_KEY_NAMES[key] || key).toLowerCase();
     }
 
     // if this key is a modifier then add it to the list of modifiers
@@ -413,9 +273,10 @@ function _getKeyInfo(combination, action) {
     }
   }
 
-  // depending on what the key combination is
-  // we will try to pick the best event for it
-  action = _pickBestAction(key, modifiers, action);
+  // everything runs on keydown unless the caller asked for keyup
+  if (!action) {
+    action = "keydown";
+  }
 
   return {
     key: key,
@@ -485,15 +346,8 @@ function Mousetrap(targetElement) {
   var _ignoreNextKeyup = false;
 
   /**
-   * temporary state where we will ignore the next keypress
-   *
-   * @type {boolean}
-   */
-  var _ignoreNextKeypress = false;
-
-  /**
    * are we currently inside of a sequence?
-   * type of action ("keyup" or "keydown" or "keypress") or false
+   * type of action ("keyup" or "keydown") or false
    *
    * @type {boolean|string}
    */
@@ -525,10 +379,10 @@ function Mousetrap(targetElement) {
   }
 
   /**
-   * finds all callbacks that match based on the keycode, modifiers,
+   * finds all callbacks that match based on the key, modifiers,
    * and action
    *
-   * @param {string} character
+   * @param {string} character canonical lowercase key
    * @param {Array} modifiers
    * @param {Event|Object} e
    * @param {string=} sequenceName - name of the sequence we are looking for
@@ -549,7 +403,7 @@ function Mousetrap(targetElement) {
     var matches = [];
     var action = e.type;
 
-    // if there are no events related to this keycode
+    // if there are no events related to this key
     if (!self._callbacks[character]) {
       return [];
     }
@@ -580,17 +434,7 @@ function Mousetrap(targetElement) {
         continue;
       }
 
-      // if this is a keypress event and the meta key and control key
-      // are not pressed that means that we need to only look at the
-      // character, otherwise check the modifiers as well
-      //
-      // chrome will not fire a keypress if meta or control is down
-      // safari will fire a keypress if meta or meta+shift is down
-      // firefox will fire a keypress if meta or control is down
-      if (
-        (action == "keypress" && !e.metaKey && !e.ctrlKey) ||
-        _modifiersMatch(modifiers, callback.modifiers)
-      ) {
+      if (_modifiersMatch(modifiers, callback.modifiers)) {
         // when you bind a combination or sequence a second time it
         // should overwrite the first one.  if a sequenceName or
         // combination is specified in this call it does just that
@@ -697,7 +541,7 @@ function Mousetrap(targetElement) {
     }
 
     // if the key you pressed matches the type of sequence without
-    // being a modifier (ie "keyup" or "keypress") then we should
+    // being a modifier (ie "keyup" or "keydown") then we should
     // reset all sequences that were not matched by this event
     //
     // this is so, for example, if you have the sequence "h a t" and you
@@ -707,43 +551,22 @@ function Mousetrap(targetElement) {
     // modifier keys are ignored because you can have a sequence
     // that contains modifiers such as "enter ctrl+space" and in most
     // cases the modifier key will be pressed before the next key
-    //
-    // also if you have a sequence such as "ctrl+b a" then pressing the
-    // "b" key will trigger a "keypress" and a "keydown"
-    //
-    // the "keydown" is expected when there is a modifier, but the
-    // "keypress" ends up matching the _nextExpectedAction since it occurs
-    // after and that causes the sequence to reset
-    //
-    // we ignore keypresses in a sequence that directly follow a keydown
-    // for the same character
-    var ignoreThisKeypress = e.type == "keypress" && _ignoreNextKeypress;
     if (
       e.type == _nextExpectedAction &&
-      !_isModifier(character) &&
-      !ignoreThisKeypress
+      !_isModifier(character)
     ) {
       _resetSequences(doNotReset);
     }
-
-    _ignoreNextKeypress = processedSequenceCallback && e.type == "keydown";
   };
 
   /**
-   * handles a keydown event
+   * handles a key event
    *
    * @param {Event} e
    * @returns void
    */
   function _handleKeyEvent(e) {
-    // normalize e.which for key events
-    // @see http://stackoverflow.com/questions/4285627/javascript-keycode-vs-charcode-utter-confusion
-    if (typeof e.which !== "number") {
-      e.which = e.keyCode;
-    }
-
     var character = _characterFromEvent(e);
-
     // no character found then stop
     if (!character) {
       return;
@@ -810,8 +633,8 @@ function Mousetrap(targetElement) {
     function _callbackAndReset(e) {
       _fireCallback(callback, e, combo);
 
-      // we should ignore the next key up if the action is key down
-      // or keypress.  this is so if you finish a sequence and
+      // we should ignore the next key up if the action is keydown.
+      // this is so if you finish a sequence and
       // release the key the final key will not trigger a keyup
       if (action !== "keyup") {
         _ignoreNextKeyup = _characterFromEvent(e);
@@ -828,9 +651,7 @@ function Mousetrap(targetElement) {
     //
     // if an action is specified in the original bind call then that will
     // be used throughout.  otherwise we will pass the action that the
-    // next key in the sequence should match.  this allows a sequence
-    // to mix and match keypress and keydown events depending on which
-    // ones are better suited to the key provided
+    // next key in the sequence should match.
     for (var i = 0; i < keys.length; ++i) {
       var isFinal = i + 1 === keys.length;
       var wrappedCallback = isFinal
@@ -930,7 +751,6 @@ function Mousetrap(targetElement) {
   };
 
   if (targetElement) {
-    _addEvent(targetElement, "keypress", _handleKeyEvent);
     _addEvent(targetElement, "keydown", _handleKeyEvent);
     _addEvent(targetElement, "keyup", _handleKeyEvent);
   }
@@ -947,7 +767,7 @@ function Mousetrap(targetElement) {
  *
  * @param {string|Array} keys
  * @param {Function} callback
- * @param {string=} action - 'keypress', 'keydown', or 'keyup'
+ * @param {string=} action - 'keydown' or 'keyup' (defaults to 'keydown')
  * @returns void
  */
 Mousetrap.prototype.bind = function (keys, callback, action, overwrite) {
@@ -1045,7 +865,7 @@ Mousetrap.prototype.stopCallback = function (e, element, combo) {
     element.tagName == "INPUT" ||
     element.tagName == "SELECT" ||
     element.tagName == "TEXTAREA" ||
-    (element.tagName == "BUTTON" && combo.includes("tab")) ||
+    (element.tagName == "BUTTON" && typeof combo === "string" && combo.includes("tab")) ||
     (element.contentEditable &&
       (element.contentEditable == "true" ||
         element.contentEditable === "plaintext-only"));
@@ -1060,18 +880,6 @@ Mousetrap.prototype.handleKey = function () {
   var self = this;
   return self._handleKey.apply(self, arguments);
 };
-
-/**
- * allow custom key mappings
- */
-export function addKeycodes(object) {
-  for (var key in object) {
-    if (object.hasOwnProperty(key)) {
-      _MAP[key] = object[key];
-    }
-  }
-  _REVERSE_MAP = null;
-}
 
 /**
  * Init the global mousetrap functions
