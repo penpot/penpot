@@ -91,7 +91,7 @@
 
 (declare generate-sync-container)
 (declare generate-sync-shape)
-(declare uses-assets?)
+(declare asset-user?)
 
 (declare generate-sync-shape-direct)
 (declare sync-shape-recursive)
@@ -187,8 +187,12 @@
     (container-log :debug (:id container) :msg "Sync page in local file" :page-id (:id container))
     (container-log :debug (:id container) :msg "Sync component in local library" :component-id (:id container)))
 
-  (let [linked-shapes (->> (vals (:objects container))
-                           (filter #(uses-assets? asset-type asset-id % library-id)))]
+  (let [asset-user?   (asset-user? asset-type asset-id library-id)
+        linked-shapes (persistent!
+                       (reduce-kv (fn [shapes _ shape]
+                                    (cond-> shapes (asset-user? shape) (conj! shape)))
+                                  (transient [])
+                                  (:objects container)))]
     (loop [shapes (seq linked-shapes)
            changes (-> changes
                        (pcb/with-container container)
@@ -210,27 +214,21 @@
                    changes)))
         changes))))
 
-(defmulti uses-assets?
-  "Checks if a shape uses some asset of the given type in the given library."
-  (fn [asset-type _ _ _] asset-type))
-
-(defmethod uses-assets? :components
-  [_ component-id shape library-id]
-  (if (nil? component-id)
-    (ctk/uses-library-components? shape library-id)
-    (ctk/instance-of? shape library-id component-id)))
-
-(defmethod uses-assets? :colors
-  [_ color-id shape library-id]
-  (if (nil? color-id)
-    (cts/uses-library-colors? shape library-id)
-    (cts/uses-library-color? shape library-id color-id)))
-
-(defmethod uses-assets? :typographies
-  [_ typography-id shape library-id]
-  (if (nil? typography-id)
-    (cty/uses-library-typographies? shape library-id)
-    (cty/uses-library-typography? shape library-id typography-id)))
+(defn- asset-user?
+  "A predicate of the shapes that use the asset `asset-id` of type
+  `asset-type` in the library `library-id`, or any asset of that type in it
+  when `asset-id` is nil."
+  [asset-type asset-id library-id]
+  (case asset-type
+    :components   (if (nil? asset-id)
+                    #(ctk/uses-library-components? % library-id)
+                    #(ctk/instance-of? % library-id asset-id))
+    :colors       (if (nil? asset-id)
+                    #(cts/uses-library-colors? % library-id)
+                    #(cts/uses-library-color? % library-id asset-id))
+    :typographies (if (nil? asset-id)
+                    #(cty/uses-library-typographies? % library-id)
+                    #(cty/uses-library-typography? % library-id asset-id))))
 
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape from all assets of the given type
@@ -716,6 +714,15 @@
 
 ;; ---- Operation generation helpers ----
 
+(defn- index-positions
+  "A map of each value of `key-fn` among the elements of the vector `v` to
+  their positions, in order."
+  [key-fn v]
+  (reduce-kv (fn [index position x]
+               (update index (key-fn x) (fnil conj []) position))
+             {}
+             v))
+
 (defn- compare-children
   "Pair the children of a copy shape with the children of its main and call
   the callback of each case. A child pairs with the main child it refers to;
@@ -723,7 +730,12 @@
   `both-cb` in a reset, and does not pair in an inverse sync, so the main
   child it replaces is removed and the swapped child is added in its place.
   An inverse sync (which passes `reset?`) never calls `swapped-cb`, so it
-  passes nil."
+  passes nil.
+
+  The children are walked in order, side by side. A child out of place is
+  looked up by its reference (`index-positions`), not searched, so the walk
+  takes linear time; a child taken out of order is skipped when the walk
+  reaches it."
   [changes shape-inst children-inst children-main container-inst only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
   (shape-log :trace (:id shape-inst) container-inst :msg "Compare children")
   (let [pair?
@@ -734,12 +746,48 @@
         synced-pair?
         (fn [child-main child-inst]
           (and (ctk/is-main-of? child-main child-inst)
-               (or reset? (not (ctk/swapped? child-inst)))))]
-    (loop [children-inst (seq (or children-inst []))
-           children-main (seq (or children-main []))
-           changes       changes]
-      (let [child-inst (first children-inst)
-            child-main (first children-main)]
+               (or reset? (not (ctk/swapped? child-inst)))))
+
+        insts        (vec children-inst)
+        mains        (vec children-main)
+        insts-by-ref (index-positions :shape-ref insts)
+        mains-by-id  (index-positions :id mains)
+
+        ;; the first position from `position` on whose child was not taken
+        ;; out of order
+        next-position
+        (fn [v position taken]
+          (loop [position position]
+            (if (and (< position (count v))
+                     (contains? taken (:id (nth v position))))
+              (recur (inc position))
+              position)))
+
+        ;; the first child from `position` on, with `key` in `index`, not
+        ;; taken and accepted by `pred`
+        find-child
+        (fn [index key v position taken pred]
+          (some (fn [p]
+                  (let [child (nth v p)]
+                    (when (and (>= p position)
+                               (not (contains? taken (:id child)))
+                               (pred child))
+                      child)))
+                (get index key)))
+
+        remaining
+        (fn [v position taken]
+          (remove #(contains? taken (:id %)) (subvec v (min position (count v)))))]
+
+    (loop [i           0
+           j           0
+           taken-insts #{}
+           taken-mains #{}
+           changes     changes]
+      (let [i          (next-position insts i taken-insts)
+            j          (next-position mains j taken-mains)
+            child-inst (get insts i)
+            child-main (get mains j)]
         (shape-log :trace (:id shape-inst) container-inst
                    :msg "Comparing"
                    :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
@@ -749,37 +797,47 @@
           changes
 
           (nil? child-inst)
-          (reduce only-main-cb changes children-main)
+          (reduce only-main-cb changes (remaining mains j taken-mains))
 
           (nil? child-main)
-          (reduce only-inst-cb changes children-inst)
+          (reduce only-inst-cb changes (remaining insts i taken-insts))
 
           :else
           (if (pair? child-main child-inst)
-            (recur (next children-inst)
-                   (next children-main)
+            (recur (inc i)
+                   (inc j)
+                   taken-insts
+                   taken-mains
                    (if (synced-pair? child-main child-inst)
                      (both-cb changes child-inst child-main)
                      (swapped-cb changes child-inst child-main)))
 
-            (let [child-inst' (d/seek #(pair? child-main %) children-inst)
-                  child-main' (d/seek #(pair? % child-inst) children-main)]
+            (let [child-inst' (find-child insts-by-ref (:id child-main) insts i taken-insts
+                                          #(pair? child-main %))
+                  child-main' (find-child mains-by-id (:shape-ref child-inst) mains j taken-mains
+                                          #(pair? % child-inst))]
               (cond
                 (nil? child-inst')
-                (recur children-inst
-                       (next children-main)
+                (recur i
+                       (inc j)
+                       taken-insts
+                       taken-mains
                        (only-main-cb changes child-main))
 
                 (nil? child-main')
-                (recur (next children-inst)
-                       children-main
+                (recur (inc i)
+                       j
+                       taken-insts
+                       taken-mains
                        (only-inst-cb changes child-inst))
 
                 :else
                 (if inverse?
                   (let [synced? (synced-pair? child-main' child-inst)]
-                    (recur (next children-inst)
-                           (remove #(= (:id %) (:id child-main')) children-main)
+                    (recur (inc i)
+                           j
+                           taken-insts
+                           (conj taken-mains (:id child-main'))
                            (cond-> changes
                              synced?
                              (both-cb child-inst child-main')
@@ -788,8 +846,10 @@
                              :always
                              (moved-cb child-inst child-main'))))
                   (let [synced? (synced-pair? child-main child-inst')]
-                    (recur (remove #(= (:id %) (:id child-inst')) children-inst)
-                           (next children-main)
+                    (recur i
+                           (inc j)
+                           (conj taken-insts (:id child-inst'))
+                           taken-mains
                            (cond-> changes
                              synced?
                              (both-cb child-inst' child-main)
@@ -1208,37 +1268,43 @@
                                                      :ignore-touched true}]}))
           (pcb/apply-changes-local)))))
 
+;; The token attributes of each attribute whose tokens sync; the
+;; `layout-grid-cells` are not synced automatically.
+(def ^:private token-attrs-by-sync-attr
+  (into {}
+        (comp (remove #(= :layout-grid-cells %))
+              (map (juxt identity cto/shape-attr->token-attrs)))
+        (keys ctk/sync-attrs)))
+
 (defn generate-update-tokens
   "Copy into `dest-shape` the tokens `origin-shape` applies to the attributes
   it syncs: with `omit-touched?`, only those whose group is not in `touched`;
-  with `valid-attrs`, only those attributes (all when nil)."
+  with `valid-attrs`, only those attributes (all when nil). Nothing to copy
+  or remove when neither shape applies tokens."
   [changes container dest-shape origin-shape touched omit-touched? valid-attrs]
-  (let [attrs
-        (->> (keys ctk/sync-attrs)
-             ;; We don't update the flex-child attrs
-             (remove #(= :layout-grid-cells %)))
+  (if (and (empty? (:applied-tokens origin-shape))
+           (empty? (:applied-tokens dest-shape)))
+    changes
+    (let [;; the styles of a text live in its content, so its tokens follow
+          ;; the text override groups
+          text?   (cfh/text-shape? dest-shape)
+          touched (cond-> touched
+                    text? (-> set (into (txt/text-overrides touched))))
 
-        ;; the styles of a text live in its content, so its tokens follow
-        ;; the text override groups
-        text?   (cfh/text-shape? dest-shape)
-        touched (cond-> touched
-                  text? (-> set (into (txt/text-overrides touched))))
-
-        applied-tokens
-        (reduce (fn [applied-tokens attr]
-                  (let [sync-group  (or (when text? (txt/style-unit-of attr))
-                                        (ctk/resolve-sync-group (:type origin-shape) attr)
-                                        (ctk/resolve-sync-group (:type dest-shape) attr))
-                        token-attrs (cto/shape-attr->token-attrs attr)]
-                    (if  (and (or (not omit-touched?) (not (touched sync-group)))
-                              (or (empty? valid-attrs) (contains? valid-attrs attr)))
-                      (into applied-tokens token-attrs)
-                      applied-tokens)))
-                #{}
-                attrs)]
-    (cond-> changes
-      (seq applied-tokens)
-      (update-tokens container dest-shape origin-shape applied-tokens))))
+          applied-tokens
+          (reduce-kv (fn [applied-tokens attr token-attrs]
+                       (let [sync-group (or (when text? (txt/style-unit-of attr))
+                                            (ctk/resolve-sync-group (:type origin-shape) attr)
+                                            (ctk/resolve-sync-group (:type dest-shape) attr))]
+                         (if (and (or (not omit-touched?) (not (touched sync-group)))
+                                  (or (empty? valid-attrs) (contains? valid-attrs attr)))
+                           (into applied-tokens token-attrs)
+                           applied-tokens)))
+                     #{}
+                     token-attrs-by-sync-attr)]
+      (cond-> changes
+        (seq applied-tokens)
+        (update-tokens container dest-shape origin-shape applied-tokens)))))
 
 (defn add-update-attr-changes
   "Add to `changes` the operations of `attr-operations` on `dest-shape`, and
