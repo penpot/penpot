@@ -205,3 +205,23 @@
          (let [file' (ths/get-file-from-state state)]
            (t/is (= "Renamed" (:name (ctkl/get-component (:data file') (cthi/id :plain1)))))
            (t/is (= "Renamed" (:name (cths/get-shape file' :plain1-root))))))))))
+
+(t/deftest remove-empty-properties-of-a-set-with-many-properties
+  (t/async
+    done
+    (let [props (fn [value]
+                  (mapv (fn [i]
+                          {:name  (str "Property " (inc i))
+                           :value (if (= i 5) "" value)})
+                        (range 10)))
+          file  (-> (cthf/sample-file :file1)
+                    (cthv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (cthc/update-component :c01 {:variant-properties (props "a")})
+                    (cthc/update-component :c02 {:variant-properties (props "b")}))]
+      (ths/run-store
+       (ths/setup-store file) done
+       [(dwv/remove-empty-properties (cthi/id :v01))]
+       (fn [state]
+         (let [data (:data (ths/get-file-from-state state))]
+           (t/is (= (remove #{"Property 6"} (map :name (props "a")))
+                    (map :name (:variant-properties (ctkl/get-component data (cthi/id :c01))))))))))))
