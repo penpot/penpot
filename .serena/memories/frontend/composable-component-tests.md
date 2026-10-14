@@ -77,7 +77,7 @@ Layout:
   `frontend_tests/runner.cljs`).
 - JVM/JS: `common-tests.logic.composable-sync-test` runs the shared cases through the pure
   runner; all except those that need frontend code: N, Z, AI and the rotation case (placement
-  step), X (pending sync), AJ (reflow), AT..AX (variant action events).
+  step), X (pending sync), AJ (reflow), AT, AU, AV, AX (variant action events).
 
 Judging (both runners): each variant is judged before the next one runs (`r/run-each`, and the
 interpreter's `check`), while the label map still names its shapes; a variant whose inline
@@ -184,9 +184,14 @@ Two pure runners (no store, JVM + CLJS):
   `n/add-variant set member` duplicates a member (`clv/generate-add-new-variant`; `dwv/add-new-variant`,
   whose delayed DOM focus `check` neutralises by stubbing `dom/get-element`); ask the node for the
   new component (`n/added-variant-component-id`).
+  `n/rename-variant-in-layers` (the layers panel's rename to a properties formula, which also
+  removes the empty properties; `clvp/generate-rename-member`, `dw/rename-shape-or-variant`),
+  `n/remove-empty-properties` and `n/set-variant-error` are edits of `EditVariantProperty` too.
   Frontend-only variant actions are one node, `n/VariantAction` (`n/transform-in-variant`,
-  `combine-as-variants`, `rename-variant`, `rename-variant-in-layers`, `remove-empty-properties`,
-  `set-variant-error`, `variant-shortcut`); the interpreter's `variant-action-events` sends them.
+  `combine-as-variants`, `rename-variant`, `variant-shortcut`); the interpreter's
+  `variant-action-events` sends them. Transform and combine have common generators
+  (`clv/generate-transform-in-variant`, `generate-combine-as-variants`), but the pure runner does
+  not reflow layouts or apply the modifiers that size a combined board, so they stay frontend only.
   A set they build has no `variant-set` record: read it with `n/component-of` and
   `n/variant-component-ids`; `switch-variant` takes the value as a fn for it.
 - Tokens: `n/add-tokens` (assembly: an active set of border radius tokens), `n/apply-token`,
