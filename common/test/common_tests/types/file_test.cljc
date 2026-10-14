@@ -320,11 +320,20 @@
         copy-c1   (ths/get-shape-by-id file (first (:shapes (ths/get-shape-by-id file copy-c2))))
         chain     (ctf/get-ref-chain-until-target-ref (thf/current-page file) {(:id file) file}
                                                       copy-c1 (thi/id :nested-subhead2))]
-    ;; the stop compares each shape with the target's id, so it never holds
-    (tm/known-failure "F62"
-                      [(:id copy-c1) (thi/id :nested-subhead2)]
-                      [(:id copy-c1) (thi/id :nested-subhead2) (thi/id :nested-head1) (thi/id :main1)]
-                      (mapv :id chain))))
+    (t/is (= [(:id copy-c1) (thi/id :nested-subhead2)] (mapv :id chain)))))
+
+(t/deftest ref-chain-follows-mains-on-other-pages
+  ;; the mains are on the first page, the copy on the second
+  (let [file       (-> (thf/sample-file :file :page-label :page1)
+                       (tho/add-nested-component :c1 :main1 :main1-child :c2 :main2 :nested-head)
+                       (thf/add-sample-page :page2)
+                       (thc/instantiate-component :c2 :copy2))
+        copy-head  (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy2))))
+        copy-child (ths/get-shape-by-id file (first (:shapes copy-head)))
+        near-child (first (:shapes (ths/get-shape file :nested-head :page-label :page1)))
+        chain      (ctf/get-ref-chain-until-target-ref (thf/current-page file) {(:id file) file}
+                                                       copy-child nil)]
+    (t/is (= [(:id copy-child) near-child (thi/id :main1-child)] (mapv :id chain)))))
 
 (t/deftest near-match-with-context
   (let [file  (-> (thf/sample-file :file)
