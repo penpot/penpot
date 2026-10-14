@@ -162,7 +162,7 @@ fn calculate_cursor_rect(
                 (0.0, 0.0, 1.0, laid_out_para.height())
             } else if char_pos == 0 {
                 let rects = laid_out_para.get_rects_for_range(
-                    0..para.char_utf16_len_at(0),
+                    0..para.char_offset_to_utf16(para.next_grapheme_offset(0)),
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -173,10 +173,10 @@ fn calculate_cursor_rect(
                     (0.0, 0.0, 1.0, laid_out_para.height())
                 }
             } else if char_pos >= para_char_count {
-                let last_char = para_char_count.saturating_sub(1);
-                let last_start = para.char_offset_to_utf16(last_char);
+                let last_start =
+                    para.char_offset_to_utf16(para.prev_grapheme_offset(para_char_count));
                 let rects = laid_out_para.get_rects_for_range(
-                    last_start..last_start + para.char_utf16_len_at(last_char),
+                    last_start..para.char_offset_to_utf16(para_char_count),
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -196,7 +196,7 @@ fn calculate_cursor_rect(
             } else {
                 let utf16_pos = para.char_offset_to_utf16(char_pos);
                 let rects = laid_out_para.get_rects_for_range(
-                    utf16_pos..utf16_pos + para.char_utf16_len_at(char_pos),
+                    utf16_pos..para.char_offset_to_utf16(para.next_grapheme_offset(char_pos)),
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );

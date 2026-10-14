@@ -114,17 +114,17 @@
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
-   :rpc-climit-queue
-   {::mdef/name "penpot_rpc_climit_queue"
-    ::mdef/help "Current number of queued submissions."
+   :rpc-climit-waiting
+   {::mdef/name "penpot_rpc_climit_waiting"
+    ::mdef/help "Calls of this limiter name waiting for a permit, on this instance."
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
 
-   :rpc-climit-permits
-   {::mdef/name "penpot_rpc_climit_permits"
-    ::mdef/help "Current number of available permits"
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}
+   :rpc-climit-rejected
+   {::mdef/name "penpot_rpc_climit_rejected_total"
+    ::mdef/help "Calls rejected by this limiter, by name and reason."
+    ::mdef/labels ["name" "reason"]
+    ::mdef/type :counter}
 
    :rpc-climit-timing
    {::mdef/name "penpot_rpc_climit_timing"
@@ -204,11 +204,6 @@
     ::mdef/help "Current number of queued tasks in the http server xnio worker."
     ::mdef/type :gauge}
 
-   :http-worker-busy-threads
-   {::mdef/name "penpot_http_worker_busy_threads"
-    ::mdef/help "Current number of busy threads in the http server xnio worker."
-    ::mdef/type :gauge}
-
    :http-worker-pool-size
    {::mdef/name "penpot_http_worker_pool_size"
     ::mdef/help "Current number of threads in the http server xnio worker pool."
@@ -240,16 +235,16 @@
     ::mdef/labels ["name" "queue"]
     ::mdef/type :counter}
 
-   :jobs-dispatched
-   {::mdef/name "penpot_jobs_dispatched_total"
-    ::mdef/help "Total number of jobs pushed to a worker queue."
+   :jobs-skipped
+   {::mdef/name "penpot_jobs_skipped_total"
+    ::mdef/help "Total number of durable job submissions skipped by skip-if-active."
     ::mdef/labels ["name" "queue"]
     ::mdef/type :counter}
 
-   :jobs-completed
-   {::mdef/name "penpot_jobs_completed_total"
-    ::mdef/help "Total number of durable jobs reaching a terminal state."
-    ::mdef/labels ["name" "queue" "outcome"]
+   :jobs-dispatched
+   {::mdef/name "penpot_jobs_dispatched_total"
+    ::mdef/help "Total number of jobs pushed to a worker queue. Counts pushes, not claims: compare with the _count of penpot_jobs_queue_wait_ms."
+    ::mdef/labels ["name" "queue"]
     ::mdef/type :counter}
 
    :jobs-retries
@@ -277,7 +272,7 @@
 
    :jobs-queue-wait-timing
    {::mdef/name "penpot_jobs_queue_wait_ms"
-    ::mdef/help "Time from job scheduling to worker claim (milliseconds)."
+    ::mdef/help "Time from job scheduling to worker claim (milliseconds). Its _count counts claims, not pushes: compare with penpot_jobs_dispatched_total."
     ::mdef/labels ["name" "queue"]
     ::mdef/type :histogram
     ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000 600000]}
@@ -291,7 +286,7 @@
 
    :jobs-total-timing
    {::mdef/name "penpot_jobs_total_ms"
-    ::mdef/help "Time from job creation to a terminal state (milliseconds)."
+    ::mdef/help "Time from job creation to a terminal state (milliseconds). Its _count is the terminal total per outcome."
     ::mdef/labels ["name" "queue" "outcome"]
     ::mdef/type :histogram
     ::mdef/buckets [10 50 100 500 1000 5000 10000 30000 60000 300000 600000 3600000]}
@@ -340,15 +335,9 @@
     ::mdef/labels ["outcome" "reason"]
     ::mdef/type :counter}
 
-   :jobs-requests-total
-   {::mdef/name "penpot_jobs_requests_total"
-    ::mdef/help "Total number of ephemeral job request events."
-    ::mdef/labels ["outcome"]
-    ::mdef/type :counter}
-
    :jobs-request-timing
    {::mdef/name "penpot_jobs_request_ms"
-    ::mdef/help "Time spent waiting for an ephemeral job reply (milliseconds)."
+    ::mdef/help "Time spent waiting for an ephemeral job reply (milliseconds). Its _count is the request total per outcome."
     ::mdef/labels ["outcome"]
     ::mdef/type :histogram
     ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000]}})

@@ -265,6 +265,7 @@ def cmd_report(args: argparse.Namespace) -> None:
     for pr in pr_by_num.values():
         unknown_issues.update(pr.get("closing_issues", []))
     unknown_issues |= collect_changelog_issues(extract_subsection(section, r"### :boom:"))
+    unknown_issues |= collect_changelog_issues(extract_subsection(section, r"### :rocket:"))
     unknown_issues -= set(issue_milestone_cache)
     external_issues: dict[int, dict] = {}
     if unknown_issues:
@@ -375,6 +376,36 @@ def cmd_report(args: argparse.Namespace) -> None:
                     }
                 )
 
+    # Type F: :rocket: out of sync with the `release highlight` label. The
+    # label is the only source of highlights: every labelled milestone
+    # issue goes under :rocket:, and nothing else does.
+    anomalies_f = []
+    rocket_issues = collect_changelog_issues(extract_subsection(section, r"### :rocket:"))
+    for issue_num in sorted(rocket_issues):
+        labels = get_issue_labels(issue_num)
+        if labels is None:
+            continue
+        if "release highlight" not in labels:
+            issue = issue_by_num.get(issue_num) or external_issues.get(issue_num) or {}
+            anomalies_f.append(
+                {
+                    "issue": issue_num,
+                    "issue_title": issue.get("title", ""),
+                    "reason": "under :rocket: without the `release highlight` label",
+                }
+            )
+    for issue_num, issue in sorted(issue_by_num.items()):
+        if issue_excluded(issue) or issue_num in rocket_issues:
+            continue
+        if "release highlight" in issue.get("labels", []):
+            anomalies_f.append(
+                {
+                    "issue": issue_num,
+                    "issue_title": issue.get("title", ""),
+                    "reason": "labelled `release highlight` but missing from :rocket:",
+                }
+            )
+
     # Type C: released X.Y.0 sections without a :rocket: subsection.
     # Patches (X.Y.Z with Z != 0) never carry :rocket: — only minors/majors.
     anomalies_c = []
@@ -428,12 +459,13 @@ def cmd_report(args: argparse.Namespace) -> None:
         )
         f.write("---\n\n")
 
-        n_a, n_b, n_c, n_d, n_e = (
+        n_a, n_b, n_c, n_d, n_e, n_f = (
             len(anomalies_a),
             len(anomalies_b),
             len(anomalies_c),
             len(anomalies_d),
             len(anomalies_e),
+            len(anomalies_f),
         )
 
         f.write("## Summary\n\n")
@@ -444,13 +476,14 @@ def cmd_report(args: argparse.Namespace) -> None:
             f"- **PR in {milestone}, closing issue in a different milestone:** {n_b}\n"
         )
         f.write(f"- **:boom: entry without breaking change label:** {n_e}\n")
-        f.write(f"- **Total anomalies:** {n_a + n_b + n_e}\n")
+        f.write(f"- **:rocket: out of sync with release highlight label:** {n_f}\n")
+        f.write(f"- **Total anomalies:** {n_a + n_b + n_e + n_f}\n")
         f.write(
             f"- **Released X.Y.0 version missing :rocket: section (gap):** {n_c}\n"
         )
         f.write(f"- **:rocket: entry without issue AND PR references (gap):** {n_d}\n\n")
 
-        if n_a or n_b or n_e:
+        if n_a or n_b or n_e or n_f:
             f.write("## Anomalies\n\n")
             f.write(
                 "Types A and B are milestone mismatches between an issue in the changelog "
@@ -461,6 +494,9 @@ def cmd_report(args: argparse.Namespace) -> None:
                 "removing the misleading entry from the changelog.\n\n"
                 "Type E entries stay in the changelog: either label the issue "
                 "as `breaking change` or move the entry out of `:boom:`.\n\n"
+                "Type F is a rule violation: `:rocket:` must list exactly the "
+                "issues labelled `release highlight`. Fix the label on GitHub "
+                "or re-run the workflow.\n\n"
             )
 
             if n_a:
@@ -512,6 +548,14 @@ def cmd_report(args: argparse.Namespace) -> None:
                 for e in anomalies_e:
                     f.write(f"- ⚠️ {issue_link_title(e['issue'], e['issue_title'][:80])}\n")
                 f.write("\n")
+
+            if n_f:
+                f.write("\n### :rocket: out of sync with release highlight label\n\n")
+                for e in anomalies_f:
+                    f.write(
+                        f"- ⚠️ {issue_link_title(e['issue'], e['issue_title'][:80])}: {e['reason']}\n"
+                    )
+                f.write("\n")
         else:
             f.write(
                 "✅ No anomalies found. All (issue, PR) pairs in the changelog have aligned milestone assignments.\n\n"
@@ -546,7 +590,7 @@ def cmd_report(args: argparse.Namespace) -> None:
                 for d in anomalies_d:
                     f.write(f"- **{d['version']}**: `{d['line']}`\n")
                 f.write("\n")
-        elif not (n_a or n_b or n_e):
+        elif not (n_a or n_b or n_e or n_f):
             f.write(
                 "✅ No highlight gaps found. All released X.Y.0 versions have properly referenced :rocket: entries.\n\n"
             )

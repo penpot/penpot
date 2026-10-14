@@ -257,6 +257,7 @@
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/team-id (:default-team-id profile))
                      (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
                      (assoc ::bfc/input evil)
                      (v3/import-files!))]
       (t/is (= 1 (count (:file-ids result))))

@@ -45,29 +45,25 @@
 
 (defmethod repair-error :parent-not-found
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [repair-shape
-        (fn [shape]
-          ;; Set parent to root frame.
-          (log/debug :hint "  -> set to " :parent-id uuid/zero)
-          (assoc shape :parent-id uuid/zero))]
-
-    (log/debug :hint "repairing shape :parent-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+  ;; Move the shape to the root frame. `:mov-objects` adds it to the
+  ;; root's children list when applied, so several repairs on the same
+  ;; root do not overwrite each other
+  (log/debug :hint "repairing shape :parent-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
+  (log/debug :hint "  -> set to " :parent-id uuid/zero)
+  (-> (pcb/empty-changes nil page-id)
+      (pcb/with-file-data file-data)
+      (pcb/change-parent uuid/zero [shape] nil {:allow-altering-copies true})))
 
 (defmethod repair-error :child-not-in-parent
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [repair-shape
-        (fn [parent-shape]
-          ;; Add shape to parent's children list
-          (log/debug :hint "  -> add children to" :parent-id (:id parent-shape))
-          (update parent-shape :shapes conj (:id shape)))]
-
-    (log/debug :hint "repairing shape :child-not-in-parent" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:parent-id shape)] repair-shape))))
+  ;; Add the shape to its parent's children list. `:mov-objects` adds it
+  ;; when applied, so several repairs on the same parent do not
+  ;; overwrite each other
+  (log/debug :hint "repairing shape :child-not-in-parent" :id (:id shape) :name (:name shape) :page-id page-id)
+  (log/debug :hint "  -> add children to" :parent-id (:parent-id shape))
+  (-> (pcb/empty-changes nil page-id)
+      (pcb/with-file-data file-data)
+      (pcb/change-parent (:parent-id shape) [shape] nil {:allow-altering-copies true})))
 
 (defmethod repair-error :duplicated-children
   [_ {:keys [shape page-id] :as error} file-data _]

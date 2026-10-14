@@ -245,6 +245,19 @@
       AND status = 'new'
       AND scheduled_at > ?")
 
+;; The cron no-overlap check and the skip-if-active submit option share
+;; this shape: both look for jobs of one tenant with the same name, queue
+;; and label that have not reached a terminal state yet. The
+;; `job__name_label__idx` partial index serves both queries.
+(def ^:private sql:count-active-jobs
+  "SELECT count(*) AS n
+     FROM job
+    WHERE name = ?
+      AND tenant = ?
+      AND queue = ?
+      AND label = ?
+      AND status IN ('new', 'scheduled', 'running', 'retry')")
+
 (def ^:private schema:options
   [:map {:title "submit-options"}
    [::name schema:job-name]
@@ -255,6 +268,10 @@
    [::priority {:optional true} ::sm/int]
    [::max-retries {:optional true} ::sm/int]
    [::dedupe {:optional true} ::sm/boolean]
+   ;; Skip the insert when a live job already covers the same
+   ;; (tenant, name, queue, label). Requires an explicit label: the
+   ;; default empty one would block every flagged submission at once.
+   [::skip-if-active {:optional true} ::sm/boolean]
    ;; Owner of a user-facing job. Its events are published on the msgbus
    ;; topic of this profile; internal jobs omit it.
    [::profile-id {:optional true} ::sm/uuid]
@@ -289,17 +306,36 @@
   `::expires-at`) are validated and stored as columns; nothing is inferred
   from `params`.
 
+  With `::skip-if-active`, the insert is skipped (and `nil` returned)
+  when a live job (`new`, `scheduled`, `running` or `retry`) already
+  exists for the same tenant, name, queue and label. The check and the
+  insert share one transaction. A skip deletes nothing and inserts
+  nothing; it records a skipped metric instead of a submitted one, so
+  dashboards can tell withheld work apart from new work. The option
+  needs an explicit non-blank `::label`, otherwise it raises.
+
   NOTE: the dedupe DELETE and the INSERT run atomically: joined to
   the caller's transaction when the cfg provides `::db/conn`, wrapped
   in their own transaction otherwise. Concurrent cross-backend
   submissions can, in rare race conditions, produce duplicated 'new'
-  rows (accepted risk, see prod-infra documentation)."
+  rows (accepted risk, see prod-infra documentation). The same caveat
+  covers the skip-if-active check: a race between backends can slip
+  two inserts past the count."
   [cfg {:keys [::params ::name ::delay ::queue ::priority ::max-retries
-               ::dedupe ::label ::profile-id ::resource-id ::expires-at]
+               ::dedupe ::skip-if-active ::label
+               ::profile-id ::resource-id ::expires-at]
         :or   {delay 0 queue :default priority 100 max-retries 3 label ""}
         :as   options}]
 
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
+  ;; Before the schema check so the failure names the option, not the
+  ;; shape: the schema would reject a blank label with a generic
+  ;; "check error" either way.
+  (when (and skip-if-active (or (not (string? label)) (str/blank? label)))
+    (ex/raise :type :validation
+              :code :skip-if-active-requires-label
+              :hint "skip-if-active requires an explicit non-blank label"
+              :name (d/name name)))
   (check-options options)
   (let [job-def      (get-job-def (get-defs cfg) name)
         params       (validate-params job-def params)
@@ -327,6 +363,14 @@
         ;; between backends could create duplicates, but this is
         ;; acceptable: cross-backend races are rare, jobs are idempotent,
         ;; and dedupe is best-effort.
+        ;; Skip-if-active is best-effort like dedupe: the count and the
+        ;; insert share this transaction, but a race between backends
+        ;; can still slip two inserts past the count.
+        active?      (fn [conn]
+                       (when skip-if-active
+                         (pos? (or (:n (db/exec-one! conn [sql:count-active-jobs
+                                                           job-name tenant queue label]))
+                                   0))))
         insert!      (fn [conn]
                        (let [deleted (when dedupe
                                        ;; the DELETE below is intentional:
@@ -353,13 +397,23 @@
     ;; caller's transaction when the cfg provides a connection,
     ;; wrapped in their own otherwise (a failed INSERT can never
     ;; orphan a committed DELETE, even on an autocommit caller conn).
+    ;; A skip returns nil: no DELETE, no INSERT, no submitted metric.
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn]}]
-                  (let [result (insert! conn)]
-                    (db/after-commit
-                     #(metrics/record-submitted cfg job-name queue))
-                    result)))
-    id))
+                  (if (active? conn)
+                    (do (db/after-commit
+                         #(metrics/record-skipped cfg job-name queue))
+                        (l/trc :hint "submit skipped, active job exists"
+                               :name job-name
+                               :tenant tenant
+                               :queue queue
+                               :label label
+                               :skipped true))
+                    (let [result (insert! conn)]
+                      (db/after-commit
+                       #(metrics/record-submitted cfg job-name queue))
+                      result
+                      id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB API
@@ -845,13 +899,14 @@
       nil)))
 
 (defn- record-terminal
-  "Record the terminal outcome and the total time. Runs after the commit
+  "Record the total time of a terminal outcome. Runs after the commit
   that made the job terminal, so a rolled back transition is never
-  counted. Takes the cfg and resolves the metrics instance from it, so
-  the callback is not tied to an instance read at registration time."
+  counted. The histogram `_count` is the terminal total per outcome:
+  no separate counter. Takes the cfg and resolves the metrics
+  instance from it, so the callback is not tied to an instance read
+  at registration time."
   [cfg job outcome]
   (when job
-    (metrics/record-outcome cfg (:name job) (:queue job) outcome)
     (when (ct/inst? (:created-at job))
       (metrics/record-total
        cfg

@@ -907,7 +907,7 @@ msgstr ""
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "Ripristina tutti i progetti e file"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Ripristina tutto"
 
@@ -1475,7 +1475,7 @@ msgstr "Qualcosa è andato storto con il web worker."
 msgid "errors.invalid-color"
 msgstr "Colore non valido"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Dati non validi"
 
@@ -2569,7 +2569,7 @@ msgstr "Nascondi"
 msgid "labels.hide-resolved-comments"
 msgstr "Non mostrare i commenti risolti"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Importa"
 
@@ -4381,7 +4381,7 @@ msgstr "Zoom"
 msgid "shortcuts.thumbnail-set"
 msgstr "Imposta miniature"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "Scorciatoie da tastiera"
 

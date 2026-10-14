@@ -21,10 +21,12 @@
    [clojure.set :as set]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
+   [promesa.exec :as px]
    [promesa.exec.bulkhead :as pbh])
   (:import
    clojure.lang.ExceptionInfo
-   java.util.concurrent.atomic.AtomicLong))
+   java.util.concurrent.atomic.AtomicLong
+   java.util.concurrent.ConcurrentHashMap))
 
 (set! *warn-on-reflection* true)
 
@@ -54,6 +56,71 @@
 (def ^:private check-config
   (sm/check-fn schema:config))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WAITING COUNTER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private waiting-sample-interval-ms 15000)
+
+(defn- create-waiting-counters
+  "Per limiter name, how many calls on this instance are waiting for a
+  permit. Every limiter of a name adds to the same entry, so the value does
+  not depend on which of them ran last the way a sampled gauge does: a
+  request that enters and never leaves stays visible for ever. The map
+  belongs to the component, so its counts die with it instead of surviving
+  into the next system built in the same JVM."
+  []
+  (ConcurrentHashMap.))
+
+(defn- waiting-counter
+  ^AtomicLong
+  [^ConcurrentHashMap counters name]
+  (.computeIfAbsent counters name
+                    (reify java.util.function.Function
+                      (apply [_ _] (AtomicLong. 0)))))
+
+(defn- publish-waiting
+  [metrics name value]
+  (mtx/run! metrics
+            :id :rpc-climit-waiting
+            :val value
+            :labels (into-array String [name])))
+
+(defn- waiting-inc
+  [metrics counters name]
+  (publish-waiting metrics name (.incrementAndGet (waiting-counter counters name))))
+
+(defn- waiting-dec
+  [metrics counters name]
+  (publish-waiting metrics name (.decrementAndGet (waiting-counter counters name))))
+
+(defn- republish-waiting
+  "Publish the waiting count of every name again. A count that stops changing
+  (a limiter whose requests never come back and whose traffic died) has to keep
+  being written, or the series goes stale and the pile-up disappears."
+  [metrics counters]
+  (doseq [[name counter] counters]
+    (publish-waiting metrics name (.get ^AtomicLong counter))))
+
+(defn- create-waiting-sampler
+  "A daemon sampler that republishes the waiting counts of this component."
+  [metrics counters]
+  (mtx/create-sampler waiting-sample-interval-ms
+                      (fn [] (republish-waiting metrics counters))
+                      {:name "climit-metrics"}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; COMPONENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrecord ConcurrencyLimiter [params cache metrics counters sampler]
+  IConcurrencyLimiter
+  (get-config [_ id]
+    (get params id))
+
+  (invoke [_ config handler]
+    (impl-invoke metrics counters cache config handler)))
+
 (def ^:private schema:climit-params
   [:map
    ::mtx/metrics
@@ -70,19 +137,24 @@
   (when enabled
     (when-let [params (some->> config slurp edn/read-string check-config)]
       (l/inf :hint "initializing concurrency limit" :config (str config))
-      (let [params (reduce-kv (fn [result k v]
-                                (assoc result k (assoc v ::id k)))
-                              params
-                              params)
-            cache  (create-cache cfg)]
+      (let [params   (reduce-kv (fn [result k v]
+                                  (when-not (:timeout v)
+                                    (l/wrn :hint "limiter without timeout, a saturated one parks its threads forever"
+                                           :id k))
+                                  (assoc result k (assoc v ::id k)))
+                                params
+                                params)
+            cache    (create-cache cfg)
+            counters (create-waiting-counters)]
 
-        (reify
-          IConcurrencyLimiter
-          (get-config [_ id]
-            (get params id))
+        (->ConcurrencyLimiter params cache metrics counters
+                              (create-waiting-sampler metrics counters))))))
 
-          (invoke [_ config handler]
-            (impl-invoke metrics cache config handler)))))))
+(defmethod ig/halt-key! ::rpc/climit
+  [_ instance]
+  (when-let [sampler (:sampler instance)]
+    (l/inf :hint "stopping concurrency limit metrics")
+    (px/shutdown-now sampler)))
 
 (defn- id->str
   ([id]
@@ -110,28 +182,15 @@
                   :keepalive "5m")))
 
 (defn- measure
-  [metrics mlabels stats elapsed]
-  (let [mpermits (:max-permits stats)
-        permits  (:permits stats)
-        queue    (:queue stats)
-        queue    (- queue mpermits)
-        queue    (if (neg? queue) 0 queue)]
-
-    (mtx/run! metrics
-              :id :rpc-climit-queue
-              :val queue
-              :labels mlabels)
-
-    (mtx/run! metrics
-              :id :rpc-climit-permits
-              :val permits
-              :labels mlabels)
-
-    (when elapsed
-      (mtx/run! metrics
-                :id :rpc-climit-timing
-                :val (inst-ms elapsed)
-                :labels mlabels))))
+  "Publish the wait time of a call that got its permit, in milliseconds. The
+  queue is not published here: a gauge written by whichever limiter of the name
+  ran last cannot show it, and the `:rpc-climit-waiting` gauge accumulates the
+  entries and the exits instead."
+  [metrics mlabels elapsed]
+  (mtx/run! metrics
+            :id :rpc-climit-timing
+            :val (inst-ms elapsed)
+            :labels mlabels))
 
 (defn- prepare-params-for-debug
   [params]
@@ -140,7 +199,7 @@
       (update-vals str)))
 
 (defn- log
-  [action req-id stats limit-id limit-label limit-params elapsed]
+  [{:keys [id label params permits queue-max]} action req-id stats elapsed code reason]
   (let [mpermits (:max-permits stats)
         queue    (:queue stats)
         queue    (- queue mpermits)
@@ -150,58 +209,109 @@
     (l/log level
            :hint action
            :req req-id
-           :id limit-id
-           :label limit-label
+           :id id
+           :label label
            :queue queue
+           :queue-max queue-max
+           :permits permits
            :elapsed (some-> elapsed ct/format-duration)
-           :params @limit-params)))
+           :code code
+           :reason reason
+           :params @params)))
 
 (def ^:private idseq (AtomicLong. 0))
 
+(def ^:private ^ThreadLocal held-limiters
+  ;; Limiters a thread is inside of, identified by the limiter instance, which
+  ;; already encodes the limit id and its key: the cache is per id+key pair.
+  ;; `pbh/invoke!` runs the handler on the calling thread, so a handler that
+  ;; enters climit again for a limit it holds finds it here. Without this a
+  ;; thread parks forever behind a permit it holds itself.
+  (ThreadLocal/withInitial
+   (reify java.util.function.Supplier
+     (get [_] (java.util.HashSet.)))))
+
 (defn- impl-invoke
-  [metrics cache config handler]
+  [metrics counters cache config handler]
   (let [limit-id     (::id config)
         limit-key    (::key config)
         limit-label  (::label config)
+        limit-name   (id->str limit-id)
         limit-params (delay
                        (prepare-params-for-debug
                         (::params config)))
 
-        mlabels     (into-array String [(id->str limit-id)])
-        limit-id    (id->str limit-id limit-key)
-        limiter     (cache/get cache limit-id (partial create-limiter config))
-        tpoint      (ct/tpoint)
-        req-id      (.incrementAndGet ^AtomicLong idseq)]
-    (try
-      (let [stats (pbh/get-stats limiter)]
-        (measure metrics mlabels stats nil)
-        (log "enqueued" req-id stats limit-id limit-label limit-params nil))
+        mlabels      (into-array String [limit-name])
+        limit-id     (id->str limit-id limit-key)
+        limit        {:id limit-id
+                      :label limit-label
+                      :params limit-params
+                      :permits (or (:permits config) (:concurrency config) 1)
+                      :queue-max (or (:queue config) (:queue-size config))}
+        limiter      (cache/get cache limit-id (partial create-limiter config))
+        held         ^java.util.Set (.get ^ThreadLocal held-limiters)]
 
-      (pbh/invoke! limiter (fn []
-                             (let [elapsed (tpoint)
-                                   stats   (pbh/get-stats limiter)]
-                               (measure metrics mlabels stats elapsed)
-                               (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
-                               (handler))))
+    (if (.contains held limiter)
+      ;; The calling thread already holds this limiter for this key: run the
+      ;; handler inline instead of queueing behind itself.
+      (do
+        (l/trc :hint "reentrant invocation" :id limit-id :label limit-label)
+        (handler))
 
-      (catch ExceptionInfo cause
-        (let [{:keys [type code]} (ex-data cause)]
-          (if (= :bulkhead-error type)
+      (let [tpoint        (ct/tpoint)
+            req-id        (.incrementAndGet ^AtomicLong idseq)
+            waiting       (volatile! true)
+            stop-waiting  (fn []
+                            ;; Exactly one decrement per increment: the flag
+                            ;; makes a second call a no-op and the `finally`
+                            ;; guarantees that there is one.
+                            (when @waiting
+                              (vreset! waiting false)
+                              (waiting-dec metrics counters limit-name)))]
+
+        (.add held limiter)
+
+        (try
+          ;; The increment lives inside the `try`, so a throwable from the
+          ;; publishing path unwinds through the `finally`: the thread drops the
+          ;; mark and the count comes back down instead of staying up for good.
+          (waiting-inc metrics counters limit-name)
+
+          (let [stats (pbh/get-stats limiter)]
+            (log limit "enqueued" req-id stats nil nil nil))
+
+          (pbh/invoke! limiter (fn []
+                                 (stop-waiting)
+                                 (let [elapsed (tpoint)
+                                       stats   (pbh/get-stats limiter)]
+                                   (measure metrics mlabels elapsed)
+                                   (log limit "acquired" req-id stats elapsed nil nil)
+                                   (handler))))
+
+          (catch ExceptionInfo cause
+            (let [{:keys [type code] :as data} (ex-data cause)]
+              (if (= :bulkhead-error type)
+                (let [elapsed (tpoint)
+                      stats   (pbh/get-stats limiter)
+                      reason  (if (some? (:timeout data)) "timeout" "queue-full")]
+                  (mtx/run! metrics
+                            :id :rpc-climit-rejected
+                            :inc 1
+                            :labels (into-array String [limit-name reason]))
+                  (log limit "rejected" req-id stats elapsed code reason)
+                  (ex/raise :type :concurrency-limit
+                            :code code
+                            :hint "concurrency limit reached"
+                            :cause cause))
+                (throw cause))))
+
+          (finally
+            (.remove held limiter)
+            (stop-waiting)
             (let [elapsed (tpoint)
                   stats   (pbh/get-stats limiter)]
-              (log "rejected" req-id stats limit-id limit-label limit-params elapsed)
-              (ex/raise :type :concurrency-limit
-                        :code code
-                        :hint "concurrency limit reached"
-                        :cause cause))
-            (throw cause))))
 
-      (finally
-        (let [elapsed (tpoint)
-              stats (pbh/get-stats limiter)]
-
-          (measure metrics mlabels stats nil)
-          (log "finished" req-id stats limit-id limit-label limit-params elapsed))))))
+              (log limit "finished" req-id stats elapsed nil nil))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MIDDLEWARE
@@ -263,7 +373,13 @@
                   (l/wrn :hint "no config found for specified queue" :id (id->str limit-id))
                   handler)))
             handler
-            (concat global-limits (get-limits mdata)))
+            ;; The root limiters go last so they end up outermost: every path
+            ;; meets them before the command's own limits. The nested
+            ;; `climit/invoke!` chains carry only the command's own limits and
+            ;; run inside those of the enclosing call, so this puts both paths
+            ;; in the same order. With the opposite order two calls of the same
+            ;; profile hold the same limiters inverted and park for good.
+            (concat (get-limits mdata) global-limits))
 
     handler))
 

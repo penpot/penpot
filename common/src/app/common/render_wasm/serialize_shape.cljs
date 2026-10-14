@@ -48,7 +48,7 @@
     (when (and (contains? #{:path :bool} type) (some? (:content shape)))
       (props/set-shape-path-content (:content shape)))))
 
-(defn serialize-shape!
+(defn serialize-shape
   "Applies every host-independent WASM property of `shape`."
   [shape]
   (let [shape (svg-derived/apply-svg-derived shape)]
@@ -59,11 +59,11 @@
 
     shape))
 
-(defn serialize-shapes-batch!
+(defn serialize-shapes-batch
   "Structural batch upload plus per-shape svg-attrs/path tail.
 
   Derives via svg-derived, uploads one `_set_shapes_batch` with `opts`,
-  then selects each shape needing svg-attrs/path content via `use-shape!`
+  then selects each shape needing svg-attrs/path content via `use-shape`
   and applies the tail. Host text/grid/image sequencing stays in callers.
   Returns the prepared vector for the downstream host-attrs loop."
   [shapes opts]

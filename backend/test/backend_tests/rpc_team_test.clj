@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.email.blacklist :as email.blacklist]
    [app.http :as http]
+   [app.loggers.audit :as-alias audit]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
@@ -927,6 +928,38 @@
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [result (th/run-task! :objects-gc {})]
         (t/is (= 7 (:processed result)))))))
+
+(t/deftest delete-team-audit-includes-organization-id
+  ;; Assert result metadata directly: wrap-audit is inactive in the
+  ;; default test flags, so mocking audit/submit would never see this.
+  (let [owner           (th/create-profile* 1 {:is-active true})
+        team            (th/create-team* 1 {:profile-id (:id owner)})
+        organization-id (uuid/next)
+        organization    {:id organization-id
+                         :name "Acme"
+                         :slug "acme"
+                         :owner-id (:id owner)
+                         :avatar-bg-url "https://example.com/avatar.svg"
+                         :permissions {:delete-teams "onlyOwners"}}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
+                  nitrate/call
+                  (fn [_cfg method params]
+                    (case method
+                      :get-team-organization
+                      (when (= (:id team) (:team-id params))
+                        {:id (:id team)
+                         :is-your-penpot false
+                         :organization organization})
+                      :delete-team nil
+                      nil))]
+      (let [result (db/tx-run! th/*system*
+                               (fn [cfg]
+                                 (teams/delete-team cfg {:team-id (:id team)
+                                                         :profile-id (:id owner)})))
+            props  (::audit/props (meta result))]
+        (t/is (= organization-id (:organization-id props)))
+        (t/is (= (:id team) (:team-id props)))
+        (t/is (= (:name team) (:team-name props)))))))
 
 (t/deftest create-team-access-request
   (with-mocks [mock {:target 'app.email/send :return nil}]

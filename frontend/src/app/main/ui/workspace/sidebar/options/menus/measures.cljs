@@ -50,10 +50,11 @@
    :show-content
    :hide-in-viewer
 
-   ;; Needed to disable/enable width/height
+   ;; Needed to disable/enable width/height and x/y
    ;; otherwise the memo will not detect changes
    :layout-item-h-sizing
-   :layout-item-v-sizing])
+   :layout-item-v-sizing
+   :layout-item-absolute])
 
 (def ^:private generic-options
   #{:size :position :rotation})
@@ -161,6 +162,8 @@
                      (get n-values :layout-item-h-sizing))
          (identical? (get o-values :layout-item-v-sizing)
                      (get n-values :layout-item-v-sizing))
+         (identical? (get o-values :layout-item-absolute)
+                     (get n-values :layout-item-absolute))
          (identical? (get o-values :points)
                      (get n-values :points))
          (identical? (get o-values :selrect)
@@ -396,10 +399,8 @@
          (mf/deps ids shapes)
          (fn [value attr]
            (if (or (string? value) (number? value))
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (udw/update-dimensions-coalesced ids attr value))
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/apply-token-from-input {:token (first value)
+             (st/emit! (udw/update-dimensions-coalesced ids attr value))
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{attr}
                                                      :shape-ids ids})))))
 
@@ -416,11 +417,8 @@
          (mf/deps ids)
          (fn [value attr]
            (if (or (string? value) (number? value))
-             (do
-               (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (st/emit! (udw/update-positions ids {attr value})))
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/apply-token-from-input {:token (first value)
+             (st/emit! (udw/update-positions ids {attr value}))
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{attr}
                                                      :shape-ids ids})))))
 
@@ -430,10 +428,8 @@
          (fn [value]
            (if (or (string? value) (number? value))
              (let [value (fixed-decimal-value value)]
-               (st/emit! (udw/trigger-bounding-box-cloaking ids))
                (st/emit! (udw/increase-rotation-coalesced ids value)))
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/apply-token-from-input {:token (first value)
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{:rotation}
                                                      :shape-ids ids})))))
 

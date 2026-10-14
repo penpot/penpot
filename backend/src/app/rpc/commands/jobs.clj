@@ -110,6 +110,25 @@
 ;; EXPORT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- single-team-id
+  "The team id when every `file-ids` entry resolves and they share one
+  team. Otherwise nil."
+  [cfg file-ids]
+  (when (seq file-ids)
+    (db/run! cfg
+             (fn [{:keys [::db/conn]}]
+               (let [arr   (db/create-array conn "uuid" file-ids)
+                     rows  (db/exec! conn
+                                     ["SELECT f.id AS file_id, t.id AS team_id
+                                         FROM file AS f
+                                         JOIN project AS p ON (p.id = f.project_id)
+                                         JOIN team AS t ON (t.id = p.team_id)
+                                        WHERE f.id = ANY(?)" arr])
+                     teams (into #{} (map :team-id) rows)]
+                 (when (and (= (count file-ids) (count rows))
+                            (= 1 (count teams)))
+                   (first teams)))))))
+
 (sv/defmethod ::create-export-binfile-job
   "Create a durable job that exports a set of files as a `.penpot`
    package.
@@ -146,11 +165,13 @@
                         ::quotes/profile-id profile-id})
 
     (let [summary (get-job-summary cfg (submit-job cfg job-def :export-binfile
-                                                   params profile-id))]
+                                                   params profile-id))
+          team-id (single-team-id cfg file-ids)]
       (with-meta summary
-        {::audit/props {:job-id      (:id summary)
-                        :files       (count file-ids)
-                        :export-type (d/name (:export-type params))}}))))
+        {::audit/props (cond-> {:job-id      (:id summary)
+                                :files       (count file-ids)
+                                :export-type (d/name (:export-type params))}
+                         team-id (assoc :team-id team-id))}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPORT

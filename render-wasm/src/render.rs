@@ -349,6 +349,13 @@ fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -
     }
 }
 
+/// Children bottom to top, in the same order the GPU renderer paints them.
+pub(crate) fn children_paint_order(tree: ShapesPoolRef, element: &Shape) -> Vec<Uuid> {
+    let mut ids = sort_z_index(tree, element, element.children_ids(false));
+    ids.reverse();
+    ids
+}
+
 /// Whether this `render_shape_exit` pass closes the shape's focus scope. A
 /// masked group keeps it open across the mask pass.
 fn exit_closes_focus_scope(element: &Shape, visited_mask: bool) -> bool {

@@ -29,6 +29,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
@@ -867,11 +868,13 @@
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
 
-    (let [delay (ldel/get-deletion-delay team)
-          team  (db/update! conn :team
-                            {:deleted-at (ct/in-future delay)}
-                            {:id team-id}
-                            {::db/return-keys true})]
+    (let [delay           (ldel/get-deletion-delay team)
+          organization-id (dm/get-in team [:organization :id])
+          team-name       (:name team)
+          team            (db/update! conn :team
+                                      {:deleted-at (ct/in-future delay)}
+                                      {:id team-id}
+                                      {::db/return-keys true})]
 
       ;; Api call to nitrate
       (when (contains? cf/flags :admin-console)
@@ -882,7 +885,10 @@
                     ::jobs/params {:object :team
                                    :deleted-at (:deleted-at team)
                                    :id team-id}})
-      team)))
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:organization-id organization-id
+                        :team-id team-id
+                        :team-name team-name}}))))
 
 (def ^:private schema:delete-team
   [:map {:title "delete-team"}
@@ -894,8 +900,7 @@
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]
-  (delete-team cfg {:team-id id :profile-id profile-id})
-  nil)
+  (delete-team cfg {:team-id id :profile-id profile-id}))
 
 ;; --- Mutation: Team Update Role
 

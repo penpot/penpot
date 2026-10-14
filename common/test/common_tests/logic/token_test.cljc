@@ -146,7 +146,7 @@
       (t/is (= (ctos/get-active-set-ids file-tokens-status)
                (ctos/get-active-set-ids undo-tokens-status)))))
 
-  (t/testing "if the library is the same file, the source is set to self and the status is the same one"
+  (t/testing "if the library is the same file, the source is removed and the status is the same one"
     (let [set-id (uuid/next)
           file (tht/sample-file-with-tokens
                 :file-id :file1
@@ -166,7 +166,7 @@
           undo-tokens-status (tht/get-tokens-status undo)]
 
       ;; Redo: source and status copied from library, replacing the previous status
-      (t/is (= (:id file) redo-tokens-source))
+      (t/is (nil? redo-tokens-source))
       (t/is (= (ctos/get-active-theme-ids file-tokens-status)
                (ctos/get-active-theme-ids redo-tokens-status)))
       (t/is (= (ctos/get-active-set-ids file-tokens-status)

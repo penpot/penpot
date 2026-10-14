@@ -372,6 +372,49 @@ PENPOT_PUBLIC_URI: https://penpot.mycompany.com
 If you're using the official <code class="language-bash">docker-compose.yml</code> you only need to configure the
 <code class="language-bash">PENPOT_PUBLIC_URI</code> envvar in the top of the file.
 
+### Serve Penpot from a subpath
+
+Penpot can be served from a subpath such as `https://mycompany.com/penpot/`.
+Set `PENPOT_PUBLIC_URI` to the complete public URL, including the subpath and its
+trailing slash:
+
+```bash
+PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+```
+
+Your reverse proxy or Ingress must also:
+
+- Route requests under `/penpot/` to the Penpot frontend.
+- Remove the `/penpot` prefix before forwarding each request. The frontend
+  continues to serve its internal routes from `/`.
+- Preserve WebSocket upgrade headers for notifications and other services that
+  use WebSockets.
+
+Changing only `PENPOT_PUBLIC_URI` is not enough. Without the matching proxy
+rewrite, static assets, API calls, and WebSocket connections will use routes that
+the frontend does not recognize.
+
+#### Migrate an existing installation to a subpath
+
+Moving an installation from `/` to a subpath does not require a database or
+asset migration. Users, teams, projects, files, and uploaded assets remain in
+the existing storage.
+
+Before changing the public URL:
+
+1. Back up the database, assets, and current deployment configuration.
+2. Configure the proxy or Ingress route and prefix rewrite.
+3. Update `PENPOT_PUBLIC_URI` for every Penpot component that uses it.
+4. Keep the existing `PENPOT_SECRET_KEY`, database, and asset storage
+   configuration.
+5. Restart or redeploy Penpot and verify login, static assets, API requests,
+   WebSockets, file editing, and image uploads through the new URL.
+
+Existing bookmarks and integrations that use the previous root URL must be
+updated. You may also configure a redirect from the previous URL. If the scheme
+or hostname changes in addition to the path, review your authentication provider
+callback URLs and cookie settings. Active users may need to sign in again.
+
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
     you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
@@ -386,9 +429,13 @@ By default, <code class="language-bash">smtp</code> flag is disabled, the email 
 printed to the console, which means that the emails will be shown in the stdout.
 
 Note that if you plan to invite members to a team, it is recommended that you enable SMTP
-as they will need to login to their account after receiving the invite link sent an in email.
-It is currently not possible to just add someone to a team without them accepting an
-invitation email.
+as they will need to login to their account after receiving the invite link sent in an email.
+
+There is one exception: with the `disable-email-verification` flag set, inviting an email
+that already has a profile adds that user to the team directly, without sending any
+invitation email and without requiring acceptance. Emails without an existing profile
+still follow the normal invitation flow. See the
+[`disable-email-verification` flag][11] description for more detail.
 
 If you have an SMTP service, uncomment the appropriate settings section in
 <code class="language-bash">docker-compose.yml</code> and configure those
@@ -617,6 +664,16 @@ In a high-availability (HA) scenario, managing the state outside of replicas is 
 - Database: Penpot typically operates with a single database instance. This database can also have a replica in case the primary instance fails.
 - Valkey: Penpot only needs one Valkey instance to function correctly. Due to the nature of the data it manages, replication isn't even essential.
 - User media storage: This should not be configured with local storage but rather with centralized storage, such as Kubernetes PVC or S3.
+
+### Draining a backend instance
+
+To restart one backend without affecting ongoing clients, take it out of the
+load balancer first. From the backend REPL, run `(app.srepl.main/set-offline)`.
+The `/readyz` endpoint then answers `503 OFFLINE`, so the load balancer stops
+sending new requests to that instance while the requests already in flight
+finish normally. Wait for the traffic to drop, restart the process, and the
+instance comes back online on its own. To undo the drain without a restart,
+run `(app.srepl.main/set-online)`. Drain one instance at a time.
 
 ## Backend
 
@@ -926,6 +983,13 @@ for the user:
   <code class="language-bash">penpot-mcp</code> service. Check the [MCP section][8] to get more detail.
 - <code class="language-bash">enable-prepl-server</code>: enables PREPL server, used by manage.py and other additional
   tools to communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
+- `disable-email-verification`: skips the email verification step on registration, making
+  newly registered profiles active immediately without any verification email. It also
+  changes the team invitation flow: inviting an email that already has a profile adds that
+  user to the team directly, without sending an invitation email (check the
+  [email configuration section][10] for more detail). Note that registering with an email
+  that already has an inactive profile is rejected as "email already exists" while this
+  flag is set. Not recommended for production environments.
 
 __Since version 1.13.0__
 
@@ -952,3 +1016,5 @@ __Since version 2.0.0__
 [7]: /technical-guide/integration/#access-tokens
 [8]: /mcp/
 [9]: /technical-guide/developer/subsystems/link-preview/
+[10]: /technical-guide/configuration/#email-configuration
+[11]: /technical-guide/configuration/#other-flags

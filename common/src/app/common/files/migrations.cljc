@@ -35,6 +35,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -2151,6 +2152,71 @@
         (update :pages-index d/update-vals repair-container)
         (d/update-when :components d/update-vals repair-container))))
 
+(defmethod migrate-data "0031-migrate-stroke-width-token-attr"
+  ;; Stroke width tokens used to be applied to the single `:stroke-width` token
+  ;; attribute, replaced by the four per-side attributes. The editor reads only
+  ;; the new keys, so a file written before the change keeps the token on
+  ;; `:stroke-width` and the token looks unapplied even though its value is
+  ;; still set. Copy the legacy reference to every side (matching how applying
+  ;; the token resolves all sides) and drop the old key. A side that already
+  ;; carries a reference wins over the recycled global one.
+  [data _]
+  (letfn [(repair-shape [shape]
+            (let [applied (:applied-tokens shape)
+                  token   (:stroke-width applied)]
+              (if (some? token)
+                (update shape :applied-tokens
+                        (fn [applied]
+                          (-> (zipmap ctt/per-side-stroke-width-keys (repeat token))
+                              (merge applied)
+                              (dissoc :stroke-width))))
+                shape)))
+
+          (repair-container [container]
+            (d/update-when container :objects d/update-vals repair-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals repair-container)
+        (d/update-when :components d/update-vals repair-container))))
+
+;; A shape can point to an existing parent that does not list it in its
+;; `:shapes`. Such shapes are unreachable from the root, and operations
+;; that walk the tree through `:shapes` miss them; e.g. deleting a variant
+;; also deleted its container, which looked empty, and left the other
+;; variants pointing to a deleted parent. Add them back to their parent.
+(defmethod migrate-data "0032-fix-children-not-in-parent"
+  [data _]
+  (letfn [(get-unlisted-children [objects]
+            ;; Returns a {parent-id -> [child-id]} map
+            (let [listed (reduce-kv (fn [result id shape]
+                                      (if-let [shapes (not-empty (:shapes shape))]
+                                        (assoc result id (set shapes))
+                                        result))
+                                    {}
+                                    objects)]
+              (reduce-kv (fn [result id shape]
+                           (let [parent-id (:parent-id shape)]
+                             (if (and (not (cfh/root? shape))
+                                      (contains? objects parent-id)
+                                      (not (contains? (get listed parent-id) id)))
+                               (update result parent-id (fnil conj []) id)
+                               result)))
+                         {}
+                         objects)))
+
+          (fix-objects [objects]
+            (reduce-kv (fn [objects parent-id child-ids]
+                         (update-in objects [parent-id :shapes] (fnil into []) child-ids))
+                       objects
+                       (get-unlisted-children objects)))
+
+          (update-container [container]
+            (d/update-when container :objects fix-objects))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2238,4 +2304,6 @@
          "0027-separate-tokens-status"
          "0028-normalize-constrained-values"
          "0029-move-background-blur-out-of-blur"
-         "0030-remove-stroke-per-side-attr"]))
+         "0030-remove-stroke-per-side-attr"
+         "0031-migrate-stroke-width-token-attr"
+         "0032-fix-children-not-in-parent"]))

@@ -41,7 +41,7 @@
    [:> search-bar* {:on-change on-search-term-change
                     :on-clear on-search-clear-click
                     :value filter-term
-                    :placeholder (tr "shortcuts.title")
+                    :placeholder (tr "shortcuts.search")
                     :icon-id i/search
                     :auto-focus true}]
    (when (and show-restore-all has-custom-shortcuts)
@@ -50,7 +50,7 @@
        :on-click on-restore-all
        :class (stl/css :restore-all-button)
        :icon i/reload}
-      (tr "dashboard.restore-all-deleted-button")])])
+      (tr "shortcuts.reset-all")])])
 
 (defn- filter-shortcuts-tree
   [tree shortcut-filter search-term]
@@ -457,9 +457,9 @@
                                                   :imported-shortcuts shortcuts
                                                   :custom-shortcuts custom-shortcuts
                                                   :all-shortcuts-raw all-shortcuts-raw}))
-                           (st/emit! (ntf/error (tr "errors.invalid-data")))))
+                           (st/emit! (ntf/error (tr "import-shortcuts.invalid-file")))))
                        (catch :default _
-                         (st/emit! (ntf/error (tr "errors.invalid-data"))))))))
+                         (st/emit! (ntf/error (tr "import-shortcuts.invalid-file"))))))))
 
              (-> (mf/ref-val input-ref)
                  (dom/set-value! "")))))]

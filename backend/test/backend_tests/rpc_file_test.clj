@@ -17,6 +17,7 @@
    [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.http :as http]
+   [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
@@ -810,6 +811,20 @@
     ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest delete-file-audit-includes-team-id
+  ;; Assert result metadata directly: wrap-audit is inactive in the
+  ;; default test flags, so mocking audit/submit would never see this.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        result  (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (#'files/delete-file cfg {:id (:id file)
+                                                        :profile-id (:id profile)})))
+        props   (::audit/props (meta result))]
+    (t/is (= (:default-team-id profile) (:team-id props)))
+    (t/is (= (:project-id file) (:project-id props)))))
 
 (t/deftest permissions-checks-set-file-shared
   (let [profile1 (th/create-profile* 1)
@@ -2852,3 +2867,130 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+(t/deftest get-file-plugin-data
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})]
+
+    ;; A file without plugin data returns an empty map
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= {} (:result out))))
+
+    ;; Set file-level plugin data through a change
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :set-plugin-data
+       :object-type :file
+       :namespace :shared/traceability
+       :key "req-id"
+       :value "REQ-123"}])
+
+    ;; The full plugin-data map is returned
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:shared/traceability {"req-id" "REQ-123"}} (:result out))))
+
+    ;; A namespace filter narrows the result
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)
+                            :namespace :shared/traceability})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:shared/traceability {"req-id" "REQ-123"}} (:result out))))
+
+    ;; A filter on an absent namespace returns an empty map
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)
+                            :namespace :plugin/absent})]
+      (t/is (nil? (:error out)))
+      (t/is (= {} (:result out))))))
+
+(t/deftest get-file-plugin-data-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id other)
+                            :id (:id file)})]
+
+    (t/is (not (nil? (:error out))))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :not-found (:type edata))))))
+
+(t/deftest get-file-tokens-without-tokens
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})
+        out     (th/command! {::th/type :get-file-tokens
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)})]
+    (t/is (nil? (:error out)))
+    (t/is (nil? (:result out)))))
+
+(t/deftest get-file-tokens-with-tokens
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared  false})
+        set-id   (uuid/next)
+        token-id (uuid/next)]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :set-token-set
+       :id set-id
+       :attrs {:id set-id :name "brand-core"}}
+      {:type :set-token
+       :set-id set-id
+       :token-id token-id
+       :attrs {:id token-id
+               :name "color.primary-base"
+               :type :color
+               :value "#ff0000"}}])
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 1
+     :changes
+     [{:type :set-tokens-status
+       :theme-ids #{}
+       :set-ids #{set-id}}])
+
+    (let [out (th/command! {::th/type :get-file-tokens
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)})
+          dtcg (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (= "#ff0000" (get-in dtcg ["brand-core" "color" "primary-base" "$value"])))
+      (t/is (= "color" (get-in dtcg ["brand-core" "color" "primary-base" "$type"])))
+      (t/is (= ["brand-core"] (get-in dtcg ["$metadata" "tokenSetOrder"])))
+      (t/is (= #{"brand-core"} (set (get-in dtcg ["$metadata" "activeSets"])))))))
+
+(t/deftest get-file-tokens-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :get-file-tokens
+                            ::rpc/profile-id (:id other)
+                            :file-id (:id file)})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :not-found))))

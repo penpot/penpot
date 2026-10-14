@@ -507,6 +507,69 @@
                                             AND tenant = ?"
                                          label (cf/get :tenant)])))))))
 
+(t/deftest submit-skip-if-active-skips-live-jobs
+  (doseq [status ["new" "scheduled" "running" "retry"]]
+    (t/testing (str "live status " status)
+      (let [cfg    (make-cfg (get-job-defs))
+            params (make-params)
+            label  (str "skip-active-" status)
+            id1    (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params params
+                                     ::jobs/label  label})
+            _      (th/db-update! :job {:status status} {:id id1})
+            id2    (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params params
+                                     ::jobs/label  label
+                                     ::jobs/skip-if-active true})]
+        (t/is (nil? id2))
+        (t/testing "no row deleted, none inserted"
+          (t/is (some? (jobs/get-job cfg id1)))
+          (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                              WHERE label = ?" label])))))))))
+
+(t/deftest submit-skip-if-active-inserts-past-terminal-jobs
+  (doseq [status ["completed" "failed" "cancelled" "aborted"]]
+    (t/testing (str "terminal status " status)
+      (let [cfg    (make-cfg (get-job-defs))
+            params (make-params)
+            label  (str "skip-terminal-" status)
+            id1    (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params params
+                                     ::jobs/label  label})
+            _      (th/db-update! :job {:status status} {:id id1})
+            id2    (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params params
+                                     ::jobs/label  label
+                                     ::jobs/skip-if-active true})]
+        (t/is (uuid? id2))
+        (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                            WHERE label = ?" label]))))))))
+
+(t/deftest submit-skip-if-active-requires-an-explicit-label
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)]
+    (t/is (thrown-with-msg? Exception #"skip-if-active requires"
+                            (jobs/submit cfg {::jobs/name   :echo
+                                              ::jobs/params params
+                                              ::jobs/skip-if-active true})))
+    (t/is (thrown-with-msg? Exception #"skip-if-active requires"
+                            (jobs/submit cfg {::jobs/name   :echo
+                                              ::jobs/params params
+                                              ::jobs/label  "   "
+                                              ::jobs/skip-if-active true})))))
+
+(t/deftest submit-skip-if-active-inserts-when-nothing-is-live
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "skip-idle-label"
+        id1    (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label
+                                 ::jobs/skip-if-active true})]
+    (t/is (uuid? id1))
+    (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                        WHERE label = ?" label]))))))
+
 (t/deftest submit-dedupe-rolls-back-on-insert-failure
   (let [cfg    (make-cfg (get-job-defs))
         params (make-params)

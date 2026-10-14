@@ -581,3 +581,48 @@
   (t/testing "a non-root content (e.g. paragraph) is left alone"
     (let [node {:type "paragraph" :children []}]
       (t/is (= node (dwt/ensure-valid-text-content node))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: merge-live-text-dimensions (Design tab / edition outline)
+;; ---------------------------------------------------------------------------
+
+(t/deftest merge-live-text-dimensions-auto-width-uses-live-axes
+  (t/testing "auto-width takes live width and height"
+    (let [selrect {:width 0.01 :height 0.01}
+          live    {:width 70 :height 17}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect live)]
+      (t/is (= 70 (:width result)))
+      (t/is (= 17 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-auto-height-keeps-width
+  (t/testing "auto-height keeps selrect width and takes live height"
+    (let [selrect {:width 300 :height 40}
+          live    {:width 120 :height 80}
+          result  (dwt/merge-live-text-dimensions :auto-height selrect live)]
+      (t/is (= 300 (:width result)))
+      (t/is (= 80 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-fixed-keeps-selrect
+  (t/testing "fixed keeps both selrect axes"
+    (let [selrect {:width 300 :height 60}
+          live    {:width 90 :height 20}
+          result  (dwt/merge-live-text-dimensions :fixed selrect live)]
+      (t/is (= 300 (:width result)))
+      (t/is (= 60 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-nil-live-falls-back
+  (t/testing "nil live map falls back to selrect"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect nil)]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result)))))
+  (t/testing "nil live axes fall back per axis"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect {:width nil :height nil})]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result)))))
+  (t/testing "non-positive live axes do not wipe selrect"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect {:width 0 :height 0})]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result))))))
