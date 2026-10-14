@@ -17,6 +17,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.transit :as t]
    [app.common.types.fills :as types.fills]
    [app.common.types.modifiers :as ctm]
@@ -1563,11 +1564,11 @@
              (wasm.text-editor/text-editor-has-selection?))
     (let [text (wasm.text-editor/text-editor-export-selection)]
       (when (seq text)
-        (let [content  (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
-                         (-> (wasm.text-editor/text-editor-get-active-shape-id)
-                             (wasm.text-editor/selection-content)))
+        (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
+              content  (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
+                         (wasm.text-editor/selection-content shape-id))
               geometry (when (some? content)
-                         (wasm.text-editor/content-geometry content
+                         (wasm.text-editor/content-geometry shape-id content
                                                             (wasm.text-editor/selection-start)))
               payload  (when (some? content)
                          (text-clipboard/payload->html content
@@ -1685,14 +1686,14 @@
 
 (defn- target-geometry
   "Where the gradient spans of `pasted`, inserted at `start`, begin in `shape` with
-   `content`, laid over the box it gets when the editor closes; nil when none."
-  [{:keys [grow-type]} content pasted start]
-  (when-let [{:keys [box] :as geometry} (wasm.text-editor/content-geometry pasted start)]
+   `content`, laid over the box it gets once resized to its text; nil when none."
+  [{:keys [id grow-type]} content pasted start]
+  (when-let [{:keys [box] :as geometry} (wasm.text-editor/content-geometry id pasted start)]
     (if (= :fixed grow-type)
       geometry
-      ;; Auto-sized boxes only fit their text when the editor closes, which drops
-      ;; the vertical-align offset the origins have now.
-      (let [{:keys [width height]} (wasm.api/get-text-dimensions)
+      ;; Auto-sized boxes only fit their text when resized (for the editor, when it
+      ;; closes), which drops the vertical-align offset in the measured origins.
+      (let [{:keys [width height]} (wasm.api/get-text-dimensions id)
             offset (case (some-> (:vertical-align content) name)
                      "center" (/ (- (:height box) height) 2)
                      "bottom" (- (:height box) height)
@@ -1713,6 +1714,26 @@
         (wasm.api/set-shape-text-content (:id shape) content)
         content)
       content)))
+
+(defn move-new-text-gradients
+  "Event moving the gradients of `payload`, just pasted on the canvas as the text
+   `id`, so they keep their place on their spans."
+  [id {:keys [geometry]}]
+  (ptk/reify ::move-new-text-gradients
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [content] :as shape} (dsh/lookup-shape state id)
+            start  {:para 0 :offset 0}
+            target (when (and (some? shape) (some? geometry) (wasm.api/initialized?))
+                     (wselect/use-shape id)
+                     (wasm.api/set-shape-text-content id content)
+                     (target-geometry shape content content start))]
+        (if (some? target)
+          (rx/of (dwsh/update-shapes
+                  [id]
+                  #(update % :content text-paste/move-gradients content start geometry target)
+                  {:attrs #{:content}}))
+          (rx/empty))))))
 
 (defn- insert-fragment
   "Insert the text of `fragment` at the caret and restyle it: with its own styles

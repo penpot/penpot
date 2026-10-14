@@ -858,14 +858,16 @@
         (-> content :children first :children)))
 
 (defn- range-origin
-  "Where the text in `range` starts in the edited shape, shape-local, with the size
+  "Where the text in `range` starts in the text `shape-id`, shape-local, with the size
   of the box its fills are laid over: {:x :y :box-width :box-height}, or nil."
-  [{:keys [start-para start-offset end-para end-offset]}]
+  [shape-id {:keys [start-para start-offset end-para end-offset]}]
   (when (wasm/ready?)
-    (let [byte-offset (mem/alloc 16)
+    (let [id          (uuid/get-u32 shape-id)
+          byte-offset (mem/alloc 16)
           f32-offset  (mem/->offset-32 byte-offset)
           heap        (mem/get-heap-f32)
-          has-text?   (h/call wasm/internal-module "_text_editor_get_range_origin"
+          has-text?   (h/call wasm/internal-module "_text_get_range_origin"
+                              (aget id 0) (aget id 1) (aget id 2) (aget id 3)
                               start-para start-offset end-para end-offset byte-offset)
           result      (when has-text?
                         {:x          (aget heap f32-offset)
@@ -882,13 +884,13 @@
 
 (defn content-geometry
   "Where the gradient or image spans of `content`, a slice starting at `start`, begin
-  in the edited shape, with its box size; nil when it has none."
-  [content start]
+  in the text `shape-id`, with its box size; nil when it has none."
+  [shape-id content start]
   (let [ranges  (span-ranges content start)
         origins (mapv (fn [paragraph paragraph-ranges]
                         (mapv (fn [span range]
                                 (when (some box-relative-fill? (:fills span))
-                                  (range-origin range)))
+                                  (range-origin shape-id range)))
                               (:children paragraph)
                               paragraph-ranges))
                       (-> content :children first :children)

@@ -1034,11 +1034,16 @@ pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
     })
 }
 
-/// Writes where the text between the UTF-16 offsets starts (x, y, shape-local)
-/// and the size of its text box (width, height); false when it has no text.
+/// Writes where the text between the UTF-16 offsets starts in the text shape
+/// (x, y, shape-local) and its box size (width, height); false when no text.
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn text_editor_get_range_origin(
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn text_get_range_origin(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
     start_paragraph: u32,
     start_offset: u32,
     end_paragraph: u32,
@@ -1046,10 +1051,7 @@ pub extern "C" fn text_editor_get_range_origin(
     buffer_ptr: *mut f32,
 ) -> Result<bool> {
     with_state!(state, {
-        let Some(shape) = get_text_editor_state()
-            .active_shape_id
-            .and_then(|shape_id| state.shapes.get(&shape_id))
-        else {
+        let Some(shape) = state.shapes.get(&uuid_from_u32_quartet(a, b, c, d)) else {
             return Ok(false);
         };
         let Type::Text(text_content) = &shape.shape_type else {
