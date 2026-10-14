@@ -37,7 +37,6 @@
     :child-not-found
     :frame-not-found
     :invalid-frame
-    :component-not-main
     :component-main-external
     :component-not-found
     :invalid-main-instance-id
@@ -45,7 +44,6 @@
     :invalid-main-instance
     :invalid-parent
     :component-main
-    :should-be-component-root
     :should-not-be-component-root
     :ref-shape-not-found
     :ref-shape-is-head
@@ -58,7 +56,6 @@
     :nested-copy-not-allowed
     :not-head-main-not-allowed
     :not-head-copy-not-allowed
-    :not-component-not-allowed
     :component-nil-objects-not-allowed
     :non-deleted-component-cannot-have-objects
     :instance-head-not-frame
@@ -274,13 +271,9 @@
                               shape file page)))))))))
 
 (defn- check-component-main-head
-  "Validate shape is a main instance head, component exists
-  and its main-instance points to this shape."
+  "Validate that the component of the main head `shape` is in this file,
+  exists and has `shape` as its main instance."
   [shape file page libraries]
-  (when (nil? (:main-instance shape))
-    (report-error :component-not-main
-                  "Shape expected to be main instance"
-                  shape file page))
   (when-not (= (:component-file shape) (:id file))
     (report-error :component-main-external
                   "Main instance should refer to a component in the same file"
@@ -309,15 +302,9 @@
                             shape file page))))))))
 
 (defn- check-component-not-main-head
-  "Validate shape is a not-main instance head, component
-  exists and its main-instance does not point to this
-  shape."
+  "Validate that the component of the copy head `shape` exists and has
+  another shape as its main instance."
   [shape file page libraries]
-  (when (true? (:main-instance shape))
-    (report-error :component-not-main
-                  "Shape not expected to be main instance"
-                  shape file page))
-
   (let [library-exists (library-exists? file libraries shape)
         component (when library-exists
                     (ctf/resolve-component shape file libraries {:include-deleted? true}))]
@@ -339,18 +326,9 @@
     (report-error :component-main
                   "Shape not expected to be main instance"
                   shape file page))
-  (when (or (some? (:component-id shape))
-            (some? (:component-file shape)))
+  (when (some? (:component-file shape))
     (report-error :component-main
                   "Shape not expected to be component head"
-                  shape file page)))
-
-(defn- check-component-root
-  "Validate that this shape is an instance root."
-  [shape file page]
-  (when (nil? (:component-root shape))
-    (report-error :should-be-component-root
-                  "Shape should be component root"
                   shape file page)))
 
 (defn- check-component-not-root
@@ -492,7 +470,6 @@
    - :component-root"
   [shape file page libraries]
   (check-component-main-head shape file page libraries)
-  (check-component-root shape file page)
   (check-component-not-ref shape file page)
   (check-no-swap-slot shape file page)
   (check-not-swapped shape file page)
@@ -521,7 +498,6 @@
   ;; We propagate have to propagate to nested shapes if library is valid or not
   (let [library-exists (library-exists? file libraries shape)]
     (check-component-not-main-head shape file page libraries)
-    (check-component-root shape file page)
     (check-component-ref shape file page libraries)
     (check-ref-is-head shape file page libraries)
     (check-no-swap-slot shape file page)
@@ -722,26 +698,18 @@
                           shape file page)
             (check-shape-copy-not-root shape file page libraries))
 
-          ;; Short-circuit `inside-component-main?` when the propagated
-          ;; `context` already classifies this sub-tree as belonging to a
-          ;; main component.  `inside-component-main?` performs an O(depth)
-          ;; upward ancestor walk; skipping it for every non-head shape that
-          ;; sits inside a known-main context avoids redundant tree traversals
-          ;; that would otherwise dominate validation time on deep hierarchies.
-          (let [in-main? (or (#{:main-top :main-nested :main-any} context)
-                             (ctn/inside-component-main? (:objects page) shape))]
-            (if in-main?
-              (if-not (#{:main-top :main-nested :main-any} context)
-                (report-error :not-head-main-not-allowed
-                              "Non-root main only allowed inside a main component"
-                              shape file page)
-                (check-shape-main-not-root shape file page libraries))
+          (cond
+            (#{:main-top :main-nested :main-any} context)
+            (check-shape-main-not-root shape file page libraries)
 
-              (if (#{:main-top :main-nested :main-any} context)
-                (report-error :not-component-not-allowed
-                              "Not components are not allowed inside a main"
-                              shape file page)
-                (check-shape-not-component shape file page libraries)))))))))
+            ;; an O(depth) walk up, so only when the context does not answer
+            (ctn/inside-component-main? (:objects page) shape)
+            (report-error :not-head-main-not-allowed
+                          "Non-root main only allowed inside a main component"
+                          shape file page)
+
+            :else
+            (check-shape-not-component shape file page libraries)))))))
 
 (defn check-ref-cycles
   [component file]
