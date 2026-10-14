@@ -7,7 +7,10 @@
 (ns frontend-tests.plugins.shape-bugfixes-test
   (:require
    [app.common.data :as d]
+   [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.variants :as cthv]
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -410,3 +413,85 @@
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :combineAsVariants "Plugin doesn't have 'content:write' permission"]
                  (first @errors)))))))
+
+(defn- plugin-errors-of
+  "The errors the plugin reports when `call` runs on the proxy of the shape
+   `shape-id` of `objects`, with every check passing but the shape's own."
+  [objects shape-id call]
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        errors  (atom [])
+        emitted (atom [])]
+    (with-redefs [u/locate-shape      (fn [_ _ id] (get objects id))
+                  u/locate-objects    (fn ([] objects) ([_ _] objects))
+                  u/page-active?      (constantly true)
+                  r/check-permission  (constantly true)
+                  u/not-valid         (mock/stub (fn [_ prop msg] (swap! errors conj [prop msg])))
+                  st/emit!            (mock/stub (fn [& events] (swap! emitted into events)))]
+      (call (shape/shape-proxy plugin-id file-id page-id shape-id)))
+    {:errors @errors :emitted @emitted}))
+
+(defn- nested-copy-objects
+  "A copy root holding a nested copy head, which holds a child."
+  []
+  (let [root  (uuid/next)
+        head  (uuid/next)
+        child (uuid/next)]
+    {:root  root
+     :head  head
+     :child child
+     :objects {root  {:id root :type :frame :parent-id uuid/zero :shapes [head]
+                      :component-id (uuid/next) :component-file (uuid/next)
+                      :component-root true :shape-ref (uuid/next)}
+               head  {:id head :type :frame :parent-id root :shapes [child]
+                      :component-id (uuid/next) :component-file (uuid/next)
+                      :shape-ref (uuid/next)}
+               child {:id child :type :rect :parent-id head :shape-ref (uuid/next)}}}))
+
+(t/deftest swap-component-rejects-a-shape-that-is-no-copy-head
+  (let [{:keys [objects child]} (nested-copy-objects)
+        {:keys [errors emitted]} (plugin-errors-of objects child #(.swapComponent ^js % #js {}))]
+    (t/is (= [[:swapComponent "The shape is not a component copy head"]] errors))
+    (t/is (empty? emitted))))
+
+(t/deftest reset-overrides-rejects-a-shape-that-is-no-copy-head
+  (let [{:keys [objects child]} (nested-copy-objects)
+        {:keys [errors emitted]} (plugin-errors-of objects child #(.resetOverrides ^js %))]
+    (t/is (= [[:resetOverrides "The shape is not a component copy head"]] errors))
+    (t/is (empty? emitted))))
+
+(t/deftest detach-rejects-a-copy-nested-in-a-copy
+  (let [{:keys [objects head]} (nested-copy-objects)
+        {:keys [errors emitted]} (plugin-errors-of objects head #(.detach ^js %))]
+    (t/is (= [[:detach "Only a copy that is not inside another copy can be detached"]] errors))
+    (t/is (empty? emitted))))
+
+(t/deftest swap-component-rejects-a-value-that-is-no-component
+  (let [{:keys [objects head]} (nested-copy-objects)
+        {:keys [errors emitted]} (plugin-errors-of objects head #(.swapComponent ^js % #js {}))]
+    (t/is (= [[:swapComponent "Component not valid"]] errors))
+    (t/is (empty? emitted))))
+
+(t/deftest switch-variant-into-a-nesting-loop-reports-it
+  (t/async
+    done
+    (let [file   (-> (cthf/sample-file :file1)
+                     (cthv/add-variant :v01 :c01 :m01 :c02 :m02)
+                     (cthc/instantiate-component :c01 :nested :parent-label :m02))
+          store  (ths/setup-store file)
+          errors (atom [])]
+      (set! st/state store)
+      (mock/with-mocks
+        {u/not-valid        (fn [_ prop msg] (swap! errors conj [prop msg]))
+         r/check-permission (constantly true)
+         u/page-active?     (constantly true)}
+        (fn [done']
+          (.switchVariant (shape/shape-proxy plugin-id (:id file) (cthf/current-page-id file)
+                                             (cthi/id :nested))
+                          0 "Value2")
+          (js/setTimeout
+           (fn []
+             (t/is (= [[:switchVariant "The switch would create a component nesting loop"]] @errors))
+             (done'))
+           50))
+        done))))

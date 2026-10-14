@@ -1099,7 +1099,7 @@
           :else
           (st/emit!
            (se/event plugin-id "variant-edit-property-value")
-           (dwv/update-property-value id pos (ctv/normalize-property-text value))))))))
+           (dwv/update-property-value [id] pos (ctv/normalize-property-text value))))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))
