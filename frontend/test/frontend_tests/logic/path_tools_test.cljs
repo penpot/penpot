@@ -517,6 +517,35 @@
       (t/is (< (nodes mixed) 4))
       (t/is (= 1 (move-tos mixed))))))
 
+(t/deftest delete-selected-collapses-selected-handlers
+  (let [id      (random-uuid)
+        content (pth/selectable-path-content)
+        run     (fn [handlers]
+                  (let [state  (pth/selectable-path-state
+                                id content {:nodes #{} :segments #{} :handlers handlers})
+                        events (atom [])]
+                    (->> (ptk/watch (path.tools/delete-selected) state nil)
+                         (rx/subs! #(swap! events conj %)))
+                    (ptk/update (first @events) state)))
+        content-of   (fn [st] (vec (get-in st [:workspace-drawing :object :content])))
+        selection-of (fn [st] (get-in st [:workspace-local :edit-path id :selection]))]
+
+    (t/testing "single handler collapses onto its node"
+      (let [state'   (run #{[2 :c1]})
+            content' (content-of state')]
+        (t/is (= (gpt/point 10 0) (path/get-handler-point content' 2 :c1)))
+        (t/is (= (gpt/point 18 0) (path/get-handler-point content' 2 :c2)))
+        (t/is (= (gpt/point 8 0) (path/get-handler-point content' 1 :c2)))
+        (t/is (empty? (:handlers (selection-of state'))))))
+
+    (t/testing "multiple handlers collapse and flat curves become lines"
+      (let [state'   (run #{[1 :c1] [1 :c2] [2 :c1]})
+            content' (content-of state')]
+        (t/is (= [:move-to :line-to :curve-to] (mapv :command content')))
+        (t/is (= (gpt/point 10 0) (path/get-handler-point content' 2 :c1)))
+        (t/is (= (gpt/point 18 0) (path/get-handler-point content' 2 :c2)))
+        (t/is (empty? (:handlers (selection-of state'))))))))
+
 (t/deftest deleting-a-closed-seam-node-heals-its-adjacent-segments
   (let [id       (random-uuid)
         content  (path/content

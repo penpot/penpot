@@ -9,8 +9,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.db :as db]
    [app.storage :as-alias sto]
+   [app.storage.schema :as stsch]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as jio]
@@ -26,7 +26,7 @@
   [{:keys [metadata] :as row}]
   (cond-> row
     (some? metadata)
-    (assoc :metadata (db/decode-transit-pgobject metadata))))
+    (assoc :metadata (stsch/decode-metadata metadata))))
 
 ;; --- API Definition
 

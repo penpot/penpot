@@ -49,11 +49,13 @@ python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
 - Issues with type "Task" are excluded (`--include-tasks` to keep them).
 - Issues with "Rejected" project status are excluded (`--include-rejected` to keep them).
 
+Every issue entry carries `assignees` (logins) and `projects` (board titles); every PR entry carries `assignees`.
+
 **Output**: JSON array to stdout; progress to stderr.
 
 ### `prs`
 
-Fetch PR details by number or by milestone.
+Fetch PR details by number or by milestone. Every entry includes a `milestone` field (title or null).
 
 ```bash
 # Fetch specific PRs
@@ -71,6 +73,12 @@ python3 scripts/gh.py prs --milestone "2.16.0"
 # All PRs in a milestone (all states)
 python3 scripts/gh.py prs --milestone "2.16.0" --state all
 ```
+
+**Output**: JSON array to stdout; progress to stderr.
+
+### `issue`
+
+Fetch issue details by number in batches of 50 (same input styles as `prs`: numbers, `--file`, `--stdin`). No filters. A dead number fails its whole batch (unlike PRs, issues error instead of resolving to null), so the batch falls back to one-by-one lookups and reports misses as `{"number", "error": "not_found"}`. Any other failure aborts.
 
 **Output**: JSON array to stdout; progress to stderr.
 
@@ -111,7 +119,10 @@ python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 
 ## Key principles
 
+- Changelog-specific checks (merge-status verification, milestone-vs-changelog cross-reference, anomaly report) live in `scripts/changelog.py`, which calls this script via subprocess — see `mem:scripts/changelog`.
+
 - All output is JSON — pipe into `jq` or other tools for further processing.
+- Transient HTTP 504 responses from `gh` are retried automatically (3 attempts, 5s/15s backoff); any other error fails fast with no retry.
 - Milestone lookup is by exact title match.
 - `issues` subcommand auto-paginates (100 items per page).
 - `prs` subcommand batches PR number lookups (50 per GraphQL query).

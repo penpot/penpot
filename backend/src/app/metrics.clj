@@ -7,10 +7,12 @@
 (ns app.metrics
   (:refer-clojure :exclude [run!])
   (:require
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.metrics.definition :as-alias mdef]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    io.prometheus.client.CollectorRegistry
    io.prometheus.client.Counter
@@ -159,6 +161,25 @@
       (swap! warned-hints conj hint)
       (l/wrn :hint hint :cause cause))))
 
+(defn instance
+  "Resolve the metrics instance from a cfg; raises when it is absent.
+
+  The shared resolver: a module that records metrics takes a cfg and
+  calls this, so no caller has to know where the instance lives or
+  capture it beforehand. That matters most inside an
+  `app.db/after-commit` callback, which closes over whatever it was
+  given and cannot read the cfg again later.
+
+  Raises on purpose. A cfg without metrics is a wiring bug, and it must
+  surface where the metric is recorded rather than disappear: a caller
+  that resolved this at the top of a write and dropped the value is
+  precisely the pattern this replaces."
+  [cfg]
+  (or (::metrics cfg)
+      (ex/raise :type :assertion
+                :code :missing-metrics
+                :hint "missing ::mtx/metrics on the provided cfg")))
+
 (defn run!
   "Record a metric.
 
@@ -182,6 +203,33 @@
       (catch Throwable cause
         (report-safe-failure! (str "unable to record metric " (pr-str id)) cause)
         nil))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SAMPLER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-sampler
+  "Create a daemon scheduler that runs `sample` every `interval-ms`,
+  starting right away. A single thread is used, named after `name`
+  (default `metrics`), and an unexpected error on a single sample does NOT
+  cancel the following runs: the next run is scheduled in a `finally`.
+  The caller owns the returned scheduler and has to shut it down
+  (`px/shutdown-now`) when its component halts."
+  ([interval-ms sample]
+   (create-sampler interval-ms sample {}))
+  ([interval-ms sample {:keys [name] :or {name "metrics"}}]
+   (let [prefix    (str "penpot/" name "/")
+         scheduler (px/scheduled-executor
+                    :parallelism 1
+                    :factory (px/thread-factory :prefix prefix :daemon true))
+         task      (fn task []
+                     (try
+                       (sample)
+                       (finally
+                         (px/schedule scheduler interval-ms task))))]
+
+     (px/schedule scheduler 0 task)
+     scheduler)))
 
 (defn- create-registry
   []

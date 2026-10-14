@@ -583,12 +583,70 @@
      (l/trc :hint "explicit rollback requested (savepoint)")
      (.rollback conn sp))))
 
+(def ^:dynamic *after-commit-context* nil)
+
+;; the connection the ambient transaction owns, bound by `transact!` for
+;; the extent of its body. It is what tells a nested call (same
+;; connection) from an independent one (any other).
+(def ^:dynamic *after-commit-conn* nil)
+
+(defn- run-after-commit-callbacks
+  [callbacks]
+  (doseq [callback callbacks]
+    (try
+      (callback)
+      (catch Throwable cause
+        (l/wrn :hint "after-commit callback failed" :cause cause)))))
+
+(defn after-commit
+  "Run a callback after the current transaction commits.
+
+  The callback runs immediately when called outside a transaction.
+
+  Nesting follows the connection, not an ambient flag. A transaction
+  opened on the connection the surrounding one owns is part of it and
+  shares its context, so callbacks are never drained before the
+  transaction that owns the connection commits. A transaction opened on
+  any other connection is an independent unit of work: it owns its
+  context, drains its callbacks at its own commit and drops them if it
+  rolls back."
+  [f]
+  (if *after-commit-context*
+    (swap! *after-commit-context* conj f)
+    (f)))
+
+(defn- joins-transaction?
+  "True when `transactable` is the very connection the ambient
+  transaction owns, which is what makes this call part of it."
+  [transactable]
+  (boolean
+   (and *after-commit-conn*
+        (identical? transactable *after-commit-conn*))))
+
 (defn transact!
   "A lower-level function for executing function in a transaction"
   ([transactable f] (transact! transactable f {}))
   ([transactable f opts]
-   (binding [next.jdbc.transaction/*nested-tx* :ignore]
-     (jdbc/transact transactable f opts))))
+   (if (joins-transaction? transactable)
+     (binding [next.jdbc.transaction/*nested-tx* :ignore]
+       (jdbc/transact transactable f opts))
+     (let [context (atom [])]
+       (try
+         (let [result (binding [*after-commit-context* context]
+                        (binding [next.jdbc.transaction/*nested-tx* :ignore]
+                          (jdbc/transact
+                           transactable
+                           (fn [conn]
+                             (binding [*after-commit-conn* conn]
+                               (f conn)))
+                           opts)))]
+           ;; a rollback-only transaction commits nothing, so its
+           ;; callbacks have nothing to follow
+           (when-not (:rollback-only opts)
+             (run-after-commit-callbacks @context))
+           result)
+         (finally
+           (reset! context [])))))))
 
 (defn tx-run!
   "Run a function in a transaction."

@@ -62,24 +62,14 @@ impl SvgLayerCanvas {
         }
     }
 
-    /// Fills to paint for a leaf: own fills, else inherited group fills (unless
-    /// `fill="none"` broke the SVG inheritance chain). Mirrors GPU nested_fills.
-    /// Returns an owned vec so callers can still mutably borrow `self` afterward.
+    /// Fills to paint for a leaf: own fills, else inherited group fills.
+    /// Owned so callers can still mutably borrow `self` afterward.
     pub(super) fn effective_fills_owned(&self, element: &Shape) -> Vec<Fill> {
-        if !element.fills.is_empty() {
-            return element.fills.clone();
+        if element.inherits_fills() {
+            self.nested_fills.last().cloned().unwrap_or_default()
+        } else {
+            element.fills.clone()
         }
-        if matches!(element.shape_type, Type::Group(_) | Type::Frame(_)) {
-            return Vec::new();
-        }
-        if element
-            .svg_attrs
-            .as_ref()
-            .is_some_and(|attrs| attrs.fill_none)
-        {
-            return Vec::new();
-        }
-        self.nested_fills.last().cloned().unwrap_or_default()
     }
 
     /// CTM for silhouette geometry: original centered transform, then local

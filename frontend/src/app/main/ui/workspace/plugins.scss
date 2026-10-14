@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/mixins.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
@@ -15,6 +16,7 @@
 
   display: grid;
   grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   max-height: initial;
 
   &.plugin-permissions {
@@ -160,17 +162,21 @@
   flex-direction: column;
   gap: deprecated.$s-8;
   width: 100%;
+  min-width: 0;
 }
 
 .plugin-title {
   @include deprecated.body-medium-typography;
+  @include text-ellipsis;
 
   color: var(--color-foreground-primary);
 }
 
 .plugin-summary {
   @include deprecated.body-small-typography;
+  @include two-line-text-ellipsis;
 
+  overflow-wrap: anywhere;
   color: var(--color-foreground-secondary);
 }
 

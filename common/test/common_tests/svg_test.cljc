@@ -36,3 +36,8 @@
                              :strokeDasharray "none",
                              :stopColor "#000000"}}))))
 
+(t/deftest extract-defs-keeps-fe-drop-shadow
+  (let [[defs _] (svg/extract-defs {:tag :filter
+                                    :attrs {:id "shadow"}
+                                    :content [{:tag :feDropShadow}]})]
+    (t/is (= [:feDropShadow] (mapv :tag (get-in defs ["shadow" :content]))))))

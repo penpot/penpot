@@ -260,10 +260,10 @@
 
         on-drag
         (mf/use-fn
-         (mf/deps path)
+         (mf/deps id is-selected on-select)
          (fn [_]
            (when-not is-selected
-             (on-select path))))
+             (on-select id))))
 
         on-drop
         (mf/use-fn

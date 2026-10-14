@@ -25,6 +25,7 @@ Usage:
   cat prs.txt | python3 scripts/gh.py prs --stdin
   python3 scripts/gh.py prs --milestone "2.16.0"            (default: state=merged)
   python3 scripts/gh.py prs --milestone "2.16.0" --state all
+  python3 scripts/gh.py issue 11235 11236
   python3 scripts/gh.py advisories                          (list all advisories)
   python3 scripts/gh.py advisories --severity critical      (filter by severity)
   python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7     (single advisory detail)
@@ -40,6 +41,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from typing import Any
 
 
@@ -47,21 +49,70 @@ REPO = "penpot/penpot"
 OWNER = "penpot"
 REPO_NAME = "penpot"
 
+# Transient gateway timeouts from the GitHub API are retried, nothing else.
+GH_RETRIES = 3
+GH_RETRY_DELAYS = (5, 15)  # seconds waited before retry N (last delay repeats)
+
+
+def run_gh_command(cmd: list[str], input_text: str | None = None) -> str:
+    """Run a ``gh`` command, retrying transient HTTP 504s.
+
+    Raises `GhCommandFailed` on failure so callers can choose between
+    aborting (normal commands) and degrading (batched lookups).
+    """
+    last_stderr = ""
+    for attempt in range(GH_RETRIES):
+        if attempt:
+            delay = GH_RETRY_DELAYS[min(attempt - 1, len(GH_RETRY_DELAYS) - 1)]
+            print(
+                f"gh: HTTP 504, retrying in {delay}s"
+                f" (attempt {attempt + 1}/{GH_RETRIES})...",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+        result = subprocess.run(
+            cmd, input=input_text, capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout
+        last_stderr = result.stderr
+        if "504" not in result.stderr:
+            break
+    raise GhCommandFailed(last_stderr)
+
+
+class GhCommandFailed(Exception):
+    """A ``gh`` invocation failed (stderr kept for the caller to judge)."""
+
+    def __init__(self, stderr: str) -> None:
+        super().__init__(stderr)
+        self.stderr = stderr
+
+
+def fail_gh(stderr: str) -> None:
+    """Report a ``gh`` failure and exit (standard behavior for CLI commands)."""
+    print(f"gh error: {stderr}", file=sys.stderr)
+    sys.exit(1)
+
 
 # ─────────────────────────────────────────────
 #  Shared helpers
 # ─────────────────────────────────────────────
 
 
+def post_graphql(query: str, variables: dict) -> Any:
+    """POST a GraphQL query via ``gh`` and return the raw response body."""
+    payload = json.dumps({"query": query, "variables": variables})
+    stdout = run_gh_command(["gh", "api", "graphql", "--input", "-"], payload)
+    return json.loads(stdout)
+
+
 def run_gh_graphql(query: str, variables: dict) -> Any:
     """Run a GraphQL query via ``gh api graphql --input -``."""
-    payload = json.dumps({"query": query, "variables": variables})
-    cmd = ["gh", "api", "graphql", "--input", "-"]
-    result = subprocess.run(cmd, input=payload, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"gh error: {result.stderr}", file=sys.stderr)
-        sys.exit(1)
-    body = json.loads(result.stdout)
+    try:
+        body = post_graphql(query, variables)
+    except GhCommandFailed as err:
+        fail_gh(err.stderr)
     if "errors" in body:
         for err in body["errors"]:
             print(f"GraphQL error: {err.get('message')}", file=sys.stderr)
@@ -71,12 +122,10 @@ def run_gh_graphql(query: str, variables: dict) -> Any:
 
 def run_gh_rest(path: str) -> Any:
     """Run a REST API call via ``gh api``."""
-    cmd = ["gh", "api", path]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"gh error: {result.stderr}", file=sys.stderr)
-        sys.exit(1)
-    return json.loads(result.stdout)
+    try:
+        return json.loads(run_gh_command(["gh", "api", path]))
+    except GhCommandFailed as err:
+        fail_gh(err.stderr)
 
 
 # ─────────────────────────────────────────────
@@ -219,6 +268,7 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
               state
               issueType { name }
               labels(first: 20) { nodes { name } }
+              assignees(first: 10) { nodes { login } }
               closedByPullRequestsReferences(first: 5) { nodes { number } }
               projectItems(first: 10) {
                 nodes {
@@ -257,6 +307,7 @@ query($query: String!, $cursor: String) {
         milestone { title }
         issueType { name }
         labels(first: 20) { nodes { name } }
+        assignees(first: 10) { nodes { login } }
         closedByPullRequestsReferences(first: 5) { nodes { number } }
         projectItems(first: 10) {
           nodes {
@@ -275,6 +326,32 @@ query($query: String!, $cursor: String) {
 """
 
 
+def node_assignees(node: dict) -> list[str]:
+    """Extract assignee logins from a GraphQL issue/PR node."""
+    return [
+        a["login"] for a in (node.get("assignees") or {}).get("nodes") or []
+    ]
+
+
+def node_projects(node: dict) -> list[str]:
+    """Extract project board titles from a GraphQL issue node."""
+    return [
+        (pi.get("project") or {}).get("title")
+        for pi in (node.get("projectItems") or {}).get("nodes") or []
+        if (pi.get("project") or {}).get("title")
+    ]
+
+
+def node_main_status(node: dict) -> str | None:
+    """Extract the "Main" project board status from a GraphQL issue node."""
+    for pi in (node.get("projectItems") or {}).get("nodes") or []:
+        project = pi.get("project") or {}
+        if project.get("title") == "Main":
+            status_field = pi.get("fieldValueByName") or {}
+            return status_field.get("name")
+    return None
+
+
 def fetch_no_milestone_issues(states: str, labels: str | None = None) -> list[dict]:
     """
     Fetch all issues that belong to NO milestone via paginated GraphQL search.
@@ -284,7 +361,7 @@ def fetch_no_milestone_issues(states: str, labels: str | None = None) -> list[di
         labels: optional comma-separated labels to include (built into the search query)
 
     Returns:
-        List of {number, title, state, milestone, issue_type, labels, closing_prs, project_status}
+        List of {number, title, state, milestone, issue_type, labels, assignees, closing_prs, project_status, projects}
     """
     all_nodes: list[dict] = []
     cursor: str | None = None
@@ -315,13 +392,6 @@ def fetch_no_milestone_issues(states: str, labels: str | None = None) -> list[di
                 continue
             issue_type = node.get("issueType")
             ms = node.get("milestone")
-            project_status = None
-            for pi in (node.get("projectItems") or {}).get("nodes") or []:
-                project = pi.get("project") or {}
-                if project.get("title") == "Main":
-                    status_field = pi.get("fieldValueByName") or {}
-                    project_status = status_field.get("name")
-                    break
             all_nodes.append({
                 "number": node["number"],
                 "title": node["title"],
@@ -329,8 +399,10 @@ def fetch_no_milestone_issues(states: str, labels: str | None = None) -> list[di
                 "milestone": ms["title"] if ms else None,
                 "issue_type": issue_type["name"] if issue_type else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+                "assignees": node_assignees(node),
                 "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
-                "project_status": project_status,
+                "project_status": node_main_status(node),
+                "projects": node_projects(node),
             })
 
         total = len(all_nodes)
@@ -352,7 +424,7 @@ def fetch_milestone_issues(milestone_num: int, states: str) -> list[dict]:
         states: GraphQL states enum array literal, e.g. ``"[CLOSED]"`` or ``"[OPEN CLOSED]"``
 
     Returns:
-        List of {number, title, state, issue_type: str|None, labels: [str], closing_prs: [int]}
+        List of {number, title, state, issue_type: str|None, labels: [str], assignees: [str], closing_prs: [int], project_status, projects}
     """
     query = GQL_ISSUES_QUERY.replace("__STATES__", states)
     all_nodes: list[dict] = []
@@ -373,22 +445,16 @@ def fetch_milestone_issues(milestone_num: int, states: str) -> list[dict]:
             if node is None:
                 continue
             issue_type = node.get("issueType")
-            # Extract project status from the "Main" project board (if present)
-            project_status = None
-            for pi in (node.get("projectItems") or {}).get("nodes") or []:
-                project = pi.get("project") or {}
-                if project.get("title") == "Main":
-                    status_field = pi.get("fieldValueByName") or {}
-                    project_status = status_field.get("name")
-                    break
             all_nodes.append({
                 "number": node["number"],
                 "title": node["title"],
                 "state": node["state"],
                 "issue_type": issue_type["name"] if issue_type else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+                "assignees": node_assignees(node),
                 "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
-                "project_status": project_status,
+                "project_status": node_main_status(node),
+                "projects": node_projects(node),
             })
 
         total = len(all_nodes)
@@ -490,7 +556,9 @@ GQL_PRS_QUERY_ITEM = """\
       state
       mergedAt
       createdAt
+      milestone {{ title }}
       author {{ login }}
+      assignees(first: 10) {{ nodes {{ login }} }}
       labels(first: 20) {{ nodes {{ name }} }}
       closingIssuesReferences(first: 5) {{ nodes {{ number }} }}
     }}
@@ -537,7 +605,9 @@ def fetch_prs_batch(pr_numbers: list[int]) -> list[dict]:
             "state": pr["state"],
             "merged_at": pr.get("mergedAt"),
             "created_at": pr.get("createdAt"),
+            "milestone": (pr.get("milestone") or {}).get("title"),
             "author": pr["author"]["login"] if pr["author"] else None,
+            "assignees": node_assignees(pr),
             "labels": [lbl["name"] for lbl in pr["labels"]["nodes"]],
             "closing_issues": [iss["number"] for iss in pr["closingIssuesReferences"]["nodes"]],
         })
@@ -561,6 +631,7 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
             createdAt
             headRefName
             author { login }
+            assignees(first: 10) { nodes { login } }
             labels(first: 20) { nodes { name } }
             files(first: 100) { nodes { path } }
             closingIssuesReferences(first: 5) { nodes { number } }
@@ -583,7 +654,7 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
 
     Returns:
         List of {number, title, body, state, merged_at, created_at,
-                head_ref_name, author, labels: [str], files: [str],
+                head_ref_name, author, assignees, labels: [str], files: [str],
                 closing_issues: [int]}
     """
     query = GQL_MILESTONE_PRS_QUERY.replace("__STATES__", states)
@@ -613,6 +684,7 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
                 "created_at": node.get("createdAt"),
                 "head_ref_name": node.get("headRefName"),
                 "author": node["author"]["login"] if node["author"] else None,
+                "assignees": node_assignees(node),
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
                 "files": [file["path"] for file in node["files"]["nodes"]],
                 "closing_issues": [iss["number"] for iss in node["closingIssuesReferences"]["nodes"]],
@@ -641,37 +713,18 @@ def cmd_prs(args: argparse.Namespace) -> None:
 
         print(f"Fetching {args.state} PRs via GraphQL...", file=sys.stderr)
         prs = fetch_milestone_prs(ms["number"], gql_states)
+        for pr in prs:
+            pr["milestone"] = ms["title"]
         print(f"Fetched {len(prs)} PRs total", file=sys.stderr)
         print(json.dumps(prs, indent=2))
         return
 
     # ── Number-based path ───────────────────────────────────────────
-    pr_numbers: list[int] = []
-
-    if args.numbers:
-        pr_numbers.extend(args.numbers)
-
-    if args.file:
-        with open(args.file) as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    pr_numbers.append(int(line))
-
-    if args.stdin:
-        for line in sys.stdin:
-            line = line.strip()
-            if line:
-                pr_numbers.append(int(line))
-
+    pr_numbers = read_numbers_from_args(args)
     if not pr_numbers:
         print("ERROR: no PR numbers provided (pass numbers, --file, --stdin, or --milestone)",
               file=sys.stderr)
         sys.exit(1)
-
-    # Deduplicate while preserving order
-    seen: set[int] = set()
-    pr_numbers = [n for n in pr_numbers if not (n in seen or seen.add(n))]
 
     print(f"Fetching {len(pr_numbers)} PRs in batches of {PRS_BATCH_SIZE}...",
           file=sys.stderr)
@@ -682,6 +735,155 @@ def cmd_prs(args: argparse.Namespace) -> None:
         print(f"  batch {i // PRS_BATCH_SIZE + 1}: PRs {batch[0]}..{batch[-1]}",
               file=sys.stderr)
         all_results.extend(fetch_prs_batch(batch))
+
+    print(json.dumps(all_results, indent=2))
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: issue (fetch issues by number, batched)
+# ─────────────────────────────────────────────
+
+GQL_ISSUE_BY_NUMBER_QUERY_ITEM = """\
+    issue_{num}: issue(number: {num}) {{
+      number
+      title
+      state
+      milestone {{ title }}
+      issueType {{ name }}
+      labels(first: 20) {{ nodes {{ name }} }}
+      assignees(first: 10) {{ nodes {{ login }} }}
+      closedByPullRequestsReferences(first: 5) {{ nodes {{ number }} }}
+      projectItems(first: 10) {{
+        nodes {{
+          project {{ title }}
+          fieldValueByName(name: "Status") {{
+            ... on ProjectV2ItemFieldSingleSelectValue {{
+              name
+            }}
+          }}
+        }}
+      }}
+    }}
+"""
+
+
+def issue_node_to_dict(node: dict) -> dict:
+    """Convert a GraphQL issue node to the shared issue dict shape."""
+    issue_type = node.get("issueType")
+    ms = node.get("milestone")
+    return {
+        "number": node["number"],
+        "title": node["title"],
+        "state": node["state"],
+        "milestone": ms["title"] if ms else None,
+        "issue_type": issue_type["name"] if issue_type else None,
+        "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+        "assignees": node_assignees(node),
+        "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
+        "project_status": node_main_status(node),
+        "projects": node_projects(node),
+    }
+
+
+class IssueBatchFailed(Exception):
+    """One aliased issue lookup failed; the batch cannot be trusted as a whole."""
+
+
+def _fetch_issues_batch(issue_numbers: list[int]) -> list[dict]:
+    """Single batched issue lookup; raises `IssueBatchFailed` on any failure."""
+    items = "\n".join(
+        GQL_ISSUE_BY_NUMBER_QUERY_ITEM.format(num=n) for n in issue_numbers
+    )
+    query = GQL_PRS_QUERY_WRAPPER.format(items=items)
+    variables = {"owner": OWNER, "repo": REPO_NAME}
+
+    try:
+        body = post_graphql(query, variables)
+    except GhCommandFailed as err:
+        raise IssueBatchFailed(err.stderr) from err
+    if "errors" in body:
+        raise IssueBatchFailed("; ".join(e.get("message", "") for e in body["errors"]))
+    repo = body["data"]["repository"]
+
+    results: list[dict] = []
+    for num in issue_numbers:
+        node = repo.get(f"issue_{num}")
+        if node is None:
+            results.append({
+                "number": num,
+                "error": "not_found",
+            })
+            continue
+        results.append(issue_node_to_dict(node))
+    return results
+
+
+def fetch_issues_batch(issue_numbers: list[int]) -> list[dict]:
+    """
+    Fetch details for a list of issue numbers in a single GraphQL query.
+
+    Uses numbered aliases (issue_1234, …) so each issue is looked up by
+    number in one round-trip. Returns entries in the same order as the input.
+
+    Unlike PRs (which resolve to null), a dead issue number fails the whole
+    batch, so when the failure names an unresolvable issue each number is
+    retried on its own and reported as ``not_found`` instead of aborting.
+    Any other failure (auth, outage, exhausted 504 retries) still aborts.
+    """
+    try:
+        return _fetch_issues_batch(issue_numbers)
+    except IssueBatchFailed as err:
+        if "Could not resolve" not in str(err):
+            print(f"GraphQL error: {err}", file=sys.stderr)
+            sys.exit(1)
+        print("  batch lookup failed, retrying issues one by one...",
+              file=sys.stderr)
+        results: list[dict] = []
+        for num in issue_numbers:
+            try:
+                results.extend(_fetch_issues_batch([num]))
+            except IssueBatchFailed:
+                results.append({"number": num, "error": "not_found"})
+        return results
+
+
+def read_numbers_from_args(args: argparse.Namespace) -> list[int]:
+    """Collect numbers from positional args, --file, and/or --stdin (deduplicated)."""
+    numbers: list[int] = []
+    if args.numbers:
+        numbers.extend(args.numbers)
+    if args.file:
+        with open(args.file) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    numbers.append(int(line))
+    if args.stdin:
+        for line in sys.stdin:
+            line = line.strip()
+            if line:
+                numbers.append(int(line))
+    seen: set[int] = set()
+    return [n for n in numbers if not (n in seen or seen.add(n))]
+
+
+def cmd_issue(args: argparse.Namespace) -> None:
+    """Handle the ``issue`` subcommand (batched by-number lookup, no filters)."""
+    issue_numbers = read_numbers_from_args(args)
+    if not issue_numbers:
+        print("ERROR: no issue numbers provided (pass numbers, --file, or --stdin)",
+              file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Fetching {len(issue_numbers)} issues in batches of {PRS_BATCH_SIZE}...",
+          file=sys.stderr)
+
+    all_results: list[dict] = []
+    for i in range(0, len(issue_numbers), PRS_BATCH_SIZE):
+        batch = issue_numbers[i : i + PRS_BATCH_SIZE]
+        print(f"  batch {i // PRS_BATCH_SIZE + 1}: issues {batch[0]}..{batch[-1]}",
+              file=sys.stderr)
+        all_results.extend(fetch_issues_batch(batch))
 
     print(json.dumps(all_results, indent=2))
 
@@ -859,6 +1061,24 @@ def main() -> None:
     p_link.add_argument("issue_number", type=int, help="Issue number")
     p_link.add_argument("pr_number", type=int, help="Pull request number")
     p_link.set_defaults(func=cmd_link_issue)
+
+    # --- issue (by-number lookup) ---
+    p_issue = sub.add_parser(
+        "issue", help="Fetch details for one or more issues by number (batched)"
+    )
+    p_issue.add_argument(
+        "numbers", type=int, nargs="*",
+        help="Issue numbers to fetch (space-separated)"
+    )
+    p_issue.add_argument(
+        "--file", type=str,
+        help="File with one issue number per line"
+    )
+    p_issue.add_argument(
+        "--stdin", action="store_true",
+        help="Read issue numbers from stdin (one per line)"
+    )
+    p_issue.set_defaults(func=cmd_issue)
 
     # --- advisories ---
     p_adv = sub.add_parser("advisories", help="List or inspect GitHub security advisories")

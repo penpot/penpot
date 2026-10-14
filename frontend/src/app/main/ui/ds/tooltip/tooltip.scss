@@ -160,6 +160,7 @@ $arrow-side: 12px;
   grid-area: content;
   block-size: fit-content;
   overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 
 .tooltip-trigger {

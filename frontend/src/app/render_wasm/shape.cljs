@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.render-wasm.svg-derived :as svg-derived]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
@@ -321,7 +322,7 @@
   (let [shape-id (dm/get-prop shape :id)]
     (if (shape-in-current-page? shape-id)
       (do
-        (api/use-shape shape-id)
+        (wselect/use-shape shape-id)
         (->> properties
              (mapcat #(set-wasm-attr! shape %))
              (d/index-by :key :callback)
@@ -347,10 +348,15 @@
 ;; `conj` empty set initialization
 (def conj* (fnil conj (d/ordered-set)))
 
+(defn- track-change!
+  [self k]
+  (when-let [changes shape/*shape-changes*]
+    (let [id (:id self)]
+      (.set changes id (conj* (.get changes id) k)))))
+
 (defn- impl-assoc
   [self k v]
-  (when shape/*shape-changes*
-    (vswap! shape/*shape-changes* update (:id self) conj* k))
+  (track-change! self k)
 
   (case k
     :id
@@ -378,8 +384,7 @@
 
 (defn- impl-dissoc
   [self k]
-  (when shape/*shape-changes*
-    (vswap! shape/*shape-changes* update (:id self) conj* k))
+  (track-change! self k)
 
   (case k
     :id

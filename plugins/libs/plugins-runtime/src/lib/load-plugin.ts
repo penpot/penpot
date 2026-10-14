@@ -4,7 +4,10 @@ import { loadManifest } from './parse-manifest.js';
 import { Manifest } from './models/manifest.model.js';
 import { createPlugin } from './create-plugin.js';
 
-let plugins: Awaited<ReturnType<typeof createPlugin>>[] = [];
+type Plugin = NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
+
+let plugins: Plugin[] = [];
+const pendingPlugins = new Map<Manifest['pluginId'], AbortController>();
 
 export type ContextBuilder = (id: string) => Context;
 
@@ -17,14 +20,19 @@ export function setContextBuilder(builder: ContextBuilder) {
 export const getPlugins = () => plugins;
 
 const closeAllPlugins = () => {
-  plugins.forEach((pluginApi) => {
+  // Background and global plugins keep running, so they must stay registered:
+  // the registry routes their UI messages and lets them be unloaded later.
+  plugins = plugins.filter((pluginApi) => {
     /* eslint-disable  @typescript-eslint/no-explicit-any */
-    if (!(pluginApi.manifest as any)?.allowBackground) {
-      pluginApi.plugin.close();
+    if (
+      pluginApi.manifest?.scope === 'global' ||
+      (pluginApi.manifest as any)?.allowBackground
+    ) {
+      return true;
     }
+    pluginApi.plugin.close();
+    return false;
   });
-
-  plugins = [];
 };
 
 window.addEventListener('message', (event) => {
@@ -44,6 +52,7 @@ export const loadPlugin = async function (
   closeCallback?: () => void,
   apiExtensions?: object,
 ) {
+  const load = new AbortController();
   try {
     const context = contextBuilder && contextBuilder(manifest.pluginId);
 
@@ -51,7 +60,18 @@ export const loadPlugin = async function (
       return;
     }
 
-    closeAllPlugins();
+    if (manifest.scope === 'global') {
+      if (
+        pendingPlugins.has(manifest.pluginId) ||
+        plugins.some(
+          (plugin) => plugin.manifest?.pluginId === manifest.pluginId,
+        )
+      ) {
+        return;
+      }
+    } else {
+      closeAllPlugins();
+    }
 
     // The host context is not deeply frozen at this load stage.
     //
@@ -68,10 +88,17 @@ export const loadPlugin = async function (
     // `createSandbox`'s proxy handler applies `ses.safeReturn` to values
     // crossing into the sandbox. Compartment isolation and intrinsics
     // hardening are performed by createSandbox, not here.
-    const plugin = await createPlugin(
+    pendingPlugins.get(manifest.pluginId)?.abort();
+    pendingPlugins.set(manifest.pluginId, load);
+    let plugin: Plugin | undefined = undefined;
+    plugin = await createPlugin(
       context,
       manifest,
       () => {
+        load.abort();
+        if (pendingPlugins.get(manifest.pluginId) === load) {
+          pendingPlugins.delete(manifest.pluginId);
+        }
         plugins = plugins.filter((api) => api !== plugin);
 
         if (closeCallback) {
@@ -79,11 +106,20 @@ export const loadPlugin = async function (
         }
       },
       apiExtensions,
+      load.signal,
     );
+    if (!plugin || load.signal.aborted) {
+      plugin?.plugin.close();
+      return;
+    }
     plugins.push(plugin);
   } catch (error) {
-    closeAllPlugins();
+    if (manifest.scope !== 'global') closeAllPlugins();
     throw error;
+  } finally {
+    if (pendingPlugins.get(manifest.pluginId) === load) {
+      pendingPlugins.delete(manifest.pluginId);
+    }
   }
 };
 
@@ -101,6 +137,7 @@ export const ɵloadPluginByUrl = async function (manifestUrl: string) {
 };
 
 export const ɵunloadPlugin = function (id: Manifest['pluginId']) {
+  pendingPlugins.get(id)?.abort();
   const plugin = plugins.find((plugin) => plugin.manifest.pluginId === id);
 
   if (plugin) {

@@ -139,10 +139,10 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps selected-shapes)
+         (mf/deps selected-shapes color-origin)
          (fn [event token]
            (dom/stop-propagation event)
-           (when (seq selected-shapes)
+           (when (or (= color-origin :canvas) (seq selected-shapes))
              (on-token-change event token))))
 
         create-token-on-set

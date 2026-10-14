@@ -20,12 +20,15 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.main :as main]
    [app.media]
    [app.media :as-alias mtx]
+   [app.metrics :as-alias metrics]
    [app.migrations]
    [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-create :as files.create]
@@ -35,7 +38,6 @@
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [app.worker.runner]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -60,6 +62,13 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
+;; Fallback values used when no PENPOT_TEST_* env vars are set (e.g. CI sets
+;; them explicitly, see .github/workflows/tests-backend.yml). Inside the
+;; devenv each wsN container receives per-instance values via
+;; manage.sh (PENPOT_TEST_DATABASE_URI=postgresql://postgres/penpot_test_wsN,
+;; PENPOT_TEST_REDIS_URI=redis://valkey/<6+N>), so parallel test runs on
+;; different workspaces never share a database. cf/read-config picks the env
+;; vars up through the "penpot-test" prefix.
 (def default
   {:database-uri "postgresql://postgres/penpot_test"
    :redis-uri "redis://valkey/1"
@@ -95,6 +104,22 @@
        (fs/create-dir "/tmp/penpot")
        (next)))))
 
+(defn- remove-job-runners
+  "Drops every `[<profile> :app.worker/runner]` from the system.
+
+  The tests drive the runner loop by hand (`wdisp/run-batch` plus
+  `run-worker-loop` over a system they build themselves), so a live runner
+  of any queue races them: it takes the job the test just dispatched and
+  completes it behind the test's back. Matching the key by shape, instead
+  of listing the known queues by hand, keeps a new queue from silently
+  bringing that race back (which is what happened to the `binfile` runner
+  this key list was missing)."
+  [system]
+  (apply dissoc system
+         (filter #(and (vector? %)
+                       (= :app.worker/runner (second %)))
+                 (keys system))))
+
 (defn init-system
   [next]
   (let [templates [{:id "test"
@@ -125,9 +150,8 @@
                            :app.loggers.mattermost/reporter
                            :app.loggers.database/reporter
                            :app.worker/cron
-                           :app.worker/dispatcher
-                           [:app.main/default :app.worker/runner]
-                           [:app.main/webhook :app.worker/runner]))
+                           :app.worker/dispatcher)
+                   (remove-job-runners))
         _      (ig/load-namespaces system)
         system (-> (ig/expand system) (ig/init))]
     (try
@@ -231,8 +255,10 @@
 (defn mark-file-deleted*
   ([params]
    (mark-file-deleted* *system* params))
-  ([conn {:keys [id] :as params}]
-   (#'files/mark-file-deleted conn {} id)))
+  ([system {:keys [id] :as params}]
+   (db/tx-run! system
+               (fn [cfg]
+                 (#'files/mark-file-deleted cfg {} id)))))
 
 (defn create-team*
   ([i params] (create-team* *system* i params))
@@ -299,9 +325,7 @@
   ([params] (create-project-role* *system* params))
   ([system {:keys [project-id profile-id role] :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
-     (#'teams/create-project-role conn {:project-id project-id
-                                        :profile-id profile-id
-                                        :role role}))))
+     (#'teams/create-project-role conn profile-id project-id role))))
 
 (defn create-file-role*
   ([params] (create-file-role* *system* params))
@@ -487,28 +511,71 @@
       (try-on! (method-fn params)))))
 
 (defn run-task!
+  "Execute a job handler directly (in-process, no row): the handler gets a
+  nil context, because there is no job to describe."
   ([name]
    (run-task! name {}))
   ([name params]
-   (wrk/invoke! (-> *system*
-                    (assoc ::wrk/task name)
-                    (assoc ::wrk/params params)))))
+   (jobs/invoke (-> *system*
+                    (assoc ::jobs/name name)
+                    (assoc ::jobs/params params)))))
 
-(def sql:pending-tasks
-  "select t.* from task as t
-    where t.status = 'new'
-    order by t.priority desc, t.scheduled_at")
+(def sql:pending-jobs
+  "select * from job
+    where status = 'new'
+    order by priority desc, scheduled_at")
 
-(defn run-pending-tasks!
+(defn run-pending-jobs
+  "Execute the pending (status='new') `job` rows in-process (simulating
+  the dispatcher + runner for the tests). Each row gets its context and its
+  job-id, so heartbeats and progress reach it exactly like in the runner.
+  Does not touch the row status; only the handler side effects matter."
   []
-  (db/tx-run! *system* (fn [{:keys [::db/conn] :as cfg}]
-                         (let [tasks (->> (db/exec! conn [sql:pending-tasks])
-                                          (map #'app.worker.runner/decode-task-row))]
-                           (doseq [task tasks]
-                             (let [cfg (-> cfg
-                                           (assoc :app.worker.runner/queue (:queue task))
-                                           (assoc :app.worker.runner/id 0))]
-                               (#'app.worker.runner/run-task cfg task)))))))
+  (db/tx-run! *system*
+              (fn [{:keys [::db/conn]}]
+                (let [jobs-rows (db/exec! conn [sql:pending-jobs])]
+                  (doseq [row jobs-rows]
+                    (jobs/invoke (-> *system*
+                                     ;; the row stores a string; invoke
+                                     ;; takes the canonical keyword
+                                     (assoc ::jobs/name (keyword (:name row)))
+                                     (assoc ::jobs/params (:params row))
+                                     (assoc ::jobs/context (jobs/make-context row))
+                                     (assoc ::jobs/job-id (:id row)))))))))
+
+(defn metrics-stub
+  "A metrics instance with no collectors, where every `run!` is a no-op."
+  []
+  (reify metrics/IMetrics
+    (get-handler [_] nil)
+    (get-collector [_ _] nil)
+    (get-registry [_] nil)))
+
+(defn init-climit
+  "Build a concurrency limiter component from an inline config map. The
+  optional second argument is the metrics instance to publish to (a
+  `metrics-stub` by default, where every `run!` is a no-op)."
+  ([config]
+   (init-climit config (metrics-stub)))
+  ([config metrics]
+   (let [file (doto (java.io.File/createTempFile "climit" ".edn")
+                (.deleteOnExit))]
+     (spit file (pr-str config))
+     (ig/init-key ::rpc/climit
+                  {::climit/enabled true
+                   ::climit/config (.getAbsolutePath file)
+                   ::metrics/metrics metrics}))))
+
+(defmacro with-climit
+  "Build a concurrency limiter from an inline config map, run the body and
+  halt it, so the republisher thread it starts never outlives the test. An
+  optional third binding element is the metrics instance to publish to."
+  [[sym config & [metrics]] & body]
+  `(let [~sym (init-climit ~config ~@(when metrics [metrics]))]
+     (try
+       ~@body
+       (finally
+         (ig/halt-key! ::rpc/climit ~sym)))))
 
 ;; --- UTILS
 
@@ -619,6 +686,17 @@
 (defn db-delete!
   [& params]
   (apply db/delete! *pool* params))
+
+(defn db-force-delete
+  "Deletes rows whose table is guarded by `raise_deletion_protection`,
+  inside a transaction that disables the guard. Test-only escape hatch:
+  production delete paths disable protection in their own transaction
+  (see `app.jobs.gc`)."
+  [& params]
+  (db/tx-run! *pool*
+              (fn [{:keys [::db/conn]}]
+                (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
+                (apply db/delete! conn params))))
 
 (defn db-query
   [& params]

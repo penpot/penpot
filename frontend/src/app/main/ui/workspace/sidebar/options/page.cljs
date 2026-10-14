@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.types.color :as clr]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -22,6 +23,10 @@
 
 (def ^:private ref:background-color
   (-> (l/key :background)
+      (l/derived refs/workspace-page)))
+
+(def ^:private ref:background-token
+  (-> (l/key :background-token)
       (l/derived refs/workspace-page)))
 
 (def ^:private ref:pixel-grid-color
@@ -36,12 +41,24 @@
   {::mf/wrap [mf/memo]}
   []
   (let [background (mf/deref ref:background-color)
+        background-token (mf/deref ref:background-token)
         grid-color (mf/deref ref:pixel-grid-color)
         grid-alpha (mf/deref ref:pixel-grid-opacity)
 
         on-change  (mf/use-fn #(st/emit! (dw/change-canvas-color %)))
         on-open    (mf/use-fn #(st/emit! (dwu/start-undo-transaction :options)))
         on-close   (mf/use-fn #(st/emit! (dwu/commit-undo-transaction :options)))
+
+        on-token-change
+        (mf/use-fn
+         (fn [_event token]
+           (when-let [color (dwta/value->color (:resolved-value token))]
+             (st/emit! (dw/apply-canvas-color-token (:color color) (:name token))))))
+
+        on-detach-token
+        (mf/use-fn
+         (fn [_token-name]
+           (st/emit! (dw/detach-canvas-color-token))))
 
         on-grid-change
         (mf/use-fn #(st/emit! (dw/change-pixel-grid-color %)))
@@ -54,7 +71,8 @@
                      {:color (d/nilv grid-color clr/default-pixel-grid-color)
                       :opacity (d/nilv grid-alpha clr/default-pixel-grid-opacity)})]
 
-    [:* [:div {:class (stl/css :element-set)}
+    [:* [:section {:class (stl/css :element-set)
+                   :aria-label (tr "workspace.options.canvas-background-section")}
          [:div {:class (stl/css :element-title)}
           [:> title-bar* {:collapsable false
                           :title       (tr "workspace.options.canvas-background")
@@ -68,6 +86,9 @@
             :title (tr "workspace.options.canvas-background")
             :color color
             :on-change on-change
+            :on-token-change on-token-change
+            :on-detach-token on-detach-token
+            :applied-token background-token
             :origin :canvas
             :on-open on-open
             :on-close on-close}]]]

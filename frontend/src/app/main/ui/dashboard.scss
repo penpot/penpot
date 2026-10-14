@@ -20,10 +20,10 @@
 
 .dashboard-content {
   display: grid;
-  grid-template-rows: $sz-64 1fr;
+  grid-template-rows: px2rem(72) 1fr;
   position: relative;
   grid-row: 1 / span 2;
-  padding: var(--sp-l) var(--sp-l) 0 0;
+  padding: var(--sp-s) var(--sp-l) 0 0;
   overflow: hidden;
   inline-size: 100%;
 }

@@ -1818,6 +1818,31 @@ impl Shape {
         !self.fills.is_empty()
     }
 
+    /// Whether this fill-less leaf paints its group's fills (SVG inheritance,
+    /// broken by `fill="none"`).
+    pub fn inherits_fills(&self) -> bool {
+        self.fills.is_empty()
+            && !matches!(self.shape_type, Type::Group(_) | Type::Frame(_))
+            && !self.svg_attrs.as_ref().is_some_and(|attrs| attrs.fill_none)
+    }
+
+    /// Fills a fill-less child inherits when rendering starts at this shape:
+    /// the nearest group's fills, or none past a frame (seeds `nested_fills`).
+    pub fn inherited_fills(&self, shapes: ShapesPoolRef) -> Vec<Fill> {
+        let mut parent_id = self.parent_id;
+        while let Some(id) = parent_id {
+            let Some(parent) = shapes.get(&id) else {
+                break;
+            };
+            match parent.shape_type {
+                Type::Group(_) => return parent.fills.clone(),
+                Type::Frame(_) => break,
+                _ => parent_id = parent.parent_id,
+            }
+        }
+        Vec::new()
+    }
+
     /// Determines if this frame or group can be flattened (doesn't affect children visually)
     /// A container can be flattened if it has no visual effects that affect its children
     /// and doesn't render its own content (no fills/strokes)
@@ -2059,10 +2084,7 @@ impl Shape {
     /// contribute to the shadow silhouette, so frames with outer/center strokes can
     /// look slightly narrower here. We keep them eligible anyway for performance.
     pub fn uses_direct_container_drop_shadow(&self, tree: ShapesPoolRef) -> bool {
-        if !matches!(self.shape_type, Type::Frame(_)) {
-            return false;
-        }
-        if !self.has_fills() {
+        if !self.is_filled_frame() {
             return false;
         }
         if self.blend_mode() != BlendMode::default() {
@@ -2085,7 +2107,11 @@ impl Shape {
     /// When true, the container's own fill shadow mask is enough and descendant
     /// silhouettes can be skipped (same geometry assumption as the direct path).
     pub fn container_fill_covers_shadow_descendants(&self, tree: ShapesPoolRef) -> bool {
-        self.has_fills() && self.descendants_contained_for_frame_shadow(tree, self.selrect())
+        self.is_filled_frame() && self.descendants_contained_for_frame_shadow(tree, self.selrect())
+    }
+
+    fn is_filled_frame(&self) -> bool {
+        matches!(self.shape_type, Type::Frame(_)) && self.has_fills()
     }
 
     fn descendants_have_drop_shadows(&self, tree: ShapesPoolRef) -> bool {
@@ -2693,6 +2719,17 @@ mod tests {
         let frame = pool.get(&frame_id).expect("frame");
         assert!(!frame.uses_direct_container_drop_shadow(&pool));
         assert!(!frame.container_fill_covers_shadow_descendants(&pool));
+    }
+
+    #[test]
+    fn filled_group_does_not_cover_shadow_descendants() {
+        let (mut pool, group_id) =
+            frame_with_fill_and_child(Fill::Solid(SolidColor(skia::Color::BLACK)), 1.0);
+        pool.get_mut(&group_id)
+            .expect("group")
+            .set_shape_type(Type::Group(Group { masked: false }));
+        let group = pool.get(&group_id).expect("group");
+        assert!(!group.container_fill_covers_shadow_descendants(&pool));
     }
 
     #[test]

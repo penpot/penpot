@@ -48,4 +48,11 @@
   (t/testing "re-renders when width changes"
     (t/is (false? (check-measures-menu-props
                    (props base-values)
-                   (props (assoc base-values :width 150)))))))
+                   (props (assoc base-values :width 150))))))
+
+  (t/testing "re-renders when absolute positioning changes but nothing else does"
+    ;; Regression test: toggling static <-> absolute on a flex child must
+    ;; force a re-render so the X/Y inputs enabled/disabled state updates.
+    (t/is (false? (check-measures-menu-props
+                   (props (assoc base-values :layout-item-absolute false))
+                   (props (assoc base-values :layout-item-absolute true)))))))

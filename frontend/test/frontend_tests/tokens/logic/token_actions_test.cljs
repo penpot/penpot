@@ -308,6 +308,40 @@
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-color]) "#ff0000"))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-opacity]) 0.5))))))))))
 
+(t/deftest test-switch-set-updates-canvas-color
+  (t/testing "switching the active set updates a canvas background linked to a color token"
+    (t/async
+      done
+      (let [file    (ctht/sample-file-with-tokens
+                     :lib-fn #(-> %
+                                  (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
+                                                                     :name "Set A"))
+                                  (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-b)
+                                                                     :name "Set B"))
+                                  (ctob/add-token (cthi/id :set-a)
+                                                  (ctob/make-token {:name "canvas.bg"
+                                                                    :value "#ff0000"
+                                                                    :type :color}))
+                                  (ctob/add-token (cthi/id :set-b)
+                                                  (ctob/make-token {:name "canvas.bg"
+                                                                    :value "#00ff00"
+                                                                    :type :color})))
+                     ;; Both sets active: "Set B" comes last, so its value wins.
+                     :status-fn #(ctos/set-tokens-status % #{} #{(cthi/id :set-a)
+                                                                 (cthi/id :set-b)}))
+            page-id (cthf/current-page-id file)
+            file    (update-in file [:data :pages-index page-id]
+                               assoc :background "#00ff00" :background-token "canvas.bg")
+            store   (ths/setup-store file)
+            events  [(dwtl/set-enabled-token-set (cthi/id :set-b) false)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 page' (get-in file' [:data :pages-index page-id])]
+             (t/is (= "#ff0000" (:background page')))
+             (t/is (= "canvas.bg" (:background-token page'))))))))))
+
 (t/deftest test-apply-dimensions
   (t/testing "applies dimensions token and updates the shapes width and height"
     (t/async

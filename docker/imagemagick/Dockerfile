@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev AS build
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:61dc022a1908439c478ed4b00e883fe8a7a03540fac23a8aed61352e28e6ae07 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -6,11 +6,10 @@ ENV LANG='C.UTF-8' \
     DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
-ARG IMAGEMAGICK_VERSION=7.1.2-27
+ARG IMAGEMAGICK_VERSION=7.1.2-32
 
 RUN set -e; \
     apt-get -qq update; \
-    apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install init-system-helpers; \
     apt-get -qqy --no-install-recommends install \
         autoconf \
@@ -24,7 +23,6 @@ RUN set -e; \
         liblcms2-dev \
         libltdl-dev \
         liblzma-dev \
-        libopenexr-dev \
         libxml2-dev \
         libpng-dev \
         librsvg2-dev \
@@ -39,7 +37,7 @@ RUN set -e; \
     mkdir -p /tmp/magick; \
     cd /tmp/magick; \
     tar -xf /tmp/magick.tar.gz --strip-components=1; \
-    ./configure --prefix=/opt/imagick; \
+    ./configure --prefix=/opt/imagick --without-openexr; \
     make -j 2; \
     make install; \
     rm -rf /opt/imagick/lib/libMagick++*; \
@@ -58,7 +56,6 @@ RUN set -ex; \
         libheif1 \
         libjpeg62-turbo \
         liblcms2-2 \
-        libopenexr-3-1-30 \
         libopenjp2-7 \
         libpng16-16 \
         librsvg2-2 \
@@ -77,7 +74,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*
 
 
-FROM dhi.io/debian-base:trixie-debian13 AS image
+FROM dhi.io/debian-base:trixie-debian13@sha256:20079b51710f0397da5e056bfc7156b6aafc7ff3aa4ef4cbcb0b0f1df99cd8c4 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \

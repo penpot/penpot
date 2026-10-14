@@ -605,6 +605,7 @@
    :dimensions         [:dimensions]
    :fill               [:color]
    :stroke-color       [:color]
+   :canvas             [:color]
    :typography         [:typography]
    :number             [:number]
    :sizing             [:sizing :dimensions]

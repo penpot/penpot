@@ -126,8 +126,8 @@
   (t/testing "returns empty sets when no active themes"
     (let [base-lib     (ctob/make-tokens-lib)
           tokens-lib   (ctob/map->tokens-lib
-                        {:sets   (:sets (.sets base-lib))
-                         :themes (:themes (.themes base-lib))
+                        {:sets   (.-sets base-lib)
+                         :themes (.-themes base-lib)
                          :active-themes #{}})
           status       (cfo/make-tokens-status-from-lib tokens-lib)]
       (t/is (= #{} (ctos/get-active-theme-ids status)))

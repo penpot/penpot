@@ -32,6 +32,7 @@ async function modernRequest(method: string, params: Record<string, unknown> = {
         headers: {
             "Content-Type": "application/json",
             Accept: "application/json, text/event-stream",
+            "MCP-Protocol-Version": "2026-07-28",
             "Mcp-Method": method,
             ...(typeof params.name === "string" ? { "Mcp-Name": params.name } : {}),
         },
@@ -103,6 +104,23 @@ test("isolates user tokens across overlapping tool calls with the same request I
     );
     assert.deepEqual(results, ["alice", "bob"]);
     assert.equal(server.getSessionContext(), undefined);
+});
+
+test("passes an explicit Penpot session ID from the tool call to plugin dispatch", async (t) => {
+    t.mock.method(server.pluginBridge, "executePluginTask", async (_task: unknown, sessionId?: string) => ({
+        data: sessionId,
+    }));
+    const response = await modernRequest(
+        "tools/call",
+        {
+            name: "execute_code",
+            arguments: { code: "return penpot.currentFile.id;", sessionId: "chosen-tab" },
+        },
+        "?userToken=alice"
+    );
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.match(JSON.stringify(body), /chosen-tab/);
 });
 
 test("supports older Streamable HTTP clients without allocating a session", async () => {

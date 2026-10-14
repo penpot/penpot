@@ -16,6 +16,7 @@
 (def ^:private all-label (i18n/tr "labels.all"))
 
 (def ^:private per-side-flags (conj cf/flags :stroke-per-side))
+(def ^:private no-per-side-flags (disj cf/flags :stroke-per-side))
 
 (defn setup-file []
   (-> (tht/sample-file-with-tokens
@@ -164,7 +165,7 @@
                               :separator
                               {:title "Border Radius", :submenu :border-radius}
                               :separator
-                              {:title "Stroke Width"}
+                              {:title "Stroke Width", :submenu :stroke-width}
                               :separator
                               {:title "X"}
                               {:title "Y"}]))))
@@ -177,7 +178,7 @@
                               :separator
                               {:title "Border Radius", :submenu :border-radius}
                               :separator
-                              {:title "Stroke Width"}
+                              {:title "Stroke Width", :submenu :stroke-width}
                               :separator
                               {:title "X"}
                               {:title "Y"}]))))
@@ -208,16 +209,17 @@
       (t/is (= action-titles ["Rotation"])))))
 
 (t/deftest stroke-width-items
-  (t/testing "shows a single global item when per-side is disabled"
-    (doseq [shape [:rect1 :frame1 :text1]]
-      (let [actions (token-menu-actions [shape] "token-stroke-width")
-            action-titles (mapv :title actions)]
-        (t/is (= action-titles ["Stroke Width"])))))
+  (with-redefs [cf/flags no-per-side-flags]
+    (t/testing "shows a single global item when per-side is disabled"
+      (doseq [shape [:rect1 :frame1 :text1]]
+        (let [actions (token-menu-actions [shape] "token-stroke-width")
+              action-titles (mapv :title actions)]
+          (t/is (= action-titles ["Stroke Width"])))))
 
-  (t/testing "shows a single global item for mixed selections when per-side is disabled"
-    (let [actions (token-menu-actions [:rect1 :text1] "token-stroke-width")
-          action-titles (mapv :title actions)]
-      (t/is (= action-titles ["Stroke Width"])))))
+    (t/testing "shows a single global item for mixed selections when per-side is disabled"
+      (let [actions (token-menu-actions [:rect1 :text1] "token-stroke-width")
+            action-titles (mapv :title actions)]
+        (t/is (= action-titles ["Stroke Width"]))))))
 
 (t/deftest stroke-width-items-per-side
   (with-redefs [cf/flags per-side-flags]

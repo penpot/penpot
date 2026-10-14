@@ -25,6 +25,7 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.graph.arrow :as arrow]
+   [app.graph.ingest :as ingest]
    [app.graph.ladybug :as ladybug]
    [app.graph.projection.document :as projection.document]
    [app.graph.projection.transforms :as projection.transforms]
@@ -131,12 +132,13 @@
 (defn- load-graph!
   "Create the schema on `conn`, project `data` into it, run the transforms.
 
+  `allocator` must outlive `conn` — see `app.graph.arrow/with-allocator!` —
+  so the caller nests the allocator outside its connections and passes it in.
   Returns the projection, which is also what the sync index is built from."
-  [conn data file]
+  [conn allocator data file]
   (let [projection (projection.document/projection-data data file)]
     (ladybug/exec-on-connection! conn (nodes/ddl-statements))
-    (arrow/with-allocator!
-      (fn [allocator] (arrow/load-projection! conn projection allocator)))
+    (arrow/load-projection! conn projection allocator)
     (projection.transforms/apply-transforms! nil conn data file)
     projection))
 
@@ -222,12 +224,19 @@
           [[kind table] d])))
 
 (defn- with-two-connections
+  "Open two `:memory:` databases under one Arrow allocator.
+
+  The allocator stays outer to both connections: Ladybug keeps the staged
+  buffers until connection close, so an allocator closed first leaks —
+  see `app.graph.arrow/with-allocator!`."
   [f]
-  (ladybug/with-connection! ":memory:"
-    (fn [conn-a]
+  (arrow/with-allocator!
+    (fn [allocator]
       (ladybug/with-connection! ":memory:"
-        (fn [conn-b]
-          (f conn-a conn-b))))))
+        (fn [conn-a]
+          (ladybug/with-connection! ":memory:"
+            (fn [conn-b]
+              (f conn-a conn-b allocator))))))))
 
 (defn- round-trip
   "Sync `change-list` into A, rebuild the same file into B, return the diff."
@@ -236,11 +245,11 @@
         data1 (cfc/process-changes data0 change-list)
         revn1 (inc base-revn)]
     (with-two-connections
-      (fn [conn-a conn-b]
-        (let [projection (load-graph! conn-a data0 (file-row base-revn))
+      (fn [conn-a conn-b allocator]
+        (let [projection (load-graph! conn-a allocator data0 (file-row base-revn))
               index      (sync/build-index file-id base-revn projection)
               result     (sync/apply-changes! conn-a index change-list revn1)]
-          (load-graph! conn-b data1 (file-row revn1))
+          (load-graph! conn-b allocator data1 (file-row revn1))
           {:diff    (diff (snapshot conn-a) (snapshot conn-b))
            :applied (:applied result)
            :skipped (:skipped result)})))))
@@ -261,6 +270,15 @@
           (str "cold projection and sync replay disagree on "
                (pr-str (keys diff)) "\n" (pr-str diff)))))
 
+(t/deftest ingest-on-connection-requires-allocator
+  ;; The allocator must outlive the connection, so ingest cannot make its own
+  ;; inside the call — see `app.graph.arrow/with-allocator!`.
+  (try
+    (ingest/ingest-on-connection! nil nil file-id)
+    (t/is false "expected :missing-arrow-allocator")
+    (catch clojure.lang.ExceptionInfo e
+      (t/is (= :missing-arrow-allocator (:code (ex-data e)))))))
+
 (t/deftest the-diff-catches-an-injected-sync-bug
   ;; The round trip is only worth running if it fails when sync is wrong.
   ;; `apply-mov-objects` maintains `IsChildOf`; drop the change from the list
@@ -270,11 +288,11 @@
         crippled (remove #(= :mov-objects (:type %)) changes)
         revn1   (inc base-revn)
         result  (with-two-connections
-                  (fn [conn-a conn-b]
-                    (let [projection (load-graph! conn-a data0 (file-row base-revn))
+                  (fn [conn-a conn-b allocator]
+                    (let [projection (load-graph! conn-a allocator data0 (file-row base-revn))
                           index      (sync/build-index file-id base-revn projection)]
                       (sync/apply-changes! conn-a index crippled revn1)
-                      (load-graph! conn-b data1 (file-row revn1))
+                      (load-graph! conn-b allocator data1 (file-row revn1))
                       (diff (snapshot conn-a) (snapshot conn-b)))))]
     (t/is (contains? result [:edges "IsChildOf"])
           "a sync that skips a reparent must show up as an IsChildOf difference")))

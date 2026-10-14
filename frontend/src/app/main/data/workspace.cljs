@@ -55,7 +55,6 @@
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.path :as dwdp]
@@ -77,7 +76,6 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
-   [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
@@ -259,15 +257,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/merge
-       (rx/of (dp/check-open-plugin)
-              (fdf/fix-deleted-fonts-for-local-library file-id))
-       (if (contains? cf/flags :mcp)
-         ;; We wait the plugin runtime to be ready before launch the
-         ;; mcp initialization
-         (->> (rx/from (preg/wait-for-runtime))
-              (rx/map (fn [_] (mcp/init))))
-         (rx/empty))))))
+      (rx/of (dp/check-open-plugin)
+             (fdf/fix-deleted-fonts-for-local-library file-id)))))
 
 (defn- compute-shape-stats
   "Compute shape statistics in a single pass over pages-index.
@@ -1256,10 +1247,18 @@
 
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
 
-        (if (and (some? shape) (not (contains? selected (:id shape))))
+        (cond
+          ;; A shape missing from the current page can never become
+          ;; selected, so selecting it and retrying would recurse forever
+          (and (some? shape) (not (contains? objects (:id shape))))
+          (rx/empty)
+
+          (and (some? shape) (not (contains? selected (:id shape))))
           (rx/concat
            (rx/of (dws/select-shape (:id shape)))
            (rx/of (show-shape-context-menu params)))
+
+          :else
           (rx/of (show-context-menu
                   (-> params
                       (assoc
@@ -1372,7 +1371,41 @@
              page    (dsh/lookup-page state page-id)
              changes (-> (pcb/empty-changes it)
                          (pcb/with-page page)
-                         (pcb/mod-page {:background (:color color)}))]
+                         (pcb/mod-page {:background (:color color)
+                                        :background-token nil}))]
+         (rx/of (dch/commit-changes changes)))))))
+
+(defn apply-canvas-color-token
+  "Sets the canvas background to the resolved value of `token` and
+  remembers it as the applied token, so the background badge shows it."
+  ([color token-name]
+   (apply-canvas-color-token nil color token-name))
+  ([page-id color token-name]
+   (ptk/reify ::apply-canvas-color-token
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:background color
+                                        :background-token token-name}))]
+         (rx/of (dch/commit-changes changes)))))))
+
+(defn detach-canvas-color-token
+  "Removes the applied-token link from the canvas background, keeping
+  the current background color as a plain value."
+  ([]
+   (detach-canvas-color-token nil))
+  ([page-id]
+   (ptk/reify ::detach-canvas-color-token
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:background-token nil}))]
          (rx/of (dch/commit-changes changes)))))))
 
 (defn change-pixel-grid-color

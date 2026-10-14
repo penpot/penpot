@@ -6,6 +6,7 @@
 
 (ns backend-tests.config-test
   (:require
+   [app.common.time :as ct]
    [app.config :as cf]
    [clojure.test :as t]))
 
@@ -38,3 +39,39 @@
   (t/testing "a leading slash would drop the subpath, so it fails fast"
     (t/is (thrown? AssertionError
                    (cf/join-uri "https://example.com/penpot" "/assets/by-id/123")))))
+
+(t/deftest tenant-allows-only-alphanumeric
+  (t/testing "default and plain alphanumeric tenants validate"
+    (doseq [tenant ["default" "acme42" "my-company"]]
+      (t/is (cf/validate-config (assoc cf/config :tenant tenant)))))
+  (t/testing "LIKE wildcards and separators are rejected"
+    (doseq [tenant ["my_tenant" "a%b" "a:b" "a b" "" "acme.example.com"]]
+      (t/is (not (cf/validate-config (assoc cf/config :tenant tenant)))))))
+
+(t/deftest worker-parallelism-keys
+  (t/testing "schema decodes all runner parallelism keys (env strings to int)"
+    (let [decoded (cf/decode-config {:worker-default-parallelism "4"
+                                     :worker-webhook-parallelism "2"
+                                     :worker-cron-parallelism "3"
+                                     :worker-binfile-parallelism "5"})]
+      (t/is (= 4 (:worker-default-parallelism decoded)))
+      (t/is (= 2 (:worker-webhook-parallelism decoded)))
+      (t/is (= 3 (:worker-cron-parallelism decoded)))
+      (t/is (= 5 (:worker-binfile-parallelism decoded)))))
+  (t/testing "lookups resolve configured values (unnamespaced keys, as main uses)"
+    (with-redefs [cf/config (assoc cf/config
+                                   :worker-default-parallelism 4)]
+      (t/is (= 4 (cf/get :worker-default-parallelism 1))))))
+
+(t/deftest jobs-user-ttl
+  (t/testing "the env value is decoded as a duration"
+    (let [decoded (cf/decode-config {:jobs-user-ttl "72h"})]
+      (t/is (= (ct/duration {:days 3}) (:jobs-user-ttl decoded)))))
+
+  (t/testing "the getter resolves the configured value"
+    (with-redefs [cf/config (assoc cf/config :jobs-user-ttl (ct/duration {:days 1}))]
+      (t/is (= (ct/duration {:days 1}) (cf/get-jobs-user-ttl)))))
+
+  (t/testing "and falls back to a week"
+    (with-redefs [cf/config (dissoc cf/config :jobs-user-ttl)]
+      (t/is (= (ct/duration {:days 7}) (cf/get-jobs-user-ttl))))))

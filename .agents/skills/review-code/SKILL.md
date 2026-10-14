@@ -67,6 +67,26 @@ agent again.
 6. Skip generated files, lockfile-only changes, and unrelated modifications
    unless they introduce security risks.
 
+## Posting as a GitHub comment
+
+Only post the review as a comment when the user asks for it explicitly. Keep
+it in the session otherwise.
+
+When posting: PR comments go in English, with this minimal structure:
+
+1. **Intro line** — one sentence: what was found and the overall tone. No
+   greetings.
+2. **`## Main issues`** — one subsection per required finding: what breaks,
+   the failure circumstances, and the minimal fix (code snippet when useful).
+   A missing test belongs here, not under minor suggestions.
+3. **`## Minor suggestions`** — one bullet per minor finding or suggestion:
+   file/function, problem, concrete remedy.
+4. **Closing** — optional and short. Cut it when it adds nothing.
+
+Reference every finding by its ID (`R1`, `M1`, `S1`, … from
+`code-review-criteria`) so follow-up replies can point to findings
+unambiguously.
+
 ## User input, overrides and additional context
 
 $ARGUMENTS

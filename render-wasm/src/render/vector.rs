@@ -8,6 +8,7 @@ use crate::shapes::{
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
+use super::children_paint_order;
 use super::shape_renderer::ShapeRenderer;
 use super::text;
 use super::RenderResources;
@@ -422,6 +423,32 @@ struct TreeOpts<'a> {
     /// When rendering a backdrop, the shape whose own subtree must be omitted
     /// (so the blur samples only what is *behind* it).
     skip: Option<&'a Uuid>,
+    /// Fills the root inherits from its ancestors; backdrops restart from it.
+    root_fills: &'a [Fill],
+    /// Nearest group's fills, painted by fill-less leaves (GPU `nested_fills`).
+    inherited_fills: &'a [Fill],
+}
+
+impl<'a> TreeOpts<'a> {
+    /// Options for `container`'s children: a group hands its fills down, a
+    /// frame breaks the inheritance.
+    fn for_children_of<'b>(&self, container: &'b Shape) -> TreeOpts<'b>
+    where
+        'a: 'b,
+    {
+        let inherited_fills: &'b [Fill] = match container.shape_type {
+            Type::Group(_) => &container.fills,
+            _ => &[],
+        };
+        TreeOpts {
+            root: self.root,
+            page: self.page,
+            embed_bg_blur: self.embed_bg_blur,
+            skip: self.skip,
+            root_fills: self.root_fills,
+            inherited_fills,
+        }
+    }
 }
 
 /// Depth-first render of the shape tree rooted at `id`. Used for raster export
@@ -463,11 +490,17 @@ fn render_tree_dispatch(
     page: skia::Rect,
     embed_bg_blur: bool,
 ) -> Result<()> {
+    let root_fills = tree
+        .get(id)
+        .map(|shape| shape.inherited_fills(tree))
+        .unwrap_or_default();
     let opts = TreeOpts {
         root: id,
         page,
         embed_bg_blur,
         skip: None,
+        root_fills: &root_fills,
+        inherited_fills: &root_fills,
     };
     render_tree_inner(shared, canvas, id, tree, scale, &opts)
 }
@@ -524,7 +557,12 @@ fn render_tree_inner(
         | Type::Bool(_)
         | Type::Text(_)
         | Type::SVGRaw(_) => {
-            render_leaf(shared, canvas, element, scale)?;
+            let fills = if element.inherits_fills() {
+                opts.inherited_fills
+            } else {
+                element.fills.as_slice()
+            };
+            render_leaf(shared, canvas, element, fills, scale)?;
         }
     }
 
@@ -657,6 +695,8 @@ fn render_background_blur_image(
             page: opts.page,
             embed_bg_blur: false,
             skip: Some(&shape.id),
+            root_fills: opts.root_fills,
+            inherited_fills: opts.root_fills,
         };
         render_tree_inner(shared, oc, opts.root, tree, scale, &sub)?;
     }
@@ -779,6 +819,7 @@ fn render_group(
     }
 
     let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+    let child_opts = opts.for_children_of(element);
 
     if masked {
         // Mirror the GPU mask: render all children (including the mask shape)
@@ -793,7 +834,7 @@ fn render_group(
         );
 
         for child_id in &children {
-            render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
+            render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
         }
 
         if let Some(mask_id) = element.mask_id() {
@@ -804,14 +845,14 @@ fn render_group(
                     .bounds(&subtree_bounds)
                     .paint(&mask_paint),
             );
-            render_tree_inner(shared, canvas, mask_id, tree, scale, opts)?;
+            render_tree_inner(shared, canvas, mask_id, tree, scale, &child_opts)?;
             canvas.restore(); // mask layer
         }
 
         canvas.restore(); // composition layer
     } else {
         for child_id in &children {
-            render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
+            render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
         }
     }
 
@@ -894,9 +935,10 @@ fn render_frame(
     }
 
     // Children (absolute coords, no frame transform).
-    let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+    let children = children_paint_order(tree, element);
+    let child_opts = opts.for_children_of(element);
     for child_id in &children {
-        render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
+        render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
     }
     canvas.restore(); // content clip
 
@@ -947,9 +989,10 @@ fn render_container_drop_shadows(
             renderer.draw_fills(element, &element.fills)?;
         }
 
-        let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+        let children = children_paint_order(tree, element);
+        let child_opts = opts.for_children_of(element);
         for child_id in &children {
-            render_tree_inner(shared, canvas, child_id, tree, scale, opts)?;
+            render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
         }
 
         canvas.restore();
@@ -965,6 +1008,7 @@ fn render_leaf(
     shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
+    fills: &[Fill],
     scale: f32,
 ) -> Result<()> {
     let needs_layer = element.needs_layer();
@@ -996,7 +1040,7 @@ fn render_leaf(
     };
 
     renderer.draw_drop_shadows(element)?;
-    render_leaf_content(&mut renderer, element)?;
+    render_leaf_content(&mut renderer, element, fills)?;
 
     if blur_layer {
         renderer.restore_blur_layer();
@@ -1016,6 +1060,7 @@ fn render_leaf(
 pub(super) fn render_leaf_content<R: ShapeRenderer + ?Sized>(
     renderer: &mut R,
     shape: &Shape,
+    fills: &[Fill],
 ) -> Result<()> {
     match &shape.shape_type {
         Type::Text(_) => renderer.draw_text(shape)?,
@@ -1027,7 +1072,7 @@ pub(super) fn render_leaf_content<R: ShapeRenderer + ?Sized>(
         | Type::Bool(_)
         | Type::Group(_)
         | Type::Frame(_) => {
-            renderer.draw_fills(shape, &shape.fills)?;
+            renderer.draw_fills(shape, fills)?;
             renderer.draw_fill_inner_shadows(shape)?;
 
             let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();

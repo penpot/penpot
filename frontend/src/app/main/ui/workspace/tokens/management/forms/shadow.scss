@@ -32,6 +32,15 @@
   padding-inline-start: var(--sp-m);
 }
 
+.detach-button {
+  visibility: hidden;
+}
+
+.reference-row:hover .detach-button,
+.reference-row:focus-within .detach-button {
+  visibility: visible;
+}
+
 .title-bar {
   display: grid;
   grid-template-columns: 1fr auto auto;

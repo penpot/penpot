@@ -190,7 +190,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
@@ -357,7 +357,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
@@ -393,7 +393,7 @@
       (t/is (nil? (:result out)))
       (t/is (nil? (:error out))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     (let [rows (th/db-exec! ["select id,name,deleted_at from team where deleted_at is not null"])]
       (t/is (= 3 (count rows))))
@@ -509,7 +509,7 @@
         (t/is (= "mtma" (:penpot/mtm-campaign props)))))))
 
 (t/deftest prepare-register-and-register-profile-2
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -563,7 +563,7 @@
           (t/is (= 1 (:call-count @mock))))))))
 
 (t/deftest prepare-register-and-register-profile-3
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -611,7 +611,7 @@
   ;; When disable-email-verification is set and the profile is inactive
   ;; (e.g. created before the flag was set), re-registering should be
   ;; rejected with :email-already-exists.
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (with-redefs [app.config/flags #{:registration :login-with-password}]
       (let [current-token (atom nil)]
         ;; PREPARE REGISTER: first attempt (no profile exists yet)
@@ -699,7 +699,7 @@
 
 (t/deftest prepare-register-with-invitation-and-disabled-registration
   (with-redefs [app.config/flags #{:login-with-password :email-verification}]
-    (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (with-mocks [mock {:target 'app.email/send :return nil}]
       (let [email   "invited@example.com"
             fixture (create-invitation-fixture email (ct/in-future "48h"))
             itoken  (create-test-invitation-token fixture email)
@@ -840,7 +840,7 @@
   ;; verify-email mail with the invitation token EMBEDDED into the
   ;; verify-email JWE (so the team-invitation flow can resume after
   ;; the user clicks the email link).
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
@@ -1181,7 +1181,7 @@
             "prepare-register must not embed existing profile id of an anonymous caller"))))
 
 (t/deftest register-profile-with-invitation-must-not-take-over-existing-account
-  (with-mocks [_mock {:target 'app.email/send! :return nil}]
+  (with-mocks [_mock {:target 'app.email/send :return nil}]
     (let [;; Victim profile exists but is not yet active (e.g. registered
           ;; but has not clicked the verification link). This is the
           ;; remaining attack surface after fix 1b: `prepare-register`
@@ -1287,7 +1287,7 @@
       (t/is (true? (:is-active reloaded))))))
 
 (t/deftest email-change-request
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
@@ -1327,7 +1327,7 @@
 
 
 (t/deftest email-change-request-without-smtp
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (with-redefs [app.config/flags #{}]
       (let [profile (th/create-profile* 1)
             pool    (:app.db/pool th/*system*)
@@ -1343,7 +1343,7 @@
 
 
 (t/deftest request-profile-recovery
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active false})
           profile2 (th/create-profile* 2 {:is-active true})
           pool  (:app.db/pool th/*system*)
@@ -1401,7 +1401,7 @@
 
 
 (t/deftest update-profile-password
-  (with-mocks [_ {:target 'app.email/send! :return nil}]
+  (with-mocks [_ {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           data  {::th/type :update-profile-password
                  ::rpc/profile-id (:id profile)
@@ -1413,7 +1413,7 @@
 
 
 (t/deftest update-profile-password-bad-old-password
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           data  {::th/type :update-profile-password
                  ::rpc/profile-id (:id profile)
@@ -1549,6 +1549,111 @@
     (t/is (th/ex-of-code? (:error out) :params-validation))))
 
 
+(t/deftest update-profile-props-rejects-oversized-props
+  ;; The merged props must not exceed :profile-props-max-size
+  (let [profile (th/create-profile* 1)]
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
+(t/deftest update-profile-props-enforces-hard-limit-on-oversized-profile
+  ;; An already-oversized profile can only write back under the limit:
+  ;; shrinking below it passes, staying above it fails
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    ;; Seed an already-oversized profile directly in DB (bypasses RPC validation)
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      ;; Shrinking below the limit passes
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob "small"}}}
+            out  (th/command! data)]
+        (t/is (nil? (:error out))))
+      ;; Staying above the limit fails
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 300 "x"))}}}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
+(t/deftest check-props-size-measures-bytes-not-chars
+  ;; The limit is in UTF-8 bytes: multibyte content that fits in chars
+  ;; but exceeds the byte limit must be rejected
+  (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 200})]
+    ;; 70 ASCII chars (~87 bytes serialized) passes and returns props unchanged
+    (let [props {:blob (apply str (repeat 70 "x"))}]
+      (t/is (= props (profile/check-props-size props))))
+    ;; 70 CJK chars (~227 bytes serialized, still 70 chars) raises
+    (try
+      (profile/check-props-size {:blob (apply str (repeat 70 "日"))})
+      (t/is false "should have thrown")
+      (catch clojure.lang.ExceptionInfo e
+        (t/is (= :validation (:type (ex-data e))))
+        (t/is (= :props-too-large (:code (ex-data e))))))))
+
+(t/deftest update-profile-props-rejects-steady-size-on-oversized-profile
+  ;; Same size (not smaller) on an oversized profile still exceeds
+  ;; the limit, so it fails
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 200 "y"))}}}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
+(t/deftest update-profile-notifications-rejects-growth-on-oversized-profile
+  ;; The notifications write path goes through the same size check:
+  ;; growing an oversized profile fails
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-notifications
+                  ::rpc/profile-id (:id profile)
+                  :dashboard-comments :all
+                  :email-comments :all
+                  :email-invites :all}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+(t/deftest update-profile-notifications-rejects-steady-on-oversized-profile
+  ;; Same-size notifications write on an oversized profile still exceeds
+  ;; the limit, so it fails
+  (let [profile (th/create-profile* 1)
+        notifications {:dashboard-comments :all
+                       :email-comments :all
+                       :email-invites :all}
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}
+                 :notifications notifications}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data (merge {::th/type :update-profile-notifications
+                         ::rpc/profile-id (:id profile)}
+                        notifications)
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
 (t/deftest prepare-register-profile-password-too-short
   (let [data {::th/type :prepare-register-profile
               :email "user@example.com"
@@ -1594,9 +1699,8 @@
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :weak-password))))
 
-
 (t/deftest update-profile-password-sends-notification
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           data    {::th/type :update-profile-password
                    ::rpc/profile-id (:id profile)
@@ -1606,14 +1710,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest update-profile-password-sends-notification-for-first-password
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1 {:password "!"})
           data    {::th/type :update-profile-password
                    ::rpc/profile-id (:id profile)
@@ -1622,14 +1726,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest recover-profile-sends-notification
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           token   (tokens/generate th/*system*
                                    {:iss :password-recovery
@@ -1641,7 +1745,60 @@
           out     (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; VERIFY-TOKEN AUDIT ATTRIBUTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest verify-token-auth-audit-event-attributes-the-authenticated-profile
+  ;; `verify-token` is anonymous, so the audit event cannot infer the profile
+  ;; from the caller: the handler must declare it in the result metadata.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        token   (tokens/generate th/*system*
+                                 {:iss :auth
+                                  :exp (ct/in-future "1h")
+                                  :profile-id (:id profile)})
+        out     (th/command! {::th/type :verify-token
+                              :token token})]
+    (t/is (th/success? out))
+    (t/is (= (:id profile)
+             (get-in (meta (:result out)) [:app.loggers.audit/profile-id])))))
+
+(t/deftest verify-token-invitation-audit-event-attributes-the-accepting-profile
+  ;; Both the invitation claims and the response carry the inviter's
+  ;; profile-id, so the event must not end up on the inviter: the member who
+  ;; clicked the link is the one who accepted the invitation.
+  (with-redefs [app.config/flags #{:login-with-password}]
+    (let [owner  (th/create-profile* 1 {:is-active true})
+          team   (th/create-team* 1 {:profile-id (:id owner)})
+          member (th/create-profile* 2 {:is-active true
+                                        :email "invited@example.com"})
+          email  (:email member)
+          token  (tokens/generate th/*system*
+                                  {:iss :team-invitation
+                                   :exp (ct/in-future "48h")
+                                   :role :editor
+                                   :profile-id (:id owner)
+                                   :team-id (:id team)
+                                   :member-email email
+                                   :member-id (:id member)})]
+      (th/db-insert! :team-invitation
+                     {:id (uuid/random)
+                      :team-id (:id team)
+                      :email-to email
+                      :created-by (:id owner)
+                      :role "editor"
+                      :valid-until (ct/in-future "48h")})
+
+      (let [out     (th/command! {::th/type :verify-token
+                                  :token token
+                                  ::rpc/profile-id (:id member)
+                                  ::rpc/auth-type :session})
+            event-pid (get-in (meta (:result out)) [:app.loggers.audit/profile-id])]
+        (t/is (th/success? out))
+        (t/is (= (:id member) event-pid))
+        (t/is (not= (:id owner) event-pid))))))

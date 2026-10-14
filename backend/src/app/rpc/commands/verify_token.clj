@@ -6,7 +6,6 @@
 
 (ns app.rpc.commands.verify-token
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -99,7 +98,11 @@
                     (profile/strip-private-attrs)
                     (update :props profile/filter-props)
                     (with-nitrate-licence cfg))]
-    (assoc claims :profile profile)))
+    ;; The command is anonymous, so the audit event has no caller to fall
+    ;; back on and the profile must be declared here. The claims also carry
+    ;; a `:profile-id`, but the audit layer ignores the response on purpose.
+    (-> (assoc claims :profile profile)
+        (rph/with-meta {::audit/profile-id (:id profile)}))))
 
 ;; --- Team Invitation
 
@@ -240,6 +243,12 @@
                          (not (:is-member membership)))
                 (:organization-id membership))
 
+              organization-add-source
+              (when organization-id-on-add
+                (if organization-id
+                  "direct-organization-invitation"
+                  "team-invitation"))
+
               organization-member-count-before
               (when organization-id-on-add
                 (count
@@ -280,22 +289,34 @@
                               (-> (audit/event-from-rpc-params params)
                                   (assoc :profile-id created-by)
                                   (assoc :name "accept-team-invitation-from")
-                                  (assoc :props (assoc props
-                                                       :profile-id (:id profile)
-                                                       :email (:email profile)))))))
+                                  (assoc :props (-> props
+                                                    (assoc :invited-by (:created-by invitation))
+                                                    (assoc :profile-id (:id profile))
+                                                    (assoc :profile-email (:email profile))
+                                                    (audit/clean-props)))))))
 
             (let [accepted-team-id (accept-invitation cfg claims invitation profile)]
+              ;; NOTE: the browser used to re-submit a copy of this event from
+              ;; the `:organization-invitation-audit` payload of this response,
+              ;; which wrote two rows per acceptance with two prop vocabularies
+              ;; for the same name, and tied the record to the browser finishing
+              ;; the flow. Everything the copy carried is computed above.
               (when organization-id-on-add
-                (audit/submit
-                 cfg
-                 (-> (audit/event-from-rpc-params params)
-                     (assoc :name "accept-organization-invitation")
-                     (assoc :props
-                            (-> props
-                                (assoc :organization-id organization-id-on-add
-                                       :user-id (:id profile)
-                                       :user-who-send-invitation (:created-by invitation))
-                                (audit/clean-props))))))
+                (audit/submit cfg (-> (audit/event-from-rpc-params params)
+                                      (assoc :name "accept-organization-invitation")
+                                      (assoc :props
+                                             (-> props
+                                                 (assoc :organization-id organization-id-on-add)
+                                                 (assoc :invited-by (:created-by invitation))
+                                                 (assoc :profile-id (:id profile))
+                                                 (assoc :profile-email (:email profile))
+                                                 (assoc :organization-member-add-source
+                                                        organization-add-source)
+                                                 (assoc :belongs-to-team-on-add
+                                                        (boolean team-id))
+                                                 (assoc :organization-member-count-before
+                                                        organization-member-count-before)
+                                                 (audit/clean-props))))))
 
               (cond-> (assoc claims
                              :state :created
@@ -316,15 +337,11 @@
                 ;; accepted-team-id as :organization-team-id
                 (:organization-id claims)
                 (assoc :organization-team-id accepted-team-id)
-
-                organization-id-on-add
-                (merge (d/without-nils
-                        {:invitation-id (:id invitation)
-                         :organization-member-count-before
-                         organization-member-count-before}))
-
-                (and organization-id-on-add team-id)
-                (assoc :organization-id organization-id-on-add))))))
+                ;; The response carries the inviter's profile-id, so the
+                ;; audit event has to name the accepting profile explicitly
+                ;; or the invitation gets logged against the wrong user.
+                :always
+                (rph/with-meta {::audit/profile-id (:id profile)}))))))
 
       (do
         ;; If the user is not logged-in and the invitation has been canceled

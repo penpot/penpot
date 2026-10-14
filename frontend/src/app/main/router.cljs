@@ -17,7 +17,6 @@
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [goog.events :as e]
    [potok.v2.core :as ptk]))
 
 ;; --- Router API
@@ -25,6 +24,11 @@
 ;; Query-string routing: `router` is the set of enabled route names
 ;; (see `app.main.ui.routes/routes`). The `screen` query param carries
 ;; the route name; every other param travels as a plain query param.
+
+(def ^:private history-path-prefix
+  "The application base path. The history token is the query string
+  appended to it; the path never carries the token."
+  (:path cf/public-uri))
 
 (defn create
   [routes]
@@ -120,9 +124,8 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [router  (:router state)
-            history (:history state)
-            path    (resolve router id params)]
+      (let [router (:router state)
+            path   (resolve router id params)]
 
         (if ^boolean new-window
           (let [name   (or (::window-name options) "_blank")
@@ -130,8 +133,8 @@
             (dom/open-new-window uri name nil))
           (ts/asap
            #(if ^boolean replace
-              (bhistory/replace-token! history path)
-              (bhistory/set-token! history path))))))))
+              (bhistory/replace-token! history-path-prefix path)
+              (bhistory/set-token! history-path-prefix path))))))))
 
 (defn assign-exception
   [error]
@@ -221,26 +224,14 @@
 (defn initialize-history
   [on-change]
   (ptk/reify ::initialize-history
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [history (bhistory/create (:path cf/public-uri))]
-        (bhistory/enable! history)
-        (assoc state :history history)))
-
     ptk/EffectEvent
     (effect [_ state stream]
       (let [stopper (rx/filter (ptk/type? ::initialize-history) stream)
-            history (:history state)
             router  (:router state)]
-        (ts/schedule #(on-change router (.getToken ^js history) true))
+        (ts/schedule #(on-change router (bhistory/get-token) true))
         (->> (rx/concat
               (rx/of nil nil)
-              (rx/create
-               (fn [subs]
-                 (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
-                   (fn []
-                     (bhistory/disable! history)
-                     (e/unlistenByKey key))))))
+              bhistory/token-changes)
              (rx/buffer 2 1)
              (rx/take-until stopper)
              (rx/subs!

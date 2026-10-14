@@ -4,7 +4,7 @@
  */
 export interface Penpot extends Omit<
   Context,
-  'addListener' | 'removeListener'
+  'addListener' | 'removeListener' | 'management'
 > {
   readonly ui: {
     /**
@@ -778,10 +778,135 @@ export interface CommonLayout {
   remove(): void;
 }
 
+/** Current workspace of this browser tab. */
+export interface WorkspaceContext {
+  readonly status: 'none' | 'loading' | 'ready';
+  readonly fileId: string | null;
+  readonly fileName: string | null;
+  readonly teamId: string | null;
+}
+
+/** Metadata snapshot of an accessible, non-deleted project. */
+export interface ProjectSummary {
+  readonly id: string;
+  readonly teamId: string;
+  readonly name: string;
+  /** Whether this is the team's Drafts project. */
+  readonly isDefault: boolean;
+  readonly fileCount: number;
+}
+
+/** Metadata snapshot of an accessible, non-deleted file. */
+export interface FileSummary {
+  readonly id: string;
+  readonly teamId: string;
+  readonly projectId: string;
+  readonly name: string;
+  /** Last modification time as an ISO 8601 string in UTC. */
+  readonly modifiedAt: string;
+}
+
+/**
+ * Application management API exposed as `penpotMgmt` to global plugins.
+ *
+ * - Discovery and navigation require `content:read`; creation requires `content:write`.
+ * - Available in the dashboard and file workspaces.
+ * - Use this API to discover, create and open files; file operations on `penpot` require a ready workspace.
+ * - Reacquire file, page and shape objects after changing files.
+ */
+export interface PenpotMgmt {
+  /** Current workspace availability and metadata; usable for file operations when status is `ready`. */
+  readonly workspace: WorkspaceContext;
+  /**
+   * Lists accessible, non-deleted projects as metadata snapshots.
+   *
+   * - `teamId` defaults to the current team.
+   * - Queries the backend without opening a file or changing navigation.
+   * - Rejects invalid identifiers and backend access errors.
+   *
+   * @example
+   * ```ts
+   * const projects = await penpotMgmt.listProjects();
+   * ```
+   */
+  listProjects(options?: { teamId?: string }): Promise<ProjectSummary[]>;
+  /**
+   * Lists accessible, non-deleted files in the specified project as metadata snapshots.
+   *
+   * - Requires an explicit `projectId`.
+   * - Queries the backend without opening a file or changing navigation.
+   * - Rejects invalid identifiers and backend access errors.
+   *
+   * @example
+   * ```ts
+   * const files = await penpotMgmt.listFiles({ projectId: project.id });
+   * ```
+   */
+  listFiles(options: { projectId: string }): Promise<FileSummary[]>;
+  /**
+   * Creates a project and returns its metadata snapshot. Requires `content:write`.
+   *
+   * - `teamId` defaults to the current team.
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not change navigation or open a file.
+   * - Rejects invalid input, backend access errors and quota errors.
+   *
+   * @example
+   * ```ts
+   * const project = await penpotMgmt.createProject({ name: 'Design system' });
+   * ```
+   */
+  createProject(options: {
+    name: string;
+    teamId?: string;
+  }): Promise<ProjectSummary>;
+  /**
+   * Creates a file with an initial page and returns its metadata snapshot. Requires `content:write`.
+   *
+   * - Requires an explicit `projectId`.
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not open the file or change navigation. Use `openFile` to edit it.
+   * - Rejects invalid input, backend access errors and quota errors.
+   *
+   * @example
+   * ```ts
+   * const file = await penpotMgmt.createFile({ projectId: project.id, name: 'Login' });
+   * await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+   * ```
+   */
+  createFile(options: {
+    name: string;
+    projectId: string;
+  }): Promise<FileSummary>;
+  /**
+   * Opens a file in this tab and resolves once its workspace and page are ready.
+   *
+   * - `teamId` defaults to the current team.
+   * - Rejects invalid identifiers, failed or superseded navigation, and waits exceeding 30 seconds.
+   *
+   * @example
+   * ```ts
+   * await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+   * ```
+   */
+  openFile(fileId: string, options?: { teamId?: string }): Promise<void>;
+  /** Subscribes to workspace availability and metadata changes. */
+  on(
+    type: 'workspacechange',
+    callback: (workspace: WorkspaceContext) => void,
+  ): symbol;
+  off(listenerId: symbol): void;
+}
+
 /**
  * Represents the context of Penpot, providing access to various Penpot functionalities and data.
  */
 export interface Context {
+  /**
+   * Backs `penpotMgmt`. Its events go through the plugin listener registry,
+   * so `on` and `off` are not part of it.
+   */
+  readonly management?: Omit<PenpotMgmt, 'on' | 'off'>;
   /**
    * Returns the current penpot version.
    */
@@ -1556,6 +1681,8 @@ export interface Ellipse extends ShapeBase {
  * ```
  */
 export interface EventsMap {
+  readonly workspacechange: WorkspaceContext;
+  readonly logout: void;
   /**
    * The `pagechange` event is triggered when the active page in the project is changed.
    */
@@ -4164,8 +4291,8 @@ export interface Slide {
 }
 
 /**
- * Represents stroke properties in Penpot. You can add a stroke to any shape except for groups.
- * This interface includes properties for defining the color, style, width, alignment, and caps of a stroke.
+ * Stroke properties for any shape except groups.
+ * Literals apply strokeWidth before top/right/bottom/left widths.
  */
 export interface Stroke {
   /**
@@ -4190,9 +4317,33 @@ export interface Stroke {
    */
   strokeStyle?: 'solid' | 'dotted' | 'dashed' | 'mixed' | 'none' | 'svg';
   /**
-   * The optional width of the stroke.
+   * Reads the top width. Setting it selects simple mode and sets all four sides.
    */
   strokeWidth?: number;
+  /**
+   * Computed width mode: simple when all four effective widths match, multiple otherwise.
+   */
+  readonly strokeWidthType?: 'simple' | 'multiple';
+  /**
+   * Top side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
+   */
+  strokeWidthTop?: number;
+  /**
+   * Right side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
+   */
+  strokeWidthRight?: number;
+  /**
+   * Bottom side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
+   */
+  strokeWidthBottom?: number;
+  /**
+   * Left side width; setting it preserves the other side widths.
+   * Boards and rectangles only; other shape types raise a validation error.
+   */
+  strokeWidthLeft?: number;
   /**
    * The optional alignment of the stroke relative to the shape's boundary.
    */
@@ -5465,7 +5616,11 @@ type TokenDimensionProps =
   | 'y'
 
   // Stroke width
-  | 'strokeWidth';
+  | 'strokeWidth'
+  | 'strokeWidthTop'
+  | 'strokeWidthRight'
+  | 'strokeWidthBottom'
+  | 'strokeWidthLeft';
 
 /**
  * The properties that a FontFamilies token can be applied to.
@@ -5534,7 +5689,12 @@ type TokenSpacingProps =
 /**
  * The properties that a BorderWidth token can be applied to.
  */
-type TokenBorderWidthProps = 'strokeWidth';
+type TokenBorderWidthProps =
+  | 'strokeWidth'
+  | 'strokeWidthTop'
+  | 'strokeWidthRight'
+  | 'strokeWidthBottom'
+  | 'strokeWidthLeft';
 
 /**
  * The properties that a TextCase token can be applied to.
@@ -5757,4 +5917,5 @@ export interface Viewport {
 
 declare global {
   const penpot: Penpot;
+  const penpotMgmt: PenpotMgmt;
 }

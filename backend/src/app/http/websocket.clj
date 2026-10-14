@@ -8,6 +8,7 @@
   "A penpot notification service for file cooperative edition."
   (:require
    [app.binfile.common :as bfc]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
@@ -18,6 +19,7 @@
    [app.http.session :as session]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
+   [app.nitrate :as nitrate]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.util.websocket :as ws]
@@ -42,13 +44,13 @@
 (defn repl-get-connections-for-file
   [file-id]
   (->> (vals @state)
-       (filter #(= file-id (-> % deref ::file-subscription :file-id)))
+       (filter #(= file-id (-> % ::ws/state deref ::file-subscription :file-id)))
        (map ::ws/id)))
 
 (defn repl-get-connections-for-team
   [team-id]
   (->> (vals @state)
-       (filter #(= team-id (-> % deref ::team-subscription :team-id)))
+       (filter #(= team-id (-> % ::ws/state deref ::team-subscription :team-id)))
        (map ::ws/id)))
 
 (defn repl-close-connection
@@ -60,15 +62,17 @@
 (defn repl-get-connection-info
   [id]
   (when-let [wsp (get @state id)]
-    {:id               id
-     :created-at       (::created-at wsp)
-     :profile-id       (::profile-id wsp)
-     :session-id       (::session-id wsp)
-     :user-agent       (::ws/user-agent wsp)
-     :ip-addr          (::ws/remote-addr wsp)
-     :last-activity-at (::ws/last-activity-at wsp)
-     :subscribed-file  (-> wsp ::file-subscription :file-id)
-     :subscribed-team  (-> wsp ::team-subscription :team-id)}))
+    (let [subs (some-> wsp ::ws/state deref)]
+      {:id               id
+       :created-at       (::created-at wsp)
+       :profile-id       (::profile-id wsp)
+       :session-id       (::session-id wsp)
+       :user-agent       (::ws/user-agent wsp)
+       :ip-addr          (::ws/remote-addr wsp)
+       :last-activity-at (::ws/last-activity-at wsp)
+       :subscribed-file  (-> subs ::file-subscription :file-id)
+       :subscribed-team  (-> subs ::team-subscription :team-id)
+       :subscribed-org   (-> subs ::team-subscription :organization-id)})))
 
 (defn repl-print-connection-info
   [id]
@@ -133,18 +137,39 @@
       (mbus/purge! msgbus [channel])
       (mbus/pub! msgbus :topic topic :message msg))))
 
+(defn- get-team-organization-id
+  "Returns the id of the organization that owns `team-id`, or nil when
+  the team has no organization or nitrate cannot be reached."
+  [cfg team-id]
+  (try
+    (-> (nitrate/call cfg :get-team-organization {:team-id team-id})
+        (dm/get-in [:organization :id]))
+    (catch Throwable cause
+      (l/warn :hint "unable to resolve team organization"
+              :team-id team-id
+              :cause cause)
+      nil)))
+
 (defmethod handle-message :subscribe-team
   [cfg {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [team-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
   (teams/check-read-permissions! cfg profile-id team-id)
-  (let [prev-subs (get @state ::team-subscription)
-        channel   (sp/chan :buf (sp/dropping-buffer 64)
-                           :xf  (remove #(= (:session-id %) session-id)))]
+  (let [prev-subs       (get @state ::team-subscription)
+        organization-id (get-team-organization-id cfg team-id)
+        ;; Resolved server-side so a client only hears its readable team's org
+        topics          (cond-> [team-id]
+                          (some? organization-id)
+                          (conj organization-id))
+        channel         (sp/chan :buf (sp/dropping-buffer 64)
+                                 :xf  (remove #(= (:session-id %) session-id)))]
 
     (sp/pipe channel output-ch false)
-    (mbus/sub! (::mbus/msgbus cfg) :topic team-id :chan channel)
+    (mbus/sub! (::mbus/msgbus cfg) :topics topics :chan channel)
 
-    (let [subs {:team-id team-id :channel channel :topic team-id}]
+    (let [subs {:team-id team-id
+                :organization-id organization-id
+                :channel channel
+                :topic team-id}]
       (swap! state assoc ::team-subscription subs))
 
     ;; Close previous subscription if exists

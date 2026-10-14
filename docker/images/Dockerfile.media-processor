@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM dhi.io/node:24.20.0-debian13-dev
+FROM dhi.io/node:24.21.0-debian13-dev@sha256:2e51e8397b85c3771c554834fb55d7fd5825e7d57a993e00153db42c584b7e58
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
@@ -11,7 +11,6 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy --no-install-recommends install passwd; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
-    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
       curl \
       tzdata \
@@ -35,7 +34,6 @@ RUN set -ex; \
       libheif1 \
       libjpeg62-turbo \
       liblcms2-2 \
-      libopenexr-3-1-30 \
       libopenjp2-7 \
       libpng16-16 \
       librsvg2-2 \
@@ -60,7 +58,7 @@ WORKDIR /opt/penpot/media-processor
 # pnpm ships as a system binary (same tarball + SHA pin as
 # docker/devenv/Dockerfile); ./setup expects it on PATH.
 # Corepack is gone from Node 25+, so nothing here may use it.
-ARG PNPM_VERSION=12.5.1
+ARG PNPM_VERSION=12.8.1
 RUN set -eux; \
     apt-get -qq update; \
     apt-get -qqy --no-install-recommends install gzip; \
@@ -69,11 +67,11 @@ RUN set -eux; \
     case "${ARCH}" in \
        aarch64|arm64) \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
+         PNPM_SHA256='75c5e34d3164fe3d3549580b1b1b59c9dd16543e558dec722b686193cdb7dfa1'; \
          ;; \
        amd64|x86_64) \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
+         PNPM_SHA256='db3906881f63e41b655e3b97d473603dc26326c2470d0b1b8083689e1bcbd1e8'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \

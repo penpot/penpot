@@ -6,9 +6,12 @@
 
 (ns backend-tests.rpc-quotes-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
+   [app.jobs :as jobs]
    [app.rpc :as-alias rpc]
    [app.rpc.cond :as cond]
    [app.rpc.quotes :as-alias quotes]
@@ -472,3 +475,78 @@
         (t/is (= :restriction (th/ex-type error)))
         (t/is (= :max-quote-reached (th/ex-code error)))
         (t/is (= "media-storage-bytes-per-team" (:target (ex-data error))))))))
+
+(t/deftest binfile-jobs-per-profile-quote
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-export-jobs-per-profile 2
+                               :quotes-import-jobs-per-profile 1})}]
+
+    (let [profile  (th/create-profile* 1)
+          other    (th/create-profile* 2)
+
+          insert!  (fn [profile-id name status & {:keys [tenant]}]
+                     (th/db-insert! :job {:id           (uuid/next)
+                                          :name         name
+                                          :tenant       (or tenant (cf/get :tenant))
+                                          :queue        "binfile"
+                                          :params       (db/json {})
+                                          :priority     100
+                                          :max-retries  0
+                                          :retry-num    0
+                                          :status       status
+                                          :profile-id   profile-id
+                                          :scheduled-at (ct/now)
+                                          :created-at   (ct/now)
+                                          :modified-at  (ct/now)}))
+
+          check!   (fn check!
+                     ([id profile-id] (check! th/*system* id profile-id))
+                     ([cfg id profile-id]
+                      (quotes/check! cfg {::quotes/id id
+                                          ::quotes/profile-id profile-id})))
+
+          error    (fn [& args]
+                     (try (apply check! args) nil (catch Throwable cause cause)))]
+
+      (t/testing "a profile without jobs is under the quote"
+        (t/is (nil? (check! ::quotes/export-jobs-per-profile (:id profile)))))
+
+      (t/testing "the jobs of another profile do not count"
+        (insert! (:id other) "export-binfile" "new")
+        (insert! (:id profile) "export-binfile" "new")
+        (t/is (nil? (check! ::quotes/export-jobs-per-profile (:id profile)))))
+
+      (t/testing "the jobs of another tenant do not count either"
+        (insert! (:id profile) "export-binfile" "new" :tenant "another-tenant")
+        (t/is (nil? (check! ::quotes/export-jobs-per-profile (:id profile)))))
+
+      (t/testing "a job that already reached a terminal state does not count"
+        (insert! (:id profile) "export-binfile" "completed")
+        (insert! (:id profile) "export-binfile" "failed")
+        (insert! (:id profile) "export-binfile" "cancelled")
+        (t/is (nil? (check! ::quotes/export-jobs-per-profile (:id profile)))))
+
+      (t/testing "the job that would go over the limit is rejected"
+        (insert! (:id profile) "export-binfile" "running")
+        (let [cause (error ::quotes/export-jobs-per-profile (:id profile))]
+          (t/is (some? cause))
+          (t/is (= :restriction (:type (ex-data cause))))
+          (t/is (= :max-quote-reached (:code (ex-data cause))))
+          (t/is (= "export-jobs-per-profile" (:target (ex-data cause))))))
+
+      (t/testing "the families are independent"
+        (t/is (nil? (check! ::quotes/import-jobs-per-profile (:id profile))))
+        (insert! (:id profile) "import-binfile" "new")
+        (t/is (some? (error ::quotes/import-jobs-per-profile (:id profile)))))
+
+      (t/testing "a new name of the family is covered by the registry"
+        (let [future  (th/create-profile* 3)
+              defs    (assoc (::jobs/defs th/*system*)
+                             :export-assets {::jobs/name   :export-assets
+                                             ::jobs/family :export})
+              cfg     (assoc th/*system* ::jobs/defs defs)]
+          (insert! (:id future) "export-assets" "new")
+          (t/is (nil? (check! cfg ::quotes/export-jobs-per-profile (:id future))))
+          (insert! (:id future) "export-assets" "new")
+          (t/is (some? (error cfg ::quotes/export-jobs-per-profile (:id future)))))))))

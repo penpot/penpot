@@ -24,16 +24,14 @@
        :allowHTMLPaste false})
 
 (defn plain-text->html
-  "Build a minimal text/html clipboard payload from plain text.
-
-  Windows apps often prefer CF_HTML over CF_UNICODETEXT; writing only
-  text/plain from a contenteditable copy handler can leave them with the
-  editor surface's empty/`<br>` fallback (a lone newline)."
-  [text]
-  (let [escaped (-> (or text "")
-                    (dom/escape-html)
-                    (str/replace "\n" "<br>"))]
-    (str "<meta charset=\"utf-8\">" escaped)))
+  "Minimal text/html clipboard payload for `text`, with `hidden-html` before it.
+  Windows apps prefer CF_HTML, and may otherwise paste the editor's empty `<br>`."
+  ([text] (plain-text->html text nil))
+  ([text hidden-html]
+   (let [escaped (-> (or text "")
+                     (dom/escape-html)
+                     (str/replace "\n" "<br>"))]
+     (str "<meta charset=\"utf-8\">" hidden-html escaped))))
 
 (defn- from-data-transfer
   "Get clipboard stream from DataTransfer instance"
@@ -223,6 +221,34 @@
   (let [clipboard (get-clipboard)]
     (if (and clipboard (unchecked-get clipboard "readText"))
       (.readText ^js clipboard)
+      (unavailable-error))))
+
+(defn- read-item-type
+  "Promise of the `mime` text of clipboard `item`, or of nil when it has none."
+  [^js item mime]
+  (if (some #{mime} (some-> item .-types array-seq))
+    (-> (.getType item mime) (.then #(.text ^js %)))
+    (js/Promise.resolve nil)))
+
+(defn read-html-and-text
+  "Promise of the system clipboard as {:html :text}, either may be nil. Rejects like
+   `to-clipboard` when the asynchronous Clipboard API is not exposed."
+  []
+  (let [clipboard (get-clipboard)]
+    (cond
+      (and clipboard (unchecked-get clipboard "read"))
+      (-> (.read ^js clipboard)
+          (.then (fn [items]
+                   (let [item (first items)]
+                     (-> (js/Promise.all #js [(read-item-type item "text/html")
+                                              (read-item-type item "text/plain")])
+                         (.then (fn [[html text]] {:html html :text text})))))))
+
+      (and clipboard (unchecked-get clipboard "readText"))
+      (-> (.readText ^js clipboard)
+          (.then (fn [text] {:html nil :text text})))
+
+      :else
       (unavailable-error))))
 
 (defn permission-error?

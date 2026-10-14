@@ -22,8 +22,11 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.jobs :as jobs]
+   [app.metrics :as mtx]
    [app.storage :as sto]
    [app.storage.impl :as impl]
    [integrant.core :as ig]))
@@ -67,13 +70,30 @@
   (-> (db/exec-one! conn [sql:has-file-object-thumbnail-refs id])
       (get :has-refs)))
 
-(def ^:private
-  sql:has-file-thumbnail-refs
+(def ^:private sql:has-file-thumbnail-refs
   "SELECT EXISTS (SELECT 1 FROM file_thumbnail WHERE media_id = ?) AS has_refs")
 
 (defn- has-file-thumbnails-refs?
   [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-file-thumbnail-refs id])
+      (get :has-refs)))
+
+;; Objects in the job-resource bucket are referenced by the resource_id
+;; column of job rows (the unified jobs substrate). A live job row of
+;; any status keeps the object frozen; once no row references it (the
+;; jobs GC deletes expiring/retained rows and marks the object as
+;; touched before/at the same time) the object becomes deletable.
+
+(def ^:private sql:has-job-resource-refs
+  "SELECT EXISTS (SELECT 1 FROM job WHERE resource_id = ?) AS has_refs")
+
+(defn- has-job-resource-refs?
+  "Checks if ANY job row (any status) references the object. Terminal states
+  (completed, failed, cancelled, aborted) also freeze the object because the jobs GC
+  hasn't run yet to clean them up. Once the jobs GC deletes the row, the
+  object becomes eligible for storage GC."
+  [conn {:keys [id]}]
+  (-> (db/exec-one! conn [sql:has-job-resource-refs id])
       (get :has-refs)))
 
 (def sql:exists-file-data-refs
@@ -95,7 +115,7 @@
       SET touched_at = NULL
     WHERE id = ANY(?::uuid[])")
 
-(defn- mark-freeze-in-bulk!
+(defn- mark-freeze-in-bulk
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:mark-freeze-in-bulk ids])))
@@ -106,10 +126,20 @@
           touched_at = NULL
     WHERE id = ANY(?::uuid[])")
 
-(defn- mark-delete-in-bulk!
+(defn- mark-delete-in-bulk
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:mark-delete-in-bulk (ct/now) ids])))
+
+(def ^:private sql:defer-in-bulk
+  "UPDATE storage_object
+      SET touched_at = ?
+    WHERE id = ANY(?::uuid[])")
+
+(defn- defer-in-bulk
+  [conn ids timestamp]
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:defer-in-bulk timestamp ids])))
 
 ;; NOTE: A getter that retrieves the key which will be used for group
 ;; ids; previously we have no value, then we introduced the
@@ -125,12 +155,17 @@
 ;; have value, it means :file-media-object.
 
 (defn- lookup-bucket
-  [{:keys [metadata]}]
+  [{:keys [id metadata]}]
   (or (some-> metadata :bucket)
-      (some-> metadata :reference d/name)
-      sto/default-bucket))
+      (do
+        ;; Only reachable when the metadata column is NULL: the decode
+        ;; always sets :bucket on non-nil metadata (0155 also backfills
+        ;; NULL columns). Keep working, but make it visible.
+        (l/wrn :hint "storage object without bucket metadata, using fallback"
+               :id (str id))
+        sto/default-bucket)))
 
-(defn- process-objects!
+(defn- process-objects
   [conn has-refs? bucket objects]
   (loop [to-freeze #{}
          to-delete #{}
@@ -148,31 +183,38 @@
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
       (do
-        (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
-        (some->> (seq to-delete) (mark-delete-in-bulk! conn))
+        (some->> (seq to-freeze) (mark-freeze-in-bulk conn))
+        (some->> (seq to-delete) (mark-delete-in-bulk conn))
         [(count to-freeze) (count to-delete)]))))
 
-(defn- process-bucket!
+(defn- process-bucket
   [conn bucket objects]
   (cond
-    (= bucket "file-media-object")       (process-objects! conn has-file-media-object-refs? bucket objects)
-    (= bucket "team-font-variant")       (process-objects! conn has-team-font-variant-refs? bucket objects)
-    (= bucket "file-object-thumbnail")   (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
-    (= bucket "file-thumbnail")          (process-objects! conn has-file-thumbnails-refs? bucket objects)
-    (= bucket "profile")                 (process-objects! conn has-profile-refs? bucket objects)
-    (= bucket "file-data")               (process-objects! conn has-file-data-refs? bucket objects)
-    (= bucket sto/tempfile-bucket)       (process-objects! conn (constantly false) sto/tempfile-bucket objects)
-    (= bucket sto/upload-session-bucket) (process-objects! conn (constantly false) sto/upload-session-bucket objects)
-    (= bucket "organization")            (process-objects! conn (constantly false) bucket objects)
+    (= bucket "file-media-object")       (process-objects conn has-file-media-object-refs? bucket objects)
+    (= bucket "team-font-variant")       (process-objects conn has-team-font-variant-refs? bucket objects)
+    (= bucket "file-object-thumbnail")   (process-objects conn has-file-object-thumbnails-refs? bucket objects)
+    (= bucket "file-thumbnail")          (process-objects conn has-file-thumbnails-refs? bucket objects)
+    (= bucket "profile")                 (process-objects conn has-profile-refs? bucket objects)
+    (= bucket "file-data")               (process-objects conn has-file-data-refs? bucket objects)
+    (= bucket sto/tempfile-bucket)       (process-objects conn (constantly false) sto/tempfile-bucket objects)
+    (= bucket sto/upload-session-bucket) (process-objects conn (constantly false) sto/upload-session-bucket objects)
+    (= bucket sto/job-resource-bucket)   (process-objects conn has-job-resource-refs? bucket objects)
+    (= bucket "organization")            (process-objects conn (constantly false) bucket objects)
     :else
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))
 
-(defn process-chunk!
+(defn- defer-poison
+  "Defer corrupt rows by one day in their own transaction, separate from
+  the healthy-chunk work."
+  [{:keys [::db/conn]} poison-ids]
+  (defer-in-bulk conn poison-ids (ct/plus (ct/now) {:days 1})))
+
+(defn process-chunk
   [{:keys [::db/conn]} chunk]
   (reduce-kv (fn [[nfo ndo] bucket objects]
-               (let [[nfo' ndo'] (process-bucket! conn bucket objects)]
+               (let [[nfo' ndo'] (process-bucket conn bucket objects)]
                  [(+ nfo nfo')
                   (+ ndo ndo')]))
              [0 0]
@@ -189,39 +231,85 @@
      SKIP LOCKED
     LIMIT 10")
 
+(defn- try-decode-row
+  "Decode a touched row, capturing corrupt metadata as poison instead
+  of aborting the whole chunk. Poison rows are deferred by the caller."
+  [row]
+  (try
+    [:ok (impl/decode-row row)]
+    ;; Exception, not Throwable: JVM Errors (OOM, StackOverflow) must
+    ;; not be swallowed as a deferrable data problem.
+    (catch Exception cause
+      (l/err :hint "storage object with corrupt metadata, deferring evaluation"
+             :id (str (:id row))
+             :cause cause)
+      [:poison (:id row)])))
+
 (defn get-chunk
   [conn timestamp]
-  (->> (db/exec! conn [sql:get-touched-storage-objects timestamp])
-       (map impl/decode-row)
-       (not-empty)))
+  (let [grouped (->> (db/exec! conn [sql:get-touched-storage-objects timestamp])
+                     (map try-decode-row)
+                     (group-by first))]
+    {:chunk  (not-empty (mapv second (:ok grouped)))
+     :poison (not-empty (mapv second (:poison grouped)))}))
 
-(defn- process-touched!
-  [{:keys [::db/pool ::timestamp] :as cfg}]
+(defn- process-touched
+  [{:keys [::db/pool ::mtx/metrics ::timestamp] :as cfg}]
   (loop [freezed 0
          deleted 0]
-    (if-let [chunk (get-chunk pool timestamp)]
-      (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
-        (recur (long (+ freezed nfo))
-               (long (+ deleted ndo))))
-      {:freeze freezed :delete deleted})))
+    (let [{:keys [chunk poison]} (get-chunk pool timestamp)]
+      (when (seq poison)
+        (mtx/run! metrics :id :storage-gc-poison :inc (count poison))
+        (db/tx-run! cfg defer-poison poison))
+      ;; Keep draining after a poison-only batch: the deferred rows leave
+      ;; the selection and the next batch may hold healthy objects.
+      (if (or (seq chunk) (seq poison))
+        (let [[nfo ndo] (if (seq chunk)
+                          (db/tx-run! cfg process-chunk chunk)
+                          [0 0])]
+          (jobs/heartbeat cfg)
+          (recur (long (+ freezed nfo))
+                 (long (+ deleted ndo))))
+        {:freeze freezed :delete deleted}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expect valid storage"))
+(declare execute-storage-gc-touched)
 
-(defmethod ig/expand-key ::handler
+(defmethod ig/assert-key ::job-def
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expect valid storage")
+  (assert (mtx/metrics? (::mtx/metrics params)) "expect valid metrics"))
+
+(defmethod ig/expand-key ::job-def
   [k v]
   {k (merge {::min-age (ct/duration {:hours 2})} v)})
 
-(defmethod ig/init-key ::handler
-  [_ {:keys [::min-age] :as cfg}]
-  (fn [{:keys [props]}]
-    (let [threshold (if (:skip-delay props)
-                      (ct/now)
-                      (ct/minus (ct/now) min-age))]
-      (process-touched! (assoc cfg ::timestamp threshold)))))
+(def schema:storage-gc-touched-params
+  "Optional :skip-delay processes all touched objects immediately,
+  bypassing the min-age threshold (repl-driven deletion cascades)."
+  [:map {:closed true}
+   [:skip-delay {:optional true} :boolean]])
+
+(defmethod ig/init-key ::job-def
+  [_ cfg]
+  {::jobs/name      :storage-gc-touched
+   ::jobs/schema    schema:storage-gc-touched-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-storage-gc-touched cfg params))
+   ::jobs/decoder   (sm/decoder schema:storage-gc-touched-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:storage-gc-touched-params)})
+
+(defn execute-storage-gc-touched
+  "Plain job handler: analyze the touched storage objects and freeze or
+  delete them depending on their references."
+  ([cfg] (execute-storage-gc-touched cfg {}))
+  ([cfg params]
+   (let [threshold (if (:skip-delay params)
+                     (ct/now)
+                     (ct/minus (ct/now) (::min-age cfg)))]
+     (process-touched (assoc cfg ::timestamp threshold)))))
 
