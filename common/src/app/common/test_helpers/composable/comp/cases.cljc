@@ -58,11 +58,11 @@
      AR — variant property edits keep the copies of a member as they are; a
          switch then finds its member by the edited properties.
      AS — an added variant joins the set and is a switch target for copies.
-     AT..AX — variant management, frontend only: transform a component into a
-         variant (AT), combine components (AU), rename a variant (AV, F6),
-         rename a member in the layers panel and remove empty properties
-         (AW), the shortcuts that add members (AX). Copies of the members
-         keep their link and overrides.
+     AT..AX — variant management: transform a component into a variant (AT),
+         combine components (AU), rename a variant (AV, F6), the shortcuts
+         that add members (AX), all frontend only, and rename a member in the
+         layers panel, remove empty properties and set a member's error
+         (AW). Copies of the members keep their link and overrides.
      AY — a border radius token on a main reaches untouched copies, and its
          removal too; a copy's own token survives.
      AZ — a nested copy pasted out of its main keeps the overrides the main
@@ -1358,31 +1358,8 @@
         path-name (n/change-property main :name "Button/Primary")
         first-val #(if (tm/applied? % path-name) "Primary" "Value 1")
         transform (n/transform-in-variant main)
-        shortcut  (n/variant-shortcut :create-component [main])
-        ;; renaming the main to the path's first part syncs the copy's name
-        ;; in an undo entry of its own: one undo reverts only that sync, so
-        ;; the component keeps the name and path the transform gave it
-        f6        (fn [op]
-                    {:bug     "F6"
-                     :fails   {:undo       #{[:object :sync-main-head :frame-id]
-                                             [:object :sync-main-head :parent-id]
-                                             [:object :sync-main-head :name]
-                                             [:object :sync-main-head :variant-id]
-                                             [:object :sync-main-head :variant-name]
-                                             [:object :sync-main-head :hide-in-viewer]
-                                             [:object :unlabelled :extra]
-                                             [:object :unlabelled :shapes]
-                                             [:component :sync-main-component :name]
-                                             [:component :sync-main-component :path]
-                                             [:component :sync-main-component :variant-id]
-                                             [:component :sync-main-component :variant-properties]
-                                             [:component :unlabelled :extra]}
-                               :undo-index #{[:undo-index 1]}}
-                     :op      op
-                     :runners #{:frontend}
-                     :when    #(tm/applied? % path-name)})]
+        shortcut  (n/variant-shortcut :create-component [main])]
     {:setup      setup/empty-situation
-     :undo-check {:known-failures [(f6 transform) (f6 shortcut)]}
      :operation  (tm/in-sequence
                   [(n/create-component m base-color :size 100)
                    (n/instantiate-copy m)
@@ -1504,15 +1481,15 @@
                          (t/is (not (contains? (:touched copy) :name-group)))))))}))
 
 (defn variant-layer-rename-and-cleanup
-  "Case AW (frontend only). A copy nests member a of a variant set (a, b; their
-   rects differ) and overrides the fill of the variant's rect. Member a is
-   renamed in the layers panel: its value changes and a property Size is
-   added, empty on b. The set gets a property with no values and the empty
+  "Case AW. A copy nests member a of a variant set (a, b; their rects
+   differ) and overrides the fill of the variant's rect. Member a is renamed
+   in the layers panel: its value changes and a property Size is added,
+   empty on b. The set gets a property with no values and the empty
    properties are removed: only that one goes, Size holding a value. A
    second layers-panel rename drops Size from a, leaving it empty on every
-   member, and the empty properties are removed again: Size goes. Then
-   member b gets an error and loses it. The copy stays as it was through
-   every step, and a switch then finds member b."
+   member, and the rename removes it. Then member b gets an error and loses
+   it. The copy stays as it was through every step, and a switch then finds
+   member b."
   []
   (let [m      "main"
         vset   "vset"
@@ -1542,11 +1519,6 @@
                      (t/is (= resized (props s)))
                      (variant-copy-checks s nested (a-id s) green)))
                   (n/rename-variant-in-layers vset "a" [["Property 1" "a2"]])
-                  (tm/test-that
-                   (fn [s]
-                     (t/is (= [[["Property 1" "a2"] ["Size" ""]] [["Property 1" "b"] ["Size" ""]]]
-                              (props s)))))
-                  (n/remove-empty-properties vset)
                   (tm/test-that
                    (fn [s]
                      (t/is (= [[["Property 1" "a2"]] [["Property 1" "b"]]] (props s)))

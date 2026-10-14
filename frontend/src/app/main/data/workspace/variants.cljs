@@ -11,25 +11,20 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
-   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
    [app.common.path-names :as cpn]
-   [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
-   [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
-   [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -66,67 +61,54 @@
     (rx/empty)))
 
 (defn- variant-changes
-  "The empty changes of the page that holds the mains `opts` names (see
-  `get-variant-mains-page`), with its objects and the data of the file, or
-  nil when the file has no such page. Without `opts`, of the current page."
-  ([it state]
-   (let [page-id (:current-page-id state)
-         data    (dsh/lookup-file-data state)]
-     (-> (pcb/empty-changes it page-id)
-         (pcb/with-library-data data)
-         (pcb/with-objects (:objects (dsh/get-page data page-id))))))
-  ([it state opts]
-   (let [data (dsh/lookup-file-data state)]
-     (when-let [{:keys [page-id objects]} (get-variant-mains-page data opts)]
-       (-> (pcb/empty-changes it page-id)
-           (pcb/with-library-data data)
-           (pcb/with-objects objects))))))
+  "The empty changes of a page, with its objects and the data of the file:
+  the page `page-id`, the one that holds the mains of `component-id` or
+  `variant-id` (see `get-variant-mains-page`), or the current one. Nil when
+  the file has no page for those mains."
+  [it state & {:keys [page-id component-id variant-id]}]
+  (let [data    (dsh/lookup-file-data state)
+        page-id (cond
+                  (some? page-id) page-id
+                  (or (some? component-id) (some? variant-id))
+                  (:page-id (get-variant-mains-page data {:component-id component-id :variant-id variant-id}))
+                  :else (:current-page-id state))]
+    (when page-id
+      (-> (pcb/empty-changes it page-id)
+          (pcb/with-library-data data)
+          (pcb/with-objects (:objects (dsh/get-page data page-id)))))))
 
-(defn update-properties-names-and-values
-  "Compares the previous properties with the updated ones and executes the correspondent action
-   for each one depending on if it needs to be removed, updated or added"
-  [component-id variant-id previous-properties updated-properties]
-  (ptk/reify ::update-properties-names-and-values
+(defn rename-member
+  "Rename the component `component-id` of the variant `variant-id` from the
+  layers panel, with the text `name` (`clvp/generate-rename-member`)."
+  [component-id variant-id name]
+  (ptk/reify ::rename-member
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local dissoc :shape-for-rename))
 
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (variant-changes it state {:component-id component-id})]
-        (let [updated-properties   (ctv/update-number-in-repeated-prop-names updated-properties)
-
-              properties-to-remove (ctv/find-properties-to-remove previous-properties updated-properties)
-              properties-to-add    (ctv/find-properties-to-add previous-properties updated-properties)
-              properties-to-update (ctv/find-properties-to-update previous-properties updated-properties)
-
-              changes (reduce
-                       (fn [changes {:keys [name]}]
-                         (-> changes
-                             (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) "")))
-                       changes
-                       properties-to-remove)
-
-              changes (reduce
-                       (fn [changes {:keys [name value]}]
-                         (-> changes
-                             (clvp/generate-update-property-value component-id (ctv/find-index-for-property-name previous-properties name) value)))
-                       changes
-                       properties-to-update)
-
-              changes (reduce
-                       (fn [changes [idx {:keys [name value]}]]
-                         (-> changes
-                             (clvp/generate-add-new-property variant-id {:property-name name})
-                             (clvp/generate-update-property-value component-id (+ idx (count previous-properties)) value)))
-                       changes
-                       (map-indexed vector properties-to-add))]
-
+      (let [previous (-> (dsh/lookup-file-data state)
+                         (ctkl/get-component component-id)
+                         :variant-properties)
+            updated  (ctv/update-number-in-repeated-prop-names
+                      (if (ctv/valid-properties-formula? name) (ctv/properties-formula->map name) []))
+            to-add   (ctv/find-properties-to-add previous updated)
+            changes  (some-> (variant-changes it state :component-id component-id)
+                             (clvp/generate-rename-member component-id variant-id name))
+            removed? (< (count (-> (pcb/get-library-data changes)
+                                   (ctkl/get-component component-id)
+                                   :variant-properties))
+                        (+ (count previous) (count to-add)))]
+        (when changes
           (rx/of
-           (when (or (seq properties-to-remove) (seq properties-to-update))
+           (when (or (seq (ctv/find-properties-to-remove previous updated))
+                     (seq (ctv/find-properties-to-update previous updated)))
              (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:rename-in-layers"}))
-           (when (seq properties-to-add)
+           (when (seq to-add)
              (ev/event {::ev/name "variant-add-property" ::ev/origin "workspace:rename-in-layers"}))
+           (when removed?
+             (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:rename-in-layers"}))
            (dch/commit-changes changes)))))))
 
 (defn update-property-name
@@ -151,7 +133,7 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+      (when-let [changes (variant-changes it state :variant-id variant-id)]
         (let [data       (dsh/lookup-file-data state)
               props      (-> (cfv/find-variant-components data (pcb/get-objects changes) variant-id)
                              last
@@ -169,7 +151,7 @@
   (ptk/reify ::update-property-value
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (variant-changes it state {:component-id component-id})]
+      (when-let [changes (variant-changes it state :component-id component-id)]
         (rx/of (dch/commit-changes (clvp/generate-update-property-value changes component-id pos value)))))))
 
 (defn update-error
@@ -180,7 +162,7 @@
    (ptk/reify ::update-error
      ptk/WatchEvent
      (watch [it state _]
-       (when-let [changes (variant-changes it state {:component-id component-id})]
+       (when-let [changes (variant-changes it state :component-id component-id)]
          (rx/of (dch/commit-changes (clvp/generate-set-variant-error changes component-id value))))))))
 
 (defn remove-property
@@ -190,7 +172,7 @@
   (ptk/reify ::remove-property
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+      (when-let [changes (variant-changes it state :variant-id variant-id)]
         (rx/of (dch/commit-changes (clvp/generate-remove-property changes variant-id pos)))))))
 
 (defn remove-empty-properties
@@ -200,7 +182,7 @@
   (ptk/reify ::remove-empty-properties
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (some-> (variant-changes it state {:variant-id variant-id})
+      (when-let [changes (some-> (variant-changes it state :variant-id variant-id)
                                  (clvp/generate-remove-empty-properties variant-id))]
         (when (seq (:redo-changes changes))
           (rx/of
@@ -213,7 +195,7 @@
   (ptk/reify ::add-new-property
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+      (when-let [changes (variant-changes it state :variant-id variant-id)]
         (rx/of (dch/commit-changes (clvp/generate-add-new-property changes variant-id options)))))))
 
 (defn reorder-variant-properties
@@ -222,19 +204,8 @@
   (ptk/reify ::reorder-variant-properties
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (variant-changes it state {:variant-id variant-id})]
+      (when-let [changes (variant-changes it state :variant-id variant-id)]
         (rx/of (dch/commit-changes (clvp/generate-reorder-variant-properties changes variant-id from-pos to-space-between-pos)))))))
-
-(defn- define-variant-container
-  "Read page objects after the artboard exists, then commit the defining
-   variant fields in one change."
-  [variant-id main-id component-id name]
-  (ptk/reify ::define-variant-container
-    ptk/WatchEvent
-    (watch [it state _]
-      (rx/of (dch/commit-changes (-> (variant-changes it state)
-                                     (clv/generate-define-variant-container
-                                      variant-id main-id component-id name)))))))
 
 (defn- focus-property
   [variant-id]
@@ -315,102 +286,26 @@
               (->> (rx/of (focus-property (:id variant-container)))
                    (rx/delay 250))))))))))
 
-(defn- transform-in-variant-stream
-  "Event stream that turns `main-instance-id` into a variant set.
-   The defining fields share one commit (`define-variant-container`).
-   Combine concatenates this stream before relocating the other mains.
-   `page-id` is the page that holds the main; nil means the open page."
-  [state main-instance-id variant-id delta prefix add-wrapper? duplicate? flex? page-id]
-  (let [variant-id   (or variant-id (uuid/next))
-        variant-vec  [variant-id]
-        file-id      (:current-file-id state)
-        page-id      (or page-id (:current-page-id state))
-        objects      (dsh/lookup-page-objects state file-id page-id)
-        main         (get objects main-instance-id)
-        parent       (get objects (:parent-id main))
-        component-id (:component-id main)
-        name         (if add-wrapper?
-                       (str "Component/" (:name main))
-                       (:name main))
-        ;; If there is a prefix, set is as first item of path
-        cpath (-> name
-                  cpn/split-path
-                  (cond->
-                   (seq prefix)
-                    (->> (drop (count prefix))
-                         (cons (cpn/join-path prefix))
-                         vec)))
-
-        name         (first cpath)
-        num-props    (max 1 (dec (count cpath)))
-        style-props  (cond-> {:r1 20
-                              :r2 20
-                              :r3 20
-                              :r4 20
-                              :layout-item-absolute true}
-                       flex?
-                       (into {:layout-item-h-sizing :auto
-                              :layout-item-v-sizing :auto
-                              :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
-                              :layout-gap     {:row-gap 0 :column-gap 20}}))
-
-        stroke-props {:stroke-alignment :inner
-                      :stroke-style :solid
-                      :stroke-color "#bb97d8" ;; todo use color var?
-                      :stroke-opacity 1
-                      :stroke-width 2}
-
-        ;; Move the position of the variant container so the main shape doesn't
-        ;; change its position
-        delta        (or delta
-                         (if (ctsl/any-layout? parent)
-                           (gpt/point 0 0)
-                           (gpt/point -30 -30)))
-        undo-id      (js/Symbol)]
-
-    (rx/concat
-     (rx/of
-      (dwu/start-undo-transaction undo-id)
-
-      ;; Create the frame while it is still a normal board
-      (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)
-      (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
-      (when flex? (dwsl/create-layout-from-id variant-id :flex))
-      (dwsh/update-shapes variant-vec #(merge % style-props))
-      (cl/add-stroke variant-vec stroke-props))
-
-     (rx/of (define-variant-container variant-id main-instance-id component-id name))
-
-     ;; First property is in the defining commit
-     (when (> num-props 1)
-       (rx/from
-        (repeatedly (dec num-props)
-                    #(add-new-property variant-id {:fill-values? true}))))
-
-     ;; When the component has path, set the path items as properties values
-     (when (> (count cpath) 1)
-       (rx/from
-        (map
-         #(update-property-value component-id % (nth cpath (inc %)))
-         (range num-props))))
-
-     (rx/of
-      (when duplicate? (add-new-variant main-instance-id))
-      (dwsh/update-shapes variant-vec #(dissoc % :layout-item-absolute))
-      (dwu/commit-undo-transaction undo-id)
-      (when flex?
-        (ptk/data-event :layout/update {:ids [variant-id]}))))))
-
 (defn transform-in-variant
   "Given the id of a main shape of a component, creates a variant structure for
-   that component"
-  ([main-instance-id]
-   (transform-in-variant main-instance-id nil nil [] false true true))
-  ([main-instance-id variant-id delta prefix add-wrapper? duplicate? flex?]
-   (ptk/reify ::transform-in-variant
-     ptk/WatchEvent
-     (watch [_ state _]
-       (transform-in-variant-stream state main-instance-id variant-id delta prefix add-wrapper? duplicate? flex? nil)))))
+   that component, with a second member (`clv/generate-transform-in-variant`)."
+  [main-instance-id]
+  (ptk/reify ::transform-in-variant
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [variant-id   (uuid/next)
+            new-shape-id (uuid/next)
+            changes      (-> (variant-changes it state)
+                             (clv/generate-transform-in-variant main-instance-id variant-id
+                                                                {:layout?          true
+                                                                 :new-component-id (uuid/next)
+                                                                 :new-shape-id     new-shape-id}))]
+        (rx/concat
+         (rx/of (dch/commit-changes changes)
+                (ptk/data-event :layout/update {:ids [variant-id]})
+                (dws/select-shape new-shape-id))
+         (->> (rx/of (focus-property variant-id))
+              (rx/delay 250)))))))
 
 (defn add-component-or-variant
   "Manage the shared shortcut, and do the pertinent action"
@@ -508,122 +403,41 @@
           (rx/of (rename-variant (:variant-id component) name))
           (rx/of (dwl/rename-component-and-main-instance component-id name)))))))
 
-(defn- bounding-rect
-  "Receives a list of frames (with X, y, width and height) and
-  calculates a rect that contains them all"
-  [frames]
-  (let [xs   (map :x frames)
-        ys   (map :y frames)
-        x2s  (map #(+ (:x %) (:width %)) frames)
-        y2s  (map #(+ (:y %) (:height %)) frames)
-        min-x (apply min xs)
-        min-y (apply min ys)
-        max-x (apply max x2s)
-        max-y (apply max y2s)]
-    {:x min-x
-     :y min-y
-     :width (- max-x min-x)
-     :height (- max-y min-y)}))
-
-(defn- common-prefix
-  [paths]
-  (->> (apply map vector paths)
-       (take-while #(apply = %))
-       (map first)
-       vec))
-
-(defn- order-variant-children
-  "Reorders the children of a variant container so that the variant components
-   (as returned by cfv/find-variant-components, which reverses the children
-   vector) appear in the given order of ids. Ids that are not children of the
-   container are ignored; children not covered by ids keep their position at
-   the end."
-  [variant-id ordered-ids]
-  (ptk/reify ::order-variant-children
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page-id   (:current-page-id state)
-            objects   (dsh/lookup-page-objects state page-id)
-            children  (set (dm/get-in objects [variant-id :shapes]))
-            ;; The desired :shapes vector is the reverse of ordered-ids;
-            ;; change-parent at index 0 inverts the order of the given shapes,
-            ;; so they are passed in ordered-ids order
-            shapes    (->> ordered-ids
-                           (filter children)
-                           (mapv (d/getf objects)))]
-        (when (> (count shapes) 1)
-          (let [changes (-> (pcb/empty-changes it page-id)
-                            (pcb/with-objects objects)
-                            (pcb/change-parent variant-id shapes 0))]
-            (rx/of (dch/commit-changes changes)
-                   (ptk/data-event :layout/update {:ids [variant-id]}))))))))
-
 (defn combine-as-variants
   "Combines the components identified by the main-instance ids `ids` into a
-   new variant container. If `ids` is a sequential collection, its order
-   determines the order of the resulting variant components; unordered
-   collections are normalized to the layer-tree order."
+   new variant container (`clv/generate-combine-as-variants`). If `ids` is a
+   sequential collection, its order determines the order of the resulting
+   variant components; unordered collections are normalized to the
+   layer-tree order."
   [ids {:keys [page-id trigger variant-id]}]
   (ptk/reify ::combine-as-variants
     ptk/WatchEvent
     (watch [it state stream]
-      (let [current-page  (:current-page-id state)
+      (let [current-page (:current-page-id state)
 
             combine
-            (fn [current-page]
-              (let [objects       (dsh/lookup-page-objects state current-page)
-                    ids           (->> (if (sequential? ids)
-                                         ids
-                                         (cfh/order-by-indexed-shapes objects ids))
-                                       (cfh/clean-loops objects)
-                                       (remove (fn [id]
-                                                 (let [shape (get objects id)]
-                                                   (or (not (ctc/main-instance? shape))
-                                                       (ctc/is-variant? shape)))))
-                                       (vec))]
+            (fn [page-id]
+              (let [objects (dsh/lookup-page-objects state page-id)
+                    ids     (->> (if (sequential? ids)
+                                   ids
+                                   (cfh/order-by-indexed-shapes objects ids))
+                                 (cfh/clean-loops objects)
+                                 (remove (fn [id]
+                                           (let [shape (get objects id)]
+                                             (or (not (ctc/main-instance? shape))
+                                                 (ctc/is-variant? shape)))))
+                                 (vec))]
                 (when (> (count ids) 1)
-                  (let [shapes        (mapv #(get objects %) ids)
-                        rect          (bounding-rect shapes)
-                        prefix        (->> shapes
-                                           (mapv #(cpn/split-path (:name %)))
-                                           (common-prefix))
-                        ;; When the common parent is root, add a wrapper
-                        add-wrapper?  (empty? prefix)
-                        first-shape   (first shapes)
-                        delta         (gpt/point (- (:x rect) (:x first-shape) 30)
-                                                 (- (:y rect) (:y first-shape) 30))
-                        common-parent (->> ids
-                                           (mapv #(-> (cfh/get-parent-ids objects %) reverse))
-                                           common-prefix
-                                           last)
-                        index         (-> (get objects common-parent)
-                                          :shapes
-                                          count
-                                          inc)
-                        variant-id    (or variant-id (uuid/next))
-                        undo-id       (js/Symbol)]
-
+                  (let [rect       (grc/join-rects (map #(:selrect (get objects %)) ids))
+                        variant-id (or variant-id (uuid/next))
+                        changes    (-> (variant-changes it state :page-id page-id)
+                                       (clv/generate-combine-as-variants ids variant-id))
+                        undo-id    (js/Symbol)]
                     (rx/concat
-                     (if (and page-id (not= current-page page-id))
-                       (rx/of (dcm/go-to-workspace :page-id page-id))
-                       (rx/empty))
-
-                     (rx/of (dwu/start-undo-transaction undo-id))
-
-                     (transform-in-variant-stream state (first ids) variant-id delta prefix add-wrapper? false false current-page)
-
-                     ;; One relocation per main, in `ids` order, so the
-                     ;; generated property values follow the combine order
-                     (rx/from (map #(dwsh/relocate-shapes #{%} variant-id 0) (rest ids)))
-
-                     ;; Each relocation inserts at index 0, so restore the
-                     ;; intended order afterwards
-                     (rx/of (order-variant-children variant-id ids)
-                            (dwsh/update-shapes ids #(-> %
-                                                         (assoc :constraints-h :left)
-                                                         (assoc :constraints-v :top)
-                                                         (assoc :fixed-scroll false)))
-                            (dwsh/relocate-shapes #{variant-id} common-parent index)
+                     (rx/of (dwu/start-undo-transaction undo-id)
+                            (dch/commit-changes changes)
+                            (dws/select-shapes (d/ordered-set variant-id))
+                            (ptk/data-event :layout/update {:ids (into [variant-id] (map #(:parent-id (get objects %))) ids)})
                             (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
                             (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
                             (ev/event (-> {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count ids)}
@@ -655,29 +469,6 @@
                    component
                    (not (ctc/is-variant? component)))))
           ids))))
-
-(defn valid-variant-switch?
-  [state shape pos val]
-  (let [libraries              (dsh/lookup-libraries state)
-        component              (ctf/get-component libraries
-                                                  (:component-file shape)
-                                                  (:component-id shape)
-                                                  :include-deleted? false)
-        component-file-data    (dm/get-in libraries [(:component-file shape) :data])
-        component-page         (dsh/get-page component-file-data (:main-instance-page component))
-        component-page-objects (:objects component-page)
-        variant-components     (when component
-                                 (cfv/find-variant-components component-file-data
-                                                              component-page-objects
-                                                              (:variant-id component)))]
-    (and (ctc/instance-head? shape)
-         (ctc/in-component-copy? shape)
-         (ctc/is-variant? component)
-         (nat-int? pos)
-         (< pos (count (:variant-properties component)))
-         (string? val)
-         (some #(= val (dm/get-in % [:variant-properties pos :value]))
-               variant-components))))
 
 (defn combine-selected-as-variants
   [options]

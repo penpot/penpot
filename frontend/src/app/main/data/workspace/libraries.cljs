@@ -871,30 +871,12 @@
              shape         (ctn/get-shape container id)]
 
          (when (ctk/instance-head? shape)
-           (let [changes
+           (let [[local-changes nonlocal-changes]
                  (-> (pcb/empty-changes it)
                      (pcb/set-undo-group undo-group)
                      (pcb/with-container container)
-                     (cll/generate-sync-shape-inverse libraries container id))
-
-                 ldata     (->> (:component-file shape)
-                                (dsh/lookup-file-data state))
-
-                 xf-filter (comp
-                            (filter :local-change?)
-                            (map #(dissoc % :local-change?)))
-
-                 local-changes (-> changes
-                                   (update :redo-changes #(into [] xf-filter %))
-                                   (update :undo-changes #(into [] xf-filter %)))
-
-                 xf-remove (comp
-                            (remove :local-change?)
-                            (map #(dissoc % :local-change?)))
-
-                 nonlocal-changes (-> changes
-                                      (update :redo-changes #(into [] xf-remove %))
-                                      (update :undo-changes #(into [] xf-remove %)))]
+                     (cll/generate-sync-shape-inverse libraries container id)
+                     (cll/split-local-changes))]
 
              (log/debug :msg "UPDATE-COMPONENT finished"
                         :js/local-changes (log-changes
@@ -910,7 +892,7 @@
                                            :file-id (:id file))))
               (when (seq (:redo-changes nonlocal-changes))
                 (dch/commit-changes (assoc nonlocal-changes
-                                           :file-id (:id ldata))))))))))))
+                                           :file-id (:component-file shape))))))))))))
 
 (defn- update-component-thumbnail-sync
   [state component-id file-id tag]
