@@ -55,20 +55,20 @@ class BodyLineLengthTests(unittest.TestCase):
         self.assert_ok(message)
 
     def test_line_at_limit_passes(self):
-        line = "x " * 38  # 76 chars, breakable
-        self.assertEqual(len(line), 76)
+        line = "x " * 40  # 80 chars, breakable
+        self.assertEqual(len(line), 80)
         self.assert_ok(":bug: Fix crash\n\n" + line + "\n")
 
     def test_line_one_over_limit_fails(self):
-        line = "x " * 38 + "x"  # 77 chars, breakable
-        self.assertEqual(len(line), 77)
+        line = "x " * 40 + "x"  # 81 chars, breakable
+        self.assertEqual(len(line), 81)
         error = self.assert_fail(":bug: Fix crash\n\n" + line + "\n")
-        self.assertIn("76", error)
+        self.assertIn("80", error)
 
     def test_long_body_line_fails(self):
         long_line = "word " * 20  # 100 chars, breakable
         error = self.assert_fail(":bug: Fix crash\n\n" + long_line + "\n")
-        self.assertIn("76", error)
+        self.assertIn("80", error)
         self.assertIn("line 3", error)
 
     def test_subject_is_not_checked(self):
@@ -150,15 +150,34 @@ class SubjectRulesRegressionTests(unittest.TestCase):
         ok, _ = check_commit.check_subject_no_trailing_dot(":bug: Fix crash.")
         self.assertFalse(ok)
 
-    def test_subject_at_70_chars_passes(self):
-        # ":bug: " is 6 chars, so 64 chars of text reach exactly 70.
-        ok, error = check_commit.check_subject_length(":bug: " + "S" * 64)
+    def test_subject_at_80_chars_passes(self):
+        # ":bug: " is 6 chars, so 74 chars of text reach exactly 80.
+        ok, error = check_commit.check_subject_length(":bug: " + "S" * 74)
         self.assertTrue(ok, error)
 
-    def test_subject_over_70_chars_fails(self):
-        ok, error = check_commit.check_subject_length(":bug: " + "S" * 65)
+    def test_subject_over_80_chars_fails(self):
+        ok, error = check_commit.check_subject_length(":bug: " + "S" * 75)
         self.assertFalse(ok)
-        self.assertIn("70", error)
+        self.assertIn("80", error)
+
+    def test_merge_subject_skips_length_check(self):
+        # Git generates Merge subjects from branch names; the limit is skipped.
+        subject = "Merge branch 'some-very-long-branch-name-that-keeps-going' into develop with extra text here"
+        self.assertGreater(len(subject), 80)
+        ok, error = check_commit.check_subject_length(subject)
+        self.assertTrue(ok, error)
+
+    def test_revert_subject_skips_length_check(self):
+        subject = 'Revert ":bug: Fix some earlier commit with a fairly long subject line already here" extra'
+        self.assertGreater(len(subject), 80)
+        ok, error = check_commit.check_subject_length(subject)
+        self.assertTrue(ok, error)
+
+    def test_reapply_subject_skips_length_check(self):
+        subject = 'Reapply ":bug: Fix some earlier commit with a fairly long subject line already here" extra'
+        self.assertGreater(len(subject), 80)
+        ok, error = check_commit.check_subject_length(subject)
+        self.assertTrue(ok, error)
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ Always add the PR to the Main project (`--project "Main"`) unless the user expli
 PR titles follow commit title conventions:
 
 ```
-:emoji: Subject line (imperative, capitalized, no period, <=70 chars)
+:emoji: Subject line (imperative, capitalized, no period, <=80 chars)
 ```
 
 See `mem:workflow/creating-commits` for emoji codes. Squash merge uses the PR title as the final commit subject, so title format matters.
