@@ -5,10 +5,13 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.tokenscript.processor
-  "Resolves a set of design tokens whose values reference each other.
+  "Resolves design tokens whose values reference each other, from one
+  token map or an ordered vector of token sets where later sets win.
 
-    (build {\"a\" {:value \"8\"} \"b\" {:value \"{a} * 2\"}} config)
+    (build {\"a\" {:value \"8\"} \"b\" {:value \"{a} * 2\"}} {:config config})
     ;; => {:tokens {\"a\" #Number 8 \"b\" #Number 16} :issues nil :graph {..} :state ..}
+
+    (build [[core-id core-tokens] [dark-id dark-tokens]] {:config config})
 
   Resolution is a memoized depth first walk over the reference graph:
   a token is resolved by first resolving everything it references, so
@@ -29,8 +32,12 @@
   token get a `:processor/dependency-error` describing the chain.
 
   The returned `:state` supports incremental operations (`create-token`,
-  `update-token`, `rename-token`, `delete-token`, `resolve-value`) that
-  only re-resolve tokens affected by the change."
+  `update-token`, `rename-token`, `delete-token`, `set-sets`,
+  `resolve-value`) that only re-parse the changed tokens and only
+  re-resolve the tokens that can observe the change. They return new
+  states and leave the one they started from unchanged.
+
+  See docs/technical-guide/developer/subsystems/tokenscript/resolver.md."
   (:require
    [app.common.tokenscript.ast :as ast]
    [app.common.tokenscript.config :as config]
@@ -122,11 +129,13 @@
 
 ;; State of one build. `prefixes` and `direct-children` stay nil until
 ;; `ensure-prefix-index`; `cycle-root` is set while the resolution
-;; unwinds a cycle.
+;; unwinds a cycle. `reverse` is a delay until the first incremental
+;; operation needs it, see `reverse-index`.
 (defrecord State [config
                   parsers
-                  tokens             ; name -> normalized token data
-                  constants          ; lower case name -> symbol
+                  sets               ; [[set-key {name token-data}]], later sets win
+                  tokens             ; name -> token data of the winning set
+                  constants          ; `u/name-key` -> symbol
                   mutable-constants? ; constants are copied per evaluation, see `constants-table`
                   parsed             ; name -> {:ast :deps}
                   sub-fields         ; field path -> {:parent :field-path}
@@ -134,19 +143,22 @@
                   prefixes           ; prefix -> #{member token}
                   direct-children    ; prefix -> #{short name}
                   graph              ; name -> #{dep}
+                  reverse            ; dep -> #{name}, the inverse of `graph`
                   resolved           ; name -> symbol | error map
                   cache              ; reference path -> value
+                  derived            ; #{group or dictionary key path in `cache`/`resolved`}
                   issues             ; name -> [issue]
                   missing            ; #{reference to no token}
                   visiting           ; #{name being resolved}
                   cycle-root])
 
 (defn- initial-state
-  [tokens cfg parsers]
+  [sets tokens cfg parsers]
   (let [constants (constant-symbols cfg)]
     (map->State
      {:config cfg
       :parsers parsers
+      :sets sets
       :tokens tokens
       :constants constants
       ;; checked once per build instead of per token
@@ -157,6 +169,7 @@
       :graph {}
       :resolved {}
       :cache {}
+      :derived #{}
       :issues {}
       :missing #{}
       :visiting #{}})))
@@ -165,6 +178,12 @@
 (defn- put
   [st k name v]
   (assoc st k (assoc (get st k) name v)))
+
+(defn- put-derived
+  "`put` for a group or dictionary key entry, which no token owns."
+  [st k name v]
+  (-> (put st k name v)
+      (update :derived conj name)))
 
 (defn- add-issue
   [st name i]
@@ -395,20 +414,34 @@
   [st path]
   (some #(when (token? st %) %) (reverse (prefixes-of path))))
 
+(defn- resolve-until-cycle
+  "Resolves the names of `items` (`name-of` each) in order, stopping when
+  one of them closes a cycle through a token being resolved: the names
+  after it would be resolved while the cycle unwinds and be taken for
+  part of it."
+  [st name-of items]
+  (reduce (fn [st item]
+            (let [st (resolve-name st (name-of item))]
+              (if (:cycle-root st) (reduced st) st)))
+          st
+          items))
+
 (defn- resolve-prefix
-  "Resolves all tokens under `prefix` and caches a dictionary of the
-  expression tokens directly below it."
+  "Resolves the expression tokens directly below `prefix`, the entries of
+  the group, and caches them as a dictionary. Tokens further down are
+  not part of the value and are left alone."
   [st prefix]
-  (let [st (reduce resolve-name st (sort (get (:prefixes st) prefix)))
+  (let [shorts (sort (get (:direct-children st) prefix))
+        st (resolve-until-cycle st #(str prefix "." %) shorts)
         entries (into (sym/value (sym/dictionary nil))
                       (keep (fn [short]
                               (let [path (str prefix "." short)]
                                 (when (contains? (:cache st) path)
                                   (let [v (get (:cache st) path)]
                                     [short (sym/clone-if-mutable (sym/data->symbol v))])))))
-                      (sort (get (:direct-children st) prefix)))]
-    (if (seq entries)
-      (put st :cache prefix (sym/dictionary entries))
+                      shorts)]
+    (if (and (seq entries) (not (:cycle-root st)))
+      (put-derived st :cache prefix (sym/dictionary entries))
       st)))
 
 (defn- resolve-virtual-child
@@ -421,7 +454,7 @@
       (contains? (:cache st) path) st
 
       (err/error-map? parent-value)
-      (put st :resolved path (dependency-error path parent parent-value))
+      (put-derived st :resolved path (dependency-error path parent parent-value))
 
       ;; Only direct keys of a dictionary token are reachable, like the
       ;; one level flattening of the other implementations.
@@ -429,42 +462,50 @@
       (let [key (subs path (inc (count parent)))
             v (when-not (str/includes? key ".") (get (sym/value parent-value) key))]
         (if (some? v)
-          (put st :cache path (sym/clone-if-mutable v))
-          (put st :resolved path (err/error-map :processor/token-not-found {:data {:token-name path}}))))
+          (put-derived st :cache path (sym/clone-if-mutable v))
+          (put-derived st :resolved path (err/error-map :processor/token-not-found {:data {:token-name path}}))))
 
       :else
-      (put st :resolved path (err/error-map :processor/token-not-found {:data {:token-name path}})))))
+      (put-derived st :resolved path (err/error-map :processor/token-not-found {:data {:token-name path}})))))
+
+(defn- dependency-status
+  "`[state status]` for a resolved `dep`."
+  [st dep]
+  (let [v (get (:resolved st) dep)]
+    (cond
+      ;; still unwinding a cycle: the current token is on it too
+      (:cycle-root st) [st :cycle]
+      (err/error-map? v) [st v]
+      :else [st :ok])))
 
 (defn- ensure-dependency
   "Makes the value of `dep` available in the cache if possible. Returns
-  `[state status]` where status is `:ok`, `:cycle`, an error map or
-  `:missing`."
+  `[state status cycle-root]` where status is `:ok`, `:cycle`, an error
+  map or `:missing`, and `cycle-root` is the token being resolved that a
+  new cycle leads back to. A group or a key of a token being resolved
+  closes a cycle too."
   [st dep]
   (cond
     (contains? (:visiting st) dep)
-    [st :cycle]
+    [st :cycle dep]
 
     (or (token? st dep) (contains? (:sub-fields st) dep))
-    (let [st (resolve-name st dep)
-          v (get (:resolved st) dep)]
-      [st (cond
-            ;; still unwinding a cycle: the current token is on it too
-            (:cycle-root st) :cycle
-            (err/error-map? v) v
-            :else :ok)])
+    (dependency-status (resolve-name st dep) dep)
 
     (contains? (:resolved st) dep)
-    (let [v (get (:resolved st) dep)]
-      [st (if (err/error-map? v) v :ok)])
+    (dependency-status st dep)
 
     :else
-    (let [st (ensure-prefix-index st)]
+    (let [st (ensure-prefix-index st)
+          visiting (:visiting st)]
       (if (contains? (:prefixes st) dep)
-        [(resolve-prefix st dep) :ok]
+        (if-let [member (some #(visiting (str dep "." %)) (get (:direct-children st) dep))]
+          [st :cycle member]
+          (dependency-status (resolve-prefix st dep) dep))
         (if-let [parent (parent-token st dep)]
-          (let [st (resolve-virtual-child st dep parent)
-                v (get (:resolved st) dep)]
-            [st (if (err/error-map? v) v :ok)])
+          (if (contains? visiting parent)
+            [st :cycle parent]
+            (dependency-status (resolve-virtual-child st dep parent) dep))
           [(update st :missing conj dep) :missing])))))
 
 (defn- constants-table
@@ -508,13 +549,13 @@
   [st name {:keys [ast deps]}]
   (loop [st st deps deps]
     (if-let [dep (first deps)]
-      (let [[st status] (ensure-dependency st dep)]
+      (let [[st status cycle-root] (ensure-dependency st dep)]
         (case status
           :ok (recur st (rest deps))
           :cycle (-> st
                      (put :resolved name (circular-error name))
                      (add-error name (circular-error name))
-                     (cond-> (not (:cycle-root st)) (assoc :cycle-root dep)))
+                     (cond-> (not (:cycle-root st)) (assoc :cycle-root cycle-root)))
           :missing (let [error (dependency-error name dep (err/error-map :processor/token-not-found {:data {:token-name dep}}))]
                      (-> st (put :resolved name error) (add-error name error)))
           (let [error (dependency-error name dep status)]
@@ -523,7 +564,7 @@
 
 (defn- resolve-structured
   [st name {:keys [fields]}]
-  (let [st (reduce (fn [st [path]] (resolve-name st path)) st fields)
+  (let [st (resolve-until-cycle st first fields)
         failure (some (fn [[path]]
                         (let [v (get (:resolved st) path)]
                           (when (err/error-map? v) v)))
@@ -628,17 +669,53 @@
      :graph (if no-sub-fields? (:graph st) (select-names (:graph st) names))
      :state st}))
 
+;; Sets -----------------------------------------------------------------------
+;;
+;; The input is an ordered vector of sets, `[[set-key tokens] ..]`; a name
+;; defined by several sets takes its data from the last of them. Set keys
+;; are opaque: penpot passes the set ids.
+
+(defn- normalize-sets
+  [tokens]
+  (if (map? tokens)
+    [[nil (td/normalize-tokens tokens)]]
+    (mapv (fn [[k set-tokens]] [k (td/normalize-tokens set-tokens)]) tokens)))
+
+(defn- merge-sets
+  [sets]
+  (if (= 1 (count sets))
+    (second (first sets))
+    (reduce (fn [acc [_ set-tokens]] (into acc set-tokens)) {} sets)))
+
+(defn- source-index
+  "Index of the last set defining `name`, nil when none does."
+  [sets name]
+  (loop [i (dec (count sets))]
+    (when (>= i 0)
+      (if (contains? (second (nth sets i)) name)
+        i
+        (recur (dec i))))))
+
+(defn- winner
+  [sets name]
+  (when-let [i (source-index sets name)]
+    (get-in sets [i 1 name])))
+
+;; Building -------------------------------------------------------------------
+
 (defn- run
-  [tokens cfg parsers seed]
-  (-> (initial-state tokens cfg parsers)
-      (merge (select-keys seed [:resolved :cache :issues]))
-      (parse-all)
-      (resolve-all)
-      (result)))
+  [sets cfg parsers]
+  (let [st (parse-all (initial-state sets (merge-sets sets) cfg parsers))
+        graph (:graph st)]
+    (-> st
+        (assoc :reverse (delay (reverse-graph graph)))
+        (resolve-all)
+        (result))))
 
 (defn build
-  "Resolves normalized token data (`{name {:value .. :type ..}}`).
-  Options:
+  "Resolves token data, `{name {:value .. :type .. :metadata ..}}`, or an
+  ordered vector of sets of it, `[[set-key tokens] ..]`, where a token
+  defined by several sets is taken from the last one. Options:
 
     :config         interpreter config (default `config/make-config`)
     :object-parsers parsers for atomic structured values
@@ -650,145 +727,284 @@
   graph."
   ([tokens] (build tokens nil))
   ([tokens {:keys [config object-parsers]}]
-   (run (td/normalize-tokens tokens)
+   (run (normalize-sets tokens)
         (or config (config/make-config))
-        (or object-parsers td/default-object-parsers)
-        nil)))
-
-(defn process-tokens
-  "Like `build` but accepts raw inputs: a flat map of names to values or
-  token data, or a nested token tree."
-  ([tokens] (process-tokens tokens nil))
-  ([tokens opts]
-   (build (td/->flat-tokens tokens) opts)))
+        (or object-parsers td/default-object-parsers))))
 
 ;; Incremental operations -----------------------------------------------------
+;;
+;; An operation changes the data of some names in the sets and re-resolves
+;; what can observe the change: the changed names and, through the reverse
+;; graph, the tokens referencing them, a group above them (`{color}`) or a
+;; key below them (`{theme.dark}`). Every other value is kept.
 
-(defn- expanded-reverse-graph
-  "Reverse dependency edges including prefix memberships and virtual
-  child parents, so a change to a token dirties everything that could
-  observe it."
+(defn- reverse-index
   [st]
-  (let [st (ensure-prefix-index st)
-        graph (:graph st)
-        edges (for [[node deps] graph
-                    dep deps
-                    source (cond
-                             (contains? (:tokens st) dep) [dep]
-                             (contains? (:sub-fields st) dep) [dep]
-                             (contains? (:prefixes st) dep) (get (:prefixes st) dep)
-                             :else (if-let [parent (parent-token st dep)] [parent] [dep]))]
-                [source node])]
-    (reduce (fn [acc [source node]] (update acc source (fnil conj #{}) node)) {} edges)))
+  (let [r (:reverse st)]
+    (if (delay? r) @r r)))
 
-(defn- dirty-tokens
-  "Tokens that must be re-resolved after `changed` names change: their
-  dependents, tokens under a changed prefix, and every token that had
-  issues (a change may fix them)."
-  [st changed]
-  (let [reverse (expanded-reverse-graph st)
-        seeds (into (set changed)
-                    (concat (keys (:issues st))
-                            (mapcat (fn [c] (for [[t _] (:tokens st) :when (str/starts-with? t (str c "."))] t)) changed)))]
-    (loop [queue (vec seeds) seen #{}]
-      (if-let [current (first queue)]
-        (if (contains? seen current)
-          (recur (subvec queue 1) seen)
-          (recur (into (subvec queue 1) (remove seen (get reverse current))) (conj seen current)))
+(defn- set-index
+  [sets set-key]
+  (or (first (keep-indexed (fn [i [k]] (when (= k set-key) i)) sets))
+      (err/raise :processor/token-set-not-found {:data {:set-name (str set-key)}})))
+
+(defn- last-set
+  [sets]
+  (if (seq sets)
+    (dec (count sets))
+    (err/raise :processor/token-set-not-found {:data {:set-name "(no sets)"}})))
+
+(defn- target-set
+  "Index of the set an operation on `name` applies to: the `:set` option,
+  else the set `name` is taken from, else the last set."
+  [sets name opts]
+  (if (contains? opts :set)
+    (set-index sets (:set opts))
+    (or (source-index sets name) (last-set sets))))
+
+(defn- field-names
+  [st name]
+  (map first (get-in st [:structured name :fields])))
+
+(defn- disj-reverse
+  [rev dep node]
+  (let [nodes (disj (get rev dep) node)]
+    (if (empty? nodes) (dissoc rev dep) (assoc rev dep nodes))))
+
+(defn- remove-node
+  "State without the parse and resolution data of `name` and its fields."
+  [st name]
+  (reduce (fn [st node]
+            (-> st
+                (assoc :reverse (reduce #(disj-reverse %1 %2 node) (:reverse st) (get (:graph st) node)))
+                (update :graph dissoc node)
+                (update :parsed dissoc node)
+                (update :sub-fields dissoc node)
+                (update :resolved dissoc node)
+                (update :cache dissoc node)
+                (update :issues dissoc node)))
+          (update st :structured dissoc name)
+          (cons name (field-names st name))))
+
+(defn- add-edges
+  [st name]
+  (reduce (fn [st node]
+            (assoc st :reverse (reduce (fn [rev dep] (update rev dep (fnil conj #{}) node))
+                                       (:reverse st)
+                                       (get (:graph st) node))))
+          st
+          (cons name (field-names st name))))
+
+(defn- reparse
+  "Parses `name` again from its current token data."
+  [st name]
+  (let [st (remove-node st name)]
+    (if-let [data (get (:tokens st) name)]
+      (-> st (parse-token name data) (add-edges name))
+      st)))
+
+(defn- keys-below
+  "Reverse graph keys that are neither tokens nor fields (groups, keys of
+  dictionary tokens, missing tokens) by each dot prefix."
+  [st]
+  (reduce (fn [acc k]
+            (if (or (token? st k) (contains? (:sub-fields st) k))
+              acc
+              (reduce #(update %1 %2 (fnil conj []) k) acc (prefixes-of k))))
+          {}
+          (keys (:reverse st))))
+
+(defn- dirty-names
+  "`seeds` and every name that can observe a change of them."
+  [st seeds]
+  (let [rev (:reverse st)
+        below (delay (keys-below st))
+        observers (fn [name]
+                    (concat (get rev name)
+                            (mapcat #(get rev %) (prefixes-of name))
+                            (mapcat #(get rev %) (get @below name))
+                            (field-names st name)))]
+    (loop [todo (vec seeds) seen (set seeds)]
+      (if-let [name (peek todo)]
+        (let [new (remove seen (observers name))]
+          (recur (into (pop todo) new) (into seen new)))
         seen))))
 
-(defn- seed-from
-  "Resolved values of the old state that are still valid for `tokens`."
-  [st tokens dirty]
-  (let [keep? (fn [name]
-                (and (contains? tokens name)
-                     (not (contains? dirty name))
-                     (= (get tokens name) (get (:tokens st) name))
-                     (contains? (:resolved st) name)
-                     (not (err/error-map? (get (:resolved st) name)))))
-        names (filter keep? (keys (:tokens st)))]
-    {:resolved (select-keys (:resolved st) names)
-     :cache (select-keys (:cache st) names)
-     :issues (select-keys (:issues st) names)}))
+(defn- reset-name
+  "Drops the resolution of `name`, keeping its invalid name issue."
+  [st name]
+  (let [st (-> st
+               (update :resolved dissoc name)
+               (update :cache dissoc name)
+               (update :issues dissoc name))]
+    (if (td/valid-token-path? name)
+      st
+      (add-issue st name (err/error-map :processor/invalid-token-name {:data {:token-name name}})))))
 
-(defn- rebuild
+(defn- drop-derived
+  [{:keys [derived] :as st}]
+  (assoc st
+         :cache (apply dissoc (:cache st) derived)
+         :resolved (apply dissoc (:resolved st) derived)
+         :derived #{}))
+
+(defn- apply-changes
+  "State with the token data `tokens`, re-resolving the `changed` names
+  and the names observing them."
   [st tokens changed]
-  (let [dirty (dirty-tokens st changed)
-        seed (seed-from st tokens dirty)]
-    (run tokens (:config st) (:parsers st) seed)))
+  (if (empty? changed)
+    (assoc st :tokens tokens)
+    (let [st (-> (drop-derived st)
+                 (assoc :reverse (reverse-index st)))
+          parsed-before (filterv #(contains? (:parsed st) %) changed)
+          old-fields (mapcat #(field-names st %) changed)
+          st (reduce reparse (assoc st :tokens tokens) changed)
+          dirty (dirty-names st (concat changed old-fields (mapcat #(field-names st %) changed)))
+          changed? (set changed)
+          ;; Structured tokens are parsed again to get fresh fields
+          restructured (filter #(and (contains? (:structured st) %) (not (changed? %))) dirty)
+          st (reduce reparse st restructured)
+          fresh (into changed? (concat restructured (mapcat #(field-names st %) restructured)))
+          st (reduce reset-name st (filter #(and (contains? (:parsed st) %) (token? st %) (not (fresh %))) dirty))
+          membership-changed? (not= parsed-before (filterv #(contains? (:parsed st) %) changed))]
+      (-> (cond-> st
+            membership-changed? (assoc :prefixes nil :direct-children nil))
+          (as-> st (reduce resolve-name st (sort dirty)))))))
+
+(defn- change
+  "`[state changed?]` for `sets` in which the data of `names` may have
+  changed."
+  [st sets names]
+  (let [old (:tokens st)
+        tokens (reduce (fn [tokens name]
+                         (if-let [data (winner sets name)]
+                           (assoc tokens name data)
+                           (dissoc tokens name)))
+                       old
+                       names)
+        changed (filterv #(not= (get old %) (get tokens %)) names)]
+    [(apply-changes (assoc st :sets sets) tokens changed) (seq changed)]))
+
+(defn- dependents-graph
+  "Dependency graph between `name` and the tokens transitively depending
+  on it."
+  [st name]
+  (let [rev (reverse-index st)
+        graph (:graph st)
+        affected (loop [todo [name] seen #{name}]
+                   (if-let [current (peek todo)]
+                     (let [new (remove seen (get rev current))]
+                       (recur (into (pop todo) new) (into seen new)))
+                     seen))]
+    (into {} (map (fn [t] [t (into #{} (filter affected) (get graph t))])) affected)))
 
 (defn- ensure-token
   [st name]
   (when-not (contains? (:tokens st) name)
     (err/raise :processor/token-not-found {:data {:token-name name}})))
 
-(defn- with-dependents
-  "Build result `res` with `:dependents`, the dependency graph between
-  `name` and the tokens depending on it."
-  [res name]
-  (assoc res :dependents (:subgraph (dependents (:graph res) name))))
-
 (defn create-token
-  "Adds the token `name`. Returns the build result with `:dependents`."
-  [st name data]
-  (let [name (str/trim name)]
-    (when (contains? (:tokens st) name)
-      (err/raise :processor/token-already-exists {:data {:token-name name}}))
-    (-> (rebuild st (assoc (:tokens st) name (td/normalize data)) [name])
-        (with-dependents name))))
+  "Adds the token `name` to the `:set` of `opts`, the last set by default.
+  Returns the build result with `:dependents`, the dependency graph
+  between `name` and the tokens depending on it."
+  ([st name data] (create-token st name data nil))
+  ([st name data opts]
+   (let [name (str/trim name)
+         sets (:sets st)
+         i (if (contains? opts :set) (set-index sets (:set opts)) (last-set sets))
+         _ (when (contains? (get-in sets [i 1]) name)
+             (err/raise :processor/token-already-exists {:data {:token-name name}}))
+         [st changed?] (change st (assoc-in sets [i 1 name] (td/normalize data)) [name])]
+     (assoc (result st) :dependents (if changed? (dependents-graph st name) {})))))
 
 (defn update-token
-  "Sets the data of the token `name`, adding it when missing. Returns the
-  build result with `:dependents`."
-  [st name data]
-  (let [name (str/trim name)]
-    (-> (rebuild st (assoc (:tokens st) name (td/normalize data)) [name])
-        (with-dependents name))))
+  "Sets the data of the token `name` in the `:set` of `opts`, by default
+  the set it is taken from, adding it when missing. Returns the build
+  result with `:dependents`; it is empty when a later set overrides the
+  token."
+  ([st name data] (update-token st name data nil))
+  ([st name data opts]
+   (let [name (str/trim name)
+         sets (:sets st)
+         i (target-set sets name opts)
+         [st changed?] (change st (assoc-in sets [i 1 name] (td/normalize data)) [name])]
+     (assoc (result st) :dependents (if changed? (dependents-graph st name) {})))))
 
 (defn- rename-references
-  "Tokens of `st` with the references to `name` in its dependents renamed
-  to `new-name`."
-  [st name new-name]
-  (reduce (fn [tokens dependent]
-            (let [{:keys [value] :as data} (get tokens dependent)
+  "Sets with the references to `name` in its direct dependents renamed to
+  `new-name`, in the sets they are taken from."
+  [st sets name new-name]
+  (reduce (fn [sets dependent]
+            (let [i (source-index sets dependent)
+                  {:keys [value] :as data} (when i (get-in sets [i 1 dependent]))
                   ast (get-in st [:parsed dependent :ast])]
               (if (and (string? value) ast)
-                (assoc tokens dependent (assoc data :value (ast/rename-references value ast {name new-name})))
-                tokens)))
-          (:tokens st)
-          (disj (:tokens (dependents (:graph st) name)) name)))
+                (assoc-in sets [i 1 dependent]
+                          (assoc data :value (ast/rename-references value ast {name new-name})))
+                sets)))
+          sets
+          (get (reverse-index st) name)))
 
 (defn rename-token
-  "Renames the token `name` to `new-name`. The references to it break
-  unless `:update-references?` rewrites them in its dependents. Returns
-  the build result with `:dependents`."
+  "Renames the token `name` to `new-name` in the `:set` of `opts`, by
+  default the set it is taken from. The references to it break unless
+  `:update-references?` rewrites them in its dependents. Returns the
+  build result with `:dependents`."
   ([st name new-name] (rename-token st name new-name nil))
-  ([st name new-name {:keys [update-references?]}]
+  ([st name new-name {:keys [update-references?] :as opts}]
    (let [name (str/trim name)
-         new-name (str/trim new-name)]
-     (ensure-token st name)
+         new-name (str/trim new-name)
+         _ (ensure-token st name)
+         sets (:sets st)
+         i (target-set sets name opts)
+         data (or (get-in sets [i 1 name])
+                  (err/raise :processor/token-not-found {:data {:token-name name}}))]
      (if (= name new-name)
-       (with-dependents (result st) name)
+       (assoc (result st) :dependents (dependents-graph st name))
        (do
          (when (contains? (:tokens st) new-name)
            (err/raise :processor/token-already-exists {:data {:token-name new-name}}))
-         (let [tokens (if update-references?
-                        (rename-references st name new-name)
-                        (:tokens st))
-               tokens (-> tokens (dissoc name) (assoc new-name (get tokens name)))]
-           (-> (rebuild st tokens [name new-name])
-               (with-dependents new-name))))))))
+         (let [sets (cond-> sets
+                      update-references? (as-> sets (rename-references st sets name new-name))
+                      :always (-> (update-in [i 1] dissoc name)
+                                  (assoc-in [i 1 new-name] data)))
+               names (into [name new-name] (when update-references? (get (reverse-index st) name)))
+               [st _] (change st sets names)]
+           (assoc (result st) :dependents (dependents-graph st new-name))))))))
 
 (defn delete-token
-  "Removes the token `name`. Returns the build result with `:dependents`,
-  the graph of the tokens that depended on it."
-  [st name]
-  (let [name (str/trim name)]
-    (ensure-token st name)
-    (assoc (rebuild st (dissoc (:tokens st) name) [name])
-           :dependents (-> (:subgraph (dependents (:graph st) name))
-                           (dissoc name)
-                           (update-vals #(disj % name))))))
+  "Removes the token `name` from the `:set` of `opts`, by default the set
+  it is taken from. Returns the build result with `:dependents`, the
+  graph of the tokens that depended on it."
+  ([st name] (delete-token st name nil))
+  ([st name opts]
+   (let [name (str/trim name)
+         _ (ensure-token st name)
+         sets (:sets st)
+         i (target-set sets name opts)
+         _ (when-not (contains? (get-in sets [i 1]) name)
+             (err/raise :processor/token-not-found {:data {:token-name name}}))
+         [st' changed?] (change st (update-in sets [i 1] dissoc name) [name])]
+     (assoc (result st')
+            :dependents (if changed?
+                          (-> (dependents-graph st name)
+                              (dissoc name)
+                              (update-vals #(disj % name)))
+                          {})))))
+
+(defn set-sets
+  "Replaces the sets, as `build` takes them, e.g. for a theme switch.
+  Re-resolves only what the names whose data changed can reach. Returns
+  the build result."
+  [st sets]
+  (let [sets (normalize-sets sets)
+        old (:tokens st)
+        tokens (merge-sets sets)
+        changed (-> []
+                    (into (remove #(identical? (get tokens %) (get old %))) (keys tokens))
+                    (into (remove #(contains? tokens %)) (keys old)))
+        [st _] (change st sets changed)]
+    (result st)))
 
 (defn resolve-value
   "Evaluates the expression `value` against the resolved tokens without
@@ -816,6 +1032,17 @@
                         [])})))))))
 
 ;; Result helpers -------------------------------------------------------------
+
+(defn source
+  "Key of the set the token `name` is taken from."
+  [res name]
+  (let [sets (get-in res [:state :sets])]
+    (some->> (source-index sets name) (nth sets) (first))))
+
+(defn metadata
+  "`:metadata` of the token data `name` is taken from."
+  [res name]
+  (get-in res [:state :tokens name :metadata]))
 
 (defn affected-tokens
   "Token names in the `:dependents` graph of an operation result."
@@ -872,19 +1099,3 @@
   [res]
   (let [cfg (get-in res [:state :config])]
     (update-vals (:tokens res) #(sym/->string-result % cfg))))
-
-(defn nest-tokens
-  "Nests a flat `{\"a.b\" v}` map into `{\"a\" {\"b\" v}}`."
-  [flat]
-  (reduce-kv (fn [acc path v] (assoc-in acc (str/split path #"\.") v)) {} flat))
-
-(defn flatten-dictionaries
-  "Flattens dictionary values of a tokens map into `prefix.key` entries,
-  like the flat output builders of the other implementations."
-  [tokens]
-  (letfn [(flat [acc prefix v]
-            (if (sym/dictionary? v)
-              (reduce-kv (fn [acc k child] (flat acc (str prefix "." k) child)) acc (sym/value v))
-              (assoc acc prefix v)))]
-    (reduce-kv flat {} tokens)))
-

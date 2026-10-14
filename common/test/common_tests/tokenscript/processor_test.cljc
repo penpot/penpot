@@ -6,6 +6,8 @@
 
 (ns common-tests.tokenscript.processor-test
   (:require
+   [app.common.schema.generators :as sg]
+   [app.common.schema.test :as smt]
    [app.common.tokenscript :as tsc]
    [app.common.tokenscript.config :as config]
    [app.common.tokenscript.errors :as err]
@@ -18,7 +20,7 @@
 
 (defn- process
   ([tokens] (process tokens (h/core-config)))
-  ([tokens cfg] (proc/process-tokens tokens {:config cfg})))
+  ([tokens cfg] (proc/build tokens {:config cfg})))
 
 (defn- value
   "String form of a resolved token."
@@ -80,7 +82,16 @@
     (t/is (= [:processor/circular-dependency] (codes res "y")))
     (t/is (= [:processor/circular-dependency] (codes res "self")))
     (t/is (= [:processor/dependency-error] (codes res "z")) "dependents of a cycle get a dependency error")
-    (t/is (= :processor/circular-dependency (get-in res [:issues "z" 0 :data :cause :code])))))
+    (t/is (= :processor/circular-dependency (get-in res [:issues "z" 0 :data :cause :code]))))
+  (t/testing "cycles through groups and dictionary keys"
+    (let [res (process {"a" "{g}" "g.x" "{a}" "g.y" "{other}" "other" "1"
+                        "d" "{grp}" "grp.k" "{d.k}"})]
+      (t/is (= [:processor/circular-dependency] (codes res "a")))
+      (t/is (= "1" (value res "g.y")) "a group member off the cycle resolves")
+      (t/is (nil? (get-in res [:issues "g.y"])))
+      (t/is (= [:processor/circular-dependency] (codes res "d")) "a key of a token being resolved closes a cycle")
+      (t/is (= :processor/circular-dependency
+               (get-in res [:issues "grp.k" 0 :data :cause :code] (get-in res [:issues "grp.k" 0 :code])))))))
 
 (t/deftest group-references-test
   (let [res (process {"color.primary" "#FF0000"
@@ -126,9 +137,9 @@
         (t/is (= :processor/dependency-error (:code parent-issue)))))))
 
 (t/deftest object-parsers-test
-  (let [res (proc/process-tokens {"spacing" {:value {:small {:value 8 :unit "px"}} :type "spacing"}}
-                                 {:config (h/core-config)
-                                  :object-parsers [td/number-with-unit-parser]})]
+  (let [res (proc/build {"spacing" {:value {:small {:value 8 :unit "px"}} :type "spacing"}}
+                        {:config (h/core-config)
+                         :object-parsers [td/number-with-unit-parser]})]
     (t/is (= "{small: 8px}" (value res "spacing")))))
 
 (t/deftest token-name-validation-test
@@ -136,13 +147,6 @@
     (t/is (= [:processor/invalid-token-name] (codes res "bad name")))
     (t/is (= "1" (value res "bad name")) "the token still resolves")
     (t/is (nil? (get-in res [:issues "ok.name"])))))
-
-(t/deftest nested-input-test
-  (let [res (process {"color" {"red" {"$value" "#f00" "$type" "color"}
-                               "dark" {"$value" "{color.red}"}}})]
-    (t/is (= "#f00" (value res "color.red")))
-    (t/is (= "#f00" (value res "color.dark")))
-    (t/is (= "color" (get-in res [:state :tokens "color.red" :type])))))
 
 (t/deftest inline-constants-test
   (let [res (process {"a" "red" "b" "{a}" "c" "lighten({b}, 0.1)"} (h/full-config))]
@@ -212,6 +216,188 @@
       (t/is (= :processor/token-not-found
                (h/error-code #(proc/delete-token (:state del) "a")))))))
 
+(defn- snapshot
+  "Resolved strings and issue codes of a result, to compare results."
+  [res]
+  {:tokens (proc/tokens->strings res)
+   :issues (update-vals (or (:issues res) {}) #(frequencies (map :code %)))})
+
+(defn- same-as-build?
+  "Whether an incremental result equals a fresh build of its sets."
+  [res]
+  (= (snapshot (proc/build (get-in res [:state :sets]) {:config (get-in res [:state :config])}))
+     (snapshot res)))
+
+(defn- build-sets
+  [sets]
+  (proc/build sets {:config (h/core-config)}))
+
+(t/deftest sets-test
+  (let [res (build-sets [[:core {"color.bg" {:value "#fff" :metadata {:id 1}}
+                                 "space" "8"}]
+                         [:dark {"color.bg" {:value "#000" :metadata {:id 2}}
+                                 "double" "{space} * 2"}]])]
+    (t/is (= "#000" (value res "color.bg")) "later sets win")
+    (t/is (= "16" (value res "double")) "references reach across sets")
+    (t/is (= :dark (proc/source res "color.bg")))
+    (t/is (= :core (proc/source res "space")))
+    (t/is (= {:id 2} (proc/metadata res "color.bg")))
+    (t/is (= :processor/token-set-not-found
+             (h/error-code #(proc/update-token (:state res) "x" {:value "1"} {:set :nope}))))))
+
+(t/deftest shadowed-update-test
+  (let [res (build-sets [[:core {"a" "1" "b" "{a} + 1"}]
+                         [:dark {"a" "10"}]])
+        shadowed (proc/update-token (:state res) "a" {:value "2"} {:set :core})]
+    (t/is (= "11" (value shadowed "b")))
+    (t/is (= {} (:dependents shadowed)) "an overridden definition affects nothing")
+    (t/is (identical? (get-in res [:tokens "b"]) (get-in shadowed [:tokens "b"])))
+    (t/testing "deleting the override uses the earlier definition"
+      (let [del (proc/delete-token (:state shadowed) "a" {:set :dark})]
+        (t/is (= "2" (value del "a")))
+        (t/is (= "3" (value del "b")))
+        (t/is (same-as-build? del))))
+    (t/testing "by default operations apply to the set a token is taken from"
+      (let [upd (proc/update-token (:state res) "a" {:value "20"})]
+        (t/is (= "20" (get-in upd [:state :sets 1 1 "a" :value])))
+        (t/is (= "1" (get-in upd [:state :sets 0 1 "a" :value])))))))
+
+(t/deftest set-sets-test
+  (let [core {"base" "8" "other" "{base} + 1" "color.bg" "{mode.bg}"}
+        res (build-sets [[:core core] [:light {"mode.bg" "#fff"}]])
+        dark (proc/set-sets (:state res) [[:core core] [:dark {"mode.bg" "#000"}]])]
+    (t/is (= "#000" (value dark "color.bg")))
+    (t/is (identical? (get-in res [:tokens "other"]) (get-in dark [:tokens "other"]))
+          "tokens that cannot see the change keep their value")
+    (t/is (same-as-build? dark))
+    (t/testing "removing a set"
+      (let [none (proc/set-sets (:state dark) [[:core core]])]
+        (t/is (= [:processor/dependency-error] (codes none "color.bg")))
+        (t/is (same-as-build? none))))))
+
+(t/deftest incremental-references-test
+  (let [res (process {"color.primary" "#FF0000"
+                      "group" "{color}"
+                      "pick" "{group.primary}"
+                      "base" "4"
+                      "shadow" {:value {:blur "{base} * 2"} :type "shadow"}
+                      "blur" "{shadow.blur}"
+                      "waiting" "{later}"
+                      "bad name" "{base}"})
+        st (:state res)]
+    (t/testing "groups and dictionary keys follow their members"
+      (let [upd (proc/update-token st "color.primary" {:value "#00FF00"})]
+        (t/is (= "#00FF00" (value upd "pick")))
+        (t/is (same-as-build? upd)))
+      (let [cr (proc/create-token st "color.extra" {:value "#000"})]
+        (t/is (= "Dictionary" (sym/type-name (get-in cr [:tokens "group"]))))
+        (t/is (= "2" (sym/to-string (sym/length (get-in cr [:tokens "group"])))))
+        (t/is (same-as-build? cr))))
+    (t/testing "fields of structured tokens follow their references"
+      (let [upd (proc/update-token st "base" {:value "5"})]
+        (t/is (= "10" (value upd "blur")))
+        (t/is (= [:processor/invalid-token-name] (codes upd "bad name")) "re-resolved tokens keep their name issue")
+        (t/is (same-as-build? upd))))
+    (t/testing "creating a missing token fixes its dependents"
+      (let [cr (proc/create-token st "later" {:value "1"})]
+        (t/is (= "1" (value cr "waiting")))
+        (t/is (nil? (get-in cr [:issues "waiting"])))
+        (t/is (same-as-build? cr))))
+    (t/testing "the state an operation started from is unchanged"
+      (proc/update-token st "base" {:value "100"})
+      (t/is (= "8" (value res "blur"))))))
+
+(t/deftest incremental-matches-build-test
+  (let [ops [[:update "a" "{c}"] [:update "c" "1"] [:update "c" "{a}"] [:delete "b"]
+             [:create "b" "{a} * 3"] [:update "a" "{missing}"] [:create "missing" "2"]
+             [:update "s" "{x}"] [:rename "a" "z"] [:update "d" {:p "{z}" :q "{b}"}]]
+        start (:state (process {"a" "10" "b" "{a} + 5" "c" "{b} * 2" "d" {:p "{a}" :q "1"}
+                                "g.x" "{b}" "g.y" "2" "s" "{g}" "x" "{s}"}))]
+    (reduce (fn [st [op name arg]]
+              (let [res (case op
+                          :update (proc/update-token st name {:value arg})
+                          :create (proc/create-token st name {:value arg})
+                          :delete (proc/delete-token st name)
+                          :rename (proc/rename-token st name arg {:update-references? true}))]
+                (t/is (same-as-build? res) (str "after " op " " name))
+                (:state res)))
+            start
+            ops)))
+
+(def ^:private prop-names
+  ["a" "b" "c" "g.x" "g.y" "d" "dict" "bad name"])
+
+(def ^:private prop-values
+  (into ["1" "2" 3 nil "" "1 +" "uppercase" "{g}" "{dict.x}" "{d.p}"
+         "variable q: Number = 2; q * 3" {:p "{a}" :q "2"} [{:p "{b} * 2"}]]
+        (mapcat (fn [n] [(str "{" n "}") (str "{" n "} + 1")]))
+        prop-names))
+
+(def ^:private prop-set-keys
+  [:core :light :dark])
+
+(def ^:private gen-sets
+  (let [tokens (sg/map-of (sg/elements prop-names) (sg/elements prop-values) {:max-elements 6})]
+    (sg/mcat (fn [ks] (sg/fmap #(mapv vector ks %) (apply sg/tuple (repeat (count ks) tokens))))
+             (sg/filter seq (sg/subseq prop-set-keys)))))
+
+(def ^:private gen-op
+  (let [token-name (sg/elements prop-names)
+        set-key (sg/elements [nil :core :dark])]
+    (sg/one-of (sg/tuple (sg/elements [:update :create]) token-name (sg/elements prop-values) set-key)
+               (sg/tuple (sg/elements [:delete]) token-name set-key)
+               (sg/tuple (sg/elements [:rename]) token-name token-name sg/boolean)
+               (sg/tuple (sg/elements [:sets]) gen-sets))))
+
+(defn- apply-op
+  "Result of `op` on `st`, nil when the operation is refused."
+  [st [op a b c]]
+  (try
+    (case op
+      :update (proc/update-token st a {:value b} (when c {:set c}))
+      :create (proc/create-token st a {:value b} (when c {:set c}))
+      :delete (proc/delete-token st a (when b {:set b}))
+      :rename (proc/rename-token st a b {:update-references? c})
+      :sets (proc/set-sets st a))
+    (catch #?(:clj Exception :cljs :default) e
+      (when-not (contains? #{:processor/token-not-found :processor/token-already-exists :processor/token-set-not-found}
+                           (:code (ex-data e)))
+        (throw e)))))
+
+(defn- normalize-cycle-issues
+  "Result where a dependency error caused by a cycle counts as a circular
+  dependency, as penpot shows both. Which tokens of a cycle get which of
+  the two depends on where resolution enters the cycle, and that differs
+  between a build and an update."
+  [res]
+  (update res :issues
+          (fn [issues]
+            (when issues
+              (update-vals issues
+                           (fn [is]
+                             (mapv #(if (and (= :processor/dependency-error (:code %))
+                                             (= :processor/circular-dependency (get-in % [:data :cause :code])))
+                                      (assoc % :code :processor/circular-dependency)
+                                      %)
+                                   is)))))))
+
+(t/deftest incremental-operations-property-test
+  (smt/check!
+   (smt/for [sets gen-sets
+             ops (sg/vector gen-op 1 12)]
+     (let [cfg (h/core-config)]
+       (loop [st (:state (proc/build sets {:config cfg})) ops ops]
+         (if-let [op (first ops)]
+           (if-let [res (apply-op st op)]
+             (let [fresh (proc/build (get-in res [:state :sets]) {:config cfg})]
+               (if (= (snapshot (normalize-cycle-issues fresh))
+                      (snapshot (normalize-cycle-issues res)))
+                 (recur (:state res) (rest ops))
+                 false))
+             (recur st (rest ops)))
+           true))))
+   :num 100))
+
 (t/deftest resolve-value-test
   (let [st (:state (process {"a" "10" "b" "{a} + 5"}))]
     (t/is (= "16px" (sym/to-string (:value (proc/resolve-value st "{b} + 1px")))))
@@ -231,11 +417,10 @@
     (t/is (= {"a" {:value 8.0 :unit "px"} "c" {:type "Hex" :value "#fff" :alpha nil} "l" [1.0 2.0]}
              (-> (proc/tokens->data res)
                  (update-in ["a" :value] double)
-                 (update "l" #(mapv double %)))))
-    (t/is (= {"x" {"y" 1}} (proc/nest-tokens {"x.y" 1})))))
+                 (update "l" #(mapv double %)))))))
 
 (t/deftest facade-test
-  (let [res (tsc/process-tokens {"a" "lighten(red, 0.1)"})]
+  (let [res (tsc/build {"a" "lighten(red, 0.1)"})]
     (t/is (= "Color.Oklch" (sym/full-type-name (get-in res [:tokens "a"]))))
     (t/is (= "Color.Hex" (sym/full-type-name (tsc/color->hex (get-in res [:tokens "a"])))))))
 

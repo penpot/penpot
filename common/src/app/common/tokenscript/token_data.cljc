@@ -77,38 +77,6 @@
                tokens)
     (into {} (map (fn [[k v]] [(key-name k) (normalize v)])) tokens)))
 
-(defn- nested?
-  "A map is a nested token tree when it has a non `$` key with a map
-  value."
-  [m]
-  (some (fn [[k v]] (and (map? v) (not (str/starts-with? (key-name k) "$")))) m))
-
-(defn flatten-tree
-  "Flattens a nested token tree (DTCG style) into token data keyed by
-  dot separated paths. Leaves are maps with a `$value`/`value` key;
-  `$`-prefixed keys are metadata and skipped."
-  ([tree] (flatten-tree tree ""))
-  ([tree prefix]
-   (reduce-kv (fn [acc k v]
-                (let [k (key-name k)]
-                  (if (str/starts-with? k "$")
-                    acc
-                    (let [path (if (= prefix "") k (str prefix "." k))]
-                      (cond
-                        (and (map? v) (token-data? v)) (assoc acc path (normalize v))
-                        (map? v) (merge acc (flatten-tree v path))
-                        :else (assoc acc path {:value v}))))))
-              {}
-              tree)))
-
-(defn ->flat-tokens
-  "Accepts either a flat token map or a nested tree and returns normalized
-  flat token data."
-  [tokens]
-  (if (and (map? tokens) (nested? tokens) (not (every? (fn [[_ v]] (token-data? v)) tokens)))
-    (flatten-tree tokens)
-    (normalize-tokens tokens)))
-
 ;; Object parsers -------------------------------------------------------------
 
 (def number-with-unit-parser

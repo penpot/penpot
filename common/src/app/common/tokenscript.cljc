@@ -42,14 +42,9 @@
   []
   @default-config*)
 
-(defn process-tokens
-  "Resolves a token map. See `app.common.tokenscript.processor/process-tokens`."
-  ([tokens] (process-tokens tokens nil))
-  ([tokens opts]
-   (processor/process-tokens tokens (merge {:config (default-config)} opts))))
-
 (defn build
-  "Resolves normalized token data. See `app.common.tokenscript.processor/build`."
+  "Resolves token data or an ordered vector of token sets. See
+  `app.common.tokenscript.processor/build`."
   ([tokens] (build tokens nil))
   ([tokens opts]
    (processor/build tokens (merge {:config (default-config)} opts))))

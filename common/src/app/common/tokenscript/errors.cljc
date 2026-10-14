@@ -252,19 +252,9 @@
    (fn [{:keys [token-name chain cause]}]
      (str "Token '" token-name "' failed due to dependency error: " (str/join " → " chain)
           "\nRoot cause: " (:message cause)))
-   :processor/no-themes-found (fn [{:keys [theme-name]}] (str "No themes found for theme \"" theme-name "\""))
-   :processor/theme-not-found
-   (fn [{:keys [theme-name available-themes]}]
-     (str "Theme \"" theme-name "\" not found. Available: " (join-list available-themes)))
    :processor/token-set-not-found (fn [{:keys [set-name]}] (str "Token set \"" set-name "\" not found"))
-   :processor/token-set-invalid (fn [{:keys [set-name]}] (str "Token set \"" set-name "\" is not an object"))
-   :processor/no-sets-to-process "No sets to process"
-   :processor/multiple-sets-no-selection
-   (fn [{:keys [set-names]}]
-     (str "Multiple sets found (" (join-list set-names) ") - specify activeSets or activeTheme"))
    :processor/unknown-parsing-error
    (fn [{:keys [error]}] (str "Unknown parsing error" (when error (str ": " error))))
-   :processor/resolver-not-initialized "Resolver not initialized. Call build() first."
 
    ;; Color
    :color/initializer-crashed "Initializer crashed!"
