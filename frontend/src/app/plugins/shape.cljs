@@ -66,7 +66,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs per-side-stroke-attrs? token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -1839,6 +1839,14 @@
 
                       (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
+
+                      ;; Per-side stroke widths are only supported on boards
+                      ;; and rectangles. The uniform `strokeWidth` alias is
+                      ;; exempt: it expands to a uniform width on every side.
+                      (and (per-side-stroke-attrs? attrs)
+                           (not (ctt/per-side-stroke-shape?
+                                 (:type (u/locate-shape file-id page-id id)))))
+                      (u/not-valid plugin-id :applyToken "Per-side stroke widths require a board or rectangle")
 
                       :else
                       (st/emit!
