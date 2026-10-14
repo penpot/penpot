@@ -53,7 +53,7 @@
            [:> icon* {:icon-id i/arrow-up :size "s"}]
            (dm/str ahead)])
         (when (pos? behind)
-          [:span {:class (stl/css :count)
+          [:span {:class (stl/css :count :count-behind)
                   :title (tr "workspace.branches.counts.behind")}
            [:> icon* {:icon-id i/arrow-down :size "s"}]
            (dm/str behind)])])

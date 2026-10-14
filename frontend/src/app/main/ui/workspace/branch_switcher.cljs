@@ -202,9 +202,11 @@
 
      [:hr {:class (stl/css :divider)}]
 
-     [:button {:class (stl/css :action) :on-click on-create}
-      [:> i/icon* {:icon-id i/git-branch-plus :size "s"}]
-      [:span {:class (stl/css :action-label)} (tr "workspace.branches.switcher.new")]]
+     ;; branches only grow from main: on a branch there is nothing to create
+     (when (:is-main current)
+       [:button {:class (stl/css :action) :on-click on-create}
+        [:> i/icon* {:icon-id i/git-branch-plus :size "s"}]
+        [:span {:class (stl/css :action-label)} (tr "workspace.branches.switcher.new")]])
 
      [:button {:class (stl/css :action) :on-click on-show-all}
       [:> i/icon* {:icon-id i/menu :size "s"}]

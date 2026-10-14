@@ -88,9 +88,13 @@
   }
 }
 
-// pull request review: accent-colored so an active review stands out from
-// the plain branch badge (the file is still the live, editable branch)
+// pull request review: info blue, as every review mark (the banner, the
+// review pill), so an active review stands out from the plain branch badge
 .review-badge {
+  :global(.light) & {
+    --color-foreground-info: var(--color-accent-info);
+  }
+
   @include deprecated.flex-center;
 
   flex-shrink: 0;
@@ -98,8 +102,16 @@
   height: deprecated.$s-16;
   margin-right: deprecated.$s-6;
   border-radius: deprecated.$br-4;
-  background-color: var(--button-primary-background-color-rest);
-  color: var(--button-primary-foreground-color-rest);
+  background-color: var(--color-background-info);
+  color: var(--color-foreground-info);
+}
+
+.review-label {
+  :global(.light) & {
+    --color-foreground-info: var(--color-accent-info);
+  }
+
+  color: var(--color-foreground-info);
 }
 
 .shared-badge {

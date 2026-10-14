@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
 @use "refactor/common-refactor.scss" as deprecated;
@@ -589,9 +590,9 @@
   border-radius: deprecated.$s-8;
 
   // the review banner must stand out from the branch banner it replaces
-  // (the canvas is still the live branch): accent-colored border instead
-  // of the branch banner's neutral one
-  border: deprecated.$s-2 solid var(--color-accent-primary);
+  // (the canvas is still the live branch): info blue border, as every
+  // review mark, instead of the branch banner's neutral one
+  border: deprecated.$s-2 solid var(--color-foreground-info);
   background-color: var(--color-background-primary);
 
   // unlike the branch banner this one hosts a dropdown that opens
@@ -651,13 +652,19 @@
 
 .pr-banner-icon {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  color: var(--color-accent-primary);
+  justify-content: center;
+  inline-size: $sz-24;
+  block-size: $sz-24;
+  border-radius: $br-4;
+  background-color: var(--color-background-info);
+  color: var(--color-foreground-info);
 }
 
 .pr-banner-text {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--sp-xs);
 
   @include t.use-typography("body-small");
@@ -666,6 +673,14 @@
 .pr-banner-title,
 .pr-banner-route {
   color: var(--color-foreground-secondary);
+}
+
+// branch -> main, as pills, the same way the compare dialog names them
+.pr-banner-route {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  white-space: nowrap;
 }
 
 .pr-banner-name {
@@ -695,18 +710,19 @@
   gap: var(--sp-s);
 }
 
+// not positioned: the options menu anchors to the banner box itself
 .pr-banner-menu {
-  position: relative;
   display: flex;
   align-items: center;
 }
 
-// the banner sits at the bottom of the canvas, so its options menu
-// opens upwards
+// the banner sits at the bottom of the canvas, so its options menu opens
+// upwards, clear of the banner and flush with its right edge (the offsets
+// skip the banner's border, which the menu is placed inside of)
 .pr-banner-options-dropdown {
   @extend %menu-dropdown;
 
-  inset-block-end: 100%;
-  inset-inline-end: 0;
+  inset-block-end: calc(100% + #{deprecated.$s-2} + var(--sp-xs));
+  inset-inline-end: calc(-1 * #{deprecated.$s-2});
   inline-size: $sz-192;
 }

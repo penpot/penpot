@@ -28,6 +28,7 @@
 // variables, so there are no new variables, no global override and the dark
 // theme is untouched.
 .compare-overlay,
+.modal-container,
 .branches-list-content,
 .branch-banner {
   :global(.light) & {
@@ -159,6 +160,11 @@
 
   &.has-changes {
     color: var(--color-accent-primary);
+  }
+
+  // what main has and the branch lacks reads in the error color
+  &.is-behind.has-changes {
+    color: var(--color-foreground-error);
   }
 }
 
@@ -497,26 +503,6 @@
 
   @include t.use-typography("body-small");
 
-  color: var(--color-foreground-secondary);
-}
-
-.breadcrumb-branch {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xxs);
-  padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 8px;
-  background-color: var(--color-background-tertiary);
-  color: var(--color-accent-primary);
-}
-
-.breadcrumb-main {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xxs);
-  padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 8px;
-  background-color: var(--color-background-tertiary);
   color: var(--color-foreground-secondary);
 }
 
@@ -1380,19 +1366,20 @@
   padding: var(--sp-m) var(--sp-m) var(--sp-s);
 }
 
+// not positioned: the options menu anchors to the banner box itself
 .branch-banner-menu {
-  position: relative;
   display: flex;
   align-items: center;
 }
 
-// the banner sits at the bottom of the canvas, so its options menu
-// opens upwards
+// the banner sits at the bottom of the canvas, so its options menu opens
+// upwards, clear of the banner and flush with its right edge (the offsets
+// skip the banner's border, which the menu is placed inside of)
 .branch-banner-options-dropdown {
   @extend %menu-dropdown;
 
-  inset-block-end: 100%;
-  inset-inline-end: 0;
+  inset-block-end: calc(100% + #{deprecated.$s-2} + var(--sp-xs));
+  inset-inline-end: calc(-1 * #{deprecated.$s-2});
   inline-size: $sz-192;
 }
 

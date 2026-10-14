@@ -28,6 +28,7 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
+   [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge*]]
@@ -592,7 +593,7 @@
                [:span {:class (stl/css-case :count true :has-changes (pos? (:ahead branch 0)))
                        :title (tr "workspace.branches.counts.ahead")}
                 [:> i/icon* {:icon-id i/arrow-up :size "s"}] (dm/str (:ahead branch 0))]
-               [:span {:class (stl/css-case :count true :has-changes (pos? (:behind branch 0)))
+               [:span {:class (stl/css-case :count true :is-behind true :has-changes (pos? (:behind branch 0)))
                        :title (tr "workspace.branches.counts.behind")}
                 [:> i/icon* {:icon-id i/arrow-down :size "s"}] (dm/str (:behind branch 0))]
                (when (pos? (:conflicts branch 0))
@@ -829,7 +830,7 @@
                     :title (tr "workspace.branches.counts.ahead")}
              [:> i/icon* {:icon-id i/arrow-up :size "s"}]
              (dm/str ahead)]
-            [:span {:class (stl/css-case :count true :has-changes (pos? (or behind 0)))
+            [:span {:class (stl/css-case :count true :is-behind true :has-changes (pos? (or behind 0)))
                     :title (tr "workspace.branches.counts.behind")}
              [:> i/icon* {:icon-id i/arrow-down :size "s"}]
              (dm/str behind)]])])
@@ -1152,7 +1153,7 @@
 (mf/defc branch-compare-dialog*
   {::mf/register modal/components
    ::mf/register-as :branch-compare}
-  [{:keys [branch]}]
+  [{:keys [branch is-review]}]
   (let [{:keys [status diff selected direction excluded]} (mf/deref branch-diff)
         direction  (or direction :branch->main)
         incoming?  (= direction :main->branch)
@@ -1236,29 +1237,23 @@
          [:div {:class (stl/css :compare-breadcrumb)}
           (if incoming?
             [:*
-             [:span {:class (stl/css :breadcrumb-main)}
-              [:> i/icon* {:icon-id i/git-commit-vertical :size "s"}]
-              (tr "workspace.branches.main")]
+             [:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}]
              [:button {:class (stl/css :breadcrumb-swap)
                        :title (tr "workspace.branches.compare.swap")
                        :aria-label (tr "workspace.branches.compare.swap")
                        :on-click on-swap}
               [:> i/icon* {:icon-id i/arrow-long-right :size "s"}]]
-             [:span {:class (stl/css :breadcrumb-branch)}
-              [:> i/icon* {:icon-id i/git-branch :size "s"}]
-              (:name branch)]]
+             ;; opened from a pull request, the branch takes the review blue
+             [:> branch-pill* {:label (:name branch) :is-review (boolean is-review)}]]
             [:*
-             [:span {:class (stl/css :breadcrumb-branch)}
-              [:> i/icon* {:icon-id i/git-branch :size "s"}]
-              (:name branch)]
+             ;; opened from a pull request, the branch takes the review blue
+             [:> branch-pill* {:label (:name branch) :is-review (boolean is-review)}]
              [:button {:class (stl/css :breadcrumb-swap)
                        :title (tr "workspace.branches.compare.swap")
                        :aria-label (tr "workspace.branches.compare.swap")
                        :on-click on-swap}
               [:> i/icon* {:icon-id i/arrow-long-right :size "s"}]]
-             [:span {:class (stl/css :breadcrumb-main)}
-              [:> i/icon* {:icon-id i/git-commit-vertical :size "s"}]
-              (tr "workspace.branches.main")]])]]]
+             [:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}]])]]]
 
        (when stats
          [:div {:class (stl/css :compare-stats)}

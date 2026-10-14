@@ -8,6 +8,16 @@
 @use "ds/typography.scss" as t;
 
 .branch-status {
+  // light theme: the DS state foregrounds wash out over their pale
+  // backgrounds, so they take the saturated accents, as the branch
+  // compare and conflicts dialogs do; the dark theme keeps the DS ones
+  :global(.light) & {
+    --color-foreground-success: var(--color-accent-success);
+    --color-foreground-error: var(--color-accent-error);
+    --color-foreground-warning: color-mix(in srgb, var(--color-accent-warning) 60%, #000);
+    --color-foreground-info: var(--color-accent-info);
+  }
+
   display: flex;
   flex-shrink: 0;
   align-items: center;
@@ -24,6 +34,11 @@
   gap: var(--sp-xxs);
   font-weight: 600;
   color: var(--color-accent-primary);
+}
+
+// what main has and the branch lacks reads in the error color
+.count-behind {
+  color: var(--color-foreground-error);
 }
 
 .error {

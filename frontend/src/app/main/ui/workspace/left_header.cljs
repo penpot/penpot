@@ -170,7 +170,13 @@
                           :placement "bottom"}
              [:span {:class (stl/css :review-badge)}
               [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]]])
-          [:div {:class (stl/css :file-name-label)} display-name]])]
+          [:div {:class (stl/css :file-name-label)}
+           (if ^boolean review?
+             [:*
+              [:span {:class (stl/css :review-label)}
+               (tr "workspace.pull-requests.header-label")]
+              " " pr-title]
+             display-name)]])]
       (when ^boolean shared?
         [:span {:class (stl/css :shared-badge)} deprecated-icon/library])
       [:div {:class (stl/css :menu-section)}

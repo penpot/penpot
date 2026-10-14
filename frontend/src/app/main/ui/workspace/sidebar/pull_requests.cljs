@@ -29,6 +29,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
+   [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -93,7 +94,7 @@
   proposed changes can be inspected. Like merging, it diffs the LIVE
   branch against main."
   [pr]
-  (modal/show! :branch-compare {:branch (pr->branch pr)}))
+  (modal/show! :branch-compare {:branch (pr->branch pr) :is-review true}))
 
 (defn confirm-merge!
   "Open the branching merge dialog for the pull request's branch:
@@ -488,6 +489,9 @@
         ;; branch file, so the team role tells whether this user could
         ;; integrate the branch
         can-merge? (boolean (get-in team [:permissions :can-edit]))
+        ;; same rule as the details dialog's "Cancel pull request"
+        can-cancel? (and (or author? (boolean (get-in team [:permissions :is-admin])))
+                         (= "open" (:status pr)))
         [approvals total] (current-approvals pr)
 
         collapsed*  (mf/use-state false)
@@ -495,7 +499,7 @@
         on-toggle   (mf/use-fn #(swap! collapsed* not))
 
         ;; secondary actions live behind the kebab menu so the banner
-        ;; only exposes the essential ones (details / compare / review)
+        ;; only exposes the essential ones (compare / review)
         menu-open*    (mf/use-state false)
         menu-open?    (deref menu-open*)
         on-open-menu  (mf/use-fn
@@ -507,7 +511,11 @@
         on-close-menu (mf/use-fn #(reset! menu-open* false))
 
         on-info
-        (mf/use-fn (mf/deps pr) #(modal/show! :pull-request-info {:pr pr}))
+        (mf/use-fn
+         (mf/deps pr)
+         (fn [_]
+           (reset! menu-open* false)
+           (modal/show! :pull-request-info {:pr pr})))
 
         on-compare
         (mf/use-fn (mf/deps pr) #(open-compare! pr))
@@ -528,12 +536,12 @@
            (reset! menu-open* false)
            (confirm-merge! pr)))
 
-        on-play
+        on-cancel
         (mf/use-fn
          (mf/deps pr)
          (fn [_]
            (reset! menu-open* false)
-           (st/emit! (dwpr/open-pull-request-viewer pr))))
+           (confirm-close! pr)))
 
         on-publish
         (mf/use-fn
@@ -563,7 +571,9 @@
           (tr "workspace.pull-requests.banner.reviewing")]
          [:span {:class (stl/css :pr-banner-name)} (:title pr)]
          [:span {:class (stl/css :pr-banner-route)}
-          (dm/str (:branch-name pr) " → " (tr "workspace.branches.main"))]]
+          [:> branch-pill* {:label (:branch-name pr) :is-review true}]
+          [:> i/icon* {:icon-id i/arrow-long-right :size "s"}]
+          [:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}]]]
 
         [:div {:class (stl/css :pr-banner-badges)}
          [:> pr-state-badge* {:pr pr}]
@@ -579,10 +589,6 @@
             (dm/str approvals "/" total)])]
 
         [:div {:class (stl/css :pr-banner-actions)}
-         [:> button* {:variant "secondary"
-                      :on-click on-info}
-          (tr "workspace.pull-requests.menu.info")]
-
          [:> button* {:variant "secondary"
                       :icon i/switch
                       :on-click on-compare}
@@ -602,8 +608,8 @@
           [:> dropdown-menu* {:show menu-open?
                               :on-close on-close-menu
                               :class (stl/css :pr-banner-options-dropdown)}
-           [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-play}
-            (tr "workspace.pull-requests.banner.play")]
+           [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-info}
+            (tr "workspace.pull-requests.menu.info")]
            (when (and author? (:outdated pr))
              [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-publish}
               (tr "workspace.pull-requests.banner.publish")])
@@ -611,4 +617,7 @@
              [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-merge}
               (tr "workspace.pull-requests.actions.merge")])
            [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-exit}
-            (tr "workspace.pull-requests.banner.exit")]]]]]])))
+            (tr "workspace.pull-requests.banner.exit")]
+           (when can-cancel?
+             [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-cancel}
+              (tr "workspace.pull-requests.banner.cancel")])]]]]])))

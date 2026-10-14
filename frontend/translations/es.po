@@ -9656,3 +9656,11 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
+
+#: src/app/main/ui/workspace/left_header.cljs:177
+msgid "workspace.pull-requests.header-label"
+msgstr "Revisión:"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:623
+msgid "workspace.pull-requests.banner.cancel"
+msgstr "Cancelar revisión"

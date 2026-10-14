@@ -6637,7 +6637,7 @@ msgstr "No conflicts to resolve"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1520
 msgid "workspace.branches.conflicts.footer-pending"
-msgstr "%s conflict(s) pending · resolve all to merge"
+msgstr "%s conflict(s) pending. Resolve all to merge"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1515
 msgid "workspace.branches.conflicts.footer-ready"
@@ -7024,7 +7024,7 @@ msgstr "Main"
 
 #: src/app/main/data/workspace/branches.cljs:336
 msgid "workspace.branches.main-advanced"
-msgstr "main has new changes — you can update this branch"
+msgstr "Main has new changes. You can update this branch"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:659
 msgid "workspace.branches.main-subtitle"
@@ -9216,13 +9216,13 @@ msgstr "%s conflicts"
 msgid "workspace.pull-requests.badge.outdated"
 msgstr "New changes on branch"
 
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:623
+msgid "workspace.pull-requests.banner.cancel"
+msgstr "Cancel review"
+
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:759
 msgid "workspace.pull-requests.banner.exit"
 msgstr "Exit review"
-
-#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:736
-msgid "workspace.pull-requests.banner.play"
-msgstr "Try interactions"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:742
 msgid "workspace.pull-requests.banner.publish"
@@ -9305,6 +9305,10 @@ msgstr "Create pull request"
 #: src/app/main/ui/workspace/left_header.cljs:163
 msgid "workspace.pull-requests.header-badge-tooltip"
 msgstr "Reviewing pull request: %s"
+
+#: src/app/main/ui/workspace/left_header.cljs:177
+msgid "workspace.pull-requests.header-label"
+msgstr "Review:"
 
 #: src/app/main/ui/workspace/left_header.cljs:54
 msgid "workspace.pull-requests.header-title"
