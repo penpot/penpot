@@ -18,10 +18,12 @@
   `mock/with-mocks` with an explicit `done` chain."
   (:require
    [app.common.time :as ct]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.persistence :as dps]
    [app.main.data.render-wasm :as drw]
+   [app.main.data.workspace :as dw]
    [app.main.errors :as errors]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -31,6 +33,74 @@
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
+
+(t/deftest reopening-restores-only-the-retained-edits-of-the-loaded-file
+  (doseq [[status cause-type vern restored?]
+          [[:retrying nil 0 true]
+           [:saving nil 0 true]
+           [:error :offline 0 true]
+           [:error :validation 0 false]
+           [:retrying nil 1 false]]]
+    (t/testing (str status " / " cause-type " / version " vern)
+      (let [file-id  (uuid/next)
+            page-id  (uuid/next)
+            shape-id (uuid/next)
+            first-id (uuid/next)
+            next-id  (uuid/next)
+            other-id (uuid/next)
+            shape    (cts/setup-shape {:id shape-id :type :rect :x 0 :y 0})
+            file     {:id file-id
+                      :vern vern
+                      :data {:pages [page-id]
+                             :pages-index {page-id {:id page-id :name "Page"
+                                                    :objects {uuid/zero
+                                                              (cts/setup-shape {:id uuid/zero :type :frame})}}}}}
+            rename   (fn [name]
+                       {:type :mod-obj :id shape-id :page-id page-id
+                        :operations [{:type :set :attr :name :val name}]})
+            pstate   {:status status
+                      :error {:cause-type cause-type :commit-id first-id}
+                      :queue (into #queue [] [first-id next-id other-id])
+                      :index {first-id {:file-id file-id :file-vern 0
+                                        :redo-changes [{:type :add-obj :id shape-id :obj shape
+                                                        :page-id page-id :parent-id uuid/zero
+                                                        :frame-id uuid/zero}]}
+                              next-id {:file-id file-id :file-vern 0
+                                       :redo-changes [(rename "Retained rectangle")]}
+                              other-id {:file-id (uuid/next) :file-vern 0
+                                        :redo-changes [(rename "Another file")]}}}
+            state    {:persistence pstate}
+            loaded   (ptk/update (#'dw/bundle-fetched {:file file :file-id file-id :thumbnails {}})
+                                 state)
+            restored (get-in loaded [:files file-id :data :pages-index page-id :objects shape-id])]
+        (t/is (= restored? (some? restored)))
+        (when restored?
+          (t/is (= "Retained rectangle" (:name restored))
+                "queued edits apply in order and exclude other files"))
+        (t/is (identical? pstate (:persistence loaded))
+              "restoring the editor must preserve the save queue")))))
+
+;; Scenario: a queued edit no longer applies to the data the server sent, so
+;; replaying it throws. Proves: the file still opens, as the server sent it,
+;; and the edits stay queued.
+(t/deftest reopening-with-an-edit-that-no-longer-applies-keeps-the-server-file
+  (let [file-id   (uuid/next)
+        page-id   (uuid/next)
+        commit-id (uuid/next)
+        data      {:pages [page-id]
+                   :pages-index {page-id {:id page-id :name "Page"
+                                          :objects {uuid/zero
+                                                    (cts/setup-shape {:id uuid/zero :type :frame})}}}}
+        file      {:id file-id :vern 0 :data data}
+        pstate    {:status :saving
+                   :queue (into #queue [] [commit-id])
+                   :index {commit-id {:file-id file-id :file-vern 0
+                                      :redo-changes [{:type :mod-obj :id uuid/zero :page-id page-id
+                                                      :operations [{:type :no-longer-supported}]}]}}}
+        loaded    (ptk/update (#'dw/bundle-fetched {:file file :file-id file-id :thumbnails {}})
+                              {:persistence pstate})]
+    (t/is (identical? data (get-in loaded [:files file-id :data])))
+    (t/is (identical? pstate (:persistence loaded)))))
 
 (defn- local-commit
   "Builds a synthetic local commit event for `file-id`: a page edit as redo,
@@ -430,8 +500,8 @@
 ;; - Transport failures and malformed answers (`nil`, empty, bad revision)
 ;;   fail the save but preserve the queue for retry.
 ;; - Initialization recovers gracefully: dangling runners error instead of
-;;   skipping, unsent commits are picked up, unknown outcomes are reported
-;;   without replaying.
+;;   skipping, unsent commits are picked up, unknown outcomes are sent again
+;;   under the same commit id.
 ;;
 ;; Same async pattern as the watchdog tests: triggers stay bare, every
 ;; assert block is preceded by `wait-for` on its leading signal (or a bare
@@ -796,27 +866,26 @@
        (t/is (empty? (get-in @store [:persistence :queue])))))))
 
 ;; Scenario: a queued commit carries a request id but persistence has no
-;; run id for it when initializing — its outcome is unknowable. It errors
-;; as `:save-outcome-unknown`, stays queued, and nothing is sent.
-;; Proves: unknown outcomes report without replaying (never assume persisted,
-;; never resend blindly).
-(t/deftest ^:async recovery-reports-an-unknown-request-outcome-without-replaying-it
+;; run id for it when initializing, so its outcome is unknown. It is sent
+;; again under the same commit id and saves. Proves: an unknown outcome is
+;; resent, since changes are idempotent.
+(t/deftest ^:async recovery-sends-again-a-save-with-an-unknown-outcome
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id requests store]}]
+     (^:async fn [{:keys [file-id response requests store]}]
        (let [commit (assoc @(local-commit file-id) ::dps/request-id (uuid/next))
              id     (:id commit)]
          (ptk/emit! store
                     #(assoc % :persistence {:queue (conj #queue [] id)
                                             :index {id commit} :status :saving})
                     (dps/initialize-persistence))
-         (await (async/wait-for #(= :save-outcome-unknown
-                                    (get-in @store [:persistence :error :code]))
-                                "unknown outcome errors"))
-         (t/is (= :error (get-in @store [:persistence :status])))
-         (t/is (= :save-outcome-unknown (get-in @store [:persistence :error :code])))
-         (t/is (= [id] (vec (get-in @store [:persistence :queue]))))
-         (t/is (empty? @requests)))))))
+         (await (async/wait-for #(= 1 (count @requests)) "the commit is sent again"))
+         (t/is (= id (:commit-id (second (first @requests)))))
+         (rx/push! response {:revn 1})
+         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                      (empty? (get-in @store [:persistence :queue])))
+                                "the resent commit saves"))
+         (t/is (= 1 (count @requests))))))))
 
 ;; Scenario: an edit is queued before persistence even initializes. On
 ;; initialization plus force-persist it is sent exactly once (still queued

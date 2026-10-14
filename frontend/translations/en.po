@@ -1809,6 +1809,11 @@ msgstr ""
 msgid "errors.save-retrying"
 msgstr "Connection lost. Retrying to save your changes."
 
+#: src/app/main/errors.cljs
+msgid "errors.save-still-retrying"
+msgstr ""
+"Your changes are not saved yet because Penpot cannot reach the server. They are kept, and Penpot will keep trying to save them. Keep this tab open until they are saved."
+
 #: src/app/main/errors.cljs:337
 msgid "errors.svg-parser.invalid-svg"
 msgstr "SVG is invalid or malformed"

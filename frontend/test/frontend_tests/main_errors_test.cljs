@@ -727,6 +727,29 @@
          (t/is (nil? (get-in state [:notification :timeout]))
                "the toast stays until the user acts on it"))))))
 
+;; Scenario: a save fails on the transport and the queue keeps trying on
+;; the slow cycle. The toast says the changes are kept and offers no reload,
+;; which would lose them. Proves: the retrying variant tells the truth.
+(t/deftest ^:async retrying-save-failure-toast-offers-no-reload
+  (let [events (atom [])]
+    (await
+     (mock/with-mocks*
+       {errors/generate-report (fn [_ & _] "generated error report")
+        st/emit!               (mock/stub (fn [& emitted]
+                                            (swap! events into emitted)))
+        tm/schedule            (mock/stub (fn [callback] (callback)))}
+       (errors/flash-persistence (ex-info "Save failed"
+                                          {:type :gateway-error :hint "Save failed"})
+                                 :retrying true)
+       (await (async/settle))
+       (let [state (ptk/update (last @events) {})]
+         (t/is (= "errors.save-still-retrying" (get-in state [:notification :content])))
+         (t/is (= ["labels.download"] (mapv :label (get-in state [:notification :links])))
+               "the toast carries the report and no reload")
+         (t/is (= errors/persistence-failed-tag (get-in state [:notification :tag]))
+               "a save that lands can hide it")
+         (t/is (nil? (get-in state [:notification :timeout]))))))))
+
 (t/deftest ^:async persistence-waiters-do-not-report-an-already-handled-failure
   (let [reports  (atom [])
         rejected (atom [])

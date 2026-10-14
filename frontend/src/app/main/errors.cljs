@@ -430,6 +430,7 @@
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
+  A `:tag` lets the notification be hidden later by that tag.
 
   The payload format is derived from the cause: environment failures get a
   compact report. The audit event name is the canonical one requested by
@@ -460,7 +461,7 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout report-link? links]
+  [& {:keys [type hint cause timeout tag report-link? links]
       :or {type :handled timeout 5000}}]
   (js/Promise.
    (fn [resolve _reject]
@@ -488,6 +489,9 @@
                           :type :toast
                           :level :error
                           :timeout timeout}
+                   (some? tag)
+                   (assoc :tag tag)
+
                    (seq all-links)
                    (assoc :links all-links))))
                (catch :default err
@@ -585,17 +589,36 @@
                (dom/prevent-default event)
                (js/location.reload))})
 
+(def persistence-failed-tag
+  "Tag of the save failure notification, hidden once a save lands."
+  :persistence-failed)
+
 (defn flash-persistence
-  [cause]
+  "Notifies a save failure. With `:retrying` the failure is transient and
+  the queue keeps trying in the background, so the toast says the changes
+  are kept and offers no reload, which would lose them."
+  [cause & {:keys [retrying]}]
   (let [data (ex-data cause)]
-    (if (delegated-persistence-failure? data)
+    (cond
+      (delegated-persistence-failure? data)
       ;; The persistence state wraps the failure and records the original
       ;; type under :cause-type; dispatch on it to reach the cause's handler.
       (on-error (-> (exception->error-data cause)
                     (assoc :type (or (:cause-type data) (:type data)))))
+
+      retrying
       (flash :cause cause
              :type (persistence-report-type data)
              :timeout nil
+             :tag persistence-failed-tag
+             :report-link? true
+             :hint (tr "errors.save-still-retrying"))
+
+      :else
+      (flash :cause cause
+             :type (persistence-report-type data)
+             :timeout nil
+             :tag persistence-failed-tag
              :report-link? true
              :links [(reload-page-link)]
              :hint (tr "errors.save-failed")))))

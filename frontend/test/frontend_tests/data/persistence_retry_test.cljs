@@ -83,18 +83,26 @@
           (rx/dispose! store)
           (rx/end! response))))))
 
+(defn- instant-backoff
+  "Timer double: the backoff delays fire at once and the slow cycle never
+  does, so a failure that outlasts the backoff settles in `:error`."
+  [ms]
+  (if (= ms dps/slow-retry-delay-ms)
+    (rx/subject)
+    (rx/of :tick)))
+
 (defn- check-failed-save-response
   "Feeds `result` as the transport response and asserts the commit stays
   queued as a failed save instead of being treated as persisted. Retry
-  timers fire instantly (stubbed `rx/timer`), so a permanently bad answer
-  exhausts the 3-retry budget and lands terminal: `:error` carrying
+  timers fire instantly (stubbed `rx/timer`, slow cycle held), so a
+  permanently bad answer exhausts the 3-retry budget and lands terminal: `:error` carrying
   `:invalid-save-response`, queue intact, exactly 4 sends."
   [result]
   (with-persistence
     (^:async fn [{:keys [file-id requests store]}]
       (await
        (mock/with-mocks*
-         {rx/timer (mock/stub (fn [_] (rx/of :tick)))}
+         {rx/timer (mock/stub instant-backoff)}
          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
          (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
                                       (= :invalid-save-response
@@ -141,7 +149,7 @@
        (^:async fn [{:keys [file-id requests store]}]
          (await
           (mock/with-mocks*
-            {rx/timer (mock/stub (fn [_] (rx/of :tick)))}
+            {rx/timer (mock/stub instant-backoff)}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
             (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
                                          (empty? (get-in @store [:persistence :queue])))
@@ -168,7 +176,7 @@
       (^:async fn [{:keys [file-id failures requests store]}]
         (await
          (mock/with-mocks*
-           {rx/timer (mock/stub (fn [_] (rx/of :tick)))}
+           {rx/timer (mock/stub instant-backoff)}
            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
                                         (empty? (get-in @store [:persistence :queue])))
@@ -202,7 +210,7 @@
        (^:async fn [{:keys [file-id failures requests store]}]
          (await
           (mock/with-mocks*
-            {rx/timer (mock/stub (fn [ms] (swap! delays conj ms) (rx/of :tick)))}
+            {rx/timer (mock/stub (fn [ms] (swap! delays conj ms) (instant-backoff ms)))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
             (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
                                          (= 4 (count @requests)))
@@ -210,7 +218,8 @@
             (t/is (= :error (get-in @store [:persistence :status])))
             (t/is (= :save-failed (get-in @store [:persistence :error :code])))
             (t/is (= 1 (count (get-in @store [:persistence :queue]))))
-            (t/is (= [2000 8000 20000] @delays) "the backoff schedule fires in order")
+            (t/is (= [2000 8000 20000 dps/slow-retry-delay-ms] @delays)
+                  "the backoff schedule fires in order, then the slow cycle is armed")
             (t/is (= 1 (count @failures)) "exhaustion flashes exactly once"))))
        (fn [_ _] (rx/throw (ex-info "offline" {:type :offline})))))))
 
@@ -254,9 +263,9 @@
            (rx/subject)))))))
 
 ;; Scenario: a persist-commit arrives with a superseded episode token after
-;; a transient failure. Without the token guard it would fail terminally as
-;; `:save-outcome-unknown`; with it, nothing happens. Proves: stale retry
-;; timers stay silent.
+;; a transient failure. Without the token guard it would send outside the
+;; backoff schedule; with it, nothing happens. Proves: stale retry timers
+;; stay silent.
 (t/deftest ^:async stale-retry-token-stays-silent
   (await
    (with-persistence
@@ -366,7 +375,7 @@
      (^:async fn [{:keys [file-id store]}]
        (await
         (mock/with-mocks*
-          {rx/timer (mock/stub (fn [_] (rx/of :tick)))}
+          {rx/timer (mock/stub instant-backoff)}
           (ptk/emit! store (local-commit file-id) ::dps/force-persist)
           (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
                                  "retries exhaust into terminal error"))
@@ -536,7 +545,7 @@
        (^:async fn [{:keys [file-id requests store]}]
          (await
           (mock/with-mocks*
-            {rx/timer   (mock/stub (fn [_] (rx/of :tick)))
+            {rx/timer   (mock/stub instant-backoff)
              rx/timeout (mock/stub (fn [ms with ob]
                                      (swap! timeouts conj ms)
                                      (timeout 0 with ob)))}
@@ -551,4 +560,203 @@
        (fn [_ _]
          (if (= 1 (swap! calls inc))
            (rx/subject)
+           (rx/of {:revn 1})))))))
+
+;; ---------------------------------------------------------------------------
+;; slow cycle
+;; ---------------------------------------------------------------------------
+
+(defn- slow-cycle-timer
+  "Timer double: the backoff delays fire at once, and every slow cycle waits
+  on a subject collected in `cycles`, so the test fires them one by one."
+  [cycles]
+  (fn [ms]
+    (if (= ms dps/slow-retry-delay-ms)
+      (let [cycle-s (rx/subject)]
+        (swap! cycles conj cycle-s)
+        cycle-s)
+      (rx/of :tick))))
+
+;; Scenario: the backoff is spent while the network is down. The queue keeps
+;; trying on the slow cycle, one send per cycle, without warning the user
+;; again, and saves once the network is back. Proves: a session outlasting
+;; the backoff still recovers on its own.
+(t/deftest ^:async a-spent-backoff-keeps-trying-on-a-slow-cycle
+  (let [calls  (atom 0)
+        cycles (atom [])]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id failures requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (slow-cycle-timer cycles))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
+                                         (= 1 (count @cycles)))
+                                   "the spent backoff arms the slow cycle"))
+            (t/is (= 4 (count @requests)))
+            (t/is (= 1 (count @failures)))
+
+            (rx/push! (last @cycles) :tick)
+            (await (async/wait-for #(= 2 (count @cycles))
+                                   "a failed slow attempt arms the next cycle"))
+            (t/is (= 5 (count @requests)) "a slow cycle sends once")
+            (t/is (= :error (get-in @store [:persistence :status])))
+            (t/is (= 1 (count @failures)) "the user is not warned again")
+
+            ;; The warning the first failure left on screen.
+            (ptk/emit! store #(assoc % :notification {:tag errors/persistence-failed-tag
+                                                      :level :error}))
+            (rx/push! (last @cycles) :tick)
+            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                         (empty? (get-in @store [:persistence :queue])))
+                                   "the slow attempt saves"))
+            (t/is (= 6 (count @requests)))
+            (t/is (apply = (map (comp :commit-id second) @requests))
+                  "every attempt carries the same commit id")
+            (t/is (nil? (get-in @store [:persistence :recovering])))
+            (t/is (nil? (get-in @store [:persistence :failing-since])))
+            (t/is (nil? (get @store :notification))
+                  "the failure warning goes away once the save lands"))))
+       (fn [_ _]
+         (if (< (swap! calls inc) 6)
+           (rx/throw (ex-info "offline" {:type :offline}))
+           (rx/of {:revn 1})))))))
+
+;; Scenario: a gateway error outlasts the backoff, then the proxy recovers.
+;; Proves: each gateway status takes the slow cycle and saves the held edit.
+(t/deftest ^:async a-gateway-error-arms-the-slow-cycle
+  (doseq [status [504 520 521 522 523 524]]
+    (let [calls  (atom 0)
+          cycles (atom [])]
+      (await
+       (with-persistence
+         (^:async fn [{:keys [file-id requests store]}]
+           (await
+            (mock/with-mocks*
+              {rx/timer (mock/stub (slow-cycle-timer cycles))}
+              (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+              (await (async/wait-for #(= 1 (count @cycles))
+                                     (str status " arms the slow cycle")))
+              (t/is (= 4 (count @requests)))
+              (t/is (= :gateway-error (get-in @store [:persistence :error :cause-type])))
+              (t/is (= 1 (count (get-in @store [:persistence :queue]))))
+
+              (rx/push! (last @cycles) :tick)
+              (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                           (empty? (get-in @store [:persistence :queue])))
+                                     (str status " recovers on the slow cycle")))
+              (t/is (= 5 (count @requests)))
+              (t/is (apply = (map (comp :commit-id second) @requests))
+                    "the slow cycle saves the held commit"))))
+         (fn [_ _]
+           (if (<= (swap! calls inc) 4)
+             (rp/handle-response {:status status :body "<html>Gateway error</html>" :uri "/api"})
+             (rx/of {:revn 1}))))))))
+
+;; Scenario: a save fails for a reason no attempt can get past. Proves: only
+;; transport failures arm the slow cycle.
+(t/deftest ^:async a-terminal-failure-does-not-arm-the-slow-cycle
+  (let [cycles (atom [])]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (slow-cycle-timer cycles))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                   "the save fails"))
+            (await (async/settle))
+            (t/is (= 1 (count @requests)))
+            (t/is (empty? @cycles)))))
+       (fn [_ _] (rx/throw (ex-info "Validation failed" {:type :validation})))))))
+
+;; Scenario: a gateway answers 504 only after its own timeout, while the
+;; backend may still be applying the save. Proves: slow failures below the
+;; limit still arm the slow cycle; at the limit the save stops being sent,
+;; and opening a file releases it instead of sending it again.
+(t/deftest ^:async slow-failures-stop-the-slow-cycle-at-the-limit
+  (doseq [[slow-count armed?] [[(dec dps/max-slow-failures) true]
+                               [dps/max-slow-failures false]]]
+    (let [clock  (atom 0)
+          calls  (atom 0)
+          cycles (atom [])]
+      (await
+       (with-persistence
+         (^:async fn [{:keys [file-id requests store]}]
+           (await
+            (mock/with-mocks*
+              {rx/timer (mock/stub (slow-cycle-timer cycles))
+               ct/now   (mock/stub #(ct/inst @clock))}
+              (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+              (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                     (str slow-count " slow failures spend the backoff")))
+              (await (async/settle))
+              (t/is (= 4 (count @requests)))
+              (t/is (= slow-count (get-in @store [:persistence :slow-failures])))
+              (t/is (= (if armed? 1 0) (count @cycles))
+                    (str slow-count " slow failures " (if armed? "arm" "do not arm") " the slow cycle"))
+
+              (when-not armed?
+                (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+                (await (async/wait-for #(empty? (get-in @store [:persistence :queue]))
+                                       "recovery releases the held edit"))
+                (t/is (= 4 (count @requests)) "the released edit is not sent again")))))
+         (fn [_ _]
+           (when (<= (swap! calls inc) slow-count)
+             (swap! clock + dps/slow-failure-ms))
+           (rp/handle-response {:status 504 :body "<html>Gateway timeout</html>" :uri "/api"})))))))
+
+;; Scenario: the slow cycle is still failing when the retry window closes.
+;; Proves: the cycle gives up, keeping the edits queued.
+(t/deftest ^:async the-slow-cycle-stops-when-the-retry-window-closes
+  (let [clock  (atom 0)
+        cycles (atom [])]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (slow-cycle-timer cycles))
+             ct/now   (mock/stub #(ct/inst @clock))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @cycles)) "the slow cycle is armed"))
+
+            (reset! clock (+ dps/retry-give-up-ms 1000))
+            (rx/push! (last @cycles) :tick)
+            (await (async/wait-for #(= 5 (count @requests)) "the last slow attempt"))
+            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                   "the attempt fails"))
+            (await (async/settle))
+            (t/is (= 1 (count @cycles)) "no further cycle is armed")
+            (t/is (= 1 (count (get-in @store [:persistence :queue])))))))
+       (fn [_ _] (rx/throw (ex-info "offline" {:type :offline})))))))
+
+;; Scenario: the backoff is spent and the user leaves the workspace, which
+;; stops the slow cycle, then opens a file again. Recovery sends the queue
+;; once more instead of releasing it, and it saves. Proves: edits held by a
+;; transport failure are never dropped by recovery.
+(t/deftest ^:async recovery-resends-a-transport-failure-instead-of-releasing-it
+  (let [calls  (atom 0)
+        cycles (atom [])]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (slow-cycle-timer cycles))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @cycles)) "the slow cycle is armed"))
+            (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
+            (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                         (empty? (get-in @store [:persistence :queue])))
+                                   "recovery saves the held edit"))
+            (t/is (= 5 (count @requests)))
+            (t/is (apply = (map (comp :commit-id second) @requests))
+                  "recovery sends the same commit, not a released queue"))))
+       (fn [_ _]
+         (if (< (swap! calls inc) 5)
+           (rx/throw (ex-info "offline" {:type :offline}))
            (rx/of {:revn 1})))))))
