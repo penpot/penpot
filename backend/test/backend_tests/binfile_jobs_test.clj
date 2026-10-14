@@ -51,24 +51,28 @@
 
 (defn- make-job!
   "A job row as the substrate writes it: running, owned by a profile and
-  holding a resource when the test needs one."
-  [profile-id resource-id]
-  (let [id (uuid/next)]
-    (th/db-insert! :job {:id           id
-                         :name         "export-binfile"
-                         :tenant       (cf/get :tenant)
-                         :queue        "binfile"
-                         :params       (db/json {})
-                         :priority     100
-                         :max-retries  0
-                         :retry-num    0
-                         :status       "running"
-                         :profile-id   profile-id
-                         :resource-id  resource-id
-                         :scheduled-at (ct/now)
-                         :created-at   (ct/now)
-                         :modified-at  (ct/now)})
-    id))
+  holding a resource when the test needs one. The name is the one the row
+  carries, and it is what the substrate uses to resolve the job-def when
+  the result is read."
+  ([profile-id resource-id]
+   (make-job! profile-id resource-id "export-binfile"))
+  ([profile-id resource-id name]
+   (let [id (uuid/next)]
+     (th/db-insert! :job {:id           id
+                          :name         name
+                          :tenant       (cf/get :tenant)
+                          :queue        "binfile"
+                          :params       (db/json {})
+                          :priority     100
+                          :max-retries  0
+                          :retry-num    0
+                          :status       "running"
+                          :profile-id   profile-id
+                          :resource-id  resource-id
+                          :scheduled-at (ct/now)
+                          :created-at   (ct/now)
+                          :modified-at  (ct/now)})
+     id)))
 
 (defn- job-cfg
   "The system cfg as the runner hands it to a handler. The job id is NOT
@@ -89,6 +93,46 @@
                        ORDER BY created_at ASC, id ASC"
                      job-id])
        (mapv #(jobs/decode-progress (:payload %)))))
+
+(defn- export-link-later-package
+  "A package of one file that uses a shared library, exported so the
+  library is resolved while importing. The library of the package is gone
+  afterwards and two replacements share its name, so the import cannot
+  link it by itself and leaves the file pending resolution."
+  [profile]
+  (let [library (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  true
+                                    :name       "Icons Library"})
+        file    (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id file)
+                 :library-file-id (:id library)})
+
+    (v3/export-files! (-> th/*system*
+                          (assoc ::bfc/ids #{(:id file)})
+                          (assoc ::bfc/export-type :link-later))
+                      (io/output-stream output))
+
+    (db/update! th/*system* :file
+                {:deleted-at (ct/now)}
+                {:id (:id library)})
+
+    (th/create-file* 3 {:profile-id (:id profile)
+                        :project-id (:default-project-id profile)
+                        :is-shared  true
+                        :name       "Icons Library"})
+    (th/create-file* 4 {:profile-id (:id profile)
+                        :project-id (:default-project-id profile)
+                        :is-shared  true
+                        :name       "Icons Library"})
+
+    {:library-id (:id library)
+     :output     output}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ADAPTER
@@ -401,3 +445,45 @@
       (t/is (pos? (count (:file-ids result)))))
     (t/testing "the handler reported progress without knowing the job id"
       (t/is (pos? (count (progress-events job-id)))))))
+
+(t/deftest the-import-result-keeps-the-type-of-its-ids
+  "The resolution of an import is a map keyed by the new file id, and it
+  crosses a plain JSON column: the result schema the job-def declares is
+  what keeps the keys and the values as uuids, which is what the dashboard
+  wizard matches against the ids it holds."
+  (let [profile (th/create-profile* 1)
+        {:keys [library-id output]} (export-link-later-package profile)
+
+        staged  (js/put-resource th/*system* (:id profile)
+                                 {:content  (sto/content output)
+                                  :filename "package.penpot"
+                                  :mtype    "application/zip"})
+        job-id  (make-job! (:id profile) (:resource-id staged) "import-binfile")
+        result  (jobs/invoke (-> th/*system*
+                                 (assoc ::jobs/name :import-binfile)
+                                 (assoc ::jobs/params {:project-id (:default-project-id profile)
+                                                       :name       "imported"
+                                                       :version    3})
+                                 (assoc ::jobs/context (job-context job-id))))]
+
+    (t/testing "the result of the job is stored as the substrate does"
+      (t/is (= 1 (jobs/complete th/*system* :job-id job-id :result result))))
+
+    (let [stored             (:result (jobs/get-job th/*system* job-id))
+          [file-id file-res] (first (:resolution stored))]
+
+      (t/testing "the resolution comes back keyed by the new file id"
+        (t/is (= 1 (count (:resolution stored))))
+        (t/is (uuid? file-id))
+        (t/is (= file-id (:id file-res))))
+
+      (t/testing "the ids of the entries keep their type"
+        (t/is (= [file-id] (:file-ids stored)))
+        (t/is (= [] (:done file-res)))
+        (t/is (= 1 (count (:pending file-res))))
+
+        (let [pending (first (:pending file-res))]
+          (t/is (= library-id (:id pending)))
+          (t/is (= 2 (count (:candidates pending))))
+          (t/is (every? (comp uuid? :id) (:candidates pending)))
+          (t/is (every? (comp uuid? :project-id) (:candidates pending))))))))
