@@ -897,6 +897,18 @@ mod per_side_tests {
             assert!(!path.contains(point), "hole filled at {point:?}");
         }
         assert_eq!(path.compute_tight_bounds(), shape.selrect);
+        // Check the whole band and hole without the render mask's boundary tolerance.
+        for y in -2..102 {
+            for x in -2..142 {
+                let in_rect = (0..140).contains(&x) && (0..100).contains(&y);
+                let in_hole = (40..128).contains(&x) && (4..76).contains(&y);
+                assert_eq!(
+                    path.contains((x as f32 + 0.5, y as f32 + 0.5)),
+                    in_rect && !in_hole,
+                    "exact inner region at ({x}, {y})"
+                );
+            }
+        }
     }
 
     #[test]

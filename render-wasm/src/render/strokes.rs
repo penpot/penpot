@@ -1120,13 +1120,13 @@ pub fn render_text_paths(
 #[cfg(test)]
 mod per_side_conversion_tests {
     use super::*;
-    use crate::shapes::{per_side_stroke_to_path, SolidColor};
+    use crate::shapes::{per_side_stroke_to_path, Frame, SolidColor};
 
     /// Compare serialized editable geometry with the canvas clips used in rendering.
     fn assert_render_mask(shape: &Shape, index: usize) {
         let stroke = &shape.strokes[index];
-        let mut original = skia::surfaces::raster_n32_premul((240, 200)).unwrap();
-        let mut converted = skia::surfaces::raster_n32_premul((240, 200)).unwrap();
+        let mut original = skia::surfaces::raster_n32_premul((320, 280)).unwrap();
+        let mut converted = skia::surfaces::raster_n32_premul((320, 280)).unwrap();
         let mut paint = skia::Paint::default();
         paint.set_color(skia::Color::WHITE);
         let outline = per_side_stroke_to_path(shape, stroke).unwrap();
@@ -1135,8 +1135,9 @@ mod per_side_conversion_tests {
             .to_skia_path(None);
         for surface in [&mut original, &mut converted] {
             surface.canvas().clear(skia::Color::TRANSPARENT);
-            surface.canvas().translate((50., 50.));
+            surface.canvas().translate((80., 80.));
         }
+        original.canvas().concat(&shape.centered_transform());
         draw_stroke_on_rect(
             original.canvas(),
             stroke,
@@ -1152,8 +1153,32 @@ mod per_side_conversion_tests {
         converted.canvas().draw_path(&outline, &paint);
         let before = original.peek_pixels().unwrap();
         let after = converted.peek_pixels().unwrap();
-        for y in 0..200 {
-            for x in 0..240 {
+        let expected = PerSideStrokeGeometry::new(
+            stroke,
+            &shape.selrect,
+            &shape.shape_type.corners(),
+            stroke.per_side_widths().unwrap(),
+            1.,
+            Stroke::per_side_profile(shape.visible_strokes()),
+            false,
+        )
+        .to_path()
+        .unwrap()
+        .make_transform(&shape.centered_transform());
+        // Bounds must agree within subpixel error even when mask edges allow one pixel.
+        let expected_bounds = expected.compute_tight_bounds();
+        let actual_bounds = outline.compute_tight_bounds();
+        for (expected, actual) in [
+            (expected_bounds.left, actual_bounds.left),
+            (expected_bounds.top, actual_bounds.top),
+            (expected_bounds.right, actual_bounds.right),
+            (expected_bounds.bottom, actual_bounds.bottom),
+        ] {
+            assert!((expected - actual).abs() < 0.01,
+                "{:?} {:?} stroke {index} geometry bounds: expected {expected_bounds:?} actual {actual_bounds:?}", stroke.kind, stroke.style);
+        }
+        for y in 1..279 {
+            for x in 1..319 {
                 let expected = before.get_color((x, y));
                 if expected != after.get_color((x, y)) {
                     // Canvas clipping and serialized cubics can differ at one boundary pixel.
@@ -1220,6 +1245,31 @@ mod per_side_conversion_tests {
                         for index in 0..shape.strokes.len() {
                             assert_render_mask(&shape, index);
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn rotated_rounded_frames_keep_multiple_patterned_strokes() {
+        for kind in [StrokeKind::Inner, StrokeKind::Center, StrokeKind::Outer] {
+            for style in [StrokeStyle::Dashed, StrokeStyle::Dotted, StrokeStyle::Mixed] {
+                for flip in [1., -1.] {
+                    let mut shape = shape(
+                        kind,
+                        style,
+                        &[[4., 12., 24., 40.], [8., 6., 12., 20.]],
+                        true,
+                    );
+                    let corners = shape.shape_type.corners().unwrap();
+                    shape.shape_type = Type::Frame(Frame::default());
+                    shape.shape_type.set_corners(corners);
+                    shape.selrect.offset((13., 17.));
+                    shape.transform.pre_rotate(37., None);
+                    shape.transform.pre_scale((flip, 1.), None);
+                    for index in 0..shape.strokes.len() {
+                        assert_render_mask(&shape, index);
                     }
                 }
             }

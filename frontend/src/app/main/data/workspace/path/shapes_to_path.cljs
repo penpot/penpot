@@ -14,6 +14,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
+   [app.common.types.stroke :as ctss]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
@@ -117,23 +118,29 @@
   "Given a shape with strokes, returns a vector of new path shapes
    created from each stroke. Uses the provided parent-id and frame-id."
   [shape parent-id frame-id]
-  (into []
-        (keep-indexed
-         (fn [idx stroke]
-           (let [result (wasm.api/stroke-to-path (:id shape) idx)]
-             (when (some? result)
-               (cts/setup-shape
-                (cond-> {:type      :path
-                         :id        (uuid/next)
-                         :name      (str (:name shape) " (stroke)")
-                         :parent-id parent-id
-                         :frame-id  frame-id
-                         :content   (:content result)
-                         :fills     [(stroke->fill stroke)]
-                         :strokes   []}
-                  (:even-odd? result)
-                  (assoc :svg-attrs {:fillRule "evenodd"})))))))
-        (:strokes shape)))
+  (let [paths
+        (into []
+              (keep-indexed
+               (fn [idx stroke]
+                 (let [result (wasm.api/stroke-to-path (:id shape) idx)]
+                   (when (some? result)
+                     (cts/setup-shape
+                      (cond-> {:type      :path
+                               :id        (uuid/next)
+                               :name      (str (:name shape) " (stroke)")
+                               :parent-id parent-id
+                               :frame-id  frame-id
+                               :content   (:content result)
+                               :fills     [(stroke->fill stroke)]
+                               :strokes   []}
+                        (:even-odd? result)
+                        (assoc :svg-attrs {:fillRule "evenodd"})))))))
+              (:strokes shape))]
+    ;; Stroke lists paint first-on-top; siblings paint last-on-top.
+    (if (and (#{:rect :frame} (:type shape))
+             (some #(= :multiple (ctss/width-type %)) (:strokes shape)))
+      (vec (rseq paths))
+      paths)))
 
 (defn convert-selected-strokes-to-path
   "For each selected shape, converts each stroke into a new sibling
