@@ -575,8 +575,7 @@
 
    :toggle-alignment     {:tooltip (ds/meta "\\")
                           :label (fn [] (tr "shortcuts.toggle-alignment"))
-                          :command [(ds/c-mod "\\") (ds/ca-mod "\\")]
-                          :show-command (ds/c-mod "\\")
+                          :command (ds/c-mod "\\")
                           :subsections [:main-menu]
                           :section [:workspace]
                           :fn #(st/emit! (toggle-layout-flag :dynamic-alignment))}
@@ -678,7 +677,7 @@
 
    :hide-ui              {:tooltip "\\"
                           :label (fn [] (tr "shortcuts.hide-ui"))
-                          :command ["\\" "alt+\\"]
+                          :command ["\\" "alt+\\" "alt+º"]
                           :show-command "\\"
                           :subsections [:panels :basics]
                           :section [:workspace :basics]
