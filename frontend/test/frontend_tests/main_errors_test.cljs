@@ -168,7 +168,7 @@
 (t/deftest environment-error-classification
   (t/testing "environment failures are recognised"
     (doseq [type [:network :offline :bad-gateway :service-unavailable
-                  :nitrate-unavailable :nitrate-not-configured]]
+                  :gateway-error :nitrate-unavailable :nitrate-not-configured]]
       (t/is (true? (errors/environment-error? (error-cause :type type)))
             (str "expected environment error: " type))))
   (t/testing "application defects are not environment failures"
@@ -219,7 +219,7 @@
   ;; handler. Each is reported as a governed compact audit event plus its
   ;; connection toast. Proves: per type, report first and toast right after,
   ;; with no stack in the report and the dedicated toast message.
-  (doseq [type [:network :offline]]
+  (doseq [type [:network :offline :gateway-error]]
     (errors/reset-report-governor!)
     (let [events (atom [])
           cause  (ex-info "http error" {:type type :hint "http error"})]
@@ -849,11 +849,19 @@
   (t/testing "environment failures stay handled after the retry budget"
     ;; They land here once the backoff is spent, and the user's connection is
     ;; not our bug, so they must not alert.
-    (doseq [cause-type [:network :offline :bad-gateway :service-unavailable]]
+    (doseq [cause-type [:network :offline :bad-gateway :service-unavailable
+                        :gateway-error]]
       (t/is (= ["handled-exception"]
                (await (report-names {:type :persistence
                                      :cause-type cause-type})))
             (str cause-type " is an environment failure, not a defect"))))
+
+  (t/testing "responses the backend never wrote stay handled"
+    (doseq [cause-type [:rate-limit :unexpected-response]]
+      (t/is (= ["handled-exception"]
+               (await (report-names {:type :persistence
+                                     :cause-type cause-type})))
+            (str cause-type " comes from a proxy, not from our code"))))
 
   (t/testing "an unclassified failure keeps the handled path"
     (t/is (= ["handled-exception"]
@@ -870,3 +878,36 @@
                (await (report-names {:type :persistence
                                      :cause-type cause-type})))
             (str cause-type " is our bug")))))
+
+;; ---------------------------------------------------------------------------
+;; transport errors
+;; ---------------------------------------------------------------------------
+
+(t/deftest ^:async transport-errors-are-handled-without-replacing-the-page
+  ;; Scenario: a rate limit and an error page the backend did not write,
+  ;; through the global handler. Proves: neither replaces the page, each is
+  ;; a handled report followed by one toast.
+  (doseq [type [:rate-limit :unexpected-response]]
+    (errors/reset-report-governor!)
+    (let [events   (atom [])
+          assigned (atom [])
+          cause    (ex-info "http error"
+                            {:type type
+                             :hint "http error"
+                             :status 429
+                             :uri "https://design.penpot.app/api/main/methods/get-teams"})]
+      (await
+       (mock/with-mocks*
+         {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+          rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+          rt/assign-exception   (fn [error] (swap! assigned conj error) error)
+          tm/schedule           (mock/stub (fn [f] (f)))
+          st/format-last-events (mock/stub (fn [& _] "(stub last events)"))}
+         (errors/on-error cause)
+         (await (async/settle))
+         (t/is (empty? @assigned)
+               (str type " must not replace the page with an error screen"))
+         (t/is (= ["handled-exception"]
+                  (map (comp ::ev/name deref) (report-events @events)))
+               (str type " is reported as handled, not unhandled"))
+         (t/is (= 2 (count @events)) (str type " must show one notification")))))))

@@ -158,6 +158,39 @@
            (rx/throw (ex-info "offline" {:type :offline}))
            (rx/of {:revn 1})))))))
 
+(defn- check-gateway-response-retries
+  "Answers the first send with a proxy error page for `status`, built by the
+  real `rp/handle-response`, and the retry with a valid revision. The save
+  must take the retry path and land, never halt in `:error`."
+  [status]
+  (let [calls (atom 0)]
+    (with-persistence
+      (^:async fn [{:keys [file-id failures requests store]}]
+        (await
+         (mock/with-mocks*
+           {rx/timer (mock/stub (fn [_] (rx/of :tick)))}
+           (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+           (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                        (empty? (get-in @store [:persistence :queue])))
+                                  (str "a " status " is retried and the save lands")))
+           (t/is (= 2 (count @requests)) "the proxy error plus one retry")
+           (t/is (empty? @failures) "a retried proxy error never reaches the failure toast"))))
+      (fn [_ _]
+        (if (= 1 (swap! calls inc))
+          (rp/handle-response {:status status
+                               :headers {"content-type" "text/html"}
+                               :body "<html><body>Gateway Timeout</body></html>"
+                               :uri "https://penpot.example.com/api/main/methods/update-file"})
+          (rx/of {:revn 1}))))))
+
+;; Variant: the proxy in front of the backend timed out.
+(t/deftest ^:async gateway-timeout-save-is-retried
+  (await (check-gateway-response-retries 504)))
+
+;; Variant: Cloudflare gave up waiting for the origin.
+(t/deftest ^:async cloudflare-origin-timeout-save-is-retried
+  (await (check-gateway-response-retries 524)))
+
 ;; Scenario: every send fails transiently. The 2s / 8s / 20s retries fire
 ;; and then the failure falls through to the exact terminal path: `:error`
 ;; carrying the cause, queue intact, one flash. Proves: the budget bounds
