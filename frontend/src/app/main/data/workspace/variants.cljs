@@ -164,31 +164,8 @@
   (ptk/reify ::remove-empty-properties
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (dsh/lookup-file-data state)
-            objects (dsh/lookup-page-objects state)
-
-            variant-components (cfv/find-variant-components data objects variant-id)
-
-            properties-empty-pos (->> variant-components
-                                      (mapcat :variant-properties)
-                                      (group-by :name)
-                                      (map-indexed
-                                       (fn [i [_ v]]
-                                         [i (->> v
-                                                 (map :value)
-                                                 (remove empty?)
-                                                 empty?)]))
-                                      (reverse))
-
-            changes (reduce
-                     (fn [changes [pos property-empty?]]
-                       (if property-empty?
-                         (-> changes
-                             (clvp/generate-remove-property variant-id pos))
-                         changes))
-                     (variant-changes it state)
-                     properties-empty-pos)]
-
+      (let [changes (-> (variant-changes it state)
+                        (clvp/generate-remove-empty-properties variant-id))]
         (when (seq (:redo-changes changes))
           (rx/of
            (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:rename-in-layers"})

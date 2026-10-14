@@ -59,6 +59,19 @@
       changes)))
 
 
+(defn generate-remove-empty-properties
+  "Remove each property of the variant `variant-id` whose value is empty in
+  all its components."
+  [changes variant-id]
+  (let [data       (pcb/get-library-data changes)
+        objects    (pcb/get-objects changes)
+        components (cfv/find-variant-components data objects variant-id)
+        empty-pos  (filter (fn [pos]
+                             (every? #(empty? (get-in % [:variant-properties pos :value])) components))
+                           (range (count (-> components first :variant-properties))))]
+    ;; from the last one, so the positions of the others stay
+    (reduce #(generate-remove-property %1 variant-id %2) changes (reverse empty-pos))))
+
 (defn generate-update-property-value
   [changes component-id pos value]
   (let [component (ctcl/get-component (pcb/get-library-data changes) component-id true)]
