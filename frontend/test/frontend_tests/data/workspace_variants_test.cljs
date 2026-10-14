@@ -28,6 +28,7 @@
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.common :as dcm]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
@@ -121,7 +122,7 @@
           variant-id (cthi/id :v01)]
       (run file
            [(dwv/add-new-property variant-id {:fill-values? true})
-            (dwv/reorder-variant-poperties variant-id 0 3)
+            (dwv/reorder-variant-properties variant-id 0 3)
             (dwv/remove-property variant-id 0)]
            done
            (fn [state]
@@ -139,13 +140,10 @@
 (t/deftest formula-rename-from-another-page
   (t/async
     done
-    (let [file     (two-property-file-on-other-page)
-          comp     (cthc/get-component file :c01)
-          previous (:variant-properties comp)
-          updated  [{:name "Property 1" :value "active"}
-                    {:name "Property 2" :value "crítica"}]]
+    (let [file (two-property-file-on-other-page)
+          comp (cthc/get-component file :c01)]
       (run file
-           [(dwv/update-properties-names-and-values (:id comp) (:variant-id comp) previous updated)
+           [(dwv/rename-member (:id comp) (:variant-id comp) "Property 1=active, Property 2=crítica")
             (dwv/remove-empty-properties (:variant-id comp))]
            done
            (fn [state]
@@ -696,7 +694,7 @@
   (let [file   (setup-file)
         state  (state-of file)
         valid? (fn [label pos val]
-                 (dwv/valid-variant-switch? state (cths/get-shape file label) pos val))]
+                 (clv/valid-switch? (dsh/lookup-libraries state) (cths/get-shape file label) pos val))]
     (t/testing "a variant copy head and a value some member holds"
       (t/is (valid? :copy01 0 "Value2"))
       (t/is (valid? :copy01 0 "Value1")))

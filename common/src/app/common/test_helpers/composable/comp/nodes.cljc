@@ -42,6 +42,7 @@
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
 
 ;; ---------------------------------------------------------------------------
@@ -829,7 +830,8 @@
 ;;
 ;; The "Update main component" action on the copy head bound to `target`,
 ;; through `generate-sync-shape-inverse`. The frontend commits the copy's and
-;; the main's changes apart, by `:local-change?`; here they go as one.
+;; the main's changes apart (`split-local-changes`); here they go as one, in
+;; the order the sync built them.
 ;; ---------------------------------------------------------------------------
 
 (defn- strip-local-change
@@ -1436,12 +1438,13 @@
   (tm/assign-id (->SwitchVariant target value pos)))
 
 ;; ---------------------------------------------------------------------------
-;; Variant properties — add, remove, rename, reorder a property of a set, or
-;; set the value of a member
+;; Variant properties — add, remove, rename, reorder a property of a set, set
+;; the value or the error of a member, rename a member in the layers panel,
+;; or remove the properties no member gives a value
 ;;
-;; The edits of the design tab's variant properties, through the
-;; `app.common.logic.variant-properties` generators (the `dwv` events on the
-;; frontend). `variant-property-call` resolves an edit to the generator's
+;; The edits of the design tab's variant properties and of the layers panel,
+;; through the `app.common.logic.variant-properties` generators (the `dwv`
+;; events on the frontend). `variant-property-call` resolves an edit to the generator's
 ;; arguments, which the frontend events take too. A member is named by the
 ;; value it was built with (`variant-member`), whatever its value now.
 ;; ---------------------------------------------------------------------------
@@ -1490,7 +1493,15 @@
       :set-value [:set-value
                   (variant-member-component-id situation set-name (:member params))
                   (:pos params)
-                  (:value params)])))
+                  (:value params)]
+      :rename-in-layers [:rename-in-layers
+                         (variant-member-component-id situation set-name (:member params))
+                         variant-id
+                         (:name params)]
+      :remove-empty [:remove-empty variant-id]
+      :error        [:error
+                     (variant-member-component-id situation set-name (:member params))
+                     (:value params)])))
 
 (defn- variant-property-changes
   [changes [edit & args]]
@@ -1500,7 +1511,10 @@
     :remove    (apply clvp/generate-remove-property changes args)
     :rename    (apply clvp/generate-update-property-name changes args)
     :reorder   (apply clvp/generate-reorder-variant-properties changes args)
-    :set-value (apply clvp/generate-update-property-value changes args)))
+    :set-value (apply clvp/generate-update-property-value changes args)
+    :rename-in-layers (apply clvp/generate-rename-member changes args)
+    :remove-empty (apply clvp/generate-remove-empty-properties changes args)
+    :error (apply clvp/generate-set-variant-error changes args)))
 
 (defrecord EditVariantProperty [set-name edit params]
   IComponentOperation
@@ -1543,6 +1557,30 @@
    position `to`."
   [set-name from to]
   (tm/assign-id (->EditVariantProperty set-name :reorder {:from from :to to})))
+
+(defn rename-variant-in-layers
+  "Rename set `set-name`'s member built with value `member` in the layers
+   panel to the properties formula of `properties` (`[[name value] ...]`;
+   the ones with no value left out), which also removes the properties no
+   member gives a value (`generate-rename-member`)."
+  [set-name member properties]
+  (tm/assign-id
+   (->EditVariantProperty set-name :rename-in-layers
+                          {:member member
+                           :name   (ctv/properties-map->formula
+                                    (map (fn [[name value]] {:name name :value value}) properties))})))
+
+(defn remove-empty-properties
+  "Remove the properties of set `set-name` whose value is empty in every
+   member (`generate-remove-empty-properties`)."
+  [set-name]
+  (tm/assign-id (->EditVariantProperty set-name :remove-empty {})))
+
+(defn set-variant-error
+  "Set the error of set `set-name`'s member built with value `member` to
+   `value`, nil to clear it (`generate-set-variant-error`)."
+  [set-name member value]
+  (tm/assign-id (->EditVariantProperty set-name :error {:member member :value value})))
 
 (defn set-variant-property-value
   "Set the value of the property at position `pos` of set `set-name`'s member
@@ -1613,9 +1651,8 @@
 ;; Variant actions with no common generator (frontend only)
 ;;
 ;; Transform a component into a variant, combine components as variants,
-;; rename a variant, rename a member in the layers panel, remove the empty
-;; properties, set a member's error, and the shortcuts that add a variant to
-;; selected members. Their logic is in the `dwv` events, so the frontend
+;; rename a variant, and the shortcuts that add a variant to selected
+;; members. Their logic is in the `dwv` events, so the frontend
 ;; interpreter sends them and the pure runner rejects them. A set these
 ;; actions build has no `variant-set` record: read it from the file
 ;; (`component-of`, `variant-component-ids`).
@@ -1653,25 +1690,6 @@
    container and every member's main (`rename-comp-or-variant-and-main`)."
   [target name]
   (variant-action :rename {:target target :name name}))
-
-(defn rename-variant-in-layers
-  "Rename set `set-name`'s member built with value `member` in the layers
-   panel, to the properties `properties` (`[[name value] ...]`)
-   (`update-properties-names-and-values`)."
-  [set-name member properties]
-  (variant-action :rename-in-layers {:set-name set-name :member member :properties properties}))
-
-(defn remove-empty-properties
-  "Remove the properties of set `set-name` whose value is empty in every
-   member (`remove-empty-properties`)."
-  [set-name]
-  (variant-action :remove-empty {:set-name set-name}))
-
-(defn set-variant-error
-  "Set the error of set `set-name`'s member built with value `member` to
-   `value`, nil to clear it (`update-error`)."
-  [set-name member value]
-  (variant-action :error {:set-name set-name :member member :value value}))
 
 (defn variant-shortcut
   "Select the shapes `targets` name and press the shortcut `kind`:
