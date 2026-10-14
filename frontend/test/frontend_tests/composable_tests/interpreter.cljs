@@ -237,7 +237,8 @@
          :rename    (let [[variant-id pos name] args]
                       (dwv/update-property-name variant-id pos name {:trigger "workspace:design-tab"}))
          :reorder   (apply dwv/reorder-variant-properties args)
-         :set-value (apply dwv/update-property-value args)
+         :set-value (let [[component-id pos value] args]
+                      (dwv/update-property-value [component-id] pos value))
          ;; the layers panel's rename of the member's main
          :rename-in-layers (let [{:keys [set-name params]} op]
                              (dw/rename-shape-or-variant (:id (n/member-root situation set-name (:member params)))

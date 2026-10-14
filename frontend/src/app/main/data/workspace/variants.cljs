@@ -146,13 +146,21 @@
              (ev/event {::ev/name "variant-edit-property-name" ::ev/origin trigger}))))))))
 
 (defn update-property-value
-  "Updates the variant property value on the position pos in a component"
-  [component-id pos value]
+  "Set the value of the variant property at `pos` of the components
+  `component-ids`, and clear their errors."
+  [component-ids pos value]
   (ptk/reify ::update-property-value
     ptk/WatchEvent
     (watch [it state _]
-      (when-let [changes (variant-changes it state :component-id component-id)]
-        (rx/of (dch/commit-changes (clvp/generate-update-property-value changes component-id pos value)))))))
+      ;; the components of one variant have their mains in the same page
+      (when-let [changes (variant-changes it state :component-id (first component-ids))]
+        (rx/of (dch/commit-changes
+                (reduce (fn [changes id]
+                          (-> changes
+                              (clvp/generate-update-property-value id pos value)
+                              (clvp/generate-set-variant-error id nil)))
+                        changes
+                        component-ids)))))))
 
 (defn update-error
   "Sets or unsets an error for a component"
@@ -479,7 +487,10 @@
         (rx/of (combine-as-variants selected options))))))
 
 (defn- variant-switch
-  "Switch the shape (that must be a variant copy head) for the closest one with the property value passed as parameter.
+  "Switch the shape (that must be a variant copy head) for the closest one
+   with the property value passed as parameter. A switch that would nest a
+   component in itself does nothing and calls the `:on-error` of the
+   metadata of `params`.
 
    `params` may include `:swap-opts` forwarded to `component-swap` (e.g.
    `{:skip-select? true :skip-layout? true}` for a multi batch)."
@@ -495,7 +506,7 @@
                 nearest-comp (clv/find-switch-target libraries shape pos val)
 
                 {:keys [on-error]
-                 :or {on-error rx/throw}} (meta params)]
+                 :or {on-error (constantly nil)}} (meta params)]
             ;; Nothing to do when the value is already val or no variant has it
             (if nearest-comp
               (if (clv/swap-nesting-loop? objects

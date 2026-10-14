@@ -88,8 +88,8 @@
           component-id (:id (cthc/get-component file :c01))
           other-id     (cthi/id :page2)]
       (run file
-           [(dwv/update-property-value component-id 0 "active")
-            (dwv/update-property-value component-id 1 "crítica")]
+           [(dwv/update-property-value [component-id] 0 "active")
+            (dwv/update-property-value [component-id] 1 "crítica")]
            done
            (fn [state]
              (let [file  (ths/get-file-from-state state)
@@ -106,7 +106,7 @@
                            (cthf/switch-to-page :page1))
           component-id (:id (cthc/get-component file :c01))]
       (run file
-           [(dwv/update-property-value component-id 1 "crítica")]
+           [(dwv/update-property-value [component-id] 1 "crítica")]
            done
            (fn [state]
              (let [file  (ths/get-file-from-state state)
@@ -849,3 +849,19 @@
          (let [data (:data (ths/get-file-from-state state))]
            (t/is (= (remove #{"Property 6"} (map :name (props "a")))
                     (map :name (:variant-properties (ctkl/get-component data (cthi/id :c01))))))))))))
+
+(t/deftest set-a-property-value-on-several-members
+  (t/async
+    done
+    (let [file (-> (setup-file)
+                   (cths/update-shape :m01 :variant-error "Duplicated")
+                   (cths/update-shape :m02 :variant-error "Duplicated"))]
+      (ths/run-store
+       (ths/setup-store file) done
+       [(dwv/update-property-value [(cthi/id :c01) (cthi/id :c02)] 0 "Same")]
+       (fn [state]
+         (let [file' (ths/get-file-from-state state)
+               value #(get-in (ctkl/get-component (:data file') (cthi/id %)) [:variant-properties 0 :value])]
+           (t/is (= ["Same" "Same"] [(value :c01) (value :c02)]))
+           (t/is (nil? (:variant-error (cths/get-shape file' :m01))))
+           (t/is (nil? (:variant-error (cths/get-shape file' :m02))))))))))
