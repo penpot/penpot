@@ -132,6 +132,10 @@
   gap: var(--sp-xxl);
 }
 
+.notification-text {
+  color: var(--color-foreground-secondary);
+}
+
 .notification-email {
   @include use-typography("title-medium");
 

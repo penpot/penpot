@@ -1,8 +1,9 @@
 use super::fixtures::*;
 
 use crate::shapes::{
-    radius_to_sigma, BlendMode, Blur, BlurType, Fill, ImageFill, ImageFillTransform, Shadow,
-    ShadowStyle, SolidColor, StrokeCap, StrokeKind,
+    radius_to_sigma, AlignContent, AlignItems, BlendMode, Blur, BlurType, Fill, FlexDirection,
+    ImageFill, ImageFillTransform, JustifyContent, JustifyItems, Shadow, ShadowStyle, SolidColor,
+    StrokeCap, StrokeKind, WrapType,
 };
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
@@ -220,6 +221,63 @@ fn exports_frame_background_blur_before_children() {
     let child_pos = svg.find(child_marker).expect("child rect size");
     assert!(fo_pos < child_pos, "frame FO must precede children: {svg}");
     insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_flex_children_with_first_child_on_top() {
+    let mut pool = ShapesPool::new();
+    let frame_id = uid(1);
+    let first = uid(2);
+    let second = uid(3);
+    add_frame(
+        &mut pool,
+        frame_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_rgb(255, 255, 255),
+        false,
+    );
+    pool.get_mut(&frame_id).unwrap().set_flex_layout_data(
+        FlexDirection::Row,
+        0.0,
+        0.0,
+        AlignItems::Start,
+        AlignContent::Start,
+        JustifyItems::Start,
+        JustifyContent::Start,
+        WrapType::NoWrap,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    );
+    add_solid_rect(
+        &mut pool,
+        first,
+        frame_id,
+        (20.0, 20.0, 80.0, 80.0),
+        skia::Color::from_rgb(255, 0, 0),
+    );
+    add_solid_rect(
+        &mut pool,
+        second,
+        frame_id,
+        (40.0, 40.0, 100.0, 100.0),
+        skia::Color::from_rgb(0, 0, 255),
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_child(first);
+        frame.add_child(second);
+    }
+
+    let svg = render(&pool, frame_id);
+    let first_pos = svg.find("fill=\"red\"").expect("first child");
+    let second_pos = svg.find("fill=\"blue\"").expect("second child");
+    assert!(
+        second_pos < first_pos,
+        "flex paints its first child on top: {svg}"
+    );
 }
 
 #[test]

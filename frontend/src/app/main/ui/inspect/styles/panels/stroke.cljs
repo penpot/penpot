@@ -42,20 +42,44 @@
    :border-width :stroke-width
    :border-color :stroke-color})
 
-(defn- get-applied-tokens-in-shape
-  [shape-tokens property]
-  (let [border-prop (get shape-prop->stroke-prop property)]
-    (if border-prop
-      (get shape-tokens border-prop)
-      (get shape-tokens property))))
+(def ^:private per-side-prop->token-attr
+  {:border-block-start-width  :stroke-width-top
+   :border-inline-end-width   :stroke-width-right
+   :border-block-end-width    :stroke-width-bottom
+   :border-inline-start-width :stroke-width-left})
+
+(defn- all-sides-token-name
+  "Token applied to the four stroke width sides when they all share it."
+  [applied-tokens]
+  (let [sides (map #(get applied-tokens %)
+                   [:stroke-width-top :stroke-width-right
+                    :stroke-width-bottom :stroke-width-left])]
+    (when (and (every? some? sides) (apply = sides))
+      (first sides))))
+
+(defn stroke-property-token-name
+  "Name of the token applied to the stroke `property`, read from the shape
+  `applied-tokens`. Stroke width tokens are stored per side, so a per-side
+  property reads its side and `:border-width` reads the token shared by
+  every side. Files not migrated yet keep it in the old `:stroke-width`."
+  [applied-tokens property]
+  (cond
+    (contains? per-side-prop->token-attr property)
+    (get applied-tokens (get per-side-prop->token-attr property))
+
+    (= :border-width property)
+    (or (all-sides-token-name applied-tokens)
+        (get applied-tokens :stroke-width))
+
+    :else
+    (let [border-prop (get shape-prop->stroke-prop property)]
+      (get applied-tokens (or border-prop property)))))
 
 (defn- get-resolved-token
   "Get the resolved token for a specific property in a shape."
   [property shape resolved-tokens]
-  (let [shape-tokens (:applied-tokens shape)
-        applied-tokens-in-shape (get-applied-tokens-in-shape shape-tokens property)
-        token (get resolved-tokens applied-tokens-in-shape)]
-    token))
+  (let [token-name (stroke-property-token-name (:applied-tokens shape) property)]
+    (get resolved-tokens token-name)))
 
 ;; Current token implementation on strokes only supports one token per shape and has to be the first stroke
 ;; This must be improved in the future

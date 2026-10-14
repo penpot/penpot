@@ -49,7 +49,7 @@ pub fn move_cursor_backward(
         if cursor.offset > 0 {
             return TextPositionWithAffinity::new_downstream_affinity(
                 cursor.paragraph,
-                cursor.offset - 1,
+                paragraphs[cursor.paragraph].prev_grapheme_offset(cursor.offset),
             );
         }
         if cursor.paragraph > 0 {
@@ -126,7 +126,7 @@ pub fn move_cursor_forward(
         if cursor.offset < char_count {
             return TextPositionWithAffinity::new_downstream_affinity(
                 cursor.paragraph,
-                cursor.offset + 1,
+                para.next_grapheme_offset(cursor.offset),
             );
         }
         if cursor.paragraph < paragraphs.len() - 1 {
@@ -582,7 +582,7 @@ pub fn delete_char_before(
     if cursor.offset > 0 {
         let paragraphs = text_content.paragraphs_mut();
         let para = &mut paragraphs[cursor.paragraph];
-        let delete_pos = cursor.offset - 1;
+        let delete_pos = para.prev_grapheme_offset(cursor.offset);
         delete_range_in_paragraph(para, delete_pos, cursor.offset);
         Some(TextPositionWithAffinity::new_downstream_affinity(
             cursor.paragraph,
@@ -766,7 +766,8 @@ pub fn delete_char_after(text_content: &mut TextContent, cursor: &TextPositionWi
 
     if cursor.offset < para_len {
         let para = &mut paragraphs[cursor.paragraph];
-        delete_range_in_paragraph(para, cursor.offset, cursor.offset + 1);
+        let end = para.next_grapheme_offset(cursor.offset);
+        delete_range_in_paragraph(para, cursor.offset, end);
     } else if cursor.paragraph < paragraphs.len() - 1 {
         let next_para_idx = cursor.paragraph + 1;
         let next_children: Vec<_> = paragraphs[next_para_idx].children_mut().drain(..).collect();
@@ -944,6 +945,38 @@ mod tests {
         let mut content = content(vec![paragraph(&["a😀b"])]);
         delete_selection_range(&mut content, &selection((0, 1), (0, 2)));
         assert_eq!(text_of(&content), "ab");
+    }
+
+    fn caret(paragraph: usize, offset: usize) -> TextPositionWithAffinity {
+        TextPositionWithAffinity::new_downstream_affinity(paragraph, offset)
+    }
+
+    #[test]
+    fn delete_char_before_deletes_a_whole_emoji() {
+        for emoji in ["😀", "👍🏽", "👨\u{200d}👩\u{200d}👧", "🇪🇸"] {
+            let text = format!("A{emoji}");
+            let len = text.chars().count();
+            let mut content = content(vec![paragraph(&[text.as_str()])]);
+            let new_caret = delete_char_before(&mut content, &caret(0, len));
+            assert_eq!(text_of(&content), "A");
+            assert_eq!(new_caret, Some(caret(0, 1)));
+        }
+    }
+
+    #[test]
+    fn delete_char_after_deletes_a_whole_emoji() {
+        let mut content = content(vec![paragraph(&["A👍🏽B"])]);
+        delete_char_after(&mut content, &caret(0, 1));
+        assert_eq!(text_of(&content), "AB");
+    }
+
+    #[test]
+    fn move_cursor_steps_over_a_whole_emoji() {
+        let paragraphs = vec![paragraph(&["A👍🏽B"])];
+        let forward = move_cursor_forward(&caret(0, 1), &paragraphs, false);
+        assert_eq!(forward, caret(0, 3));
+        let backward = move_cursor_backward(&caret(0, 3), &paragraphs, false);
+        assert_eq!(backward, caret(0, 1));
     }
 
     #[test]

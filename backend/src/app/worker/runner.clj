@@ -163,9 +163,22 @@
       (throw cause))
     (catch Throwable cause
       (let [edata (ex-data cause)]
-        (if (and (< (:retry-num job)
-                    (:max-retries job))
-                 (= ::wrk/retry (:type edata)))
+        (cond
+          ;; the interrupt is the signal that the job is no longer active:
+          ;; a normal procedure, so it is not reported as an error and it
+          ;; never fails or retries a row that is already terminal
+          (= :interrupt (:type edata))
+          (binding [l/*context* (-> (cf/logging-context)
+                                    (assoc :params job))]
+            (l/inf :hint "interrupted"
+                   :tenant tenant
+                   :job-id (str (:job-id edata))
+                   :status (:status edata))
+            {:status "interrupted"})
+
+          (and (< (:retry-num job)
+                  (:max-retries job))
+               (= ::wrk/retry (:type edata)))
           (cond-> {:status "retry" :error cause}
             (ct/duration? (:delay edata))
             (assoc :delay-ms (inst-ms (:delay edata)))
@@ -174,6 +187,8 @@
 
             (= ::wrk/noop (:strategy edata))
             (assoc :inc-by 0))
+
+          :else
           (do
             (l/err :hint "unhandled exception on job"
                    ::l/context (assoc (cf/logging-context) :params job)
@@ -288,9 +303,12 @@
           (process-result [{:keys [status] :as result}]
             (ex/try!
              (case status
-               "retry"     (handle-job-retry result)
-               "failed"    (handle-job-failure result)
-               "completed" (handle-job-completion result)
+               "retry"       (handle-job-retry result)
+               "failed"      (handle-job-failure result)
+               "completed"   (handle-job-completion result)
+               ;; the job is no longer active: there is nothing to write,
+               ;; the row is already terminal and whoever stopped it did
+               "interrupted" nil
                (throw (IllegalArgumentException.
                        (str "invalid status received: '" status "'"))))))
 

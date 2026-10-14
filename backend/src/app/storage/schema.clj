@@ -53,7 +53,8 @@
    "organization"          #{:organization-id}
    tempfile-bucket         #{}
    upload-session-bucket   #{}
-   job-resource-bucket     #{}
+   ;; read back only by the profile that owns them
+   job-resource-bucket     #{:profile-id}
    "file-data"             #{:file-id :id}
    "file-data-fragment"    #{}
    "file-change"           #{}})

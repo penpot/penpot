@@ -133,7 +133,7 @@ test("BUG 10001: Negative margins are allowed on the numeric input", async ({
   });
 
   await expect(verticalMarginInput).toBeVisible();
-  
+
   await verticalMarginInput.fill("-10");
   await verticalMarginInput.press("Enter");
   await expect(verticalMarginInput).toHaveValue("-10");
@@ -229,4 +229,55 @@ test("BUG 10638 - Invalid padding input on multi-selection must not persist stri
   // persisted at least one layout-padding value.
   expect(seenLayoutValues).not.toEqual([]);
   expect(badLayoutValues).toEqual([]);
+});
+
+test("BUG 12227: Numeric inputs only show the scrub cursor when they hold a single value", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-copy-paste.json",
+  );
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-copy-paste-fragment.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "870f9f10-87b5-8137-8005-934804124660",
+    pageId: "870f9f10-87b5-8137-8005-934804124661",
+  });
+
+  await page.getByTestId("layer-item").getByRole("button").first().click();
+  await workspacePage.layers.getByTestId("layer-row").nth(0).click();
+
+  const measuresSection = workspacePage.rightSidebar.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+    exact: true,
+  });
+  await expect(widthInput).toHaveValue("360");
+
+  // The wrapper around the input is the element that carries the cursor.
+  const widthWrapper = measuresSection
+    .getByTestId("numeric-input-wrapper")
+    .filter({ has: page.getByRole("textbox", { name: "Width", exact: true }) });
+
+  // A single committed value can be scrubbed.
+  await expect(widthWrapper).toHaveCSS("cursor", "ew-resize");
+
+  // Selecting a second shape with a different width mixes the values.
+  // The field then has no single value, so it must not look scrubbable.
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .nth(1)
+    .click({ modifiers: ["Shift"] });
+  await expect(widthInput).toHaveAttribute("placeholder", "Mixed");
+  await expect(widthWrapper).not.toHaveCSS("cursor", "ew-resize");
 });

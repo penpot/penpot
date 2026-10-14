@@ -1,4 +1,4 @@
-FROM dhi.io/nginx:1.31.6-alpine3.24
+FROM dhi.io/nginx:1.31.6-alpine3.24@sha256:94652754aa6bbf187859b24c0b547aa2c3d07e99d4462868f8d9f36bf2039d88
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ARG BUNDLE_PATH="./bundle-storybook/"

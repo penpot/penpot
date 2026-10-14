@@ -828,7 +828,7 @@ msgstr "你将恢复所有项目和文件。这可能需要一些时间。"
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "恢复所有的项目及其文件"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "恢复所有"
 
@@ -1316,7 +1316,7 @@ msgstr "Web Worker 出错。"
 msgid "errors.invalid-color"
 msgstr "无效的颜色"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "无效数据"
 
@@ -2474,7 +2474,7 @@ msgstr "隐藏"
 msgid "labels.hide-resolved-comments"
 msgstr "隐藏已解决的评论"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "导入"
 
@@ -4466,7 +4466,7 @@ msgstr "缩放"
 msgid "shortcuts.thumbnail-set"
 msgstr "设置缩略图"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "快捷键"
 

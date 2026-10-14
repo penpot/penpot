@@ -898,7 +898,7 @@ msgstr "הפעולה הזאת תשחזר את כל המיזמים והקבצים
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "שחזור כל המיזמים והקבצים"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "לשחזר הכול"
 
@@ -1462,7 +1462,7 @@ msgstr "משהו השתבש עם מנגנון הדפדפן."
 msgid "errors.invalid-color"
 msgstr "צבע שגוי"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "נתונים שגויים"
 
@@ -2534,7 +2534,7 @@ msgstr "הסתרה"
 msgid "labels.hide-resolved-comments"
 msgstr "הסתרת הערות שנפתרו"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "ייבוא"
 
@@ -4473,7 +4473,7 @@ msgstr "תקריב"
 msgid "shortcuts.thumbnail-set"
 msgstr "הגדרת תמונות ממוזערות"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "קיצורי מקלדת"
 

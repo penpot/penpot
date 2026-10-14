@@ -16,6 +16,7 @@
    [app.main.data.event :as ev]
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.errors]
    [app.main.features :as feat]
    [app.main.rasterizer :as thr]
@@ -81,6 +82,7 @@
     (watch [_ _ stream]
       (rx/merge
        (rx/of (ev/initialize)
+              (mcp/initialize)
               (dp/refresh-profile))
 
        ;; Watch for profile deletion events

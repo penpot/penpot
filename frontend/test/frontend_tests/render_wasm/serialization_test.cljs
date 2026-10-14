@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.render-wasm.serialization-test
-  "Routing tests for `serialize-shape!` and `serialize-shapes-batch!`.
+  "Routing tests for `serialize-shape` and `serialize-shapes-batch`.
 
    A shared `tail-cases` table states, per shape, whether the svg-attrs/path
    tail must fire. The pure `needs-shape-tail?` predicate is tested against
@@ -23,7 +23,7 @@
 
 (defn- with-ffi-stubs*
   "Stubs the single-arity FFI boundary fns (`flush-shapes-batch!`,
-  `use-shape!`, `set-shape-svg-attrs`, `set-shape-path-content`).
+  `use-shape`, `set-shape-svg-attrs`, `set-shape-path-content`).
   `set-shape-upload!` is deliberately left real: it is a trivial one-liner
   over the stubbed flush, so the single test exercises its actual delegation
   and default opts. A plain fn `set!` onto a multi-arity var breaks under
@@ -121,7 +121,7 @@
                :svg-attrs (fn [attrs] (swap! events conj [:svg-attrs @current attrs]) nil)
                :path (fn [content] (swap! events conj [:path @current content]) nil)}
         result (with-ffi-stubs* stubs
-                 #(serialize-shape/serialize-shapes-batch! shapes opts))
+                 #(serialize-shape/serialize-shapes-batch shapes opts))
         flushed (first @flush-calls)]
     (t/is (= 1 (count @flush-calls)) "exactly one flush")
     (t/is (= opts (:opts flushed)) "flush carries passed opts")
@@ -140,7 +140,7 @@
                  :svg-attrs (fn [attrs] (swap! svg-applied conj attrs) nil)
                  :path (fn [content] (swap! path-applied conj content) nil)}]
       (let [expected (svg-derived/apply-svg-derived shape)
-            result (with-ffi-stubs* stubs #(serialize-shape/serialize-shape! shape))]
+            result (with-ffi-stubs* stubs #(serialize-shape/serialize-shape shape))]
         (t/is (= [{:shapes [expected] :opts {:include-layout? false}}] @flush-calls)
               (str "single upload carries derived shape without layout for " (:type shape)))
         (t/is (= expected result)
@@ -161,7 +161,7 @@
                :svg-attrs (fn [_] (t/is false "no svg-attrs write on empty batch") nil)
                :path (fn [_] (t/is false "no path write on empty batch") nil)}
         result (with-ffi-stubs* stubs
-                 #(serialize-shape/serialize-shapes-batch! [] opts))]
+                 #(serialize-shape/serialize-shapes-batch [] opts))]
     (t/is (= [] result) "returns empty prepared")
     (t/is (empty? @flush-calls) "no flush on empty batch")
     (t/is (empty? @selected) "no select on empty batch")))

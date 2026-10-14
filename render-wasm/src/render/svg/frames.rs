@@ -9,7 +9,7 @@ use super::document::{
 };
 use super::images::{emit_fills, emit_strokes};
 use super::render_tree;
-use crate::render::RenderResources;
+use crate::render::{children_paint_order, RenderResources};
 
 pub(super) fn render_frame(
     builder: &mut SvgLayerCanvas,
@@ -104,7 +104,7 @@ fn render_frame_body(
         )?;
     }
 
-    let children: Vec<_> = element.children_ids_iter_forward(false).copied().collect();
+    let children = children_paint_order(tree, element);
     for child_id in &children {
         render_tree(builder, shared, child_id, tree, scale)?;
     }

@@ -7,6 +7,7 @@
 (ns common-tests.geom-flex-layout-test
   (:require
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes.flex-layout.params :as flparams]
    [app.common.geom.shapes.flex-layout.positions :as flp]
    [app.common.math :as mth]
    [app.common.types.shape :as cts]
@@ -104,3 +105,33 @@
                                   :layout-justify-content :end
                                   :x 0 :y 0 :width 100 :height 100})]
       (t/is (not (ctl/v-end? frame))))))
+
+;; ---- calculate-params paddings ----
+;;
+;; Adding a flex layout derives the paddings from the distance between the
+;; board and its children. A child that overflows the board, or floating
+;; point noise after "Resize board to fit content", gave negative paddings
+;; that the shape schema rejects, which broke autosave (#12107).
+
+(defn- params-for-child
+  [child-attrs]
+  (let [parent (cts/setup-shape {:type :frame :x 0 :y 0 :width 100 :height 100})
+        child  (cts/setup-shape (merge {:type :rect :parent-id (:id parent)} child-attrs))
+        parent (assoc parent :shapes [(:id child)])
+        objects {(:id parent) parent (:id child) child}]
+    (flparams/calculate-params objects [child] parent)))
+
+(t/deftest calculate-params-keeps-positive-padding
+  (t/is (= {:p1 20 :p2 10 :p3 20 :p4 10}
+           (:layout-padding (params-for-child {:x 10 :y 20 :width 50 :height 50})))))
+
+(t/deftest calculate-params-clamps-overflowing-child-padding
+  (t/is (= {:p1 0 :p2 0 :p3 0 :p4 0}
+           (:layout-padding (params-for-child {:x -10 :y -5 :width 150 :height 150})))))
+
+(t/deftest calculate-params-clamps-float-noise-padding
+  (let [padding (:layout-padding
+                 (params-for-child {:x -1.1728368917829357E-5
+                                    :y -2.1457672119140625E-6
+                                    :width 100 :height 100}))]
+    (t/is (every? #(not (neg? %)) (vals padding)))))

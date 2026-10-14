@@ -6,21 +6,33 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: build-docker-devenv
+  cancel-in-progress: false
+
 jobs:
   build-and-push:
     name: Build and push DevEnv Docker image
     runs-on: penpot-standar-runner
+    timeout-minutes: 90
+    env:
+      DOCKER_IMAGE: 'penpotapp/devenv'
 
     steps:
       - name: Set common environment variables
         run: |
           # Each job execution will use its own docker configuration.
-          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
+          echo "DOCKER_CONFIG=${RUNNER_TEMP}/.docker-${GITHUB_RUN_ID}-${GITHUB_JOB}" >> "$GITHUB_ENV"
 
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: linux/amd64,linux/arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -40,8 +52,6 @@ jobs:
 
       - name: Build and push DevEnv Docker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        env:
-          DOCKER_IMAGE: 'penpotapp/devenv'
         with:
           context: ./docker/devenv/
           file: ./docker/devenv/Dockerfile
@@ -61,4 +71,13 @@ jobs:
           TEXT: |
             🚀 *[PENPOT] New devenv available*
             📄 You may want to update your devenv.
-            @alvaro
+
+      - name: Notify Mattermost (developers)
+        uses: mattermost/action-mattermost-notify@ae31bb6f9e26a54336e79696f108a2c91cf55b4e # v2.1.0
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: penpotdev
+          TEXT: |
+            🚀 *[PENPOT] New devenv available*
+            📄 You may want to update your devenv.
+            (\cc @alvaro)

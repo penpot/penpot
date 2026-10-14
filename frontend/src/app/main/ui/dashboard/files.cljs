@@ -14,6 +14,7 @@
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.mcp-menu :refer [dashboard-mcp-menu*]]
    [app.main.ui.dashboard.grid :refer [grid*]]
    [app.main.ui.dashboard.import :as udi]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -102,6 +103,7 @@
            (:name project)]]))
 
      [:div {:class (stl/css :dashboard-header-actions)}
+      [:> dashboard-mcp-menu*]
       [:> layout-toggle* {:layout layout
                           :on-change on-change}]
 

@@ -74,6 +74,16 @@ goog.scope(function () {
         mediaObj.onchange = null;
         return mediaObj;
       };
+      // The History API. `app.util.browser-history` writes the router
+      // through `history.pushState`/`replaceState`, so the mock only has
+      // to accept the calls; nothing reads the resulting URL back.
+      mockWindow.history = {
+        pushState() {},
+        replaceState() {},
+        back() {},
+        forward() {},
+        go() {},
+      };
       return mockWindow;
     }
   })();

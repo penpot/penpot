@@ -92,7 +92,7 @@ Penpot:
 
     Hierarchy
 
-    * Omit<Context, "addListener" | "removeListener">
+    * Omit<Context, "addListener" | "removeListener" | "management">
       + Penpot
   members:
     Properties:
@@ -5002,6 +5002,297 @@ CommonLayout:
         The `remove` method removes the layout.
 
         Returns void
+WorkspaceContext:
+  overview: |-
+    Interface WorkspaceContext
+    ==========================
+
+    Current workspace of this browser tab.
+
+    ```
+    interface WorkspaceContext {
+        status: "none" | "loading" | "ready";
+        fileId: string | null;
+        fileName: string | null;
+        teamId: string | null;
+    }
+    ```
+
+    Referenced by: EventsMap, PenpotMgmt
+  members:
+    Properties:
+      status: |-
+        ```
+        readonly status: "none" | "loading" | "ready"
+        ```
+      fileId: |-
+        ```
+        readonly fileId: string | null
+        ```
+      fileName: |-
+        ```
+        readonly fileName: string | null
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string | null
+        ```
+ProjectSummary:
+  overview: |-
+    Interface ProjectSummary
+    ========================
+
+    Metadata snapshot of an accessible, non-deleted project.
+
+    ```
+    interface ProjectSummary {
+        id: string;
+        teamId: string;
+        name: string;
+        isDefault: boolean;
+        fileCount: number;
+    }
+    ```
+
+    Referenced by: PenpotMgmt
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string
+        ```
+      name: |-
+        ```
+        readonly name: string
+        ```
+      isDefault: |-
+        ```
+        readonly isDefault: boolean
+        ```
+
+        Whether this is the team's Drafts project.
+      fileCount: |-
+        ```
+        readonly fileCount: number
+        ```
+FileSummary:
+  overview: |-
+    Interface FileSummary
+    =====================
+
+    Metadata snapshot of an accessible, non-deleted file.
+
+    ```
+    interface FileSummary {
+        id: string;
+        teamId: string;
+        projectId: string;
+        name: string;
+        modifiedAt: string;
+    }
+    ```
+
+    Referenced by: PenpotMgmt
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string
+        ```
+      projectId: |-
+        ```
+        readonly projectId: string
+        ```
+      name: |-
+        ```
+        readonly name: string
+        ```
+      modifiedAt: |-
+        ```
+        readonly modifiedAt: string
+        ```
+
+        Last modification time as an ISO 8601 string in UTC.
+PenpotMgmt:
+  overview: |-
+    Interface PenpotMgmt
+    ====================
+
+    Application management API exposed as `penpotMgmt` to global plugins.
+
+    * Discovery and navigation require `content:read`; creation requires `content:write`.
+    * Available in the dashboard and file workspaces.
+    * Use this API to discover, create and open files; file operations on `penpot` require a ready workspace.
+    * Reacquire file, page and shape objects after changing files.
+
+    ```
+    interface PenpotMgmt {
+        workspace: WorkspaceContext;
+        listProjects(options?: { teamId?: string }): Promise<ProjectSummary[]>;
+        listFiles(options: { projectId: string }): Promise<FileSummary[]>;
+        createProject(options: { name: string; teamId?: string }): Promise<ProjectSummary>;
+        createFile(options: { name: string; projectId: string }): Promise<FileSummary>;
+        openFile(fileId: string, options?: { teamId?: string }): Promise<void>;
+        on(
+            type: "workspacechange",
+            callback: (workspace: WorkspaceContext) => void,
+        ): symbol;
+        off(listenerId: symbol): void;
+    }
+    ```
+
+    Referenced by: Context
+  members:
+    Properties:
+      workspace: |-
+        ```
+        readonly workspace: WorkspaceContext
+        ```
+
+        Current workspace availability and metadata; usable for file operations when status is `ready`.
+    Methods:
+      listProjects: |-
+        ```
+        listProjects(options?: { teamId?: string }): Promise<ProjectSummary[]>
+        ```
+
+        Lists accessible, non-deleted projects as metadata snapshots.
+
+        * `teamId` defaults to the current team.
+        * Queries the backend without opening a file or changing navigation.
+        * Rejects invalid identifiers and backend access errors.
+
+        Parameters
+
+        * options: { teamId?: string }
+
+        Returns Promise<ProjectSummary[]>
+
+        Example
+        ```
+        const projects = await penpotMgmt.listProjects();
+        ```
+      listFiles: |-
+        ```
+        listFiles(options: { projectId: string }): Promise<FileSummary[]>
+        ```
+
+        Lists accessible, non-deleted files in the specified project as metadata snapshots.
+
+        * Requires an explicit `projectId`.
+        * Queries the backend without opening a file or changing navigation.
+        * Rejects invalid identifiers and backend access errors.
+
+        Parameters
+
+        * options: { projectId: string }
+
+        Returns Promise<FileSummary[]>
+
+        Example
+        ```
+        const files = await penpotMgmt.listFiles({ projectId: project.id });
+        ```
+      createProject: |-
+        ```
+        createProject(options: { name: string; teamId?: string }): Promise<ProjectSummary>
+        ```
+
+        Creates a project and returns its metadata snapshot. Requires `content:write`.
+
+        * `teamId` defaults to the current team.
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not change navigation or open a file.
+        * Rejects invalid input, backend access errors and quota errors.
+
+        Parameters
+
+        * options: { name: string; teamId?: string }
+
+        Returns Promise<ProjectSummary>
+
+        Example
+        ```
+        const project = await penpotMgmt.createProject({ name: 'Design system' });
+        ```
+      createFile: |-
+        ```
+        createFile(options: { name: string; projectId: string }): Promise<FileSummary>
+        ```
+
+        Creates a file with an initial page and returns its metadata snapshot. Requires `content:write`.
+
+        * Requires an explicit `projectId`.
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not open the file or change navigation. Use `openFile` to edit it.
+        * Rejects invalid input, backend access errors and quota errors.
+
+        Parameters
+
+        * options: { name: string; projectId: string }
+
+        Returns Promise<FileSummary>
+
+        Example
+        ```
+        const file = await penpotMgmt.createFile({ projectId: project.id, name: 'Login' });
+        await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+        ```
+      openFile: |-
+        ```
+        openFile(fileId: string, options?: { teamId?: string }): Promise<void>
+        ```
+
+        Opens a file in this tab and resolves once its workspace and page are ready.
+
+        * `teamId` defaults to the current team.
+        * Rejects invalid identifiers, failed or superseded navigation, and waits exceeding 30 seconds.
+
+        Parameters
+
+        * fileId: string
+        * options: { teamId?: string }
+
+        Returns Promise<void>
+
+        Example
+        ```
+        await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+        ```
+      on: |-
+        ```
+        on(
+            type: "workspacechange",
+            callback: (workspace: WorkspaceContext) => void,
+        ): symbol
+        ```
+
+        Subscribes to workspace availability and metadata changes.
+
+        Parameters
+
+        * type: "workspacechange"
+        * callback: (workspace: WorkspaceContext) => void
+
+        Returns symbol
+      off: |-
+        ```
+        off(listenerId: symbol): void
+        ```
+
+        Parameters
+
+        * listenerId: symbol
+
+        Returns void
 Context:
   overview: |-
     Interface Context
@@ -5011,6 +5302,7 @@ Context:
 
     ```
     interface Context {
+        management?: Omit<PenpotMgmt, "on" | "off">;
         version: string;
         root: Shape | null;
         currentFile: File | null;
@@ -5082,6 +5374,13 @@ Context:
     ```
   members:
     Properties:
+      management: |-
+        ```
+        readonly management?: Omit<PenpotMgmt, "on" | "off">
+        ```
+
+        Backs `penpotMgmt`. Its events go through the plugin listener registry,
+        so `on` and `off` are not part of it.
       version: |-
         ```
         readonly version: string
@@ -7109,6 +7408,8 @@ EventsMap:
 
     ```
     interface EventsMap {
+        workspacechange: WorkspaceContext;
+        logout: void;
         pagechange: Page;
         filechange: File;
         selectionchange: string[];
@@ -7122,6 +7423,14 @@ EventsMap:
     Referenced by: Context, Penpot
   members:
     Properties:
+      workspacechange: |-
+        ```
+        readonly workspacechange: WorkspaceContext
+        ```
+      logout: |-
+        ```
+        readonly logout: void
+        ```
       pagechange: |-
         ```
         readonly pagechange: Page

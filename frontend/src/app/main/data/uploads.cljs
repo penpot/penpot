@@ -11,7 +11,7 @@
   by any feature that needs to upload large binary blobs:
 
     1. create-upload-session  – obtain a session-id
-    2. upload-chunk           – upload each slice (max-parallel-chunk-uploads in-flight)
+    2. upload-chunk           – upload each slice, one at a time
     3. caller-specific step   – e.g. assemble-file-media-object or import-binfile
 
   `upload-blob-chunked` drives steps 1 and 2 and emits the completed
@@ -24,18 +24,13 @@
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]))
 
-(def ^:private max-parallel-chunk-uploads
-  "Maximum number of chunk upload requests that may be in-flight at the
-  same time within a single chunked upload session."
-  2)
-
 (defn upload-blob-chunked
   "Uploads `blob` via the three-step chunked session API.
 
   Steps performed:
     1. Creates an upload session  (`create-upload-session`).
-    2. Slices `blob` and uploads every chunk  (`upload-chunk`),
-       with at most `max-parallel-chunk-uploads` concurrent requests.
+    2. Slices `blob` and uploads every chunk  (`upload-chunk`), one at a
+       time so the progress of the file is a straight line.
 
   Returns an observable that emits exactly one map:
     `{:session-id <uuid>}`
@@ -43,8 +38,11 @@
   The caller is responsible for the final step (assemble / import).
 
   The optional `opts` map accepts:
-    `:chunk-size` – size in bytes of each chunk (default: `cf/upload-chunk-size`, 25 MiB)."
-  [blob & {:keys [chunk-size] :or {chunk-size cf/upload-chunk-size}}]
+    `:chunk-size` – size in bytes of each chunk (default: `cf/upload-chunk-size`, 25 MiB).
+    `:on-progress` – a fn called after every uploaded chunk with
+      `{:current <uploaded-chunks> :total <total-chunks>}`, so the
+      caller can show the upload while it runs."
+  [blob & {:keys [chunk-size on-progress] :or {chunk-size cf/upload-chunk-size}}]
   (let [total-size   (.-size blob)
         total-chunks (js/Math.ceil (/ total-size chunk-size))]
     (->> (rp/cmd! :create-upload-session
@@ -53,17 +51,22 @@
           (fn [{raw-session-id :session-id}]
             (let [session-id    (cond-> raw-session-id
                                   (string? raw-session-id) uuid/uuid)
+                  uploaded      (atom 0)
                   chunk-uploads
                   (->> (range total-chunks)
                        (map (fn [idx]
                               (let [start (* idx chunk-size)
                                     end   (min (+ start chunk-size) total-size)
                                     chunk (.slice blob start end)]
-                                (rp/cmd! :upload-chunk
-                                         {:session-id session-id
-                                          :index      idx
-                                          :content    (list chunk (dm/str "chunk-" idx))})))))]
+                                (->> (rp/cmd! :upload-chunk
+                                              {:session-id session-id
+                                               :index      idx
+                                               :content    (list chunk (dm/str "chunk-" idx))})
+                                     (rx/tap (fn [_]
+                                               (when (fn? on-progress)
+                                                 (on-progress {:current (swap! uploaded inc)
+                                                               :total total-chunks})))))))))]
               (->> (rx/from chunk-uploads)
-                   (rx/merge-all max-parallel-chunk-uploads)
+                   (rx/concat-all)
                    (rx/last)
                    (rx/map (fn [_] {:session-id session-id})))))))))

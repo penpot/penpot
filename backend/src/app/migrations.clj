@@ -519,6 +519,12 @@
    {:name "0156-add-storage-object-json-dedup-index"
     :fn (mg/resource "app/migrations/sql/0156-add-storage-object-json-dedup-index.sql")}
 
+   {:name "0153-del-orphan-profile-rels-after-team-leave"
+    :fn (mg/resource "app/migrations/sql/0153-del-orphan-profile-rels-after-team-leave.sql")}
+
+   {:name "0154-del-legacy-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0154-del-legacy-file-object-thumbnail-table.sql")}
+
    {:name "0155-add-file-branch-table"
     :fn (mg/resource "app/migrations/sql/0155-add-file-branch-table.sql")}
 

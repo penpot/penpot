@@ -26,18 +26,25 @@
 (def ^:private archive-uri "http://nexus.example/archive")
 
 (defn- insert-audit-row!
-  [profile-id name]
-  (th/db-insert! :audit-log
-                 {:id         (uuid/next)
-                  :name       name
-                  :type       "action"
-                  :source     "backend"
-                  :profile-id profile-id
-                  :ip-addr    (db/inet "127.0.0.1")
-                  :props      (db/tjson {:team-id (uuid/next)})
-                  :context    (db/tjson {})
-                  :tracked-at (ct/now)
-                  :created-at (ct/now)}))
+  ([profile-id name]
+   (insert-audit-row! profile-id name {:team-id (uuid/next)}))
+  ([profile-id name props]
+   (th/db-insert! :audit-log
+                  {:id         (uuid/next)
+                   :name       name
+                   :type       "action"
+                   :source     "backend"
+                   :profile-id profile-id
+                   :ip-addr    (db/inet "127.0.0.1")
+                   :props      (db/tjson props)
+                   :context    (db/tjson {})
+                   :tracked-at (ct/now)
+                   :created-at (ct/now)})))
+
+(defn- nitrate-event-props
+  [nitrate-mock]
+  (let [[_ _ params] (:call-args @nitrate-mock)]
+    (:props (first (:events params)))))
 
 (t/deftest archive-events-sends-to-nitrate-then-nexus
   ;; Create profile before enabling :admin-console — system nitrate
@@ -76,14 +83,16 @@
       (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "create-project")
+        (insert-audit-row! (:id prof) "create-organization-attribute")
         (insert-audit-row! (:id prof) "unrelated-event")
         (th/run-task! :audit-log-archive {:uri archive-uri})
         (t/is (:called? @nitrate-mock))
         (t/is (:called? @http-mock))
         (let [[_ _ params] (:call-args @nitrate-mock)]
-          (t/is (= ["create-project"] (mapv :name (:events params)))))
+          (t/is (= #{"create-project" "create-organization-attribute"}
+                   (into #{} (map :name) (:events params)))))
         (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
-          (t/is (= 2 (count rows))))))))
+          (t/is (= 3 (count rows))))))))
 
 (t/deftest archive-events-skips-nitrate-when-no-matching-names
   (let [prof (th/create-profile* 1 {:is-active true})]
@@ -229,3 +238,113 @@
                           (catch Throwable cause
                             cause)))]
       (t/is (= :task-not-configured (:code data))))))
+
+(t/deftest archive-events-enriches-team-name-and-emails
+  (let [actor  (th/create-profile* 1 {:is-active true})
+        member (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id actor)})]
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! (:id actor) "create-project"
+                           {:team-id   (:id team)
+                            :profile-id (:id actor)
+                            :user-id   (:id member)
+                            :member-id (:id member)
+                            ;; Producers store this as a string UUID.
+                            :user-who-send-invitation (str (:id actor))})
+        (th/run-task! :audit-log-archive {})
+        (t/is (:called? @nitrate-mock))
+        (let [props (nitrate-event-props nitrate-mock)]
+          (t/is (= (:name team) (:team-name props)))
+          (t/is (= (:email actor) (:profile-email props)))
+          (t/is (= (:email member) (:user-email props)))
+          (t/is (= (:email member) (:member-email props)))
+          (t/is (= (:email actor) (:user-who-send-invitation-email props))))
+        (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
+          (t/is (= 1 (count rows))))))))
+
+(t/deftest archive-events-enriches-soft-deleted-team-and-profile
+  (let [actor (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id actor)})]
+    (th/db-update! :team {:deleted-at (ct/now)} {:id (:id team)})
+    (th/db-update! :profile {:deleted-at (ct/now)} {:id (:id other)})
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! (:id actor) "create-project"
+                           {:team-id    (:id team)
+                            :profile-id (:id other)})
+        (th/run-task! :audit-log-archive {})
+        (let [props (nitrate-event-props nitrate-mock)]
+          (t/is (= (:name team) (:team-name props)))
+          (t/is (= (:email other) (:profile-email props))))
+        (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
+          (t/is (= 1 (count rows))))))))
+
+(t/deftest archive-events-does-not-overwrite-existing-enrich-props
+  (let [actor (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id actor)})]
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! (:id actor) "create-project"
+                           {:team-id       (:id team)
+                            :team-name     "already-set-name"
+                            :profile-id    (:id actor)
+                            :profile-email "already-set@example.com"
+                            :user-id       (:id actor)
+                            :user-email    "already-user@example.com"
+                            :member-id     (:id actor)
+                            :member-email  "already-member@example.com"
+                            :user-who-send-invitation (str (:id actor))
+                            :user-who-send-invitation-email "already-inviter@example.com"})
+        (th/run-task! :audit-log-archive {})
+        (let [props (nitrate-event-props nitrate-mock)]
+          (t/is (= "already-set-name" (:team-name props)))
+          (t/is (= "already-set@example.com" (:profile-email props)))
+          (t/is (= "already-user@example.com" (:user-email props)))
+          (t/is (= "already-member@example.com" (:member-email props)))
+          (t/is (= "already-inviter@example.com"
+                   (:user-who-send-invitation-email props))))))))
+
+(t/deftest archive-events-enrich-skips-missing-and-non-uuid-ids
+  (let [actor (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! (:id actor) "create-project"
+                           {:team-id    (uuid/next)
+                            :profile-id (uuid/next)
+                            :user-id    "not-a-uuid"
+                            :member-id  42})
+        (th/run-task! :audit-log-archive {})
+        (t/is (:called? @nitrate-mock))
+        (let [props (nitrate-event-props nitrate-mock)]
+          (t/is (nil? (:team-name props)))
+          (t/is (nil? (:profile-email props)))
+          (t/is (nil? (:user-email props)))
+          (t/is (nil? (:member-email props)))
+          (t/is (= "not-a-uuid" (:user-id props)))
+          (t/is (= 42 (:member-id props))))
+        (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
+          (t/is (= 1 (count rows))))))))
+
+(t/deftest archive-events-forwards-export-job-not-legacy-export
+  (let [actor (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id actor)})]
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! (:id actor) "create-export-binfile-job"
+                           {:team-id (:id team)
+                            :job-id (uuid/next)
+                            :files 1
+                            :export-type "detach-libraries"})
+        (insert-audit-row! (:id actor) "export-binfile"
+                           {:file-id (uuid/next)})
+        (th/run-task! :audit-log-archive {})
+        (let [[_ _ params] (:call-args @nitrate-mock)
+              events       (:events params)
+              props        (:props (first events))]
+          (t/is (= ["create-export-binfile-job"] (mapv :name events)))
+          (t/is (= (:id team) (:team-id props)))
+          (t/is (= (:name team) (:team-name props))))
+        (let [rows (th/db-exec! ["select * from audit_log where archived_at is not null"])]
+          (t/is (= 2 (count rows))))))))

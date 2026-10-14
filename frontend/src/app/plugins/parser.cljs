@@ -11,6 +11,7 @@
    [app.common.json :as json]
    [app.common.types.path :as path]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.stroke :as cts]
    [app.common.uuid :as uuid]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
@@ -223,18 +224,34 @@
 (defn parse-stroke
   [^js stroke]
   (when (some? stroke)
-    (d/without-nils
-     {:stroke-color (-> (obj/get stroke "strokeColor") parse-hex)
-      :stroke-color-ref-file (-> (obj/get stroke "strokeColorRefFile") parse-id)
-      :stroke-color-ref-id (-> (obj/get stroke "strokeColorRefId") parse-id)
-      :stroke-opacity (obj/get stroke "strokeOpacity")
-      :stroke-style (-> (obj/get stroke "strokeStyle") parse-keyword)
-      :stroke-width (obj/get stroke "strokeWidth")
-      :stroke-alignment (-> (obj/get stroke "strokeAlignment") parse-keyword)
-      :stroke-cap-start (-> (obj/get stroke "strokeCapStart") parse-keyword)
-      :stroke-cap-end (-> (obj/get stroke "strokeCapEnd") parse-keyword)
-      :stroke-color-gradient (-> (obj/get stroke "strokeColorGradient") parse-gradient)
-      :stroke-image (-> (obj/get stroke "strokeImage") parse-image-data)})))
+    (let [raw    (obj/get stroke "$state")
+          parsed (d/without-nils
+                  {:stroke-color (-> (obj/get stroke "strokeColor") parse-hex)
+                   :stroke-color-ref-file (-> (obj/get stroke "strokeColorRefFile") parse-id)
+                   :stroke-color-ref-id (-> (obj/get stroke "strokeColorRefId") parse-id)
+                   :stroke-opacity (obj/get stroke "strokeOpacity")
+                   :stroke-style (-> (obj/get stroke "strokeStyle") parse-keyword)
+                   :stroke-alignment (-> (obj/get stroke "strokeAlignment") parse-keyword)
+                   :stroke-cap-start (-> (obj/get stroke "strokeCapStart") parse-keyword)
+                   :stroke-cap-end (-> (obj/get stroke "strokeCapEnd") parse-keyword)
+                   :stroke-color-gradient (-> (obj/get stroke "strokeColorGradient") parse-gradient)
+                   :stroke-image (-> (obj/get stroke "strokeImage") parse-image-data)})]
+      (if (map? raw)
+        ;; Reads the proxy's stored widths without replaying its public getters.
+        (merge parsed (select-keys raw [:stroke-width
+                                        :stroke-width-top :stroke-width-right
+                                        :stroke-width-bottom :stroke-width-left]))
+        (let [width  (obj/get stroke "strokeWidth")
+              top    (obj/get stroke "strokeWidthTop")
+              right  (obj/get stroke "strokeWidthRight")
+              bottom (obj/get stroke "strokeWidthBottom")
+              left   (obj/get stroke "strokeWidthLeft")]
+          (cond-> parsed
+            (some? width) (cts/set-width-to-all-sides width)
+            (some? top) (cts/set-width-to-single-side :stroke-width-top top)
+            (some? right) (cts/set-width-to-single-side :stroke-width-right right)
+            (some? bottom) (cts/set-width-to-single-side :stroke-width-bottom bottom)
+            (some? left) (cts/set-width-to-single-side :stroke-width-left left)))))))
 
 (defn parse-strokes
   [^js strokes]

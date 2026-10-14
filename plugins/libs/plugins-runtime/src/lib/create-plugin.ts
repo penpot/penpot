@@ -8,8 +8,13 @@ export async function createPlugin(
   manifest: Manifest,
   onCloseCallback: () => void,
   apiExtensions?: object,
+  signal?: AbortSignal,
 ) {
+  // Closing can happen while the manager is still fetching code.
+  let sandbox: ReturnType<typeof createSandbox> | undefined = undefined;
+
   const evaluateSandbox = async () => {
+    if (plugin.destroyed || !sandbox) return;
     try {
       sandbox.evaluate();
     } catch (error) {
@@ -23,15 +28,18 @@ export async function createPlugin(
     context,
     manifest,
     function onClose() {
-      sandbox.cleanGlobalThis();
+      sandbox?.cleanGlobalThis();
       onCloseCallback();
     },
     function onReloadModal() {
       evaluateSandbox();
     },
+    signal,
   );
 
-  const sandbox = createSandbox(plugin, apiExtensions);
+  if (plugin.destroyed) return;
+
+  sandbox = createSandbox(plugin, apiExtensions);
 
   await evaluateSandbox();
 

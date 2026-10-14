@@ -1,8 +1,9 @@
 /** Metadata identifying one connected Penpot plugin session. */
 export interface PenpotSession {
     sessionId: string;
-    fileId: string;
-    fileName: string;
+    fileId: string | null;
+    fileName: string | null;
+    workspaceState?: "none" | "loading" | "ready";
 }
 
 /** First message sent by the plugin on each new WebSocket connection. */

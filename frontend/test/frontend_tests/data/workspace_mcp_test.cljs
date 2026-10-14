@@ -8,13 +8,42 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.workspace.mcp :as mcp]
+   [app.plugins.register :as preg]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as a]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
+
+(t/deftest ^:async test-initialize-once-per-authenticated-session
+  (let [stream (rx/subject)
+        events (atom [])
+        profile {:id (uuid/next)}]
+    (await
+     (mock/with-mocks*
+       {cf/flags #{:mcp}
+        preg/wait-for-runtime (fn [] (js/Promise.resolve true))}
+       (let [subscription (rx/subs! #(swap! events conj (ptk/type %))
+                                    (ptk/watch (mcp/initialize) {} stream))]
+         (try
+           (rx/push! stream (du/set-profile profile))
+           (await (a/wait-for #(= 1 (count @events))))
+           (rx/push! stream (du/set-profile profile))
+           (rx/push! stream (ptk/data-event :app.main.data.workspace/finalize-workspace))
+           (await (a/settle))
+           (t/is (= [:app.main.data.workspace.mcp/init] @events))
+           (rx/push! stream (ptk/data-event :app.main.data.auth/logged-out))
+           (rx/push! stream (du/set-profile profile))
+           (await (a/wait-for #(= 2 (count @events))))
+           (t/is (= [:app.main.data.workspace.mcp/init
+                     :app.main.data.workspace.mcp/init] @events))
+           (finally
+             (rx/dispose! subscription)
+             (rx/end! stream))))))))
 
 (t/deftest test-update-mcp-status
   (t/testing "enables MCP in profile props and mcp state"
@@ -151,7 +180,7 @@
     (t/is (= "disconnected" (get-in result [:mcp :connection-status])))
     (t/is (nil? (get-in result [:mcp :session-id])))))
 
-(t/deftest test-init-clears-previous-file-connection
+(t/deftest test-init-clears-previous-app-connection
   (let [state  {:profile {:props {:mcp-enabled true}}
                 :mcp {:connection-requested true
                       :connection-status "connected"
@@ -165,8 +194,8 @@
   (let [state {:mcp {:connection-requested false :connection-status "disconnected"}}]
     (t/is (= state (ptk/update (mcp/update-mcp-connection-status "connected") state)))))
 
-(t/deftest test-plugin-callbacks-stop-with-workspace
-  (doseq [stop-event [:app.main.data.workspace/finalize-workspace
+(t/deftest test-plugin-callbacks-stop-with-app-session
+  (doseq [stop-event [:app.main.data.auth/logged-out
                       :app.main.data.workspace.mcp/init]]
     (let [stream    (rx/subject)
           extension (atom nil)
@@ -179,6 +208,8 @@
         (.on @extension "connect" #(swap! calls inc))
         (rx/push! stream (ptk/data-event :app.main.data.workspace.mcp/connect))
         (t/is (= 1 @calls))
+        (rx/push! stream (ptk/data-event :app.main.data.workspace/finalize-workspace))
+        (t/is (zero? @closed))
         (rx/push! stream (ptk/data-event stop-event))
         (t/is (= 1 @closed))
         (t/is (false? (.isConnectionRequested @extension)))

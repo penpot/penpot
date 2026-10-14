@@ -12,24 +12,20 @@
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as dwdc]
-   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path.state :as pst]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu* dropdown-menu-item*]]
    [app.main.ui.components.file-uploader :as file-uploader]
+   [app.main.ui.components.mcp-menu :refer [mcp-menu*]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -297,118 +293,6 @@
                                       :ref ref
                                       :on-selected on-selected}]]))
 
-(mf/defc mcp-tool*
-  {::mf/private true
-   ::mf/wrap [mf/memo]}
-  [{:keys [is-mcp-connected is-connection-requested session-id]}]
-  (let [copied-text (tr "workspace.toolbar.mcp-session-copied")
-        copy-error (tr "errors.clipboard-api-unavailable")
-        menu-open*   (mf/use-state false)
-        menu-open?   (deref menu-open*)
-
-        open-timer*  (mf/use-ref nil)
-        close-timer* (mf/use-ref nil)
-
-        on-open-menu
-        (mf/use-fn
-         (fn [event]
-           (dom/stop-propagation event)
-           (cancel-timer! open-timer*)
-           (cancel-timer! close-timer*)
-           (reset! menu-open* true)))
-
-        on-close-menu
-        (mf/use-fn
-         (fn []
-           (cancel-timer! open-timer*)
-           (cancel-timer! close-timer*)
-           (reset! menu-open* false)))
-
-        on-display-menu
-        (mf/use-fn
-         (fn []
-           (cancel-timer! close-timer*)
-           (cancel-timer! open-timer*)
-           (mf/set-ref-val!
-            open-timer*
-            (ts/schedule 350
-                         #(do
-                            (reset! menu-open* true)
-                            (mf/set-ref-val! open-timer* nil))))))
-
-        on-hide-menu
-        (mf/use-fn
-         (fn []
-           (cancel-timer! open-timer*)
-           (cancel-timer! close-timer*)
-           (mf/set-ref-val!
-            close-timer*
-            (ts/schedule 350
-                         #(do
-                            (reset! menu-open* false)
-                            (mf/set-ref-val! close-timer* nil))))))
-
-        on-connect
-        (mf/use-fn
-         #(st/emit! (mcp/connect-mcp)
-                    (ev/event {::ev/name "connect-mcp-plugin"
-                               ::ev/origin "workspace:toolbar"})))
-
-        on-disconnect
-        (mf/use-fn
-         #(st/emit! (mcp/user-disconnect-mcp)))
-
-        on-copy-session
-        (mf/use-fn
-         (mf/deps session-id copied-text copy-error)
-         (fn []
-           (-> (clipboard/to-clipboard session-id)
-               (.then #(st/emit! (ntf/info copied-text)))
-               (.catch #(st/emit! (ntf/error copy-error))))))]
-
-    (mf/with-effect []
-      (fn []
-        (cancel-timer! open-timer*)
-        (cancel-timer! close-timer*)))
-
-    [:div {:on-pointer-enter on-display-menu
-           :on-pointer-leave on-hide-menu}
-     [:> button* {:variant "ghost"
-                  :on-click on-open-menu
-                  :aria-haspopup true
-                  :aria-expanded menu-open?
-                  :aria-pressed menu-open?
-                  :data-tool "mcp"
-                  :data-testid "mcp-btn"}
-      [:div {:class (stl/css-case :toolbar-mcp-button true
-                                  :selected menu-open?)}
-       [:span {:class (stl/css-case :toolbar-mcp-button-dot true
-                                    :connected is-mcp-connected)}]
-       [:span {:class (stl/css-case :toolbar-mcp-button-label true
-                                    :connected is-mcp-connected)}
-        (tr "workspace.toolbar.mcp")]]]
-
-     [:div {:class (stl/css :toolbar-mcp-menu)}
-      [:> dropdown-menu* {:show menu-open?
-                          :on-close on-close-menu
-                          :class (stl/css :toolbar-mcp-dropdown)}
-       (when (or is-mcp-connected session-id)
-         [:li {:class (stl/css :toolbar-mcp-dropdown-info)
-               :role "presentation"}
-          (when is-mcp-connected
-            [:span (tr "workspace.toolbar.mcp-connected")])
-          (when session-id
-            [:span (tr "workspace.toolbar.mcp-session-id" session-id)])])
-       (when session-id
-         [:> dropdown-menu-item* {:class (stl/css :toolbar-mcp-dropdown-item)
-                                  :on-click on-copy-session}
-          (tr "workspace.toolbar.mcp-copy-session-id")])
-       [:> dropdown-menu-item* {:class (stl/css :toolbar-mcp-dropdown-item)
-                                :on-click (if is-connection-requested on-disconnect on-connect)}
-        (if is-connection-requested
-          (tr "workspace.header.menu.mcp.plugin.status.disconnect")
-          (tr "workspace.header.menu.mcp.plugin.status.connect"))]]]]))
-
 (mf/defc top-toolbar*
   {::mf/wrap [mf/memo]}
   [{:keys [layout]}]
@@ -545,7 +429,7 @@
 
         (when mcp-show?
           [:li {:class (stl/css :toolbar-option)}
-           [:> mcp-tool* {:is-mcp-connected mcp-connected?
+           [:> mcp-menu* {:is-mcp-connected mcp-connected?
                           :is-connection-requested (:connection-requested mcp)
                           :session-id (:session-id mcp)}]])]
 
