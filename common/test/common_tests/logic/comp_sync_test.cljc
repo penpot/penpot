@@ -1126,22 +1126,22 @@
 
 (defn- run-sync-inverse
   "Run the inverse sync on `shape-tag`, which has been renamed to an
-   unnormalized name, and return the resulting main root and component
-   names, and the updated file."
+   unnormalized name and holds a name override, as a main of an older file
+   may, and return the resulting main root and component names, and the
+   updated file."
   [shape-tag]
   (let [file       (-> (thf/sample-file :file1)
                        (tho/add-simple-component-with-copy :component1
                                                            :main-root
                                                            :main-child
                                                            :copy-root)
-                       (tho/change-shape shape-tag #(update % :touched (fnil conj #{}) :name-group))
+                       (ths/update-shape shape-tag :touched #{:name-group})
                        (ths/update-shape shape-tag :name "Group/Subgroup"))
         page       (thf/current-page file)
         container  (ctn/make-container page :page)
         changes    (-> (pcb/empty-changes)
                        (pcb/with-container container)
-                       (cll/generate-sync-shape-inverse (:data file)
-                                                        {(:id file) file}
+                       (cll/generate-sync-shape-inverse {(:id file) file}
                                                         container
                                                         (thi/id shape-tag)))
         file'      (thf/apply-changes file changes)
@@ -1164,8 +1164,7 @@
           container  (ctn/make-container page :page)
           changes    (-> (pcb/empty-changes)
                          (pcb/with-container container)
-                         (cll/generate-sync-shape-inverse (:data file)
-                                                          {(:id file) file}
+                         (cll/generate-sync-shape-inverse {(:id file) file}
                                                           container
                                                           (thi/id :copy-root)))
           file'      (thf/apply-changes file changes)
@@ -1212,8 +1211,7 @@
         container (ctn/make-container page :page)
         changes   (-> (pcb/empty-changes)
                       (pcb/with-container container)
-                      (cll/generate-sync-shape-inverse (:data file)
-                                                       {(:id file) file}
+                      (cll/generate-sync-shape-inverse {(:id file) file}
                                                        container
                                                        (thi/id :copy-root)))
         file'     (thf/apply-changes file changes)

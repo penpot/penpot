@@ -210,6 +210,19 @@
                  ::applied-changes-count (count redo-changes)))
     changes))
 
+(defn add-changes
+  "Add the changes `redo` and their inverse `undo`, on the objects of
+  `container` (a page or a component), and apply them locally. Each list is
+  added in order, as one `conj` after another."
+  [changes container redo undo]
+  (let [in-container (if (cfh/page? container)
+                       #(assoc % :page-id (:id container))
+                       #(assoc % :component-id (:id container)))]
+    (-> changes
+        (update :redo-changes into (map in-container) redo)
+        (update :undo-changes into (map in-container) undo)
+        (apply-changes-local))))
+
 (defn skip-local
   "Stop applying changes to the builder objects."
   [changes skip?]
