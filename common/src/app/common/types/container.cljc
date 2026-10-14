@@ -460,6 +460,13 @@
            (map :id)
            (cfh/clean-loops objects)))))
 
+(defn detachable?
+  "Whether the shape can be detached from its component: a copy shape that
+  is not inside another copy."
+  [objects shape]
+  (and (ctk/in-component-copy? shape)
+       (not (has-any-copy-parent? objects shape))))
+
 (defn has-any-main?
   "Check if the shape is a main component or has any children or parent that is a main component."
   [objects shape]
