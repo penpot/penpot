@@ -5,7 +5,7 @@ use std::mem::size_of;
 use std::sync::{Mutex, OnceLock};
 
 use crate::error::{Error, Result};
-use crate::shapes::{stroke_to_path, Path, Segment, ToPath};
+use crate::shapes::{per_side_stroke_to_path, stroke_to_path, Path, Segment, ToPath, Type};
 use crate::{mem, with_current_shape, with_current_shape_mut};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
@@ -241,23 +241,33 @@ pub extern "C" fn current_to_path() -> *mut u8 {
 /// into a filled path, properly handling inner/outer/center alignment
 /// via boolean path operations.
 #[no_mangle]
-pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
+#[wasm_error]
+pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> Result<*mut u8> {
     let mut result = Vec::<RawSegmentData>::default();
     let mut even_odd = false;
+    let mut conversion_failed = false;
     with_current_shape!(state, |shape: &Shape| {
         let idx = stroke_index as usize;
         if let Some(stroke) = shape.strokes.get(idx) {
-            let shape_path = shape.to_path(&state.shapes);
-            let path_transform = shape.to_path_transform();
-
-            if let Some(path) = stroke_to_path(
-                stroke,
-                &shape_path,
-                path_transform.as_ref(),
-                &shape.selrect,
-                shape.svg_attrs.as_ref(),
-                false,
-            ) {
+            let path = if matches!(shape.shape_type, Type::Rect(_) | Type::Frame(_))
+                && stroke.per_side_widths().is_some()
+            {
+                let path = per_side_stroke_to_path(shape, stroke);
+                conversion_failed = path.is_none();
+                path
+            } else {
+                let shape_path = shape.to_path(&state.shapes);
+                let path_transform = shape.to_path_transform();
+                stroke_to_path(
+                    stroke,
+                    &shape_path,
+                    path_transform.as_ref(),
+                    &shape.selrect,
+                    shape.svg_attrs.as_ref(),
+                    false,
+                )
+            };
+            if let Some(path) = path {
                 even_odd = path.is_even_odd();
                 result = path
                     .segments()
@@ -269,7 +279,12 @@ pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
         }
     });
 
-    mem::write_vec_with_header(even_odd as u32, result)
+    if conversion_failed {
+        return Err(Error::RecoverableError(
+            "Per-side stroke conversion failed".to_string(),
+        ));
+    }
+    Ok(mem::write_vec_with_header(even_odd as u32, result))
 }
 
 #[cfg(test)]
