@@ -374,49 +374,31 @@
         ;; Creates a map to quickly find a child of the orig-ref-shape by its shape-path
         o-ref-shapes-p-map  (into {} (map (juxt :id :shape-path)) o-ref-shapes-wp)
 
-        ;; Process each touched children of the original-shape
-        [changes parents-of-swapped]
-        (reduce
-         (fn [[changes parent-of-swapped] orig-child-touched]
-           (let [;; The switched shape itself relates to the root of the new one
-                 root?          (= (:id orig-child-touched) (:id original-shape))
+        ;; Each touched child of the original-shape, with the shape it refers
+        ;; to in the main and the child of the new-shape that has the same
+        ;; shape-path; the switched shape itself relates to the new root
+        pairs
+        (keep (fn [old]
+                (let [root?   (= (:id old) (:id original-shape))
+                      old-ref (if root?
+                                orig-base-ref-shape
+                                (find-shape-ref-child-of container libraries old (:id orig-base-ref-shape)))
+                      new     (get new-shapes-map (get o-ref-shapes-p-map (:id old-ref)))]
+                  (when new
+                    {:old old :old-ref old-ref :new new
+                     :swapped? (and (not root?) (ctk/swapped? old))})))
+              orig-touched)
 
-                 swapped?       (and (not root?) (ctk/swapped? orig-child-touched))
-
-                 ;; orig-child-touched is in a copy. Get the referenced shape on the main component
-                 orig-ref-shape (if root?
-                                  orig-base-ref-shape
-                                  (find-shape-ref-child-of container libraries orig-child-touched (:id orig-base-ref-shape)))
-
-                 orig-ref-id    (:id orig-ref-shape)
-
-                 ;; Get the shape path of the referenced main
-                 shape-path     (get o-ref-shapes-p-map orig-ref-id)
-
-                 ;; Get its related shape in the children of new-shape: the one that
-                 ;; has the same shape-path
-                 related-shape-in-new  (get new-shapes-map shape-path)
-
-                 parents-of-swapped (if related-shape-in-new
-                                      (conj parent-of-swapped (:parent-id related-shape-in-new))
-                                      parent-of-swapped)
-                 ;; If there is a related shape, keep its data
-                 changes
-                 (if related-shape-in-new
-                   (if swapped?
-                     ;; If the orig-child-touched was swapped, keep it
-                     (keep-swapped-item changes related-shape-in-new orig-child-touched
-                                        ldata page libraries)
-                     ;; If the orig-child-touched wasn't swapped, copy
-                     ;; the touched attributes into it
-                     (clsw/update-attrs-on-switch
-                      changes related-shape-in-new orig-child-touched
-                      new-shape original-shape orig-ref-shape container))
-                   changes)]
-             [changes parents-of-swapped]))
-         [changes []]
-         orig-touched)]
-    [changes parents-of-swapped]))
+        ;; A swapped child is kept as it is, and the others carry their
+        ;; touched attributes into their new child
+        changes
+        (reduce (fn [changes {:keys [old old-ref new swapped?]}]
+                  (if swapped?
+                    (keep-swapped-item changes new old ldata page libraries)
+                    (clsw/update-attrs-on-switch changes new old new-shape original-shape old-ref container)))
+                changes
+                pairs)]
+    [changes (mapv (comp :parent-id :new) pairs)]))
 
 (defn- shape-index
   "Position of `shape-id` among the children of `parent-id`; 0 when it is not

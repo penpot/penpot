@@ -249,7 +249,7 @@
     (t/is (= #{(thi/id :main) (thi/id :main-child)}
              (set (map :id (ctf/get-component-shapes data component)))))
     (t/testing "a shape of the component, with the component as its container"
-      (let [child (ctf/get-component-shape data component (thi/id :main-child)
+      (let [child (ctf/get-component-child data component (thi/id :main-child)
                                            :with-context? true)]
         (t/is (= (thi/id :main-child) (:id child)))
         (t/is (= :component (:type (:container (meta child)))))))
