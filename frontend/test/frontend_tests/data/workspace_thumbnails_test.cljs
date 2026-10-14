@@ -186,6 +186,13 @@
   [file-id n]
   (vec (repeatedly n #(thc/fmt-object-id file-id (uuid/next) (uuid/next) "frame"))))
 
+(defn- calls-for
+  "The recorded RPC calls about the thumbnails `oids`: a batch left over by
+  an earlier test can call the mock while it is installed."
+  [oids]
+  (let [own? (set oids)]
+    (filterv #(some own? (get-in % [:params :object-ids])) @mock/rpc-calls)))
+
 (t/deftest clear-thumbnail-batch-watch-calls-rpc-with-object-ids
   (t/async
     done
@@ -204,8 +211,8 @@
                 (fn [_] nil)
                 (fn [err] (t/is (nil? err)) (done'))
                 (fn [_]
-                  (t/is (= 1 (count @mock/rpc-calls)))
-                  (let [[{:keys [cmd params]}] @mock/rpc-calls]
+                  (t/is (= 1 (count (calls-for oids))))
+                  (let [[{:keys [cmd params]}] (calls-for oids)]
                     (t/is (= :delete-file-object-thumbnails cmd))
                     (t/is (= (vec oids) (:object-ids params))))
                   (done')))))
@@ -229,8 +236,8 @@
                 (fn [_] nil)
                 (fn [err] (t/is (nil? err)) (done'))
                 (fn [_]
-                  (t/is (= 2 (count @mock/rpc-calls)))
-                  (let [[c1 c2] @mock/rpc-calls]
+                  (t/is (= 2 (count (calls-for oids))))
+                  (let [[c1 c2] (calls-for oids)]
                     (t/is (= :delete-file-object-thumbnails (:cmd c1)))
                     (t/is (= :delete-file-object-thumbnails (:cmd c2)))
                     (t/is (= 200 (count (:object-ids (:params c1)))))
@@ -282,7 +289,8 @@
                 (fn [_] nil)
                 (fn [err] (t/is (nil? err)) (done'))
                 (fn [_]
-                  (t/is (empty? @mock/rpc-calls))
+                  ;; a call of this event could only carry no object ids
+                  (t/is (not-any? #(empty? (get-in % [:params :object-ids])) @mock/rpc-calls))
                   (done')))))
         done))))
 
