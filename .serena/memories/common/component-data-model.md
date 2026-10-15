@@ -38,7 +38,7 @@ Masters are not normally touched through `set-shape-attr`, but touched flags can
 
 ## Cloning paths
 
-`make-component-instance` in `app.common.types.container` produces a clean component copy through `update-new-shape`, dissociating attrs such as `:touched`, `:variant-id`, and `:variant-name` on cloned shapes.
+`make-component-instance` in `app.common.types.container` produces a clean component copy through `update-new-shape`, dissociating attrs such as `:touched`, `:remote-synced`, `:variant-id`, and `:variant-name` on cloned shapes.
 
 `duplicate-component` in `app.common.logic.duplicate` creates a new component master by cloning existing component shapes, setting component metadata, and applying a position delta. It does not have the same clean-copy semantics as `make-component-instance`, so inherited attrs on the source can matter.
 
