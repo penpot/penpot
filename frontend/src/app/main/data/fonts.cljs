@@ -191,17 +191,17 @@
             hhea            (some-> ^js font .-tables .-hhea)
             os2             (some-> ^js font .-tables .-os2)
 
-            hhea-ascender   (some-> hhea .-ascender abs)
-            hhea-descender  (some-> hhea .-descender abs)
+            hhea-ascender   (some-> ^js hhea .-ascender abs)
+            hhea-descender  (some-> ^js hhea .-descender abs)
 
-            win-ascent      (some-> os2 .-usWinAscent abs)
-            win-descent     (some-> os2 .-usWinDescent abs)
+            win-ascent      (some-> ^js os2 .-usWinAscent abs)
+            win-descent     (some-> ^js os2 .-usWinDescent abs)
 
-            os2-ascent      (some-> os2 .-sTypoAscender abs)
-            os2-descent     (some-> os2 .-sTypoDescender abs)
+            os2-ascent      (some-> ^js os2 .-sTypoAscender abs)
+            os2-descent     (some-> ^js os2 .-sTypoDescender abs)
 
             ;; useTypoMetrics can be read from the 7th bit
-            f-selection     (some-> os2 .-fsSelection (bit-test 7))
+            f-selection     (some-> ^js os2 .-fsSelection (bit-test 7))
 
             height-warning? (boolean
                              (and hhea-ascender hhea-descender win-ascent win-descent
