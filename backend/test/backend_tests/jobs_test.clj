@@ -65,10 +65,31 @@
    ::jobs/decoder   (sm/decoder schema:echo-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:echo-params)})
 
+(def schema:typed-result
+  "A result with a uuid keyed map, the shape that needs a declared schema
+  to survive the plain JSON round trip of the `job.result` column."
+  [:map
+   [:file-ids   [:vector ::sm/uuid]]
+   [:resolution [:map-of ::sm/uuid [:map [:id ::sm/uuid]]]]])
+
+(defmethod ig/init-key ::typed-job
+  [_ cfg]
+  {::jobs/name          :typed
+   ::jobs/schema        schema:echo-params
+   ::jobs/handler       (fn [_context params]
+                          (echo-handler cfg params))
+   ::jobs/decoder       (sm/decoder schema:echo-params sm/json-transformer)
+   ::jobs/validator     (sm/validator schema:echo-params)
+   ;; the substrate compiles the decoder from this schema and checks the
+   ;; result against it before storing it
+   ::jobs/result-schema schema:typed-result})
+
 (defn- get-job-defs
   []
-  (-> {::jobs/defs {:echo (ig/ref ::echo-job)}
-       ::echo-job  {::db/pool th/*pool*}}
+  (-> {::jobs/defs {:echo  (ig/ref ::echo-job)
+                    :typed (ig/ref ::typed-job)}
+       ::echo-job  {::db/pool th/*pool*}
+       ::typed-job {::db/pool th/*pool*}}
       (ig/expand)
       (ig/init)
       (get ::jobs/defs)))
@@ -1188,11 +1209,12 @@
 
 (defn- mk-running
   "A job already claimed by a worker, ready for a terminal transition."
-  [cfg]
-  (let [job-id (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params (make-params)})]
-    (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
-    job-id))
+  ([cfg] (mk-running cfg :echo))
+  ([cfg name]
+   (let [job-id (jobs/submit cfg {::jobs/name   name
+                                  ::jobs/params (make-params)})]
+     (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
+     job-id)))
 
 (t/deftest lifecycle-writers-require-metrics
   ;; Every one of the six writers must check the metrics instance before
@@ -1374,6 +1396,99 @@
     (t/testing "a terminal job gets no second end event"
       (t/is (= 0 (jobs/cancel cfg job-id)))
       (t/is (= ["cancelled"] (get-outcomes job-id))))))
+
+(t/deftest get-job-decodes-the-result-with-the-schema-of-the-def
+  "A result with a declared schema comes back typed. Without it, the plain
+  JSON of the column keywordizes every key and leaves every uuid as text;
+  without the substrate compiling the decoder from that schema, the key of
+  the uuid map comes back as a keyword and this test fails."
+  (let [cfg     (make-cfg (get-job-defs))
+        job-id  (mk-running cfg :typed)
+        file-id (uuid/next)
+        lib-id  (uuid/next)]
+
+    (t/is (= 1 (jobs/complete cfg :job-id job-id
+                              :result {:file-ids   [lib-id]
+                                       :resolution {file-id {:id file-id}}})))
+
+    (let [result (:result (jobs/get-job cfg job-id))]
+      (t/testing "the uuid keyed map keeps the type of its key and values"
+        (t/is (= [file-id] (keys (:resolution result))))
+        (t/is (uuid? (:id (get (:resolution result) file-id)))))
+
+      (t/testing "the vector of uuids keeps the type of its elements"
+        (t/is (= [lib-id] (:file-ids result)))))))
+
+(t/deftest get-job-leaves-a-result-without-a-schema-untouched
+  (let [cfg     (make-cfg (get-job-defs))
+        job-id  (mk-running cfg)
+        file-id (uuid/next)]
+
+    (t/is (= 1 (jobs/complete cfg :job-id job-id
+                              :result {:resolution {file-id {:id file-id}}})))
+
+    (t/testing "the raw JSON shape survives: keywordized keys, uuid as text"
+      (let [result (:result (jobs/get-job cfg job-id))
+            key    (keyword (str file-id))]
+        (t/is (= [key] (keys (:resolution result))))
+        (t/is (= (str file-id) (get-in result [:resolution key :id])))))))
+
+(t/deftest get-job-reads-a-row-whose-job-def-is-gone
+  (let [job-id (mk-running (make-cfg (get-job-defs)))
+        ;; a registry that no longer knows the kind of the row (a retired
+        ;; job-def): reading its result must not raise
+        row    (jobs/get-job (make-cfg {}) job-id)]
+    (t/is (some? row))
+    (t/is (= "echo" (:name row)))))
+
+(t/deftest complete-refuses-a-result-that-does-not-conform
+  "The schema a job-def declares is checked before the result is stored: the
+  row keeps no result and the job is not completed."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg :typed)]
+
+    (t/is (thrown-with-msg? Exception #"invalid result of a job"
+                            (jobs/complete cfg :job-id job-id
+                                           :result {:resolution "not-a-map"})))
+
+    (t/testing "the row was not completed and holds no result"
+      (let [row (jobs/get-job cfg job-id)]
+        (t/is (= "running" (:status row)))
+        (t/is (nil? (:result row)))))
+
+    (t/testing "a job that is no longer completable is skipped without checking"
+      (th/db-update! :job {:status "aborted"} {:id job-id})
+      (t/is (zero? (jobs/complete cfg :job-id job-id
+                                  :result {:resolution "not-a-map"}))))))
+
+(t/deftest a-stored-result-that-does-not-conform-is-read-decode-only
+  "A row written by another version may hold a result the schema of today no
+  longer accepts: reading it decodes and never raises."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg :typed)]
+
+    (th/db-update! :job
+                   {:status "completed"
+                    :result (db/json {:resolution "not-a-map"})}
+                   {:id job-id})
+
+    (let [row (jobs/get-job cfg job-id)]
+      (t/is (= "completed" (:status row)))
+      (t/is (= {:resolution "not-a-map"} (:result row))))))
+
+(t/deftest decode-result-accepts-a-pgobject
+  (let [job-def (jobs/get-job-def (get (make-cfg (get-job-defs)) ::jobs/defs) :typed)
+        file-id (uuid/next)]
+
+    (t/testing "a raw column value is decoded with the schema of the def"
+      (let [decoded (jobs/decode-result job-def
+                                        (db/json {:file-ids   [file-id]
+                                                  :resolution {file-id {:id file-id}}}))]
+        (t/is (= [file-id] (:file-ids decoded)))
+        (t/is (= [file-id] (keys (:resolution decoded))))))
+
+    (t/testing "no result answers nil"
+      (t/is (nil? (jobs/decode-result job-def nil))))))
 
 (t/deftest aborted-job-is-terminal-for-all-writers
   "An aborted job (system-side terminal set by the orphan sweep) cannot be
