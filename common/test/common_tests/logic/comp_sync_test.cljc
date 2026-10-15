@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
@@ -21,6 +22,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -334,6 +336,56 @@
     (t/is (= (second (:shapes copy-root')) (:id copy-child1')))
     (t/is (= (first (:shapes copy-root')) (:id copy-child2')))
     (t/is (= (nth (:shapes copy-root') 2) (:id copy-child3')))))
+
+(defn- reorder-main-and-sync
+  "A main with six children, and its copy; the main moves the children
+   `ids` to `to-index`, then syncs. Returns `[file-before file-after
+   sync-changes]`."
+  [labels to-index]
+  (let [main-labels [:m1 :m2 :m3 :m4 :m5 :m6]
+        file        (-> (thf/sample-file :file1)
+                        (tho/add-component-with-many-children-and-copy
+                         :component1 :main-root main-labels :copy-root
+                         :copy-root-params {:children-labels [:c1 :c2 :c3 :c4 :c5 :c6]}))
+        page        (thf/current-page file)
+        relocate    (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                               (pcb/with-page-id (:id page))
+                                               (pcb/with-objects (:objects page)))
+                                           (thi/id :main-root)
+                                           to-index
+                                           (into #{} (map thi/id) labels))
+        moved       (thf/apply-changes file relocate)
+        sync        (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                    nil
+                                                    :components
+                                                    (:id moved)
+                                                    (thi/id :component1)
+                                                    (:id moved)
+                                                    {(:id moved) moved}
+                                                    (:id moved))]
+    [moved (thf/apply-changes moved sync) sync]))
+
+(defn- copy-order
+  [file]
+  (mapv #(:shape-ref (ths/get-shape-by-id file %)) (:shapes (ths/get-shape file :copy-root))))
+
+(defn- moves
+  [changes]
+  (count (filter #(= :mov-objects (:type %)) (:redo-changes changes))))
+
+(t/deftest test-sync-of-a-reorder-moves-each-displaced-child-once
+  (doseq [[labels to-index displaced] [[[:m1] 6 1]   ; first to the end
+                                       [[:m6] 0 1]   ; last to the start
+                                       [[:m2] 5 1]   ; one to a later place
+                                       [[:m5] 1 1]   ; one to an earlier place
+                                       [[:m1 :m2] 6 2]]]
+    (let [[moved synced sync] (reorder-main-and-sync labels to-index)
+          main-order          (:shapes (ths/get-shape moved :main-root))]
+      (t/testing (str labels " to " to-index)
+        (t/is (= main-order (copy-order synced)))
+        (t/is (= displaced (moves sync)))
+        (t/testing "undo puts the copy's children back"
+          (t/is (= (copy-order moved) (copy-order (thf/apply-undo-changes synced sync)))))))))
 
 (t/deftest test-sync-when-changing-upper
   (let [;; ==== Setup
@@ -838,6 +890,44 @@
     (t/is (true? (:hidden main-child2')))
     (t/is (= [(thi/id :main-child2) (thi/id :main-child1)] (:shapes main-root')))))
 
+(t/deftest test-update-main-of-a-swap-into-a-main-on-another-page
+  ;; component2's main, on its own page, holds a copy of component1 inside a
+  ;; group; its copy, on another page, swaps that copy for a bigger component3
+  ;; and pushes it to the main
+  (let [file      (-> (thf/sample-file :file1 :page-label :main-page)
+                      (tho/add-simple-component :c1 :main1 :main1-child
+                                                :root-params {:width 10 :height 10}
+                                                :child-params {:width 10 :height 10})
+                      (tho/add-simple-component :c3 :main3 :main3-child
+                                                :root-params {:width 80 :height 80}
+                                                :child-params {:width 80 :height 80})
+                      (tho/add-frame :main2 {:width 200 :height 200})
+                      (tho/add-group :group :parent-label :main2)
+                      (thc/instantiate-component :c1 :nested :parent-label :group)
+                      (tho/fit-group :group)
+                      (thc/make-component :c2 :main2)
+                      (thf/add-sample-page :copy-page)
+                      (thc/instantiate-component :c2 :copy2 :children-labels [:copy-group :copy-nested])
+                      (tho/swap-component-in-shape :copy-nested :c3 {:page-label :copy-page
+                                                                     :new-shape-label :swapped}))
+        page      (thf/current-page file)
+        container (ctn/make-container page :page)
+        changes   (-> (pcb/empty-changes)
+                      (pcb/with-container container)
+                      (cll/generate-sync-shape-inverse {(:id file) file} container (thi/id :copy2)))
+        file'     (thf/apply-changes file changes)
+        group'    (ths/get-shape file' :group :page-label :main-page)
+        pushed    (ths/get-shape-by-id file' (first (:shapes group')) :page-label :main-page)]
+    (t/is (= (thi/id :c3) (:component-id pushed)))
+    (t/testing "the group takes the size of the pushed copy"
+      (t/is (== 80 (-> group' :selrect :width) (-> group' :selrect :height))))
+    (t/testing "undo gives the main back as it was"
+      (let [file'' (thf/apply-undo-changes file' changes)]
+        (t/is (= (:shapes (ths/get-shape file :group :page-label :main-page))
+                 (:shapes (ths/get-shape file'' :group :page-label :main-page))))
+        (t/is (= (count (:objects (thf/get-page file :main-page)))
+                 (count (:objects (thf/get-page file'' :main-page)))))))))
+
 (t/deftest test-an-assign-on-a-main-changes-its-component
   (let [file   (-> (thf/sample-file :file1)
                    (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root))
@@ -852,6 +942,62 @@
     (t/is (= #{(thi/id :component1)}
              (ch/components-changed (:data file) (change {:type :assign :value {:opacity 0.5}}))))
     (t/is (nil? (ch/components-changed (:data file) (change {:type :assign :value {:interactions []}}))))))
+
+(t/deftest test-sync-of-a-flip
+  ;; the main flips its child as the editor does: a transform that scales
+  ;; it by -1, which toggles :flip-x
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root
+                                                        :copy-root-params {:children-labels [:copy-child]}))
+        page    (thf/current-page file)
+        flip    (fn [shape]
+                  (gsh/transform-shape shape (ctm/resize-modifiers (gpt/point -1 1) (gsh/shape->center shape))))
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id :main-child)}
+                                            flip
+                                            (:objects page)
+                                            {})
+        flipped (thf/apply-changes file changes)
+        sync    (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                nil
+                                                :components
+                                                (:id flipped)
+                                                (thi/id :component1)
+                                                (:id flipped)
+                                                {(:id flipped) flipped}
+                                                (:id flipped))
+        file'   (thf/apply-changes flipped sync)]
+    (t/is (true? (:flip-x (ths/get-shape flipped :main-child))))
+    (t/is (true? (:flip-x (ths/get-shape file' :copy-child))))
+    (t/is (= (:transform (ths/get-shape file' :main-child))
+             (:transform (ths/get-shape file' :copy-child))))
+    (t/is (nil? (:touched (ths/get-shape file' :copy-child))))))
+
+(t/deftest test-sync-of-a-grid-child-margin
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-grid-frame :main-root)
+                    (tho/add-rect :main-child {:parent-label :main-root})
+                    (tho/place-in-grid-columns :main-root 1 {1 :main-child})
+                    (thc/make-component :component1 :main-root)
+                    (thc/instantiate-component :component1 :copy-root :children-labels [:copy-child]))
+        page    (thf/current-page file)
+        margin  {:m1 9 :m2 9 :m3 9 :m4 9}
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id :main-child)}
+                                            #(assoc % :layout-item-margin margin :layout-item-margin-type :simple)
+                                            (:objects page)
+                                            {})
+        edited  (thf/apply-changes file changes)
+        sync    (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                nil
+                                                :components
+                                                (:id edited)
+                                                (thi/id :component1)
+                                                (:id edited)
+                                                {(:id edited) edited}
+                                                (:id edited))
+        file'   (thf/apply-changes edited sync)]
+    (t/is (= margin (:layout-item-margin (ths/get-shape file' :copy-child))))))
 
 (t/deftest test-which-changes-of-a-main-mark-its-component-modified
   (let [file     (-> (thf/sample-file :file1)
@@ -874,3 +1020,62 @@
       (t/is (= :old (apply-op [pos-data]))))
     (t/testing "any synced attribute of the change counts, not only the last"
       (t/is (not= :old (apply-op [fills pos-data]))))))
+
+(t/deftest test-an-edit-of-a-nested-component-keeps-the-placement-of-its-copies
+  ;; a copy of button dropped into the card main, which then sets it to
+  ;; stick right (an override of the nested copy); an edit of the button
+  ;; main keeps it, in the card main and in its copy
+  (let [sync    (fn [f component]
+                  (thf/apply-changes f (cll/generate-sync-file-changes (pcb/empty-changes) nil :components
+                                                                       (:id f) (thi/id component) (:id f)
+                                                                       {(:id f) f} (:id f))))
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :button :button-main :button-rect)
+                    (tho/add-frame :card-main {:width 300 :height 300})
+                    (thc/make-component :card :card-main)
+                    (thc/instantiate-component :card :card-copy)
+                    (thc/instantiate-component :button :nested-button))
+        page    (thf/current-page file)
+        file    (-> file
+                    (thf/apply-changes (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                                  (pcb/with-page-id (:id page))
+                                                                  (pcb/with-objects (:objects page)))
+                                                              (thi/id :card-main) 0 #{(thi/id :nested-button)}))
+                    (ths/update-shape :nested-button :constraints-h :right)
+                    (sync :card))
+        page    (thf/current-page file)
+        edit    (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) #{(thi/id :button-rect)}
+                                            #(assoc % :opacity 0.5) (:objects page) {})
+        file'   (-> (thf/apply-changes file edit) (sync :button) (sync :card))
+        copy    #(ths/get-shape-by-id % (first (:shapes (ths/get-shape % :card-copy))))
+        placing (juxt :constraints-h :constraints-v)]
+    (t/is (= [:right :top] (placing (copy file))))
+    (t/is (= [:right :top] (placing (ths/get-shape file' :nested-button))))
+    (t/is (= [:right :top] (placing (copy file'))))
+    (t/is (= 0.5 (:opacity (ths/get-shape-by-id file' (first (:shapes (copy file')))))))))
+
+(t/deftest test-update-main-of-a-library-copy-files-the-copy-changes-as-local
+  ;; a copy of a library component swaps its nested copy and pushes it to
+  ;; the library main: the copy's own changes stay in the file
+  (let [library (-> (thf/sample-file :library :is-shared true :page-label :lib-page)
+                    (tho/add-nested-component :c1 :main1 :main1-child :c2 :main2 :nested-head)
+                    (tho/add-simple-component :c3 :main3 :main3-child))
+        file    (-> (thf/sample-file :file1 :page-label :page1)
+                    (thc/instantiate-component :c2 :copy2 :library library
+                                               :children-labels [:copy-nested]))
+        file    (tho/swap-component-in-shape file :copy-nested :c3 {:library library
+                                                                    :new-shape-label :swapped})
+        page    (thf/current-page file)
+        cont    (ctn/make-container page :page)
+        changes (-> (pcb/empty-changes)
+                    (pcb/with-container cont)
+                    (cll/generate-sync-shape-inverse {(:id file) file (:id library) library}
+                                                     cont (thi/id :copy2)))
+        [local _] (cll/split-local-changes changes)
+        objects (:objects page)
+        in-copy (into #{} (cfh/get-children-ids-with-self objects (thi/id :copy2)))]
+    (t/is (contains? (into #{} (map :id) (:redo-changes local)) (thi/id :swapped)))
+    (t/testing "every change of a shape of the copy is local"
+      (t/is (every? #(not (contains? in-copy (:id %)))
+                    (:redo-changes (second (cll/split-local-changes changes))))))))
+

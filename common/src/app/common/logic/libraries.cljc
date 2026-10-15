@@ -53,13 +53,13 @@
        ;; We don't do automatic update of the `layout-grid-cells` property.
        (remove #(= :layout-grid-cells %))))
 
-;; Flex-child layout attrs synced between main and copy (interactions are only kept on swap)
-(def ^:private flex-child-attrs
+;; Layout child attrs synced between main and copy (interactions are only kept on swap)
+(def ^:private layout-child-attrs
   (disj ctk/swap-keep-attrs :interactions))
 
 ;; Attributes that place a shape in its parent
 (def ^:private placement-attrs
-  (conj flex-child-attrs :constraints-h :constraints-v :fixed-scroll))
+  (conj layout-child-attrs :constraints-h :constraints-v :fixed-scroll))
 
 ;; Touched groups of the placement attributes and of the position
 (def placement-groups
@@ -98,6 +98,7 @@
 (declare mark-local-changes)
 
 (declare compare-children)
+(declare reorder-copy-children)
 (declare add-shape-to-instance)
 (declare add-shape-to-main)
 (declare remove-shape)
@@ -107,7 +108,7 @@
 (declare update-attrs)
 (declare update-grid-main-attrs)
 (declare update-grid-copy-attrs)
-(declare update-flex-children)
+(declare update-layout-children)
 (declare update-swapped-placement)
 (declare orient-like)
 (declare reposition-shape)
@@ -281,8 +282,7 @@
                                 :library        library
                                 :root-inst      shape-inst
                                 :root-main      shape-main
-                                :reset?         reset?
-                                :remote-synced  (when-not (:component-root shape-inst) true)}
+                                :reset?         reset?}
                                shape-inst
                                shape-main))
 
@@ -293,19 +293,21 @@
 
 (defn- sync-copy-shape
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
-  pairs with. A reset also clears its overrides and sets its
-  `:remote-synced`."
-  [changes {:keys [container main-container library component root-inst root-main reset? remote-synced]}
+  pairs with. A reset also clears its overrides and its `:remote-synced`,
+  as it follows its near main."
+  [changes {:keys [container main-container root-inst root-main reset?]}
    shape-inst shape-main]
   (let [omit-touched? (not reset?)]
     (cond-> (update-attrs changes shape-inst shape-main root-inst root-main container omit-touched?)
-      (ctsl/flex-layout? shape-main)
-      (update-flex-children container shape-inst shape-main
-                            #(ctn/get-shape main-container (:shape-ref %)) omit-touched?)
+      ;; the children refer to the children of `shape-main`, in the
+      ;; container of the walk's main shapes
+      (ctsl/any-layout? shape-main)
+      (update-layout-children container shape-inst shape-main
+                              #(ctn/get-shape main-container (:shape-ref %)) omit-touched?)
 
       reset?
       (-> (set-touched shape-inst container nil)
-          (change-remote-synced shape-inst container remote-synced)))))
+          (change-remote-synced shape-inst container nil)))))
 
 (defn- sync-copy-recursive
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
@@ -315,8 +317,7 @@
   overrides and clears them. `ctx` holds what stays the same along the
   walk: the copy's `:container`, the `:main-container` of the main shapes,
   the `:component` and its `:library`, the roots `:root-inst` and
-  `:root-main`, `:reset?`, and the `:remote-synced` a reset gives the copy
-  shapes (true when it starts below the copy root)."
+  `:root-main`, and `:reset?`."
   [changes {:keys [container main-container library component reset?] :as ctx} shape-inst shape-main]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
@@ -341,13 +342,8 @@
                                  (remove-shape changes child-inst container))
                     :only-main (fn [changes child-main]
                                  (add-shape-to-instance changes ctx shape-inst child-main
-                                                        (d/index-of children-main child-main)))
-                    :moved     (fn [changes child-inst child-main]
-                                 (move-shape changes
-                                             child-inst
-                                             (d/index-of children-inst child-inst)
-                                             (d/index-of children-main child-main)
-                                             container))}))
+                                                        (d/index-of children-main child-main)))})
+                  (reorder-copy-children shape-inst children-main container))
 
         (ctsl/grid-layout? shape-inst)
         (update-grid-copy-attrs (:id shape-inst) shape-main library component (not reset?))))))
@@ -414,12 +410,9 @@
               (set-touched shape-main main-container
                            (when-not (:remote-synced shape-inst)
                              (set/union (:touched shape-main) (:touched shape-inst)))))
-    (ctsl/flex-layout? shape-main)
-    (update-flex-children main-container shape-main shape-inst
-                          #(ctf/get-shape-in-copy container % shape-inst) false)
-
-    (ctsl/grid-layout? shape-main)
-    (update-grid-main-attrs shape-main shape-inst main-container container)
+    (ctsl/any-layout? shape-main)
+    (update-layout-children main-container shape-main shape-inst
+                            #(ctf/get-shape-in-copy container % shape-inst) false)
 
     :always
     (change-remote-synced shape-inst container remote-synced)))
@@ -441,30 +434,35 @@
     ;; This should not occur, but protect against it in any case
     changes
     (let [children-inst (vec (ctn/get-direct-children container shape-inst))
-          children-main (vec (ctn/get-direct-children main-container shape-main))]
+          children-main (vec (ctn/get-direct-children main-container shape-main))
+          ;; the main shapes added for copy children, by copy child id
+          added         (volatile! {})]
       (vswap! synced-ids conj (:id shape-inst))
-      (-> changes
-          (update-main-shape ctx shape-inst shape-main)
-          (compare-children
-           children-inst
-           children-main
-           {:pair?     (fn [child-main child-inst]
-                         (and (ctk/is-main-of? child-main child-inst)
-                              (not (ctk/swapped? child-inst))))
-            :on-pair   (fn [changes child-inst child-main]
-                         (update-main-recursive changes ctx child-inst child-main))
-            :only-inst (fn [changes child-inst]
-                         (add-shape-to-main changes ctx shape-main child-inst
-                                            (d/index-of children-inst child-inst)))
-            :only-main (fn [changes child-main]
-                         (remove-shape changes child-main main-container))
-            :moved     (fn [changes child-inst child-main]
-                         (move-shape changes
-                                     child-main
-                                     (d/index-of children-main child-main)
-                                     (d/index-of children-inst child-inst)
-                                     main-container))
-            :inverse?  true})))))
+      (cond-> (-> changes
+                  (update-main-shape ctx shape-inst shape-main)
+                  (compare-children
+                   children-inst
+                   children-main
+                   {:pair?     (fn [child-main child-inst]
+                                 (and (ctk/is-main-of? child-main child-inst)
+                                      (not (ctk/swapped? child-inst))))
+                    :on-pair   (fn [changes child-inst child-main]
+                                 (update-main-recursive changes ctx child-inst child-main))
+                    :only-inst (fn [changes child-inst]
+                                 (add-shape-to-main changes (assoc ctx :added added) shape-main child-inst
+                                                    (d/index-of children-inst child-inst)))
+                    :only-main (fn [changes child-main]
+                                 (remove-shape changes child-main main-container))
+                    :moved     (fn [changes child-inst child-main]
+                                 (move-shape changes
+                                             child-main
+                                             (d/index-of children-main child-main)
+                                             (d/index-of children-inst child-inst)
+                                             main-container))
+                    :inverse?  true}))
+
+        (ctsl/grid-layout? shape-main)
+        (update-grid-main-attrs shape-main shape-inst children-inst @added main-container)))))
 
 (defn- mark-local-changes
   "Mark as `:local-change?` the changes of the copy shapes `ids`. The inverse
@@ -497,9 +495,9 @@
     - `on-pair` for a copy child and the main child it pairs with
       (`(pair? child-main child-inst)`);
     - `only-inst` and `only-main` for a child that pairs with none;
-    - `moved`, after `on-pair`, for a pair found out of place. The main's
-      order wins, so the copy child is looked up; with `inverse?` the
-      copy's order wins, and the main child is looked up.
+    - `moved` (optional), after `on-pair`, for a pair found out of place.
+      The main's order wins, so the copy child is looked up; with
+      `inverse?` the copy's order wins, and the main child is looked up.
 
   The children are walked in order, side by side. A child out of place is
   looked up by its reference (`index-positions`), not searched, so the walk
@@ -576,15 +574,13 @@
 
               inverse?
               (recur (inc i) j taken-insts (conj taken-mains (:id child-main'))
-                     (-> changes
-                         (on-pair child-inst child-main')
-                         (moved child-inst child-main')))
+                     (cond-> (on-pair changes child-inst child-main')
+                       moved (moved child-inst child-main')))
 
               :else
               (recur i (inc j) (conj taken-insts (:id child-inst')) taken-mains
-                     (-> changes
-                         (on-pair child-inst' child-main)
-                         (moved child-inst' child-main))))))))))
+                     (cond-> (on-pair changes child-inst' child-main)
+                       moved (moved child-inst' child-main))))))))))
 
 (defn- shape-label
   "The container and the shape, for the log."
@@ -616,22 +612,18 @@
 (defn- add-shape-to-instance
   "Add to the copy shape `parent-inst`, at `index`, a copy of `child-main`,
   a child of the main shape it pairs with."
-  [changes {:keys [container main-container root-inst root-main reset? remote-synced]}
+  [changes {:keys [container main-container root-inst root-main]}
    parent-inst child-main index]
   (shape-log :info (:id child-main) main-container
              :msg (str "ADD " (shape-label child-main container)))
   (let [all-parents      (into [(:id parent-inst)]
                                (cfh/get-parent-ids (:objects container) (:id parent-inst)))
 
+        ;; a new shape is synced with its main shape
         update-new-shape (fn [new-shape original-shape]
-                           (cond-> (reposition-shape new-shape root-main root-inst)
-                             (and reset? remote-synced)
-                             (assoc :remote-synced true)
-
-                             ;; a new shape is synced with its main shape
-                             :always
-                             (-> (assoc :shape-ref (:id original-shape))
-                                 (dissoc :touched))))
+                           (-> (reposition-shape new-shape root-main root-inst)
+                               (assoc :shape-ref (:id original-shape))
+                               (dissoc :touched)))
 
         [_ new-shapes _]
         (ctst/clone-shape child-main
@@ -651,7 +643,7 @@
   "Add to the main shape `parent-main`, at `index`, a copy of `child-inst`,
   a child of the copy shape that pairs with it; `child-inst` then refers to
   the new main shape."
-  [changes {:keys [container main-container component root-inst root-main libraries]}
+  [changes {:keys [container main-container root-inst root-main libraries added synced-ids]}
    parent-main child-inst index]
   (shape-log :info (:id child-inst) container
              :msg (str "ADD " (shape-label child-inst main-container)))
@@ -690,6 +682,10 @@
                                       (:id parent-main)
                                       (:frame-id parent-main)))
 
+        _ (some-> added (vswap! assoc (:id child-inst) (:id new-head)))
+        ;; the copy shapes it relinks are changes of the copy's file
+        _ (some-> synced-ids (vswap! into (map :id) updated-shapes))
+
         new-shapes
         (if swap-in-copy?
           (let [objects  (d/index-by :id new-shapes)
@@ -709,21 +705,17 @@
                              [:component-id :component-file :component-root :shape-ref :touched])})]
 
     (-> changes
+        ;; each undo goes with its redo, and the undo list runs backwards:
+        ;; the new shapes are deleted, children first, then the parents refit
         (pcb/add-changes main-container
-                         (map #(assoc (add-obj-change % index) :frame-id (:frame-id %)) new-shapes)
-                         [])
-        ;; F102: this targets the component's own objects, which only a
-        ;; deleted component has, not the page that holds its main
-        (update :redo-changes conj {:type :reg-objects
-                                    :component-id (:id component)
-                                    :shapes all-parents})
-        ;; the parents are recalculated after the other undo changes
-        (pcb/add-changes main-container [] [{:type :reg-objects :shapes all-parents}])
+                         (conj (mapv #(assoc (add-obj-change % index) :frame-id (:frame-id %)) new-shapes)
+                               {:type :reg-objects :shapes all-parents})
+                         (into [{:type :reg-objects :shapes all-parents}]
+                               (map (comp del-obj-change :id))
+                               new-shapes))
         (pcb/add-changes container
                          (map set-link updated-shapes)
-                         (concat (map #(set-link (ctn/get-shape container (:id %))) updated-shapes)
-                                 ;; F102: the new shapes are in the main's container
-                                 (map (comp del-obj-change :id) new-shapes))))))
+                         (map #(set-link (ctn/get-shape container (:id %))) updated-shapes)))))
 
 (defn- remove-shape
   [changes shape container]
@@ -740,6 +732,63 @@
                      (cons {:type :reg-objects :shapes (vec parents)}
                            (map #(add-obj-change (get objects %) (cfh/get-position-on-parent objects %))
                                 ids)))))
+
+(defn- longest-increasing
+  "The set of the elements of `xs` that form the longest run, not
+  necessarily contiguous, whose `key-fn` values increase."
+  [key-fn xs]
+  (let [xs (vec xs)
+        ;; tails[l]: position of the smallest last key of a run of length l+1
+        [tails prev]
+        (reduce (fn [[tails prev] i]
+                  (let [k (key-fn (nth xs i))
+                        l (loop [lo 0 hi (count tails)]
+                            (if (< lo hi)
+                              (let [mid (quot (+ lo hi) 2)]
+                                (if (< (key-fn (nth xs (nth tails mid))) k)
+                                  (recur (inc mid) hi)
+                                  (recur lo mid)))
+                              lo))]
+                    [(assoc tails l i)
+                     (assoc prev i (when (pos? l) (nth tails (dec l))))]))
+                [[] {}]
+                (range (count xs)))]
+    (loop [i   (peek tails)
+           run #{}]
+      (if (some? i)
+        (recur (get prev i) (conj run (nth xs i)))
+        run))))
+
+(defn- reorder-copy-children
+  "Move the children of the copy shape `shape-inst`, as the changes so far
+  left them, into the order of their main shapes among `children-main`,
+  moving the fewest: the longest run already in order stays, and each other
+  child goes right after the one before it in the main's order."
+  [changes shape-inst children-main container]
+  (let [main-index (into {} (map-indexed (fn [i child] [(:id child) i])) children-main)
+        objects    (pcb/get-objects changes)
+        current    (vec (get-in objects [(:id shape-inst) :shapes]))
+        index-of   #(get main-index (get-in objects [% :shape-ref]) ##Inf)
+        target     (vec (sort-by index-of current))]
+    (if (= current target)
+      changes
+      (let [in-place (longest-increasing index-of current)]
+        (first
+         (reduce (fn [[changes order] [k id]]
+                   (if (contains? in-place id)
+                     [changes order]
+                     (let [before  (when (pos? k) (nth target (dec k)))
+                           after   (fn [order neighbour]
+                                     (if (some? neighbour) (inc (d/index-of order neighbour)) 0))
+                           from    (d/index-of order id)
+                           order'  (d/insert-at-index order (after order before) [id])]
+                       [(move-shape changes (get objects id)
+                                    (after order' (when (pos? from) (nth order (dec from))))
+                                    (after order before)
+                                    container)
+                        order'])))
+                 [changes current]
+                 (map-indexed vector target)))))))
 
 (defn- move-shape
   [changes shape index-before index-after container]
@@ -815,7 +864,9 @@
                                       :ignore-touched true}]})]
     (if (= dest-tokens dest-tokens')
       changes
-      (pcb/add-changes changes container [(set-tokens dest-tokens')] [(set-tokens dest-tokens)]))))
+      (pcb/add-changes changes container
+                       [(set-tokens dest-tokens')]
+                       [(set-tokens (:applied-tokens dest-shape))]))))
 
 ;; The token attributes of each attribute whose tokens sync; the
 ;; `layout-grid-cells` are not synced automatically.
@@ -1113,12 +1164,13 @@
                              (and (ctsl/any-layout-immediate-child? objects shape-inst)
                                   (not (ctsl/position-absolute? shape-inst))))))
 
-(defn- update-flex-children
+(defn- update-layout-children
   "Copy into `dest`, a shape of `container`, the layout attributes of the
-  flex shape `src` it pairs with: its sizing, when `src` hugs or fixes it,
-  and the flex child attributes of each of its children, from the child of
-  `src` it pairs with (`src-child`). With `omit-touched?`, an attribute
-  whose group is touched is left as it is."
+  flex or grid shape `src` it pairs with: its sizing, when `src` hugs or
+  fixes it, and the layout child attributes of each of its children, from
+  the child of `src` it pairs with (`src-child`); a child with none is left
+  as it is. With `omit-touched?`, an attribute whose group is touched is
+  left as it is."
   [changes container dest src src-child omit-touched?]
   (pcb/concat-changes
    changes
@@ -1137,10 +1189,9 @@
         {:ignore-touched true})
        (pcb/update-shapes
         (:shapes dest)
-        (fn [child]
-           (if-let [source (src-child child)]
-             (propagate-attrs child source flex-child-attrs omit-touched?)
-             child))
+        #(if-let [src-child (src-child %)]
+           (propagate-attrs % src-child layout-child-attrs omit-touched?)
+           %)
         {:ignore-touched true}))))
 
 (defn- update-grid-copy-attrs
@@ -1178,17 +1229,17 @@
        {:ignore-touched true :with-objects? true})))
 
 (defn- update-grid-main-attrs
-  "Synchronizes the `layout-grid-cells` property from the copy to the main shape"
-  [changes shape-main shape-copy main-container copy-container]
+  "Synchronizes the `layout-grid-cells` property from the copy to the main
+  shape, once the update main has paired `children-copy`, the copy's
+  children, with the main's: each with the main shape `added` for it, or
+  else with the one it refers to."
+  [changes shape-main shape-copy children-copy added main-container]
   (let [ids-map
         (into {}
-              (comp
-               (map #(dm/get-in main-container [:objects %]))
-               (keep
-                (fn [main-shape]
-                  (let [copy-shape (ctf/get-shape-in-copy copy-container main-shape shape-copy)]
-                    [(:id copy-shape) (:id main-shape)]))))
-              (:shapes shape-main))
+              (keep (fn [child]
+                      (when-let [main-id (get added (:id child) (:shape-ref child))]
+                        [(:id child) main-id])))
+              children-copy)
 
         new-changes
         (-> (pcb/empty-changes)

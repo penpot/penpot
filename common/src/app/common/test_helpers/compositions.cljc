@@ -61,6 +61,14 @@
                                 :name "Group1"}
                                params)))
 
+(defn fit-group
+  "Fit the group `group-label` to its children, as the editor does once
+  they are in it."
+  [file group-label]
+  (thf/apply-changes file {:redo-changes [{:type    :reg-objects
+                                           :page-id (:id (thf/current-page file))
+                                           :shapes  [(thi/id group-label)]}]}))
+
 (defn add-frame-with-child
   [file frame-label child-label & {:keys [frame-params child-params]}]
   ;; Generated shape tree:

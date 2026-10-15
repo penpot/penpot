@@ -5,7 +5,7 @@
   {:transcript "create-component {:component \"main\", :id sync-main-component}\n  create-component {:component \"s1\", :id sync-s1-component}\n  create-component {:component \"s2\", :id sync-s2-component}\n  make-nested-component {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  swap-shape {:target #fn, :to \"s1\", :keep-touched? false}\n  one-of -> skip\n  change-property {:target #fn, :property :fills, :value \"#0000ff\"}", :states ["9019918a02196b8f" "c4e06e2eab16398f" "9b149917696880e1"]}
   {:transcript "create-component {:component \"main\", :id sync-main-component}\n  create-component {:component \"s1\", :id sync-s1-component}\n  create-component {:component \"s2\", :id sync-s2-component}\n  make-nested-component {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  swap-shape {:target #fn, :to \"s1\", :keep-touched? false}\n  one-of -> skip\n  one-of -> skip", :states ["9019918a02196b8f" "b5373f3c8cae4fc1"]}]
  :ab
- [{:transcript "create-component {:component \"main\", :id sync-main-component}\n  create-component {:component \"s1\", :id sync-s1-component}\n  make-nested-component {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  change-property {:target #fn, :property :opacity, :value 0.5}\n  swap-shape {:target #fn, :to \"s1\", :keep-touched? false}\n  reset-overrides {:target #fn, :reset 3}", :states ["2ec7fb83e8335e83" "6a105b37f6ebf73c" "8ec10656f376e332" "4ba9485ff33b0f2c"]}]
+ [{:transcript "create-component {:component \"main\", :id sync-main-component}\n  create-component {:component \"s1\", :id sync-s1-component}\n  make-nested-component {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  change-property {:target #fn, :property :opacity, :value 0.5}\n  swap-shape {:target #fn, :to \"s1\", :keep-touched? false}\n  reset-overrides {:target #fn, :reset 3}", :states ["2ec7fb83e8335e83" "6a105b37f6ebf73c" "2ec7fb83e8335e83" "1ed2373b434016f9"]}]
  :ac
  [{:transcript "create-component {:component \"main\", :id sync-main-component}\n  make-variant-container {:variant-set \"vset\", :variant-id sync-vset-vcontainer, :count 3}\n  make-nested-component-with-variant {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  change-property {:target #fn, :property :opacity, :value 0.5}\n  switch-variant {:target-component sync-vset-v1-component}\n  test\n  switch-variant {:target-component sync-vset-v2-component}", :states ["9f9ac61ce3c54295" "5bd9620c6fc0cf6e" "387d74ba1c75e52f" "62a55a068ebd6043"]}]
  :ad
@@ -17,25 +17,25 @@
  [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  move-to-cell {:board :main-root, :child :main-child, :row 1, :column 3}", :states ["a3bca1c5fd1b9b29" "8a7fa3fde8815d35" "1c786eab89f462da"]}
   {:transcript "one-of -> skip\n  move-to-cell {:board :main-root, :child :main-child, :row 1, :column 3}", :states ["7f1f0be7424c543f" "7c9214e430ebb4e8"]}]
  :ag
- [{:transcript "move-child {:target :sub1, :parent :row-root, :to-index 3}", :states ["7a572aaeec3d11c7" "4ef6a524e41aa81f"]}]
+ [{:transcript "move-child {:target :sub1, :parent :row-root, :to-index 3}", :states ["7a572aaeec3d11c7" "e6899eae694479cf"]}]
  :ah
  [{:transcript "one-of -> recorded-choice\n  remove-child {:target :copy-sub1}", :states ["3043434871927bf0" "c5acd77993218759"]}
   {:transcript "one-of -> recorded-choice\n  remove-child {:target :copy-sub3}", :states ["fdddae12ff7dd7bc" "7efeb83144959be0"]}
   {:transcript "one-of -> skip", :states ["4f8193bba8dbfb0d"]}]
  :ak
- [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  move-to-cell {:board :copy-root, :child :copy-child, :row 1, :column 3}\n  update-main {:target :copy-root, :updated grid-copy}", :states ["a3bca1c5fd1b9b29" "246adb9d062e7222" "c4587bbdc8952e96" "400ce49b85daec77"]}
+ [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  move-to-cell {:board :copy-root, :child :copy-child, :row 1, :column 3}\n  update-main {:target :copy-root, :updated grid-copy}", :states ["a3bca1c5fd1b9b29" "246adb9d062e7222" "725449d340ed4db7" "f7c72fa8b8699165"]}
   {:transcript "one-of -> skip\n  move-to-cell {:board :copy-root, :child :copy-child, :row 1, :column 3}\n  update-main {:target :copy-root, :updated grid-copy}", :states ["8aad596633c254fd" "7f1f0be7424c543f" "7c9214e430ebb4e8"]}]
  :al
  [{:transcript "change-property {:target :copy-root, :property :name, :value \"Renamed\"}\n  change-property {:target :copy-instance, :property :name, :value \"Renamed child\"}\n  update-main {:target :copy-root, :updated copy-root}", :states ["0166c98332ed23a7" "6c0c864aa286702f" "af3a00259b74b965" "6598d0729b91c5b3"]}
   {:transcript "change-property {:target :copy-root, :property :name, :value \"Renamed\"}\n  one-of -> skip\n  update-main {:target :copy-root, :updated copy-root}", :states ["0166c98332ed23a7" "e2849db0c0174bfc" "c307f8e2c66e8760"]}]
  :am
- [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  update-main {:target :copy-root, :updated grouped-copy}", :states ["97535386c5e6b064" "ae99b169cd56a48c" "40447fef13f32e5a"]}]
+ [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  update-main {:target :copy-root, :updated grouped-copy}", :states ["606d0e9ed09ebe9b" "c96014db9eb364e5" "bc48794035d17e6f"]}]
  :an
  [{:transcript "change-property {:target :copy-instance, :property :margin, :value 8}\n  change-property {:target :main-instance, :property :margin, :value 20}", :states ["4087468201a18ebc" "04328fe58e252ee9" "85db26a4ea6a899c"]}
   {:transcript "change-property {:target :copy-instance, :property :margin, :value 8}\n  reset-overrides {:target :copy-root, :reset copy-root}", :states ["4087468201a18ebc" "cb5b3ab586333d10" "054cd426071de8e3"]}
   {:transcript "change-property {:target :copy-instance, :property :margin, :value 8}\n  update-main {:target :copy-root, :updated copy-root}", :states ["4087468201a18ebc" "6b82a7e5bb516fc5" "8d389cd790e5cfb3"]}]
  :ao
- [{:transcript "nest-copy {:copy :loose, :into :main-root, :cell [1 3]}", :states ["6e7144142468b3ea" "5e11927c1505e3f6"]}]
+ [{:transcript "nest-copy {:copy :loose, :into :main-root, :cell [1 3]}", :states ["6e7144142468b3ea" "16834d9e0ad8afe0"]}]
  :ap
  [{:transcript "sync-from-library {:library-id library}", :states ["3550b8df58ff0c95" "3872af2b94d47dea"]}]
  :aq
@@ -54,8 +54,8 @@
  :ay
  [{:transcript "create-component {:component \"main\", :id sync-main-component}\n  add-tokens {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  apply-token {:target #fn, :token-name \"radius.s\", :value 10}\n  apply-token {:target #fn, :token-name \"radius.l\", :value 30}\n  test\n  unapply-token {:target #fn, :token-name \"radius.l\"}", :states ["59efd69700884e48" "abf5f79fd6265aff" "39b3757cf3962625" "90094c5af982b268"]}
   {:transcript "create-component {:component \"main\", :id sync-main-component}\n  add-tokens {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  apply-token {:target #fn, :token-name \"radius.s\", :value 10}\n  apply-token {:target #fn, :token-name \"radius.l\", :value 30}\n  test\n  one-of -> skip", :states ["59efd69700884e48" "abf5f79fd6265aff" "35f26a160913fed7"]}
-  {:transcript "create-component {:component \"main\", :id sync-main-component}\n  add-tokens {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  one-of -> skip\n  apply-token {:target #fn, :token-name \"radius.l\", :value 30}\n  test\n  unapply-token {:target #fn, :token-name \"radius.l\"}", :states ["b59fbe5fc9ca6e6b" "6f8d6e70db24f3ee" "23156b8978646a6a"]}
-  {:transcript "create-component {:component \"main\", :id sync-main-component}\n  add-tokens {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  one-of -> skip\n  apply-token {:target #fn, :token-name \"radius.l\", :value 30}\n  test\n  one-of -> skip", :states ["b59fbe5fc9ca6e6b" "959ff508596afeae"]}]
+  {:transcript "create-component {:component \"main\", :id sync-main-component}\n  add-tokens {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  one-of -> skip\n  apply-token {:target #fn, :token-name \"radius.l\", :value 30}\n  test\n  unapply-token {:target #fn, :token-name \"radius.l\"}", :states ["b59fbe5fc9ca6e6b" "6f8d6e70db24f3ee" "0ca3152225a95d53"]}
+  {:transcript "create-component {:component \"main\", :id sync-main-component}\n  add-tokens {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  one-of -> skip\n  apply-token {:target #fn, :token-name \"radius.l\", :value 30}\n  test\n  one-of -> skip", :states ["b59fbe5fc9ca6e6b" "1b4cbbfda551811b"]}]
  :az
  [{:transcript "create-component {:component \"main\", :id sync-main-component}\n  make-nested-component {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  change-property {:target #fn, :property :fills, :value \"#00ff00\"}\n  make-nested-component {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n  paste-to-root {:target #fn, :new-head 5}\n  test\n  change-property {:target #fn, :property :fills, :value \"#ff0000\"}", :states ["c8c845596f55aa86" "1d1b26cfc6a035e4" "cdcb72926d45d3db" "c6ccfcd10b8e16a3"]}
   {:transcript "create-component {:component \"main\", :id sync-main-component}\n  make-nested-component {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  change-property {:target #fn, :property :fills, :value \"#00ff00\"}\n  one-of -> skip\n  paste-to-root {:target #fn, :new-head 3}\n  test\n  change-property {:target #fn, :property :fills, :value \"#ff0000\"}", :states ["c8c845596f55aa86" "a6a97a3d3298a63a" "a47933c7e373dfd7" "75123b44e98d2e2c"]}]
@@ -86,7 +86,7 @@
  :edit-through-a-chain-of-dependents
  [{:transcript "edit-through-a-chain-of-dependents", :states ["9ee47520f6b1a0e9"]}]
  :f
- [{:transcript "move-child {:target :main-child1, :parent :main-root, :to-index 2}", :states ["4ca7ef4736e23ba7" "8082d4caea054434"]}]
+ [{:transcript "move-child {:target :main-child1, :parent :main-root, :to-index 2}", :states ["4ca7ef4736e23ba7" "a06b120581c9097f"]}]
  :h
  [{:transcript "sync-from-library {:library-id library}", :states ["ac5b8031232b4f6a" "7448e7e0603e54be"]}]
  :i

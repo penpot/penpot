@@ -27,7 +27,8 @@
   [changes shape container update-node]
   (let [old-content (:content shape)
         new-content (txt/transform-nodes update-node old-content)
-        set-content (fn [content]
+        ;; the new content is measured again
+        set-content (fn [content position-data]
                       {:type :mod-obj
                        :id (:id shape)
                        :operations [{:type :set
@@ -36,10 +37,12 @@
                                      :ignore-touched true}
                                     {:type :set
                                      :attr :position-data
-                                     :val nil}]})]
+                                     :val position-data}]})]
     (if (= new-content old-content)
       changes
-      (pcb/add-changes changes container [(set-content new-content)] [(set-content old-content)]))))
+      (pcb/add-changes changes container
+                       [(set-content new-content nil)]
+                       [(set-content old-content (:position-data shape))]))))
 
 (defn generate-sync-typographies
   "Copy into the text `shape` the text styles of each typography of the
