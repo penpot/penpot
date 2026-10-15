@@ -511,7 +511,7 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
-          (not (u/editable-tokens-status? file-id))
+          (not (dwtl/editable-tokens-status? @st/state file-id))
           (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
           :else
@@ -523,7 +523,7 @@
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
 
-         (not (u/editable-tokens-status? file-id))
+         (not (dwtl/editable-tokens-status? @st/state file-id))
          (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
          :else
@@ -742,7 +742,7 @@
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
-         (not (u/editable-tokens-status? file-id))
+         (not (dwtl/editable-tokens-status? @st/state file-id))
          (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
          :else
@@ -754,7 +754,7 @@
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
 
-        (not (u/editable-tokens-status? file-id))
+        (not (dwtl/editable-tokens-status? @st/state file-id))
         (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
         :else
@@ -850,7 +850,7 @@
      :enumerable false
      :get
      (fn []
-       (u/editable-tokens? file-id))}
+       (dwtl/editable-tokens? @st/state file-id))}
 
     :themes
     {:this true

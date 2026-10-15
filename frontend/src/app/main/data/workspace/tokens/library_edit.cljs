@@ -49,11 +49,24 @@
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn editable-tokens-status?
+  "True when file-id is the current file. Its activation status is editable
+   even when its tokens come from an external source."
+  [state file-id]
+  (= file-id (:current-file-id state)))
+
+(defn editable-tokens?
+  "True when file-id is the current file and uses its own tokens source.
+   Use this predicate when the file may be a connected library."
+  [state file-id]
+  (and (editable-tokens-status? state file-id)
+       (cfo/editable-tokens? (dsh/lookup-file-data state file-id))))
+
 (defn- check-editable-tokens!
   "Throws when the tokens of the current file come from an external library,
    so they can't be modified from this file."
   [state]
-  (when-not (cfo/editable-tokens? (dsh/lookup-file-data state))
+  (when-not (editable-tokens? state (:current-file-id state))
     (ex/raise :type :assertion
               :code :tokens-not-editable
               :hint "cannot modify the tokens of an external library")))

@@ -18,6 +18,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
@@ -286,28 +287,10 @@
   (boolean
    (dm/get-in @st/state [:plugins :flags plugin-id :natural-child-ordering])))
 
-(defn- current-file?
-  [file-id]
-  (= file-id (:current-file-id @st/state)))
-
-(defn editable-tokens?
-  "True when the tokens catalog of `file-id` can be modified: it belongs to
-   the current file and the file is its own tokens source."
-  [file-id]
-  (let [file (locate-file file-id)]
-    (and (current-file? file-id)
-         (cfo/editable-tokens? (ctf/file-data file)))))
-
 (defn check-editable-tokens
   [file-id]
-  (when-not (editable-tokens? file-id)
+  (when-not (dwtl/editable-tokens? @st/state file-id)
     (throw (js/Error. (dm/str "[PENPOT PLUGIN] Cannot modify tokens in an external library")))))
-
-(defn editable-tokens-status?
-  "True when the proxy belongs to the current file, whose activation status
-   is editable even when its tokens come from an external source."
-  [file-id]
-  (current-file? file-id))
 
 (defn throw-validation-errors?
   [plugin-id]
