@@ -73,6 +73,20 @@
   (let [file (old-copy [[["Price: "] ["$20" {:weight 700}]]] #{:content-group :text-content-text})]
     (t/is (= (touched file :copy-child) (touched (convert file) :copy-child)))))
 
+(t/deftest a-content-group-alone-becomes-the-letters-and-styles-that-differ
+  ;; older files mark a copy text whose content changed with
+  ;; `:content-group` alone
+  (t/is (= #{:content-group :text-content-text :text-content-fills}
+           (-> (old-copy [[["Cost: " {:color :red}] ["$10" {:weight 700 :color :red}]]]
+                         #{:content-group})
+               (convert)
+               (touched :copy-child))))
+  (t/testing "where nothing differs it sets nothing"
+    (t/is (nil? (-> (old-copy main #{:content-group})
+                    (convert)
+                    (touched :copy-child)
+                    (not-empty))))))
+
 (defn- library-and-file
   "A library with the text component :component1, and a file with a copy of
    it whose text is red and holds the old style flag."
@@ -116,3 +130,10 @@
     (t/is (contains? (:features file) "components/text-overrides"))
     (t/is (contains? cfeat/default-features "components/text-overrides"))
     (t/is (= #{:content-group :text-content-fills} (touched file :copy-child)))))
+
+(t/deftest migration-converts-a-content-group-alone
+  (let [old  (-> (old-copy [[["Cost: "] ["$10" {:weight 700}]]] #{:content-group})
+                 (assoc :migrations (disj fmg/available-migrations "0035-recompute-content-group-alone")))
+        file (fmg/migrate-file old (delay {}))]
+    (t/is (= #{:content-group :text-content-text} (touched file :copy-child)))))
+
