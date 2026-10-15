@@ -7711,6 +7711,10 @@ msgstr "More library colors"
 msgid "workspace.options.more-token-colors"
 msgstr "More color tokens"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:502
+msgid "workspace.options.no-font-results"
+msgstr "No matching fonts"
+
 #: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:518
 msgid "workspace.options.no-size-preset-results"
 msgstr "No matching size preset"
