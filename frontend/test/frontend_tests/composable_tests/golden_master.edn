@@ -207,8 +207,8 @@
  :case-x-undo-before-sync-leaves-copies-unchanged
  [{:transcript " {:target :main-instance, :property :fills, :value \"#ff0000\"}", :states ["734ec524d88eb6bb" "ff1fa863b88027e5"]}]
  :case-y-text-override-merges-with-main-text-change
- [{:transcript "one-of -> \n   {:target :copy-instance, :edit :text, :value \"copy text\"}\n   {:target :main-instance, :edit :text, :value \"main text\"}", :states ["1fdda10ff2de93bb" "9caff776f882850b" "cc39679f8f901c8e"]}
-  {:transcript "one-of -> \n   {:target :copy-instance, :edit :text, :value \"copy text\"}\n   {:target :main-instance, :edit :font-size, :value \"24\"}", :states ["1fdda10ff2de93bb" "b44573ca4817a1c2" "805af3e9523db814"]}
+ [{:transcript "one-of -> \n   {:target :copy-instance, :edit :text, :value \"copy text\"}\n   {:target :main-instance, :edit :text, :value \"main text\"}", :states ["7ea87003598e5626" "f823f8147e941701" "3a6ecb19a9315cb8"]}
+  {:transcript "one-of -> \n   {:target :copy-instance, :edit :text, :value \"copy text\"}\n   {:target :main-instance, :edit :font-size, :value \"24\"}", :states ["7ea87003598e5626" "bc06b54fa303bde9" "230d1c77384fc557"]}
   {:transcript "one-of -> \n   {:target :copy-instance, :edit :font-size, :value \"32\"}\n   {:target :main-instance, :edit :text, :value \"main text\"}", :states ["c5ad2b1e98811951" "ed2ffe7c84c65ffa" "50166a4e5025f6cb"]}
   {:transcript "one-of -> \n   {:target :copy-instance, :edit :font-size, :value \"32\"}\n   {:target :main-instance, :edit :font-size, :value \"24\"}", :states ["c5ad2b1e98811951" "c75ab24b318795d7" "8896671645bb0a65"]}
   {:transcript "one-of -> \n   {:target :main-instance, :edit :text, :value \"main text\"}", :states ["dd9f23b4112dddae" "3bd3720125090159"]}

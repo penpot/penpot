@@ -373,3 +373,8 @@
   (t/is (true? (cttx/list-paragraph? {:type "paragraph" :list-style-type "disc"})))
   (t/is (false? (cttx/list-paragraph? {:type "paragraph" :list-style-type "none"})))
   (t/is (false? (cttx/list-paragraph? {:type "paragraph"}))))
+
+(t/deftest the-name-of-a-text-with-several-paragraphs
+  (t/is (= "Hello world Ends Sunday" (cttx/generate-shape-name "Hello world\nEnds Sunday")))
+  (t/is (= "One Two" (cttx/generate-shape-name "One \n\n Two")))
+  (t/is (= 280 (count (cttx/generate-shape-name (apply str (repeat 300 "a")))))))

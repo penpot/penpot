@@ -1354,6 +1354,15 @@
                  pending-ids     (sync-file-pending-ids file-id changes)
 
                  current-page-id (:current-page-id state)
+                 page-objects    (dsh/lookup-page-objects state file-id current-page-id)
+                 wasm?           (features/active-feature? state "render-wasm/v1")
+
+                 ;; the texts measured again join the undo of the sync
+                 undo-group      (or undo-group
+                                     (when (and wasm?
+                                                (seq (sync-auto-grow-text-ids-on-page changes current-page-id page-objects)))
+                                       (uuid/next)))
+                 changes         (pcb/set-undo-group changes undo-group)
 
                  frontend-sync
                  (sync-file-frontend-events
@@ -1362,8 +1371,8 @@
                   updated-frames
                   undo-group
                   current-page-id
-                  (dsh/lookup-page-objects state file-id current-page-id)
-                  (features/active-feature? state "render-wasm/v1"))]
+                  page-objects
+                  wasm?)]
 
              (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                                 (:redo-changes changes)
