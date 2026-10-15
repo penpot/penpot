@@ -8,6 +8,19 @@ READ `mem:testing` FIRST — it defines the execution discipline (no piping, tee
 
 Frontend unit tests live under `frontend/test/frontend_tests/` and use `cljs.test`. They should be deterministic, avoid DOM/UI integration where possible, and mock side effects such as RPC, storage, timers, or network access.
 
+### Async-first stance
+
+Frontend testing is async-first: everything essentially asynchronous is modeled with a test reproducing the asynchrony, even when the test could be written "synchronously". Sync-passing tests prove nothing about async behavior and rot as soon as an async boundary appears downstream. Consequences: mock through `frontend-tests.helpers.mock`, never `with-redefs`, except unit tests of purely synchronous functions; transport doubles deliver asynchronously (`observe-on :async`) while the test keeps scenario timing (explicit pushes); assertions always follow quiescence (`wait-for` on presence, bare `settle` tick for absence-only blocks), never a trigger.
+
+### Mock primitives
+
+- `mock/with-mocks` (callback style, the default): installs with `set!` so mocks survive async boundaries. Body runs immediately and `done'` restores and completes — so the call site must be inside `t/async`, and `done'` is called exactly once (twice only warns; never calling it stalls the run and leaks the mocks).
+- `mock/with-mocks*` (preferred for new tests): body forms are wrapped in a generated `^:async` fn and it evaluates to a promise — `await` it, `await` nested scopes too, no `done` in test code. A rejection or a non-promise return is reported as an `:error` by `run-mocked`, which restores the originals in either case.
+- `mock/asap` runs `f` on the next macrotask; used to make a scheduled callback fire under test control.
+- `mock/stub` wraps fns for arities 0-6 (the `:esm` test build dispatches multi-arity vars as `cljs$core$IFn$_invoke$arity$N`); when the mocked var is variadic-defined (or called with more than 6 args), the call compiles to variadic dispatch, so use a plain variadic `fn` — the stub does not forward variadic. A mock must not call the mocked var again (self-delegation inside a multi-arity function recurses).
+- Helpers in `frontend-tests.helpers.async`: `->promise` (single-value observable → promise; beicon has no `to-promise`), `await-response` (subscribe→push→await, atomic), `settle`, `wait-for` (immediate check + bounded poll, fails instead of hanging), `observe` (stream → termination promise; asserts provided, timeout rejects).
+- Valid `^:async` placements: `mem:clojure/idioms`.
+
 From `frontend/`:
 - Full unit test run (always builds, suppressed output): `pnpm run test:quiet`.
 - Full unit test run (always builds, build output visible): `pnpm run test`.
