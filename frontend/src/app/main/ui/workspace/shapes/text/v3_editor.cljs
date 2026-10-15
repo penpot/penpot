@@ -9,7 +9,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
@@ -87,12 +86,7 @@
     ;; Sync first so the cached content stays index-aligned with WASM.
     (text-editor/text-editor-sync-content)
     (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
-      (let [text (txt/content->text content)
-            name (when (not= text "") (txt/generate-shape-name text))]
-        (st/emit! (dwt/v2-update-text-shape-content
-                   shape-id content
-                   :update-name? true
-                   :name name)))
+      (st/emit! (dwt/v3-update-editor-content shape-id content))
       (sync-wasm-text-editor-content!))))
 
 (defn- collapse-input-caret
