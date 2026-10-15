@@ -13,5 +13,13 @@
 ;; ---- constraint-modifier :default ----
 
 (t/deftest constraint-modifier-default-returns-empty-modifiers
-  (t/is (= (ctm/empty)
-           (gsc/constraint-modifier :unknown-constraint-type :x nil nil nil nil))))
+  (t/testing ":default method accepts 6 args and returns empty modifiers"
+    ;; :scale and any other type with no method of its own add nothing; the
+    ;; caller adds the result to the child's modifiers (`ctm/add-modifiers`)
+    (let [result (gsc/constraint-modifier :unknown-constraint-type
+                                          :x nil nil nil nil)]
+      (t/is (ctm/empty? result))))
+
+  (t/testing ":default method can be added to modifiers"
+    (let [result (gsc/constraint-modifier :scale :y nil nil nil nil)]
+      (t/is (ctm/empty? (ctm/add-modifiers (ctm/empty) result))))))
