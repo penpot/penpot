@@ -12,9 +12,7 @@
    [app.binfile.jobs :as bfj]
    [app.binfile.v1 :as v1]
    [app.binfile.v3 :as v3]
-   [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
    [app.jobs.storage :as js]
@@ -66,27 +64,6 @@
                     :filename "package.penpot"
                     :mtype    "application/zip"}))
 
-(defn- make-job!
-  "A job row as the substrate writes it: running, owned by a profile and
-  holding the package it consumes."
-  [profile-id resource-id]
-  (let [id (uuid/next)]
-    (th/db-insert! :job {:id           id
-                         :name         "import-binfile"
-                         :tenant       (cf/get :tenant)
-                         :queue        "binfile"
-                         :params       (db/json {})
-                         :priority     100
-                         :max-retries  0
-                         :retry-num    0
-                         :status       "running"
-                         :profile-id   profile-id
-                         :resource-id  resource-id
-                         :scheduled-at (ct/now)
-                         :created-at   (ct/now)
-                         :modified-at  (ct/now)})
-    id))
-
 (defn- run-import
   "Run the import handler of a job, as the runner does."
   [job-id params]
@@ -120,7 +97,8 @@
 (t/deftest the-import-handler-imports-the-package-of-its-job
   (let [profile  (th/create-profile* 1)
         staged   (stage-package! profile (fixture-path))
-        job-id   (make-job! (:id profile) (:resource-id staged))
+        job-id   (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                  :resource-id (:resource-id staged)})
         result   (run-import job-id {:project-id (:default-project-id profile)
                                      :name       "imported"
                                      :version    3})]
@@ -143,7 +121,8 @@
   (let [profile    (th/create-profile* 1)
         project-id (:default-project-id profile)
         staged     (stage-package! profile (fixture-path))
-        job-id     (make-job! (:id profile) (:resource-id staged))
+        job-id     (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                    :resource-id (:resource-id staged)})
         before     (project-modified-at project-id)]
 
     (run-import job-id {:project-id project-id
@@ -158,7 +137,8 @@
   (let [profile  (th/create-profile* 1)
         file-id  (first (:file-ids (import-fixture! profile)))
         staged   (stage-package! profile (export-to-v1! file-id))
-        job-id   (make-job! (:id profile) (:resource-id staged))
+        job-id   (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                  :resource-id (:resource-id staged)})
         result   (run-import job-id {:project-id (:default-project-id profile)
                                      :name       "imported-v1"
                                      :version    1})]
@@ -172,7 +152,8 @@
         staged  (stage-package! other (fixture-path))
         ;; the package belongs to `other`, but the destination project
         ;; belongs to `owner`: an import there is not allowed
-        job-id  (make-job! (:id other) (:resource-id staged))
+        job-id  (th/create-job* :import-binfile {:profile-id (:id other)
+                                                 :resource-id (:resource-id staged)})
         before  (project-files (:default-project-id owner))]
 
     (t/testing "a job that cannot edit the destination does not import it"
@@ -190,7 +171,8 @@
 (t/deftest a-job-that-was-already-cancelled-never-imports
   (let [profile (th/create-profile* 1)
         staged  (stage-package! profile (fixture-path))
-        job-id  (make-job! (:id profile) (:resource-id staged))
+        job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                 :resource-id (:resource-id staged)})
         before  (project-files (:default-project-id profile))]
 
     (th/db-update! :job {:status "cancelled"} {:id job-id})
@@ -208,7 +190,8 @@
 (t/deftest an-import-cancelled-while-it-runs-leaves-nothing-behind
   (let [profile (th/create-profile* 1)
         staged  (stage-package! profile (fixture-path))
-        job-id  (make-job! (:id profile) (:resource-id staged))
+        job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                 :resource-id (:resource-id staged)})
         before  (project-files (:default-project-id profile))]
 
     ;; the user cancels while the import is running: the first progress
@@ -231,7 +214,8 @@
 (t/deftest a-package-that-is-not-a-penpot-file-fails-without-writing
   (let [profile (th/create-profile* 1)
         staged  (stage-package! profile (fixture-path))
-        job-id  (make-job! (:id profile) (:resource-id staged))
+        job-id  (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                 :resource-id (:resource-id staged)})
         before  (project-files (:default-project-id profile))]
 
     ;; the bytes of the resource are replaced by something that is not a
@@ -258,7 +242,8 @@
   (let [profile    (th/create-profile* 1)
         project-id (:default-project-id profile)
         staged     (stage-package! profile (fixture-path))
-        job-id     (make-job! (:id profile) (:resource-id staged))
+        job-id     (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                    :resource-id (:resource-id staged)})
         before     (project-files project-id)]
 
     ;; the core does its work inside the transaction and answers with a result
