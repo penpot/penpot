@@ -14,7 +14,6 @@
    [app.common.geom.rect :as grc]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
-   [app.common.path-names :as cpn]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape.layout :as ctsl]
@@ -25,7 +24,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.util.dom :as dom]
@@ -51,14 +49,6 @@
     (when (and page-id objects)
       {:page-id page-id
        :objects objects})))
-
-(defn- with-main-page
-  "Run `f` with the page id and objects that hold the component/variant mains.
-   Returns an empty stream when the file cannot resolve them."
-  [data opts f]
-  (if-let [{:keys [page-id objects]} (get-variant-mains-page data opts)]
-    (f page-id objects)
-    (rx/empty)))
 
 (defn- variant-changes
   "The empty changes of a page, with its objects and the data of the file:
@@ -332,8 +322,14 @@
                                        (not (ctc/is-variant? first-shape))
                                        (ctc/main-instance? first-shape))
             add-new-variant?      (every? ctc/is-variant? selected-shapes)
+            variant-container?    (and single? (ctc/is-variant-container? first-shape))
             undo-id              (js/Symbol)]
         (cond
+          variant-container?
+          (rx/of
+           (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:shortcut-create-component"})
+           (add-new-variant (:id first-shape)))
+
           transform-in-variant?
           (rx/of
            (ev/event {::ev/name "transform-in-variant" ::ev/origin "workspace:shortcut"})
@@ -378,24 +374,14 @@
           (rx/empty))))))
 
 (defn rename-variant
-  "Rename the variant container and all components belonging to this variant"
+  "Rename the variant container and all components belonging to this variant
+  (`clv/generate-rename-variant`), in one commit."
   [variant-id name]
   (ptk/reify ::rename-variant
-
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)]
-        (with-main-page data {:variant-id variant-id}
-          (fn [page-id objects]
-            (let [changes (-> (pcb/empty-changes it page-id)
-                              (pcb/with-library-data data)
-                              (pcb/with-objects objects)
-                              (clv/generate-rename-variant variant-id name))
-                  undo-id (js/Symbol)]
-              (rx/of
-               (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (dwu/commit-undo-transaction undo-id)))))))))
+      (when-let [changes (variant-changes it state :variant-id variant-id)]
+        (rx/of (dch/commit-changes (clv/generate-rename-variant changes variant-id name)))))))
 
 (defn rename-comp-or-variant-and-main
   "If the component is in a variant, rename the variant.

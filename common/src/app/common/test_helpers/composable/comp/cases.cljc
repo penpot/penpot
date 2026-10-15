@@ -1421,18 +1421,6 @@
         rename-copy (n/change-property nested :name "Mine")
         rename      (n/rename-variant #(:id (n/member-root % vset "a")) "Renamed")]
     {:setup      setup/empty-situation
-     ;; the rename's transaction keeps the undo group of its first commit, the
-     ;; container's, while the copies' sync takes the group of the main
-     ;; renames: one undo reverts only the sync
-     :undo-check {:known-failures [{:bug     "F6"
-                                    :fails   {:undo       #{[:object :sync-vset-vcontainer :name]
-                                                            [:object :sync-vset-v0-root :name]
-                                                            [:object :sync-vset-v1-root :name]
-                                                            [:component :sync-vset-v0-component :name]
-                                                            [:component :sync-vset-v1-component :name]}
-                                              :undo-index #{[:undo-index 1]}}
-                                    :op      rename
-                                    :runners #{:frontend}}]}
      :operation (tm/in-sequence
                  [(n/create-component m base-color :size 100)
                   (n/make-variant-container vset [["a" base-color] ["b" red]] :size 100)
