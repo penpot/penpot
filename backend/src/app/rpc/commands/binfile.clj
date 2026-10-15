@@ -50,9 +50,10 @@
   (let [output (tmp/tempfile*)]
 
     (try
-      (-> (bfc/export-cfg cfg {:ids #{file-id}
-                               :export-type (bfc/resolve-export-type params)})
-          (bf.v3/export-files! output))
+      (-> (bfc/export-cfg cfg {:file-ids    #{file-id}
+                               :export-type (bfc/resolve-export-type params)
+                               :output      output})
+          (bf.v3/export-files!))
 
       (let [data   (sto/content output)
             object (sto/put-object! storage
