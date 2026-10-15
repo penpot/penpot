@@ -608,9 +608,16 @@
                      new-val (get new attr)
                      changed? (not= old-val new-val)
 
+                     ;; the touched groups are written whole, with the
+                     ;; operation of their own
+                     touched? (= attr :touched)
+
                      rops
                      (cond-> rops
-                       changed?
+                       (and changed? touched?)
+                       (conj {:type :set-touched :touched new-val})
+
+                       (and changed? (not touched?))
                        (conj  {:type :set :attr attr :val new-val
                                :ignore-geometry ignore-geometry?
                                :ignore-touched (if (set? ignore-touched)
@@ -619,7 +626,7 @@
 
                      uops
                      (cond-> uops
-                       changed?
+                       (and changed? (not touched?))
                        (conj  {:type :set :attr attr :val old-val
                                :ignore-touched true}))]
 
@@ -642,10 +649,10 @@
 
                      ;; a touch also clears :remote-synced
                      uops        (cond-> uops
-                                   (seq uops)
+                                   (seq rops)
                                    (conj {:type :set-touched :touched (:touched old-obj)})
 
-                                   (and (seq uops) (:remote-synced old-obj))
+                                   (and (seq rops) (:remote-synced old-obj))
                                    (conj {:type :set-remote-synced :remote-synced true}))
 
                      change      (cond-> {:type :mod-obj :id id}
@@ -898,9 +905,8 @@
                                    {:type :set
                                     :attr :shape-ref
                                     :val (:shape-ref shape)}
-                                   {:type :set
-                                    :attr :touched
-                                    :val (:touched shape)}]})]
+                                   {:type :set-touched
+                                    :touched (:touched shape)}]})]
      (-> changes
          (update :redo-changes
                  (fn [redo-changes]
