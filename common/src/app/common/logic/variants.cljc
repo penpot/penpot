@@ -282,17 +282,14 @@
         second)))
 
 (defn- child-of-swapped?
-  "Check if any ancestor of a shape (between base-parent-id and shape) was swapped"
+  "Check if any head between base-parent-id and the shape, both left out,
+  was swapped"
   [shape objects base-parent-id]
-  (let [ancestors (->> (ctn/get-parent-heads objects shape)
-                       ;; Ignore ancestors ahead of base-parent
-                       (drop-while #(not= base-parent-id (:id %)))
-                       seq)
-        num-ancestors (count ancestors)
-        ;; Ignore first and last (base-parent and shape)
-        ancestors (when (and ancestors (<= 3 num-ancestors))
-                    (subvec (vec ancestors) 1 (dec num-ancestors)))]
-    (some ctk/swapped? ancestors)))
+  (->> (ctn/get-parent-heads objects shape)
+       (drop-while #(not= base-parent-id (:id %)))
+       (rest)
+       (remove #(= (:id shape) (:id %)))
+       (some ctk/swapped?)))
 
 (defn- find-shape-ref-child-of
   "Get the shape referenced by the shape-ref of the near main of the shape,

@@ -15,7 +15,6 @@
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -3197,11 +3196,8 @@
         rect  (copy-child file :copy01)
         file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})]
     (size-is rect 200 100)
-    ;; the variants agree on the size, so the touched size is carried; a
-    ;; fixed sizing takes the new variant's width instead
-    (let [rect' (copy-child file' :copy02)]
-      (tm/known-failure "F61" [200 100] [100 100]
-                        (mapv #(mth/round (get-in rect' [:selrect %])) [:width :height])))))
+    ;; the variants agree on the size, so the touched size is carried
+    (size-is (copy-child file' :copy02) 200 100)))
 
 (t/deftest test-switch-keeps-a-resized-path-of-same-size-variants
   (let [triangle (fn [x0 y0]
@@ -3260,3 +3256,44 @@
     (t/is (= "50" (get-in disagree font-size-path-1)))
     ;; nothing was carried, so nothing is touched
     (t/is (not (contains? (:touched disagree) :content-group)))))
+
+(t/deftest test-switch-keeps-an-override-inside-a-swapped-child
+  ;; both variants nest a copy of :item; the copy swaps it for :other and
+  ;; fills the rect of :other; a keep-touched switch keeps the swap with its
+  ;; override
+  (let [file  (-> (thf/sample-file :file1)
+                  (tho/add-simple-component :item :item-root :item-rect)
+                  (tho/add-simple-component :other :other-root :other-rect)
+                  (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                  (thc/instantiate-component :item :n1 :parent-label :m01)
+                  (thc/instantiate-component :item :n2 :parent-label :m02)
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-n1])
+                  (tho/swap-component-in-shape :copy-n1 :other {:new-shape-label :swapped}))
+        rect  (first (:shapes (ths/get-shape file :swapped)))
+        page  (thf/current-page file)
+        file  (thf/apply-changes file (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) #{rect}
+                                                                  #(assoc % :opacity 0.5) (:objects page) {}))
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        moved (ths/get-shape-by-id file' (thi/id :swapped))]
+    (t/is (= (thi/id :other) (:component-id moved)))
+    (t/is (= 0.5 (:opacity (ths/get-shape-by-id file' (first (:shapes moved))))))))
+
+(t/deftest test-switch-of-a-resized-text-touches-only-its-geometry
+  ;; both variants hold a text, measured differently; the copy resizes its
+  ;; text, then switches keeping its overrides
+  (let [text  (fn [x]
+                {:type :text
+                 :grow-type :fixed
+                 :content (txt/change-text (:content (ths/sample-shape :tmp :type :text)) "hello")
+                 :position-data [{:x x :y 0 :width 30 :height 14 :fills [] :text "hello"}]})
+        file  (-> (thf/sample-file :file1)
+                  (thv/add-variant-with-child :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                                              {:child1-params (text 1) :child2-params (text 2)})
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-r01])
+                  (resize-copy-child :copy01 2 1))
+        ;; the switch moves the labels, so read the copy before it
+        text  (copy-child file :copy01)
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})]
+    (t/is (= #{:geometry-group} (:touched text)))
+    (t/is (= #{:geometry-group} (:touched (copy-child file' :copy02))))))
+
