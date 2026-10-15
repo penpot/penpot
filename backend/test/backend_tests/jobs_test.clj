@@ -1399,7 +1399,9 @@
 
 (t/deftest get-job-decodes-the-result-with-the-schema-of-the-def
   "A result with a declared schema comes back typed. Without it, the plain
-  JSON of the column keywordizes every key and leaves every uuid as text."
+  JSON of the column keywordizes every key and leaves every uuid as text;
+  without the substrate compiling the decoder from that schema, the key of
+  the uuid map comes back as a keyword and this test fails."
   (let [cfg     (make-cfg (get-job-defs))
         job-id  (mk-running cfg :typed)
         file-id (uuid/next)

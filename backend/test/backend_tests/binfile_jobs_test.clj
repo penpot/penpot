@@ -450,7 +450,9 @@
   "The resolution of an import is a map keyed by the new file id, and it
   crosses a plain JSON column: the result schema the job-def declares is
   what keeps the keys and the values as uuids, which is what the dashboard
-  wizard matches against the ids it holds."
+  wizard matches against the ids it holds. Without the decoder the substrate
+  compiles from that schema, the key comes back as a keyword and the entry as
+  text, and this test fails."
   (let [profile (th/create-profile* 1)
         {:keys [library-id output]} (export-link-later-package profile)
 
@@ -487,3 +489,76 @@
           (t/is (= 2 (count (:candidates pending))))
           (t/is (every? (comp uuid? :id) (:candidates pending)))
           (t/is (every? (comp uuid? :project-id) (:candidates pending))))))))
+
+(t/deftest a-package-without-external-libraries-reads-with-an-empty-resolution
+  (let [profile (th/create-profile* 1)
+        staged  (js/put-resource th/*system* (:id profile)
+                                 {:content  (sto/content (fixture-path))
+                                  :filename "package.penpot"
+                                  :mtype    "application/zip"})
+        job-id  (make-job! (:id profile) (:resource-id staged) "import-binfile")
+        result  (jobs/invoke (-> th/*system*
+                                 (assoc ::jobs/name :import-binfile)
+                                 (assoc ::jobs/params {:project-id (:default-project-id profile)
+                                                       :name       "imported"
+                                                       :version    3})
+                                 (assoc ::jobs/context (job-context job-id))))]
+
+    (t/is (= 1 (jobs/complete th/*system* :job-id job-id :result result)))
+
+    (let [stored (:result (jobs/get-job th/*system* job-id))]
+
+      (t/testing "a package without external libraries resolves nothing"
+        (t/is (= {} (:resolution stored))))
+
+      (t/testing "and the file ids come back typed"
+        (t/is (= 1 (count (:file-ids stored))))
+        (t/is (every? uuid? (:file-ids stored)))))))
+
+(t/deftest a-version-1-result-reads-without-a-resolution
+  "A version 1 import answers with the file ids and no resolution: the read
+  path decodes it with the schema of the job-def, which declares the
+  resolution as optional. Without that schema the file ids come back as text."
+  (let [profile (th/create-profile* 1)
+        file-id (uuid/next)
+        job-id  (make-job! (:id profile) nil "import-binfile")]
+
+    (t/is (= 1 (jobs/complete th/*system* :job-id job-id
+                              :result {:file-ids [file-id]
+                                       :name     "imported-v1"
+                                       :version  1})))
+
+    (let [stored (:result (jobs/get-job th/*system* job-id))]
+
+      (t/testing "there is no resolution to decode"
+        (t/is (nil? (:resolution stored))))
+
+      (t/testing "and the file ids come back typed"
+        (t/is (= [file-id] (:file-ids stored)))
+        (t/is (= 1 (:version stored)))))))
+
+(t/deftest a-result-of-a-retired-job-def-reads-as-plain-json
+  "A registry that no longer knows the kind of the row answers with the JSON
+  the column holds, keywordized keys and uuid as text, instead of raising."
+  (let [profile (th/create-profile* 1)
+        file-id (uuid/next)
+        job-id  (make-job! (:id profile) nil "import-binfile")
+        key     (keyword (str file-id))]
+
+    (t/is (= 1 (jobs/complete th/*system* :job-id job-id
+                              :result {:file-ids   [file-id]
+                                       :resolution {file-id {:id      file-id
+                                                             :name    "card.penpot"
+                                                             :done    []
+                                                             :pending []}}
+                                       :name       "imported"
+                                       :version    3})))
+
+    (let [stored (:result (jobs/get-job (assoc th/*system* ::jobs/defs {}) job-id))]
+
+      (t/testing "the resolution comes back as it is on disk"
+        (t/is (= [key] (keys (:resolution stored))))
+        (t/is (= (str file-id) (get-in stored [:resolution key :id]))))
+
+      (t/testing "and so do the file ids"
+        (t/is (= [(str file-id)] (:file-ids stored)))))))
