@@ -15,6 +15,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]
    [app.common.types.text :as txt]
    [clojure.test :as t]))
 
@@ -933,3 +934,47 @@
     (t/is (= "copy text" (:text line)))
     (t/is (= "32" (:font-size line)))
     (t/is (= #{:content-group :text-content-text} (:touched copy-child')))))
+
+(defn- type-letters
+  "The editor's commit of `text` (in the notation of `thtx`) into the text
+   `label`: the content, and the name that follows it, a derived write."
+  [file label text]
+  (let [page    (thf/current-page file)
+        content (thtx/content text)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id label)}
+                                            #(assoc % :content content
+                                                    :name (txt/generate-shape-name (txt/content->text content)))
+                                            (:objects page)
+                                            {:ignore-touched #{:name}})]
+    (thf/apply-changes file changes)))
+
+(defn- sync-component1
+  [file]
+  (thf/apply-changes file (cll/generate-sync-file-changes (pcb/empty-changes) nil :components
+                                                          (:id file) (thi/id :component1) (:id file)
+                                                          {(:id file) file} (:id file))))
+
+(t/deftest the-automatic-name-of-a-copy-text-follows-its-letters
+  (let [file (-> (thf/sample-file :file1)
+                 (thtx/add-text-component-with-copy [[["hello world"]]])
+                 (type-letters :main-child [[["hello world"]]])
+                 (sync-component1))]
+    (t/testing "an untouched copy takes the main's letters and name"
+      (let [file' (-> file (type-letters :main-child [[["main text"]]]) (sync-component1))]
+        (t/is (= "main text" (:name (ths/get-shape file' :copy-child))))
+        (t/is (nil? (:touched (ths/get-shape file' :copy-child))))))
+    (t/testing "a copy that typed its letters keeps the name they give"
+      (let [file' (-> file
+                      (type-letters :copy-child [[["copy text"]]])
+                      (type-letters :main-child [[["main text"]]])
+                      (sync-component1))
+            copy  (ths/get-shape file' :copy-child)]
+        (t/is (= "copy text" (:name copy)))
+        (t/is (= #{:content-group :text-content-text} (:touched copy)))))
+    (t/testing "a main named by hand passes its name on"
+      (let [file' (-> file
+                      (ths/update-shape :main-child :name "Title")
+                      (sync-component1))]
+        (t/is (= "Title" (:name (ths/get-shape file' :copy-child))))))))
+

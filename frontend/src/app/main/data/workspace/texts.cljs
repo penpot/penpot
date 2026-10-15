@@ -297,6 +297,11 @@
             (update :workspace-editor-state dissoc id)
             (update :workspace-new-text-shapes disj id))))))
 
+(def ^:private derived-attrs
+  "The attributes an edit of a text writes that follow its content: its name
+   and the size it grows to."
+  #{:name :selrect :points :x :y :width :height :transform :transform-inverse :position-data})
+
 (defn finalize-editor-state
   [id update-name?]
   (ptk/reify ::finalize-editor-state
@@ -332,7 +337,8 @@
                            (cond-> (some? new-size)
                              (gsh/transform-shape
                               (ctm/change-size shape (:width new-size) (:height new-size))))))
-                     {:undo-group (when new-shape? id)})))))
+                     {:undo-group (when new-shape? id)
+                      :ignore-touched derived-attrs})))))
 
               (let [content (d/merge (ted/export-content content)
                                      (dissoc (:content shape) :children))
@@ -355,7 +361,8 @@
                                (assoc :name name))
                              (cond-> (or (some? width) (some? height))
                                (gsh/transform-shape (ctm/change-size shape width height))))))
-                     {:undo-group (when new-shape? id)}))))))
+                     {:undo-group (when new-shape? id)
+                      :ignore-touched derived-attrs}))))))
 
             (when (some? id)
               (rx/of (dws/deselect-shape id)
@@ -1270,7 +1277,8 @@
         final-shape-fn   (fn [shape] (merge shape final-geom))]
     (-> base
         (pcb/with-objects objects-with-old)
-        (pcb/update-shapes [id] final-shape-fn {:attrs attrs}))))
+        ;; the size a text grows to is derived: it touches nothing
+        (pcb/update-shapes [id] final-shape-fn {:attrs attrs :ignore-touched true}))))
 
 (defn- build-finalize-commit-changes
   "Builds the commit changes for text finalization (content + geometry undo).
@@ -1286,7 +1294,8 @@
                        (pcb/with-objects objects)
                        (pcb/set-text-content id content original-content)
                        (cond-> (and update-name? (some? name) (not= (:name shape*) name))
-                         (pcb/update-shapes [id] (fn [s] (assoc s :name name)) {:attrs [:name]}))
+                         ;; the name follows the content: a derived write
+                         (pcb/update-shapes [id] (fn [s] (assoc s :name name)) {:attrs [:name] :ignore-touched true}))
                        (cond-> new-shape?
                          (-> (pcb/set-undo-group id)
                              (pcb/set-stack-undo? true))))
@@ -1396,12 +1405,19 @@
                        (assoc :name name))))
                {:save-undo? finalize-save-undo-first?
                 :stack-undo? effective-stack-undo?
-                :undo-group (when new-shape? id)})
+                :undo-group (when new-shape? id)
+                ;; the name follows the content: a derived write
+                :ignore-touched #{:name}})
 
               ;; Push the auto-grow geometry to WASM/app state; the commit persists it via `resize-geom`.
               ;; Skipped for a no-op finalize: applying it would record an undo transaction.
+              ;; An existing text's finalize commit holds the undo of that geometry, so this
+              ;; one records none. The size a text grows to is derived: it touches nothing.
               (when (and (some? resize-modifiers) (not finalize-no-op?))
-                (dwm/apply-wasm-modifiers resize-modifiers {:undo-group (when new-shape? id)})))
+                (dwm/apply-wasm-modifiers resize-modifiers
+                                          (if new-shape?
+                                            {:undo-group id :ignore-touched true}
+                                            {:save-undo? false :ignore-touched true}))))
 
              (when finalize?
                (rx/concat
@@ -1457,7 +1473,8 @@
                                            (assoc :name name))
                                          (cond-> (or (some? width) (some? height))
                                            (gsh/transform-shape (ctm/change-size shape width height))))))
-                                 {:undo-group (when new-shape? id)}))))))))
+                                 {:undo-group (when new-shape? id)
+                                  :ignore-touched derived-attrs}))))))))
 
 (defn- editor-content-update
   "Event saving `content` from the WASM editor, renaming the shape after its text."
@@ -1862,7 +1879,8 @@
                        new-name    (txt/generate-shape-name (txt/content->text new-content))]
                    (-> shape (assoc :content new-content) (assoc :name new-name)))
                  shape))
-             {:attrs #{:content :name} :undo-group undo-group})]
+             ;; the name follows the content: a derived write
+             {:attrs #{:content :name} :undo-group undo-group :ignore-touched #{:name}})]
         (rx/concat
          (rx/of update-event)
          (if (features/active-feature? state "render-wasm/v1")

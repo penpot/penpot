@@ -975,6 +975,29 @@
           [[] '()]
           updatable-attrs))
 
+(defn- automatic-name
+  "The name the editors give a text after its `content`, or nil when it has
+  no letters."
+  [content]
+  (let [name (txt/generate-shape-name (txt/content->text content))]
+    (when (not= name "") name)))
+
+(defn- synced-text-name
+  "The name an untouched copy text takes from `origin-shape`, its main: the
+  main's own name, or, when that one follows the main's letters, the name
+  that follows the letters the copy shows after the sync."
+  [dest-shape origin-shape touched omit-touched?]
+  (let [origin-name (:name origin-shape)]
+    (if (and (some? origin-name)
+             (= origin-name (automatic-name (:content origin-shape))))
+      (let [content (if (and omit-touched? (touched :content-group))
+                      (txt/merge-overrides (:content dest-shape)
+                                           (:content origin-shape)
+                                           (txt/text-overrides touched))
+                      (:content origin-shape))]
+        (or (automatic-name content) origin-name))
+      origin-name)))
+
 (defn- sync-attr-operations
   "The `[attr value]` pairs that sync `attr` from `origin-shape`, a main
    shape placed like `dest-shape`, into `dest-shape`, its copy. With
@@ -1007,8 +1030,15 @@
              (= :content attr)
              (touched sync-group))
 
+        ;; the name of a text may follow its letters
+        text-name?
+        (and (cfh/text-shape? origin-shape)
+             (cfh/text-shape? dest-shape)
+             (= :name attr))
+
         skip?
-        (or (= (get origin-shape attr) (get dest-shape attr))
+        (or (and (not text-name?)
+                 (= (get origin-shape attr) (get dest-shape attr)))
             (and (touched sync-group)
                  omit-touched?
                  ;; When it is a text-partial-change, we should generate operations
@@ -1028,6 +1058,9 @@
             (txt/merge-overrides (:content dest-shape)
                                  (:content origin-shape)
                                  (txt/text-overrides touched))
+
+            text-name?
+            (synced-text-name dest-shape origin-shape touched omit-touched?)
 
             :else
             (get origin-shape attr)))]
