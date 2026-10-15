@@ -18,6 +18,7 @@
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.file :as ctf]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
@@ -144,6 +145,24 @@
      (t/is (some? (:synced-at (live-library))))
      (t/is (not= synced-at (:synced-at (live-library))))
      (t/is (= :settled (await (await-sync-status-sent)))))))
+
+(t/deftest ^:async updating-a-library-propagates-the-file-tokens
+  ;; the update of the sync dialog and of the libraries dialog's updates tab
+  (await
+   (mock/with-mocks*
+     {rp/cmd!   rpc-on-subscribe
+      rx/timer  mock/timer-mock}
+     (install-with-library! true)
+     (let [events (atom [])
+           sub    (rx/sub! (->> st/stream
+                                (rx/map ptk/type)
+                                (rx/filter #{::dwl/sync-file ::dwtp/propagate-workspace-tokens}))
+                           #(swap! events conj %))]
+       (t/is (= :settled (await (ftm/await-step [(dwl/update-libraries (:id (ftm/current-file))
+                                                                       [(:id (live-library))])]))))
+       (await (await-until #(= new-color (copy-fill))))
+       (rx/dispose! sub)
+       (t/is (= [::dwl/sync-file ::dwtp/propagate-workspace-tokens] @events))))))
 
 (t/deftest ^:async sync-dialog-dismiss-ignores-the-changes
   (await
