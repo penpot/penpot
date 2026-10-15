@@ -309,6 +309,25 @@
     (t/is (true? (:remote-synced (ths/get-shape file'' :copy-child))))
     (t/is (nil? (:touched (ths/get-shape file'' :copy-child))))))
 
+(t/deftest test-an-update-writes-touched-groups-whole
+  ;; an update that sets the touched groups of a copy shape writes them with
+  ;; the operation of their own, and its undo gives back the ones it had
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root
+                                                        :copy-root-params {:children-labels [:copy-child]}))
+        page    (thf/current-page file)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id :copy-child)}
+                                            #(assoc % :touched #{:shadow-group})
+                                            (:objects page)
+                                            {})
+        ops     (mapcat :operations (:redo-changes changes))
+        file'   (thf/apply-changes file changes)
+        file''  (thf/apply-undo-changes file' changes)]
+    (t/is (= [{:type :set-touched :touched #{:shadow-group}}] ops))
+    (t/is (= #{:shadow-group} (:touched (ths/get-shape file' :copy-child))))
+    (t/is (nil? (:touched (ths/get-shape file'' :copy-child))))))
+
 (t/deftest test-touched-set-by-an-update-then-its-attrs-touch
   ;; an update sets the touched groups of a copy shape and changes an
   ;; attribute: the attribute touches its group on top of them, whatever the
