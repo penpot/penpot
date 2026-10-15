@@ -620,7 +620,8 @@
 
 (defn- renamed-container?
   [container]
-  (not= (:name container) (cpn/clean-path (:name container))))
+  (and (some? container)
+       (not= (:name container) (cpn/clean-path (:name container)))))
 
 (defn- check-variant
   "Shape is a variant, so
