@@ -82,10 +82,8 @@
   grid-column: span 3;
   padding: 0;
 
-  .dropdown-upwards {
-    bottom: deprecated.$s-36;
+  .dropdown {
     width: deprecated.$s-80;
-    top: unset;
   }
 }
 
@@ -93,9 +91,7 @@
   grid-column: span 2;
   padding: 0;
 
-  .dropdown-upwards {
-    bottom: deprecated.$s-36;
-    top: unset;
+  .dropdown {
     width: deprecated.$s-80;
   }
 }
