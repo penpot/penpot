@@ -1167,7 +1167,7 @@
    (rx/of (set-updating-library false)
           (ntf/hide {:tag :sync-dialog}))
    (when (seq (:redo-changes changes))
-     (rx/of (dch/commit-changes changes)))
+     (rx/of (dch/commit-changes (assoc changes :file-id file-id))))
    (when (seq text-ids)
      (rx/of (dwwt/resize-wasm-text-all text-ids {:skip-component-sync? true
                                                  :undo-group undo-group})))
@@ -1258,16 +1258,19 @@
                  libraries       (dsh/lookup-libraries state)
                  current-file-id (:current-file-id state)
 
-                 changes         (-> (cll/generate-sync-file-changes
-                                      (pcb/empty-changes it)
-                                      undo-group
-                                      asset-type
-                                      file-id
-                                      asset-id
-                                      library-id
-                                      libraries
-                                      current-file-id)
-                                     (fix-font-variants))
+                 ;; the components of the file the sync changes are synced
+                 ;; too, until none is left, in one commit
+                 {:keys [changes component-ids]}
+                 (cll/generate-sync-file-cascade (pcb/empty-changes it)
+                                                 undo-group
+                                                 asset-type
+                                                 file-id
+                                                 asset-id
+                                                 library-id
+                                                 libraries
+                                                 current-file-id)
+
+                 changes         (fix-font-variants changes)
 
                  find-frames     (fn [change]
                                    (->> (ch/frames-changed ldata change)
@@ -1298,6 +1301,13 @@
              (rx/concat
               ;; Keep the sync pending until its layout work starts.
               (wrf/with-pending :sync-file pending-ids frontend-sync)
+
+              ;; the copies in the current file of the library components the
+              ;; sync changed follow them
+              (when (not= file-id current-file-id)
+                (->> component-ids
+                     (map #(sync-file current-file-id file-id :components % undo-group))
+                     (rx/from)))
 
               (when (not= file-id library-id)
                 (let [stopper-s     (rx/filter (ptk/type? ::dw/finalize-workspace) stream)

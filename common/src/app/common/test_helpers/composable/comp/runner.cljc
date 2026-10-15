@@ -11,7 +11,7 @@
 
      - Sync. After a user operation (kind `:user`, see
        `n/IComponentOperation`), it syncs each component that
-       `ch/components-changed` reports, then the components each sync changed,
+       `cll/changed-components` reports, then the components each sync changed,
        until none is left. The frontend component watcher does the same, one
        pass per sync commit.
      - Undo and redo. A user operation and the syncs it caused form one undo
@@ -31,7 +31,6 @@
    and the frontend follow-ups of a swap or switch (token propagation, WASM
    text resize, layout update)."
   (:require
-   [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.libraries :as cll]
    [app.common.test-helpers.composable.comp.nodes :as n]
@@ -42,16 +41,10 @@
 (def ^:private default-opts
   {:sync? true})
 
-;; A guard against a sync cascade that never settles.
-(def ^:private max-sync-passes 100)
-
-(defn changed-components
+(def changed-components
   "Ids of the components whose main `changes` modified, judged against
    `old-data`, the file data before `changes` applied."
-  [old-data changes]
-  (into #{}
-        (mapcat (partial ch/components-changed old-data))
-        (:redo-changes changes)))
+  cll/changed-components)
 
 (defn- libraries
   "The situation's files by id, with `file` as its current file."
@@ -69,44 +62,22 @@
     situation))
 
 (defn sync-cascade
-  "Sync the copies of `component-ids` in `file`, then those of the components
-   each sync changed, until none is left, as the frontend `sync-file` event
-   builds the changes for a local component; the frontend watcher runs one
-   pass per sync commit. `libraries` are the other files by id. Returns
-   `{:file :syncs :passes}`, with `syncs` the sync changes that changed
-   something, in order."
+  "Sync the copies of `component-ids` in `file`, then those of the
+   components each sync changed, until none is left, as the frontend
+   `sync-file` event does (`cll/generate-sync-components-cascade`).
+   `libraries` are the other files by id. Returns `{:file :syncs
+   :passes}`, with `syncs` the sync changes, if they changed something."
   [file libraries component-ids]
-  (loop [file    file
-         pending (vec component-ids)
-         syncs   []
-         passes  0]
-    (cond
-      (empty? pending)
-      {:file file :syncs syncs :passes passes}
-
-      (>= passes max-sync-passes)
-      (throw (ex-info "Component sync did not settle"
-                      {:type ::sync-not-settled
-                       :pending pending
-                       :passes passes}))
-
-      :else
-      (let [file-id (:id file)
-            sync    (cll/generate-sync-file-changes (pcb/empty-changes)
-                                                    nil
-                                                    :components
-                                                    file-id
-                                                    (first pending)
-                                                    file-id
-                                                    (assoc libraries file-id file)
-                                                    file-id)
-            file'   (thf/apply-changes file sync :validate? false)
-            more    (->> (changed-components (:data file) sync)
-                         (remove (set pending)))]
-        (recur file'
-               (into (subvec pending 1) more)
-               (cond-> syncs (seq (:redo-changes sync)) (conj sync))
-               (inc passes))))))
+  (let [file-id (:id file)
+        {:keys [changes data passes]}
+        (cll/generate-sync-components-cascade (pcb/empty-changes)
+                                              file-id
+                                              component-ids
+                                              (assoc libraries file-id file)
+                                              file-id)]
+    {:file   (assoc file :data data)
+     :syncs  (if (seq (:redo-changes changes)) [changes] [])
+     :passes passes}))
 
 (defn- sync-file
   "Sync `situation`'s file, starting from the components that `changes`
