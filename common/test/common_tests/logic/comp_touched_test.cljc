@@ -289,3 +289,46 @@
     (t/is (= (:fill-opacity fill') 1))
     (t/is (= (:touched copy2-root') nil))
     (t/is (= (:touched copy2-child') #{:fill-group}))))
+
+(t/deftest test-undo-of-a-touch-gives-back-remote-synced
+  ;; a copy shape synced from a remote main (after a reset below the copy
+  ;; root, say) loses :remote-synced when it is touched
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root
+                                                        :copy-root-params {:children-labels [:copy-child]})
+                    (ths/update-shape :copy-child :remote-synced true))
+        page    (thf/current-page file)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id :copy-child)}
+                                            #(assoc % :opacity 0.5)
+                                            (:objects page)
+                                            {})
+        file'   (thf/apply-changes file changes)
+        file''  (thf/apply-undo-changes file' changes)]
+    (t/is (nil? (:remote-synced (ths/get-shape file' :copy-child))))
+    (t/is (true? (:remote-synced (ths/get-shape file'' :copy-child))))
+    (t/is (nil? (:touched (ths/get-shape file'' :copy-child))))))
+
+(t/deftest test-touched-set-by-an-update-then-its-attrs-touch
+  ;; an update sets the touched groups of a copy shape and changes an
+  ;; attribute: the attribute touches its group on top of them, whatever the
+  ;; order of the shape's keys
+  (doseq [[attr value group] [[:fills (ths/sample-fills-color :fill-color "#ff0000") :fill-group]
+                              [:opacity 0.5 :layer-effects-group]
+                              [:strokes [{:stroke-color "#ff0000" :stroke-opacity 1 :stroke-width 2}] :stroke-group]
+                              [:hidden true :visibility-group]
+                              [:blocked true :modifiable-group]
+                              [:r1 5 :radius-group]
+                              [:name "Renamed" :name-group]]]
+    (let [file    (-> (thf/sample-file :file1)
+                      (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root
+                                                          :copy-root-params {:children-labels [:copy-child]}))
+          page    (thf/current-page file)
+          changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              #{(thi/id :copy-child)}
+                                              #(assoc % attr value :touched #{:shadow-group})
+                                              (:objects page)
+                                              {})
+          file'   (thf/apply-changes file changes)]
+      (t/is (= #{:shadow-group group} (:touched (ths/get-shape file' :copy-child))) (name attr)))))
+

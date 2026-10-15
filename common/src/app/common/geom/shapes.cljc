@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
@@ -16,7 +17,8 @@
    [app.common.geom.shapes.fit-frame :as gsff]
    [app.common.geom.shapes.intersect :as gsi]
    [app.common.geom.shapes.transforms :as gtr]
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.common.types.path :as path]))
 
 ;; --- Outer Rect
 
@@ -144,6 +146,31 @@
        (every? #(and (close-val? (:x (first %)) (:x (second %)))
                      (close-val? (:y (first %)) (:y (second %))))
                (d/zip val1 val2))
+
+       ;; a matrix holds scale and rotation terms, so it is compared with a
+       ;; precision of its own
+       (and (or (= attr :transform) (= attr :transform-inverse))
+            (or (nil? val1) (gmt/matrix? val1))
+            (or (nil? val2) (gmt/matrix? val2)))
+       (gmt/close? (or val1 (gmt/matrix)) (or val2 (gmt/matrix)))
+
+       (and (= attr :content) (path/content? val1) (path/content? val2))
+       (let [segments1 (vec val1)
+             segments2 (vec val2)
+             close-params?
+             (fn [params1 params2]
+               (and (= (set (keys params1)) (set (keys params2)))
+                    (every? (fn [[k v]]
+                              (let [other (get params2 k)]
+                                (if (and (number? v) (number? other))
+                                  (close-val? v other)
+                                  (= v other))))
+                            params1)))]
+         (and (= (count segments1) (count segments2))
+              (every? (fn [[s1 s2]]
+                        (and (= (:command s1) (:command s2))
+                             (close-params? (:params s1) (:params s2))))
+                      (d/zip segments1 segments2))))
 
        :else
        (= val1 val2)))))

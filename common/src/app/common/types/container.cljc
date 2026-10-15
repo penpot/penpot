@@ -606,8 +606,9 @@
 (defn set-shape-attr
   "Assign attribute to shape with touched logic.
 
-  The returned shape will contain a metadata associated with it
-  indicating if shape is touched or not."
+  The returned shape carries in its metadata (`::touched`) whether this or
+  an earlier attribute set on it changed something component sync reads;
+  `:position-data`, re-measured from the content, never does."
   [shape attr val & {:keys [ignore-touched ignore-geometry]}]
   (let [type      (get shape :type)
         group     (ctk/resolve-sync-group type attr)
@@ -643,6 +644,7 @@
         touched?
         (and group
              (not equal?)
+             (not= attr :position-data)
              (not (and ignore-geometry is-geometry?)))
 
         ;; Depending on the origin of the attribute change, we need or not to
@@ -686,4 +688,4 @@
       (assoc attr val)
 
       :always
-      (vary-meta assoc ::touched touched?))))
+      (vary-meta update ::touched #(or % touched?)))))
