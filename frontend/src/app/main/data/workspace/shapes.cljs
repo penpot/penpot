@@ -17,6 +17,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
    [app.main.data.event :as ev]
@@ -263,8 +264,12 @@
                {:keys [layout-ids text-ids]}
                (wrfs/reflow-ids state page-id objects changed-objects ids props)
 
+               ;; the reflow joins the undo group of this commit
                changes
-               (add-undo-group changes state)]
+               (let [changes (add-undo-group changes state)]
+                 (cond-> changes
+                   (and layout-ids (nil? (:undo-group changes)))
+                   (pcb/set-undo-group (uuid/next))))]
 
            (rx/concat
             ;; Announces the texts still to be re-measured, so a reflow wait
@@ -281,7 +286,8 @@
 
             ;; Update layouts for properties marked
             (if layout-ids
-              (rx/of (ptk/data-event :layout/update {:ids layout-ids}))
+              (rx/of (ptk/data-event :layout/update {:ids layout-ids
+                                                     :undo-group (:undo-group changes)}))
               (rx/empty)))))))))
 
 (defn add-shape

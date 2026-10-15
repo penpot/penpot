@@ -625,18 +625,16 @@
   "Case AJ (frontend only). A component nested two levels deep, with the
    minimal frame size, has a copy; its remote main changes the rect, then one
    undo runs. The transform math rewrites the minimal nested frames with float
-   noise, so the sync of the change reflows them, and the reflow commits land
-   in undo entries of their own (F43). One undo should revert the change and
-   its sync; it reverts only the last reflow entry, so the remote rect keeps
-   the change. How many entries the reflow makes depends on when its 100 ms
-   buffer flushes, so the case checks the value one undo leaves, never the
-   undo stack."
+   noise, so the sync of the change reflows them. The reflow joins the undo
+   group of the change, so one undo reverts the change, its sync and the
+   reflow: the remote rect is back to red. How many entries the reflow makes
+   depends on when its 100 ms buffer flushes, so the case checks the value
+   one undo leaves, never the undo stack."
   []
   (let [m      "main"
         remote (n/remote-rect-of m)]
     {:setup      setup/empty-situation
-     ;; the round trip's signature depends on when the reflow buffer flushes
-     :undo-check {:off "the case undoes its own step (F43)"}
+     :undo-check {:off "the case undoes its own step"}
      :operation  (tm/in-sequence
                   [(n/create-component m red)
                    (n/make-nested-component m)
@@ -645,8 +643,7 @@
                    (n/change-property remote :fills blue)
                    (n/undo)])
      :asserter   (fn [s]
-                   (tm/known-failure "F43" red blue
-                                     (fill-color (tm/shape-by-id s (remote s)))))}))
+                   (t/is (= red (fill-color (tm/shape-by-id s (remote s))))))}))
 
 (defn text-override-merges-with-main-text-change
   "Case Y. A main text changes its characters or its font size; before that,
@@ -1085,17 +1082,6 @@
         update-main (n/update-main :copy-root)
         follow-up   (tm/one-of [main-change reset update-main])]
     {:setup      setup/flex-component-with-copy
-     ;; the reflow after the sync of the main's margin lands in undo entries
-     ;; of its own, so one undo leaves the margin and the reflow in place
-     :undo-check {:known-failures [{:bug     "F43"
-                                    :fails   {:undo       #{[:object :main-child :layout-item-margin]
-                                                            [:object :main-child :layout-item-margin-type]
-                                                            [:object :main-child :x]
-                                                            [:object :main-child :selrect]
-                                                            [:object :main-child :points]}
-                                              :undo-index #{[:undo-index 2]}}
-                                    :op      main-change
-                                    :runners #{:frontend}}]}
      :operation  (tm/in-sequence [override follow-up])
      :asserter   (fn [s]
                    (let [copy    (tm/role-shape s :copy-instance)
