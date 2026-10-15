@@ -5288,6 +5288,10 @@ msgstr "Select previous layer"
 msgid "shortcuts.separate-nodes"
 msgstr "Separate nodes"
 
+#: src/app/main/data/viewer/shortcuts.cljs:76
+msgid "shortcuts.show-chrome"
+msgstr "Show interface"
+
 #: src/app/main/data/workspace/shortcuts.cljs:167
 msgid "shortcuts.show-measure"
 msgstr "Show measurements"
@@ -5388,6 +5392,10 @@ msgstr "Toggle dynamic alignment"
 #: src/app/main/data/workspace/shortcuts.cljs:646
 msgid "shortcuts.toggle-assets"
 msgstr "Toggle assets"
+
+#: src/app/main/data/viewer/shortcuts.cljs:69
+msgid "shortcuts.toggle-chrome-hidden"
+msgstr "Toggle interface"
 
 #: src/app/main/data/workspace/shortcuts.cljs:661
 msgid "shortcuts.toggle-colorpalette"
@@ -6045,6 +6053,10 @@ msgstr "Don't show interactions"
 msgid "viewer.header.fullscreen"
 msgstr "Full Screen"
 
+#: src/app/main/ui/viewer/header.cljs:114
+msgid "viewer.header.hide-interface"
+msgstr "Hide interface"
+
 #: src/app/main/ui/viewer/header.cljs:350
 msgid "viewer.header.inspect-section"
 msgstr "Inspect (%s)"
@@ -6069,9 +6081,17 @@ msgstr "Show interactions"
 msgid "viewer.header.show-interactions-on-click"
 msgstr "Show interactions on click"
 
+#: src/app/main/ui/viewer/header.cljs:152
+msgid "viewer.header.show-interface"
+msgstr "Show interface"
+
 #: src/app/main/ui/viewer/header.cljs:236
 msgid "viewer.header.sitemap"
 msgstr "Sitemap"
+
+#: src/app/main/data/viewer.cljs:508
+msgid "viewer.interface-hidden-hint"
+msgstr "Interface hidden. Press Escape to show it again."
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
 msgid "webgl.modals.webgl-unavailable.cta-dashboard"
