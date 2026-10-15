@@ -164,3 +164,27 @@ test.describe("Palette", () => {
     ).toBeVisible();
   });
 });
+
+test.describe("Selected colors", () => {
+  test("Shows the more colors button", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await page.keyboard.press("Control+A");
+
+    await expect(
+      workspace.rightSidebar.getByRole("button", { name: "More colors" }),
+    ).toBeVisible();
+    // The button is a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
