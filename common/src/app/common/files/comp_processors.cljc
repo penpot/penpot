@@ -74,12 +74,10 @@
 
 (defn- find-next-related-swap-shape-id
   "Go up from the chain of references shapes that will eventually lead to the shape
-   with swap-slot-id as id. Returns the next shape on the chain"
-  [parent swap-slot-id libraries]
-  (let [container         (ctf/get-component-container-from-head parent libraries)
-        objects           (:objects container)
-
-        children          (cfh/get-children objects (:id parent))
+   with swap-slot-id as id. Returns the next shape on the chain. `container`
+   holds `parent`."
+  [parent container swap-slot-id libraries]
+  (let [children          (cfh/get-children (:objects container) (:id parent))
         original-shape-id (->> children
                                (filter #(= swap-slot-id (:id %)))
                                first
@@ -88,11 +86,14 @@
       ;; Return the children which id is the swap-slot-id
       original-shape-id
       ;; No children with swap-slot-id as id, go up
-      (let [referenced-shape (ctf/find-ref-shape nil container libraries parent)
+      (let [referenced-shape (ctf/find-ref-shape nil container libraries parent :with-context? true)
             ;; Recursive call that will get the id of the next shape on
             ;; the chain that ends on a shape with swap-slot-id as id
             next-shape-id    (when referenced-shape
-                               (find-next-related-swap-shape-id referenced-shape swap-slot-id libraries))]
+                               (find-next-related-swap-shape-id referenced-shape
+                                                                (:container (meta referenced-shape))
+                                                                swap-slot-id
+                                                                libraries))]
         ;; Return the children which shape-ref points to the next-shape-id
         (->> children
              (filter #(= next-shape-id (:shape-ref %)))
@@ -108,10 +109,10 @@
 
         parent      (get objects (:parent-id shape))
         parent-head (ctn/get-head-shape objects parent)
-        parent-ref  (ctf/find-ref-shape nil container libraries parent-head)]
+        parent-ref  (ctf/find-ref-shape nil container libraries parent-head :with-context? true)]
 
     (when (and swap-slot parent-ref)
-      (find-next-related-swap-shape-id parent-ref swap-slot libraries))))
+      (find-next-related-swap-shape-id parent-ref (:container (meta parent-ref)) swap-slot libraries))))
 
 ;; ---- Repairs
 
@@ -416,6 +417,18 @@
   [shape]
   (boolean (some legacy-text-groups (:touched shape))))
 
+(defn- content-group-alone?
+  "Whether the copy text `shape` has `:content-group` touched with no text
+  override group, as files older than the text override groups mark a copy
+  text whose content changed in any way."
+  [shape]
+  (let [touched (:touched shape)]
+    (and (cfh/text-shape? shape)
+         (ctk/in-component-copy? shape)
+         (contains? touched :content-group)
+         (not-any? cttx/text-groups touched)
+         (not-any? legacy-text-groups touched))))
+
 (defn recompute-text-touched
   "The touched groups of a copy text `shape` that holds the text override
   groups of files older than the feature components/text-overrides, given
@@ -424,9 +437,10 @@
   when `ref` is nil. A shape that is not a copy keeps none."
   [shape ref]
   (let [touched (:touched shape)
-        allowed (if (ctk/in-component-copy? shape)
-                  (cttx/text-overrides touched)
-                  #{})
+        allowed (cond
+                  (not (ctk/in-component-copy? shape)) #{}
+                  (content-group-alone? shape)         cttx/text-groups
+                  :else                                (cttx/text-overrides touched))
         groups  (if (some? ref)
                   (set/intersection allowed (cttx/override-groups (:content ref) (:content shape)))
                   allowed)]
@@ -439,9 +453,10 @@
   Files older than the feature components/text-overrides mark a copy text
   with `:text-content-attribute` (any style) and `:text-content-structure`
   (the number of paragraphs or runs); now it holds `:text-content-text` and
-  one group per style unit (`cttx/style-units`). Each copy text with the
-  old groups is compared with its near main, and takes the groups the old
-  ones allowed where it differs. When the near main cannot be reached it
+  one group per style unit (`cttx/style-units`). Older files still mark it
+  with `:content-group` alone, which allows every group. Each copy text with
+  the old groups is compared with its near main, and takes the groups the
+  old ones allowed where it differs. When the near main cannot be reached it
   takes every group they allowed, so that it loses no override; with
   `*defer-unreachable*` it is left, and the data carries
   `::deferred-texts` in its metadata."
@@ -452,7 +467,7 @@
         convert-container
         (fn [container]
           (reduce (fn [container shape]
-                    (if-not (legacy-text-touched? shape)
+                    (if-not (or (legacy-text-touched? shape) (content-group-alone? shape))
                       container
                       (let [ref (when (ctk/in-component-copy? shape)
                                   (ctf/find-ref-shape file container libraries shape
