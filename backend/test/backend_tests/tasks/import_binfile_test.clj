@@ -9,6 +9,7 @@
   it leaves behind when it fails."
   (:require
    [app.binfile.common :as bfc]
+   [app.binfile.jobs :as bfj]
    [app.binfile.v1 :as v1]
    [app.binfile.v3 :as v3]
    [app.common.time :as ct]
@@ -252,3 +253,31 @@
 
       (t/testing "and the broken package is released too"
         (t/is (some? (:deleted-at (input-row (:resource-id broken)))))))))
+
+(t/deftest a-result-that-does-not-conform-leaves-nothing-behind
+  (let [profile    (th/create-profile* 1)
+        project-id (:default-project-id profile)
+        staged     (stage-package! profile (fixture-path))
+        job-id     (make-job! (:id profile) (:resource-id staged))
+        before     (project-files project-id)]
+
+    ;; the core does its work inside the transaction and answers with a result
+    ;; the schema of the task does not accept: the check runs before the
+    ;; transaction commits, so the work is rolled back with it
+    (with-redefs [bfj/import-files
+                  (fn [tx-cfg _context _params]
+                    (th/create-file* tx-cfg 7 {:profile-id (:id profile)
+                                               :project-id project-id
+                                               :is-shared  false
+                                               :name       "half imported"})
+                    {:file-ids   [(uuid/next)]
+                     :resolution "not-a-map"})]
+
+      (t/testing "the handler refuses the result"
+        (t/is (thrown-with-msg? Exception #"invalid result of an import job"
+                                (run-import job-id {:project-id project-id
+                                                    :name       "imported"
+                                                    :version    3}))))
+
+      (t/testing "and the import is rolled back: the destination keeps no files"
+        (t/is (= before (project-files project-id)))))))

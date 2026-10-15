@@ -106,7 +106,11 @@
   The edition permission is checked again here, and not only when the job
   was created: it can be revoked while the job waits in its queue. The
   core runs inside a transaction, so a cancellation detected between units
-  rolls the whole import back.
+  rolls the whole import back, and the result is checked against its schema
+  inside that same transaction: a result the contract does not accept rolls
+  the import back instead of leaving half of a file imported. The substrate
+  checks the result again when the job is completed, which is the only net
+  for a job that does not validate its own result.
 
   The package is the input of the job: it is released and its temporary
   copy deleted once the job is terminal, whatever the outcome. A crash is
@@ -132,17 +136,18 @@
                                  ;; the core joins this transaction: it
                                  ;; is the one that decides whether the
                                  ;; whole import is kept or rolled back
-                                 (bfj/import-files tx-cfg context
-                                                   {:profile-id profile-id
-                                                    :project-id project-id
-                                                    :team       team
-                                                    :name       (:name params)
-                                                    :input      input
-                                                    :version    (:version params)})))]
+                                 (check-result
+                                  (assoc (bfj/import-files tx-cfg context
+                                                           {:profile-id profile-id
+                                                            :project-id project-id
+                                                            :team       team
+                                                            :name       (:name params)
+                                                            :input      input
+                                                            :version    (:version params)})
+                                         :name    (:name params)
+                                         :version (:version params)))))]
 
-        (check-result (assoc result
-                             :name (:name params)
-                             :version (:version params))))
+        result)
 
       (finally
         (fs/delete input)
