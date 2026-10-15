@@ -966,3 +966,25 @@
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the second save turns the guard off"))
        (t/is (empty? (get-in @store [:persistence :queue])))))))
+
+;; Scenario: a save fails terminally, then recovery releases the edit. The
+;; guard stays on while the failed edit is retained, and turns off once it
+;; is released. Proves: a release that empties the queue also turns the
+;; leave-page warning off.
+(t/deftest ^:async releasing-a-failed-edit-turns-the-leave-page-guard-off
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store tasks]}]
+       (ptk/emit! store (local-commit file-id)
+                  #(assoc-in % [:permissions :can-edit] false)
+                  ::dps/force-persist)
+       (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                              "the save fails terminally"))
+       (await (async/settle))
+       (t/is (contains? @tasks :persistence) "the retained edit keeps the guard on")
+       (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+       (await (async/wait-for #(empty? (get-in @store [:persistence :queue]))
+                              "recovery releases the edit"))
+       (await (async/wait-for #(not (contains? @tasks :persistence))
+                              "the release turns the guard off"))
+       (t/is (= :saved (get-in @store [:persistence :status])))))))

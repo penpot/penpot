@@ -799,14 +799,16 @@
               (rx/take-until stoper-s))
 
          ;; Syncs the leave-page warning on every local commit and on every
-         ;; queue change (append after a flush, discard after a save).
+         ;; queue change (append after a flush, discard after a save,
+         ;; release of a failed file).
          (->> (rx/merge
                (rx/of false)
                (->> local-commits-s
                     (rx/map (fn [_] (vreset! buffered? true))))
                (->> stream
                     (rx/filter #(or (ptk/type? ::append-commit %)
-                                    (ptk/type? ::discard-commit %)))
+                                    (ptk/type? ::discard-commit %)
+                                    (ptk/type? ::release-failed-file %)))
                     (rx/map (fn [_] @buffered?))))
               (rx/map sync-unload-guard)
               (rx/take-until stoper-s))
