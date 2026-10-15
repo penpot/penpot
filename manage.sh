@@ -239,10 +239,12 @@ function infra-compose {
 function instance-compose {
     local instance="$1"; shift
     local source_path
+    # Resolved, so the container sees the host path that agents use: the MCP
+    # server translates host paths under it (PENPOT_SOURCE_PATH).
     if [[ "$instance" == "ws0" ]]; then
-        source_path="$PWD"
+        source_path="$(realpath -m "$PWD")"
     else
-        source_path="$(workspace-path "$instance")"
+        source_path="$(realpath -m "$(workspace-path "$instance")")"
     fi
 
     # Per-instance overrides apply to all workspaces uniformly.
