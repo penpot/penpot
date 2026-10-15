@@ -1470,15 +1470,22 @@
   (ptk/reify ::v3-sync-text-layout
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shape   (get objects id)]
-        (if (and (cfh/text-shape? shape)
-                 (not= :fixed (:grow-type shape))
-                 (ctl/any-layout-descent? objects shape)
-                 (not (ctl/position-absolute? (layout-item objects shape))))
-          (if-let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
-            (rx/of (dwm/set-wasm-modifiers modifiers))
-            (rx/empty))
+      (let [objects  (dsh/lookup-page-objects state)
+            shape    (get objects id)
+            preview? (and (cfh/text-shape? shape)
+                          (not= :fixed (:grow-type shape))
+                          (ctl/any-layout-descent? objects shape)
+                          (not (ctl/position-absolute? (layout-item objects shape))))
+            size     (when preview?
+                       (dwwt/get-wasm-text-new-size shape))
+            previous (or (get-in state [::layout-preview id])
+                         (select-keys (:selrect shape) [:width :height]))]
+        ;; Modifiers are costly, so skip keystrokes that keep the size.
+        (if (and (some? size)
+                 (not (and (mth/close? (:width size) (:width previous))
+                           (mth/close? (:height size) (:height previous)))))
+          (rx/of #(assoc-in % [::layout-preview id] size)
+                 (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers shape)))
           (rx/empty))))))
 
 (defn v3-update-editor-content
