@@ -44,7 +44,7 @@ Rule of thumb: if you need to know for sure "did this user do X?", look at `sour
 
 ## 3. The `audit_log` table: a buffer, not a store
 
-The Penpot `audit_log` table **is not the final destination**. It is a waiting tray: events sit here until the archive cron sends them to Nexus and the cleanup cron (GC) deletes them.
+The Penpot `audit_log` table **is not the final destination**. It is a waiting tray: events sit here until every active archiver (Nexus, Nitrate) confirms them, and whoever finishes last deletes the row.
 
 Main columns (migration `backend/src/app/migrations/sql/0054-add-audit-log-table.sql` and later ones):
 
@@ -56,15 +56,16 @@ Main columns (migration `backend/src/app/migrations/sql/0054-add-audit-log-table
 - `source` text: `backend` / `frontend` for full rows, `telemetry:backend` / `telemetry:frontend` for anonymized copies (see section 10).
 - `ip_addr` inet: real IP (or `0.0.0.0` on telemetry rows).
 - `props` / `context` jsonb holding transit-encoded maps: action data and metadata (versions, browser, request-id...).
-- `archived_at` timestamptz: NULL until Nexus confirms receipt; only then the row can be deleted.
+- No `archived_at`: the `audit_log_pending` queue (migration `0157`, archiver `1` = Nexus, `2` = Nitrate, ids never reused) tracks what is left. Every record is born pending only for the archivers enabled at insert time (never a fixed both): cheaper on single-archiver hosts and true to the design doc. Consequence, accepted on purpose: rows born with no send flag on get no pendings, so enabling archiving later does not pick them up — the sweep deletes them unarchived.
 
 Indexes (each consumer has its own, so a slow consumer never blocks the others):
 
-- Partial `created_at WHERE archived_at IS NULL`: used by the archive scan.
-- Partial `archived_at WHERE archived_at IS NOT NULL`: used by the GC.
+- `audit_log_pending` PK `(archiver, audit_log_id)`: each archiver owns its queue at constant cost, even with millions pending.
+- `audit_log (created_at, id)` (migration `0157`): the chronological drain order (`ORDER BY created_at ASC, id ASC`; same total order for both archivers, so concurrent drains cannot deadlock).
+- `audit_log_pending (audit_log_id)`: serves the "is anything still pending?" check of the final delete.
 - `(source, created_at)`: used by the telemetry scan.
 
-Life of a row: `INSERT` → (every 5 min) archive sets `archived_at = now()` **only if Nexus answers 204**, in the same transaction → (every 5 min) GC runs `DELETE WHERE archived_at IS NOT NULL` **with no age filter**. So archive must run before GC, or data is deleted without being sent.
+Life of a row: `INSERT` (row plus one pending per enabled archiver, same transaction; a rollback takes both) → (every 5 min) each archive job sends its own 128-row batches oldest-first and deletes its pendings in the same transaction → whoever deletes the last pending deletes the row. A batch the destination refuses rolls back and stays for the next tick. Pendings of archivers that are off are reaped at the start of each job run (covers later deactivations), and orphan rows are swept at the end of each run, so there is no separate GC task. The FK is plain `DEFERRABLE` (never `INITIALLY DEFERRED`): every deleter removes pendings before rows, including the telemetry task's own deletes.
 
 ## 4. Anatomy of an event
 
@@ -271,17 +272,19 @@ Nexus dispatches on `:type`: `"telemetry-events"` batches are coerced and insert
 - **No personal data is expected.** Profile ids are random UUIDs with no PII, so the telemetry consumer needs no login guard; grouping is by `instance`, not by person (see posthog-telemetry below).
 - **The endpoint always answers 200.** Failures are swallowed and only counted (`nexus_telemetry_errors_total`), so a bad batch never breaks the sending instance; successes are counted (`nexus_telemetry_events_total`, `nexus_telemetry_reports_total`). A body the parser cannot read never reaches the handler: it answers 400 and counts in `nexus_http_malformed_requests_total`. Old instances may send a fressian+zstd base64 blob instead of a plain vector; Nexus decodes both (50 MiB cap against decompression bombs).
 
-## 12. Archive to Nexus (today) and to Nitrate (future)
+## 12. Archive to Nexus and to Nitrate
 
-### Nexus: how it works today
+### How it works today
 
-Nexus is the long-term store. Every 5 min the `:audit-log-archive` cron takes 128-row chunks of unarchived rows (`FOR UPDATE SKIP LOCKED`, ordered by `created_at`), POSTs them as transit `{:events [...]}` with `x-shared-key: "nexus <key>"` (`:nexus-shared-key`, or derived from the instance secret) and `origin` = public-uri, and marks `archived_at = now()` **only on HTTP 204**, in the same transaction. Anything else is retried next run; flag on but no URI raises `:task-not-configured`. It loops with 100 ms pauses until empty.
+Every 5 min each archive job drains its own queue (`:audit-log-archive-nexus` on flag `:nexus`, `:audit-log-archive-nitrate` on flag `:admin-console`, each with its own cron entry), in 128-row chunks taken oldest-first (`ORDER BY created_at ASC, id ASC`) with `FOR UPDATE OF audit_log` (`SET LOCAL lock_timeout = '30s'`) inside the same transaction that sends and completes them, with 100 ms pauses between chunks. Batches arrive at Nexus in chronological order (it numbers by arrival for order-sensitive consumers). Nexus receives transit `{:events [...]}` with `x-shared-key: "nexus <key>"` (`:nexus-shared-key`, or derived from the instance secret) and `origin` = public-uri; flag on but no URI raises `:task-not-configured`. Nitrate receives only its allowlist of event names (enriched with team names and emails); anything filtered out counts as done for the Nitrate queue. A chunk whose destination refuses it (Nexus non-204 raises `:archive-chunk-refused`) or throws (transport failure, Nitrate error) rolls back and stays for the next tick, and the job aborts as failed: it archives what it can, and the cron retries the rest. Committed chunks stay sent. The send fns return counts or throw carrying the attempted count as `:events`; `run-single-archiver` records the `failed` metric from it, outside every chunk transaction (a local DB failure carries no `:events` and stays uncounted — it is not a destination failure). No `warn` before the throw: the runner reports the aborted job. Each job touches only its own queue, so a fallen Nexus never starves Nitrate (nor vice versa).
 
 A chunk is **one POST** and the task advances only on 204, so a single oversized event wedges the whole queue: a crash report whose message embeds a whole payload (a serialized file, for example) can push the request past the proxy body limit and the rejection blocks every later event until it is pruned by hand. Frontend crash reports are therefore size-bounded at the source (`mem:frontend/routing-app-shell-subtleties`): `app.common.exceptions/get-hint` and the CLJS `format-throwable` clamp exception messages (`max-message-length`).
 
 On the other side, Nexus checks `origin` against its allowlist (403 if not allowed), coerces the events, and inserts them into its own `audit_log` (partitioned by `received_at`, with an incrementing sequence number and `source`). Watch the rename: Penpot's `created-at` is stored as **`received-at`** in Nexus; Nexus's `created-at` is when it was created there. `tracked-at` keeps the origin time. Telemetry batches arriving at `telemetry.penpot.app` land in the same table through the telemetry endpoint above.
 
-Concurrent runs are safe: rows are locked with `FOR UPDATE SKIP LOCKED` inside the same transaction that sends and marks them, so two archivers running at once each take different rows. Only rows Nexus acknowledges (HTTP 204) get marked; anything else is retried on the next run.
+Concurrent jobs are safe: both lock rows in `created_at ASC, id ASC` order (one total order, deliberately blocking — no `SKIP LOCKED`, so archive arrival stays chronological), so the second waits for the first to commit and then sees whether it was last. Only acknowledged work deletes pendings; a Nitrate failure never blocks the Nexus send of the same rows (each job owns its queue).
+
+Observability (`backend/src/app/loggers/audit/archive_task.clj`, definitions in `backend/src/app/main.clj:default-metrics`): one `dbg` summary per job run (`:archiver` label, sent/skipped/chunks, reaped disabled pendings, swept orphans, `:elapsed` as `"1.5s"` via `ct/format-duration`, frozen in a strict binding first because log props evaluate lazily in the logger thread), plus `dbg` when the queue is empty or the job's send flag is off. Queue depth is Grafana's business: it queries the database directly, so the run performs no `GROUP BY` for the logs. No `warn` before a throw: the runner reports the aborted job (refusal details travel in the error data). Metrics, all recorded with bounded labels only: `penpot_audit_archive_events_total{ destination = nexus|nitrate, outcome = archived|failed|skipped }` (`skipped` = filtered by the Nitrate allowlist) and `penpot_audit_archive_discarded_total{ reason = reaped|swept }` (entries discarded without archiving: `reaped` counts pendings dropped for disabled archivers, `swept` counts rows deleted while nobody waited for them — the silent R3 loss, now dashboard-visible instead of log-only). Timing needs no custom histogram: the jobs substrate already records execution time per job (`jobs-execution-timing`, split by job name), so each archive job is timed as itself. No queue-depth gauge: pending depth is read off the replica database directly. The bulk frontend ingest counts `penpot_audit_ingest_events_total{ kind = full|shadow, outcome = inserted|failed }` (both faces share one transaction, so a failure drops the batch on both). Archive success counts are recorded by `run-single-archiver` on the drain totals: a chunk that returns normally committed its transaction (a rollback always throws instead), so they cannot inflate. Logs never carry event data (`props`, `context`, `profile-id`, `ip-addr`, `team-name`, emails): only counts, statuses and the uri host.
 
 ### How Nexus consumes the data (and forwards to PostHog)
 
@@ -293,17 +296,13 @@ Stored rows are not the end: a consumer pipeline reads them back in sequence ord
 
 So the full journey is: Penpot buffer → Nexus `audit_log` (via archive cron or telemetry endpoint) → consumers → PostHog (SaaS events grouped by team, telemetry grouped by instance) plus local analytics views and materialized KPIs.
 
-### Nitrate: what exists and what is planned
+### Nitrate: the second archiver
 
-Today **only Nexus archives**. Archiving Penpot → Nitrate is in development and not on this branch.
-
-What already exists (do not confuse with archiving):
+Penpot → Nitrate archiving lives in its own job (`:audit-log-archive-nitrate`, archiver `2`, flag `:admin-console`, params closed empty): it drains its own pending queue and ingests allowlisted events through `nitrate/call :ingest-audit-log`, enriched as described above. What also exists (do not confuse with archiving):
 
 - **Nitrate → Penpot**: `POST /api/management/methods/push-audit-events` (`backend/src/app/rpc/management/nitrate.clj`) lets the trusted Nitrate backend inject events into the Penpot audit log (no RPC auth, `::audit/skip`, request context + `submit`). Section 7a is the main user.
 - **Admin-console browser → collector**: usage events from the admin-console UI traveling through the normal public `push-audit-events` (section 7b).
 - **Penpot frontend Nitrate bits**: membership/subscription events (`frontend/src/app/main/data/nitrate.cljs`, `nitrate-audit/*`) through the same public endpoint.
-
-The future Penpot → Nitrate archive will follow the Nexus pattern (cron reading the buffer and POSTing batches), but there is no contract or flag on this branch yet. When it lands, document here: endpoint, auth, format, which `source` values travel, and how it shares the GC.
 
 ## 13. Flags and config
 
@@ -312,8 +311,7 @@ Flags (`common/src/app/common/flags.cljc`, varia; enabled with `PENPOT_FLAGS=ena
 | Flag | What it does |
 |---|---|
 | `:audit-log` | Stores full rows; turns on `wrap-audit` and frontend ingest |
-| `:audit-log-archive` | Turns on the cron that sends to Nexus (needs `:audit-log-archive-uri`) |
-| `:audit-log-gc` | Turns on the cron that deletes archived rows |
+| `:audit-log-archive` | Turns on the archive crons that drain the queues (needs `:audit-log-archive-uri` for the Nexus job) |
 | `:audit-log-logger` | Structured `app.audit` log per event |
 | `:error-reporting` | Starts the error reporters (off by default); database reporter on flag alone, Mattermost on flag plus webhook URL |
 | `:telemetry` | Stores shadow rows and turns on shipping (auto with `:telemetry-enabled`) |
@@ -337,6 +335,6 @@ Config (`backend/src/app/config.clj`): `:audit-log-archive-uri`, `:telemetry-uri
 - Penpot frontend producer: `frontend/src/app/main/data/event.cljs` (collector, buffer, send), `frontend/src/app/main/repo.cljs` + `frontend/src/app/util/http.cljs` (headers), `frontend/src/app/main/data/nitrate.cljs` (Nitrate membership events).
 - Admin-console producer (private repo, no paths cited here): server-side organization/subscription events through the management `push-audit-events`, browser-side UI events through the public `push-audit-events`.
 - Consumers: `backend/src/app/loggers/webhooks.clj`, `backend/src/app/loggers/database.clj`, `backend/src/app/loggers/mattermost.clj`, `backend/src/app/tasks/telemetry.clj`.
-- Archive/GC: `backend/src/app/loggers/audit/archive_task.clj`, `backend/src/app/loggers/audit/gc_task.clj`, wiring and crons in `backend/src/app/main.clj`.
+- Archive (two jobs sharing one namespace + pending queue, no GC): `backend/src/app/loggers/audit/archive_task.clj` (`:audit-log-archive-nexus` / `:audit-log-archive-nitrate` job-defs, shared drain/reap/sweep helpers), producer hook in `backend/src/app/loggers/audit.clj` (`append-audit-entry`) plus the bulk ingest in `backend/src/app/rpc/commands/audit.clj` (`handle-events`), metrics/cron wiring in `backend/src/app/main.clj` (one cron entry per job, each gated by its own send flag), single migration `0157` (queue, drop of `archived_at`, covering `(created_at, id)` index for the chronological scan; no backfill — pre-existing rows are swept unsent, an accepted loss).
 - Nexus (private repo, no paths cited here): archive ingest, ordered consumers (local profile mirror, PostHog SaaS events, PostHog telemetry), telemetry endpoint, analytics views.
 - Tests: `backend_tests/rpc-audit-test.clj`, `rpc-team-test/accept-organization-invitation-audit-event`.
