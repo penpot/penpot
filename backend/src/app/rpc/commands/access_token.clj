@@ -12,6 +12,7 @@
    [app.db :as db]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
@@ -34,6 +35,9 @@
   Elevated permissions (e.g. error-reports:read) are not assignable via
   the public API; grant them with SQL or `repl:grant-access-token-perm`."
   [{:keys [::db/conn] :as cfg} profile-id name expiration type]
+  ;; Serialize regeneration with OAuth provisioning for the same profile.
+  (when (= type "mcp")
+    (db/get-by-id conn :profile profile-id {::db/for-update true}))
   (let [token-id   (uuid/next)
         expires-at (some-> expiration (ct/in-future))
         created-at (ct/now)
@@ -61,6 +65,22 @@
       (db/exec! conn [sql:clean-old-mcp-tokens profile-id (:id token)]))
 
     (decode-row token)))
+
+(defn ensure-mcp-access!
+  "Enable MCP and return the profile's existing token, creating it only if absent.
+  Must run in a transaction. Lock the profile even when no token exists, so
+  concurrent approvals and settings regeneration use the same lock. Enabling
+  MCP must not regenerate a token already held by a connected client."
+  [{:keys [::db/conn] :as cfg} profile-id]
+  (let [profile (profile/get-profile conn profile-id ::db/for-update true)
+        token   (first (db/query conn :access-token
+                                 {:profile-id profile-id :type "mcp"}
+                                 {:order-by [[:created-at :desc]]}))]
+    (when-not (:mcp-enabled (:props profile))
+      (profile/update-profile-props cfg profile-id {:mcp-enabled true}))
+    (if token
+      (decode-row token)
+      (create-access-token cfg profile-id "MCP" nil "mcp"))))
 
 (defn repl:create-access-token
   [cfg profile-id name expiration]
