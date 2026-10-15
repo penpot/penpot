@@ -1540,6 +1540,81 @@
             (t/is (str/includes? (:hint data) "materialise"))
             (t/is (not (str/includes? (:hint data) "merge")))))))))
 
+(t/deftest oplog-depth-gate-counts-the-changes-a-row-holds
+  ;; The gate bounds a log by the changes it holds, and every op log row stamps
+  ;; that number at write time, so the gate reads it rather than decoding a log
+  ;; the derive in the same command decodes again. One save carrying two
+  ;; changes is one row of depth two, which a row count cannot tell from one.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          proj-id  (:default-project-id profile)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id proj-id
+                                       :is-shared false})
+          create   (:result (th/command! {::th/type :create-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id file)
+                                          :name "deep-log"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          derive!        @#'bfc/branch-file-data
+          cfg            {::db/conn th/*pool*}
+          depth          #(bfc/get-branch-oplog-depth cfg %)
+          decoded-depth  #(count (mapcat identity (bfc/get-branch-changes cfg %)))
+          rows           #(th/db-query :file-branch-change {:file-id branch-file-id})
+          reads          (atom 0)
+          derives        (atom 0)
+          compare!       (fn []
+                           (with-redefs [bfc/get-branch-changes
+                                         (fn [& args]
+                                           (swap! reads inc)
+                                           (apply bfc/get-branch-changes args))
+                                         bfc/branch-file-data
+                                         (fn [& args]
+                                           (swap! derives inc)
+                                           (apply derive! args))]
+                             (th/command! {::th/type :get-branch-diff
+                                           ::rpc/profile-id (:id profile)
+                                           :branch-id branch-id})))]
+
+      (let [f (th/db-get :file {:id branch-file-id})]
+        (th/command! {::th/type :update-file
+                      ::rpc/profile-id (:id profile)
+                      :id branch-file-id
+                      :session-id (uuid/random)
+                      :revn (:revn f)
+                      :vern (:vern f)
+                      :features cfeat/supported-features
+                      :changes [{:type :add-page :id (uuid/random) :name "one"}
+                                {:type :add-page :id (uuid/random) :name "two"}]}))
+
+      (t/testing "a save stamps the changes its row holds"
+        (t/is (= 1 (count (rows))))
+        (t/is (= 2 (count (mapcat identity (bfc/get-branch-changes cfg branch-file-id))))))
+
+      (t/testing "the stamped depth is the depth of the decoded log"
+        (t/is (= (decoded-depth branch-file-id) (depth branch-file-id))))
+
+      (t/testing "the gate refuses on the changes the row holds"
+        (with-redefs [cf/get (th/config-get-mock {:branching-max-oplog-changes 1})]
+          (let [out  (compare!)
+                data (ex-data (:error out))]
+            (t/is (= :restriction (:type data)))
+            (t/is (= :branching-oplog-limit-exceeded (:code data)))
+            (t/is (= 2 (:actual data)) "the gate counted rows instead of the depth")
+            (t/is (zero? @reads) "the refused compare decoded the op log")
+            (t/is (zero? @derives) "the refused compare derived the branch first"))))
+
+      (t/testing "an update from main stamps the squash it writes"
+        (apply-change* profile (:id file) {:type :add-page :id (uuid/random) :name "on-main"})
+        (let [out (th/command! {::th/type :update-branch-from-main
+                                ::rpc/profile-id (:id profile)
+                                :branch-id branch-id})]
+          (t/is (nil? (:error out)))
+          (t/is (= 1 (count (rows))) "the squash is one row")
+          (t/is (= (decoded-depth branch-file-id) (depth branch-file-id)))
+          (t/is (= (depth branch-file-id) (:changes-count (first (rows))))))))))
+
 (t/deftest published-limits-are-the-ones-the-gates-enforce
   (let [profile (th/create-profile* 1 {:is-active true})
         limits  (fn [] (th/command! {::th/type :get-branching-limits

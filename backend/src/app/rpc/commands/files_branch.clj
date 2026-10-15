@@ -119,10 +119,12 @@
 
 (defn- check-oplog-depth-limit!
   "Refuse an operation on a branch whose op log is deeper than the derive
-  was measured to survive. `changes` is the flattened log."
-  [changes branch-file-id operation]
-  (let [limit (branching-limit :branching-max-oplog-changes 100000)
-        depth (count changes)]
+  was measured to survive. `depth` is the number of changes the whole log
+  holds, as `bfc/get-branch-oplog-depth` reads it from the count each op
+  log row stamps: gating on that instead of the flattened log keeps the
+  gate from decoding rows the derive decodes a moment later."
+  [depth branch-file-id operation]
+  (let [limit (branching-limit :branching-max-oplog-changes 100000)]
     (when (> depth limit)
       (ex/raise :type :restriction
                 :code :branching-oplog-limit-exceeded
@@ -131,8 +133,7 @@
                 :operation operation
                 :branch-file-id branch-file-id
                 :limit limit
-                :actual depth))
-    changes))
+                :actual depth))))
 
 (def ^:private schema:get-branching-limits
   [:map {:title "get-branching-limits"}])
@@ -889,8 +890,10 @@
             dir         (or direction :branch->main)
             main-file   (-> (bfc/get-file cfg (:source-file-id branch) :realize? true)
                             (check-file-size-limits! :compare))
-            log         (-> (branch-log cfg (:branch-file-id branch))
-                            (check-oplog-depth-limit! (:branch-file-id branch) :compare))
+            _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg (:branch-file-id branch))
+                                                  (:branch-file-id branch)
+                                                  :compare)
+            log         (branch-log cfg (:branch-file-id branch))
             branch-file (bfc/get-file cfg (:branch-file-id branch)
                                       :realize? true :include-base-data? true)
             main-data   (:data main-file)
@@ -1027,8 +1030,9 @@
                                          :branch-id branch-id))
                  main-file   (-> (bfc/get-file cfg main-id :realize? true)
                                  (check-file-size-limits! :merge))
-                 _           (-> (branch-log cfg branch-file-id)
-                                 (check-oplog-depth-limit! branch-file-id :merge))
+                 _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg branch-file-id)
+                                                       branch-file-id
+                                                       :merge)
                  branch-file (bfc/get-file cfg branch-file-id
                                            :realize? true :include-base-data? true)
                  base-data   (branch-base-data cfg main-id branch-file)
@@ -1254,6 +1258,7 @@
                    :file-id (:id file)
                    :revn (:revn file)
                    :changes (blob/encode (vec changes))
+                   :changes-count (count changes)
                    :media-id-map (some-> (not-empty media-map) db/tjson)
                    :data-version (fmg/data-version)
                    :created-at ts
@@ -1320,8 +1325,9 @@
                                (ex/raise :type :conflict
                                          :code :file-modified
                                          :hint "main was modified, recompute the diff and retry"))
-                 _           (-> (branch-log cfg branch-file-id)
-                                 (check-oplog-depth-limit! branch-file-id :update-from-main))
+                 _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg branch-file-id)
+                                                       branch-file-id
+                                                       :update-from-main)
                  branch-file (bfc/get-file cfg branch-file-id :realize? true)
                  base-raw    (get-base-data cfg branch)
 

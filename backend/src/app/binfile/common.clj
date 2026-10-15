@@ -308,6 +308,20 @@
       AND deleted_at IS NULL
     ORDER BY revn ASC")
 
+(def ^:private sql:get-branch-oplog-depth
+  "SELECT coalesce(sum(changes_count), 0) AS depth
+     FROM file_branch_change
+    WHERE file_id = ?
+      AND deleted_at IS NULL")
+
+(defn get-branch-oplog-depth
+  "The branch's op log depth: the number of changes the whole log holds,
+  which is the quantity a size gate limits. Every row stamps its own count
+  at write time, so this answers without decoding a change vector the
+  derive in the same request decodes again."
+  [{:keys [::db/conn] :as cfg} branch-file-id]
+  (:depth (db/exec-one! conn [sql:get-branch-oplog-depth branch-file-id])))
+
 (defn get-branch-changes
   "The branch's op log as decoded change batches, oldest first. This is
   the complete delta between the branch and its merge base, which is what
