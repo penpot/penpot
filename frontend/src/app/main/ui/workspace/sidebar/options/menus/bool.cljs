@@ -16,13 +16,10 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
-(def ^:private flatten-icon
-  (deprecated-icon/icon-xref :boolean-flatten (stl/css :flatten-icon)))
 
 (mf/defc bool-options*
   [{:keys [total-selected shapes shapes-with-children]}]
@@ -100,11 +97,9 @@
                            :title (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :bool-exclude) ")")
                            :id "bool-opt-exclude"}]]]
 
-       [:button
-        {:title (tr "workspace.shape.menu.flatten")
-         :class (stl/css-case
-                 :flatten-button true
-                 :disabled disabled-flatten)
-         :disabled disabled-flatten
-         :on-click flatten-objects}
-        flatten-icon]])))
+       [:> icon-button* {:variant "ghost"
+                         :tooltip-class (stl/css :flatten-button)
+                         :aria-label (tr "workspace.shape.menu.flatten")
+                         :icon i/boolean-flatten
+                         :disabled disabled-flatten
+                         :on-click flatten-objects}]])))
