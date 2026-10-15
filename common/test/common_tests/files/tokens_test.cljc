@@ -254,6 +254,14 @@
       (t/is (not (contains? file-data' :tokens-lib)))
       (t/is (= source-id (:tokens-source file-data')))
       (t/is (contains? file-data' :tokens-status))
+      (t/is (ctos/tokens-status? (:tokens-status file-data')))))
+
+  (t/testing "ensure-tokens-lib should add a tokens-lib if the tokens-source is the file itself"
+    (let [file       (thf/sample-file :file1)
+          file-data  (-> (ctf/file-data file)
+                         (assoc :tokens-source (:id file)))
+          file-data' (cfo/ensure-tokens-lib file-data)]
+      (t/is (ctob/tokens-lib? (:tokens-lib file-data')))
       (t/is (ctos/tokens-status? (:tokens-status file-data'))))))
 
 (t/deftest test-get-tokens-lib
@@ -293,7 +301,16 @@
           file       (thf/sample-file :file1)
           file-data  (:data file)
           file-data' (cfo/set-tokens-source file-data source-id)]
-      (t/is (= source-id (:tokens-source file-data'))))))
+      (t/is (= source-id (:tokens-source file-data')))))
+
+  (t/testing "removes tokens-source when set to the file itself"
+    (let [source-id  (thi/new-id! :tokens-source)
+          file       (thf/sample-file :file1)
+          file-data  (-> (ctf/file-data file)
+                         (assoc :tokens-source source-id))
+          file-data' (cfo/set-tokens-source file-data (:id file))]
+      (t/is (not (contains? file-data' :tokens-source)))
+      (t/is (= (:id file) (cfo/get-effective-tokens-source file-data'))))))
 
 (t/deftest test-effective-tokens-source?
   (t/testing "no tokens, no tokens-source, ask for file id -> true"

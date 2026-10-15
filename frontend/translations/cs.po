@@ -1498,7 +1498,7 @@ msgstr "Centrum nápovědy"
 msgid "labels.hide-resolved-comments"
 msgstr "Skrýt vyřešené komentáře"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Import"
 
@@ -3083,7 +3083,7 @@ msgstr "Přiblížení"
 msgid "shortcuts.thumbnail-set"
 msgstr "Nastavit náhledy"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "Klávesové zkratky"
 

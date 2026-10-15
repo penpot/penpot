@@ -1985,7 +1985,7 @@
   (let [storage (-> (:app.storage/storage th/*system*)
                     (stt/configure-storage-backend))
 
-        sobject (sto/put-object! storage {::sto/content (sto/content "media-bytes")
+        sobject (sto/put-object! storage {::sto/content (sto/content "<svg xmlns=\"http://www.w3.org/2000/svg\"/>")
                                           :content-type "image/svg+xml"
                                           :bucket "file-media-object"})
 
@@ -2160,6 +2160,13 @@
           out (try-import-files! cfg)]
       (t/is (= :validation (:type out)))
       (t/is (= :max-file-size-reached (:code out))))))
+
+(t/deftest default-text-total-budget-fits-giant-legit-files
+  ;; A real-world giant export held ~437 MiB of JSON across ~178k
+  ;; KB-sized entries without tripping any per-entry cap. The default
+  ;; cumulative budget must clear that scale, or such files cannot be
+  ;; imported out of the box.
+  (t/is (>= bfc/default-max-text-total-size (* 1024 1024 450))))
 
 (defn- text-entries-sizes
   "Returns the decompressed sizes of every `.json` entry in the zip at

@@ -52,8 +52,7 @@
 (defn- make-orphan-metrics []
   (ig/init-key :app.metrics/metrics
                {:default (select-keys main/default-metrics
-                                      [:jobs-orphaned :jobs-completed
-                                       :jobs-total-timing])}))
+                                      [:jobs-orphaned :jobs-total-timing])}))
 
 (defn- counter-value [metrics id labels]
   (let [collector (mtx/get-collector metrics id)
@@ -228,8 +227,7 @@
                                                          (ct/duration {:minutes 1})))})]
     (wdisp/run-batch cfg)
     (t/is (= 1.0 (counter-value metrics :jobs-orphaned ["test"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-completed
-                                ["test-job" "test" "aborted"])))))
+    (t/is (= 1 (histogram-sample-count metrics ["test-job" "test" "aborted"])))))
 
 (t/deftest dispatcher-batch-without-pending-jobs-signals-wait
   (let [cfg (mk-cfg)]

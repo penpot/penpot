@@ -876,7 +876,7 @@ msgstr "Ви збираєтесь відновити усі проєкти та 
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "Відновити усі проєкти й файли"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Відновити Все"
 
@@ -1387,7 +1387,7 @@ msgstr "Під час роботи веб-виконавця сталась по
 msgid "errors.invalid-color"
 msgstr "Недійсний колір"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Помилкові дані"
 
@@ -2272,7 +2272,7 @@ msgstr "Приховати"
 msgid "labels.hide-resolved-comments"
 msgstr "Приховати вирішені коментарі"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Імпортувати"
 
@@ -4087,7 +4087,7 @@ msgstr "Масштабування"
 msgid "shortcuts.thumbnail-set"
 msgstr "Вставити мініатюри"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "Клавіатурні скорочення"
 

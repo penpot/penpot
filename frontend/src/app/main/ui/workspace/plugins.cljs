@@ -332,6 +332,13 @@
        (tr "workspace.plugins.permissions.allow-localstorage")]])
 
    (cond
+     (contains? permissions "allow:global")
+     [:div {:class (stl/css :permissions-list-entry)}
+      deprecated-icon/oauth-1
+      [:p {:class (stl/css :permissions-list-text)}
+       (tr "workspace.plugins.permissions.allow-global")]])
+
+   (cond
      (contains? permissions "clipboard:write")
      [:div {:class (stl/css :permissions-list-entry)}
       deprecated-icon/oauth-1

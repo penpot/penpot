@@ -193,7 +193,7 @@
           (update :export assoc :in-progress false :last-update (ct/now) :healthy? healthy?)
 
           (= status "ended")
-          (update :export assoc :in-progress false :last-update (ct/now) :healthy? healthy?))))
+          (update :export assoc :in-progress false :progress done :last-update (ct/now) :healthy? healthy?))))
 
     ptk/WatchEvent
     (watch [_ _ _]

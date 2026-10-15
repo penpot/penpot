@@ -298,6 +298,83 @@ test.describe("BUG 10910 - Text is not replaced when there is a selection", () =
   });
 });
 
+test.describe("BUG 12187 - Typing after a triple-click selection", () => {
+  // Creates a text and enters the editor again, so the input surface is fresh.
+  async function editNewText(page, text) {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.createAutoWidthTextShape(200, 150, text);
+    await workspace.textEditor.stopEditing();
+    await workspace.textEditor.startEditing();
+
+    return workspace;
+  }
+
+  async function tripleClickText(page) {
+    await page
+      .getByTestId("text-editor-container")
+      .click({ position: { x: 10, y: 8 }, clickCount: 3 });
+  }
+
+  // Some browsers (Chrome on Linux) select the whole input surface on a
+  // triple-click. That selection is not editable, so typing fires no input.
+  async function selectWholeInputSurface(page) {
+    await page.evaluate(() => {
+      const range = document.createRange();
+      range.selectNode(document.getElementById("text-editor-wasm-input"));
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+  }
+
+  test("Typing over a triple-click selection replaces it", async ({ page }) => {
+    const workspace = await editNewText(page, "Hello brave new world");
+
+    await tripleClickText(page);
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+
+  test("Typing works when the browser selects the whole input surface", async ({
+    page,
+  }) => {
+    const workspace = await editNewText(page, "Hello brave new world");
+
+    await tripleClickText(page);
+    await selectWholeInputSurface(page);
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+
+  test("Typing works after deleting a whole input surface selection", async ({
+    page,
+  }) => {
+    const workspace = await editNewText(page, "Hello brave new world");
+
+    await tripleClickText(page);
+    await selectWholeInputSurface(page);
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+});
+
 test("BUG 10531 - Entering the editor auto-selects the whole text", async ({
   page,
 }) => {

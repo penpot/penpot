@@ -6,8 +6,9 @@
 
 (ns app.render-wasm.text-paste
   "Restyles the text WASM just inserted from a paste fragment (see
-  `app.util.text.clipboard`) with each run's overrides."
+  `app.util.text.clipboard`), with run overrides or full Penpot styles."
   (:require
+   [app.common.types.text :as txt]
    [app.main.fonts :as fonts]
    [app.render-wasm.text-editor :as text-editor]
    [cuerdas.core :as str]))
@@ -90,3 +91,38 @@
             (text-editor/apply-styles-over-range content range #(resolve-overrides % attrs)))
           content
           (styled-ranges fragment start)))
+
+;; --- Text copied in Penpot
+
+(def ^:private style-attrs
+  (into txt/paragraph-attrs txt/text-node-attrs))
+
+(defn content->fragment
+  "The paste fragment for Penpot `content`. Its attrs are whole paragraph and span
+  styles, not overrides."
+  [content]
+  (->> (-> content :children first :children)
+       (mapv (fn [paragraph]
+               {:attrs (dissoc paragraph :type :children)
+                :children (into []
+                                (comp (filter (comp seq :text))
+                                      (map (fn [span] {:text (:text span) :attrs (dissoc span :text)})))
+                                (:children paragraph))}))))
+
+(defn- restyle
+  "`node` with its style replaced by `attrs`."
+  [node attrs]
+  (merge (apply dissoc node style-attrs) attrs))
+
+(defn apply-content-styles
+  "Restyles the Penpot `fragment` text WASM inserted at `start` in `content`. The
+  first paragraph keeps the style of the one it went into; the others bring their own."
+  [content fragment start]
+  (let [content (reduce (fn [content {:keys [range attrs]}]
+                          (text-editor/apply-styles-over-range content range #(restyle % attrs)))
+                        content
+                        (styled-ranges fragment start))]
+    (reduce (fn [content [idx {:keys [attrs]}]]
+              (update-in content [:children 0 :children (+ (:para start) idx)] restyle attrs))
+            content
+            (rest (map-indexed vector fragment)))))

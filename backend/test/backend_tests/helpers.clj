@@ -24,9 +24,11 @@
    [app.main :as main]
    [app.media]
    [app.media :as-alias mtx]
+   [app.metrics :as-alias metrics]
    [app.migrations]
    [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-create :as files.create]
@@ -102,6 +104,22 @@
        (fs/create-dir "/tmp/penpot")
        (next)))))
 
+(defn- remove-job-runners
+  "Drops every `[<profile> :app.worker/runner]` from the system.
+
+  The tests drive the runner loop by hand (`wdisp/run-batch` plus
+  `run-worker-loop` over a system they build themselves), so a live runner
+  of any queue races them: it takes the job the test just dispatched and
+  completes it behind the test's back. Matching the key by shape, instead
+  of listing the known queues by hand, keeps a new queue from silently
+  bringing that race back (which is what happened to the `binfile` runner
+  this key list was missing)."
+  [system]
+  (apply dissoc system
+         (filter #(and (vector? %)
+                       (= :app.worker/runner (second %)))
+                 (keys system))))
+
 (defn init-system
   [next]
   (let [templates [{:id "test"
@@ -132,10 +150,8 @@
                            :app.loggers.mattermost/reporter
                            :app.loggers.database/reporter
                            :app.worker/cron
-                           :app.worker/dispatcher
-                           [:app.main/default :app.worker/runner]
-                           [:app.main/webhook :app.worker/runner]
-                           [:app.main/cron :app.worker/runner]))
+                           :app.worker/dispatcher)
+                   (remove-job-runners))
         _      (ig/load-namespaces system)
         system (-> (ig/expand system) (ig/init))]
     (try
@@ -309,9 +325,7 @@
   ([params] (create-project-role* *system* params))
   ([system {:keys [project-id profile-id role] :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
-     (#'teams/create-project-role conn {:project-id project-id
-                                        :profile-id profile-id
-                                        :role role}))))
+     (#'teams/create-project-role conn profile-id project-id role))))
 
 (defn create-file-role*
   ([params] (create-file-role* *system* params))
@@ -534,6 +548,40 @@
                                      (assoc ::jobs/params (:params row))
                                      (assoc ::jobs/context (jobs/make-context row))
                                      (assoc ::jobs/job-id (:id row)))))))))
+
+(defn metrics-stub
+  "A metrics instance with no collectors, where every `run!` is a no-op."
+  []
+  (reify metrics/IMetrics
+    (get-handler [_] nil)
+    (get-collector [_ _] nil)
+    (get-registry [_] nil)))
+
+(defn init-climit
+  "Build a concurrency limiter component from an inline config map. The
+  optional second argument is the metrics instance to publish to (a
+  `metrics-stub` by default, where every `run!` is a no-op)."
+  ([config]
+   (init-climit config (metrics-stub)))
+  ([config metrics]
+   (let [file (doto (java.io.File/createTempFile "climit" ".edn")
+                (.deleteOnExit))]
+     (spit file (pr-str config))
+     (ig/init-key ::rpc/climit
+                  {::climit/enabled true
+                   ::climit/config (.getAbsolutePath file)
+                   ::metrics/metrics metrics}))))
+
+(defmacro with-climit
+  "Build a concurrency limiter from an inline config map, run the body and
+  halt it, so the republisher thread it starts never outlives the test. An
+  optional third binding element is the metrics instance to publish to."
+  [[sym config & [metrics]] & body]
+  `(let [~sym (init-climit ~config ~@(when metrics [metrics]))]
+     (try
+       ~@body
+       (finally
+         (ig/halt-key! ::rpc/climit ~sym)))))
 
 ;; --- UTILS
 

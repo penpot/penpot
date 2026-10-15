@@ -55,20 +55,18 @@
 
 (defn sample-worker-metrics
   "Publishes the current state of the xnio worker thread pool (the
-  request dispatch queue and its threads) as gauges."
+  request dispatch queue and its threads) as gauges. The pool size is the
+  signal to watch: the busy thread count of this MXBean stays at zero with
+  threads blocked inside a concurrency limiter, so it is not published."
   [metrics ^XnioWorkerMXBean mxbean]
   (let [queue-size (.getWorkerQueueSize mxbean)
-        busy-count (.getBusyWorkerThreadCount mxbean)
         pool-size  (.getWorkerPoolSize mxbean)
         max-size   (.getMaxWorkerPoolSize mxbean)]
 
-    ;; negative values are missing measurements, not zeros: the xnio
-    ;; MXBean may transiently report -1 on the busy thread count.
+    ;; negative values are missing measurements, not zeros: the xnio MXBean
+    ;; may transiently report -1.
     (when (>= queue-size 0)
       (mtx/run! metrics :id :http-worker-queue-size :val queue-size))
-
-    (when (>= busy-count 0)
-      (mtx/run! metrics :id :http-worker-busy-threads :val busy-count))
 
     (when (>= pool-size 0)
       (mtx/run! metrics :id :http-worker-pool-size :val pool-size))
@@ -121,26 +119,14 @@
 
 (defn create-metrics-sampler
   "Creates a daemon scheduler that periodically samples the state of
-  the http server and publishes it as metrics. A single thread is used,
-  and an unexpected error on a single sample does NOT cancel the
-  subsequent runs."
+  the http server and publishes it as metrics, in the shape shared by
+  `app.metrics/create-sampler`: a single thread, and an unexpected error
+  on one sample does not cancel the following runs."
   [^Undertow server metrics]
-  (let [state     (atom {:last-requests 0 :last-errors 0})
-        scheduler (px/scheduled-executor
-                   :parallelism 1
-                   :factory (px/thread-factory :prefix "penpot/http-metrics/"
-                                               :daemon true))
-        sample    (fn sample []
-                    (try
-                      (sample-http-metrics metrics state server)
-                      (finally
-                        ;; reschedule even if a single sample fails, so
-                        ;; an unexpected error does not cancel the
-                        ;; following runs.
-                        (px/schedule scheduler metrics-sample-interval-ms sample))))]
-
-    (px/schedule scheduler 0 sample)
-    scheduler))
+  (let [state (atom {:last-requests 0 :last-errors 0})]
+    (mtx/create-sampler metrics-sample-interval-ms
+                        (fn [] (sample-http-metrics metrics state server))
+                        {:name "http-metrics"})))
 
 (defmethod ig/expand-key ::server
   [k v]

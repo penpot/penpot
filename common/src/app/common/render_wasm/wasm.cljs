@@ -6,8 +6,15 @@
 
 (ns app.common.render-wasm.wasm)
 
+;; Types of frames in the rendering pipeline
+(def ^:const FRAME_TYPE_NONE 0)     ;; This type should never leak
+(def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more _render calls to end
+(def ^:const FRAME_TYPE_FULL 2)     ;; A frame is done
+(def ^:const FRAME_TYPE_VIEWPORT_READY 3) ;; Viewport presented; interest tiles may still be pending
+(def ^:const RENDER_FLAG_SYNC_TILES 4)  ;; Rebuild tile index without ending fast mode (pan/zoom pause)
+
 (defonce internal-frame-id nil)
-(defonce internal-frame-type 0)
+(defonce internal-frame-type FRAME_TYPE_NONE)
 (defonce internal-module #js {})
 
 ;; Reference to the HTML canvas element.

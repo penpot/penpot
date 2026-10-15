@@ -23,14 +23,14 @@ case "$_RENDER_TARGET" in
         ;;
 esac
 
-set -e
+set -e -o pipefail
 
 EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
 
 pushd "$_SCRIPT_DIR" > /dev/null
 
 export RENDER_TARGET="$_RENDER_TARGET"
-. ./_build_env "$_RENDER_TARGET"
+. ./_build_env "$_RENDER_TARGET" "${@:2}"
 . ./_build_lock
 
 acquire_build_lock

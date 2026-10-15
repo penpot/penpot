@@ -197,9 +197,17 @@
 
 (defn- read-storage-object!
   [{:keys [::sto/storage ::bfc/timestamp] :as cfg} id]
-  (let [mdata   (read-obj cfg :storage-object id)
+  (let [mdata   (d/update-when (read-obj cfg :storage-object id)
+                               :content-type bfc/normalize-content-type)
         data    (read-blob cfg :storage-object id)
-        hash    (sto/calculate-hash data)
+        ;; NOTE: v2 bundles are legacy and no longer produced; the
+        ;; sanitizer call stays as defense in depth and is covered by
+        ;; the shared helper unit tests, with no dedicated v2
+        ;; import test.
+        clean   (when (bfc/svg-object? mdata)
+                  (bfc/sanitize-imported-svg mdata data))
+        data    (or (:bytes clean) data)
+        hash    (or (:hash clean) (sto/calculate-hash data))
 
         content (-> (sto/content data)
                     (sto/wrap-with-hash hash))

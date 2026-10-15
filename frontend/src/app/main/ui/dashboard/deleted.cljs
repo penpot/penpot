@@ -16,6 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
+   [app.main.ui.components.mcp-menu :refer [dashboard-mcp-menu*]]
    [app.main.ui.dashboard.grid :refer [grid*]]
    [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
@@ -64,6 +65,7 @@
    [:div#dashboard-deleted-title {:class (stl/css :dashboard-title)}
     [:h1 (tr "dashboard.projects-title")]]
    [:div {:class (stl/css :dashboard-header-actions)}
+    [:> dashboard-mcp-menu*]
     [:> layout-toggle* {:layout layout :on-change on-change}]]])
 
 (mf/defc project-context-menu*

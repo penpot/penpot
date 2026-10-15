@@ -519,17 +519,23 @@
    {:name "0156-add-storage-object-json-dedup-index"
     :fn (mg/resource "app/migrations/sql/0156-add-storage-object-json-dedup-index.sql")}
 
-   {:name "0155-add-file-branch-table"
-    :fn (mg/resource "app/migrations/sql/0155-add-file-branch-table.sql")}
+   {:name "0153-del-orphan-profile-rels-after-team-leave"
+    :fn (mg/resource "app/migrations/sql/0153-del-orphan-profile-rels-after-team-leave.sql")}
 
-   {:name "0156-add-file-pull-request-tables"
-    :fn (mg/resource "app/migrations/sql/0156-add-file-pull-request-tables.sql")}
+   {:name "0154-del-legacy-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0154-del-legacy-file-object-thumbnail-table.sql")}
 
-   {:name "0157-add-file-branch-change-table"
-    :fn (mg/resource "app/migrations/sql/0157-add-file-branch-change-table.sql")}
+   {:name "0800-add-file-branch-table"
+    :fn (mg/resource "app/migrations/sql/0800-add-file-branch-table.sql")}
 
-   {:name "0159-add-file-branch-change-media-id-map"
-    :fn (mg/resource "app/migrations/sql/0159-add-file-branch-change-media-id-map.sql")}])
+   {:name "0801-add-file-pull-request-tables"
+    :fn (mg/resource "app/migrations/sql/0801-add-file-pull-request-tables.sql")}
+
+   {:name "0802-add-file-branch-change-table"
+    :fn (mg/resource "app/migrations/sql/0802-add-file-branch-change-table.sql")}
+
+   {:name "0803-add-file-branch-change-media-id-map"
+    :fn (mg/resource "app/migrations/sql/0803-add-file-branch-change-media-id-map.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

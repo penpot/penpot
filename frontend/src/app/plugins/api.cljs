@@ -43,6 +43,7 @@
    [app.plugins.history :as history]
    [app.plugins.library :as library]
    [app.plugins.local-storage :as local-storage]
+   [app.plugins.management :as management]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
    [app.plugins.reflow :as wrfp]
@@ -88,6 +89,9 @@
     :$plugin {:enumerable false :get (fn [] plugin-id)}
 
     ;; Public properties
+    :management
+    {:get (fn [] (management/create-context))}
+
     :version
     {:this true
      :get (constantly (:base cf/version))}

@@ -44,7 +44,7 @@ pub struct RawImageFillData {
     d: u32,
     opacity: u8,
     flags: u8,
-    _pad: u16,
+    mtype: u16,
     width: i32,
     height: i32,
     transform_x: f32,
@@ -76,7 +76,7 @@ impl From<&ImageFill> for RawImageFillData {
             d,
             opacity: image_fill.opacity(),
             flags,
-            _pad: 0,
+            mtype: image_fill.mtype(),
             width: image_fill.width(),
             height: image_fill.height(),
             transform_x: tx,
@@ -110,6 +110,7 @@ impl From<RawImageFillData> for ImageFill {
             keep_aspect_ratio,
             transform,
         )
+        .with_mtype(value.mtype)
     }
 }
 

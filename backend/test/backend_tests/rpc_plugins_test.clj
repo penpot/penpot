@@ -47,6 +47,17 @@
       (t/is (= [plugin-id-1] (:ids plugins)))
       (t/is (= valid-plugin (get-in plugins [:data plugin-id-1]))))))
 
+(t/deftest add-profile-plugin-accepts-global-plugins
+  (let [profile (th/create-profile* 1)
+        plugin  (assoc valid-plugin
+                       :scope "global"
+                       :permissions #{"content:read" "allow:global"})
+        out     (th/command! {::th/type :add-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin plugin})]
+    (t/is (nil? (:error out)))
+    (t/is (= plugin (:result out)))))
+
 (t/deftest add-profile-plugin-rejects-invalid-permissions
   (let [profile (th/create-profile* 1)
         plugin  (assoc valid-plugin :permissions #{"content:read" "admin:delete"})

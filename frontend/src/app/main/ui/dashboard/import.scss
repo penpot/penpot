@@ -34,7 +34,7 @@
   background-color: var(--color-background-primary);
   border: $b-2 solid var(--color-background-quaternary);
   min-block-size: $sz-192;
-  inline-size: $sz-512;
+  inline-size: px2rem(640);
   max-block-size: px2rem(800);
 }
 
@@ -62,13 +62,6 @@
   position: absolute;
   inset-block-start: var(--sp-s);
   inset-inline-end: px2rem(6);
-}
-
-.status-message {
-  @include use-typography("body-small");
-
-  color: var(--color-foreground-primary);
-  font-style: italic;
 }
 
 .action-buttons {

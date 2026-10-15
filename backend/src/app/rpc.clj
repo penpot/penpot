@@ -381,6 +381,7 @@
           'app.rpc.commands.files-branch
           'app.rpc.commands.files-pull-request
           'app.rpc.commands.files-thumbnails
+          'app.rpc.commands.jobs
           'app.rpc.commands.ldap
           'app.rpc.commands.management
           'app.rpc.commands.media

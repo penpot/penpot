@@ -144,3 +144,49 @@
     (let [result (text-paste/fragment->content [(fragment-paragraph (run "x"))] regular)]
       (t/is (= (assoc regular :type "paragraph")
                (dissoc (-> result :children first :children first) :children))))))
+
+;; --- Text copied in Penpot
+
+(def ^:private brand
+  {:font-id "gfont-roboto" :font-family "Roboto" :font-variant-id "700italic"
+   :font-weight "700" :font-style "italic"
+   :fills [{:fill-color "#ff0000" :fill-opacity 1}]})
+
+(t/deftest content->fragment
+  (t/testing "paragraphs and spans keep their whole style, and empty spans are dropped"
+    (t/is (= [{:attrs {:text-align "center"}
+               :children [{:text "x" :attrs brand}]}
+              {:attrs {:text-align "right"}
+               :children []}]
+             (text-paste/content->fragment
+              {:type "root"
+               :children [{:type "paragraph-set"
+                           :children [{:type "paragraph" :text-align "center"
+                                       :children [(assoc brand :text "x") (assoc brand :text "")]}
+                                      {:type "paragraph" :text-align "right"
+                                       :children [(assoc brand :text "")]}]}]})))))
+
+(t/deftest penpot-styles-replace-the-caret-style
+  (t/testing "pasted runs take their whole style, dropping the target's typography"
+    (let [pasted   (content [(span "AxyB" {:typography-ref-id "t" :typography-ref-file "f"})])
+          fragment [(fragment-paragraph (run "x" brand) (run "y" regular))]
+          result   (text-paste/apply-content-styles pasted fragment {:para 0 :offset 1})]
+      (t/is (= [[(span "A" {:typography-ref-id "t" :typography-ref-file "f"})
+                 (assoc brand :text "x")
+                 (span "y")
+                 (span "B" {:typography-ref-id "t" :typography-ref-file "f"})]]
+               (spans-of result)))))
+
+  (t/testing "the first paragraph keeps its style; later ones bring theirs"
+    (let [pasted   {:type "root"
+                    :children [{:type "paragraph-set"
+                                :children [{:type "paragraph" :text-align "left" :children [(span "Ax")]}
+                                           {:type "paragraph" :text-align "left" :children [(span "yB")]}]}]}
+          fragment [{:attrs {:text-align "center"} :children [(run "x" brand)]}
+                    {:attrs {:text-align "right"} :children [(run "y" brand)]}]
+          result   (text-paste/apply-content-styles pasted fragment {:para 0 :offset 1})]
+      (t/is (= ["left" "right"]
+               (map :text-align (-> result :children first :children))))
+      (t/is (= [[(span "A") (assoc brand :text "x")]
+                [(assoc brand :text "y") (span "B")]]
+               (spans-of result))))))

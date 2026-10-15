@@ -65,18 +65,17 @@
                 [(name-label name) (queue-label queue)]
                 1))
 
+(defn record-skipped
+  [cfg name queue]
+  (record-count (mtx/instance cfg) :jobs-skipped
+                [(name-label name) (queue-label queue)]
+                1))
+
 (defn record-dispatched
   [cfg name queue amount]
   (record-count (mtx/instance cfg) :jobs-dispatched
                 [(name-label name) (queue-label queue)]
                 amount))
-
-(defn record-outcome
-  [cfg name queue outcome]
-  (record-count (mtx/instance cfg) :jobs-completed
-                [(name-label name) (queue-label queue)
-                 (outcome-label outcome)]
-                1))
 
 (defn record-retry
   [cfg name queue reason]
@@ -172,7 +171,8 @@
   [cfg outcome millis]
   (let [outcome (str/lower (or (some-> outcome d/name) "error"))
         metrics (mtx/instance cfg)]
-    (record-count metrics :jobs-requests-total [outcome] 1)
+    ;; No separate counter: the timing `_count` is the request total
+    ;; per outcome.
     (record-value metrics :jobs-request-timing [outcome]
                   (max 0 (long millis)))))
 

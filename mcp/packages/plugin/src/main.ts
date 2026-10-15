@@ -249,6 +249,7 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
                     cancelReconnect();
                     startHeartbeat();
                     updateConnectionStatus("connected", "Connected");
+                    parent.postMessage({ type: "context-request" }, "*");
                     return;
                 }
                 // Track the current task received from the MCP server
@@ -349,10 +350,7 @@ window.addEventListener("message", async (event) => {
             if (!initialization.penpotUserSessionId) {
                 throw new Error("Missing Penpot user session ID");
             }
-            const sessionId = await SessionId.forFile(
-                initialization.penpotUserSessionId,
-                initialization.session.fileId
-            );
+            const sessionId = await SessionId.forSession(initialization.penpotUserSessionId);
             if (
                 !shouldReconnect ||
                 ws !== socket ||
@@ -374,6 +372,12 @@ window.addEventListener("message", async (event) => {
                 disconnectFromMcpServer();
                 updateConnectionStatus("error", "Failed to initialize MCP session");
             }
+        }
+        return;
+    }
+    if (event.data.type === "context-update") {
+        if (connectionReady && ws?.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(event.data));
         }
         return;
     }

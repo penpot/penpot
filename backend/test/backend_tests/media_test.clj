@@ -137,6 +137,72 @@
       (t/is (not (clojure.string/includes? result "onmouseover")))
       (t/is (clojure.string/includes? result "<rect")))))
 
+(t/deftest sanitize-svg-namespace-prefixed-script
+  (t/testing "sanitize-svg removes script tags written with a namespace prefix bound to the SVG namespace"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><x:script>alert('xss')</x:script><rect width=\"50\" height=\"50\"/></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (not (clojure.string/includes? result "<x:script")))
+      (t/is (not (clojure.string/includes? result "alert")))
+      (t/is (clojure.string/includes? result "<rect")))))
+
+(t/deftest sanitize-svg-arbitrary-prefixed-script
+  (t/testing "sanitize-svg removes script tags written with an arbitrary namespace prefix"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:p=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><p:script>alert('xss')</p:script><rect width=\"50\" height=\"50\"/></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (not (clojure.string/includes? result "<p:script")))
+      (t/is (not (clojure.string/includes? result "alert")))
+      (t/is (clojure.string/includes? result "<rect")))))
+
+(t/deftest sanitize-svg-nested-prefixed-script
+  (t/testing "sanitize-svg removes namespace-prefixed script tags from nested elements"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><g><x:script>alert('xss')</x:script></g></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (not (clojure.string/includes? result "<x:script")))
+      (t/is (not (clojure.string/includes? result "alert")))
+      (t/is (clojure.string/includes? result "<g")))))
+
+(t/deftest sanitize-svg-prefixed-dangerous-tags
+  (t/testing "sanitize-svg removes dangerous animation elements written with a namespace prefix"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><x:foreignObject width=\"10\" height=\"10\"/><x:set attributeName=\"onmouseover\" to=\"alert('xss')\"/><x:animate attributeName=\"fill\" to=\"red\"/><x:animateTransform attributeName=\"transform\"/><rect width=\"50\" height=\"50\"/></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (not (clojure.string/includes? result "foreignObject")))
+      (t/is (not (clojure.string/includes? result "<x:set")))
+      (t/is (not (clojure.string/includes? result "<x:animate")))
+      (t/is (not (clojure.string/includes? result "alert")))
+      (t/is (clojure.string/includes? result "<rect")))))
+
+(t/deftest sanitize-svg-prefixed-javascript-href
+  (t/testing "sanitize-svg removes javascript: URLs from href attributes written with a namespace prefix"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><a x:href=\"javascript:alert('xss')\"><rect width=\"50\" height=\"50\"/></a></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (not (clojure.string/includes? result "javascript:")))
+      (t/is (not (clojure.string/includes? result "alert")))
+      (t/is (clojure.string/includes? result "<a")))))
+
+(t/deftest sanitize-svg-prefixed-event-handlers
+  (t/testing "sanitize-svg removes event handler attributes written with a namespace prefix"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" x:onload=\"alert('xss')\"><rect width=\"50\" height=\"50\" x:onclick=\"alert('xss')\"/></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (not (clojure.string/includes? result "onload")))
+      (t/is (not (clojure.string/includes? result "onclick")))
+      (t/is (not (clojure.string/includes? result "alert")))
+      (t/is (clojure.string/includes? result "<rect")))))
+
+(t/deftest sanitize-svg-prefixed-xlink-namespace-href
+  (t/testing "sanitize-svg removes javascript: URLs from href written with a prefix bound to the xlink namespace"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:y=\"http://www.w3.org/1999/xlink\" width=\"100\" height=\"100\"><a y:href=\"javascript:alert('xss')\"><rect width=\"50\" height=\"50\"/></a></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (not (clojure.string/includes? result "javascript:")))
+      (t/is (not (clojure.string/includes? result "alert")))
+      (t/is (clojure.string/includes? result "<a")))))
+
+(t/deftest sanitize-svg-preserved-prefixed-attrs
+  (t/testing "sanitize-svg preserves legitimate attributes written with a namespace prefix"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\"><text xml:space=\"preserve\">hola</text></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (clojure.string/includes? result "xml:space"))
+      (t/is (clojure.string/includes? result "hola")))))
+
 (t/deftest info-invalid-image
   (t/testing "info on invalid image raises error"
     (let [path (fs/create-tempfile :prefix "penpot-test-" :suffix ".jpg")]

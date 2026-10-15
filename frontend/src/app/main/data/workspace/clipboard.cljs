@@ -213,6 +213,7 @@
                             :features features
                             :version version
                             :file-id file-id
+                            :team-id (:current-team-id state)
                             :selected selected
                             :objects {}
                             :images #{}}
@@ -578,6 +579,7 @@
    [:features ::sm/set-of-strings]
    [:version :int]
    [:file-id ::sm/uuid]
+   [:team-id {:optional true} ::sm/uuid]
    [:selected ::sm/set-of-uuid]
    [:objects
     [:map-of ::sm/uuid :map]]
@@ -883,7 +885,7 @@
                 (assoc change :index (get map-ids (:old-id change)))
                 change)))
 
-          (process-shape [valid-file-ids frame-id parent-id shape]
+          (process-shape [valid-file-ids other-team? frame-id parent-id shape]
             (cond-> shape
               :always
               (assoc :frame-id frame-id :parent-id parent-id)
@@ -894,7 +896,11 @@
               (assoc :shapes [])
 
               (cfh/text-shape? shape)
-              (ctt/remove-external-typographies valid-file-ids)))]
+              (ctt/remove-external-typographies valid-file-ids)
+
+              ;; Custom font ids differ between teams.
+              (and other-team? (cfh/text-shape? shape))
+              (update :content text-clipboard/replace-custom-fonts)))]
 
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
@@ -947,7 +953,11 @@
 
                   valid-file-ids (conj (set (keys libraries)) file-id)
 
-                  objects      (update-vals objects (partial process-shape valid-file-ids frame-id parent-id))
+                  ;; Shapes copied before the team was recorded count as same team.
+                  other-team?  (and (some? (:team-id pdata))
+                                    (not= (:team-id pdata) (:current-team-id state)))
+
+                  objects      (update-vals objects (partial process-shape valid-file-ids other-team? frame-id parent-id))
 
                   all-objects  (merge page-objects objects)
 
@@ -1067,10 +1077,13 @@
     (watch [_ state  _]
       (let [[text content]
             (if (v3-html-paste? state)
-              (when-let [fragment (some-> (text-clipboard/html->fragment html)
-                                          (text-clipboard/without-overrides))]
-                [(text-paste/fragment->text fragment)
-                 (text-paste/fragment->content fragment (txt/get-default-text-attrs))])
+              (if-let [payload (text-clipboard/html->payload html)]
+                (let [content (dwtxt/payload-content state payload)]
+                  [(txt/content->text content) content])
+                (when-let [fragment (some-> (text-clipboard/html->fragment html)
+                                            (text-clipboard/without-overrides))]
+                  [(text-paste/fragment->text fragment)
+                   (text-paste/fragment->content fragment (txt/get-default-text-attrs))]))
               (let [style (deref refs/workspace-clipboard-style)
                     root  (dwtxt/create-root-from-html html style (features/active-feature? @st/state "text-editor/v2-html-paste"))]
                 [(.-textContent root) (tc/dom->cljs root)]))]

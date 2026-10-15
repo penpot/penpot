@@ -89,6 +89,7 @@
 
    :jobs-lease (ct/duration {:minutes 30})
    :jobs-retention (ct/duration {:days 7})
+   :jobs-user-ttl (ct/duration {:days 7})
    :jobs-request-timeout (ct/duration {:minutes 2})
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
@@ -111,6 +112,8 @@
 
    :quotes-upload-sessions-per-profile 5
    :quotes-upload-chunks-per-session 20
+   :quotes-export-jobs-per-profile 10
+   :quotes-import-jobs-per-profile 10
    :upload-max-chunk-size (* 1024 1024 30) ; 30MiB
 
    ;; SSRF protection
@@ -216,6 +219,7 @@
     [:file-clean-delay {:optional true} ::ct/duration]
     [:jobs-lease {:optional true} ::ct/duration]
     [:jobs-retention {:optional true} ::ct/duration]
+    [:jobs-user-ttl {:optional true} ::ct/duration]
     [:jobs-request-timeout {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
@@ -231,10 +235,10 @@
     [:audit-log-http-handler-concurrency {:optional true} ::sm/int]
 
     [:default-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
-    [:scheduled-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
     [:worker-default-parallelism {:optional true} ::sm/int]
     [:worker-webhook-parallelism {:optional true} ::sm/int]
     [:worker-cron-parallelism {:optional true} ::sm/int]
+    [:worker-binfile-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]
     [:database-uri {:optional true} ::sm/uri]
@@ -253,6 +257,8 @@
     [:quotes-font-variants-per-team {:optional true} ::sm/int]
     [:quotes-comment-threads-per-file {:optional true} ::sm/int]
     [:quotes-comments-per-file {:optional true} ::sm/int]
+    [:quotes-export-jobs-per-profile {:optional true} ::sm/int]
+    [:quotes-import-jobs-per-profile {:optional true} ::sm/int]
     [:quotes-snapshots-per-file {:optional true} ::sm/int]
     [:quotes-snapshots-per-team {:optional true} ::sm/int]
     [:quotes-branches-per-file {:optional true} ::sm/int]
@@ -495,6 +501,15 @@
   cleaned by the legacy `tasks-gc` of that version."
   []
   (or (c/get config :jobs-retention)
+      (ct/duration {:days 7})))
+
+(defn get-jobs-user-ttl
+  "How long a user-facing job, and the artifact it owns, is kept before
+  the jobs GC deletes the row and marks the object for the storage GC.
+  Not the same as `:jobs-retention`, which only sweeps terminal internal
+  rows."
+  []
+  (or (c/get config :jobs-user-ttl)
       (ct/duration {:days 7})))
 
 (defn get

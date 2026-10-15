@@ -135,7 +135,6 @@ RETURNING job.id, job.queue, job.name, job.created_at")
      (fn []
        (doseq [{:keys [id queue name created-at]} rows]
          (metrics/record-orphan cfg queue)
-         (metrics/record-outcome cfg name queue :aborted)
          (when (ct/inst? created-at)
            (metrics/record-total cfg name queue :aborted
                                  (- (inst-ms timestamp) (inst-ms created-at))))

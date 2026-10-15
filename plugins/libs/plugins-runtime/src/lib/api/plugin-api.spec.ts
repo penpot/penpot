@@ -54,6 +54,148 @@ describe('Plugin api', () => {
     vi.clearAllMocks();
   });
 
+  describe('management listing', () => {
+    it.each(['none', 'loading', 'ready'])(
+      'lists metadata with workspace status %s',
+      async (status) => {
+        const projects = [{ id: 'project-id' }];
+        const files = [{ id: 'file-id' }];
+        const management = {
+          workspace: { status },
+          listProjects: vi.fn().mockResolvedValue(projects),
+          listFiles: vi.fn().mockResolvedValue(files),
+        };
+        const { penpotMgmt } = createApi({
+          ...pluginManager,
+          manifest: { ...pluginManager.manifest, scope: 'global' },
+          context: { ...pluginManager.context, management },
+        } as any);
+
+        await expect(penpotMgmt.listProjects()).resolves.toEqual(projects);
+        expect(management.listProjects).toHaveBeenLastCalledWith(undefined);
+        await penpotMgmt.listProjects({ teamId: 'team-id' });
+        expect(management.listProjects).toHaveBeenLastCalledWith({
+          teamId: 'team-id',
+        });
+        await expect(
+          penpotMgmt.listFiles({ projectId: 'project-id' }),
+        ).resolves.toEqual(files);
+        expect(management.listFiles).toHaveBeenCalledWith({
+          projectId: 'project-id',
+        });
+      },
+    );
+
+    it('requires content:read before querying metadata', () => {
+      const management = {
+        listProjects: vi.fn(),
+        listFiles: vi.fn(),
+      };
+      const { penpotMgmt } = createApi({
+        ...pluginManager,
+        manifest: {
+          ...pluginManager.manifest,
+          permissions: [],
+          scope: 'global',
+        },
+        context: { ...pluginManager.context, management },
+      } as any);
+
+      expect(() => penpotMgmt.listProjects()).toThrow();
+      expect(() => penpotMgmt.listFiles({ projectId: 'project-id' })).toThrow();
+      expect(management.listProjects).not.toHaveBeenCalled();
+      expect(management.listFiles).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('management creation', () => {
+    it.each(['none', 'loading', 'ready'])(
+      'creates projects and files with workspace status %s',
+      async (status) => {
+        const project = { id: 'project-id', name: 'Buttons' };
+        const file = { id: 'file-id', name: 'Login' };
+        const management = {
+          workspace: { status },
+          createProject: vi.fn().mockResolvedValue(project),
+          createFile: vi.fn().mockResolvedValue(file),
+        };
+        const { penpotMgmt } = createApi({
+          ...pluginManager,
+          manifest: {
+            ...pluginManager.manifest,
+            permissions: ['content:write'],
+            scope: 'global',
+          },
+          context: { ...pluginManager.context, management },
+        } as any);
+
+        await expect(
+          penpotMgmt.createProject({ name: 'Buttons' }),
+        ).resolves.toEqual(project);
+        await expect(
+          penpotMgmt.createProject({ name: 'Buttons', teamId: 'team-id' }),
+        ).resolves.toEqual(project);
+        expect(management.createProject).toHaveBeenLastCalledWith({
+          name: 'Buttons',
+          teamId: 'team-id',
+        });
+        await expect(
+          penpotMgmt.createFile({ name: 'Login', projectId: 'project-id' }),
+        ).resolves.toEqual(file);
+        expect(management.createFile).toHaveBeenCalledWith({
+          name: 'Login',
+          projectId: 'project-id',
+        });
+      },
+    );
+
+    it.each([{ permissions: [] }, { permissions: ['content:read'] }])(
+      'requires content:write before creating with permissions $permissions',
+      ({ permissions }) => {
+        const management = {
+          createProject: vi.fn(),
+          createFile: vi.fn(),
+        };
+        const { penpotMgmt } = createApi({
+          ...pluginManager,
+          manifest: { ...pluginManager.manifest, permissions, scope: 'global' },
+          context: { ...pluginManager.context, management },
+        } as any);
+
+        expect(() => penpotMgmt.createProject({ name: 'Buttons' })).toThrow(
+          'Permission content:write is not granted',
+        );
+        expect(() =>
+          penpotMgmt.createFile({ name: 'Login', projectId: 'project-id' }),
+        ).toThrow('Permission content:write is not granted');
+        expect(management.createProject).not.toHaveBeenCalled();
+        expect(management.createFile).not.toHaveBeenCalled();
+      },
+    );
+
+    it('preserves backend creation errors', async () => {
+      const error = new Error('Access denied');
+      const { penpotMgmt } = createApi({
+        ...pluginManager,
+        manifest: { ...pluginManager.manifest, scope: 'global' },
+        context: {
+          ...pluginManager.context,
+          management: {
+            createProject: vi.fn().mockRejectedValue(error),
+            createFile: vi.fn().mockRejectedValue(error),
+          },
+        },
+      } as any);
+
+      await expect(penpotMgmt.createProject({ name: 'Buttons' })).rejects.toBe(
+        error,
+      );
+      await expect(
+        penpotMgmt.createFile({ name: 'Login', projectId: 'project-id' }),
+      ).rejects.toBe(error);
+    });
+  });
+
   describe('ui', () => {
     describe.concurrent('permissions', () => {
       const api = createApi({

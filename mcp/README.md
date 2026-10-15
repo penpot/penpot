@@ -243,7 +243,7 @@ of the prompt input area.
 Connect the files you want to use:
 
 * Open each file in a separate Penpot tab, run the plugin, and connect it to the same MCP server.
-* Each connection has its own short session ID, shown in the plugin UI with a **Copy** button.
+* Each browser tab uses a short session ID derived only from `penpot.currentUser.sessionId`, shown in the plugin UI with a **Copy** button. The ID stays the same across workspace navigation.
 * Multiple tabs can connect to the same file. Connecting or disconnecting one tab does not disconnect the others.
 
 Choose a session for your agent:
