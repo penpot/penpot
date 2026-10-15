@@ -546,3 +546,20 @@
       ;; First iteration used the seed; errors-fn runs only after the repair.
       (t/is (= 1 @calls)))))
 
+(t/deftest repair-invalid-geometry-of-a-copy-shape
+  (t/testing "a repair is not an override: the copy shape it resets stays untouched, so sync gives it back its main's geometry"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (tho/add-simple-component :component1 :main-root :main-child)
+                      (thc/instantiate-component :component1 :copy-root
+                                                 :children-labels [:copy-child])
+                      (ths/update-shape :copy-child :width nil)
+                      (ths/update-shape :copy-child :touched nil))
+
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
+          child'  (ths/get-shape file' :copy-child :page-label :page1)]
+
+      (t/is (= [:invalid-geometry] (mapv :code errors)))
+      (t/is (nil? (cfv/validate-file file' {})))
+      (t/is (nil? (:touched child'))))))
