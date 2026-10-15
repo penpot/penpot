@@ -30,7 +30,7 @@
   {:transcript "one-of -> \n   {:target :copy-root, :value 500}", :states ["df9a66ef7c8ee469" "c4f0c92f92575cda"]}
   {:transcript "one-of -> \n  one-of -> ", :states ["94318a628db305b6"]}]
  :case-aj-reflow-after-nested-sync-is-its-own-undo-step
- [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :fills, :value \"#0000ff\"}\n   {:times 1}", :states ["43ca8b2de80a51fc" "43ca8b2de80a51fc" "9c3022331b3fe9ae"]}]
+ [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :fills, :value \"#0000ff\"}\n   {:times 1}", :states ["43ca8b2de80a51fc" "32b45a5ac7536b08" "7104bfaccd42cd3b"]}]
  :case-ak-update-main-pushes-grid-cells
  [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["5a6af6c0b8f86ac3" "278e4ff6bf0df746" "322e03c88f4a9dce" "432cfef7e9b05164"]}
   {:transcript "one-of -> \n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["9900a7f71dc0cb5f" "de66ab1c3d4cc157" "6b5ff9fd86e2aa87"]}]
@@ -40,7 +40,7 @@
  :case-am-update-main-pushes-a-swap-inside-a-group
  [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:target :copy-root}", :states ["b4f808a12f723283" "9b695fc212f26b53" "32b94deb961ac763"]}]
  :case-an-flex-child-override-follows-sync-reset-and-update-main
- [{:transcript " {:target :copy-instance, :property :margin, :value 8}\n   {:target :main-instance, :property :margin, :value 20}", :states ["234a21e54bf21bd5" "03664b1e6eb74856" "9c3b12abbc6089ce"]}
+ [{:transcript " {:target :copy-instance, :property :margin, :value 8}\n   {:target :main-instance, :property :margin, :value 20}", :states ["234a21e54bf21bd5" "03664b1e6eb74856" "820db97e4e4b43dc"]}
   {:transcript " {:target :copy-instance, :property :margin, :value 8}\n   {:target :copy-root}", :states ["234a21e54bf21bd5" "1f92f9b4d2e50598" "a09954797e57930c"]}
   {:transcript " {:target :copy-instance, :property :margin, :value 8}\n   {:target :copy-root}", :states ["234a21e54bf21bd5" "ace1e76c1da2c443" "8f3452e82544f1ad"]}]
  :case-ao-copy-dropped-into-a-grid-cell-reaches-copies

@@ -115,16 +115,17 @@
    (every? uuid? (:ids args)))
   (ptk/reify ::move-frame-guides
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [it state _]
       (let [ids (:ids args)
             object-modifiers (:modifiers args)
             object-transforms (:transforms args)
-            objects (dsh/lookup-page-objects state)
+            page (dsh/lookup-page state)
+            objects (:objects page)
 
             is-frame? (fn [id] (= :frame (get-in objects [id :type])))
             frame-ids? (into #{} (filter is-frame?) ids)
 
-            build-move-event
+            move-guide
             (fn [guide]
               (let [frame-id (:frame-id guide)
                     frame (get objects frame-id)
@@ -140,17 +141,25 @@
                       (gsh/apply-transform transform))
 
                     moved (gpt/to-vec (gpt/point (:x frame) (:y frame))
-                                      (gpt/point (:x frame') (:y frame')))
+                                      (gpt/point (:x frame') (:y frame')))]
+                (update guide :position + (get moved (:axis guide)))))
 
-                    guide (update guide :position + (get moved (:axis guide)))]
-                (update-guides guide)))
+            ;; one commit, in the undo group of the transform, with the
+            ;; guides that move
+            changes
+            (->> (:guides page)
+                 (vals)
+                 (filter (comp frame-ids? :frame-id))
+                 (keep (fn [guide]
+                         (let [guide' (move-guide guide)]
+                           (when (not= guide guide') guide'))))
+                 (reduce (fn [changes guide] (pcb/set-guide changes (:id guide) guide))
+                         (-> (pcb/empty-changes it)
+                             (pcb/with-page page)
+                             (pcb/set-undo-group (:undo-group args)))))]
 
-            guides (-> state dsh/lookup-page :guides vals)]
-
-        (->> guides
-             (filter (comp frame-ids? :frame-id))
-             (map build-move-event)
-             (rx/from))))))
+        (when (seq (:redo-changes changes))
+          (rx/of (dwc/commit-changes changes)))))))
 
 (defn update-guide-color
   [guide-id color]
