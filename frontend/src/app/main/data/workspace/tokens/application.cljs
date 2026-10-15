@@ -26,6 +26,7 @@
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.colors :as wdc]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwtr]
@@ -715,6 +716,8 @@
                                     tokens-status (dsh/lookup-tokens-status state)]
                                 (when (and tokens-lib tokens-status)
                                   (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))]
+              ;; the shapes are pending while the tokens resolve, so a wait
+              ;; for the layout covers the update that follows
               (->> (if (contains? cf/flags :tokenscript)
                      (rx/of (ts/resolve-tokens tokens))
                      (sd/resolve-tokens tokens))
@@ -758,7 +761,8 @@
                              (if (rx/observable? res)
                                res
                                (rx/of res))))
-                         (rx/of (dwu/commit-undo-transaction undo-id)))))))))
+                         (rx/of (dwu/commit-undo-transaction undo-id))))))
+                   (wrf/with-pending :token shape-ids))))
 
           (when text-editing?
             (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")

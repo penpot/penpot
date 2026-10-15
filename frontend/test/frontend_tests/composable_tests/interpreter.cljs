@@ -364,13 +364,14 @@
   (-> (cths/get-shape (current-file) label) :fills first :fill-color))
 
 (defn fill-commit
-  "A commit that fills the shape `label` of the live file with `color`, with
-   `opts` merged into the commit params."
+  "A commit that fills the shape `label` (or each of the labels in a
+   collection) of the live file with `color`, with `opts` merged into the
+   commit params."
   [label color opts]
   (let [page    (cthf/current-page (current-file))
         changes (cls/generate-update-shapes
                  (pcb/empty-changes nil (:id page))
-                 #{(cthi/id label)}
+                 (into #{} (map cthi/id) (if (keyword? label) [label] label))
                  #(assoc % :fills (cths/sample-fills-color :fill-color color))
                  (:objects page)
                  {})]
@@ -395,11 +396,11 @@
 (defn await-step
   "Emit `events` and return a promise of `:settled` once the pending work of
    `app.main.data.workspace.reflow` drains (component sync, layout and text
-   reflow), as the plugin `waitForLayoutUpdate` waits; or of
-   `{:timeout pending}` after `timeout-ms` (default `step-timeout-ms`). Work
-   must be opened while the events are processed; for events that commit
-   only after asynchronous work that opens none (token resolution), pass
-   `ready?`, which must hold before the pending work is awaited."
+   reflow, token resolution), as the plugin `waitForLayoutUpdate` waits; or
+   of `{:timeout pending}` after `timeout-ms` (default `step-timeout-ms`).
+   Work must be opened while the events are processed; for events whose
+   effect waits on something that opens none (a dialog shown to the user),
+   pass `ready?`, which must hold before the pending work is awaited."
   ([events] (await-step events step-timeout-ms))
   ([events timeout-ms] (await-step events timeout-ms nil))
   ([events timeout-ms ready?]
@@ -451,20 +452,6 @@
   "The workspace events of the op unit `op` (for a choice, of the chosen op)."
   [op situation]
   (op->events (unwrap op) situation))
-
-(defn- live-shape
-  "The shape `id` of the current page of the live file."
-  [id]
-  (get-in (current-file) [:data :pages-index (:current-page-id @st/state) :objects id]))
-
-(defn- op-ready
-  "For the op unit `op` whose events commit only after asynchronous work that
-   opens no pending work, a predicate of when they have committed; else nil."
-  [op situation]
-  (let [op (unwrap op)]
-    (when (instance? n/ApplyToken op)
-      (let [id (tm/target-shape-id situation (:target op))]
-        #(= (:token-name op) (get-in (live-shape id) [:applied-tokens :r1]))))))
 
 (defn- install-file-event
   "An event that makes `file` the current file in the store, the result of a
@@ -695,7 +682,7 @@
           (run-ops situation (rest ops)))
         (do
           (reset! step-errors [])
-          (.then (await-step (op-events op situation) step-timeout-ms (op-ready op situation))
+          (.then (await-step (op-events op situation) step-timeout-ms)
                  (fn [result]
                    (let [[errors] (reset-vals! step-errors [])]
                      (cond

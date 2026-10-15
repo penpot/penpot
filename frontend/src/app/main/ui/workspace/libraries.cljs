@@ -996,7 +996,7 @@
                               (when library-id
                                 (st/emit!
                                  (dwl/set-updating-library true)
-                                 (dwl/sync-file file-id library-id)))))))]
+                                 (dwl/update-libraries file-id [library-id])))))))]
 
     [:div {:class (stl/css-case :updates-content (not is-legacy)
                                 :updates-content-legacy is-legacy)}
