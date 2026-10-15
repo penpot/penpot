@@ -15,18 +15,26 @@
    [app.main.ui.dashboard.import :as import]
    [cljs.test :as t :include-macros true]))
 
+(def ^:private pending-library-links
+  @#'import/pending-library-links)
+
+(defn- pending-entry
+  "One library of the package the user has to resolve, with a candidate."
+  [library-id]
+  {:id         library-id
+   :name       "Tokens"
+   :candidates [{:id           (uuid/next)
+                 :name         "Tokens"
+                 :project-id   (uuid/next)
+                 :project-name "Design system"}]})
+
 (defn- file-resolution
   "One file of a resolution, with a single library pending resolution."
   [file-id library-id]
   {:id      file-id
    :name    "card.penpot"
    :done    []
-   :pending [{:id         library-id
-              :name       "Tokens"
-              :candidates [{:id           (uuid/next)
-                            :name         "Tokens"
-                            :project-id   (uuid/next)
-                            :project-name "Design system"}]}]})
+   :pending [(pending-entry library-id)]})
 
 (t/deftest the-file-id-of-a-link-comes-from-the-entry-and-not-from-the-key
   (let [file-id (uuid/next)
@@ -38,7 +46,7 @@
         selection  {(str file-id) {(str old-lib) (str new-lib)}}]
 
     (t/is (= [{:file-id (str file-id) :library-id (str new-lib)}]
-             (import/pending-library-links resolution selection)))))
+             (pending-library-links resolution selection)))))
 
 (t/deftest the-links-are-the-same-with-a-typed-resolution
   (let [file-id (uuid/next)
@@ -48,19 +56,68 @@
         selection  {file-id {old-lib new-lib}}]
 
     (t/is (= [{:file-id file-id :library-id new-lib}]
-             (import/pending-library-links resolution selection)))))
+             (pending-library-links resolution selection)))))
+
+(t/deftest a-file-with-several-pending-libraries-creates-one-link-each
+  (let [file-id (uuid/next)
+        lib-a   (uuid/next)
+        lib-b   (uuid/next)
+        new-a   (uuid/next)
+        new-b   (uuid/next)
+        resolution {file-id {:id      file-id
+                             :name    "card.penpot"
+                             :done    []
+                             :pending [(pending-entry lib-a)
+                                       (pending-entry lib-b)]}}
+        selection  {file-id {lib-a new-a
+                             lib-b new-b}}]
+
+    (t/testing "both entries the user resolved become a link"
+      (t/is (= #{{:file-id file-id :library-id new-a}
+                 {:file-id file-id :library-id new-b}}
+               (set (pending-library-links resolution selection)))))))
+
+(t/deftest a-partial-selection-creates-only-the-chosen-link
+  (let [file-id (uuid/next)
+        lib-a   (uuid/next)
+        lib-b   (uuid/next)
+        new-a   (uuid/next)
+        resolution {file-id {:id      file-id
+                             :name    "card.penpot"
+                             :done    []
+                             :pending [(pending-entry lib-a)
+                                       (pending-entry lib-b)]}}
+        selection  {file-id {lib-a new-a}}]
+
+    (t/testing "the entry with no candidate chosen emits nothing"
+      (t/is (= [{:file-id file-id :library-id new-a}]
+               (pending-library-links resolution selection))))))
+
+(t/deftest a-done-entry-creates-no-link
+  (let [file-id (uuid/next)
+        library (uuid/next)]
+
+    (t/testing "a file whose libraries were auto-linked has nothing to emit"
+      (t/is (= [] (pending-library-links
+                   {file-id {:id      file-id
+                             :name    "card.penpot"
+                             :done    [{:id        library
+                                        :name      "Tokens"
+                                        :linked-to library}]
+                             :pending []}}
+                   {file-id {library (uuid/next)}}))))))
 
 (t/deftest pending-entries-without-a-selection-create-no-link
   (let [file-id (uuid/next)
         old-lib (uuid/next)]
 
     (t/testing "an entry the user skipped creates nothing"
-      (t/is (= [] (import/pending-library-links
+      (t/is (= [] (pending-library-links
                    {file-id (file-resolution file-id old-lib)}
                    {file-id {}}))))
 
     (t/testing "a file with nothing pending creates nothing"
-      (t/is (= [] (import/pending-library-links
+      (t/is (= [] (pending-library-links
                    {file-id {:id      file-id
                              :name    "card.penpot"
                              :done    []
@@ -68,4 +125,4 @@
                    {file-id {old-lib (uuid/next)}}))))
 
     (t/testing "an empty resolution creates nothing"
-      (t/is (= [] (import/pending-library-links {} {}))))))
+      (t/is (= [] (pending-library-links {} {}))))))

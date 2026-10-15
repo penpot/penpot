@@ -156,7 +156,7 @@
              0
              resolution))
 
-(defn pending-library-links
+(defn- pending-library-links
   "The library links the wizard must create for the files of a resolution:
   one per pending entry the user chose a candidate for. The file id comes
   from the entry and never from the key of the map: what a key holds depends
