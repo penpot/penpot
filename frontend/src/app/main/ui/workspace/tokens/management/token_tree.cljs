@@ -48,12 +48,11 @@
   (let [full-path            (str (name type) "." (:path node))
         is-folder-expanded   (not (contains? (set (or folded-token-paths [])) full-path))
         children             (:children node)
-
         sorted-children
         (mf/with-memo [children]
           (let [[leafs groups]
                 (reduce (fn [[l g] item]
-                          (if (:leaf item)
+                          (if (and (:leaf item) (not (seq (:children item))))
                             [(conj l item) g]
                             [l (conj g item)]))
                         [[] []]
@@ -80,15 +79,26 @@
                         :expanded is-folder-expanded
                         :aria-expanded is-folder-expanded
                         :aria-controls (str "folder-children-" (:path node))
-                        :is-expandable (not (:leaf node))
+                        :is-expandable (seq children)
                         :on-toggle-expand swap-folder-expanded
                         :on-context-menu node-context-menu-prep}]
      (when is-folder-expanded
        [:div {:class (stl/css :folder-children-wrapper)
               :id (str "folder-children-" (:path node))}
+        (when-let [leaf (:leaf node)]
+          (let [id    (:id leaf)
+                token (ctob/get-token tokens-lib selected-token-set-id id)]
+            [:> token-pill*
+             {:key id
+              :token token
+              :selected-shapes selected-shapes
+              :is-selected-inside-layout is-selected-inside-layout
+              :active-theme-tokens active-theme-tokens
+              :on-click on-token-pill-click
+              :on-context-menu on-pill-context-menu}]))
         (when (seq children)
           (for [child sorted-children]
-            (if (not (:leaf child))
+            (if (seq (:children child))
               [:ul {:class (stl/css :node-parent)
                     :key (:path child)}
                [:> folder-node* {:type type
@@ -160,7 +170,7 @@
         ordered-nodes (mf/with-memo [raw-tree]
                         (let [[leafs groups]
                               (reduce (fn [[l g] item]
-                                        (if (:leaf item)
+                                        (if (and (:leaf item) (not (seq (:children item))))
                                           [(conj l item) g]
                                           [l (conj g item)]))
                                       [[] []]
@@ -170,11 +180,12 @@
                           (concat sorted-leafs sorted-groups)))]
     [:div {:class (stl/css :token-tree-wrapper)}
      (for [node ordered-nodes]
-       (if (:leaf node)
-         (let [token (ctob/get-token tokens-lib selected-token-set-id (get-in node [:leaf :id]))]
+       (if (and (:leaf node) (not (seq (:children node))))
+         (let [id    (:id (:leaf node))
+               token (ctob/get-token tokens-lib selected-token-set-id id)]
            [:> token-pill*
             {:token token
-             :key (:id (:leaf node))
+             :key id
              :selected-shapes selected-shapes
              :is-selected-inside-layout is-selected-inside-layout
              :active-theme-tokens active-theme-tokens

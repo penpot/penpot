@@ -7,6 +7,7 @@
 (ns common-tests.path-names-test
   (:require
    [app.common.path-names :as cpn]
+   [app.common.types.tokens-lib :as ctob]
    [clojure.test :as t]))
 
 (t/deftest split-group-name
@@ -47,6 +48,14 @@
         (concat (when (:leaf node) [(:leaf node)])
                 (mapcat tree-payloads (:children node)))))
 
+(defn- tree-leaves
+  "Collects every token leaf from a tree."
+  [nodes]
+  (mapcat (fn [node]
+            (concat (when (:leaf node) [(:leaf node)])
+                    (tree-leaves (:children node))))
+          nodes))
+
 (t/deftest build-tree-root-preserves-repeated-segments
   (t/testing "#11588: adjacent repeated path segments keep their depth"
     (let [tree     (cpn/build-tree-root [{:name "test.pointer.pointer" :id "t1"}] ".")
@@ -82,3 +91,37 @@
         (t/is (= (last segments) (:name terminal)) path)
         (t/is (= (inc (count segments)) (count (tree-payloads root))) path)
         (t/is (= {:name (last segments) :id id} (:leaf terminal)) path)))))
+
+(t/deftest build-tree-root-preserves-active-set-ancestor-and-descendant
+  (let [tokens-lib (ctob/read-multi-set-dtcg
+                    {"Global" {"a.a"   {"$value" "#aaa" "$type" "color"}
+                               "a.a.a" {"$value" "#bbb" "$type" "color"}}
+                     "$themes" []
+                     "$metadata" {"tokenSetOrder" ["Global"]
+                                  "activeSets" ["Global"]}})
+        selected-set (ctob/get-set-by-name tokens-lib "Global")
+        selected-tokens (ctob/get-tokens tokens-lib (ctob/get-id selected-set))
+        active-tokens (ctob/get-tokens-in-active-sets tokens-lib)
+        filtered-tokens (reduce-kv (fn [tokens k _]
+                                     (if (contains? selected-tokens k)
+                                       tokens
+                                       (dissoc tokens k)))
+                                   active-tokens
+                                   active-tokens)
+        tree          (cpn/build-tree-root (vec (vals filtered-tokens)) ".")
+        collision     (-> tree first :children first)
+        leaves        (tree-leaves tree)]
+    (t/is (= #{"a.a" "a.a.a"} (set (keys active-tokens))))
+    (t/is (= #{"a.a" "a.a.a"} (set (keys selected-tokens))))
+    (t/is (= #{"a.a" "a.a.a"} (set (keys filtered-tokens))))
+    (t/is (= 2 (count leaves)))
+    (t/is (= #{(get-in selected-tokens ["a.a" :id])
+               (get-in selected-tokens ["a.a.a" :id])}
+             (set (map :id leaves))))
+    (t/is (= "a.a" (:path collision)))
+    (t/is (= (get-in selected-tokens ["a.a" :id])
+             (get-in collision [:leaf :id])))
+    (t/is (= (get-in selected-tokens ["a.a.a" :id])
+             (get-in collision [:children 0 :leaf :id])))
+    (t/is (every? #(not (contains? % :app.common.path-names/remaining?))
+                  (mapcat tree-payloads tree)))))

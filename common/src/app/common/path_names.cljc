@@ -208,23 +208,19 @@ Some naming conventions:
                        (str parent-path "." segment-name)
                        segment-name)
 
-        is-leaf? (and (seq remaining-segments)
-                      (every? (fn [segment]
-                                (and (not (::remaining? segment))
-                                     (let [remaining-segment-name (first (split-path (:name segment) :separator separator))]
-                                       (= segment-name remaining-segment-name))))
-                              remaining-segments))
-
-        ;; Leaf segments never carry the internal marker (is-leaf?
-        ;; requires every segment to be unmarked), the dissoc only
-        ;; guards the UI-consumed :leaf map against leaking it.
-        leaf-segment (when is-leaf? (dissoc (first remaining-segments) ::remaining?))
+        leaf-segment (some (fn [segment]
+                             (when (and (not (::remaining? segment))
+                                        (= segment-name
+                                           (first (split-path (:name segment) :separator separator))))
+                               (dissoc segment ::remaining?)))
+                           remaining-segments)
+        child-segments (filter ::remaining? remaining-segments)
         node {:name segment-name
               :path current-path
               :depth depth
               :leaf leaf-segment
-              :children (when-not is-leaf?
-                          (let [grouped-elements (sort-and-group-segments remaining-segments separator)]
+              :children (when (seq child-segments)
+                          (let [grouped-elements (sort-and-group-segments child-segments separator)]
                             (mapv (fn [[child-segment-name remaining-child-segments]]
                                     (build-tree-node child-segment-name remaining-child-segments separator current-path (inc depth)))
                                   grouped-elements)))}]

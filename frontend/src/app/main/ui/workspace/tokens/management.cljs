@@ -132,7 +132,8 @@
                 (filter (fn [token]
                           (let [token-path (cpn/split-path (:name token) :separator ".")]
                             (and (> (count token-path) 0)
-                                 (str/starts-with? (:name token) (str (:path node) ".")))))))))
+                                 (or (= (:name token) (:path node))
+                                     (str/starts-with? (:name token) (str (:path node) "."))))))))))
 
         ;; Filter tokens by their path and return their ids
         filter-tokens-by-path-ids
@@ -142,7 +143,9 @@
            (->> selected-token-set-tokens
                 (filter (fn [token]
                           (let [[_ token-value] token]
-                            (and (= (:type token-value) type) (str/starts-with? (:name token-value) (str path "."))))))
+                            (and (= (:type token-value) type)
+                                 (or (= (:name token-value) path)
+                                     (str/starts-with? (:name token-value) (str path ".")))))))
                 (mapv (fn [token]
                         (let [[_ token-value] token]
                           (:id token-value)))))))
