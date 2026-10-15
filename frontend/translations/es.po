@@ -729,12 +729,6 @@ msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
 
 #: src/app/main/ui/dashboard/import.cljs
-msgid "dashboard.import.importing.title"
-msgid_plural "dashboard.import.importing.title"
-msgstr[0] "Importando 1 archivo"
-msgstr[1] "Importando %s archivos"
-
-#: src/app/main/ui/dashboard/import.cljs
 msgid "dashboard.import.importing.done"
 msgid_plural "dashboard.import.importing.done"
 msgstr[0] "1 hecho"
@@ -743,6 +737,12 @@ msgstr[1] "%s hechos"
 #: src/app/main/ui/dashboard/import.cljs
 msgid "dashboard.import.importing.message"
 msgstr "Reconstruyendo páginas, componentes y recursos en tu proyecto."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "Importando 1 archivo"
+msgstr[1] "Importando %s archivos"
 
 #: src/app/main/ui/dashboard/import.cljs:710
 msgid "dashboard.import.next-file"
@@ -753,14 +753,14 @@ msgid "dashboard.import.no-perms"
 msgstr "No tienes permisos para importar en este equipo"
 
 #: src/app/main/ui/dashboard/import.cljs
-msgid "dashboard.import.queued.title"
-msgstr "Esperando a empezar..."
-
-#: src/app/main/ui/dashboard/import.cljs
 msgid "dashboard.import.queued.message"
 msgstr ""
-"Tus archivos ya están subidos. La importación empieza en cuanto haya un hueco "
-"libre."
+"Tus archivos ya están subidos. La importación empieza en cuanto haya un "
+"hueco libre."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.queued.title"
+msgstr "Esperando a empezar..."
 
 #: src/app/main/ui/dashboard/import.cljs
 msgid "dashboard.import.ready.message"
@@ -2193,9 +2193,37 @@ msgstr "Idea"
 msgid "feedback.type.issue"
 msgstr "Problema"
 
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.title"
-msgstr "Descargar ficheros"
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.cancel-export"
+msgstr "Cancelar exportación"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.done"
+msgstr "Listo"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.export-error"
+msgstr "No se ha podido exportar: %s"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exported.message"
+msgstr "Revisa tu carpeta de descargas."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exported.title"
+msgid_plural "files-export-modal.exported.title"
+msgstr[0] "1 archivo exportado"
+msgstr[1] "%s archivos exportados"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exporting.message"
+msgstr "Cada archivo se descarga en cuanto está listo."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exporting.title"
+msgid_plural "files-export-modal.exporting.title"
+msgstr[0] "Exportando 1 archivo"
+msgstr[1] "Exportando %s archivos"
 
 #: src/app/main/ui/exports/files.cljs:183
 msgid "files-export-modal.options.detach-libraries.message"
@@ -2238,6 +2266,18 @@ msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 #: src/app/main/ui/exports/files.cljs
 msgid "files-download-modal.unsaved-changes"
 msgstr "Algunos de tus últimos cambios aún no se han guardado, así que esta descarga no los incluirá."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.status.exported"
+msgstr "Exportado"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.status.waiting"
+msgstr "En espera"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.title"
+msgstr "Exportar archivo"
 
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"

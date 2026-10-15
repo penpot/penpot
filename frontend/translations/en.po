@@ -2153,9 +2153,37 @@ msgstr "Idea"
 msgid "feedback.type.issue"
 msgstr "Issue"
 
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.title"
-msgstr "Download files"
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.cancel-export"
+msgstr "Cancel export"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.done"
+msgstr "Done"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.export-error"
+msgstr "Couldn't export: %s"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exported.message"
+msgstr "Check your downloads folder."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exported.title"
+msgid_plural "files-export-modal.exported.title"
+msgstr[0] "1 file exported"
+msgstr[1] "%s files exported"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exporting.message"
+msgstr "Each file downloads as soon as it's ready."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exporting.title"
+msgid_plural "files-export-modal.exporting.title"
+msgstr[0] "Exporting 1 file"
+msgstr[1] "Exporting %s files"
 
 #: src/app/main/ui/exports/files.cljs:183
 msgid "files-export-modal.options.detach-libraries.message"
@@ -2196,6 +2224,18 @@ msgstr "Embed library assets in the file"
 #: src/app/main/ui/exports/files.cljs
 msgid "files-download-modal.unsaved-changes"
 msgstr "Some of your latest changes are not saved yet, so this download will not include them."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.status.exported"
+msgstr "Exported"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.status.waiting"
+msgstr "Waiting"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.title"
+msgstr "Export file"
 
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
