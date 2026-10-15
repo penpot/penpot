@@ -106,7 +106,10 @@
    [:job-id ::sm/uuid]
    ;; Per-job result: any JSON-encodable value, nil when the job returns
    ;; nothing. Nested maps and vectors are allowed; unserializable
-   ;; values are dropped to nil by jobs/encode-result with a warning.
+   ;; values are dropped to nil by jobs/encode-result with a warning. A
+   ;; job whose job-def declares a result schema has its result validated
+   ;; against it: one that does not conform is rejected and the job is
+   ;; not completed.
    [:result [:maybe :any]]
    ;; Storage object the worker produced for this job. A resource is only
    ;; set, never replaced: a job that already has one is rejected.
@@ -117,6 +120,13 @@
    [:action [:enum :run :skip]]])
 
 (sv/defmethod ::complete-job
+  "Complete a job on behalf of the worker that ran it, with the result it
+  produced and, when it wrote one, the resource it stores.
+
+  The result of a job whose job-def declares a result schema is validated
+  against it before it is stored: one that does not conform is rejected and
+  the job is not completed. A job that is no longer completable is skipped,
+  and nothing is validated for it."
   {::doc/added "2.20"
    ::sm/params schema:complete-job-params
    ::sm/result schema:complete-job-result
