@@ -242,8 +242,11 @@
         (update :content transform))))
 
 (defn generate-shape-name
+  "The name of a text whose letters are `text`: its first 280 characters,
+  each line break a space."
   [text]
-  (subs text 0 (min 280 (count text))))
+  (let [text (str/replace text #"\s*\n\s*" " ")]
+    (subs text 0 (min 280 (count text)))))
 
 (defn- compare-text-attr
   "Compare two attribute values and return true if they are different.

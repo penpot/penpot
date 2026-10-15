@@ -254,11 +254,13 @@
     (let [the-file (tm/file situation)
           shape-id (tm/target-shape-id situation target)
           page     (thf/current-page the-file)
+          ;; as the editor's commit, the name that follows the content is a
+          ;; derived write
           changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                                #{shape-id}
                                                #(edit-text-content % edit value)
                                                (:objects page)
-                                               {})
+                                               {:ignore-touched #{:name}})
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
