@@ -14,6 +14,7 @@
    [app.common.files.validate :as cfv]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.logic.override-scan :as clos]
    [app.common.pprint :as pp]
    [app.common.render-wasm.helpers :as wasm.h]
    [app.common.render-wasm.mem :as wasm.mem]
@@ -552,6 +553,28 @@
             (clj->js))
        (catch :default cause
          (ex/print-throwable cause))))))
+
+(defn ^:export scan-overrides
+  "List the copy shapes of the current file that differ from their mains
+  without an override (`app.common.logic.override-scan`). Copies of
+  library components changed since the file last synced are skipped."
+  []
+  (let [state     @st/state
+        file      (dsh/lookup-file state)
+        libraries (dissoc (get state :files) (:id file))
+        outdated? (fn [library component]
+                    (and (not= (:id library) (:id file))
+                         (> (:modified-at component) (:synced-at library))))]
+    (try
+      (let [findings (clos/scan file libraries :skip-component? outdated?)]
+        (js/console.table
+         (clj->js (map #(-> %
+                            (update :groups (comp vec sort))
+                            (update :attrs (comp vec sort)))
+                       findings)))
+        (count findings))
+      (catch :default cause
+        (ex/print-throwable cause)))))
 
 (defn ^:export validate-schema
   []
