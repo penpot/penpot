@@ -18,14 +18,21 @@
   (t/is (preg/check-permission preg/mcp-plugin-id "content:write"))
   (t/is (not (preg/check-permission preg/mcp-plugin-id "unknown:permission"))))
 
+(def ^:private plugin-cmds
+  #{:add-profile-plugin :remove-profile-plugin})
+
 (defn- record-cmd-mock
-  "Mock rp/cmd! that records calls in mock/rpc-calls and answers
-  with (response-fn cmd params)."
+  "Mock rp/cmd! that records the plugin calls in mock/rpc-calls and
+  answers them with (response-fn cmd params). Other calls, left over by
+  an earlier test of the suite (a component sync deletes the thumbnails
+  of the frames it changes after a delay), get an empty answer."
   [response-fn]
   (mock/stub
    (fn [cmd params]
-     (swap! mock/rpc-calls conj {:cmd cmd :params params})
-     (response-fn cmd params))))
+     (if (contains? plugin-cmds cmd)
+       (do (swap! mock/rpc-calls conj {:cmd cmd :params params})
+           (response-fn cmd params))
+       (rx/of nil)))))
 
 (defn- cmds
   []

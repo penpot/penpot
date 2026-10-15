@@ -12,7 +12,7 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 
 ## Override rule (holds once sync has settled)
 
-- Different means touched: a group whose value differs from the near main (geometry: from the expected geometry) must be touched.
+- Different means touched: a group whose value differs from the near main (geometry: from the expected geometry) must be touched. "Differs" uses `gsh/close-attrs?`: numbers, rects, points, position data with a tolerance (1 px for geometry); `:transform`/`:transform-inverse` with `gmt/close?`; path content segment by segment.
 - Equal does not mean untouched: a group set back to the main's value stays touched. Only reset, update-main, detach, swap or variant switch clear groups; value equality never does.
 - Only authored writes on copies set groups. Mains are never touched through `set-shape-attr`.
 - The swap is the only structural override: copy children always follow the main's structure (add, delete, order), and a child with `:swap-group` keeps its own component in that position.
@@ -20,10 +20,10 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 ## Per operation
 
 - Edit on a copy shape (authored): sets the attr's group (text content: `:content-group` + the text groups it changes), clears `:remote-synced`. Descendants moved/resized only because of it stay untouched.
-- Rename: an explicit rename touches `:name-group` on root or child. Automatic renames (text name following its content) are derived. Untouched names sync from the near main; a touched root name on update-main renames the component.
+- Rename: an explicit rename touches `:name-group` on root or child. Automatic renames (text name following its content) are derived: the editors write the name with `:ignore-touched #{:name}`, and sync gives an untouched copy text the name of its own letters when the main's name is automatic. Untouched names sync from the near main; a touched root name on update-main renames the component.
 - Edit on a main: no touched change on the main; triggers sync.
 - Sync main→copy: every untouched group gets the near main's value (geometry: expected geometry); touched groups keep their values; never sets or clears `:touched`. Main child added → added clean to copies. Main child deleted → copy child removed, overrides or not. Main reorder → copies follow. A swapped sub-head pairs with the main child it replaces (its `:shape-ref`) and takes only that child's placement (position, rotation, flips, constraints, `layout-item-*`); everything else syncs from its own component's main. A main child deleted → its swapped copies go with it. A swap made in the main reaches copies without `:swap-group` and spares those with it.
-- Sync cascade is eager: one sync runs to a fixpoint in memory (copies of A, including the A copy in B's main → copies of B → …) and commits once in the triggering op's undo group. The file is never left partly synced. Syncing only the components reported as changed equals a full-file sync.
+- Sync cascade is eager: one sync runs to a fixpoint in memory (copies of A, including the A copy in B's main → copies of B → …) and commits once in the triggering op's undo group. The file is never left partly synced. Syncing only the components reported as changed equals a full-file sync. Code: `cll/generate-sync-file-cascade` (first pass as `generate-sync-file-changes`, then `generate-sync-components-cascade` over `cll/changed-components` of each pass); the frontend `sync-file` commits it to the synced file, and a library file's sync then syncs the current file's copies of the library components its cascade changed.
 - Reset: the selected head's subtree becomes equal to its near main (expected geometry); all its touched groups cleared, `:swap-group` included: a swapped head turns back into the near main's component in place, keeping its id. Nothing outside that subtree changes.
 - Update main (from a top copy head): the copy's differing values go to the main; the copy's touched cleared; other copies then sync and keep their own overrides. A swapped child replaces the main child it stands for, and neither keeps `:swap-group`.
 - Detach: the subtree loses component links, `:touched`, `:remote-synced`. First-level nested heads stay copies, move one nesting level up and inherit the near main's touched groups, so values their old near main overrode become overrides. A swapped head left with no enclosing copy becomes a plain copy of its own component (`:shape-ref` = its main root, no `:swap-group`).
@@ -46,10 +46,11 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 ## Geometry ownership
 
 - Copy root: position is its own; rotation/flip belong to it only when its `:geometry-group` is touched. Resizing it touches the root only.
-- Children of a resized or transformed shape: derived (expected geometry), untouched, and still follow later main edits.
+- Children of a resized or transformed shape: derived (expected geometry), untouched, and still follow later main edits. Code: a transform touches only the shapes the user transformed (`clp/calculate-ignore-tree` takes their ids; the frontend keeps them in `:workspace-modifiers-ids`); sync places the main subtree of a copy shape with its own geometry like that shape before walking its children.
 - Layout-owned (never touched; sync writes, then reflow): x/y of non-absolute children of flex/grid frames; width/height on axes sized fill, or auto on a layout frame.
-- Grow-owned (never touched; sync writes, then re-measure on SVG and WASM): width+height of auto-width text, height of auto-height text.
-- `set-shape-attr`'s `ignore-geometry` does not cover `:width`/`:height`; a derived size write needs `ignore-touched` or per-dimension exclusion.
+- Grow-owned (never touched; sync writes, then re-measure on SVG and WASM): width+height of auto-width text, height of auto-height text. Every editor and resize path writes the measured size as derived; on WASM `sync-file` re-measures the auto-grow texts of the current page it wrote (texts on other pages keep the synced size until measured).
+- `set-shape-attr`'s `ignore-geometry` does not cover `:width`/`:height`; a derived size write needs `ignore-touched` (transforms get it from the ignore tree).
+- Repairs are not overrides: `files/repair` writes with `ignore-touched`; only the text repairs set groups, explicitly.
 
 ## Component modified marking
 
@@ -57,5 +58,5 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 
 ## Change ops
 
-- `{:type :set-touched}` replaces `:touched` wholesale and only on copies. `{:type :set :attr :touched}` is a raw assoc with no copy guard; prefer `:set-touched`.
+- `{:type :set-touched}` replaces `:touched` wholesale and only on copies (an empty set is dropped). The builders write only it (`pcb/update-shapes` turns a `:touched` change into it); `{:type :set :attr :touched}`, a raw assoc with no copy guard, is still applied for stored changes.
 - Builders that write to copies must emit the inverse `:set-touched` in undo (as `pcb/update-shapes` does).
