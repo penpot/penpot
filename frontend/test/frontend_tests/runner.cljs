@@ -33,6 +33,7 @@
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-edit-watchers-test]
    [frontend-tests.data.workspace-font-variants-test]
+   [frontend-tests.data.workspace-frame-guides-undo-test]
    [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-libraries-test]
    [frontend-tests.data.workspace-library-links-test]
@@ -203,6 +204,7 @@
    'frontend-tests.data.workspace-edit-watchers-test
    'frontend-tests.data.workspace-interactions-test
    'frontend-tests.data.workspace-font-variants-test
+   'frontend-tests.data.workspace-frame-guides-undo-test
    'frontend-tests.data.workspace-libraries-test
    'frontend-tests.data.workspace-library-links-test
    'frontend-tests.data.workspace-library-updates-test
