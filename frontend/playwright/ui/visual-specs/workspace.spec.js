@@ -84,6 +84,30 @@ test.describe("Design tab", () => {
 
     await expect(workspace.page).toHaveScreenshot();
   });
+
+  test("Shows the align options when selecting two shapes", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await workspace.rectShapeButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+    await workspace.clickLeafLayer("Rectangle");
+    await page.keyboard.press("Control+D");
+    await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
+    await page.keyboard.press("Control+A");
+
+    await expect(
+      workspace.rightSidebar.getByRole("button", { name: /^Align left/ }),
+    ).toBeVisible();
+    // The align options are a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
 });
 
 test.describe("Assets tab", () => {
