@@ -16,6 +16,7 @@
    [common-tests.buffer-test]
    [common-tests.colors-test]
    [common-tests.data-test]
+   [common-tests.exceptions-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
@@ -96,8 +97,9 @@
    'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test
-   'common-tests.files-changes-test
+   'common-tests.exceptions-test
    'common-tests.files-builder-test
+   'common-tests.files-changes-test
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
    'common-tests.files-migrations-test

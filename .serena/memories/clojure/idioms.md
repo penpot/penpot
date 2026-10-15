@@ -18,3 +18,4 @@ assumption; a wrong assumption here already cost a review round.
 - `^:async` fns never throw synchronously (rejected promises instead);
   `try/catch/finally` supported; continuations are microtasks, timers and
   RxJS schedulers are macrotasks (FIFO).
+- `cuerdas.core/index-of` returns `nil` (not `-1`) when the substring is absent, like `clojure.string/index-of`. `(pos? nil)` **throws on the JVM** but evaluates to `false` in CLJS (JS coercion), so `(if (pos? (str/index-of s "\n")) …)` works in the browser and crashes the backend. Guard with `some?` before `pos?` (this was `app.common.exceptions/first-line`).
