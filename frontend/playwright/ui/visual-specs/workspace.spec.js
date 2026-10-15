@@ -109,10 +109,15 @@ test.describe("Assets tab", () => {
     await workspace.openLibrariesModal();
     await expect(workspace.page).toHaveScreenshot();
 
+    await workspace.librariesModal
+      .getByRole("tab", { name: "Libraries" })
+      .click();
+    await expect(workspace.page).toHaveScreenshot();
+
+    // Now the get-file call should return a library
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
     await workspace.clickLibrary("Testing library 1");
-    await expect(
-      workspace.librariesModal.getByText("File library"),
-    ).toBeVisible();
+    await expect(workspace.librariesModal.getByText("Added")).toBeVisible();
     await expect(workspace.page).toHaveScreenshot();
   });
 
