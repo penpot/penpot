@@ -89,9 +89,11 @@
   [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment?]}]
   (let [changes   (reduce
                    (fn [changes id]
+                     ;; a shape the transform leaves untouched changes only
+                     ;; as a consequence of it: no attribute touches
                      (let [opts {:attrs attrs
                                  :ignore-geometry? (get ignore-tree id)
-                                 :ignore-touched ignore-touched
+                                 :ignore-touched (or (true? (get ignore-tree id)) ignore-touched)
                                  :with-objects? with-objects?}]
                        (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
                    (cond-> changes

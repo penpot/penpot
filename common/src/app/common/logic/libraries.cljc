@@ -18,6 +18,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -309,6 +310,51 @@
       (-> (set-touched shape-inst container nil)
           (change-remote-synced shape-inst container nil)))))
 
+(defn- in-main-frame
+  "The copy shape `shape-inst` expressed in the frame of the main, as
+  `reposition-shape` would place it from there: turned back by the roots'
+  relative rotation and flips when the copy root has them, and moved by the
+  roots' offset."
+  [shape-inst root-inst root-main]
+  (let [turn  (when (ctk/touched-group? root-inst :geometry-group)
+                (orient-like root-inst root-main (grc/rect->center (:selrect root-inst))))
+        shape (cond-> shape-inst (some? turn) turn)
+        delta (gpt/subtract (gpt/point (-> root-main :selrect :x) (-> root-main :selrect :y))
+                            (gpt/point (-> root-inst :selrect :x) (-> root-inst :selrect :y)))]
+    (gsh/move shape delta)))
+
+(defn- close-geometry?
+  [shape other]
+  (and (gsh/close-attrs? :selrect (:selrect shape) (:selrect other))
+       (gsh/close-attrs? :points (:points shape) (:points other))))
+
+(defn- placed-like
+  "The main `objects` with the subtree of `shape-main` placed like `placed`,
+  a copy shape expressed in the main's frame: resized to its size, its
+  children following through their constraints and layouts, then turned
+  and moved with it as one piece."
+  [objects shape-main placed]
+  (let [width   (-> placed :selrect :width)
+        height  (-> placed :selrect :height)
+        objects (if (and (mth/close? width (-> shape-main :selrect :width))
+                         (mth/close? height (-> shape-main :selrect :height)))
+                  objects
+                  (let [modif-tree (gm/set-objects-modifiers
+                                    {(:id shape-main) {:modifiers (ctm/change-size shape-main width height)}}
+                                    objects)]
+                    (reduce-kv (fn [objects id {:keys [modifiers]}]
+                                 (d/update-when objects id gsh/transform-shape modifiers))
+                               objects
+                               modif-tree)))
+        ids     (cfh/get-children-ids-with-self objects (:id shape-main))
+        resized (get objects (:id shape-main))
+        turn    (orient-like resized placed (grc/rect->center (:selrect resized)))
+        objects (cond-> objects
+                  (some? turn) (as-> objects (reduce #(update %1 %2 turn) objects ids)))
+        delta   (gpt/subtract (grc/rect->center (:selrect placed))
+                              (grc/rect->center (:selrect (get objects (:id shape-main)))))]
+    (reduce #(update %1 %2 gsh/move delta) objects ids)))
+
 (defn- sync-copy-recursive
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
   pairs with, then pair their children (`compare-children`) and walk each
@@ -317,7 +363,9 @@
   overrides and clears them. `ctx` holds what stays the same along the
   walk: the copy's `:container`, the `:main-container` of the main shapes,
   the `:component` and its `:library`, the roots `:root-inst` and
-  `:root-main`, and `:reset?`."
+  `:root-main`, and `:reset?`. The main shapes of the children of a copy
+  shape that keeps its own geometry are placed like it first, so they get
+  their expected geometry."
   [changes {:keys [container main-container library component reset?] :as ctx} shape-inst shape-main]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
@@ -326,8 +374,16 @@
   (if (nil? shape-main)
     ;; This should not occur, but protect against it in any case
     changes
-    (let [children-inst (vec (ctn/get-direct-children container shape-inst))
-          children-main (vec (ctn/get-direct-children main-container shape-main))]
+    (let [;; a copy shape that keeps its own geometry passes it on to its
+          ;; children, which follow it as they follow their main's
+          placed         (when (and (not reset?) (ctk/touched-group? shape-inst :geometry-group))
+                           (in-main-frame shape-inst (:root-inst ctx) (:root-main ctx)))
+          main-container (cond-> main-container
+                           (and (some? placed) (not (close-geometry? placed shape-main)))
+                           (update :objects placed-like shape-main placed))
+          ctx            (assoc ctx :main-container main-container)
+          children-inst  (vec (ctn/get-direct-children container shape-inst))
+          children-main  (vec (ctn/get-direct-children main-container shape-main))]
       (cond-> (-> changes
                   (sync-copy-shape ctx shape-inst shape-main)
                   (compare-children

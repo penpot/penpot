@@ -563,7 +563,7 @@
            (rx/of (dwm/apply-wasm-modifiers modif-tree (assoc options :ignore-snap-pixel true)))
 
            (let [modif-tree (gm/set-objects-modifiers modif-tree objects)]
-             (rx/of (dwm/apply-modifiers* objects modif-tree nil options)))))))))
+             (rx/of (dwm/apply-modifiers* objects modif-tree nil (assoc options :user-ids (set ids)))))))))))
 
 (defn change-orientation
   "Change orientation of shapes, from the sidebar options form.
@@ -590,7 +590,9 @@
               (-> (dwm/build-modif-tree ids objects get-modifier)
                   (gm/set-objects-modifiers objects))]
 
-          (assoc state :workspace-modifiers modif-tree))))
+          (assoc state
+                 :workspace-modifiers modif-tree
+                 :workspace-modifiers-ids (set ids)))))
 
     ptk/WatchEvent
     (watch [_ state _]

@@ -140,7 +140,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (dissoc :workspace-modifiers :wasm-props :prev-wasm-props)
+          (dissoc :workspace-modifiers :workspace-modifiers-ids :wasm-props :prev-wasm-props)
           (dissoc :app.main.data.workspace.transforms/current-move-selected)))))
 
 (defn create-modif-tree
@@ -356,7 +356,9 @@
    (ptk/reify ::update-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (update state :workspace-modifiers calculate-update-modifiers state ignore-constraints ignore-snap-pixel modif-tree)))))
+       (-> state
+           (update :workspace-modifiers calculate-update-modifiers state ignore-constraints ignore-snap-pixel modif-tree)
+           (update :workspace-modifiers-ids (fnil into #{}) (keys modif-tree)))))))
 
 
 (defn set-modifiers
@@ -375,7 +377,9 @@
      (update [_ state]
        (let [page-id   (:current-page-id state)
              modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree page-id params)]
-         (assoc state :workspace-modifiers modifiers))))))
+         (assoc state
+                :workspace-modifiers modifiers
+                :workspace-modifiers-ids (set (keys modif-tree))))))))
 
 (defn- without-nil-ids
   "Drop nil-keyed entries from a modif-tree. A nil shape id (possible in
@@ -682,7 +686,7 @@
                 (clp/matrices-transform transforms)
 
                 ignore-tree
-                (clp/calculate-ignore-tree objects (keys transforms) transform-shape)
+                (clp/calculate-ignore-tree objects (keys transforms) transform-shape (set (keys modif-tree)))
 
                 ;; the guides move in a commit of their own, in the undo
                 ;; group of the shapes, so the copies' sync joins them both
@@ -793,7 +797,9 @@
              (-> (build-modif-tree ids objects get-modifier)
                  (gm/set-objects-modifiers objects))]
 
-         (assoc state :workspace-modifiers modif-tree))))))
+         (assoc state
+                :workspace-modifiers modif-tree
+                :workspace-modifiers-ids (set ids)))))))
 
 ;; This function is similar to set-rotation-modifiers but:
 ;; - It consideres the center for everyshape instead of the center of the total selrect
@@ -821,7 +827,9 @@
             (-> (build-modif-tree ids objects get-modifier)
                 (gm/set-objects-modifiers objects))]
 
-        (assoc state :workspace-modifiers modif-tree)))))
+        (assoc state
+               :workspace-modifiers modif-tree
+               :workspace-modifiers-ids (set ids))))))
 
 (defn apply-modifiers*
   "A lower-level version of apply-modifiers, that expects receive ready
@@ -840,7 +848,8 @@
 
             ignore-tree
             (clp/calculate-ignore-tree objects (keys object-modifiers)
-                                       (clp/modifiers-transform object-modifiers))
+                                       (clp/modifiers-transform object-modifiers)
+                                       (:user-ids options))
 
             ;; the guides move in a commit of their own, in the undo group of
             ;; the shapes, so the copies' sync joins them both
@@ -894,6 +903,13 @@
                (calculate-modifiers state ignore-constraints ignore-snap-pixel modifiers page-id)
                (get state :workspace-modifiers))
 
+             ;; the shapes the user transformed: those of the given
+             ;; modifiers, or those the stored ones were set for
+             user-ids
+             (if (some? modifiers)
+               (set (keys modifiers))
+               (get state :workspace-modifiers-ids))
+
              undo-id
              (js/Symbol)]
 
@@ -901,7 +917,7 @@
           (if undo-transation?
             (rx/of (dwu/start-undo-transaction undo-id))
             (rx/empty))
-          (rx/of (apply-modifiers* objects object-modifiers text-modifiers options)
+          (rx/of (apply-modifiers* objects object-modifiers text-modifiers (assoc options :user-ids user-ids))
                  (fn [state]
                    (let [ids (into [] xf:without-uuid-zero (keys object-modifiers))]
                      (update state :workspace-text-modifier #(apply dissoc % ids)))))

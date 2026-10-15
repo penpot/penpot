@@ -7,21 +7,19 @@
 (ns common-tests.geom-shapes-constraints-test
   (:require
    [app.common.geom.shapes.constraints :as gsc]
+   [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
 ;; ---- constraint-modifier :default ----
 
-(t/deftest constraint-modifier-default-returns-empty-vector
-  (t/testing ":default method accepts 6 args and returns an empty vector"
-    ;; Before the fix the :default method only accepted 5 positional args
-    ;; (plus the dispatch value), so calling it with 6 args would throw an
-    ;; arity error.  After the fix it takes [_ _ _ _ _ _] and returns [].
+(t/deftest constraint-modifier-default-returns-empty-modifiers
+  (t/testing ":default method accepts 6 args and returns empty modifiers"
+    ;; :scale and any other type with no method of its own add nothing; the
+    ;; caller adds the result to the child's modifiers (`ctm/add-modifiers`)
     (let [result (gsc/constraint-modifier :unknown-constraint-type
                                           :x nil nil nil nil)]
-      (t/is (vector? result))
-      (t/is (empty? result))))
+      (t/is (ctm/empty? result))))
 
-  (t/testing ":default method returns [] for :scale-like unknown type on :y axis"
-    (let [result (gsc/constraint-modifier :some-other-unknown
-                                          :y nil nil nil nil)]
-      (t/is (= [] result)))))
+  (t/testing ":default method can be added to modifiers"
+    (let [result (gsc/constraint-modifier :scale :y nil nil nil nil)]
+      (t/is (ctm/empty? (ctm/add-modifiers (ctm/empty) result))))))
