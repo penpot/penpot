@@ -16,7 +16,6 @@
    [app.common.files.validate :as cfv]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -171,11 +170,8 @@
     (t/is (= #{:invalid-main-instance-id :ref-shape-not-found} found))
     (t/is (nil? errors))
     (t/is (= (thi/id :main-root) (:main-instance-id (thc/get-component file' :component1))))
-    ;; the :ref-shape-not-found repair, run in the same pass, detaches the copy
-    (tm/known-failure "F60"
-                      [(thi/id :component1) (thi/id :main-root)]
-                      [nil nil]
-                      (copy-link file'))))
+    ;; the copy keeps its link
+    (t/is (= [(thi/id :component1) (thi/id :main-root)] (copy-link file')))))
 
 (t/deftest invalid-main-instance-page
   (let [file (-> (simple)
@@ -186,11 +182,8 @@
     (t/is (= #{:invalid-main-instance-page :ref-shape-not-found} found))
     (t/is (nil? errors))
     (t/is (= (thi/id :page1) (:main-instance-page (thc/get-component file' :component1))))
-    ;; the :ref-shape-not-found repair, run in the same pass, detaches the copy
-    (tm/known-failure "F60"
-                      [(thi/id :component1) (thi/id :main-root)]
-                      [nil nil]
-                      (copy-link file'))))
+    ;; the copy keeps its link
+    (t/is (= [(thi/id :component1) (thi/id :main-root)] (copy-link file')))))
 
 (t/deftest invalid-main-instance
   ;; the component names the copy as its main; the repair of
@@ -199,11 +192,8 @@
     (t/is (= #{:invalid-main-instance :invalid-main-instance-id :ref-shape-not-found} found))
     (t/is (nil? errors))
     (t/is (= (thi/id :main-root) (:main-instance-id (thc/get-component file' :component1))))
-    ;; the :ref-shape-not-found repair, run in the same pass, detaches the copy
-    (tm/known-failure "F60"
-                      [(thi/id :component1) (thi/id :main-root)]
-                      [nil nil]
-                      (copy-link file'))))
+    ;; the copy keeps its link
+    (t/is (= [(thi/id :component1) (thi/id :main-root)] (copy-link file')))))
 
 (t/deftest shape-ref-in-main
   (let [[found file' errors] (repair (ths/update-shape (simple) :main-root :shape-ref (thi/id :copy-root)))]
@@ -220,10 +210,10 @@
     (t/is (nil? (:main-instance (ths/get-shape file' :main-child))))))
 
 (t/deftest component-main-file-on-a-child
-  ;; the repair only removes :main-instance, so the error never goes away
-  (let [[found _ errors] (repair (ths/update-shape (simple) :main-child :component-file (thi/id :file1)))]
+  (let [[found file' errors] (repair (ths/update-shape (simple) :main-child :component-file (thi/id :file1)))]
     (t/is (= #{:component-main} found))
-    (tm/known-failure "F47" nil #{:component-main} (codes errors))))
+    (t/is (nil? errors))
+    (t/is (nil? (:component-file (ths/get-shape file' :main-child))))))
 
 (t/deftest should-not-be-component-root
   (let [[found file' errors] (repair (ths/update-shape (simple) :main-child :component-root true))]
@@ -261,21 +251,83 @@
     (t/is (= (thi/id :main2-nested-head) (:shape-ref (ths/get-shape file' :copy2-nested-head))))
     (t/is (ctk/instance-head? (ths/get-shape file' :copy2-nested-head)))))
 
+(t/deftest ref-shape-not-found-pointing-at-another-library-copy
+  ;; a library copy points at another copy of the same component: it is
+  ;; reassigned to the library main that one references
+  (let [library (-> (thf/sample-file :library :is-shared true :page-label :lib-page)
+                    (tho/add-simple-component :component1 :lib-main :lib-main-child))
+        file    (-> (thf/sample-file :file1 :page-label :page1)
+                    (thc/instantiate-component :component1 :copy1 :library library)
+                    (thc/instantiate-component :component1 :copy2 :library library)
+                    (ths/update-shape :copy2 :shape-ref (thi/id :copy1)))
+        [found file' errors] (repair file {(:id library) library})]
+    (t/is (= #{:ref-shape-not-found} found))
+    (t/is (nil? errors))
+    (t/is (= [(thi/id :component1) (thi/id :lib-main)]
+             ((juxt :component-id :shape-ref) (ths/get-shape file' :copy2))))))
+
 (t/deftest ref-shape-not-found-in-a-copy-child
-  ;; the reference of a non-head copy shape is never checked: the check reads
-  ;; the library from the shape itself, and only heads have one
-  (let [errors (cfv/validate-file (ths/update-shape (simple) :copy-child :shape-ref (uuid/next)) {})]
-    (tm/known-failure "F46" #{:ref-shape-not-found} #{} (codes errors))))
+  (let [[found file' errors] (repair (ths/update-shape (simple) :copy-child :shape-ref (uuid/next)))]
+    (t/is (= #{:ref-shape-not-found} found))
+    (t/is (nil? errors))
+    ;; no matching shape: the child is detached, the copy keeps its link
+    (t/is (nil? (:shape-ref (ths/get-shape file' :copy-child))))
+    (t/is (= [(thi/id :component1) (thi/id :main-root)] (copy-link file')))))
+
+(t/deftest ref-shape-not-found-in-a-head-nested-twice
+  (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                   (tho/add-two-levels-nested-component-with-copy
+                    :component1 :main1-root :main1-child
+                    :component2 :main2-root :nested-head1
+                    :component3 :main3-root :nested-head2 :nested-subhead2
+                    :copy-root
+                    :copy2-root-params {:children-labels [:copy-head :copy-subhead :copy-rect]})
+                   (ths/update-shape :copy-subhead :shape-ref (uuid/next)))
+        errors (cfv/validate-file file {})]
+    (t/is (contains? (codes errors) :ref-shape-not-found))))
+
+(t/deftest ref-shape-not-found-in-a-head-under-a-group
+  ;; component2 nests the copy of component1 inside a group
+  (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                   (tho/add-simple-component :component1 :main1-root :main1-child)
+                   (tho/add-frame :main2-root)
+                   (tho/add-group :main2-group :parent-label :main2-root)
+                   (thc/instantiate-component :component1 :main2-nested-head :parent-label :main2-group)
+                   (thc/make-component :component2 :main2-root)
+                   (thc/instantiate-component :component2 :copy-root
+                                              :children-labels [:copy-group :copy-nested-head :copy-child])
+                   (ths/update-shape :copy-nested-head :shape-ref (uuid/next)))
+        errors (cfv/validate-file file {})]
+    (t/is (contains? (codes errors) :ref-shape-not-found))))
+
+(t/deftest library-main-child-deleted-before-the-update
+  ;; a library main deletes its nested copy; the copy in the consuming file
+  ;; still refers to it until the user takes the library update, which
+  ;; removes it
+  (let [library  (-> (thf/sample-file :library :is-shared true :page-label :lib-page)
+                     (tho/add-nested-component :component1 :main1-root :main1-child
+                                               :component2 :main2-root :main2-nested-head))
+        file     (-> (thf/sample-file :file1 :page-label :page1)
+                     (thc/instantiate-component :component2 :copy2-root
+                                                :library library
+                                                :children-labels [:copy2-nested-head]))
+        page     (thf/current-page library)
+        [_ del]  (cls/generate-delete-shapes (pcb/empty-changes nil (:id page))
+                                             (:data library) page (:objects page)
+                                             #{(thi/id :main2-nested-head)} {})
+        library' (thf/apply-changes library del)]
+    (t/is (nil? (cfv/validate-file file {(:id library') library'})))))
 
 (t/deftest ref-shape-is-head
-  ;; the check reports no component, so the repair cannot make the shape a
-  ;; head again
+  ;; a nested copy head that lost its component is made a head again
   (let [file (-> (nested)
                  (ths/update-shape :copy2-nested-head :component-id nil)
                  (ths/update-shape :copy2-nested-head :component-file nil))
-        [found _ errors] (repair file)]
+        [found file' errors] (repair file)]
     (t/is (= #{:ref-shape-is-head} found))
-    (tm/known-failure "F48" nil #{:ref-shape-is-head} (codes errors))))
+    (t/is (nil? errors))
+    (t/is (= [(thi/id :component1) (thi/id :file1)]
+             ((juxt :component-id :component-file) (ths/get-shape file' :copy2-nested-head))))))
 
 (t/deftest ref-shape-is-not-head
   ;; a copy child made a head while the shape it references is not one

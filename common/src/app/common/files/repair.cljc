@@ -30,14 +30,15 @@
 
 (defn- repair-shapes
   "The changes that apply `repair-fn` to the shapes `ids` of the page of
-  `error` (its shape, by default)."
+  `error` (its shape, by default). A repair is not an override, so it
+  touches nothing; a repair of the touched groups sets them itself."
   ([code error file-data repair-fn]
    (repair-shapes code error file-data [(:id (:shape error))] repair-fn))
   ([code {:keys [shape page-id]} file-data ids repair-fn]
    (log/debug :hint (str "repairing shape " code) :id (:id shape) :name (:name shape) :page-id page-id)
    (-> (pcb/empty-changes nil page-id)
        (pcb/with-file-data file-data)
-       (pcb/update-shapes ids repair-fn))))
+       (pcb/update-shapes ids repair-fn {:ignore-touched true}))))
 
 (defn- repair-component
   "The changes that apply `repair-fn` to the component `component-id`."
@@ -166,7 +167,10 @@
   (repair-shapes code error file-data
                  (fn [shape]
                    (log/debug :hint "  -> unset :main-instance")
-                   (dissoc shape :main-instance))))
+                   (cond-> (dissoc shape :main-instance)
+                     ;; only a head may name a component file
+                     (not (ctk/instance-head? shape))
+                     (dissoc :component-file)))))
 
 (defmethod repair-error :should-not-be-component-root
   [code error file-data _]
@@ -184,7 +188,7 @@
                                                  (-> (get libraries (:component-file root-shape)) :data))
                              component         (when component-file
                                                  (ctkl/get-component component-file (:component-id root-shape) true))
-                             component-shapes  (ctf/get-component-shapes file-data component)]
+                             component-shapes  (ctf/get-component-shapes component-file component)]
 
                          ;; Check if the shape points to the remote main. If so, reassign to the near main.
                          (if-let [near-shape-1 (d/seek #(= (:shape-ref %) (:shape-ref shape)) component-shapes)]
@@ -201,7 +205,7 @@
                                                          (-> (get libraries (:component-file head-shape)) :data))
                                      component         (when component-file
                                                          (ctkl/get-component component-file (:component-id head-shape) true))
-                                     component-shapes  (ctf/get-component-shapes file-data component)]
+                                     component-shapes  (ctf/get-component-shapes component-file component)]
                                  (if-let [near-shape-3 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
                                    near-shape-3
                                    nil))))))]
@@ -527,6 +531,20 @@
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))
   file)
 
+(def ^:private main-instance-codes
+  "Errors in the pointer from a component to its main instance. Until
+  they are repaired, the copies of the component find no near main."
+  #{:invalid-main-instance-id :invalid-main-instance-page :invalid-main-instance})
+
+(defn- repairable-now
+  "The errors to repair in this pass: a copy shape whose main is not found
+  waits for a later pass while some component's main instance is being
+  repaired, as the main may be found then."
+  [errors]
+  (if (some (comp main-instance-codes :code) errors)
+    (remove #(= :ref-shape-not-found (:code %)) errors)
+    errors))
+
 (defn repair-file
   [{:keys [data id] :as file} libraries errors]
   (log/debug :hint "repairing file" :id (str id) :errors (count errors))
@@ -538,5 +556,5 @@
                                                     data
                                                     libraries)))
                 (pcb/empty-changes nil)
-                errors)]
+                (repairable-now errors))]
     redo-changes))
