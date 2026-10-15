@@ -15,6 +15,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as cfc]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
@@ -1429,6 +1430,85 @@
          (maybe-sync sync-colors? done? #(generate-sync-file % file-id :colors asset-id library-id libraries current-file-id early-return?))
          (maybe-sync sync-typographies? done? #(generate-sync-file % file-id :typographies asset-id library-id libraries current-file-id early-return?))))))
 
+
+;; A guard against a sync cascade that never settles.
+(def ^:private max-sync-passes 100)
+
+(defn changed-components
+  "Ids of the components whose main `changes` modified, judged against
+   `old-data`, the file data before `changes` applied."
+  [old-data changes]
+  (into #{}
+        (mapcat (partial cfc/components-changed old-data))
+        (:redo-changes changes)))
+
+(defn- sync-cascade
+  "Sync the copies of the components `pending` of the file `file-id` in
+   that file, one per pass, and queue the components each pass changed,
+   until none is left. `data` is the file data after `changes`. Returns
+   `{:changes :data :component-ids :passes}`, with `component-ids` the
+   components synced."
+  [changes data file-id pending libraries current-file-id passes]
+  (loop [changes changes
+         data    data
+         pending (vec pending)
+         synced  #{}
+         passes  passes]
+    (cond
+      (empty? pending)
+      {:changes changes :data data :component-ids synced :passes passes}
+
+      (>= passes max-sync-passes)
+      (throw (ex-info "Component sync did not settle"
+                      {:type ::sync-not-settled
+                       :pending pending
+                       :passes passes}))
+
+      :else
+      (let [component-id (first pending)
+            libraries    (assoc-in libraries [file-id :data] data)
+            sync         (generate-sync-file-changes (pcb/empty-changes)
+                                                     nil
+                                                     :components
+                                                     file-id
+                                                     component-id
+                                                     file-id
+                                                     libraries
+                                                     current-file-id)
+            data'        (cfc/process-changes data (:redo-changes sync) false)
+            more         (->> (changed-components data sync)
+                              (remove (set pending)))]
+        (recur (pcb/concat-changes changes sync)
+               data'
+               (into (subvec pending 1) more)
+               (conj synced component-id)
+               (inc passes))))))
+
+(defn generate-sync-components-cascade
+  "Sync the copies of the components `component-ids` of the file `file-id`
+   in that file, then those of the components each sync changed, until
+   none is left (`mem:common/component-sync-contract`, decision (c)).
+   `libraries` holds every file by id, `file-id` included. Returns
+   `{:changes :data :component-ids :passes}`: the changes of every pass in
+   order, the file data after them, the components synced and the number
+   of passes."
+  [changes file-id component-ids libraries current-file-id]
+  (sync-cascade changes (get-in libraries [file-id :data]) file-id component-ids
+                libraries current-file-id 0))
+
+(defn generate-sync-file-cascade
+  "As `generate-sync-file-changes`, then the cascade of
+   `generate-sync-components-cascade` from the components of `file-id`
+   that sync changed. Returns `{:changes :data :component-ids :passes}`."
+  [changes undo-group asset-type file-id asset-id library-id libraries current-file-id]
+  (let [data  (get-in libraries [file-id :data])
+        sync  (generate-sync-file-changes (pcb/empty-changes) nil asset-type file-id asset-id
+                                          library-id libraries current-file-id)
+        data' (cfc/process-changes data (:redo-changes sync) false)]
+    (sync-cascade (-> (pcb/set-undo-group changes undo-group)
+                      (pcb/concat-changes sync))
+                  data' file-id (changed-components data sync)
+                  libraries current-file-id 1)))
 
 (defn generate-reset-component
   "Reset the copy head to its near main. A swapped head turns back into the
