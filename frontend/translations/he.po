@@ -1093,7 +1093,7 @@ msgstr "המיזם שלך הועבר בהצלחה"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "הצוות הזה שייך מעתה ל־%s"
+msgstr "%s שייך מעתה ל־%s"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1106,7 +1106,7 @@ msgstr "חברי הצוות"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "הצוות הזה לא שייך יותר לארגון %s"
+msgstr "%s לא שייך יותר ל־%s"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"

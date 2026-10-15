@@ -1202,7 +1202,7 @@ msgstr "プロジェクトを移動しました"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "このチームは組織「%s」に所属しました"
+msgstr "%s は組織「%s」に所属しました"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1215,7 +1215,7 @@ msgstr "チームのメンバー"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "このチームは組織「%s」に所属しなくなりました"
+msgstr "%s は組織「%s」に所属しなくなりました"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"

@@ -1163,7 +1163,7 @@ msgstr "已成功移動您的專案"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "此團隊現已隸屬於組織 %s"
+msgstr "%s 現已隸屬於 %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1176,7 +1176,7 @@ msgstr "團隊成員"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "此團隊已不再隸屬於組織 %s"
+msgstr "%s 已不再隸屬於 %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"
