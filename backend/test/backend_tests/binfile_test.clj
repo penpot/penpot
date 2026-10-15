@@ -673,6 +673,51 @@
       (t/is (cfo/token-applied? token-radius shape [:r1 :r2 :r3 :r4]))
       (t/is (cfo/token-applied? token-opacity shape [:opacity])))))
 
+(defn- import-output
+  "Import the exported output in the default project of the profile and
+  return the imported files, indexed by name."
+  [profile output]
+  (let [result (v3/import-files!
+                (assoc th/*system*
+                       ::bfc/project-id (:default-project-id profile)
+                       ::bfc/team-id (:default-team-id profile)
+                       ::bfc/profile-id (:id profile)
+                       ::bfc/input output))]
+    (into {}
+          (map (fn [id]
+                 (let [file (bfc/get-file th/*system* id)]
+                   [(:name file) file])))
+          (:file-ids result))))
+
+(t/deftest export-include-libraries-keeps-tokens-status-of-the-file
+  (let [profile (th/create-profile* 1)
+        {:keys [library file]} (prepare-file-with-tokens-lib profile)
+        output (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (assoc th/*system*
+            ::bfc/ids #{(:id file)}
+            ::bfc/export-type :include-libraries)
+     (io/output-stream output))
+
+    (let [files        (import-output profile output)
+          library'     (get files (:name library))
+          file'        (get files (:name file))
+          file-data    (:data file')
+          library-lib  (cfo/get-tokens-lib (:data library'))
+          file-status  (cfo/get-tokens-status file-data)]
+
+      (t/is (= 2 (count files)))
+      (t/is (= (:id library') (cfo/get-tokens-source file-data)))
+
+      ;; The active sets of the file are resolved against the sets of the
+      ;; imported library, so they are not lost.
+      (t/is (= {:active-themes #{"/test-theme"}
+                :active-sets #{"test-token-set"}}
+               (cfo/ids->names file-status library-lib)))
+      (t/is (= #{"token-radius" "token-opacity"}
+               (set (keys (cfo/get-tokens-in-active-sets file-status library-lib))))))))
+
 (t/deftest import-auto-links-single-candidate
   (let [profile (th/create-profile* 1)
         ;; Create a shared library file
