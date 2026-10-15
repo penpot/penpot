@@ -179,11 +179,6 @@
   (let [move (n/move-child :main-child1 :main-root 2)]
     {:setup      setup/component-with-many-children
      :operation  (tm/in-sequence [move])
-     ;; the undo of the sync's move leaves the copy children reordered
-     :undo-check {:known-failures [{:bug   "F41"
-                                    :fails {:undo         #{[:object :copy-root :shapes]}
-                                            :variant-undo #{[:object :copy-root :shapes]}}
-                                    :op    move}]}
      :asserter   (fn [situation]
                    (let [copy-root (setup/copy-root situation)
                          order     (vec (:shapes copy-root))
@@ -956,11 +951,6 @@
   []
   (let [move (n/move-child :sub1 :row-root 3)]
     {:setup      setup/component-with-sibling-instances
-     ;; the undo of the sync's move leaves the copy children reordered
-     :undo-check {:known-failures [{:bug   "F41"
-                                    :fails {:undo         #{[:object :row-copy :shapes]}
-                                            :variant-undo #{[:object :row-copy :shapes]}}
-                                    :op    move}]}
      :operation  (tm/in-sequence [move])
      :asserter   (fn [s]
                    (t/is (= [] (setup/misaligned-sub-heads s))))}))
@@ -1032,20 +1022,10 @@
                         ;; the main's third column takes the copy child's component
                         in-col-3   (mapv :component-id (get placement 3))
                         expected   [(:component-id copy-child)]]
-                    (if (tm/applied? s swap)
-                      ;; the cells keep the id of the main child update main
-                      ;; replaced, which is gone, and the new main child is in
-                      ;; no cell
-                      (tm/known-failure "F49"
-                                        [{:stray #{} :uncelled 0} expected]
-                                        [{:stray #{nil} :uncelled 1} [nil]]
-                                        [cells in-col-3])
-                      (do
-                        (t/is (= {:stray #{} :uncelled 0} cells))
-                        (t/is (= expected in-col-3))
-                        ;; both main children instantiate the same component
-                        (t/is (= [(:shape-ref copy-child)] (mapv :id (get placement 3))))
-                        (t/is (empty? (get placement 1)))))
+                    (t/is (= {:stray #{} :uncelled 0} cells))
+                    (t/is (= expected in-col-3))
+                    (t/is (= [(:shape-ref copy-child)] (mapv :id (get placement 3))))
+                    (t/is (empty? (get placement 1)))
                     (t/is (empty? (:touched (tm/role-shape s :copy-root))))))}))
 
 (defn update-main-renames-the-component
@@ -1143,12 +1123,6 @@
   []
   (let [drop (n/nest-copy :loose :main-root :cell [1 3])]
     {:setup      setup/grid-component-with-copy-and-loose-item
-     ;; the drop reorders the main's children; the undo of the sync's reorder
-     ;; leaves the copy's children reordered
-     :undo-check {:known-failures [{:bug   "F41"
-                                    :fails {:undo         #{[:object :grid-copy :shapes]}
-                                            :variant-undo #{[:object :grid-copy :shapes]}}
-                                    :op    drop}]}
      :operation  (tm/in-sequence [drop])
      :asserter   (fn [s]
                    (let [main      (tm/role-shape s :main-root)
@@ -1635,13 +1609,6 @@
         removal (n/unapply-token (n/main-rect-of m) "radius.l")
         rect    (fn [s target] (tm/shape-by-id s (target s)))]
     {:setup      setup/empty-situation
-     ;; the undo of the sync gives the copy rect, which had no tokens, an
-     ;; empty `:applied-tokens` map
-     :undo-check {:known-failures [{:bug   "F55"
-                                    :fails {:undo         #{[:object :unlabelled :applied-tokens]}
-                                            :variant-undo #{[:object :unlabelled :applied-tokens]}}
-                                    :op    applied
-                                    :when  #(not (tm/applied? % own))}]}
      :operation  (tm/in-sequence
                   [(n/create-component m base-color :size 100)
                    (n/add-tokens [["radius.s" 10] ["radius.l" 30]])

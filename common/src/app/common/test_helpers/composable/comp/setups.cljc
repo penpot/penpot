@@ -203,6 +203,7 @@
                  (tho/add-frame :grouped-root :width 200 :height 200)
                  (tho/add-group :group :parent-label :grouped-root)
                  (thc/instantiate-component :item :child1 :parent-label :group)
+                 (tho/fit-group :group)
                  (thc/make-component :grouped :grouped-root)
                  (thc/instantiate-component :grouped :grouped-copy))]
     (label-copy-children! file :grouped-copy {:group :copy-group})
