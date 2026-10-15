@@ -919,7 +919,10 @@
                     (assoc :translation? translation?)
                     ;; Attributes that can change in the transform. This
                     ;; way we don't have to check all the attributes
-                    (assoc :attrs transform-attrs))
+                    (assoc :attrs transform-attrs)
+                    ;; Transforms only change geometry, which can't break the
+                    ;; references between components
+                    (assoc :skip-validation? true))
 
                 modif-tree
                 (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
@@ -1069,7 +1072,10 @@
                 (assoc :ignore-tree ignore-tree)
                 ;; Attributes that can change in the transform. This
                 ;; way we don't have to check all the attributes
-                (assoc :attrs transform-attrs))
+                (assoc :attrs transform-attrs)
+                ;; Transforms only change geometry, which can't break the
+                ;; references between components
+                (assoc :skip-validation? true))
 
             update-shape
             (fn [shape]
