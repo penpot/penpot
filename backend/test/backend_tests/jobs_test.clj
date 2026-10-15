@@ -74,14 +74,15 @@
 
 (defmethod ig/init-key ::typed-job
   [_ cfg]
-  {::jobs/name           :typed
-   ::jobs/schema         schema:echo-params
-   ::jobs/handler        (fn [_context params]
-                           (echo-handler cfg params))
-   ::jobs/decoder        (sm/decoder schema:echo-params sm/json-transformer)
-   ::jobs/validator      (sm/validator schema:echo-params)
-   ::jobs/result-schema  schema:typed-result
-   ::jobs/result-decoder (sm/decoder schema:typed-result sm/json-transformer)})
+  {::jobs/name          :typed
+   ::jobs/schema        schema:echo-params
+   ::jobs/handler       (fn [_context params]
+                          (echo-handler cfg params))
+   ::jobs/decoder       (sm/decoder schema:echo-params sm/json-transformer)
+   ::jobs/validator     (sm/validator schema:echo-params)
+   ;; the substrate compiles the decoder from this schema and checks the
+   ;; result against it before storing it
+   ::jobs/result-schema schema:typed-result})
 
 (defn- get-job-defs
   []
@@ -1437,6 +1438,55 @@
         row    (jobs/get-job (make-cfg {}) job-id)]
     (t/is (some? row))
     (t/is (= "echo" (:name row)))))
+
+(t/deftest complete-refuses-a-result-that-does-not-conform
+  "The schema a job-def declares is checked before the result is stored: the
+  row keeps no result and the job is not completed."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg :typed)]
+
+    (t/is (thrown-with-msg? Exception #"invalid result of a job"
+                            (jobs/complete cfg :job-id job-id
+                                           :result {:resolution "not-a-map"})))
+
+    (t/testing "the row was not completed and holds no result"
+      (let [row (jobs/get-job cfg job-id)]
+        (t/is (= "running" (:status row)))
+        (t/is (nil? (:result row)))))
+
+    (t/testing "a job that is no longer completable is skipped without checking"
+      (th/db-update! :job {:status "aborted"} {:id job-id})
+      (t/is (zero? (jobs/complete cfg :job-id job-id
+                                  :result {:resolution "not-a-map"}))))))
+
+(t/deftest a-stored-result-that-does-not-conform-is-read-decode-only
+  "A row written by another version may hold a result the schema of today no
+  longer accepts: reading it decodes and never raises."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg :typed)]
+
+    (th/db-update! :job
+                   {:status "completed"
+                    :result (db/json {:resolution "not-a-map"})}
+                   {:id job-id})
+
+    (let [row (jobs/get-job cfg job-id)]
+      (t/is (= "completed" (:status row)))
+      (t/is (= {:resolution "not-a-map"} (:result row))))))
+
+(t/deftest decode-result-accepts-a-pgobject
+  (let [job-def (jobs/get-job-def (get (make-cfg (get-job-defs)) ::jobs/defs) :typed)
+        file-id (uuid/next)]
+
+    (t/testing "a raw column value is decoded with the schema of the def"
+      (let [decoded (jobs/decode-result job-def
+                                        (db/json {:file-ids   [file-id]
+                                                  :resolution {file-id {:id file-id}}}))]
+        (t/is (= [file-id] (:file-ids decoded)))
+        (t/is (= [file-id] (keys (:resolution decoded))))))
+
+    (t/testing "no result answers nil"
+      (t/is (nil? (jobs/decode-result job-def nil))))))
 
 (t/deftest aborted-job-is-terminal-for-all-writers
   "An aborted job (system-side terminal set by the orphan sweep) cannot be

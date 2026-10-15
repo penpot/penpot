@@ -164,8 +164,8 @@
                           (execute-import cfg context params))
    ::jobs/decoder       (sm/decoder schema:params sm/json-transformer)
    ::jobs/validator     (sm/validator schema:params)
-   ;; The resolution is keyed by file id: without the result decoder the
+   ;; The resolution is keyed by file id: without the result schema the
    ;; keys come back as keywords and the dashboard wizard can no longer
-   ;; match them with the file ids it holds.
-   ::jobs/result-schema  schema:result
-   ::jobs/result-decoder (sm/decoder schema:result sm/json-transformer)})
+   ;; match them with the file ids it holds. The substrate compiles the
+   ;; decoder from it and checks the result against it before storing it.
+   ::jobs/result-schema schema:result})
