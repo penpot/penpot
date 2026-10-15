@@ -61,14 +61,18 @@
             update-positions-stream
             (if (d/not-empty? ids)
               (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+                ;; the reflow stacks on the latest undo entry, which a
+                ;; transaction of its own would not
                 (if (features/active-feature? state "render-wasm/v1")
                   (rx/of (dwm/apply-wasm-modifiers modif-tree
                                                    :stack-undo? true
+                                                   :undo-transation? false
                                                    :undo-group undo-group
                                                    :ignore-touched true))
                   (rx/of (dwm/apply-modifiers {:page-id page-id
                                                :modifiers modif-tree
                                                :stack-undo? true
+                                               :undo-transation? false
                                                :ignore-touched true
                                                :undo-group undo-group}))))
               (rx/empty))
@@ -112,14 +116,19 @@
              (rx/map #(assoc % ::reflow-task (wrf/start! :layout (:ids %))))
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
+             ;; The updates of a page reflow together, in the undo group of
+             ;; the step that asked for them: the one an update names, as
+             ;; those with none come from the same step.
              (rx/mapcat
               (fn [updates]
-                (->> (group-by :page-id updates)
-                     (map (fn [[page-id updates]]
-                            (let [ids (into #{} (mapcat :ids) updates)]
-                              (update-layout-positions {:page-id page-id
-                                                        :ids ids
-                                                        :reflow-tasks (mapv ::reflow-task updates)})))))))
+                (let [undo-group (some :undo-group updates)]
+                  (->> (group-by :page-id updates)
+                       (map (fn [[page-id updates]]
+                              (let [ids (into #{} (mapcat :ids) updates)]
+                                (update-layout-positions {:page-id page-id
+                                                          :ids ids
+                                                          :undo-group undo-group
+                                                          :reflow-tasks (mapv ::reflow-task updates)}))))))))
              (rx/take-until stopper)
              ;; On workspace teardown clear everything still pending.
              (rx/finalize wrf/reset-pending!))))))

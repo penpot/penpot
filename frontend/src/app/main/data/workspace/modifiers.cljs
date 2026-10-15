@@ -687,8 +687,14 @@
                 ignore-tree
                 (clp/calculate-ignore-tree objects (keys transforms) transform-shape)
 
+                ;; the guides move in a commit of their own, in the undo
+                ;; group of the shapes, so the copies' sync joins them both
+                undo-group
+                (or (:undo-group params) (uuid/next))
+
                 options
                 (-> params
+                    (assoc :undo-group undo-group)
                     (assoc :reg-objects? true)
                     (assoc :ignore-tree ignore-tree)
                     (assoc :translation? translation?)
@@ -728,7 +734,7 @@
                (rx/empty))
              (rx/of
               (clear-local-transform)
-              (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
+              (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms :undo-group undo-group})
               (ptk/event ::dwcm/move-frame-comment-threads transforms)
               (dwsh/update-shapes ids update-shape options))
 
@@ -839,8 +845,14 @@
             (clp/calculate-ignore-tree objects (keys object-modifiers)
                                        (clp/modifiers-transform object-modifiers))
 
+            ;; the guides move in a commit of their own, in the undo group of
+            ;; the shapes, so the copies' sync joins them both
+            undo-group
+            (or (:undo-group options) (uuid/next))
+
             options
             (-> options
+                (assoc :undo-group undo-group)
                 (assoc :reg-objects? true)
                 (assoc :ignore-tree ignore-tree)
                 ;; Attributes that can change in the transform. This
@@ -860,7 +872,8 @@
                     (cond-> (d/not-empty? pos-data)
                       (assoc-position-data pos-data shape)))))]
 
-        (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children :modifiers object-modifiers})
+        (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children :modifiers object-modifiers
+                                                   :undo-group undo-group})
                (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
                (dwsh/update-shapes ids update-shape options))))))
 
