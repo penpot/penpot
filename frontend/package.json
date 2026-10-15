@@ -56,7 +56,6 @@
     "@penpot/plugins-runtime": "link:../plugins/libs/plugins-runtime",
     "@penpot/svgo": "penpot/svgo#3.3.0",
     "@penpot/text-editor": "link:text-editor",
-    "@penpot/tokenscript": "link:packages/tokenscript",
     "@penpot/ua-parser": "penpot/ua-parser#1.0.0",
     "@playwright/test": "1.63.0",
     "@storybook/addon-docs": "10.6.1",

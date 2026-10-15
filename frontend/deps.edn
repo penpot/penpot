@@ -30,6 +30,11 @@
    :git/sha "d726717"
    :git/url "https://github.com/funcool/rumext.git"}
 
+  penpot/tokenscript-interpreter
+  {:git/tag "v0.1.0"
+   :git/sha "224547d"
+   :git/url "https://github.com/penpot/tokenscript-interpreter.git"}
+
   instaparse/instaparse {:mvn/version "1.5.0"}
   garden/garden {:git/url "https://github.com/noprompt/garden"
                  :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}
