@@ -177,17 +177,28 @@
                   :title (tr "workspace.assets.components.num-variants" num-variants)}
            [:> icon* {:icon-id i/variant :size "s"}]])])]))
 
-(defn- count-leaves
-  "Counts the total number of leaf elements in a nested map structure.
-     A leaf element is considered any element inside a vector."
+(defn- leaves
+  "The leaf elements of a nested map structure: the elements of each vector
+  in it."
   [m]
   (reduce-kv (fn [acc _ v]
                (cond
-                 (map? v) (+ acc (count-leaves v))
-                 (vector? v) (+ acc (count v))
-                 :else acc))
-             0
+                 (map? v)    (into acc (leaves v))
+                 (vector? v) (into acc v)
+                 :else       acc))
+             []
              m))
+
+(defn can-combine-group?
+  "Whether the components of a group of the assets panel, `groups` (its
+  subgroups by name, its own components under \"\"), nested ones included,
+  can be combined as variants: two or more, none a variant, all with their
+  main on one page."
+  [groups]
+  (let [components (leaves groups)]
+    (and (> (count components) 1)
+         (not-any? ctc/is-variant? components)
+         (apply = (map :main-instance-page components)))))
 
 (mf/defc components-group*
   [{:keys [file-id prefix groups open-groups is-force-open renaming is-listing-thumbs selected on-asset-click
@@ -207,11 +218,8 @@
                                selected-full))
 
         components     (not-empty (get groups "" []))
-        can-combine?   (mf/with-memo [is-local groups components]
-                         (and is-local
-                              (> (count-leaves groups) 1)
-                              (not-any? ctc/is-variant? components)
-                              (apply = (map :main-instance-page components))))
+        can-combine?   (mf/with-memo [is-local groups]
+                         (and is-local (can-combine-group? groups)))
         on-drag-enter
         (mf/use-fn
          (mf/deps dragging* prefix selected-paths is-local drag-data*)
