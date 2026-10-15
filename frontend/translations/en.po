@@ -5786,7 +5786,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
-msgstr "Penpot member since: %s"
+msgstr "Penpot member since: %s."
 
 #: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
@@ -5855,6 +5855,9 @@ msgstr "Subscribe"
 #: src/app/main/ui/settings/subscription.cljs:707
 msgid "subscription.settings.subscribed-since"
 msgstr "You've been on the %s plan since %s."
+
+msgid "subscription.settings.trial-ends-on"
+msgstr "Your free trial ends on %s."
 
 #: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
