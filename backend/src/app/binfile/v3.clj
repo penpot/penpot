@@ -259,6 +259,10 @@
                         embed?
                         (update :data #(bfc/embed-assets cfg % file-id))
 
+                        (not (or detach? embed?))
+                        (update :data #(bfc/absorb-unlinked-tokens-source
+                                        cfg % (bfc/get-libraries cfg [file-id])))
+
                         :always
                         (bfc/clean-file-features))))))
 

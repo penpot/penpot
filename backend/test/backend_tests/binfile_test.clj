@@ -718,6 +718,68 @@
       (t/is (= #{"token-radius" "token-opacity"}
                (set (keys (cfo/get-tokens-in-active-sets file-status library-lib))))))))
 
+(t/deftest export-file-with-deleted-tokens-library-embeds-its-tokens
+  (let [profile    (th/create-profile* 1)
+        {:keys [library file]} (prepare-file-with-tokens-lib profile)
+        tokens-lib (-> (bfc/get-file th/*system* (:id library))
+                       (:data)
+                       (cfo/get-tokens-lib))
+        output     (tmp/tempfile :suffix ".zip")]
+
+    ;; The state left by deleting the library: in the trash and unlinked,
+    ;; but still the tokens source of the file.
+    (th/db-update! :file {:deleted-at (ct/in-future {:days 7})} {:id (:id library)})
+    (th/db-delete! :file-library-rel {:library-file-id (:id library)})
+
+    (v3/export-files!
+     (assoc th/*system*
+            ::bfc/ids #{(:id file)}
+            ::bfc/export-type :include-libraries)
+     (io/output-stream output))
+
+    (t/is (contains? (zip-entry-names output)
+                     (str "files/" (:id file) "/tokens.json")))
+
+    (let [files     (import-output profile output)
+          file-data (:data (get files (:name file)))]
+      (t/is (= 1 (count files)))
+      (t/is (nil? (cfo/get-tokens-source file-data)))
+      (t/is (= (ctob/export-dtcg-json tokens-lib)
+               (ctob/export-dtcg-json (cfo/get-tokens-lib file-data))))
+      (t/is (= {:active-themes #{"/test-theme"}
+                :active-sets #{"test-token-set"}}
+               (cfo/ids->names (cfo/get-tokens-status file-data)
+                               (cfo/get-tokens-lib file-data)))))))
+
+(t/deftest export-file-with-missing-tokens-library-removes-tokens-source
+  (let [profile (th/create-profile* 1)
+        {:keys [library file]} (prepare-file-with-tokens-lib profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    ;; The tokens source points to a library that does not exist anymore
+    (th/db-delete! :file-library-rel {:library-file-id (:id library)})
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     (-> (pcb/empty-changes nil)
+         (pcb/with-library-data (:data (bfc/get-file th/*system* (:id file))))
+         (pcb/set-tokens-source (uuid/next))
+         (:redo-changes)))
+
+    (v3/export-files!
+     (assoc th/*system*
+            ::bfc/ids #{(:id file)}
+            ::bfc/export-type :include-libraries)
+     (io/output-stream output))
+
+    (let [files     (import-output profile output)
+          file-data (:data (get files (:name file)))]
+      (t/is (= 1 (count files)))
+      (t/is (nil? (cfo/get-tokens-source file-data)))
+      (t/is (nil? (cfo/get-tokens-status file-data)))
+      (t/is (nil? (cfo/get-tokens-lib file-data))))))
+
 (t/deftest import-auto-links-single-candidate
   (let [profile (th/create-profile* 1)
         ;; Create a shared library file

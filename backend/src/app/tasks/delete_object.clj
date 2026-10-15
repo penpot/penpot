@@ -61,7 +61,7 @@
               {::db/return-keys false}))
 
 (defmethod delete-object :file
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at file-ids]}]
   (when-let [file (db/get* conn :file {:id id}
                            {::db/remove-deleted false
                             ::sql/columns [:id :is-shared]})]
@@ -79,7 +79,7 @@
                (not *team-deletion*))
       ;; NOTE: we don't prevent file deletion on absorb operation failure
       (try
-        (db/tx-run! cfg files/absorb-library id)
+        (db/tx-run! cfg files/absorb-library id :file-ids file-ids)
         (catch Throwable cause
           (l/warn :hint "error on absorbing library"
                   :file-id id
