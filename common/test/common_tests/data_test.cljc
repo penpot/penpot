@@ -34,7 +34,18 @@
   (t/is (= "AB" (d/get-initials "123 Alpha ## beta")))
   (t/is (= "PD" (d/get-initials "  penpot   design  tool ")))
   (t/is (= "" (d/get-initials nil)))
-  (t/is (= "" (d/get-initials "!!! ???"))))
+  (t/is (= "" (d/get-initials "!!! ???")))
+  ;; Accented / Unicode letters (org default avatars)
+  (t/is (= "Á" (d/get-initials "Ábaco")))
+  (t/is (= "Ó" (d/get-initials "Órbita")))
+  (t/is (= "ÁN" (d/get-initials "Álvaro Núñez")))
+  ;; Sequential calls must stay stable (CLJS global RegExp lastIndex)
+  (t/is (= ["Á" "BB" "JG" "L" "Á"]
+           (mapv d/get-initials ["Ábaco"
+                                 "Black Bird"
+                                 "Jean Grey Academy"
+                                 "Library"
+                                 "Ábaco"]))))
 
 (t/deftest normalize-string-test
   ;; nil input returns empty string
