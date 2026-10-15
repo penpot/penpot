@@ -1070,13 +1070,33 @@
         (assoc state :updating-library true)
         (dissoc state :updating-library)))))
 
+(defn- synced-text-ids
+  "The texts of the current page that grow with their content and that
+   `changes` write: their size comes from their main, so the WASM renderer
+   measures them again (the SVG renderer does when it draws them)."
+  [state changes]
+  (when (features/active-feature? state "render-wasm/v1")
+    (let [page-id (:current-page-id state)
+          objects (dsh/lookup-page-objects state page-id)]
+      (into []
+            (comp (filter #(and (= :mod-obj (:type %)) (= page-id (:page-id %))))
+                  (map :id)
+                  (distinct)
+                  (filter #(let [shape (get objects %)]
+                             (and (cfh/text-shape? shape)
+                                  (not= :fixed (:grow-type shape))))))
+            (:redo-changes changes)))))
+
 (defn- sync-file-frontend-events
-  [file-id changes updated-frames undo-group]
+  [file-id changes updated-frames text-ids undo-group]
   (rx/concat
    (rx/of (set-updating-library false)
           (ntf/hide {:tag :sync-dialog}))
    (when (seq (:redo-changes changes))
      (rx/of (dch/commit-changes changes)))
+   (when (seq text-ids)
+     (rx/of (dwwt/resize-wasm-text-all text-ids {:skip-component-sync? true
+                                                 :undo-group undo-group})))
    (when-not (empty? updated-frames)
      (let [frames-by-page (group-by :page-id updated-frames)]
        (rx/merge
@@ -1159,9 +1179,17 @@
 
                pending-ids     (sync-file-pending-ids file-id changes)
 
+               text-ids        (when (= file-id current-file-id)
+                                 (synced-text-ids state changes))
+
+               ;; the texts measured again join the undo of the sync
+               undo-group      (or undo-group
+                                   (when (seq text-ids) (uuid/next)))
+               changes         (pcb/set-undo-group changes undo-group)
+
                frontend-sync
                (sync-file-frontend-events
-                file-id changes updated-frames undo-group)]
+                file-id changes updated-frames text-ids undo-group)]
 
            (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                               (:redo-changes changes)

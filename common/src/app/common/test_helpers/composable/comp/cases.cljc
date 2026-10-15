@@ -37,7 +37,7 @@
      W — one undo node undoes several steps over nested cascades.
      X — an undo committed before the edit's sync leaves copies unchanged
          (frontend only).
-     AJ — one undo after a nested sync reverts only the reflow (F43, frontend
+     AJ — one undo after a nested sync reverts the change and its reflow (frontend
          only).
      Y — a text override merges with a main text change per subgroup.
      Z — a move of a main child reaches the copies (frontend only).
@@ -85,6 +85,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [clojure.test :as t]
    [clojure.walk :as walk]))
@@ -653,7 +654,8 @@
    the same for the font size. An edited copy has `:content-group` and the
    group of its edit touched; an unedited one has nothing touched. The text starts with
    the name generated from its content, so an edit of its characters renames
-   it, an automatic rename that must not touch `:name-group` (decision (d))."
+   it, an automatic rename that must not touch `:name-group` (decision (d)),
+   and the copy's name keeps following the letters it shows."
   []
   (let [copy-edit (tm/one-of [(n/edit-text :copy-instance :text "copy text")
                               (n/edit-text :copy-instance :font-size "32")])
@@ -667,6 +669,8 @@
                         main   (setup/main-instance s)
                         edited (tm/get-choice s copy-edit)]
                     (t/is (n/has-property-of (tm/get-choice s main-edit) main))
+                    (t/is (= (txt/generate-shape-name (txt/content->text (:content copy)))
+                             (:name copy)))
                     (doseq [edit [:text :font-size]]
                       (t/is (= (if (= edit (:edit edited))
                                  (:value edited)
@@ -676,13 +680,6 @@
                     (cond
                       (nil? edited)
                       (t/is (empty? (:touched copy)))
-
-                      ;; the automatic rename touches the name
-                      (= :text (:edit edited))
-                      (tm/known-failure "F27"
-                                        #{:content-group :text-content-text}
-                                        #{:content-group :text-content-text :name-group}
-                                        (:touched copy))
 
                       :else
                       (t/is (= #{:content-group (subgroup (:edit edited))}

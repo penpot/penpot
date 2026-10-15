@@ -585,7 +585,8 @@
 
 (defn update-shapes
   "Calculate the changes and undos to be done when a function is applied to a
-  single object"
+  single object. `ignore-touched` is a boolean, or the set of attributes whose
+  change on a copy is derived and touches nothing."
   ([changes ids update-fn]
    (update-shapes changes ids update-fn nil))
 
@@ -612,7 +613,9 @@
                        changed?
                        (conj  {:type :set :attr attr :val new-val
                                :ignore-geometry ignore-geometry?
-                               :ignore-touched ignore-touched}))
+                               :ignore-touched (if (set? ignore-touched)
+                                                 (contains? ignore-touched attr)
+                                                 ignore-touched)}))
 
                      uops
                      (cond-> uops

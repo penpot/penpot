@@ -106,7 +106,7 @@
                   (-> (pcb/update-shapes grid-ids ctl/assign-cell-positions {:with-objects? true})
                       (pcb/reorder-grid-children ids))
 
-                  (not ignore-touched)
+                  (not (true? ignore-touched))
                   (generate-unapply-tokens objects changed-sub-attr changed-item-index))]
     changes))
 

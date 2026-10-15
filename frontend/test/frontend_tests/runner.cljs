@@ -45,6 +45,8 @@
    [frontend-tests.data.workspace-reflow-test]
    [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-sync-barrier-test]
+   [frontend-tests.data.workspace-sync-wasm-text-test]
+   [frontend-tests.data.workspace-text-modifier-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-undo-test]
@@ -205,6 +207,7 @@
    'frontend-tests.data.workspace-interactions-test
    'frontend-tests.data.workspace-font-variants-test
    'frontend-tests.data.workspace-frame-guides-undo-test
+   'frontend-tests.data.workspace-text-modifier-test
    'frontend-tests.data.workspace-libraries-test
    'frontend-tests.data.workspace-library-links-test
    'frontend-tests.data.workspace-library-updates-test
@@ -215,6 +218,7 @@
    'frontend-tests.data.workspace-reflow-test
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-sync-barrier-test
+   'frontend-tests.data.workspace-sync-wasm-text-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-undo-test
