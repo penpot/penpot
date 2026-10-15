@@ -50,6 +50,11 @@ To capture what `update-attrs-on-switch` saw during a real UI swap, patch it tem
 
 Runtime patching is faster than adding temporary source instrumentation and avoids recompilation cleanup. Restore the var or reload the frontend when finished.
 
+## Lost propagation in a real file
+
+- `app.common.logic.override-scan/scan` runs the sync of every component a file uses in memory and lists the copy shapes it would change (`{:page-id :id :name :groups :attrs}`; `:structure` = children differ): values that differ from the near main in an untouched group. It skips text-measured sizes and layout-owned places, and the copies of components `:skip-component?` names.
+- In the browser: `debug.scan_overrides()` prints them with `console.table` for the current file, skipping library components changed since the file last synced.
+
 ## Test-side helpers
 
 - Use `thf/dump-file file :keys [...]` to print a shape tree with selected keys during common tests.

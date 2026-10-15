@@ -100,8 +100,8 @@ Two pure runners (no store, JVM + CLJS):
   runner and the interpreter's `sync-op?` dispatch on it. A NEW node MUST implement it. User ops
   record their production changes (`n/record-changes`, nil when nothing changed); the runner
   throws if a `:user` op records nothing or another kind records changes. After a user op the
-  runner syncs to a fixpoint (`ch/components-changed` + `generate-sync-file-changes`, one pass
-  per cascade level, like the frontend watcher) and pushes op + syncs as one undo group.
+  runner syncs to a fixpoint with the production cascade (`cll/generate-sync-components-cascade`,
+  the one the frontend `sync-file` commits at once) and pushes op + sync as one undo group.
   `n/undo` (`(n/undo k)` for k groups) reverts the latest group and moves it to a redo stack; `n/redo` applies it again
   (interpreter: `dwu/redo`); neither re-syncs. A user op that pushes a group empties the redo
   stack; one that changed nothing keeps it. The runner validates the file (against the
@@ -195,9 +195,10 @@ Two pure runners (no store, JVM + CLJS):
   A set they build has no `variant-set` record: read it with `n/component-of` and
   `n/variant-component-ids`; `switch-variant` takes the value as a fn for it.
 - Tokens: `n/add-tokens` (assembly: an active set of border radius tokens), `n/apply-token`,
-  `n/unapply-token`, check `n/has-token?`. The interpreter sends `dwta/apply-token`, which resolves
-  tokens asynchronously and opens no pending work (F54), so `await-step` takes a `ready?` predicate
-  (`op-ready`: the token shows on the shape) that must hold before it awaits the pending work.
+  `n/unapply-token`, check `n/has-token?`. The interpreter sends `dwta/apply-token`, which holds its
+  shapes pending (a `:token` task) while the tokens resolve, so `await-step` waits for it like any
+  other op. `await-step`'s `ready?` argument remains for waits on something that opens no pending
+  work (a dialog shown to the user).
 - `n/paste-to-root target`: the clipboard's copy (shape-refs of nested heads advanced, the skipped ref
   chain's touched merged) and paste at the root; the interpreter pastes `thp/simulate-copy-shape`'s data.
   The node, that helper and `copy-selected` all advance through `cld/advance-copied-objects` (`app.common.logic.duplicate`). A duplicate inside a copy is
