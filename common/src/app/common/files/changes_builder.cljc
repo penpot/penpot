@@ -629,12 +629,21 @@
                  new-obj (if with-objects? (update-fn old-obj objects) (update-fn old-obj))]
              (if (= old-obj new-obj)
                changes
-               (let [[rops uops] (-> (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
-                                     (generate-operations old-obj new-obj))
+               (let [attrs       (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
+                     ;; the touched groups the update sets go first, so the
+                     ;; attributes it changes touch on top of them
+                     attrs       (if (some #{:touched} attrs)
+                                   (cons :touched (remove #{:touched} attrs))
+                                   attrs)
+                     [rops uops] (generate-operations attrs old-obj new-obj)
 
+                     ;; a touch also clears :remote-synced
                      uops        (cond-> uops
                                    (seq uops)
-                                   (conj {:type :set-touched :touched (:touched old-obj)}))
+                                   (conj {:type :set-touched :touched (:touched old-obj)})
+
+                                   (and (seq uops) (:remote-synced old-obj))
+                                   (conj {:type :set-remote-synced :remote-synced true}))
 
                      change      (cond-> {:type :mod-obj :id id}
                                    (some? page-id)

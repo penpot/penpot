@@ -6,6 +6,7 @@
 
 (ns common-tests.types.container-test
   (:require
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -16,6 +17,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctc]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -423,3 +425,30 @@
     (t/is (= #{:objects} (ctk/diff-components component changed)))
     (t/is (= #{} (ctk/diff-components component component)))))
 
+
+(defn- copy-shape
+  "A shape of a copy: one with a ref to its main."
+  [& {:as attrs}]
+  (assoc (make-shape (uuid/next) attrs) :shape-ref (uuid/next)))
+
+(defn- touched-by
+  [shape attr val]
+  (:touched (ctc/set-shape-attr shape attr val)))
+
+(t/deftest float-noise-in-a-transform-touches-nothing
+  (let [shape (copy-shape)
+        noisy (-> (gmt/matrix)
+                  (assoc :a 1.0000000001 :b 1e-10))]
+    (t/is (nil? (touched-by shape :transform noisy)))
+    (t/is (nil? (touched-by shape :transform-inverse noisy)))
+    (t/is (= #{:geometry-group}
+             (touched-by shape :transform (gmt/rotate-matrix 30))))))
+
+(t/deftest float-noise-in-a-path-touches-nothing
+  (let [content (fn [x]
+                  (path/content [{:command :move-to :params {:x 0 :y 0}}
+                                 {:command :line-to :params {:x x :y 10}}]))
+        shape   (copy-shape :type :path :content (content 10))]
+    (t/is (nil? (touched-by shape :content (content 10.01))))
+    (t/is (= #{:geometry-group}
+             (touched-by shape :content (content 30))))))

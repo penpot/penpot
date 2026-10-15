@@ -7,6 +7,7 @@
 (ns common-tests.logic.comp-sync-test
   (:require
    [app.common.data :as d]
+   [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -19,6 +20,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -580,3 +582,40 @@
     ;; ==== Check
     (t/is (true? (:hidden main-child2')))
     (t/is (= [(thi/id :main-child2) (thi/id :main-child1)] (:shapes main-root')))))
+
+(t/deftest test-an-assign-on-a-main-changes-its-component
+  (let [file   (-> (thf/sample-file :file1)
+                   (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root))
+        page   (thf/current-page file)
+        change (fn [operation]
+                 {:type       :mod-obj
+                  :id         (thi/id :main-child)
+                  :page-id    (:id page)
+                  :operations [operation]})]
+    (t/is (= #{(thi/id :component1)}
+             (ch/components-changed (:data file) (change {:type :set :attr :opacity :val 0.5}))))
+    (t/is (= #{(thi/id :component1)}
+             (ch/components-changed (:data file) (change {:type :assign :value {:opacity 0.5}}))))
+    (t/is (nil? (ch/components-changed (:data file) (change {:type :assign :value {:interactions []}}))))))
+
+(t/deftest test-which-changes-of-a-main-mark-its-component-modified
+  (let [file     (-> (thf/sample-file :file1)
+                     (tho/add-simple-component :component1 :main-root :main-child)
+                     (ths/update-shape :main-child :position-data [{:x 0 :y 0 :width 3 :height 4 :text "a"}])
+                     (ctf/update-file-data #(assoc-in % [:components (thi/id :component1) :modified-at] :old)))
+        page     (thf/current-page file)
+        apply-op (fn [operations]
+                   (-> (thf/apply-changes file {:redo-changes [{:type       :mod-obj
+                                                                :id         (thi/id :main-child)
+                                                                :page-id    (:id page)
+                                                                :operations operations}]}
+                                          :validate? false)
+                       (thc/get-component :component1)
+                       :modified-at))
+        fills    {:type :set :attr :fills :val (ths/sample-fills-color :fill-color "#ff0000")}
+        pos-data {:type :set :attr :position-data :val [{:x 1 :y 2 :width 3 :height 4 :text "a"}]}]
+    (t/is (not= :old (apply-op [fills])))
+    (t/testing "a re-measured text is not a change of the component"
+      (t/is (= :old (apply-op [pos-data]))))
+    (t/testing "any synced attribute of the change counts, not only the last"
+      (t/is (not= :old (apply-op [fills pos-data]))))))

@@ -619,7 +619,7 @@
 (defn- process-operations
   [objects {:keys [page-id id operations] :as change}]
   (if-let [shape (get objects id)]
-    (let [shape    (reduce process-operation shape operations)
+    (let [shape    (reduce process-operation (vary-meta shape dissoc ::ctn/touched) operations)
           touched? (-> shape meta ::ctn/touched)]
       ;; NOTE: processing operation functions can assign
       ;; the ::ctn/touched metadata on shapes, in this case we
@@ -1157,8 +1157,10 @@
   (let [need-sync? (fn [operation]
                      ; We need to trigger a sync if the shape has changed any
                      ; attribute that participates in components synchronization.
-                     (and (= (:type operation) :set)
-                          (ctk/component-attr? (:attr operation))))
+                     (case (:type operation)
+                       :set    (ctk/component-attr? (:attr operation))
+                       :assign (some ctk/component-attr? (keys (:value operation)))
+                       false))
         any-sync? (some need-sync? operations)]
     (when any-sync?
       (if page-id
