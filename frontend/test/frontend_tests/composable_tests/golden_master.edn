@@ -5,7 +5,7 @@
   {:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"s1\", :id sync-s1-component}\n   {:component \"s2\", :id sync-s2-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :to \"s1\", :keep-touched? false}\n  one-of -> \n   {:target #fn, :property :fills, :value \"#0000ff\"}", :states ["a1eb6e86bd5c7824" "16622fffacac0c8d" "964a553e029b1e19"]}
   {:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"s1\", :id sync-s1-component}\n   {:component \"s2\", :id sync-s2-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :to \"s1\", :keep-touched? false}\n  one-of -> \n  one-of -> ", :states ["a1eb6e86bd5c7824" "4ce98879b40b53aa"]}]
  :case-ab-reset-of-nested-swap-keeps-top-copy-overrides
- [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"s1\", :id sync-s1-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :opacity, :value 0.5}\n   {:target #fn, :to \"s1\", :keep-touched? false}\n   {:target #fn}", :states ["18092b58aa495ad2" "783143fdc428e89e" "8398b5c6929d2064" "c13a6df26c01deb1"]}]
+ [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"s1\", :id sync-s1-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :opacity, :value 0.5}\n   {:target #fn, :to \"s1\", :keep-touched? false}\n   {:target #fn}", :states ["18092b58aa495ad2" "783143fdc428e89e" "18092b58aa495ad2" "a7a9887e39859a9a"]}]
  :case-ac-second-variant-switch-keeps-root-overrides
  [{:transcript " {:component \"main\", :id sync-main-component}\n   {:variant-set \"vset\", :variant-id sync-vset-vcontainer, :count 3}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :opacity, :value 0.5}\n   {:target #fn, :value \"b\", :pos 0}\n  \n   {:target #fn, :value \"c\", :pos 0}", :states ["45b82e3d3433e503" "6aa8b050f6e60b75" "2464ce46aa6d70f8" "83ae3b7689a44277"]}]
  :case-ad-update-main-pushes-a-swapped-child
@@ -17,7 +17,7 @@
  [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:board :main-root, :child :main-child, :row 1, :column 3}", :states ["5a6af6c0b8f86ac3" "ec2294c072f52ae5" "8cd63b096547fb1b"]}
   {:transcript "one-of -> \n   {:board :main-root, :child :main-child, :row 1, :column 3}", :states ["ab911a9c4ef389ba" "56df09285036aa60"]}]
  :case-ag-main-reorder-keeps-copy-sub-heads-aligned
- [{:transcript " {:target :sub1, :parent :row-root, :to-index 3}", :states ["8118be0e3d318e30" "bd3db9738a8851c0"]}]
+ [{:transcript " {:target :sub1, :parent :row-root, :to-index 3}", :states ["8118be0e3d318e30" "e0d17dd4c27d652c"]}]
  :case-ah-copy-sub-head-delete-keeps-others-aligned
  [{:transcript "one-of -> \n   {:target :copy-sub1}", :states ["fff37cf722a40e61" "6fd3a8bad999968b"]}
   {:transcript "one-of -> \n   {:target :copy-sub3}", :states ["efada86db353920f" "3364b0fbfb76067a"]}
@@ -32,19 +32,19 @@
  :case-aj-reflow-after-nested-sync-is-its-own-undo-step
  [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :fills, :value \"#0000ff\"}\n   {:times 1}", :states ["43ca8b2de80a51fc" "43ca8b2de80a51fc" "9c3022331b3fe9ae"]}]
  :case-ak-update-main-pushes-grid-cells
- [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["5a6af6c0b8f86ac3" "278e4ff6bf0df746" "f611ebe15fb41317" "ead3c5e066d93cc4"]}
+ [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["5a6af6c0b8f86ac3" "278e4ff6bf0df746" "322e03c88f4a9dce" "432cfef7e9b05164"]}
   {:transcript "one-of -> \n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["9900a7f71dc0cb5f" "de66ab1c3d4cc157" "6b5ff9fd86e2aa87"]}]
  :case-al-update-main-renames-the-component
  [{:transcript " {:target :copy-root, :property :name, :value \"Renamed\"}\n   {:target :copy-instance, :property :name, :value \"Renamed child\"}\n   {:target :copy-root}", :states ["d4e11348047fc1e1" "0021aeab497d25e6" "c0aa5a2b915a7542" "ca23729038aec91f"]}
   {:transcript " {:target :copy-root, :property :name, :value \"Renamed\"}\n  one-of -> \n   {:target :copy-root}", :states ["d4e11348047fc1e1" "409795fc3e2bb3a7" "6a882f51aaf16306"]}]
  :case-am-update-main-pushes-a-swap-inside-a-group
- [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:target :copy-root}", :states ["aba215c5bc93ff0d" "f2232d12b1707e79" "a9496203eed2406e"]}]
+ [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:target :copy-root}", :states ["b4f808a12f723283" "9b695fc212f26b53" "32b94deb961ac763"]}]
  :case-an-flex-child-override-follows-sync-reset-and-update-main
  [{:transcript " {:target :copy-instance, :property :margin, :value 8}\n   {:target :main-instance, :property :margin, :value 20}", :states ["234a21e54bf21bd5" "03664b1e6eb74856" "9c3b12abbc6089ce"]}
   {:transcript " {:target :copy-instance, :property :margin, :value 8}\n   {:target :copy-root}", :states ["234a21e54bf21bd5" "1f92f9b4d2e50598" "a09954797e57930c"]}
   {:transcript " {:target :copy-instance, :property :margin, :value 8}\n   {:target :copy-root}", :states ["234a21e54bf21bd5" "ace1e76c1da2c443" "8f3452e82544f1ad"]}]
  :case-ao-copy-dropped-into-a-grid-cell-reaches-copies
- [{:transcript " {:copy :loose, :into :main-root, :cell [1 3]}", :states ["abc6e41a291516a2" "88ef39349d35f0b6"]}]
+ [{:transcript " {:copy :loose, :into :main-root, :cell [1 3]}", :states ["abc6e41a291516a2" "571d314ba8917a08"]}]
  :case-ap-library-main-child-removal-reaches-copy
  [{:transcript "", :states ["f53d220c42298128" "7c2dfde6478d399c"]}]
  :case-aq-main-change-reaches-a-copy-nested-in-a-sub-board
@@ -79,8 +79,8 @@
  :case-ay-token-on-a-main-reaches-copies
  [{:transcript " {:component \"main\", :id sync-main-component}\n   {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :token-name \"radius.s\", :value 10}\n   {:target #fn, :token-name \"radius.l\", :value 30}\n  \n   {:target #fn, :token-name \"radius.l\"}", :states ["04cddffca776d7fb" "24756b13d210f3a5" "8e8c0c21d4a0638b" "f656f9c8188793cf"]}
   {:transcript " {:component \"main\", :id sync-main-component}\n   {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :token-name \"radius.s\", :value 10}\n   {:target #fn, :token-name \"radius.l\", :value 30}\n  \n  one-of -> ", :states ["04cddffca776d7fb" "24756b13d210f3a5" "8fb17ce46cb883c8"]}
-  {:transcript " {:component \"main\", :id sync-main-component}\n   {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n   {:component \"main\", :copy sync-main-copyhead-0}\n  one-of -> \n   {:target #fn, :token-name \"radius.l\", :value 30}\n  \n   {:target #fn, :token-name \"radius.l\"}", :states ["d943d9831136267d" "ae544068bc050c2a" "eb8434e3f9dd763e"]}
-  {:transcript " {:component \"main\", :id sync-main-component}\n   {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n   {:component \"main\", :copy sync-main-copyhead-0}\n  one-of -> \n   {:target #fn, :token-name \"radius.l\", :value 30}\n  \n  one-of -> ", :states ["d943d9831136267d" "62fe93164996f7fe"]}]
+  {:transcript " {:component \"main\", :id sync-main-component}\n   {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n   {:component \"main\", :copy sync-main-copyhead-0}\n  one-of -> \n   {:target #fn, :token-name \"radius.l\", :value 30}\n  \n   {:target #fn, :token-name \"radius.l\"}", :states ["d943d9831136267d" "ae544068bc050c2a" "458ba8e9225d9ae7"]}
+  {:transcript " {:component \"main\", :id sync-main-component}\n   {:tokens [[\"radius.s\" 10] [\"radius.l\" 30]]}\n   {:component \"main\", :copy sync-main-copyhead-0}\n  one-of -> \n   {:target #fn, :token-name \"radius.l\", :value 30}\n  \n  one-of -> ", :states ["d943d9831136267d" "b97f65e9e0e4e3c7"]}]
  :case-az-copy-moved-out-of-its-main-keeps-inherited-overrides
  [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:target #fn, :property :fills, :value \"#00ff00\"}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:target #fn, :new-head 5}\n  \n   {:target #fn, :property :fills, :value \"#ff0000\"}", :states ["d6802c2361c4f48a" "09526a373b2bf78d" "f6588d21ee3f82ea" "89696ef8abcbb71d"]}
   {:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:target #fn, :property :fills, :value \"#00ff00\"}\n  one-of -> \n   {:target #fn, :new-head 3}\n  \n   {:target #fn, :property :fills, :value \"#ff0000\"}", :states ["d6802c2361c4f48a" "7443c8f4406f3704" "78edc4e41925495c" "62c32614a4d51244"]}]
@@ -107,7 +107,7 @@
  :case-e-remove-shape-from-main-auto-propagates-to-clean-copy
  [{:transcript " {:target :main-child2}", :states ["43c6f0fafdb79914" "d084fa213a85ee68"]}]
  :case-f-move-shape-in-main-auto-propagates-order-to-clean-copy
- [{:transcript " {:target :main-child1, :parent :main-root, :to-index 2}", :states ["1994876f6bbe7d2e" "0ac4d4f98925b8d9"]}]
+ [{:transcript " {:target :main-child1, :parent :main-root, :to-index 2}", :states ["1994876f6bbe7d2e" "de144b280bc4fc82"]}]
  :case-h-library-change-propagates-across-file-boundary-on-sync
  [{:transcript "", :states ["d8c5e8bda3728127" "6ee281995d7d8f65"]}]
  :case-i-undo-reverts-edit-and-its-auto-propagation

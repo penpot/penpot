@@ -147,3 +147,18 @@
   (let [file' (change-library-typography (component-using-typography) "24")
         node  (get-in (ths/get-shape file' :main-child) [:content :children 0 :children 0 :children 0])]
     (t/is (not (contains? node :modified-at)))))
+
+(t/deftest undo-of-a-library-typography-sync-gives-back-the-text
+  (let [pos-data [{:x 1 :y 2 :width 30 :height 14 :fills [] :text "hello"}]
+        file     (-> (component-using-typography)
+                     (ths/update-shape :main-child :position-data pos-data)
+                     (update :data cttl/update-typography (thi/id :typography1) assoc :font-size "24"))
+        changes  (cll/generate-sync-file-changes (pcb/empty-changes) nil :typographies (:id file)
+                                                 (thi/id :typography1) (:id file) {(:id file) file} (:id file))
+        file'    (thf/apply-changes file changes)
+        file''   (thf/apply-undo-changes file' changes)
+        main     (ths/get-shape file'' :main-child)]
+    (t/is (nil? (:position-data (ths/get-shape file' :main-child))))
+    (t/is (= "14" (font-size-of main)))
+    (t/is (= pos-data (:position-data main)))))
+

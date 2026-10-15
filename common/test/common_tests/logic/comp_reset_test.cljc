@@ -499,3 +499,76 @@
     ;; ==== Check
     ;; Without propagation the copy still reflects the overridden color
     (t/is (= copy2-bottom-color "#fabada"))))
+
+(defn- margin-of
+  [file label]
+  (:layout-item-margin (ths/get-shape file label)))
+
+(defn- nested-layout-board
+  "component1, a board with a `layout` whose child has the margin `margin`;
+   component2, which nests a copy of it; a copy of component2."
+  [layout margin]
+  (let [child {:parent-label :main1-root
+               :layout-item-margin margin
+               :layout-item-margin-type :simple}]
+    (-> (thf/sample-file :file1)
+        (cond-> (= layout :flex)
+          (-> (tho/add-frame :main1-root {:layout :flex :layout-flex-dir :row})
+              (tho/add-rect :main1-child child)))
+        (cond-> (= layout :grid)
+          (-> (tho/add-grid-frame :main1-root)
+              (tho/add-rect :main1-child child)
+              (tho/place-in-grid-columns :main1-root 1 {1 :main1-child})))
+        (thc/make-component :component1 :main1-root)
+        (tho/add-frame :main2-root)
+        (thc/instantiate-component :component1 :nested-head :parent-label :main2-root)
+        (thc/make-component :component2 :main2-root)
+        (thc/instantiate-component :component2 :copy2-root
+                                   :children-labels [:copy-nested-head :copy-nested-child]))))
+
+(t/deftest test-reset-of-a-nested-copy-of-a-layout-board
+  ;; a copy of component2 resets its nested copy of component1
+  (doseq [layout [:flex :grid]]
+    (let [margin    {:m1 7 :m2 7 :m3 7 :m4 7}
+          file      (nested-layout-board layout margin)
+          page      (thf/current-page file)
+          changes   (cll/generate-reset-component (pcb/empty-changes)
+                                                  file
+                                                  {(:id file) file}
+                                                  (ctn/make-container page :page)
+                                                  (thi/id :copy-nested-head))
+          file'     (thf/apply-changes file changes)]
+      (t/testing (name layout)
+        (t/is (= margin (margin-of file :copy-nested-child)))
+        (t/is (= margin (margin-of file' :copy-nested-child)))))))
+
+(t/deftest test-update-main-after-a-reset-of-a-nested-copy-keeps-the-main-overrides
+  ;; component2's main overrides the fill of its nested copy of component1;
+  ;; a copy of component2 resets its nested copy, then pushes to the main
+  (let [file      (-> (thf/sample-file :file1)
+                      (tho/add-nested-component :component1 :main1-root :main1-child
+                                                :component2 :main2-root :nested-head)
+                      (thc/instantiate-component :component2 :copy2-root
+                                                 :children-labels [:copy-nested-head :copy-nested-child]))
+        page      (thf/current-page file)
+        nested    (first (:shapes (ths/get-shape file :nested-head)))
+        changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              #{nested}
+                                              #(assoc % :fills (ths/sample-fills-color :fill-color "#ff0000"))
+                                              (:objects page)
+                                              {})
+        file      (thf/apply-changes file changes)
+        page      (thf/current-page file)
+        reset     (cll/generate-reset-component (pcb/empty-changes) file {(:id file) file}
+                                                (ctn/make-container page :page)
+                                                (thi/id :copy-nested-head))
+        file      (thf/apply-changes file reset)
+        page      (thf/current-page file)
+        container (ctn/make-container page :page)
+        update    (-> (pcb/empty-changes)
+                      (pcb/with-container container)
+                      (cll/generate-sync-shape-inverse {(:id file) file} container (thi/id :copy2-root)))
+        file'     (thf/apply-changes file update)]
+    (t/is (= #{:fill-group} (:touched (ths/get-shape-by-id file nested))))
+    (t/is (= #{:fill-group} (:touched (ths/get-shape-by-id file' nested))))))
+
