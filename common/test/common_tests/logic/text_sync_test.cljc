@@ -7,10 +7,10 @@
 (ns common-tests.logic.text-sync-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.comp-processors :as cfcp]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -890,7 +890,7 @@
 (t/deftest sync-copy-touched-only-in-content-group
   ;; A copy text whose `:touched` has `:content-group` but no text subgroup,
   ;; as files from before the subgroups hold it, keeps its own content
-  ;; when the main changes.
+  ;; when the main changes, once the file is migrated.
   (let [;; ==== Setup
         file       (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -902,7 +902,8 @@
                                          (assoc-in (:content copy-child)
                                                    [:children 0 :children 0 :children 0 :text]
                                                    "copy text"))
-                       (ths/update-shape :copy-child :touched #{:content-group}))
+                       (ths/update-shape :copy-child :touched #{:content-group})
+                       (update :data cfcp/convert-text-overrides {}))
         page       (thf/current-page file)
 
         ;; ==== Action
@@ -929,7 +930,6 @@
         ;; ==== Get
         copy-child' (ths/get-shape file' :copy-child)
         line (get-in copy-child' [:content :children 0 :children 0 :children 0])]
-    ;; with no subgroup, sync takes the "nothing touched" branch and writes
-    ;; the main's content
-    (tm/known-failure "F50" "copy text" "hello world" (:text line))
-    (t/is (= #{:content-group} (:touched copy-child')))))
+    (t/is (= "copy text" (:text line)))
+    (t/is (= "32" (:font-size line)))
+    (t/is (= #{:content-group :text-content-text} (:touched copy-child')))))

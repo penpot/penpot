@@ -11,16 +11,18 @@
    components."
   (:require
    [app.common.data :as d]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.comp-processors :as cfcp]
    [app.common.files.swap-slots :as cfss]
    [app.common.files.validate :as cfv]
+   [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
@@ -61,7 +63,7 @@
     (t/testing "a copy of a library component becomes plain shapes"
       (t/is (= {} (links file' :lib-copy)))
       (t/is (= {} (links file' :lib-copy-child)))
-      (tm/known-failure "F52" nil #{:fill-group} (:touched (ths/get-shape file' :lib-copy-child))))
+      (t/is (nil? (:touched (ths/get-shape file' :lib-copy-child)))))
     (t/testing "a copy of a local component keeps its links"
       (t/is (= (links file :copy) (links file' :copy)))
       (t/is (= (links file :copy-child) (links file' :copy-child))))
@@ -81,12 +83,26 @@
     (t/testing "the nested library copy in the main becomes plain shapes"
       (t/is (= {} (links file' :nested-head))))
     (t/testing "its copy keeps the ref to the main's shape, which is local"
-      (tm/known-failure "F52"
-                        {:shape-ref (thi/id :nested-head)}
-                        {}
-                        (links file' :copy-nested-head)))
-    (t/testing "the validation does not see the lost ref"
-      (t/is (= #{} (validation-errors file'))))))
+      (t/is (= {:shape-ref (thi/id :nested-head)} (links file' :copy-nested-head))))
+    (t/is (= #{} (validation-errors file')))))
+
+(t/deftest detach-external-references-in-a-deleted-component
+  (let [library (library-with-component)
+        file    (-> (thf/sample-file :file)
+                    (tho/add-frame :main {:name "Frame2"})
+                    (thc/instantiate-component :lib-component :nested-head
+                                               :library library
+                                               :parent-label :main)
+                    (thc/make-component :component :main))
+        page    (thf/current-page file)
+        [_ del] (cls/generate-delete-shapes (pcb/empty-changes nil (:id page))
+                                            file page (:objects page) #{(thi/id :main)} {})
+        file    (thf/apply-changes file del :validate? false)
+        file'   (ctf/detach-external-references file (:id file))
+        stored  #(get-in (ctkl/get-component (:data %) (thi/id :component) true)
+                         [:objects (thi/id :nested-head)])]
+    (t/is (= (thi/id :lib-component) (:component-id (stored file))))
+    (t/is (= {} (select-keys (stored file') link-attrs)))))
 
 ;; Fill and typography refs on the shape and on the text nodes themselves
 ;; (the older format), next to a fill ref inside `:fills`.
@@ -141,7 +157,7 @@
                             [:fill-color-ref-file :stroke-color-ref-file]))))
     (t/is (= [{} {:typography-ref-file (:id file)}] (text-leaves file')))
     (t/testing "a fill ref inside `:fills`"
-      (tm/known-failure "F57" nil library-id (-> rect' :fills first :fill-color-ref-file)))))
+      (t/is (nil? (-> rect' :fills first :fill-color-ref-file))))))
 
 ;; ----- Asset usage
 
@@ -230,7 +246,7 @@
                  (thc/instantiate-component :c3 :copy3)
                  (swap-at-second-level))]
     (t/is (= (thi/id :nested-head1) (cfss/get-swap-slot (ths/get-shape file :swapped))))
-    (tm/known-failure "F56" (thi/id :nested-subhead2) nil (ref-id-for-swapped file))))
+    (t/is (= (thi/id :nested-subhead2) (ref-id-for-swapped file)))))
 
 ;; ----- Deleted components
 
