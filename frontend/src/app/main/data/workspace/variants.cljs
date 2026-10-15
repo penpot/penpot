@@ -14,7 +14,6 @@
    [app.common.geom.rect :as grc]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
-   [app.common.path-names :as cpn]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape.layout :as ctsl]
@@ -25,7 +24,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.util.dom :as dom]
@@ -290,8 +288,14 @@
                                        (not (ctc/is-variant? first-shape))
                                        (ctc/main-instance? first-shape))
             add-new-variant?      (every? ctc/is-variant? selected-shapes)
+            variant-container?    (and single? (ctc/is-variant-container? first-shape))
             undo-id              (js/Symbol)]
         (cond
+          variant-container?
+          (rx/of
+           (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:shortcut-create-component"})
+           (add-new-variant (:id first-shape)))
+
           transform-in-variant?
           (rx/of
            (ev/event {::ev/name "transform-in-variant" ::ev/origin "workspace:shortcut"})
@@ -336,27 +340,14 @@
           (rx/empty))))))
 
 (defn rename-variant
-  "Rename the variant container and all components belonging to this variant"
+  "Rename the variant container and all components belonging to this variant
+  (`clv/generate-rename-variant`), in one commit."
   [variant-id name]
   (ptk/reify ::rename-variant
-
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-id            (:current-page-id state)
-            data               (dsh/lookup-file-data state)
-            objects            (-> (dsh/get-page data page-id)
-                                   (get :objects))
-            variant-components (cfv/find-variant-components data objects variant-id)
-            clean-name         (cpn/clean-path name)
-            undo-id            (js/Symbol)]
-
-        (rx/concat
-         (rx/of (dwu/start-undo-transaction undo-id)
-                (dwsh/update-shapes [variant-id] #(assoc % :name clean-name)))
-         (rx/from (map
-                   #(dwl/rename-component-and-main-instance (:id %) clean-name)
-                   variant-components))
-         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+    (watch [it state _]
+      (rx/of (dch/commit-changes (-> (variant-changes it state)
+                                     (clv/generate-rename-variant variant-id name)))))))
 
 (defn rename-comp-or-variant-and-main
   "If the component is in a variant, rename the variant.

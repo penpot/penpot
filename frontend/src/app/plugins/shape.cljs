@@ -336,6 +336,13 @@
   [shape]
   (and (ctk/instance-head? shape) (ctk/in-component-copy? shape)))
 
+(defn swap-keeps-touched?
+  "Whether a swap of a copy of `component` for `target` keeps the copy's
+  overrides: only a switch between variants of one set does, as in the UI."
+  [component target]
+  (and (ctk/is-variant? component)
+       (= (:variant-id component) (:variant-id target))))
+
 (defn shape-proxy? [p]
   (obj/type-of? p "ShapeProxy"))
 
@@ -1569,7 +1576,11 @@
                    valid-component? (obj/type-of? component "LibraryComponentProxy")
                    target-file      (when valid-component? (obj/get component "$file"))
                    target-id        (when valid-component? (obj/get component "$id"))
-                   target-data      (some-> target-file u/locate-file :data)]
+                   target-data      (some-> target-file u/locate-file :data)
+                   component        (when (copy-head? shape)
+                                      (u/locate-library-component (:component-file shape) (:component-id shape)))
+                   target           (when target-data
+                                      (dm/get-in target-data [:components target-id]))]
                (cond
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :swapComponent "Plugin doesn't have 'content:write' permission")
@@ -1590,7 +1601,7 @@
                  (st/emit! (dwl/component-swap shape
                                                target-file
                                                target-id
-                                               true)))))
+                                               (swap-keeps-touched? component target))))))
 
            :updateMain
            (fn []
@@ -1860,9 +1871,10 @@
 
            :isVariantHead
            (fn []
-             (let [shape     (u/locate-shape file-id page-id id)
-                   component (u/locate-library-component file-id (:component-id shape))]
-               (and (ctk/instance-head? shape) (ctk/is-variant? component))))
+             (let [shape (u/locate-shape file-id page-id id)]
+               (and (ctk/instance-head? shape)
+                    (ctk/is-variant? (u/locate-library-component (:component-file shape)
+                                                                 (:component-id shape))))))
 
            :isVariantContainer
            (fn []
