@@ -12,6 +12,7 @@
   (:require
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.ids-map :as thi]
+   [app.config :as cf]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.store :as st]
@@ -32,7 +33,8 @@
 
 (defn- run-commit
   "Install a component with a copy and emit the main child fill commit with
-   `commit-opts`. Once the wait settles, call `check` (which may return a
+   `commit-opts` (with `:labels`, the fill commit of those shapes). Once the
+   wait settles, call `check` (which may return a
    promise) with whether the sync wait was open right after the commit and an
    atom with the ids of the components the watcher touched. Fails the test
    when the wait does not settle."
@@ -42,7 +44,7 @@
         touched (atom #{})
         sub     (rx/sub! (rx/filter (ptk/type? ::dwl/touch-component) st/stream)
                          #(swap! touched into @%))]
-    (st/emit! (ftm/fill-commit :main-child red commit-opts))
+    (st/emit! (ftm/fill-commit (:labels commit-opts :main-child) red (dissoc commit-opts :labels)))
     (let [open? (sync-pending? file-id)]
       (-> (pwrf/wait-for-layout-update nil 2000)
           (.then #(check open? touched)
@@ -80,10 +82,30 @@
                (t/is (= setup/labeled-fill (ftm/fill-of :copy-child)))
                (t/is (empty? @touched))))))
 
-(t/deftest translation-commit-leaves-nothing-pending
+(t/deftest translation-of-a-whole-main-leaves-nothing-pending
   (t/async done
-    (run-commit done {:translation? true} dropped)))
+    (run-commit done {:translation? true :labels [:main-root :main-child]} dropped)))
+
+(t/deftest translation-of-a-child-inside-a-main-syncs-the-copies
+  ;; dragging a shape inside a main is an edit its copies follow
+  (t/async done
+    (run-commit done {:translation? true}
+                (fn [open? _]
+                  (t/is open?)
+                  (t/is (= red (ftm/fill-of :copy-child)))))))
 
 (t/deftest derived-commit-leaves-nothing-pending
   (t/async done
     (run-commit done {:skip-component-sync? true} dropped)))
+
+(t/deftest copies-sync-without-component-thumbnails
+  ;; the flag only turns the thumbnails of components off
+  (t/async done
+    (with-redefs [cf/flags (disj cf/flags :component-thumbnails)]
+      (ftm/install! (setup/simple-component-with-labeled-copy)))
+    (st/emit! (ftm/fill-commit :main-child red {}))
+    (-> (pwrf/wait-for-layout-update nil 2000)
+        (.then #(t/is (= red (ftm/fill-of :copy-child))))
+        (.catch #(t/is false (str "the wait threw: " %)))
+        (.finally done))))
+

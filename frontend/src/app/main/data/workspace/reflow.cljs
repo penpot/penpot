@@ -26,6 +26,7 @@
     :text-position DOM text fragment geometry   (texts)
     :text-bridge   change awaiting its pipeline (texts)
     :font          font change measurement      (texts)
+    :token         token resolution             (tokens application)
     :sync-file     component/library propagation (libraries)"
   (:require
    [beicon.v2.core :as rx]

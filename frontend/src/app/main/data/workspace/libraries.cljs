@@ -1215,6 +1215,18 @@
        (when (> (:modified-at library) sync-date)
          (ctf/used-assets-changed-since file-data library sync-date))))))
 
+(defn update-libraries
+  "Sync the file `file-id` from each library of `library-ids`, then
+  propagate the file's tokens, so that its copies take the token values
+  of the file's token status, not the library's."
+  [file-id library-ids]
+  (ptk/reify ::update-libraries
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/concat
+       (rx/from (map #(sync-file file-id %) library-ids))
+       (rx/of (dwtp/propagate-workspace-tokens))))))
+
 (defn notify-sync-file
   "Notify the user that there are updates in the libraries used by the
    current file, and ask if he wants to update them now."
@@ -1264,13 +1276,8 @@
                                #(modal/show! :libraries-dialog {:starting-tab "updates" :file-id file-id})
 
                                do-update
-                               #(do (apply st/emit! (map (fn [library]
-                                                           (sync-file file-id (:id library)))
-                                                         libraries-with-changes))
-                                    ;; Launch a local tokens propagation, so that the copies have the token values
-                                    ;; with the local tokens status, not the one coming from the external library.
-                                    (st/emit! (dwtp/propagate-workspace-tokens))
-                                    (st/emit! (ntf/hide)))
+                               #(st/emit! (update-libraries file-id (map :id libraries-with-changes))
+                                          (ntf/hide))
 
                                do-dismiss
                                #(st/emit! ignore-sync (ntf/hide))]
@@ -1326,6 +1333,21 @@
                 (component-sync-events state component-id file-id undo-group)
                 [(dwu/commit-undo-transaction undo-id)]))))))
 
+(defn- moves-whole-mains?
+  "Whether the `changes` of a translation commit, applied on the file
+  `data`, move only shapes outside mains, or whole mains: every shape they
+  move inside a main moves with the main's root."
+  [data changes]
+  (every? (fn [[page-id changes]]
+            (let [objects (dm/get-in data [:pages-index page-id :objects])
+                  ids     (into #{} (map :id) changes)]
+              (every? (fn [id]
+                        (let [root (ctn/get-component-shape objects (get objects id) {:allow-main? true})]
+                          (or (not (ctk/main-instance? root))
+                              (contains? ids (:id root)))))
+                      ids)))
+          (group-by :page-id (filter #(= :mod-obj (:type %)) changes))))
+
 (defn watch-component-changes
   "Watch the state for changes that affect to any main instance. If a change is detected will call
    component-changed, so changes are immediately propagated to the component and copies."
@@ -1380,12 +1402,15 @@
                  (rx/map start-sync-barrier)
                  (rx/share))
 
-            ;; Translation commits never propagate component changes. Derived /
+            ;; A translation commit that moves whole mains changes no
+            ;; component; one that moves a shape inside a main does. Derived /
             ;; corrective commits (font-load selrect fix, position-data regen)
             ;; are not user component edits.
             dropped-commit?
-            (fn [[{:keys [translation? skip-component-sync?]} _]]
-              (or translation? skip-component-sync?))
+            (fn [[{:keys [translation? skip-component-sync? changes]} _]]
+              (or skip-component-sync?
+                  (and translation?
+                       (moves-whole-mains? @refs/workspace-data changes))))
 
             dropped-commits-s
             (->> local-commits-s
@@ -1456,40 +1481,45 @@
                  (rx/debounce 5000)
                  (rx/tap #(log/trc :hint "buffer initialized")))]
 
-        (when (or (contains? cf/flags :component-thumbnails)
-                  (features/active-feature? state "render-wasm/v1"))
-          (->> (rx/merge
-                dropped-commits-s
-                component-events-s
+        (->> (rx/merge
+              dropped-commits-s
+              component-events-s
 
-                ;; WASM only: render the thumbnail on every component
-                ;; change so single edits (fill, etc.) update instantly.
-                ;; Non-WASM persists on every render, so it stays on the
-                ;; debounced path below to avoid per-edit backend posts.
-                (if (features/active-feature? state "render-wasm/v1")
-                  (->> component-events-s
-                       (rx/filter (ptk/type? ::component-changed))
-                       (rx/map deref)
-                       (rx/map render-component-thumbnail-event))
-                  (rx/empty))
+              ;; the flag (or WASM) turns on the thumbnails of components,
+              ;; not their sync
+              (if (or (contains? cf/flags :component-thumbnails)
+                      (features/active-feature? state "render-wasm/v1"))
+                (rx/merge
 
-                ;; Persist to the server in batches, 5s after the user
-                ;; goes idle.
-                (->> component-events-s
-                     (rx/filter (ptk/type? ::component-changed))
-                     (rx/map deref)
-                     (rx/buffer-until notifier-s)
-                     (rx/mapcat #(into #{} %))
-                     (rx/map (fn [[component-id file-id]]
-                               (update-component-thumbnail component-id file-id))))
+                 ;; WASM only: render the thumbnail on every component
+                 ;; change so single edits (fill, etc.) update instantly.
+                 ;; Non-WASM persists on every render, so it stays on the
+                 ;; debounced path below to avoid per-edit backend posts.
+                 (if (features/active-feature? state "render-wasm/v1")
+                   (->> component-events-s
+                        (rx/filter (ptk/type? ::component-changed))
+                        (rx/map deref)
+                        (rx/map render-component-thumbnail-event))
+                   (rx/empty))
 
-                ;; Undo/redo emit touch-component instead.
-                (->> component-events-s
-                     (rx/filter (ptk/type? ::touch-component))
-                     (rx/map deref)
-                     (rx/map render-component-thumbnail-event)))
+                 ;; Persist to the server in batches, 5s after the user
+                 ;; goes idle.
+                 (->> component-events-s
+                      (rx/filter (ptk/type? ::component-changed))
+                      (rx/map deref)
+                      (rx/buffer-until notifier-s)
+                      (rx/mapcat #(into #{} %))
+                      (rx/map (fn [[component-id file-id]]
+                                (update-component-thumbnail component-id file-id))))
 
-               (rx/take-until stopper-s)))))))
+                 ;; Undo/redo emit touch-component instead.
+                 (->> component-events-s
+                      (rx/filter (ptk/type? ::touch-component))
+                      (rx/map deref)
+                      (rx/map render-component-thumbnail-event)))
+                (rx/empty)))
+
+             (rx/take-until stopper-s))))))
 
 (defn sync-tokens-status-with-lib
   []
