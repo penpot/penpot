@@ -664,6 +664,14 @@
     (when (contains? text-decoration-values normalized-value)
       normalized-value)))
 
+(def text-case-values #{"none" "uppercase" "lowercase" "capitalize"})
+
+(defn number-out-of-bounds?
+  "Whether a resolved numeric token value is outside the safe integer
+  range."
+  [n]
+  (or (>= n sm/max-safe-int) (<= n sm/min-safe-int)))
+
 (def font-weight-aliases
   {"100" #{"thin" "hairline"},
    "200" #{"ultra light" "extralight" "extraleicht" "extra-light" "ultra-light" "ultralight" "extra light"},

@@ -144,16 +144,25 @@
 
 
 (defn- resolve-value-tokenscript
-  [tokens prev-token value]
-  (let [result (ts/update-token tokens (assoc prev-token :value value))
-        token-result (.-resolved result)]
+  [tokens prev-token token-name value]
+  (let [valid-token-name?
+        (and (string? token-name)
+             (re-matches cto/token-name-validation-regex token-name))
+
+        token
+        (assoc prev-token
+               :value value
+               :name (if (or (not valid-token-name?) (str/blank? token-name))
+                       "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
+                       token-name))
+
+        {:keys [errors resolved-value]}
+        ;; Remove previous token when renaming a token
+        (ts/resolve-token (dissoc tokens (:name prev-token)) token)]
     (rx/of
-     (cond
-       (ts/processor-error? token-result) {:error (wte/error-with-value :error.style-dictionary/missing-reference (some->> (.-dependencyChain token-result)
-                                                                                                                           (seq)
-                                                                                                                           (rest)))}
-       (instance? js/Error token-result) {:error (wte/error-with-value :error.style-dictionary/invalid-token-value value)}
-       :else {:value token-result}))))
+     (if (seq errors)
+       {:error (first errors)}
+       {:value resolved-value}))))
 
 (defn- resolve-value
   [tokens prev-token token-name value]
@@ -178,10 +187,7 @@
            (sd/resolve-tokens-interactive)
            (rx/mapcat
             (fn [resolved-tokens]
-              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                    resolved-value (if (contains? cf/flags :tokenscript)
-                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                     resolved-value)]
+              (let [{:keys [errors resolved-value]} (get resolved-tokens (:name token))]
                 (if resolved-value
                   (rx/of {:value resolved-value})
                   (rx/of {:error (if errors

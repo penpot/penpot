@@ -1,6 +1,11 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
+
 (ns app.main.data.workspace.tokens.format
   (:require
-   [app.main.data.tokenscript :as ts]
    [cuerdas.core :as str]))
 
 (def category-dictionary
@@ -35,39 +40,10 @@
        (str/join "\n")
        (str "\n")))
 
-(defn- format-structured-token
-  "Formats tokenscript Token"
-  [token-symbol]
-  (->> (.-value token-symbol)
-       (.entries)
-       (es6-iterator-seq)
-       (format-map-entries)))
-
-(defn format-tokenscript-symbol
-  [^js tokenscript-symbol]
-  (cond
-    (ts/rem-number-with-unit? tokenscript-symbol)
-    (str (ts/rem->px tokenscript-symbol) "px")
-
-    (ts/color-symbol? tokenscript-symbol)
-    (ts/color-symbol->hex-string tokenscript-symbol)
-
-    (ts/structured-record-token? tokenscript-symbol)
-    (format-structured-token tokenscript-symbol)
-
-    (ts/structured-array-token? tokenscript-symbol)
-    (str/join "\n" (map format-tokenscript-symbol (.-value tokenscript-symbol)))
-
-    :else
-    (.toString tokenscript-symbol)))
-
 (defn format-token-value
   "Converts token value of any shape to a string."
   [token-value]
   (cond
-    (ts/tokenscript-symbol? token-value)
-    (format-tokenscript-symbol token-value)
-
     (map? token-value)
     (format-map-entries token-value)
 
