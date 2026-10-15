@@ -2928,6 +2928,7 @@
       (let [result (:file-ids (-> th/*system*
                                   (assoc ::bfc/project-id (:default-project-id profile))
                                   (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/team-id (:default-team-id profile))
                                   (assoc ::bfc/input output)
                                   (v3/import-files!)))
             rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
@@ -2983,6 +2984,7 @@
       (let [result (:file-ids (-> th/*system*
                                   (assoc ::bfc/project-id (:default-project-id profile))
                                   (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/team-id (:default-team-id profile))
                                   (assoc ::bfc/input output)
                                   (v3/import-files!)))
             rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
@@ -3023,6 +3025,7 @@
       (let [result (:file-ids (-> th/*system*
                                   (assoc ::bfc/project-id (:default-project-id profile))
                                   (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/team-id (:default-team-id profile))
                                   (assoc ::bfc/input output)
                                   (v3/import-files!)))
             rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
@@ -3067,6 +3070,7 @@
       (let [result (:file-ids (-> th/*system*
                                   (assoc ::bfc/project-id (:default-project-id profile))
                                   (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/team-id (:default-team-id profile))
                                   (assoc ::bfc/input output)
                                   (v3/import-files!)))
             rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
