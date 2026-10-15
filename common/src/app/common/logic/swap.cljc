@@ -94,20 +94,15 @@
    current-shape        ; The shape after the switch (a clean copy)
    origin-shape         ; The original shape
    attr]
-  ;; When there is a layout with fixed h or v sizing, we need
-  ;; to keep the width/height (and recalculate selrect and points)
-  (let [size (fn [dimension sizing]
-               (let [prev    (-> prev-shape :selrect dimension)
-                     current (-> current-shape :selrect dimension)
-                     origin  (-> origin-shape :selrect dimension)]
-                 (cond
-                   (= :fix (sizing prev-shape)) current
-                   ;; same-size: preserve override
-                   (= origin current)           prev
-                   ;; different-size: use new component's
-                   :else                        current)))
-        width  (size :width :layout-item-h-sizing)
-        height (size :height :layout-item-v-sizing)]
+  ;; Each dimension keeps the copy's size when both variants agree on it,
+  ;; and takes the new variant's otherwise (selrect and points follow)
+  (let [size   (fn [dimension]
+                 (let [prev    (-> prev-shape :selrect dimension)
+                       current (-> current-shape :selrect dimension)
+                       origin  (-> origin-shape :selrect dimension)]
+                   (if (= origin current) prev current)))
+        width  (size :width)
+        height (size :height)]
     (case attr
       :width  width
       :height height
