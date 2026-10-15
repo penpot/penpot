@@ -76,6 +76,8 @@
    :width                   :geometry-group
    :height                  :geometry-group
    :rotation                :geometry-group
+   :flip-x                  :geometry-group
+   :flip-y                  :geometry-group
    :transform               :geometry-group
    :transform-inverse       :geometry-group
    :opacity                 :layer-effects-group
