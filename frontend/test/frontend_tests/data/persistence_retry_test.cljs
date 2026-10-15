@@ -760,3 +760,125 @@
          (if (< (swap! calls inc) 5)
            (rx/throw (ex-info "offline" {:type :offline}))
            (rx/of {:revn 1})))))))
+
+;; Leaving the workspace tests.
+
+;; Scenario: a save fails on a transport error and the user leaves the
+;; workspace before the backoff fires. The pending retry stays silent, and
+;; opening a file sends the held edit again. Proves: the backoff does not
+;; run outside the workspace and resumes once a file is opened.
+(t/deftest ^:async leaving-the-workspace-stops-the-backoff
+  (let [calls  (atom 0)
+        timers (atom [])]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (fn [_]
+                                   (let [timer-s (rx/subject)]
+                                     (swap! timers conj timer-s)
+                                     timer-s)))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @timers)) "the failure schedules a retry"))
+
+            (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
+            (await (async/wait-for #(get-in @store [:persistence :suspended])
+                                   "leaving the workspace suspends retries"))
+            (rx/push! (first @timers) :tick)
+            (await (async/settle))
+            (t/is (= 1 (count @requests)) "the pending retry stays silent")
+            (t/is (= :retrying (get-in @store [:persistence :status])))
+            (t/is (= 1 (count (get-in @store [:persistence :queue]))))
+
+            (ptk/emit! store (ptk/data-event :app.main.data.workspace/workspace-initialized))
+            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                         (empty? (get-in @store [:persistence :queue])))
+                                   "opening a file saves the held edit"))
+            (t/is (= 2 (count @requests)))
+            (t/is (apply = (map (comp :commit-id second) @requests))
+                  "the same commit is sent again")
+            (t/is (nil? (get-in @store [:persistence :suspended]))))))
+       (fn [_ _]
+         (if (= 1 (swap! calls inc))
+           (rx/throw (ex-info "offline" {:type :offline}))
+           (rx/of {:revn 1})))))))
+
+;; Scenario: the user leaves the workspace while a save is in flight, and the
+;; save then fails on a transport error. No backoff is scheduled, the online
+;; event does not resend, and opening a file does. Proves: a failure that
+;; lands outside the workspace waits for the user instead of retrying there.
+(t/deftest ^:async a-failure-after-leaving-the-workspace-arms-no-retry
+  (let [calls   (atom 0)
+        timers  (atom [])
+        first-s (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (fn [ms] (swap! timers conj ms) (rx/subject)))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @requests)) "the edit is sent"))
+
+            (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
+            (await (async/wait-for #(get-in @store [:persistence :suspended])
+                                   "leaving the workspace suspends retries"))
+            (rx/error! first-s (ex-info "offline" {:type :offline}))
+            (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
+                                   "the failure keeps the edit queued"))
+            (await (async/settle))
+            (t/is (empty? @timers) "no backoff is scheduled")
+
+            (ptk/emit! store (#'dps/resume-on-online))
+            (await (async/settle))
+            (t/is (= 1 (count @requests)) "the online event does not resend")
+
+            (ptk/emit! store (ptk/data-event :app.main.data.workspace/workspace-initialized))
+            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                         (empty? (get-in @store [:persistence :queue])))
+                                   "opening a file saves the held edit"))
+            (t/is (= 2 (count @requests))))))
+       (fn [_ _]
+         (if (= 1 (swap! calls inc))
+           first-s
+           (rx/of {:revn 1})))))))
+
+;; Scenario: the last backoff attempt is in flight when the user leaves the
+;; workspace, and it fails. The queue halts without arming the slow cycle,
+;; and opening a file sends it once more. Proves: the slow cycle never
+;; starts outside the workspace.
+(t/deftest ^:async a-spent-backoff-outside-the-workspace-arms-no-slow-cycle
+  (let [calls  (atom 0)
+        cycles (atom [])
+        last-s (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (slow-cycle-timer cycles))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 4 (count @requests)) "the last retry is sent"))
+
+            (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
+            (await (async/wait-for #(get-in @store [:persistence :suspended])
+                                   "leaving the workspace suspends retries"))
+            (rx/error! last-s (ex-info "offline" {:type :offline}))
+            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                   "the spent backoff halts the queue"))
+            (await (async/settle))
+            (t/is (empty? @cycles) "no slow cycle is armed")
+            (t/is (= 1 (count (get-in @store [:persistence :queue]))))
+
+            (ptk/emit! store (ptk/data-event :app.main.data.workspace/workspace-initialized))
+            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                         (empty? (get-in @store [:persistence :queue])))
+                                   "opening a file saves the held edit"))
+            (t/is (= 5 (count @requests))))))
+       (fn [_ _]
+         (let [n (swap! calls inc)]
+           (cond
+             (< n 4) (rx/throw (ex-info "offline" {:type :offline}))
+             (= n 4) last-s
+             :else   (rx/of {:revn 1}))))))))

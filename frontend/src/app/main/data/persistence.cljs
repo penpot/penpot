@@ -329,9 +329,11 @@
               (ntf/hide :tag reconnecting-tag))
        ;; A transport failure that outlasts the backoff can still pass, so
        ;; the queue keeps trying at a slow pace.
-       (if (slow-retry-pending? (:persistence state))
-         (slow-retry-cycle stream)
-         (rx/empty))))
+       (let [pstate (:persistence state)]
+         (if (and (not (:suspended pstate))
+                  (slow-retry-pending? pstate))
+           (slow-retry-cycle stream)
+           (rx/empty)))))
 
     ptk/EffectEvent
     (effect [_ state _]
@@ -349,8 +351,9 @@
   scheduled with backoff instead of parking the save in `:error`. Once the
   budget (`retry-delays-ms`) is exhausted, or when the failed attempt was
   one of the slow cycle, the failure falls through to the `persistence-failed`
-  path, which schedules the next slow attempt. `elapsed-ms` is how long the
-  failed attempt took."
+  path, which schedules the next slow attempt. While retries are suspended
+  nothing is scheduled: the episode waits for a file to be opened again.
+  `elapsed-ms` is how long the failed attempt took."
   [commit-id cause elapsed-ms]
   (ptk/reify ::persistence-transient-failure
     ptk/UpdateEvent
@@ -373,9 +376,15 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [attempts recovering]} (:persistence state)]
-        (if (or recovering (> attempts (count retry-delays-ms)))
+      (let [{:keys [attempts recovering suspended]} (:persistence state)]
+        (cond
+          (or recovering (> attempts (count retry-delays-ms)))
           (rx/of (persistence-failed commit-id cause))
+
+          suspended
+          (rx/empty)
+
+          :else
           (rx/merge
            ;; One notice per episode: shown on the first attempt,
            ;; re-showing would only replace the identical toast.
@@ -582,6 +591,27 @@
          (rx/map (fn [_] (resume-persistence true)))
          (rx/take-until stopper-s))))
 
+(defn- suspend-retries
+  "Stops retrying when the workspace closes. A pending backoff timer goes
+  stale, and no backoff or slow cycle is armed until a file is opened
+  again. Queued edits stay queued and a request in flight still lands."
+  []
+  (ptk/reify ::suspend-retries
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :persistence
+              #(-> %
+                   (assoc :suspended true)
+                   (dissoc :retry-token))))))
+
+(defn- restore-retries
+  "Lets failed saves be retried again once a file is opened."
+  []
+  (ptk/reify ::restore-retries
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :persistence dissoc :suspended))))
+
 (defn- release-failed-file
   "Drops the queued commits of the file whose save failed terminally.
 
@@ -608,9 +638,8 @@
   The runner does not survive a subscription teardown, so both
   initialization and recovery hit this. A halted queue is excluded: the
   halt is lifted by `recover-persistence`, which has its own triggers. A
-  retrying episode is excluded too: its backoff timer outlives the
-  subscription and owns the recovery, so resuming here would spend the
-  budget twice."
+  retrying episode is excluded too: its backoff timer owns the recovery,
+  or `recover-persistence` resumes it when retries were suspended."
   [{:keys [queue status]}]
   (and (seq queue)
        (not= :error status)
@@ -664,9 +693,10 @@
 (defn- recover-persistence
   "Lifts a halted queue when a file is opened again or the role changes.
 
-  Leaving the workspace stops the slow retry cycle, so opening a file sends
-  a failure the cycle still covers (`slow-retry-pending?`) once more
-  instead of dropping it.
+  Leaving the workspace suspends retries (`suspend-retries`), so opening a
+  file (`opened-file?`) restores them, resends a retrying episode whose
+  backoff was cut short, and sends a failure the slow cycle still covers
+  (`slow-retry-pending?`) once more instead of dropping it.
 
   Every other terminal failure is permanent for that file: permission lost,
   file gone, or changes the server refuses. None of them can succeed on a
@@ -678,31 +708,38 @@
   A lost permission is not a temporary condition. The backend raises
   `:not-found` for it, and replaying the save to find that out routes the
   user to the exception page."
-  []
+  [opened-file?]
   (ptk/reify ::recover-persistence
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [queue status run-id]} (:persistence state)]
-        (cond
-          ;; A live retry episode owns its recovery through the backoff
-          ;; scheduler; resuming here would bypass the attempt budget.
-          (= :retrying status)
-          (rx/empty)
+      (let [{:keys [queue status run-id suspended]} (:persistence state)]
+        (rx/concat
+         (if (and opened-file? suspended)
+           (rx/of (restore-retries))
+           (rx/empty))
+         (cond
+           ;; A live retry episode owns its recovery through the backoff
+           ;; scheduler; resuming here would bypass the attempt budget.
+           ;; A suspended one has no scheduler left.
+           (= :retrying status)
+           (if (and opened-file? suspended)
+             (rx/of (resume-persistence))
+             (rx/empty))
 
-          (slow-retry-pending? (:persistence state))
-          (rx/of (resume-persistence true))
+           (slow-retry-pending? (:persistence state))
+           (rx/of (resume-persistence true))
 
-          (= :error status)
-          (rx/of (release-failed-file) (resume-persistence))
+           (= :error status)
+           (rx/of (release-failed-file) (resume-persistence))
 
-          (queue-needs-a-runner? (:persistence state))
-          (rx/of (resume-persistence))
+           (queue-needs-a-runner? (:persistence state))
+           (rx/of (resume-persistence))
 
-          (and (empty? queue) (or run-id (#{:pending :saving} status)))
-          (rx/of (update-status :saved))
+           (and (empty? queue) (or run-id (#{:pending :saving} status)))
+           (rx/of (update-status :saved))
 
-          :else
-          (rx/empty))))))
+           :else
+           (rx/empty)))))))
 
 (def ^:private xf-mapcat-undo
   (mapcat :undo-changes))
@@ -724,13 +761,14 @@
 (defn- resume-on-online
   "Re-enters the runner for a retrying episode when the browser reports
   connectivity back, instead of waiting out the backoff. Terminal failures
-  stay terminal: only a live `:retrying` episode resumes."
+  stay terminal: only a live `:retrying` episode resumes, never one
+  suspended outside the workspace."
   []
   (ptk/reify ::resume-on-online
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [status queue]} (:persistence state)]
-        (if (and (seq queue) (= :retrying status))
+      (let [{:keys [status queue suspended]} (:persistence state)]
+        (if (and (seq queue) (= :retrying status) (not suspended))
           (rx/of (run-persistence-task))
           (rx/empty))))))
 
@@ -776,9 +814,14 @@
          (rx/of (initialize-persistence-state))
 
          (->> stream
+              (rx/filter (ptk/type? ::dw/finalize-workspace))
+              (rx/map (fn [_] (suspend-retries)))
+              (rx/take-until stoper-s))
+
+         (->> stream
               (rx/filter #(or (ptk/type? ::dc/change-team-role %)
                               (ptk/type? ::dw/workspace-initialized %)))
-              (rx/map (fn [_] (recover-persistence)))
+              (rx/map #(recover-persistence (ptk/type? ::dw/workspace-initialized %)))
               (rx/take-until stoper-s))
 
          (->> (rx/interval saving-check-interval-ms)
