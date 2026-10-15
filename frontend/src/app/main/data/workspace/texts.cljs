@@ -1488,6 +1488,17 @@
                  (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers shape)))
           (rx/empty))))))
 
+(defn v3-stop-text-layout-preview
+  "Drops the layout preview of the text `id` and leaves interactive render mode."
+  [id]
+  (ptk/reify ::v3-stop-text-layout-preview
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (contains? (get state ::layout-preview) id)
+        (rx/of #(update % ::layout-preview dissoc id)
+               (dwm/clear-local-transform))
+        (rx/empty)))))
+
 (defn v3-update-editor-content
   "Commits `content` from the WASM editor to the text `shape-id` and, while
   editing, previews its new size in the layout."
