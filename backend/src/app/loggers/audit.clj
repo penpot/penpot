@@ -234,7 +234,9 @@
 (defn- append-audit-entry
   [cfg params]
   (let [params (-> params
-                   (assoc :id (uuid/next))
+                   ;; Keep a pre-assigned id (process-event assigns one so
+                   ;; the webhook task can reference the stored row).
+                   (update :id #(or % (uuid/next)))
                    (update :props db/tjson)
                    (update :context db/tjson)
                    (update :ip-addr db/inet))
@@ -253,62 +255,70 @@
 
 (defn- process-event
   [cfg event]
-  (when (contains? cf/flags :audit-log-logger)
-    (l/log! ::l/logger "app.audit"
-            ::l/level :info
-            :profile-id (str (:profile-id event))
-            :ip-addr (str (:ip-addr event))
-            :type (:type event)
-            :name (:name event)
-            :props (json/encode (:props event) :key-fn json/write-camel-key)
-            :context (json/encode (:context event) :key-fn json/write-camel-key)))
+  ;; Assign the row id up-front so every sink below shares it: the
+  ;; stored row and the `:process-webhook-event` task params. The
+  ;; webhook trigger row links back to its origin event through props
+  ;; `:event-id`, which used to land nil because the id was generated
+  ;; inside `append-audit-entry` without reaching the worker params.
+  (let [event (assoc event :id (or (:id event) (uuid/next)))]
+    (when (contains? cf/flags :audit-log-logger)
+      (l/log! ::l/logger "app.audit"
+              ::l/level :info
+              :profile-id (str (:profile-id event))
+              :ip-addr (str (:ip-addr event))
+              :type (:type event)
+              :name (:name event)
+              :props (json/encode (:props event) :key-fn json/write-camel-key)
+              :context (json/encode (:context event) :key-fn json/write-camel-key)))
 
-  (when (contains? cf/flags :audit-log)
-    (append-audit-entry cfg event))
+    (when (contains? cf/flags :audit-log)
+      (append-audit-entry cfg event))
 
-  (when (contains? cf/flags :telemetry)
-    ;; NOTE: when both audit-log and telemetry are enabled, events are stored
-    ;; twice: once with full details (above) and once stripped of props and
-    ;; ip-addr, tagged with source="telemetry" so the telemetry task can
-    ;; collect and ship them.  The profile-id is preserved (UUIDs are already
-    ;; anonymous random identifiers).  Only a safe subset of context fields
-    ;; is kept: initiator, version, client-version and client-user-agent.
-    ;; Timestamps are truncated to day precision to avoid leaking exact event
-    ;; timing.
-    (let [event (-> event
-                    (filter-telemetry-props)
-                    (filter-telemetry-context)
-                    (update :created-at ct/truncate :days)
-                    (update :tracked-at ct/truncate :days)
-                    (assoc :source "telemetry:backend")
-                    (assoc :ip-addr "0.0.0.0"))]
-      (append-audit-entry cfg event)))
+    (when (contains? cf/flags :telemetry)
+      ;; NOTE: when both audit-log and telemetry are enabled, events are stored
+      ;; twice: once with full details (above) and once stripped of props and
+      ;; ip-addr, tagged with source="telemetry" so the telemetry task can
+      ;; collect and ship them.  The profile-id is preserved (UUIDs are already
+      ;; anonymous random identifiers).  Only a safe subset of context fields
+      ;; is kept: initiator, version, client-version and client-user-agent.
+      ;; Timestamps are truncated to day precision to avoid leaking exact event
+      ;; timing. The shadow row gets its own id: reusing the full row id
+      ;; would collide on the primary key.
+      (let [event (-> event
+                      (assoc :id (uuid/next))
+                      (filter-telemetry-props)
+                      (filter-telemetry-context)
+                      (update :created-at ct/truncate :days)
+                      (update :tracked-at ct/truncate :days)
+                      (assoc :source "telemetry:backend")
+                      (assoc :ip-addr "0.0.0.0"))]
+        (append-audit-entry cfg event)))
 
-  (when (and (contains? cf/flags :webhooks)
-             (::webhooks/event? event))
-    (let [batch-key     (::webhooks/batch-key event)
-          batch-timeout (::webhooks/batch-timeout event)
-          label         (dm/str "rpc:" (:name event))
-          label         (cond
-                          (ifn? batch-key)    (dm/str label ":" (batch-key (::rpc/params event)))
-                          (string? batch-key) (dm/str label ":" batch-key)
-                          :else               label)
-          dedupe?       (boolean (and batch-key batch-timeout))]
+    (when (and (contains? cf/flags :webhooks)
+               (::webhooks/event? event))
+      (let [batch-key     (::webhooks/batch-key event)
+            batch-timeout (::webhooks/batch-timeout event)
+            label         (dm/str "rpc:" (:name event))
+            label         (cond
+                            (ifn? batch-key)    (dm/str label ":" (batch-key (::rpc/params event)))
+                            (string? batch-key) (dm/str label ":" batch-key)
+                            :else               label)
+            dedupe?       (boolean (and batch-key batch-timeout))]
 
-      (wrk/submit! (-> cfg
-                       (assoc ::wrk/task :process-webhook-event)
-                       (assoc ::wrk/queue :webhooks)
-                       (assoc ::wrk/max-retries 0)
-                       (assoc ::wrk/delay (or batch-timeout 0))
-                       (assoc ::wrk/dedupe dedupe?)
-                       (assoc ::wrk/label label)
-                       (assoc ::wrk/params (-> event
-                                               (d/without-qualified)
-                                               (dissoc :source)
-                                               (dissoc :context)
-                                               (dissoc :ip-addr)
-                                               (dissoc :type)))))))
-  event)
+        (wrk/submit! (-> cfg
+                         (assoc ::wrk/task :process-webhook-event)
+                         (assoc ::wrk/queue :webhooks)
+                         (assoc ::wrk/max-retries 0)
+                         (assoc ::wrk/delay (or batch-timeout 0))
+                         (assoc ::wrk/dedupe dedupe?)
+                         (assoc ::wrk/label label)
+                         (assoc ::wrk/params (-> event
+                                                 (d/without-qualified)
+                                                 (dissoc :source)
+                                                 (dissoc :context)
+                                                 (dissoc :ip-addr)
+                                                 (dissoc :type)))))))
+    event))
 
 (defn submit*
   "A public API, lower-level than submit, assumes all required fields are filled"
@@ -396,6 +406,47 @@
 
     coerced))
 
+(def ^:private sql:team-id-by-project
+  "SELECT id FROM team
+    WHERE id = (SELECT team_id FROM project WHERE id = ?)")
+
+(def ^:private sql:team-id-by-file
+  "SELECT t.id FROM team AS t
+     JOIN project AS p ON (p.team_id = t.id)
+     JOIN file AS f ON (f.project_id = p.id)
+    WHERE f.id = ?")
+
+(def ^:private read-event-names
+  "Read commands excluded from team-id resolution on top of the `get-*`
+  prefix: their events carry no consumer state, so the lookup would only
+  tax the read path."
+  #{"has-file-libraries"})
+
+(defn- read-event?
+  [event-name]
+  (or (str/starts-with? event-name "get-")
+      (contains? read-event-names event-name)))
+
+(defn- enrich-team-id
+  "Adds the team id to the event props when it is missing and can be resolved
+  locally, so consumers do not have to join production tables. Only events that
+  already carry a project or file id are considered: read commands put the
+  entity id under `:id`, and resolving those would add a query to every read."
+  [cfg event-name props]
+  (if (or (:team-id props)
+          (read-event? event-name)
+          (and (nil? (:project-id props))
+               (nil? (:file-id props))))
+    props
+    (let [project-id (:project-id props)
+          file-id    (:file-id props)
+          team-id    (or (when (some? project-id)
+                           (:id (db/exec-one! cfg [sql:team-id-by-project project-id])))
+                         (when (some? file-id)
+                           (:id (db/exec-one! cfg [sql:team-id-by-file file-id]))))]
+      (cond-> props
+        (some? team-id) (assoc :team-id team-id)))))
+
 (defn prepare-rpc-event
   [cfg mdata params result]
   (let [resultm      (meta result)
@@ -410,25 +461,32 @@
                          (::rpc/profile-id params)
                          uuid/zero)
 
+        module       (get cfg ::rpc/module)
+        event-name   (or (::name resultm)
+                         (let [sname (::sv/name mdata)]
+                           (if (not= module "main")
+                             (str module "-" sname)
+                             sname)))
+
         props        (-> (or (::replace-props resultm)
                              (merge params (::props resultm)))
                          (clean-props))
+
+        ;; Resolve the team locally when the event carries a project or file
+        ;; id, so the consumers do not need to join production tables.
+        ;; Reads are excluded: their events carry no consumer state.
+        props        (enrich-team-id cfg event-name props)
 
         context      (-> (::context resultm)
                          (merge (prepare-context-from-request request))
                          (assoc :request-id (::rpc/request-id params))
                          (d/without-nils))
 
-        ip-addr      (inet/parse-request request)
-        module       (get cfg ::rpc/module)]
+        ip-addr      (inet/parse-request request)]
 
     {:type (or (::type resultm)
                (::rpc/type cfg))
-     :name (or (::name resultm)
-               (let [sname (::sv/name mdata)]
-                 (if (not= module "main")
-                   (str module "-" sname)
-                   sname)))
+     :name event-name
 
      :profile-id profile-id
      :ip-addr ip-addr
@@ -484,6 +542,33 @@
                   (update :source d/nilv "backend")
                   (d/without-nils))]
     (submit* cfg event)))
+
+(defn submit-create-event
+  "Emits a `create-*` audit event for an entity created as a side effect of a
+  bulk operation (import, duplicate, clone). Those entities get no event from
+  their own command, so a local projection cannot key them otherwise. The
+  event is built by hand and does not pass through `prepare-rpc-event`, so its
+  props are passed as-is minus nils."
+  [cfg params event-name props]
+  (when (contains? cf/flags :audit-log)
+    (submit cfg
+            (-> (event-from-rpc-params params)
+                (assoc :name event-name)
+                (assoc :props (d/without-nils props))))))
+
+(def ^:private sql:get-file-event-columns
+  "SELECT id, name, project_id, created_at, modified_at, revn
+     FROM file WHERE id = ?;")
+
+(defn submit-file-created-event
+  "Emit a `create-file` event for a file born inside a bulk operation,
+  with the same prop shape as the `create-file` command event. Only
+  the file id is needed: the light columns are read back (no data
+  blob), so projections that key on name, revn or timestamps work.
+  `extra` carries what the row lacks (the team id)."
+  [cfg params file-id extra]
+  (when-let [row (db/exec-one! cfg [sql:get-file-event-columns file-id])]
+    (submit-create-event cfg params "create-file" (merge row extra))))
 
 (defn insert
   "Submit audit event to the collector, intended to be used only from

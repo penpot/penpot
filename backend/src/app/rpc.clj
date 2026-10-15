@@ -426,7 +426,8 @@
 (defn- resolve-management-methods
   [cfg]
   (let [cfg  (assoc cfg ::module "management" ::type "command" ::metrics-id :rpc-management-timing)
-        mods (cond->> (list 'app.rpc.management.exporter)
+        mods (cond->> (list 'app.rpc.management.exporter
+                            'app.rpc.management.files)
                (contains? cf/flags :admin-console)
                (cons 'app.rpc.management.nitrate))]
 

@@ -1098,7 +1098,9 @@
       {::audit/props {:project-id (:project-id file)
                       :name (:name file)
                       :created-at (:created-at file)
-                      :modified-at (:modified-at file)}})))
+                      :modified-at (:modified-at file)
+                      :deleted-at (:deleted-at file)
+                      :team-id (:id team)}})))
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"

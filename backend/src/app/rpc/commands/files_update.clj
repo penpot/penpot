@@ -283,11 +283,18 @@
 
       (with-meta {:revn revn :lagged (get-lagged-changes conn params)}
         {::audit/replace-props
-         {:id         (:id file)
-          :name       (:name file)
-          :features   (:features file)
-          :project-id (:project-id file)
-          :team-id    (:team-id file)}}))))
+         {:id          (:id file)
+          :name        (:name file)
+          :features    (:features file)
+          :project-id  (:project-id file)
+          :team-id     (:team-id file)
+          ;; NOTE: `file` carries the post-update revn here (`revn`
+          ;; above is the pre-update one kept for the response), and
+          ;; `modified-at` mirrors `persist-file!`: same `::timestamp`
+          ;; fallback, so both agree to the millisecond when the
+          ;; request timestamp exists.
+          :revn        (:revn file)
+          :modified-at (or timestamp (ct/now))}}))))
 
 (defn get-file
   "Get not-decoded file, only decodes the features set."

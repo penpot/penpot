@@ -1226,3 +1226,27 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest media-audit-event-carries-team-id
+  ;; The media event carries the file id, so the resolver could find the team;
+  ;; the command already resolved the team for the quota check and sets it.
+  (let [prof    (th/create-profile* 1)
+        team    (th/create-team* 1 {:profile-id (:id prof)})
+        project (th/create-project* 1 {:profile-id (:id prof)
+                                       :team-id (:id team)})
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:id project)
+                                    :is-shared false})
+        mfile   {:filename "sample.jpg"
+                 :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                 :mtype "image/jpeg"
+                 :size 312043}
+        out     (th/command! {::th/type :upload-file-media-object
+                              ::rpc/profile-id (:id prof)
+                              :file-id (:id file)
+                              :is-local true
+                              :name "testfile"
+                              :content mfile})]
+    (t/is (th/success? out))
+    (t/is (= (:id team)
+             (get-in (meta (:result out)) [:app.loggers.audit/replace-props :team-id])))))

@@ -1802,3 +1802,30 @@
         (t/is (th/success? out))
         (t/is (= (:id member) event-pid))
         (t/is (not= (:id owner) event-pid))))))
+
+(t/deftest delete-profile-audit-event-carries-profile-data
+  ;; The event used to carry empty props because every param is namespaced and
+  ;; clean-props drops them; the projection needs the deleted identity.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        out     (th/command-raw! {::th/type :delete-profile
+                                  ::rpc/profile-id (:id profile)})
+        props   (:app.loggers.audit/props (meta out))]
+    (t/is (= (:id profile) (:id props)))
+    (t/is (= "profile1.test@nodomain.com" (:email props)))
+    (t/is (= "Profile 1" (:fullname props)))
+    (t/is (ct/inst? (:created-at props)))
+    (t/is (ct/inst? (:modified-at props)))
+    (t/is (ct/inst? (:deleted-at props)))))
+
+(t/deftest delete-profile-is-idempotent
+  ;; Deleting an already-deleted profile (client retry after a lost response)
+  ;; succeeds: the row is still there, only marked.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        params  {::th/type :delete-profile
+                 ::rpc/profile-id (:id profile)}
+        first-out (th/command-raw! params)]
+    (t/is (th/success? first-out))
+    (let [second-out (th/command-raw! params)]
+      (t/is (th/success? second-out))
+      (t/is (= (:id profile)
+               (get-in (meta second-out) [:app.loggers.audit/props :id]))))))

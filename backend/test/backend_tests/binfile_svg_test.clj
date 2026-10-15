@@ -374,13 +374,14 @@
   of its single media object."
   [profile file]
   (let [bundle (export-v1 profile file)]
-    (let [result (-> th/*system*
-                     (assoc ::bfc/project-id (:default-project-id profile))
-                     (assoc ::bfc/profile-id (:id profile))
-                     (assoc ::bfc/input (io/input-stream bundle))
-                     (v1/import-files!))]
-      (t/is (= 1 (count result)))
-      (let [rows    (th/db-query :file-media-object {:file-id (first result)})
+    (let [result  (-> th/*system*
+                      (assoc ::bfc/project-id (:default-project-id profile))
+                      (assoc ::bfc/profile-id (:id profile))
+                      (assoc ::bfc/input (io/input-stream bundle))
+                      (v1/import-files!))
+          file-id (first (:file-ids result))]
+      (t/is (= 1 (count (:file-ids result))))
+      (let [rows    (th/db-query :file-media-object {:file-id file-id})
             storage (:app.storage/storage th/*system*)]
         (t/is (= 1 (count rows)))
         (let [object (sto/get-object storage (:media-id (first rows)))]
