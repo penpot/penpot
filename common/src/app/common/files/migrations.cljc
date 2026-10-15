@@ -223,8 +223,10 @@
   [data _]
   (letfn [(fix-line-paths [shape]
             (if (= (:type shape) :path)
-              (let [{:keys [width height]} (grc/points->rect (:points shape))]
-                (if (or (mth/almost-zero? width) (mth/almost-zero? height))
+              ;; A path with missing or empty points has no rect; rebuild
+              ;; its geometry from the content as for line-like paths.
+              (let [{:keys [width height] :as rect} (grc/points->rect (:points shape))]
+                (if (or (nil? rect) (mth/almost-zero? width) (mth/almost-zero? height))
                   (let [selrect (path.segment/content->selrect (:content shape))
                         points (grc/rect->points selrect)
                         transform (gmt/matrix)

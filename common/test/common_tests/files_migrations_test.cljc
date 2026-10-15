@@ -605,3 +605,45 @@
         data'        (cfm/migrate-data data migration-id)]
 
     (t/is (= [child-id] (get-in data' [:components component-id :objects main-id :shapes])))))
+
+(defn- make-path-shape
+  [shape-id]
+  (cts/setup-shape {:id shape-id
+                    :type :path
+                    :content [{:command :move-to :params {:x 10 :y 20}}
+                              {:command :line-to :params {:x 110 :y 70}}]}))
+
+(t/deftest migration-legacy-6-repairs-paths-without-points
+  (let [migration-id "legacy-6"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (make-path-shape shape-id)]
+
+    (doseq [points [nil []]]
+      (let [data   {:pages-index {page-id {:objects {shape-id (assoc shape :points points)}}}}
+            data'  (cfm/migrate-data data migration-id)
+            shape' (get-in data' [:pages-index page-id :objects shape-id])]
+
+        (t/is (= (:points shape) (:points shape'))
+              (str "points rebuilt from content when they were " (pr-str points)))
+        (t/is (= (:selrect shape) (:selrect shape'))
+              "selrect rebuilt from content")))))
+
+(t/deftest migration-legacy-6-runs-through-file-migration
+  ;; A file saved before version 6 runs every migration from legacy-6 on,
+  ;; and the whole chain must succeed for the file to load.
+  (let [migration-id "legacy-6"
+        shape-id     (uuid/next)
+        file         (ctf/make-file {:name "Legacy path without points"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (make-path-shape shape-id)
+                         (assoc :points []))
+        file         (-> file
+                         (dissoc :migrations)
+                         (assoc :version 5)
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file (delay {}))]
+
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (= 4 (count (get-in file' [:data :pages-index page-id :objects shape-id :points])))
+          "path points repaired before schema validation")))
