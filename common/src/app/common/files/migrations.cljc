@@ -2385,6 +2385,15 @@
                     {})]
     (cfcp/convert-text-overrides data libraries)))
 
+(defmethod migrate-data "0038-recompute-content-group-alone"
+  [data _]
+  ;; copy texts that older files mark with `:content-group` alone, which
+  ;; 0037 left; it converts nothing else again
+  (let [libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (cfcp/convert-text-overrides data libraries)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2478,4 +2487,5 @@
          "0034-fix-path-content-offset"
          "0035-fix-shape-svg-attrs-and-defs"
          "0036-convert-swap-slots-to-swap-groups"
-         "0037-recompute-text-overrides"]))
+         "0037-recompute-text-overrides"
+         "0038-recompute-content-group-alone"]))

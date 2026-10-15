@@ -368,13 +368,6 @@
       (cfh/make-container component-page :page))
     (cfh/make-container component :component)))
 
-(defn get-component-container-from-head
-  [instance-head libraries & {:keys [include-deleted?] :or {include-deleted? true}}]
-  (let [library-data   (-> (get-component-library libraries instance-head)
-                           :data)
-        component (ctkl/get-component library-data (:component-id instance-head) include-deleted?)]
-    (get-component-container library-data component)))
-
 (defn get-component-root
   "Retrieve the root shape of the component."
   [file-data component]
@@ -1169,20 +1162,21 @@
 
 ;; Export
 
-(defn- get-component-ref-file
+(defn- get-shape-ref-file
+  "The file of the main shape the copy shape `shape` refers to: the file of
+  the component of the top head of its copy, or of the closest swapped head
+  above it, whose children refer into its own component."
   [objects shape]
-
-  (cond
-    (contains? shape :component-file)
-    (get shape :component-file)
-
-    (contains? shape :shape-ref)
-    (recur objects (get objects (:parent-id shape)))
-
-    :else
-    nil))
+  (let [parent (get objects (:parent-id shape))]
+    (cond
+      (not (ctk/in-component-copy? parent)) (:component-file shape)
+      (ctk/swapped? parent)                 (:component-file parent)
+      :else                                 (recur objects parent))))
 
 (defn detach-external-references
+  "Remove from `file` every reference to another file: colors,
+  typographies, components and the copy links to their mains, in the pages
+  and in the shapes of deleted components."
   [file file-id]
   (let [detach-text
         (fn [content]
@@ -1195,17 +1189,31 @@
                    (not= file-id (:typography-ref-file %))
                    (dissoc :typography-ref-id :typography-ref-file)))))
 
+        detach-color
+        (fn [shape position {:keys [ref-file]} _ _ detach-fn]
+          (if (and (some? ref-file) (not= file-id ref-file))
+            (detach-fn shape position)
+            shape))
+
+        ;; a head whose component is in another file stops being a head; it
+        ;; stays a copy while the main shape it refers to is in this file
         detach-shape
         (fn [objects shape]
-          (let [shape' (cond-> shape
+          (let [shape' (cond-> (cts/process-shape-colors shape detach-color)
                          (not= file-id (:fill-color-ref-file shape))
                          (dissoc :fill-color-ref-id :fill-color-ref-file)
 
                          (not= file-id (:stroke-color-ref-file shape))
                          (dissoc :stroke-color-ref-id :stroke-color-ref-file)
 
-                         (not= file-id (get-component-ref-file objects shape))
-                         (dissoc :component-id :component-file :shape-ref :component-root)
+                         (and (ctk/instance-head? shape)
+                              (not= file-id (:component-file shape)))
+                         (-> (ctk/unhead-shape)
+                             (ctk/remove-swap-group))
+
+                         (and (ctk/in-component-copy? shape)
+                              (not= file-id (get-shape-ref-file objects shape)))
+                         (ctk/detach-shape)
 
                          (= :text (:type shape))
                          (update :content detach-text))]
@@ -1223,9 +1231,15 @@
 
         detach-pages
         (fn [pages-index]
-          (d/update-vals pages-index #(update % :objects detach-objects)))]
+          (d/update-vals pages-index #(update % :objects detach-objects)))
 
-    (cond-> (update-in file [:data :pages-index] detach-pages)
+        detach-components
+        (fn [components]
+          (d/update-vals components #(cond-> % (:deleted %) (update :objects detach-objects))))]
+
+    (cond-> (-> file
+                (update-in [:data :pages-index] detach-pages)
+                (d/update-in-when [:data :components] detach-components))
       (not (cfo/effective-tokens-source? (:data file) file-id))
       (update :data cfo/detach-tokens-source))))
 
