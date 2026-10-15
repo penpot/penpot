@@ -1453,6 +1453,16 @@
                                            (gsh/transform-shape (ctm/change-size shape width height))))))
                                  {:undo-group (when new-shape? id)}))))))))
 
+(defn- layout-item
+  "The ancestor of `shape` (or `shape` itself) that is a direct child of its board."
+  [objects shape]
+  (loop [item shape]
+    (let [parent-id (:parent-id item)]
+      (if (or (= parent-id (:frame-id shape))
+              (nil? (get objects parent-id)))
+        item
+        (recur (get objects parent-id))))))
+
 (defn- v3-sync-text-layout
   "Previews an auto-grow text's live size in its layout, so a fit-content parent
   follows it while typing. Geometry is committed on finalize."
@@ -1464,7 +1474,8 @@
             shape   (get objects id)]
         (if (and (cfh/text-shape? shape)
                  (not= :fixed (:grow-type shape))
-                 (ctl/any-layout-descent? objects shape))
+                 (ctl/any-layout-descent? objects shape)
+                 (not (ctl/position-absolute? (layout-item objects shape))))
           (if-let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
             (rx/of (dwm/set-wasm-modifiers modifiers))
             (rx/empty))
