@@ -53,26 +53,24 @@
   "A job row as the substrate writes it: running, owned by a profile and
   holding a resource when the test needs one. The name is the one the row
   carries, and it is what the substrate uses to resolve the job-def when
-  the result is read."
-  ([profile-id resource-id]
-   (make-job! profile-id resource-id "export-binfile"))
-  ([profile-id resource-id name]
-   (let [id (uuid/next)]
-     (th/db-insert! :job {:id           id
-                          :name         name
-                          :tenant       (cf/get :tenant)
-                          :queue        "binfile"
-                          :params       (db/json {})
-                          :priority     100
-                          :max-retries  0
-                          :retry-num    0
-                          :status       "running"
-                          :profile-id   profile-id
-                          :resource-id  resource-id
-                          :scheduled-at (ct/now)
-                          :created-at   (ct/now)
-                          :modified-at  (ct/now)})
-     id)))
+  the result is read or checked, so every test states the kind of its row."
+  [profile-id resource-id name]
+  (let [id (uuid/next)]
+    (th/db-insert! :job {:id           id
+                         :name         name
+                         :tenant       (cf/get :tenant)
+                         :queue        "binfile"
+                         :params       (db/json {})
+                         :priority     100
+                         :max-retries  0
+                         :retry-num    0
+                         :status       "running"
+                         :profile-id   profile-id
+                         :resource-id  resource-id
+                         :scheduled-at (ct/now)
+                         :created-at   (ct/now)
+                         :modified-at  (ct/now)})
+    id))
 
 (defn- job-cfg
   "The system cfg as the runner hands it to a handler. The job id is NOT
@@ -141,7 +139,7 @@
 (t/deftest export-through-the-adapter-produces-the-artifact
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (make-job! (:id profile) nil "export-binfile")
         output  (tmp/tempfile* :suffix ".penpot")]
 
     (bfj/export-files (job-cfg) (job-context job-id)
@@ -173,7 +171,7 @@
                                   {:content  (sto/content (fixture-path))
                                    :filename "package.penpot"
                                    :mtype    "application/zip"})
-        job-id   (make-job! (:id profile) (:resource-id staged))
+        job-id   (make-job! (:id profile) (:resource-id staged) "import-binfile")
         context  (job-context job-id)
         result   (bfj/import-files (job-cfg) context
                                    {:profile-id (:id profile)
@@ -192,7 +190,7 @@
 (t/deftest the-adapter-composes-a-milestone-per-tap
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (make-job! (:id profile) nil "export-binfile")
         reports (atom [])]
 
     ;; the substrate throttles the durable events, so the whole stream of
@@ -227,7 +225,7 @@
 (t/deftest a-tap-carries-the-outer-counters-in-course
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (make-job! (:id profile) nil "export-binfile")
         taps    (atom [])]
 
     ;; the taps themselves, before the adapter turns them into events
@@ -286,7 +284,7 @@
                                  {:content  (sto/content (fixture-path))
                                   :filename "package.penpot"
                                   :mtype    "application/zip"})
-        job-id  (make-job! (:id profile) (:resource-id staged))
+        job-id  (make-job! (:id profile) (:resource-id staged) "import-binfile")
         context (job-context job-id)
         reports (atom [])]
 
@@ -322,7 +320,7 @@
 (t/deftest a-job-that-is-no-longer-active-stops-the-work
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (make-job! (:id profile) nil "export-binfile")
         context (job-context job-id)]
 
     (t/testing "a running job is active"
@@ -413,7 +411,7 @@
 (t/deftest the-export-handler-runs-through-the-registry
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (make-job! (:id profile) nil)
+        job-id  (make-job! (:id profile) nil "export-binfile")
         result  (jobs/invoke (-> th/*system*
                                  (assoc ::jobs/name :export-binfile)
                                  (assoc ::jobs/params {:file-ids    #{file-id}
@@ -433,7 +431,7 @@
                                   {:content  (sto/content (fixture-path))
                                    :filename "package.penpot"
                                    :mtype    "application/zip"})
-        job-id   (make-job! (:id profile) (:resource-id staged))
+        job-id   (make-job! (:id profile) (:resource-id staged) "import-binfile")
         result   (jobs/invoke (-> th/*system*
                                   (assoc ::jobs/name :import-binfile)
                                   (assoc ::jobs/params {:project-id (:default-project-id profile)

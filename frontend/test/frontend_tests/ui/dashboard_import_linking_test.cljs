@@ -6,9 +6,10 @@
 
 (ns frontend-tests.ui.dashboard-import-linking-test
   "The links the import wizard creates for a file of the package whose
-  library the auto-link could not resolve. The resolution map arrives with
-  the keys the job result has, so the file id of a link must come from the
-  entry and never from the key of the map."
+  library the auto-link could not resolve. The resolution map comes from the
+  job result, so the type of its keys is not something the wizard can rely
+  on: the file id of a link must come from the entry and never from the key
+  of the map."
   (:require
    [app.common.uuid :as uuid]
    [app.main.ui.dashboard.import :as import]
@@ -31,8 +32,8 @@
   (let [file-id (uuid/next)
         old-lib (uuid/next)
         new-lib (uuid/next)
-        ;; the shape the job result has today: the key of the map is a
-        ;; keyword and the entry carries the same id as text
+        ;; the shape a result without a declared schema has: the key of the
+        ;; map is a keyword and the entry carries the same id as text
         resolution {(keyword (str file-id)) (file-resolution (str file-id) (str old-lib))}
         selection  {(str file-id) {(str old-lib) (str new-lib)}}]
 

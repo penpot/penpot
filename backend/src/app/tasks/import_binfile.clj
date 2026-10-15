@@ -45,8 +45,8 @@
    [:version    {:optional true} [:enum 1 3]]])
 
 (def schema:candidate
-  "A library of the instance that matches the name of one the package used
-  and is therefore offered to the user as a replacement."
+  "A library of the instance whose slugified name matches the one the package
+  used and is therefore offered to the user as a replacement."
   [:map
    [:id           ::sm/uuid]
    [:name         :string]
@@ -62,7 +62,8 @@
 
 (def schema:pending-entry
   "A library of the package that needs the user to choose a replacement:
-  candidates are the libraries of the instance with the same name."
+  candidates are the libraries of the instance with the same slugified name
+  (`bfc/find-shared-files-by-slug`)."
   [:map
    [:id         ::sm/uuid]
    [:name       :string]

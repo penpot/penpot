@@ -159,9 +159,9 @@
 (defn pending-library-links
   "The library links the wizard must create for the files of a resolution:
   one per pending entry the user chose a candidate for. The file id comes
-  from the entry and never from the key of the map: the key of the
-  resolution map is keywordized on its way through the job result, and it
-  would not match the ids the wizard holds."
+  from the entry and never from the key of the map: what a key holds depends
+  on the result schema of the job-def that wrote it, while the wizard indexes
+  its selection by the id of the entry."
   [resolution selection]
   (->> (vals resolution)
        (mapcat (fn [{:keys [id pending]}]
