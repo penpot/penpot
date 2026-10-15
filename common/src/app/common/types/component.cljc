@@ -295,24 +295,12 @@
          :component-file component-file
          :component-id component-id))
 
-(defn- extract-ids [shape]
-  (if (map? shape)
-    (let [current-id (:id shape)
-          child-ids  (mapcat extract-ids (:children shape))]
-      (cons current-id child-ids))
-    []))
-
 (defn diff-components
   "Compare two components, and return a set of the keys with different values"
   [comp1 comp2]
-  (let [eq (fn [key val1 val2]
-             (if (= key :objects)
-               (= (extract-ids val1) (extract-ids val2))
-               (= val1 val2)))]
-    (->> (concat (keys comp1) (keys comp2))
-         (distinct)
-         (filter #(not (eq % (get comp1 %) (get comp2 %))))
-         set)))
+  (into #{}
+        (filter #(not= (get comp1 %) (get comp2 %)))
+        (concat (keys comp1) (keys comp2))))
 
 (defn allow-duplicate?
   [objects shape]

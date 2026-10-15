@@ -8,7 +8,6 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -332,8 +331,7 @@
         labels  #(set (map (comp label :id) (ctc/get-children-in-instance objects (thi/id %))))]
     (t/is (= #{:main1 :main1-child} (labels :main1)))
     (t/is (= #{:main2} (labels :main2)))
-    ;; each ancestor comes back once per child below it
-    (tm/known-failure "F59" 2 3 (count (ctc/get-children-in-instance objects (thi/id :main1))))))
+    (t/is (= 2 (count (ctc/get-children-in-instance objects (thi/id :main1)))))))
 
 (t/deftest copy-parent-above-a-plain-parent
   ;; a rect in a plain group inside a copy: the copy is two levels up
@@ -346,9 +344,7 @@
         rect     (make-shape (uuid/next) :parent-id group-id)
         objects  (objects-map copy group rect)]
     (t/is (ctc/has-any-copy-parent? objects group))
-    ;; the walk passes on the parent's id where it expects a shape, so it
-    ;; stops after the direct parent
-    (tm/known-failure "F63" true false (ctc/has-any-copy-parent? objects rect))))
+    (t/is (ctc/has-any-copy-parent? objects rect))))
 
 (t/deftest nesting-level-delta-of-a-move-between-copies
   ;; :copy2-root          #--> [Component :component2]
@@ -406,3 +402,24 @@
     (t/is (= 2 (count shapes)))
     (t/testing "each shape references its main"
       (t/is (= #{(thi/id :main1) (thi/id :main1-child)} (set (map :shape-ref shapes)))))))
+
+(t/deftest a-new-copy-starts-clean
+  ;; the main of component2 nests a copy of component1, synced from a remote
+  ;; main and touched; a new copy of component2 has neither mark
+  (let [file  (-> (thf/sample-file :file)
+                  (tho/add-nested-component :c1 :main1 :main1-child
+                                            :c2 :main2 :nested-head)
+                  (ths/update-shape :nested-head :remote-synced true)
+                  (ths/update-shape :nested-head :touched #{:fill-group})
+                  (thc/instantiate-component :c2 :copy2 :children-labels [:copy-nested-head]))
+        shape (ths/get-shape file :copy-nested-head)]
+    (t/is (nil? (:touched shape)))
+    (t/is (nil? (:remote-synced shape)))))
+
+(t/deftest a-change-of-the-shapes-of-a-deleted-component-marks-it-modified
+  (let [component {:id (uuid/next) :name "C" :deleted true :modified-at 1
+                   :objects {uuid/zero {:id uuid/zero :name "Old"}}}
+        changed   (assoc-in component [:objects uuid/zero :name] "New")]
+    (t/is (= #{:objects} (ctk/diff-components component changed)))
+    (t/is (= #{} (ctk/diff-components component component)))))
+

@@ -57,6 +57,28 @@
     (t/is (ctk/is-main-of? main-root' copy-root'))
     (t/is (ctk/main-instance-of? (:id main-root') (:id (second pages')) component'))))
 
+(t/deftest absorb-nested-components
+  ;; component2's main nests a copy of component1, and has an annotation;
+  ;; the file has a copy of component2
+  (let [library (-> (thf/sample-file :library :is-shared true)
+                    (tho/add-nested-component :component1 :main1-root :main1-child
+                                              :component2 :main2-root :nested-head)
+                    (thc/update-component :component2 :annotation "Note"))
+        file    (-> (thf/sample-file :file)
+                    (thc/instantiate-component :component2 :copy2-root :library library
+                                               :children-labels [:copy-nested-head]))
+        file'   (ctf/update-file-data file #(ctf/absorb-assets % (:data library)))
+        data'   (ctf/file-data file')
+        page'   (second (ctpl/pages-seq data'))
+        nested' (get-in page' [:objects (thi/id :nested-head)])]
+    (thf/validate-file! file')
+    (t/is (= 2 (count (ctkl/components-seq data'))))
+    (t/testing "the nested copy in the absorbed main keeps its link"
+      (t/is (= (thi/id :main1-root) (:shape-ref nested')))
+      (t/is (= (:id file') (:component-file nested'))))
+    (t/testing "the component keeps its annotation"
+      (t/is (= "Note" (:annotation (ctkl/get-component data' (thi/id :component2))))))))
+
 (t/deftest absorb-colors
   (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)

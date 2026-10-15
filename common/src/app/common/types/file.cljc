@@ -767,9 +767,12 @@
                                              {:main-instance? true
                                               :keep-ids? true})
 
+                ;; the heads of the library's components now point to the
+                ;; local ones; with the same ids, the nested copies keep
+                ;; their refs
                 main-instance-shapes
                 (map #(cond-> %
-                        (some? (:component-file %))
+                        (= (:component-file %) (:id library-data))
                         (assoc :component-file (:id file-data)))
                      main-instance-shapes)
 
@@ -794,6 +797,7 @@
                                       {:id (:id component)
                                        :name (:name component)
                                        :path (:path component)
+                                       :annotation (:annotation component)
                                        :main-instance-id (:id main-instance-shape)
                                        :main-instance-page page-id}))
 
