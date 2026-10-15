@@ -233,14 +233,12 @@
     k))
 
 (defn- shadow-entry->js
-  "Converts one resolved shadow entry (a JS Map of field name -> tokenscript
-   symbol) into a plain JS object using the public member names and the
-   unit-converted values."
-  [^js m]
+  "Converts one resolved shadow entry (a map of field name -> value) into
+   a plain JS object using the public member names."
+  [m]
   (let [out #js {}]
-    (.forEach m (fn [sym k]
-                  (obj/set! out (shadow-key->camel k)
-                            (ts/tokenscript-symbols->penpot-unit sym))))
+    (doseq [[k v] m]
+      (obj/set! out (shadow-key->camel (name k)) (clj->js v)))
     out))
 
 (defn- shadow-resolved-value->js
@@ -251,37 +249,37 @@
     (into-array (map shadow-entry->js entries))))
 
 (defn- font-families-resolved-value->js
-  "Converts a resolved fontFamilies value (a tokenscript list symbol) into the
-   documented `string[]` shape."
-  [resolved-value]
-  (some-> (ts/font-family-symbols->penpot-unit resolved-value)
-          (clj->js)))
+  "Converts a resolved fontFamilies value into the documented `string[]`
+   shape."
+  [v]
+  (cond
+    (nil? v) nil
+    (sequential? v) (clj->js v)
+    :else #js [v]))
 
 (defn- get-resolved-value
   [token tokens-tree]
   (let [resolved-tokens (ts/resolve-tokens tokens-tree)
-        resolved-value  (dm/get-in resolved-tokens [(:name token) :resolved-value])]
+        resolved-token  (get resolved-tokens (:name token))
+        resolved-value  (:resolved-value resolved-token)]
     (cond
       (= :font-family (:type token))
       ;; A fontFamilies token resolves to a list of families; expose it as the
-      ;; documented `string[]` rather than the raw tokenscript list symbol.
+      ;; documented `string[]`.
       (font-families-resolved-value->js resolved-value)
 
       (= :typography (:type token))
       ;; A typography token resolves to a composite; expose it as the documented
-      ;; `TokenTypographyValue[]` rather than the raw tokenscript structure.
-      (typography-resolved-value->js
-       (ts/tokenscript-symbols->penpot-unit resolved-value))
+      ;; `TokenTypographyValue[]` with the line height as resolved.
+      (typography-resolved-value->js (ts/plugin-value resolved-token))
 
       (= :shadow (:type token))
-      ;; A shadow token resolves to a list of composites whose entries the
-      ;; tokenscript unit conversion leaves as raw symbols; expose them as the
+      ;; A shadow token resolves to a list of composites; expose them as the
       ;; documented `TokenShadowValue[]`.
-      (shadow-resolved-value->js
-       (ts/tokenscript-symbols->penpot-unit resolved-value))
+      (shadow-resolved-value->js resolved-value)
 
       :else
-      (ts/tokenscript-symbols->penpot-unit resolved-value))))
+      resolved-value)))
 
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
