@@ -466,6 +466,31 @@
     (t/is (= [[:detach "Only a copy that is not inside another copy can be detached"]] errors))
     (t/is (empty? emitted))))
 
+(t/deftest swap-component-keeps-overrides-only-within-a-variant-set
+  (let [set-a   (uuid/next)
+        set-b   (uuid/next)
+        variant #(hash-map :id (uuid/next) :variant-id %)]
+    (t/is (true? (shape/swap-keeps-touched? (variant set-a) (variant set-a))))
+    (t/is (false? (shape/swap-keeps-touched? (variant set-a) (variant set-b))))
+    (t/is (not (shape/swap-keeps-touched? {:id (uuid/next)} {:id (uuid/next)})))
+    (t/is (not (shape/swap-keeps-touched? (variant set-a) {:id (uuid/next)})))))
+
+(t/deftest is-variant-head-reads-the-component-file-of-the-shape
+  ;; a copy, in this file, of a variant of a library
+  (let [library-id (uuid/next)
+        copy-id    (uuid/next)
+        rect-id    (uuid/next)
+        objects    {copy-id {:id copy-id :type :frame :component-id (uuid/next)
+                             :component-file library-id :component-root true :shape-ref (uuid/next)}
+                    rect-id {:id rect-id :type :rect}}
+        head?      (fn [id]
+                     (with-redefs [u/locate-shape (fn [_ _ id] (get objects id))
+                                   u/locate-library-component
+                                   (fn [file-id _] (when (= file-id library-id) {:variant-id (uuid/next)}))]
+                       (.isVariantHead ^js (shape/shape-proxy "test-plugin" (uuid/next) (uuid/next) id))))]
+    (t/is (true? (head? copy-id)))
+    (t/is (false? (head? rect-id)))))
+
 (t/deftest swap-component-rejects-a-value-that-is-no-component
   (let [{:keys [objects head]} (nested-copy-objects)
         {:keys [errors emitted]} (plugin-errors-of objects head #(.swapComponent ^js % #js {}))]

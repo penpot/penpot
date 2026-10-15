@@ -27,6 +27,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
+   [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]
@@ -194,6 +195,22 @@
     done
     (run-selected done (file-with-a-rect) [:rect] (dwv/add-component-or-variant)
                   #(t/is (= 1 (count (ctkl/components-seq (:data %))))))))
+
+(t/deftest create-component-shortcut-on-a-variant-container
+  ;; the shortcut the container's "Add variant" menu entry shows; the new
+  ;; variant focuses its first property 250 ms later, which finds no DOM here
+  (t/async
+    done
+    (mock/with-mocks
+      {dom/get-element (constantly nil)}
+      (fn [inner-done]
+        (let [file (-> (cthf/sample-file :file1)
+                       (cthv/add-variant :v01 :c01 :m01 :c02 :m02))]
+          (run-selected #(js/setTimeout inner-done 300) file [:v01] (dwv/add-component-or-variant)
+                        (fn [file']
+                          (t/is (= 3 (count (filter #(= (cthi/id :v01) (:variant-id %))
+                                                    (ctkl/components-seq (:data file'))))))))))
+      done)))
 
 (t/deftest rename-of-a-plain-component
   (t/async

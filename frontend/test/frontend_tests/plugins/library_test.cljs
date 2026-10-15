@@ -374,6 +374,47 @@
         (t/is (= [plugin-id :setVariantProperty "Plugin doesn't have 'library:write' permission"]
                  (first @errors)))))))
 
+(defn- variant-edit-errors
+  "The errors and emitted events of `call` on a variant edit of the file
+   `file-id`, with its main on the page `page-id`, while the workspace shows
+   the current file `current-file` and page `current-page`."
+  [{:keys [file-id page-id current-file current-page]} call]
+  (let [errors  (atom [])
+        emitted (atom [])]
+    (with-redefs [r/check-permission              (constantly true)
+                  u/not-valid                     (mock/stub (fn [_ prop msg] (swap! errors conj [prop msg])))
+                  u/locate-library-component      (constantly {:main-instance-page page-id
+                                                               :variant-properties [{:name "color" :value "red"}
+                                                                                    {:name "size" :value "s"}]})
+                  library/get-variant-components  (constantly [{:main-instance-page page-id
+                                                                :variant-properties [{:name "color" :value "red"}
+                                                                                     {:name "size" :value "s"}]}])
+                  st/state                        (atom {:current-file-id current-file :current-page-id current-page})
+                  st/emit!                        (fn ([_] (swap! emitted conj :emitted))
+                                                    ([_ & _] (swap! emitted conj :emitted)))]
+      (call (library/variant-proxy "test-plugin" file-id (uuid/next))
+            (library/lib-component-proxy "test-plugin" file-id (uuid/next))))
+    {:errors @errors :emitted @emitted}))
+
+(t/deftest variant-edits-need-the-variant-on-the-current-page
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        edits   {:addVariant         #(.addVariant ^js %1)
+                 :addProperty        #(.addProperty ^js %1)
+                 :removeProperty     #(.removeProperty ^js %1 0)
+                 :renameProperty     #(.renameProperty ^js %1 0 "shade")
+                 :setVariantProperty #(.setVariantProperty ^js %2 0 "blue")}]
+    (doseq [[prop call] edits]
+      (t/testing (name prop)
+        (let [here  (variant-edit-errors {:file-id file-id :page-id page-id
+                                          :current-file file-id :current-page page-id} call)
+              there (variant-edit-errors {:file-id file-id :page-id page-id
+                                          :current-file file-id :current-page (uuid/next)} call)]
+          (t/is (empty? (:errors here)))
+          (t/is (seq (:emitted here)))
+          (t/is (= [[prop "The variant is not on the current page"]] (:errors there)))
+          (t/is (empty? (:emitted there))))))))
+
 ;; ---------------------------------------------------------------------------
 ;; connectLibrary
 ;; ---------------------------------------------------------------------------

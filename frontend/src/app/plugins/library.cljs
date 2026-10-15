@@ -694,6 +694,16 @@
   [file-id variant-id]
   (cfv/find-variant-components (-> file-id u/locate-file :data) variant-id))
 
+(defn- on-current-page?
+  "Whether the main of `component`, of the file `file-id`, is on the page the
+  workspace shows: the variant events build their changes there."
+  [file-id component]
+  (and (= file-id (:current-file-id @st/state))
+       (u/page-active? (:main-instance-page component))))
+
+(def ^:private not-on-current-page
+  "The variant is not on the current page")
+
 (declare lib-component-proxy)
 
 (defn variant-proxy
@@ -740,6 +750,9 @@
         (not (r/check-permission plugin-id "library:write"))
         (u/not-valid plugin-id :addVariant "Plugin doesn't have 'library:write' permission")
 
+        (not (on-current-page? file-id (first (get-variant-components file-id id))))
+        (u/not-valid plugin-id :addVariant not-on-current-page)
+
         :else
         (st/emit!
          (se/event plugin-id "add-new-variant")
@@ -750,6 +763,9 @@
       (cond
         (not (r/check-permission plugin-id "library:write"))
         (u/not-valid plugin-id :addProperty "Plugin doesn't have 'library:write' permission")
+
+        (not (on-current-page? file-id (first (get-variant-components file-id id))))
+        (u/not-valid plugin-id :addProperty not-on-current-page)
 
         :else
         (st/emit!
@@ -770,6 +786,9 @@
           (not (ctv/can-remove-property? properties))
           (u/not-valid plugin-id :removeProperty "A variant must keep at least one property")
 
+          (not (on-current-page? file-id (first (get-variant-components file-id id))))
+          (u/not-valid plugin-id :removeProperty not-on-current-page)
+
           :else
           (st/emit!
            (se/event plugin-id "remove-property")
@@ -787,6 +806,9 @@
 
           (not (r/check-permission plugin-id "library:write"))
           (u/not-valid plugin-id :renameProperty "Plugin doesn't have 'library:write' permission")
+
+          (not (on-current-page? file-id (first (get-variant-components file-id id))))
+          (u/not-valid plugin-id :renameProperty not-on-current-page)
 
           :else
           (st/emit!
@@ -1095,6 +1117,9 @@
 
           (not (r/check-permission plugin-id "library:write"))
           (u/not-valid plugin-id :setVariantProperty "Plugin doesn't have 'library:write' permission")
+
+          (not (on-current-page? file-id (u/locate-library-component file-id id)))
+          (u/not-valid plugin-id :setVariantProperty not-on-current-page)
 
           :else
           (st/emit!

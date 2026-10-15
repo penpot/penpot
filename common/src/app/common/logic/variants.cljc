@@ -482,3 +482,21 @@
           (cfh/components-nesting-loop?
            (cfh/get-children-with-self (:objects page) (:id root))
            (cfh/get-parents-with-self objects (:parent-id shape)))))))
+
+(defn generate-rename-variant
+  "Rename the variant `variant-id` to `name`: its board, and each of its
+  components with its main. The changes must hold the objects of the page
+  of the variant and the data of its file."
+  [changes variant-id name]
+  (let [data       (pcb/get-library-data changes)
+        objects    (pcb/get-objects changes)
+        clean-name (cpn/clean-path name)
+        valid-name (cpn/clean-valid-name clean-name)
+        rename     (fn [changes component]
+                     (-> changes
+                         (cll/generate-rename-component (:id component) valid-name data)
+                         (pcb/update-shapes [(:main-instance-id component)] #(assoc % :name valid-name))))]
+    (cond-> (pcb/update-shapes changes [variant-id] #(assoc % :name clean-name))
+      (some? valid-name)
+      (as-> changes (reduce rename changes (cfv/find-variant-components data objects variant-id))))))
+
