@@ -102,14 +102,14 @@
   "Get the shape and their children recursively, but stopping when
    a component nested instance is found."
   [objects id]
-  (letfn [(get-children-rec [children id]
+  (letfn [(get-children-rec [result id top?]
             (let [shape (get objects id)]
-              (if (and (ctk/instance-head? shape) (seq children))
-                children
-                (let [children' (conj children shape)]
-                  (into children'
-                        (mapcat #(get-children-rec children' %) (:shapes shape)))))))]
-    (get-children-rec [] id)))
+              (if (and (ctk/instance-head? shape) (not top?))
+                result
+                (reduce #(get-children-rec %1 %2 false)
+                        (conj result shape)
+                        (:shapes shape)))))]
+    (get-children-rec [] id true)))
 
 (defn get-component-shape
   "Get the parent top shape linked to a component main for this shape, if any"
@@ -347,16 +347,13 @@
              (cond-> new-shape
                :always
                (-> (gsh/move delta)
-                   (dissoc :touched :variant-id :variant-name))
+                   (dissoc :touched :remote-synced :variant-id :variant-name))
 
                (and main-instance? root?)
                (assoc :main-instance true)
 
                (not main-instance?)
                (dissoc :main-instance)
-
-               main-instance?
-               (dissoc :shape-ref)
 
                (not main-instance?)
                (assoc :shape-ref (:id original-shape)) ; shape-ref points to the near instance
@@ -408,11 +405,10 @@
   "Check if the shape has any parent that is a copy of a component."
   [objects shape]
   (let [parent (get objects (:parent-id shape))]
-    (if (nil? parent)
-      false
-      (if (ctk/in-component-copy? parent)
-        true
-        (has-any-copy-parent? objects (:parent-id shape))))))
+    (cond
+      (or (nil? parent) (cfh/root? shape)) false
+      (ctk/in-component-copy? parent)      true
+      :else                                (has-any-copy-parent? objects parent))))
 
 (defn detachable?
   "Whether the shape can be detached from its component: a copy shape that
@@ -451,7 +447,9 @@
   (get-in libraries [(:component-file shape) :data :components (:component-id shape)]))
 
 (defn invalid-structure-for-component?
-  "Check if the structure generated nesting children in parent is invalid in terms of nested components"
+  "Check if the structure generated nesting children in parent is invalid in
+  terms of nested components: a change of a copy's structure, a main inside
+  a component, or a component nesting loop."
   [objects parent children pasting? libraries]
   (let [; If the original shapes had been cutted, and we are pasting them now, they aren't
         ; in objects. We can add them to locate later
@@ -480,8 +478,9 @@
      (has-any-copy-parent? objects parent)
      ;; If we are moving something containing a main instance the container can't be part of a component (neither main nor copy)
      (and selected-main-instance? parent-in-component?)
-     ;; Avoid placing a shape as a direct or indirect child of itself,
-     ;; or inside its main component if it's in a copy.
+     ;; Avoid a component nesting loop: a main inside itself, or a copy
+     ;; inside its own main. A plain shape moved into its own subtree passes;
+     ;; the move itself (`relocate-shapes`) refuses it.
      comps-nesting-loop?)))
 
 (defn parent-validation-cache
