@@ -33,11 +33,10 @@
   `:shape/order`, the sibling ordinal the builder derives from each
   container's `:shapes` vector. The fold keeps it **equal to a rebuild's**,
   because a consumer holding an index and no document reads it to learn a
-  shape's position among its siblings
-  (`pp:graph:sibling-order-needs-an-authored-attribute`,
-  `pp:graph:mirror-the-reorder-children-change`); the two derived layers
-  above are pinned by their invariants instead, because their values are
-  not comparable between the two paths.
+  shape's position among its siblings, and the Euler intervals answer
+  containment only. The two derived layers above are pinned by their
+  invariants instead, because their values are not comparable between the
+  two paths.
 
   Everything here is pure: db value in, db value out. The session layer
   owns the atom and the revision bookkeeping, and `staleness` tells it
@@ -528,9 +527,10 @@
 
   The predicate takes the objects-shaped view rather than an index, so
   this is the view: the index is not a second way to answer which moves
-  are legal (`pp:graph:database-is-the-boundary`). Parent and child ids
-  are shape ids, as they are in the document, so a shape the index parents
-  on its container — the page root frame, the root copy of a component
+  are legal, because a second copy of that rule would drift from the
+  document's with no test failing. Parent and child ids are shape ids, as
+  they are in the document, so a shape the index parents on its
+  container — the page root frame, the root copy of a component
   container — arrives with no parent, and the walk up stops where the
   document's stops.
 
@@ -569,7 +569,8 @@
   the index holds it at this point in the change list, and where the
   document leaves its objects untouched the index rewrites no datom. That
   is an applied change rather than a skip, because the fold still equals a
-  rebuild of the changed document (`pp:graph:stale-index-gate`)."
+  rebuild of the changed document, and a skip would mark the index stale
+  for good."
   [db {:keys [parent-id shapes index after-shape allow-altering-copies syncing] :as change}]
   (let [ceid (queries/container-eid db (change-container-id change))
         peid (when ceid (queries/shape-eid db ceid parent-id))]
@@ -959,10 +960,9 @@
   `:db.fn/retractEntity` retracts the entity's own datoms and every
   reference datom whose value is the entity, which here is every
   `:shape/fill-color`, `:shape/stroke-color`, `:shape/text-color` and
-  `:shape/uses-typography` pointing at the asset. On the design-system
-  file measured by
-  `pp:vcs:the-real-change-stream-is-attribute-shaped` one skipped
-  `:del-color` left up to 10,304 of those ref datoms behind."
+  `:shape/uses-typography` pointing at the asset. Measured on Penpot's
+  design-system file of 21,219 objects, one skipped `:del-color` left up
+  to 10,304 of those ref datoms behind."
   [db id-attr id]
   (if-let [eid (d/entid db [id-attr id])]
     (ok (d/db-with db [[:db.fn/retractEntity eid]]))

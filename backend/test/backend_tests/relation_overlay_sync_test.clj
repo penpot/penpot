@@ -312,8 +312,8 @@
 
    {:type :purge-component :id comp-id}
 
-   ;; ---- library colours, the largest unsupported class in the stream
-   ;; measured by pp:vcs:the-real-change-stream-is-attribute-shaped
+   ;; ---- library colours, the largest unsupported class in the change
+   ;; stream of Penpot's 21,219-object design-system file
 
    ;; a fill on rect naming a colour the library does not hold yet: the raw
    ;; id lands in the index and no reference does, because a rebuild
@@ -813,10 +813,10 @@
 (t/deftest a-token-written-onto-a-taken-name-leaves-one-token
   ;; The two writes a taken token name can arrive from, each folded as a
   ;; list of two changes and compared against the rebuild. The rename is
-  ;; the branch whose document outcome reads the token map's order
-  ;; (`pp:graph:token-rename-displacement-is-order-dependent`); this list
-  ;; is the ordering where the holder is the one that goes, which is the
-  ;; reading the mirror takes.
+  ;; the branch whose document outcome reads the token map's order: the
+  ;; holder goes when it precedes the renamed token, and the renamed token
+  ;; goes when it follows the holder. This list is the ordering where the
+  ;; holder is the one that goes, which is the reading the mirror takes.
   (let [check (fn [label change-list displaced kept]
                 (let [result (sync/apply-changes (overlay/build (base-data)) change-list)
                       folded (:db result)
@@ -1014,8 +1014,7 @@
 ;; vector, and it is the one piece of order the index owns: the intervals
 ;; answer containment and are excluded from the comparison, so a consumer
 ;; holding an overlay and no document reads this attribute to learn which
-;; child of which parent a shape is
-;; (`pp:graph:sibling-order-needs-an-authored-attribute`).
+;; child of which parent a shape is.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- ordinals
@@ -1173,11 +1172,10 @@
      :skipped  (:skipped result)}))
 
 (t/deftest a-move-the-gate-refuses-leaves-the-parent-edges-alone
-  ;; The measurement `pp:graph:the-move-mirror-ignores-the-validity-gate`
-  ;; records, on this fixture: the destination is a component copy, so the
-  ;; document refuses to move the main instance's child into it, and the fold
-  ;; used to follow the move anyway, leaving the fold with a parent edge the
-  ;; document never had.
+  ;; What this fixture measured before the fix: the destination is a
+  ;; component copy, so the document refuses to move the main instance's
+  ;; child into it, and the fold used to follow the move anyway, leaving
+  ;; the fold with a parent edge the document never had.
   (let [change (conj with-a-copy-on-the-page
                      {:type :mov-objects :page-id page-id
                       :parent-id copy-root-id :shapes [comp-child-id]})
