@@ -908,7 +908,9 @@
      ptk/WatchEvent
      (watch [it state _]
        (log/info :msg "UPDATE-COMPONENT of shape" :id (str id) :undo-group undo-group)
-       (let [page-id       (:current-page-id state)
+       (let [;; One undo group for the commits in both files
+             undo-group    (or undo-group (uuid/next))
+             page-id       (:current-page-id state)
 
              libraries     (dsh/lookup-libraries state)
              file          (dsh/lookup-file state)
@@ -990,7 +992,9 @@
              page            (dsh/lookup-page state)
              shape           (ctn/get-shape page shape-id)
              component-id    (:component-id shape)
-             undo-id         (js/Symbol)]
+             undo-id         (js/Symbol)
+             ;; One undo group for the update and the syncs, in any file
+             undo-group      (or undo-group (uuid/next))]
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (update-component shape-id undo-group)
@@ -1013,7 +1017,9 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [current-file-id (:current-file-id state)
-             undo-id         (js/Symbol)]
+             undo-id         (js/Symbol)
+             ;; One undo group for the syncs of both files
+             undo-group      (or undo-group (uuid/next))]
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (sync-file current-file-id file-id :components component-id undo-group)

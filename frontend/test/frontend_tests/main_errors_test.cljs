@@ -804,6 +804,17 @@
           (t/is (= timeout (get-in state [:notification :timeout])))
           (t/is (= :visible (get-in state [:notification :status]))))))))
 
+(t/deftest flash-shows-errors-unless-asked-for-another-level
+  (doseq [[notify level] [[#(errors/flash :hint "Ordinary error") :error]
+                          [#(errors/flash :hint "Undone changes" :level :warning) :warning]]]
+    (let [scheduled (atom [])
+          events    (atom [])]
+      (with-redefs [tm/schedule (mock/stub #(swap! scheduled conj %))
+                    st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))]
+        (notify)
+        (doseq [callback @scheduled] (callback))
+        (t/is (= level (get-in (ptk/update (first @events) {}) [:notification :level])))))))
+
 (t/deftest ^:async persistence-notifications-include-an-error-report-download
   (let [scheduled      (atom [])
         idle-callbacks (atom [])

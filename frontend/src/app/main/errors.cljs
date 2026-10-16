@@ -490,7 +490,8 @@
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
-  A `:tag` lets the notification be hidden later by that tag.
+  A `:tag` lets the notification be hidden later by that tag. `:level`
+  defaults to `:error`.
 
   The payload format is derived from the cause: environment failures get a
   compact report. The audit event name is the canonical one requested by
@@ -521,8 +522,8 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout tag report-link? links]
-      :or {type :handled timeout 5000}}]
+  [& {:keys [type hint cause timeout tag report-link? links level]
+      :or {type :handled timeout 5000 level :error}}]
   (js/Promise.
    (fn [resolve _reject]
      (ts/schedule
@@ -547,7 +548,7 @@
                 (ntf/show
                  (cond-> {:content (or ^boolean hint (tr "errors.generic"))
                           :type :toast
-                          :level :error
+                          :level level
                           :timeout timeout}
                    (some? tag)
                    (assoc :tag tag)
