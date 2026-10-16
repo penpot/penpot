@@ -523,7 +523,9 @@
        (effective-tokens-source? file-data (:id file-data))))
 
 (defn editable-tokens?
-  "Returns true if the file-data is its own tokens source."
+  "Returns true if the file-data is its own tokens source.
+   Call only with the current local file's data. This predicate does not check
+   which file is open; callers must reject connected libraries first."
   [file-data]
   (effective-tokens-source? file-data (:id file-data)))
 
