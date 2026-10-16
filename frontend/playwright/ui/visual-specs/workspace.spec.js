@@ -264,6 +264,32 @@ test.describe("Design tab", () => {
   });
 });
 
+test.describe("Component options", () => {
+  test("Shows the component pill of a copy", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickToggableLayer("Group");
+    await workspace.layers.getByText("A", { exact: true }).click();
+
+    await expect(
+      workspace.rightSidebar.getByTestId("component-pill-button"),
+    ).toBeVisible();
+    // The component pill is a small part of the sidebar: compare every
+    // pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Assets tab", () => {
   test("Shows the libraries modal correctly", async ({ page }) => {
     const workspace = new WorkspacePage(page);
