@@ -13,17 +13,51 @@
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dwp]
+   [app.main.errors :as errors]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (def default-timeout 5000)
+
+;; Longest wait for the pending changes of the exported files to be saved.
+(def save-wait-timeout-ms 10000)
+
+(defn- export-file-ids
+  [exports]
+  (into #{} (keep :file-id) exports))
+
+(defn- warn-unsaved-changes
+  "Warns that the export may miss the changes of `file-ids` not saved yet."
+  [file-ids]
+  (ptk/reify ::warn-unsaved-changes
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (dwp/unsaved-changes? state file-ids)
+        (rx/of (ntf/show {:content (tr "workspace.export.unsaved-changes")
+                          :type :toast
+                          :level :warning
+                          :timeout 8000}))))))
+
+(defn- export-failed
+  "Shows an export failure as a toast, keeping the workspace open."
+  [cause]
+  (ptk/reify ::export-failed
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (errors/flash :cause cause
+                    :type (if (#{:server-error :internal} (:type (ex-data cause)))
+                            :unhandled
+                            :handled)
+                    :hint (tr "errors.export-failed")))))
 
 (defn normalize-export
   [{:keys [object-id name] :as export}]
@@ -226,16 +260,16 @@
                                                             :wait true
                                                             :is-wasm (wasm-export-enabled? state)})]
             (rx/concat
-             (dwp/force-persist-and-wait 400)
+             (dwp/force-persist-files-and-wait (export-file-ids [export]) save-wait-timeout-ms)
+             (rx/of (warn-unsaved-changes (export-file-ids [export])))
 
              (->> (rp/cmd! :export params)
                   (rx/map (fn [{:keys [filename mtype uri]}]
                             (dom/trigger-download-uri filename mtype uri)
                             (clear-export-state uuid/zero)))
                   (rx/catch (fn [cause]
-                              (rx/concat
-                               (rx/of (clear-export-state uuid/zero))
-                               (rx/throw cause))))))))))))
+                              (rx/of (clear-export-state uuid/zero)
+                                     (export-failed cause))))))))))))
 
 (defn request-multiple-export
   [{:keys [exports cmd name]
@@ -246,6 +280,8 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [resource-id (volatile! nil)
+              ;; Emits when the export request fails.
+              failed-s    (rx/subject)
               profile-id  (:profile-id state)
               ws-conn     (:ws-conn state)
               params      (cond->
@@ -263,46 +299,48 @@
                    (rx/map :payload)
                    (rx/filter #(= :export-update (:type %)))
                    (rx/filter #(= @resource-id (:resource-id %)))
+                   (rx/take-until failed-s)
                    (rx/share))
 
               stopper
               (rx/filter #(or (= "ended" (:status %))
                               (= "error" (:status %)))
-                         progress-stream)]
+                         progress-stream)
+
+              file-ids
+              (export-file-ids exports)]
 
           (swap! st/ongoing-tasks conj :export)
 
-          (rx/merge
-           ;; Force that all data is persisted; best effort.
-           (rx/of ::dwp/force-persist)
+          (rx/concat
+           (dwp/force-persist-files-and-wait file-ids save-wait-timeout-ms)
+           (rx/of (warn-unsaved-changes file-ids))
+           (rx/merge
+            ;; Updates the export state with each progress message, until
+            ;; shortly after the export ends or fails.
+            (->> progress-stream
+                 (rx/map update-export-status)
+                 (rx/take-until (rx/delay 500 stopper))
+                 (rx/finalize (fn []
+                                (swap! st/ongoing-tasks disj :export))))
 
-           ;; Launch the exportation process and stores the resource id
-           ;; locally.
-           (->> (rp/cmd! :export params)
-                (rx/map (fn [{:keys [id] :as resource}]
-                          (vreset! resource-id id)
-                          (initialize-export-status exports cmd resource))))
+            ;; Clears the export state a while after the export ends.
+            (->> progress-stream
+                 (rx/filter #(= "ended" (:status %)))
+                 (rx/take 1)
+                 (rx/delay default-timeout)
+                 (rx/map #(clear-export-state @resource-id))
+                 (rx/take-until (rx/delay 6000 stopper)))
 
-           ;; We proceed to update the export state with incoming
-           ;; progress updates. We delay the stopper for give some time
-           ;; to update the status with ended or errored status before
-           ;; close the stream.
-           (->> progress-stream
-                (rx/map update-export-status)
-                (rx/take-until (rx/delay 500 stopper))
-                (rx/finalize (fn []
-                               (swap! st/ongoing-tasks disj :export))))
-
-           ;; We hide need to hide the ui elements of the export after
-           ;; some interval. We also delay a little bit more the stopper
-           ;; for ensure that after some security time, the stream is
-           ;; completely closed.
-           (->> progress-stream
-                (rx/filter #(= "ended" (:status %)))
-                (rx/take 1)
-                (rx/delay default-timeout)
-                (rx/map #(clear-export-state @resource-id))
-                (rx/take-until (rx/delay 6000 stopper)))))))))
+            ;; Sends the export request and keeps its resource id. It goes
+            ;; last so a failure reaches the progress listeners above.
+            (->> (rp/cmd! :export params)
+                 (rx/map (fn [{:keys [id] :as resource}]
+                           (vreset! resource-id id)
+                           (initialize-export-status exports cmd resource)))
+                 (rx/catch (fn [cause]
+                             (rx/push! failed-s cause)
+                             (rx/of (export-failed cause))))))))))))
 
 (defn request-export
   [{:keys [exports] :as params}]
