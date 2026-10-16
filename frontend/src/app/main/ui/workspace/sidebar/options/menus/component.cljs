@@ -896,10 +896,14 @@
 
      (when menu-entries?
        [:div {:class (stl/css :pill-actions)}
-        [:button {:class (stl/css-case :pill-actions-btn true
-                                       :selected menu-open?)
-                  :on-click on-menu-click}
-         [:> icon* {:icon-id i/menu}]]
+        [:> icon-button* {:variant "secondary"
+                          :class (stl/css :pill-actions-btn)
+                          :tooltip-class (stl/css :pill-actions-tooltip)
+                          :aria-label (tr "labels.options")
+                          :aria-pressed menu-open?
+                          :tooltip-placement "top-left"
+                          :on-click on-menu-click
+                          :icon i/menu}]
 
         [:& dropdown {:show menu-open?
                       :on-close on-menu-close}

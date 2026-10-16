@@ -588,17 +588,17 @@
   position: relative;
 }
 
-.pill-actions-btn {
-  @extend %button-secondary;
+// The tooltip wrapper is the flex item: let it fill the pill segment.
+.pill-actions-tooltip {
+  block-size: 100%;
+  inline-size: 100%;
+}
 
-  cursor: unset;
+// Right segment of the pill: full height and square corners on the left.
+.pill-actions-btn {
   block-size: 100%;
   inline-size: 100%;
   border-radius: 0 $br-8 $br-8 0;
-
-  &.selected {
-    @extend %button-icon-selected;
-  }
 }
 
 .pill-actions-dropdown {
