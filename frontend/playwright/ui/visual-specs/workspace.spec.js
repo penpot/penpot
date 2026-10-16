@@ -242,3 +242,33 @@ test.describe("Selected colors", () => {
     });
   });
 });
+
+test.describe("Guides", () => {
+  test("Shows the advanced options of a square guide", async ({ page }) => {
+    // A taller window keeps the whole Design tab visible: a scrolled
+    // sidebar can land on a fractional offset and change the antialiasing.
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await workspace.boardButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 200);
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Add guide" })
+      .click();
+
+    // The advanced options toggle has no accessible name yet.
+    await workspace.rightSidebar
+      .locator("button[class*='frame_grid__show-options']")
+      .click();
+    await expect(workspace.rightSidebar.getByText("Color")).toBeVisible();
+    // The guide options are a small part of the sidebar: compare every
+    // pixel. The color rows antialias their rounded corners one color step
+    // differently between runs, so allow that much and nothing more.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0.02,
+    });
+  });
+});
