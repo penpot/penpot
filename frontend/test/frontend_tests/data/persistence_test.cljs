@@ -29,6 +29,7 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.worker :as mw]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -1136,3 +1137,94 @@
                                [:cause-type :code :retrying :queued-commits])))))
      (fn [_ _]
        (rx/throw (ex-info "invalid" {:type :validation :code :referential-integrity}))))))
+
+;; Buffered commits.
+
+;; Scenario: an edit waits in the buffer for the next flush, then a flush
+;; moves it to the queue. Proves: buffered edits are visible in the store
+;; until they are queued, so a rollback can reach them.
+(t/deftest ^:async buffered-commits-stay-in-the-store-until-queued
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (let [commit (local-commit file-id)]
+         (ptk/emit! store commit)
+         (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
+                                "the edit is buffered"))
+         (t/is (= [(:id @commit)] (mapv :id (get-in @store [:persistence :buffer]))))
+         (t/is (empty? (get-in @store [:persistence :queue])))
+         (ptk/emit! store ::dps/force-persist)
+         (await (async/wait-for #(seq @requests) "the flush sends the edit"))
+         (t/is (empty? (get-in @store [:persistence :buffer])))
+         (t/is (= [(:id @commit)]
+                  (->> (get-in @store [:persistence :queue])
+                       (mapcat #(get-in @store [:persistence :index % :commits]))
+                       (mapv :id))))
+         (rx/push! response {:revn 1})
+         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
+                                "the save lands")))))))
+
+(defn- rename
+  [page-id shape-id name]
+  {:type :mod-obj :id shape-id :page-id page-id
+   :operations [{:type :set :attr :name :val name}]})
+
+(defn- rename-commit
+  "A local commit of `file-id` that renames the shape from `from` to `to`,
+  with its own undo group."
+  [file-id page-id shape-id from to]
+  (ptk/data-event ::dch/commit
+                  {:id (uuid/next)
+                   :file-id file-id
+                   :file-revn 0
+                   :file-vern 0
+                   :source :local
+                   :features #{}
+                   :undo-group (uuid/next)
+                   :redo-changes [(rename page-id shape-id to)]
+                   :undo-changes [(rename page-id shape-id from)]}))
+
+(defn- file-data
+  "File data with one page holding one rectangle named `name`."
+  [page-id shape-id name]
+  {:pages [page-id]
+   :pages-index {page-id {:id page-id
+                          :name "Page"
+                          :objects {uuid/zero (cts/setup-shape {:id uuid/zero :type :frame :shapes [shape-id]})
+                                    shape-id (cts/setup-shape {:id shape-id :type :rect :name name
+                                                               :parent-id uuid/zero :frame-id uuid/zero})}}}})
+
+(defn- shape-name
+  [store file-id page-id shape-id]
+  (get-in @store [:files file-id :data :pages-index page-id :objects shape-id :name]))
+
+;; Scenario: an edit waits in the buffer when another user's change to the
+;; same attribute arrives. The server will apply the remote change first and
+;; the buffered edit after it, so the local file must end the same way.
+;; Proves: a remote commit is applied under buffered edits too, not only
+;; under queued ones.
+(t/deftest ^:async a-remote-commit-goes-under-buffered-edits
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (await
+        (mock/with-mocks*
+          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
+          (let [page-id  (uuid/next)
+                shape-id (uuid/next)
+                local    (rename-commit file-id page-id shape-id "Original" "Local")]
+            (ptk/emit! store #(-> %
+                                  (assoc :current-page-id page-id)
+                                  (assoc-in [:files file-id :data] (file-data page-id shape-id "Local"))))
+            (ptk/emit! store local)
+            (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
+                                   "the local edit is buffered"))
+            (ptk/emit! store (dch/commit {:file-id file-id
+                                          :file-revn 1
+                                          :file-vern 0
+                                          :source :remote
+                                          :save-undo? false
+                                          :redo-changes [(rename page-id shape-id "Remote")]
+                                          :undo-changes []}))
+            (await (async/settle))
+            (t/is (= "Local" (shape-name store file-id page-id shape-id))))))))))

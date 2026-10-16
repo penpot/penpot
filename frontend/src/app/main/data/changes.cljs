@@ -69,10 +69,13 @@
              (rx/ignore))))))
 
 (defn- get-pending-commits
+  "Local commits the server has not saved yet, oldest first: the queued
+  ones, then the ones still buffered."
   [{:keys [persistence]}]
-  (->> (:queue persistence)
-       (map (d/getf (:index persistence)))
-       (not-empty)))
+  (-> []
+      (into (map (d/getf (:index persistence))) (:queue persistence))
+      (into (:buffer persistence))
+      (not-empty)))
 
 (def ^:private xf:map-page-id
   (map :page-id))
