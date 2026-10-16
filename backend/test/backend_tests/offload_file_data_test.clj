@@ -11,7 +11,8 @@
    [app.db :as db]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [promesa.exec :as px]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -152,3 +153,15 @@
     (let [rows-a (db-rows (:id file-a))]
       (t/is (every? #(= "storage" (:backend %)) rows-a))
       (t/is (every? #(nil? (:data %)) rows-a)))))
+
+(t/deftest offload-sleeps-every-n-rows
+  (let [profile (th/create-profile* 1)
+        file    (create-file 1 profile)
+        calls   (volatile! [])]
+    (with-redefs [px/sleep (fn [ms] (vswap! calls conj ms) nil)]
+      (let [result (th/run-task! :offload-file-data {:file-id (:id file)
+                                                     :sleep-every 1
+                                                     :sleep-ms 5})]
+        (t/is (pos? (:offloaded result)))
+        (t/is (= (:offloaded result) (count @calls)))
+        (t/is (every? #(= 5 %) @calls))))))

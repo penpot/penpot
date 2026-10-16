@@ -14,7 +14,8 @@
    [app.features.fdata :as fdata]
    [app.jobs :as jobs]
    [app.storage :as sto]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.exec :as px]))
 
 (def ^:private sql:get-file-data
   "SELECT fd.*
@@ -27,12 +28,14 @@
   "SELECT id FROM file WHERE id = ? AND deleted_at IS NULL FOR UPDATE SKIP LOCKED")
 
 (defn- offload-file-data
-  [cfg {:keys [id file-id type data] :as fdata} stats]
+  [cfg {:keys [id file-id type data] :as fdata} stats sleep-every sleep-ms]
   (jobs/heartbeat cfg)
   (fdata/upsert! cfg (assoc fdata :backend "storage"))
-  (vswap! stats (fn [{:keys [rows bytes]}]
-                  {:rows  (inc rows)
-                   :bytes (+ bytes (if (bytes? data) (alength ^bytes data) 0))}))
+  (let [{:keys [rows]} (vswap! stats (fn [{:keys [rows bytes]}]
+                                       {:rows  (inc rows)
+                                        :bytes (+ bytes (if (bytes? data) (alength ^bytes data) 0))}))]
+    (when (zero? (mod rows sleep-every))
+      (px/sleep sleep-ms)))
   (l/trc :file-id (str file-id)
          :id (str id)
          :type type))
@@ -44,14 +47,16 @@
 (defn execute-offload-file-data
   "Plain job handler: offload the file data rows of one file."
   [cfg params]
-  (let [file-id (:file-id params)]
+  (let [file-id     (:file-id params)
+        sleep-every (let [n (or (:sleep-every params) 50)] (if (pos? n) n 50))
+        sleep-ms    (let [n (or (:sleep-ms params) 50)] (if (>= n 0) n 50))]
     (-> cfg
         (assoc ::db/rollback (:rollback? params))
         (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
                       (if (db/exec-one! conn [sql:lock-file file-id])
                         (let [stats (volatile! {:rows 0 :bytes 0})]
                           (run! (fn [fdata]
-                                  (offload-file-data cfg fdata stats))
+                                  (offload-file-data cfg fdata stats sleep-every sleep-ms))
                                 (db/plan conn [sql:get-file-data file-id]))
                           (let [{:keys [rows bytes]} @stats]
                             (l/trc :hint "file data offloaded"
@@ -66,7 +71,9 @@
 
 (def schema:offload-file-data-params
   [:map
-   [:file-id ::sm/uuid]])
+   [:file-id ::sm/uuid]
+   [:sleep-every {:optional true} ::sm/int]
+   [:sleep-ms {:optional true} ::sm/int]])
 
 (defmethod ig/assert-key ::job-def
   [_ params]

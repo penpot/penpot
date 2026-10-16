@@ -14,7 +14,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.exec :as px]))
 
 (def ^:private
   sql:get-candidates
@@ -30,22 +31,25 @@
      SKIP LOCKED")
 
 (defn- schedule!
-  [{:keys [::db/conn] :as cfg} threshold]
-  (let [total (reduce (fn [total {:keys [id modified-at revn]}]
-                        (let [params {:file-id id :revn revn}]
-                          (l/trc :hint "schedule"
-                                 :file-id (str id)
-                                 :revn revn
-                                 :modified-at (ct/format-inst modified-at))
-                          (jobs/submit cfg
-                                       {::jobs/name :file-gc
-                                        ::jobs/params params
-                                        ::jobs/priority 10
-                                        ::jobs/delay 10000})
-                          (jobs/heartbeat cfg)
-                          (inc total)))
-                      0
-                      (db/plan conn [sql:get-candidates threshold] {:fetch-size 10}))]
+  [{:keys [::db/conn] :as cfg} threshold sleep-every sleep-ms]
+  (let [counter (volatile! 0)
+        total   (reduce (fn [total {:keys [id modified-at revn]}]
+                          (let [params {:file-id id :revn revn}]
+                            (l/trc :hint "schedule"
+                                   :file-id (str id)
+                                   :revn revn
+                                   :modified-at (ct/format-inst modified-at))
+                            (jobs/submit cfg
+                                         {::jobs/name :file-gc
+                                          ::jobs/params params
+                                          ::jobs/priority 10
+                                          ::jobs/delay 10000})
+                            (jobs/heartbeat cfg)
+                            (when (zero? (mod (vswap! counter inc) sleep-every))
+                              (px/sleep sleep-ms))
+                            (inc total)))
+                        0
+                        (db/plan conn [sql:get-candidates threshold] {:fetch-size 10}))]
     {:processed total}))
 
 (declare execute-file-gc-scheduler)
@@ -62,7 +66,9 @@
   "min-age: int millis or text over the job pipeline, duration object
   in-process (repl runs)."
   [:map
-   [:min-age {:optional true} [:or :int :string ::ct/duration]]])
+   [:min-age {:optional true} [:or :int :string ::ct/duration]]
+   [:sleep-every {:optional true} ::sm/int]
+   [:sleep-ms {:optional true} ::sm/int]])
 
 (defmethod ig/init-key ::job-def
   [_ cfg]
@@ -79,8 +85,10 @@
   files before threshold) and schedule one file-gc job per file; no props
   needed (min-age default from config; overridable for the repl runs)."
   [cfg params]
-  (let [threshold (-> (ct/duration (or (:min-age params) (::min-age cfg)))
-                      (ct/in-past))]
+  (let [threshold   (-> (ct/duration (or (:min-age params) (::min-age cfg)))
+                        (ct/in-past))
+        sleep-every (let [n (or (:sleep-every params) 50)] (if (pos? n) n 50))
+        sleep-ms    (let [n (or (:sleep-ms params) 100)] (if (>= n 0) n 100))]
     (-> cfg
         (assoc ::db/rollback (:rollback? params))
-        (db/tx-run! schedule! threshold))))
+        (db/tx-run! (fn [cfg] (schedule! cfg threshold sleep-every sleep-ms))))))
