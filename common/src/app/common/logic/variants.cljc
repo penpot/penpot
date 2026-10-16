@@ -435,8 +435,9 @@
   "The variant component that the variant copy head `shape` switches to when
    its property at position `pos` takes the value `val`: among the other
    variants with that value, the one whose properties are nearest to the
-   current ones. Nil when the property already has that value or no variant
-   has it."
+   current ones; between equally near ones, the first among the children of
+   the variant container. Nil when the property already has that value or no
+   variant has it."
   [libraries shape pos val]
   (let [component-id (:component-id shape)
         component    (ctf/get-component libraries (:component-file shape) component-id
@@ -446,12 +447,16 @@
             objects       (-> (ctf/get-component-page ldata component) :objects)
             target-props  (-> (:variant-properties component)
                               (update pos assoc :value val))
+            distance      #(ctv/distance target-props (:variant-properties %))
+            ;; in the order of the container's children
             candidates    (->> (cfv/find-variant-components ldata objects (:variant-id component))
                                (remove #(= (:id %) component-id))
                                (filter #(= (get-in % [:variant-properties pos :value]) val))
                                (reverse))]
-        (when (seq candidates)
-          (apply min-key #(ctv/distance target-props (:variant-properties %)) candidates))))))
+        (reduce (fn [nearest candidate]
+                  (if (< (distance candidate) (distance nearest)) candidate nearest))
+                (first candidates)
+                (rest candidates))))))
 
 (defn valid-switch?
   "Whether the variant copy head `shape` can switch its property at position

@@ -66,6 +66,25 @@
         target (clv/find-switch-target (libraries file) (ths/get-shape file :copy01) 0 "p1v2")]
     (t/is (= (thi/id :c03) (:id target)))))
 
+(t/deftest switch-target-between-equally-near-variants-is-the-first-of-the-container
+  ;; From p1v1, p2v1, setting Property 1 to p1v2 can give c02 (p1v2, p2v2) or
+  ;; c03 (p1v2, p2v3), both one value away; the one placed first among the
+  ;; container's children wins.
+  (let [file   (-> (thf/sample-file :file1)
+                   (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                   (ths/add-sample-shape :m03 :type :frame :parent-label :v01
+                                         :variant-id (thi/id :v01) :variant-name "p1v2, p2v3")
+                   (thc/make-component :c03 :m03)
+                   (thc/update-component :c03 {:variant-id (thi/id :v01)
+                                               :variant-properties [{:name "Property 1" :value "p1v2"}
+                                                                    {:name "Property 2" :value "p2v3"}]})
+                   (thc/instantiate-component :c01 :copy01))
+        target (fn [order]
+                 (let [file (ths/update-shape file :v01 :shapes (mapv thi/id order))]
+                   (:id (clv/find-switch-target (libraries file) (ths/get-shape file :copy01) 0 "p1v2"))))]
+    (t/is (= (thi/id :c02) (target [:m01 :m02 :m03])))
+    (t/is (= (thi/id :c03) (target [:m01 :m03 :m02])))))
+
 (t/deftest switch-into-own-main-is-a-nesting-loop
   (let [file    (-> (thf/sample-file :file1)
                     (thv/add-variant :v01 :c01 :m01 :c02 :m02)
