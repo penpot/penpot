@@ -425,10 +425,11 @@
   (let [path (tmp/tempfile :prefix "penpot.import-test." :min-age "30m")]
     (with-open [output (io/output-stream path)]
       (-> th/*system*
-          (assoc ::bfc/ids #{file-id})
+          (assoc ::bfc/file-ids #{file-id})
           (assoc ::bfc/embed-assets false)
           (assoc ::bfc/include-libraries false)
-          (bf.v3/export-files! output)))
+          (assoc ::bfc/output output)
+          (bf.v3/export-files!)))
     path))
 
 (t/deftest export-anonymous-rejected
