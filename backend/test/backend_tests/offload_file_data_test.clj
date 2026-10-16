@@ -9,6 +9,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -85,3 +86,69 @@
     (let [after (db-rows (:id file))]
       (t/is (= (count before) (count after)))
       (t/is (every? #(= "db" (:backend %)) after)))))
+
+(defn- row-bytes
+  [{:keys [data]}]
+  (if (bytes? data)
+    (alength ^bytes data)
+    0))
+
+(t/deftest summary-reports-rows-and-bytes
+  (let [profile        (th/create-profile* 1)
+        file           (create-file 1 profile)
+        before         (db-rows (:id file))
+        expected-bytes (reduce + 0 (map row-bytes before))]
+
+    (t/is (pos? (count before)))
+    (t/is (every? some? (map :data before)))
+    (t/is (pos? expected-bytes))
+
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
+      (t/is (= (count before) (:offloaded result)))
+      (t/is (= expected-bytes (:bytes result)))
+      (t/is (zero? (:skipped result))))
+
+    ;; A second run is a no-op: nothing left on the hot storage.
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
+      (t/is (= 0 (:offloaded result)))
+      (t/is (= 0 (:bytes result)))
+      (t/is (zero? (:skipped result))))))
+
+(t/deftest storage-failure-aborts-only-that-file
+  (let [profile  (th/create-profile* 1)
+        file-a   (create-file 1 profile)
+        file-b   (create-file 2 profile)
+        real-put @#'sto/put-object!
+        failing  (fn [storage params]
+                   (if (= (:file-id params) (:id file-a))
+                     (throw (ex-info "storage is down" {:file-id (:id file-a)}))
+                     (real-put storage params)))]
+
+    ;; The failing file aborts as a whole: every row stays on hot storage.
+    (with-redefs [sto/put-object! failing]
+      (t/is (thrown? Exception
+                     (th/run-task! :offload-file-data {:file-id (:id file-a)}))))
+
+    (let [rows-a (db-rows (:id file-a))]
+      (t/is (pos? (count rows-a)))
+      (t/is (every? #(= "db" (:backend %)) rows-a))
+      (t/is (every? some? (map :data rows-a))))
+
+    ;; The other file is independent and offloads while storage is down for A.
+    (with-redefs [sto/put-object! failing]
+      (let [result (th/run-task! :offload-file-data {:file-id (:id file-b)})]
+        (t/is (pos? (:offloaded result)))
+        (t/is (pos? (:bytes result)))
+        (t/is (zero? (:skipped result)))))
+
+    (t/is (every? #(= "storage" (:backend %)) (db-rows (:id file-b))))
+
+    ;; Once storage recovers, a retry converges with no leftovers on hot.
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file-a)})]
+      (t/is (pos? (:offloaded result)))
+      (t/is (pos? (:bytes result)))
+      (t/is (zero? (:skipped result))))
+
+    (let [rows-a (db-rows (:id file-a))]
+      (t/is (every? #(= "storage" (:backend %)) rows-a))
+      (t/is (every? #(nil? (:data %)) rows-a)))))
