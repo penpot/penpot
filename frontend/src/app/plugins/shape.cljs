@@ -66,7 +66,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
