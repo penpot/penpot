@@ -69,9 +69,10 @@
   ([path query-params]
    (build-admin-console-url cf/public-uri path query-params))
   ([public-uri path query-params]
-   (dm/str
-    (cond-> (u/join public-uri "admin-console/" path)
-      (seq query-params) (assoc :query (u/map->query-string query-params))))))
+   (let [base-uri (assoc public-uri :path "/" :query nil :fragment nil)]
+     (dm/str
+      (cond-> (u/join base-uri "admin-console/" path)
+        (seq query-params) (assoc :query (u/map->query-string query-params)))))))
 
 (defn build-admin-console-href
   ([]

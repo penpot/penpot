@@ -142,12 +142,12 @@
         (t/is (= :auth-register (:id event)))
         (t/is (= invitation-token (get-in event [:params :invitation-token])))))))
 
-(t/deftest build-admin-console-url-preserves-public-uri-subpath
-  (t/testing "builds admin console routes below the configured Penpot subpath"
+(t/deftest build-admin-console-url-uses-public-uri-origin
+  (t/testing "builds admin console routes at the root of the Penpot origin"
     (let [public-uri (u/uri "https://example.com/penpot/")]
-      (t/is (= "https://example.com/penpot/admin-console/"
+      (t/is (= "https://example.com/admin-console/"
                (dnt/build-admin-console-url public-uri "" nil)))
-      (t/is (= "https://example.com/penpot/admin-console/organization/my-organization/organization-id/people/"
+      (t/is (= "https://example.com/admin-console/organization/my-organization/organization-id/people/"
                (dnt/build-admin-console-url
                 public-uri
                 "organization/my-organization/organization-id/people/"
