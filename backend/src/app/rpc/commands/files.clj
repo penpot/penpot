@@ -1029,6 +1029,8 @@
              :library-id (str (:id ldata))
              :file-id (str file-id))
 
+      ;; the features say how to store the data: with fdata/pointer-map, the
+      ;; fragments the absorption changed
       (bfc/update-file! cfg file
                         :revn (inc (:revn file))
                         :modified-at (ct/now)
