@@ -14,6 +14,7 @@
 
 - Add a graceful instance drain through the /readyz endpoint [#12281](https://github.com/penpot/penpot/issues/12281) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
 - Add an accumulated queue gauge to the CLIMIT metrics [#12282](https://github.com/penpot/penpot/issues/12282) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Expose the backend log events as a metric by logger and level [#12312](https://github.com/penpot/penpot/issues/12312) (PR: [#12313](https://github.com/penpot/penpot/pull/12313))
 
 ## 2.18.3
 
