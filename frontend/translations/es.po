@@ -2113,6 +2113,10 @@ msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 msgid "files-download-modal.title"
 msgstr "Descargar ficheros"
 
+#: src/app/main/ui/exports/files.cljs
+msgid "files-download-modal.unsaved-changes"
+msgstr "Algunos de tus últimos cambios aún no se han guardado, así que esta descarga no los incluirá."
+
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"
 msgstr "Ha ocurrido un error"

@@ -35,6 +35,10 @@
   @extend %modal-close-btn-base;
 }
 
+.unsaved-warning {
+  margin-block-end: var(--sp-xxl);
+}
+
 .modal-content {
   @include deprecated.body-small-typography;
 

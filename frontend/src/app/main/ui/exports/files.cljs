@@ -13,6 +13,7 @@
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -68,7 +69,7 @@
   {::mf/register modal/components
    ::mf/register-as ::fexp/export-files
    ::mf/props :obj}
-  [{:keys [team-id files]}]
+  [{:keys [team-id files unsaved]}]
   (let [state*       (mf/use-state (partial initialize-state files))
         has-libs?    (some :has-libraries files)
 
@@ -123,6 +124,12 @@
         (tr "files-download-modal.title")]
        [:button {:class (stl/css :modal-close-btn)
                  :on-click on-cancel} deprecated-icon/close]]
+
+      (when unsaved
+        [:> context-notification* {:level :warning
+                                   :appearance :ghost
+                                   :class (stl/css :unsaved-warning)}
+         (tr "files-download-modal.unsaved-changes")])
 
       (cond
         (= status :prepare)

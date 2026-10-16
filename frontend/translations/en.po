@@ -2177,6 +2177,10 @@ msgstr "Include shared library assets in file libraries"
 msgid "files-download-modal.title"
 msgstr "Download files"
 
+#: src/app/main/ui/exports/files.cljs
+msgid "files-download-modal.unsaved-changes"
+msgstr "Some of your latest changes are not saved yet, so this download will not include them."
+
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"
 msgstr "An error has occurred"
