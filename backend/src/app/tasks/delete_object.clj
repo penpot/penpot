@@ -39,7 +39,7 @@
               {::db/return-keys false}))
 
 (defmethod delete-object :file
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at absorb-file-ids]}]
   (when-let [file (db/get* conn :file {:id id}
                            {::db/remove-deleted false
                             ::sql/columns [:id :is-shared]})]
@@ -57,7 +57,7 @@
                (not *team-deletion*))
       ;; NOTE: we don't prevent file deletion on absorb operation failure
       (try
-        (db/tx-run! cfg files/absorb-library id)
+        (db/tx-run! cfg files/absorb-library id absorb-file-ids)
         (catch Throwable cause
           (l/warn :hint "error on absorbing library"
                   :file-id id
@@ -156,7 +156,9 @@
    [:object [:enum :snapshot :team :project :profile :file]]
    [:deleted-at ::ct/inst]
    [:id ::sm/uuid]
-   [:file-id {:optional true} ::sm/uuid]])
+   [:file-id {:optional true} ::sm/uuid]
+   ;; the users of a deleted library, already unlinked from it
+   [:absorb-file-ids {:optional true} [:vector ::sm/uuid]]])
 
 (defn execute-delete-object
   "Plain job handler: run the delete-object multimethod on the provided

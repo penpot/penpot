@@ -1004,16 +1004,21 @@
                              :modified-at (ct/now)
                              :has-media-trimmed false}))))
 
+(defn- get-referenced-file-ids
+  "The ids of the files that use the library `id`."
+  [cfg id]
+  (->> (db/exec! cfg [sql:get-referenced-files id])
+       (into [] bfc/xf-map-id)))
+
 (defn- absorb-library*
-  "Find all files using a shared library, and absorb all library assets
-  into the file local libraries"
-  [cfg {:keys [id data] :as library}]
+  "Absorb all library assets into the local libraries of the files
+  `file-ids`, or, without them, of all the files using it."
+  [cfg {:keys [id data] :as library} file-ids]
 
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
-  (let [ids (->> (db/exec! cfg [sql:get-referenced-files id])
-                 (sequence bfc/xf-map-id))]
+  (let [ids (or file-ids (get-referenced-file-ids cfg id))]
 
     (l/trc :hint "absorbing library"
            :library-id (str id)
@@ -1023,7 +1028,10 @@
     library))
 
 (defn absorb-library
-  [{:keys [::db/conn] :as cfg} id]
+  "Absorb the assets of the library `id` into the files using it, or into
+  the files `file-ids` when given (the users of a library that is already
+  unlinked from them)."
+  [{:keys [::db/conn] :as cfg} id & [file-ids]]
   (let [file (-> (bfc/get-file cfg id
                                :realize? true
                                :lock-for-update? true
@@ -1039,7 +1047,7 @@
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-file-features! (:features file)))
 
-    (absorb-library* cfg file)))
+    (absorb-library* cfg file file-ids)))
 
 (defn- set-file-shared
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
@@ -1112,7 +1120,10 @@
                           {:deleted-at (ct/in-future delay)}
                           {:id file-id}
                           {::db/return-keys [:id :name :is-shared :deleted-at
-                                             :project-id :created-at :modified-at]})]
+                                             :project-id :created-at :modified-at]})
+        ;; read before the relations go, for the job that absorbs the library
+        users (when (:is-shared file)
+                (get-referenced-file-ids cfg file-id))]
 
     ;; Remove all possible relations for that file
     (db/delete! conn :file-library-rel
@@ -1120,9 +1131,11 @@
 
     (jobs/submit cfg
                  {::jobs/name :delete-object
-                  ::jobs/params {:object :file
-                                 :deleted-at (:deleted-at file)
-                                 :id file-id}})
+                  ::jobs/params (cond-> {:object :file
+                                         :deleted-at (:deleted-at file)
+                                         :id file-id}
+                                  (seq users)
+                                  (assoc :absorb-file-ids users))})
     file))
 
 (def ^:private

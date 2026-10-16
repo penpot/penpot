@@ -2214,6 +2214,16 @@
                                      :is-shared false})))
     (check-absorbed! setup)))
 
+(t/deftest delete-shared-library-absorbs-it-into-the-files-using-it
+  ;; Deleting the file unlinks it from its users at once; the job that
+  ;; follows must still find them and give them the components they use.
+  (let [{:keys [profile library] :as setup} (create-library-copy!)]
+    (t/is (th/success? (th/command! {::th/type :delete-file
+                                     ::rpc/profile-id (:id profile)
+                                     :id (:id library)})))
+    (th/run-pending-jobs)
+    (check-absorbed! setup)))
+
 (t/deftest delete-shared-library-with-storage-file-data
   (binding [cf/config (assoc cf/config :file-data-backend "storage")]
     ;; Keep this test focused on the storage-backed file-data fix: create
