@@ -105,6 +105,12 @@
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
+   :storage-gc-deleted-objects
+   {::mdef/name "penpot_storage_gc_deleted_objects_total"
+    ::mdef/help "Storage objects permanently deleted by storage-gc-deleted, by backend."
+    ::mdef/labels ["backend"]
+    ::mdef/type :counter}
+
    :redis-eval-timing
    {::mdef/name "penpot_redis_eval_timing"
     ::mdef/help "Redis EVAL commands execution timings (ms)"
@@ -230,7 +236,8 @@
 
    ::sto.gc-deleted/handler
    {::db/pool      (ig/ref ::db/pool)
-    ::sto/storage  (ig/ref ::sto/storage)}
+    ::sto/storage  (ig/ref ::sto/storage)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)}
 
    ::sto.gc-touched/handler
    {::db/pool (ig/ref ::db/pool)}
