@@ -529,3 +529,97 @@
       (t/testing "every referenced storage object is reclaimed"
         (let [objects (mapv #(sto/get-object storage %) ref-ids)]
           (t/is (every? nil? objects)))))))
+
+(t/deftest file-gc-with-stale-revn-enqueues-nothing
+  (let [profile (th/create-profile* 1)
+        file    (create-file 1 profile)
+        before  (db-rows (:id file))
+        stale   (inc (or (:revn file) 0))]
+    (t/is (not (th/run-task! :file-gc {:file-id (:id file) :revn stale})))
+    (th/run-pending-jobs)
+    (t/testing "no offload job was enqueued"
+      (t/is (empty? (th/db-query :job {:name "offload-file-data"}))))
+    (t/testing "every row stays on hot storage"
+      (let [after (db-rows (:id file))]
+        (t/is (= (count before) (count after)))
+        (t/is (every? #(= "db" (:backend %)) after))))))
+
+(t/deftest concurrent-edit-and-offload-stay-coherent
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (create-file 1 profile)
+        page-1   (uuid/next)
+        shape-1  (uuid/next)
+        page-2   (uuid/next)
+        shape-2  (uuid/next)]
+    (add-page-with-rect profile file page-1 shape-1)
+
+    (let [locked  (promise)
+          release (promise)
+          holder  (future
+                    (db/tx-run! th/*system*
+                                (fn [{:keys [::db/conn]}]
+                                  (db/exec-one! conn ["SELECT id FROM file WHERE id = ? FOR UPDATE" (:id file)])
+                                  (deliver locked true)
+                                  @release
+                                  :held)))
+          _       (t/is (= true (deref locked 10000 ::timeout)))
+          updater (future
+                    (add-page-with-rect profile file page-2 shape-2))]
+
+      ;; Give the updater time to block on the held row lock.
+      (th/sleep 500)
+      (t/is (not (realized? updater)))
+
+      (t/testing "offload skips while the row is locked"
+        (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
+          (t/is (= 0 (:offloaded result)))
+          (t/is (= 1 (:skipped result)))))
+
+      (deliver release true)
+      (t/is (not= ::timeout (deref holder 10000 ::timeout)))
+      (t/is (not= ::timeout (deref updater 30000 ::timeout))))
+
+    (t/testing "the blocked edit won as a whole"
+      (t/is (some? (get-in (get-file-data profile (:id file))
+                           [:pages-index page-2 :objects shape-2]))))
+
+    (t/testing "a later offload migrates the new bytes, never stale ones"
+      (let [current (get-file-data profile (:id file))
+            result  (th/run-task! :offload-file-data {:file-id (:id file)})]
+        (t/is (pos? (:offloaded result)))
+        (t/is (= current (get-file-data profile (:id file))))))))
+
+(t/deftest partial-failure-leaves-reclaimable-orphans
+  (let [profile (th/create-profile* 1)
+        file    (create-file 1 profile)
+        _       (t/is (>= (count (db-rows (:id file))) 2))
+        calls   (volatile! 0)
+        orphans (volatile! [])
+        real-put @#'sto/put-object!
+        mock    (fn [storage params]
+                  (if (= (:file-id params) (:id file))
+                    (let [n (vswap! calls inc)]
+                      (if (= 1 n)
+                        (let [object (real-put storage params)]
+                          (vswap! orphans conj (:id object))
+                          object)
+                        (throw (ex-info "storage is down" {}))))
+                    (real-put storage params)))]
+
+    (with-redefs [sto/put-object! mock]
+      (t/is (thrown? Exception
+                     (th/run-task! :offload-file-data {:file-id (:id file)}))))
+
+    (t/testing "the aborted file keeps every row on hot storage"
+      (let [rows (db-rows (:id file))]
+        (t/is (every? #(= "db" (:backend %)) rows))
+        (t/is (every? some? (map :data rows)))))
+
+    (t/testing "the orphaned blob is reclaimed once old enough"
+      (t/is (= 1 (count @orphans)))
+      (let [storage (sto/resolve th/*system*)]
+        (t/is (some? (sto/get-object storage (first @orphans))))
+        (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                    (th/run-task! :storage-gc-touched {}))]
+          (t/is (pos? (:delete res))))
+        (t/is (nil? (sto/get-object storage (first @orphans))))))))
