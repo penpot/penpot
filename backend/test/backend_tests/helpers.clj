@@ -133,6 +133,7 @@
                            :app.notifications/handler
                            :app.loggers.mattermost/reporter
                            :app.loggers.database/reporter
+                           :app.loggers.metrics/reporter
                            :app.worker/cron
                            :app.worker/dispatcher
                            [:app.main/default :app.worker/runner]
