@@ -508,9 +508,9 @@
     (let [output (tmp/tempfile :suffix ".zip")]
       (v3/export-files!
        (-> th/*system*
-           (assoc ::bfc/ids #{(:id file)})
-           (assoc ::bfc/export-type :detach-libraries))
-       (io/output-stream output))
+           (assoc ::bfc/file-ids #{(:id file)})
+           (assoc ::bfc/export-type :detach-libraries)
+           (assoc ::bfc/output (io/output-stream output))))
 
       ;; Only the file is exported, not the library
       (let [manifest (v3/get-manifest th/*system* output)
@@ -569,9 +569,9 @@
 
       (v3/export-files!
        (-> th/*system*
-           (assoc ::bfc/ids #{(:id file)})
-           (assoc ::bfc/export-type :merge-libraries))
-       (io/output-stream output))
+           (assoc ::bfc/file-ids #{(:id file)})
+           (assoc ::bfc/export-type :merge-libraries)
+           (assoc ::bfc/output (io/output-stream output))))
 
       ;; Only the file is exported, not the library
       (let [manifest (v3/get-manifest th/*system* output)
@@ -645,9 +645,9 @@
 
     (v3/export-files!
      (assoc th/*system*
-            ::bfc/ids #{(:id file)}
-            ::bfc/export-type :detach-libraries)
-     (io/output-stream output))
+            ::bfc/file-ids #{(:id file)}
+            ::bfc/export-type :detach-libraries
+            ::bfc/output (io/output-stream output)))
 
     (let [names (zip-entry-names output)]
       (t/is (contains? names (str "files/" (:id file) "/tokens.json")))
@@ -696,9 +696,9 @@
 
     (v3/export-files!
      (assoc th/*system*
-            ::bfc/ids #{(:id file)}
-            ::bfc/export-type :include-libraries)
-     (io/output-stream output))
+            ::bfc/file-ids #{(:id file)}
+            ::bfc/export-type :include-libraries
+            ::bfc/output (io/output-stream output)))
 
     (let [files        (import-output profile output)
           library'     (get files (:name library))
@@ -733,9 +733,9 @@
 
     (v3/export-files!
      (assoc th/*system*
-            ::bfc/ids #{(:id file)}
-            ::bfc/export-type :include-libraries)
-     (io/output-stream output))
+            ::bfc/file-ids #{(:id file)}
+            ::bfc/export-type :include-libraries
+            ::bfc/output (io/output-stream output)))
 
     (t/is (contains? (zip-entry-names output)
                      (str "files/" (:id file) "/tokens.json")))
@@ -769,9 +769,9 @@
 
     (v3/export-files!
      (assoc th/*system*
-            ::bfc/ids #{(:id file)}
-            ::bfc/export-type :include-libraries)
-     (io/output-stream output))
+            ::bfc/file-ids #{(:id file)}
+            ::bfc/export-type :include-libraries
+            ::bfc/output (io/output-stream output)))
 
     (let [files     (import-output profile output)
           file-data (:data (get files (:name file)))]
