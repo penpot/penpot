@@ -26,6 +26,7 @@
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as dw]
    [app.main.errors :as errors]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :as i18n]
@@ -33,6 +34,7 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
+   [okulary.core :as l]
    [potok.v2.core :as ptk]))
 
 (t/deftest reopening-restores-only-the-retained-edits-of-the-loaded-file
@@ -1002,6 +1004,71 @@
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the release turns the guard off"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
+
+(defn- wait-files-saved
+  "Emits into `store` an event that runs `force-persist-files-and-wait` for
+  `file-ids` and then flips `done`."
+  [store file-ids timeout-ms done]
+  (ptk/emit! store
+             (ptk/reify ::wait-files-saved
+               ptk/WatchEvent
+               (watch [_ _ _]
+                 (rx/concat
+                  (dps/force-persist-files-and-wait file-ids timeout-ms)
+                  (rx/of (ptk/reify ::files-saved
+                           ptk/EffectEvent
+                           (effect [_ _ _] (reset! done true)))))))))
+
+;; Scenario: an edit waits in the buffer when an export asks for its file
+;; to be saved. Proves: the wait sends the edit and only ends once the save
+;; lands.
+(t/deftest ^:async waiting-for-a-file-sends-and-waits-for-its-edits
+  (let [done (atom false)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id response requests store]}]
+         (await
+          (mock/with-mocks*
+            {refs/persistence (l/derived :persistence store)}
+            (ptk/emit! store (local-commit file-id))
+            (wait-files-saved store #{file-id} 60000 done)
+            (await (async/wait-for #(= 1 (count @requests)) "the edit is sent at once"))
+            (await (async/settle))
+            (t/is (false? @done) "the wait holds while the save is in flight")
+            (rx/push! response {:revn 1})
+            (await (async/wait-for #(true? @done) "the landed save ends the wait"))
+            (t/is (not (dps/unsaved-changes? @store #{file-id}))))))))))
+
+;; Scenario: a save of one file hangs while another file is exported.
+;; Proves: the wait only covers the exported files.
+(t/deftest ^:async waiting-for-a-file-ignores-other-files
+  (let [done (atom false)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {refs/persistence (l/derived :persistence store)}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @requests)) "the other file's save hangs"))
+            (wait-files-saved store #{(uuid/next)} 60000 done)
+            (await (async/wait-for #(true? @done) "the wait ends at once")))))))))
+
+;; Scenario: the file's save hangs past the wait. Proves: the wait gives up
+;; without raising, and the file still reports unsaved changes.
+(t/deftest ^:async waiting-for-a-file-gives-up-after-the-timeout
+  (let [done (atom false)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {refs/persistence (l/derived :persistence store)}
+            (ptk/emit! store (local-commit file-id))
+            (wait-files-saved store #{file-id} 1 done)
+            (await (async/wait-for #(true? @done) "the wait times out"))
+            (t/is (= 1 (count @requests)))
+            (t/is (dps/unsaved-changes? @store #{file-id})))))))))
 
 (defn- save-failed-events
   "Starts collecting the `save-failed` audit events that `store` processes."

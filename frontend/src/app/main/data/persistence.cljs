@@ -109,6 +109,30 @@
   ([timeout-ms]
    (rx/concat (rx/of ::force-persist) (wait-persisted timeout-ms))))
 
+(defn- files-queued?
+  "True when the queue in `pstate` still holds changes of any of `file-ids`."
+  [{:keys [queue index]} file-ids]
+  (boolean (some #(contains? file-ids (get-in index [% :file-id])) queue)))
+
+(defn unsaved-changes?
+  "True when any of `file-ids` has changes the server does not have yet."
+  [state file-ids]
+  (files-queued? (:persistence state) file-ids))
+
+(defn force-persist-files-and-wait
+  "Sends the pending changes and waits until no change of `file-ids` is
+  queued, saving fails, or `timeout-ms` passes. Never raises; check
+  `unsaved-changes?` afterwards."
+  [file-ids timeout-ms]
+  (rx/concat
+   (rx/of ::force-persist)
+   (->> (rx/from-atom refs/persistence {:emit-current-value? true})
+        (rx/filter #(or (= :error (:status %))
+                        (not (files-queued? % file-ids))))
+        (rx/take 1)
+        (rx/ignore)
+        (rx/timeout timeout-ms (rx/empty)))))
+
 (defn- next-status
   "Refuses downgrades: a save in progress stays :saving, a failed save
   stays :error until persistence is resumed, and a retrying episode stays

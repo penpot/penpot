@@ -1589,6 +1589,10 @@ msgstr "The email «%s» has many permanent bounce reports."
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "The email «%s» has been reported as spam or permanently bounce."
 
+#: src/app/main/data/exports/assets.cljs
+msgid "errors.export-failed"
+msgstr "The export failed. Try again in a moment."
+
 #: src/app/main/errors.cljs:391
 msgid "errors.feature-mismatch"
 msgstr ""
@@ -6918,6 +6922,10 @@ msgstr "Remove guide"
 #: src/app/main/ui/workspace/sidebar/debug.cljs:38
 msgid "workspace.debug.title"
 msgstr "Debugging tools"
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export.unsaved-changes"
+msgstr "Some of your latest changes are not saved yet, so this export may not include them."
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:841
 msgid "workspace.focus.focus-mode"

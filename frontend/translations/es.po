@@ -1573,6 +1573,10 @@ msgstr "El correo electrónico «%s» tiene varios reportes de rebote permanente
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 
+#: src/app/main/data/exports/assets.cljs
+msgid "errors.export-failed"
+msgstr "La exportación ha fallado. Inténtalo de nuevo en un momento."
+
 #: src/app/main/errors.cljs:391
 msgid "errors.feature-mismatch"
 msgstr ""
@@ -6756,6 +6760,10 @@ msgstr "Duplicar fila"
 #: src/app/main/ui/workspace/sidebar/debug.cljs:38
 msgid "workspace.debug.title"
 msgstr "Herramientas de depuración"
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export.unsaved-changes"
+msgstr "Algunos de tus últimos cambios aún no se han guardado, así que puede que esta exportación no los incluya."
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:841
 msgid "workspace.focus.focus-mode"
