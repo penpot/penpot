@@ -138,17 +138,31 @@
                     (#{:error :saved} status)
                     (dissoc :run-id :last-progress-at :stall-reported))))))))
 
+(def ^:private busy-server-codes
+  "Server error codes for a database timeout that rolled the save back."
+  #{:statement-timeout :idle-in-transaction-timeout})
+
+(defn- busy-server-error?
+  "True when the backend was too busy to apply the save: it refused it
+  (429) or a database timeout rolled it back. Resending it is safe."
+  [{:keys [type cause-type code]}]
+  (let [type (or cause-type type)]
+    (or (= :rate-limit type)
+        (and (= :server-error type)
+             (contains? busy-server-codes code)))))
+
 (defn transient-error?
   "True when a save failure is worth retrying with backoff: a transient
   transport failure (from the shared `repo/retryable-types` set, which says
-  nothing about the edits themselves) or an unusable save response.
-  Everything else (auth, validation, state) is terminal and keeps the
-  `:error` path. Checked against both `:type` and `:cause-type` because
+  nothing about the edits themselves), a busy backend, or an unusable save
+  response. Everything else (auth, validation, state) is terminal and keeps
+  the `:error` path. Checked against both `:type` and `:cause-type` because
   `persistence-failed` wraps the original cause under `:type :persistence`."
-  [{:keys [type cause-type code]}]
+  [{:keys [type cause-type code] :as error}]
   (boolean
    (or (contains? rp/retryable-types type)
        (contains? rp/retryable-types cause-type)
+       (busy-server-error? error)
        (= :invalid-save-response code))))
 
 (def ^:private retry-delays-ms
