@@ -2127,6 +2127,93 @@
       (t/is (= (:id file-2) (:file-id (get rows 0))))
       (t/is (nil? (:deleted-at (get rows 0)))))))
 
+(defn- create-library-copy!
+  "Create a shared library with a component and a file using it with a copy
+  of it. Returns the profile, both files and the ids involved."
+  []
+  (let [profile (th/create-profile* 1)
+        params  {:profile-id (:id profile)
+                 :project-id (:default-project-id profile)}
+        library (th/create-file* 1 (assoc params :is-shared true))
+        file    (th/create-file* 2 params)
+        c-id    (uuid/random)
+        main-id (uuid/random)
+        inst-id (uuid/random)
+        l-page  (first (get-in library [:data :pages]))
+        f-page  (first (get-in file [:data :pages]))]
+    (th/link-file-to-library* {:file-id (:id file)
+                               :library-id (:id library)})
+
+    (update-file!
+     :file-id (:id library)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id l-page
+       :id main-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :obj (cts/setup-shape
+             {:id main-id
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :main-instance true
+              :component-root true
+              :component-file (:id library)
+              :component-id c-id})}
+      {:type :add-component
+       :path ""
+       :name "Board"
+       :main-instance-id main-id
+       :main-instance-page l-page
+       :id c-id
+       :anotation nil}])
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id f-page
+       :id inst-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :obj (cts/setup-shape
+             {:id inst-id
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :main-instance false
+              :component-root true
+              :component-file (:id library)
+              :component-id c-id})}])
+
+    {:profile profile :library library :file file
+     :c-id c-id :inst-id inst-id :f-page f-page}))
+
+(defn- check-absorbed!
+  "Check that the file of `setup` holds the library component, with its copy
+  pointing at it."
+  [{:keys [profile file c-id inst-id f-page]}]
+  (let [out (th/command! {::th/type :get-file
+                          ::rpc/profile-id (:id profile)
+                          :id (:id file)})]
+    (t/is (th/success? out))
+    (t/is (some? (get-in out [:result :data :components c-id])))
+    (t/is (= (:id file)
+             (get-in out [:result :data :pages-index f-page :objects inst-id :component-file])))))
+
+(t/deftest unpublish-library-absorbs-it-into-the-files-using-it
+  (let [{:keys [profile library] :as setup} (create-library-copy!)]
+    (t/is (th/success? (th/command! {::th/type :set-file-shared
+                                     ::rpc/profile-id (:id profile)
+                                     :id (:id library)
+                                     :is-shared false})))
+    (check-absorbed! setup)))
+
 (t/deftest delete-shared-library-with-storage-file-data
   (binding [cf/config (assoc cf/config :file-data-backend "storage")]
     ;; Keep this test focused on the storage-backed file-data fix: create
