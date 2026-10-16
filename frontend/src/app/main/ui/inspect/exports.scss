@@ -5,7 +5,6 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "refactor/common-refactor.scss" as deprecated;
-@use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as *;
 @use "ds/_utils.scss" as *;
 
@@ -23,19 +22,6 @@
   color: var(--color-foreground-primary);
   margin-inline-start: calc(-1 * var(--sp-s));
   inline-size: calc(100% + var(--sp-s));
-}
-
-.add-export {
-  @extend %button-tertiary;
-
-  block-size: $sz-32;
-  inline-size: $sz-28;
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--color-foreground-secondary);
-  }
 }
 
 .element-set-content {
@@ -66,17 +52,6 @@
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   column-gap: var(--sp-xs);
-
-  .action-btn {
-    @extend %button-tertiary;
-
-    block-size: $sz-32;
-    inline-size: $sz-28;
-
-    svg {
-      @extend %button-icon;
-    }
-  }
 }
 
 .input-wrapper {
@@ -111,9 +86,6 @@
 }
 
 .export-btn {
-  @extend %button-secondary;
-  @include use-typography("headline-small");
-
-  block-size: $sz-32;
+  justify-content: center;
   inline-size: 100%;
 }
