@@ -409,7 +409,7 @@
       (vary-meta assoc ::deferred-swaps true))))
 
 (def ^:private legacy-text-groups
-  #{:text-content-attribute :text-content-structure})
+  #{:text-content-attribute :text-content-structure :text-content-structure-same-attrs})
 
 (defn legacy-text-touched?
   "Whether `shape` holds the text override groups of files older than the
@@ -452,7 +452,8 @@
   "Store the text overrides of the file's copies per letters and per style.
   Files older than the feature components/text-overrides mark a copy text
   with `:text-content-attribute` (any style) and `:text-content-structure`
-  (the number of paragraphs or runs); now it holds `:text-content-text` and
+  (the number of paragraphs or runs, with `:text-content-structure-same-attrs`
+  when the styles were uniform); now it holds `:text-content-text` and
   one group per style unit (`cttx/style-units`). Older files still mark it
   with `:content-group` alone, which allows every group. Each copy text with
   the old groups is compared with its near main, and takes the groups the
