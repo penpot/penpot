@@ -9,11 +9,15 @@
 
   Every job is defined as a job-def map returned by the `ig/init-key` of its
   module: {::name, ::schema, ::handler, ::decoder, ::validator} — decoder and
-  validator are precompiled at init time. A job-def may also carry the
-  optional metadata {::family, ::resource-role}, which the consumers of the
-  job (quotes, storage helpers) read from the registry: the substrate never
-  reads them. The registry of job-defs is plain integrant wiring (::jobs/defs);
-  submit, dispatch and management consume it by reference.
+  validator are precompiled at init time. A def whose result needs its types
+  back declares the optional ::result-schema: the substrate compiles the
+  decoder from that schema and checks a result against it before storing it,
+  while a def without one answers with the JSON the row holds. A job-def may
+  also carry the optional metadata {::family, ::resource-role}, which the
+  consumers of the job (quotes, storage helpers) read from the registry: the
+  substrate never reads them. The registry of job-defs is plain integrant
+  wiring (::jobs/defs); submit, dispatch and management consume it by
+  reference.
 
   Two execution modes are provided:
   - `submit` (durable): validates + JSON-encodes params and inserts a row
@@ -24,6 +28,11 @@
 
   Params payloads are stored as plain JSON (not transit) in the `params` jsonb
   column and decoded back to typed Clojure values using the job-def decoder.
+  Results are plain JSON in the `result` jsonb column: they are decoded with the
+  decoder the substrate compiled from the schema the def declares, and a result
+  that does not conform to that schema is refused before it is stored. Without a
+  schema a uuid comes back as the text it is on disk and a uuid used as a map
+  key as a keyword, so a def that keys a result map by uuid must declare it.
 
   Any job that can run longer than `:jobs-lease` must call `heartbeat`
   on its loop, otherwise the dispatcher marks it `aborted` (a system-side
@@ -151,7 +160,14 @@
    ;; implementation stays [cfg params].
    [::handler ::sm/fn]
    [::decoder ::sm/fn]
-   [::validator ::sm/fn]])
+   [::validator ::sm/fn]
+   ;; A result crosses a plain JSON column on its way out of the job, so a
+   ;; uuid comes back as the text it is on disk and a uuid used as a map
+   ;; key comes back as a keyword. A def that declares the schema of its
+   ;; result gets its types back when the row is read (the substrate
+   ;; compiles the decoder from the schema), and its result is checked
+   ;; against that schema before it is stored.
+   [::result-schema {:optional true} any?]])
 
 (def ^:private schema:job-defs
   [:map-of :keyword schema:job-def])
@@ -189,11 +205,24 @@
                 :job (d/name name)
                 :expected (d/name (::name job-def))))))
 
+(defn- compile-result-schema
+  "Compile the decoder of a job-def from the result schema it declares, so the
+  pair cannot drift from the schema and a def without one keeps working
+  untouched. The write path checks the result against the schema itself."
+  [job-def]
+  (if-let [schema (::result-schema job-def)]
+    (assoc job-def ::result-decoder (sm/decoder schema sm/json-transformer))
+    job-def))
+
 (defmethod ig/init-key ::defs
   [_ defs]
-  (reset! defs-registry defs)
-  (l/inf :hint "job definitions initialized" :jobs (count defs))
-  defs)
+  (let [defs (reduce-kv (fn [acc name job-def]
+                          (assoc acc name (compile-result-schema job-def)))
+                        {}
+                        defs)]
+    (reset! defs-registry defs)
+    (l/inf :hint "job definitions initialized" :jobs (count defs))
+    defs))
 
 (defmethod ig/halt-key! ::defs
   [_ defs]
@@ -221,6 +250,32 @@
         (db/pgobject? params)
         db/decode-json-pgobject)
       ((::decoder job-def))))
+
+(defn decode-result
+  "Decode the raw JSON result (pgobject or decoded map) with the decoder the
+  substrate compiled from the result schema of the job-def. A def without one
+  answers with the JSON the row holds: every key keywordized and every uuid as
+  the text it is on disk."
+  [job-def result]
+  (when (some? result)
+    (let [value (cond-> result
+                  (db/pgobject? result)
+                  db/decode-json-pgobject)]
+      (if-let [decoder (::result-decoder job-def)]
+        (decoder value)
+        value))))
+
+(defn- check-result
+  "Validate the result of a job against the schema its job-def declares, with
+  the malli explanation on failure. A job-def without a result schema has
+  nothing to check, and so has a job whose definition is gone."
+  [job-def result]
+  (when-let [schema (::result-schema job-def)]
+    (sm/check schema result
+              :hint "invalid result of a job"
+              :type :validation
+              :code :invalid-result))
+  result)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SUBMIT API
@@ -432,11 +487,21 @@
       (decode-json-col :result)
       (decode-json-col :error)))
 
+(defn- decode-result-of
+  "Decode the result of a row with the decoder of the job-def that owns it.
+  A kind the registry no longer knows (a retired job-def) answers with the
+  row untouched instead of raising."
+  [cfg row]
+  (if-let [job-def (get (get-defs cfg) (keyword (:name row)))]
+    (update row :result #(decode-result job-def %))
+    row))
+
 (defn get-job
-  "Retrieve the job row (with the raw JSON params decoded to a plain map)."
+  "Retrieve the job row, with params and result decoded to plain maps (the
+  result only when its job-def declares a result decoder)."
   [cfg job-id]
-  (some-> (db/get* cfg :job {:id job-id})
-          (decode-row)))
+  (when-let [row (db/get* cfg :job {:id job-id})]
+    (decode-result-of cfg (decode-row row))))
 
 (defn get-user-status
   "Map the internal job status to the user-facing status."
@@ -1058,7 +1123,8 @@
 
   - `:job-id`      the job to complete.
   - `:result`      the JSON-encodable result, nil when the job returns
-                   nothing.
+                   nothing; a result that does not conform to the schema
+                   its job-def declares is refused.
   - `:resource-id` optional storage object to associate with the job. A
                    resource is only ever set, never replaced: passing one
                    for a job that already has a resource is a validation
@@ -1073,11 +1139,13 @@
   aborted by the dispatcher — is never overwritten) and writes no event. Returns
   the number of affected rows.
 
-  The row is read locked inside that same transaction, so the two rules
-  are applied in a fixed order against the row and not against the
-  clock: a job that is no longer completable is skipped, and only a job
-  that is still completable can be refused for its resource. A
-  concurrent completion waits for the lock and then sees the outcome."
+  The row is read locked inside that same transaction, so the rules are
+  applied in a fixed order against the row and not against the clock: a
+  job that is no longer completable is skipped, only a job that is still
+  completable can be refused for its resource, and the result is checked
+  against the schema its job-def declares before it is stored (a def
+  without one has nothing to check). A concurrent completion waits for
+  the lock and then sees the outcome."
   [cfg & {:keys [job-id result resource-id]}]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
   (check-resource-id resource-id)
@@ -1097,6 +1165,9 @@
                                           :hint "the job already has a resource, it cannot be replaced"
                                           :job-id job-id
                                           :resource-id (:resource-id job)))
+                              (check-result (get (get-defs tx-cfg)
+                                                 (keyword (:name job)))
+                                            result)
                               (if (db/exec-one! conn [sql:complete-job (ct/now) (ct/now)
                                                       encoded resource-id job-id])
                                 (do

@@ -25,6 +25,8 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http :as http]
+   [app.jobs :as jobs]
+   [app.jobs.storage :as js]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
    [app.srepl.procs.fdata-storage :as fdata-storage]
@@ -696,9 +698,9 @@
                                 {:file-id (:id local-file')
                                  :library-file-id (:id asset-match)}))))
     (t/is (= (:id local-file') (cfo/get-effective-tokens-source (:data local-file'))))
-    (t/is (= #{local-theme-id}
+    (t/is (= #{(ctob/get-id (ctob/get-theme-by-path (get-in local-file' [:data :tokens-lib]) "/Local"))}
              (ctos/get-active-theme-ids (get-in local-file' [:data :tokens-status]))))
-    (t/is (= #{local-set-id}
+    (t/is (= #{(ctob/get-id (ctob/get-set-by-name (get-in local-file' [:data :tokens-lib]) "local"))}
              (ctos/get-active-set-ids (get-in local-file' [:data :tokens-status]))))
     (t/is (nil? (get-in local-file' [:metadata :tokens-source-fallback-notification])))))
 
@@ -797,23 +799,40 @@
                           :changes [{:type :set-tokens-lib
                                      :tokens-lib (make-token-lib-with-activation
                                                   candidate-b-set candidate-b-theme "shared" "Dark")}])
-          result (import-link-later! profile output)
+          staged (js/put-resource th/*system* (:id profile)
+                                  {:content (sto/content output)
+                                   :filename "tokens.penpot"
+                                   :mtype "application/zip"})
+          job-id (th/create-job* :import-binfile {:profile-id (:id profile)
+                                                  :resource-id (:resource-id staged)})
+          job-result (jobs/invoke (assoc th/*system*
+                                         ::jobs/name :import-binfile
+                                         ::jobs/params {:project-id (:default-project-id profile)
+                                                        :name {(:id first-file) "Manual Chosen Consumer"
+                                                               (:id second-file) "Manual Skipped Consumer"
+                                                               (:id ordinary-file) "Manual Ordinary Consumer"}
+                                                        :version 3}
+                                         ::jobs/context (jobs/make-context (jobs/get-job th/*system* job-id))))
+          _ (t/is (= 1 (jobs/complete th/*system* :job-id job-id :result job-result)))
+          result (:result (jobs/get-job th/*system* job-id))
           imported (into {}
                          (map (fn [file-id]
-                                (let [file (bfc/get-file th/*system* file-id)]
+                                (let [file (bfc/get-file th/*system* file-id :realize? true)]
                                   [(:name file) file])))
                          (:file-ids result))
           first-imported (get imported "Manual Chosen Consumer")
           second-imported (get imported "Manual Skipped Consumer")
           ordinary-imported (get imported "Manual Ordinary Consumer")
-          first-before (bfc/get-file th/*system* (:id first-imported))
+          first-before (bfc/get-file th/*system* (:id first-imported) :realize? true)
           pending (first (get-in result [:resolution (:id first-imported) :pending]))
           ordinary-pending (first (get-in result [:resolution (:id ordinary-imported) :pending]))]
       (t/is (:tokens-source? pending))
       (t/is (not (:tokens-source? ordinary-pending)))
       (t/is (= (set (map :id (:candidates pending)))
                #{(:id candidate-a) (:id candidate-b)}))
-      (t/is (some? (:tokens-status-names pending)))
+      (t/is (= {"activeThemes" ["/Dark"] "activeSets" ["shared"]}
+               (:tokens-status-names pending)))
+      (t/is (= :tokens-source-fallback-local (:tokens-source-fallback pending)))
       (t/is (nil? (cfv/validate-file first-imported [])))
       (let [resolve-params {::th/type :resolve-import-token-source
                             ::rpc/profile-id (:id profile)
@@ -821,11 +840,16 @@
                             :library-id (:id candidate-a)
                             :tokens-status-names (:tokens-status-names pending)}
             chosen-out      (th/command! resolve-params)
+            resolved-before (bfc/get-file th/*system* (:id first-imported) :realize? true)
             repeated-out    (th/command! resolve-params)
+            resolved-after  (bfc/get-file th/*system* (:id first-imported) :realize? true)
             ordinary-out    (th/command! {::th/type :link-file-to-library
                                           ::rpc/profile-id (:id profile)
                                           :file-id (:id ordinary-imported)
                                           :library-id (:id candidate-b)})]
+        (t/is (= (select-keys resolved-before [:revn :modified-at :metadata])
+                 (select-keys resolved-after [:revn :modified-at :metadata])))
+        (t/is (nil? (get-in resolved-after [:metadata :tokens-source-fallback-notification])))
         (t/is (nil? (:error chosen-out)))
         (t/is (nil? (:error repeated-out)))
         (t/is (nil? (:error ordinary-out)))
@@ -833,12 +857,15 @@
                  (get-in chosen-out [:result :tokens-source-outcome])))
         (t/is (= :tokens-source-restored
                  (get-in repeated-out [:result :tokens-source-outcome]))))
-      (let [first-imported (bfc/get-file th/*system* (:id first-imported))
-            second-imported (bfc/get-file th/*system* (:id second-imported))
-            ordinary-imported (bfc/get-file th/*system* (:id ordinary-imported))
+      (let [first-imported (bfc/get-file th/*system* (:id first-imported) :realize? true)
+            second-imported (bfc/get-file th/*system* (:id second-imported) :realize? true)
+            ordinary-imported (bfc/get-file th/*system* (:id ordinary-imported) :realize? true)
             first-status (get-in first-imported [:data :tokens-status])
             second-status (get-in second-imported [:data :tokens-status])
             ordinary-status (get-in ordinary-imported [:data :tokens-status])]
+        (t/is (= (cfo/ids->names (get-in (get imported "Manual Ordinary Consumer") [:data :tokens-status])
+                                 (get-in (get imported "Manual Ordinary Consumer") [:data :tokens-lib]))
+                 (cfo/ids->names ordinary-status (get-in ordinary-imported [:data :tokens-lib]))))
         (t/is (= (inc (:revn first-before)) (:revn first-imported)))
         (t/is (not= (:modified-at first-before) (:modified-at first-imported)))
         (t/is (= (:id candidate-a) (cfo/get-tokens-source (:data first-imported))))
@@ -850,8 +877,10 @@
         (t/is (nil? (cfo/get-tokens-source (:data ordinary-imported))))
         (t/is (= (:id ordinary-imported)
                  (cfo/get-effective-tokens-source (:data ordinary-imported))))
-        (t/is (= #{ordinary-local-theme} (ctos/get-active-theme-ids ordinary-status)))
-        (t/is (= #{ordinary-local-set} (ctos/get-active-set-ids ordinary-status)))
+        (t/is (= #{(ctob/get-id (ctob/get-theme-by-path (get-in ordinary-imported [:data :tokens-lib]) "/Local"))}
+                 (ctos/get-active-theme-ids ordinary-status)))
+        (t/is (= #{(ctob/get-id (ctob/get-set-by-name (get-in ordinary-imported [:data :tokens-lib]) "local"))}
+                 (ctos/get-active-set-ids ordinary-status)))
         (t/is (= 1 (count (db/query th/*system* :file-library-rel
                                     {:file-id (:id first-imported)
                                      :library-file-id (:id candidate-a)}))))
@@ -872,7 +901,7 @@
                                       :file-id (:id first-imported)
                                       :library-id (:id tokenless)
                                       :tokens-status-names (:tokens-status-names pending)})
-            cleared    (bfc/get-file th/*system* (:id first-imported))
+            cleared    (bfc/get-file th/*system* (:id first-imported) :realize? true)
             cleared-status (get-in cleared [:data :tokens-status])]
         (t/is (nil? (:error cleared-out)))
         (t/is (= :tokens-source-fallback-local
@@ -3014,6 +3043,10 @@
 
                 ;; Read access alone is sufficient; both calls start together
                 ;; and use separate RPC transactions.
+                (db/insert! th/*system* :team-profile-rel
+                            {:team-id (:default-team-id profile) :profile-id (:id reader)
+                             :is-owner false :is-admin false :can-edit false}
+                            {::db/on-conflict-do-nothing? true})
                 (db/insert! th/*system* :file-profile-rel
                             {:file-id file-id :profile-id (:id reader)
                              :is-owner false :is-admin false :can-edit false})
@@ -3231,3 +3264,18 @@
           (let [file (bfc/get-file th/*system* (:id local-file))]
             (t/is (= (:id extra-provider) (cfo/get-tokens-source (:data file))))
             (t/is (nil? (get-in file [:metadata :tokens-source-fallback-notification])))))))))
+
+(t/deftest token-activation-names-normalize-json-keys-and-reject-invalid-input
+  (let [names {"activeThemes" ["Dark"] "activeSets" ["shared"]}]
+    (t/is (= names (v3/decode-tokens-status-names names)))
+    (t/is (= names (v3/decode-tokens-status-names
+                    {:activeThemes ["Dark"] :activeSets ["shared"]})))
+    (t/is (= {} (v3/decode-tokens-status-names {})))
+    (doseq [invalid [{:active-themes ["Dark"]}
+                     {"activeSets" "shared"}
+                     {"activeSets" [42]}
+                     {"unknown" []}
+                     {"activeThemes" ["/Dark"] :activeThemes ["/Light"]}
+                     {:unknown/activeSets ["shared"]}]]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (v3/decode-tokens-status-names invalid))))))

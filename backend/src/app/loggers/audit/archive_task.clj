@@ -256,12 +256,10 @@
 (declare execute-audit-log-archive)
 
 (def schema:audit-log-archive-params
-  "Optional overrides for the repl invocation defaults."
+  "Optional overrides for the repl invocation defaults.
+  Cron submits {}; system deps (pool, shared-keys, http) live on the
+  job-def cfg closed over by the handler, not in job params."
   [:map
-   ::db/pool
-   ::setup/shared-keys
-   ::http/client
-   [:app.nitrate/client {:optional true} [:maybe :map]]
    [:enabled {:optional true} :boolean]
    [:uri {:optional true} ::sm/uri]])
 

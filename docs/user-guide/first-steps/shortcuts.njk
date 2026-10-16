@@ -10,7 +10,43 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
 
 <p class="main-paragraph">Here you can find a list of all keyboard shortcuts that you can use in Penpot. Bear in mind that most of them are at the workspace, where they are more needed.</p>
 
-<p>You can also check the most updated list of shortcuts at the <a href="https://github.com/penpot/penpot/blob/develop/frontend/src/app/main/data/workspace/shortcuts.cljs" target="_blank">GitHub file</a>.</p>
+<p>The tables below list the default shortcuts. You can change most of them to fit your keyboard layout or your habits. See <a href="#customize-shortcuts">Customize shortcuts</a>.</p>
+
+<h2 id="customize-shortcuts">Customize shortcuts</h2>
+<p>Go to <strong>Your account → Shortcuts</strong> to see every shortcut and change the ones you want. From the workspace, open the shortcuts panel (<strong>Help &amp; info → Shortcuts</strong> in the main menu, or <kbd>?</kbd>) and click <strong>Customize in Settings</strong>.</p>
+<p>Your shortcuts are saved in your account, so they follow you to any computer and browser. After a change, reload any other open Penpot tabs to apply it.</p>
+
+<h3 id="customize-shortcuts-find">Find a shortcut</h3>
+<p>Shortcuts are grouped into <strong>Workspace</strong>, <strong>Dashboard</strong> and <strong>Viewer</strong>. Use the tabs to see <strong>All</strong> of them, only your <strong>Custom</strong> ones, or the ones you <strong>Disabled</strong>.</p>
+<p>The search field matches both the action name and the keys. Type "group" to find the grouping actions, or "shift" to see every shortcut that uses <kbd>Shift</kbd>.</p>
+
+<h3 id="customize-shortcuts-change">Change a shortcut</h3>
+<ol>
+  <li>Click the shortcut you want to change.</li>
+  <li>Press the new keys. The last combination you press is the one recorded.</li>
+  <li>Click the check mark to save, or the cross to cancel. Clicking outside the editor also cancels. <kbd>Esc</kbd> does not cancel: it is recorded as a key.</li>
+</ol>
+<figure>
+  <img src="/img/shortcuts/shortcuts-settings.webp" alt="Shortcuts settings with a shortcut being edited and a conflict warning" />
+</figure>
+<p>If the keys are already used by another action in the same group, Penpot shows which one. When you save, the shortcut moves to the action you are editing, and the other action appears under <strong>Disabled</strong>.</p>
+<p>Each action takes one combination. If an action had two defaults (for example, two ways to redo), saving a custom one replaces both.</p>
+<p>From the same editor you can also <strong>disable</strong> a shortcut so that no keys trigger it, or <strong>reset</strong> it to its default value. Custom shortcuts are marked with a dot, and the main menu highlights the custom keys.</p>
+<p class="advice"><strong>Paste</strong> cannot be customized.</p>
+
+<h3 id="customize-shortcuts-layouts">Keyboard layouts</h3>
+<p>Punctuation keys (such as <kbd>-</kbd>, <kbd>[</kbd>, <kbd>/</kbd> or <kbd>'</kbd>) are recorded by their physical position on the keyboard, so they work the same on AZERTY, QWERTZ and other layouts. Letters and numbers are recorded by the character they type. With <kbd>Shift</kbd>, the base key is recorded, not the shifted character.</p>
+
+<h3 id="customize-shortcuts-reset">Reset to default</h3>
+<p>When you have custom shortcuts, a <strong>Reset all</strong> button appears next to the search field. It lists every shortcut that will go back to its default before you confirm.</p>
+
+<h3 id="customize-shortcuts-import-export">Export and import your shortcuts</h3>
+<p>Use the <strong>Import/Export</strong> button at the bottom of the page to move your setup to another account or share it with your team.</p>
+<ul>
+  <li><strong>Export</strong> downloads a JSON file with your custom and disabled shortcuts. It is available once you have changed at least one shortcut.</li>
+  <li><strong>Import</strong> reads a JSON file exported from Penpot and shows the shortcuts it will change. Click <strong>Import</strong> to confirm.</li>
+</ul>
+<p class="advice">Importing replaces your custom shortcuts in each group included in the file (Workspace, Dashboard or Viewer). Custom shortcuts in those groups that are not in the file go back to their defaults. If an imported shortcut uses keys taken by a default one, the default one is disabled.</p>
 
 <h2 id="workspace-section"> Workspace </h2>
 <p>The Workspace is where the designs are actually created. <a href="/user-guide/first-steps/the-interface/#interface-workspace">More about the Workspace</a>.</p>
@@ -569,6 +605,7 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
 </table>
 
 <h3 id="path-editor">Path editor</h3>
+<p>Copy, cut, paste, duplicate and select all also work on nodes while you edit a path. For mouse gestures, see <a href="/user-guide/designing/layers/#path-gestures">Reshape with the mouse</a>.</p>
 <table cellspacing="0" cellpadding="1" border="1" width="100%">
   <thead>
     <tr>
@@ -584,12 +621,17 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
       <td style="text-align: center;"><kbd>⇧</kbd><kbd>+</kbd></td>
     </tr>
     <tr>
-      <td>Delete node</td>
-      <td style="text-align: center;"><kbd>Supr</kbd> or <kbd>Delete</kbd></td>
-      <td style="text-align: center;"><kbd>⌫</kbd></td>
+      <td>Delete node, segment or handle</td>
+      <td style="text-align: center;"><kbd>Delete</kbd> or <kbd>Backspace</kbd></td>
+      <td style="text-align: center;"><kbd>⌦</kbd> or <kbd>⌫</kbd></td>
     </tr>
     <tr>
-      <td>Draw Path</td>
+      <td>Delete node and segments</td>
+      <td style="text-align: center;"><kbd>Shift</kbd><kbd>Delete</kbd></td>
+      <td style="text-align: center;"><kbd>⇧</kbd><kbd>⌫</kbd></td>
+    </tr>
+    <tr>
+      <td>Draw nodes</td>
       <td style="text-align: center;"><kbd>P</kbd></td>
       <td style="text-align: center;"><kbd>P</kbd></td>
     </tr>
@@ -614,7 +656,7 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
       <td style="text-align: center;"><kbd>⌘</kbd><kbd>J</kbd></td>
     </tr>
     <tr>
-      <td>Move Nodes</td>
+      <td>Move nodes</td>
       <td style="text-align: center;"><kbd>M</kbd></td>
       <td style="text-align: center;"><kbd>M</kbd></td>
     </tr>
@@ -627,6 +669,16 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
       <td>Snap to nodes</td>
       <td style="text-align: center;"><kbd>Ctrl</kbd><kbd>'</kbd></td>
       <td style="text-align: center;"><kbd>⌘</kbd><kbd>'</kbd></td>
+    </tr>
+    <tr>
+      <td>Flip horizontally (selected nodes, or the whole path)</td>
+      <td style="text-align: center;"><kbd>Shift</kbd><kbd>H</kbd></td>
+      <td style="text-align: center;"><kbd>⇧</kbd><kbd>H</kbd></td>
+    </tr>
+    <tr>
+      <td>Flip vertically (selected nodes, or the whole path)</td>
+      <td style="text-align: center;"><kbd>Shift</kbd><kbd>V</kbd></td>
+      <td style="text-align: center;"><kbd>⇧</kbd><kbd>V</kbd></td>
     </tr>
   </tbody>
 </table>

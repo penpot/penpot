@@ -17,7 +17,7 @@
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.data.workspace.mcp :as mcp]
-   [app.main.errors]
+   [app.main.errors :as errors]
    [app.main.features :as feat]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
@@ -135,6 +135,8 @@
       (mw/init!)
       (i18n/init)
       (cur/init-styles)
+
+      (mf/set-update-scheduler {:on-trip errors/on-update-loop})
 
       (init-ui)
       (st/emit! (plugins/initialize)

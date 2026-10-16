@@ -29,7 +29,7 @@
 - Whether a call is nested is decided by the CONNECTION, not by an ambient flag: `db/transact!` binds `*after-commit-conn*` around the body, and a transactable that is not identical to that connection is an independent unit of work that owns its own after-commit context. A `tx-run!` that passes a pool while a transaction is open therefore commits on its own and drains its own callbacks, instead of leaving them in a context that may roll back.
 - `after-commit` callbacks run on commit only. A transaction marked `::db/rollback` (used by `srepl` and `app.tasks/offload-file-data`) commits nothing, so it runs none of them.
 - `db/run!` opens/reuses one connection but does not create a transaction.
-- `db/tjson` is Transit JSON for jsonb storage; `db/json` is plain JSON. Job params (`job.params`) are plain JSON, decoded with the job-def decoder (`app.jobs/decode-params`); only the legacy `task` props were Transit (`decode-transit-pgobject`).
+- `db/tjson` is Transit JSON for jsonb storage; `db/json` is plain JSON. Job params (`job.params`) are plain JSON, decoded with the job-def decoder (`app.jobs/decode-params`); only the legacy `task` props were Transit (`decode-transit-pgobject`). Job results (`job.result`) are plain JSON too: they are read with the result decoder of the job-def (`app.jobs/decode-result`), and a result map keyed by uuid must declare its schema (`[:map-of ::sm/uuid ...]`, the import resolution does) or every key comes back as a keyword and every uuid as the text it is on disk.
 - Advisory transaction locks accept UUIDs or ints. UUID locks are hashed using a zero-UUID seeded siphash.
 
 ## Workers and cron

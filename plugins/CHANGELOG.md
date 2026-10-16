@@ -2,8 +2,10 @@
 
 ### 🚀 Features
 
-- **plugin-types, plugins-runtime:** Added `penpotMgmt.createProject` and `penpotMgmt.createFile` to create projects and files from the dashboard or workspace with `content:write` permission.
+- **plugin-types, plugins-runtime:** `penpotMgmt` returns `Team`, `Project` and `ProjectFile` objects. Assigning `name` renames teams, projects and files, `project.pinned` pins a project and `file.shared` shares a file as a team library; `createProject`, `createFile`, `moveTo`, `duplicate`, `remove` and `restore` live on the objects. Added `penpotMgmt.listTeams`, `penpotMgmt.createTeam`, `penpotMgmt.getFile`, `listDeletedProjects` and `listDeletedFiles`, and the `manage:projects`, `manage:teams` and `manage:delete` permissions. Restoration uses the dashboard's Trash operation; projects need recoverable files and empty projects cannot be restored; the API exposes no permanent deletion method. Team deletion is not exposed.
 - **plugins-runtime, plugin-types**: Added global plugins (`scope: "global"`) that remain active across dashboard and workspace navigation until closed or logged out, with `penpotMgmt` for project and file discovery, file navigation and workspace events. Global scope adds the `allow:global` permission, which users must accept when installing the plugin.
+- **plugin-types:** Added `LibraryComponent.restore()` to restore a deleted component and its main instance without changing the current page, selection, zoom, or viewport. Requires `library:write` permission.
+- **plugin-types:** Added `Shape.updateMain()`, `LibraryComponent.duplicate()`, writable component `annotation`, and `Library.deletedComponents`. Declared the existing `LibraryComponent.remove()` method.
 - **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
 - **plugin-types**: Added `waitForLayoutUpdate` to wait until pending layout updates have finished. It rejects when the optional timeout elapses, defaulting to 30 seconds so a wait never hangs.
 - **plugin-types**: Added `waitForLayoutUpdate` to the `Shape` interface to wait until the pending layout updates of a shape and its children have finished
@@ -11,7 +13,10 @@
 
 ### 🩹 Fixes
 
+- **plugin-types, plugin-runtime:** Dashboard property setters now update values after backend success and log failures without interrupting the workspace. File moves reject projects in other teams, backend rejections include their type and code, and `project.fileCount` stays at its listing snapshot. Duplicated projects include their file count and pinned state.
 - **plugin-runtime:** Cancel plugin loads before they execute after unloading or logout, and allow reopening plugins that close during startup.
+- **plugins-runtime**: `library.connectLibrary()` now resolves once the library's assets are loaded; it used to resolve with an empty library the first time. `library.connected` and `library.availableLibraries()` ignore files opened earlier in the same tab, which used to show up as connected and be left out of the available libraries.
+- **plugins-runtime:** `LibraryComponent.remove()` now rejects linked-library and missing component handles, and does nothing for an already deleted component.
 - **plugins-runtime**: An interaction obtained from `Shape.interactions` now keeps addressing that interaction instead of the position it held when the array was read. Removing every interaction of a shape from a single read removes all of them rather than leaving some behind, and writing through a held interaction after an earlier one is removed no longer lands on a different interaction.
 - **plugins-runtime**: `Shape.removeInteraction()` now rejects an interaction belonging to a different shape with a validation error, instead of removing whichever interaction sat at the same position on the target shape.
 - **plugins-runtime**: Writing `trigger`, `delay` or `action` on an interaction the shape no longer has now raises a validation error. The write used to be sent to the workspace with no position to apply it at, where it failed out of the plugin's reach: nothing was written and nothing was reported.
@@ -20,6 +25,7 @@
 - **plugins-runtime**: Removed the premature deep-hardening of the host plugin context, which froze shared host functions (including `Function.prototype`) before SES override taming, causing `TypeError: Cannot assign to read only property 'toString'` on later host-side function extension. Related to #11001.
 - **plugins-runtime**: The plugin modal no longer shows two resize grips in Firefox. Firefox now shows only its native grip. Closes #11795.
 - **plugins-runtime**: Fixed the `fontFamilies` token property mapping so `Shape.applyToken(token, ["fontFamilies"])` resolves to the canonical `:font-family` attribute and applied-token readback exposes the documented `fontFamilies` key instead of the undocumented singular `fontFamily`. Closes #11405.
+- **plugins-runtime**: `TokenFontFamilies.resolvedValue` and the `fontFamilies` member of `TokenTypographyValue` now keep a family whose name has several words (`Hanken Grotesk`) as one entry, instead of splitting it into an array of its words, and keep names with words the resolver would otherwise read as colors or numbers (`Red Hat Display`, `Press Start 2P`) unchanged.
 - **plugins-runtime**: Opening a plugin no longer drops running background plugins (`allowBackground`, such as the MCP plugin) from the runtime registry. They kept running, but their UI messages were no longer delivered to the plugin and they could no longer be unloaded, so MCP tasks timed out after another plugin was opened.
 
 ## 1.5.0 (2026-07-08)

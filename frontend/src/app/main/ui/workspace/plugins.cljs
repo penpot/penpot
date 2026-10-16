@@ -339,6 +339,27 @@
        (tr "workspace.plugins.permissions.allow-global")]])
 
    (cond
+     (contains? permissions "manage:projects")
+     [:div {:class (stl/css :permissions-list-entry)}
+      deprecated-icon/oauth-1
+      [:p {:class (stl/css :permissions-list-text)}
+       (tr "workspace.plugins.permissions.manage-projects")]])
+
+   (cond
+     (contains? permissions "manage:teams")
+     [:div {:class (stl/css :permissions-list-entry)}
+      deprecated-icon/oauth-1
+      [:p {:class (stl/css :permissions-list-text)}
+       (tr "workspace.plugins.permissions.manage-teams")]])
+
+   (cond
+     (contains? permissions "manage:delete")
+     [:div {:class (stl/css :permissions-list-entry)}
+      deprecated-icon/oauth-1
+      [:p {:class (stl/css :permissions-list-text)}
+       (tr "workspace.plugins.permissions.manage-delete")]])
+
+   (cond
      (contains? permissions "clipboard:write")
      [:div {:class (stl/css :permissions-list-entry)}
       deprecated-icon/oauth-1

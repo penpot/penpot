@@ -17,7 +17,8 @@
 - **Read `AGENTS.local.md` after this file whenever it exists.** It carries
   the developer's steering for this project and overrides this file on prose style and
   workflow, but not on project policy, where instructions here prevail.
-- **Commit message body lines MUST wrap at ≤76 chars** (subject ≤70 chars) and
+- **Commit message body lines MUST wrap at ≤80 chars** (subject ≤80 chars,
+  except `Merge`/`Revert`/`Reapply` which skip the subject length check) and
   the commit MUST pass `./scripts/check-commit` with exit code 0 before you
   consider it done. This is mechanically checked — do not eyeball it.
 - **Read the workflow memory BEFORE the corresponding action**:

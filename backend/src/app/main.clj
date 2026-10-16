@@ -543,7 +543,8 @@
 
    :app.nitrate/client
    {::http.client/client (ig/ref ::http.client/client)
-    ::jobs/defs          (ig/ref ::jobs/defs)
+    ;; No ::jobs/defs: nitrate never submits jobs, and archive-task's
+    ;; job-def needs this client — that would cycle through jobs/defs.
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
 
    :app.rpc/management-methods
@@ -679,10 +680,11 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.loggers.audit.archive-task/job-def
-   {::db/pool          (ig/ref ::db/pool)
+   {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
-    ::setup/shared-keys (ig/ref ::setup/shared-keys)
-    ::mtx/metrics      (ig/ref ::mtx/metrics)}
+    ::setup/shared-keys  (ig/ref ::setup/shared-keys)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
    :app.loggers.audit.gc-task/job-def
    {::db/pool     (ig/ref ::db/pool)

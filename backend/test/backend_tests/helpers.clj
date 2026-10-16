@@ -252,6 +252,30 @@
                                                      :features features}
                                                     params)))))))
 
+(defn create-job*
+  "A job row in the state a worker finds it: running, in the `binfile` queue,
+  owned by `profile-id` and holding `resource-id` when it consumes one.
+  `job-name` is the kind of the job (a keyword like the `::jobs/name` a caller
+  would pass, or the text the row holds) and it is what resolves the job-def
+  of the row when its result is read or checked."
+  [job-name {:keys [profile-id resource-id]}]
+  (let [id (uuid/next)]
+    (db/insert! *pool* :job {:id           id
+                             :name         (name job-name)
+                             :tenant       (cf/get :tenant)
+                             :queue        "binfile"
+                             :params       (db/json {})
+                             :priority     100
+                             :max-retries  0
+                             :retry-num    0
+                             :status       "running"
+                             :profile-id   profile-id
+                             :resource-id  resource-id
+                             :scheduled-at (ct/now)
+                             :created-at   (ct/now)
+                             :modified-at  (ct/now)})
+    id))
+
 (defn mark-file-deleted*
   ([params]
    (mark-file-deleted* *system* params))

@@ -54,6 +54,31 @@ test.describe("Viewport", () => {
 });
 
 test.describe("Design tab", () => {
+  test("Shows the boolean options when selecting two shapes", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await workspace.rectShapeButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+    await workspace.clickLeafLayer("Rectangle");
+    await page.keyboard.press("Control+D");
+    await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
+    await page.keyboard.press("Control+A");
+
+    await expect(
+      workspace.rightSidebar.getByRole("button", { name: "Flatten" }),
+    ).toBeVisible();
+    // The boolean options are a small part of the sidebar: compare every
+    // pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
   test("Shows the design tab when selecting a shape", async ({ page }) => {
     const workspace = new WorkspacePage(page);
     await workspace.setupEmptyFile();
@@ -83,6 +108,30 @@ test.describe("Design tab", () => {
     await workspace.rightSidebar.getByTestId("add-stroke").click();
 
     await expect(workspace.page).toHaveScreenshot();
+  });
+
+  test("Shows the align options when selecting two shapes", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await workspace.rectShapeButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+    await workspace.clickLeafLayer("Rectangle");
+    await page.keyboard.press("Control+D");
+    await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
+    await page.keyboard.press("Control+A");
+
+    await expect(
+      workspace.rightSidebar.getByRole("button", { name: /^Align left/ }),
+    ).toBeVisible();
+    // The align options are a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
   });
 });
 
@@ -162,5 +211,29 @@ test.describe("Palette", () => {
         "There are no color styles in your library yet",
       ),
     ).toBeVisible();
+  });
+});
+
+test.describe("Selected colors", () => {
+  test("Shows the more colors button", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await page.keyboard.press("Control+A");
+
+    await expect(
+      workspace.rightSidebar.getByRole("button", { name: "More colors" }),
+    ).toBeVisible();
+    // The button is a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
   });
 });

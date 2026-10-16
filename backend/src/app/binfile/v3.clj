@@ -105,6 +105,26 @@
     [:options {:optional true} ctf/schema:options]
     [:tokens-source {:optional true} ::sm/uuid]]))
 
+(defn- normalize-tokens-status-names
+  [value]
+  (if (map? value)
+    (reduce-kv (fn [result key names]
+                 (let [key (get {:activeThemes "activeThemes" :activeSets "activeSets"} key key)]
+                   (when (contains? result key)
+                     (ex/raise :type :validation
+                               :code :invalid-tokens-status-names
+                               :hint "duplicate token activation key"))
+                   (assoc result key names)))
+               {} value)
+    value))
+
+(def schema:tokens-status-names
+  [:map-of {:decode/json normalize-tokens-status-names}
+   [:enum "activeThemes" "activeSets"] [:vector :string]])
+
+(def decode-tokens-status-names
+  (sm/coercer schema:tokens-status-names))
+
 ;; --- HELPERS
 
 (defn- default-now
@@ -923,7 +943,7 @@
 
 (defn- tokens-status-from-names
   [tokens-status-names tokens-lib]
-  (->> (or tokens-status-names {})
+  (->> (decode-tokens-status-names (or tokens-status-names {}))
        (cfo/names->ids tokens-lib)
        (decode-tokens-status)
        (validate-tokens-status)))
@@ -1291,7 +1311,8 @@
   Only the selected library is linked; no other relations are touched.
   Repeated calls with the same choice leave persisted file state untouched."
   [{:keys [::db/conn] :as cfg} file-id library-id status-names]
-  (let [file           (bfc/get-file cfg file-id :lock-for-update? true)
+  (let [status-names   (decode-tokens-status-names (or status-names {}))
+        file           (bfc/get-file cfg file-id :lock-for-update? true :realize? true)
         file-data      (:data file)
         library        (bfc/get-file cfg library-id)
         library-data   (assoc (:data library) :id library-id)

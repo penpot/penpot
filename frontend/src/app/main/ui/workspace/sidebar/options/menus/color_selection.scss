@@ -4,7 +4,6 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .element-set {
@@ -16,36 +15,25 @@
 }
 
 .title-spacing-selected-colors {
-  padding-left: deprecated.$s-2;
+  padding-inline-start: var(--sp-xxs);
   margin: 0;
-}
-
-.add-fill {
-  @extend %button-tertiary;
-
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-
-  svg {
-    @extend %button-icon;
-  }
 }
 
 .element-content {
   grid-column: span 8;
-
-  @include deprecated.flex-column;
-
-  margin-bottom: deprecated.$s-8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-end: var(--sp-s);
 }
 
 .selected-color-group {
-  @include deprecated.flex-column;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
 }
 
+// The DS button is stretched by the column; center its label.
 .more-colors-btn {
-  @extend %button-secondary;
-  @include deprecated.uppercase-title-typography;
-
-  height: deprecated.$s-32;
+  justify-content: center;
 }

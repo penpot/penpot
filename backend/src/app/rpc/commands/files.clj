@@ -1230,7 +1230,7 @@
   [:map {:title "resolve-import-token-source"}
    [:file-id ::sm/uuid]
    [:library-id ::sm/uuid]
-   [:tokens-status-names {:optional true} [:map]]])
+   [:tokens-status-names {:optional true} bfv3/schema:tokens-status-names]])
 
 (sv/defmethod ::resolve-import-token-source
   "Resolve the chosen token-source library and state of an imported file in one step."
