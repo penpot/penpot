@@ -59,7 +59,8 @@
 
    :add-node        {:tooltip (ds/shift "+")
                      :label (fn [] (tr "shortcuts.add-node"))
-                     :command "shift++"
+                     :command ["shift++" "shift+="]
+                     :show-command "shift++"
                      :subsections [:path-editor]
                      :section [:workspace]
                      :fn #(st/emit! (drp/add-node))}
@@ -117,8 +118,7 @@
 
    :snap-nodes      {:tooltip (ds/meta "'")
                      :label (fn [] (tr "shortcuts.snap-nodes"))
-                     ;;https://github.com/ccampbell/mousetrap/issues/85
-                     :command [(ds/c-mod "'") (ds/c-mod "219")]
+                     :command (ds/c-mod "'")
                      :subsections [:path-editor]
                      :section [:workspace]
                      :fn #(st/emit! (drp/toggle-snap))}
@@ -207,7 +207,8 @@
 
    :increase-zoom   {:tooltip "+"
                      :label (fn [] (tr "shortcuts.increase-zoom"))
-                     :command "+"
+                     :command ["+" "="]
+                     :show-command "+"
                      :section [:workspace]
                      :fn #(st/emit! (dw/increase-zoom nil))}
 

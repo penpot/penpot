@@ -5064,6 +5064,13 @@ msgstr "Unir nodos"
 msgid "shortcuts.key-combo"
 msgstr "Pulsa las nuevas teclas"
 
+#: src/app/main/ui/settings/shortcuts.cljs:484
+msgid "shortcuts.layout-map-missing"
+msgstr ""
+"Este navegador no expone el mapa de teclado, así que los atajos que "
+"combinan Shift con puntuación (por ejemplo Shift+,) pueden no funcionar "
+"aquí. Siguen funcionando en navegadores Chromium."
+
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
 msgstr "Alternar tachado"
@@ -6341,10 +6348,6 @@ msgstr "Tipografías"
 msgid "workspace.assets.typography.add-typography"
 msgstr "Añadir tipografía"
 
-#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:461
-msgid "workspace.assets.typography.multiple-texts-selected"
-msgstr "Selecciona un solo texto para crear un estilo de tipografía"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:855
 msgid "workspace.assets.typography.font-size"
 msgstr "Tamaño"
@@ -6364,6 +6367,10 @@ msgstr "Interletrado"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:859
 msgid "workspace.assets.typography.line-height"
 msgstr "Interlineado"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:461
+msgid "workspace.assets.typography.multiple-texts-selected"
+msgstr "Selecciona un solo texto para crear un estilo de tipografía"
 
 #: src/app/main/ui/dashboard/grid.cljs:226, src/app/main/ui/workspace/libraries.cljs:1070, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:802, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:838, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:957, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:976
 msgid "workspace.assets.typography.sample"

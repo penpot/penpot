@@ -2,6 +2,7 @@
   (:require
    [app.config :as cf]
    [app.main.data.profile :as du]
+   [app.main.data.shortcuts :as ds]
    [app.main.ui.settings.import-shortcuts-diff-modal :as diff-modal]
    [app.main.ui.settings.restore-shortcuts-modal :as restore-modal]
    [app.main.ui.settings.shortcuts :as sut]
@@ -293,9 +294,8 @@
 
 ;; --- keyboard-event->mousetrap across keyboard layouts -------------------
 ;; `keyboard-event->mousetrap` (private, exercised via #') turns a recorded
-;; keydown into a Mousetrap-style combo string, reading `event.code`
-;; (layout-independent) rather than `event.key` (layout- and Shift-dependent)
-;; so the recorded combo matches what Mousetrap resolves positionally. Real
+;; keydown into a Mousetrap-style combo string from `event.key` (the typed
+;; glyph), so recording and dispatch always use the same token. Real
 ;; keydown events are wrapped by goog.events in a goog.events.BrowserEvent,
 ;; which forwards `key` but not `code`; the fixtures below simulate that
 ;; wrapper via `getBrowserEvent`.
@@ -326,35 +326,47 @@
        :metaKey (boolean meta)})
 
 (t/deftest mousetrap-shift-period-on-us-layout
-  (t/testing "US layout: Shift + Period key types \">\""
+  (t/testing "US layout without a layout map: Shift + Period types \">\" and
+              records the glyph, the same token Mousetrap dispatches"
     (with-redefs [cf/check-platform? (constantly false)]
-      (t/is (= "shift+."
+      (t/is (= "shift+>"
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key ">" :code "Period" :shift true})))))))
 
-(t/deftest mousetrap-shift-period-on-spanish-iso-layout
-  (t/testing "Spanish (ISO) layout: Shift + Period key types \":\" instead of
-              \">\", but the physical key (code \"Period\") is the same as on
-              a US layout, so the recorded combo must match"
+(t/deftest mousetrap-shift-period-with-layout-map-records-primary
+  (t/testing "with a layout map, Shift + Period records the primary \".\"
+              even when the typed glyph differs"
     (with-redefs [cf/check-platform? (constantly false)]
-      (t/is (= "shift+."
+      (try
+        (reset! ds/layout-map #js {:get (fn [code] (when (= code "Period") "."))})
+        (t/is (= "shift+."
+                 (#'ui-shortcuts/keyboard-event->mousetrap
+                  (mock-wrapped-keydown {:key ">" :code "Period" :shift true}))))
+        (t/is (= "shift+."
+                 (#'ui-shortcuts/keyboard-event->mousetrap
+                  (mock-wrapped-keydown {:key ":" :code "Period" :shift true}))))
+        (finally
+          (reset! ds/layout-map nil))))))
+
+(t/deftest mousetrap-shift-period-on-spanish-iso-layout
+  (t/testing "Spanish (ISO) layout without a layout map: Shift + Period
+              types \":\" and records the glyph"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+:"
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key ":" :code "Period" :shift true})))))))
 
 (t/deftest mousetrap-shift-period-on-arbitrary-layout
-  (t/testing "an arbitrary layout where Shift + Period produces a character
-              unrelated to \".\" or \":\" still normalizes to \"shift+.\",
-              since matching is driven by the physical key, not the glyph"
+  (t/testing "without a layout map the typed glyph wins over the physical
+              position: \"?\" on the Period position records \"shift+?\""
     (with-redefs [cf/check-platform? (constantly false)]
-      (t/is (= "shift+."
+      (t/is (= "shift+?"
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key "?" :code "Period" :shift true})))))))
 
 (t/deftest mousetrap-letter-key-on-azerty-layout
   (t/testing "French AZERTY: the key printed \"A\" sits where \"Q\" is on a US
-              layout (code \"KeyQ\") and types \"a\". Mousetrap doesn't
-              resolve letters positionally (absent from its
-              _MAP/_KEYCODE_MAP), so recording must stay glyph-based
+              layout (code \"KeyQ\") and types \"a\". Letters resolve by glyph
               (\"a\", not \"q\") to match what that physical key triggers"
     (with-redefs [cf/check-platform? (constantly false)]
       (t/is (= "a"
@@ -364,19 +376,17 @@
 (t/deftest mousetrap-digit-key-on-azerty-layout
   (t/testing "French AZERTY: the unshifted top-row key at the US \"1\"
               position (code \"Digit1\") types \"&\". Digits, like letters,
-              are absent from Mousetrap's _MAP/_KEYCODE_MAP, so recording
-              must stay glyph-based (\"&\") rather than resolve positionally
-              to \"1\""
+              resolve by glyph (\"&\") rather than positionally to \"1\""
     (with-redefs [cf/check-platform? (constantly false)]
       (t/is (= "&"
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key "&" :code "Digit1"})))))))
 
 (t/deftest mousetrap-reads-code-from-unwrapped-native-event
-  (t/testing "falls back to reading `code` straight off the event when it is
-              not a goog.events.BrowserEvent wrapper (no getBrowserEvent)"
+  (t/testing "recording works on a plain native event too (glyph wins
+              without a layout map)"
     (with-redefs [cf/check-platform? (constantly false)]
-      (t/is (= "shift+."
+      (t/is (= "shift+:"
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-native-keydown {:key ":" :code "Period" :shift true})))))))
 
@@ -417,3 +427,116 @@
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key "q" :code "KeyQ"
                                        :ctrl true :alt true :shift true})))))))
+
+(t/deftest mousetrap-shifted-letter-lowercases
+  (t/testing "Ctrl+Shift+Z types \"Z\" but records \"ctrl+shift+z\" so the
+              bind and the event use the same token"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "ctrl+shift+z"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "Z" :code "KeyZ"
+                                       :ctrl true :shift true})))))))
+
+(t/deftest mousetrap-shifted-digit-resolves-to-digit
+  (t/testing "a digit row key held with Shift records the digit itself: US
+              Shift+0 types \")\" but records \"shift+0\", so the physical
+              digit key means the same on every layout (production keyCode
+              behavior)"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+0"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key ")" :code "Digit0" :shift true}))))
+      (t/is (= "shift+1"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "!" :code "Digit1" :shift true}))))
+      (t/is (= "shift+2"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "@" :code "Digit2" :shift true}))))
+      (t/is (= "shift+8"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "*" :code "Digit8" :shift true})))))))
+
+(t/deftest mousetrap-shifted-digit-already-digit-unchanged
+  (t/testing "AZERTY Shift+Digit0 already types \"0\": unchanged"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+0"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "0" :code "Digit0" :shift true})))))))
+
+(t/deftest mousetrap-space-and-named-keys
+  (t/testing "\" \" records as space and named keys stay lowercase"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "space"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key " " :code "Space"}))))
+      (t/is (= "escape"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "Escape" :code "Escape"}))))
+      (t/is (= "shift+tab"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "Tab" :code "Tab" :shift true}))))
+      (t/is (= "del"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "Delete" :code "Delete"})))))))
+
+(t/deftest mousetrap-altgr-drops-phantom-ctrl
+  (t/testing "Spanish AltGr++] types \"]\" with ctrl+alt flags, but the
+              phantom ctrl is dropped so no ctrl+alt shortcut fires"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (let [event #js {:key "]"
+                       :shiftKey false :ctrlKey true :altKey true :metaKey false
+                       :getModifierState (fn [m] (= m "AltGraph"))
+                       :getBrowserEvent (fn [] nil)}]
+        (t/is (= "alt+]"
+                 (#'ui-shortcuts/keyboard-event->mousetrap event)))))))
+
+(t/deftest mousetrap-real-ctrl-alt-keeps-both
+  (t/testing "a real Ctrl+Alt without AltGraph still records both modifiers"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (let [event #js {:key "]"
+                       :shiftKey false :ctrlKey true :altKey true :metaKey false
+                       :getModifierState (fn [_] false)
+                       :getBrowserEvent (fn [] nil)}]
+        (t/is (= "ctrl+alt+]"
+                 (#'ui-shortcuts/keyboard-event->mousetrap event)))))))
+
+(t/deftest mousetrap-spanish-shift-plus-with-layout-map-records-primary
+  (t/testing "Spanish layout with a layout map: Shift + the physical \"+\"
+              key types \"*\" but records the primary \"shift++\", which is
+              what the user sees and what Mousetrap matches"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (try
+        (reset! ds/layout-map #js {:get (fn [code] (when (= code "BracketRight") "+"))})
+        (t/is (= "shift++"
+                 (#'ui-shortcuts/keyboard-event->mousetrap
+                  (mock-wrapped-keydown {:key "*" :code "BracketRight" :shift true}))))
+        (t/is (= "+"
+                 (#'ui-shortcuts/keyboard-event->mousetrap
+                  (mock-wrapped-keydown {:key "+" :code "BracketRight"}))))
+        (finally
+          (reset! ds/layout-map nil))))))
+
+(t/deftest mousetrap-spanish-shift-plus-without-layout-map-records-glyph
+  (t/testing "Spanish layout without a layout map: Shift + the physical
+              \"+\" key records the typed glyph \"shift+*\", the same token
+              Mousetrap dispatches"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+*"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "*" :code "BracketRight" :shift true})))))))
+
+(t/deftest mousetrap-spanish-unshifted-plus-records-plus
+  (t/testing "Spanish layout: the unshifted physical \"+\" key records \"+\""
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "+"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "+" :code "BracketRight"})))))))
+
+(t/deftest layout-map-supported-matches-keyboard-api
+  (t/testing "false without a navigator or without a keyboard API"
+    (t/is (false? (ds/layout-map-supported? nil)))
+    (t/is (false? (ds/layout-map-supported? #js {})))
+    (t/is (false? (ds/layout-map-supported? #js {:keyboard #js {}}))))
+  (t/testing "true when getLayoutMap exists (Chromium)"
+    (t/is (true? (ds/layout-map-supported?
+                  #js {:keyboard #js {:getLayoutMap (fn [] nil)}})))))

@@ -5013,6 +5013,13 @@ msgstr "Join nodes"
 msgid "shortcuts.key-combo"
 msgstr "Press the new keys"
 
+#: src/app/main/ui/settings/shortcuts.cljs:484
+msgid "shortcuts.layout-map-missing"
+msgstr ""
+"This browser does not expose the keyboard layout, so shortcuts that "
+"combine Shift with punctuation (for example Shift+,) may not work here. "
+"They keep working in Chromium browsers."
+
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
 msgstr "Toggle line through"
