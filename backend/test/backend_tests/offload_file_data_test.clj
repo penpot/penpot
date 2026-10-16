@@ -8,7 +8,9 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.jobs.metrics :as metrics]
    [app.main :as main]
    [app.metrics :as mtx]
@@ -274,3 +276,34 @@
                    (ig/assert-key :app.tasks.offload-file-data/job-def params)))
     (t/is (nil? (ig/assert-key :app.tasks.offload-file-data/job-def
                                (assoc params ::mtx/metrics (:app.metrics/metrics th/*system*)))))))
+
+(t/deftest submit-validates-params-upfront
+  (let [cfg th/*system*]
+    (t/testing "valid params submit a durable job"
+      (t/is (uuid? (jobs/submit cfg {::jobs/name   :offload-file-data
+                                     ::jobs/params {:file-id (uuid/next)}})))
+      (t/is (uuid? (jobs/submit cfg {::jobs/name   :offload-file-data
+                                     ::jobs/params {:file-id (uuid/next)
+                                                    :sleep-every 5
+                                                    :sleep-ms 10}}))))
+    (t/testing "invalid params fail at submit instead of burning retries"
+      (t/is (thrown? Exception
+                     (jobs/submit cfg {::jobs/name   :offload-file-data
+                                       ::jobs/params {}})))
+      (t/is (thrown? Exception
+                     (jobs/submit cfg {::jobs/name   :offload-file-data
+                                       ::jobs/params {:file-id "not-a-uuid"}}))))))
+
+(t/deftest file-gc-without-flag-does-not-enqueue-offload
+  (t/is (not (contains? cf/flags :tiered-file-data-storage)))
+  (let [profile (th/create-profile* 1)
+        file    (create-file 1 profile)]
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (th/run-pending-jobs)
+    (t/testing "no offload job was enqueued"
+      (t/is (empty? (th/db-query :job {:name "offload-file-data"}))))
+    (t/testing "every row stays on hot storage"
+      (let [rows (db-rows (:id file))]
+        (t/is (pos? (count rows)))
+        (t/is (every? #(= "db" (:backend %)) rows))
+        (t/is (every? some? (map :data rows)))))))
