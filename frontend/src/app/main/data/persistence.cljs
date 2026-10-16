@@ -838,6 +838,17 @@
         (swap! st/ongoing-tasks conj :persistence)
         (swap! st/ongoing-tasks disj :persistence)))))
 
+(defn leave-signals
+  "Emits when the tab is hidden or the window loses focus: another tab or
+  app, a plugin iframe, a closed laptop. Empty outside the browser."
+  []
+  (if (and (exists? js/window) (exists? js/document))
+    (rx/merge
+     (->> (rx/from-event js/document "visibilitychange")
+          (rx/filter #(= "hidden" (.-visibilityState js/document))))
+     (rx/from-event js/window "blur"))
+    (rx/empty)))
+
 (defn initialize-persistence
   []
   (ptk/reify ::initialize-persistence
@@ -894,6 +905,12 @@
 
          (->> notifier-s
               (rx/map #(ptk/data-event ::persistence-notification))
+              (rx/take-until stoper-s))
+
+         ;; Sends the buffered edits when the user leaves the tab or window.
+         (->> (leave-signals)
+              (rx/filter (fn [_] @buffered?))
+              (rx/map (fn [_] ::force-persist))
               (rx/take-until stoper-s))
 
          ;; Syncs the leave-page warning on every local commit and on every

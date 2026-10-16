@@ -1005,6 +1005,40 @@
                               "the release turns the guard off"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
 
+;; Scenario: an edit waits in the 3 s buffer and the user switches tabs or
+;; windows. Proves: leaving sends the buffered edit at once, well before
+;; the buffer would (the bounded `wait-for` gives up long before 3 s).
+(t/deftest ^:async leaving-the-tab-sends-buffered-edits-at-once
+  (let [leave-s (rx/subject)]
+    (await
+     (mock/with-mocks*
+       {dps/leave-signals (fn [] leave-s)}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [file-id requests store]}]
+            (ptk/emit! store (local-commit file-id))
+            (await (async/settle))
+            (t/is (empty? @requests) "the edit waits in the buffer")
+            (rx/push! leave-s :hidden)
+            (await (async/wait-for #(= 1 (count @requests))
+                                   "leaving sends the edit at once"))
+            (t/is (= 1 (count @requests))))))))))
+
+;; Scenario: nothing is buffered when the user leaves. Proves: a leave
+;; signal alone sends nothing.
+(t/deftest ^:async leaving-with-nothing-buffered-sends-nothing
+  (let [leave-s (rx/subject)]
+    (await
+     (mock/with-mocks*
+       {dps/leave-signals (fn [] leave-s)}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [requests store]}]
+            (rx/push! leave-s :hidden)
+            (await (async/settle))
+            (t/is (empty? @requests))
+            (t/is (nil? (get-in @store [:persistence :status]))))))))))
+
 (defn- wait-files-saved
   "Emits into `store` an event that runs `force-persist-files-and-wait` for
   `file-ids` and then flips `done`."
