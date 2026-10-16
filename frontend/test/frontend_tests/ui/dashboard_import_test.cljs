@@ -1,16 +1,23 @@
 (ns frontend-tests.ui.dashboard-import-test
   (:require
+   ["jsdom" :refer [JSDOM]]
+   ["react-dom" :refer [flushSync]]
+   ["react-dom/client" :refer [createRoot]]
+   [app.common.uuid :as uuid]
+   [app.main.data.imports :as imp]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as workspace]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.dashboard.import :as dashboard-import]
+   [app.util.globals :as globals]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t]
    [frontend-tests.helpers.async :as a]
-   [frontend-tests.helpers.mock :as mock]))
+   [frontend-tests.helpers.mock :as mock]
+   [rumext.v2 :as mf]))
 
 (t/deftest pending-token-source-uses-token-aware-resolution
   (t/is (= {:command :resolve-import-token-source
@@ -154,3 +161,92 @@
              (@#'dashboard-import/pending-library-links
               {:unrelated-key {:id "file" :pending [entry]}}
               {"file" {"original" "replacement"}})))))
+
+(t/deftest ^:async mounted-import-dialog-confirms-and-retries-library-links
+  (doseq [token-source? [false true]]
+    (let [window (.-window (JSDOM. "<div id='root'></div>"))
+          previous-window (.-window js/globalThis)
+          previous-document (.-document js/globalThis)
+          file-id (uuid/next)
+          names {"activeThemes" ["/Dark"] "activeSets" ["shared"]}
+          resolution {file-id {:id file-id :name "Imported" :done []
+                               :pending [{:id "ordinary" :name "Assets"}
+                                         {:id "source" :name "Tokens"
+                                          :tokens-source? token-source?
+                                          :tokens-status-names names}]}}
+          calls (atom [])
+          events (atom [])
+          finished (atom 0)
+          response* (atom (rx/subject))
+          container (.getElementById (.-document window) "root")
+          button (fn [label]
+                   (some #(when (= label (.-textContent %)) %)
+                         (array-seq (.querySelectorAll container "button"))))]
+      (set! (.-window js/globalThis) window)
+      (set! (.-document js/globalThis) (.-document window))
+      (let [root (createRoot container)]
+        (try
+          (await
+           (mock/with-mocks*
+             {globals/window window
+              globals/document (.-document window)
+              imp/analyze (mock/stub (fn [_]
+                                       (->> (rx/of {:file-id file-id :name "Imported" :status :success})
+                                            (rx/observe-on :async))))
+              imp/import-files (mock/stub (fn [_]
+                                            (->> (rx/of {:libraries-resolution resolution}
+                                                        {:file-id file-id :status :finish})
+                                                 (rx/observe-on :async))))
+              dashboard-import/import-library-resolution-stage*
+              (fn [^js props]
+                (mf/element "button"
+                            #js {:onClick (fn []
+                                            ((.-onSelect props) file-id "ordinary" "assets")
+                                            ((.-onSelect props) file-id "source" "tokens")
+                                            ((.-onWizardNext props)))
+                                 :children "Select libraries"}))
+              rp/cmd! (mock/stub (fn [command params]
+                                   (swap! calls conj [command params])
+                                   (if (= "assets" (:library-id params))
+                                     (->> (rx/of {}) (rx/observe-on :async))
+                                     (->> @response* (rx/take 1) (rx/observe-on :async)))))
+              i18n/tr (mock/stub identity)
+              st/emit! (mock/stub (fn [event] (swap! events conj event)))
+              ntf/error (mock/stub (fn [message] [:error message]))
+              modal/hide (mock/stub (fn [] :hide))}
+             (try
+               (flushSync #(.render root (mf/element dashboard-import/import-dialog
+                                                     #js {:entries [{:file-id file-id :name "Imported"}]
+                                                          :on-finish-import (fn [] (swap! finished inc))})))
+               (await (a/wait-for #(button "labels.continue") "analysis completes" {:max-ticks 1000}))
+               (.click (button "labels.continue"))
+               (await (a/wait-for #(button "Select libraries") "library selection appears"))
+               (.click (button "Select libraries"))
+               (await (a/wait-for #(button "dashboard.import.confirm-library-links") "summary appears"))
+               (.click (button "dashboard.import.confirm-library-links"))
+               (await (a/wait-for #(= 2 (count @calls)) "mounted dialog submits both links"))
+               (rx/error! @response* (ex-info "link rejected" {:hint "Permission denied"}))
+               (await (a/wait-for #(some #{[:error "Permission denied"]} @events) "error is displayed"))
+               (t/is (zero? @finished))
+               (t/is (not-any? #{:hide} @events))
+               (await (a/wait-for #(not (.-disabled (button "dashboard.import.confirm-library-links")))
+                                  "confirmation permits retry"))
+               (reset! response* (rx/subject))
+               (.click (button "dashboard.import.confirm-library-links"))
+               (await (a/wait-for #(= 3 (count @calls)) "only unfinished link is retried after rerender"))
+               (rx/push! @response* {})
+               (await (a/wait-for #(= 1 @finished) "dialog completes"))
+               (t/is (some #{:hide} @events))
+               (t/is (= ["assets" "tokens" "tokens"] (mapv #(get-in % [1 :library-id]) @calls)))
+               (t/is (= [:link-file-to-library
+                         (if token-source? :resolve-import-token-source :link-file-to-library)
+                         (if token-source? :resolve-import-token-source :link-file-to-library)]
+                        (mapv first @calls)))
+               (when token-source?
+                 (t/is (= names (get-in @calls [1 1 :tokens-status-names]))))
+               (finally
+                 (flushSync #(.unmount root))))))
+          (finally
+            (set! (.-window js/globalThis) previous-window)
+            (set! (.-document js/globalThis) previous-document)
+            (.close window)))))))

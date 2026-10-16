@@ -785,7 +785,7 @@
         selection*  (mf/use-state {})
         selection   (deref selection*)
 
-        resolved-links* (mf/use-ref #{})
+        resolved-links* (mf/use-var #{})
         linking?*       (mf/use-state false)
         linking?        (deref linking?*)
 
