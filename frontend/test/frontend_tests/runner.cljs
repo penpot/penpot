@@ -187,6 +187,7 @@
    [frontend-tests.ui.dashboard-import-linking-test]
    [frontend-tests.ui.drawarea-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
+   [frontend-tests.ui.ds-input-with-meta-test]
    [frontend-tests.ui.error-boundary-test]
    [frontend-tests.ui.export-preview-test]
    [frontend-tests.ui.file-restored-modal-test]
@@ -439,6 +440,7 @@
    'frontend-tests.ui.dashboard-import-linking-test
    'frontend-tests.ui.drawarea-test
    'frontend-tests.ui.ds-controls-numeric-input-test
+   'frontend-tests.ui.ds-input-with-meta-test
    'frontend-tests.ui.error-boundary-test
    'frontend-tests.ui.export-preview-test
    'frontend-tests.ui.file-restored-modal-test
