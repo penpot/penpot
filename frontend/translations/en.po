@@ -7052,7 +7052,7 @@ msgstr "Mine"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:988
 msgid "workspace.branches.list.title"
-msgstr "Branches · %s"
+msgstr "Branches - %s"
 
 #, unused
 msgid "workspace.branches.loading"

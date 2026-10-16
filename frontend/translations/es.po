@@ -6456,7 +6456,7 @@ msgstr "Mías"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:988
 msgid "workspace.branches.list.title"
-msgstr "Ramas · %s"
+msgstr "Ramas - %s"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1152
 msgid "workspace.branches.menu.create"

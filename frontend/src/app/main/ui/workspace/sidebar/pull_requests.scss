@@ -6,228 +6,40 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as t;
-@use "refactor/common-refactor.scss" as deprecated;
-
-// Same light-theme semantic-tint re-pointing the branches surfaces use
-// (see branches.scss for the rationale).
-.pr-section,
-.pr-banner,
-.modal-container {
-  :global(.light) & {
-    --color-foreground-success: var(--color-accent-success);
-    --color-foreground-error: var(--color-accent-error);
-    --color-foreground-warning: color-mix(in srgb, var(--color-accent-warning) 60%, #000);
-    --color-foreground-info: var(--color-accent-info);
-  }
-}
-
-// --- Sidebar section
-
-.pr-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-}
-
-.pr-section-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  padding-block: var(--sp-s) var(--sp-xs);
-  padding-inline: var(--sp-s);
-
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-
-  > button {
-    margin-inline-start: auto;
-  }
-}
-
-.pr-section-count {
-  color: var(--color-foreground-secondary);
-}
-
-.pr-section-empty {
-  @include t.use-typography("body-small");
-
-  padding-inline: var(--sp-s);
-  color: var(--color-foreground-secondary);
-}
-
-.pr-entries {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pr-entry {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: start;
-  gap: var(--sp-s);
-  padding: var(--sp-s);
-  border-radius: 8px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--color-background-tertiary);
-  }
-}
-
-.pr-entry.is-finished {
-  opacity: 0.7;
-}
-
-.pr-entry.is-menu-open {
-  position: relative;
-  z-index: 1;
-}
-
-.pr-entry-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 32px;
-  block-size: 32px;
-  border-radius: 8px;
-  background-color: var(--color-background-tertiary);
-  color: var(--color-accent-primary);
-}
-
-.pr-entry-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xxs);
-  min-width: 0;
-}
-
-.pr-entry-title {
-  @include t.use-typography("body-medium");
-
-  color: var(--color-foreground-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pr-entry-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  min-width: 0;
-}
-
-.pr-entry-route {
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pr-entry-badges {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-xs);
-}
-
-.pr-entry-aside {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-}
-
-.pr-entry-approvals {
-  @include t.use-typography("code-font");
-
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xxs);
-  font-weight: 600;
-  color: var(--color-foreground-success);
-}
-
-.pr-options-dropdown {
-  @extend %menu-dropdown;
-
-  inset-block-start: 100%;
-  inset-inline-end: 0;
-  inline-size: $sz-160;
-}
-
-.menu-option {
-  @extend %menu-item-base;
-
-  white-space: nowrap;
-}
-
-.pr-finished {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-}
-
-.pr-finished-toggle {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  padding-block: var(--sp-s) var(--sp-xs);
-  padding-inline: var(--sp-s);
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--color-foreground-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
+@use "ds/typography.scss" as *;
 
 // --- State badges
 
 .pr-badge {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 12px;
+  border-radius: $br-12;
   white-space: nowrap;
 }
 
 .badge-open {
-  color: var(--color-foreground-info);
+  color: var(--color-accent-info);
   background-color: var(--color-background-info);
 }
 
 .badge-in-review {
-  color: var(--color-foreground-info);
+  color: var(--color-accent-info);
   background-color: var(--color-background-info);
 }
 
 .badge-approved {
-  color: var(--color-foreground-success);
+  color: var(--color-accent-success);
   background-color: var(--color-background-success);
 }
 
 .badge-changes {
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
   background-color: var(--color-background-warning);
 }
 
 .badge-merged {
-  color: var(--color-foreground-success);
+  color: var(--color-accent-success);
   background-color: var(--color-background-success);
 }
 
@@ -237,7 +49,7 @@
 }
 
 .badge-outdated {
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
   background-color: var(--color-background-warning);
 }
 
@@ -246,91 +58,68 @@
   background-color: var(--color-background-error);
 }
 
-// --- Modals (create / review / details)
+// --- Dialogs (create / review / details)
+//
+// `dialog-header*` lives here and the branch dialogs use it too.
 
-.modal-overlay {
-  @extend %modal-overlay-base;
-}
-
-.modal-container {
-  @extend %modal-container-base;
-
-  min-width: deprecated.$s-408;
-
-  // long pull request descriptions: let the card grow past the base
-  // 512px cap up to the viewport, and scroll the CONTENT (header and
-  // footer stay pinned) instead of spilling out of the card
-  display: flex;
-  flex-direction: column;
-  max-block-size: min(90vh, 56rem);
-  max-inline-size: min(90vw, 40rem);
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+// room for the close button `modal*` places over the top-right corner
+.dialog-header {
   gap: var(--sp-s);
-  margin-bottom: deprecated.$s-24;
+  padding-inline-end: var(--sp-s);
 }
 
-.modal-header-icon {
+.dialog-header-icon {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: $sz-32;
-  height: $sz-32;
-  border-radius: 8px;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  border-radius: $br-8;
   color: var(--color-accent-primary);
   background-color: var(--color-background-tertiary);
+
+  &.is-warning {
+    color: var(--color-accent-warning);
+  }
 }
 
-.modal-header-text {
+.dialog-header-text {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--sp-xxs);
-  flex: 1;
+  min-inline-size: 0;
 }
 
-.modal-title {
-  @include deprecated.headline-medium-typography;
-
-  color: var(--modal-title-foreground-color);
+.dialog-title {
+  color: var(--color-foreground-primary);
   overflow-wrap: anywhere;
 }
 
-.modal-subtitle {
-  @include t.use-typography("body-small");
-
+.dialog-subtitle {
   color: var(--color-foreground-secondary);
   overflow-wrap: anywhere;
 }
 
-.modal-subtitle-row {
+.dialog-subtitle-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-xs);
 }
 
-.modal-content {
-  @include deprecated.flex-column;
-
-  gap: deprecated.$s-16;
-  margin-bottom: deprecated.$s-24;
-  flex: 1 1 auto;
-  min-block-size: 0;
-  overflow-y: auto;
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
 }
 
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
+// long labels: the row of actions wraps, never the label inside a button
+.dialog-footer {
   flex-wrap: wrap;
-  gap: var(--sp-s);
 
-  // action labels never wrap inside their button; the row wraps instead
+  // button: the DS buttons in the footer take no class from this module
   button {
     white-space: nowrap;
   }
@@ -343,28 +132,28 @@
 }
 
 .field-label {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }
 
 .textarea {
-  width: 100%;
-  min-height: $sz-64;
+  inline-size: 100%;
+  min-block-size: $sz-64;
   padding: var(--sp-s);
-  border-radius: 8px;
-  border: 1px solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
   resize: vertical;
 
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 }
 
 // --- Reviewer picker (create dialog)
 
 .reviewers-empty {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }
@@ -386,8 +175,8 @@
   gap: var(--sp-s);
   inline-size: 100%;
   padding: var(--sp-xs) var(--sp-s);
-  border: 1px solid transparent;
-  border-radius: 8px;
+  border: $b-1 solid transparent;
+  border-radius: $br-8;
   background: none;
   cursor: pointer;
   color: var(--color-foreground-primary);
@@ -408,7 +197,7 @@
 }
 
 .reviewer-name {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   white-space: nowrap;
   overflow: hidden;
@@ -428,8 +217,8 @@
   align-items: center;
   gap: var(--sp-m);
   padding: var(--sp-m);
-  border: 1px solid var(--color-background-quaternary);
-  border-radius: 8px;
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
   background: none;
   cursor: pointer;
   text-align: start;
@@ -452,13 +241,11 @@
 }
 
 .verdict-option-title {
-  @include t.use-typography("body-medium");
-
-  font-weight: 600;
+  @include use-typography("body-medium");
 }
 
 .verdict-option-hint {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }
@@ -468,15 +255,15 @@
 // the pull request metadata (author / dates / approvals / reviewers)
 // gets its own card, visually separated from the free-text description
 // (same surface treatment as the reviewer rows and the create dialog's
-// "derived from" box: tertiary background + 8px radius)
+// "derived from" box: tertiary background + $br-8 radius)
 .pr-info-card {
   display: flex;
   flex-direction: column;
   gap: var(--sp-m);
   flex-shrink: 0;
   padding: var(--sp-m);
-  border-radius: 8px;
-  border: 1px solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
 }
 
@@ -492,7 +279,7 @@
 }
 
 .pr-info-description {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   margin: 0;
   color: var(--color-foreground-primary);
@@ -521,7 +308,7 @@
   align-items: center;
   gap: var(--sp-xs);
 
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-primary);
 }
@@ -543,7 +330,7 @@
   flex-wrap: wrap;
   gap: var(--sp-s);
   padding: var(--sp-xs) var(--sp-s);
-  border-radius: 8px;
+  border-radius: $br-8;
 
   // sits INSIDE the tertiary metadata card: step one surface down so
   // the rows remain distinguishable
@@ -551,18 +338,18 @@
 }
 
 .reviewer-state {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   margin-inline-start: auto;
   color: var(--color-foreground-secondary);
 }
 
 .reviewer-approved {
-  color: var(--color-foreground-success);
+  color: var(--color-accent-success);
 }
 
 .reviewer-changes {
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
 }
 
 .reviewer-stale {
@@ -571,7 +358,7 @@
 }
 
 .reviewer-comment {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   flex-basis: 100%;
   margin: 0;
@@ -587,21 +374,18 @@
   inset-inline-start: 50%;
   transform: translateX(-50%);
   max-inline-size: 90vw;
-  border-radius: deprecated.$s-8;
+  border-radius: $br-8;
 
   // the review banner must stand out from the branch banner it replaces
   // (the canvas is still the live branch): info blue border, as every
   // review mark, instead of the branch banner's neutral one
-  border: deprecated.$s-2 solid var(--color-foreground-info);
+  border: $b-2 solid var(--color-accent-info);
   background-color: var(--color-background-primary);
 
-  // unlike the branch banner this one hosts a dropdown that opens
-  // upwards, outside the banner box: it must not be clipped (the
-  // collapsed state hides its content via block-size + visibility) and
   // it must beat the viewport controls, which are raised to z-index 1
   // while a drawing tool is active
-  overflow: visible;
-  z-index: deprecated.$z-index-2;
+  // TODO: no DS z-index token for 2.
+  z-index: 2;
   transition:
     inset-block-end 0.2s,
     block-size 0.2s;
@@ -609,7 +393,7 @@
   &.is-collapsed {
     inset-block-end: 0;
     block-size: var(--sp-m);
-    border-radius: 12px 12px 0 0;
+    border-radius: $br-12 $br-12 0 0;
 
     .pr-banner-content {
       block-size: 0;
@@ -620,13 +404,16 @@
 }
 
 .pr-banner-handle {
-  @include deprecated.flex-center;
-  @include deprecated.button-style;
-
   position: absolute;
   inset-inline: 0;
   inset-block-start: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   block-size: var(--sp-m);
+  border: none;
+  background: none;
+  cursor: pointer;
   inline-size: 100%;
   z-index: 1;
 }
@@ -634,10 +421,10 @@
 .pr-banner-handle-btn {
   block-size: var(--sp-xs);
   inline-size: 100%;
-  max-inline-size: 64px;
+  max-inline-size: $sz-64;
   padding: 0;
-  border-radius: var(--sp-xs);
-  background-color: var(--palette-handler-background-color);
+  border-radius: $br-4;
+  background-color: var(--color-background-quaternary);
 }
 
 .pr-banner-content {
@@ -645,9 +432,6 @@
   align-items: center;
   gap: var(--sp-m);
   padding: var(--sp-m) var(--sp-m) var(--sp-s);
-
-  // no overflow clip: the kebab dropdown opens upwards past the banner
-  // edge (the collapsed state hides this box via block-size + visibility)
 }
 
 .pr-banner-icon {
@@ -659,7 +443,7 @@
   block-size: $sz-24;
   border-radius: $br-4;
   background-color: var(--color-background-info);
-  color: var(--color-foreground-info);
+  color: var(--color-accent-info);
 }
 
 .pr-banner-text {
@@ -667,7 +451,7 @@
   align-items: center;
   gap: var(--sp-xs);
 
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 }
 
 .pr-banner-title,
@@ -685,7 +469,6 @@
 
 .pr-banner-name {
   color: var(--color-foreground-primary);
-  font-weight: 700;
 }
 
 .pr-banner-badges {
@@ -695,13 +478,12 @@
 }
 
 .pr-banner-approvals {
-  @include t.use-typography("code-font");
+  @include use-typography("code-font");
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xxs);
-  font-weight: 600;
-  color: var(--color-foreground-success);
+  color: var(--color-accent-success);
 }
 
 .pr-banner-actions {
@@ -714,15 +496,4 @@
 .pr-banner-menu {
   display: flex;
   align-items: center;
-}
-
-// the banner sits at the bottom of the canvas, so its options menu opens
-// upwards, clear of the banner and flush with its right edge (the offsets
-// skip the banner's border, which the menu is placed inside of)
-.pr-banner-options-dropdown {
-  @extend %menu-dropdown;
-
-  inset-block-end: calc(100% + #{deprecated.$s-2} + var(--sp-xs));
-  inset-inline-end: calc(-1 * #{deprecated.$s-2});
-  inline-size: $sz-192;
 }

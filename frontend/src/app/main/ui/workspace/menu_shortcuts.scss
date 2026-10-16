@@ -4,29 +4,31 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_utils.scss" as *;
 
+// The menu entry that holds the keys sets `--shortcut-foreground-color`
+// on hover so the keys follow its text color.
 .shortcut {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
   gap: var(--sp-xxs);
-  color: var(--menu-shortcut-foreground-color);
+  color: var(--shortcut-foreground-color, var(--color-foreground-secondary));
 }
 
 .shortcut-key {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
   justify-content: center;
-  height: px2rem(20);
+  block-size: px2rem(20);
   padding: var(--sp-xxs) px2rem(6);
   border-radius: $br-6;
-  background-color: var(--menu-shortcut-background-color);
+  background-color: var(--color-background-primary);
 }
 
 .customized-key {

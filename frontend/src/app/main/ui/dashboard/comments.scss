@@ -4,6 +4,8 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .dashboard-comments-section {
@@ -118,44 +120,53 @@
 .review-requests {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-4;
-  padding: deprecated.$s-8 deprecated.$s-12;
-  border-bottom: deprecated.$s-1 solid var(--color-background-quaternary);
+  gap: var(--sp-xs);
+  padding: var(--sp-s) var(--sp-m);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
 }
 
 .review-requests-title {
+  // TODO: No exact DS typography match found.
+  // Closest match: headline-small (size 11 vs 12; family, weight and
+  // line-height are inherited here).
+  font-size: px2rem(11);
   color: var(--color-foreground-secondary);
-  font-size: deprecated.$fs-11;
   text-transform: uppercase;
 }
 
 .review-request-item {
+  --review-request-item-background-color: none;
+
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-2;
-  padding: deprecated.$s-8;
+  gap: var(--sp-xxs);
+  padding: var(--sp-s);
   border: none;
-  border-radius: deprecated.$s-8;
-  background: none;
+  border-radius: $br-8;
+  background: var(--review-request-item-background-color);
   cursor: pointer;
   text-align: start;
 
   &:hover {
-    background-color: var(--color-background-tertiary);
+    --review-request-item-background-color: var(--color-background-tertiary);
   }
 }
 
 .review-request-name {
+  // TODO: No exact DS typography match found.
+  // Closest match: body-medium (only the size is set here).
+  font-size: px2rem(14);
   color: var(--color-foreground-primary);
-  font-size: deprecated.$fs-14;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .review-request-route {
+  // TODO: No exact DS typography match found.
+  // Closest match: headline-small (size 11 vs 12; only the size is set here).
+  font-size: px2rem(11);
   color: var(--color-foreground-secondary);
-  font-size: deprecated.$fs-11;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

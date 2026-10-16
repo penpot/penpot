@@ -6,7 +6,7 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 
 :global(:root) {
   --branch-bar-size: #{$sz-36};
@@ -50,7 +50,7 @@
 }
 
 .section {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
   display: flex;
   justify-content: space-between;
@@ -67,7 +67,7 @@
 }
 
 .action {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
@@ -83,7 +83,7 @@
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    --menu-shortcut-foreground-color: var(--menu-shortcut-foreground-color-hover);
+    --shortcut-foreground-color: var(--color-foreground-primary);
 
     background-color: var(--color-background-quaternary);
   }

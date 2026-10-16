@@ -6,33 +6,30 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as t;
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as *;
 
 // floats over the bottom-right corner of the file thumbnail
 .branches-popover-wrap {
   position: absolute;
-  inset-inline-start: deprecated.$s-12;
-  inset-block-start: deprecated.$s-12;
+  inset-inline-start: var(--sp-m);
+  inset-block-start: var(--sp-m);
+
+  // TODO: no DS z-index token for 1.
   z-index: 1;
 }
 
 .branches-badge {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xxs);
+  block-size: $sz-32;
   padding: var(--sp-xs) var(--sp-s);
-  border: 2px solid var(--color-background-quaternary);
-  border-radius: deprecated.$br-8;
-  height: 32px;
+  border: $b-2 solid var(--color-background-quaternary);
+  border-radius: $br-8;
   color: var(--color-foreground-secondary);
   background-color: var(--color-background-tertiary);
-
-  &:hover {
-    background-color: var(--color-background-tertiary);
-  }
 }
 
 // out of the flow, under the badge: the badge never moves when it opens,
@@ -55,7 +52,7 @@
 }
 
 .branches-popover-section {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
   display: flex;
   justify-content: space-between;

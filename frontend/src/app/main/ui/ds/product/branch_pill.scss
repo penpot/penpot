@@ -7,16 +7,6 @@
 @use "ds/_borders.scss" as *;
 
 .branch-pill {
-  // light theme: the DS state foregrounds wash out over their pale
-  // backgrounds, so they take the saturated accents, as the branch
-  // compare and conflicts dialogs do; the dark theme keeps the DS ones
-  :global(.light) & {
-    --color-foreground-success: var(--color-accent-success);
-    --color-foreground-error: var(--color-accent-error);
-    --color-foreground-warning: color-mix(in srgb, var(--color-accent-warning) 60%, #000);
-    --color-foreground-info: var(--color-accent-info);
-  }
-
   --pill-fg-color: var(--color-accent-primary);
 
   display: inline-flex;
@@ -35,7 +25,7 @@
   }
 
   &.is-review {
-    --pill-fg-color: var(--color-foreground-info);
+    --pill-fg-color: var(--color-accent-info);
   }
 }
 

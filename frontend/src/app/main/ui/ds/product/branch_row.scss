@@ -6,7 +6,7 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 
 .branch-row {
   --row-bg-color: transparent;
@@ -54,7 +54,7 @@
 }
 
 .aside {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   flex-shrink: 0;

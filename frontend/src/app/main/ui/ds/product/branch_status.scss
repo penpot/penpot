@@ -5,34 +5,23 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 
 .branch-status {
-  // light theme: the DS state foregrounds wash out over their pale
-  // backgrounds, so they take the saturated accents, as the branch
-  // compare and conflicts dialogs do; the dark theme keeps the DS ones
-  :global(.light) & {
-    --color-foreground-success: var(--color-accent-success);
-    --color-foreground-error: var(--color-accent-error);
-    --color-foreground-warning: color-mix(in srgb, var(--color-accent-warning) 60%, #000);
-    --color-foreground-info: var(--color-accent-info);
-  }
-
   display: flex;
   flex-shrink: 0;
   align-items: center;
   gap: var(--sp-s);
 }
 
-// counts use the monospace inspect font at 600 weight, as every branch
-// figure does; they only show when there are changes, so they stand out
+// counts use the DS code font, as every branch figure does; they
+// only show when there are changes, so they stand out
 .count {
-  @include t.use-typography("code-font");
+  @include use-typography("code-font");
 
   display: flex;
   align-items: center;
   gap: var(--sp-xxs);
-  font-weight: 600;
   color: var(--color-accent-primary);
 }
 
@@ -43,7 +32,7 @@
 
 .error {
   display: flex;
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
 }
 
 .pill {
@@ -60,16 +49,16 @@
 }
 
 .pill-conflict {
-  --pill-fg-color: var(--color-foreground-warning);
+  --pill-fg-color: var(--color-accent-warning);
   --pill-bg-color: var(--color-background-warning);
 }
 
 .pill-pending {
-  --pill-fg-color: var(--color-foreground-info);
+  --pill-fg-color: var(--color-accent-info);
   --pill-bg-color: var(--color-background-info);
 }
 
 .pill-approved {
-  --pill-fg-color: var(--color-foreground-success);
+  --pill-fg-color: var(--color-accent-success);
   --pill-bg-color: var(--color-background-success);
 }

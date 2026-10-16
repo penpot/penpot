@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/z-index.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -81,7 +81,7 @@
 }
 
 .base-menu-item {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: grid;
   align-items: center;
@@ -97,7 +97,7 @@
   &:hover {
     --menu-foreground-color: var(--menu-foreground-color-hover);
     --menu-background-color: var(--menu-background-color-hover);
-    --menu-shortcut-foreground-color: var(--menu-shortcut-foreground-color-hover);
+    --shortcut-foreground-color: var(--color-foreground-primary);
     --menu-icon-foreground-color: var(--menu-foreground-color-hover);
   }
 
@@ -184,4 +184,3 @@
   left: calc(-1 * var(--sp-xs));
   margin-top: var(--sp-s);
 }
-
