@@ -5,18 +5,18 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.branches-popover
-  "Dashboard file-card popover that lists a file's branches and lets you
-  open one or create a new branch without entering the file."
+  "Dashboard file-card popover that lists a file and its branches and
+  opens the one picked. Branches are created from inside the file."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
-   [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.branch-row :refer [branch-row*]]
+   [app.main.ui.ds.product.branch-status :refer [branch-status*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
@@ -43,14 +43,6 @@
 
         on-close (mf/use-fn #(reset! show? false))
 
-        on-create
-        (mf/use-fn
-         (mf/deps file)
-         (fn [event]
-           (dom/stop-propagation event)
-           (reset! show? false)
-           (modal/show! :create-branch {:file-name (:name file) :file-id (:id file)})))
-
         on-open-branch
         (mf/use-fn
          (fn [event]
@@ -67,24 +59,25 @@
       [:> i/icon* {:icon-id i/git-branch :size "s"}]
       [:span (dm/str n)]]
 
+     ;; a switcher only: branches are created from inside the file
      [:& dropdown {:show (deref show?) :on-close on-close}
-      [:div {:class (stl/css :branches-popover)}
+      [:div {:class (stl/css :branches-popover)
+             :role "dialog"
+             :aria-label (tr "dashboard.branches-badge" (dm/str n))}
+       [:> branch-row* {:label (tr "workspace.branches.main")
+                        :data-branch (dm/str (:id file))
+                        :on-click on-open-branch}
+        (tr "workspace.branches.main-subtitle")]
+       [:div {:class (stl/css :branches-popover-section)}
+        [:span (tr "workspace.branches.menu")]
+        [:span (dm/str (count branches))]]
        [:ul {:class (stl/css :branches-popover-list)}
         (for [b branches]
-          [:li {:key (dm/str (:id b))
-                :class (stl/css :branches-popover-item)
-                :role "button"
-                :data-branch (dm/str (:branch-file-id b))
-                :on-click on-open-branch}
-           [:> i/icon* {:icon-id i/git-branch :size "s"}]
-           [:span {:class (stl/css :branches-popover-name)} (:name b)]
-           (if (or (:diff-error b) (nil? (:ahead b)))
-             ;; the comparison could not be made: the warning stands
-             ;; where the counts would, because zeros read as "in sync"
-             [:span {:class (stl/css :branches-popover-error)
-                     :title (tr "workspace.branches.counts.error")}
-              [:> i/icon* {:icon-id i/triangle-alert :size "s"}]]
-             [:span {:class (stl/css :branches-popover-counts)}
-              (dm/str "↑" (:ahead b) " ↓" (:behind b))])])]
-       [:> button* {:variant "primary" :icon i/add :on-click on-create}
-        (tr "workspace.branches.new")]]]]))
+          [:li {:key (dm/str (:id b))}
+           [:> branch-row* {:label (:name b)
+                            :data-branch (dm/str (:branch-file-id b))
+                            :on-click on-open-branch}
+            [:> branch-status* {:ahead (:ahead b)
+                                :behind (:behind b)
+                                :conflicts (:conflicts b)
+                                :has-error (boolean (or (:diff-error b) (nil? (:ahead b))))}]]])]]]]))

@@ -1,0 +1,64 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+.branch-row {
+  --row-bg-color: transparent;
+  --row-icon-color: var(--color-foreground-secondary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  min-block-size: $sz-32;
+  padding: var(--sp-xs) var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background-color: var(--row-bg-color);
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    --row-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
+  &.is-current {
+    --row-icon-color: var(--color-accent-primary);
+
+    cursor: default;
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--row-icon-color);
+}
+
+.label {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.aside {
+  @include use-typography("body-small");
+
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-s);
+  color: var(--color-foreground-secondary);
+}

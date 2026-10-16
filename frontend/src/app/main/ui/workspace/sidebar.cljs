@@ -20,7 +20,6 @@
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.branches :as dwb]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -34,7 +33,6 @@
    [app.main.ui.workspace.left-header :refer [left-header*]]
    [app.main.ui.workspace.right-header :refer [right-header*]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox*]]
-   [app.main.ui.workspace.sidebar.branches :refer [branches-toolbox*]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox*]]
@@ -244,7 +242,7 @@
    ::mf/memo true}
   []
   (let [selected*
-        (hooks/use-shared-state dwb/history-sidebar-tab-key "history")
+        (hooks/use-persisted-state ::history-sidebar "history")
 
         selected
         (deref selected*)
@@ -255,13 +253,10 @@
 
         tabs
         (mf/with-memo []
-          (cond-> [{:label (tr "workspace.versions.tab.history")
-                    :id "history"}
-                   {:label (tr "workspace.versions.tab.actions")
-                    :id "actions"}]
-            (contains? cf/flags :branching)
-            (conj {:label (tr "workspace.branches.tab")
-                   :id "branches"})))
+          [{:label (tr "workspace.versions.tab.history")
+            :id "history"}
+           {:label (tr "workspace.versions.tab.actions")
+            :id "actions"}])
 
         button
         (mf/with-memo []
@@ -285,11 +280,7 @@
 
        "actions"
        [:article {:class (stl/css :versions-tab)}
-        [:> history-toolbox*]]
-
-       "branches"
-       [:article {:class (stl/css :history-tab)}
-        [:> branches-toolbox* {}]])]))
+        [:> history-toolbox*]])]))
 
 (mf/defc right-sidebar*
   [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]

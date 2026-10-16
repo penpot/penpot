@@ -33,6 +33,10 @@
    [app.main.ui.ds.notifications.shared.notification-pill :refer [notification-pill*]]
    [app.main.ui.ds.notifications.toast :refer [toast*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
+   [app.main.ui.ds.product.branch-chip :refer [branch-chip*]]
+   [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
+   [app.main.ui.ds.product.branch-row :refer [branch-row*]]
+   [app.main.ui.ds.product.branch-status :refer [branch-status*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
@@ -81,6 +85,10 @@
     :Swatch swatch*
     :Cta cta*
     :Avatar avatar*
+    :BranchChip branch-chip*
+    :BranchPill branch-pill*
+    :BranchRow branch-row*
+    :BranchStatus branch-status*
     :Milestone milestone*
     :MilestoneGroup milestone-group*
     :Date date*

@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -18,6 +19,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.branch-switcher :refer [branch-bar*]]
    [app.main.ui.workspace.main-menu :as main-menu]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -36,8 +38,8 @@
 
         ;; When the open file is a branch, `branch-ctx` is non-nil (the
         ;; main file is never a branch, so this is also how we tell them
-        ;; apart). On a branch we show "<main name> (<branch name>)" and a
-        ;; badge; on main we keep the plain file name.
+        ;; apart). On a branch the title is main's name: the branch itself
+        ;; is named by the chip in the branch row below.
         branch-ctx  (mf/deref refs/branch-context)
         branch?     (and (some? branch-ctx) (some? (:source-name branch-ctx)))
 
@@ -54,7 +56,7 @@
           (tr "workspace.pull-requests.header-title" pr-title)
 
           ^boolean branch?
-          (dm/str (:source-name branch-ctx) " (" (:name branch-ctx) ")")
+          (:source-name branch-ctx)
 
           :else
           file-name)
@@ -116,67 +118,69 @@
       (when ^boolean editing?
         (dom/select-text! (mf/ref-val input-ref))))
 
-    [:header {:class (dm/str class " " (stl/css :workspace-header-left))}
-     [:a {:on-click go-back
-          :class (stl/css :main-icon)} deprecated-icon/logo-icon]
-     [:div {:alt (tr "workspace.sitemap")
-            :class (stl/css :project-tree)}
-      [:div
-       {:class (stl/css :project-name)
-        :on-click nav-to-project}
-       (:name project)]
-      (if ^boolean editing?
-        [:input
-         {:class (stl/css :file-name-input)
-          :type "text"
-          :ref input-ref
-          :on-blur handle-blur
-          :on-key-down handle-name-keydown
-          :auto-focus true
-          :default-value (:name file "")}]
-        [:div
-         {:class (stl/css :file-name)
-          :title display-name
-          ;; on a branch the name is fixed ("File (Branch)"); renaming here
-          ;; would be confusing, so double-click editing is disabled.
-          :on-double-click (when-not ^boolean branch? start-editing-name)}
-         ;; Persistence state widget
-         [:div {:class (case persistence-status
-                         :pending (stl/css :status-notification :pending-status)
-                         :saving (stl/css :status-notification :saving-status)
-                         :saved (stl/css :status-notification :saved-status)
-                         :retrying (stl/css :status-notification :retrying-status)
-                         :error (stl/css :status-notification :error-status)
-                         (stl/css :status-notification))
-                :title (case persistence-status
-                         :pending (tr "workspace.header.saving")
-                         :saving (tr "workspace.header.saving")
-                         :saved (tr "workspace.header.saved")
-                         :retrying (tr "workspace.header.retrying")
-                         :error (tr "workspace.header.save-error")
-                         nil)}
-          (case persistence-status
-            :pending deprecated-icon/status-alert
-            :saving deprecated-icon/status-alert
-            :saved deprecated-icon/status-tick
-            :retrying deprecated-icon/status-alert
-            :error deprecated-icon/status-wrong
-            nil)]
-         (cond
-           ^boolean review?
-           [:> tooltip* {:content (tr "workspace.pull-requests.header-badge-tooltip" pr-title)
-                         :placement "bottom"}
-            [:span {:class (stl/css :review-badge)}
-             [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]]]
-
-           ^boolean branch?
-           [:> tooltip* {:content (tr "workspace.branches.header-badge-tooltip" (:name branch-ctx))
-                         :placement "bottom"}
-            [:span {:class (stl/css :branch-badge)}
-             [:> icon* {:icon-id i/git-branch :size "s"}]]])
-         [:div {:class (stl/css :file-name-label)} display-name]])]
-     (when ^boolean shared?
-       [:span {:class (stl/css :shared-badge)} deprecated-icon/library])
-     [:div {:class (stl/css :menu-section)}
-      [:> main-menu/menu* {:layout layout
-                           :file file}]]]))
+    [:div {:class (dm/str class " " (stl/css :workspace-header-left-wrapper))}
+     [:header {:class (stl/css :workspace-header-left)}
+      [:a {:on-click go-back
+           :class (stl/css :main-icon)} deprecated-icon/logo-icon]
+      [:div {:alt (tr "workspace.sitemap")
+             :class (stl/css :project-tree)}
+       [:div
+        {:class (stl/css :project-name)
+         :on-click nav-to-project}
+        (:name project)]
+       (if ^boolean editing?
+         [:input
+          {:class (stl/css :file-name-input)
+           :type "text"
+           :ref input-ref
+           :on-blur handle-blur
+           :on-key-down handle-name-keydown
+           :auto-focus true
+           :default-value (:name file "")}]
+         [:div
+          {:class (stl/css :file-name)
+           :title display-name
+           ;; on a branch the title is main's name, which this file does not
+           ;; own, so double-click editing is disabled.
+           :on-double-click (when-not ^boolean branch? start-editing-name)}
+          ;; Persistence state widget
+          [:div {:class (case persistence-status
+                          :pending (stl/css :status-notification :pending-status)
+                          :saving (stl/css :status-notification :saving-status)
+                          :saved (stl/css :status-notification :saved-status)
+                          :retrying (stl/css :status-notification :retrying-status)
+                          :error (stl/css :status-notification :error-status)
+                          (stl/css :status-notification))
+                 :title (case persistence-status
+                          :pending (tr "workspace.header.saving")
+                          :saving (tr "workspace.header.saving")
+                          :saved (tr "workspace.header.saved")
+                          :retrying (tr "workspace.header.retrying")
+                          :error (tr "workspace.header.save-error")
+                          nil)}
+           (case persistence-status
+             :pending deprecated-icon/status-alert
+             :saving deprecated-icon/status-alert
+             :saved deprecated-icon/status-tick
+             :retrying deprecated-icon/status-alert
+             :error deprecated-icon/status-wrong
+             nil)]
+          (when ^boolean review?
+            [:> tooltip* {:content (tr "workspace.pull-requests.header-badge-tooltip" pr-title)
+                          :placement "bottom"}
+             [:span {:class (stl/css :review-badge)}
+              [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]]])
+          [:div {:class (stl/css :file-name-label)}
+           (if ^boolean review?
+             [:*
+              [:span {:class (stl/css :review-label)}
+               (tr "workspace.pull-requests.header-label")]
+              " " pr-title]
+             display-name)]])]
+      (when ^boolean shared?
+        [:span {:class (stl/css :shared-badge)} deprecated-icon/library])
+      [:div {:class (stl/css :menu-section)}
+       [:> main-menu/menu* {:layout layout
+                            :file file}]]]
+     (when (contains? cf/flags :branching)
+       [:> branch-bar* {:file file}])]))

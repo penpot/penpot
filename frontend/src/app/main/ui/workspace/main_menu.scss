@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/z-index.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -27,11 +27,14 @@
 .menu {
   top: $sz-48;
   left: calc(var(--left-sidebar-width) - px2rem(44));
-  inline-size: $sz-192;
+
+  // wide enough for a top-level entry with its shortcut keys
+  inline-size: $sz-224;
 }
 
+// submenus open right after the menu's edge
 .sub-menu {
-  left: calc(var(--left-sidebar-width) + px2rem(150));
+  left: calc(var(--left-sidebar-width) + px2rem(182));
   min-width: $sz-364;
 
   &.pos-1 {
@@ -78,7 +81,7 @@
 }
 
 .base-menu-item {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: grid;
   align-items: center;
@@ -94,7 +97,7 @@
   &:hover {
     --menu-foreground-color: var(--menu-foreground-color-hover);
     --menu-background-color: var(--menu-background-color-hover);
-    --menu-shortcut-foreground-color: var(--menu-shortcut-foreground-color-hover);
+    --shortcut-foreground-color: var(--color-foreground-primary);
     --menu-icon-foreground-color: var(--menu-foreground-color-hover);
   }
 
@@ -120,6 +123,18 @@
 
 .item-name {
   grid-area: name;
+}
+
+// a top-level entry with a shortcut instead of a submenu arrow: the keys
+// keep their size and the name gives way
+.shortcut-item {
+  gap: var(--sp-s);
+
+  .item-name {
+    @include text-ellipsis;
+
+    min-inline-size: 0;
+  }
 }
 
 .plugin-name {
@@ -168,29 +183,4 @@
   border-top: $b-1 solid var(--color-background-quaternary);
   left: calc(-1 * var(--sp-xs));
   margin-top: var(--sp-s);
-}
-
-.shortcut {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-xxs);
-  color: var(--menu-shortcut-foreground-color);
-}
-
-.shortcut-key {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: px2rem(20);
-  padding: var(--sp-xxs) px2rem(6);
-  border-radius: $br-6;
-  background-color: var(--menu-shortcut-background-color);
-}
-
-.customized-key {
-  background-color: var(--color-background-info);
-  color: var(--color-foreground-primary);
 }

@@ -9,17 +9,14 @@
   patterns in `app.main.data.workspace.versions`."
   (:require
    [app.config :as cf]
-   [app.main.broadcast :as mbc]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dwp]
-   [app.main.data.workspace.layout :as layout]
    [app.main.repo :as rp]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -56,7 +53,6 @@
 (declare fetch-branches)
 (declare fetch-branching-limits)
 (declare fetch-branch-context)
-(declare show-branches-panel)
 
 (defn init-branches-state
   []
@@ -243,8 +239,7 @@
 (defn create-branch
   "Create a branch from a file. With no `file-id`, branches the currently
   open file (force-persisting first so the merge base captures the latest
-  edits) and jumps into the new branch, keeping the branches panel open
-  so the user lands on the branch with full context. With an explicit
+  edits) and jumps into the new branch. With an explicit
   `file-id` (e.g. from the dashboard, where the file is not open),
   creates it directly and opens the new branch. Errors surface as a
   toast; the caller closes the dialog."
@@ -282,65 +277,67 @@
                   (rx/concat
                    (rx/of (ntf/success (tr "workspace.branches.create.success" name)))
                    (if from-ws?
-                     ;; jump into the new branch keeping the branches
-                     ;; panel open (the layout survives in-app navigation;
-                     ;; show-branches-panel pins the tab selection), and
-                     ;; refresh the list so the new branch is included
-                     (rx/of (open-branch branch-file-id)
-                            (show-branches-panel)
-                            (fetch-branches))
+                     ;; jump into the new branch; the branch switcher in
+                     ;; the header shows where the user landed
+                     (rx/of (open-branch branch-file-id))
                      ;; from dashboard: jump into the new branch
                      (rx/of (dcm/go-to-workspace :file-id branch-file-id))))))
                (rx/catch
                 (fn [cause]
                   (rx/of (refusal-notification cause (tr "workspace.branches.create.error"))))))))))))
 
+(defn toggle-branch-switcher
+  "Open or close the branch switcher popover of the workspace header. With
+  no argument it flips the current state; `open?` forces it."
+  ([] (toggle-branch-switcher nil))
+  ([open?]
+   (ptk/reify ::toggle-branch-switcher
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [open? (if (some? open?)
+                     (boolean open?)
+                     (not (:workspace-branch-switcher state)))]
+         (assoc state :workspace-branch-switcher open?))))))
+
+(defn has-branches?
+  "True when the open file takes part in branching: it is a branch, or it
+  is main and has at least one branch (archived ones count, so they stay
+  reachable). The header only shows the branch switcher then."
+  [state]
+  (or (some? (get-in state [:workspace-branch-context :info]))
+      (boolean (seq (get-in state [:workspace-branches :data])))))
+
 (defn open-branch
-  "Navigate to the branch file as a normal workspace file. Switching
-  branch must never lose the branches panel: the layout flag survives
-  in-app navigation, but side effects of the transition can still close
-  it (e.g. the version-history interrupt watcher armed by the header
-  button), which makes the switch confusing. So once the target
-  workspace finishes initializing, the panel + Branches tab are
-  re-asserted; when they are already open this is an idempotent no-op."
+  "Navigate to the branch file as a normal workspace file. The branch
+  switcher and any open dialog close; once there, the header shows the
+  branch."
   [branch-file-id]
   (assert (uuid? branch-file-id) "expected valid uuid for `branch-file-id`")
   (ptk/reify ::open-branch
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (rx/merge
-       (rx/of (dcm/go-to-workspace :file-id branch-file-id))
-       ;; keyword literal to avoid requiring the whole app.main.data.workspace ns
-       (->> stream
-            (rx/filter (ptk/type? :app.main.data.workspace/workspace-initialized))
-            (rx/take 1)
-            (rx/mapcat (fn [_] (rx/of (show-branches-panel)
-                                      (fetch-branches)))))))))
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-branch-switcher false))
 
-(def history-sidebar-tab-key
-  "Storage + broadcast key for the selected tab of the version-history
-  sidebar. Shared with `app.main.ui.workspace.sidebar`, which reads it
-  through `hooks/use-shared-state` so this event can switch the active
-  tab even when the panel is already open."
-  ::history-sidebar-tab)
-
-(defn show-branches-panel
-  "Open the version-history sidebar and switch it to the Branches tab.
-  No-op when the branching feature flag is disabled (the tab does not
-  exist in that case). Writing storage covers a closed→open panel; the
-  broadcast emit covers an already-open one."
-  []
-  (ptk/reify ::show-branches-panel
     ptk/WatchEvent
     (watch [_ _ _]
-      (when (contains? cf/flags :branching)
-        (rx/of (layout/toggle-layout-flag :document-history :force? true))))
+      ;; the all-branches dialog may be the one that asked
+      (rx/of (modal/hide)
+             (dcm/go-to-workspace :file-id branch-file-id)))))
 
-    ptk/EffectEvent
-    (effect [_ _ _]
+(defn show-branches
+  "The entry point of the File menu and the Ctrl/Cmd+Alt+B shortcut. A
+  file that has branches gets the branch switcher; one with none gets the
+  create-branch dialog, since the switcher only exists once a branch does.
+  No-op when the branching feature flag is disabled."
+  []
+  (ptk/reify ::show-branches
+    ptk/WatchEvent
+    (watch [_ state _]
       (when (contains? cf/flags :branching)
-        (swap! storage/user assoc history-sidebar-tab-key "branches")
-        (mbc/emit! history-sidebar-tab-key "branches")))))
+        (if (has-branches? state)
+          (rx/of (toggle-branch-switcher true))
+          (let [file (get-in state [:files (:current-file-id state)])]
+            (rx/of (modal/show :create-branch {:file-name (:name file)}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPARE (read-only 3-way diff)

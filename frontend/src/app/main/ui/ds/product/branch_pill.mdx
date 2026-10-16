@@ -1,0 +1,53 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as BranchPill from "./branch_pill.stories";
+
+<Meta title="Product/Branching/BranchPill" />
+
+# BranchPill
+
+A branch name inside running text, drawn as a static pill so it reads
+apart from the words around it.
+
+<Canvas of={BranchPill.Default} />
+
+## Variants
+
+`is-main` draws main muted, with the commit icon.
+
+<Canvas of={BranchPill.Main} />
+
+`is-review` draws the branch in the info blue that marks pull requests
+and design reviews. It has no effect on main.
+
+<Canvas of={BranchPill.Review} />
+
+Two pills and an arrow name where a change goes.
+
+<Canvas of={BranchPill.Route} />
+
+## Technical notes
+
+The label is mandatory. Any other prop goes to the underlying `span`.
+
+```clj
+[:> branch-pill* {:label (:branch-name pr) :is-review true}]
+[:> branch-pill* {:label (tr "workspace.branches.main") :is-main true}]
+```
+
+## Usage guidelines (design)
+
+### Where to use
+
+Wherever a branch is named inside a line of text: the compare dialog
+header, the pull request banner.
+
+### Interaction / Behavior
+
+None: it is a label, not a control. For a branch that opens the
+switcher, use `BranchChip`.
