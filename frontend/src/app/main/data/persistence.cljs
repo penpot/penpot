@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as-alias dc]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
@@ -313,6 +314,23 @@
             (update :queue #(into (empty %) (remove dropped) %))
             (update :index #(apply dissoc % dropped)))))))
 
+(defn- notify-failure?
+  "False for a failed attempt of the slow cycle: it repeats a failure the
+  user was already told about."
+  [pstate]
+  (not (and (:recovering pstate)
+            (slow-retry-pending? pstate))))
+
+(defn- save-failed-event
+  "Audit event for a save failure the user is told about, so failed saves
+  can be counted."
+  [{:keys [error queue] :as pstate}]
+  (ev/event {::ev/name "save-failed"
+             :cause-type (:cause-type error)
+             :code (:code error)
+             :retrying (slow-retry-pending? pstate)
+             :queued-commits (count queue)}))
+
 (defn- persistence-failed
   [commit-id cause]
   (ptk/reify ::persistence-failed
@@ -336,14 +354,16 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/merge
-       ;; The terminal toast supersedes the reconnect notice; hide it
-       ;; explicitly instead of relying on the single-toast replacement.
-       (rx/of (ptk/data-event ::error cause)
-              (ntf/hide :tag reconnecting-tag))
-       ;; A transport failure that outlasts the backoff can still pass, so
-       ;; the queue keeps trying at a slow pace.
-       (let [pstate (:persistence state)]
+      (let [pstate (:persistence state)]
+        (rx/merge
+         ;; The terminal toast replaces the reconnect notice, hidden by tag.
+         (rx/of (ptk/data-event ::error cause)
+                (ntf/hide :tag reconnecting-tag))
+         (if (notify-failure? pstate)
+           (rx/of (save-failed-event pstate))
+           (rx/empty))
+         ;; A transport failure that outlasts the backoff can still pass, so
+         ;; the queue keeps trying at a slow pace.
          (if (and (not (:suspended pstate))
                   (slow-retry-pending? pstate))
            (slow-retry-cycle stream)
@@ -351,13 +371,10 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      ;; A failed slow attempt repeats a failure the user was already warned
-      ;; about. Report without invoking global handlers that may reload the
-      ;; file or navigate away before the user can recover the retained
-      ;; changes.
+      ;; Notifies without the global handlers, which may reload the file or
+      ;; navigate away and lose the retained changes.
       (let [pstate (:persistence state)]
-        (when-not (and (:recovering pstate)
-                       (slow-retry-pending? pstate))
+        (when (notify-failure? pstate)
           (errors/flash-persistence cause :retrying (slow-retry-pending? pstate)))))))
 
 (defn- persistence-transient-failure

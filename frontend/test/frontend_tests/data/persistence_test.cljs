@@ -21,6 +21,7 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.persistence :as dps]
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as dw]
@@ -1002,3 +1003,35 @@
                               "the release turns the guard off"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
 
+(defn- save-failed-events
+  "Starts collecting the `save-failed` audit events that `store` processes."
+  [store]
+  (let [events (atom [])]
+    (->> (ptk/input-stream store)
+         (rx/filter #(= ::ev/event (ptk/type %)))
+         (rx/map deref)
+         (rx/filter #(= "save-failed" (::ev/name %)))
+         (rx/subs! #(swap! events conj %)))
+    events))
+
+;; Scenario: the backend rejects a save as invalid data. Proves: the user's
+;; failure toast comes with one `save-failed` audit event that records why.
+(t/deftest ^:async a-failed-save-emits-one-save-failed-event
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (let [events (save-failed-events store)]
+         (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+         (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                "the save fails"))
+         (await (async/wait-for #(seq @events) "the event is emitted"))
+         (await (async/settle))
+         (t/is (= 1 (count @events)))
+         (t/is (= {:cause-type :validation
+                   :code :referential-integrity
+                   :retrying false
+                   :queued-commits 1}
+                  (select-keys (first @events)
+                               [:cause-type :code :retrying :queued-commits])))))
+     (fn [_ _]
+       (rx/throw (ex-info "invalid" {:type :validation :code :referential-integrity}))))))
