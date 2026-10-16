@@ -590,8 +590,9 @@
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :objects-gc}
 
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :storage-gc-deleted}
+     ;; FIXME: temporary commented
+     ;; {:cron #penpot/cron "0 0 0 * * ?" ;; daily
+     ;;  :task :storage-gc-deleted}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :storage-gc-touched}
