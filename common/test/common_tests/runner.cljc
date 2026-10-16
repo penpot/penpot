@@ -16,6 +16,7 @@
    [common-tests.buffer-test]
    [common-tests.colors-test]
    [common-tests.data-test]
+   [common-tests.exceptions-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
@@ -34,6 +35,7 @@
    [common-tests.geom-grid-layout-test]
    [common-tests.geom-grid-test]
    [common-tests.geom-image-bounds-resize-test]
+   [common-tests.geom-image-crop-test]
    [common-tests.geom-line-test]
    [common-tests.geom-modif-tree-test]
    [common-tests.geom-modifiers-test]
@@ -118,6 +120,7 @@
    'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test
+   'common-tests.exceptions-test
    'common-tests.files-builder-test
    'common-tests.files-changes-test
    'common-tests.files-migrations-0025-test
@@ -136,6 +139,7 @@
    'common-tests.geom-grid-layout-test
    'common-tests.geom-grid-test
    'common-tests.geom-image-bounds-resize-test
+   'common-tests.geom-image-crop-test
    'common-tests.geom-line-test
    'common-tests.geom-modif-tree-test
    'common-tests.geom-modifiers-test

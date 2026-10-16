@@ -32,6 +32,7 @@
   #{:network              ; js/fetch network-level failure
     :bad-gateway          ; 502
     :service-unavailable  ; 503
+    :gateway-error        ; 504 and the Cloudflare 52x family
     :offline})            ; status 0 (browser offline)
 
 (defn retryable-error?
@@ -79,6 +80,28 @@
 
 ;; -- Response handling -------------------------------------------------------
 
+(def ^:private gateway-statuses
+  "Statuses raised by an edge proxy when the request never reached the
+  backend or its answer never came back."
+  #{504    ; gateway timeout
+    520    ; cloudflare: unknown origin error
+    521    ; cloudflare: origin is down
+    522    ; cloudflare: connection timed out
+    523    ; cloudflare: origin unreachable
+    524})  ; cloudflare: origin timed out
+
+(def ^:private max-body-excerpt
+  "Number of characters kept from a body that we could not interpret."
+  500)
+
+(defn- body-excerpt
+  "Keeps the head of an uninterpretable body. Error pages from proxies run
+  into tens of kilobytes and the excerpt is enough to recognize them."
+  [body]
+  (if (and (string? body) (> (count body) max-body-excerpt))
+    (str (subs body 0 max-body-excerpt) "...")
+    body))
+
 (defn handle-response
   [{:keys [status body headers uri] :as response}]
   (cond
@@ -121,6 +144,35 @@
     (and (>= status 400) (map? body))
     (rx/throw (ex-info "http error" (assoc body :uri uri :status status)))
 
+    ;; The branches below handle responses the backend never wrote: the
+    ;; body carries no error code, so the status is all we can read.
+
+    (contains? gateway-statuses status)
+    (rx/throw
+     (ex/error :type :gateway-error
+               :code :gateway-error
+               :hint "the request did not reach the backend"
+               :uri uri
+               :status status))
+
+    (= 429 status)
+    (rx/throw
+     (ex/error :type :rate-limit
+               :code :rate-limited
+               :hint "too many requests"
+               :uri uri
+               :status status))
+
+    (>= status 400)
+    (rx/throw
+     (ex/error :type :unexpected-response
+               :code :unexpected-error-response
+               :hint "unexpected error response"
+               :uri uri
+               :status status
+               :headers headers
+               :data (body-excerpt body)))
+
     :else
     (rx/throw
      (ex/error :type :internal
@@ -129,7 +181,7 @@
                :uri uri
                :status status
                :headers headers
-               :data body))))
+               :data (body-excerpt body)))))
 
 (def default-options
   {:update-file {:query-params [:id]}

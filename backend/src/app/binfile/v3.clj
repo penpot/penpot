@@ -285,6 +285,10 @@
                         embed?
                         (update :data #(bfc/embed-assets cfg % file-id))
 
+                        (not (or detach? embed?))
+                        (update :data #(bfc/absorb-unlinked-tokens-source
+                                        cfg % (bfc/get-libraries cfg [file-id])))
+
                         :always
                         (bfc/clean-file-features))))))
 
@@ -843,13 +847,26 @@
                  {})
          (not-empty))))
 
-(defn- read-file-tokens-lib
+(defn- read-file-tokens-lib*
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
   (when-let [{:keys [entry]} (first (get-in entries-index [:tokens (str file-id)]))]
     (tap-progress cfg {:section :tokens-lib :file-id file-id})
     (->> (read-entry cfg input entry nil)
          (decode-tokens-lib)
          (validate-tokens-lib))))
+
+(defn- read-file-tokens-lib
+  "Read the tokens lib of a file once per import. Decoding generates new
+  set ids, so the tokens lib of a library must be the same instance when
+  it is imported and when it resolves the tokens status of a file that
+  uses it as tokens source."
+  [cfg file-id]
+  (let [cache (:tokens-libs @bfc/*state*)]
+    (if (contains? cache file-id)
+      (get cache file-id)
+      (let [tokens-lib (read-file-tokens-lib* cfg file-id)]
+        (vswap! bfc/*state* assoc-in [:tokens-libs file-id] tokens-lib)
+        tokens-lib))))
 
 (defn- read-file-tokens-status
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id tokens-lib]
@@ -1369,7 +1386,8 @@
   format. There are some options available for customize the output:
 
   `::bfc/export-type`: determines how linked libraries are handled.
-  Valid values: `:include-libraries` (include linked libraries),
+  Valid values:
+  `:include-libraries` (include linked libraries),
   `:merge-libraries` (embed library assets in the file),
   `:detach-libraries` (treat assets as basic objects),
   `:link-later` (preserve component metadata for relinking on import)."

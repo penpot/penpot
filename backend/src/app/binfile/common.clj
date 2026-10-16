@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
+   [app.common.files.tokens :as cfo]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
    [app.common.media :as cm]
@@ -678,15 +679,34 @@
              colors
              colors))
 
+(defn absorb-unlinked-tokens-source
+  "Make the file its own tokens source when its tokens source is not one
+  of the given library-ids, as happens when the library was deleted. The
+  tokens lib of the source is copied while the library still exists, even
+  if deleted; otherwise the tokens source and status are removed."
+  [cfg data library-ids]
+  (let [source-id (cfo/get-tokens-source data)]
+    (if (and (some? source-id)
+             (not (contains? library-ids source-id)))
+      (if-let [library (get-file cfg source-id
+                                 :include-deleted? true
+                                 :throw-if-not-exists? false)]
+        (cfo/absorb-tokens-lib data (:data library))
+        (dissoc data :tokens-source :tokens-status))
+      data)))
+
 (defn embed-assets
   [cfg data file-id]
-  (let [library-ids (get-libraries cfg [file-id])]
-    (reduce (fn [data library-id]
-              (if-let [library (get-file cfg library-id :include-deleted? true)]
-                (ctf/absorb-assets data (:data library))
-                data))
-            data
-            library-ids)))
+  (let [library-ids (get-libraries cfg [file-id])
+        data        (reduce (fn [data library-id]
+                              (if-let [library (get-file cfg library-id :include-deleted? true)]
+                                (cond-> (ctf/absorb-assets data (:data library))
+                                  (= library-id (cfo/get-tokens-source data))
+                                  (cfo/absorb-tokens-lib (:data library)))
+                                data))
+                            data
+                            library-ids)]
+    (absorb-unlinked-tokens-source cfg data library-ids)))
 
 (def ^:const import-transaction-timeout-ms
   "Ceiling for binfile import transactions (20 minutes). Interpolated

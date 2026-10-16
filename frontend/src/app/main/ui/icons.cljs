@@ -150,6 +150,7 @@
 (def ^:icon help (icon-xref :help))
 (def ^:icon hide (icon-xref :hide))
 (def ^:icon history (icon-xref :history))
+(def ^:icon hourglass (icon-xref :hourglass))
 (def ^:icon hsva (icon-xref :hsva))
 (def ^:icon hug-content (icon-xref :hug-content))
 (def ^:icon icon (icon-xref :icon))

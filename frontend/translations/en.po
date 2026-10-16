@@ -1222,7 +1222,7 @@ msgstr "Your project has been moved successfully"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "This team is now part of the organization %s"
+msgstr "%s now belongs to %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1235,7 +1235,7 @@ msgstr "Team members"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "This team is no longer part of the organization %s"
+msgstr "%s is no longer part of %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"
@@ -1504,7 +1504,7 @@ msgstr "There was an error with the comment"
 msgid "errors.connection-error"
 msgstr "Cannot reach the server. Check your connection and try again."
 
-#: src/app/main/errors.cljs:851
+#: src/app/main/errors.cljs:414
 msgid "errors.deprecated"
 msgstr ""
 "Sorry! This is an old file that uses a deprecated type of Penpot assets and "
@@ -1730,8 +1730,16 @@ msgstr "The registration is currently disabled."
 #: src/app/main/errors.cljs:538
 msgid "errors.save-failed"
 msgstr ""
-"Autosave is not working due to an error. Contact support to report the "
-"error and reload to continue from your last saved version."
+"Autosave has stopped for this session, so your changes since the last successful save cannot be saved. Download the report to help us fix it, then reload the page, or leave this file and open it again, to keep editing."
+
+#: src/app/main/data/persistence.cljs:310
+msgid "errors.save-retrying"
+msgstr "Connection lost. Retrying to save your changes."
+
+#: src/app/main/errors.cljs
+msgid "errors.save-still-retrying"
+msgstr ""
+"Your changes are not saved yet because Penpot cannot reach the server. They are kept, and Penpot will keep trying to save them. Keep this tab open until they are saved."
 
 #: src/app/main/data/persistence.cljs:307
 msgid "errors.save-retrying"
@@ -5806,7 +5814,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
-msgstr "Penpot member since: %s"
+msgstr "Penpot member since: %s."
 
 #: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
@@ -5875,6 +5883,9 @@ msgstr "Subscribe"
 #: src/app/main/ui/settings/subscription.cljs:707
 msgid "subscription.settings.subscribed-since"
 msgstr "You've been on the %s plan since %s."
+
+msgid "subscription.settings.trial-ends-on"
+msgstr "Your free trial ends on %s."
 
 #: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
@@ -6645,7 +6656,7 @@ msgstr "Reset"
 msgid "workspace.header.retrying"
 msgstr "Retrying to save"
 
-#: src/app/main/ui/workspace/left_header.cljs:126
+#: src/app/main/ui/workspace/left_header.cljs:123
 msgid "workspace.header.save-error"
 msgstr "Error on saving"
 
@@ -7730,6 +7741,10 @@ msgstr "More library colors"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:268
 msgid "workspace.options.more-token-colors"
 msgstr "More color tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:502
+msgid "workspace.options.no-font-results"
+msgstr "No matching fonts"
 
 #: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:518
 msgid "workspace.options.no-size-preset-results"

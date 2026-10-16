@@ -1221,7 +1221,7 @@ msgstr "Ditt projekt har flyttats"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "Detta team tillhör nu %s"
+msgstr "%s tillhör nu %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1234,7 +1234,7 @@ msgstr "Teammedlemmar"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Detta team tillhör inte längre organisation %s"
+msgstr "%s tillhör inte längre %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"

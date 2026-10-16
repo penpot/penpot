@@ -17,6 +17,7 @@
    [app.storage :as sto]
    [app.storage.fs :as-alias sto.fs]
    [app.storage.gc-deleted :as gcd]
+   [app.storage.gc-touched :as gc-touched]
    [app.storage.impl :as impl]
    [app.storage.s3 :as-alias sto.s3]
    [app.storage.schema :as stsch]
@@ -367,8 +368,10 @@
     ;; run the touched gc task
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 5 (:freeze res)))
-      (t/is (= 1 (:delete res)))
+      (t/is (= 6 (:freeze res)))
+      ;; the consumed-but-not-yet-purged session keeps its mapping,
+      ;; so its chunk freezes instead of being marked
+      (t/is (= 0 (:delete res)))
 
       (let [result-1 (:result out1)
             result-2 (:result out2)]
@@ -1176,6 +1179,168 @@
                 (th/run-task! :storage-gc-deleted {}))]
       (t/is (= 1 (:deleted res))))
     (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from storage_object"]))))))
+
+(t/deftest upload-session-chunk-frozen-while-referenced
+  ;; A chunk whose session mapping is still alive must be frozen, not
+  ;; marked for deletion: the reference scan owns the liveness decision.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/command! {::th/type :upload-chunk
+                                 ::rpc/profile-id (:id prof)
+                                 :session-id session-id
+                                 :index 0
+                                 :content mfile})]
+    (t/is (nil? (:error out)))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+
+    ;; the session is neither consumed nor stalled: the mapping is alive
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 1 (:freeze res)))
+      (t/is (= 0 (:delete res))))
+
+    ;; frozen: untouched, not marked, mapping intact
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from storage_object where deleted_at is not null"]))))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))))
+
+(t/deftest upload-session-freeze-reverify
+  ;; The freeze recheck runs under row locks: an object whose mapping
+  ;; disappeared (plus a concurrent touch) after the first check is
+  ;; reclassified to deletion instead of swallowing the touch.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/command! {::th/type :upload-chunk
+                                 ::rpc/profile-id (:id prof)
+                                 :session-id session-id
+                                 :index 0
+                                 :content mfile})
+        object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
+                                                 session-id]))
+        check      @#'gc-touched/has-upload-session-chunk-refs?
+        verify     @#'gc-touched/verify-frozen]
+    (t/is (nil? (:error out)))
+
+    ;; mapping alive: stays frozen
+    (let [[frozen deletable] (db/transact! th/*pool* (fn [conn] (verify conn check "upload-session" [{:id object-id}])))]
+      (t/is (= #{object-id} frozen))
+      (t/is (= #{} deletable)))
+
+    ;; simulate a purge that committed after the first check: mapping
+    ;; gone, touch bumped
+    (th/db-exec! ["delete from upload_session_chunk where session_id = ?" session-id])
+    (th/db-exec! ["update storage_object set touched_at = ? where id = ?" (ct/now) object-id])
+
+    ;; recheck moves it to deletion
+    (let [[frozen deletable] (db/transact! th/*pool* (fn [conn] (verify conn check "upload-session" [{:id object-id}])))]
+      (t/is (= #{} frozen))
+      (t/is (= #{object-id} deletable)))))
+
+(t/deftest upload-session-gc-deleted-skips-live-mapping
+  ;; A row marked for deletion while its mapping is still alive must NOT
+  ;; be reaped silently: the chunk is skipped loud (logged) and retried
+  ;; once objects-gc purges the session. This pins the mark-time
+  ;; invariant instead of breaking sessions quietly.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/command! {::th/type :upload-chunk
+                                 ::rpc/profile-id (:id prof)
+                                 :session-id session-id
+                                 :index 0
+                                 :content mfile})
+        object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
+                                                 session-id]))]
+    (t/is (nil? (:error out)))
+
+    ;; force the anomaly: mark deleted while the mapping is alive
+    (th/db-exec! ["update storage_object set deleted_at = ? where id = ?" (ct/now) object-id])
+
+    (let [res (th/run-task! :storage-gc-deleted {})]
+      (t/is (= 0 (:deleted res))))
+
+    ;; row and mapping both intact for the retry
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where id = ?" object-id]))))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))))
+
+(t/deftest upload-session-deferred-keeps-mapping
+  ;; A physical-deletion failure defers the row; the session mapping is
+  ;; kept so the session survives the backend outage and the blob is
+  ;; retried the next day.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/command! {::th/type :upload-chunk
+                                 ::rpc/profile-id (:id prof)
+                                 :session-id session-id
+                                 :index 0
+                                 :content mfile})
+        object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
+                                                 session-id]))]
+    (t/is (nil? (:error out)))
+    (th/db-exec! ["update storage_object set deleted_at = ? where id = ?" (ct/now) object-id])
+
+    (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
+                        :return (fn [_ ids] (set ids))}]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 0 (:deleted res)))))
+
+    ;; row kept and deferred one day
+    (let [row (th/db-exec-one! ["select deletion_attempts, touched_at from storage_object where id = ?" object-id])]
+      (t/is (= 1 (:deletion-attempts row)))
+      (t/is (some? (:touched-at row))))
+    ;; mapping kept: the session is intact for the retry
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))))
 
 (t/deftest upload-session-consumed-purge
   ;; An assembled session is marked as consumed and objects-gc purges it
