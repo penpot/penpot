@@ -63,6 +63,21 @@
                (convert)
                (touched :copy-child)))))
 
+(t/deftest the-uniform-structure-flag-goes-with-the-others
+  ;; older files mark a structure change of a uniform text with
+  ;; `:text-content-structure-same-attrs` too
+  (t/is (= #{:content-group :text-content-text}
+           (-> (old-copy [[["Price:"] ["$10" {:weight 700}]]]
+                         #{:content-group :text-content-structure :text-content-structure-same-attrs})
+               (convert)
+               (touched :copy-child))))
+  (t/testing "it goes without the structure flag as well"
+    (t/is (= #{:content-group :text-content-text}
+             (-> (old-copy [[["Price:"] ["$10" {:weight 700}]]]
+                           #{:content-group :text-content-text :text-content-structure-same-attrs})
+                 (convert)
+                 (touched :copy-child))))))
+
 (t/deftest an-old-flag-where-nothing-differs-sets-nothing
   (t/is (= #{:fill-group}
            (-> (old-copy main #{:content-group :text-content-attribute :fill-group})

@@ -369,7 +369,13 @@
                                                        #{:content-group :text-content-attribute}))]
     (t/is (= #{:legacy-text-touched} found))
     (t/is (nil? errors))
-    (t/is (empty? (:touched (ths/get-shape file' :copy-child))))))
+    (t/is (empty? (:touched (ths/get-shape file' :copy-child)))))
+  (t/testing "the uniform structure flag is an old flag too"
+    (let [[found file' errors] (repair (ths/update-shape (simple) :copy-child :touched
+                                                         #{:content-group :text-content-structure-same-attrs}))]
+      (t/is (= #{:legacy-text-touched} found))
+      (t/is (nil? errors))
+      (t/is (empty? (:touched (ths/get-shape file' :copy-child)))))))
 
 ;; ---- Nesting
 
