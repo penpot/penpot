@@ -693,6 +693,19 @@
   (t/is (not (dps/transient-error? {:type :persistence :code :save-permission-denied})))
   (t/is (not (dps/transient-error? {}))))
 
+;; A busy backend refused or rolled back the save, so it is safe to resend:
+;; a rate or concurrency limit, or a database timeout. Any other server
+;; error stays terminal.
+(t/deftest busy-server-classification
+  (t/is (dps/transient-error? {:type :rate-limit}))
+  (t/is (dps/transient-error? {:type :persistence :cause-type :rate-limit :code :rate-limited}))
+  (t/is (dps/transient-error? {:type :server-error :code :statement-timeout}))
+  (t/is (dps/transient-error? {:type :persistence :cause-type :server-error :code :statement-timeout}))
+  (t/is (dps/transient-error? {:type :persistence :cause-type :server-error :code :idle-in-transaction-timeout}))
+  (t/is (not (dps/transient-error? {:type :server-error})))
+  (t/is (not (dps/transient-error? {:type :persistence :cause-type :server-error :code :unhandled})))
+  (t/is (not (dps/transient-error? {:type :persistence :cause-type :validation :code :statement-timeout}))))
+
 ;; The transient set is owned by `repo/retryable-types`: every transport
 ;; type retryable at the HTTP layer must also be transient for the save
 ;; pipeline, in both the direct and the wrapped (`persistence-failed`)
@@ -988,3 +1001,4 @@
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the release turns the guard off"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
+
