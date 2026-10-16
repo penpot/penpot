@@ -9,6 +9,7 @@
    image fill). The shape is a window over a picture that keeps its size
    and position; the window never flips."
   (:require
+   [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]))
 
 (defn crop-axis
@@ -36,3 +37,18 @@
      :y      (/ (- (* y height) dy) height')
      :width  (/ (* w width) width')
      :height (/ (* h height) height')}))
+
+(defn preview-image-matrix
+  "Return the matrix that takes the picture of a `width` x `height` window
+   from its box under `transform` to its box under `transform'`, both in
+   the coordinates of the window before the resize. While dragging, the
+   SVG preview resizes the whole shape with one matrix; this one, applied
+   to the picture first, undoes that resize so the picture stays in place."
+  [transform transform' width height]
+  (let [x  (* (get transform :x 0.0) width)
+        y  (* (get transform :y 0.0) height)
+        x' (* (get transform' :x 0.0) width)
+        y' (* (get transform' :y 0.0) height)
+        sx (/ (get transform' :width 1.0) (get transform :width 1.0))
+        sy (/ (get transform' :height 1.0) (get transform :height 1.0))]
+    (gmt/matrix sx 0 0 sy (- x' (* x sx)) (- y' (* y sy)))))
