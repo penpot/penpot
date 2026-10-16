@@ -637,6 +637,144 @@
         (t/is (= (:file-id item1) (:id file1)))
         (t/is (= (:library-file-id item1) (:id file2)))))))
 
+(defn- add-library-copy!
+  "Add a component to the shared `library` and a copy of it to `file`,
+  linked to it. Returns the ids `check-absorbed!` needs."
+  [profile library file]
+  (let [c-id    (uuid/random)
+        main-id (uuid/random)
+        inst-id (uuid/random)
+        l-page  (first (get-in library [:data :pages]))
+        f-page  (first (get-in file [:data :pages]))]
+    (th/link-file-to-library* {:file-id (:id file)
+                               :library-id (:id library)})
+    (update-file!
+     :file-id (:id library)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id l-page
+       :id main-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :obj (cts/setup-shape
+             {:id main-id
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :main-instance true
+              :component-root true
+              :component-file (:id library)
+              :component-id c-id})}
+      {:type :add-component
+       :path ""
+       :name "Board"
+       :main-instance-id main-id
+       :main-instance-page l-page
+       :id c-id
+       :anotation nil}])
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :add-obj
+       :page-id f-page
+       :id inst-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :obj (cts/setup-shape
+             {:id inst-id
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :main-instance false
+              :component-root true
+              :component-file (:id library)
+              :component-id c-id})}])
+    {:profile profile :file file :c-id c-id :inst-id inst-id :f-page f-page}))
+
+(defn- check-absorbed!
+  "Check that the file of `copy` holds the library component, with its copy
+  pointing at it, and is linked to no library."
+  [{:keys [profile file c-id inst-id f-page]}]
+  (let [out (th/command! {::th/type :get-file
+                          ::rpc/profile-id (:id profile)
+                          :id (:id file)})]
+    (t/is (th/success? out))
+    (t/is (some? (get-in out [:result :data :components c-id])))
+    (t/is (= (:id file)
+             (get-in out [:result :data :pages-index f-page :objects inst-id :component-file])))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id (:id file)})))))
+
+(defn- move-files!
+  [profile project file]
+  (let [out (th/command! {::th/type :move-files
+                          ::rpc/profile-id (:id profile)
+                          :project-id (:id project)
+                          :ids #{(:id file)}})]
+    (t/is (nil? (:error out)))))
+
+(t/deftest move-library-to-other-team-absorbs-it-into-the-files-using-it
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project1 (th/create-project* 1 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        project2 (th/create-project* 2 {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        project3 (th/create-project* 3 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        library  (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project1)
+                                     :is-shared true})
+        file1    (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:id project1)})
+        ;; in a project the move does not touch
+        file3    (th/create-file* 3 {:profile-id (:id profile)
+                                     :project-id (:id project3)})
+        copy1    (add-library-copy! profile library file1)
+        copy3    (add-library-copy! profile library file3)]
+    (move-files! profile project2 library)
+    (check-absorbed! copy1)
+    (check-absorbed! copy3)))
+
+(t/deftest move-file-to-other-team-absorbs-its-libraries
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project1 (th/create-project* 1 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        project2 (th/create-project* 2 {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        library  (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project1)
+                                     :is-shared true})
+        file     (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:id project1)})
+        copy     (add-library-copy! profile library file)]
+    (move-files! profile project2 file)
+    (check-absorbed! copy)))
+
+(t/deftest move-project-to-other-team-absorbs-the-libraries-left-behind
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project1 (th/create-project* 1 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        project2 (th/create-project* 2 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        library  (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project2)
+                                     :is-shared true})
+        file     (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:id project1)})
+        copy     (add-library-copy! profile library file)
+        out      (th/command! {::th/type :move-project
+                               ::rpc/profile-id (:id profile)
+                               :project-id (:id project1)
+                               :team-id (:id team)})]
+    (t/is (nil? (:error out)))
+    (check-absorbed! copy)))
+
 (t/deftest clone-template
   (let [prof    (th/create-profile* 1 {:is-active true})
         data    {::th/type :clone-template

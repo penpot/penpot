@@ -12,6 +12,7 @@
    [app.binfile.v3 :as bf.v3]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -259,20 +260,34 @@
 (def sql:move-files
   "update file set project_id = ? where id = ANY(?)")
 
-(def sql:delete-broken-relations
-  "with broken as (
-     (select * from file_library_rel as flr
-       inner join file as f on (flr.file_id = f.id)
-       inner join project as p on (f.project_id = p.id)
-       inner join file as lf on (flr.library_file_id = lf.id)
-       inner join project as lp on (lf.project_id = lp.id)
-       where p.id = ANY(?)
-         and lp.team_id != p.team_id)
-   )
-   delete from file_library_rel as rel
-    using broken as br
-    where rel.file_id = br.file_id
-      and rel.library_file_id = br.library_file_id")
+(def ^:private sql:get-relations-across-teams
+  "SELECT flr.file_id, flr.library_file_id
+     FROM file_library_rel AS flr
+     JOIN file AS f ON (f.id = flr.file_id)
+     JOIN project AS p ON (p.id = f.project_id)
+     JOIN file AS lf ON (lf.id = flr.library_file_id)
+     JOIN project AS lp ON (lp.id = lf.project_id)
+    WHERE (flr.file_id = ANY(?) OR flr.library_file_id = ANY(?))
+      AND lp.team_id != p.team_id")
+
+(defn- absorb-libraries-across-teams!
+  "Absorb each library linked to or from the files `file-ids` that is now
+  in another team than the file using it into that file, and unlink them,
+  as deleting the library would. Run after the files move to another team."
+  [{:keys [::db/conn] :as cfg} file-ids]
+  (let [ids  (db/create-array conn "uuid" file-ids)
+        rels (db/exec! conn [sql:get-relations-across-teams ids ids])]
+    (doseq [[library-id rels] (group-by :library-file-id rels)]
+      ;; as on deletion, a failed absorption does not stop the move
+      (try
+        (db/tx-run! cfg files/absorb-library library-id (mapv :file-id rels))
+        (catch Throwable cause
+          (l/warn :hint "error on absorbing library"
+                  :library-id (str library-id)
+                  :cause cause))))
+    (doseq [{:keys [file-id library-file-id]} rels]
+      (db/delete! conn :file-library-rel {:file-id file-id
+                                          :library-file-id library-file-id}))))
 
 (defn move-files
   [{:keys [::db/conn] :as cfg} {:keys [profile-id ids project-id] :as params}]
@@ -280,9 +295,7 @@
   (let [fids    (db/create-array conn "uuid" ids)
         files   (->> (db/exec! conn [sql:get-files fids])
                      (map files/decode-row))
-        source  (into #{} (map :project-id) files)
-        pids    (->> (conj source project-id)
-                     (db/create-array conn "uuid"))]
+        source  (into #{} (map :project-id) files)]
 
     (when (contains? source project-id)
       (ex/raise :type :validation
@@ -309,8 +322,7 @@
     ;; move all files to the project
     (db/exec-one! conn [sql:move-files project-id fids])
 
-    ;; delete possible broken relations on moved files
-    (db/exec-one! conn [sql:delete-broken-relations pids])
+    (absorb-libraries-across-teams! cfg ids)
 
     ;; Update the modification date of the all affected projects
     ;; ensuring that the destination project is the most recent one.
@@ -351,17 +363,15 @@
 
   The operation also:
   - Updates the project's team assignment
-  - Cleans up any broken library relations after the move
+  - Absorbs the libraries now in another team than the files using them
+    into those files, and unlinks them
 
   Throws:
   - :cant-move-to-same-team if trying to move project to its current team
   - Permission exceptions if user lacks required permissions
   - Team compatibility exceptions if teams are incompatible"
   [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id project-id] :as params}]
-  (let [project (db/get-by-id conn :project project-id {:columns [:id :team-id]})
-        pids    (->> (db/query conn :project {:team-id (:team-id project)} {:columns [:id]})
-                     (map :id)
-                     (db/create-array conn "uuid"))]
+  (let [project (db/get-by-id conn :project project-id {:columns [:id :team-id]})]
 
     (when (= team-id (:team-id project))
       (ex/raise :type :validation
@@ -389,8 +399,11 @@
                 {:team-id team-id}
                 {:id project-id})
 
-    ;; delete possible broken relations on moved files
-    (db/exec-one! conn [sql:delete-broken-relations pids])
+    (absorb-libraries-across-teams! cfg (->> (db/query conn :file
+                                                       {:project-id project-id}
+                                                       {:columns [:id]
+                                                        ::db/remove-deleted false})
+                                             (map :id)))
 
     nil))
 
