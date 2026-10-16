@@ -176,6 +176,41 @@
     (record-value metrics :jobs-request-timing [outcome]
                   (max 0 (long millis)))))
 
+(defn- offload-result-label
+  "Coerce an offload outcome to its label: lowercase, with `failed`
+  only when there is no outcome at all. Values come from the fixed
+  call sites of the offload handler (`ok`, `skip`, `error`), never
+  from params, IDs or exception text."
+  [result]
+  (str/lower (mtx/label result "failed")))
+
+(defn- offload-type-label
+  "Coerce a file data type to its label: lowercase, with `other` only
+  when there is no type at all. Values are the fixed `file_data.type`
+  values (`main`, `snapshot`, `fragment`)."
+  [type]
+  (str/lower (mtx/label type "other")))
+
+(defn record-offload-rows
+  [cfg result type amount]
+  (record-count (mtx/instance cfg) :file-data-offload-rows
+                [(offload-result-label result)
+                 (offload-type-label type)]
+                amount))
+
+(defn record-offload-bytes
+  [cfg result type amount]
+  (record-count (mtx/instance cfg) :file-data-offload-bytes
+                [(offload-result-label result)
+                 (offload-type-label type)]
+                amount))
+
+(defn record-offload-duration
+  [cfg result millis]
+  (record-value (mtx/instance cfg) :file-data-offload-timing
+                [(offload-result-label result)]
+                (max 0 (long millis))))
+
 (def ^:private backlog-statuses
   ["new" "scheduled" "running" "retry" "completed" "failed" "cancelled" "aborted"])
 

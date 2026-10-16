@@ -9,10 +9,19 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.jobs.metrics :as metrics]
+   [app.main :as main]
+   [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.storage :as sto]
+   [app.tasks.offload-file-data :as offload]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [promesa.exec :as px]))
+   [integrant.core :as ig]
+   [promesa.exec :as px])
+  (:import
+   io.prometheus.client.Counter
+   io.prometheus.client.Counter$Child))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -165,3 +174,103 @@
         (t/is (pos? (:offloaded result)))
         (t/is (= (:offloaded result) (count @calls)))
         (t/is (every? #(= 5 %) @calls))))))
+
+(defn- make-metrics
+  []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:file-data-offload-rows
+                                       :file-data-offload-bytes
+                                       :file-data-offload-timing])}))
+
+(defn- offload-cfg
+  [metrics]
+  (-> th/*system*
+      (assoc ::mtx/metrics metrics)
+      (assoc ::sto/storage (assoc (::sto/storage th/*system*)
+                                  ::mtx/metrics metrics))))
+
+(defn- counter-value
+  [metrics id labels]
+  (let [collector (mtx/get-collector metrics id)
+        instance  (::mdef/instance collector)
+        child     (.labels ^Counter instance (into-array String labels))]
+    (.get ^Counter$Child child)))
+
+(def ^:private known-types
+  ["main" "snapshot" "fragment"])
+
+(defn- total-counter
+  [metrics id result]
+  (reduce + 0 (map #(counter-value metrics id [result %]) known-types)))
+
+(t/deftest metric-definitions-are-pinned
+  (let [defs main/default-metrics]
+    (t/is (= "penpot_file_data_offload_rows_total"
+             (get-in defs [:file-data-offload-rows ::mdef/name])))
+    (t/is (= ["result" "type"]
+             (get-in defs [:file-data-offload-rows ::mdef/labels])))
+    (t/is (= :counter
+             (get-in defs [:file-data-offload-rows ::mdef/type])))
+    (t/is (= "penpot_file_data_offload_bytes_total"
+             (get-in defs [:file-data-offload-bytes ::mdef/name])))
+    (t/is (= ["result" "type"]
+             (get-in defs [:file-data-offload-bytes ::mdef/labels])))
+    (t/is (= :counter
+             (get-in defs [:file-data-offload-bytes ::mdef/type])))
+    (t/is (= "penpot_file_data_offload_timing_ms"
+             (get-in defs [:file-data-offload-timing ::mdef/name])))
+    (t/is (= ["result"]
+             (get-in defs [:file-data-offload-timing ::mdef/labels])))
+    (t/is (= :histogram
+             (get-in defs [:file-data-offload-timing ::mdef/type])))))
+
+(t/deftest success-emits-rows-and-bytes
+  (let [metrics (make-metrics)
+        profile (th/create-profile* 1)
+        file    (create-file 1 profile)
+        result  (offload/execute-offload-file-data (offload-cfg metrics)
+                                                   {:file-id (:id file)})]
+    (t/is (pos? (:offloaded result)))
+    (t/is (= (double (:offloaded result))
+             (total-counter metrics :file-data-offload-rows "ok")))
+    (t/is (= (double (:bytes result))
+             (total-counter metrics :file-data-offload-bytes "ok")))
+    (t/is (pos? (counter-value metrics :file-data-offload-rows ["ok" "main"])))
+    (t/is (= 0.0 (total-counter metrics :file-data-offload-rows "skip")))
+    (t/is (= 0.0 (total-counter metrics :file-data-offload-rows "error")))))
+
+(t/deftest skip-records-skip-and-nothing-else
+  (let [durations (volatile! [])
+        rows      (volatile! [])
+        bytes     (volatile! [])]
+    (with-redefs [metrics/record-offload-duration (fn [_ result _] (vswap! durations conj result) nil)
+                  metrics/record-offload-rows (fn [_ result type amount] (vswap! rows conj [result type amount]) nil)
+                  metrics/record-offload-bytes (fn [_ result type amount] (vswap! bytes conj [result type amount]) nil)]
+      (let [result (offload/execute-offload-file-data th/*system* {:file-id (uuid/next)})]
+        (t/is (= 0 (:offloaded result)))
+        (t/is (= 1 (:skipped result)))))
+    (t/is (= [:skip] @durations))
+    (t/is (empty? @rows))
+    (t/is (empty? @bytes))))
+
+(t/deftest error-records-error-and-rethrows
+  (let [profile  (th/create-profile* 1)
+        file     (create-file 1 profile)
+        durations (volatile! [])
+        real-put @#'sto/put-object!]
+    (with-redefs [sto/put-object! (fn [_ _] (throw (ex-info "storage is down" {})))
+                  metrics/record-offload-duration (fn [_ result _] (vswap! durations conj result) nil)]
+      (t/is (thrown? Exception
+                     (offload/execute-offload-file-data th/*system* {:file-id (:id file)}))))
+    (t/is (= [:error] @durations))
+    ;; Nothing was migrated: the whole file aborted.
+    (t/is (every? #(= "db" (:backend %)) (db-rows (:id file))))))
+
+(t/deftest missing-metrics-raises
+  (let [params {::db/pool th/*pool*
+                ::sto/storage (::sto/storage th/*system*)}]
+    (t/is (thrown? AssertionError
+                   (ig/assert-key :app.tasks.offload-file-data/job-def params)))
+    (t/is (nil? (ig/assert-key :app.tasks.offload-file-data/job-def
+                               (assoc params ::mtx/metrics (:app.metrics/metrics th/*system*)))))))
