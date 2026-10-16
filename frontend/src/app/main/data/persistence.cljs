@@ -17,7 +17,10 @@
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence.commits :as pcm]
    [app.main.data.workspace :as-alias dw]
+   [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -146,7 +149,13 @@
     (and (= from :retrying) (#{:pending :saving} to)) from
     :else                                          to))
 
+(defn- nothing-to-save?
+  [{:keys [buffer queue]}]
+  (and (empty? buffer) (empty? queue)))
+
 (defn- update-status
+  "Moves persistence to `status`. A delayed :pending notice is ignored
+  when nothing is left to save (e.g. a rollback already dropped the edit)."
   [status]
   (ptk/reify ::update-status
     ptk/UpdateEvent
@@ -156,7 +165,9 @@
                 (log/trc :hint "update-status"
                          :from (:status pstate)
                          :to status)
-                (let [status (next-status (:status pstate) status)]
+                (let [status (if (and (= :pending status) (nothing-to-save? pstate))
+                               (:status pstate)
+                               (next-status (:status pstate) status))]
                   (cond-> (assoc pstate :status status)
                     (#{:pending :saving} status)
                     (update :last-progress-at d/nilv (inst-ms (ct/now)))
@@ -277,6 +288,21 @@
     (effect [_ _ _]
       (swap! revn-data update file-id (fnil max 0) revn))))
 
+(defn- record-remote-changes
+  "Numbers a remote commit and, while `file-id` has pending commits, keeps
+  its changes for a rollback to apply again."
+  [file-id changes]
+  (ptk/reify ::record-remote-changes
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :persistence
+              (fn [pstate]
+                (let [number (inc (:remote-seq pstate 0))]
+                  (cond-> (assoc pstate :remote-seq number)
+                    (seq (pcm/pending-commits pstate file-id))
+                    (update-in [:remote-changes file-id] (fnil conj [])
+                               {:seq number :changes changes}))))))))
+
 (defn- discard-commit
   [commit-id]
   (ptk/reify ::discard-commit
@@ -289,24 +315,27 @@
                                                           (pop queue)
                                                           (throw (ex-info "invalid state" {})))))
                                        (update :index dissoc commit-id)
+                                       (pcm/keep-saved-commits (get-in pstate [:index commit-id]))
+                                       (pcm/prune-remote-changes (get-in pstate [:index commit-id :file-id]))
                                        (assoc :last-progress-at (inst-ms (ct/now)))
                                        (dissoc :stall-reported :failing-since :recovering
                                                :slow-failures :attempts :retry-token
                                                :retry-for)))))))
 
 (defn- without-commits
-  "Removes from `buffer` the commits listed in `commits`."
+  "`buffer` without `commits`."
   [buffer commits]
   (let [ids (into #{} (map :id) commits)]
     (into [] (remove #(contains? ids (:id %))) buffer)))
 
 (defn- buffer-commit
-  "Keeps a local commit in the store until the next flush queues it."
+  "Keeps a local commit in the buffer until the next flush."
   [commit]
   (ptk/reify ::buffer-commit
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:persistence :buffer] (fnil conj []) commit))))
+      (let [number (get-in state [:persistence :remote-seq] 0)]
+        (update-in state [:persistence :buffer] (fnil conj []) (assoc commit :remote-seq number))))))
 
 (defn- append-commit
   "Event used internally to append the current change to the
@@ -481,6 +510,97 @@
       (d/update-in-when state [:persistence :index (:id commit)]
                         assoc ::acknowledged true))))
 
+(def ^:private rejected-tag
+  "Tag of the rejected changes notice."
+  :persistence-rejected)
+
+(def ^:private rejected-timeout-ms
+  "How long the rejected changes notice stays; the report is sent anyway."
+  10000)
+
+(defn- prune-removed-shapes
+  "Deselects the shapes missing from the current page and leaves edition
+  mode if the edited one is missing."
+  []
+  (ptk/reify ::prune-removed-shapes
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (dsh/lookup-page-objects state)]
+        (d/update-in-when state [:workspace-local :selected]
+                          (fn [selected]
+                            (into (empty selected) (filter #(contains? objects %)) selected)))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [edition (dm/get-in state [:workspace-local :edition])]
+        (if (and (some? edition)
+                 (not (contains? (dsh/lookup-page-objects state) edition)))
+          (rx/of (dwe/clear-edition-mode))
+          (rx/empty))))))
+
+(defn- compensate-commits
+  "Undoes the saved `commits` of `file-id`, newest first. A loaded file gets
+  a commit, applied locally; the undo of a file that is not loaded goes to
+  the queue as is."
+  [origin state file-id commits]
+  (let [changes (pcm/compensation-changes commits)]
+    (if (dsh/lookup-file-data state file-id)
+      (dch/commit-changes (assoc changes
+                                 :origin origin
+                                 :file-id file-id
+                                 :save-undo? false))
+      (let [{:keys [file-revn file-vern features]} (peek commits)]
+        (append-commit
+         (pcm/queue-entry
+          [(assoc changes
+                  :id (uuid/next)
+                  :created-at (ct/now)
+                  :origin (ptk/type origin)
+                  :file-id file-id
+                  :file-revn file-revn
+                  :file-vern file-vern
+                  :features features
+                  :remote-seq (dm/get-in state [:persistence :remote-seq] 0))]))))))
+
+(defn- rollback-rejected
+  "Reverts the commits `rejected` in the save of `entry`, the later commits
+  of its file and the rest of their undo groups. Pending commits are undone
+  and dropped, saved ones undone by a new commit; the groups leave the undo
+  history and the user gets a warning."
+  [{:keys [file-id] :as entry} rejected]
+  (let [plan (volatile! nil)]
+    (ptk/reify ::rollback-rejected
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [plan' (pcm/rollback-plan (:persistence state) entry rejected)]
+          (vreset! plan plan')
+          (update state :persistence pcm/without-rolled-back entry plan')))
+
+      ptk/WatchEvent
+      (watch [it state _]
+        (let [{:keys [files compensate groups]} @plan]
+          (rx/concat
+           (rx/from (map (fn [[fid plan]] (dch/rebase-commits fid plan)) files))
+           (rx/from (map (fn [[fid commits]] (compensate-commits it state fid commits))
+                         (group-by :file-id compensate)))
+           (rx/of (dwu/forget-undo-groups groups)
+                  (prune-removed-shapes)))))
+
+      ptk/EffectEvent
+      (effect [_ _ _]
+        (let [{:keys [error commit-ids]} rejected]
+          (errors/flash :cause (ex-info "The server rejected some changes"
+                                        (merge error
+                                               {:file-id file-id
+                                                :commit-ids commit-ids}
+                                               (pcm/rollback-summary @plan)))
+                        :type :unhandled
+                        :level :warning
+                        :timeout rejected-timeout-ms
+                        :tag rejected-tag
+                        :report-link? true
+                        :hint (tr "errors.save-rejected-changes-undone")))))))
+
 (defn- update-file-request
   "Issues the `update-file` request, tracked as active for its lifetime."
   [request-id params]
@@ -510,19 +630,30 @@
       (not (dm/get-in state [:permissions :can-edit]))     :permission-denied
       :else                                                :ready)))
 
+(defn- with-changes
+  "Adds the changes of a queue entry to the save params, one group per
+  commit so the backend can reject them one by one."
+  [params {:keys [commits]}]
+  (assoc params :changes-with-metadata
+         (mapv (fn [{:keys [id origin redo-changes]}]
+                 (cond-> {:commit-id id :changes (vec redo-changes)}
+                   (keyword? origin)
+                   (assoc :hint-origin origin)))
+               commits)))
+
 (defn- send-queued-commit
   "Sends one queued commit and maps its outcome to persistence events."
-  [request-id session-id {:keys [id file-id file-revn file-vern changes features] :as commit}]
+  [request-id session-id {:keys [id file-id file-revn file-vern features] :as commit}]
   (let [sent-at (inst-ms (ct/now))
-        params  {:id file-id
-                 :revn (max file-revn (get @revn-data file-id 0))
-                 :vern file-vern
-                 :session-id session-id
-                 :origin (:origin commit)
-                 :created-at (:created-at commit)
-                 :commit-id id
-                 :changes (vec changes)
-                 :features features}]
+        params  (-> {:id file-id
+                     :revn (max file-revn (get @revn-data file-id 0))
+                     :vern file-vern
+                     :session-id session-id
+                     :origin (:origin commit)
+                     :created-at (:created-at commit)
+                     :commit-id id
+                     :features features}
+                    (with-changes commit))]
     ;; UI read-only mode does not invalidate already queued edits.
     (->> (update-file-request request-id params)
          ;; Fails an unanswered request as a transient network error, so the
@@ -536,10 +667,15 @@
          ;; A response that carries no revision, including one that never
          ;; arrived, is treated as a failed save rather than a saved file.
          (rx/if-empty nil)
-         (rx/mapcat (fn [{:keys [revn]}]
+         (rx/mapcat (fn [{:keys [revn rejected]}]
                       (if (and (int? revn) (<= 0 revn))
-                        (rx/of (update-file-revn file-id revn)
-                               (commit-persisted commit))
+                        (rx/concat
+                         (rx/of (update-file-revn file-id revn))
+                         ;; Reverts the rejected commits before the queue moves on
+                         (if (some? rejected)
+                           (rx/of (rollback-rejected commit rejected))
+                           (rx/empty))
+                         (rx/of (commit-persisted commit)))
                         (rx/throw (ex-info "The save response has no valid revision"
                                            {:type :persistence
                                             :code :invalid-save-response
@@ -701,6 +837,7 @@
         (update state :persistence
                 #(-> %
                      (drop-file-commits file-id)
+                     (pcm/prune-remote-changes file-id)
                      (dissoc :failing-since :slow-failures)))))))
 
 (defn- queue-needs-a-runner?
@@ -717,22 +854,27 @@
        (not= :retrying status)))
 
 (defn pending-file-changes
-  "Queued edits to restore into a freshly loaded file, in queue order.
-  Only edits of the loaded version belong in its data. A permanently
-  failed file is excluded because recovery releases its edits."
+  "Queued and buffered edits to restore into a freshly loaded file, oldest
+  first. Only edits of the loaded version belong in its data. A
+  permanently failed file is excluded because recovery releases its edits."
   [{:keys [persistence]} {:keys [id vern]}]
-  (let [{:keys [queue index status error]} persistence
-        failed-file-id (get-in index [(:commit-id error) :file-id])]
+  (let [{:keys [queue index buffer status error]} persistence
+        failed-file-id (get-in index [(:commit-id error) :file-id])
+        of-file?       #(and (= id (:file-id %))
+                             (= vern (:file-vern %)))]
     (if (and (= :error status)
              (= id failed-file-id)
              (not (slow-retry-pending? persistence)))
       []
-      (into []
-            (comp (map #(get index %))
-                  (filter #(and (= id (:file-id %))
-                                (= vern (:file-vern %))))
-                  (mapcat :redo-changes))
-            queue))))
+      (-> []
+          (into (comp (map #(get index %))
+                      (filter of-file?)
+                      (mapcat :commits)
+                      (mapcat :redo-changes))
+                queue)
+          (into (comp (filter of-file?)
+                      (mapcat :redo-changes))
+                buffer)))))
 
 (defn- initialize-persistence-state
   "Brings persistence to a coherent starting shape when the workspace
@@ -762,8 +904,7 @@
 
            :else
            (rx/empty))
-         ;; Commits buffered by a previous session are queued now instead of
-         ;; waiting for the next edit.
+         ;; Queues the commits a previous session left buffered
          (if (seq buffer)
            (rx/of (flush-buffer))
            (rx/empty)))))))
@@ -819,27 +960,10 @@
            :else
            (rx/empty)))))))
 
-(def ^:private xf-mapcat-undo
-  (mapcat :undo-changes))
-
-(def ^:private xf-mapcat-redo
-  (mapcat :redo-changes))
-
-(def ^:private commit-keys
-  "What a queue entry keeps of each commit merged into it."
-  [:id :origin :undo-group :redo-changes :undo-changes])
-
 (defn- merge-commit
   [buffer]
   (->> (rx/from (group-by :file-id buffer))
-       (rx/map (fn [[_ [item :as commits]]]
-                 (let [uchg (into [] xf-mapcat-undo commits)
-                       rchg (into [] xf-mapcat-redo commits)]
-                   (-> item
-                       (assoc :undo-changes uchg)
-                       (assoc :redo-changes rchg)
-                       (assoc :changes rchg)
-                       (assoc :commits (mapv #(select-keys % commit-keys) commits))))))))
+       (rx/map (comp pcm/queue-entry val))))
 
 (defn- flush-buffer
   "Queues the buffered commits, merged into one queue entry per file."
@@ -960,14 +1084,13 @@
               (rx/take-until stoper-s))
 
          ;; Syncs the leave-page warning on every buffer and queue change
-         ;; (a buffered commit, an append after a flush, a discard after a
-         ;; save, the release of a failed file).
          (->> (rx/merge
                (rx/of nil)
                (->> stream
                     (rx/filter #(or (ptk/type? ::buffer-commit %)
                                     (ptk/type? ::append-commit %)
                                     (ptk/type? ::discard-commit %)
+                                    (ptk/type? ::rollback-rejected %)
                                     (ptk/type? ::release-failed-file %)))))
               (rx/map (fn [_] (sync-unload-guard)))
               (rx/take-until stoper-s))
@@ -978,8 +1101,7 @@
                         (update-status :pending)))
               (rx/take-until stoper-s))
 
-         ;; Local commits wait in the store buffer and are queued in small
-         ;; chunks (commits very near in time) on each notification
+         ;; Buffers local commits; each notification queues the buffer
          (->> local-commits-s
               (rx/map buffer-commit)
               (rx/take-until stoper-s))
@@ -996,6 +1118,7 @@
               (rx/filter dch/commit?)
               (rx/map deref)
               (rx/filter #(= :remote (:source %)))
-              (rx/mapcat (fn [{:keys [file-id file-revn] :as commit}]
-                           (rx/of (update-file-revn file-id file-revn))))
+              (rx/mapcat (fn [{:keys [file-id file-revn redo-changes]}]
+                           (rx/of (record-remote-changes file-id redo-changes)
+                                  (update-file-revn file-id file-revn))))
               (rx/take-until stoper-s)))))))
