@@ -51,6 +51,8 @@
          (fn [event]
            (dom/stop-propagation event)
            (reset! editing* false)
+           ;; the edit is committed: the cleanup has nothing left to send
+           (mf/set-ref-val! last-node* nil)
            (when on-blur
              (on-blur event))))
 
