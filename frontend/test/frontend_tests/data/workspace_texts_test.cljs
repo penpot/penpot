@@ -16,8 +16,10 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.texts-events :as dwte]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -296,6 +298,20 @@
 ;; With the fix (mth/precision + str), it is normalised to "1.2" before the
 ;; schema check runs.
 ;; ---------------------------------------------------------------------------
+
+;; Scenario: the text editor saves its content after its shape is gone (a
+;; rollback removed it while it was being edited). Proves: nothing is
+;; committed for a shape that no longer exists.
+(t/deftest updating-the-content-of-a-removed-text-commits-nothing
+  (let [state  (-> @(ths/setup-store (cthf/sample-file :file1))
+                   (assoc :features #{}))
+        event  (dwt/v2-update-text-shape-content (uuid/next) (txt/change-text nil "hello")
+                                                 :finalize? true)
+        events (atom [])]
+    (rx/subs! #(swap! events conj %) (ptk/watch event state (rx/subject)))
+    (t/is (not-any? #(and (ptk/event? %)
+                          (= :app.main.data.workspace.shapes/update-shapes (ptk/type %)))
+                    @events))))
 
 (t/deftest add-typography-normalises-float-line-height
   (t/async

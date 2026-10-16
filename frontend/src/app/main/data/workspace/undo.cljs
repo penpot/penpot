@@ -251,6 +251,27 @@
           (update-in [:workspace-undo :transactions-pending] dissoc id)
           (add-transaction-undo-entry)))))
 
+(defn forget-undo-groups
+  "Drops the undo history from the first entry of `undo-groups` on, or all
+  of it if none matches, and empties the open transaction."
+  [undo-groups]
+  (ptk/reify ::forget-undo-groups
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-undo
+              (fn [{:keys [items index transaction] :as undo}]
+                (let [first-index (d/index-of-pred items #(contains? undo-groups (:undo-group %)))]
+                  (cond-> undo
+                    (some? first-index)
+                    (assoc :items (subvec items 0 first-index)
+                           :index (min (d/nilv index -1) (dec first-index)))
+
+                    (nil? first-index)
+                    (dissoc :items :index)
+
+                    (some? transaction)
+                    (assoc :transaction empty-tx))))))))
+
 (def reinitialize-undo
   "Clears the undo stack, removing all entries and transactions."
   (ptk/reify ::reset-undo

@@ -1788,6 +1788,10 @@ msgid "errors.save-failed"
 msgstr ""
 "El autoguardado se ha detenido en esta sesión, así que los cambios desde el último guardado correcto no se podrán guardar. Descarga el informe para ayudarnos a arreglarlo y recarga la página, o sal de este fichero y vuelve a abrirlo, para seguir editando."
 
+#: src/app/main/data/persistence.cljs
+msgid "errors.save-rejected-changes-undone"
+msgstr "Algunos de tus últimos cambios no se han podido guardar y se han deshecho. El resto de tu trabajo está guardado."
+
 #: src/app/main/errors.cljs
 msgid "errors.save-still-retrying"
 msgstr ""

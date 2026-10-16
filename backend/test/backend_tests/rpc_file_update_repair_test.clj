@@ -249,8 +249,9 @@
             page-id (thi/id :page1)
             changes [(set-attr page-id (thi/id :other) :name "renamed")]
             cfg     {::files-update/validation-timings (atom {})}
-            result  (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
-                      (@#'files-update/process-changes-and-validate cfg file changes nil))
+            result  (binding [pmap/*tracked* (pmap/create-tracked)]
+                      (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
+                        (@#'files-update/process-changes-and-validate cfg file changes nil nil)))
             stored  result]
         (t/is (some? (::files-update/repair stored)))
         (t/is (nil? (cfv/validate-file stored {})))
@@ -267,8 +268,9 @@
             changes [(set-attr (thi/id :page1) (thi/id :shape1) :name "renamed")]
             timings (atom {})
             cfg     {::files-update/validation-timings timings}
-            result  (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
-                      (@#'files-update/process-changes-and-validate cfg file changes nil))]
+            result  (binding [pmap/*tracked* (pmap/create-tracked)]
+                      (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
+                        (@#'files-update/process-changes-and-validate cfg file changes nil nil)))]
         (t/is (some? (::files-update/repair result)))
         (t/is (number? (:repair-ms @timings)))
         (t/is (number? (:reprocess-changes-ms @timings)))

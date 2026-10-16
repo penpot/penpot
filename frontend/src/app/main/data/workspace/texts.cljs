@@ -1313,7 +1313,15 @@
     (ptk/reify ::v2-update-text-shape-content
       ptk/WatchEvent
       (watch [it state _]
-        (if (features/active-feature? state "render-wasm/v1")
+        (cond
+          ;; The shape is gone (e.g. a rollback): only forget the edit session
+          (not (contains? (dsh/lookup-page-objects state) id))
+          (rx/of (fn [state]
+                   (-> state
+                       (update :workspace-new-text-shapes disj id)
+                       (update :workspace-text-session-geom (fnil dissoc {}) id))))
+
+          (features/active-feature? state "render-wasm/v1")
           (let [;; v3 editor always passes :finalize? from keyword opts; when absent
                 ;; that binds nil and :or defaults do not apply — coerce so undo flags
                 ;; stay strict booleans for changes-builder schema validation.
@@ -1437,6 +1445,7 @@
                               (update :workspace-new-text-shapes disj id)
                               (update :workspace-text-session-geom (fnil dissoc {}) id)))))))))
 
+          :else
           (let [modifiers    (get-in state [:workspace-text-modifier id])
                 new-shape?   (contains? (:workspace-new-text-shapes state) id)]
             (rx/of

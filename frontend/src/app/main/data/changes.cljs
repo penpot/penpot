@@ -16,6 +16,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence.commits :as pcm]
+   [app.main.data.workspace :as-alias dw]
    [app.main.features :as features]
    [app.main.worker :as mw]
    [app.render-wasm.api :as wasm.api]
@@ -67,15 +69,6 @@
                                    :cause cause)
                          (rx/empty)))
              (rx/ignore))))))
-
-(defn- get-pending-commits
-  "Local commits the server has not saved yet, oldest first: the queued
-  ones, then the ones still buffered."
-  [{:keys [persistence]}]
-  (-> []
-      (into (map (d/getf (:index persistence))) (:queue persistence))
-      (into (:buffer persistence))
-      (not-empty)))
 
 (def ^:private xf:map-page-id
   ;; Component-only changes have no :page-id; keep drops those nils so
@@ -203,7 +196,7 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [pending (when-not local?
-                        (get-pending-commits state))]
+                        (not-empty (pcm/pending-commits (:persistence state) file-id)))]
           (rx/concat
            (rx/of (apply-changes-localy commit pending))
            (if pending
@@ -214,6 +207,44 @@
               (->> (rx/from pending)
                    (rx/map (fn [commit] (update-indexes commit :redo-changes)))))
              (rx/of (update-indexes commit :redo-changes)))))))))
+
+(defn rebase-commits
+  "Undoes `undo`, applies `remote` and redoes `redo` on the local data of
+  `file-id`, commits oldest first. Nothing is saved or added to the undo
+  history; if the changes fail to apply, the file is reloaded."
+  [file-id {:keys [undo remote redo]}]
+  (let [commit  {:file-id file-id
+                 :redo-changes (-> []
+                                   (into (mapcat :undo-changes) (reverse undo))
+                                   (into remote)
+                                   (into (mapcat :redo-changes) redo))}
+        event   (apply-changes-localy commit nil)
+        failed? (volatile! false)]
+    (ptk/reify ::rebase-commits
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (dsh/lookup-file-data state file-id)
+          (try
+            (ptk/update event state)
+            (catch :default cause
+              (log/error :hint "unable to rebase commits" :file-id (str file-id) :cause cause)
+              (vreset! failed? true)
+              state))
+          state))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (cond
+          @failed?
+          (rx/of (ptk/event ::dw/reload-current-file))
+
+          (dsh/lookup-file-data state file-id)
+          (rx/merge
+           (or (ptk/watch event state stream) (rx/empty))
+           (rx/of (update-indexes commit :redo-changes)))
+
+          :else
+          (rx/empty))))))
 
 (defn- resolve-file-revn
   [state file-id]

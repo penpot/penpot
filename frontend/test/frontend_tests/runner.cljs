@@ -17,6 +17,7 @@
    [frontend-tests.data.fix-deleted-fonts-test]
    [frontend-tests.data.modal-test]
    [frontend-tests.data.nitrate-test]
+   [frontend-tests.data.persistence-commits-test]
    [frontend-tests.data.persistence-retry-test]
    [frontend-tests.data.persistence-test]
    [frontend-tests.data.profile-test]
@@ -166,6 +167,7 @@
    'frontend-tests.data.fix-deleted-fonts-test
    'frontend-tests.data.modal-test
    'frontend-tests.data.nitrate-test
+   'frontend-tests.data.persistence-commits-test
    'frontend-tests.data.persistence-retry-test
    'frontend-tests.data.persistence-test
    'frontend-tests.data.profile-test
