@@ -1236,7 +1236,7 @@ msgstr "Tu proyecto ha sido movido con éxito"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "Este equipo ahora es parte de la organización %s"
+msgstr "%s ahora pertenece a %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1249,7 +1249,7 @@ msgstr "Integrantes del equipo"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Este equipo ya no es parte de la organización %s"
+msgstr "%s ya no forma parte de %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"
@@ -1756,9 +1756,12 @@ msgstr "El registro está actualmente desactivado."
 #: src/app/main/errors.cljs:538
 msgid "errors.save-failed"
 msgstr ""
-"El autoguardado se ha detenido debido a un error. Contacta soporte para "
-"informar del error y recarga para continuar desde los últimos cambios "
-"guardados."
+"El autoguardado se ha detenido en esta sesión, así que los cambios desde el último guardado correcto no se podrán guardar. Descarga el informe para ayudarnos a arreglarlo y recarga la página, o sal de este fichero y vuelve a abrirlo, para seguir editando."
+
+#: src/app/main/errors.cljs
+msgid "errors.save-still-retrying"
+msgstr ""
+"Tus cambios aún no se han guardado porque Penpot no puede conectar con el servidor. Se conservan y Penpot seguirá intentando guardarlos. Mantén esta pestaña abierta hasta que se guarden."
 
 #: src/app/main/data/persistence.cljs:307
 msgid "errors.save-retrying"
@@ -5890,7 +5893,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
-msgstr "Miembro de penpot desde: %s"
+msgstr "Miembro de penpot desde: %s."
 
 #: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
@@ -5961,6 +5964,9 @@ msgstr "Suscríbete"
 #: src/app/main/ui/settings/subscription.cljs:707
 msgid "subscription.settings.subscribed-since"
 msgstr "Llevas en el plan %s desde %s."
+
+msgid "subscription.settings.trial-ends-on"
+msgstr "Tu prueba gratuita acaba el %s."
 
 #: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
@@ -7822,6 +7828,10 @@ msgstr "Más colores de la biblioteca"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:268
 msgid "workspace.options.more-token-colors"
 msgstr "Más tokens de color"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:502
+msgid "workspace.options.no-font-results"
+msgstr "No hay fuentes coincidentes"
 
 #: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:518
 msgid "workspace.options.no-size-preset-results"

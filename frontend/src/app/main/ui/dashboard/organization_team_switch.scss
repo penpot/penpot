@@ -208,7 +208,12 @@
   gap: var(--sp-s);
   top: calc(var(--sp-s) + #{$sz-64} + var(--sp-xs));
   left: var(--sp-s);
-  height: px2rem(416);
+
+  // Floor matches the previous fixed height; grow for ~6 org rows + left
+  // footer; scroll + fade kick in above the cap.
+  block-size: fit-content;
+  min-block-size: px2rem(416);
+  max-block-size: $sz-520;
   overflow: hidden;
 }
 

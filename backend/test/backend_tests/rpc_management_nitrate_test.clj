@@ -1989,6 +1989,9 @@
                               :type "action"}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are counted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (t/is (:called? @audit-mock))
@@ -2009,6 +2012,9 @@
                               :profile-id (:id prof)}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]
@@ -2028,6 +2034,9 @@
                               :type "action"}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are counted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (t/is (= 2 (:call-count @audit-mock)))
@@ -2047,6 +2056,9 @@
                                         :foo "bar"}}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]
@@ -2071,6 +2083,9 @@
             params (with-meta params
                      {::http/request (assoc http-request
                                             ::http/auth-key-id :admin-console)})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]

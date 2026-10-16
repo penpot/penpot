@@ -6,8 +6,10 @@
 
 (ns backend-tests.rpc-team-test
   (:require
+   [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.time :as ct]
+   [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -17,6 +19,7 @@
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.helpers :as rph]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
@@ -1784,3 +1787,195 @@
                               ::rpc/profile-id (:id stranger)})]
         (t/is (th/success? out))
         (t/is (nil? (some #(= (:id project) (:id %)) (:result out))))))))
+
+(t/deftest create-team-emits-add-team-member-audit-event
+  ;; Team creation adds the owner through add-profile-to-team!, which used to
+  ;; leave no membership event.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [owner  (th/create-profile* 1 {:is-active true})
+            team   (th/create-team* 21 {:profile-id (:id owner)})
+            events (->> (:call-args-list @audit-mock)
+                        (map second)
+                        (filter #(= "add-team-member" (:name %)))
+                        (filter #(= (:id team) (get-in % [:props :team-id]))))]
+        (t/is (= 1 (count events)))
+        (t/is (= (:id owner) (get-in (first events) [:props :member-id])))
+        (t/is (true? (get-in (first events) [:props :is-owner])))))))
+
+(t/deftest add-team-member-event-skipped-when-membership-exists
+  ;; Adding an existing member with on-conflict-do-nothing inserts nothing and
+  ;; must not report a membership that already exists.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [owner (th/create-profile* 1 {:is-active true})
+            team  (th/create-team* 22 {:profile-id (:id owner)})]
+        (th/reset-mock! audit-mock)
+        (db/tx-run! th/*system*
+                    (fn [cfg]
+                      (teams/add-profile-to-team! cfg
+                                                  {:team-id (:id team)
+                                                   :profile-id (:id owner)}
+                                                  {::db/on-conflict-do-nothing? true})))
+        (t/is (empty? (:call-args-list @audit-mock)))))))
+
+(t/deftest no-add-team-member-event-without-audit-log
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [owner  (th/create-profile* 1 {:is-active true})
+          _team  (th/create-team* 23 {:profile-id (:id owner)})
+          events (->> (:call-args-list @audit-mock)
+                      (map second)
+                      (filter #(= "add-team-member" (:name %))))]
+      (t/is (empty? events)))))
+
+(t/deftest add-team-member-event-carries-derived-role
+  ;; `team_profile_rel` has no role column, so no caller can pass it: the
+  ;; emitter derives it from the flags, inverse of permissions-for-role.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [owner  (th/create-profile* 1 {:is-active true})
+            team   (th/create-team* 26 {:profile-id (:id owner)})
+            editor (th/create-profile* 27 {:is-active true})
+            admin  (th/create-profile* 28 {:is-active true})
+            viewer (th/create-profile* 29 {:is-active true})]
+        (db/tx-run! th/*system*
+                    (fn [cfg]
+                      (doseq [[member role] [[editor :editor]
+                                             [admin :admin]
+                                             [viewer :viewer]]]
+                        (teams/add-profile-to-team!
+                         cfg
+                         (merge {:team-id (:id team)
+                                 :profile-id (:id member)}
+                                (get types.team/permissions-for-role role))))))
+        (let [by-member (->> (:call-args-list @audit-mock)
+                             (map second)
+                             (filter #(= "add-team-member" (:name %)))
+                             (d/index-by #(get-in % [:props :member-id])))]
+          (t/is (= :owner (get-in by-member [(:id owner) :props :role])))
+          (t/is (= :editor (get-in by-member [(:id editor) :props :role])))
+          (t/is (= :admin (get-in by-member [(:id admin) :props :role])))
+          (t/is (= :viewer (get-in by-member [(:id viewer) :props :role]))))))))
+
+(t/deftest add-team-member-event-carries-request-context
+  ;; Sibling events built by `prepare-rpc-event` carry the request context;
+  ;; the hand-built membership event must not lose it when rpc params travel.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [owner  (th/create-profile* 1 {:is-active true})
+            member (th/create-profile* 2 {:is-active true})
+            team   (th/create-team* 30 {:profile-id (:id owner)})]
+        (th/reset-mock! audit-mock)
+        (db/tx-run! th/*system*
+                    (fn [cfg]
+                      (teams/add-profile-to-team!
+                       cfg
+                       (merge {:team-id (:id team)
+                               :profile-id (:id member)}
+                              (get types.team/permissions-for-role :editor))
+                       nil
+                       {:rpc-params {::rpc/profile-id (:id owner)
+                                     ::rpc/request-id "req-1"}})))
+        (let [events (->> (:call-args-list @audit-mock)
+                          (map second)
+                          (filter #(= "add-team-member" (:name %))))]
+          (t/is (= 1 (count events)))
+          (t/is (= "req-1" (get-in (first events) [:context :request-id]))))))))
+
+(t/deftest invitation-direct-add-attributes-event-to-inviter
+  ;; With email verification off, inviting an existing profile adds the
+  ;; member directly; the event belongs to the inviter, not the member.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags #{:audit-log}]
+      (let [owner  (th/create-profile* 1 {:is-active true})
+            member (th/create-profile* 2 {:is-active true})
+            team   (th/create-team* 31 {:profile-id (:id owner)})]
+        (th/reset-mock! audit-mock)
+        (let [out (th/command! {::th/type :create-team-invitations
+                                ::rpc/profile-id (:id owner)
+                                :team-id (:id team)
+                                :role :editor
+                                :emails [(:email member)]})]
+          (t/is (th/success? out))
+          (let [events (->> (:call-args-list @audit-mock)
+                            (map second)
+                            (filter #(= "add-team-member" (:name %)))
+                            (filter #(= (:id member) (get-in % [:props :member-id]))))]
+            (t/is (= 1 (count events)))
+            (t/is (= (:id owner) (:profile-id (first events))))
+            (t/is (= :editor (get-in (first events) [:props :role])))))))))
+
+(t/deftest create-team-audit-event-carries-created-at
+  ;; The projection keys the new team on the event id and needs its creation
+  ;; time from the same event.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        out     (th/command-raw! {::th/type :create-team
+                                  ::rpc/profile-id (:id profile)
+                                  :name "team"})
+        props   (:app.loggers.audit/props (meta out))]
+    (t/is (= (:id out) (:id props)))
+    (t/is (= (:created-at out) (:created-at props)))
+    (t/is (ct/inst? (:created-at props)))
+    (t/is (= (:modified-at out) (:modified-at props)))
+    (t/is (ct/inst? (:modified-at props)))))
+
+(t/deftest delete-team-audit-event-carries-entity-data
+  ;; The projection marks the team deleted from this single event, so it needs
+  ;; the identity, the name and the timestamps.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 31 {:profile-id (:id profile)})
+        out     (th/command-raw! {::th/type :delete-team
+                                  ::rpc/profile-id (:id profile)
+                                  :id (:id team)})
+        props   (:app.loggers.audit/props (meta out))]
+    ;; The API response is unchanged: the command still returns nil.
+    (t/is (nil? (rph/unwrap out)))
+    (t/is (= (:id team) (:id props)))
+    (t/is (= (:name team) (:name props)))
+    (t/is (= (:created-at team) (:created-at props)))
+    (t/is (ct/inst? (:modified-at props)))
+    (t/is (ct/inst? (:deleted-at props)))))
+
+(t/deftest create-team-with-invitations-audit-event-carries-team-id
+  ;; The team is created by an internal call, so both the command event and
+  ;; the manual event must carry its id for a projection to key it.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}
+               email-mock {:target 'app.email/send :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [profile (th/create-profile* 1 {:is-active true})
+            out     (th/command-raw! {::th/type :create-team-with-invitations
+                                      ::rpc/profile-id (:id profile)
+                                      :name "team"
+                                      :emails #{"invitee@example.com"}
+                                      :role :editor})
+            props   (:app.loggers.audit/props (meta out))
+            events  (->> (:call-args-list @audit-mock)
+                         (map second)
+                         (filter #(= "create-team" (:name %))))]
+        (t/is (= (:id out) (:id props)))
+        (t/is (= 1 (count events)))
+        (t/is (= (:id out) (get-in (first events) [:props :id])))))))
+
+(t/deftest update-team-member-role-to-owner-names-demoted-member
+  ;; Promoting a member to owner demotes the actor; the event names them so a
+  ;; projection can keep a single owner.
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 82 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [out   (th/command-raw! {::th/type :update-team-member-role
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :member-id (:id editor)
+                                  :role :editor})
+          props (:app.loggers.audit/props (meta out))]
+      (t/is (nil? (:prev-owner-id props))))
+    (let [out   (th/command-raw! {::th/type :update-team-member-role
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :member-id (:id editor)
+                                  :role :owner})
+          props (:app.loggers.audit/props (meta out))]
+      (t/is (= (:id owner) (:prev-owner-id props))))))

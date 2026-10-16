@@ -602,7 +602,6 @@
             :input-type :min-width
             :nillable true
             :applied-token applied-token-to-min-w
-            :tooltip-class (stl/css :tooltip-wrapper)
             :value min-w}]
 
           [:div {:class (stl/css :layout-item-min-w)
@@ -632,7 +631,6 @@
             :attr :layout-item-max-w
             :property (tr "workspace.options.layout-item.layout-item-max-w")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
             :applied-token applied-token-to-max-w
             :value max-w}]
 
@@ -663,7 +661,6 @@
             :attr :layout-item-min-h
             :property (tr "workspace.options.layout-item.layout-item-min-h")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
 
             :applied-token applied-token-to-min-h
             :value min-h}]
@@ -694,7 +691,6 @@
             :attr :layout-item-max-h
             :property (tr "workspace.options.layout-item.layout-item-max-h")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
             :applied-token applied-token-to-max-h
             :value max-h}]
 

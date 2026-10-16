@@ -13,12 +13,36 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.jobs :as jobs]
+   [app.loggers.audit :as audit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.storage :as sto]
    [integrant.core :as ig]))
 
 (def ^:dynamic *team-deletion* false)
+
+(def ^:dynamic *cascade*
+  "Accumulates the ids marked deleted by the current cascade execution,
+  grouped by entity. Bound by the task entry point; nil on direct calls
+  (e.g. objects-gc, whose purges are announced by their own procs)."
+  nil)
+
+(defn- record
+  [kind id]
+  (when (some? *cascade*)
+    (swap! *cascade* update kind conj id)))
+
+(defn- top-exists?
+  "The cascade marks blindly, so an unknown top id would report phantom
+  rows. Every queue submission and SREPL call names a real row; only
+  check, never change behavior: a missing row just skips the run."
+  [{:keys [::db/conn]} {:keys [object id]}]
+  (let [object (when (some? object) (keyword (name object)))]
+    (if (contains? #{:team :project :file :profile} object)
+      (some? (db/get* conn object {:id id}
+                      {::db/remove-deleted false
+                       ::sql/columns [:id]}))
+      true)))
 
 (defmulti delete-object
   (fn [_ props] (:object props)))
@@ -39,7 +63,7 @@
               {::db/return-keys false}))
 
 (defmethod delete-object :file
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at file-ids]}]
   (when-let [file (db/get* conn :file {:id id}
                            {::db/remove-deleted false
                             ::sql/columns [:id :is-shared]})]
@@ -57,7 +81,7 @@
                (not *team-deletion*))
       ;; NOTE: we don't prevent file deletion on absorb operation failure
       (try
-        (db/tx-run! cfg files/absorb-library id)
+        (db/tx-run! cfg files/absorb-library id :file-ids file-ids)
         (catch Throwable cause
           (l/warn :hint "error on absorbing library"
                   :file-id id
@@ -90,7 +114,9 @@
     (db/update! conn :file-tagged-object-thumbnail
                 {:deleted-at deleted-at}
                 {:file-id id}
-                {::db/return-keys false})))
+                {::db/return-keys false})
+
+    (record :files id)))
 
 (defmethod delete-object :project
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
@@ -107,7 +133,9 @@
                          {::db/columns [:id :deleted-at]})]
     (delete-object cfg (assoc file
                               :object :file
-                              :deleted-at deleted-at))))
+                              :deleted-at deleted-at)))
+
+  (record :projects id))
 
 (defmethod delete-object :team
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
@@ -129,7 +157,9 @@
                               {::db/columns [:id :deleted-at]})]
       (delete-object cfg (assoc project
                                 :object :project
-                                :deleted-at deleted-at)))))
+                                :deleted-at deleted-at))))
+
+  (record :teams id))
 
 (defmethod delete-object :profile
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
@@ -156,13 +186,30 @@
    [:object [:enum :snapshot :team :project :profile :file]]
    [:deleted-at ::ct/inst]
    [:id ::sm/uuid]
-   [:file-id {:optional true} ::sm/uuid]])
+   [:file-id {:optional true} ::sm/uuid]
+   [:file-ids {:optional true} [:vector ::sm/uuid]]])
 
 (defn execute-delete-object
   "Plain job handler: run the delete-object multimethod on the provided
-  params inside a single transaction."
+  params inside a single transaction, tracking the cascade and reporting
+  it as an audit event when anything was marked."
   [cfg params]
-  (db/tx-run! cfg delete-object params))
+  (db/tx-run! cfg
+              (fn [cfg]
+                (when (top-exists? cfg params)
+                  (binding [*cascade* (atom {:teams [] :projects [] :files []})]
+                    (delete-object cfg params)
+                    (let [{:keys [teams projects files]} @*cascade*]
+                      (when (or (seq teams) (seq projects) (seq files))
+                        (audit/submit cfg {:name "delete-object-with-cascade"
+                                           :type "action"
+                                           :props {:object (:object params)
+                                                   :id (:id params)
+                                                   :deleted-at (:deleted-at params)
+                                                   :cascade {:team-ids teams
+                                                             :project-ids projects
+                                                             :file-ids files}}
+                                           :context {:triggered-by "delete-object"}}))))))))
 
 (defmethod ig/assert-key ::job-def
   [_ params]

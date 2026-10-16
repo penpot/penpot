@@ -13,6 +13,8 @@
 
 // Must match BOX_HEIGHT in scripts/build-fonts-preview.js (the sprite bakes each
 // font name into that box at 1 unit == 1px).
+// NOTE: kept in px on purpose, not px2rem(): the sprite is baked in pixels, so
+// the box must not scale with the root font size.
 $font-preview-box-height: 28px;
 
 .typography-entry {
@@ -116,6 +118,10 @@ $font-preview-box-height: 28px;
 }
 
 .typography-sample-input {
+  // No DS typography on purpose: the "Ag" sample is drawn in the
+  // typography's own font
+  font-size: px2rem(16);
+  line-height: 1;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -130,6 +136,9 @@ $font-preview-box-height: 28px;
 }
 
 .adv-typography-name {
+  // TODO: No exact DS typography match found. Rename input of a
+  // typography; only the font size is set.
+  // Closest match: body-small (12px).
   font-size: px2rem(12);
   color: var(--font-name-wrapper-foreground-color);
   flex-grow: 1;
@@ -161,26 +170,31 @@ $font-preview-box-height: 28px;
 }
 
 .typography-name-wrapper {
-  @extend %asset-element;
+  @include t.use-typography("body-small");
 
   display: grid;
   grid-template-columns: minmax($sz-24, auto) auto 1fr $sz-28;
   column-gap: var(--sp-xs);
   flex: 1;
+  align-items: center;
   block-size: $sz-32;
   inline-size: 100%;
   padding: 0 0 0 var(--sp-m);
+  border-radius: $br-8;
   background-color: var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
   margin-block-end: var(--sp-xs);
 }
 
 .typography-sample {
+  // No DS typography on purpose: the "Ag" sample is drawn in the
+  // typography's own font
+  font-size: px2rem(16);
+  line-height: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   min-inline-size: $sz-24;
-  font-size: px2rem(16);
-  line-height: 1;
   block-size: $sz-32;
   white-space: nowrap;
   padding: 0;
@@ -194,8 +208,8 @@ $font-preview-box-height: 28px;
 
   margin: 0;
   min-inline-size: px2rem(6);
-  padding: 8px 0 8px 6px;
-  max-width: 100%;
+  padding: var(--sp-s) 0 var(--sp-s) px2rem(6);
+  max-inline-size: 100%;
   color: var(--color-foreground-primary);
 }
 
@@ -218,7 +232,7 @@ $font-preview-box-height: 28px;
   display: grid;
   grid-template-columns: 50% 50%;
   block-size: $sz-32;
-  padding-left: var(--sp-xs);
+  padding-inline-start: var(--sp-xs);
 }
 
 .info-label,
@@ -243,11 +257,22 @@ $font-preview-box-height: 28px;
 }
 
 .font-option {
-  @include t.use-typography("body-small");
-  @extend %asset-element;
+  --font-option-background-color: var(--color-background-tertiary);
 
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
   padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--font-option-background-color);
+  color: var(--color-foreground-primary);
   cursor: pointer;
+
+  &:hover {
+    --font-option-background-color: var(--color-background-quaternary);
+  }
 }
 
 .font-option-name {
@@ -263,15 +288,26 @@ $font-preview-box-height: 28px;
 }
 
 .font-size-options {
-  @extend %asset-element;
+  --font-size-options-background-color: var(--color-background-tertiary);
+
   @include t.use-typography("body-small");
 
+  display: flex;
   flex-grow: 1;
+  align-items: center;
+  block-size: $sz-32;
   inline-size: px2rem(60);
   margin: 0;
   padding: 0;
   border: $b-1 solid var(--color-background-tertiary);
+  border-radius: $br-8;
+  background-color: var(--font-size-options-background-color);
+  color: var(--color-foreground-primary);
   position: relative;
+
+  &:hover {
+    --font-size-options-background-color: var(--color-background-quaternary);
+  }
 }
 
 .font-variant-options {
@@ -291,6 +327,9 @@ $font-preview-box-height: 28px;
   gap: var(--sp-xs);
 }
 
+// TODO: Kept on the deprecated %input-element and %button-icon-small
+// placeholders, which style the icon svg and the input elements. They go
+// away when these controls move to the DS numeric-input*.
 .line-height,
 .letter-spacing {
   @extend %input-element;
@@ -309,11 +348,22 @@ $font-preview-box-height: 28px;
 }
 
 .text-transform {
-  @extend %asset-element;
+  --text-transform-background-color: var(--color-background-tertiary);
 
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
   inline-size: fit-content;
   padding: 0;
-  background-color: var(--color-background-tertiary);
+  border-radius: $br-8;
+  background-color: var(--text-transform-background-color);
+  color: var(--color-foreground-primary);
+
+  &:hover {
+    --text-transform-background-color: var(--color-background-quaternary);
+  }
 }
 
 .font-size-select {
@@ -328,10 +378,24 @@ $font-preview-box-height: 28px;
   outline: none;
 
   .numeric-input {
-    @extend %input-base;
     @include t.use-typography("body-small");
+    @include text-ellipsis;
 
+    block-size: $sz-28;
+    inline-size: 100%;
+    flex-grow: 1;
+    margin: var(--sp-xxs) 0;
     padding: 0;
+    border: none;
+    border-radius: $br-8;
+    background: none;
+    outline: none;
+    color: var(--color-foreground-primary);
+
+    &[disabled] {
+      opacity: 0.5;
+      pointer-events: none;
+    }
   }
 }
 
@@ -340,16 +404,15 @@ $font-preview-box-height: 28px;
   justify-content: center;
   align-items: center;
   position: absolute;
-  top: calc(-1 * #{px2rem(18)});
-  left: 0;
-  right: 0;
+  inset-block-start: calc(-1 * #{px2rem(18)});
+  inset-inline: 0;
   block-size: 100%;
   inline-size: 100%;
   z-index: var(--z-index-dropdown);
 }
 
 .fonts-on-modal {
-  top: 0;
+  inset-block-start: 0;
 }
 
 .show-recent {
@@ -385,20 +448,37 @@ $font-preview-box-height: 28px;
 }
 
 .font-wrapper {
-  padding-bottom: var(--sp-xs);
+  padding-block-end: var(--sp-xs);
   cursor: pointer;
 }
 
 .font-item {
-  @extend %asset-element;
+  --font-item-background-color: var(--color-background-tertiary);
 
-  width: px2rem(280);
-  margin-bottom: var(--sp-xs);
-  border-radius: $br-8;
+  @include t.use-typography("body-small");
+
   display: flex;
+  block-size: $sz-32;
+  inline-size: 100%;
+  margin-block-end: var(--sp-xs);
+  padding: var(--sp-s) var(--sp-m);
+  border-radius: $br-8;
+  background-color: var(--font-item-background-color);
+  color: var(--color-foreground-primary);
+
+  &:hover {
+    --font-item-background-color: var(--color-background-quaternary);
+  }
 
   &.selected {
     color: var(--color-foreground-primary);
+  }
+
+  // The font Enter applies, same border as the focused option of the
+  // select dropdowns
+  &.focused {
+    outline: $b-1 solid var(--color-accent-primary);
+    outline-offset: calc(-1 * #{$b-1});
   }
 
   // Center & clip so a previewed font's own metrics never grow/overflow the row.
@@ -456,9 +536,21 @@ $font-preview-box-height: 28px;
 }
 
 .fonts-list-full-size {
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+// Joins the list to the "Recent" section above it
+.fonts-list-below-recent {
   border-start-start-radius: 0;
   border-start-end-radius: 0;
-  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.fonts-list-empty {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  margin: 0;
+  padding: var(--sp-m);
 }
 
 .dropdown-icon {
