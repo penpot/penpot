@@ -6,19 +6,27 @@
 
 (ns backend-tests.offload-file-data-test
   (:require
+   [app.binfile.common :as bfc]
+   [app.binfile.v3 :as v3]
+   [app.common.features :as cfeat]
    [app.common.time :as ct]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.jobs :as jobs]
    [app.jobs.metrics :as metrics]
    [app.main :as main]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
+   [app.rpc :as-alias rpc]
    [app.storage :as sto]
+   [app.storage.tmp :as tmp]
    [app.tasks.offload-file-data :as offload]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [datoteka.io :as io]
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
@@ -307,3 +315,217 @@
         (t/is (pos? (count rows)))
         (t/is (every? #(= "db" (:backend %)) rows))
         (t/is (every? some? (map :data rows)))))))
+
+(defn- update-file!
+  [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+  (let [params {::th/type :update-file
+                ::rpc/profile-id profile-id
+                :id file-id
+                :session-id (uuid/random)
+                :revn revn
+                :vern 0
+                :features cfeat/supported-features
+                :changes changes}
+        out    (th/command! params)]
+    (t/is (nil? (:error out)))
+    (:result out)))
+
+(defn- add-page-with-rect
+  [profile file page-id shape-id]
+  (update-file!
+   :file-id (:id file)
+   :profile-id (:id profile)
+   :changes
+   [{:type :add-page
+     :name "test"
+     :id page-id}
+    {:type :add-obj
+     :page-id page-id
+     :id shape-id
+     :parent-id uuid/zero
+     :frame-id uuid/zero
+     :components-v2 true
+     :obj (cts/setup-shape
+           {:id shape-id
+            :name "rect"
+            :frame-id uuid/zero
+            :parent-id uuid/zero
+            :type :rect})}]))
+
+(defn- get-file-data
+  [profile file-id]
+  (let [out (th/command! {::th/type :get-file
+                          ::rpc/profile-id (:id profile)
+                          :id file-id})]
+    (t/is (nil? (:error out)))
+    (get-in out [:result :data])))
+
+(t/deftest offloaded-file-reads-identically
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (create-file 1 profile)
+        page-id  (uuid/next)
+        shape-id (uuid/next)]
+    (add-page-with-rect profile file page-id shape-id)
+
+    (let [before-bfc (:data (bfc/get-file th/*system* (:id file) {:realize? true}))
+          before-rpc (get-file-data profile (:id file))]
+
+      (t/is (some? (get-in before-bfc [:pages-index page-id :objects shape-id])))
+      (t/is (= before-bfc before-rpc))
+
+      (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
+        (t/is (pos? (:offloaded result)))
+        (t/is (every? #(= "storage" (:backend %)) (remove :deleted-at (db-rows (:id file))))))
+
+      (t/testing "direct read resolves cold storage transparently"
+        (t/is (= before-bfc
+                 (:data (bfc/get-file th/*system* (:id file) {:realize? true})))))
+
+      (t/testing "rpc read resolves cold storage transparently"
+        (t/is (= before-rpc (get-file-data profile (:id file))))))))
+
+(t/deftest snapshot-survives-offload
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (create-file 1 profile)
+        page-id  (uuid/next)
+        shape-id (uuid/next)]
+    (add-page-with-rect profile file page-id shape-id)
+
+    (let [out (th/command! {::th/type :create-file-snapshot
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)
+                            :label "before-offload"})]
+      (t/is (nil? (:error out)))
+      (t/is (uuid? (get-in out [:result :id]))))
+
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
+      (t/is (pos? (:offloaded result))))
+
+    (t/testing "live snapshot rows moved to cold storage"
+      (let [snapshots (th/db-query :file-data {:file-id (:id file)
+                                               :type "snapshot"
+                                               :deleted-at nil})]
+        (t/is (pos? (count snapshots)))
+        (t/is (every? #(= "storage" (:backend %)) snapshots))
+        (t/is (every? #(nil? (:data %)) snapshots))))
+
+    (t/testing "snapshots are still listed"
+      (let [out (th/command! {::th/type :get-file-snapshots
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)})]
+        (t/is (nil? (:error out)))
+        (t/is (some #(= "before-offload" (:label %)) (:result out)))))
+
+    (t/testing "snapshot restores from cold storage"
+      (let [snap-id (->> (:result (th/command! {::th/type :get-file-snapshots
+                                                ::rpc/profile-id (:id profile)
+                                                :file-id (:id file)}))
+                         (filter #(= "before-offload" (:label %)))
+                         first
+                         :id)
+            out     (th/command! {::th/type :restore-file-snapshot
+                                  ::rpc/profile-id (:id profile)
+                                  :file-id (:id file)
+                                  :id snap-id})]
+        (t/is (some? snap-id))
+        (t/is (nil? (:error out)))
+        (t/is (some? (get-in (get-file-data profile (:id file))
+                             [:pages-index page-id :objects shape-id])))))))
+
+(t/deftest write-after-offload-returns-to-hot-storage
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (create-file 1 profile)
+        page-id  (uuid/next)
+        shape-id (uuid/next)]
+
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
+      (t/is (pos? (:offloaded result))))
+
+    (let [main (th/db-get :file-data {:file-id (:id file) :type "main"})]
+      (t/is (= "storage" (:backend main)))
+      (t/is (nil? (:data main))))
+
+    (add-page-with-rect profile file page-id shape-id)
+
+    (t/testing "the new main row is back on hot storage"
+      (let [main (th/db-get :file-data {:file-id (:id file) :type "main"})]
+        (t/is (= "db" (:backend main)))
+        (t/is (bytes? (:data main)))))
+
+    (t/testing "the written content reads back"
+      (t/is (some? (get-in (get-file-data profile (:id file))
+                           [:pages-index page-id :objects shape-id]))))))
+
+(t/deftest export-import-roundtrip-after-offload
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (create-file 1 profile)
+        page-id  (uuid/next)
+        shape-id (uuid/next)]
+    (add-page-with-rect profile file page-id shape-id)
+
+    (let [before (:data (bfc/get-file th/*system* (:id file) {:realize? true}))
+          _      (th/run-task! :offload-file-data {:file-id (:id file)})
+          output (tmp/tempfile :suffix ".zip")]
+
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/export-type :detach-libraries))
+       (io/output-stream output))
+
+      (let [result   (-> th/*system*
+                         (assoc ::bfc/project-id (:default-project-id profile))
+                         (assoc ::bfc/profile-id (:id profile))
+                         (assoc ::bfc/team-id (:default-team-id profile))
+                         (assoc ::bfc/input output)
+                         (v3/import-files!))
+            imported (:data (bfc/get-file th/*system* (first (:file-ids result))
+                                          {:realize? true}))]
+        (t/is (= 1 (count (:file-ids result))))
+        (t/is (= (set (keys (:pages-index before)))
+                 (set (keys (:pages-index imported)))))
+        (t/is (= (get-in before [:pages-index page-id :name])
+                 (get-in imported [:pages-index page-id :name])))
+        (t/is (some? (get-in imported [:pages-index page-id :objects shape-id])))))))
+
+(t/deftest deleted-offloaded-file-is-fully-purged
+  (let [storage (sto/resolve th/*system*)
+        profile (th/create-profile* 1 {:is-active true})
+        file    (create-file 1 profile)
+        page-id (uuid/next)]
+
+    (add-page-with-rect profile file page-id (uuid/next))
+
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
+      (t/is (pos? (:offloaded result))))
+
+    (let [ref-ids (into #{}
+                        (comp (map :metadata)
+                              (map fdata/decode-metadata)
+                              (keep :storage-ref-id))
+                        (db-rows (:id file)))]
+      (t/is (pos? (count ref-ids)))
+      (t/is (every? some? (map #(sto/get-object storage %) ref-ids)))
+
+      (let [out (th/command! {::th/type :delete-file
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})]
+        (t/is (nil? (:error out))))
+      (th/run-pending-jobs)
+
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
+                  (th/run-task! :objects-gc {}))]
+        (t/is (pos? (:processed res))))
+
+      (t/testing "every file data row is gone"
+        (t/is (empty? (db-rows (:id file)))))
+
+      ;; The touches above landed 8 days in the future, so the touched
+      ;; collector needs a clock past them plus its deletion delay.
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 9}))]
+                  (th/run-task! :storage-gc-touched {}))]
+        (t/is (pos? (:delete res))))
+
+      (t/testing "every referenced storage object is reclaimed"
+        (let [objects (mapv #(sto/get-object storage %) ref-ids)]
+          (t/is (every? nil? objects)))))))
