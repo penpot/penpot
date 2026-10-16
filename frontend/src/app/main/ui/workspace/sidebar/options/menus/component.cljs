@@ -1047,12 +1047,14 @@
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.options.component.variants-help-modal.title")
                                :on-click on-click-variant-title-help
+                               :tooltip-placement "top-left"
                                :icon i/help}])
 
            (when main-instance?
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.shape.menu.add-variant")
                                :on-click (if is-variant? create-variant transform-into-variant)
+                               :tooltip-placement "top-left"
                                :icon i/variant}])])]
 
        (when open?
@@ -1075,6 +1077,7 @@
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.shape.menu.add-variant-property")
                                :on-click add-new-property
+                               :tooltip-placement "top-left"
                                :icon i/add}])]
 
           (when is-swap-opened
@@ -1159,7 +1162,8 @@
                                       (tr "workspace.shape.menu.remove-variant-property.last-property")
                                       (tr "workspace.shape.menu.remove-variant-property"))
                         :on-click on-remove
-                        :disabled is-remove-disabled}]]]))
+                        :disabled is-remove-disabled
+                        :tooltip-placement "top-left"}]]]))
 
 (mf/defc component-variant-main*
   [{:keys [shapes]}]
@@ -1291,10 +1295,12 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.component.variants-help-modal.title")
                            :on-click on-click-variant-title-help
+                           :tooltip-placement "top-left"
                            :icon i/help}]
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.shape.menu.add-variant")
                            :on-click (partial create-variant "workspace:button-design-tab-component")
+                           :tooltip-placement "top-left"
                            :icon i/variant}]]]
 
        (when open?
@@ -1309,6 +1315,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.shape.menu.add-variant-property")
                              :on-click (partial add-new-property "workspace:button-design-tab-component")
+                             :tooltip-placement "top-left"
                              :icon i/add}]]
 
           (when-not multi?
