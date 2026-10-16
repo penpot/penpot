@@ -10,7 +10,6 @@
 @use "ds/spacing.scss" as *;
 @use "ds/typography.scss" as t;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
-@use "refactor/common-refactor.scss" as deprecated;
 
 .annotation {
   @include t.use-typography("body-small");
@@ -23,7 +22,7 @@
     border: $b-1 solid var(--color-accent-primary);
 
     .annotation-title {
-      border-bottom: $b-1 solid var(--entry-border-color-disabled);
+      border-bottom: $b-1 solid var(--color-background-quaternary);
     }
 
     // Keep the hover background of the actions off the border.
@@ -479,11 +478,6 @@
   color: var(--color-foreground-secondary);
 }
 
-.component-title-actions {
-  display: flex;
-  gap: var(--sp-xs);
-}
-
 .component-content {
   grid-column: span 8;
   display: flex;
@@ -592,11 +586,21 @@
 }
 
 .pill-actions-dropdown {
-  @extend %dropdown-wrapper;
-
-  inline-size: $sz-252;
+  position: absolute;
+  inset-block-start: $sz-32;
   inset-inline-end: 0;
-  inset-inline-start: unset;
+  inline-size: $sz-252;
+  max-block-size: var(--menu-max-height, px2rem(300));
+  padding: var(--sp-xxs);
+  margin: 0;
+  margin-block-start: px2rem(1);
+  border: $b-2 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  box-shadow: 0 0 px2rem(12) 0 var(--color-shadow-dark);
+  z-index: var(--z-index-dropdown);
+  overflow: hidden auto;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 
   &.extended {
     inset-block-start: $sz-48;
@@ -604,7 +608,33 @@
 }
 
 .pill-actions-dropdown-item {
-  @extend %dropdown-element-base;
+  @include t.use-typography("body-small");
+
+  --pill-actions-dropdown-item-foreground-color: var(--color-foreground-secondary);
+  --pill-actions-dropdown-item-background-color: transparent;
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  block-size: $sz-32;
+  padding: 0 var(--sp-s);
+  border-radius: $br-6;
+  cursor: pointer;
+  color: var(--pill-actions-dropdown-item-foreground-color);
+  background-color: var(--pill-actions-dropdown-item-background-color);
+
+  &:hover {
+    --pill-actions-dropdown-item-foreground-color: var(--color-foreground-primary);
+    --pill-actions-dropdown-item-background-color: var(--color-background-quaternary);
+  }
+}
+
+.pill-actions-dropdown-item-label {
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .variant-property-list {

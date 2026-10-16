@@ -918,7 +918,7 @@
               [:li {:key title
                     :class (stl/css :pill-actions-dropdown-item)
                     :on-click (partial do-action action)}
-               [:span title]]))]]])]))
+               [:span {:class (stl/css :pill-actions-dropdown-item-label)} title]]))]]])]))
 
 (mf/defc component-menu*
   [{:keys [shapes is-swap-opened]}]
