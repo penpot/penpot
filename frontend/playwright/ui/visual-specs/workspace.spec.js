@@ -267,4 +267,44 @@ test.describe("Component options", () => {
       threshold: 0,
     });
   });
+
+  test("Shows the annotation actions of a main component", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickToggableLayer("Group");
+    await workspace.layers.getByText("B", { exact: true }).click();
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Options" })
+      .click();
+    await workspace.rightSidebar.getByText("Create annotation").click();
+
+    // Creating: save (disabled while the text is empty) and discard.
+    const annotation = workspace.rightSidebar.locator("#annotation-textarea");
+    await expect(annotation).toBeFocused();
+    await expect(workspace.rightSidebar).toHaveScreenshot(
+      "annotation-creating.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    // Saved: edit and delete show when hovering the title.
+    await annotation.fill("An annotation");
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Create", exact: true })
+      .click();
+    const title = workspace.rightSidebar.getByText("Annotation", {
+      exact: true,
+    });
+    await title.hover();
+    await expect(workspace.rightSidebar).toHaveScreenshot(
+      "annotation-saved.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+  });
 });
