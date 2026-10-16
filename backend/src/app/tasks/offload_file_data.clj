@@ -23,6 +23,9 @@
       AND fd.backend = 'db'
       AND fd.deleted_at IS NULL")
 
+(def ^:private sql:lock-file
+  "SELECT id FROM file WHERE id = ? AND deleted_at IS NULL FOR UPDATE SKIP LOCKED")
+
 (defn- offload-file-data
   [cfg {:keys [id file-id type] :as fdata}]
   (jobs/heartbeat cfg)
@@ -42,8 +45,21 @@
     (-> cfg
         (assoc ::db/rollback (:rollback? params))
         (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
-                      (run! (partial offload-file-data cfg)
-                            (db/plan conn [sql:get-file-data file-id])))))))
+                      (if (db/exec-one! conn [sql:lock-file file-id])
+                        (let [counter (volatile! 0)]
+                          (run! (fn [fdata]
+                                  (offload-file-data cfg fdata)
+                                  (vswap! counter inc))
+                                (db/plan conn [sql:get-file-data file-id]))
+                          (let [total @counter]
+                            (l/trc :hint "file data offloaded"
+                                   :file-id (str file-id)
+                                   :offloaded total)
+                            {:offloaded total :skipped 0}))
+                        (do
+                          (l/dbg :hint "skip offload, file is locked or gone"
+                                 :file-id (str file-id))
+                          {:offloaded 0 :skipped 1})))))))
 
 (def schema:offload-file-data-params
   [:map
