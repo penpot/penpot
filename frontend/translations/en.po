@@ -1536,7 +1536,7 @@ msgstr "Auth provider not allowed for this profile"
 msgid "errors.auth-provider-not-configured"
 msgstr "Authentication provider not configured."
 
-#: src/app/main/errors.cljs:742
+#: src/app/main/errors.cljs:743
 msgid "errors.auth.unable-to-login"
 msgstr "Looks like you are not authenticated or session expired."
 
@@ -1556,7 +1556,7 @@ msgstr "Cannot upload the media file."
 msgid "errors.character-limit-exceeded"
 msgstr "Character limit exceeded"
 
-#: src/app/main/data/workspace/libraries.cljs:1778
+#: src/app/main/data/workspace/libraries.cljs:1784
 msgid "errors.circular-library-reference"
 msgstr "Cannot add library: this would create a circular dependency"
 
@@ -1576,29 +1576,29 @@ msgstr ""
 "Clipboard access denied. Please allow clipboard permissions in your browser "
 "to paste content"
 
-#: src/app/main/errors.cljs:944
+#: src/app/main/errors.cljs:945
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
 
-#: src/app/main/errors.cljs:586
+#: src/app/main/errors.cljs:587
 msgid "errors.connection-error"
 msgstr "Cannot reach the server. Check your connection and try again."
 
-#: src/app/main/errors.cljs:1013
+#: src/app/main/errors.cljs:1014
 msgid "errors.deprecated"
 msgstr ""
 "Sorry! This is an old file that uses a deprecated type of Penpot assets and "
 "you can't open it."
 
-#: src/app/main/errors.cljs:1016
+#: src/app/main/errors.cljs:1017
 msgid "errors.deprecated.contact.after"
 msgstr "so we can help you."
 
-#: src/app/main/errors.cljs:1014
+#: src/app/main/errors.cljs:1015
 msgid "errors.deprecated.contact.before"
 msgstr "Although Penpot no longer support this type of Assets, you can"
 
-#: src/app/main/errors.cljs:1015
+#: src/app/main/errors.cljs:1016
 msgid "errors.deprecated.contact.text"
 msgstr "contact us"
 
@@ -1642,13 +1642,13 @@ msgstr "The export failed. Try again in a moment."
 msgid "errors.export-too-large"
 msgstr "Too large to export, try a smaller scale"
 
-#: src/app/main/errors.cljs:990
+#: src/app/main/errors.cljs:991
 msgid "errors.feature-mismatch"
 msgstr ""
 "Looks like you are opening a file that has the feature '%s' enabled but the "
 "current penpot version does not supports it or has it disabled."
 
-#: src/app/main/errors.cljs:994, src/app/main/errors.cljs:1008
+#: src/app/main/errors.cljs:995, src/app/main/errors.cljs:1009
 msgid "errors.feature-not-supported"
 msgstr "Feature '%s' is not supported."
 
@@ -1668,7 +1668,7 @@ msgstr "Empty field"
 msgid "errors.field-not-all-whitespace"
 msgstr "The name must contain some character other than space."
 
-#: src/app/main/errors.cljs:986
+#: src/app/main/errors.cljs:987
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "It seems that there is a mismatch between the enabled features and the "
@@ -1681,11 +1681,11 @@ msgstr ""
 "The font family name can only contain letters, numbers, spaces, hyphens, "
 "underscores, and dots."
 
-#: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:564, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:131, src/app/main/ui/dashboard/fonts.cljs:125, src/app/main/ui/dashboard/fonts.cljs:403, src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/dashboard/team.cljs:1132, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:967
+#: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:565, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:131, src/app/main/ui/dashboard/fonts.cljs:125, src/app/main/ui/dashboard/fonts.cljs:403, src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/dashboard/team.cljs:1132, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:967
 msgid "errors.generic"
 msgstr "Something wrong has happened."
 
-#: src/app/main/errors.cljs:923
+#: src/app/main/errors.cljs:924
 msgid "errors.internal-worker-error"
 msgstr "Something wrong has happened with the web worker."
 
@@ -1735,7 +1735,7 @@ msgstr "This invite might be canceled or may be expired."
 msgid "errors.ldap-disabled"
 msgstr "LDAP authentication is disabled."
 
-#: src/app/main/errors.cljs:1002, src/app/main/ui/dashboard/team.cljs:218, src/app/main/ui/dashboard/team.cljs:1124, src/app/main/ui/onboarding/team_choice.cljs:117
+#: src/app/main/errors.cljs:1003, src/app/main/ui/dashboard/team.cljs:218, src/app/main/ui/dashboard/team.cljs:1124, src/app/main/ui/onboarding/team_choice.cljs:117
 msgid "errors.max-quota-reached"
 msgstr "You have reached the '%s' quota. Contact support."
 
@@ -1761,15 +1761,15 @@ msgstr "Seems that this is not a valid image."
 msgid "errors.member-is-muted"
 msgstr "The profile you inviting has emails muted (spam reports or high bounces)."
 
-#: src/app/main/errors.cljs:976
+#: src/app/main/errors.cljs:977
 msgid "errors.migration-in-progress"
 msgstr "Migration in progress"
 
-#: src/app/main/errors.cljs:869
+#: src/app/main/errors.cljs:870
 msgid "errors.only-creator-can-lock"
 msgstr "Only the version creator can lock it"
 
-#: src/app/main/errors.cljs:877
+#: src/app/main/errors.cljs:878
 msgid "errors.only-creator-can-unlock"
 msgstr "Only the version creator can unlock it"
 
@@ -1793,7 +1793,7 @@ msgstr "Confirmation password must match"
 msgid "errors.password-too-short"
 msgstr "Password should at least be 8 characters"
 
-#: src/app/main/errors.cljs:850
+#: src/app/main/errors.cljs:851
 msgid "errors.paste-data-validation"
 msgstr "Invalid data in clipboard"
 
@@ -1805,7 +1805,7 @@ msgstr "The profile is blocked"
 msgid "errors.profile-is-muted"
 msgstr "Your profile has emails muted (spam reports or high bounces)."
 
-#: src/app/main/errors.cljs:886
+#: src/app/main/errors.cljs:887
 msgid "errors.profile-props-too-large"
 msgstr ""
 "Your profile settings are too large to save. Remove some plugins and try "
@@ -1815,29 +1815,35 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
 
-#: src/app/main/errors.cljs:700
+#: src/app/main/errors.cljs:701
 msgid "errors.save-failed"
 msgstr ""
 "Autosave has stopped for this session, so your changes since the last "
 "successful save cannot be saved. Download the report to help us fix it, "
 "then reload the page, or leave this file and open it again, to keep editing."
 
-#: src/app/main/data/persistence.cljs:447
+#: src/app/main/data/persistence.cljs:602
+msgid "errors.save-rejected-changes-undone"
+msgstr ""
+"Some of your latest changes couldn't be saved and were undone. The rest of "
+"your work is saved."
+
+#: src/app/main/data/persistence.cljs:492
 msgid "errors.save-retrying"
 msgstr "Connection lost. Retrying to save your changes."
 
-#: src/app/main/errors.cljs:691
+#: src/app/main/errors.cljs:692
 msgid "errors.save-still-retrying"
 msgstr ""
 "Your changes are not saved yet because Penpot cannot reach the server. They "
 "are kept, and Penpot will keep trying to save them. Keep this tab open "
 "until they are saved."
 
-#: src/app/main/errors.cljs:935
+#: src/app/main/errors.cljs:936
 msgid "errors.svg-parser.invalid-svg"
 msgstr "SVG is invalid or malformed"
 
-#: src/app/main/errors.cljs:981
+#: src/app/main/errors.cljs:982
 msgid "errors.team-feature-mismatch"
 msgstr "Detected incompatible feature '%s'"
 
@@ -2026,15 +2032,15 @@ msgstr "An unexpected error occurred."
 msgid "errors.unexpected-token"
 msgstr "Unknown token"
 
-#: src/app/main/errors.cljs:894
+#: src/app/main/errors.cljs:895
 msgid "errors.version-already-locked"
 msgstr "This version is already locked"
 
-#: src/app/main/errors.cljs:861
+#: src/app/main/errors.cljs:862
 msgid "errors.version-locked"
 msgstr "This version is locked and cannot be deleted by others"
 
-#: src/app/main/errors.cljs:998
+#: src/app/main/errors.cljs:999
 msgid "errors.version-not-supported"
 msgstr "File has an incompatible version number"
 
@@ -3037,7 +3043,7 @@ msgstr "Development"
 msgid "labels.discard"
 msgstr "Discard"
 
-#: src/app/main/errors.cljs:559, src/app/main/ui/settings/feedback.cljs:137, src/app/main/ui/static.cljs:435
+#: src/app/main/errors.cljs:560, src/app/main/ui/settings/feedback.cljs:137, src/app/main/ui/static.cljs:435
 msgid "labels.download"
 msgstr "Download %s"
 
@@ -3401,7 +3407,7 @@ msgstr "Refresh"
 msgid "labels.release-notes"
 msgstr "Release notes"
 
-#: src/app/main/errors.cljs:663, src/app/main/ui/static.cljs:388
+#: src/app/main/errors.cljs:664, src/app/main/ui/static.cljs:388
 msgid "labels.reload-page"
 msgstr "Reload page"
 
@@ -9768,19 +9774,19 @@ msgstr "typography asset"
 msgid "workspace.undo.entry.unknown"
 msgstr "Operation over %s"
 
-#: src/app/main/data/workspace/libraries.cljs:1442, src/app/main/data/workspace/versions.cljs:241
+#: src/app/main/data/workspace/libraries.cljs:1448, src/app/main/data/workspace/versions.cljs:241
 msgid "workspace.updates.dismiss"
 msgstr "Dismiss"
 
-#: src/app/main/data/workspace/libraries.cljs:1440
+#: src/app/main/data/workspace/libraries.cljs:1446
 msgid "workspace.updates.more-info"
 msgstr "More info"
 
-#: src/app/main/data/workspace/libraries.cljs:1438
+#: src/app/main/data/workspace/libraries.cljs:1444
 msgid "workspace.updates.there-are-updates"
 msgstr "There are updates in shared libraries"
 
-#: src/app/main/data/workspace/libraries.cljs:1444
+#: src/app/main/data/workspace/libraries.cljs:1450
 msgid "workspace.updates.update"
 msgstr "Update"
 
