@@ -8777,6 +8777,10 @@ msgstr "Formas"
 msgid "workspace.sidebar.layers.texts"
 msgstr "Textos"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:53
+msgid "workspace.sidebar.options.svg-attrs.remove"
+msgstr "Eliminar atributo"
+
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:113
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Atributos del SVG Importado"
