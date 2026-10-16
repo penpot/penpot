@@ -372,6 +372,10 @@
                                             (rx/from (entry-messages entries {:status :error
                                                                               :error  (job-message error)}))
 
+                                            ;; cancelled elsewhere (e.g. from
+                                            ;; the admin panel): no outcome is
+                                            ;; coming, fail the entries with
+                                            ;; the cancelled message
                                             (= "cancelled" status)
                                             (rx/from (entry-messages entries {:status :error
                                                                               :error  (tr "jobs.import-cancelled")}))
