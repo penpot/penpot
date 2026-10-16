@@ -198,31 +198,35 @@
            (if (or ^boolean editing?
                    ^boolean creating?)
              [:*
-              [:div {:title (if ^boolean creating?
-                              (tr "labels.create")
-                              (tr "labels.save"))
-                     :on-click on-save
-                     :class (stl/css :annotation-title-icon-action)}
-               [:> icon* {:icon-id i/tick
-                          :class (stl/css-case :annotation-title-icon-ok true
-                                               :disabled invalid-text?)}]]
-              [:div {:class (stl/css :annotation-title-icon-action)
-                     :title (tr "labels.discard")
-                     :on-click on-discard}
-               [:> icon* {:icon-id i/close
-                          :class (stl/css :annotation-title-icon-nok)}]]]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (if ^boolean creating?
+                                              (tr "labels.create")
+                                              (tr "labels.save"))
+                                :on-click on-save
+                                :disabled invalid-text?
+                                :tooltip-class (stl/css :annotation-title-icon-action)
+                                :tooltip-placement "top-left"
+                                :icon i/tick}]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "labels.discard")
+                                :on-click on-discard
+                                :tooltip-class (stl/css :annotation-title-icon-action)
+                                :tooltip-placement "top-left"
+                                :icon i/close}]]
 
              [:*
-              [:div {:class (stl/css :annotation-title-icon-action)
-                     :title (tr "labels.edit")
-                     :on-click on-edit}
-               [:> icon* {:icon-id i/curve
-                          :class (stl/css :annotation-title-icon-ok)}]]
-              [:div {:class (stl/css :annotation-title-icon-action)
-                     :title (tr "labels.delete")
-                     :on-click on-delete-annotation}
-               [:> icon* {:icon-id i/delete
-                          :class (stl/css :annotation-title-icon-nok)}]]]))]]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "labels.edit")
+                                :on-click on-edit
+                                :tooltip-class (stl/css :annotation-title-icon-action)
+                                :tooltip-placement "top-left"
+                                :icon i/curve}]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "labels.delete")
+                                :on-click on-delete-annotation
+                                :tooltip-class (stl/css :annotation-title-icon-action)
+                                :tooltip-placement "top-left"
+                                :icon i/delete}]]))]]
 
        [:div {:class (stl/css-case :annotation-body-hidden (not expanded?))}
         [:div {:class (stl/css :annotation-body)}

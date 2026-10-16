@@ -26,6 +26,11 @@
       border-bottom: $b-1 solid var(--entry-border-color-disabled);
     }
 
+    // Keep the hover background of the actions off the border.
+    .annotation-title-actions {
+      padding: var(--sp-xxs);
+    }
+
     .annotation-title-icon-action {
       display: flex;
     }
@@ -46,6 +51,10 @@
       display: flex;
     }
 
+    .annotation-title-actions {
+      padding: var(--sp-xxs);
+    }
+
     .annotation-title-name {
       margin-inline-start: var(--sp-m);
     }
@@ -59,7 +68,7 @@
 .annotation-title {
   display: flex;
   align-items: center;
-  block-size: $sz-32;
+  min-block-size: $sz-32;
 
   &.expanded {
     border-bottom: $b-1 solid var(--color-background-quaternary);
@@ -90,29 +99,10 @@
   line-height: 2.5;
 }
 
-.annotation-title-icon-action {
-  cursor: pointer;
+// Tooltip wrapper of each action: hidden until the title is hovered or the
+// annotation is being edited or created.
+.annotation-title-actions .annotation-title-icon-action {
   display: none;
-  justify-content: center;
-  align-items: center;
-  inline-size: $sz-28;
-  block-size: $sz-32;
-  border-radius: $br-8;
-  margin: 0;
-  padding: 0;
-}
-
-.annotation-title-icon-ok:hover {
-  color: var(--color-accent-success);
-
-  &.disabled {
-    cursor: default;
-    color: var(--color-foreground-secondary);
-  }
-}
-
-.annotation-title-icon-nok:hover {
-  color: var(--color-accent-error);
 }
 
 .annotation-body-hidden {
