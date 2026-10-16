@@ -30,6 +30,7 @@
 (declare ^:private persist-commit)
 (declare ^:private resume-persistence)
 (declare ^:private slow-retry-cycle)
+(declare ^:private flush-buffer)
 
 (log/set-level! :warn)
 
@@ -293,6 +294,20 @@
                                                :slow-failures :attempts :retry-token
                                                :retry-for)))))))
 
+(defn- without-commits
+  "Removes from `buffer` the commits listed in `commits`."
+  [buffer commits]
+  (let [ids (into #{} (map :id) commits)]
+    (into [] (remove #(contains? ids (:id %))) buffer)))
+
+(defn- buffer-commit
+  "Keeps a local commit in the store until the next flush queues it."
+  [commit]
+  (ptk/reify ::buffer-commit
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:persistence :buffer] (fnil conj []) commit))))
+
 (defn- append-commit
   "Event used internally to append the current change to the
   persistence queue."
@@ -307,6 +322,7 @@
                   (-> pstate
                       (cond-> (not= :error (:status pstate))
                         (update :run-id d/nilv run-id))
+                      (update :buffer without-commits (:commits commit))
                       (update :queue queue-conj id)
                       (update :index assoc id commit)))))
 
@@ -730,20 +746,27 @@
   (ptk/reify ::initialize-persistence-state
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [queue status run-id]} (:persistence state)]
-        (cond
-          ;; A commit left queued by a previous session, with no runner.
-          (queue-needs-a-runner? (:persistence state))
-          (rx/of (resume-persistence))
+      (let [{:keys [queue status run-id buffer]} (:persistence state)]
+        (rx/concat
+         (cond
+           ;; A commit left queued by a previous session, with no runner.
+           (queue-needs-a-runner? (:persistence state))
+           (rx/of (resume-persistence))
 
-          ;; Nothing queued and nothing in flight: there is nothing to save.
-          (and (empty? queue)
-               (not= status :error)
-               (or run-id (#{:pending :saving} status)))
-          (rx/of (update-status :saved))
+           ;; Nothing queued and nothing in flight: there is nothing to save.
+           (and (empty? queue)
+                (empty? buffer)
+                (not= status :error)
+                (or run-id (#{:pending :saving} status)))
+           (rx/of (update-status :saved))
 
-          :else
-          (rx/empty))))))
+           :else
+           (rx/empty))
+         ;; Commits buffered by a previous session are queued now instead of
+         ;; waiting for the next edit.
+         (if (seq buffer)
+           (rx/of (flush-buffer))
+           (rx/empty)))))))
 
 (defn- recover-persistence
   "Lifts a halted queue when a file is opened again or the role changes.
@@ -802,6 +825,10 @@
 (def ^:private xf-mapcat-redo
   (mapcat :redo-changes))
 
+(def ^:private commit-keys
+  "What a queue entry keeps of each commit merged into it."
+  [:id :origin :undo-group :redo-changes :undo-changes])
+
 (defn- merge-commit
   [buffer]
   (->> (rx/from (group-by :file-id buffer))
@@ -811,7 +838,19 @@
                    (-> item
                        (assoc :undo-changes uchg)
                        (assoc :redo-changes rchg)
-                       (assoc :changes rchg)))))))
+                       (assoc :changes rchg)
+                       (assoc :commits (mapv #(select-keys % commit-keys) commits))))))))
+
+(defn- flush-buffer
+  "Queues the buffered commits, merged into one queue entry per file."
+  []
+  (ptk/reify ::flush-buffer
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if-let [buffer (seq (dm/get-in state [:persistence :buffer]))]
+        (->> (merge-commit buffer)
+             (rx/map append-commit))
+        (rx/empty)))))
 
 (defn- resume-on-online
   "Re-enters the runner for a retrying episode when the browser reports
@@ -830,13 +869,24 @@
 (defn- sync-unload-guard
   "Turns the browser's leave-page warning on while edits are unsaved:
   buffered, queued, or retained after a failed save."
-  [buffered?]
+  []
   (ptk/reify ::sync-unload-guard
     ptk/EffectEvent
     (effect [_ state _]
-      (if (or buffered? (seq (dm/get-in state [:persistence :queue])))
+      (if (or (seq (dm/get-in state [:persistence :buffer]))
+              (seq (dm/get-in state [:persistence :queue])))
         (swap! st/ongoing-tasks conj :persistence)
         (swap! st/ongoing-tasks disj :persistence)))))
+
+(defn- persist-buffered
+  "Forces a save when local commits wait in the buffer."
+  []
+  (ptk/reify ::persist-buffered
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (seq (dm/get-in state [:persistence :buffer]))
+        (rx/of ::force-persist)
+        (rx/empty)))))
 
 (defn leave-signals
   "Emits when the tab is hidden or the window loses focus: another tab or
@@ -856,9 +906,6 @@
     (watch [_ _ stream]
       (log/debug :hint "initialize persistence")
       (let [stoper-s (rx/filter (ptk/type? ::initialize-persistence) stream)
-
-            ;; True while local commits wait in the buffer for the next flush.
-            buffered? (volatile! false)
 
             local-commits-s
             (->> stream
@@ -909,23 +956,20 @@
 
          ;; Sends the buffered edits when the user leaves the tab or window.
          (->> (leave-signals)
-              (rx/filter (fn [_] @buffered?))
-              (rx/map (fn [_] ::force-persist))
+              (rx/map (fn [_] (persist-buffered)))
               (rx/take-until stoper-s))
 
-         ;; Syncs the leave-page warning on every local commit and on every
-         ;; queue change (append after a flush, discard after a save,
-         ;; release of a failed file).
+         ;; Syncs the leave-page warning on every buffer and queue change
+         ;; (a buffered commit, an append after a flush, a discard after a
+         ;; save, the release of a failed file).
          (->> (rx/merge
-               (rx/of false)
-               (->> local-commits-s
-                    (rx/map (fn [_] (vreset! buffered? true))))
+               (rx/of nil)
                (->> stream
-                    (rx/filter #(or (ptk/type? ::append-commit %)
+                    (rx/filter #(or (ptk/type? ::buffer-commit %)
+                                    (ptk/type? ::append-commit %)
                                     (ptk/type? ::discard-commit %)
-                                    (ptk/type? ::release-failed-file %)))
-                    (rx/map (fn [_] @buffered?))))
-              (rx/map sync-unload-guard)
+                                    (ptk/type? ::release-failed-file %)))))
+              (rx/map (fn [_] (sync-unload-guard)))
               (rx/take-until stoper-s))
 
          (->> local-commits-s
@@ -934,15 +978,15 @@
                         (update-status :pending)))
               (rx/take-until stoper-s))
 
-         ;; Here we watch for local commits, buffer them in a small
-         ;; chunks (very near in time commits) and append them to the
-         ;; persistence queue
+         ;; Local commits wait in the store buffer and are queued in small
+         ;; chunks (commits very near in time) on each notification
          (->> local-commits-s
+              (rx/map buffer-commit)
+              (rx/take-until stoper-s))
+
+         (->> notifier-s
+              (rx/map (fn [_] (flush-buffer)))
               (rx/take-until stoper-s)
-              (rx/buffer-until notifier-s)
-              (rx/tap (fn [_] (vreset! buffered? false)))
-              (rx/mapcat merge-commit)
-              (rx/map append-commit)
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: changes watcher"))))
 
