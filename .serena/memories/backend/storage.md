@@ -125,6 +125,11 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - The `file_data.metadata.storage-ref-id` value points to the storage object.
 - `fdata/upsert!` touches a storage object from incoming metadata before it stores the new row.
 - File snapshots use `file_data` for snapshot data and `file_change` for snapshot metadata.
+- Tiered offload (`:tiered-file-data-storage` flag + `db` backend): `file-gc` submits an `:offload-file-data` job (priority 10, delay 1000, same params) only when it actually processed the file; the handler takes the `file` row with `FOR UPDATE SKIP LOCKED` and skips (`{:skipped 1}`, no error) when the row is locked or gone, then moves every live `file_data` row of that file with `backend = 'db'` to `backend = 'storage'` via `fdata/upsert!` (one `put-object!` in bucket `file-data` per row, `data` becomes nil) inside a single all-or-nothing transaction per file. A storage failure aborts only that file and bubbles for a runner retry; orphans go to `storage-gc-touched`. A second run is a no-op because the query only matches `backend = 'db'`.
+- Offload throttle: `jobs/heartbeat` per row plus `px/sleep` every N rows (`:sleep-every` 50 / `:sleep-ms` 50 defaults, overridable per job params); `file-gc-scheduler` also sleeps every N schedules (50 submits / 100 ms defaults).
+- Offload metrics (bounded labels only, never ids or error text): `penpot_file_data_offload_rows_total{result,type}` and `penpot_file_data_offload_bytes_total{result,type}` (`result`: `ok`/`skip`/`error`; `type`: `main`/`snapshot`/`fragment`) plus `penpot_file_data_offload_timing_ms{result}`. Helpers live in `app.jobs.metrics`; the job-def requires `::mtx/metrics`.
+- Writes always resolve the backend through `fdata/default-backend` (`cf/get :file-data-backend`), so post-offload edits land back in hot (`db`) storage without extra code; reads stay transparent through `fdata/resolve-file-data` + `decode-file-data` + `realize`.
+- Deleting an offloaded row touches its storage object first (`objects-gc/delete-file-data-chunk` via `fdata/process-metadata`), so `storage-gc-touched` reclaims the blob with the usual delay; restoring a file unmarks the referenced objects.
 
 ## Metrics
 
