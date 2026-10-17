@@ -346,6 +346,25 @@
     ::mdef/help "Time spent waiting for an ephemeral job reply (milliseconds). Its _count is the request total per outcome."
     ::mdef/labels ["outcome"]
     ::mdef/type :histogram
+    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000]}
+
+   :file-data-offload-rows
+   {::mdef/name "penpot_file_data_offload_rows_total"
+    ::mdef/help "File data rows moved from hot to cold storage by the offload job."
+    ::mdef/labels ["type"]
+    ::mdef/type :counter}
+
+   :file-data-offload-bytes
+   {::mdef/name "penpot_file_data_offload_bytes_total"
+    ::mdef/help "File data bytes moved from hot to cold storage by the offload job."
+    ::mdef/labels ["type"]
+    ::mdef/type :counter}
+
+   :file-data-offload-timing
+   {::mdef/name "penpot_file_data_offload_timing_ms"
+    ::mdef/help "Time spent offloading one file from hot to cold storage (milliseconds)."
+    ::mdef/labels ["result"]
+    ::mdef/type :histogram
     ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000]}})
 
 (def system-config
