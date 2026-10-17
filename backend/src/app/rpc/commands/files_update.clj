@@ -36,7 +36,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
-   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [clojure.set :as set]))
 
@@ -282,8 +281,7 @@
   [{:keys [::db/conn ::timestamp] :as cfg}
    {:keys [profile-id file team features changes session-id skip-validate] :as params}]
 
-  (binding [pmap/*tracked* (pmap/create-tracked)
-            pmap/*load-fn* (partial fdata/load-pointer cfg (:id file))]
+  (fdata/with-tracked-pointers cfg (:id file)
 
     (let [file (assoc file :features
                       (-> features
@@ -430,11 +428,13 @@
                     (rds/del conn key)))))
 
 (defn- attach-snapshot
-  "Attach snapshot data to the file. This should be called before the
-  upcoming file operations are applied to the file."
-  [cfg migrated? file]
-  (let [snapshot (if migrated? file (fdata/realize cfg file))]
-    (assoc file ::snapshot snapshot)))
+  "Attach snapshot data to the file. Snapshots share fragment rows with
+  the live file, so the snapshot is kept as-is (with pointers); it is
+  NOT realized/materialized here. The file-gc liveness set unions main
+  and snapshots, so shared fragments survive while any of them needs
+  them."
+  [file]
+  (assoc file ::snapshot file))
 
 (defn- update-file-data!
   "Perform a file data transformation in with all update context setup.
@@ -442,8 +442,9 @@
   This function expected not-decoded file and transformation function. Returns
   an encoded file.
 
-  This function is not responsible of saving the file. It only saves
-  fdata/pointer-map modified fragments."
+  This function is not responsible of saving the file. Fragment rows are
+  persisted later by `persist-file!` (via `bfc/update-file!` inside the
+  same transaction); nothing is written to `file_data` here."
 
   [cfg {:keys [id] :as file} update-fn & args]
   (let [file (update file :data (fn [data]
@@ -458,6 +459,11 @@
         take-snapshot?
         (take-snapshot? file)
 
+        ;; Attach the snapshot before migrating: a migration can rebuild a
+        ;; page and give its PointerMap a new id with `modified?` set, and a
+        ;; snapshot taken after that would keep the very pointer the save
+        ;; then rewrites, ending up with post-save content.
+        ;;
         ;; For avoid unnecesary overhead of creating multiple
         ;; pointers and handly internally with objects map in their
         ;; worst case (when probably all shapes and all pointers
@@ -468,11 +474,11 @@
           ;; need-migration?
           ;; (->> (fdata/realize cfg))
 
-          need-migration?
-          (fmg/migrate-file libs)
-
           take-snapshot?
-          (->> (attach-snapshot cfg need-migration?)))]
+          (->> (attach-snapshot))
+
+          need-migration?
+          (fmg/migrate-file libs))]
 
     (apply update-fn cfg file args)))
 
@@ -630,7 +636,7 @@
         pending-repair
         (atom nil)]
 
-    (binding [pmap/*tracked* nil]
+    (fdata/with-untracked
       (when (contains? cf/flags :soft-file-validation)
         (let [t (ct/tpoint)]
           (try

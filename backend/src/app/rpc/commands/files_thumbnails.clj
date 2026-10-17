@@ -166,7 +166,7 @@
 
                 objects)))]
 
-    (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)]
+    (fdata/with-pointers cfg id
       (let [frame     (get-thumbnail-frame data)
             frame-id  (:id frame)
             page-id   (or (:page-id frame)
