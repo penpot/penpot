@@ -25,4 +25,7 @@
 - File data backends are `legacy-db`, `db`, and `storage`. The storage backend keeps encoded file data in storage bucket `file-data`; the DB row stores metadata with `storage-ref-id` and nil data.
 - `fdata/upsert!` touches any storage object referenced by incoming metadata before storing the new row/blob.
 - Pointer-map fragments are persisted separately as type `fragment`, and only modified pointer maps are written.
+- File snapshots (versions) keep their metadata row in `file_change` and their payload in `file_data` (`type = 'snapshot'`). With the `db` backend `file_change.data` stays NULL: that column is only written by the `legacy-db` backend, plus the rows written before the 2025-07 file storage refactor.
+- Tell a snapshot apart by `label IS NOT NULL` (with `created_by` / `deleted_at` as needed), never by `file_change.data IS NOT NULL`: the label holds with every file data backend, and the payload column stopped meaning "this is a snapshot" when the payload moved out. Queries that identify versions must use the label.
+- The version quota counts of `app.rpc.quotes` (`sql:get-snapshots-per-file`, `sql:get-snapshots-per-team`) are served by the partial index `file_change__user_snapshots__idx`, whose predicate mirrors their where clause; changing one without the other drops the index only scan and the count walks the whole table again.
 - `fdata/realize` combines pointer realization and object-map realization. Use it before operations that need complete in-memory file data instead of pointer placeholders.
