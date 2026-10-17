@@ -53,6 +53,28 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- offload-file-rows
+  "Offload every live hot-storage row of one file inside the caller
+  transaction. Takes the file row lock first and skips when the row
+  is locked or gone. Returns a summary map with the offloaded rows,
+  bytes, per-type stats and the skipped flag."
+  [{:keys [::db/conn] :as cfg} file-id]
+  (if (db/exec-one! conn [sql:lock-file file-id])
+    (let [stats (volatile! {:rows 0 :bytes 0 :by-type {}})]
+      (run! (fn [fdata]
+              (offload-file-data cfg fdata stats))
+            (db/plan conn [sql:get-file-data file-id]))
+      (let [{:keys [rows bytes by-type]} @stats]
+        (l/trc :hint "file data offloaded"
+               :file-id (str file-id)
+               :offloaded rows
+               :bytes bytes)
+        {:offloaded rows :bytes bytes :by-type by-type :skipped 0}))
+    (do
+      (l/dbg :hint "skip offload, file is locked or gone"
+             :file-id (str file-id))
+      {:offloaded 0 :bytes 0 :by-type {} :skipped 1})))
+
 (defn execute-offload-file-data
   "Plain job handler: offload the file data rows of one file."
   [cfg params]
@@ -61,22 +83,7 @@
     (try
       (let [summary (-> cfg
                         (assoc ::db/rollback (:rollback? params))
-                        (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
-                                      (if (db/exec-one! conn [sql:lock-file file-id])
-                                        (let [stats (volatile! {:rows 0 :bytes 0 :by-type {}})]
-                                          (run! (fn [fdata]
-                                                  (offload-file-data cfg fdata stats))
-                                                (db/plan conn [sql:get-file-data file-id]))
-                                          (let [{:keys [rows bytes by-type]} @stats]
-                                            (l/trc :hint "file data offloaded"
-                                                   :file-id (str file-id)
-                                                   :offloaded rows
-                                                   :bytes bytes)
-                                            {:offloaded rows :bytes bytes :by-type by-type :skipped 0}))
-                                        (do
-                                          (l/dbg :hint "skip offload, file is locked or gone"
-                                                 :file-id (str file-id))
-                                          {:offloaded 0 :bytes 0 :by-type {} :skipped 1})))))]
+                        (db/tx-run! offload-file-rows file-id))]
         (if (pos? (:skipped summary))
           (do
             (metrics/record-offload-duration cfg :skip (inst-ms (tpoint)))
