@@ -24,7 +24,7 @@
 - `get-object` excludes rows with `deleted_at`.
 - `get-object`, `get-object-data`, and `get-object-bytes` accept `{:include-deleted? true}`.
   It returns a row marked for deletion anyway. Use it when the content must be read
-  before the gc removes it: the export of a file, and the repair of a reference.
+  before the gc removes it: the export of a file.
 - `get-object-by-hash` returns an alive object by hash and bucket. Pass `:backend` to look
   in the backend of a known object instead of the storage default.
 - Existing object values can remain readable until physical deletion.

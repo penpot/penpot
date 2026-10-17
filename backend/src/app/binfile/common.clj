@@ -130,6 +130,9 @@
 (defn initial-state
   []
   {:storage-objects #{}
+   :storage-aliases {}
+   :storage-alias-index {}
+   :input-cache {}
    :files #{}
    :teams #{}
    :projects #{}})
@@ -198,10 +201,28 @@
                   :storage-object-id (str id)
                   :bucket bucket))))
 
+(defn resolve-storage-row
+  "Import side. Return `row` with every storage reference of `kind`
+  pointing at the object the bundle stored for it. Raises when the
+  bundle does not contain an object a reference uses."
+  [row kind]
+  (reduce (fn [row column]
+            (d/update-when row column #(reference-storage-id % (get storage-bucket-by-kind kind))))
+          row
+          (get storage-reference-columns kind)))
+
 (defn- register-storage-alias
   [alias-id source-id bucket]
-  (vswap! *state* update :storage-aliases assoc alias-id {:source-id source-id
-                                                          :bucket bucket}))
+  (vswap! *state* (fn [state]
+                    (-> state
+                        (update :storage-aliases assoc alias-id {:source-id source-id
+                                                                 :bucket bucket})
+                        (assoc-in [:storage-alias-index [source-id bucket]] alias-id)))))
+
+(defn- lookup-storage-alias
+  "Return the alias already emitted for `[source-id bucket]`, if any."
+  [source-id bucket]
+  (get-in @*state* [:storage-alias-index [source-id bucket]]))
 
 (defn resolve-storage-reference
   "Export side. Return the object id to use for a reference that requires
@@ -212,19 +233,19 @@
   - if not, a copy of the object with the required bucket, which is emitted
     in the bundle under a new object id.
 
-  Returns nil when the object can not be read at all, so the caller can
-  drop the reference and keep exporting."
+  Raises when the object can not be read at all, mirroring
+  `export-storage-objects`: a bundle that loses a reference must fail
+  loudly instead of carrying a null the import would reject."
   [storage id bucket]
   (when id
     (let [object (sto/get-object storage id {:include-deleted? true})]
       (cond
         (nil? object)
-        (do
-          (l/warn :hint "referenced storage object not found; dropping the reference"
+        (ex/raise :type :internal
+                  :code :storage-object-not-found
+                  :hint "the file references a storage object that can not be read"
                   :storage-object-id (str id)
-                  :bucket bucket
-                  ::l/sync? true)
-          nil)
+                  :bucket bucket)
 
         (= bucket (:bucket (meta object)))
         (do
@@ -245,15 +266,16 @@
             (vswap! *state* update :storage-objects conj (:id twin))
             (:id twin))
 
-          (let [alias-id (uuid/next)]
-            (l/warn :hint "storage object with unexpected bucket; emitting a copy with the required bucket"
-                    :storage-object-id (str id)
-                    :bucket bucket
-                    :copy-id (str alias-id)
-                    ::l/sync? true)
-            (register-storage-alias alias-id id bucket)
-            (vswap! *state* update :storage-objects conj alias-id)
-            alias-id))))))
+          (or (lookup-storage-alias id bucket)
+              (let [alias-id (uuid/next)]
+                (l/warn :hint "storage object with unexpected bucket; emitting a copy with the required bucket"
+                        :storage-object-id (str id)
+                        :bucket bucket
+                        :copy-id (str alias-id)
+                        ::l/sync? true)
+                (register-storage-alias alias-id id bucket)
+                (vswap! *state* update :storage-objects conj alias-id)
+                alias-id)))))))
 
 (defn resolve-storage-references
   "Export side. Return `rows` with every storage reference of `kind`

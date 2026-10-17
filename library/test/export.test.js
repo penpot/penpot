@@ -12,7 +12,11 @@ import * as penpot from "#self";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Buckets that can appear inside a `.penpot` file. Mirrors `lib.export/valid-buckets`.
+// Buckets that can appear inside a `.penpot` file. Oracle kept in sync
+// by hand with the backend `app.storage/valid-buckets` and
+// `lib.export/valid-buckets` (`organization`, `tempfile`,
+// `upload-session` and `job-resource` are runtime-only and never travel
+// inside a file).
 const ALLOWED_BUCKETS = new Set([
   "file-media-object",
   "team-font-variant",
@@ -98,6 +102,14 @@ test("export a file with media writes one coherent object per media", async () =
     assert.equal(object.hash, undefined);
     assert.equal(typeof object.size, "number");
     assert.equal(typeof object.contentType, "string");
+    // No other keys may leak into the entry: the malli encoder only
+    // transforms the declared ones.
+    assert.deepEqual(Object.keys(object).sort(), [
+      "bucket",
+      "contentType",
+      "id",
+      "size",
+    ]);
   }
 
   // The object blob (not only its metadata) is part of the bundle.

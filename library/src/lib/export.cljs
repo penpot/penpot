@@ -70,6 +70,9 @@
     "file-change"})
 
 (def ^:private schema:storage-object
+  ;; The entry `:bucket` is an audit/compat label; the bucket the object
+  ;; is stored with is decided by the reference that uses it, never by
+  ;; this label.
   [:map {:title "StorageObject"}
    [:id ::sm/uuid]
    [:size ::sm/int]

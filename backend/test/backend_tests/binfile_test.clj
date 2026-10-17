@@ -3040,6 +3040,19 @@
      :sobject sobject
      :storage storage}))
 
+(t/deftest resolve-storage-reference-raises-on-missing-object
+  ;; A reference to a storage row that no longer exists fails loudly
+  ;; instead of emitting a null that the import would reject.
+  (let [out (binding [bfc/*state* (volatile! (bfc/initial-state))]
+              (try
+                (with-redefs [sto/get-object (fn [_ _ _] nil)]
+                  (bfc/resolve-storage-reference nil (uuid/random) "file-media-object"))
+                :no-error
+                (catch Throwable e
+                  (ex-data e))))]
+    (t/is (= :internal (:type out)))
+    (t/is (= :storage-object-not-found (:code out)))))
+
 (t/deftest export-binfile-v3-normalizes-cross-bucket-reference
   ;; A reference that points to an object of the wrong bucket is exported
   ;; pointing to the alive object with the same content, so the bundle does
@@ -3089,6 +3102,67 @@
     (t/is (= "file-media-object" (:bucket params)))
     (t/is (= (alength ^bytes (io/read (io/input-stream (th/tempfile "backend_tests/test_files/sample2.jpg"))))
              (alength ^bytes (get entries (str "objects/" thumb ".jpg")))))))
+
+(t/deftest export-binfile-v3-emits-a-single-copy-per-bucket
+  ;; Two references of the same bucket sharing one wrong-bucket object
+  ;; resolve to the same emitted copy, not to one copy each.
+  (let [profile (th/create-profile* 1)
+        {:keys [file row storage]} (prepare-file-with-media-object profile)
+
+        ;; a different real image, stored with the wrong bucket
+        foreign (put-image-object! storage "file-object-thumbnail"
+                                   "backend_tests/test_files/sample2.jpg")
+
+        _       (th/db-update! :file-media-object
+                               {:media-id (:id foreign)
+                                :thumbnail-id (:id foreign)}
+                               {:id (:id row)})
+        entries (read-zip-entries (export-to-zip! (:id file)))
+        media   (->> entries
+                     (keep (fn [[name data]]
+                             (when (media-entry? name)
+                               (read-json-entry data))))
+                     first)
+        copies  (filter object-entry? (keys entries))]
+
+    (t/is (some? media))
+    (t/is (= (:media-id media) (:thumbnail-id media)))
+    (t/is (not= (str (:id foreign)) (:media-id media)))
+    (t/is (= 1 (count copies)))
+    (t/is (= (str "objects/" (:media-id media) ".json")
+             (first copies)))))
+
+(t/deftest export-import-binfile-v3-round-trips-emitted-copy
+  ;; End to end of the issue case: a reference to a wrong-bucket object
+  ;; without a live twin exports an alias copy and imports it back as an
+  ;; object of the required bucket, with identical content.
+  (let [profile (th/create-profile* 1)
+        {:keys [file row storage]} (prepare-file-with-media-object profile)
+
+        foreign (put-image-object! storage "file-object-thumbnail"
+                                   "backend_tests/test_files/sample2.jpg")
+
+        _       (th/db-update! :file-media-object {:thumbnail-id (:id foreign)} {:id (:id row)})
+        result  (import-zip! profile (export-to-zip! (:id file)))
+        new-id  (first (:file-ids result))
+        media   (first (th/db-query :file-media-object {:file-id new-id :deleted-at nil}))
+        backend (-> (:app.storage/storage th/*system*)
+                    (stt/configure-storage-backend))
+        obj1    (sto/get-object backend (:media-id media))
+        obj2    (sto/get-object backend (:thumbnail-id media))
+        sample1 (io/read (io/input-stream (th/tempfile "backend_tests/test_files/sample.jpg")))
+        sample2 (io/read (io/input-stream (th/tempfile "backend_tests/test_files/sample2.jpg")))]
+
+    (t/is (= 1 (count (:file-ids result))))
+    (t/is (some? media))
+    (t/is (some? obj1))
+    (t/is (some? obj2))
+    (t/is (= "file-media-object" (:bucket (meta obj1))))
+    (t/is (= "file-media-object" (:bucket (meta obj2))))
+    (t/is (= (sto/calculate-hash sample1)
+             (sto/calculate-hash (sto/get-object-bytes backend obj1))))
+    (t/is (= (sto/calculate-hash sample2)
+             (sto/calculate-hash (sto/get-object-bytes backend obj2))))))
 
 (t/deftest import-binfile-v3-rejects-undefined-storage-reference
   ;; A reference to an object that the bundle does not contain must be
@@ -3187,8 +3261,8 @@
       (t/is (not= (:id obj1) (:id obj2)))
       (t/is (= "file-media-object" (:bucket (meta obj1))))
       (t/is (= "file-object-thumbnail" (:bucket (meta obj2))))
-      (t/is (= (seq (sto/get-object-bytes storage obj1))
-               (seq (sto/get-object-bytes storage obj2)))))))
+      (t/is (= (sto/calculate-hash (sto/get-object-bytes storage obj1))
+               (sto/calculate-hash (sto/get-object-bytes storage obj2)))))))
 
 (t/deftest import-binfile-v3-splits-object-shared-by-two-buckets
   ;; A media object that references an object of the `file-object-thumbnail`
@@ -3237,5 +3311,70 @@
     (t/is (not= (:id obj1) (:id obj2)))
     (t/is (= "file-media-object" (:bucket (meta obj1))))
     (t/is (= "file-object-thumbnail" (:bucket (meta obj2))))
-    (t/is (= (seq (sto/get-object-bytes storage obj1))
-             (seq (sto/get-object-bytes storage obj2))))))
+    (t/is (= (sto/calculate-hash (sto/get-object-bytes storage obj1))
+             (sto/calculate-hash (sto/get-object-bytes storage obj2))))))
+
+(defn- v1-sobjects-input
+  "Build a minimal :v1/sobjects section body: an ids vector followed by
+  one (uuid, metadata, blob) triple per id, using the same writers the
+  exporter uses."
+  [objects]
+  (let [baos (java.io.ByteArrayOutputStream.)
+        out  (io/data-output-stream baos)]
+    (binding [v1/*position* (atom 0)]
+      (v1/write-obj! out (mapv :id objects))
+      (doseq [{:keys [id meta blob]} objects]
+        (v1/write-uuid! out id)
+        (v1/write-obj! out meta)
+        (v1/write-stream! out (java.io.ByteArrayInputStream. ^bytes blob) (alength ^bytes blob))))
+    (io/input-stream (.toByteArray baos))))
+
+(defn- read-v1-sobjects
+  "Run the :v1/sobjects import section over `objects` with the given
+  media and thumbnail rows and file-id index already in the state."
+  [objects media thumbnails index]
+  (let [input (v1-sobjects-input objects)]
+    (db/tx-run! th/*system*
+                (fn [system]
+                  (let [cfg (assoc system
+                                   ::bfc/timestamp (ct/now)
+                                   ::bfc/input (io/data-input-stream input)
+                                   ::v1/section :v1/sobjects)]
+                    (binding [bfc/*state* (volatile! {:media media
+                                                      :thumbnails thumbnails
+                                                      :index index})
+                              v1/*position* (atom 0)]
+                      (v1/read-section cfg)))))))
+
+(defn- count-storage-objects
+  []
+  (-> (th/db-exec! ["select count(*) as n from storage_object"])
+      first
+      :n))
+
+(t/deftest import-binfile-v1-does-not-store-unreferenced-objects
+  ;; Objects that no reference uses are not persisted.
+  (let [blob   (.getBytes "unreferenced-blob" "UTF-8")
+        before (count-storage-objects)]
+    (read-v1-sobjects [{:id (uuid/random)
+                        :meta {:content-type "image/png"}
+                        :blob blob}]
+                      []
+                      []
+                      {})
+    (t/is (= before (count-storage-objects)))))
+
+(t/deftest import-binfile-v1-rejects-undefined-storage-reference
+  ;; A reference to an object that the section does not contain must be
+  ;; rejected instead of dangling.
+  (let [file-id    (uuid/random)
+        media-item {:id (uuid/random)
+                    :file-id file-id
+                    :media-id (uuid/random)}
+        out        (try
+                     (read-v1-sobjects [] [media-item] [] {file-id (uuid/random)})
+                     :no-error
+                     (catch Throwable e
+                       (or (ex-data e) (some-> (ex-cause e) ex-data))))]
+    (t/is (= :validation (:type out)))
+    (t/is (= :inconsistent-penpot-file (:code out)))))
