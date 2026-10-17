@@ -1485,7 +1485,8 @@
                  (not (and (mth/close? (:width size) (:width previous))
                            (mth/close? (:height size) (:height previous)))))
           (rx/of #(assoc-in % [::layout-preview id] size)
-                 (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers shape)))
+                 (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers shape)
+                                         :interactive? false))
           (rx/empty))))))
 
 (defn v3-stop-text-layout-preview
