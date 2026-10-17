@@ -114,6 +114,7 @@
                 (rx/subs! (fn [result]
                             (swap! fonts* df/merge-and-group-fonts installed-fonts result))
                           (fn [error]
+                            (st/emit! (ntf/error (tr "errors.generic")))
                             (js/console.error "error" error))))))
 
         on-upload

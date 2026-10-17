@@ -67,7 +67,7 @@ RUN set -ex; \
 FROM base AS setup-node
 
 ENV NODE_VERSION=v24.22.0 \
-    PNPM_VERSION=12.9.1 \
+    PNPM_VERSION=12.14.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -78,14 +78,14 @@ RUN set -eux; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          NODE_SHA256='b7e7991d5407815adfa74a2a9cd4db683552c8ce32ff4a295c22e972849c3f5d'; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='468294b77633d29889c6e4a79cefb1277eba30cd62e7d6a754218cb85a1d730d'; \
+         PNPM_SHA256='cfc780b9e690549e6633e1045fb1fb6ef84e390711e2099e6ccbae91c32456ea'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          NODE_SHA256='28ea0a438de9a13bd7891fd758eee6c7819ee8af5442dfd8d45bd65e56d4228c'; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='b4f58449ac02d9d24023ac89e17e05e8331f8ddc12ca1f489cf231bc2bb2bce1'; \
+         PNPM_SHA256='3910c3852136bed5bc1511b9137a45fd4357ed6b3970d9d08893641e9005867e'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -105,37 +105,6 @@ RUN set -eux; \
     chown -R root /opt/node; \
     find /opt/node/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; ; \
     rm -f /tmp/nodejs.tar.gz /tmp/pnpm.tar.gz;
-
-################################################################################
-## OPENCODE SETUP
-################################################################################
-
-FROM base AS setup-opencode
-
-ENV OPENCODE_VERSION=2.0.29
-
-RUN set -eux; \
-    ARCH="$(dpkg --print-architecture)"; \
-    case "${ARCH}" in \
-       aarch64|arm64) \
-         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE_VERSION}.tgz"; \
-         ESUM='0af39e75dbdfacc20f8f531ef35fb4dcc0b44c08084203518614272f232283ae'; \
-         ;; \
-       amd64|x86_64) \
-         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE_VERSION}.tgz"; \
-         ESUM='14b5a6638a1a093ac9d484599c844b10c29b445d04844b682ccc668ce26530a2'; \
-         ;; \
-       *) \
-         echo "Unsupported arch: ${ARCH}"; exit 1; \
-         ;; \
-    esac; \
-    curl -LfsSo /tmp/opencode.tgz "${BINARY_URL}"; \
-    echo "${ESUM} */tmp/opencode.tgz" | sha256sum -c -; \
-    mkdir -p /tmp/opencode; \
-    tar -xzf /tmp/opencode.tgz -C /tmp/opencode --strip-components=2 package/bin; \
-    chmod +x /tmp/opencode/opencode; \
-    rm -f /tmp/opencode.tgz;
-
 
 ################################################################################
 ## CADDYSERVER SETUP
@@ -561,7 +530,6 @@ COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
 COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
-COPY --from=setup-opencode /tmp/opencode/opencode /opt/utils/bin/opencode
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types

@@ -16,6 +16,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
   - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, labels, Issue Type)
   - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, "Note:" line)
 - Before a repo-wide pnpm version update → `mem:workflow/updating-pnpm` (workspace layout, `scripts/sync-pnpm-version` flow, the stamp-missing-field and ignored-builds gotchas, verification steps)
+- Before a Node version update → `mem:workflow/updating-node` (the six pin sites in `.nvmrc`, the devenv and image Dockerfiles and the plugins-deploy workflows, the DHI tag and digest rules, what to verify)
 - **Never `git push`, force-push, or modify `git origin`** (or any other remote). The user pushes from their own shell; if a push is required, say so and wait. Never amend a commit that the user has already pushed unless explicitly asked.
 - **Never edit `CHANGES.md` by hand.** The changelog is generated from GitHub milestones during the release process; update it only via the `update-changelog` skill flow or on explicit user request.
 - You have access to the GitHub CLI `gh` or corresponding MCP tools.
@@ -59,6 +60,7 @@ The memory is structured in a way that you can get the critical information abou
 - `scripts/changelog.py` — Changelog checks for the `update-changelog` skill: `check-merged` (PR merge status), `cross-ref` (milestone PRs vs changelog section), `report` (anomaly report to CHANGES-ISSUES.md). Calls `scripts/gh.py` via subprocess. See `mem:scripts/changelog`.
 - `scripts/error-reports.mjs` — Query error reports via RPC API with token authentication. Supports list/get operations with filtering and pagination. See `mem:scripts/error-reports`.
 - `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm workspaces (root, modules, member packages). Keeps the shared pnpm store at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
+- `scripts/setup-opencode` — Install the opencode CLI in-container as a global pnpm package in `$PNPM_HOME`. Not part of the devenv image; see `mem:devenv/core`.
 - `scripts/ci` — CI orchestration script: runs lint, tests, and format checks per module (`frontend backend common render-wasm exporter mcp plugins library`). Logs go to `.ci-logs/`; read the log file on failure. It is the preferred way to run the backend tests, and it exports `PENPOT_FLAGS` with `enable-backend-asserts`, which is what makes `clojure.core/assert` exist in the compiled test code. See `mem:scripts/ci`.
 
 # Dependency graph
