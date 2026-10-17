@@ -17,8 +17,7 @@
    [app.jobs.metrics :as metrics]
    [app.metrics :as mtx]
    [app.storage :as sto]
-   [integrant.core :as ig]
-   [promesa.exec :as px]))
+   [integrant.core :as ig]))
 
 (def ^:private sql:get-file-data
   "SELECT fd.*
@@ -28,21 +27,24 @@
       AND fd.deleted_at IS NULL")
 
 (def ^:private sql:lock-file
+  ;; NOTE: SKIP LOCKED only serializes against writers that also lock
+  ;; the file row. Every file_data writer must therefore hold at least
+  ;; FOR SHARE on it (the update RPC via lock-for-share?, file-gc via
+  ;; FOR UPDATE); a writer skipping that lock would reopen the
+  ;; lost-update race this lock closes.
   "SELECT id FROM file WHERE id = ? AND deleted_at IS NULL FOR UPDATE SKIP LOCKED")
 
 (defn- offload-file-data
-  [cfg {:keys [id file-id type data] :as fdata} stats sleep-every sleep-ms]
+  [cfg {:keys [id file-id type data] :as fdata} stats]
   (jobs/heartbeat cfg)
   (fdata/upsert! cfg (assoc fdata :backend "storage"))
-  (let [size  (if (bytes? data) (alength ^bytes data) 0)
-        {:keys [rows]} (vswap! stats (fn [{:keys [rows bytes by-type]}]
-                                       {:rows    (inc rows)
-                                        :bytes   (+ bytes size)
-                                        :by-type (update by-type type
-                                                         (fn [{r :rows b :bytes :or {r 0 b 0}}]
-                                                           {:rows (+ r 1) :bytes (+ b size)}))}))]
-    (when (zero? (mod rows sleep-every))
-      (px/sleep sleep-ms)))
+  (vswap! stats (fn [{:keys [rows bytes by-type]}]
+                  (let [size (if (bytes? data) (alength ^bytes data) 0)]
+                    {:rows    (inc rows)
+                     :bytes   (+ bytes size)
+                     :by-type (update by-type type
+                                      (fn [{r :rows b :bytes :or {r 0 b 0}}]
+                                        {:rows (+ r 1) :bytes (+ b size)}))})))
   (l/trc :file-id (str file-id)
          :id (str id)
          :type type))
@@ -54,10 +56,8 @@
 (defn execute-offload-file-data
   "Plain job handler: offload the file data rows of one file."
   [cfg params]
-  (let [file-id     (:file-id params)
-        sleep-every (let [n (or (:sleep-every params) 50)] (if (pos? n) n 50))
-        sleep-ms    (let [n (or (:sleep-ms params) 50)] (if (>= n 0) n 50))
-        tpoint      (ct/tpoint)]
+  (let [file-id (:file-id params)
+        tpoint  (ct/tpoint)]
     (try
       (let [summary (-> cfg
                         (assoc ::db/rollback (:rollback? params))
@@ -65,7 +65,7 @@
                                       (if (db/exec-one! conn [sql:lock-file file-id])
                                         (let [stats (volatile! {:rows 0 :bytes 0 :by-type {}})]
                                           (run! (fn [fdata]
-                                                  (offload-file-data cfg fdata stats sleep-every sleep-ms))
+                                                  (offload-file-data cfg fdata stats))
                                                 (db/plan conn [sql:get-file-data file-id]))
                                           (let [{:keys [rows bytes by-type]} @stats]
                                             (l/trc :hint "file data offloaded"
@@ -93,9 +93,7 @@
 
 (def schema:offload-file-data-params
   [:map
-   [:file-id ::sm/uuid]
-   [:sleep-every {:optional true} ::sm/int]
-   [:sleep-ms {:optional true} ::sm/int]])
+   [:file-id ::sm/uuid]])
 
 (defmethod ig/assert-key ::job-def
   [_ params]

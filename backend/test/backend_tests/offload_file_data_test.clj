@@ -27,8 +27,7 @@
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.io :as io]
-   [integrant.core :as ig]
-   [promesa.exec :as px])
+   [integrant.core :as ig])
   (:import
    io.prometheus.client.Counter
    io.prometheus.client.Counter$Child))
@@ -173,18 +172,6 @@
       (t/is (every? #(= "storage" (:backend %)) rows-a))
       (t/is (every? #(nil? (:data %)) rows-a)))))
 
-(t/deftest offload-sleeps-every-n-rows
-  (let [profile (th/create-profile* 1)
-        file    (create-file 1 profile)
-        calls   (volatile! [])]
-    (with-redefs [px/sleep (fn [ms] (vswap! calls conj ms) nil)]
-      (let [result (th/run-task! :offload-file-data {:file-id (:id file)
-                                                     :sleep-every 1
-                                                     :sleep-ms 5})]
-        (t/is (pos? (:offloaded result)))
-        (t/is (= (:offloaded result) (count @calls)))
-        (t/is (every? #(= 5 %) @calls))))))
-
 (defn- make-metrics
   []
   (ig/init-key :app.metrics/metrics
@@ -233,7 +220,9 @@
     (t/is (= ["result"]
              (get-in defs [:file-data-offload-timing ::mdef/labels])))
     (t/is (= :histogram
-             (get-in defs [:file-data-offload-timing ::mdef/type])))))
+             (get-in defs [:file-data-offload-timing ::mdef/type])))
+    (t/is (= [1 10 50 100 500 1000 5000 10000 30000 60000 300000]
+             (get-in defs [:file-data-offload-timing ::mdef/buckets])))))
 
 (t/deftest success-emits-rows-and-bytes
   (let [metrics (make-metrics)
@@ -289,11 +278,7 @@
   (let [cfg th/*system*]
     (t/testing "valid params submit a durable job"
       (t/is (uuid? (jobs/submit cfg {::jobs/name   :offload-file-data
-                                     ::jobs/params {:file-id (uuid/next)}})))
-      (t/is (uuid? (jobs/submit cfg {::jobs/name   :offload-file-data
-                                     ::jobs/params {:file-id (uuid/next)
-                                                    :sleep-every 5
-                                                    :sleep-ms 10}}))))
+                                     ::jobs/params {:file-id (uuid/next)}}))))
     (t/testing "invalid params fail at submit instead of burning retries"
       (t/is (thrown? Exception
                      (jobs/submit cfg {::jobs/name   :offload-file-data
@@ -566,16 +551,18 @@
           updater (future
                     (add-page-with-rect profile file page-2 shape-2))]
 
-      ;; Give the updater time to block on the held row lock.
-      (th/sleep 500)
-      (t/is (not (realized? updater)))
+      (try
+        ;; Give the updater time to block on the held row lock.
+        (th/sleep 500)
+        (t/is (not (realized? updater)))
 
-      (t/testing "offload skips while the row is locked"
-        (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
-          (t/is (= 0 (:offloaded result)))
-          (t/is (= 1 (:skipped result)))))
+        (t/testing "offload skips while the row is locked"
+          (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
+            (t/is (= 0 (:offloaded result)))
+            (t/is (= 1 (:skipped result)))))
+        (finally
+          (deliver release true)))
 
-      (deliver release true)
       (t/is (not= ::timeout (deref holder 10000 ::timeout)))
       (t/is (not= ::timeout (deref updater 30000 ::timeout))))
 

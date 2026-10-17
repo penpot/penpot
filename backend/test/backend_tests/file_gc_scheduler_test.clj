@@ -9,8 +9,7 @@
    [app.common.time :as ct]
    [app.jobs :as jobs]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]
-   [promesa.exec :as px]))
+   [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -29,7 +28,7 @@
                               (jobs/submit cfg {::jobs/name   :file-gc-scheduler
                                                 ::jobs/params {:min-age {:bogus true}}}))))))
 
-(t/deftest scheduler-sleeps-every-n-schedules
+(t/deftest scheduler-submits-one-job-per-eligible-file
   (let [profile (th/create-profile* 1)]
     (doseq [i [1 2 3]]
       (let [file (th/create-file* i {:profile-id (:id profile)
@@ -39,11 +38,6 @@
         (th/db-update! :file {:has-media-trimmed false
                               :modified-at (ct/in-past "2h")}
                        {:id (:id file)})))
-    (let [calls  (volatile! [])
-          result (with-redefs [px/sleep (fn [ms] (vswap! calls conj ms) nil)]
-                   (th/run-task! :file-gc-scheduler {:min-age "1h"
-                                                     :sleep-every 1
-                                                     :sleep-ms 7}))]
+    (let [result (th/run-task! :file-gc-scheduler {:min-age "1h"})]
       (t/is (= 3 (:processed result)))
-      (t/is (= 3 (count @calls)))
-      (t/is (every? #(= 7 %) @calls)))))
+      (t/is (= 3 (count (th/db-query :job {:name "file-gc"})))))))
