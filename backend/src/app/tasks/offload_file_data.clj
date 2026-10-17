@@ -35,19 +35,19 @@
   "SELECT id FROM file WHERE id = ? AND deleted_at IS NULL FOR UPDATE SKIP LOCKED")
 
 (defn- offload-file-data
-  [cfg {:keys [id file-id type data] :as fdata} stats]
+  "Offload one hot-storage row to cold storage. Returns the row type
+  and the migrated bytes for the caller to aggregate."
+  [cfg {:keys [id file-id type data] :as fdata}]
   (jobs/heartbeat cfg)
   (fdata/upsert! cfg (assoc fdata :backend "storage"))
-  (vswap! stats (fn [{:keys [rows bytes by-type]}]
-                  (let [size (if (bytes? data) (alength ^bytes data) 0)]
-                    {:rows    (inc rows)
-                     :bytes   (+ bytes size)
-                     :by-type (update by-type type
-                                      (fn [{r :rows b :bytes :or {r 0 b 0}}]
-                                        {:rows (+ r 1) :bytes (+ b size)}))})))
-  (l/trc :file-id (str file-id)
-         :id (str id)
-         :type type))
+  (let [size (if (bytes? data) (alength ^bytes data) 0)]
+    (l/trc :hint "file data row offloaded"
+           :file-id (str file-id)
+           :id (str id)
+           :type type
+           :bytes size)
+    {:type type
+     :size size}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER
@@ -60,16 +60,22 @@
   bytes, per-type stats and the skipped flag."
   [{:keys [::db/conn] :as cfg} file-id]
   (if (db/exec-one! conn [sql:lock-file file-id])
-    (let [stats (volatile! {:rows 0 :bytes 0 :by-type {}})]
-      (run! (fn [fdata]
-              (offload-file-data cfg fdata stats))
-            (db/plan conn [sql:get-file-data file-id]))
-      (let [{:keys [rows bytes by-type]} @stats]
-        (l/trc :hint "file data offloaded"
-               :file-id (str file-id)
-               :offloaded rows
-               :bytes bytes)
-        {:offloaded rows :bytes bytes :by-type by-type :skipped 0}))
+    (let [{:keys [rows bytes by-type]}
+          (reduce (fn [stats fdata]
+                    (let [{:keys [type size]} (offload-file-data cfg fdata)]
+                      (-> stats
+                          (update :rows inc)
+                          (update :bytes + size)
+                          (update-in [:by-type type]
+                                     (fn [{r :rows b :bytes :or {r 0 b 0}}]
+                                       {:rows (inc r) :bytes (+ b size)})))))
+                  {:rows 0 :bytes 0 :by-type {}}
+                  (db/plan conn [sql:get-file-data file-id]))]
+      (l/trc :hint "file data offloaded"
+             :file-id (str file-id)
+             :offloaded rows
+             :bytes bytes)
+      {:offloaded rows :bytes bytes :by-type by-type :skipped 0})
     (do
       (l/dbg :hint "skip offload, file is locked or gone"
              :file-id (str file-id))
