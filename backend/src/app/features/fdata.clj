@@ -51,10 +51,19 @@
   (update file :data process-objects (partial into {})))
 
 (defn enable-objects-map
+  "Ensure every page holds an ObjectsMap. Unloaded pointers are left
+  untouched: the fragment they point to was written by an `encode-file`
+  that already wrapped its objects, and loading it only to wrap it again
+  costs one page read per untouched page on every save. A page whose
+  fragment predates the feature is wrapped when it is first loaded or
+  edited; a data migration that enables the feature must rewrite the
+  data itself."
   [file & _opts]
   (let [update-page
         (fn [page]
-          (update page :objects omap/wrap))
+          (if (and (pmap/pointer-map? page) (not (pmap/loaded? page)))
+            page
+            (update page :objects omap/wrap)))
 
         update-data
         (fn [fdata]
@@ -264,9 +273,13 @@
 (defn load-pointer
   "A database loader pointer helper"
   [cfg file-id id]
+  ;; Keep the include-marked behavior explicit: `db/get*` only filters
+  ;; rows by `deleted_at` when that column is selected, and a fragment a
+  ;; previous pass marked must still load until `objects-gc` purges it.
   (let [fragment (some-> (db/get* cfg :file-data
                                   {:id id :file-id file-id :type "fragment"}
-                                  {::sql/columns [:data :backend :id :metadata]})
+                                  {::sql/columns [:data :backend :id :metadata]
+                                   ::db/remove-deleted false})
                          (update :metadata decode-metadata))]
 
     (l/trc :hint "load pointer"
@@ -297,6 +310,40 @@
                       :type "fragment"
                       :data content})))))
 
+(defmacro with-pointers
+  "Bind the fragment loader for `file-id` around `body`. All pointer
+  derefs must happen inside the body; a pointer derefed outside of it
+  raises because there is no loader bound."
+  [cfg file-id & body]
+  `(binding [pmap/*load-fn* (partial load-pointer ~cfg ~file-id)]
+     ~@body))
+
+(defmacro with-tracked
+  "Bind a fresh tracked set around `body`, without a fragment loader.
+  For write paths that create pointers before any file exists to load
+  from (e.g. file creation): wrapping tracks new pointers for
+  persistence, while any deref still fails loudly."
+  [& body]
+  `(binding [pmap/*tracked* (pmap/create-tracked)]
+     ~@body))
+
+(defmacro with-untracked
+  "Run `body` with pointer tracking disabled. For validation passes
+   that must not track anything for persistence: pointers created
+   inside are not collected, and derefs still go through the bound
+   loader when there is one."
+  [& body]
+  `(binding [pmap/*tracked* nil]
+     ~@body))
+
+(defmacro with-tracked-pointers
+  "Bind a fresh tracked set plus the fragment loader for `file-id`
+  around `body`. For write paths that create or modify pointers."
+  [cfg file-id & body]
+  `(binding [pmap/*tracked* (pmap/create-tracked)
+             pmap/*load-fn* (partial load-pointer ~cfg ~file-id)]
+     ~@body))
+
 (defn process-pointers
   "Apply a function to all pointers on the file. Usuly used for
   dereference the pointer to a plain value before some processing."
@@ -311,14 +358,20 @@
 
 (defn realize-pointers
   "Process a file and remove all instances of pointers realizing them to
-  a plain data. Used in operation where is more efficient have the
-  whole file loaded in memory."
-  [cfg {:keys [id] :as file}]
-  (binding [pmap/*load-fn* (partial load-pointer cfg id)]
-    (update file :data process-pointers deref)))
+  plain data. Accepts a file map (arity 1) or raw file data with its
+  file id (arity 2): a snapshot map carries the snapshot id, so always
+  pass the live file id explicitly."
+  ([cfg {:keys [id] :as file}]
+   (update file :data #(realize-pointers cfg id %)))
+  ([cfg file-id data]
+   (with-pointers cfg file-id
+     (process-pointers data deref))))
 
 (defn get-used-pointer-ids
-  "Given a file, return all pointer ids used in the data."
+  "Given a file data map, return all pointer ids used in the data.
+  This is a plain readout with no liveness meaning of its own: file-gc
+  unions it over the main file and every unpurged snapshot (see
+  `app.tasks.file-gc/clean-fragments!` for the actual liveness rule)."
   [fdata]
   (->> (concat (vals fdata)
                (vals (:pages-index fdata)))
@@ -345,3 +398,50 @@
   (->> file
        (realize-pointers cfg)
        (realize-objects cfg)))
+
+(defn realize-entry
+  "Realize a file data entry (a page or the components map) to plain
+  data for value comparison: deref pointers and convert objects-maps
+  with the same `into {}` production uses. Requires *load-fn* bound."
+  [entry]
+  (let [entry (if (pmap/pointer-map? entry) (deref entry) entry)]
+    (if (and (map? entry) (contains? entry :objects))
+      (let [objects (:objects entry)]
+        (assoc entry :objects (if (omap/objects-map? objects)
+                                (into {} objects)
+                                objects)))
+      entry)))
+
+(defn original-pointers
+  "Snapshot the current pointer layout of file data, mapping each
+  pointer position to its PointerMap. No loading involved."
+  [fdata]
+  {:root  (into {} (filter (fn [[_ v]] (pmap/pointer-map? v))) fdata)
+   :pages (into {} (filter (fn [[_ v]] (pmap/pointer-map? v)))
+                (:pages-index fdata {}))})
+
+(defn reattach-unchanged
+  "Put back the original fragment pointers wherever the current value
+  is value-equal to the stored fragment, so unchanged positions keep
+  their ids and no new fragment rows are persisted for them. `current`
+  may be a PointerMap (file-gc) or a plain page (the migration read
+  path); `orig` always comes from `original-pointers`. Anything added,
+  removed or actually changed keeps the current value. Requires
+  *load-fn* bound."
+  [{:keys [root pages]} file]
+  (letfn [(reattach [current orig]
+            (if (or (identical? current orig)
+                    (= (realize-entry current) (realize-entry orig)))
+              orig
+              current))
+          (reattach-all [m origs]
+            (reduce-kv (fn [m k orig]
+                         (if (contains? m k)
+                           (update m k reattach orig)
+                           m))
+                       m origs))]
+    (update file :data (fn [data]
+                         (cond-> (reattach-all data root)
+                           (contains? data :pages-index)
+                           (update :pages-index reattach-all pages))))))
+

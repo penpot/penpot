@@ -22,6 +22,7 @@
    [app.jobs :as jobs]
    [app.storage :as sto]
    [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]))
 
 (def sql:snapshots
@@ -376,8 +377,13 @@
                :snapshot-id (str (:id snapshot)))
 
         ;; In the same way, on reseting the file data, we need to restore
-        ;; the applied migrations on the moment of taking the snapshot
-        (bfc/update-file! cfg file ::bfc/reset-migrations? true)
+        ;; the applied migrations on the moment of taking the snapshot.
+        ;; The snapshot data may hold shared pointer-mapped pages; the
+        ;; loader stays bound while persisting so any page the encode
+        ;; path does load keeps working (`enable-objects-map` skips the
+        ;; unloaded ones).
+        (fdata/with-pointers cfg file-id
+          (bfc/update-file! cfg file ::bfc/reset-migrations? true))
 
         ;; FIXME: this should be separated functions, we should not have
         ;; inline sql here.
@@ -441,13 +447,20 @@
 
 (defn reduce-snapshots
   "Process the file snapshots using efficient reduction; the file
-  reduction comes with all snapshots, including maked as deleted"
+  reduction comes with all snapshots, including maked as deleted.
+
+  Snapshot data may hold pointer-mapped pages, so the fragment loader
+  is bound while reducing: consumers that walk page content (media
+  refs, stats) transparently load fragments, consumers that only read
+  pointer ids never trigger a load."
   [cfg file-id xform f init]
   (let [conn  (db/get-connection cfg)
+        load  (partial fdata/load-pointer cfg file-id)
         xform (comp
                (map (partial fdata/resolve-file-data cfg))
                (map (partial fdata/decode-file-data cfg))
                xform)]
 
-    (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
-         (transduce xform f init))))
+    (binding [pmap/*load-fn* load]
+      (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
+           (transduce xform f init)))))

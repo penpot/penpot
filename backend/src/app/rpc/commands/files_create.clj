@@ -14,6 +14,7 @@
    [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -22,7 +23,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
-   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [clojure.set :as set]))
 
@@ -44,32 +44,31 @@
 
   (assert (db/connection? conn) "expected a valid connection")
 
-  (binding [pmap/*tracked* (pmap/create-tracked)
-            cfeat/*current* features]
+  (binding [cfeat/*current* features]
+    (fdata/with-tracked
+      (let [file (ctf/make-file {:id id
+                                 :project-id project-id
+                                 :name name
+                                 :revn revn
+                                 :is-shared is-shared
+                                 :features features
+                                 :migrations fmg/available-migrations
+                                 :ignore-sync-until ignore-sync-until
+                                 :created-at modified-at
+                                 :deleted-at deleted-at}
+                                {:create-page create-page
+                                 :page-id page-id})]
 
-    (let [file (ctf/make-file {:id id
-                               :project-id project-id
-                               :name name
-                               :revn revn
-                               :is-shared is-shared
-                               :features features
-                               :migrations fmg/available-migrations
-                               :ignore-sync-until ignore-sync-until
-                               :created-at modified-at
-                               :deleted-at deleted-at}
-                              {:create-page create-page
-                               :page-id page-id})]
+        (bfc/insert-file! cfg file)
 
-      (bfc/insert-file! cfg file)
+        (->> (assoc params :file-id (:id file) :role :owner)
+             (create-file-role! conn))
 
-      (->> (assoc params :file-id (:id file) :role :owner)
-           (create-file-role! conn))
+        (db/update! conn :project
+                    {:modified-at (ct/now)}
+                    {:id project-id})
 
-      (db/update! conn :project
-                  {:modified-at (ct/now)}
-                  {:id project-id})
-
-      (bfc/get-file cfg (:id file)))))
+        (bfc/get-file cfg (:id file))))))
 
 (def ^:private schema:create-file
   [:map {:title "create-file" :closed true}
