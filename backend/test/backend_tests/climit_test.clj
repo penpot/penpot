@@ -661,7 +661,11 @@
       (record-metrics
        (fn []
          (#'climit/republish-waiting (th/metrics-stub) (:counters climit))
-         (t/is (= [3] (waiting-value-of name))))))))
+         ;; The value is the contract, not the publication count: the
+         ;; sampler thread started with the component runs its first
+         ;; tick asynchronously, and when it lands inside this window
+         ;; it publishes the same count a second time.
+         (t/is (= 3 (waiting-last name))))))))
 
 (t/deftest halting-the-component-stops-the-republisher
   ;; The republisher is a daemon thread started with the component: halting it
