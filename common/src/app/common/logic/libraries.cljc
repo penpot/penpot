@@ -2405,8 +2405,9 @@
              (:shapes shape-copy)
              (fn [child-copy]
                (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
-                 (-> child-copy
-                     (propagate-attrs child-main flex-child-attrs omit-touched?))))
+                 (cond-> child-copy
+                   (some? child-main)
+                   (propagate-attrs child-main flex-child-attrs omit-touched?))))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
 
@@ -2435,8 +2436,9 @@
              (:shapes shape-main)
              (fn [child-main]
                (let [child-copy (ctf/get-shape-in-copy copy-container child-main shape-copy)]
-                 (-> child-main
-                     (propagate-attrs child-copy flex-child-attrs omit-touched?))))
+                 (cond-> child-main
+                   (some? child-copy)
+                   (propagate-attrs child-copy flex-child-attrs omit-touched?))))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
 
