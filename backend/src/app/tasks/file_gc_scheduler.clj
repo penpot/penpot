@@ -30,7 +30,7 @@
       FOR UPDATE OF f
      SKIP LOCKED")
 
-(defn- schedule!
+(defn- schedule-files
   [{:keys [::db/conn] :as cfg} threshold sleep-every sleep-ms]
   (let [counter (volatile! 0)
         total   (reduce (fn [total {:keys [id modified-at revn]}]
@@ -91,4 +91,4 @@
         sleep-ms    (let [n (or (:sleep-ms params) 100)] (if (>= n 0) n 100))]
     (-> cfg
         (assoc ::db/rollback (:rollback? params))
-        (db/tx-run! (fn [cfg] (schedule! cfg threshold sleep-every sleep-ms))))))
+        (db/tx-run! (fn [cfg] (schedule-files cfg threshold sleep-every sleep-ms))))))
