@@ -265,7 +265,7 @@
                           :is-local true
                           :name "testfile"
                           :content mfile}
-                  out    (th/command! params)]
+                  out    (th/multipart-command! params)]
 
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
@@ -414,7 +414,7 @@
                           :is-local true
                           :name "testfile"
                           :content mfile}
-                  out    (th/command! params)]
+                  out    (th/multipart-command! params)]
 
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
@@ -605,7 +605,7 @@
                              :object-id object-id
                              :tag "frame"
                              :media mfile}
-                  out       (th/command! params)]
+                  out       (th/multipart-command! params)]
 
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
@@ -1279,7 +1279,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
         (t/is (nil? error))
         (t/is (map? result)))
 
@@ -1336,7 +1336,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
         (t/is (nil? error))
         (t/is (map? result)))
 
@@ -1360,7 +1360,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
         (t/is (nil? error))
         (t/is (map? result)))
 
@@ -1478,7 +1478,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? error))
@@ -1493,7 +1493,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? error))
@@ -1991,7 +1991,7 @@
                 :is-local true
                 :name "testfile"
                 :content mfile}
-        out    (th/command! params)]
+        out    (th/multipart-command! params)]
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))

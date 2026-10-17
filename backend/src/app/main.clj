@@ -346,7 +346,12 @@
     ::mdef/help "Time spent waiting for an ephemeral job reply (milliseconds). Its _count is the request total per outcome."
     ::mdef/labels ["outcome"]
     ::mdef/type :histogram
-    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000]}})
+    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000]}
+
+   :http-malformed-requests-total
+   {::mdef/name "penpot_http_malformed_requests_total"
+    ::mdef/help "Total number of requests whose body the parser could not read."
+    ::mdef/type :counter}})
 
 (def system-config
   {::db/pool
@@ -466,6 +471,7 @@
     ::rpc/routes         (ig/ref ::rpc/routes)
     ::setup/props        (ig/ref ::setup/props)
     ::mtx/routes         (ig/ref ::mtx/routes)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::mgmt/routes        (ig/ref ::mgmt/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
