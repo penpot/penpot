@@ -148,7 +148,16 @@
        (rx/map :data)
        (rx/map
         (fn [data]
-          (assoc file :data (d/removem (comp t/pointer? val) data))))))
+          (let [pending (into []
+                              (comp (filter (fn [[_ v]] (t/pointer? v)))
+                                    (map key))
+                              data)]
+            (when (seq pending)
+              (log/error :hint "unresolved fragments after workspace resolve"
+                         :file-id (str (:id file))
+                         :keys pending)
+              (throw (ex-info "unresolved file fragments" {:file-id (:id file)})))
+            (assoc file :data data))))))
 
 (defn- check-libraries-synchronization
   [file-id libraries]

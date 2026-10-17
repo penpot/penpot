@@ -12,6 +12,7 @@
    [app.common.files.changes :as cpc]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.shape-tree :as ctt]
@@ -147,7 +148,13 @@
                                       (assoc :share-id share-id))]
                          (->> (rp/cmd! :get-file-fragment params)
                               (rx/map :data)
-                              (rx/map #(vector key %)))))]
+                              (rx/map #(vector key %))
+                              (rx/catch (fn [cause]
+                                          (log/error :hint "unable to resolve viewer fragment"
+                                                     :file-id (str file-id)
+                                                     :fragment-id (str @pointer)
+                                                     :cause cause)
+                                          (rx/throw cause))))))]
 
         (->> (rp/cmd! :get-view-only-bundle params')
              (rx/mapcat

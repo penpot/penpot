@@ -186,8 +186,14 @@
         (mapcat feat.fdata/get-used-pointer-ids)))
 
 (defn- clean-fragments!
+  "Mark fragment rows that are referenced neither by the live main file
+  data nor by any snapshot (snapshots share fragment rows with the live
+  file, see `app.features.fdata/get-used-pointer-ids`). Runs inside the
+  caller transaction, which already holds FOR UPDATE on the file row."
   [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id] :as file}]
-  (let [used   (into #{} xf:collect-pointers [file])
+  (let [main-used (into #{} xf:collect-pointers [file])
+        snap-used (fsnap/reduce-snapshots cfg id xf:collect-pointers conj #{})
+        used      (into main-used snap-used)
         unused (->> (db/exec! conn [sql:mark-deleted-data-fragments timestamp id
                                     (db/create-array conn "uuid" used)])
                     (into #{} bfc/xf-map-id))]

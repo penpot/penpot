@@ -22,6 +22,7 @@
    [app.jobs :as jobs]
    [app.storage :as sto]
    [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]))
 
 (def sql:snapshots
@@ -441,7 +442,12 @@
 
 (defn reduce-snapshots
   "Process the file snapshots using efficient reduction; the file
-  reduction comes with all snapshots, including maked as deleted"
+  reduction comes with all snapshots, including maked as deleted.
+
+  Snapshot data may hold pointer-mapped pages, so the fragment loader
+  is bound while reducing: consumers that walk page content (media
+  refs, stats) transparently load fragments, consumers that only read
+  pointer ids never trigger a load."
   [cfg file-id xform f init]
   (let [conn  (db/get-connection cfg)
         xform (comp
@@ -449,5 +455,6 @@
                (map (partial fdata/decode-file-data cfg))
                xform)]
 
-    (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
-         (transduce xform f init))))
+    (binding [pmap/*load-fn* (partial fdata/load-pointer cfg file-id)]
+      (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
+           (transduce xform f init)))))

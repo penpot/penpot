@@ -318,7 +318,12 @@
     (update file :data process-pointers deref)))
 
 (defn get-used-pointer-ids
-  "Given a file, return all pointer ids used in the data."
+  "Given a file data map, return all pointer ids used in the data.
+
+  Liveness contract (shared with file-gc): a fragment is alive when it
+  is referenced by the current main file data OR by any snapshot that
+  has not been purged yet. Snapshots share fragment rows with the live
+  file, so the collector must union both sets before marking."
   [fdata]
   (->> (concat (vals fdata)
                (vals (:pages-index fdata)))
@@ -345,3 +350,19 @@
   (->> file
        (realize-pointers cfg)
        (realize-objects cfg)))
+
+(defmacro with-pointers
+  "Bind the fragment loader for `file-id` around `body`. All pointer
+  derefs must happen inside the body; a pointer derefed outside of it
+  raises because there is no loader bound."
+  [cfg file-id & body]
+  `(binding [pmap/*load-fn* (partial load-pointer ~cfg ~file-id)]
+     ~@body))
+
+(defmacro with-tracked-pointers
+  "Bind a fresh tracked set plus the fragment loader for `file-id`
+  around `body`. For write paths that create or modify pointers."
+  [cfg file-id & body]
+  `(binding [pmap/*tracked* (pmap/create-tracked)
+             pmap/*load-fn* (partial load-pointer ~cfg ~file-id)]
+     ~@body))

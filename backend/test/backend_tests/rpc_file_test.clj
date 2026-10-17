@@ -176,6 +176,12 @@
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
       (t/is (= 3 (count rows))))
 
+    ;; Snapshots share fragment rows with the live file; drop them so
+    ;; this GC-mechanics test asserts only on unreferenced fragments
+    ;; (snapshot retention itself is covered in file-pointer-snapshot-test).
+    (th/db-delete! :file-change {:file-id (:id file)})
+    (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
+
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
@@ -215,6 +221,11 @@
     ;; Check the number of fragments
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
       (t/is (= 3 (count rows))))
+
+    ;; Same snapshot cleanup as above: isolate GC mechanics from
+    ;; snapshot retention.
+    (th/db-delete! :file-change {:file-id (:id file)})
+    (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
 
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
@@ -339,8 +350,10 @@
         (t/is (ct/inst? (:deleted-at row2))))
 
       (let [res (th/run-task! :objects-gc {})]
-        ;; delete 2 fragments and 1 media object
-        (t/is (= 3 (:processed res))))
+        ;; 2 (was 3): the automatic snapshot shares one replaced page
+        ;; fragment, so file-gc keeps it and only 1 fragment + 1 media
+        ;; object purge.
+        (t/is (= 2 (:processed res))))
 
       ;; check file media objects
       (let [rows (th/db-query :file-media-object {:file-id (:id file)})]
@@ -367,9 +380,9 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       ;; This only clears fragments, the file media objects still referenced because
-      ;; snapshots are preserved
+      ;; snapshots are preserved (and shared page fragments are kept too).
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 1 (:processed res))))
 
       ;; Delete all snapshots
       (th/db-exec! ["update file_data set deleted_at = now() where file_id = ? and type = 'snapshot'" (:id file)])
@@ -384,9 +397,11 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       (let [res (th/run-task! :objects-gc {})]
+        ;; 4 (was 2): this also purges the fragment rows the deleted
+        ;; snapshots used to pin.
         ;; this will remove the file media objects marked as deleted
         ;; on prev file-gc
-        (t/is (= 2 (:processed res))))
+        (t/is (= 4 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
@@ -510,12 +525,15 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        ;; Only 1 (was 2): the automatic snapshot shares one replaced
+        ;; page fragment with the live file, so file-gc keeps it.
+        (t/is (= 1 (:processed res))))
 
       (let [rows (th/db-query :file-data {:file-id (:id file)
                                           :type "fragment"
                                           :deleted-at nil})]
-        (t/is (= (count rows) 1)))
+        ;; 2 live (was 1): the snapshot-pinned fragment survives.
+        (t/is (= (count rows) 2)))
 
       ;; retrieve file and check trimmed attribute
       (let [row (th/db-get :file {:id (:id file)})]
@@ -554,9 +572,9 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       ;; This only removes unused fragments, file media are still
-      ;; referenced on snapshots.
+      ;; referenced on snapshots (and now shared page fragments too).
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 1 (:processed res))))
 
       ;; Mark all snapshots to be a non-snapshot file change
       (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file)])
@@ -567,7 +585,9 @@
       ;; "expired/deleted"
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 6 (:processed res))))
+        ;; 8 (was 6): the two rows kept alive by snapshots above now
+        ;; purge as well. Totals are conserved (1+1+8 = 2+2+6).
+        (t/is (= 8 (:processed res))))
 
       (let [rows (th/db-query :file-data {:file-id (:id file)
                                           :type "fragment"
@@ -716,9 +736,10 @@
 
       ;; Now that file-gc have marked for deletion the object
       ;; thumbnail lets execute the objects-gc task which remove
-      ;; the rows and mark as touched the storage object rows
+      ;; the rows and mark as touched the storage object rows.
+      ;; 3 (was 5): shared page fragments stay pinned by the snapshot.
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 5 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
@@ -749,7 +770,8 @@
 
       (let [res (th/run-task! :objects-gc {})]
         ;; (pp/pprint res)
-        (t/is (= 3 (:processed res))))
+        ;; 2 (was 3): same snapshot pinning as above.
+        (t/is (= 2 (:processed res))))
 
       ;; We still have th storage objects in the table
       (let [rows (th/db-query :storage-object {:deleted-at nil})]
@@ -1387,7 +1409,8 @@
         (t/is (= 1 (count (remove :deleted-at rows)))))
 
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 4 (:processed res))))
+        ;; 3 (was 4): one shared fragment row stays pinned by the snapshot.
+        (t/is (= 3 (:processed res))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
         ;; (app.common.pprint/pprint rows)
@@ -1619,7 +1642,10 @@
       (t/is (= 4 (count rows)))
 
       (t/is (nil? (:data row1)))
-      (t/is (ct/inst? (:deleted-at row1)))
+      ;; Not deleted: the automatic snapshot shares this fragment with
+      ;; the live file, so file-gc keeps it (was marked before snapshots
+      ;; shared fragments).
+      (t/is (nil? (:deleted-at row1)))
       (t/is (= "storage" (:backend row1)))
 
       (t/is (bytes? (:data row2)))
@@ -1635,20 +1661,26 @@
       (t/is (nil? (:deleted-at row4))))
 
     ;; The objects-gc should remove the marked to delete fragments
+    ;; (only 1 now: the snapshot-shared fragment survives).
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 2 (:processed res))))
+      (t/is (= 1 (:processed res))))
 
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-      (t/is (= 2 (count rows)))
-      (t/is (every? #(bytes? (:data %)) rows))
-      (t/is (every? #(= "db" (:backend %)) rows)))
+      ;; 3 rows (was 2): the snapshot-pinned offloaded fragment plus the
+      ;; two live hot rows.
+      (t/is (= 3 (count rows)))
+      (t/is (= 2 (count (filter #(bytes? (:data %)) rows))))
+      (t/is (= 1 (count (filter #(= "storage" (:backend %)) rows))))
+      (t/is (= 2 (count (filter #(= "db" (:backend %)) rows)))))
 
     ;; we ensure that once object-gc is passed and marked two storage
     ;; objects to delete
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
-      (t/is (= 2 (:delete res))))
+      ;; 1 (was 2): only one storage object was touched by the purge
+      ;; above, the pinned fragment's object is still referenced.
+      (t/is (= 1 (:delete res))))
 
     (let [storage (sto/resolve th/*system*)]
       (t/is (uuid? (:id @sobject)))

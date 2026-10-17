@@ -239,8 +239,7 @@
 
 (defn- migrate-file
   [{:keys [::db/conn] :as cfg} {:keys [read-only?]} {:keys [id] :as file}]
-  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)
-            pmap/*tracked* (pmap/create-tracked)]
+  (fdata/with-tracked-pointers cfg id
     (let [libs (delay (get-resolved-file-libraries cfg file))
           ;; For avoid unnecesary overhead of creating multiple
           ;; pointers and handly internally with objects map in their

@@ -90,4 +90,6 @@
 - File data backends are `legacy-db`, `db`, and `storage`. The storage backend keeps encoded file data in storage bucket `file-data`; the DB row stores metadata with `storage-ref-id` and nil data.
 - `fdata/upsert!` touches any storage object referenced by incoming metadata before storing the new row/blob.
 - Pointer-map fragments are persisted separately as type `fragment`, and only modified pointer maps are written.
+- Snapshots share fragment rows with the live file (they are stored with pointers, not materialized). A fragment is alive while the live main file or any unpurged snapshot references it; `file-gc/clean-fragments!` unions both sets (see `feat.fdata/get-used-pointer-ids`).
+- Bind the fragment loader through `fdata/with-pointers` (reads) or `fdata/with-tracked-pointers` (writes) instead of hand-rolled `binding` forms; `file-snapshots/reduce-snapshots` already binds it while walking snapshot content.
 - `fdata/realize` combines pointer realization and object-map realization. Use it before operations that need complete in-memory file data instead of pointer placeholders.
