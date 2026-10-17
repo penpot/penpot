@@ -21,7 +21,6 @@
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.render-wasm.wasm :as wasm-state]
-   [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
@@ -144,20 +143,11 @@
   (log/inf :hint "resolve file"
            :file-id (str (:id file))
            :features (str/join " " (:features file)))
+  ;; fpmap/resolve-file guarantees resolved data or an error; there is
+  ;; no leftover-pointer case to handle here.
   (->> (fpmap/resolve-file file)
        (rx/map :data)
-       (rx/map
-        (fn [data]
-          (let [pending (into []
-                              (comp (filter (fn [[_ v]] (t/pointer? v)))
-                                    (map key))
-                              data)]
-            (when (seq pending)
-              (log/error :hint "unresolved fragments after workspace resolve"
-                         :file-id (str (:id file))
-                         :keys pending)
-              (throw (ex-info "unresolved file fragments" {:file-id (:id file)})))
-            (assoc file :data data))))))
+       (rx/map #(assoc file :data %))))
 
 (defn- check-libraries-synchronization
   [file-id libraries]

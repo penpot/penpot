@@ -91,5 +91,5 @@
 - `fdata/upsert!` touches any storage object referenced by incoming metadata before storing the new row/blob.
 - Pointer-map fragments are persisted separately as type `fragment`, and only modified pointer maps are written.
 - Snapshots share fragment rows with the live file (they are stored with pointers, not materialized). A fragment is alive while the live main file or any unpurged snapshot references it; `file-gc/clean-fragments!` unions both sets (see `feat.fdata/get-used-pointer-ids`).
-- Bind the fragment loader through `fdata/with-pointers` (reads) or `fdata/with-tracked-pointers` (writes) instead of hand-rolled `binding` forms; `file-snapshots/reduce-snapshots` already binds it while walking snapshot content.
+- Bind the fragment loader through `fdata/with-pointers` (reads), `fdata/with-tracked-pointers` (writes with a loader) or `fdata/with-tracked` (writes with nothing to load yet, e.g. file creation) instead of hand-rolled `binding` forms; `file-snapshots/reduce-snapshots` already binds its loader while walking snapshot content.
 - `fdata/realize` combines pointer realization and object-map realization. Use it before operations that need complete in-memory file data instead of pointer placeholders.

@@ -42,14 +42,27 @@
    (map :data)
    (mapcat cfh/collect-used-media)))
 
+(defn- collect-snapshot-liveness
+  "Single snapshot scan collecting both fragment pointer ids and media
+  ids referenced by unpurged snapshots. Runs once per file-gc pass and
+  feeds clean-file-media! and clean-fragments!, so snapshot blobs are
+  read and decoded only once instead of once per cleaner."
+  [cfg file-id]
+  (let [xf (comp (filter :data)
+                 (map (fn [{:keys [data]}]
+                        {:pointers (feat.fdata/get-used-pointer-ids data)
+                         :media    (cfh/collect-used-media data)})))
+        rf (completing (fn [acc {:keys [pointers media]}]
+                         (-> acc
+                             (update :pointers into pointers)
+                             (update :media into media))))]
+    (fsnap/reduce-snapshots cfg file-id xf rf {:pointers #{} :media #{}})))
+
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
-  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} snap-media {:keys [id] :as file}]
   (let [used-media
-        (fsnap/reduce-snapshots cfg id xf:collect-used-media conj #{})
-
-        used-media
-        (into used-media xf:collect-used-media [file])
+        (into snap-media xf:collect-used-media [file])
 
         used-media
         (db/create-array conn "uuid" used-media)
@@ -188,12 +201,12 @@
 (defn- clean-fragments!
   "Mark fragment rows that are referenced neither by the live main file
   data nor by any snapshot (snapshots share fragment rows with the live
-  file, see `app.features.fdata/get-used-pointer-ids`). Runs inside the
+  file, see `app.features.fdata/get-used-pointer-ids`). `snap-pointers`
+  comes from a single `collect-snapshot-liveness` pass. Runs inside the
   caller transaction, which already holds FOR UPDATE on the file row."
-  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} snap-pointers {:keys [id] :as file}]
   (let [main-used (into #{} xf:collect-pointers [file])
-        snap-used (fsnap/reduce-snapshots cfg id xf:collect-pointers conj #{})
-        used      (into main-used snap-used)
+        used      (into main-used snap-pointers)
         unused (->> (db/exec! conn [sql:mark-deleted-data-fragments timestamp id
                                     (db/create-array conn "uuid" used)])
                     (into #{} bfc/xf-map-id))]
@@ -207,10 +220,10 @@
     file))
 
 (defn- clean-media!
-  [cfg file]
+  [cfg {:keys [media]} file]
   (let [file (->> file
                   (clean-deleted-components! cfg)
-                  (clean-file-media! cfg)
+                  (clean-file-media! cfg media)
                   (clean-file-thumbnails! cfg)
                   (clean-file-object-thumbnails! cfg))]
     (cfv/validate-file-schema! file)
@@ -235,10 +248,11 @@
 (defn- process-file!
   [cfg {:keys [file-id] :as props}]
   (if-let [file (get-file cfg props)]
-    (let [file (->> file
+    (let [liveness (collect-snapshot-liveness cfg file-id)
+          file (->> file
                     (bfl/clean-file)
-                    (clean-media! cfg)
-                    (clean-fragments! cfg))
+                    (clean-media! cfg liveness)
+                    (clean-fragments! cfg (:pointers liveness)))
           file (assoc file :has-media-trimmed true)]
       (bfc/update-file! cfg file)
       true)

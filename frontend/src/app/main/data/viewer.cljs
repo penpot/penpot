@@ -121,6 +121,26 @@
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]])
 
+(defn resolve-viewer-fragment
+  "Resolves one pointer-mapped entry of the view-only bundle into a
+  [key data] pair. A failing fragment rejects with the original cause
+  (logged with file-id and fragment-id) instead of resolving to a
+  silently pruned entry."
+  [file-id share-id [key pointer]]
+  (let [params {:file-id file-id :fragment-id @pointer}
+        params (cond-> params
+                 (uuid? share-id)
+                 (assoc :share-id share-id))]
+    (->> (rp/cmd! :get-file-fragment params)
+         (rx/map :data)
+         (rx/map #(vector key %))
+         (rx/catch (fn [cause]
+                     (log/error :hint "unable to resolve viewer fragment"
+                                :file-id (str file-id)
+                                :fragment-id (str @pointer)
+                                :cause cause)
+                     (rx/throw cause))))))
+
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
 
@@ -141,20 +161,7 @@
                        (uuid? share-id)
                        (assoc :share-id share-id))
 
-            resolve  (fn [[key pointer]]
-                       (let [params {:file-id file-id :fragment-id @pointer}
-                             params (cond-> params
-                                      (uuid? share-id)
-                                      (assoc :share-id share-id))]
-                         (->> (rp/cmd! :get-file-fragment params)
-                              (rx/map :data)
-                              (rx/map #(vector key %))
-                              (rx/catch (fn [cause]
-                                          (log/error :hint "unable to resolve viewer fragment"
-                                                     :file-id (str file-id)
-                                                     :fragment-id (str @pointer)
-                                                     :cause cause)
-                                          (rx/throw cause))))))]
+            resolve  (partial resolve-viewer-fragment file-id share-id)]
 
         (->> (rp/cmd! :get-view-only-bundle params')
              (rx/mapcat

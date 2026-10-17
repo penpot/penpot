@@ -10,6 +10,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -118,6 +119,62 @@
             snap-ids  (fdata/get-used-pointer-ids snap-data)]
         (t/is (contains? snap-ids orphan))))))
 
+(t/deftest snapshot-release-frees-fragments
+  ;; Full pin-release lifecycle through the real paths: the replaced
+  ;; fragment stays alive while the snapshot exists, and the next
+  ;; file-gc after deleting + purging the snapshot marks it.
+  ;; Note: every update takes an automatic snapshot, so besides the
+  ;; manual one there is also an automatic snapshot of the same state;
+  ;; the release phase deletes all of them.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        f0      (bfc/get-file th/*system* file-id)
+        page-id (first (:pages (:data f0)))]
+
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 0
+                  :changes (add-rect-change page-id (uuid/random)))
+
+    (let [f1   (bfc/get-file th/*system* file-id)
+          snap (fsnap/create! th/*system* f1 {:profile-id (:id profile)})]
+      (t/is (uuid? (:id snap)))
+
+      (update-file! :profile-id (:id profile)
+                    :file-id file-id
+                    :revn 1
+                    :changes (add-rect-change page-id (uuid/random)))
+
+      (let [f2      (bfc/get-file th/*system* file-id)
+            new-ids (fdata/get-used-pointer-ids (:data f2))
+            old-ids (fdata/get-used-pointer-ids (:data f1))
+            orphan  (first (remove #(contains? new-ids %) old-ids))]
+        (t/is (some? orphan))
+
+        (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+        (t/is (nil? (:deleted-at (first (filter #(= orphan (:id %))
+                                                (fragment-rows file-id))))))
+
+        ;; Every update takes an automatic snapshot and each of them may
+        ;; share the orphan, so release all of them through the real
+        ;; path: delete! submits a :delete-object job per snapshot that
+        ;; marks both its file_change and its file_data rows as deleted.
+        (doseq [{:keys [id]} (filter #(some? (:label %))
+                                     (th/db-query :file-change {:file-id file-id}))]
+          (fsnap/delete! th/*system* {:id id
+                                      :file-id file-id
+                                      :deleted-at (ct/minus (ct/now) {:hours 1})}))
+        (th/run-pending-jobs)
+        (t/is (pos? (:processed (th/run-task! :objects-gc {}))))
+
+        (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+        (let [row (first (filter #(= orphan (:id %)) (fragment-rows file-id)))]
+          (t/is (some? row))
+          (t/is (some? (:deleted-at row))))))))
+
 (t/deftest gc-marks-fragments-without-live-reference
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
@@ -160,6 +217,17 @@
         (t/is false "expected a fragment-not-found error")
         (catch clojure.lang.ExceptionInfo cause
           (t/is (= :fragment-not-found (:code (ex-data cause)))))))))
+
+(t/deftest memoize-loader-caches-per-id
+  ;; The per-pass cache contract: repeated loads of the same fragment
+  ;; hit the underlying loader exactly once.
+  (let [calls (atom 0)
+        load  (fdata/memoize-loader
+               (fn [id] (swap! calls inc) {:id id}))]
+    (t/is (= {:id 1} (load 1)))
+    (t/is (= {:id 1} (load 1)))
+    (t/is (= {:id 2} (load 2)))
+    (t/is (= 2 @calls))))
 
 (t/deftest restore-returns-snapshot-content
   ;; Snapshot, modify the page so the old fragment is snapshot-only,

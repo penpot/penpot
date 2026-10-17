@@ -223,23 +223,25 @@
       (t/is (pos? (count snap)))
       (t/is (every? #(contains? live %) snap)))
 
-    ;; Modify the file, then restore the version and compare resolved
-    ;; content with the version preview (both materialized).
-    (update-file! :profile-id (:id profile)
-                  :file-id file-id
-                  :revn 0
-                  :changes [{:type :add-obj
-                             :page-id page-id
-                             :id (uuid/random)
-                             :parent-id uuid/zero
-                             :frame-id uuid/zero
-                             :components-v2 true
-                             :obj (cts/setup-shape
-                                   {:id (uuid/random)
-                                    :name "rect"
-                                    :frame-id uuid/zero
-                                    :parent-id uuid/zero
-                                    :type :rect})}])
+    (let [shape-id (uuid/random)]
+
+      ;; Modify the file, then restore the version and compare resolved
+      ;; content with the version preview (both materialized).
+      (update-file! :profile-id (:id profile)
+                    :file-id file-id
+                    :revn 0
+                    :changes [{:type :add-obj
+                               :page-id page-id
+                               :id shape-id
+                               :parent-id uuid/zero
+                               :frame-id uuid/zero
+                               :components-v2 true
+                               :obj (cts/setup-shape
+                                     {:id shape-id
+                                      :name "rect"
+                                      :frame-id uuid/zero
+                                      :parent-id uuid/zero
+                                      :type :rect})}]))
     (let [preview-out (th/command! {::th/type :get-file-snapshot
                                     ::rpc/profile-id (:id profile)
                                     :file-id file-id

@@ -351,12 +351,35 @@
        (realize-pointers cfg)
        (realize-objects cfg)))
 
+(defn memoize-loader
+  "Wraps a fragment load function with a per-call memory cache keyed by
+  fragment id. Fragment rows are immutable, so a cached value can never
+  go stale inside the transaction that reads it. The cache is created
+  per call and never escapes it. Successful loads are cached; misses
+  propagate and are not cached."
+  [load-fn]
+  (let [cache (atom {})]
+    (fn [id]
+      (or (get @cache id)
+          (let [data (load-fn id)]
+            (swap! cache assoc id data)
+            data)))))
+
 (defmacro with-pointers
   "Bind the fragment loader for `file-id` around `body`. All pointer
   derefs must happen inside the body; a pointer derefed outside of it
   raises because there is no loader bound."
   [cfg file-id & body]
   `(binding [pmap/*load-fn* (partial load-pointer ~cfg ~file-id)]
+     ~@body))
+
+(defmacro with-tracked
+  "Bind a fresh tracked set around `body`, without a fragment loader.
+  For write paths that create pointers before any file exists to load
+  from (e.g. file creation): wrapping tracks new pointers for
+  persistence, while any deref still fails loudly."
+  [& body]
+  `(binding [pmap/*tracked* (pmap/create-tracked)]
      ~@body))
 
 (defmacro with-tracked-pointers
