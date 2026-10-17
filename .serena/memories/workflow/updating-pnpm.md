@@ -33,7 +33,9 @@ file (never pipe tool output through filters).
   images). Nothing may call corepack: it is gone from Node 25+. pnpm
   auto-downloads the `packageManager` version on mismatch
   (`pmOnFail: download`, the default), so drift self-heals; aligned pins
-  just skip the download.
+  just skip the download. Inside the devenv that download lands in the
+  penpot user's `package-manager-store`, which `files/entrypoint.sh` chowns
+  to penpot on every start (see `mem:devenv/core`).
 - The pnpm version pin lives in three places that move together:
   `PNPM_VERSION` (+ arch SHAs) in `docker/devenv/Dockerfile` and in
   `docker/images/Dockerfile.{media-processor,exporter,mcp}`, and the
