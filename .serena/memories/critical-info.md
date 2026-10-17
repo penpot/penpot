@@ -60,6 +60,7 @@ The memory is structured in a way that you can get the critical information abou
 - `scripts/changelog.py` — Changelog checks for the `update-changelog` skill: `check-merged` (PR merge status), `cross-ref` (milestone PRs vs changelog section), `report` (anomaly report to CHANGES-ISSUES.md). Calls `scripts/gh.py` via subprocess. See `mem:scripts/changelog`.
 - `scripts/error-reports.mjs` — Query error reports via RPC API with token authentication. Supports list/get operations with filtering and pagination. See `mem:scripts/error-reports`.
 - `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm workspaces (root, modules, member packages). Keeps the shared pnpm store at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
+- `scripts/setup-opencode` — Install the opencode CLI in-container as a global pnpm package in `$PNPM_HOME`. Not part of the devenv image; see `mem:devenv/core`.
 - `scripts/ci` — CI orchestration script: runs lint, tests, and format checks per module (`frontend backend common render-wasm exporter mcp plugins library`). Logs go to `.ci-logs/`; read the log file on failure. See `mem:scripts/ci`.
 
 # Dependency graph
