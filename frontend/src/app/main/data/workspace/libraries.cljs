@@ -1462,6 +1462,12 @@
                 (wrf/finish! task)
                 (swap! pending-sync-barriers* disj task)))
 
+            ;; Each batch entry is [[event task] old-data].
+            finish-batch-barriers!
+            (fn [batch]
+              (doseq [[[_ task] _] batch]
+                (finish-sync-barrier! task)))
+
             commits-s
             (->> stream
                  (rx/filter dch/commit?)
@@ -1474,6 +1480,9 @@
                  (rx/filter (complement :skip-component-sync?))
                  ;; Keep waits pending while component changes are checked.
                  (rx/map start-sync-barrier)
+                 ;; Paired as it arrives, so later commits in the same batch
+                 ;; cannot hide the shapes this one moved or deleted.
+                 (rx/with-latest-from workspace-buffer-s)
                  (rx/share))
 
             ;; Buffers commits until a timer turn passes with no new ones. The
@@ -1499,32 +1508,33 @@
                     (log/info :hint "detected component changes"
                               :ids (map str changed-components)
                               :undo-group undo-group)
-                    (map #(vector ::component-changed % undo-group)
+                    (map #(vector ::component-changed % (:id old-data) undo-group)
                          changed-components))
 
                   :else
                   ;; Undos only bump :modified-at.
                   (map #(vector ::touch-component %) changed-components))))
 
-            ;; One event per distinct component change in the batch
+            ;; One event per distinct component change in the batch, each
+            ;; commit checked against the file data right before it
             get-component-events
-            (fn [batch old-data]
+            (fn [batch]
               (->> batch
-                   (mapcat #(get-component-changes old-data (first %)))
+                   (mapcat (fn [[[event _] old-data]]
+                             (get-component-changes old-data event)))
                    (distinct)
-                   (map (fn [[type component-id undo-group]]
+                   (map (fn [[type component-id file-id undo-group]]
                           (if (= type ::component-changed)
-                            (component-changed component-id (:id old-data) undo-group)
+                            (component-changed component-id file-id undo-group)
                             (touch-component component-id))))
                    (rx/from)))
 
             component-events-s
             (->> commit-batches-s
-                 (rx/with-latest-from workspace-buffer-s)
                  (rx/mapcat
-                  (fn [[batch old-data]]
-                    (->> (get-component-events batch old-data)
-                         (rx/finalize #(run! (comp finish-sync-barrier! second) batch)))))
+                  (fn [batch]
+                    (->> (get-component-events batch)
+                         (rx/finalize #(finish-batch-barriers! batch)))))
                  ;; Close barriers left behind when the page shuts down.
                  (rx/finalize #(wrf/finish-tasks! @pending-sync-barriers*))
                  (rx/share))
