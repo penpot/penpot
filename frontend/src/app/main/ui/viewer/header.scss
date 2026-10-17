@@ -363,3 +363,35 @@
 [data-fullscreen="true"] .viewer-header:hover {
   transform: translateY(0);
 }
+
+/** HIDE UI (without browser fullscreen) */
+[data-hide-ui="true"] .viewer-header::after {
+  content: " ";
+  position: absolute;
+  width: 100%;
+  height: deprecated.$s-48;
+  left: 0;
+  top: deprecated.$s-48;
+}
+
+[data-hide-ui="true"] .viewer-header {
+  transform: translateY(-#{deprecated.$s-48});
+}
+
+[data-hide-ui="true"] .viewer-header:hover {
+  transform: translateY(0);
+}
+
+.hide-ui-btn {
+  @extend %button-tertiary;
+  @include deprecated.flex-center;
+
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
+
+  svg {
+    @extend %button-icon;
+
+    stroke: var(--icon-foreground);
+  }
+}

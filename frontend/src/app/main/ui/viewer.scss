@@ -233,3 +233,25 @@
 [data-force-visible="true"] .viewer-go-prev {
   transform: translateX(0);
 }
+
+/** HIDE UI (without browser fullscreen) */
+[data-hide-ui="true"] .viewer-bottom {
+  transform: translateY(deprecated.$s-40);
+}
+
+[data-hide-ui="true"] .viewer-go-next {
+  transform: translateX(deprecated.$s-40);
+}
+
+[data-hide-ui="true"] .viewer-go-prev {
+  transform: translateX(-#{deprecated.$s-40});
+}
+
+[data-hide-ui="true"] .viewer-content {
+  transform: translateY(-#{deprecated.$s-48});
+  height: 100vh;
+}
+
+[data-hide-ui="true"] .viewer-section {
+  height: 100vh;
+}
