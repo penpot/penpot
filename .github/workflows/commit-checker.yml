@@ -56,7 +56,7 @@ jobs:
       # always the trusted version: PR commits are only read, never
       # executed. On push events this resolves to the pushed sha.
       - name: Checkout trusted code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.base.sha || github.sha }}
