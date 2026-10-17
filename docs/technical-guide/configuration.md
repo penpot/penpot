@@ -833,7 +833,7 @@ PENPOT_FLAGS: [...] enable-tiered-file-data-storage
 PENPOT_FILE_DATA_BACKEND: db
 ```
 
-Once enabled, the offload job moves one file per run inside a single transaction: it locks the file row (skipping the run while the file is being edited) and migrates every live data row to the objects storage. You can follow it with `penpot_file_data_offload_rows_total` and `penpot_file_data_offload_bytes_total` (labels `result="ok"` and `type="main|snapshot|fragment"`) and `penpot_file_data_offload_timing_ms` (label `result="ok|skip|error"`).
+Once enabled, the offload job moves one file per run inside a single transaction: it locks the file row (skipping the run while the file is being edited) and migrates every live data row to the objects storage. You can follow it with `penpot_file_data_offload_rows_total` and `penpot_file_data_offload_bytes_total` (label `type="main|snapshot|fragment"`) and `penpot_file_data_offload_timing_ms` (label `result="ok|skip|error"`).
 
 ### Autosave
 

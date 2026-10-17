@@ -351,13 +351,13 @@
    :file-data-offload-rows
    {::mdef/name "penpot_file_data_offload_rows_total"
     ::mdef/help "File data rows moved from hot to cold storage by the offload job."
-    ::mdef/labels ["result" "type"]
+    ::mdef/labels ["type"]
     ::mdef/type :counter}
 
    :file-data-offload-bytes
    {::mdef/name "penpot_file_data_offload_bytes_total"
     ::mdef/help "File data bytes moved from hot to cold storage by the offload job."
-    ::mdef/labels ["result" "type"]
+    ::mdef/labels ["type"]
     ::mdef/type :counter}
 
    :file-data-offload-timing

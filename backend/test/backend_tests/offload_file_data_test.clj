@@ -198,20 +198,20 @@
   ["main" "snapshot" "fragment"])
 
 (defn- total-counter
-  [metrics id result]
-  (reduce + 0 (map #(counter-value metrics id [result %]) known-types)))
+  [metrics id]
+  (reduce + 0 (map #(counter-value metrics id [%]) known-types)))
 
 (t/deftest metric-definitions-are-pinned
   (let [defs main/default-metrics]
     (t/is (= "penpot_file_data_offload_rows_total"
              (get-in defs [:file-data-offload-rows ::mdef/name])))
-    (t/is (= ["result" "type"]
+    (t/is (= ["type"]
              (get-in defs [:file-data-offload-rows ::mdef/labels])))
     (t/is (= :counter
              (get-in defs [:file-data-offload-rows ::mdef/type])))
     (t/is (= "penpot_file_data_offload_bytes_total"
              (get-in defs [:file-data-offload-bytes ::mdef/name])))
-    (t/is (= ["result" "type"]
+    (t/is (= ["type"]
              (get-in defs [:file-data-offload-bytes ::mdef/labels])))
     (t/is (= :counter
              (get-in defs [:file-data-offload-bytes ::mdef/type])))
@@ -232,20 +232,19 @@
                                                    {:file-id (:id file)})]
     (t/is (pos? (:offloaded result)))
     (t/is (= (double (:offloaded result))
-             (total-counter metrics :file-data-offload-rows "ok")))
+             (total-counter metrics :file-data-offload-rows)))
     (t/is (= (double (:bytes result))
-             (total-counter metrics :file-data-offload-bytes "ok")))
-    (t/is (pos? (counter-value metrics :file-data-offload-rows ["ok" "main"])))
-    (t/is (= 0.0 (total-counter metrics :file-data-offload-rows "skip")))
-    (t/is (= 0.0 (total-counter metrics :file-data-offload-rows "error")))))
+             (total-counter metrics :file-data-offload-bytes)))
+    (t/is (pos? (counter-value metrics :file-data-offload-rows ["main"])))
+    (t/is (pos? (total-counter metrics :file-data-offload-rows)))))
 
 (t/deftest skip-records-skip-and-nothing-else
   (let [durations (volatile! [])
         rows      (volatile! [])
         bytes     (volatile! [])]
     (with-redefs [metrics/record-offload-duration (fn [_ result _] (vswap! durations conj result) nil)
-                  metrics/record-offload-rows (fn [_ result type amount] (vswap! rows conj [result type amount]) nil)
-                  metrics/record-offload-bytes (fn [_ result type amount] (vswap! bytes conj [result type amount]) nil)]
+                  metrics/record-offload-rows (fn [_ type amount] (vswap! rows conj [type amount]) nil)
+                  metrics/record-offload-bytes (fn [_ type amount] (vswap! bytes conj [type amount]) nil)]
       (let [result (offload/execute-offload-file-data th/*system* {:file-id (uuid/next)})]
         (t/is (= 0 (:offloaded result)))
         (t/is (= 1 (:skipped result)))))

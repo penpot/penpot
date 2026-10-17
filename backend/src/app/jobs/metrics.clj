@@ -192,21 +192,19 @@
   (str/lower (mtx/label type "other")))
 
 (defn record-offload-rows
-  "Count file data rows moved by the offload job. Only `ok` runs carry
-  rows; `skip` and `error` runs only record a duration."
-  [cfg result type amount]
+  "Count file data rows moved by the offload job, broken down by row
+  type. Only successful runs emit rows, so there is no result label."
+  [cfg type amount]
   (record-count (mtx/instance cfg) :file-data-offload-rows
-                [(offload-result-label result)
-                 (offload-type-label type)]
+                [(offload-type-label type)]
                 amount))
 
 (defn record-offload-bytes
-  "Count file data bytes moved by the offload job. Only `ok` runs carry
-  bytes; `skip` and `error` runs only record a duration."
-  [cfg result type amount]
+  "Count file data bytes moved by the offload job, broken down by row
+  type. Only successful runs emit bytes, so there is no result label."
+  [cfg type amount]
   (record-count (mtx/instance cfg) :file-data-offload-bytes
-                [(offload-result-label result)
-                 (offload-type-label type)]
+                [(offload-type-label type)]
                 amount))
 
 (defn record-offload-duration

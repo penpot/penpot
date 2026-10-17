@@ -96,8 +96,8 @@
             summary)
           (do
             (doseq [[type {:keys [rows bytes]}] (:by-type summary)]
-              (metrics/record-offload-rows cfg :ok type rows)
-              (metrics/record-offload-bytes cfg :ok type bytes))
+              (metrics/record-offload-rows cfg type rows)
+              (metrics/record-offload-bytes cfg type bytes))
             (metrics/record-offload-duration cfg :ok (inst-ms (tpoint)))
             summary)))
       (catch Throwable cause
