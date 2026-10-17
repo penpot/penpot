@@ -25,7 +25,7 @@
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.metrics :as-alias mtx]
+   [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [app.msgbus :as-alias mbus]
    [app.redis :as-alias rds]
@@ -70,12 +70,14 @@
    {::mdef/name "penpot_rpc_main_timing"
     ::mdef/help "RPC command method call timing for main"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :rpc-management-timing
    {::mdef/name "penpot_rpc_management_timing"
     ::mdef/help "RPC command method call timing for management."
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :websocket-active-connections
@@ -103,6 +105,7 @@
    {::mdef/name "penpot_tasks_timing"
     ::mdef/help "Background tasks timing (milliseconds)."
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-tasks-histogram-buckets
     ::mdef/type :histogram}
 
    :storage-gc-deleted-objects
@@ -115,6 +118,7 @@
    {::mdef/name "penpot_redis_eval_timing"
     ::mdef/help "Redis EVAL commands execution timings (ms)"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-redis-histogram-buckets
     ::mdef/type :histogram}
 
    :rpc-climit-waiting
@@ -133,6 +137,7 @@
    {::mdef/name "penpot_rpc_climit_timing"
     ::mdef/help "Summary of the time between queuing and executing on the CLIMIT"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :audit-http-handler-queue-size
@@ -151,12 +156,14 @@
    {::mdef/name "penpot_audit_http_handler_timing"
     ::mdef/help "Summary of the time between queuing and executing on the audit log http handler"
     ::mdef/labels []
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :http-server-dispatch-timing
    {::mdef/name "penpot_http_server_dispatch_timing"
     ::mdef/help "Histogram of dispatch handler"
     ::mdef/labels []
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :http-worker-queue-size
