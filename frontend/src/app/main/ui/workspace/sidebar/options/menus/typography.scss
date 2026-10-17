@@ -128,9 +128,7 @@ $font-preview-box-height: 28px;
   flex-shrink: 0;
   min-inline-size: $sz-24;
   block-size: 100%;
-  font-size: px2rem(16);
   white-space: nowrap;
-  line-height: 1;
   overflow: hidden;
   color: var(--color-foreground-primary);
 }
