@@ -6,6 +6,7 @@
 
 (ns common-tests.path-names-test
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.path-names :as cpn]
    [app.common.types.tokens-lib :as ctob]
    [clojure.test :as t]))
@@ -93,35 +94,27 @@
         (t/is (= {:name (last segments) :id id} (:leaf terminal)) path)))))
 
 (t/deftest build-tree-root-preserves-active-set-ancestor-and-descendant
-  (let [tokens-lib (ctob/read-multi-set-dtcg
-                    {"Global" {"a.a"   {"$value" "#aaa" "$type" "color"}
-                               "a.a.a" {"$value" "#bbb" "$type" "color"}}
-                     "$themes" []
-                     "$metadata" {"tokenSetOrder" ["Global"]
-                                  "activeSets" ["Global"]}})
-        selected-set (ctob/get-set-by-name tokens-lib "Global")
-        selected-tokens (ctob/get-tokens tokens-lib (ctob/get-id selected-set))
-        active-tokens (ctob/get-tokens-in-active-sets tokens-lib)
-        filtered-tokens (reduce-kv (fn [tokens k _]
-                                     (if (contains? selected-tokens k)
-                                       tokens
-                                       (dissoc tokens k)))
-                                   active-tokens
-                                   active-tokens)
-        tree          (cpn/build-tree-root (vec (vals filtered-tokens)) ".")
-        collision     (-> tree first :children first)
-        leaves        (tree-leaves tree)]
-    (t/is (= #{"a.a" "a.a.a"} (set (keys active-tokens))))
-    (t/is (= #{"a.a" "a.a.a"} (set (keys selected-tokens))))
-    (t/is (= #{"a.a" "a.a.a"} (set (keys filtered-tokens))))
-    (t/is (= 2 (count leaves)))
-    (t/is (= #{(get-in selected-tokens ["a.a" :id])
-               (get-in selected-tokens ["a.a.a" :id])}
-             (set (map :id leaves))))
-    (t/is (= "a.a" (:path collision)))
-    (t/is (= (get-in selected-tokens ["a.a" :id])
-             (get-in collision [:leaf :id])))
-    (t/is (= (get-in selected-tokens ["a.a.a" :id])
-             (get-in collision [:children 0 :leaf :id])))
-    (t/is (every? #(not (contains? % :app.common.path-names/remaining?))
-                  (mapcat tree-payloads tree)))))
+  (t/testing "#11588: an ancestor token and its descendant in the active set are both kept"
+    (let [tokens-lib    (ctob/read-multi-set-dtcg
+                         {"Global"    {"a.a"   {"$value" "#aaa" "$type" "color"}
+                                       "a.a.a" {"$value" "#bbb" "$type" "color"}}
+                          "$themes"   []
+                          "$metadata" {"tokenSetOrder" ["Global"]
+                                       "activeSets"    ["Global"]}})
+          tokens-status (cfo/make-tokens-status-from-lib tokens-lib)
+          active-tokens (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
+          tree          (cpn/build-tree-root (vec (vals active-tokens)) ".")
+          collision     (-> tree first :children first)
+          leaves        (tree-leaves tree)]
+      (t/is (= #{"a.a" "a.a.a"} (set (keys active-tokens))))
+      (t/is (= 2 (count leaves)))
+      (t/is (= #{(get-in active-tokens ["a.a" :id])
+                 (get-in active-tokens ["a.a.a" :id])}
+               (set (map :id leaves))))
+      (t/is (= "a.a" (:path collision)))
+      (t/is (= (get-in active-tokens ["a.a" :id])
+               (get-in collision [:leaf :id])))
+      (t/is (= (get-in active-tokens ["a.a.a" :id])
+               (get-in collision [:children 0 :leaf :id])))
+      (t/is (every? #(not (contains? % :app.common.path-names/remaining?))
+                    (mapcat tree-payloads tree))))))
