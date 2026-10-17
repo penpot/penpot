@@ -5,9 +5,11 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .element-set {
-  padding-bottom: deprecated.$s-16;
+  padding-block-end: var(--sp-l);
   margin: 0;
 }
 
@@ -17,33 +19,22 @@
 
 .title-spacing-export-viewer {
   margin: 0;
-  color: var(--entry-foreground-color-hover);
-  margin-inline-start: calc(-1 * deprecated.$s-8);
-  width: calc(100% + deprecated.$s-8);
-}
-
-.add-export {
-  @extend %button-tertiary;
-
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--icon-foreground);
-  }
+  color: var(--color-foreground-primary);
+  margin-inline-start: calc(-1 * var(--sp-s));
+  inline-size: calc(100% + var(--sp-s));
 }
 
 .element-set-content {
-  @include deprecated.flex-column;
-
-  margin-bottom: deprecated.$s-4;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-end: var(--sp-xs);
 }
 
 .multiple-exports {
-  @include deprecated.flex-row;
-
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
   grid-column: 1 / span 9;
 }
 
@@ -52,24 +43,15 @@
 }
 
 .actions {
-  @include deprecated.flex-row;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
 }
 
 .element-group {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  column-gap: deprecated.$s-4;
-
-  .action-btn {
-    @extend %button-tertiary;
-
-    height: deprecated.$s-32;
-    width: deprecated.$s-28;
-
-    svg {
-      @extend %button-icon;
-    }
-  }
+  column-gap: var(--sp-xs);
 }
 
 .input-wrapper {
@@ -82,10 +64,8 @@
   grid-column: span 3;
   padding: 0;
 
-  .dropdown-upwards {
-    bottom: deprecated.$s-36;
-    width: deprecated.$s-80;
-    top: unset;
+  .dropdown {
+    inline-size: px2rem(80);
   }
 }
 
@@ -93,24 +73,19 @@
   grid-column: span 2;
   padding: 0;
 
-  .dropdown-upwards {
-    bottom: deprecated.$s-36;
-    top: unset;
-    width: deprecated.$s-80;
+  .dropdown {
+    inline-size: px2rem(80);
   }
 }
 
 .suffix-input {
   @extend %input-element;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   grid-column: span 3;
 }
 
 .export-btn {
-  @extend %button-secondary;
-  @include deprecated.uppercase-title-typography;
-
-  height: deprecated.$s-32;
-  width: 100%;
+  justify-content: center;
+  inline-size: 100%;
 }
