@@ -3173,7 +3173,7 @@
                       (assoc ::bfc/profile-id (:id profile))
                       (assoc ::bfc/input output)
                       (v1/import-files!))
-          new-id  (first result)
+          new-id  (first (:file-ids result))
           media   (first (th/db-query :file-media-object {:file-id new-id :deleted-at nil}))
           thumb   (first (bfc/get-file-object-thumbnails th/*system* new-id))
           storage (-> (:app.storage/storage th/*system*)
@@ -3181,7 +3181,7 @@
           obj1    (sto/get-object storage (:media-id media))
           obj2    (sto/get-object storage (:media-id thumb))]
 
-      (t/is (= 1 (count result)))
+      (t/is (= 1 (count (:file-ids result))))
       (t/is (some? media))
       (t/is (some? thumb))
       (t/is (not= (:id obj1) (:id obj2)))
