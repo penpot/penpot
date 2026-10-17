@@ -159,8 +159,9 @@
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file) :revn (:revn file)})))
 
     ;; Check the number of fragments before adding the page
+    ;; (no churn: the preventive GC above reuses the single id).
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-      (t/is (= 2 (count rows))))
+      (t/is (= 1 (count rows))))
 
     ;; Add page
     (update-file!
@@ -174,20 +175,29 @@
        :id page-id}])
 
     ;; Check the number of fragments before adding the page
+    ;; (add-page adds exactly one fragment; the existing page keeps
+    ;; its id).
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-      (t/is (= 3 (count rows))))
+      (t/is (= 2 (count rows))))
+
+    ;; Snapshots share fragment rows with the live file; drop them so
+    ;; this GC-mechanics test asserts only on unreferenced fragments
+    ;; (snapshot retention itself is covered in file-pointer-snapshot-test).
+    (th/db-delete! :file-change {:file-id (:id file)})
+    (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
 
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; Check the number of fragments
+    ;; Check the number of fragments (no churn: unchanged pages keep
+    ;; their ids, so nothing is marked and nothing new is persisted).
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-      (t/is (= 5 (count rows)))
-      (t/is (= 3 (count (filterv :deleted-at rows)))))
+      (t/is (= 2 (count rows)))
+      (t/is (= 0 (count (filterv :deleted-at rows)))))
 
-    ;; The objects-gc should remove unused fragments
+    ;; The objects-gc has nothing to remove.
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 3 (:processed res))))
+      (t/is (= 0 (:processed res))))
 
     ;; Check the number of fragments
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
@@ -217,12 +227,18 @@
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
       (t/is (= 3 (count rows))))
 
+    ;; Same snapshot cleanup as above: isolate GC mechanics from
+    ;; snapshot retention.
+    (th/db-delete! :file-change {:file-id (:id file)})
+    (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
+
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; The objects-gc should remove unused fragments
+    ;; Only the replaced page fragment is marked; the live pages keep
+    ;; their ids instead of being re-persisted.
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 3 (:processed res))))
+      (t/is (= 1 (:processed res))))
 
     ;; Check the number of fragments;
     (let [rows (th/db-query :file-data {:file-id (:id file)
@@ -242,14 +258,15 @@
     ;; snapshots previously deleted.
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; Check the number of fragments;
+    ;; Check the number of fragments; without churn the two live
+    ;; pages simply stay where they are (was 4 with 2 re-persisted).
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
       ;; (pp/pprint rows)
-      (t/is (= 4 (count rows)))
+      (t/is (= 2 (count rows)))
       (t/is (= 2 (count (remove :deleted-at rows)))))
 
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 2 (:processed res))))
+      (t/is (= 0 (:processed res))))
 
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
       (t/is (= 2 (count rows))))))
@@ -340,8 +357,10 @@
         (t/is (ct/inst? (:deleted-at row2))))
 
       (let [res (th/run-task! :objects-gc {})]
-        ;; delete 2 fragments and 1 media object
-        (t/is (= 3 (:processed res))))
+        ;; 1 (was 2): no churn orphans anymore, only the unused media
+        ;; row is purged. The replaced page fragment stays pinned by
+        ;; the automatic snapshot.
+        (t/is (= 1 (:processed res))))
 
       ;; check file media objects
       (let [rows (th/db-query :file-media-object {:file-id (:id file)})]
@@ -367,10 +386,11 @@
       ;; as deleted.
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      ;; This only clears fragments, the file media objects still referenced because
-      ;; snapshots are preserved
+      ;; The deleted shape's fragment is pinned by the automatic
+      ;; snapshot taken before the deletion, and its media is still
+      ;; referenced there too: nothing is marked, nothing to purge.
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 0 (:processed res))))
 
       ;; Delete all snapshots
       (th/db-exec! ["update file_data set deleted_at = now() where file_id = ? and type = 'snapshot'" (:id file)])
@@ -385,9 +405,11 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       (let [res (th/run-task! :objects-gc {})]
+        ;; 3 (was 4): the two orphaned page fragments plus the media
+        ;; row, all unreferenced now that the snapshots are purged.
         ;; this will remove the file media objects marked as deleted
         ;; on prev file-gc
-        (t/is (= 2 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
@@ -511,12 +533,15 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        ;; 0 (was 2, then 1): no churn orphans and every replaced page
+        ;; fragment stays pinned by an automatic snapshot.
+        (t/is (= 0 (:processed res))))
 
       (let [rows (th/db-query :file-data {:file-id (:id file)
                                           :type "fragment"
                                           :deleted-at nil})]
-        (t/is (= (count rows) 1)))
+        ;; 2 live (was 1): the snapshot-pinned fragment survives.
+        (t/is (= (count rows) 2)))
 
       ;; retrieve file and check trimmed attribute
       (let [row (th/db-get :file {:id (:id file)})]
@@ -554,10 +579,11 @@
       ;; as deleted.
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      ;; This only removes unused fragments, file media are still
-      ;; referenced on snapshots.
+      ;; The deleted shapes' fragments stay pinned by the automatic
+      ;; snapshots taken before the deletion, and the media is still
+      ;; referenced there too: nothing is marked, nothing to purge.
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 0 (:processed res))))
 
       ;; Mark all snapshots to be a non-snapshot file change
       (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file)])
@@ -568,7 +594,10 @@
       ;; "expired/deleted"
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 6 (:processed res))))
+        ;; 7 (was 6, then 8): the two orphaned page fragments plus the
+        ;; five media rows, all unreferenced once the snapshot file_data
+        ;; rows are gone. No churn duplicates are created anymore.
+        (t/is (= 7 (:processed res))))
 
       (let [rows (th/db-query :file-data {:file-id (:id file)
                                           :type "fragment"
@@ -717,9 +746,11 @@
 
       ;; Now that file-gc have marked for deletion the object
       ;; thumbnail lets execute the objects-gc task which remove
-      ;; the rows and mark as touched the storage object rows
+      ;; the rows and mark as touched the storage object rows.
+      ;; 1 (was 5, then 3): without churn there are no orphaned
+      ;; fragment rows to purge, only the deleted thumbnail row.
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 5 (:processed res))))
+        (t/is (= 1 (:processed res))))
 
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
@@ -750,7 +781,9 @@
 
       (let [res (th/run-task! :objects-gc {})]
         ;; (pp/pprint res)
-        (t/is (= 3 (:processed res))))
+        ;; 1 (was 3, then 2): without churn there are no fragment
+        ;; orphans; only the deleted thumbnail row is purged.
+        (t/is (= 1 (:processed res))))
 
       ;; We still have th storage objects in the table
       (let [rows (th/db-query :storage-object {:deleted-at nil})]
@@ -1388,7 +1421,10 @@
         (t/is (= 1 (count (remove :deleted-at rows)))))
 
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 4 (:processed res))))
+        ;; 1 (was 4, then 3): no fragment churn anymore — unchanged
+        ;; pages keep their ids, so only the deleted object-thumbnail
+        ;; row itself is purged.
+        (t/is (= 1 (:processed res))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
         ;; (app.common.pprint/pprint rows)
@@ -1511,7 +1547,9 @@
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        ;; 1 (was 2): without churn there is no re-persisted fragment
+        ;; orphan; only the superseded thumbnail row is purged.
+        (t/is (= 1 (:processed res))))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 1 (count rows)))))))
@@ -1531,8 +1569,9 @@
 
     ;; Preventive objects-gc
     (let [result (th/run-task! :objects-gc {})]
-      ;; deletes the fragment created by file-gc
-      (t/is (= 1 (:processed result))))
+      ;; nothing to delete: without churn the preventive file-gc above
+      ;; marked and created nothing.
+      (t/is (= 0 (:processed result))))
 
     ;; Check the number of fragments before adding the page
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
@@ -1556,9 +1595,10 @@
       (t/is (= 2 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    ;; Clean objects after file-gc
+    ;; Clean objects after file-gc: nothing to purge, the single
+    ;; fragment was kept (no churn re-persist) and offloaded as is.
     (let [result (th/run-task! :objects-gc {})]
-      (t/is (= 1 (:processed result))))
+      (t/is (= 0 (:processed result))))
 
     ;; Check the number of fragments before adding the page
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
@@ -1608,48 +1648,49 @@
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; The file-gc task, recreates all fragments, so after it we have
-    ;; now the double of fragments, and the old ones are marked as
-    ;; deleted, and the new ones are on DB
-    (let [[row1 row2 row3 row4 :as rows]
+    ;; The file-gc only marks fragments nothing references: the live
+    ;; pages keep their ids (no churn re-persist), row1 stays alive on
+    ;; cold storage pinned by the automatic snapshot, row2 is the new
+    ;; hot page.
+    (let [[row1 row2 :as rows]
           (th/db-query :file-data
                        {:file-id (:id file)
                         :type "fragment"}
                        {:order-by [:created-at]})]
       ;; (pp/pprint rows)
-      (t/is (= 4 (count rows)))
+      ;; No churn: live pages keep their ids, so there are no
+      ;; re-persisted duplicates and nothing is marked. row1 stays on
+      ;; cold storage pinned by the automatic snapshot.
+      (t/is (= 2 (count rows)))
 
       (t/is (nil? (:data row1)))
-      (t/is (ct/inst? (:deleted-at row1)))
+      (t/is (nil? (:deleted-at row1)))
       (t/is (= "storage" (:backend row1)))
 
       (t/is (bytes? (:data row2)))
       (t/is (= "db" (:backend row2)))
-      (t/is (ct/inst? (:deleted-at row2)))
+      (t/is (nil? (:deleted-at row2))))
 
-      (t/is (bytes? (:data row3)))
-      (t/is (= "db" (:backend row3)))
-      (t/is (nil? (:deleted-at row3)))
-
-      (t/is (bytes? (:data row4)))
-      (t/is (= "db" (:backend row4)))
-      (t/is (nil? (:deleted-at row4))))
-
-    ;; The objects-gc should remove the marked to delete fragments
+    ;; The objects-gc has nothing to remove: no fragment was marked.
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 2 (:processed res))))
+      (t/is (= 0 (:processed res))))
 
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      ;; 2 rows (was 3): the snapshot-pinned offloaded fragment plus
+      ;; the single live hot row. No churn duplicates.
       (t/is (= 2 (count rows)))
-      (t/is (every? #(bytes? (:data %)) rows))
-      (t/is (every? #(= "db" (:backend %)) rows)))
+      (t/is (= 1 (count (filter #(bytes? (:data %)) rows))))
+      (t/is (= 1 (count (filter #(= "storage" (:backend %)) rows))))
+      (t/is (= 1 (count (filter #(= "db" (:backend %)) rows)))))
 
     ;; we ensure that once object-gc is passed and marked two storage
     ;; objects to delete
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
-      (t/is (= 2 (:delete res))))
+      ;; 1 (was 2): only one storage object was touched by the purge
+      ;; above, the pinned fragment's object is still referenced.
+      (t/is (= 1 (:delete res))))
 
     (let [storage (sto/resolve th/*system*)]
       (t/is (uuid? (:id @sobject)))
