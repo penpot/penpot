@@ -1241,12 +1241,12 @@
                  :path (th/tempfile "backend_tests/test_files/sample.jpg")
                  :mtype "image/jpeg"
                  :size 312043}
-        out     (th/command! {::th/type :upload-file-media-object
-                              ::rpc/profile-id (:id prof)
-                              :file-id (:id file)
-                              :is-local true
-                              :name "testfile"
-                              :content mfile})]
+        out     (th/multipart-command! {::th/type :upload-file-media-object
+                                        ::rpc/profile-id (:id prof)
+                                        :file-id (:id file)
+                                        :is-local true
+                                        :name "testfile"
+                                        :content mfile})]
     (t/is (th/success? out))
     (t/is (= (:id team)
              (get-in (meta (:result out)) [:app.loggers.audit/replace-props :team-id])))))
