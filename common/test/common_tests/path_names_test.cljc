@@ -68,7 +68,7 @@
       (t/is (= "test.pointer.pointer" (:path terminal)))
       (t/is (= {:name "pointer" :id "t1"} (:leaf terminal)))
       (t/is (nil? (:children terminal)))
-      (t/is (every? #(not (contains? % :app.common.path-names/remaining?))
+      (t/is (every? #(not (contains? % :app.common.path-names/remaining-path))
                     (tree-payloads (first tree))))))
   (t/testing "control case without repeated segments is unchanged"
     (let [tree     (cpn/build-tree-root [{:name "test.thing.other-thing" :id "t2"}] ".")
@@ -116,5 +116,5 @@
                (get-in collision [:leaf :id])))
       (t/is (= (get-in active-tokens ["a.a.a" :id])
                (get-in collision [:children 0 :leaf :id])))
-      (t/is (every? #(not (contains? % :app.common.path-names/remaining?))
+      (t/is (every? #(not (contains? % :app.common.path-names/remaining-path))
                     (mapcat tree-payloads tree))))))
