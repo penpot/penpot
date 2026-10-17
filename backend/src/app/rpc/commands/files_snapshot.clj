@@ -13,6 +13,7 @@
    [app.common.time :as ct]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
    [app.main :as-alias main]
@@ -66,9 +67,15 @@
       ;; Load current file metadata only (no data decoding) then overlay
       ;; the snapshot data so the client receives the same shape as a
       ;; normal get-file response but with historical page/object content.
-      (let [base-file (bfc/get-file cfg file-id :load-data? false)]
+      ;; Snapshots may hold pointer-mapped pages shared with the live
+      ;; file, so materialize them here: the preview UI applies the
+      ;; response straight into state and cannot resolve pointers.
+      ;; NOTE: the loader binds the live file-id, not the snapshot id.
+      (let [base-file (bfc/get-file cfg file-id :load-data? false)
+            data      (fdata/with-pointers cfg file-id
+                        (fdata/process-pointers (:data snapshot) deref))]
         (-> base-file
-            (assoc :data (:data snapshot))
+            (assoc :data data)
             (assoc :version (:version snapshot))
             (assoc :features (:features snapshot))
             (assoc :revn (:revn snapshot))
@@ -87,7 +94,13 @@
                 [:create-file-snapshot/global]]}
   [cfg {:keys [::rpc/profile-id file-id label]}]
   (files/check-edition-permissions! cfg profile-id file-id)
-  (let [file    (bfc/get-file cfg file-id :realize? true)
+  ;; NOTE: the file is intentionally NOT realized here: the snapshot
+  ;; shares fragment rows with the live file (same as automatic
+  ;; snapshots) instead of storing a materialized copy. file-gc treats
+  ;; every unpurged snapshot as a liveness root, and readers
+  ;; (get-file-snapshot, restore!, reduce-snapshots) resolve pointers
+  ;; on demand.
+  (let [file    (bfc/get-file cfg file-id)
         project (db/get-by-id cfg :project (:project-id file))]
 
     (-> cfg

@@ -1630,9 +1630,10 @@
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; The file-gc task, recreates all fragments, so after it we have
-    ;; now the double of fragments, and the old ones are marked as
-    ;; deleted, and the new ones are on DB
+    ;; The file-gc task re-persists the realized pages as new fragments
+    ;; while keeping the ones still referenced: the snapshot-shared
+    ;; row1 stays alive (nil deleted-at) and only the replaced row2 is
+    ;; marked; the re-persisted rows land on DB.
     (let [[row1 row2 row3 row4 :as rows]
           (th/db-query :file-data
                        {:file-id (:id file)

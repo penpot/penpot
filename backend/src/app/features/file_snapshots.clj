@@ -377,8 +377,11 @@
                :snapshot-id (str (:id snapshot)))
 
         ;; In the same way, on reseting the file data, we need to restore
-        ;; the applied migrations on the moment of taking the snapshot
-        (bfc/update-file! cfg file ::bfc/reset-migrations? true)
+        ;; the applied migrations on the moment of taking the snapshot.
+        ;; The snapshot data may hold shared pointer-mapped pages, so
+        ;; the fragment loader stays bound while persisting.
+        (fdata/with-pointers cfg file-id
+          (bfc/update-file! cfg file ::bfc/reset-migrations? true))
 
         ;; FIXME: this should be separated functions, we should not have
         ;; inline sql here.
@@ -440,6 +443,20 @@
       (db/get-update-count)
       (pos?)))
 
+(defn- memo-load-pointer
+  "Returns a fragment loader for `file-id` that caches decoded content
+  by fragment id for the duration of one reduction. Fragment rows are
+  immutable, so the cache can never go stale inside the transaction
+  that reads them. The cache is created per call and never escapes."
+  [cfg file-id]
+  (let [cache (atom {})
+        load  (partial fdata/load-pointer cfg file-id)]
+    (fn [id]
+      (or (get @cache id)
+          (let [data (load id)]
+            (swap! cache assoc id data)
+            data)))))
+
 (defn reduce-snapshots
   "Process the file snapshots using efficient reduction; the file
   reduction comes with all snapshots, including maked as deleted.
@@ -447,7 +464,9 @@
   Snapshot data may hold pointer-mapped pages, so the fragment loader
   is bound while reducing: consumers that walk page content (media
   refs, stats) transparently load fragments, consumers that only read
-  pointer ids never trigger a load."
+  pointer ids never trigger a load. Repeated references to the same
+  fragment (the common case once snapshots share rows) hit a
+  per-pass memory cache instead of the database."
   [cfg file-id xform f init]
   (let [conn  (db/get-connection cfg)
         xform (comp
@@ -455,6 +474,6 @@
                (map (partial fdata/decode-file-data cfg))
                xform)]
 
-    (binding [pmap/*load-fn* (partial fdata/load-pointer cfg file-id)]
+    (binding [pmap/*load-fn* (memo-load-pointer cfg file-id)]
       (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
            (transduce xform f init)))))

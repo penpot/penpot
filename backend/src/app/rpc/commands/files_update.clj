@@ -336,7 +336,7 @@
   NOT realized/materialized here. The file-gc liveness set unions main
   and snapshots, so shared fragments survive while any of them needs
   them."
-  [_ _ file]
+  [file]
   (assoc file ::snapshot file))
 
 (defn- update-file-data!
@@ -376,7 +376,7 @@
           (fmg/migrate-file libs)
 
           take-snapshot?
-          (->> (attach-snapshot cfg need-migration?)))]
+          (->> (attach-snapshot)))]
 
     (apply update-fn cfg file args)))
 

@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-file-snapshot-test
   (:require
+   [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
@@ -15,6 +16,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.features.fdata :as fdata]
+   [app.features.file-snapshots :as fsnap]
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
@@ -137,6 +140,124 @@
           (let [res (th/run-task! :objects-gc {})]
             ;; delete 2 snapshots and 2 file data entries
             (t/is (= 4 (:processed res)))))))))
+
+(t/deftest snapshot-preview-resolves-fragments
+  ;; Regression test (R1): previewing an automatic snapshot of a
+  ;; pointer-mapped file must return plain data, not pointer
+  ;; placeholders the preview UI cannot render.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        page-id (first (get-in file [:data :pages]))
+        shape-id (uuid/random)]
+
+    ;; An update at revn 0 takes an automatic (system) snapshot of the
+    ;; pre-change state; with pointer-map that snapshot shares fragments
+    ;; with the live file.
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 0
+                  :changes [{:type :add-obj
+                             :page-id page-id
+                             :id shape-id
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (cts/setup-shape
+                                   {:id shape-id
+                                    :name "rect"
+                                    :frame-id uuid/zero
+                                    :parent-id uuid/zero
+                                    :type :rect})}])
+
+    (let [snap-id (->> (th/db-query :file-change {:file-id file-id})
+                       (filter #(some? (:label %)))
+                       (first)
+                       (:id))
+          _       (t/is (uuid? snap-id))
+          out     (th/command! {::th/type :get-file-snapshot
+                                ::rpc/profile-id (:id profile)
+                                :file-id file-id
+                                :id snap-id
+                                :features cfeat/supported-features})]
+      (t/is (nil? (:error out)))
+      (let [data (get-in (:result out) [:data])]
+        (t/is (map? data))
+        (t/is (empty? (fdata/get-used-pointer-ids data)))))))
+
+(defn- live-fragment-ids
+  [file-id]
+  (into #{}
+        (comp (filter #(nil? (:deleted-at %)))
+              (map :id))
+        (th/db-query :file-data {:file-id file-id :type "fragment"})))
+
+(t/deftest user-snapshot-shares-fragments
+  ;; User-pinned versions share fragment rows like automatic snapshots
+  ;; instead of storing a materialized copy.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        page-id (first (get-in file [:data :pages]))
+        before  (live-fragment-ids file-id)
+        out     (th/command! {::th/type :create-file-snapshot
+                              ::rpc/profile-id (:id profile)
+                              :file-id file-id
+                              :label "v1"})
+        _       (t/is (nil? (:error out)))
+        snap-id (:id (:result out))]
+
+    ;; No new fragment rows: the version reuses the live ones.
+    (t/is (uuid? snap-id))
+    (t/is (= before (live-fragment-ids file-id)))
+
+    ;; The version pointers are a subset of the live pointers.
+    (let [live (fdata/get-used-pointer-ids
+                (:data (bfc/get-file th/*system* file-id)))
+          snap (fdata/get-used-pointer-ids
+                (:data (fsnap/get-snapshot th/*system* file-id snap-id)))]
+      (t/is (pos? (count snap)))
+      (t/is (every? #(contains? live %) snap)))
+
+    ;; Modify the file, then restore the version and compare resolved
+    ;; content with the version preview (both materialized).
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 0
+                  :changes [{:type :add-obj
+                             :page-id page-id
+                             :id (uuid/random)
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (cts/setup-shape
+                                   {:id (uuid/random)
+                                    :name "rect"
+                                    :frame-id uuid/zero
+                                    :parent-id uuid/zero
+                                    :type :rect})}])
+    (let [preview-out (th/command! {::th/type :get-file-snapshot
+                                    ::rpc/profile-id (:id profile)
+                                    :file-id file-id
+                                    :id snap-id
+                                    :features cfeat/supported-features})
+          _           (t/is (nil? (:error preview-out)))
+          preview     (:result preview-out)
+          restore-out (th/command! {::th/type :restore-file-snapshot
+                                    ::rpc/profile-id (:id profile)
+                                    :file-id file-id
+                                    :id snap-id})
+          _           (t/is (nil? (:error restore-out)))
+          live        (:data (bfc/get-file th/*system* file-id :realize? true))
+          ;; The preview resolves pointers but keeps objects-maps
+          ;; encoded; realize them too so both sides are plain data.
+          preview-data (:data (fdata/realize-objects
+                               nil {:data (:data preview)}))]
+      (t/is (= preview-data live)))))
 
 (t/deftest snapshots-locking
   (let [profile-1 (th/create-profile* 1 {:is-active true})

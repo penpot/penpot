@@ -12,9 +12,11 @@
    [app.common.features :as cfeat]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.db :as db]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.rpc :as-alias rpc]
+   [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -145,6 +147,47 @@
       (let [row (first (filter #(= orphan (:id %)) (fragment-rows file-id)))]
         (t/is (some? row))
         (t/is (some? (:deleted-at row)))))))
+
+(t/deftest pointer-context-contract
+  ;; The invariant the whole backend relies on: a pointer can only be
+  ;; derefed while a loader is bound; with-pointers binds the loader
+  ;; for the given file.
+  (let [pointer (pmap/create (uuid/next) {})]
+    (t/is (thrown? UnsupportedOperationException (deref pointer)))
+    (fdata/with-pointers th/*system* (uuid/random)
+      (try
+        (deref pointer)
+        (t/is false "expected a fragment-not-found error")
+        (catch clojure.lang.ExceptionInfo cause
+          (t/is (= :fragment-not-found (:code (ex-data cause)))))))))
+
+(t/deftest restore-returns-snapshot-content
+  ;; Snapshot, modify the page so the old fragment is snapshot-only,
+  ;; restore, and compare fully resolved content with the snapshot.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        f0      (bfc/get-file th/*system* file-id)
+        snap    (fsnap/create! th/*system* f0 {:profile-id (:id profile)})]
+
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 0
+                  :changes (add-rect-change
+                            (first (:pages (:data f0)))
+                            (uuid/random)))
+
+    (db/tx-run! th/*system*
+                (fn [cfg] (fsnap/restore! cfg file-id (:id snap))))
+
+    (let [snap-data (:data (fsnap/get-snapshot th/*system* file-id (:id snap)))
+          snap-content (:data (fdata/realize th/*system*
+                                             {:id file-id :data snap-data}))
+          live-content (:data (bfc/get-file th/*system* file-id
+                                            :realize? true))]
+      (t/is (= snap-content live-content)))))
 
 (t/deftest offload-keeps-fragment-semantics
   ;; Every file_data row (main, snapshot, fragments) moves to storage
