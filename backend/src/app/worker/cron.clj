@@ -12,8 +12,8 @@
   detection, retries and telemetry as for every other job. To keep the
   no-overlap semantics (one entry is not re-fired while the previous
   instance lives), the scheduler only submits when there is no active
-  instance (`new`/`scheduled`/`running`/`retry` with the same `name`
-  and `label` of the entry). The `FOR UPDATE SKIP LOCKED` claim on the
+  instance (`new`/`scheduled`/`running`/`retry` with the same `name`,
+  `queue` and `label` of the entry). The `FOR UPDATE SKIP LOCKED` claim on the
   scheduled_task row already serializes the tick between nodes."
   (:require
    [app.common.data :as d]
@@ -41,18 +41,6 @@
        on conflict (id)
        do nothing")
 
-;; The tenant filter is what makes the no-overlap check per instance: the
-;; job this count decides about is submitted to this tenant's queue, so
-;; counting other tenants' active jobs would let one instance skip a tick
-;; for work that is none of its business.
-(def ^:private sql:count-active-jobs
-  "SELECT count(*) AS n
-     FROM job
-    WHERE name = ?
-      AND label = ?
-      AND tenant = ?
-      AND status IN ('new','scheduled','running','retry')")
-
 (defn- synchronize-cron-entries
   [{:keys [::db/conn ::entries]}]
   (doseq [{:keys [id cron]} entries]
@@ -70,14 +58,16 @@
 (defn submit-cron-job
   "Submit the system job for the entry to the `:cron` queue. Uses the
   entry id as the job label (stable per entry) and returns the created
-  job-id. No-overlap pre-check lives in the caller."
+  job-id, or nil when an active instance (`new`/`scheduled`/`running`/
+  `retry` with the same name, queue and label) already exists."
   [cfg {:keys [job props id]}]
   (jobs/submit
    cfg
-   {::jobs/name   job
-    ::jobs/params (or props {})  ;; entries don't carry props; default to empty map
-    ::jobs/queue  :cron
-    ::jobs/label  (name id)}))
+   {::jobs/name         job
+    ::jobs/params       (or props {})  ;; entries don't carry props; default to empty map
+    ::jobs/queue        :cron
+    ::jobs/label        (name id)
+    ::jobs/skip-if-active true}))
 
 (declare ^:private schedule-cron-task)
 
@@ -100,29 +90,28 @@
                                         {:id id}
                                         {::db/return-keys false})
 
-                            ;; The count query is not locked, so a job could
-                            ;; transition from running to completed between the
-                            ;; count and the submit. This is acceptable: the
-                            ;; next tick will submit if needed. The FOR UPDATE
-                            ;; SKIP LOCKED on the scheduled_task row prevents
-                            ;; race conditions between nodes.
-                            (let [tenant (cf/get :tenant)
-                                  row    (db/exec-one! conn  [sql:count-active-jobs (d/name job) (str id) tenant])
-                                  active (or (get row :n) 0)]
-                              (if (pos? active)
-                                (do
-                                  (db/after-commit #(metrics/record-cron cfg :skipped :active))
-                                  (l/dbg :hint "skip"
-                                         :reason "scheduling, active instance exists"
-                                         :id id :job (d/name job)))
-                                (let [job-id  (submit-cron-job cfg entry)
-                                      elapsed (ct/format-duration (tpoint))]
-                                  (db/after-commit #(metrics/record-cron cfg :submitted :none))
-                                  (l/dbg :hint "submit"
-                                         :id id
-                                         :job (d/name job)
-                                         :job-id (str job-id)
-                                         :elapsed elapsed)))))))
+                            ;; The no-overlap check lives in the submit itself
+                            ;; (`::jobs/skip-if-active`): the check and the
+                            ;; insert share this transaction, so a job could
+                            ;; still transition from running to completed
+                            ;; between the check and the insert. This is
+                            ;; acceptable: the next tick will submit if
+                            ;; needed. The FOR UPDATE SKIP LOCKED on the
+                            ;; scheduled_task row prevents race conditions
+                            ;; between nodes.
+                            (if-let [job-id (submit-cron-job cfg entry)]
+                              (let [elapsed (ct/format-duration (tpoint))]
+                                (db/after-commit #(metrics/record-cron cfg :submitted :none))
+                                (l/dbg :hint "submit"
+                                       :id id
+                                       :job (d/name job)
+                                       :job-id (str job-id)
+                                       :elapsed elapsed))
+                              (do
+                                (db/after-commit #(metrics/record-cron cfg :skipped :active))
+                                (l/dbg :hint "skip"
+                                       :reason "scheduling, active instance exists"
+                                       :id id :job (d/name job)))))))
 
         (catch InterruptedException _
           (metrics/record-cron cfg :error :interrupted)
