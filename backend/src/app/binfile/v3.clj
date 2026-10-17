@@ -83,6 +83,9 @@
       [:used-by {:optional true} [:vector ::sm/uuid]]]]]])
 
 (def ^:private schema:storage-object
+  ;; The entry `:bucket` is an audit/compat label kept from the export;
+  ;; the bucket the object is stored with is decided by the reference
+  ;; that uses it, never by this label.
   [:map {:title "StorageObject"}
    [:id ::sm/uuid]
    [:size ::sm/int]
@@ -776,13 +779,25 @@
           (decode-plugin-data)
           (validate-plugin-data)))))
 
+(defn- read-decoded-entry
+  "Read a bundle entry, decode and validate it, caching the result in
+  the state. Media and thumbnail entries are read twice per import (the
+  references pre-scan and the file import), and every read counts
+  against the shared text budget, so the second read reuses the first."
+  [cfg entry decode validate]
+  (if-let [object (get-in @bfc/*state* [:input-cache entry])]
+    object
+    (let [object (->> (read-entry cfg (::bfc/input cfg) entry)
+                      (decode)
+                      (validate))]
+      (vswap! bfc/*state* assoc-in [:input-cache entry] object)
+      object)))
+
 (defn- read-file-media
-  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  [{:keys [::entries-index] :as cfg} file-id]
   (->> (get-in entries-index [:media (str file-id)])
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry cfg input entry)
-                                   (decode-media)
-                                   (validate-media))
+                 (let [object (read-decoded-entry cfg entry decode-media validate-media)
                        object (-> object
                                   (assoc :file-id file-id)
                                   (update :created-at default-now)
@@ -926,12 +941,10 @@
                  (d/ordered-map)))))
 
 (defn- read-file-thumbnails
-  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  [{:keys [::entries-index] :as cfg} file-id]
   (->> (get-in entries-index [:thumbnails (str file-id)])
        (reduce (fn [result {:keys [page-id frame-id tag entry]}]
-                 (let [object (->> (read-entry cfg input entry)
-                                   (decode-file-thumbnail)
-                                   (validate-file-thumbnail))]
+                 (let [object (read-decoded-entry cfg entry decode-file-thumbnail validate-file-thumbnail)]
 
                    (if (and (= frame-id (:frame-id object))
                             (= page-id (:page-id object))
@@ -968,23 +981,19 @@
   storage object id with the set of buckets that its references require.
   The bucket of an object is decided by the reference, so an object shared
   by references of different buckets is stored once per bucket."
-  [{:keys [::bfc/input ::entries-index] :as cfg}]
+  [{:keys [::entries-index] :as cfg}]
   (let [media      (->> (:media entries-index)
                         vals
                         (apply concat)
                         (keep (fn [{:keys [id entry]}]
-                                (let [object (->> (read-entry cfg input entry)
-                                                  (decode-media)
-                                                  (validate-media))]
+                                (let [object (read-decoded-entry cfg entry decode-media validate-media)]
                                   (when (= id (:id object))
                                     object)))))
         thumbnails (->> (:thumbnails entries-index)
                         vals
                         (apply concat)
                         (keep (fn [{:keys [entry tag page-id frame-id]}]
-                                (let [object (->> (read-entry cfg input entry)
-                                                  (decode-file-thumbnail)
-                                                  (validate-file-thumbnail))]
+                                (let [object (read-decoded-entry cfg entry decode-file-thumbnail validate-file-thumbnail)]
                                   (when (and (= tag (:tag object))
                                              (= page-id (:page-id object))
                                              (= frame-id (:frame-id object)))
@@ -1018,8 +1027,7 @@
       (let [params (-> item
                        (update :id bfc/lookup-index)
                        (assoc :file-id file-id')
-                       (d/update-when :media-id #(bfc/reference-storage-id % (:media bfc/storage-bucket-by-kind)))
-                       (d/update-when :thumbnail-id #(bfc/reference-storage-id % (:media bfc/storage-bucket-by-kind))))]
+                       (bfc/resolve-storage-row :media))]
 
         (tap-progress cfg {:section :media :id (:id params) :file-id file-id
                            :current (inc index) :total (count media)})
@@ -1036,7 +1044,7 @@
                     ::db/on-conflict-do-nothing? (::bfc/overwrite cfg))))
 
     (doseq [[index item] (d/enumerate thumbnails)]
-      (let [media-id  (bfc/reference-storage-id (:media-id item) (:thumbnail bfc/storage-bucket-by-kind))
+      (let [media-id  (:media-id (bfc/resolve-storage-row item :thumbnail))
             object-id (-> (assoc item :file-id file-id')
                           (cth/fmt-object-id))
             params    {:file-id file-id'
@@ -1111,7 +1119,11 @@
   ;; what the storage subsystem registers in other parallel
   ;; transaction
   (let [storage    (sto/resolve cfg)
-        references (read-storage-references cfg)
+        ;; Without object entries there is nothing to persist and no
+        ;; reference to resolve: skip the media/thumbnails pre-scan.
+        references (if (seq (:objects entries-index))
+                     (read-storage-references cfg)
+                     {})
         entries    (:objects entries-index)
         total      (count entries)]
 

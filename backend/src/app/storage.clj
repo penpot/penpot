@@ -184,7 +184,8 @@
 (def ^:private sql:get-storage-object-any
   "SELECT *
      FROM storage_object
-    WHERE id = ?")
+    WHERE id = ?
+      AND status = 'valid'")
 
 (defn- get-database-object
   ([conn id]

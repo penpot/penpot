@@ -397,6 +397,11 @@
 
 (defmethod write-section :v1/sobjects
   [{:keys [::output] :as cfg}]
+  ;; NOTE: unlike the v3 exporter, the legacy exporter writes the objects
+  ;; as collected, without resolving references: no twin reuse, no alias
+  ;; copies and no deleted-object reads. Reference resolution lives only
+  ;; in v3; keep it that way (this format is exercised by tests, production
+  ;; exports through `bf.v3/export-files!`).
   (let [sids    (-> bfc/*state* deref :sids)
         storage (sto/resolve cfg)]
 
@@ -670,11 +675,10 @@
           (db/insert! conn :file-media-object
                       (-> item
                           (assoc :file-id file-id)
-                          (d/update-when :media-id #(bfc/reference-storage-id % (:media bfc/storage-bucket-by-kind)))
-                          (d/update-when :thumbnail-id #(bfc/reference-storage-id % (:media bfc/storage-bucket-by-kind))))))))
+                          (bfc/resolve-storage-row :media))))))
 
     (doseq [item (:thumbnails @bfc/*state*)]
-      (let [item (update item :media-id #(bfc/reference-storage-id % (:thumbnail bfc/storage-bucket-by-kind)))]
+      (let [item (bfc/resolve-storage-row item :thumbnail)]
         (l/dbg :hint "inserting file object thumbnail"
                :file-id (str (:file-id item))
                :media-id (str (:media-id item))
