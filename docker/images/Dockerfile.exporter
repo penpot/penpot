@@ -95,17 +95,17 @@ WORKDIR /opt/penpot/exporter
 # pnpm ships as a system binary (same tarball + SHA pin as
 # docker/devenv/Dockerfile); the generated ./setup expects it on PATH.
 # Corepack is gone from Node 25+, so nothing here may use it.
-ARG PNPM_VERSION=12.8.1
+ARG PNPM_VERSION=12.11.2
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='75c5e34d3164fe3d3549580b1b1b59c9dd16543e558dec722b686193cdb7dfa1'; \
+         PNPM_SHA256='ad444fa06d7ff344d74ba1e4933f2ed71cc6357cc2d33707a5c60958b7d83085'; \
          ;; \
        amd64|x86_64) \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='db3906881f63e41b655e3b97d473603dc26326c2470d0b1b8083689e1bcbd1e8'; \
+         PNPM_SHA256='358f30541b42371360c0d48a8daddc0c0850a90c36fcbea598032a9850e2c9ab'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \

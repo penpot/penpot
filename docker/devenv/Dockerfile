@@ -67,7 +67,7 @@ RUN set -ex; \
 FROM base AS setup-node
 
 ENV NODE_VERSION=v24.21.0 \
-    PNPM_VERSION=12.9.1 \
+    PNPM_VERSION=12.11.2 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -78,14 +78,14 @@ RUN set -eux; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          NODE_SHA256='724282c3b43aec998aa9527380465b45d229e021b58035f5f4f63095eabfe5d5'; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='468294b77633d29889c6e4a79cefb1277eba30cd62e7d6a754218cb85a1d730d'; \
+         PNPM_SHA256='ad444fa06d7ff344d74ba1e4933f2ed71cc6357cc2d33707a5c60958b7d83085'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          NODE_SHA256='6e1db87ef58b8819e5d5402eff1536491b18edd8eb7bee5ef7897876e88dc5ff'; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='b4f58449ac02d9d24023ac89e17e05e8331f8ddc12ca1f489cf231bc2bb2bce1'; \
+         PNPM_SHA256='358f30541b42371360c0d48a8daddc0c0850a90c36fcbea598032a9850e2c9ab'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
