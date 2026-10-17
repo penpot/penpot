@@ -7,6 +7,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Edits/stale refs/duplication cleanup: `mem:memory-maintenance`.
 - Cross-cutting testing principles, TDD workflow, and anti-patterns: `mem:testing`.
 - Verified Clojure language behaviors that contradict common assumptions (e.g. `int?` covers `Long`; `integer?` is the general predicate): `mem:clojure/idioms` — read before assuming stdlib predicate semantics.
+- Promises: which call style to use where (`fmap`/`mcat`/`merr` vs `then`/`catch`) and how they bridge to rx: `mem:clojure/promesa` — read before chaining promises or mixing them with observables.
 - When designing a solution or an API, read `mem:clojure/design-rules` (function shape, boundary checks, naming).
 
 # Development workflow
