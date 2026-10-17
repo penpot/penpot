@@ -226,6 +226,11 @@
    :http-connector-errors-total
    {::mdef/name "penpot_http_connector_errors_total"
     ::mdef/help "Total number of handler errors in the http listener."
+    ::mdef/type :counter}
+
+   :http-malformed-requests-total
+   {::mdef/name "penpot_http_malformed_requests_total"
+    ::mdef/help "Total number of requests whose body the parser could not read."
     ::mdef/type :counter}})
 
 (def system-config
@@ -360,6 +365,7 @@
     ::rpc/routes         (ig/ref ::rpc/routes)
     ::setup/props        (ig/ref ::setup/props)
     ::mtx/routes         (ig/ref ::mtx/routes)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::mgmt/routes        (ig/ref ::mgmt/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)

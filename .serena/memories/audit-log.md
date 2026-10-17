@@ -269,7 +269,7 @@ Nexus dispatches on `:type`: `"telemetry-events"` batches are coerced and insert
 
 - **Anonymization happens in Penpot, before sending.** By the time events leave, times are day-truncated, IPs are already `0.0.0.0`, props/context are filtered (see above), and emails are gone (only derived `email-domain` survives). Nexus additionally forces the outcome: it prefixes any non-`telemetry:` source, sets `received-at = tracked-at` (already truncated), pins IP to `0.0.0.0`, and stamps the sending `instance-id` into every event context.
 - **No personal data is expected.** Profile ids are random UUIDs with no PII, so the telemetry consumer needs no login guard; grouping is by `instance`, not by person (see posthog-telemetry below).
-- **The endpoint always answers 200.** Failures are swallowed and only counted (`nexus_telemetry_errors_total`), so a bad batch never breaks the sending instance; successes are counted (`nexus_telemetry_events_total`, `nexus_telemetry_reports_total`). Old instances may send a fressian+zstd base64 blob instead of a plain vector; Nexus decodes both (50 MiB cap against decompression bombs).
+- **The endpoint always answers 200.** Failures are swallowed and only counted (`nexus_telemetry_errors_total`), so a bad batch never breaks the sending instance; successes are counted (`nexus_telemetry_events_total`, `nexus_telemetry_reports_total`). A body the parser cannot read never reaches the handler: it answers 400 and counts in `nexus_http_malformed_requests_total`. Old instances may send a fressian+zstd base64 blob instead of a plain vector; Nexus decodes both (50 MiB cap against decompression bombs).
 
 ## 12. Archive to Nexus (today) and to Nitrate (future)
 

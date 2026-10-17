@@ -42,7 +42,7 @@
 - `app.config/config` and `flags` are dynamic `defonce` vars populated from `PENPOT_*` env vars through the shared schema string transformer. Tests and tooling can bind them.
 - `parse-flags` automatically adds `:disable-secure-session-cookies` when `public-uri` is plain HTTP and not localhost. This changes cookie defaults without an explicit env flag.
 - The backend sets Clojure `*assert*` globally from the `:backend-asserts` feature flag. Assertion-dependent checks can therefore differ by runtime flags.
-- Request body parsing is mostly POST-oriented and supports Transit JSON plus plain JSON. Plain JSON request keys are kebab-decoded before being merged into `:params`.
+- Request body parsing is mostly POST-oriented and supports Transit JSON plus plain JSON. Plain JSON request keys are kebab-decoded before being merged into `:params`. A body the parser cannot read is a client error, classified at the parse site and never by exception class (`clojure.data.json` signals its syntax errors with a bare `java.lang.Exception`): 400 `:validation`/`:malformed-json`, one `warn` line (`malformed request body`) carrying path, peer address and content-type instead of a stack trace, and `penpot_http_malformed_requests_total`. `RequestTooBigException` keeps its 413.
 - Response formatting negotiates with `Accept` or `_fmt=json`. Transit is the default for collection/boolean bodies; JSON encoding has special pointer-map handling.
 - Auth prefers the session cookie token before the `Authorization` header. Headers may be `Token` or `Bearer`. Only `kid=1`/`ver=1` tokens are decoded as session tokens; anything else is left unauthenticated (legacy v1 tokens were removed).
 - Shared-key auth requires `x-shared-key` as `<key-id> <key>` and stores the lowercased key id on the request. If no shared keys are configured it always rejects.
@@ -60,6 +60,7 @@
 ## Metrics recording
 
 - `app.metrics/run!` is safe by default: a recording failure never throws (a metrics bug must not change the behavior of the measured operation). The first failure per metric id logs at `warn`, later ones at `debug`. The `instance` precondition is a plain assert (the backend enables `:backend-asserts`), and the collector lookup sits outside the recording guard, so a missing instance fails hard even when asserts are disabled. `::mtx/metrics` is required by the storage, s3-backend, and db-pool schemas; `app.db` wires the prometheus `MetricsTrackerFactory` unconditionally. Storage-specific metric contracts: `mem:backend/storage`.
+- `penpot_http_malformed_requests_total` (counter, no labels) counts requests whose body the parser could not read. `app.http.middleware/wrap-parse-request` emits it where it classifies the error, so the instance travels as a middleware argument (`[mw/parse-request (::mtx/metrics cfg)]`) and each service declares the definition with its own prefix (nexus: `nexus_http_malformed_requests_total`). The per-endpoint request counters of nexus do not count these requests: they sit inside the parse middleware, so the failure happens before them.
 
 ## Log-derived metrics
 
