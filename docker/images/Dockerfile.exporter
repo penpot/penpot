@@ -1,4 +1,4 @@
-FROM dhi.io/node:24.22.0-debian13-dev
+FROM dhi.io/node:24.22.0-debian13-dev@sha256:39f55475c45417de6a7be329834ce5b19bdda6c347ecd98e42b89d76bf4afa82
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
@@ -88,7 +88,7 @@ RUN set -ex; \
 
 ARG BUNDLE_PATH="./bundle-exporter/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
-COPY --from=penpotapp/imagemagick:7.1.2-27-1 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-32 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 

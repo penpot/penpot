@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev AS build
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:7b1d6522b9a4e72e2ca3537c031ca3650c654ec81c181447bf952069eb827226 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
     DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
-ARG IMAGEMAGICK_VERSION=7.1.2-27
+ARG IMAGEMAGICK_VERSION=7.1.2-32
 
 RUN set -e; \
     apt-get -qq update; \
@@ -74,7 +74,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*
 
 
-FROM dhi.io/debian-base:trixie-debian13 AS image
+FROM dhi.io/debian-base:trixie-debian13@sha256:20079b51710f0397da5e056bfc7156b6aafc7ff3aa4ef4cbcb0b0f1df99cd8c4 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \

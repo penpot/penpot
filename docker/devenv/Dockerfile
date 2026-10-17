@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:7b1d6522b9a4e72e2ca3537c031ca3650c654ec81c181447bf952069eb827226 AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -76,12 +76,14 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
+         NODE_SHA256='b7e7991d5407815adfa74a2a9cd4db683552c8ce32ff4a295c22e972849c3f5d'; \
          PNPM_ARCH='arm64'; \
          PNPM_SHA256='cfc780b9e690549e6633e1045fb1fb6ef84e390711e2099e6ccbae91c32456ea'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
+         NODE_SHA256='28ea0a438de9a13bd7891fd758eee6c7819ee8af5442dfd8d45bd65e56d4228c'; \
          PNPM_ARCH='x64'; \
          PNPM_SHA256='3910c3852136bed5bc1511b9137a45fd4357ed6b3970d9d08893641e9005867e'; \
          ;; \
@@ -91,6 +93,7 @@ RUN set -eux; \
          ;; \
     esac; \
     curl -LfsSo /tmp/nodejs.tar.gz ${BINARY_URL}; \
+    echo "${NODE_SHA256} */tmp/nodejs.tar.gz" | sha256sum -c -; \
     mkdir -p /opt/node; \
     cd /opt/node; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
@@ -516,7 +519,7 @@ ENV LANG='C.UTF-8' \
     SERENA_CONTEXT="claude-code" \
     PATH="/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=penpotapp/imagemagick:7.1.2-27-1 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-32 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
