@@ -26,6 +26,13 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn token-in-path?
+  "True when `token-name` is exactly `path` or nested below it. This keeps an
+   ancestor token inside the operations of its own path-based group."
+  [path token-name]
+  (or (= token-name path)
+      (str/starts-with? token-name (str path ctob/token-separator))))
+
 (defn- get-sorted-token-groups
   "Separate token-types into groups of `empty` or `filled` depending if
   tokens exist for that type. Sort each group alphabetically (by their type)."
@@ -130,10 +137,9 @@
          (fn [tokens-filtered-by-type node]
            (->> tokens-filtered-by-type
                 (filter (fn [token]
-                          (let [token-path (cpn/split-path (:name token) :separator ".")]
+                          (let [token-path (cpn/split-path (:name token) :separator ctob/token-separator)]
                             (and (> (count token-path) 0)
-                                 (or (= (:name token) (:path node))
-                                     (str/starts-with? (:name token) (str (:path node) "."))))))))))
+                                 (token-in-path? (:path node) (:name token)))))))))
 
         ;; Filter tokens by their path and return their ids
         filter-tokens-by-path-ids
@@ -144,8 +150,7 @@
                 (filter (fn [token]
                           (let [[_ token-value] token]
                             (and (= (:type token-value) type)
-                                 (or (= (:name token-value) path)
-                                     (str/starts-with? (:name token-value) (str path ".")))))))
+                                 (token-in-path? path (:name token-value))))))
                 (mapv (fn [token]
                         (let [[_ token-value] token]
                           (:id token-value)))))))
