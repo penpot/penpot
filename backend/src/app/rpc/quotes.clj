@@ -422,6 +422,8 @@
   (sm/lazy-validator schema:snapshots-per-file))
 
 (def ^:private sql:get-snapshots-per-file
+  ;; A version is told apart by its label, and the partial index with the same
+  ;; predicate answers the count without touching the table.
   "SELECT count(*) AS total
      FROM file_change AS fc
     WHERE fc.file_id = ?
@@ -453,11 +455,16 @@
   (sm/lazy-validator schema:snapshots-per-team))
 
 (def ^:private sql:get-snapshots-per-team
+  ;; The files of the team are resolved first, so the count filters by
+  ;; `file_id`: the planner can prune the partitions of `file_change` when it
+  ;; chooses an index scan (with a sequential scan it reads all of them). A
+  ;; version is told apart by its label.
   "SELECT count(*) AS total
      FROM file_change AS fc
-     JOIN file AS f ON (f.id = fc.file_id)
-     JOIN project AS p ON (p.id = f.project_id)
-    WHERE p.team_id = ?
+    WHERE fc.file_id = ANY (SELECT f.id
+                              FROM file AS f
+                              JOIN project AS p ON (p.id = f.project_id)
+                             WHERE p.team_id = ?)
       AND fc.created_by = 'user'
       AND fc.deleted_at IS NULL
       AND fc.label IS NOT NULL")

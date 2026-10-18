@@ -92,7 +92,7 @@
          (rx/of (update-versions-state {:editing nil})
                 (ev/event {::ev/name "rename-version"
                            :file-id file-id}))
-         (->> (rp/cmd! :update-file-snapshot {:id id :label label})
+         (->> (rp/cmd! :update-file-snapshot {:id id :file-id file-id :label label})
               (rx/map fetch-versions)))))))
 
 (defn- clear-preview-state
@@ -135,9 +135,10 @@
 
   (ptk/reify ::delete-version
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :delete-file-snapshot {:id id})
-           (rx/map fetch-versions)))))
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)]
+        (->> (rp/cmd! :delete-file-snapshot {:id id :file-id file-id})
+             (rx/map fetch-versions))))))
 
 (defn pin-version
   [id]
@@ -147,8 +148,10 @@
     (watch [_ state _]
       (when-let [version (->> (dm/get-in state [:workspace-versions :data])
                               (d/seek #(= (:id %) id)))]
-        (let [params {:id id
-                      :label (ct/format-inst (:created-at version) :localized-date)}]
+        (let [file-id (:current-file-id state)
+              params  {:id      id
+                       :file-id file-id
+                       :label   (ct/format-inst (:created-at version) :localized-date)}]
 
           (->> (rp/cmd! :update-file-snapshot params)
                (rx/mapcat (fn [_]
@@ -161,18 +164,20 @@
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::lock-version
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :lock-file-snapshot {:id id})
-           (rx/map fetch-versions)))))
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)]
+        (->> (rp/cmd! :lock-file-snapshot {:id id :file-id file-id})
+             (rx/map fetch-versions))))))
 
 (defn unlock-version
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::unlock-version
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :unlock-file-snapshot {:id id})
-           (rx/map fetch-versions)))))
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)]
+        (->> (rp/cmd! :unlock-file-snapshot {:id id :file-id file-id})
+             (rx/map fetch-versions))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; RESTORE VERSION EVENTS

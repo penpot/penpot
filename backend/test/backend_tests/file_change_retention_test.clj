@@ -10,7 +10,7 @@
   A file has two kinds of row. Durable history: the snapshots, which a restore
   brings back. And ephemeral revisions: the xlog of an edit, born already
   scheduled for deletion one hour later, which nobody needs once the sessions
-  that were going to read them are gone.
+  that were going to read them are gone. The `kind` column tells them apart.
 
   The invariant under test is that a deletion date is assigned once and never
   moved: restoring a file must not unmark a revision, and deleting a file must
@@ -49,9 +49,8 @@
 (defn- insert-change
   "Inserts a `file_change` row directly, so the test builds the exact shape it
   needs. The row class is decided by what the caller passes: a revision carries
-  only `changes`, a snapshot carries `label`, and a legacy payload row carries
-  `data` without a label. Returns the new row id."
-  [file-id {:keys [label data changes created-at deleted-at created-by]}]
+  only `changes` and a snapshot carries `label`. Returns the new row id."
+  [file-id {:keys [label changes created-at deleted-at created-by]}]
   (let [created-at (or created-at (ct/now))
         id         (uuid/next)]
     (th/db-insert! :file-change
@@ -64,7 +63,7 @@
                     :version    0
                     :created-by (or created-by "system")
                     :label      label
-                    :data       data
+                    :kind       (if label 1 2)
                     :changes    changes}
                    {::db/return-keys false})
     id))
@@ -104,10 +103,6 @@
           snapshot-id (insert-change file-id {:created-at old-at
                                               :created-by "user"
                                               :label      "a snapshot"
-                                              :deleted-at trash-at})
-
-          legacy-id   (insert-change file-id {:created-at old-at
-                                              :data       (blob/encode {:legacy true})
                                               :deleted-at trash-at})]
 
       (restore-file file-id)
@@ -116,10 +111,7 @@
         (t/is (= revision-at (:deleted-at (find-change revision-id)))))
 
       (t/testing "the snapshot comes back"
-        (t/is (nil? (:deleted-at (find-change snapshot-id)))))
-
-      (t/testing "the legacy payload row comes back"
-        (t/is (nil? (:deleted-at (find-change legacy-id))))))))
+        (t/is (nil? (:deleted-at (find-change snapshot-id))))))))
 
 (t/deftest deleting-a-file-does-not-push-the-revision-schedule-out
   (binding [ct/*clock* (ct/fixed-clock test-now)]
@@ -170,6 +162,7 @@
 
           out (th/command! {::th/type :update-file-snapshot
                             ::rpc/profile-id (:id profile)
+                            :file-id file-id
                             :id revision-id
                             :label "renamed"})]
 

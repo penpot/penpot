@@ -51,7 +51,8 @@
          :deleted-at (ct/format-inst deleted-at))
 
   (db/update! conn :file-change
-              {:deleted-at deleted-at}
+              {:deleted-at deleted-at
+               :updated-at (ct/now)}
               {:id id :file-id file-id}
               {::db/return-keys false})
 
@@ -91,7 +92,8 @@
     ;; lifetime; the collector would still take it, just much later than it
     ;; should.
     (db/update! conn :file-change
-                {:deleted-at deleted-at}
+                {:deleted-at deleted-at
+                 :updated-at (ct/now)}
                 {:file-id id :deleted-at nil}
                 {::db/return-keys false})
 

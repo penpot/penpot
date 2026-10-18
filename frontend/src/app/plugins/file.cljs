@@ -54,7 +54,7 @@
 
            :else
            (do (swap! data assoc :label value :created-by "user")
-               (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
+               (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :file-id file-id :label value})
                     (rx/take 1)
                     (rx/subs! #(st/emit! (se/event plugin-id "rename-version" :file-id file-id)))))))}
 
@@ -95,7 +95,7 @@
 
              :else
              (let [version-id (:id @data)]
-               (->> (rp/cmd! :delete-file-snapshot {:id version-id})
+               (->> (rp/cmd! :delete-file-snapshot {:id version-id :file-id file-id})
                     (rx/map (constantly nil))
                     (rx/subs! resolve reject)))))))
 
@@ -111,8 +111,9 @@
              (u/reject-not-valid reject :pin "Only auto-saved versions can be pinned")
 
              :else
-             (let [params  {:id (:id @data)
-                            :label (ct/format-inst (:created-at @data) :localized-date)}]
+             (let [params  {:id      (:id @data)
+                            :file-id file-id
+                            :label   (ct/format-inst (:created-at @data) :localized-date)}]
                (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
                             (rp/cmd! :update-file-snapshot params))
                     (rx/subs!

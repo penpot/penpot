@@ -108,13 +108,40 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 
 ## File Data
 
-- `file-data-backend` accepts `legacy-db`, `db`, or `storage`.
-- `legacy-db` stores main data in `file.data` and snapshots in `file_change.data`.
+- `file-data-backend` accepts `db` or `storage`.
 - `db` stores encoded data in `file_data.data`.
 - `storage` stores encoded data in storage subsystem with `file-data` bucket and keeps `data` nil in `file_data` table.
 - The `file_data.metadata.storage-ref-id` value points to the storage object.
 - `fdata/upsert!` touches a storage object from incoming metadata before it stores the new row.
 - File snapshots use `file_data` for snapshot data and `file_change` for snapshot metadata.
+- The `legacy-db` backend is gone: the legacy data was already cleaned up, and
+  it was the only thing that kept the `data` column of `file_change` alive.
+
+## File Change
+
+- `file_change` is partitioned by `HASH (file_id)` in 16 partitions, with the
+  same bounds as `file_data`, so a join between them is resolved partition by
+  partition (`enable_partitionwise_join` is set on every pooled connection).
+- Its primary key is `(file_id, id)`: a partitioned table needs the partition
+  key in the primary key, so every access filters by `file_id`.
+- It has a `kind` column: `1` is a snapshot (it has a label and its data lives
+  in `file_data`) and `2` is a revision (it has no label and it holds the
+  changes). The values are in `app.features.file-changes`.
+- `kind` is a deliberate reserve, not a leftover: today no query filters by
+  it, the queries still tell a snapshot from a revision by its label
+  (`label IS NOT NULL`), and `kind` takes over when they are rewritten. No
+  constraint ties `kind` and `label` together on purpose: the day `kind` is
+  the source of truth, that constraint would have to go.
+- A revision carries only the delta of a save (the changes). The features of
+  the file are not repeated on it: nobody read them from there.
+- A snapshot carries the features and the migrations of the file.
+- It has no `data`, `data_ref_id` or `data_backend` columns anymore.
+- It has no index for the system snapshots. The old one filtered them by
+  `data IS NOT NULL` (the column is gone) and the new one could only filter
+  them by `deleted_at IS NULL`, but the system snapshots always carry a
+  deletion date in the future, so it would never match a row. The query that
+  would use it filters that date with an "or", which no partial index can
+  serve.
 
 ## Metrics
 

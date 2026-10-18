@@ -138,7 +138,7 @@
   "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
 
 (def sql:retrieve-single-change
-  "select revn, changes, data from file_change where file_id=? and revn = ?")
+  "select revn, changes from file_change where file_id=? and revn = ?")
 
 (defn- download-file-data
   [cfg {:keys [params ::session/profile-id] :as request}]
