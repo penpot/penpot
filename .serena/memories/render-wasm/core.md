@@ -20,6 +20,8 @@
 
 `./build` sources `_build_env`, which sets the Emscripten paths and `EMCC_CFLAGS`. The WASM heap starts at 256 MB and uses geometric growth.
 
+Build output is gitignored and stays untracked everywhere it lands: `frontend/resources/public/js/render-wasm.{js,wasm}` and `frontend/src/app/render_wasm/api/shared.js` from `./build`, plus `exporter/resources/wasm/render-wasm.{js,wasm}` and `exporter/src/app/wasm/shared.js`. Never commit generated JS/WASM; rebuild instead.
+
 ## Commands
 
 From `render-wasm/`:
