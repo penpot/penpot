@@ -10,6 +10,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.file-changes :as fchanges]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.tasks.objects-gc :as ogc]
@@ -72,6 +73,25 @@
 
     (t/is (pos? (:processed result)))
     (t/is (nil? (find-file (:id file))))))
+
+(t/deftest deletes-the-pending-file-changes
+  ;; The pending file changes are locked and deleted by their (file-id, id)
+  ;; pair, so the rows of a file that is pending deletion are gone after the
+  ;; run.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+
+        _       (th/db-insert! :file-change
+                               {:file-id (:id file)
+                                :kind fchanges/revision-kind
+                                :deleted-at (ct/in-past "10m")})
+
+        result  (th/run-task! :objects-gc {})]
+
+    (t/is (pos? (:processed result)))
+    (t/is (nil? (th/db-get :file-change {:file-id (:id file)}
+                           {::db/remove-deleted false})))))
 
 (t/deftest profile-cascade-keeps-profile-deletion-date
   ;; The cascade marks the owned rows with the deletion date of the profile,

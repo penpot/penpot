@@ -564,7 +564,6 @@
                          (calculate-library-summary file))]
             (-> file
                 (assoc :library-summary result)
-                (dissoc :legacy-data)
                 (dissoc :data))))
 
         persist-to-cache
@@ -1346,16 +1345,14 @@
     WHERE file_id = ANY(?::uuid[])")
 
 (def ^:private sql:restore-file-changes
-  ;; Only durable history comes back: a snapshot (carries `label`) or a legacy
-  ;; payload row (carries `data`, the column the new model replaces with
-  ;; `file_data`). Revisions have neither and are deliberately left alone: they
-  ;; are born already scheduled for deletion one hour later, and the collector
-  ;; only looks at rows that carry a date, so unmarking one here would keep it
-  ;; in the table for ever. The `data` half is a guard for the rows still
-  ;; pending migration, not a dependency: drop it with the last one.
-  "UPDATE file_change SET deleted_at = null
+  ;; Only durable history comes back: a snapshot, which carries `label`.
+  ;; Revisions have none and are deliberately left alone: they are born
+  ;; already scheduled for deletion one hour later, and the collector only
+  ;; looks at rows that carry a date, so unmarking one here would keep it in
+  ;; the table for ever.
+  "UPDATE file_change SET deleted_at = null, updated_at = now()
     WHERE file_id = ANY(?::uuid[])
-      AND (label IS NOT NULL OR data IS NOT NULL)")
+      AND label IS NOT NULL")
 
 (def ^:private sql:restore-file-data
   "UPDATE file_data SET deleted_at = null

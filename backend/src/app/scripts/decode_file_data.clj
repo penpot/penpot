@@ -7,8 +7,8 @@
 (ns app.scripts.decode-file-data
   "Decode a file's `file_data` binary blob to `jq`-readable JSON.
 
-  The content of `file_data.data` (and `file.data` on the `legacy-db`
-  backend, or the `file-data` object on storage) is not text: it is a blob
+  The content of `file_data.data` (or the `file-data` object on storage) is
+  not text: it is a blob
   encoded with `app.util.blob` (versions 1, 3, 4 and 5; transit+json or
   fressian plus lz4/zstd). That is why it cannot be inspected with SQL
   directly.
@@ -24,7 +24,7 @@
 
   2. Inside the penpot context (nREPL with the backend running, where
      `sys/system` already exists): call `get-file-json` or `get-snapshot-json`.
-     They resolve the backend (`legacy-db`, `db`, `storage`), realize the
+     They resolve the backend (`db`, `storage`), realize the
      pointer-maps and objects-maps and return JSON.
 
      (require '[app.scripts.decode-file-data :as dfd] :reload)
@@ -39,6 +39,7 @@
   `[.data[\"pages-index\"][] | {id, name}]`, etc."
   (:require
    [app.binfile.common :as bfc]
+   [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.db :as db]
    [app.features.file-snapshots :as fsnap]
@@ -183,16 +184,23 @@
 (defn get-snapshot-json
   "Return a snapshot as JSON (realized). For nREPL.
 
-  Takes the same `format` and `output` as `get-file-json`."
+  Takes the same `format` and `output` as `get-file-json`. It raises when the
+  file has no snapshot with that id."
   [system file-id snapshot-id & {:keys [format output] :or {format :full}}]
   (let [snapshot (db/run! system
                           (fn [cfg]
                             (fsnap/get-snapshot cfg file-id snapshot-id)))
-        data   (case format
-                 :full    snapshot
-                 :data    (:data snapshot)
-                 :summary (summarize-data (:data snapshot))
-                 :pages   (:pages (summarize-data (:data snapshot))))]
+        data     (if snapshot
+                   (case format
+                     :full    snapshot
+                     :data    (:data snapshot)
+                     :summary (summarize-data (:data snapshot))
+                     :pages   (:pages (summarize-data (:data snapshot))))
+                   (ex/raise :type :not-found
+                             :code :snapshot-not-found
+                             :hint "unable to find snapshot with the provided id"
+                             :snapshot-id snapshot-id
+                             :file-id file-id))]
     (write-output (data->json data) output)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -282,7 +282,7 @@
     [:nrepl-host {:optional true} :string]
     [:nrepl-port {:optional true} ::sm/int]
 
-    [:file-data-backend {:optional true} [:enum "db" "legacy-db" "storage"]]
+    [:file-data-backend {:optional true} [:enum "db" "storage"]]
 
     [:media-directory {:optional true} :string] ;; REVIEW
     [:media-uri {:optional true} :string]
