@@ -2,6 +2,12 @@
 
 Commit only on explicit request. Before commit: `git status`; exclude unrelated user changes.
 
+**Never stage a plan file.** A plan is session bookkeeping, not part of the
+change: the commit carries the code and the tests. The `implement-plan` flow
+still closes the plan (`Status: done` plus one `Review Log` line with the issue
+URL); that is not a file to ship, and its absence from the commit is correct,
+not a missing piece.
+
 Do not guess or hallucinate git author information (Name or Email). Never include the
 `--author` flag in git commands unless specifically instructed by the user for a unique
 case; assume the local environment is already configured. Allow git commit to
