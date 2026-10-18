@@ -4,9 +4,8 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 ## Focused memories
 
-- RPC, DB helpers, workers, cron, CLIMIT: `mem:backend/subtleties`
+- RPC, DB helpers, workers, cron, CLIMIT, config and HTTP/session middleware, http self-metrics, media processing, and file data persistence: `mem:backend/subtleties`
 - Storage abstraction, logical buckets, object lifecycle, deduplication, access, and garbage collection: `mem:backend/storage`.
-- HTTP sessions, config, media processing, and file data persistence: `mem:backend/http-storage-filedata-subtleties`.
 - Auth flows, permission model, teams, projects, invitations, comments, webhooks, audit: `mem:backend/auth-permissions-product-domains`
 - Audit-log event collection (RPC wrapper, frontend ingestion), telemetry duality, webhook fan-out, error reporters, Nexus archival and retention: `mem:backend/audit-log`
 - Services, task-queue/Pub-Sub topology constraints -> `mem:prod-infra/core`.
