@@ -50,11 +50,13 @@ function browser() {
         open() {
             this.readyState = Socket.OPEN;
             this.onopen?.();
+        }
+        initialized() {
             this.onmessage?.({ data: JSON.stringify({ type: "initialized" }) });
         }
-        closed(code = 1006) {
+        closed(code = 1006, reason = "") {
             this.readyState = Socket.CLOSED;
-            this.onclose?.({ code, reason: "" });
+            this.onclose?.({ code, reason });
         }
     }
     vm.runInNewContext(source, {
@@ -137,9 +139,11 @@ test("late events from an expired socket cannot replace the new connection or fo
     b.tick(31_000);
     const active = b.sockets[1];
     active.open();
+    active.initialized();
     b.tick(100);
     const count = b.messages.length;
     old.open();
+    old.initialized();
     old.onerror?.({});
     old.onmessage?.({ data: JSON.stringify({ id: "old-task", task: "execute-code" }) });
     old.closed(1008);
@@ -161,6 +165,7 @@ test("disconnect cancels connecting deadlines, backoff and late initialization",
         if (stage === "opened") socket.open();
         b.emit("stop-server");
         socket.open();
+        socket.initialized();
         b.tick(120_000);
         b.events.resume();
         b.events.visibilitychange();
@@ -175,6 +180,7 @@ test("opening cancels its deadline and transient close recovers without replayin
     b.start();
     b.tick(29_000);
     b.sockets[0].open();
+    b.sockets[0].initialized();
     b.tick(31_000);
     assert.equal(b.status(), "connected");
     assert.equal(b.sockets.length, 1);
@@ -182,6 +188,7 @@ test("opening cancels its deadline and transient close recovers without replayin
     b.sockets[0].closed();
     b.tick(1_000);
     b.sockets[1].open();
+    b.sockets[1].initialized();
     b.tick(100);
     assert.equal(b.status(), "connected");
     assert.equal(b.messages.filter((message) => message.id === "task").length, 1);
@@ -192,6 +199,7 @@ test("policy rejection stops automatic recovery until explicitly connected again
     const b = browser();
     b.start();
     b.sockets[0].open();
+    b.sockets[0].initialized();
     b.sockets[0].closed(1008);
     b.tick(120_000);
     b.events.resume();
@@ -207,10 +215,12 @@ test("late close of a replaced closing socket cannot stop a live connection", ()
     b.start();
     const old = b.sockets[0];
     old.open();
+    old.initialized();
     old.close();
     b.start();
     const active = b.sockets[1];
     active.open();
+    active.initialized();
     old.closed(1008);
     b.tick(30_000);
     assert.equal(b.status(), "connected");
@@ -252,6 +262,7 @@ test("an open socket waiting for its open event is not timed out", () => {
     assert.equal(b.sockets.length, 1);
     assert.equal(b.sockets[0].readyState, 1);
     b.sockets[0].open();
+    b.sockets[0].initialized();
     b.tick(100);
     assert.equal(b.status(), "connected");
 });
@@ -260,6 +271,7 @@ test("resuming after a frozen connection drops recovers a stalled retry without 
     const b = browser();
     b.start();
     b.sockets[0].open();
+    b.sockets[0].initialized();
     b.events.freeze();
     assert.equal(JSON.parse(b.sockets[0].sent.at(-1)!).type, "freeze");
     b.sockets[0].closed();
@@ -270,8 +282,86 @@ test("resuming after a frozen connection drops recovers a stalled retry without 
     b.tick(30_000 + 2_000);
     assert.equal(b.sockets.length, 3);
     b.sockets[2].open();
+    b.sockets[2].initialized();
     b.events.resume();
     assert.equal(b.status(), "connected");
     assert.equal(JSON.parse(b.sockets[2].sent.at(-1)!).type, "heartbeat");
     assert.equal(b.sockets[2].url, b.sockets[0].url);
+});
+
+test("OPEN without parent metadata stays unready on resume and does not request metadata again", () => {
+    const b = browser();
+    b.start();
+    const socket = b.sockets[0];
+    socket.open();
+    const request = b.messages.find((message) => message.type === "connection-metadata-request");
+    assert.ok(request);
+    b.events.freeze();
+    b.tick(5_000);
+    b.events.resume();
+    b.events.visibilitychange();
+    b.tick(30_000);
+    assert.equal(b.status(), "connecting");
+    assert.equal(b.sockets.length, 1);
+    assert.equal(socket.readyState, 1);
+    assert.deepEqual(socket.sent, []);
+    assert.equal(b.messages.filter((message) => message.type === "connection-metadata-request").length, 1);
+});
+
+test("metadata delayed across freeze and resume still needs the server acknowledgement", async () => {
+    const b = browser();
+    b.start();
+    const socket = b.sockets[0];
+    socket.open();
+    const request = b.messages.find((message) => message.type === "connection-metadata-request");
+    b.events.freeze();
+    b.tick(5_000);
+    b.events.resume();
+    b.events.visibilitychange();
+    await b.emit("initialize", {
+        penpotUserSessionId: "tab-1",
+        session: { sessionId: request.sessionId, fileId: "file-1", fileName: "Design" },
+    });
+    assert.equal(b.status(), "connecting");
+    assert.equal(socket.sent.length, 1);
+    assert.deepEqual(JSON.parse(socket.sent[0]), {
+        type: "initialize",
+        session: { sessionId: "ftdmhltgwk", fileId: "file-1", fileName: "Design" },
+    });
+    b.events.freeze();
+    b.events.resume();
+    assert.equal(socket.sent.length, 1);
+    socket.initialized();
+    assert.equal(b.status(), "connected");
+    b.events.resume();
+    assert.equal(JSON.parse(socket.sent.at(-1)!).type, "heartbeat");
+});
+
+test("server initialization timeout with 1008 stops recovery with missing metadata or acknowledgement", async () => {
+    for (const metadataSent of [false, true]) {
+        const b = browser();
+        b.start();
+        const socket = b.sockets[0];
+        socket.open();
+        const request = b.messages.find((message) => message.type === "connection-metadata-request");
+        const metadata = {
+            penpotUserSessionId: "tab-1",
+            session: { sessionId: request.sessionId, fileId: "file-1", fileName: "Design" },
+        };
+        if (metadataSent) await b.emit("initialize", metadata);
+        b.events.freeze();
+        b.tick(10_000);
+        socket.closed(1008, "Connection initialization timed out; please update the Penpot MCP plugin.");
+        b.events.resume();
+        b.events.visibilitychange();
+        await b.emit("initialize", metadata);
+        socket.initialized();
+        b.tick(120_000);
+        assert.equal(b.status(), "disconnected");
+        assert.equal(b.sockets.length, 1);
+        assert.equal(socket.sent.length, metadataSent ? 1 : 0);
+        assert.ok(socket.sent.every((message) => JSON.parse(message).type === "initialize"));
+        b.start();
+        assert.equal(b.sockets.length, 2);
+    }
 });
