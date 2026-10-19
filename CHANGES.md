@@ -9,6 +9,9 @@
 - Fix file restore leaving its storage objects marked for deletion [#12278](https://github.com/penpot/penpot/issues/12278) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
 - Fix backend workers staying parked forever when nested calls take the same concurrency limits [#12279](https://github.com/penpot/penpot/issues/12279) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
 - Fix one profile's activity blocking the audit events of every other profile [#12280](https://github.com/penpot/penpot/issues/12280) (PR: [#12269](https://github.com/penpot/penpot/pull/12269))
+- Fix storage garbage collection blocking database vacuum during long deletions [#12396](https://github.com/penpot/penpot/issues/12396) (PR: [#12397](https://github.com/penpot/penpot/pull/12397))
+- Fix saving a version taking seconds and the version quota never counting saved versions [#12404](https://github.com/penpot/penpot/issues/12404) (PR: [#12405](https://github.com/penpot/penpot/pull/12405))
+- Fix file_change accumulating revisions that the objects GC never collects [#12418](https://github.com/penpot/penpot/issues/12418) (PR: [#12419](https://github.com/penpot/penpot/pull/12419))
 
 ### :sparkles: New features & Enhancements
 
