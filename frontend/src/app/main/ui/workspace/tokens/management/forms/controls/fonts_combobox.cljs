@@ -83,6 +83,14 @@
                                    (first errors)
                                    (wte/error-with-value :error/unknown value))})))))))))
 
+(defn- font-family->display
+  "Tokenscript resolves font families to a vector of names,
+  StyleDictionary to a string."
+  [value]
+  (if (sequential? value)
+    (cto/join-font-family value)
+    value))
+
 (mf/defc fonts-combobox*
   [{:keys [token tokens name] :rest props}]
   (let [form       (mf/use-ctx fc/context)
@@ -183,7 +191,7 @@
                                             (do
                                               (swap! form assoc-in [:extra-errors input-name] error')
                                               (reset! hint* {:message error' :type "error"}))))
-                                        (let [message (tr "workspace.tokens.resolved-value" value)]
+                                        (let [message (tr "workspace.tokens.resolved-value" (font-family->display value))]
                                           (swap! form update :extra-errors dissoc input-name)
                                           (reset! hint* {:message message :type "hint"}))))))))]
         (fn []
@@ -318,7 +326,8 @@
                                  (reset! hint* {:message error' :type "error"}))))
 
                            :else
-                           (let [message (tr "workspace.tokens.resolved-value" value)
+                           (let [value (font-family->display value)
+                                 message (tr "workspace.tokens.resolved-value" value)
                                  input-value (get-in @form [:data :value input-name] "")]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
