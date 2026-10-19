@@ -87,6 +87,10 @@ impl Shadow {
     }
 
     pub fn get_drop_shadow_filter(&self) -> Option<ImageFilter> {
+        if self.style == ShadowStyle::Inner {
+            return None;
+        }
+
         let sigma = radius_to_sigma(self.blur);
         let mut filter = image_filters::drop_shadow_only(
             (self.offset.0, self.offset.1),
