@@ -26,6 +26,11 @@
 ;; OBJECTS-MAP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- objects-map?
+  [objects]
+  (or (omap/objects-map? objects)
+      (omap.legacy/objects-map? objects)))
+
 (defn process-objects
   "Apply a function to all objects-map on the file. Usualy used for convert
   the objects-map instances to plain maps"
@@ -35,12 +40,33 @@
             (fn [page]
               (update page :objects
                       (fn [objects]
-                        (if (or (omap/objects-map? objects)
-                                (omap.legacy/objects-map? objects))
+                        (if (objects-map? objects)
                           (update-fn objects)
                           objects)))))
     fdata))
 
+(defn- page-with-objects-map?
+  "True when `page` is not behind a pointer and keeps its objects in an
+  objects-map."
+  [page]
+  (and (not (pmap/pointer-map? page))
+       (objects-map? (:objects page))))
+
+(defn has-objects-map?
+  "True when a page of `fdata` not behind a pointer keeps its objects in
+  an objects-map."
+  [fdata]
+  (some page-with-objects-map? (vals (:pages-index fdata))))
+
+(defn realize-page-objects
+  "Turns into plain maps the objects-maps of the pages of `fdata` not
+  behind a pointer. Never loads a pointer."
+  [fdata]
+  (d/update-when fdata :pages-index d/update-vals
+                 (fn [page]
+                   (cond-> page
+                     (page-with-objects-map? page)
+                     (update :objects (partial into {}))))))
 
 (defn realize-objects
   "Process a file and remove all instances of objects map realizing them

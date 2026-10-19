@@ -313,7 +313,8 @@
 
       (when snapshot
         (fsnap/create! cfg snapshot
-                       {:label (str "internal/snapshot/" revn)
+                       {:objects-map (boolean (::objects-map snapshot))
+                        :label (str "internal/snapshot/" revn)
                         :created-by "system"
                         :deleted-at (ct/plus timestamp (ldel/get-deletion-delay team))
                         :profile-id profile-id
@@ -397,10 +398,22 @@
                     (rds/del conn key)))))
 
 (defn- attach-snapshot
-  "Attach snapshot data to the file. This should be called before the
-  upcoming file operations are applied to the file."
-  [cfg migrated? file]
-  (let [snapshot (if migrated? file (fdata/realize cfg file))]
+  "Attaches to `file` the snapshot of its state before the changes. The
+  snapshot keeps `data`, the data as stored, except for a migrated file
+  (the migrated data) or one with pointers (the data with its pointers
+  realized). Stored data comes with `::objects-map`."
+  [cfg migrated? data file]
+  (let [snapshot (cond
+                   migrated?
+                   file
+
+                   (seq (fdata/get-used-pointer-ids (:data file)))
+                   (fdata/realize-pointers cfg file)
+
+                   :else
+                   (assoc file
+                          :data data
+                          ::objects-map (boolean (fdata/has-objects-map? (:data file)))))]
     (assoc file ::snapshot snapshot)))
 
 (defn- update-file-data!
@@ -412,7 +425,7 @@
   This function is not responsible of saving the file. It only saves
   fdata/pointer-map modified fragments."
 
-  [cfg {:keys [id] :as file} update-fn & args]
+  [cfg {:keys [id data] :as file} update-fn & args]
   (let [file (update file :data (fn [data]
                                   (-> data
                                       (blob/decode)
@@ -439,7 +452,7 @@
           (fmg/migrate-file libs)
 
           take-snapshot?
-          (->> (attach-snapshot cfg need-migration?)))]
+          (->> (attach-snapshot cfg need-migration? data)))]
 
     (apply update-fn cfg file args)))
 
