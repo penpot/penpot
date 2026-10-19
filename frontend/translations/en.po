@@ -8696,6 +8696,10 @@ msgstr "Shapes"
 msgid "workspace.sidebar.layers.texts"
 msgstr "Texts"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:53
+msgid "workspace.sidebar.options.svg-attrs.remove"
+msgstr "Remove attribute"
+
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:113
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Imported SVG Attributes"

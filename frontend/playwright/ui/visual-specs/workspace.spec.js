@@ -261,3 +261,29 @@ test.describe("Selected colors", () => {
     });
   });
 });
+
+test.describe("Imported SVG attributes", () => {
+  test("Shows the attributes of an imported SVG shape", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9930.json");
+    await workspace.goToWorkspace({
+      fileId: "8f843b59-7fbb-81ce-8005-aa6d47ae3111",
+      pageId: "fb9798e7-a547-80ae-8005-9ffda4a13e2c",
+    });
+
+    // The fourth "workspace" board holds the imported SVG groups.
+    await workspace.clickToggableLayer("workspace", {}, 3);
+    await workspace.clickToggableLayer("Canvas");
+    await workspace.clickLeafLayer("Rectangle 760 (Stroke)");
+
+    const section = workspace.rightSidebar.getByText("Imported SVG Attributes");
+    await section.scrollIntoViewIfNeeded();
+    await expect(section).toBeVisible();
+    // The attributes are a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
