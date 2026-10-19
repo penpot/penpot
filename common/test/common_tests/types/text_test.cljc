@@ -379,6 +379,19 @@
   [attrs]
   (update-in content-base [:children 0 :children 0] merge attrs))
 
+(t/deftest paragraph-language-and-experimental-korean-wrap
+  (doseq [language ["ja" "zh-Hans" "zh-Hant-TW" "ko" "en-GB"]]
+    (t/is (ctst/valid-content?
+           (with-paragraph-attrs {:text-language language
+                                  :korean-wrap "spaces-only"}))))
+  (doseq [attrs [{:text-language 42}
+                 {:text-language "zh_Hans"}
+                 {:text-language ""}
+                 {:korean-wrap "keep-all"}]]
+    (t/is (not (ctst/valid-content? (with-paragraph-attrs attrs))) (pr-str attrs)))
+  (t/is (contains? (set cttx/paragraph-attrs) :text-language))
+  (t/is (not (contains? (set cjk/whole-shape-paragraph-attrs) :text-language))))
+
 (t/deftest japanese-span-attrs-accept-supported-values
   (t/is (ctst/valid-content?
          (with-span-attrs {:text-combine-upright "digits2"

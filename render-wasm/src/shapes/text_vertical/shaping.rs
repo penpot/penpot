@@ -329,11 +329,12 @@ pub(super) fn shape_segment(
     upright: bool,
     font_features: FontFeatures,
     fallback: FontMgr,
+    language: &str,
 ) -> Vec<ShapedRun> {
     let mut font_iter = skia::Shaper::new_font_mgr_run_iterator(text, font, Some(fallback.clone()));
     let mut bidi_iter = skia::shapers::primitive::trivial_bidi_run_iterator(0, text.len());
     let mut script_iter = skia::Shaper::new_hb_icu_script_run_iterator(text);
-    let mut lang_iter = skia::Shaper::new_trivial_language_run_iterator("ja", text.len());
+    let mut lang_iter = skia::Shaper::new_trivial_language_run_iterator(language, text.len());
 
     let mut features = if upright {
         vec![feature(b"vert"), feature(b"vrt2")]
@@ -421,6 +422,7 @@ fn typeface_chunks(text: &str, typefaces: &[Typeface]) -> Vec<(Range<usize>, usi
 /// Shape a segment with explicit per-character font fallback.
 /// `TypefaceFontProvider` resolves named families, but some Skia builds lack
 /// its character fallback hook, so glyph coverage is resolved here.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn shape_segment_with_fallbacks(
     text: &str,
     font_size: f32,
@@ -429,6 +431,7 @@ pub(crate) fn shape_segment_with_fallbacks(
     upright: bool,
     font_features: FontFeatures,
     fallback_mgr: &FontMgr,
+    language: &str,
 ) -> Vec<ShapedRun> {
     shape_with_typefaces(
         text,
@@ -437,6 +440,7 @@ pub(crate) fn shape_segment_with_fallbacks(
         upright,
         font_features,
         fallback_mgr,
+        language,
     )
 }
 
@@ -459,6 +463,7 @@ pub(crate) fn shape_with_typefaces(
     upright: bool,
     font_features: FontFeatures,
     fallback_mgr: &FontMgr,
+    language: &str,
 ) -> Vec<ShapedRun> {
     if typefaces.is_empty() {
         return Vec::new();
@@ -473,6 +478,7 @@ pub(crate) fn shape_with_typefaces(
             upright,
             font_features,
             fallback_mgr.clone(),
+            language,
         );
         for run in &mut shaped {
             run.utf8_range =
@@ -543,6 +549,38 @@ mod tests {
     use super::super::layout::CellKind;
     use super::super::test_support::*;
     use super::*;
+
+    #[test]
+    fn selected_language_reaches_horizontal_and_vertical_localized_glyphs() {
+        use crate::shapes::{GrowType, TextAlign};
+        use skia_safe::textlayout::{FontCollection, ParagraphBuilder};
+        use std::collections::HashSet;
+
+        let font_provider = provider(include_bytes!("../../fonts/cjk-locl-test.ttf"));
+        let mut fonts = FontCollection::new();
+        fonts.set_asset_font_manager(Some(font_provider.clone().into()));
+        for (language, glyph, width) in [("ja", 2, 12.0), ("zh-Hans", 3, 14.0), ("ko", 4, 16.0)] {
+            let mut paragraph = vertical_paragraph(vec![make_span("中")], TextAlign::Left, 1.0);
+            paragraph.set_language(language.to_string());
+            let content = content_of(vec![paragraph.clone()], 100.0, GrowType::Fixed);
+            let layout = layout_with(&font_provider, &content);
+            assert_eq!(layout.runs[0].glyphs, vec![glyph], "vertical {language}");
+
+            let span = &paragraph.children()[0];
+            let style = span.to_style(&content.bounds(), &HashSet::new(), false, 1.0);
+            assert_eq!(style.locale(), language);
+            let mut builder = ParagraphBuilder::new(&paragraph.paragraph_to_style(), &fonts);
+            builder.push_style(&style);
+            builder.add_text(&span.text);
+            let mut horizontal = builder.build();
+            horizontal.layout(100.0);
+            assert!(
+                (horizontal.longest_line() - width).abs() < 0.01,
+                "horizontal {language}: {}",
+                horizontal.longest_line()
+            );
+        }
+    }
 
     #[test]
     fn span_families_try_emoji_after_the_span_font() {

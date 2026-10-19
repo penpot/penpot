@@ -1578,10 +1578,11 @@ mod tests {
     #[test]
     fn decorated_ranges_follow_inserted_kinsoku_characters() {
         // A word joiner goes before 。, so the next span starts one unit later.
-        let para = paragraph(vec![
+        let mut para = paragraph(vec![
             span("あ。", None, None),
             span("い", Some(TextDecoration::UNDERLINE), None),
         ]);
+        para.set_language("ja".to_string());
 
         assert_eq!(
             decorated_span_ranges(&para, &HorizontalOffsets::new(&para)),

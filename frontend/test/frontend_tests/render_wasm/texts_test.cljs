@@ -314,6 +314,49 @@
     (t/is (not-any? #(contains? % :text-orientation) paragraphs))
     (t/is (= [nil "center" nil] (mapv :text-align paragraphs)))))
 
+(t/deftest language-and-wrapping-only-change-selected-paragraphs
+  (let [content (editor-content [{:text "日本"}] [{:text "한국어"}] [{:text "中文"}])
+        result  (text-editor/apply-paragraph-attrs-to-range
+                 content (selection 1 0 1 0)
+                 {:text-language "ko" :korean-wrap "spaces-only"})
+        paragraphs (-> result :children first :children)]
+    (t/is (= [nil "ko" nil] (mapv :text-language paragraphs)))
+    (t/is (= [nil "spaces-only" nil] (mapv :korean-wrap paragraphs)))
+    (t/is (= result
+             (text-editor/merge-exported-texts-into-content
+              result [[{:p 0 :s 0 :t "日本"}]
+                      [{:p 1 :s 0 :t "한국어"}]
+                      [{:p 2 :s 0 :t "中文"}]]))))
+  (let [content (assoc-in (editor-content [{:text "한글"}])
+                          [:children 0 :children 0 :text-language] "ko")
+        result  (text-editor/merge-exported-texts-into-content
+                 content [[{:p 0 :s 0 :t "한"}] [{:p 0 :s 0 :t "글"}]])]
+    (t/is (= ["ko" "ko"] (mapv :text-language (-> result :children first :children))))))
+
+(t/deftest paragraph-language-binary-header-matches-rust
+  (let [dview (js/DataView. (js/ArrayBuffer. tc/PARAGRAPH-ATTR-U8-SIZE))
+        end   (@#'tc/write-paragraph 0 dview
+                                     {:text-language "zh-Hant-TW" :korean-wrap "spaces-only"
+                                      :line-height "1.5" :letter-spacing "2"})]
+    (t/is (= 20 end))
+    (t/is (= 1 (.getUint8 dview 6)))
+    (t/is (= 0 (.getUint8 dview 7)))
+    (t/is (= 1.5 (.getFloat32 dview 8 true)))
+    (t/is (= 2 (.getFloat32 dview 12 true)))
+    (t/is (= 10 (.getUint32 dview 16 true)))))
+
+(t/deftest merging-away-original-spans-keeps-the-surviving-paragraph-profile
+  (let [content (-> (editor-content [{:text "日"}] [{:text "한"}])
+                    (assoc-in [:children 0 :children 0 :text-language] "ja")
+                    (assoc-in [:children 0 :children 1 :text-language] "ko")
+                    (assoc-in [:children 0 :children 1 :korean-wrap] "spaces-only"))
+        result  (text-editor/merge-exported-texts-into-content
+                 content [[{:pp 0 :p 1 :s 0 :t "한"}]])
+        para    (get-in result [:children 0 :children 0])]
+    (t/is (= "ja" (:text-language para)))
+    (t/is (not (contains? para :korean-wrap)))
+    (t/is (= "한" (get-in para [:children 0 :text])))))
+
 ;; Byte offsets inside one span's attribute block (see `write-spans` and
 ;; RawTextSpan in render-wasm).
 (def ^:private span-attr-offset

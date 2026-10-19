@@ -8,6 +8,116 @@ use crate::shapes::{TextAlign, TextDirection, TextTransform};
 use crate::Uuid;
 
 #[test]
+fn untagged_cjk_keeps_plain_layout() {
+    init_state();
+    for text in ["中文，。", "日本 hello world", "한국 漢字"] {
+        let paragraph = Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.0,
+            0.0,
+            vec![make_span(text, 0.0)],
+        );
+        let (texts, offsets) = paragraph.layout_span_texts();
+        assert_eq!(texts, vec![text.to_string()]);
+        assert!(offsets.is_empty());
+        assert!(horizontal_aki_sheds(&paragraph, &texts)[0].is_empty());
+    }
+}
+
+#[test]
+fn explicit_profiles_use_distinct_rules_across_styles() {
+    init_state();
+    let mut paragraph = make_paragraph(
+        vec![make_span("中A 文「", 0.0), make_span("字」っ", 0.0)],
+        0.0,
+    );
+    paragraph.set_language("zh-Hans".to_string());
+    let (texts, map) = paragraph.layout_span_texts();
+    assert_eq!(texts.concat(), "中A 文「\u{2060}字\u{2060}」っ");
+    for offset in 0..="中A 文「字」っ".encode_utf16().count() {
+        assert_eq!(map.to_original(map.to_shifted(offset)), offset);
+    }
+    let plan = HorizontalParagraphPlan::new(&paragraph);
+    assert!(plan.sheds.iter().all(Vec::is_empty));
+
+    let mut paragraph =
+        make_paragraph(vec![make_span("한", 0.0), make_span("국어 문장", 0.0)], 0.0);
+    paragraph.set_language("ko".to_string());
+    assert_eq!(paragraph.layout_span_texts().0.concat(), "한국어 문장");
+    paragraph.set_korean_spaces_only(true);
+    assert_eq!(
+        paragraph.layout_span_texts().0.concat(),
+        "한\u{2060}국\u{2060}어 문\u{2060}장"
+    );
+}
+
+#[test]
+fn korean_joiners_stay_outside_decomposed_syllables_and_emoji() {
+    init_state();
+    let mut paragraph = make_paragraph(vec![make_span("ᄒ", 0.0), make_span("ᅡᆫ국 👩‍💻", 0.0)], 0.0);
+    paragraph.set_language("ko".to_string());
+    paragraph.set_korean_spaces_only(true);
+    assert_eq!(paragraph.layout_span_texts().0.concat(), "한\u{2060}국 👩‍💻");
+}
+
+#[test]
+fn same_paragraph_wraps_differently_by_profile_in_both_orientations() {
+    use crate::shapes::text_vertical::test_support::{
+        content_of, layout_with_height, provider, EM,
+    };
+    use crate::shapes::GrowType;
+    use std::collections::HashSet;
+
+    init_state();
+    let font_provider = provider(include_bytes!("../../fonts/cjk-locl-test.ttf"));
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(font_provider.clone().into()));
+    let mut horizontal_ends = Vec::new();
+    let mut vertical_ends = Vec::new();
+    for language in ["ja", "zh-Hans", "ko"] {
+        let mut span = make_span("文文 あっ文文", 0.0);
+        span.font_size = EM;
+        let mut paragraph = make_paragraph(vec![span], 0.0);
+        paragraph.set_language(language.to_string());
+        paragraph.set_korean_spaces_only(true);
+        let plan = HorizontalParagraphPlan::new(&paragraph);
+        let content = content_of(vec![paragraph.clone()], EM * 5.45, GrowType::Fixed);
+        let span = &paragraph.children()[0];
+        let style = span.to_style(&content.bounds(), &HashSet::new(), false, 1.0);
+        let mut builder = ParagraphBuilder::new(&paragraph.paragraph_to_style(), &fonts);
+        builder.push_style(&style);
+        add_horizontal_span(
+            &mut builder,
+            span,
+            &plan.texts[0],
+            &plan.sheds[0],
+            &[],
+            &style,
+            &fonts,
+        );
+        let mut horizontal = builder.build();
+        horizontal.layout(EM * 5.45);
+        let (_, offset_map) = paragraph.layout_span_texts();
+        horizontal_ends.push(offset_map.to_original(horizontal.get_line_metrics()[0].end_index));
+        let vertical = layout_with_height(&font_provider, &content, EM * 5.45);
+        vertical_ends.push(
+            vertical
+                .cells
+                .iter()
+                .filter(|cell| cell.column == 0)
+                .map(|cell| cell.end)
+                .max()
+                .unwrap(),
+        );
+    }
+    assert_eq!(horizontal_ends, vec![6, 5, 3]);
+    assert_eq!(vertical_ends, vec![6, 5, 3]);
+}
+
+#[test]
 fn horizontal_ruby_ranges_use_utf16_across_spans() {
     init_state();
     let mut astral = make_span("𠀀", 0.0);
@@ -53,7 +163,7 @@ fn make_span(text: &str, letter_spacing: f32) -> TextSpan {
 }
 
 fn make_paragraph(spans: Vec<TextSpan>, letter_spacing: f32) -> Paragraph {
-    Paragraph::new(
+    let mut paragraph = Paragraph::new(
         TextAlign::default(),
         TextDirection::LTR,
         None,
@@ -61,7 +171,9 @@ fn make_paragraph(spans: Vec<TextSpan>, letter_spacing: f32) -> Paragraph {
         1.0,
         letter_spacing,
         spans,
-    )
+    );
+    paragraph.set_language("ja".to_string());
+    paragraph
 }
 
 #[test]
@@ -769,6 +881,7 @@ fn horizontal_ruby_glyphs_share_one_baseline() {
         false,
         FontFeatures::None,
         &FontMgr::from(font_provider.clone()),
+        "ja",
     );
     let glyphs: Vec<RubyGlyphRef> = shaped
         .iter()
@@ -826,6 +939,7 @@ fn horizontal_western_ruby_keeps_its_word_whole() {
         false,
         FontFeatures::None,
         &FontMgr::from(font_provider.clone()),
+        "ja",
     );
     let glyphs = ruby_glyph_refs("editor", &shaped, EM / 2.0);
     assert!(glyphs.iter().all(|(_, _, _, western)| *western));

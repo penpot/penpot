@@ -509,26 +509,6 @@ pub fn is_japanese_text_char(c: char) -> bool {
         || matches!(u32::from(c), 0x3000..=0x30FF | 0x31F0..=0x31FF | 0xFF00..=0xFFEF)
 }
 
-/// True for characters that extend the preceding grapheme cluster
-/// (Grapheme_Cluster_Break=Extend or ZWJ): combining marks, voiced sound
-/// marks, variation selectors, emoji modifiers and tags.
-pub fn extends_grapheme(c: char) -> bool {
-    matches!(u32::from(c),
-        0x0300..=0x036F
-        | 0x1AB0..=0x1AFF
-        | 0x1DC0..=0x1DFF
-        | 0x200C..=0x200D
-        | 0x20D0..=0x20FF
-        | 0x3099..=0x309A
-        | 0xFE00..=0xFE0F
-        | 0xFE20..=0xFE2F
-        | 0xFF9E..=0xFF9F
-        | 0x1F3FB..=0x1F3FF
-        | 0xE0020..=0xE007F
-        | 0xE0100..=0xE01EF
-    )
-}
-
 fn is_hiragana(c: char) -> bool {
     matches!(u32::from(c), 0x3041..=0x309F)
 }

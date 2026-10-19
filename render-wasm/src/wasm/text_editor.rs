@@ -984,8 +984,11 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
                     .replace('\r', "\\r")
                     .replace('\t', "\\t");
                 span_parts.push(format!(
-                    "{{\"p\":{},\"s\":{},\"t\":\"{}\"}}",
-                    span.paragraph_position, span.span_position, escaped_text
+                    "{{\"pp\":{},\"p\":{},\"s\":{},\"t\":\"{}\"}}",
+                    para.source_position(),
+                    span.paragraph_position,
+                    span.span_position,
+                    escaped_text
                 ));
             }
             json_parts.push(format!("[{}]", span_parts.join(",")));
