@@ -3639,17 +3639,98 @@ fn group_with_empty_path(group_fills: Vec<Fill>) -> ShapesPool {
 }
 
 fn raster_png(pool: &ShapesPool, id: Uuid) -> Vec<u8> {
+    let (bytes, _, _) = raster_png_size(pool, id);
+    bytes
+}
+
+fn raster_png_size(pool: &ShapesPool, id: Uuid) -> (Vec<u8>, i32, i32) {
     let mut resources =
         crate::render::RenderResources::try_new_headless().expect("headless resources");
-    let (bytes, _, _) = crate::render::raster::render_to_raster(
+    crate::render::raster::render_to_raster(
         &mut resources,
         &id,
         pool,
         1.0,
         crate::render::raster::RasterFormat::Png,
     )
-    .expect("raster export");
-    bytes
+    .expect("raster export")
+}
+
+/// #12388: multi-element (headless) raster must include a board's own drop
+/// shadow, matching single-export sizing (spread 4 → +4px each side).
+#[test]
+fn raster_export_of_board_includes_own_drop_shadow_spread() {
+    let mut pool = ShapesPool::new();
+    let frame_id = uid(1);
+    add_frame(
+        &mut pool,
+        frame_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_rgb(240, 240, 240),
+        true,
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_shadow(Shadow::new(
+            skia::Color::from_rgb(0, 200, 0),
+            0.0,
+            4.0,
+            (0.0, 0.0),
+            ShadowStyle::Drop,
+            false,
+        ));
+    }
+
+    let (_, width, height) = raster_png_size(&pool, frame_id);
+    assert_eq!(
+        (width, height),
+        (208, 128),
+        "board raster must grow by drop-shadow spread, not stay at selrect"
+    );
+}
+
+/// Overflowing children stay cropped; only the board's own effects expand
+/// the headless raster page (classic exporter board-box rule).
+#[test]
+fn raster_export_of_board_crops_overflowing_child_but_keeps_own_shadow() {
+    let mut pool = ShapesPool::new();
+    let frame_id = uid(1);
+    let child = uid(2);
+    add_frame(
+        &mut pool,
+        frame_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_rgb(240, 240, 240),
+        true,
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_shadow(Shadow::new(
+            skia::Color::from_rgb(0, 200, 0),
+            0.0,
+            4.0,
+            (0.0, 0.0),
+            ShadowStyle::Drop,
+            false,
+        ));
+        frame.add_child(child);
+    }
+    add_solid_rect(
+        &mut pool,
+        child,
+        frame_id,
+        (150.0, 80.0, 280.0, 200.0),
+        skia::Color::from_rgb(255, 0, 0),
+    );
+
+    let (_, width, height) = raster_png_size(&pool, frame_id);
+    assert_eq!(
+        (width, height),
+        (208, 128),
+        "overflowing child must not grow board raster; own shadow still must"
+    );
 }
 
 #[test]

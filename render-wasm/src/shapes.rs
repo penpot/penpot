@@ -1148,8 +1148,26 @@ impl Shape {
         extrect
     }
 
-    fn own_extrect_bounds(&self) -> Bounds {
+    pub(crate) fn own_extrect_bounds(&self) -> Bounds {
         self.expand_own_bounds(self.own_base_bounds(), true)
+    }
+
+    /// Bounds for a headless export rooted at this shape.
+    ///
+    /// Frames keep the classic board-box crop of overflowing children, but
+    /// still expand by their own strokes / drop shadows / layer blur so those
+    /// effects are not clipped (parity with single-export `extrect` for the
+    /// board itself). Other shapes use full [`Self::extrect`].
+    pub fn export_root_bounds(&self, tree: ShapesPoolRef, scale: f32) -> math::Rect {
+        if matches!(self.shape_type, Type::Frame(_)) {
+            let mut bounds = self.own_extrect_bounds();
+            if !self.transform.is_identity() {
+                bounds.transform_mut(&self.centered_transform());
+            }
+            bounds.to_rect()
+        } else {
+            self.extrect(tree, scale)
+        }
     }
 
     /// The shape's own geometry bounds, before stroke/shadow/blur margins.
