@@ -123,7 +123,6 @@
            (let [type (-> (dom/get-target event)
                           (dom/get-data "type")
                           (keyword))]
-             (prn "AAA" selected type)
              (swap! state* assoc :selected type))))]
 
     (mf/with-effect [has-libs?]

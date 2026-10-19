@@ -91,6 +91,35 @@
 (t/deftest make-dummy-request-missing-cookie-returns-nil-value
   (t/is (= {:value nil} (yreq/get-cookie (th/make-dummy-request) "missing"))))
 
+;; --- RPC PARAMS: MULTIPART FLAG
+
+(t/deftest prepare-rpc-params-marks-multipart-request
+  (let [params (#'th/prepare-rpc-params
+                (with-meta {::th/type :dummy
+                            :events [{:name "event"}]}
+                  {:app.http/request {:headers {"content-type" "multipart/form-data; boundary=xxx"}}}))]
+    (t/is (true? (:app.rpc/is-multipart params)))))
+
+(t/deftest prepare-rpc-params-leaves-non-multipart-request-unmarked
+  (let [params (#'th/prepare-rpc-params
+                (with-meta {::th/type :dummy
+                            :events [{:name "event"}]}
+                  {:app.http/request {:headers {"content-type" "application/transit+json"}}}))]
+    (t/is (false? (:app.rpc/is-multipart params)))))
+
+(t/deftest prepare-rpc-params-leaves-missing-content-type-unmarked
+  (let [params (#'th/prepare-rpc-params {::th/type :dummy
+                                         :events [{:name "event"}]})]
+    (t/is (false? (:app.rpc/is-multipart params)))))
+
+(t/deftest prepare-rpc-params-body-cannot-forge-multipart-flag
+  (let [params (#'th/prepare-rpc-params
+                (with-meta {::th/type :dummy
+                            :app.rpc/is-multipart true
+                            :events [{:name "event"}]}
+                  {:app.http/request {:headers {"content-type" "application/json"}}}))]
+    (t/is (false? (:app.rpc/is-multipart params)))))
+
 ;; --- RPC PARAMS: REQUEST METADATA
 
 (t/deftest prepare-rpc-params-preserves-supplied-request

@@ -9,6 +9,7 @@
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -22,7 +23,8 @@
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io]))
+   [datoteka.io :as io]
+   [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -54,9 +56,9 @@
                            :size 7}}
         config  (assoc cf/config :public-uri "https://example.com/penpot")
         out1    (binding [cf/config config]
-                  (th/management-command! params))
+                  (th/multipart-management-command! params))
         out2    (binding [cf/config config]
-                  (th/management-command! params))]
+                  (th/multipart-management-command! params))]
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
     (t/is (str/starts-with? (str (get-in out1 [:result :uri]))
@@ -75,7 +77,7 @@
                            :path path
                            :mtype "text/html"
                            :size 27}}
-        out     (th/management-command! params)]
+        out     (th/multipart-management-command! params)]
     (t/is (some? (:error out)))
     (t/is (= :validation (th/ex-type (:error out))))
     (t/is (= :media-type-not-allowed (th/ex-code (:error out))))))
@@ -666,3 +668,68 @@
       (t/is (vector? result))
       (t/is (= 1 (count result)))
       (t/is (= "test" (:id (first result)))))))
+
+(t/deftest clone-template-audit-events-carry-team-id
+  ;; The per-file `create-file` events are built by hand, so they do not pass
+  ;; through the generic resolver: the command must copy the team id itself.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [prof    (th/create-profile* 1 {:is-active true})
+            team    (th/create-team* 1 {:profile-id (:id prof)})
+            project (th/create-project* 1 {:profile-id (:id prof)
+                                           :team-id (:id team)})
+            out     (th/command! {::th/type :clone-template
+                                  ::rpc/profile-id (:id prof)
+                                  :project-id (:id project)
+                                  :template-id "test"})]
+        (t/is (th/success? out))
+        (th/consume-sse (:result out))
+        (let [events (->> (:call-args-list @audit-mock)
+                          (map second)
+                          (filter #(= "create-file" (:name %))))]
+          (t/is (seq events))
+          (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events)))))))
+
+(t/deftest duplicate-project-audit-events-carry-entity-ids
+  ;; The duplicated project and files are created by internal calls, so the
+  ;; command emits one create event per entity for a local projection.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [profile (th/create-profile* 1 {:is-active true})
+            team    (th/create-team* 52 {:profile-id (:id profile)})
+            project (th/create-project* 52 {:profile-id (:id profile)
+                                            :team-id (:id team)})
+            _file   (th/create-file* 52 {:profile-id (:id profile)
+                                         :project-id (:id project)})
+            out     (th/command! {::th/type :duplicate-project
+                                  ::rpc/profile-id (:id profile)
+                                  :project-id (:id project)
+                                  :name "copy"})
+            events  (->> (:call-args-list @audit-mock)
+                         (map second)
+                         (filter #(contains? #{"create-project" "create-file"} (:name %))))]
+        (t/is (th/success? out))
+        (t/is (some #(and (= "create-project" (:name %))
+                          (= (get-in out [:result :id]) (get-in % [:props :id]))
+                          (= (:id team) (get-in % [:props :team-id]))
+                          (= "copy" (get-in % [:props :name])))
+                    events))
+        (t/is (some #(and (= "create-file" (:name %))
+                          (string? (get-in % [:props :name]))
+                          (int? (get-in % [:props :revn]))
+                          (ct/inst? (get-in % [:props :modified-at])))
+                    events))
+        (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events))))))
+
+(t/deftest upload-tempfile-rejects-forged-content
+  ;; Same transit-forgery vector through the management API: without a
+  ;; multipart request the wrapper must reject it at params validation.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        params  {::th/type :upload-tempfile
+                 ::rpc/profile-id (:id profile)
+                 :content {:filename "evil.png"
+                           :path (fs/path "/etc/passwd")
+                           :mtype "image/png"
+                           :size 123}}
+        out     (th/management-command! params)]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

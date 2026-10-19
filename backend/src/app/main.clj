@@ -52,7 +52,13 @@
   (:gen-class))
 
 (def default-metrics
-  {:update-file-changes
+  {:log-events
+   {::mdef/name "penpot_log_events_total"
+    ::mdef/help "Log records at WARN, ERROR and FATAL emitted by the application, by logger and level."
+    ::mdef/labels ["logger" "level"]
+    ::mdef/type :counter}
+
+   :update-file-changes
    {::mdef/name "penpot_rpc_update_file_changes_total"
     ::mdef/help "A total number of changes submitted to update-file."
     ::mdef/type :counter}
@@ -220,6 +226,11 @@
    :http-connector-errors-total
    {::mdef/name "penpot_http_connector_errors_total"
     ::mdef/help "Total number of handler errors in the http listener."
+    ::mdef/type :counter}
+
+   :http-malformed-requests-total
+   {::mdef/name "penpot_http_malformed_requests_total"
+    ::mdef/help "Total number of requests whose body the parser could not read."
     ::mdef/type :counter}})
 
 (def system-config
@@ -354,6 +365,7 @@
     ::rpc/routes         (ig/ref ::rpc/routes)
     ::setup/props        (ig/ref ::setup/props)
     ::mtx/routes         (ig/ref ::mtx/routes)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::mgmt/routes        (ig/ref ::mgmt/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
@@ -590,6 +602,9 @@
    :app.loggers.database/reporter
    {::db/pool (ig/ref ::db/pool)}
 
+   :app.loggers.metrics/reporter
+   {::mtx/metrics (ig/ref ::mtx/metrics)}
+
    ::sto/storage
    {::db/pool      (ig/ref ::db/pool)
     ::mtx/metrics  (ig/ref ::mtx/metrics)
@@ -665,7 +680,7 @@
     ::wrk/tenant  (cf/get :tenant)}
 
    [::default ::wrk/runner]
-   {::wrk/parallelism (cf/get ::worker-default-parallelism 1)
+   {::wrk/parallelism (cf/get :worker-default-parallelism 1)
     ::wrk/queue       :default
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
@@ -674,7 +689,7 @@
     ::db/pool         (ig/ref ::db/pool)}
 
    [::webhook ::wrk/runner]
-   {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
+   {::wrk/parallelism (cf/get :worker-webhook-parallelism 1)
     ::wrk/queue       :webhooks
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)

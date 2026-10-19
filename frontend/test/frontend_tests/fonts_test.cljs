@@ -6,13 +6,18 @@
 
 (ns frontend-tests.fonts-test
   (:require
+   [app.common.uuid :as uuid]
+   [app.main.data.fonts :as df]
    [app.main.fonts :as fonts]
+   [app.main.store :as st]
    [app.util.globals :as globals]
    [app.util.http :as http]
+   [app.util.webapi :as wa]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
-   [frontend-tests.helpers.mock :as mock]))
+   [frontend-tests.helpers.mock :as mock]
+   [potok.v2.core :as ptk]))
 
 (def sample-font
   {:id "sourcesanspro"
@@ -244,3 +249,105 @@
        ;; Trailing settle: the body is synchronous, but `with-mocks*`
        ;; evaluates to a promise, so the body must settle one.
        (await (async/settle))))))
+
+;; --- custom font upload ------------------------------------------------------
+;;
+;; Regression tests for https://github.com/penpot/penpot/issues/12304:
+;; uploading a font whose opentype.js names are missing (nil subfamily,
+;; as seen with some Fontshare families) crashed `process-upload` with
+;; `re-seq must match against a string` and left the user with no
+;; feedback. Unknown signatures and unparseable files were silently
+;; dropped as well.
+
+(defn- bytes->buffer
+  [bytes]
+  (.-buffer (js/Uint8Array. (clj->js bytes))))
+
+(defn- fake-ot-font
+  [{:keys [family variant hhea os2]}]
+  (let [names {"preferredFamily" family
+               "fontFamily" family
+               "preferredSubfamily" variant
+               "fontSubfamily" variant}]
+    #js {:getEnglishName (fn [k] (get names k))
+         :tables #js {:hhea hhea :os2 os2}}))
+
+(t/deftest parse-font-mtype-detects-font-signatures
+  (t/is (= "font/ttf" (#'df/parse-font-mtype (bytes->buffer [0 1 0 0]))))
+  (t/is (= "font/otf" (#'df/parse-font-mtype (bytes->buffer [79 84 84 79]))))
+  (t/is (= "font/woff" (#'df/parse-font-mtype (bytes->buffer [119 79 70 70]))))
+  (t/is (= "font/woff2" (#'df/parse-font-mtype (bytes->buffer [119 79 70 50]))))
+  (t/is (nil? (#'df/parse-font-mtype (bytes->buffer [1 2 3 4]))))
+  (t/is (nil? (#'df/parse-font-mtype nil)))
+  (t/is (nil? (#'df/parse-font-mtype (bytes->buffer [0 1])))))
+
+(t/deftest prepare-font-defaults-missing-subfamily
+  (let [font (fake-ot-font {:family "Satoshi"
+                            :variant nil
+                            :hhea #js {:ascender 1000 :descender 300}
+                            :os2 #js {:usWinAscent 1000 :usWinDescent 300
+                                      :sTypoAscender 800 :sTypoDescender 200
+                                      :fsSelection 0}})
+        entry (#'df/prepare-font {:font font
+                                  :type "font/otf"
+                                  :name "Satoshi-Regular.otf"
+                                  :data (bytes->buffer [79 84 84 79 0 0 0 0])})]
+    (t/is (= "Satoshi" (:font-family entry)))
+    (t/is (= 400 (:font-weight entry)))
+    (t/is (= "normal" (:font-style entry)))
+    (t/is (false? (:height-warning? entry)))))
+
+(t/deftest prepare-font-tolerates-missing-tables
+  (let [font  (fake-ot-font {:family "Satoshi" :variant "Regular" :hhea nil :os2 nil})
+        entry (#'df/prepare-font {:font font
+                                  :type "font/ttf"
+                                  :name "Satoshi-Regular.ttf"
+                                  :data (bytes->buffer [0 1 0 0 0 0 0 0])})]
+    (t/is (= "Satoshi" (:font-family entry)))
+    (t/is (false? (:height-warning? entry)))))
+
+(t/deftest parse-font-returns-error-on-unparseable
+  (t/testing "read errors pass through"
+    (t/is (= {:error "x.ttf"} (#'df/parse-font {:error "x.ttf"}))))
+  (t/testing "woff2 keeps a nil font for filename-based metadata"
+    (let [result (#'df/parse-font {:data (bytes->buffer [119 79 70 50])
+                                   :type "font/woff2"
+                                   :name "Satoshi-Bold.woff2"})]
+      (t/is (nil? (:font result)))
+      (t/is (nil? (:error result)))))
+  (t/testing "opentype.js failures become errors instead of silent drops"
+    (let [garbage (bytes->buffer (into [0 1 0 0] (repeat 96 0)))
+          result  (#'df/parse-font {:data garbage :type "font/ttf" :name "bad.ttf"})]
+      (t/is (= "bad.ttf" (:error result))))))
+
+(t/deftest ^:async process-upload-reports-unknown-signature
+  (let [team-id (uuid/next)
+        blob    #js {:name "mystery.bin"}
+        emitted (atom [])
+        result  (atom nil)]
+    (await (mock/with-mocks*
+             {wa/read-file-as-array-buffer (mock/stub (fn [_] (rx/of (bytes->buffer [1 2 3 4]))))
+              st/emit! (mock/stub (fn [& evts] (swap! emitted into evts) nil))}
+             (await (async/observe (df/process-upload [blob] team-id)
+                                   :on-next #(reset! result %)))))
+    (t/is (= {} @result))
+    (t/is (= 1 (count @emitted)))
+    (t/is (= :app.main.data.notifications/show (ptk/type (first @emitted))))))
+
+(t/deftest ^:async process-upload-woff2-succeeds-from-filename
+  (let [team-id (uuid/next)
+        blob    #js {:name "Satoshi-Bold.woff2"}
+        emitted (atom [])
+        result  (atom nil)]
+    (await (mock/with-mocks*
+             {wa/read-file-as-array-buffer (mock/stub (fn [_] (rx/of (bytes->buffer [119 79 70 50 0 0 0 0]))))
+              st/emit! (mock/stub (fn [& evts] (swap! emitted into evts) nil))}
+             (await (async/observe (df/process-upload [blob] team-id)
+                                   :on-next #(reset! result %)))
+             (await (async/settle))))
+    (t/is (= 1 (count (vals @result))))
+    (let [entry (first (vals @result))]
+      (t/is (= "Satoshi" (:font-family entry)))
+      (t/is (= 700 (:font-weight entry)))
+      (t/is (= "normal" (:font-style entry))))
+    (t/is (empty? @emitted))))

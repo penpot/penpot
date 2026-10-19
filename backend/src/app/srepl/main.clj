@@ -782,7 +782,7 @@
                    :type "action"
                    :props {:id team-id}
                    :context {:triggered-by "srepl"
-                             :cause "explicit call to delete-profile!"}
+                             :cause "explicit call to delete-team!"}
                    :tracked-at tnow})
 
     (wrk/invoke! (-> sys/system
@@ -851,6 +851,7 @@
     (audit/insert sys/system
                   {:name "delete-profile"
                    :type "action"
+                   :props {:id profile-id}
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-profile!"}
                    :tracked-at tnow})
@@ -1039,4 +1040,4 @@
                       (let [params (-> rel
                                        (assoc :id (uuid/next))
                                        (assoc :team-id (:id team)))]
-                        (teams/add-profile-to-team! cfg params {::db/return-keys false}))))))))
+                        (teams/add-profile-to-team! cfg params))))))))

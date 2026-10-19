@@ -11,6 +11,7 @@
    [app.common.features :as cfeat]
    [app.common.files.defaults :refer [version]]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.tree-seq :as gsts]
@@ -1238,7 +1239,9 @@
         (fn [pages-index]
           (d/update-vals pages-index #(update % :objects detach-objects)))]
 
-    (update-in file [:data :pages-index] detach-pages)))
+    (cond-> (update-in file [:data :pages-index] detach-pages)
+      (not (cfo/effective-tokens-source? (:data file) file-id))
+      (update :data dissoc :tokens-source :tokens-status))))
 
 ;; Base font size
 

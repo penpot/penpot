@@ -416,6 +416,7 @@ impl Shape {
 
     pub fn set_clip(&mut self, value: bool) {
         self.clip_content = value;
+        self.invalidate_extrect();
     }
 
     pub fn set_rotation(&mut self, angle: f32) {

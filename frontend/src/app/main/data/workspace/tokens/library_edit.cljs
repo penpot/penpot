@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.tokens.library-edit
   (:require
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
@@ -47,6 +48,28 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn editable-tokens-status?
+  "True when file-id is the current file. Its activation status is editable
+   even when its tokens come from an external source."
+  [state file-id]
+  (= file-id (:current-file-id state)))
+
+(defn editable-tokens?
+  "True when file-id is the current file and uses its own tokens source.
+   Use this predicate when the file may be a connected library."
+  [state file-id]
+  (and (editable-tokens-status? state file-id)
+       (cfo/editable-tokens? (dsh/lookup-file-data state file-id))))
+
+(defn- check-editable-tokens!
+  "Throws when the tokens of the current file come from an external library,
+   so they can't be modified from this file."
+  [state]
+  (when-not (editable-tokens? state (:current-file-id state))
+    (ex/raise :type :assertion
+              :code :tokens-not-editable
+              :hint "cannot modify the tokens of an external library")))
 
 ;; TODO HYMA: Copied over from workspace.cljs
 (defn update-shape
@@ -268,6 +291,7 @@
     (ptk/reify ::create-token-theme
       ptk/WatchEvent
       (watch [it state _]
+        (check-editable-tokens! state)
         (let [data       (dsh/lookup-file-data state)
               tokens-lib (dsh/lookup-tokens-lib state)]
           (if (and tokens-lib (ctob/get-theme tokens-lib (ctob/get-id token-theme)))
@@ -286,6 +310,7 @@
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data       (dsh/lookup-file-data state)
             tokens-lib (dsh/lookup-tokens-lib state)]
         (if (and (not= id (ctob/get-id token-theme))
@@ -322,7 +347,7 @@
   (ptk/reify ::toggle-token-theme-active
     ptk/WatchEvent
     (watch [it state _]
-      (let [data          (dsh/lookup-tokens-source-data state)
+      (let [data          (dsh/lookup-file-data state)
             tokens-status (dsh/lookup-tokens-status state)
             tokens-lib    (dsh/lookup-tokens-lib state)
             changes       (-> (pcb/empty-changes it)
@@ -338,6 +363,7 @@
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -352,6 +378,7 @@
   (ptk/reify ::create-token-set
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -366,6 +393,7 @@
   (ptk/reify ::update-token-set
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -377,7 +405,8 @@
   [set-group-path set-group-fname]
   (ptk/reify ::rename-token-set-group
     ptk/WatchEvent
-    (watch [it _state _]
+    (watch [it state _]
+      (check-editable-tokens! state)
       (let [changes (-> (pcb/empty-changes it)
                         (pcb/rename-token-set-group set-group-path set-group-fname))]
         (rx/of
@@ -390,6 +419,7 @@
    (ptk/reify ::duplicate-token-set
      ptk/WatchEvent
      (watch [it state _]
+       (check-editable-tokens! state)
        (let [data       (dsh/lookup-file-data state)
              tokens-lib (dsh/lookup-tokens-lib state)
              suffix     (tr "workspace.tokens.duplicate-suffix")]
@@ -458,6 +488,7 @@
   (ptk/reify ::import-tokens-lib
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data    (dsh/lookup-file-data state)
             status  (cfo/make-tokens-status-from-lib lib)
             changes (-> (pcb/empty-changes it)
@@ -486,6 +517,7 @@
   (ptk/reify ::delete-token-set
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -498,6 +530,7 @@
   (ptk/reify ::delete-token-set-group
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -528,6 +561,7 @@
   (ptk/reify ::drop-token-set-group
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (try
         (when-let [changes (clo/generate-move-token-set-group (pcb/empty-changes it) (dsh/lookup-tokens-lib state) drop-opts)]
           (rx/of
@@ -544,6 +578,7 @@
   (ptk/reify ::drop-token-set
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (try
         (let [tokens-lib (dsh/lookup-tokens-lib state)
               changes    (-> (pcb/empty-changes it)
@@ -559,6 +594,7 @@
   (ptk/reify ::create-token-and-set
     ptk/WatchEvent
     (watch [_ state _]
+      (check-editable-tokens! state)
       (let [data
             (dsh/lookup-file-data state)
 
@@ -594,6 +630,7 @@
    (ptk/reify ::create-token
      ptk/WatchEvent
      (watch [it state _]
+       (check-editable-tokens! state)
        (if-let [token-set (if set-id
                             (lookup-token-set state set-id)
                             (lookup-token-set state))]
@@ -621,6 +658,7 @@
   (ptk/reify ::bulk-create-tokens
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [token-set (lookup-token-set state set-id)
             data    (dsh/lookup-file-data state)
             changes (reduce (fn [changes token-id]
@@ -650,6 +688,7 @@
    (ptk/reify ::update-token
      ptk/WatchEvent
      (watch [it state _]
+       (check-editable-tokens! state)
        (let [token-set (if set-id
                          (lookup-token-set state set-id)
                          (lookup-token-set state))
@@ -678,6 +717,7 @@
   (ptk/reify ::bulk-update-tokens
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [token-set (if set-id
                         (lookup-token-set state set-id)
                         (lookup-token-set state))
@@ -708,6 +748,7 @@
   (ptk/reify ::delete-token
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data    (dsh/lookup-file-data state)
             tokens-lib (dsh/lookup-tokens-lib state)
             token-set (if set-id
@@ -731,6 +772,7 @@
   (ptk/reify ::bulk-delete-tokens
     ptk/WatchEvent
     (watch [it state _]
+      (check-editable-tokens! state)
       (let [data    (dsh/lookup-file-data state)
             changes (reduce (fn [changes token-id]
                               (pcb/set-token changes set-id token-id nil))
@@ -746,6 +788,7 @@
   (ptk/reify ::duplicate-token
     ptk/WatchEvent
     (watch [_ state _]
+      (check-editable-tokens! state)
       (when-let [token-set (lookup-token-set state)]
         (when-let [tokens-lib (dsh/lookup-tokens-lib state)]
           (when-let [token (ctob/get-token tokens-lib

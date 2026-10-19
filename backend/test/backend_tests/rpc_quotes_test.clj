@@ -464,7 +464,7 @@
                   :name "testfile"
                   :content mfile}
 
-          out    (th/command! params)]
+          out    (th/multipart-command! params)]
 
       ;; 312043 bytes > 100 byte limit → should be rejected
       (t/is (not (th/success? out)))

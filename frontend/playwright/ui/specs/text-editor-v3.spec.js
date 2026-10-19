@@ -408,10 +408,13 @@ test.describe("BUG 10934 - Double-clicking a text side handle sets auto-size", (
     await workspace.goToWorkspace();
     await workspace.waitForFirstRender();
 
-    // Select the text and zoom to fit, so it is fully visible in the viewport
+    // Select the text and zoom to fit, so it is fully visible in the viewport.
+    // Wait for the zoom label to change so the handles are at their final spot.
     await workspace.clickLeafLayer("Fixed text");
+    const zoomLabel = page.getByTitle("Zoom", { exact: true });
+    const initialZoom = await zoomLabel.innerText();
     await page.keyboard.press("Shift+1");
-    await workspace.waitForIdle();
+    await expect(zoomLabel).not.toHaveText(initialZoom);
 
     return workspace;
   }

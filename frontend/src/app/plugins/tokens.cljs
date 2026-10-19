@@ -11,7 +11,6 @@
    [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.schema :as sm]
-   [app.common.types.file :as ctf]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -512,14 +511,20 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
+          (not (dwtl/editable-tokens-status? @st/state file-id))
+          (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
+
           :else
-          (st/emit! (dwtl/set-enabled-token-set id value))))}  ;; This can be done even with tokens in an external library
+          (st/emit! (dwtl/set-enabled-token-set id value))))}
 
      :toggleActive
      (fn []
        (cond
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
+
+         (not (dwtl/editable-tokens-status? @st/state file-id))
+         (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
          :else
          (st/emit! (dwtl/toggle-token-set id))))
@@ -737,6 +742,9 @@
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
+         (not (dwtl/editable-tokens-status? @st/state file-id))
+         (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
+
          :else
          (st/emit! (dwtl/set-token-theme-active id value))))}
 
@@ -745,6 +753,9 @@
       (cond
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
+
+        (not (dwtl/editable-tokens-status? @st/state file-id))
+        (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
         :else
         (st/emit! (dwtl/toggle-token-theme-active id))))
@@ -839,8 +850,7 @@
      :enumerable false
      :get
      (fn []
-       (let [file (u/locate-file file-id)]
-         (cfo/editable-tokens? (ctf/file-data file))))}
+       (dwtl/editable-tokens? @st/state file-id))}
 
     :themes
     {:this true

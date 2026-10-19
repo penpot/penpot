@@ -940,7 +940,11 @@
     (let [file (-> (bfc/get-file cfg file-id
                                  :include-deleted? true
                                  :lock-for-update? true)
-                   (update :data ctf/absorb-assets ldata))]
+                   (update :data ctf/absorb-assets ldata)
+                   (update :data (fn [data]
+                                   (cond-> data
+                                     (cfo/effective-tokens-source? data (:id ldata))
+                                     (cfo/absorb-tokens-lib ldata)))))]
 
       (l/trc :hint "library absorbed"
              :library-id (str (:id ldata))
@@ -953,16 +957,21 @@
                              :modified-at (ct/now)
                              :has-media-trimmed false}))))
 
+(defn- get-referenced-files
+  [cfg library-id]
+  (->> (db/exec! cfg [sql:get-referenced-files library-id])
+       (into [] bfc/xf-map-id)))
+
 (defn- absorb-library*
-  "Find all files using a shared library, and absorb all library assets
-  into the file local libraries"
-  [cfg {:keys [id data] :as library}]
+  "Absorb all library assets, and its tokens lib if it is their tokens
+  source, into the local libraries of the files that use it. The files
+  are the given file-ids, or the ones linked to the library if nil."
+  [cfg {:keys [id data] :as library} file-ids]
 
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
-  (let [ids (->> (db/exec! cfg [sql:get-referenced-files id])
-                 (sequence bfc/xf-map-id))]
+  (let [ids (or file-ids (get-referenced-files cfg id))]
 
     (l/trc :hint "absorbing library"
            :library-id (str id)
@@ -972,7 +981,9 @@
     library))
 
 (defn absorb-library
-  [{:keys [::db/conn] :as cfg} id]
+  "Absorb the library into the files that use it. The files are the given
+  file-ids, or the ones linked to the library if omitted."
+  [{:keys [::db/conn] :as cfg} id & {:keys [file-ids]}]
   (let [file (-> (bfc/get-file cfg id
                                :realize? true
                                :lock-for-update? true
@@ -988,7 +999,7 @@
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-file-features! (:features file)))
 
-    (absorb-library* cfg file)))
+    (absorb-library* cfg file file-ids)))
 
 (defn- set-file-shared
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
@@ -1056,12 +1067,15 @@
 
 (defn- mark-file-deleted
   [conn team file-id]
-  (let [delay (ldel/get-deletion-delay team)
-        file  (db/update! conn :file
-                          {:deleted-at (ct/in-future delay)}
-                          {:id file-id}
-                          {::db/return-keys [:id :name :is-shared :deleted-at
-                                             :project-id :created-at :modified-at]})]
+  (let [delay    (ldel/get-deletion-delay team)
+        file     (db/update! conn :file
+                             {:deleted-at (ct/in-future delay)}
+                             {:id file-id}
+                             {::db/return-keys [:id :name :is-shared :deleted-at
+                                                :project-id :created-at :modified-at]})
+        ;; Files using the library, captured before their relations are removed
+        file-ids (when (:is-shared file)
+                   (get-referenced-files conn file-id))]
 
     ;; Remove all possible relations for that file
     (db/delete! conn :file-library-rel
@@ -1069,9 +1083,11 @@
 
     (wrk/submit! {::db/conn conn
                   ::wrk/task :delete-object
-                  ::wrk/params {:object :file
-                                :deleted-at (:deleted-at file)
-                                :id file-id}})
+                  ::wrk/params (cond-> {:object :file
+                                        :deleted-at (:deleted-at file)
+                                        :id file-id}
+                                 (some? file-ids)
+                                 (assoc :file-ids file-ids))})
     file))
 
 (def ^:private
@@ -1098,7 +1114,9 @@
       {::audit/props {:project-id (:project-id file)
                       :name (:name file)
                       :created-at (:created-at file)
-                      :modified-at (:modified-at file)}})))
+                      :modified-at (:modified-at file)
+                      :deleted-at (:deleted-at file)
+                      :team-id (:id team)}})))
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"

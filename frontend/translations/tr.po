@@ -1226,7 +1226,7 @@ msgstr "Projen başarıyla taşındı"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "Bu takım artık %s organizasyonuna ait"
+msgstr "%s artık %s organizasyonuna ait"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1239,7 +1239,7 @@ msgstr "Takım üyeleri"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Bu takım artık %s organizasyonuna ait değil"
+msgstr "%s artık %s organizasyonuna ait değil"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"

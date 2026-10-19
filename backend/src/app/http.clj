@@ -244,6 +244,7 @@
    [::mgmt/routes schema:routes]
    ::session/manager
    ::setup/props
+   ::mtx/metrics
    ::db/pool])
 
 (defmethod ig/assert-key ::router
@@ -260,7 +261,7 @@
                       [mw/auth {:bearer (partial session/decode-token cfg)
                                 :cookie (partial session/decode-token cfg)
                                 :token  (partial actoken/decode-token cfg)}]
-                      [mw/parse-request]
+                      [mw/parse-request (::mtx/metrics cfg)]
                       [mw/errors errors/handle]
                       [mw/restrict-methods]]}
 

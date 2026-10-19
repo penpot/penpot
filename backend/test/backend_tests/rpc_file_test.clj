@@ -6,11 +6,16 @@
 
 (ns backend-tests.rpc-file-test
   (:require
+   [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.tokens :as cfo]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -259,7 +264,7 @@
                           :is-local true
                           :name "testfile"
                           :content mfile}
-                  out    (th/command! params)]
+                  out    (th/multipart-command! params)]
 
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
@@ -408,7 +413,7 @@
                           :is-local true
                           :name "testfile"
                           :content mfile}
-                  out    (th/command! params)]
+                  out    (th/multipart-command! params)]
 
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
@@ -599,7 +604,7 @@
                              :object-id object-id
                              :tag "frame"
                              :media mfile}
-                  out       (th/command! params)]
+                  out       (th/multipart-command! params)]
 
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
@@ -1259,7 +1264,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
         (t/is (nil? error))
         (t/is (map? result)))
 
@@ -1316,7 +1321,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
         (t/is (nil? error))
         (t/is (map? result)))
 
@@ -1340,7 +1345,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
         (t/is (nil? error))
         (t/is (map? result)))
 
@@ -1391,7 +1396,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? error))
@@ -1406,7 +1411,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            {:keys [error result] :as out} (th/command! data)]
+            {:keys [error result] :as out} (th/multipart-command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? error))
@@ -1904,7 +1909,7 @@
                 :is-local true
                 :name "testfile"
                 :content mfile}
-        out    (th/command! params)]
+        out    (th/multipart-command! params)]
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -2168,6 +2173,93 @@
             (t/is (= (:id file)
                      (get-in out [:result :data :pages-index f-page
                                   :objects inst-id :component-file])))))))))
+
+(defn- prepare-tokens-library
+  "A shared library with a tokens lib, a file linked to it that uses it
+  as its tokens source, and another linked file that does not."
+  [profile]
+  (let [set-id     (uuid/next)
+        theme-id   (uuid/next)
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id set-id :name "test-set"))
+                       (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                              :name "test-theme"
+                                                              :sets #{"test-set"}))
+                       (ctob/add-token set-id (ctob/make-token :name "token-radius"
+                                                               :type :border-radius
+                                                               :value 10)))
+        params     {:profile-id (:id profile)
+                    :project-id (:default-project-id profile)}
+        library    (th/create-file* 1 (assoc params :is-shared true))
+        file       (th/create-file* 2 params)
+        other      (th/create-file* 3 params)]
+
+    (th/link-file-to-library* {:file-id (:id file) :library-id (:id library)})
+    (th/link-file-to-library* {:file-id (:id other) :library-id (:id library)})
+
+    (update-file!
+     :file-id (:id library)
+     :profile-id (:id profile)
+     :changes
+     (-> (pcb/empty-changes nil)
+         (pcb/with-library-data (:data library))
+         (pcb/set-tokens-lib tokens-lib)
+         (:redo-changes)))
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     (-> (pcb/empty-changes nil)
+         (pcb/with-library-data (:data file))
+         (pcb/set-tokens-source (:id library))
+         (pcb/set-tokens-status (ctos/make-tokens-status :active-theme-ids #{theme-id}
+                                                         :active-set-ids #{set-id}))
+         (:redo-changes)))
+
+    {:library library :file file :other other :tokens-lib tokens-lib}))
+
+(defn- check-tokens-absorbed
+  "The file is its own tokens source, with a copy of the tokens lib, and
+  keeps its tokens status; the other file is not changed."
+  [{:keys [file other tokens-lib]}]
+  (let [file-data  (:data (bfc/get-file th/*system* (:id file)))
+        other-data (:data (bfc/get-file th/*system* (:id other)))]
+    (t/is (nil? (cfo/get-tokens-source file-data)))
+    (t/is (= (ctob/export-dtcg-json tokens-lib)
+             (ctob/export-dtcg-json (cfo/get-tokens-lib file-data))))
+    (t/is (= {:active-themes #{"/test-theme"}
+              :active-sets #{"test-set"}}
+             (cfo/ids->names (cfo/get-tokens-status file-data)
+                             (cfo/get-tokens-lib file-data))))
+    (t/is (nil? (cfo/get-tokens-lib other-data)))))
+
+(t/deftest delete-shared-library-absorbs-its-tokens-lib
+  (let [profile (th/create-profile* 1)
+        {:keys [library file] :as prepared} (prepare-tokens-library profile)
+        out     (th/command! {::th/type :delete-file
+                              ::rpc/profile-id (:id profile)
+                              :id (:id library)})]
+    (t/is (nil? (:error out)))
+
+    ;; The relations are removed at once, the absorption is done by the
+    ;; deletion task.
+    (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id library)})))
+    (t/is (= (:id library)
+             (cfo/get-tokens-source (:data (bfc/get-file th/*system* (:id file))))))
+
+    (th/run-pending-tasks!)
+    (check-tokens-absorbed prepared)))
+
+(t/deftest unpublish-shared-library-absorbs-its-tokens-lib
+  (let [profile (th/create-profile* 1)
+        {:keys [library] :as prepared} (prepare-tokens-library profile)
+        out     (th/command! {::th/type :set-file-shared
+                              ::rpc/profile-id (:id profile)
+                              :id (:id library)
+                              :is-shared false})]
+    (t/is (nil? (:error out)))
+    (check-tokens-absorbed prepared)))
 
 (t/deftest deleted-files-permanently-delete
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -2782,3 +2874,36 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest delete-file-audit-event-carries-team-id
+  ;; The event already carries the project id, so the resolver could find the
+  ;; team; the command has the team row and sets the id without a lookup.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:profile-id (:id profile)
+                                       :team-id (:id team)})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id project)})
+        wrapped (th/command-raw! {::th/type :delete-file
+                                  ::rpc/profile-id (:id profile)
+                                  :id (:id file)})]
+    (t/is (= (:id team)
+             (get-in (meta wrapped) [:app.loggers.audit/props :team-id])))))
+
+(t/deftest create-file-audit-event-carries-its-id
+  ;; The command returns the new file but did not emit its id, so a consumer
+  ;; could not key a local projection.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:profile-id (:id profile)
+                                       :team-id (:id team)})
+        out     (th/command! {::th/type :create-file
+                              ::rpc/profile-id (:id profile)
+                              :project-id (:id project)
+                              :name "foobar"
+                              :is-shared false})]
+    (t/is (th/success? out))
+    (t/is (= (get-in out [:result :id])
+             (get-in (meta (:result out)) [:app.loggers.audit/props :id])))
+    (t/is (= (:id team)
+             (get-in (meta (:result out)) [:app.loggers.audit/props :team-id])))))
