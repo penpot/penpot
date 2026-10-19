@@ -34,6 +34,7 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;; FIXME: this is a workaround until we export this class on beicon library
@@ -608,16 +609,37 @@
 
       [:> internal-error* props])))
 
+(defn screen-kind
+  "Classify the `screen` query param for the exception page.
+
+  The param carries the route name (`?screen=<name>&params`), so the
+  viewer is \"viewer\" and every team dashboard is \"dashboard-*\". Returns
+  `:workspace`, `:dashboard`, `:viewer`, or nil when the screen is not a
+  request-access candidate. Reads the param with `rt/get-query-param`
+  because a repeated param arrives as a vector."
+  [query-params]
+  (let [screen (rt/get-query-param query-params :screen)]
+    (cond
+      (= screen "workspace")
+      :workspace
+
+      (and (string? screen)
+           (str/starts-with? screen "dashboard"))
+      :dashboard
+
+      (= screen "viewer")
+      :viewer)))
+
 (mf/defc exception-page*
   [{:keys [data route] :as props}]
 
   (let [type        (:type data)
         params      (:query-params route)
 
-        screen      (get params :screen)
-        workspace?  (= screen "workspace")
-        dashboard?  (= screen "dashboard")
-        view?       (= screen "view")
+        kind        (screen-kind params)
+        workspace?  (= kind :workspace)
+        dashboard?  (= kind :dashboard)
+        view?       (= kind :viewer)
 
         ;; We store the request access info int this state
         info*       (mf/use-state nil)
