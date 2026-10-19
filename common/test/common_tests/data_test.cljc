@@ -34,7 +34,10 @@
   (t/is (= "AB" (d/get-initials "123 Alpha ## beta")))
   (t/is (= "PD" (d/get-initials "  penpot   design  tool ")))
   (t/is (= "" (d/get-initials nil)))
-  (t/is (= "" (d/get-initials "!!! ???"))))
+  (t/is (= "" (d/get-initials "!!! ???")))
+  (t/is (= "Á" (d/get-initials "Ábaco")))
+  (t/is (= "ÓE" (d/get-initials "Órbita espacial")))
+  (t/is (= "ÑÜ" (d/get-initials "ñandú über"))))
 
 (t/deftest normalize-string-test
   ;; nil input returns empty string

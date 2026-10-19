@@ -1207,7 +1207,7 @@
   Non-letter prefixes in each token are ignored."
   [name]
   (->> (str/split (str/trim (or name "")) #"\s+")
-       (keep #(first (re-seq #"[a-zA-Z]" %)))
+       (keep #(first (re-seq #"(?u)\p{L}" %)))
        (take 2)
        (map str/upper)
        (apply str)))
