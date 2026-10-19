@@ -161,6 +161,7 @@ fn shape_ruby(span: &TextSpan, fonts: &Fonts) -> Vec<(ShapedRun, bool)> {
             segment.upright,
             span.font_features,
             fonts.fallback_mgr,
+            &span.language,
         );
         for mut run in shaped {
             for cluster in &mut run.clusters {
@@ -625,6 +626,7 @@ pub(super) fn layout_emphasis(
                 true,
                 FontFeatures::None,
                 fonts.fallback_mgr.clone(),
+                &span.language,
             );
             if shaped.first().is_none_or(|run| run.glyphs.is_empty()) {
                 continue;

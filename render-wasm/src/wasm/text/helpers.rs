@@ -472,9 +472,7 @@ pub fn delete_selection_range(text_content: &mut TextContent, selection: &TextSe
         delete_range_in_paragraph(&mut paragraphs[end_paragraph], 0, end.offset);
 
         let end_para_children: Vec<_> = std::mem::take(paragraphs[end_paragraph].children_mut());
-        paragraphs[start.paragraph]
-            .children_mut()
-            .extend(end_para_children);
+        paragraphs[start.paragraph].extend_children(end_para_children);
 
         paragraphs.drain((start.paragraph + 1)..=end_paragraph);
 
@@ -587,9 +585,7 @@ pub fn delete_char_before(
         let prev_para_len = paragraph_char_count(&paragraphs[prev_para_idx]);
 
         let current_children: Vec<_> = std::mem::take(paragraphs[cursor.paragraph].children_mut());
-        paragraphs[prev_para_idx]
-            .children_mut()
-            .extend(current_children);
+        paragraphs[prev_para_idx].extend_children(current_children);
 
         paragraphs.remove(cursor.paragraph);
 
@@ -761,9 +757,7 @@ pub fn delete_char_after(text_content: &mut TextContent, cursor: &TextPositionWi
     } else if cursor.paragraph < paragraphs.len() - 1 {
         let next_para_idx = cursor.paragraph + 1;
         let next_children: Vec<_> = std::mem::take(paragraphs[next_para_idx].children_mut());
-        paragraphs[cursor.paragraph]
-            .children_mut()
-            .extend(next_children);
+        paragraphs[cursor.paragraph].extend_children(next_children);
 
         paragraphs.remove(next_para_idx);
     }
@@ -815,6 +809,9 @@ pub fn split_paragraph_at_cursor(
     let text_transform = para.text_transform();
     let writing_mode = para.writing_mode();
     let text_orientation = para.text_orientation();
+    let language = para.language().to_owned();
+    let korean_spaces_only = para.korean_spaces_only();
+    let source_position = para.source_position();
     let line_height = para.line_height();
     let letter_spacing = para.letter_spacing();
 
@@ -841,6 +838,9 @@ pub fn split_paragraph_at_cursor(
     );
     new_para.set_writing_mode(writing_mode);
     new_para.set_text_orientation(text_orientation);
+    new_para.set_language(language);
+    new_para.set_korean_spaces_only(korean_spaces_only);
+    new_para.set_source_position(source_position);
 
     paragraphs.insert(cursor.paragraph + 1, new_para);
 
@@ -853,6 +853,51 @@ mod tests {
     use crate::math::Rect;
     use crate::shapes::{FontFamily, FontStyle, GrowType, TextAlign, TextSpan};
     use crate::uuid::Uuid;
+
+    #[test]
+    fn paragraph_split_keeps_language_and_korean_wrap() {
+        let mut para = paragraph(&["한국어"]);
+        para.set_language("ko".to_string());
+        para.set_korean_spaces_only(true);
+        let mut content = content(vec![para]);
+        let cursor = TextPositionWithAffinity {
+            paragraph: 0,
+            offset: 1,
+            ..Default::default()
+        };
+        assert!(split_paragraph_at_cursor(&mut content, &cursor));
+        assert_eq!(content.paragraphs().len(), 2);
+        for para in content.paragraphs() {
+            assert_eq!(para.language(), "ko");
+            assert!(para.korean_spaces_only());
+            assert_eq!(para.source_position(), 0);
+            assert!(para.children().iter().all(|span| span.language == "ko"));
+        }
+    }
+
+    #[test]
+    fn paragraph_merge_inherits_the_surviving_paragraph_language() {
+        let mut first = paragraph(&["中"]);
+        first.set_language("ja".to_string());
+        let mut second = paragraph(&["中"]);
+        second.set_language("ko".to_string());
+        let mut content = content(vec![first, second]);
+        delete_char_after(
+            &mut content,
+            &TextPositionWithAffinity {
+                paragraph: 0,
+                offset: 1,
+                ..Default::default()
+            },
+        );
+        assert_eq!(content.paragraphs().len(), 1);
+        let paragraph = &content.paragraphs()[0];
+        assert_eq!(paragraph.language(), "ja");
+        assert!(paragraph
+            .children()
+            .iter()
+            .all(|span| span.language == "ja"));
+    }
 
     fn span(text: &str) -> TextSpan {
         TextSpan::new(

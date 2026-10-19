@@ -27,6 +27,7 @@ use crate::math::Point;
 use crate::shapes::japanese::{
     aki_class, is_japanese_text_char, pair_rule, punctuation_aki_sheds, AkiShed, JapaneseClass,
 };
+use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{kinsoku, merge_fills};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use skia_safe::{
@@ -41,10 +42,11 @@ use skia_safe::{
 /// True when a paragraph with layout texts `texts` needs the Japanese passes:
 /// it has ruby or a Japanese character.
 pub(crate) fn uses_japanese_layout(paragraph: &Paragraph, texts: &[String]) -> bool {
-    paragraph.children().iter().any(TextSpan::has_ruby)
-        || texts
-            .iter()
-            .any(|text| text.chars().any(is_japanese_text_char))
+    paragraph.layout_policy() == TextLayoutPolicy::Japanese
+        && (paragraph.children().iter().any(TextSpan::has_ruby)
+            || texts
+                .iter()
+                .any(|text| text.chars().any(is_japanese_text_char)))
 }
 
 pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku::OffsetMap) {
@@ -54,14 +56,22 @@ pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku:
         .map(TextSpan::apply_text_transform)
         .collect();
     // Text without Japanese characters or ruby keeps plain Skia layout.
-    if uses_japanese_layout(paragraph, &texts) {
+    let policy = paragraph.layout_policy();
+    if uses_japanese_layout(paragraph, &texts)
+        || matches!(
+            policy,
+            TextLayoutPolicy::Chinese
+                | TextLayoutPolicy::KoreanSyllable
+                | TextLayoutPolicy::KoreanSpacesOnly
+        )
+    {
         let ruby_breaks: Vec<Option<Vec<usize>>> = paragraph
             .children()
             .iter()
             .map(|span| span.has_ruby().then(Vec::new))
             .collect();
         if let Some((shifted, map)) =
-            kinsoku::apply_to_span_texts_with_ruby_breaks(&texts, &ruby_breaks)
+            kinsoku::apply_policy_to_span_texts(&texts, &ruby_breaks, policy)
         {
             return (shifted, map);
         }
@@ -78,6 +88,9 @@ pub(crate) fn horizontal_aki_sheds(
     paragraph: &Paragraph,
     texts: &[String],
 ) -> Vec<Vec<(usize, f32)>> {
+    if paragraph.layout_policy() != TextLayoutPolicy::Japanese {
+        return vec![Vec::new(); texts.len()];
+    }
     let spans = paragraph.children();
     let half_em = |span: usize| spans.get(span).map_or(0.0, |span| span.font_size * 0.5);
     // (span, char index in the span text) of every real character.

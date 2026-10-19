@@ -108,10 +108,12 @@ pub struct RawParagraphData {
     text_transform: RawTextTransform,
     writing_mode: u8,
     text_orientation: u8,
+    korean_wrap: u8,
     // Padding for the CLJS writer's 4-byte-aligned layout; always zero.
-    _padding: [u8; 2],
+    _padding: [u8; 1],
     line_height: f32,
     letter_spacing: f32,
+    language_length: u32,
 }
 
 impl From<[u8; RAW_PARAGRAPH_DATA_SIZE]> for RawParagraphData {
@@ -297,6 +299,12 @@ impl From<RawParagraph> for shapes::Paragraph {
         paragraph.set_writing_mode(RawWritingMode::from(value.attrs.writing_mode).into());
         paragraph
             .set_text_orientation(RawTextOrientation::from(value.attrs.text_orientation).into());
+        let language = ruby_offset
+            .checked_add(value.attrs.language_length as usize)
+            .and_then(|end| value.text_buffer.get(ruby_offset..end))
+            .unwrap_or(&[]);
+        paragraph.set_language(String::from_utf8_lossy(language).into_owned());
+        paragraph.set_korean_spaces_only(value.attrs.korean_wrap == 1);
         paragraph
     }
 }
@@ -507,19 +515,39 @@ mod tests {
         AnnotationClearance, FontFeatures, RubyAlign, RubyOverhang, RubySide, RubySize,
     };
 
-    /// The CLJS writer (texts.cljs) writes PARAGRAPH-ATTR-U8-SIZE (16)
+    /// The shared CLJS writer writes PARAGRAPH-ATTR-U8-SIZE (20)
     /// attr bytes after the u32 span count, and SPAN-ATTR-U8-SIZE (80)
     /// attr bytes before the fills block. These sizes must match the struct
     /// layouts.
     #[test]
     fn raw_struct_sizes_match_cljs_writer() {
-        const PARAGRAPH_ATTR_U8_SIZE: usize = 16;
+        const PARAGRAPH_ATTR_U8_SIZE: usize = 20;
         const SPAN_ATTR_U8_SIZE: usize = 80;
         assert_eq!(RAW_PARAGRAPH_DATA_SIZE, 4 + PARAGRAPH_ATTR_U8_SIZE);
         assert_eq!(
             RAW_SPAN_DATA_SIZE,
             SPAN_ATTR_U8_SIZE + MAX_TEXT_FILLS * std::mem::size_of::<RawFillData>()
         );
+    }
+
+    #[test]
+    fn language_decodes_after_base_and_ruby_text() {
+        let mut attrs = [0u8; RAW_PARAGRAPH_DATA_SIZE];
+        attrs[10] = 1; // Korean spaces-only POC; byte 6 after span count.
+        attrs[20..24].copy_from_slice(&2u32.to_le_bytes());
+        let mut span = [0u8; RAW_SPAN_DATA_SIZE];
+        span[68..72].copy_from_slice(&3u32.to_le_bytes());
+        span[72..76].copy_from_slice(&3u32.to_le_bytes());
+        let paragraph = shapes::Paragraph::from(RawParagraph {
+            attrs: RawParagraphData::from(attrs),
+            spans: vec![RawTextSpan::from(span)],
+            text_buffer: "韓한ko".as_bytes().to_vec(),
+        });
+        assert_eq!(paragraph.language(), "ko");
+        assert!(paragraph.korean_spaces_only());
+        assert_eq!(paragraph.children()[0].text, "韓");
+        assert_eq!(paragraph.children()[0].ruby, "한");
+        assert_eq!(paragraph.children()[0].language, "ko");
     }
 
     #[test]
