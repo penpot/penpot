@@ -18,8 +18,7 @@
 // button sizes.
 .left-arrow,
 .right-arrow {
-  // No color at rest, as before: enabled arrows only show on hover.
-  --arrow-foreground-color: transparent;
+  --arrow-foreground-color: var(--color-foreground-secondary);
 
   display: flex;
   justify-content: center;
