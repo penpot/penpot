@@ -1030,6 +1030,58 @@
   [file]
   (update file :data ctf/check-file-data))
 
+(def ^:private file-level-change-types
+  "Change types that leave every page as it was."
+  #{:del-page :mov-page
+    :add-color :mod-color :del-color
+    :add-media :mod-media :del-media
+    :add-component :mod-component :del-component :restore-component :purge-component
+    :add-typography :mod-typography :del-typography
+    :set-tokens-lib :set-token :set-token-set :set-token-theme :set-tokens-status
+    :rename-token-set-group :move-token-set :move-token-set-group
+    :set-base-font-size :set-tokens-source})
+
+(defn- touched-page-ids
+  "Ids of the pages `changes` modify, or nil if a change has a type not
+  known here."
+  [changes]
+  (reduce (fn [page-ids {:keys [type page-id id page object-type object-id]}]
+            (case type
+              (:add-obj :mod-obj :del-obj :fix-obj :mov-objects :reorder-children :reg-objects
+                        :set-guide :set-flow :set-default-grid :set-comment-thread-position)
+              (cond-> page-ids (some? page-id) (conj page-id))
+
+              :add-page
+              (conj page-ids (or id (:id page)))
+
+              :mod-page
+              (conj page-ids id)
+
+              :set-plugin-data
+              (case object-type
+                :page  (conj page-ids object-id)
+                :shape (cond-> page-ids (some? page-id) (conj page-id))
+                page-ids)
+
+              (if (contains? file-level-change-types type)
+                page-ids
+                (reduced nil))))
+          #{}
+          changes))
+
+(defn validate-file-schema-affected!
+  "Like `validate-file-schema!` but checks, of the pages, only those that
+  `changes` modify; the rest of the file data is checked whole. If a change
+  has a type not known here, checks the whole file. Returns `file`."
+  [file changes]
+  (if-let [page-ids (touched-page-ids changes)]
+    (do
+      (-> (:data file)
+          (update :pages-index select-keys page-ids)
+          (ctf/check-file-data))
+      file)
+    (validate-file-schema! file)))
+
 (defn validate-file!
   "Validate full referential integrity and semantic coherence on file data.
 

@@ -66,7 +66,7 @@
               pmap/*tracked* (pmap/create-tracked)]
       (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})
                     val/validate-file-affected! (fn [_ _ _] nil)
-                    val/validate-file-schema! (fn [_] nil)]
+                    val/validate-file-schema-affected! (fn [_ _] nil)]
         (let [file (@#'files-update/process-changes-and-validate cfg (test-file) [] nil nil)
               timings @(::files-update/validation-timings cfg)]
           (t/is (map? file))
@@ -92,8 +92,8 @@
                                                       (throw (ex-info "must not resolve libs" {})))
                     val/validate-file-affected! (fn [_ _ _]
                                                   (throw (ex-info "must not validate" {})))
-                    val/validate-file-schema! (fn [_]
-                                                (throw (ex-info "must not validate schema" {})))]
+                    val/validate-file-schema-affected! (fn [_ _]
+                                                         (throw (ex-info "must not validate schema" {})))]
         ;; soft validations still run: they only check flags, not skip-validate
         (let [file (@#'files-update/process-changes-and-validate cfg (test-file) [] nil true)
               timings @(::files-update/validation-timings cfg)]
@@ -115,7 +115,7 @@
       (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})
                     val/validate-file-affected! (fn [_ _ _]
                                                   (throw (ex-info "bad file" {:code :referential-integrity})))
-                    val/validate-file-schema! (fn [_] nil)]
+                    val/validate-file-schema-affected! (fn [_ _] nil)]
         (let [timings-atom (::files-update/validation-timings cfg)]
           (t/is (thrown? clojure.lang.ExceptionInfo
                          (@#'files-update/process-changes-and-validate cfg (test-file) [] nil nil)))
@@ -145,7 +145,7 @@
                                                   (when (some #(= "bad" (:name %)) changes)
                                                     (throw (ex-info "bad file" {:type :validation
                                                                                 :code :referential-integrity}))))
-                    val/validate-file-schema! (fn [_] nil)]
+                    val/validate-file-schema-affected! (fn [_ _] nil)]
         (let [file    (@#'files-update/process-changes-and-validate
                        cfg (test-file) (into [] (mapcat :changes) commits) commits nil)
               timings @(::files-update/validation-timings cfg)]

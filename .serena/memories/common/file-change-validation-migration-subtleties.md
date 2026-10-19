@@ -20,6 +20,7 @@
 
 - Full referential/semantic validation currently runs only when file features contain `"components/v2"`.
 - Validation starts at root plus orphan shapes, then validates component records. `validate-file!` raises `:validation :referential-integrity` with collected details.
+- `update-file` validates per save with the change-scoped variants: `validate-file-affected!` (referential, whole touched pages/components) and `validate-file-schema-affected!` (file schema with `:pages-index` reduced to the touched pages; non-page data checked whole). The schema variant maps change types to pages itself (`touched-page-ids`): a new change type that writes a page must be added there, or to `file-level-change-types` if it touches no page; an unknown type makes it check the whole file. The whole-file schema check loads and decodes every page, ~75–80% of a save on multi-page files.
 - `repair-file` does not mutate data directly; it reduces validation errors into redo changes using `changes-builder`. Callers must apply or persist those changes.
 - `:missing-slot` fires only for a REAL swap: a copy sub-head whose `shape-ref` is no longer a child of the near main parent. A pure positional mismatch (ref still a sibling elsewhere) is a reorder — valid, realigned by the async component sync; do not "repair" it by assigning swap slots (a slot freezes the child out of normal sync). `fix-missing-swap-slots` (migration 0019) follows the same membership rule.
 

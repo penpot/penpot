@@ -444,9 +444,9 @@
     (apply update-fn cfg file args)))
 
 (defn- soft-validate-file-schema!
-  [file]
+  [file changes]
   (try
-    (val/validate-file-schema! file)
+    (val/validate-file-schema-affected! file changes)
     (catch Throwable cause
       (l/error :hint "file schema validation error" :cause cause))))
 
@@ -479,7 +479,8 @@
          (record-validation-timing ~cfg ~step-key ~step-label (inst-ms (t#)))))))
 
 (defn- validate-file
-  "Validates the entities affected by `changes` and the file schema."
+  "Validates the entities `changes` affect and the schema of the data they
+  modify."
   [cfg file libs changes skip-validate]
   (binding [pmap/*tracked* nil]
     (when (contains? cf/flags :soft-file-validation)
@@ -488,7 +489,7 @@
 
     (when (contains? cf/flags :soft-file-schema-validation)
       (with-validation-timing cfg :soft-validate-schema-ms "soft-validate-schema"
-        (soft-validate-file-schema! file)))
+        (soft-validate-file-schema! file changes)))
 
     (when (and (contains? cf/flags :file-validation)
                (not skip-validate))
@@ -498,7 +499,7 @@
     (when (and (contains? cf/flags :file-schema-validation)
                (not skip-validate))
       (with-validation-timing cfg :validate-schema-ms "validate-schema"
-        (val/validate-file-schema! file)))))
+        (val/validate-file-schema-affected! file changes)))))
 
 (def ^:private debug-fault-prefix
   "Start of the plugin data key that asks for a debug save fault."
