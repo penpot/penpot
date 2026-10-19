@@ -845,6 +845,31 @@ mod tests {
     }
 
     #[test]
+    fn boxes_shorter_than_atomic_units_keep_closing_punctuation_with_its_base() {
+        use crate::shapes::text_policy::KoreanWrap;
+        for (language, wrap) in [
+            ("zh-Hans-CN", KoreanWrap::Syllable),
+            ("zh-Hant-TW", KoreanWrap::Syllable),
+            ("zh-Hant-HK", KoreanWrap::Syllable),
+            ("ko", KoreanWrap::Syllable),
+            ("ko", KoreanWrap::KeepWords),
+        ] {
+            for height in [1.0, 10.0, 19.0, 20.0, 30.0, 39.0] {
+                let layout = cjk_layout(&["文", "。"], language, wrap, TextAlign::Left, height);
+                assert_eq!(layout.cells.len(), 2);
+                assert_eq!(
+                    layout.cells[0].column, layout.cells[1].column,
+                    "{language} {wrap:?} {height}px: an indivisible unit overflows together"
+                );
+                for cell in &layout.cells {
+                    assert!(cell.top.is_finite());
+                    assert!(cell.extent.is_finite() && cell.extent > 0.0);
+                }
+            }
+        }
+    }
+
+    #[test]
     fn korean_emergency_wrap_keeps_closing_punctuation_with_its_base() {
         use crate::shapes::text_policy::KoreanWrap;
         let layout = cjk_layout(
