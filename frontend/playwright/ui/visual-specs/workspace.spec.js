@@ -353,6 +353,40 @@ test.describe("Left header", () => {
   });
 });
 
+test.describe("Right header", () => {
+  test("Shows the header actions and the zoom menu", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    const header = page.locator('[class*="workspace-header-right"]');
+    await expect(header).toBeVisible();
+    await page.mouse.move(640, 300);
+    // The buttons are a small part of the header: compare every pixel.
+    await expect(header).toHaveScreenshot("right-header.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await header.getByRole("button", { name: /Comments/ }).click();
+    await page.mouse.move(640, 300);
+    await expect(header).toHaveScreenshot("right-header-comments.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+    await page.keyboard.press("Escape");
+
+    await header.getByTitle("Zoom").click();
+    await expect(page.getByText("Reset")).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(page).toHaveScreenshot("right-header-zoom.png", {
+      clip: { x: 900, y: 0, width: 380, height: 260 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Palette", () => {
   test("Shows the bottom palette expanded and collapsed", async ({ page }) => {
     const workspace = new WorkspacePage(page);

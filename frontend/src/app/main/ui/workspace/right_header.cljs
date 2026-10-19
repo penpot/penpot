@@ -20,6 +20,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.team]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.exports.assets :refer [progress-widget]]
@@ -91,8 +92,8 @@
                            :aria-label (tr "shortcuts.increase-zoom")
                            :on-click on-increase
                            :icon i/add}]]
-        [:button {:class (stl/css :reset-btn)
-                  :on-click on-zoom-reset}
+        [:> button* {:variant "ghost"
+                     :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
        [:li {:class (stl/css :zoom-option)
              :on-click on-zoom-fit}
@@ -215,35 +216,35 @@
         :on-zoom-selected on-zoom-selected}]]
 
      [:div {:class (stl/css :comments-section)}
-      [:button {:title (tr "workspace.toolbar.comments" (get-tt :add-comment))
-                :aria-label (tr "workspace.toolbar.comments" (get-tt :add-comment))
-                :class (stl/css-case :comments-btn true
-                                     :selected (= selected-drawtool :comments))
-                :on-click toggle-comments
-                :data-tool "comments"
-                :style {:position "relative"}}
-       deprecated-icon/comments
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :comments-btn)
+                        :tooltip-placement "bottom-left"
+                        :aria-pressed (= selected-drawtool :comments)
+                        :aria-label (tr "workspace.toolbar.comments" (get-tt :add-comment))
+                        :icon i/comments
+                        :on-click toggle-comments
+                        :data-tool "comments"}
        (when ^boolean has-unread-comments?
          [:div {:class (stl/css :unread)}])]]
 
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}
-        [:button
-         {:title (tr "workspace.sidebar.history")
-          :aria-label (tr "workspace.sidebar.history")
-          :class (stl/css-case :selected (contains? layout :document-history)
-                               :history-button true)
-          :on-click toggle-history}
-         deprecated-icon/history]])
+        [:> icon-button* {:variant "ghost"
+                          :tooltip-placement "bottom-left"
+                          :aria-pressed (contains? layout :document-history)
+                          :aria-label (tr "workspace.sidebar.history")
+                          :icon i/history
+                          :on-click toggle-history}]])
 
      (when display-share-button?
-       [:a {:class (stl/css :viewer-btn)
+       [:a {:class (stl/css :share-btn)
             :title (tr "workspace.header.share")
             :on-click open-share-dialog}
         deprecated-icon/share])
 
-     [:a {:class (stl/css :viewer-btn)
-          :title (tr "workspace.header.viewer" (get-tt :open-viewer))
-          :on-click nav-to-viewer}
-      deprecated-icon/play]]))
+     [:> icon-button* {:variant "ghost"
+                       :tooltip-placement "bottom-left"
+                       :aria-label (tr "workspace.header.viewer" (get-tt :open-viewer))
+                       :icon i/play
+                       :on-click nav-to-viewer}]]))
 
