@@ -145,6 +145,106 @@ fn emergency_word_boundaries_keep_identical_offsets_and_graphemes() {
 }
 
 #[test]
+fn cjk_emergency_wrapping_keeps_safe_boundaries_across_box_widths() {
+    use crate::shapes::text_policy::KoreanWrap;
+    use unicode_segmentation::UnicodeSegmentation;
+
+    let cases: &[(&str, KoreanWrap, &[&str], &[f32])] = &[
+        (
+            "zh-Hans-CN",
+            KoreanWrap::Syllable,
+            &["文（", "中文）", "，中文"],
+            &[65.0, 72.0, 85.0, 102.0, 140.0],
+        ),
+        (
+            "zh-Hant-TW",
+            KoreanWrap::Syllable,
+            &["文（", "中文）", "，中文"],
+            &[65.0, 72.0, 85.0, 102.0, 140.0],
+        ),
+        (
+            "zh-Hant-HK",
+            KoreanWrap::Syllable,
+            &["文（", "中文）", "，中文"],
+            &[65.0, 72.0, 85.0, 102.0, 140.0],
+        ),
+        (
+            "ko",
+            KoreanWrap::KeepWords,
+            &["한글 ", "한국어", "。"],
+            &[42.0, 52.0, 62.0, 72.0, 82.0, 100.0],
+        ),
+        (
+            "ko",
+            KoreanWrap::Syllable,
+            &["한", "글（한", "글）와 1,234%"],
+            &[65.0, 72.0, 85.0, 102.0, 140.0],
+        ),
+        (
+            "ko",
+            KoreanWrap::KeepWords,
+            &["한 ", "ᄒ", "ᅡᆫ글。"],
+            &[82.0, 100.0, 142.0],
+        ),
+    ];
+    let mut violations = Vec::new();
+    for &(language, wrap, texts, widths) in cases {
+        let source = texts.concat();
+        let chars: Vec<_> = source.chars().collect();
+        let boundaries: Vec<_> = source
+            .graphemes(true)
+            .scan(0, |at, g| {
+                let start = *at;
+                *at += g.chars().count();
+                Some(start)
+            })
+            .collect();
+        for &width in widths {
+            let (paragraph, plan, layout) = cjk_horizontal_layout(texts, language, wrap, width);
+            for line in layout.get_line_metrics().into_iter().skip(1) {
+                let at = plan.offsets.builder_to_source(line.start_index);
+                if at < chars.len()
+                    && (boundaries.binary_search(&at).is_err()
+                        || (at > 0
+                            && !paragraph
+                                .layout_policy()
+                                .emergency_break_allowed(chars[at - 1], chars[at])))
+                {
+                    violations.push(format!(
+                        "{language} {wrap:?} {width}px: break at {at} in {source}"
+                    ));
+                }
+            }
+        }
+    }
+    assert!(violations.is_empty(), "{}", violations.join("\n"));
+}
+
+#[test]
+fn narrower_than_atomic_unit_layout_keeps_source_offsets_and_finite_geometry() {
+    use crate::shapes::text_policy::KoreanWrap;
+    // These widths cannot fit the punctuation unit. This checks data safety;
+    // it does not claim SkParagraph retains the policy's forbidden boundaries.
+    for language in ["zh-Hant-TW", "ko"] {
+        for width in [1.0, 10.0, 19.0, 20.0, 30.0, 39.0] {
+            let (paragraph, plan, layout) =
+                cjk_horizontal_layout(&["文", "。"], language, KoreanWrap::KeepWords, width);
+            let original = HorizontalParagraphPlan::new(&paragraph);
+            for at in 0..=2 {
+                let builder = plan.offsets.source_to_builder(at);
+                assert_eq!(plan.offsets.builder_to_source(builder), at);
+                assert_eq!(builder, original.offsets.source_to_builder(at));
+            }
+            assert!(layout.height().is_finite() && layout.height() > 0.0);
+            for line in layout.get_line_metrics() {
+                assert!(line.width.is_finite() && line.width >= 0.0);
+                assert!(line.baseline.is_finite());
+            }
+        }
+    }
+}
+
+#[test]
 fn horizontal_cjk_justification_is_bounded_and_word_mode_only_expands_spaces() {
     use crate::shapes::text_policy::KoreanWrap;
     let (paragraph, plan, layout) =
