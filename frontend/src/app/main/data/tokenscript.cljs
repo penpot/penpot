@@ -13,7 +13,12 @@
   numbers in pixels, colors as hex strings, composites as maps),
   `:resolved-symbol` (the tokenscript value, see
   `tokenscript.symbols`) and `:errors` (Penpot error maps, see
-  `app.main.data.workspace.tokens.errors`) added to each token."
+  `app.main.data.workspace.tokens.errors`) added to each token.
+  `resolve-sets` takes ordered token sets instead of a merged map.
+
+  Resolution is incremental: the interpreter state of the last calls is
+  kept, and a call re-resolves and converts only the tokens that changed
+  since the previous one and the tokens depending on them."
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
@@ -23,6 +28,7 @@
    [cuerdas.core :as str]
    [tokenscript.core :as tsc]
    [tokenscript.errors :as tse]
+   [tokenscript.processor :as processor]
    [tokenscript.symbols :as sym]))
 
 ;; Value conversion -----------------------------------------------------------
@@ -274,81 +280,158 @@
 
 (defn- token->input
   "Token data for the interpreter. Types are passed by their DTCG names,
-  which the interpreter's bundled token types validate."
-  [{:keys [type value]}]
+  which the interpreter's bundled token types validate. The token id goes
+  along as metadata, which the interpreter keeps with the resolved name."
+  [{:keys [id type value]}]
   (cond-> {:value (case type
                     :font-family (quote-font-families value)
                     :typography (cond-> value
                                   (map? value) (d/update-when :font-family quote-font-families))
                     value)}
-    (some? type) (assoc :type (get cto/token-type->dtcg-token-type type (name type)))))
+    (some? type) (assoc :type (get cto/token-type->dtcg-token-type type (name type)))
+    (some? id) (assoc :metadata id)))
 
 (defn- empty-value?
   [token]
   (nil? (:value token)))
 
-(defn- resolved-token
-  "Adds the result of the interpreter to `token`: `:resolved-value` and
-  `:resolved-symbol` for the resolved symbol `s`, or `:errors` for its
-  `issues`, a failing conversion or a value Penpot doesn't accept."
-  [token issues s]
-  (if-let [errors (token-errors issues token)]
-    (assoc token :errors (vec errors))
-    (let [{:keys [value error]} (convert-token-value token s)]
-      (if-let [error (or error (validate-value token value))]
-        (assoc token :errors [error])
-        (assoc token
-               :resolved-value value
-               :resolved-symbol s)))))
+(defn- merge-sets
+  "The tokens of `sets` as one map, later sets winning: the names of a
+  resolution."
+  [sets]
+  (if (= 1 (count sets))
+    (second (first sets))
+    (reduce (fn [acc [_ tokens]] (merge acc tokens)) {} sets)))
 
-(defn- resolve-tokens*
-  [tokens]
-  (let [tpoint   (ct/tpoint-ms)
-        inputs   (into {}
-                       (comp (remove (fn [[_ token]] (empty-value? token)))
-                             (map (fn [[name token]] [name (token->input token)])))
-                       tokens)
-        result   (tsc/build inputs)
-        resolved (:tokens result)
-        issues   (:issues result)
-        output   (reduce-kv
-                  (fn [acc name token]
-                    (assoc acc name
-                           (if (empty-value? token)
-                             (assoc token :errors [(wte/get-error-code :error.token/empty-input)])
-                             (resolved-token token (get issues name) (get resolved name)))))
-                  {}
-                  tokens)]
-    (l/dbg :hint "tokenscript/resolve-tokens" :elapsed (tpoint))
-    output))
+(defn- set-inputs
+  "Interpreter inputs of the `tokens` of one set, without the names in
+  `empty-names`. `prev` is `{:tokens .. :inputs ..}` of the same set in
+  the previous resolution: a token that is the same object as before gets
+  its previous input, and with `same-empty?` an unchanged tokens map gets
+  the previous inputs as they are, so the interpreter sees unchanged data
+  by identity and skips it without comparing."
+  [tokens empty-names {prev-tokens :tokens prev-inputs :inputs} same-empty?]
+  (if (and same-empty? (identical? tokens prev-tokens))
+    prev-inputs
+    (persistent!
+     (reduce-kv (fn [acc name token]
+                  (if (contains? empty-names name)
+                    acc
+                    (assoc! acc name (or (when (identical? token (get prev-tokens name))
+                                           (get prev-inputs name))
+                                         (token->input token)))))
+                (transient {})
+                tokens))))
 
-;; Several components resolve the same token maps on every change (the
-;; sidebar, the forms and the propagation each compute the active tokens
-;; separately), so the results of the last few maps are kept. Entries are
-;; matched by identity first and by equality second: comparing two maps
-;; of a few hundred tokens is far cheaper than resolving them again.
+(defn- output-token
+  "`token` with `:resolved-value` and `:resolved-symbol`, or `:errors`,
+  from the interpreter `result`."
+  [name token {:keys [tokens issues]}]
+  (if (empty-value? token)
+    (assoc token :errors [(wte/get-error-code :error.token/empty-input)])
+    (let [errors (token-errors (get issues name) token)
+          {:keys [value error]} (when-not errors (convert-token-value token (get tokens name)))
+          error (or error (when-not errors (validate-value token value)))]
+      (cond
+        errors (assoc token :errors (vec errors))
+        error (assoc token :errors [error])
+        :else (assoc token
+                     :resolved-value value
+                     :resolved-symbol (get tokens name))))))
+
+(defn- resolve-sets*
+  "Resolves `sets` starting from `base`, the previous resolution (nil for
+  the first). The interpreter keeps its state across resolutions: it
+  re-resolves only the names whose data changed and the tokens that can
+  observe them, and only those names are converted again. Every other
+  entry of the output is the one of `base`, the same object."
+  [sets base]
+  (let [tpoint (ct/tpoint-ms)
+        winners (merge-sets sets)
+        empty-names (into #{} (keep (fn [[name token]] (when (empty-value? token) name))) winners)
+        same-empty? (boolean (and base (= empty-names (:empty-names base))))
+        inputs (mapv (fn [[set-id tokens]]
+                       [set-id (set-inputs tokens empty-names (get-in base [:inputs set-id]) same-empty?)])
+                     sets)
+        result (if base
+                 (processor/set-sets (get-in base [:result :state]) inputs)
+                 (tsc/build inputs))
+        resolved (:resolved result)
+        prev-winners (:winners base)
+        prev-resolved (get-in base [:result :resolved])
+        prev-output (:output base)
+        output (persistent!
+                (reduce-kv
+                 (fn [acc name token]
+                   (assoc! acc name
+                           (if (and (identical? token (get prev-winners name))
+                                    (identical? (get resolved name) (get prev-resolved name)))
+                             (get prev-output name)
+                             (output-token name token result))))
+                 (transient {})
+                 winners))]
+    (l/dbg :hint "tokenscript/resolve-sets" :elapsed (tpoint) :tokens (count winners))
+    {:sets sets
+     :winners winners
+     :empty-names empty-names
+     :inputs (into {} (map (fn [[set-id tokens] [_ set-inputs]] [set-id {:tokens tokens :inputs set-inputs}]) sets inputs))
+     :result result
+     :output output}))
+
+;; Several components resolve the same sets on every change (the sidebar,
+;; the forms and the propagation each compute the active tokens
+;; separately), and a form resolves a new map on every keystroke. The last
+;; few resolutions are kept with their interpreter state: a known input
+;; returns its output, a new one is resolved from the most recent entry,
+;; which re-resolves only what changed. The entries are values, so a
+;; preview resolved from an entry leaves it as it is.
 (def ^:private cache-size 8)
 
-(defonce ^:private results-cache (volatile! []))
+(defonce ^:private cache (volatile! []))
 
-(defn- cached-result
-  [tokens]
-  (let [entries @results-cache]
-    (or (some (fn [[t result]] (when (identical? t tokens) result)) entries)
-        (some (fn [[t result]] (when (= t tokens) result)) entries))))
+(defn- same-sets?
+  "Whether `a` and `b` hold the same set keys and the same tokens maps by
+  identity, the common case of a repeated call."
+  [a b]
+  (or (identical? a b)
+      (and (= (count a) (count b))
+           (every? true? (map (fn [[ka ta] [kb tb]] (and (= ka kb) (identical? ta tb))) a b)))))
 
-(defn- remember-result
-  [tokens result]
-  (vswap! results-cache (fn [entries] (vec (take cache-size (cons [tokens result] entries))))))
+(defn- cached-entry
+  [sets]
+  (let [entries @cache]
+    (or (some #(when (same-sets? (:sets %) sets) %) entries)
+        (some #(when (= (:sets %) sets) %) entries))))
+
+(defn- remember
+  "Puts `entry` first, dropping the oldest beyond `cache-size`."
+  [entry]
+  (vswap! cache (fn [entries]
+                  (into [entry]
+                        (comp (remove #(identical? % entry)) (take (dec cache-size)))
+                        entries)))
+  entry)
+
+(defn resolve-sets
+  "Resolves the ordered token `sets`, `[[set-id tokens] ..]`, where `tokens`
+  maps token names to tokens and a name defined by several sets is taken
+  from the last one. Returns a map of the names to their tokens with
+  `:resolved-value` and `:resolved-symbol`, or `:errors`, added.
+
+  Resolutions are incremental: the interpreter state of the last few
+  calls is kept, and a call re-resolves only the names whose token is not
+  the same object as in the previous call and the tokens referencing
+  them. The output keeps the previous entry for every other name, so the
+  tokens an edit did not reach stay identical between calls."
+  [sets]
+  (:output (remember (or (cached-entry sets)
+                         (resolve-sets* sets (first @cache))))))
 
 (defn resolve-tokens
-  "Resolves `tokens` (a map of token name to token). Returns the tokens
-  with `:resolved-value` or `:errors` added."
+  "Resolves `tokens` (a map of token name to token), as one set. Returns
+  the tokens with `:resolved-value` or `:errors` added. See `resolve-sets`."
   [tokens]
-  (or (cached-result tokens)
-      (let [result (resolve-tokens* tokens)]
-        (remember-result tokens result)
-        result)))
+  (resolve-sets [[nil tokens]]))
 
 (defn resolve-token
   "Resolves `token` against `tokens` (the token replaces any token with
