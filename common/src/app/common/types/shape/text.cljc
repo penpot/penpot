@@ -44,6 +44,12 @@
          [:font-style {:optional true} ::sm/text]
          [:font-weight {:optional true} ::sm/text]
          [:direction {:optional true} ::sm/text]
+         ;; Paragraph language selects typography; it never follows the UI locale.
+         [:text-language {:optional true}
+          [:re {:gen/elements ["ja" "zh-Hans" "zh-Hant-TW" "ko" "en-GB"]}
+           #"^(?:[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*|[xXiI](?:-[A-Za-z0-9]{1,8})+)$"]]
+         ;; Experimental POC mode, deliberately distinct from CSS keep-all.
+         [:korean-wrap {:optional true} [:enum "syllable" "spaces-only"]]
          [:writing-mode {:optional true} (schema:jl-enum :writing-mode)]
          [:text-orientation {:optional true} (schema:jl-enum :text-orientation)]
          [:text-decoration {:optional true} ::sm/text]

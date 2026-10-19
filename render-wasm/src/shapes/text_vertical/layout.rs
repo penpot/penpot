@@ -10,6 +10,7 @@ use crate::globals::get_resources;
 use crate::math::Rect;
 use crate::shapes::japanese::JapaneseClass;
 use crate::shapes::text_japanese::EMPHASIS_FONT_SCALE;
+use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{
     merge_fills, AppliedTextTransform, FontFeatures, GrowType, LineAdjustment, Paragraph, RubySide,
     TextAlign, TextContent, TextSpan, VerticalAlign,
@@ -25,7 +26,8 @@ use super::cells::{Fonts, SpanCells, WarichuNote};
 use super::flow::{
     aki_classes, align_offset_along_column, apply_inter_script_spacing, apply_ordered_oikomi,
     flow_classes, is_bounded, materialize_explicit_pair_spacing, ordered_expansion_offsets,
-    plan_with_edge_trimming, preferred_pair_spacing, shed_punctuation_aki, FlowCell, FIT_TOLERANCE,
+    plan_policy_columns, plan_with_edge_trimming, preferred_pair_spacing, shed_punctuation_aki,
+    FlowCell, FIT_TOLERANCE,
 };
 use super::paint::LayoutDraws;
 use super::shaping::ShapedRun;
@@ -516,6 +518,7 @@ fn aligned_tops(
 
 /// A paragraph's flow after spacing and column planning.
 struct PlannedParagraph {
+    policy: TextLayoutPolicy,
     flow: Vec<FlowCell>,
     ruby_units: Vec<RubyBaseUnit>,
     classes: Vec<Option<JapaneseClass>>,
@@ -554,6 +557,26 @@ impl PlannedParagraph {
             let mut flow = cells.flow(&warichu_splits, runs);
             let mut ruby_units = ruby_units.clone();
 
+            let policy = cells.paragraph.layout_policy();
+            if policy != TextLayoutPolicy::Japanese {
+                grow_ruby_bases(&mut flow, &ruby_units);
+                let text: String = cells
+                    .text_map
+                    .span_transforms
+                    .iter()
+                    .map(|t| t.text.as_str())
+                    .collect();
+                let placements = plan_policy_columns(&flow, &text, policy, max_height);
+                return Self {
+                    policy,
+                    classes: vec![None; flow.len()],
+                    pair_spacing_em: vec![0.0; flow.len().saturating_sub(1)],
+                    flow,
+                    ruby_units,
+                    placements,
+                };
+            }
+
             apply_inter_script_spacing(&mut flow);
             let classes = flow_classes(&flow, &ruby_spans);
             let aki = aki_classes(&flow, &classes, &vpal_spans);
@@ -586,6 +609,7 @@ impl PlannedParagraph {
                 Some(split) => warichu_splits.push(split),
                 None => {
                     return Self {
+                        policy,
                         flow,
                         ruby_units,
                         classes,
@@ -604,6 +628,12 @@ impl PlannedParagraph {
     /// Final cells, aligned along their columns, numbered from `column_base`.
     /// A later span's cell of a warichu piece takes the piece's box.
     fn place(&self, align: TextAlign, max_height: f32, column_base: usize) -> Vec<VerticalCell> {
+        // The POC defines no non-Japanese justification expansion table yet.
+        let align = if self.policy != TextLayoutPolicy::Japanese && align == TextAlign::Justify {
+            TextAlign::Left
+        } else {
+            align
+        };
         let tops = aligned_tops(
             &self.flow,
             &self.classes,
@@ -776,6 +806,82 @@ mod tests {
     use super::super::test_support::*;
     use super::*;
     use crate::shapes::TextOrientation;
+
+    #[test]
+    fn explicit_profiles_change_wrapping_without_japanese_spacing() {
+        let columns = |language: &str, spaces_only: bool, texts: &[&str]| {
+            let mut paragraph = vertical_paragraph(
+                texts.iter().map(|text| make_span(text)).collect(),
+                TextAlign::Left,
+                1.0,
+            );
+            paragraph.set_language(language.to_string());
+            paragraph.set_korean_spaces_only(spaces_only);
+            let content = content_of(vec![paragraph], EM * 2.1, GrowType::Fixed);
+            let layout = layout_with_height(
+                &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
+                &content,
+                EM * 2.1,
+            );
+            (
+                layout
+                    .cells
+                    .iter()
+                    .map(|cell| (cell.start, cell.column))
+                    .collect::<Vec<_>>(),
+                layout,
+            )
+        };
+        // Small kana stay attached in Japanese only; Chinese uses its own
+        // basic punctuation policy even when the fixture contains kana.
+        let (ja, _) = columns("ja", false, &["文あっ文"]);
+        let (zh, _) = columns("zh-Hans", false, &["文あっ文"]);
+        assert_ne!(ja, zh);
+        let (syllables, _) = columns("ko", false, &["한", "국어 문장"]);
+        let (words, layout) = columns("ko", true, &["한", "국어 문장"]);
+        // A three-syllable word cannot fit here: safe emergency wrapping.
+        assert!(words.iter().any(|(_, column)| *column > 0));
+        assert_eq!(syllables.len(), words.len());
+        assert!(layout
+            .cells
+            .iter()
+            .all(|cell| cell.minimum_oikomi_extent <= cell.extent));
+    }
+
+    #[test]
+    fn korean_word_boundaries_cross_styles_and_graphemes_stay_together() {
+        let mut paragraph = vertical_paragraph(
+            vec![make_span("한글 "), make_span("한"), make_span("국어")],
+            TextAlign::Left,
+            1.0,
+        );
+        paragraph.set_language("ko".to_string());
+        paragraph.set_korean_spaces_only(true);
+        let content = content_of(vec![paragraph], EM * 3.6, GrowType::Fixed);
+        let layout = layout_with_height(
+            &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
+            &content,
+            EM * 3.6,
+        );
+        let word: Vec<_> = layout.cells.iter().filter(|cell| cell.start >= 3).collect();
+        assert_eq!(word.len(), 3);
+        assert!(word.iter().all(|cell| cell.column == word[0].column));
+        assert!(word[0].column > 0);
+
+        let mut paragraph =
+            vertical_paragraph(vec![make_span("ᄒ"), make_span("ᅡᆫ국")], TextAlign::Left, 1.0);
+        paragraph.set_language("ko".to_string());
+        let content = content_of(vec![paragraph], EM, GrowType::Fixed);
+        let layout = layout_with_height(
+            &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
+            &content,
+            EM,
+        );
+        let syllable: Vec<_> = layout.cells.iter().filter(|cell| cell.start < 3).collect();
+        assert!(syllable
+            .iter()
+            .all(|cell| cell.column == syllable[0].column));
+    }
 
     fn with_headless_fonts<T>(test: impl FnOnce() -> T) -> T {
         let mut resources =

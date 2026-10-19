@@ -70,11 +70,12 @@ pub(super) fn vertical_paragraph(
         spans,
     );
     paragraph.set_writing_mode(WritingMode::VerticalRl);
+    paragraph.set_language("ja".to_string());
     paragraph
 }
 
 /// A 200px wide box `height` tall holding `paragraphs`.
-pub(super) fn content_of(
+pub(crate) fn content_of(
     paragraphs: Vec<Paragraph>,
     height: f32,
     grow_type: GrowType,
@@ -167,7 +168,7 @@ pub(super) fn layout_with_fallback(
     )
 }
 
-pub(super) fn layout_with_height(
+pub(crate) fn layout_with_height(
     provider: &TypefaceFontProvider,
     content: &TextContent,
     max_height: f32,

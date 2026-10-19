@@ -3,6 +3,7 @@
 // composite. Warichu notes span several spans and build their own cells.
 
 use std::ops::Range;
+use unicode_segmentation::UnicodeSegmentation;
 
 use skia_safe::{textlayout::TypefaceFontProvider, FontMgr, Typeface};
 
@@ -180,6 +181,7 @@ impl<'a> SpanCells<'a> {
             upright,
             self.span.font_features,
             self.fonts.fallback_mgr,
+            &self.span.language,
         )
     }
 
@@ -233,6 +235,19 @@ impl<'a> SpanCells<'a> {
                 for mut run in self.shape(&segment.text, self.span.font_size, segment.upright) {
                     let run_index = runs.len();
                     if segment.upright {
+                        // A font may leave conjoining Jamo as separate glyph
+                        // clusters. Group them by Unicode grapheme boundaries.
+                        let boundaries: Vec<usize> = segment
+                            .text
+                            .grapheme_indices(true)
+                            .map(|(at, _)| at)
+                            .collect();
+                        for cluster in &mut run.clusters {
+                            let at = boundaries
+                                .partition_point(|at| *at <= *cluster as usize)
+                                .saturating_sub(1);
+                            *cluster = boundaries[at].max(run.utf8_range.start) as u32;
+                        }
                         self.push_upright_clusters(&segment, piece_base, &run, run_index, cells);
                     } else {
                         cells.push(self.rotated_cell(&segment, piece_base, &mut run, run_index));
@@ -426,7 +441,11 @@ impl<'a> SpanCells<'a> {
         run_index: usize,
     ) -> FlowCell {
         let letter_spacing = self.span.letter_spacing;
-        run.normalize_word_spaces(&segment.text, self.span.font_size);
+        if crate::shapes::text_policy::TextLayoutPolicy::for_language(&self.span.language, false)
+            == crate::shapes::text_policy::TextLayoutPolicy::Japanese
+        {
+            run.normalize_word_spaces(&segment.text, self.span.font_size);
+        }
         let extent = run.spread_glyphs(letter_spacing);
         let run_text = &segment.text[run.utf8_range.clone()];
         let script = FlowScript::Rotated {

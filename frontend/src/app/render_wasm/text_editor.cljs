@@ -610,7 +610,10 @@
   styling is taken from there; a span WASM never saw falls back to its position
   and then to the last existing span.
 
-  exported  vector of paragraphs, each a vector of `{:p 0 :s 0 :t \"text\"}`
+  `:pp` tracks paragraph attrs independently of span styling, including
+  when a merge removes all the surviving paragraph's original characters.
+
+  exported  vector of paragraphs, each a vector of `{:pp 0 :p 0 :s 0 :t \"text\"}`
   content   existing Penpot content map (root -> paragraph-set -> …)"
   [content exported]
   (let [para-set       (first (get content :children))
@@ -621,7 +624,8 @@
 
         styling-para
         (fn [para-idx spans]
-          (or (get orig-paras (get (first spans) :p))
+          (or (get orig-paras (get (first spans) :pp))
+              (get orig-paras (get (first spans) :p))
               (get orig-paras para-idx)
               last-orig-para))
 
