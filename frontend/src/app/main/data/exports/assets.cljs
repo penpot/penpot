@@ -12,17 +12,82 @@
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dwp]
+   [app.main.errors :as errors]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (def default-timeout 5000)
+
+;; Longest wait for the pending changes of the exported files to be saved.
+(def save-wait-timeout-ms 10000)
+
+(defn- export-file-ids
+  [exports]
+  (into #{} (keep :file-id) exports))
+
+(defn- warn-unsaved-changes
+  "Warns that the export may miss the changes of `file-ids` not saved yet."
+  [file-ids]
+  (ptk/reify ::warn-unsaved-changes
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (dwp/unsaved-changes? state file-ids)
+        (rx/of (ntf/show {:content (tr "workspace.export.unsaved-changes")
+                          :type :toast
+                          :level :warning
+                          :timeout 8000}))))))
+
+(defn- export-failed
+  "Shows an export failure as a toast, keeping the workspace open: the
+  failure is never raised to the global error handler, which would
+  replace the workspace with an error page."
+  [cause]
+  (ptk/reify ::export-failed
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (errors/flash :cause cause
+                    :type (if (#{:server-error :internal} (:type (ex-data cause)))
+                            :unhandled
+                            :handled)
+                    :hint (tr "errors.export-failed")))))
+
+(defn- export-widget-failed
+  "Reports a failure that happened before the export ever started: the
+  widget settles instead of waiting for progress that will never arrive,
+  and the toast says what happened. Nothing is raised to the global
+  error handler, which would replace the workspace with an error page."
+  [exports cmd cause]
+  (ptk/reify ::export-widget-failed
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :export {:in-progress false
+                            :widget-visible true
+                            :detail-visible true
+                            :healthy? true
+                            :progress 0
+                            :total (count exports)
+                            :exports exports
+                            :cmd cmd
+                            :error (or (ex-message cause) true)
+                            :error-code (:code (ex-data cause))
+                            :last-update (ct/now)}))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (errors/flash :cause cause
+                    :type (if (#{:server-error :internal} (:type (ex-data cause)))
+                            :unhandled
+                            :handled)
+                    :hint (tr "errors.export-failed")))))
 
 (defn normalize-export
   [{:keys [object-id name] :as export}]
@@ -200,29 +265,6 @@
       (when (= status "ended")
         (dom/trigger-download-uri filename mtype resource-uri)))))
 
-;; The exporter is at capacity. Not a crash: the widget says so and the user
-;; retries, instead of the generic error dialog.
-(def ^:private saturation-codes #{:queue-full})
-
-(defn- export-failed
-  "Reports a failure that happened before the export ever started, so the widget
-  settles instead of waiting for progress that will never arrive."
-  [exports cmd cause]
-  (ptk/reify ::export-failed
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :export {:in-progress false
-                            :widget-visible true
-                            :detail-visible true
-                            :healthy? true
-                            :progress 0
-                            :total (count exports)
-                            :exports exports
-                            :cmd cmd
-                            :error (or (ex-message cause) true)
-                            :error-code (:code (ex-data cause))
-                            :last-update (ct/now)}))))
-
 (defn cancel-export
   "Stops the running export. Only reachable on the job API path, where the
   exporter can actually abort the work.
@@ -295,16 +337,16 @@
                                                             :wait true
                                                             :is-wasm (wasm-export-enabled? state)})]
             (rx/concat
-             (dwp/force-persist-and-wait 400)
+             (dwp/force-persist-files-and-wait (export-file-ids [export]) save-wait-timeout-ms)
+             (rx/of (warn-unsaved-changes (export-file-ids [export])))
 
              (->> (rp/cmd! :export params)
                   (rx/map (fn [{:keys [filename mtype uri]}]
                             (dom/trigger-download-uri filename mtype uri)
                             (clear-export-state uuid/zero)))
                   (rx/catch (fn [cause]
-                              (rx/concat
-                               (rx/of (clear-export-state uuid/zero))
-                               (rx/throw cause))))))))))))
+                              (rx/of (clear-export-state uuid/zero)
+                                     (export-failed cause))))))))))))
 
 (defn request-multiple-export
   [{:keys [exports cmd name]
@@ -315,6 +357,8 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [resource-id (volatile! nil)
+              ;; Emits when the export request fails.
+              failed-s    (rx/subject)
               profile-id  (:profile-id state)
               ws-conn     (:ws-conn state)
               params      (cond->
@@ -332,67 +376,67 @@
                    (rx/map :payload)
                    (rx/filter #(= :export-update (:type %)))
                    (rx/filter #(= @resource-id (:resource-id %)))
+                   (rx/take-until failed-s)
                    (rx/share))
 
               stopper
               (rx/filter #(or (= "ended" (:status %))
                               (= "error" (:status %))
                               (= "cancelled" (:status %)))
-                         progress-stream)]
+                         progress-stream)
+
+              file-ids
+              (export-file-ids exports)]
 
           (swap! st/ongoing-tasks conj :export)
 
-          (rx/merge
-           ;; Force that all data is persisted; best effort.
-           (rx/of ::dwp/force-persist)
+          (rx/concat
+           (dwp/force-persist-files-and-wait file-ids save-wait-timeout-ms)
+           (rx/of (warn-unsaved-changes file-ids))
+           (rx/merge
+            ;; Updates the export state with each progress message, until
+            ;; shortly after the export ends or fails.
+            (->> progress-stream
+                 (rx/map update-export-status)
+                 (rx/take-until (rx/delay 500 stopper))
+                 (rx/finalize (fn []
+                                (swap! st/ongoing-tasks disj :export))))
 
-           ;; Launch the exportation process and stores the resource id
-           ;; locally. With wasm export active the job API is used instead: it
-           ;; answers with the exporter's own object count and gives a handle
-           ;; to cancel.
-           (->> (if (wasm-export-enabled? state)
-                  (->> (rp/cmd! :create-export-job params)
-                       (rx/map (fn [{job-id :id :keys [total] :as job}]
-                                 (vreset! resource-id (:resource-id job))
-                                 (initialize-export-status exports cmd
-                                                           {:id (:resource-id job)}
-                                                           {:job-id job-id
-                                                            :total total
-                                                            :status (:state job)
-                                                            :backend (:backend job)}))))
-                  (->> (rp/cmd! :export params)
-                       (rx/map (fn [{:keys [id] :as resource}]
-                                 (vreset! resource-id id)
-                                 (initialize-export-status exports cmd resource nil)))))
-                (rx/catch (fn [cause]
-                            ;; Saturation is an answer, not a fault.
-                            (if (contains? saturation-codes (:code (ex-data cause)))
-                              (rx/of (export-failed exports cmd cause))
-                              (rx/concat
-                               (rx/of (export-failed exports cmd cause))
-                               (rx/throw cause))))))
+            ;; Clears the export state a while after the export ends or is
+            ;; cancelled.
+            (->> progress-stream
+                 (rx/filter #(or (= "ended" (:status %))
+                                 (= "cancelled" (:status %))))
+                 (rx/take 1)
+                 (rx/delay default-timeout)
+                 (rx/map #(clear-export-state @resource-id))
+                 (rx/take-until (rx/delay 6000 stopper)))
 
-           ;; We proceed to update the export state with incoming
-           ;; progress updates. We delay the stopper for give some time
-           ;; to update the status with ended or errored status before
-           ;; close the stream.
-           (->> progress-stream
-                (rx/map update-export-status)
-                (rx/take-until (rx/delay 500 stopper))
-                (rx/finalize (fn []
-                               (swap! st/ongoing-tasks disj :export))))
-
-           ;; We hide need to hide the ui elements of the export after
-           ;; some interval. We also delay a little bit more the stopper
-           ;; for ensure that after some security time, the stream is
-           ;; completely closed.
-           (->> progress-stream
-                (rx/filter #(or (= "ended" (:status %))
-                                (= "cancelled" (:status %))))
-                (rx/take 1)
-                (rx/delay default-timeout)
-                (rx/map #(clear-export-state @resource-id))
-                (rx/take-until (rx/delay 6000 stopper)))))))))
+            ;; Launches the exportation process and stores the resource id
+            ;; locally. With wasm export active the job API is used instead:
+            ;; it answers with the exporter's own object count and gives a
+            ;; handle to cancel. It goes last so a failure reaches the
+            ;; progress listeners above: the push to `failed-s` releases the
+            ;; leave-page warning even though no progress message will ever
+            ;; arrive, and nothing is raised to the global error handler,
+            ;; which would replace the workspace with an error page.
+            (->> (if (wasm-export-enabled? state)
+                   (->> (rp/cmd! :create-export-job params)
+                        (rx/map (fn [{job-id :id :keys [total] :as job}]
+                                  (vreset! resource-id (:resource-id job))
+                                  (initialize-export-status exports cmd
+                                                            {:id (:resource-id job)}
+                                                            {:job-id job-id
+                                                             :total total
+                                                             :status (:state job)
+                                                             :backend (:backend job)}))))
+                   (->> (rp/cmd! :export params)
+                        (rx/map (fn [{:keys [id] :as resource}]
+                                  (vreset! resource-id id)
+                                  (initialize-export-status exports cmd resource nil)))))
+                 (rx/catch (fn [cause]
+                             (rx/push! failed-s cause)
+                             (rx/of (export-widget-failed exports cmd cause))))))))))))
 
 (defn request-export
   [{:keys [exports] :as params}]

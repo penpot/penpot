@@ -21,10 +21,12 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.persistence :as dps]
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as dw]
    [app.main.errors :as errors]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :as i18n]
@@ -32,6 +34,7 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
+   [okulary.core :as l]
    [potok.v2.core :as ptk]))
 
 (t/deftest reopening-restores-only-the-retained-edits-of-the-loaded-file
@@ -693,6 +696,19 @@
   (t/is (not (dps/transient-error? {:type :persistence :code :save-permission-denied})))
   (t/is (not (dps/transient-error? {}))))
 
+;; A busy backend refused or rolled back the save, so it is safe to resend:
+;; a rate or concurrency limit, or a database timeout. Any other server
+;; error stays terminal.
+(t/deftest busy-server-classification
+  (t/is (dps/transient-error? {:type :rate-limit}))
+  (t/is (dps/transient-error? {:type :persistence :cause-type :rate-limit :code :rate-limited}))
+  (t/is (dps/transient-error? {:type :server-error :code :statement-timeout}))
+  (t/is (dps/transient-error? {:type :persistence :cause-type :server-error :code :statement-timeout}))
+  (t/is (dps/transient-error? {:type :persistence :cause-type :server-error :code :idle-in-transaction-timeout}))
+  (t/is (not (dps/transient-error? {:type :server-error})))
+  (t/is (not (dps/transient-error? {:type :persistence :cause-type :server-error :code :unhandled})))
+  (t/is (not (dps/transient-error? {:type :persistence :cause-type :validation :code :statement-timeout}))))
+
 ;; The transient set is owned by `repo/retryable-types`: every transport
 ;; type retryable at the HTTP layer must also be transient for the save
 ;; pipeline, in both the direct and the wrapped (`persistence-failed`)
@@ -988,3 +1004,135 @@
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the release turns the guard off"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
+
+;; Scenario: an edit waits in the 3 s buffer and the user switches tabs or
+;; windows. Proves: leaving sends the buffered edit at once, well before
+;; the buffer would (the bounded `wait-for` gives up long before 3 s).
+(t/deftest ^:async leaving-the-tab-sends-buffered-edits-at-once
+  (let [leave-s (rx/subject)]
+    (await
+     (mock/with-mocks*
+       {dps/leave-signals (fn [] leave-s)}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [file-id requests store]}]
+            (ptk/emit! store (local-commit file-id))
+            (await (async/settle))
+            (t/is (empty? @requests) "the edit waits in the buffer")
+            (rx/push! leave-s :hidden)
+            (await (async/wait-for #(= 1 (count @requests))
+                                   "leaving sends the edit at once"))
+            (t/is (= 1 (count @requests))))))))))
+
+;; Scenario: nothing is buffered when the user leaves. Proves: a leave
+;; signal alone sends nothing.
+(t/deftest ^:async leaving-with-nothing-buffered-sends-nothing
+  (let [leave-s (rx/subject)]
+    (await
+     (mock/with-mocks*
+       {dps/leave-signals (fn [] leave-s)}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [requests store]}]
+            (rx/push! leave-s :hidden)
+            (await (async/settle))
+            (t/is (empty? @requests))
+            (t/is (nil? (get-in @store [:persistence :status]))))))))))
+
+(defn- wait-files-saved
+  "Emits into `store` an event that runs `force-persist-files-and-wait` for
+  `file-ids` and then flips `done`."
+  [store file-ids timeout-ms done]
+  (ptk/emit! store
+             (ptk/reify ::wait-files-saved
+               ptk/WatchEvent
+               (watch [_ _ _]
+                 (rx/concat
+                  (dps/force-persist-files-and-wait file-ids timeout-ms)
+                  (rx/of (ptk/reify ::files-saved
+                           ptk/EffectEvent
+                           (effect [_ _ _] (reset! done true)))))))))
+
+;; Scenario: an edit waits in the buffer when an export asks for its file
+;; to be saved. Proves: the wait sends the edit and only ends once the save
+;; lands.
+(t/deftest ^:async waiting-for-a-file-sends-and-waits-for-its-edits
+  (let [done (atom false)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id response requests store]}]
+         (await
+          (mock/with-mocks*
+            {refs/persistence (l/derived :persistence store)}
+            (ptk/emit! store (local-commit file-id))
+            (wait-files-saved store #{file-id} 60000 done)
+            (await (async/wait-for #(= 1 (count @requests)) "the edit is sent at once"))
+            (await (async/settle))
+            (t/is (false? @done) "the wait holds while the save is in flight")
+            (rx/push! response {:revn 1})
+            (await (async/wait-for #(true? @done) "the landed save ends the wait"))
+            (t/is (not (dps/unsaved-changes? @store #{file-id}))))))))))
+
+;; Scenario: a save of one file hangs while another file is exported.
+;; Proves: the wait only covers the exported files.
+(t/deftest ^:async waiting-for-a-file-ignores-other-files
+  (let [done (atom false)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {refs/persistence (l/derived :persistence store)}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @requests)) "the other file's save hangs"))
+            (wait-files-saved store #{(uuid/next)} 60000 done)
+            (await (async/wait-for #(true? @done) "the wait ends at once")))))))))
+
+;; Scenario: the file's save hangs past the wait. Proves: the wait gives up
+;; without raising, and the file still reports unsaved changes.
+(t/deftest ^:async waiting-for-a-file-gives-up-after-the-timeout
+  (let [done (atom false)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {refs/persistence (l/derived :persistence store)}
+            (ptk/emit! store (local-commit file-id))
+            (wait-files-saved store #{file-id} 1 done)
+            (await (async/wait-for #(true? @done) "the wait times out"))
+            (t/is (= 1 (count @requests)))
+            (t/is (dps/unsaved-changes? @store #{file-id})))))))))
+
+(defn- save-failed-events
+  "Starts collecting the `save-failed` audit events that `store` processes."
+  [store]
+  (let [events (atom [])]
+    (->> (ptk/input-stream store)
+         (rx/filter #(= ::ev/event (ptk/type %)))
+         (rx/map deref)
+         (rx/filter #(= "save-failed" (::ev/name %)))
+         (rx/subs! #(swap! events conj %)))
+    events))
+
+;; Scenario: the backend rejects a save as invalid data. Proves: the user's
+;; failure toast comes with one `save-failed` audit event that records why.
+(t/deftest ^:async a-failed-save-emits-one-save-failed-event
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (let [events (save-failed-events store)]
+         (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+         (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                "the save fails"))
+         (await (async/wait-for #(seq @events) "the event is emitted"))
+         (await (async/settle))
+         (t/is (= 1 (count @events)))
+         (t/is (= {:cause-type :validation
+                   :code :referential-integrity
+                   :retrying false
+                   :queued-commits 1}
+                  (select-keys (first @events)
+                               [:cause-type :code :retrying :queued-commits])))))
+     (fn [_ _]
+       (rx/throw (ex-info "invalid" {:type :validation :code :referential-integrity}))))))

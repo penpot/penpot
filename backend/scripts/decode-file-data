@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Decode a file_data blob (app.util.blob) to JSON for inspection with jq.
+#
+# Offline use (no DB):
+#   backend/scripts/decode-file-data --input /tmp/blob.bin --format summary | jq .
+#
+# DB use (backend running, via nREPL):
+#   ./scripts/nrepl-eval.mjs "(require '[app.scripts.decode-file-data :as dfd] :reload)"
+#   ./scripts/nrepl-eval.mjs '(dfd/get-file-json sys/system #uuid "..." :format :summary)'
+
+SCRIPT_DIR=$(dirname "$0")
+
+source "$SCRIPT_DIR/_env"
+
+if [ -f "$SCRIPT_DIR/_env.local" ]; then
+    source "$SCRIPT_DIR/_env.local"
+fi
+
+exec clojure -M:dev -m app.scripts.decode-file-data "$@"

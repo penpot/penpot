@@ -13,6 +13,7 @@
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.event-test]
    [frontend-tests.data.exports-assets-test]
+   [frontend-tests.data.exports-files-test]
    [frontend-tests.data.fix-deleted-fonts-test]
    [frontend-tests.data.modal-test]
    [frontend-tests.data.nitrate-test]
@@ -166,6 +167,7 @@
    'frontend-tests.data.repo-test
    'frontend-tests.data.store-test
    'frontend-tests.data.exports-assets-test
+   'frontend-tests.data.exports-files-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test

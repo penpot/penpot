@@ -39,6 +39,10 @@
   max-block-size: calc(10 * px2rem(80));
 }
 
+.unsaved-warning {
+  margin-block-end: var(--sp-xxl);
+}
+
 .modal-content {
   display: flex;
   flex-direction: column;

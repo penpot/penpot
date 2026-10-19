@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as-alias dc]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
@@ -108,6 +109,30 @@
   ([timeout-ms]
    (rx/concat (rx/of ::force-persist) (wait-persisted timeout-ms))))
 
+(defn- files-queued?
+  "True when the queue in `pstate` still holds changes of any of `file-ids`."
+  [{:keys [queue index]} file-ids]
+  (boolean (some #(contains? file-ids (get-in index [% :file-id])) queue)))
+
+(defn unsaved-changes?
+  "True when any of `file-ids` has changes the server does not have yet."
+  [state file-ids]
+  (files-queued? (:persistence state) file-ids))
+
+(defn force-persist-files-and-wait
+  "Sends the pending changes and waits until no change of `file-ids` is
+  queued, saving fails, or `timeout-ms` passes. Never raises; check
+  `unsaved-changes?` afterwards."
+  [file-ids timeout-ms]
+  (rx/concat
+   (rx/of ::force-persist)
+   (->> (rx/from-atom refs/persistence {:emit-current-value? true})
+        (rx/filter #(or (= :error (:status %))
+                        (not (files-queued? % file-ids))))
+        (rx/take 1)
+        (rx/ignore)
+        (rx/timeout timeout-ms (rx/empty)))))
+
 (defn- next-status
   "Refuses downgrades: a save in progress stays :saving, a failed save
   stays :error until persistence is resumed, and a retrying episode stays
@@ -138,17 +163,31 @@
                     (#{:error :saved} status)
                     (dissoc :run-id :last-progress-at :stall-reported))))))))
 
+(def ^:private busy-server-codes
+  "Server error codes for a database timeout that rolled the save back."
+  #{:statement-timeout :idle-in-transaction-timeout})
+
+(defn- busy-server-error?
+  "True when the backend was too busy to apply the save: it refused it
+  (429) or a database timeout rolled it back. Resending it is safe."
+  [{:keys [type cause-type code]}]
+  (let [type (or cause-type type)]
+    (or (= :rate-limit type)
+        (and (= :server-error type)
+             (contains? busy-server-codes code)))))
+
 (defn transient-error?
   "True when a save failure is worth retrying with backoff: a transient
   transport failure (from the shared `repo/retryable-types` set, which says
-  nothing about the edits themselves) or an unusable save response.
-  Everything else (auth, validation, state) is terminal and keeps the
-  `:error` path. Checked against both `:type` and `:cause-type` because
+  nothing about the edits themselves), a busy backend, or an unusable save
+  response. Everything else (auth, validation, state) is terminal and keeps
+  the `:error` path. Checked against both `:type` and `:cause-type` because
   `persistence-failed` wraps the original cause under `:type :persistence`."
-  [{:keys [type cause-type code]}]
+  [{:keys [type cause-type code] :as error}]
   (boolean
    (or (contains? rp/retryable-types type)
        (contains? rp/retryable-types cause-type)
+       (busy-server-error? error)
        (= :invalid-save-response code))))
 
 (def ^:private retry-delays-ms
@@ -299,6 +338,23 @@
             (update :queue #(into (empty %) (remove dropped) %))
             (update :index #(apply dissoc % dropped)))))))
 
+(defn- notify-failure?
+  "False for a failed attempt of the slow cycle: it repeats a failure the
+  user was already told about."
+  [pstate]
+  (not (and (:recovering pstate)
+            (slow-retry-pending? pstate))))
+
+(defn- save-failed-event
+  "Audit event for a save failure the user is told about, so failed saves
+  can be counted."
+  [{:keys [error queue] :as pstate}]
+  (ev/event {::ev/name "save-failed"
+             :cause-type (:cause-type error)
+             :code (:code error)
+             :retrying (slow-retry-pending? pstate)
+             :queued-commits (count queue)}))
+
 (defn- persistence-failed
   [commit-id cause]
   (ptk/reify ::persistence-failed
@@ -322,14 +378,16 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/merge
-       ;; The terminal toast supersedes the reconnect notice; hide it
-       ;; explicitly instead of relying on the single-toast replacement.
-       (rx/of (ptk/data-event ::error cause)
-              (ntf/hide :tag reconnecting-tag))
-       ;; A transport failure that outlasts the backoff can still pass, so
-       ;; the queue keeps trying at a slow pace.
-       (let [pstate (:persistence state)]
+      (let [pstate (:persistence state)]
+        (rx/merge
+         ;; The terminal toast replaces the reconnect notice, hidden by tag.
+         (rx/of (ptk/data-event ::error cause)
+                (ntf/hide :tag reconnecting-tag))
+         (if (notify-failure? pstate)
+           (rx/of (save-failed-event pstate))
+           (rx/empty))
+         ;; A transport failure that outlasts the backoff can still pass, so
+         ;; the queue keeps trying at a slow pace.
          (if (and (not (:suspended pstate))
                   (slow-retry-pending? pstate))
            (slow-retry-cycle stream)
@@ -337,13 +395,10 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      ;; A failed slow attempt repeats a failure the user was already warned
-      ;; about. Report without invoking global handlers that may reload the
-      ;; file or navigate away before the user can recover the retained
-      ;; changes.
+      ;; Notifies without the global handlers, which may reload the file or
+      ;; navigate away and lose the retained changes.
       (let [pstate (:persistence state)]
-        (when-not (and (:recovering pstate)
-                       (slow-retry-pending? pstate))
+        (when (notify-failure? pstate)
           (errors/flash-persistence cause :retrying (slow-retry-pending? pstate)))))))
 
 (defn- persistence-transient-failure
@@ -783,6 +838,17 @@
         (swap! st/ongoing-tasks conj :persistence)
         (swap! st/ongoing-tasks disj :persistence)))))
 
+(defn leave-signals
+  "Emits when the tab is hidden or the window loses focus: another tab or
+  app, a plugin iframe, a closed laptop. Empty outside the browser."
+  []
+  (if (and (exists? js/window) (exists? js/document))
+    (rx/merge
+     (->> (rx/from-event js/document "visibilitychange")
+          (rx/filter #(= "hidden" (.-visibilityState js/document))))
+     (rx/from-event js/window "blur"))
+    (rx/empty)))
+
 (defn initialize-persistence
   []
   (ptk/reify ::initialize-persistence
@@ -839,6 +905,12 @@
 
          (->> notifier-s
               (rx/map #(ptk/data-event ::persistence-notification))
+              (rx/take-until stoper-s))
+
+         ;; Sends the buffered edits when the user leaves the tab or window.
+         (->> (leave-signals)
+              (rx/filter (fn [_] @buffered?))
+              (rx/map (fn [_] ::force-persist))
               (rx/take-until stoper-s))
 
          ;; Syncs the leave-page warning on every local commit and on every

@@ -199,6 +199,68 @@
 (t/deftest ^:async cloudflare-origin-timeout-save-is-retried
   (await (check-gateway-response-retries 524)))
 
+(defn- check-busy-server-response-retries
+  "Answers the first send with `response`, a refusal the backend wrote
+  because it was busy, built by the real `rp/handle-response`, and the retry
+  with a valid revision. The save was never applied, so it must take the
+  retry path and land, never halt in `:error`."
+  [response]
+  (let [calls (atom 0)]
+    (with-persistence
+      (^:async fn [{:keys [file-id failures requests store]}]
+        (await
+         (mock/with-mocks*
+           {rx/timer (mock/stub instant-backoff)}
+           (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+           (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                        (empty? (get-in @store [:persistence :queue])))
+                                  (str "a busy " (:status response) " is retried and the save lands")))
+           (t/is (= 2 (count @requests)) "the busy answer plus one retry")
+           (t/is (empty? @failures) "a retried busy answer never reaches the failure toast"))))
+      (fn [_ _]
+        (if (= 1 (swap! calls inc))
+          (rp/handle-response (assoc response :uri "https://penpot.example.com/api/main/methods/update-file"))
+          (rx/of {:revn 1}))))))
+
+;; Variant: the save waited too long for a concurrency slot (no body).
+(t/deftest ^:async concurrency-limit-save-is-retried
+  (await (check-busy-server-response-retries {:status 429 :body nil})))
+
+;; Variant: the database cancelled the save while it waited for the file lock.
+(t/deftest ^:async statement-timeout-save-is-retried
+  (await (check-busy-server-response-retries
+          {:status 504
+           :body {:type :server-error
+                  :code :statement-timeout
+                  :hint "The operation took too long and was cancelled"}})))
+
+;; Variant: the database ended the save's transaction after it sat idle.
+(t/deftest ^:async idle-transaction-timeout-save-is-retried
+  (await (check-busy-server-response-retries
+          {:status 504
+           :body {:type :server-error
+                  :code :idle-in-transaction-timeout
+                  :hint "The transaction was idle too long and was cancelled"}})))
+
+;; Scenario: the backend fails the save for any other reason. Proves: only
+;; the busy-server codes retry; a server defect stops saving at once.
+(t/deftest ^:async other-server-errors-stay-terminal
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests store]}]
+       (await
+        (mock/with-mocks*
+          {rx/timer (mock/stub instant-backoff)}
+          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+          (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                 "the save fails"))
+          (t/is (= :server-error (get-in @store [:persistence :error :cause-type])))
+          (t/is (= 1 (count @requests)) "no retry"))))
+     (fn [_ _]
+       (rp/handle-response {:status 500
+                            :body {:type :server-error :code :unhandled}
+                            :uri "https://penpot.example.com/api/main/methods/update-file"})))))
+
 ;; Scenario: every send fails transiently. The 2s / 8s / 20s retries fire
 ;; and then the failure falls through to the exact terminal path: `:error`
 ;; carrying the cause, queue intact, one flash. Proves: the budget bounds

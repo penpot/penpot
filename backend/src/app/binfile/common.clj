@@ -708,16 +708,28 @@
                             library-ids)]
     (absorb-unlinked-tokens-source cfg data library-ids)))
 
-(def ^:const import-transaction-timeout-ms
-  "Ceiling for binfile import transactions (20 minutes). Interpolated
-  directly into SQL: compile-time constant, never user input."
-  (* 20 60 1000))
+(def transaction-idle-timeout-ms
+  "Idle-in-transaction guard for the long binfile transactions: 30
+  minutes. The import and the export of a file run inside one
+  transaction that can go quiet while the ZIP is decoded and the file
+  data is realized. The longest operation observed in production is
+  under 8 minutes, so this leaves room for bigger files and still
+  aborts a connection that is left idle for half an hour."
+  1800000)
 
-(defn configure-database-timeouts!
+(defn set-transaction-idle-timeout
+  "Set `idle_in_transaction_session_timeout` for the current
+  transaction. Must be called inside a transaction: `SET LOCAL` is
+  scoped to it."
   [cfg]
   (let [conn (db/get-connection cfg)]
     (db/exec-one! conn [(str "SET LOCAL idle_in_transaction_session_timeout = "
-                             import-transaction-timeout-ms)])
+                             transaction-idle-timeout-ms)])))
+
+(defn configure-import-transaction
+  [cfg]
+  (set-transaction-idle-timeout cfg)
+  (let [conn (db/get-connection cfg)]
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
 (defn process-file
