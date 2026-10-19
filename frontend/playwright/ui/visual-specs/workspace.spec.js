@@ -133,6 +133,50 @@ test.describe("Design tab", () => {
       threshold: 0,
     });
   });
+
+  test("Shows the margin modes of a flex layout element", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-7760.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-7760.json",
+    );
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-create-rect.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "cd90e028-326a-80b4-8004-7cdec16ffad5",
+      pageId: "cd90e028-326a-80b4-8004-7cdec16ffad6",
+    });
+
+    await workspace.clickToggableLayer("Flex Board");
+    await workspace.clickLeafLayer("Rectangle");
+
+    const section = workspace.rightSidebar.getByRole("region", {
+      name: "Layout item section",
+    });
+    const marginMode = section.getByRole("button", {
+      name: "Margin - multiple",
+    });
+    await expect(marginMode).toBeVisible();
+    // The margin button is a small part of the section: compare every pixel.
+    await expect(section).toHaveScreenshot("margin-simple.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await marginMode.click();
+    await marginMode.blur();
+    await page.mouse.move(0, 0);
+    await expect(section.getByRole("textbox", { name: "Top margin" }))
+      .toBeVisible();
+    await expect(section).toHaveScreenshot("margin-multiple.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
 });
 
 test.describe("Assets tab", () => {
