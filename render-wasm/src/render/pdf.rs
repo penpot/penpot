@@ -24,15 +24,9 @@ pub fn render_to_pdf(
     let shape = tree
         .get(id)
         .ok_or_else(|| crate::error::Error::CriticalError("Shape not found for PDF".to_string()))?;
-    // Boards export at their own bounds (like the classic exporter, which
-    // screenshots exactly the board box): content overflowing a board lands
-    // outside the page/surface and is cropped. Other shapes keep the extended
-    // rect so their own shadows/blur are included.
-    let bounds = if matches!(shape.shape_type, crate::shapes::Type::Frame(_)) {
-        shape.selrect()
-    } else {
-        shape.extrect(tree, scale)
-    };
+    // Boards crop overflowing children (classic board box) but keep their own
+    // strokes/shadows/blur. Other shapes use full extrect.
+    let bounds = shape.export_root_bounds(tree, scale);
 
     let page_w = bounds.width() * scale;
     let page_h = bounds.height() * scale;
