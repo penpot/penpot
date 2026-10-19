@@ -8,6 +8,16 @@ use macros::ToJs;
 use super::vector;
 use super::RenderResources;
 
+/// Half the default 2 GiB emscripten heap (a 16384² RGBA surface), leaving
+/// room for the encoded copies and the scene. Estimated, not measured.
+const MAX_RASTER_BYTES: i64 = 1 << 30;
+/// PNG stores each side in 31 bits; the memory budget limits it first.
+const MAX_PNG_SIDE: i32 = i32::MAX;
+/// libjpeg-turbo's `JPEG_MAX_DIMENSION`, below the 16-bit JPEG header limit.
+const MAX_JPEG_SIDE: i32 = 65500;
+/// libwebp's `WEBP_MAX_DIMENSION`: WebP stores each side in 14 bits.
+const MAX_WEBP_SIDE: i32 = 16383;
+
 /// Encoded output format for [`render_to_raster`] and `render_shape_pixels`.
 /// `ToJs` publishes the discriminants to `api/shared.js`, so the CLJS side
 /// reads them from here instead of hardcoding the codes.
@@ -64,6 +74,17 @@ impl RasterFormat {
     /// Colour to clear a fresh export surface with.
     pub fn clear_color(self) -> skia::Color {
         self.opaque_background().unwrap_or(skia::Color::TRANSPARENT)
+    }
+
+    pub fn fits_raster(self, width: i32, height: i32) -> bool {
+        let max_side = match self {
+            Self::Png => MAX_PNG_SIDE,
+            Self::Jpeg => MAX_JPEG_SIDE,
+            Self::Webp => MAX_WEBP_SIDE,
+        };
+        width <= max_side
+            && height <= max_side
+            && width as i64 * height as i64 * 4 <= MAX_RASTER_BYTES
     }
 }
 

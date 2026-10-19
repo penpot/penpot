@@ -18,6 +18,7 @@
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.websocket :as ws]
@@ -300,11 +301,18 @@
   [state]
   (features/active-feature? state "render-wasm/v1"))
 
-(defn- use-wasm-export?
-  "Whether to take the client-side WASM export path for `export`."
-  [state export]
-  (and (wasm-export-enabled? state)
-       (contains? wasm-export-types (:type export))))
+(defn- export-target
+  [state {:keys [type object-id scale]}]
+  (cond
+    (not (and (wasm-export-enabled? state)
+              (contains? wasm-export-types type)))
+    :exporter
+
+    (contains? #{:pdf :svg} type)
+    :client
+
+    :else
+    (or (wasm.api/export-target object-id (or scale 1) type) :exporter)))
 
 (defn- request-simple-export-wasm
   [export]
@@ -318,18 +326,25 @@
 
 (defn request-simple-export
   [{:keys [export]}]
-  (let [export (normalize-export export)]
+  (let [export (normalize-export export)
+        target (volatile! nil)]
     (ptk/reify ::request-simple-export
       ptk/UpdateEvent
       (update [_ state]
+        (vreset! target (export-target state export))
         (cond-> state
-          (not (use-wasm-export? state export))
+          (= :exporter @target)
           (update :export assoc :in-progress true :id uuid/zero)))
 
       ptk/WatchEvent
       (watch [_ state _]
-        (if (use-wasm-export? state export)
+        (case @target
+          :client
           (rx/of (request-simple-export-wasm export))
+
+          :too-large
+          (rx/of (ntf/error (tr "errors.export-too-large")))
+
           (let [profile-id (:profile-id state)
                 params     (normalize-export-shapes-params {:exports [export]
                                                             :profile-id profile-id

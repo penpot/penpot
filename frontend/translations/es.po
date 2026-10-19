@@ -1596,6 +1596,10 @@ msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 msgid "errors.export-failed"
 msgstr "La exportación ha fallado. Inténtalo de nuevo en un momento."
 
+#: src/app/main/data/exports/assets.cljs:346
+msgid "errors.export-too-large"
+msgstr "El archivo es demasiado grande, prueba con otra escala"
+
 #: src/app/main/errors.cljs:974
 msgid "errors.feature-mismatch"
 msgstr ""
