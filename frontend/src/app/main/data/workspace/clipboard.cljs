@@ -68,19 +68,18 @@
    [promesa.core :as p]))
 
 (defn- advance-shape
-  [file libraries page level-delta first-shape-id objects shape]
+  [file libraries page level-delta head-id objects shape]
   (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
         container     (ctn/make-container page :page)
-        new-touched   (when (not= (:id shape) first-shape-id)
-                        (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref false))]
+        ;; The head becomes a root copy, which cannot carry a swap slot, so
+        ;; strip inherited slots only for it. Nested sub-heads keep them so
+        ;; they still pair with the children of the new near main.
+        head?         (= (:id shape) head-id)
+        new-touched   (ctf/get-touched-from-ref-chain-until-target-ref
+                       container libraries shape new-shape-ref :remove-slots? head?)]
     (cond-> objects
       (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-      (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
-          (cond->
-           (some? new-touched)
-            (assoc-in [(:id shape) :touched] new-touched)
-            (nil? new-touched)
-            (d/dissoc-in [(:id shape) :touched]))))))
+      (update (:id shape) assoc :shape-ref new-shape-ref :touched new-touched))))
 
 (defn- advance-copy
   [file libraries page objects shape]

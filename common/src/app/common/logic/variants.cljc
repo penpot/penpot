@@ -141,7 +141,7 @@
   "Adds to the :touched attr of a shape the content of
    the :touched of all its chain of ref shapes"
   [container libraries shape]
-  (let [new-touched (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape nil true)]
+  (let [new-touched (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape nil)]
     (assoc shape :touched new-touched)))
 
 (defn generate-keep-touched

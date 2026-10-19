@@ -943,3 +943,77 @@
 
            ;; the file must be valid after the paste
            (t/is (nil? errors))))))))
+
+(t/deftest test-keep-touched-copy-paste-nested-copy-to-root
+  (t/async
+    done
+    (let [;; ==== Setup
+          ;; Add a nested copy inside a copy of :green, and override its fill
+          ;; so that the copy has a touched attribute.
+          file     (-> (setup-file)
+                       (cthc/instantiate-component :green :green-copy-2
+                                                   :parent-label :frame-b2
+                                                   :children-labels [:red-copy-in-green-copy-2])
+                       (cths/update-shape :red-copy-in-green-copy-2
+                                          :fills (cths/sample-fills-color :fill-color "#ff0000")))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          red      (cths/get-shape file :red-copy-in-green-copy-2)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id red)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'       (ths/get-file-from-state new-state)
+               page'       (cthf/current-page file')
+               red'        (cths/get-shape file' :red-copy-in-green-copy-2)
+               copied-red' (find-copied-shape red' page' uuid/zero)]
+
+           ;; ==== Check
+           ;; the touched fill override must be preserved in the pasted copy
+           (t/is (some? copied-red'))
+           (t/is (contains? (:touched copied-red') :fill-group))
+           (t/is (= (:touched red') (:touched copied-red')))))))))
+
+(t/deftest test-remove-swap-slot-copy-paste-nested-swapped-copy-to-root
+  (t/async
+    done
+    (let [;; ==== Setup (sample file as is)
+          file     (setup-file)
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          blue     (cths/get-shape file :blue-copy-in-green-copy)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id blue)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'         (ths/get-file-from-state new-state)
+               page'         (cthf/current-page file')
+               blue'         (cths/get-shape file' :blue-copy-in-green-copy)
+               copied-blue'  (find-copied-shape blue' page' uuid/zero)]
+
+           ;; ==== Check
+           ;; the copied blue has no swap-id
+           (t/is (some? copied-blue'))
+           (t/is (nil? (ctk/get-swap-slot copied-blue')))))))))
