@@ -117,18 +117,6 @@
               (assoc :source "telemetry:frontend"))))
    (map event->row)))
 
-(defn- insert-pendings-for-rows
-  "Every ingested record is born pending for every enabled archiver,
-  in the same transaction as its row (see archive-task)."
-  [tx rows]
-  (let [archivers (archive/enabled-archivers)]
-    (when (seq archivers)
-      (db/insert-many! tx :audit-log-pending
-                       [:audit-log-id :archiver]
-                       (for [row rows
-                             archiver archivers]
-                         [(first row) archiver])))))
-
 (defn- record-ingested
   [metrics kind outcome amount]
   (when (pos? amount)
@@ -138,7 +126,9 @@
   [tx rows]
   (when (seq rows)
     (db/insert-many! tx :audit-log event-columns rows)
-    (insert-pendings-for-rows tx rows)))
+    ;; Same transaction as the rows: every ingested record is born
+    ;; pending for every enabled archiver (see archive-task).
+    (archive/queue-pendings tx (map first rows))))
 
 (defn- handle-events
   [{:keys [::db/pool] :as cfg} params]

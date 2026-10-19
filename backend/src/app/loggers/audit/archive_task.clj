@@ -28,7 +28,7 @@
 ;;
 ;; Two separate jobs share this namespace and the queue helpers, one
 ;; per destination: `:audit-log-archive-nexus` and
-;; `:audit-log-archive-nitrate`. Each job drains only its own queue
+;; `:audit-log-archive-admin-console`. Each job drains only its own queue
 ;; and deletes its pendings on completion; whoever deletes the last
 ;; pending also deletes the record ("last one out turns off the
 ;; light"), so no separate GC task is needed. Housekeeping (reaping
@@ -39,11 +39,11 @@
 ;; pendings are reaped by id, so a reused id would inherit the
 ;; previous owner's queue.
 (def archiver-nexus 1)
-(def archiver-nitrate 2)
+(def archiver-admin-console 2)
 
 (def ^:private archivers
-  [{:id archiver-nexus   :flag :nexus         :label "nexus"}
-   {:id archiver-nitrate :flag :admin-console :label "nitrate"}])
+  [{:id archiver-nexus          :flag :nexus         :label "nexus"}
+   {:id archiver-admin-console :flag :admin-console :label "admin-console"}])
 
 (def ^:private xf:enabled-archivers
   "Static transducer: keep the archivers whose send flag is on.
@@ -58,17 +58,20 @@
   []
   (into [] xf:enabled-archivers archivers))
 
-(defn insert-pendings
-  "Queue a record for every enabled archiver, nothing when none is
-  on. One multi-row statement instead of one per archiver: this runs
-  inside every audited RPC. Runs inside the row transaction: a
-  rollback takes both."
-  [cfg id]
+(defn queue-pendings
+  "Queue records for every enabled archiver, nothing when there is
+  nothing to queue or no archiver is on. One multi-row statement for
+  all ids instead of one per archiver: this runs inside every audited
+  RPC and the bulk frontend ingest. Runs inside the row transaction:
+  a rollback takes both."
+  [cfg ids]
   (let [archivers (enabled-archivers)]
-    (when (seq archivers)
+    (when (and (seq ids) (seq archivers))
       (db/insert-many! cfg :audit-log-pending
                        [:audit-log-id :archiver]
-                       (map (fn [archiver] [id archiver]) archivers)
+                       (for [id ids
+                             archiver archivers]
+                         [id archiver])
                        {::sql/on-conflict-do-nothing true}))))
 
 (def ^:private archiver-labels
@@ -193,7 +196,7 @@
                        :resp-body (truncate-body (:body resp) 500)
                        :events n)))))
 
-(def ^:private event-names-for-nitrate
+(def ^:private event-names-for-admin-console
   #{"accept-organization-invitation"
     "accept-team-invitation"
     "accept-team-invitation-from"
@@ -241,7 +244,7 @@
     "update-team-photo"
     "verify-token"})
 
-;; Props id key -> email prop filled from profile.email (nitrate path only).
+;; Props id key -> email prop filled from profile.email (admin-console path only).
 ;; Some producers store ids as UUID strings (e.g. :user-who-send-invitation).
 (def ^:private id->email-prop
   {:profile-id                 :profile-email
@@ -307,8 +310,8 @@
                        props
                        id->email-prop))))
 
-(defn- enrich-events-for-nitrate
-  "Enrich allowlisted events before nitrate ingest:
+(defn- enrich-events-for-admin-console
+  "Enrich allowlisted events before the admin-console ingest:
   1. Fill missing :team-name from team id (including soft-deleted).
   2. Fill missing emails from matching id keys (including soft-deleted
      profiles): :profile-email, :user-email, :member-email,
@@ -324,28 +327,46 @@
                 (maybe-assoc-emails emails)))
           events)))
 
-(defn- send-to-nitrate
-  "Ingest rows into Nitrate. Returns {:sent :skipped} (filtered-out
-  rows count as processed for the queue); throws carrying the
-  attempted count as :events, like send-to-nexus. Enrich failures
-  propagate untouched: a local DB/decode failure is ours, not
-  nitrate's, and must not count as a send failure."
+(defn- send-to-admin-console
+  "Ingest rows into the admin console. Returns {:sent :skipped}
+  (filtered-out rows count as processed for the queue); throws
+  carrying the attempted count as :events, like send-to-nexus. Enrich
+  failures propagate untouched: a local DB/decode failure is ours, not
+  the destination's, and must not count as a send failure."
   [cfg rows]
-  (let [events  (filterv #(contains? event-names-for-nitrate (:name %)) rows)
-        skipped (- (count rows) (count events))]
+  (let [events   (filterv #(contains? event-names-for-admin-console (:name %)) rows)
+        total    (count rows)
+        skipped  (- total (count events))
+        uri-host (some-> (cf/get :admin-console-uri) u/uri u/get-domain)]
+    (l/dbg :hint "archive events chunk ready"
+           :archiver "admin-console"
+           :uri-host uri-host
+           :total total
+           :skipped skipped)
     (if (empty? events)
       {:sent 0 :skipped skipped}
       ;; Enrich first, outside the try: a local DB/decode failure is
-      ;; ours, not nitrate's, and must not count as nitrate/failed.
-      (let [enriched (enrich-events-for-nitrate cfg events)
+      ;; ours, not the destination's, and must not count as
+      ;; admin-console/failed.
+      (let [enriched (enrich-events-for-admin-console cfg events)
             n        (count events)]
         (try
           (nitrate/call cfg :ingest-audit-log {:events enriched})
+          (l/dbg :hint "archive events chunk sent"
+                 :archiver "admin-console"
+                 :uri-host uri-host
+                 :sent n
+                 :skipped skipped)
           {:sent n :skipped skipped}
           (catch Throwable cause
+            (l/dbg :hint "archive events chunk failed"
+                   :archiver "admin-console"
+                   :uri-host uri-host
+                   :events n
+                   :code :admin-console-send-failed)
             (throw (ex/raise :type :internal
-                             :code :nitrate-send-failed
-                             :hint "unable to archive events to nitrate"
+                             :code :admin-console-send-failed
+                             :hint "unable to archive events to the admin console"
                              :cause cause
                              :events n))))))))
 
@@ -370,24 +391,24 @@
       (complete-batch cfg archiver-nexus rows)
       {:sent n})))
 
-(defn- archive-nitrate-chunk
-  "Send one pending chunk to Nitrate and complete it. Returns
+(defn- archive-admin-console-chunk
+  "Send one pending chunk to the admin console and complete it. Returns
   {:sent :skipped} or nil when the queue is empty; throws on failure.
   Takes a transactional cfg, no metrics here: same contract as
   archive-nexus-chunk."
   [cfg]
   (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
-  (when-let [rows (get-pending-rows cfg archiver-nitrate)]
+  (when-let [rows (get-pending-rows cfg archiver-admin-console)]
     (let [decoded     (mapv decode-row rows)
           _           (l/trc :hint "archive events chunk"
-                             :archiver "nitrate"
+                             :archiver "admin-console"
                              :events (count decoded))
-          nitrate-res (send-to-nitrate cfg decoded)]
+          admin-console-res (send-to-admin-console cfg decoded)]
       ;; Filtered-out rows count as processed for the
-      ;; nitrate queue: their pending is done, the
+      ;; admin-console queue: their pending is done, the
       ;; record stays until every archiver is done.
-      (complete-batch cfg archiver-nitrate rows)
-      nitrate-res)))
+      (complete-batch cfg archiver-admin-console rows)
+      admin-console-res)))
 
 (defn- drain-archiver
   "Drain one archiver queue chunk by chunk, one transaction per chunk.
@@ -462,7 +483,7 @@
     total))
 
 (declare execute-audit-log-archive-nexus)
-(declare execute-audit-log-archive-nitrate)
+(declare execute-audit-log-archive-admin-console)
 
 (def schema:audit-log-archive-nexus-params
   "Overrides for the nexus job repl invocation defaults.
@@ -473,10 +494,10 @@
   [:map {:closed true}
    [:uri {:optional true} ::sm/uri]])
 
-(def schema:audit-log-archive-nitrate-params
-  "Params of the nitrate job: none. Cron submits {}; system deps
-  (pool, nitrate client) live on the job-def cfg closed over by the
-  handler, not in job params. Closed on purpose, same as the nexus
+(def schema:audit-log-archive-admin-console-params
+  "Params of the admin-console job: none. Cron submits {}; system deps
+  (pool, admin-console client) live on the job-def cfg closed over by
+  the handler, not in job params. Closed on purpose, same as the nexus
   schema."
   [:map {:closed true}])
 
@@ -501,28 +522,28 @@
    ::jobs/decoder   (sm/decoder schema:audit-log-archive-nexus-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-archive-nexus-params)})
 
-(defmethod ig/assert-key ::nitrate-job-def
+(defmethod ig/assert-key ::admin-console-job-def
   [_ cfg]
-  ;; No assert on the nitrate client: it inits to nil without the
+  ;; No assert on the admin-console client: it inits to nil without the
   ;; :admin-console flag, and the job skips on its flag anyway.
   (assert (db/pool? (::db/pool cfg)) "expected a valid database pool")
   (assert (mtx/metrics? (::mtx/metrics cfg)) "expected a valid metrics instance"))
 
-(defmethod ig/init-key ::nitrate-job-def
+(defmethod ig/init-key ::admin-console-job-def
   [_ cfg]
   ;; Same as the nexus job-def: destination host once at boot. The
   ;; ingest uri is resolved by nitrate/call at send time (it raises
   ;; when missing); here it is display-only.
   (l/dbg :hint "audit log archive job initialized"
-         :archiver "nitrate"
+         :archiver "admin-console"
          :uri-host (some-> (cf/get :admin-console-uri) u/uri u/get-domain))
-  {::jobs/name      :audit-log-archive-nitrate
-   ::jobs/schema    schema:audit-log-archive-nitrate-params
+  {::jobs/name      :audit-log-archive-admin-console
+   ::jobs/schema    schema:audit-log-archive-admin-console-params
    ::jobs/handler
    (fn [_context params]
-     (execute-audit-log-archive-nitrate cfg params))
-   ::jobs/decoder   (sm/decoder schema:audit-log-archive-nitrate-params sm/json-transformer)
-   ::jobs/validator (sm/validator schema:audit-log-archive-nitrate-params)})
+     (execute-audit-log-archive-admin-console cfg params))
+   ::jobs/decoder   (sm/decoder schema:audit-log-archive-admin-console-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-archive-admin-console-params)})
 
 (defn- run-single-archiver
   "Drain one archiver queue, then housekeeping (reap disabled
@@ -599,10 +620,11 @@
                   :hint "archive task not configured, missing uri"))
       (run-single-archiver cfg archiver-nexus archive-nexus-chunk (ct/tpoint)))))
 
-(defn execute-audit-log-archive-nitrate
-  "Nitrate job handler: drain the nitrate queue in chunks, then clean
-  up (heartbeat per iteration: the sent chunk batches can be long)."
+(defn execute-audit-log-archive-admin-console
+  "Admin-console job handler: drain the admin-console queue in chunks,
+  then clean up (heartbeat per iteration: the sent chunk batches can
+  be long)."
   [cfg _params]
   (if-not (contains? cf/flags :admin-console)
-    (l/dbg :hint "audit log archive (nitrate) skipped, flag off")
-    (run-single-archiver cfg archiver-nitrate archive-nitrate-chunk (ct/tpoint))))
+    (l/dbg :hint "audit log archive (admin-console) skipped, flag off")
+    (run-single-archiver cfg archiver-admin-console archive-admin-console-chunk (ct/tpoint))))

@@ -247,7 +247,7 @@
     ;; The archive queue follows the row in the same transaction: one
     ;; pending per enabled archiver. A rollback takes both on its way
     ;; out, so a row never outlives its queue.
-    (archive/insert-pendings cfg (:id row))
+    (archive/queue-pendings cfg [(:id row)])
     row))
 
 (def ^:private xf:filter-telemetry-props

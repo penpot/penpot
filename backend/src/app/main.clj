@@ -622,25 +622,25 @@
     ::setup/shared-keys      (ig/ref ::setup/shared-keys)}
 
    ::jobs/defs
-   {:sendmail                  (ig/ref ::email/job-def)
-    :delete-object             (ig/ref :app.tasks.delete-object/job-def)
-    :demo-purge                (ig/ref :app.tasks.demo-purge/job-def)
-    :run-webhook               (ig/ref ::webhooks/run-webhook-job-def)
-    :process-webhook-event     (ig/ref ::webhooks/process-webhook-event-job-def)
-    :file-gc                   (ig/ref :app.tasks.file-gc/job-def)
-    :offload-file-data         (ig/ref :app.tasks.offload-file-data/job-def)
-    :objects-gc                (ig/ref :app.tasks.objects-gc/job-def)
-    :export-binfile            (ig/ref :app.tasks.export-binfile/job-def)
-    :import-binfile            (ig/ref :app.tasks.import-binfile/job-def)
-    :storage-gc-deleted        (ig/ref ::sto.gc-deleted/job-def)
-    :storage-gc-touched        (ig/ref ::sto.gc-touched/job-def)
-    :storage-pending-gc        (ig/ref ::sto.pending-gc/job-def)
-    :jobs-gc                   (ig/ref :app.jobs.gc/job-def)
-    :telemetry                 (ig/ref :app.tasks.telemetry/job-def)
-    :session-gc                (ig/ref ::session/job-def)
-    :file-gc-scheduler         (ig/ref :app.tasks.file-gc-scheduler/job-def)
-    :audit-log-archive-nexus   (ig/ref :app.loggers.audit.archive-task/nexus-job-def)
-    :audit-log-archive-nitrate (ig/ref :app.loggers.audit.archive-task/nitrate-job-def)}
+   {:sendmail                       (ig/ref ::email/job-def)
+    :delete-object                  (ig/ref :app.tasks.delete-object/job-def)
+    :demo-purge                     (ig/ref :app.tasks.demo-purge/job-def)
+    :run-webhook                    (ig/ref ::webhooks/run-webhook-job-def)
+    :process-webhook-event          (ig/ref ::webhooks/process-webhook-event-job-def)
+    :file-gc                        (ig/ref :app.tasks.file-gc/job-def)
+    :offload-file-data              (ig/ref :app.tasks.offload-file-data/job-def)
+    :objects-gc                     (ig/ref :app.tasks.objects-gc/job-def)
+    :export-binfile                 (ig/ref :app.tasks.export-binfile/job-def)
+    :import-binfile                 (ig/ref :app.tasks.import-binfile/job-def)
+    :storage-gc-deleted             (ig/ref ::sto.gc-deleted/job-def)
+    :storage-gc-touched             (ig/ref ::sto.gc-touched/job-def)
+    :storage-pending-gc             (ig/ref ::sto.pending-gc/job-def)
+    :jobs-gc                        (ig/ref :app.jobs.gc/job-def)
+    :telemetry                      (ig/ref :app.tasks.telemetry/job-def)
+    :session-gc                     (ig/ref ::session/job-def)
+    :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
+    :audit-log-archive-nexus        (ig/ref :app.loggers.audit.archive-task/nexus-job-def)
+    :audit-log-archive-admin-console (ig/ref :app.loggers.audit.archive-task/admin-console-job-def)}
 
    ::jobs/request-pool
    {::rds/client  (ig/ref ::rds/client)
@@ -735,7 +735,7 @@
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.archive-task/nitrate-job-def
+   :app.loggers.audit.archive-task/admin-console-job-def
    {::db/pool            (ig/ref ::db/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
@@ -864,8 +864,8 @@
         :job :audit-log-archive-nexus})
 
      (when (contains? cf/flags :admin-console)
-       {:cron #penpot/cron "0 */5 * * * ?" ;; every 5m
-        :job :audit-log-archive-nitrate})]}
+       {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m, offset 30s from nexus
+        :job :audit-log-archive-admin-console})]}
 
    ::wrk/dispatcher
    {::rds/client  (ig/ref ::rds/client)

@@ -1009,7 +1009,7 @@
   "Queue the row for both archivers (from the archiver constants, not
   literals): the delete paths must face pending-ful rows."
   [row-id]
-  (doseq [archiver [at/archiver-nexus at/archiver-nitrate]]
+  (doseq [archiver [at/archiver-nexus at/archiver-admin-console]]
     (th/db-exec! ["INSERT INTO audit_log_pending (audit_log_id, archiver)
                    VALUES (?::uuid, ?::smallint)
                         ON CONFLICT DO NOTHING"
