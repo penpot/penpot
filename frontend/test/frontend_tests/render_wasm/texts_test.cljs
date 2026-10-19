@@ -404,6 +404,14 @@
   [dview]
   (mapv #(.getUint8 dview %) (:padding span-attr-offset)))
 
+(t/deftest paragraph-wrap-modes-have-stable-distinct-protocol-bytes
+  (doseq [[mode expected] [[nil 0] ["syllable" 0] ["spaces-only" 1] ["keep-words" 2] ["invalid" 0]]]
+    (let [dview (js/DataView. (js/ArrayBuffer. tc/PARAGRAPH-ATTR-U8-SIZE))]
+      (@#'tc/write-paragraph 0 dview {:text-language "ko" :korean-wrap mode})
+      (t/is (= expected (.getUint8 dview 6)))
+      (t/is (= 0 (.getUint8 dview 7)))
+      (t/is (= 2 (.getUint32 dview 16 true))))))
+
 (t/deftest write-spans-serializes-font-features
   (let [dview (serialized-span {:text "日本語" :font-features "vpal"})]
     (t/is (= 2 (span-byte dview :font-features)))

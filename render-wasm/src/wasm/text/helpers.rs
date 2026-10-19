@@ -816,7 +816,7 @@ pub fn split_paragraph_at_cursor(
     let writing_mode = para.writing_mode();
     let text_orientation = para.text_orientation();
     let language = para.language().to_owned();
-    let korean_spaces_only = para.korean_spaces_only();
+    let korean_wrap = para.korean_wrap();
     let source_position = para.source_position();
     let line_height = para.line_height();
     let letter_spacing = para.letter_spacing();
@@ -845,7 +845,7 @@ pub fn split_paragraph_at_cursor(
     new_para.set_writing_mode(writing_mode);
     new_para.set_text_orientation(text_orientation);
     new_para.set_language(language);
-    new_para.set_korean_spaces_only(korean_spaces_only);
+    new_para.set_korean_wrap(korean_wrap);
     new_para.set_source_position(source_position);
 
     paragraphs.insert(cursor.paragraph + 1, new_para);
@@ -862,22 +862,27 @@ mod tests {
 
     #[test]
     fn paragraph_split_keeps_language_and_korean_wrap() {
-        let mut para = paragraph(&["한국어"]);
-        para.set_language("ko".to_string());
-        para.set_korean_spaces_only(true);
-        let mut content = content(vec![para]);
-        let cursor = TextPositionWithAffinity {
-            paragraph: 0,
-            offset: 1,
-            ..Default::default()
-        };
-        assert!(split_paragraph_at_cursor(&mut content, &cursor));
-        assert_eq!(content.paragraphs().len(), 2);
-        for para in content.paragraphs() {
-            assert_eq!(para.language(), "ko");
-            assert!(para.korean_spaces_only());
-            assert_eq!(para.source_position(), 0);
-            assert!(para.children().iter().all(|span| span.language == "ko"));
+        for wrap in [
+            crate::shapes::text_policy::KoreanWrap::SpacesOnly,
+            crate::shapes::text_policy::KoreanWrap::KeepWords,
+        ] {
+            let mut para = paragraph(&["한국어"]);
+            para.set_language("ko".to_string());
+            para.set_korean_wrap(wrap);
+            let mut content = content(vec![para]);
+            let cursor = TextPositionWithAffinity {
+                paragraph: 0,
+                offset: 1,
+                ..Default::default()
+            };
+            assert!(split_paragraph_at_cursor(&mut content, &cursor));
+            assert_eq!(content.paragraphs().len(), 2);
+            for para in content.paragraphs() {
+                assert_eq!(para.language(), "ko");
+                assert_eq!(para.korean_wrap(), wrap);
+                assert_eq!(para.source_position(), 0);
+                assert!(para.children().iter().all(|span| span.language == "ko"));
+            }
         }
     }
 

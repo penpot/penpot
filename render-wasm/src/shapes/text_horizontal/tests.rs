@@ -7,6 +7,182 @@ use super::*;
 use crate::shapes::{TextAlign, TextDirection, TextTransform};
 use crate::Uuid;
 
+fn cjk_horizontal_layout(
+    texts: &[&str],
+    language: &str,
+    wrap: crate::shapes::text_policy::KoreanWrap,
+    width: f32,
+) -> (
+    Paragraph,
+    HorizontalParagraphPlan,
+    skia::textlayout::Paragraph,
+) {
+    use crate::shapes::text_vertical::test_support::{provider, EM};
+    use std::collections::HashSet;
+    init_state();
+    let provider = provider(include_bytes!("../../fonts/cjk-locl-test.ttf"));
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(provider.into()));
+    let spans = texts
+        .iter()
+        .map(|text| {
+            let mut span = make_span(text, 0.0);
+            span.font_size = EM;
+            span
+        })
+        .collect();
+    let mut paragraph = make_paragraph(spans, 0.0);
+    paragraph.set_language(language.to_owned());
+    paragraph.set_korean_wrap(wrap);
+    let mut plan = HorizontalParagraphPlan::new(&paragraph);
+    let lay_out = |plan: &HorizontalParagraphPlan, width: f32| {
+        let mut paragraph_style = paragraph.paragraph_to_style();
+        paragraph_style.set_apply_rounding_hack(false);
+        let mut builder = ParagraphBuilder::new(&paragraph_style, &fonts);
+        for (index, span) in paragraph.children().iter().enumerate() {
+            let style = span.to_style(
+                &crate::math::Rect::from_xywh(0.0, 0.0, width, 200.0),
+                &HashSet::new(),
+                false,
+                1.0,
+            );
+            builder.push_style(&style);
+            add_horizontal_span(
+                &mut builder,
+                span,
+                &plan.texts[index],
+                &plan.sheds[index],
+                &[],
+                &style,
+                &fonts,
+            );
+            builder.pop();
+        }
+        let mut layout = builder.build();
+        layout.layout(width);
+        layout
+    };
+    plan.relax_overlong_words(&paragraph, width, |plan| lay_out(plan, width));
+    let layout = lay_out(&plan, width);
+    (paragraph, plan, layout)
+}
+
+#[test]
+fn horizontal_chinese_regions_apply_compression_across_styles() {
+    use crate::shapes::text_policy::KoreanWrap;
+    let (_, cn, cn_layout) = cjk_horizontal_layout(
+        &["文，", "。文"],
+        "zh-Hans-CN",
+        KoreanWrap::Syllable,
+        1000.0,
+    );
+    let (_, tw, tw_layout) = cjk_horizontal_layout(
+        &["文，", "。文"],
+        "zh-Hant-TW",
+        KoreanWrap::Syllable,
+        1000.0,
+    );
+    assert!(!cn.sheds[0].is_empty());
+    assert!(tw.sheds.iter().all(Vec::is_empty));
+    assert!((tw_layout.longest_line() - cn_layout.longest_line() - 10.0).abs() < 0.1);
+    assert_eq!(cn.texts.concat().replace('\u{2060}', ""), "文，。文");
+}
+
+#[test]
+fn horizontal_korean_emergency_wrap_does_not_start_with_closing_punctuation() {
+    use crate::shapes::text_policy::KoreanWrap;
+    let (_, plan, layout) =
+        cjk_horizontal_layout(&["한한", "한한", "。"], "ko", KoreanWrap::KeepWords, 42.0);
+    let source: Vec<_> = "한한한한。".encode_utf16().collect();
+    for line in layout.get_line_metrics() {
+        let start = plan.offsets.offset_map.to_original(line.start_index);
+        assert_ne!(source.get(start), Some(&(0x3002u16)));
+    }
+}
+
+#[test]
+fn word_mode_moves_a_fitting_word_whole_across_style_runs() {
+    use crate::shapes::text_policy::KoreanWrap;
+    let (_, plan, layout) =
+        cjk_horizontal_layout(&["한글 ", "한", "국어"], "ko", KoreanWrap::KeepWords, 72.0);
+    let starts: Vec<_> = layout
+        .get_line_metrics()
+        .iter()
+        .map(|line| plan.offsets.builder_to_source(line.start_index))
+        .collect();
+    assert_eq!(starts, vec![0, 3]);
+    assert!(
+        !plan.texts.concat().contains('\u{200b}'),
+        "a fitting word keeps all its joins"
+    );
+}
+
+#[test]
+fn emergency_word_boundaries_keep_identical_offsets_and_graphemes() {
+    use crate::shapes::text_policy::KoreanWrap;
+    let (paragraph, plan, layout) =
+        cjk_horizontal_layout(&["ᄒ", "ᅡᆫ한。"], "ko", KoreanWrap::KeepWords, 42.0);
+    let original = HorizontalParagraphPlan::new(&paragraph);
+    assert!(plan.texts.concat().contains('\u{200b}'));
+    for at in 0..=7 {
+        assert_eq!(
+            plan.offsets.source_to_builder(at),
+            original.offsets.source_to_builder(at)
+        );
+    }
+    for line in layout.get_line_metrics() {
+        let at = plan.offsets.builder_to_source(line.start_index);
+        assert!(
+            at == 0 || at == 3,
+            "no break inside a decomposed syllable or before closing punctuation: {at}"
+        );
+    }
+    let (_, wide, _) = cjk_horizontal_layout(&["ᄒ", "ᅡᆫ한。"], "ko", KoreanWrap::KeepWords, 200.0);
+    assert!(
+        !wide.texts.concat().contains('\u{200b}'),
+        "resizing restores whole-word joins"
+    );
+}
+
+#[test]
+fn horizontal_cjk_justification_is_bounded_and_word_mode_only_expands_spaces() {
+    use crate::shapes::text_policy::KoreanWrap;
+    let (paragraph, plan, layout) =
+        cjk_horizontal_layout(&["文文", "文文"], "zh-Hant-TW", KoreanWrap::Syllable, 52.0);
+    let extras =
+        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 52.0);
+    assert!(extras[1].is_empty(), "last line stays unexpanded");
+    let total: f32 = extras[0].iter().map(|(_, gap)| *gap).sum();
+    assert!(total > 9.0 && total <= 10.0);
+    let (paragraph, plan, layout) =
+        cjk_horizontal_layout(&["한 한 한 한"], "ko", KoreanWrap::KeepWords, 72.0);
+    let extras =
+        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 72.0);
+    assert!(!extras[0].is_empty());
+    for (at, amount) in &extras[0] {
+        assert_eq!(plan.texts[0].chars().nth(*at), Some(' '));
+        assert!(*amount <= 10.0);
+    }
+    let (paragraph, plan, layout) =
+        cjk_horizontal_layout(&["한한한한"], "ko", KoreanWrap::KeepWords, 52.0);
+    assert!(
+        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 52.0)
+            .iter()
+            .all(Vec::is_empty)
+    );
+}
+
+#[test]
+fn chinese_proportional_punctuation_is_not_compressed_twice() {
+    init_state();
+    let mut span = make_span("，。", 0.0);
+    span.font_features = FontFeatures::Palt;
+    let mut paragraph = make_paragraph(vec![span], 0.0);
+    paragraph.set_language("zh-Hans-CN".into());
+    let plan = HorizontalParagraphPlan::new(&paragraph);
+    assert!(plan.sheds.iter().all(Vec::is_empty));
+}
+
 #[test]
 fn untagged_cjk_keeps_plain_layout() {
     init_state();
@@ -47,7 +223,7 @@ fn explicit_profiles_use_distinct_rules_across_styles() {
         make_paragraph(vec![make_span("한", 0.0), make_span("국어 문장", 0.0)], 0.0);
     paragraph.set_language("ko".to_string());
     assert_eq!(paragraph.layout_span_texts().0.concat(), "한국어 문장");
-    paragraph.set_korean_spaces_only(true);
+    paragraph.set_korean_wrap(crate::shapes::text_policy::KoreanWrap::SpacesOnly);
     assert_eq!(
         paragraph.layout_span_texts().0.concat(),
         "한\u{2060}국\u{2060}어 문\u{2060}장"
@@ -59,7 +235,7 @@ fn korean_joiners_stay_outside_decomposed_syllables_and_emoji() {
     init_state();
     let mut paragraph = make_paragraph(vec![make_span("ᄒ", 0.0), make_span("ᅡᆫ국 👩‍💻", 0.0)], 0.0);
     paragraph.set_language("ko".to_string());
-    paragraph.set_korean_spaces_only(true);
+    paragraph.set_korean_wrap(crate::shapes::text_policy::KoreanWrap::SpacesOnly);
     assert_eq!(paragraph.layout_span_texts().0.concat(), "한\u{2060}국 👩‍💻");
 }
 
@@ -82,7 +258,7 @@ fn same_paragraph_wraps_differently_by_profile_in_both_orientations() {
         span.font_size = EM;
         let mut paragraph = make_paragraph(vec![span], 0.0);
         paragraph.set_language(language.to_string());
-        paragraph.set_korean_spaces_only(true);
+        paragraph.set_korean_wrap(crate::shapes::text_policy::KoreanWrap::SpacesOnly);
         let plan = HorizontalParagraphPlan::new(&paragraph);
         let content = content_of(vec![paragraph.clone()], EM * 5.45, GrowType::Fixed);
         let span = &paragraph.children()[0];
@@ -389,7 +565,7 @@ fn annotation_room_follows_ruby_size_and_clearance() {
 }
 
 #[test]
-fn horizontal_plans_are_cached_until_the_content_changes() {
+fn horizontal_plans_are_cached_until_content_or_width_changes() {
     init_state();
     let mut content = super::super::text::TextContent::new(
         crate::math::Rect::from_xywh(0.0, 0.0, 200.0, 40.0),
@@ -409,6 +585,13 @@ fn horizontal_plans_are_cached_until_the_content_changes() {
     let edited = content.horizontal_plans();
     assert!(!std::rc::Rc::ptr_eq(&first, &edited));
     assert_eq!(edited[0].texts, vec!["です".to_string()]);
+
+    content.set_xywh(10.0, 20.0, 200.0, 80.0);
+    assert!(std::rc::Rc::ptr_eq(&edited, &content.horizontal_plans()));
+    content.set_xywh(10.0, 20.0, 100.0, 80.0);
+    let resized = content.horizontal_plans();
+    assert!(!std::rc::Rc::ptr_eq(&edited, &resized));
+    assert!(std::rc::Rc::ptr_eq(&resized, &content.horizontal_plans()));
 }
 
 #[test]

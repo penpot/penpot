@@ -9969,3 +9969,23 @@ msgstr "By syllable"
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.korean-wrap-spaces-only"
 msgstr "At spaces (experimental)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-mainland-simplified"
+msgstr "Mainland China · Simplified"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-mainland-traditional"
+msgstr "Mainland China · Traditional"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-taiwan"
+msgstr "Taiwan"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-hong-kong"
+msgstr "Hong Kong"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-keep-words"
+msgstr "Keep words together"

@@ -9845,3 +9845,23 @@ msgstr "Por sílaba"
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.korean-wrap-spaces-only"
 msgstr "En los espacios (experimental)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-mainland-simplified"
+msgstr "China continental · Simplificado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-mainland-traditional"
+msgstr "China continental · Tradicional"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-taiwan"
+msgstr "Taiwán"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-hong-kong"
+msgstr "Hong Kong"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-keep-words"
+msgstr "Mantener las palabras juntas"

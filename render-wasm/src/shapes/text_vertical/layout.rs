@@ -25,9 +25,9 @@ use super::annotations::{
 use super::cells::{Fonts, SpanCells, WarichuNote};
 use super::flow::{
     aki_classes, align_offset_along_column, apply_inter_script_spacing, apply_ordered_oikomi,
-    flow_classes, is_bounded, materialize_explicit_pair_spacing, ordered_expansion_offsets,
-    plan_policy_columns, plan_with_edge_trimming, preferred_pair_spacing, shed_punctuation_aki,
-    FlowCell, FIT_TOLERANCE,
+    apply_policy_spacing, flow_classes, is_bounded, materialize_explicit_pair_spacing,
+    ordered_expansion_offsets, plan_policy_columns, plan_with_edge_trimming, policy_aligned_tops,
+    preferred_pair_spacing, shed_punctuation_aki, FlowCell, FIT_TOLERANCE,
 };
 use super::paint::LayoutDraws;
 use super::shaping::ShapedRun;
@@ -519,6 +519,7 @@ fn aligned_tops(
 /// A paragraph's flow after spacing and column planning.
 struct PlannedParagraph {
     policy: TextLayoutPolicy,
+    text: String,
     flow: Vec<FlowCell>,
     ruby_units: Vec<RubyBaseUnit>,
     classes: Vec<Option<JapaneseClass>>,
@@ -566,9 +567,11 @@ impl PlannedParagraph {
                     .iter()
                     .map(|t| t.text.as_str())
                     .collect();
+                apply_policy_spacing(&mut flow, &text, policy);
                 let placements = plan_policy_columns(&flow, &text, policy, max_height);
                 return Self {
                     policy,
+                    text,
                     classes: vec![None; flow.len()],
                     pair_spacing_em: vec![0.0; flow.len().saturating_sub(1)],
                     flow,
@@ -610,6 +613,7 @@ impl PlannedParagraph {
                 None => {
                     return Self {
                         policy,
+                        text: String::new(),
                         flow,
                         ruby_units,
                         classes,
@@ -628,20 +632,31 @@ impl PlannedParagraph {
     /// Final cells, aligned along their columns, numbered from `column_base`.
     /// A later span's cell of a warichu piece takes the piece's box.
     fn place(&self, align: TextAlign, max_height: f32, column_base: usize) -> Vec<VerticalCell> {
-        // The POC defines no non-Japanese justification expansion table yet.
-        let align = if self.policy != TextLayoutPolicy::Japanese && align == TextAlign::Justify {
-            TextAlign::Left
+        let align =
+            if self.policy == TextLayoutPolicy::KoreanSpacesOnly && align == TextAlign::Justify {
+                TextAlign::Left
+            } else {
+                align
+            };
+        let tops = if self.policy == TextLayoutPolicy::Japanese {
+            aligned_tops(
+                &self.flow,
+                &self.classes,
+                &self.pair_spacing_em,
+                &self.placements,
+                align,
+                max_height,
+            )
         } else {
-            align
+            policy_aligned_tops(
+                &self.flow,
+                &self.text,
+                self.policy,
+                &self.placements,
+                align,
+                max_height,
+            )
         };
-        let tops = aligned_tops(
-            &self.flow,
-            &self.classes,
-            &self.pair_spacing_em,
-            &self.placements,
-            align,
-            max_height,
-        );
         let mut cells: Vec<VerticalCell> = Vec::with_capacity(self.flow.len());
         for ((flow, (column, _)), top) in self.flow.iter().zip(&self.placements).zip(tops) {
             let mut cell = VerticalCell {
@@ -807,6 +822,128 @@ mod tests {
     use super::*;
     use crate::shapes::TextOrientation;
 
+    fn cjk_layout(
+        texts: &[&str],
+        language: &str,
+        wrap: crate::shapes::text_policy::KoreanWrap,
+        align: TextAlign,
+        height: f32,
+    ) -> VerticalLayout {
+        let mut paragraph = vertical_paragraph(
+            texts.iter().map(|text| make_span(text)).collect(),
+            align,
+            1.0,
+        );
+        paragraph.set_language(language.to_string());
+        paragraph.set_korean_wrap(wrap);
+        let content = content_of(vec![paragraph], height, GrowType::Fixed);
+        layout_with_height(
+            &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
+            &content,
+            height,
+        )
+    }
+
+    #[test]
+    fn korean_emergency_wrap_keeps_closing_punctuation_with_its_base() {
+        use crate::shapes::text_policy::KoreanWrap;
+        let layout = cjk_layout(
+            &["한한", "한한", "。"],
+            "ko",
+            KoreanWrap::KeepWords,
+            TextAlign::Left,
+            EM * 2.1,
+        );
+        let cells = &layout.cells;
+        assert!(cells.last().unwrap().column > 0);
+        assert_eq!(cells[cells.len() - 1].column, cells[cells.len() - 2].column);
+        assert!(cells.iter().all(|cell| cell.extent > 0.0));
+    }
+
+    #[test]
+    fn regional_chinese_compression_and_justification_change_geometry() {
+        use crate::shapes::text_policy::KoreanWrap;
+        let cn = cjk_layout(
+            &["文，", "。文"],
+            "zh-Hans-CN",
+            KoreanWrap::Syllable,
+            TextAlign::Left,
+            EM * 10.0,
+        );
+        let tw = cjk_layout(
+            &["文，", "。文"],
+            "zh-Hant-TW",
+            KoreanWrap::Syllable,
+            TextAlign::Left,
+            EM * 10.0,
+        );
+        let end = |layout: &VerticalLayout| {
+            layout.cells.last().unwrap().top + layout.cells.last().unwrap().extent
+        };
+        assert!((end(&tw) - end(&cn) - EM * 0.5).abs() < 0.01);
+        let justified = cjk_layout(
+            &["文文文文"],
+            "zh-Hant-TW",
+            KoreanWrap::Syllable,
+            TextAlign::Justify,
+            EM * 2.6,
+        );
+        assert!(justified.cells[1].top > EM + 1.0);
+        assert_eq!(justified.cells[3].top, EM, "last column remains unexpanded");
+    }
+
+    #[test]
+    fn traditional_chinese_hangs_only_a_single_comma_in_vertical_text() {
+        use crate::shapes::text_policy::KoreanWrap;
+        let single = cjk_layout(
+            &["文文，文"],
+            "zh-Hant-TW",
+            KoreanWrap::Syllable,
+            TextAlign::Left,
+            EM * 2.6,
+        );
+        assert_eq!(single.cells[2].column, 0);
+        assert_eq!(single.cells[3].column, 1);
+        let paired = cjk_layout(
+            &["文文，，文"],
+            "zh-Hant-TW",
+            KoreanWrap::Syllable,
+            TextAlign::Left,
+            EM * 2.6,
+        );
+        assert!(paired.cells[2].column > 0);
+        assert_eq!(paired.cells[1].column, paired.cells[2].column);
+    }
+
+    #[test]
+    fn word_mode_preserves_words_and_decomposed_syllables_across_styles() {
+        use crate::shapes::text_policy::KoreanWrap;
+        let layout = cjk_layout(
+            &["한글 ", "한", "국어"],
+            "ko",
+            KoreanWrap::KeepWords,
+            TextAlign::Left,
+            EM * 3.6,
+        );
+        let word: Vec<_> = layout.cells.iter().filter(|c| c.start >= 3).collect();
+        assert!(word.iter().all(|c| c.column == 1));
+        let layout = cjk_layout(
+            &["ᄒ", "ᅡᆫ한。"],
+            "ko",
+            KoreanWrap::KeepWords,
+            TextAlign::Left,
+            EM * 4.1,
+        );
+        for unit in [0..3, 3..7] {
+            let cells: Vec<_> = layout
+                .cells
+                .iter()
+                .filter(|c| unit.contains(&c.start))
+                .collect();
+            assert!(cells.iter().all(|c| c.column == cells[0].column));
+        }
+    }
+
     #[test]
     fn explicit_profiles_change_wrapping_without_japanese_spacing() {
         let columns = |language: &str, spaces_only: bool, texts: &[&str]| {
@@ -816,7 +953,11 @@ mod tests {
                 1.0,
             );
             paragraph.set_language(language.to_string());
-            paragraph.set_korean_spaces_only(spaces_only);
+            paragraph.set_korean_wrap(if spaces_only {
+                crate::shapes::text_policy::KoreanWrap::SpacesOnly
+            } else {
+                crate::shapes::text_policy::KoreanWrap::Syllable
+            });
             let content = content_of(vec![paragraph], EM * 2.1, GrowType::Fixed);
             let layout = layout_with_height(
                 &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
@@ -856,7 +997,7 @@ mod tests {
             1.0,
         );
         paragraph.set_language("ko".to_string());
-        paragraph.set_korean_spaces_only(true);
+        paragraph.set_korean_wrap(crate::shapes::text_policy::KoreanWrap::SpacesOnly);
         let content = content_of(vec![paragraph], EM * 3.6, GrowType::Fixed);
         let layout = layout_with_height(
             &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),

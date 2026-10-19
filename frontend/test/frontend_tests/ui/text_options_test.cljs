@@ -74,8 +74,17 @@
         other (last (tll/profile-options :chinese "ja" identity))]
     (t/is (= {:id "multiple" :label "labels.mixed-values" :disabled true :dimmed true} mixed))
     (t/is (= {:id "ja" :label "ja" :disabled true :dimmed true} other))
-    (t/is (= ["" "zh-Hans" "zh-Hant"]
+    (t/is (= ["" "zh-Hans" "zh-Hant" "zh-Hans-CN" "zh-Hant-CN" "zh-Hant-TW" "zh-Hant-HK"]
              (mapv :id (tll/profile-options :chinese nil identity))))))
+
+(t/deftest korean-word-wrapping-is-distinct-from-the-saved-experiment
+  (t/is (= ["syllable" "keep-words"]
+           (mapv :id (tll/korean-wrap-options nil identity))))
+  (t/is (= ["syllable" "keep-words" "spaces-only"]
+           (mapv :id (tll/korean-wrap-options "spaces-only" identity))))
+  (t/is (= "workspace.options.text-options.profile-chinese-taiwan"
+           (:label (select/get-option (tll/profile-options :chinese "zh-Hant-TW" identity) "zh-Hant-TW"))))
+  (t/is (= {:text-language "zh-Hant-CN"} (tll/profile-change "zh-Hant-CN"))))
 
 (t/deftest language-specific-controls-require-an-explicit-matching-profile
   (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
