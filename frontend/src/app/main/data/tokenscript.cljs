@@ -177,13 +177,13 @@
 
 (defn- missing-reference-of
   "Missing token name behind an issue, if the root cause is a missing
-  token."
+  token or a token without a value."
   [{:keys [code data]}]
   (case code
     :processor/token-not-found (:token-name data)
     :interpreter/unknown-reference (:reference data)
     :processor/dependency-error (let [cause (:cause data)]
-                                  (when (= :processor/token-not-found (:code cause))
+                                  (when (contains? #{:processor/token-not-found :penpot/empty-value} (:code cause))
                                     (get-in cause [:data :token-name])))
     nil))
 
@@ -198,6 +198,9 @@
   message of their own are an invalid value."
   [{:keys [code data] :as issue} value]
   (cond
+    (= :penpot/empty-value code)
+    (wte/get-error-code :error.token/empty-input)
+
     (circular? issue)
     (wte/error-with-value :error.token/circular-reference nil)
 
@@ -278,22 +281,20 @@
     (mapv quote-font-family value)
     value))
 
-(defn- token->input
-  "Token data for the interpreter. Types are passed by their DTCG names,
-  which the interpreter's bundled token types validate. The token id goes
-  along as metadata, which the interpreter keeps with the resolved name."
-  [{:keys [id type value]}]
-  (cond-> {:value (case type
-                    :font-family (quote-font-families value)
-                    :typography (cond-> value
-                                  (map? value) (d/update-when :font-family quote-font-families))
-                    value)}
-    (some? type) (assoc :type (get cto/token-type->dtcg-token-type type (name type)))
-    (some? id) (assoc :metadata id)))
-
-(defn- empty-value?
-  [token]
-  (nil? (:value token)))
+(defn- read-token
+  "Token reader for the interpreter: the value and the type of a Penpot
+  token. Types are passed by their DTCG names, which the interpreter's
+  bundled token types validate. A token without a value fails with
+  `:penpot/empty-value`, so the tokens referencing it fail too."
+  [{:keys [type value] token-name :name}]
+  (if (nil? value)
+    (tse/error-map :penpot/empty-value {:data {:token-name token-name}})
+    (cond-> {:value (case type
+                      :font-family (quote-font-families value)
+                      :typography (cond-> value
+                                    (map? value) (d/update-when :font-family quote-font-families))
+                      value)}
+      (some? type) (assoc :type (get cto/token-type->dtcg-token-type type (name type))))))
 
 (defn- merge-sets
   "The tokens of `sets` as one map, later sets winning: the names of a
@@ -303,59 +304,34 @@
     (second (first sets))
     (reduce (fn [acc [_ tokens]] (merge acc tokens)) {} sets)))
 
-(defn- set-inputs
-  "Interpreter inputs of the `tokens` of one set, without the names in
-  `empty-names`. `prev` is `{:tokens .. :inputs ..}` of the same set in
-  the previous resolution: a token that is the same object as before gets
-  its previous input, and with `same-empty?` an unchanged tokens map gets
-  the previous inputs as they are, so the interpreter sees unchanged data
-  by identity and skips it without comparing."
-  [tokens empty-names {prev-tokens :tokens prev-inputs :inputs} same-empty?]
-  (if (and same-empty? (identical? tokens prev-tokens))
-    prev-inputs
-    (persistent!
-     (reduce-kv (fn [acc name token]
-                  (if (contains? empty-names name)
-                    acc
-                    (assoc! acc name (or (when (identical? token (get prev-tokens name))
-                                           (get prev-inputs name))
-                                         (token->input token)))))
-                (transient {})
-                tokens))))
-
 (defn- output-token
   "`token` with `:resolved-value` and `:resolved-symbol`, or `:errors`,
   from the interpreter `result`."
   [name token {:keys [tokens issues]}]
-  (if (empty-value? token)
-    (assoc token :errors [(wte/get-error-code :error.token/empty-input)])
-    (let [errors (token-errors (get issues name) token)
-          {:keys [value error]} (when-not errors (convert-token-value token (get tokens name)))
-          error (or error (when-not errors (validate-value token value)))]
-      (cond
-        errors (assoc token :errors (vec errors))
-        error (assoc token :errors [error])
-        :else (assoc token
-                     :resolved-value value
-                     :resolved-symbol (get tokens name))))))
+  (let [errors (token-errors (get issues name) token)
+        {:keys [value error]} (when-not errors (convert-token-value token (get tokens name)))
+        error (or error (when-not errors (validate-value token value)))]
+    (cond
+      errors (assoc token :errors (vec errors))
+      error (assoc token :errors [error])
+      :else (assoc token
+                   :resolved-value value
+                   :resolved-symbol (get tokens name)))))
 
 (defn- resolve-sets*
   "Resolves `sets` starting from `base`, the previous resolution (nil for
-  the first). The interpreter keeps its state across resolutions: it
-  re-resolves only the names whose data changed and the tokens that can
-  observe them, and only those names are converted again. Every other
-  entry of the output is the one of `base`, the same object."
+  the first). The sets go to the interpreter as they are, with
+  `read-token` as the reader. The interpreter keeps its state across
+  resolutions: it reads and re-resolves only the tokens that are not the
+  same objects as before and the tokens that can observe them, and only
+  those names are converted again. Every other entry of the output is the
+  one of `base`, the same object."
   [sets base]
   (let [tpoint (ct/tpoint-ms)
         winners (merge-sets sets)
-        empty-names (into #{} (keep (fn [[name token]] (when (empty-value? token) name))) winners)
-        same-empty? (boolean (and base (= empty-names (:empty-names base))))
-        inputs (mapv (fn [[set-id tokens]]
-                       [set-id (set-inputs tokens empty-names (get-in base [:inputs set-id]) same-empty?)])
-                     sets)
         result (if base
-                 (processor/set-sets (get-in base [:result :state]) inputs)
-                 (tsc/build inputs))
+                 (processor/set-sets (get-in base [:result :state]) sets)
+                 (tsc/build sets {:token-reader read-token}))
         resolved (:resolved result)
         prev-winners (:winners base)
         prev-resolved (get-in base [:result :resolved])
@@ -373,8 +349,6 @@
     (l/dbg :hint "tokenscript/resolve-sets" :elapsed (tpoint) :tokens (count winners))
     {:sets sets
      :winners winners
-     :empty-names empty-names
-     :inputs (into {} (map (fn [[set-id tokens] [_ set-inputs]] [set-id {:tokens tokens :inputs set-inputs}]) sets inputs))
      :result result
      :output output}))
 
