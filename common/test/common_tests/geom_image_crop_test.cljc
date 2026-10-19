@@ -7,6 +7,8 @@
 (ns common-tests.geom-image-crop-test
   (:require
    [app.common.geom.image-crop :as gic]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [clojure.test :as t]))
 
@@ -65,3 +67,29 @@
         (t/is (close-vals? [(- dy) height] [dy2 h2]) "window back at its original place")
         (t/is (close-vals? ((juxt :x :y :width :height) tf)
                            ((juxt :x :y :width :height) back)))))))
+
+(t/deftest preview-image-matrix-test
+  (let [width  400
+        height 300
+        tf     {:x 0 :y -0.2 :width 1 :height 1.4}]
+
+    (t/testing "the picture keeps its place once the window is resized"
+      (doseq [[dx dy w' h'] [[0 60 400 240]
+                             [0 300 400 100]
+                             [-50 75 500 150]]]
+        (let [tf'    (gic/update-image-transform tf width height dx dy w' h')
+              matrix (gic/preview-image-matrix tf tf' width height)
+              ;; Resize the preview applies to the whole shape: the old
+              ;; window goes to the new one.
+              window (-> (gmt/matrix)
+                         (gmt/translate (gpt/point dx dy))
+                         (gmt/scale (gpt/point (/ w' width) (/ h' height))))
+              [x y w h] (picture-box tf [0 0] [width height])
+              p1     (gpt/transform (gpt/point x y) (gmt/multiply window matrix))
+              p2     (gpt/transform (gpt/point (+ x w) (+ y h)) (gmt/multiply window matrix))]
+          (t/is (close-vals? [x y (+ x w) (+ y h)] [(:x p1) (:y p1) (:x p2) (:y p2)])
+                (str "window " [dx dy w' h'])))))
+
+    (t/testing "no change gives the identity"
+      (t/is (gmt/close? (gmt/matrix) (gic/preview-image-matrix tf tf width height)))
+      (t/is (gmt/close? (gmt/matrix) (gic/preview-image-matrix nil nil width height))))))
