@@ -203,7 +203,7 @@
       (when profile
         (login-lockout/clear-attempts! cfg (:id profile))
         (eml/send-template cfg {::eml/reuse-conn true
-                                ::eml/template ::eml/password-changed
+                                ::eml/template "password-changed"
                                 :public-uri (cf/get :public-uri)
                                 :to (:email profile)
                                 :name (:fullname profile)})))
@@ -486,7 +486,7 @@
                                    :profile-id (:id profile)
                                    :exp (ct/in-future {:days 30})})]
      (eml/send-template cfg {::eml/reuse-conn true
-                             ::eml/template ::eml/register
+                             ::eml/template "register"
                              :public-uri (cf/get :public-uri)
                              :to (:email profile)
                              :name (:fullname profile)
@@ -655,7 +655,7 @@
                                            :profile-id (:id profile)
                                            :exp (ct/in-future {:days 30})})]
               (eml/send-template cfg {::eml/reuse-conn true
-                                      ::eml/template ::eml/password-recovery
+                                      ::eml/template "password-recovery"
                                       :public-uri (cf/get :public-uri)
                                       :to (:email profile)
                                       :token (:token profile)

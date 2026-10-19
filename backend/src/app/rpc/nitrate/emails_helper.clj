@@ -56,7 +56,7 @@
   (when (or (nil? profile)
             (eml/allow-send-emails? conn profile))
     (eml/send-template cfg {::eml/reuse-conn true
-                            ::eml/template ::eml/organization-setup-sso
+                            ::eml/template "organization-setup-sso"
                             :public-uri (cf/get :public-uri)
                             :to email
                             :organization-name organization-name})))

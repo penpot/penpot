@@ -226,7 +226,7 @@
     (update-profile-password! cfg (assoc profile :password password))
 
     (eml/send-template cfg {::eml/reuse-conn true
-                            ::eml/template ::eml/password-changed
+                            ::eml/template "password-changed"
                             :public-uri (cf/get :public-uri)
                             :to (:email profile)
                             :name (:fullname profile)})
@@ -464,7 +464,7 @@
                 :hint "looks like the email has spam complaint reports"))
 
     (eml/send-template cfg {::eml/reuse-conn true
-                            ::eml/template ::eml/change-email
+                            ::eml/template "change-email"
                             :public-uri (cf/get :public-uri)
                             :to (:email profile)
                             :name (:fullname profile)
