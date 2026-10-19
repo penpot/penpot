@@ -108,6 +108,7 @@ pub(super) fn horizontal_ruby_spacing_with(
             false,
             span.font_features,
             &fallback_mgr,
+            &span.language,
         )
         .iter()
         .flat_map(|run| run.advances.iter().copied())
@@ -151,6 +152,7 @@ pub(super) fn horizontal_ruby_spacing_with(
             false,
             span.font_features,
             &fallback_mgr,
+            &span.language,
         );
         let (_, pieces, _) =
             horizontal_ruby_pieces(&ruby_glyph_refs(span.ruby_text(), &shaped, ruby_font_size));
@@ -392,6 +394,7 @@ pub(crate) fn paint_horizontal_ruby(
             false,
             span.font_features,
             &fallback_mgr,
+            &span.language,
         );
         let glyphs = ruby_glyph_refs(span.ruby_text(), &shaped, span.ruby_font_size());
         let extents: Vec<f32> = rects.iter().map(|rect| rect.rect.width()).collect();

@@ -1864,6 +1864,10 @@ pub struct Paragraph {
     text_transform: Option<TextTransform>,
     writing_mode: WritingMode,
     text_orientation: TextOrientation,
+    language: String,
+    korean_spaces_only: bool,
+    /// Paragraph in the content tree last exchanged with the editor host.
+    source_position: u32,
     line_height: f32,
     letter_spacing: f32,
     children: Vec<TextSpan>,
@@ -1878,6 +1882,9 @@ impl Default for Paragraph {
             text_transform: None,
             writing_mode: WritingMode::default(),
             text_orientation: TextOrientation::default(),
+            language: String::new(),
+            korean_spaces_only: false,
+            source_position: u32::MAX,
             line_height: 1.0,
             letter_spacing: 0.0,
             children: vec![],
@@ -1903,6 +1910,9 @@ impl Paragraph {
             text_transform,
             writing_mode: WritingMode::default(),
             text_orientation: TextOrientation::default(),
+            language: String::new(),
+            korean_spaces_only: false,
+            source_position: u32::MAX,
             line_height,
             letter_spacing,
             children,
@@ -1911,6 +1921,37 @@ impl Paragraph {
 
     pub fn writing_mode(&self) -> WritingMode {
         self.writing_mode
+    }
+
+    pub fn language(&self) -> &str {
+        &self.language
+    }
+
+    pub fn set_language(&mut self, language: String) {
+        for span in &mut self.children {
+            span.language.clone_from(&language);
+        }
+        self.language = language;
+    }
+
+    pub fn korean_spaces_only(&self) -> bool {
+        self.korean_spaces_only
+    }
+
+    pub fn set_korean_spaces_only(&mut self, value: bool) {
+        self.korean_spaces_only = value;
+    }
+
+    pub fn layout_policy(&self) -> super::text_policy::TextLayoutPolicy {
+        super::text_policy::TextLayoutPolicy::for_language(&self.language, self.korean_spaces_only)
+    }
+
+    pub fn source_position(&self) -> u32 {
+        self.source_position
+    }
+
+    pub fn set_source_position(&mut self, position: u32) {
+        self.source_position = position;
     }
 
     pub fn set_writing_mode(&mut self, writing_mode: WritingMode) {
@@ -1933,7 +1974,16 @@ impl Paragraph {
         &mut self.children
     }
 
+    /// Move spans into this paragraph, inheriting its shaping language.
+    pub fn extend_children(&mut self, spans: impl IntoIterator<Item = TextSpan>) {
+        self.children.extend(spans.into_iter().map(|mut span| {
+            span.language.clone_from(&self.language);
+            span
+        }));
+    }
+
     fn set_span_positions(&mut self, index: u32) {
+        self.source_position = index;
         for (span_index, span) in self.children.iter_mut().enumerate() {
             span.set_position(index, span_index as u32);
         }
@@ -2041,7 +2091,7 @@ impl Paragraph {
     /// Japanese spacing normalized, kinsoku break suppressions inserted),
     /// plus the map from original to builder-text UTF-16 offsets. Consumers
     /// of laid-out offsets must translate through the map. Only paragraphs
-    /// with Japanese text or ruby are transformed.
+    /// with an explicit typography profile are transformed.
     pub fn layout_span_texts(&self) -> (Vec<String>, kinsoku::OffsetMap) {
         layout_span_texts(self)
     }
@@ -2179,6 +2229,8 @@ fn apply_text_transform_with_source_ranges(
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextSpan {
     pub text: String,
+    /// Effective paragraph language, copied when the paragraph is decoded.
+    pub language: String,
     pub font_family: FontFamily,
     pub font_size: f32,
     pub line_height: f32,
@@ -2211,6 +2263,7 @@ impl Default for TextSpan {
     fn default() -> Self {
         Self {
             text: String::default(),
+            language: String::new(),
             font_family: FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
             font_size: 14.0,
             line_height: 1.2,
@@ -2366,6 +2419,9 @@ impl TextSpan {
         fill_layer_from_bottom: Option<usize>,
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
+        if !self.language.is_empty() {
+            style.set_locale(&self.language);
+        }
         let paint = if remove_alpha {
             let mut paint = paint::Paint::default();
             paint.set_color(skia::Color::BLACK);

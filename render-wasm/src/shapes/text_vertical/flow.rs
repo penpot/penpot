@@ -9,7 +9,9 @@ use crate::shapes::japanese::{
 };
 use crate::shapes::kinsoku::{forbidden_at_line_end, forbidden_at_line_start};
 use crate::shapes::text_japanese::capped_equal_allocations;
+use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{LineAdjustment, TextAlign};
+use unicode_segmentation::UnicodeSegmentation;
 
 use super::layout::{CellKind, VerticalCell};
 
@@ -269,6 +271,72 @@ pub(super) fn plan_columns(items: &[FlowItem], max_height: f32) -> Vec<(usize, f
         }
         placements.push((column, cursor));
         cursor += item.extent;
+    }
+    placements
+}
+
+/// Basic non-Japanese flow. Boundaries use the entire paragraph, so font
+/// and style runs cannot split a grapheme or create a word boundary.
+pub(super) fn plan_policy_columns(
+    cells: &[FlowCell],
+    text: &str,
+    policy: TextLayoutPolicy,
+    max_height: f32,
+) -> Vec<(usize, f32)> {
+    let mut boundaries = Vec::new();
+    let mut offset = 0;
+    let mut previous = None;
+    for grapheme in text.graphemes(true) {
+        let first = grapheme.chars().next().unwrap();
+        let allowed = previous.is_none_or(|before| policy.break_allowed(before, first));
+        boundaries.push((offset, allowed));
+        previous = Some(first);
+        offset += grapheme.encode_utf16().count();
+    }
+    boundaries.push((offset, true));
+    let mut atomic_start = Vec::with_capacity(cells.len());
+    let mut unit_start = Vec::with_capacity(cells.len());
+    let mut prefix = vec![0.0];
+    for (i, flow) in cells.iter().enumerate() {
+        let boundary = boundaries
+            .binary_search_by_key(&flow.cell.start, |(at, _)| *at)
+            .ok();
+        let atomic =
+            i > 0 && (flow.keep_with_previous || flow.shares_previous_box || boundary.is_none());
+        atomic_start.push(if atomic { atomic_start[i - 1] } else { i });
+        let joined = atomic || boundary.is_some_and(|at| !boundaries[at].1);
+        unit_start.push(if i > 0 && joined {
+            unit_start[i - 1]
+        } else {
+            i
+        });
+        prefix.push(prefix[i] + flow.cell.extent);
+    }
+    let mut placements = Vec::with_capacity(cells.len());
+    let (mut column, mut column_start, mut cursor) = (0, 0, 0.0);
+    for (i, flow) in cells.iter().enumerate() {
+        if cursor > 0.0 && cursor + flow.cell.extent > max_height + FIT_TOLERANCE {
+            let candidate = unit_start[i];
+            let break_at = if candidate > column_start
+                && prefix[i + 1] - prefix[candidate] <= max_height + FIT_TOLERANCE
+            {
+                candidate
+            } else {
+                atomic_start[i]
+            };
+            // An overlong unit may break, but a grapheme or annotation may not.
+            if break_at > column_start {
+                column += 1;
+                cursor = 0.0;
+                for k in break_at..i {
+                    placements[k] = (column, cursor);
+                    cursor += cells[k].cell.extent;
+                }
+                column_start = break_at;
+            }
+        }
+        placements.push((column, cursor));
+        cursor += flow.cell.extent;
     }
     placements
 }

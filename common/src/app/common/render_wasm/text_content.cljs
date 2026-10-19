@@ -6,8 +6,9 @@
 
 (ns app.common.render-wasm.text-content
   "Single source of truth for writing a text shape's content into the WASM design
-  state. The binary layout ([num-spans][paragraph attrs][span attrs][text][ruby-text]) is
-  identical for the workspace and the headless exporter, and so is the font-id
+  state. The binary layout is [num-spans][paragraph attrs][span attrs][text]
+  [ruby-text][language], identical for the workspace and headless exporter.
+  Both hosts also share the font-id
   -> uuid mapping (`cfnt/font-id->uuid`). Only *variant* resolution differs —
   the workspace has a loaded fonts DB, the exporter does not — so that part is
   injected via the `opts` map passed to `write-shape-text!`.
@@ -24,7 +25,7 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-(def ^:const PARAGRAPH-ATTR-U8-SIZE 16)
+(def ^:const PARAGRAPH-ATTR-U8-SIZE 20)
 (def ^:const SPAN-ATTR-U8-SIZE 80)
 (def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
@@ -126,11 +127,12 @@
         (mem/write-u8 dview text-transform)
         (mem/write-u8 dview writing-mode)
         (mem/write-u8 dview text-orientation)
+        (mem/write-u8 dview (if (= "spaces-only" (:korean-wrap paragraph)) 1 0))
         ;; Alignment padding; must match RawParagraphData in Rust.
-        (mem/write-u8 dview 0)
         (mem/write-u8 dview 0)
         (mem/write-f32 dview line-height)
         (mem/write-f32 dview letter-spacing)
+        (mem/write-u32 dview (mem/size (encode-text (get paragraph :text-language ""))))
         (mem/assert-written offset PARAGRAPH-ATTR-U8-SIZE))))
 
 (defn- write-spans
@@ -225,24 +227,26 @@
                          :or   {normalize-font-id   cfnt/font-id->uuid
                                 normalize-paragraph identity
                                 normalize-span      (fn [span _paragraph] span)}}]
-  (let [paragraph     (normalize-paragraph paragraph)
-        spans         (map #(normalize-span % paragraph) spans)
-        num-spans     (count spans)
-        fills-size    (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
-        metadata-size (+ PARAGRAPH-ATTR-U8-SIZE
-                         (* num-spans (+ SPAN-ATTR-U8-SIZE fills-size)))
-        text-buffer   (encode-text text)
-        text-size     (mem/size text-buffer)
-        ruby-buffer   (encode-text (apply str (map span-ruby spans)))
-        ruby-size     (mem/size ruby-buffer)
-        total-size    (+ 4 metadata-size text-size ruby-size)
-        heapu8        (mem/get-heap-u8)
-        dview         (mem/get-data-view)
-        offset        (mem/alloc total-size)]
+  (let [paragraph        (normalize-paragraph paragraph)
+        spans            (map #(normalize-span % paragraph) spans)
+        num-spans        (count spans)
+        fills-size       (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
+        metadata-size    (+ PARAGRAPH-ATTR-U8-SIZE
+                            (* num-spans (+ SPAN-ATTR-U8-SIZE fills-size)))
+        text-buffer      (encode-text text)
+        text-size        (mem/size text-buffer)
+        ruby-buffer      (encode-text (apply str (map span-ruby spans)))
+        ruby-size        (mem/size ruby-buffer)
+        language-buffer  (encode-text (get paragraph :text-language ""))
+        total-size       (+ 4 metadata-size text-size ruby-size (mem/size language-buffer))
+        heapu8           (mem/get-heap-u8)
+        dview            (mem/get-data-view)
+        offset           (mem/alloc total-size)]
     (-> offset
         (mem/write-u32 dview num-spans)
         (write-paragraph dview paragraph)
         (write-spans dview spans paragraph normalize-font-id)
         (mem/write-buffer heapu8 text-buffer)
-        (mem/write-buffer heapu8 ruby-buffer))
+        (mem/write-buffer heapu8 ruby-buffer)
+        (mem/write-buffer heapu8 language-buffer))
     (h/call wasm/internal-module "_set_shape_text_content")))

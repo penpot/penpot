@@ -1,4 +1,5 @@
 use crate::shapes::TextOrientation;
+use unicode_segmentation::UnicodeSegmentation;
 
 /// Emoji ranges recognized by the frontend font-loader. Emoji stay upright
 /// in vertical flow; Latin text rotates under `text-orientation: mixed`.
@@ -18,6 +19,11 @@ pub(crate) fn is_upright_char(c: char) -> bool {
     is_emoji_char(c)
         || matches!(u32::from(c),
         0x2E80..=0x2FDF   // CJK radicals, Kangxi radicals
+        | 0x1100..=0x11FF // conjoining Hangul Jamo
+        | 0x3100..=0x318F // Bopomofo and compatibility Jamo
+        | 0x31A0..=0x31BF // Bopomofo extended
+        | 0xA960..=0xA97F // Hangul Jamo extended A
+        | 0xD7B0..=0xD7FF // Hangul Jamo extended B
         | 0x3000..=0x303F // CJK symbols and punctuation
         | 0x3040..=0x30FF // hiragana, katakana
         | 0x31C0..=0x31EF // CJK strokes
@@ -78,7 +84,8 @@ pub(super) struct Segment {
 pub(super) fn segment_by_orientation(text: &str, orientation: TextOrientation) -> Vec<Segment> {
     let mut segments: Vec<Segment> = Vec::new();
     let mut utf16_offset = 0;
-    for c in text.chars() {
+    for grapheme in text.graphemes(true) {
+        let c = grapheme.chars().next().unwrap();
         let upright = orientation == TextOrientation::Upright || is_upright_char(c);
         let emoji = is_emoji_char(c);
         // CJK and emoji are both upright, but split them so the segment
@@ -90,15 +97,15 @@ pub(super) fn segment_by_orientation(text: &str, orientation: TextOrientation) -
                 if last.upright == upright
                     && last.text.chars().next_back().is_some_and(is_emoji_char) == emoji =>
             {
-                last.text.push(c)
+                last.text.push_str(grapheme)
             }
             _ => segments.push(Segment {
-                text: c.to_string(),
+                text: grapheme.to_string(),
                 utf16_start: utf16_offset,
                 upright,
             }),
         }
-        utf16_offset += c.len_utf16();
+        utf16_offset += grapheme.encode_utf16().count();
     }
     segments
 }
