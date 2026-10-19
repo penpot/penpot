@@ -178,15 +178,15 @@
                           :id shape-a
                           :operations [{:type :set :attr :name :val "schema-breaker"}]})
         commit3  (commit (add-rect page-id shape-c))
-        validate val/validate-file-schema!
+        validate val/validate-file-schema-affected!
         ;; Changes and shapes are schema checked while applied, so no real
         ;; change reaches the file schema check invalid: one is simulated
-        out      (with-redefs [val/validate-file-schema!
-                               (fn [file]
+        out      (with-redefs [val/validate-file-schema-affected!
+                               (fn [file changes]
                                  (when (= "schema-breaker"
                                           (get-in file [:data :pages-index page-id :objects shape-a :name]))
                                    (ex/raise :type :validation :code :schema-validation :hint "schema"))
-                                 (validate file))]
+                                 (validate file changes))]
                    (update-file ctx {:changes-with-metadata [commit1 commit2 commit3]}))
         objects  (-> (get-file-data ctx) :pages-index (get page-id) :objects)]
 

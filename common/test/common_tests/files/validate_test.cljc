@@ -10,6 +10,7 @@
 
      - validate-file-affected   – returns nil or list of errors
      - validate-file-affected!  – same but raises on non-empty errors
+     - validate-file-schema-affected! – schema check of the touched pages
 
    The tests verify the scoping logic implemented by extract-affected-ids
    (tested indirectly) by injecting controlled broken states into specific
@@ -49,6 +50,15 @@
         (fn [page]
           (let [root (ctst/get-shape page uuid/zero)]
             (ctst/set-shape page (update root :shapes conj missing-id)))))))))
+
+(defn- inject-invalid-page
+  "Give the page identified by `page-label` a name that is not a string,
+  so the page fails the file schema check."
+  [file page-label]
+  (ctf/update-file-data
+   file
+   (fn [file-data]
+     (ctpl/update-page file-data (thi/id page-label) #(assoc % :name 42)))))
 
 (defn- inject-broken-component
   "Add a deleted component with `:objects nil` to the file.
@@ -447,3 +457,62 @@
             (t/is (= :validation (:type data)))
             (t/is (= :referential-integrity (:code data)))
             (t/is (seq (:details data)))))))))
+
+;; ----------------------------------------------------------------
+;; 11. validate-file-schema-affected! – schema of the touched pages
+;; ----------------------------------------------------------------
+
+(defn- schema-error?
+  [file changes]
+  (try
+    (cfv/validate-file-schema-affected! file changes)
+    false
+    (catch #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) _
+      true)))
+
+(t/deftest validate-file-schema-affected!-returns-the-file
+  (let [file    (thf/sample-file :file1 :page-label :page1)
+        changes [{:type :mod-obj :page-id (thi/id :page1) :id uuid/zero :operations []}]]
+    (t/is (= file (cfv/validate-file-schema-affected! file changes)))))
+
+(t/deftest validate-file-schema-affected!-checks-touched-pages
+  (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                 (thf/add-sample-page :page2)
+                 (inject-invalid-page :page2))]
+
+    (t/testing "a shape change on the invalid page raises"
+      (t/is (schema-error? file [{:type :mod-obj :page-id (thi/id :page2) :id uuid/zero :operations []}])))
+
+    (t/testing "mod-page on the invalid page raises"
+      (t/is (schema-error? file [{:type :mod-page :id (thi/id :page2) :name "page2"}])))
+
+    (t/testing "page plugin data on the invalid page raises"
+      (t/is (schema-error? file [{:type :set-plugin-data :object-type :page :object-id (thi/id :page2)
+                                  :namespace "ns" :key "k" :value "v"}])))
+
+    (t/testing "a guide on the invalid page raises"
+      (t/is (schema-error? file [{:type :set-guide :page-id (thi/id :page2) :id (uuid/next) :params nil}])))))
+
+(t/deftest validate-file-schema-affected!-skips-untouched-pages
+  (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                 (thf/add-sample-page :page2)
+                 (inject-invalid-page :page2))]
+
+    (t/testing "a shape change on another page does not check the invalid page"
+      (t/is (not (schema-error? file [{:type :mod-obj :page-id (thi/id :page1) :id uuid/zero :operations []}]))))
+
+    (t/testing "a file level change does not check the invalid page"
+      (t/is (not (schema-error? file [{:type :del-color :id (uuid/next)}]))))))
+
+(t/deftest validate-file-schema-affected!-checks-the-rest-of-the-file
+  (let [color-id (uuid/next)
+        file     (-> (thf/sample-file :file1 :page-label :page1)
+                     (ctf/update-file-data #(assoc-in % [:colors color-id] {:id color-id :name 42})))]
+    (t/is (schema-error? file [{:type :mod-obj :page-id (thi/id :page1) :id uuid/zero :operations []}]))))
+
+(t/deftest validate-file-schema-affected!-checks-everything-for-unknown-changes
+  (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                 (thf/add-sample-page :page2)
+                 (inject-invalid-page :page2))]
+    (t/is (schema-error? file [{:type :mod-obj :page-id (thi/id :page1) :id uuid/zero :operations []}
+                               {:type :some-future-change}]))))
