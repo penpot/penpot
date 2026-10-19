@@ -494,3 +494,8 @@
                                          :children [{:text "b"}]}]}]}]
     (t/is (= "vertical-rl" (cjk/whole-shape-attr content :writing-mode)))
     (t/is (nil? (cjk/whole-shape-attr content :text-orientation)))))
+
+(t/deftest regional-chinese-and-korean-word-profiles-validate
+  (doseq [language ["zh-Hans-CN" "zh-Hant-CN" "zh-Hant-TW" "zh-Hant-HK" "ko-KR"]]
+    (t/is (ctst/valid-content?
+           (with-paragraph-attrs {:text-language language :korean-wrap "keep-words"})))))

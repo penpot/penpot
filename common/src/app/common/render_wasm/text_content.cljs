@@ -127,7 +127,7 @@
         (mem/write-u8 dview text-transform)
         (mem/write-u8 dview writing-mode)
         (mem/write-u8 dview text-orientation)
-        (mem/write-u8 dview (if (= "spaces-only" (:korean-wrap paragraph)) 1 0))
+        (mem/write-u8 dview (case (:korean-wrap paragraph) "spaces-only" 1 "keep-words" 2 0))
         ;; Alignment padding; must match RawParagraphData in Rust.
         (mem/write-u8 dview 0)
         (mem/write-f32 dview line-height)

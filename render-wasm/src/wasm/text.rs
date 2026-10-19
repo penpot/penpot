@@ -304,7 +304,7 @@ impl From<RawParagraph> for shapes::Paragraph {
             .and_then(|end| value.text_buffer.get(ruby_offset..end))
             .unwrap_or(&[]);
         paragraph.set_language(String::from_utf8_lossy(language).into_owned());
-        paragraph.set_korean_spaces_only(value.attrs.korean_wrap == 1);
+        paragraph.set_korean_wrap(value.attrs.korean_wrap.into());
         paragraph
     }
 }
@@ -531,6 +531,26 @@ mod tests {
     }
 
     #[test]
+    fn word_wrap_byte_is_distinct_from_the_experiment_and_unknown_defaults() {
+        use crate::shapes::text_policy::KoreanWrap;
+        for (byte, expected) in [
+            (0, KoreanWrap::Syllable),
+            (1, KoreanWrap::SpacesOnly),
+            (2, KoreanWrap::KeepWords),
+            (255, KoreanWrap::Syllable),
+        ] {
+            let mut attrs = [0u8; RAW_PARAGRAPH_DATA_SIZE];
+            attrs[10] = byte;
+            let paragraph = shapes::Paragraph::from(RawParagraph {
+                attrs: RawParagraphData::from(attrs),
+                spans: vec![],
+                text_buffer: vec![],
+            });
+            assert_eq!(paragraph.korean_wrap(), expected);
+        }
+    }
+
+    #[test]
     fn language_decodes_after_base_and_ruby_text() {
         let mut attrs = [0u8; RAW_PARAGRAPH_DATA_SIZE];
         attrs[10] = 1; // Korean spaces-only POC; byte 6 after span count.
@@ -544,7 +564,10 @@ mod tests {
             text_buffer: "韓한ko".as_bytes().to_vec(),
         });
         assert_eq!(paragraph.language(), "ko");
-        assert!(paragraph.korean_spaces_only());
+        assert_eq!(
+            paragraph.korean_wrap(),
+            crate::shapes::text_policy::KoreanWrap::SpacesOnly
+        );
         assert_eq!(paragraph.children()[0].text, "韓");
         assert_eq!(paragraph.children()[0].ruby, "한");
         assert_eq!(paragraph.children()[0].language, "ko");

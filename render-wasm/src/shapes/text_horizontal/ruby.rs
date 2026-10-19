@@ -1,3 +1,4 @@
+use crate::render::FallbackFonts;
 use std::collections::HashMap;
 
 use super::*;
@@ -67,13 +68,12 @@ pub(crate) fn horizontal_ruby_spacing(
     if !paragraph.children().iter().any(TextSpan::has_ruby) {
         return HorizontalRubySpacing::empty(texts.len());
     }
-    let fallback_families: Vec<String> = get_fallback_fonts().iter().cloned().collect();
     horizontal_ruby_spacing_with(
         paragraph,
         texts,
         offset_map,
         get_resources().fonts.font_provider(),
-        &fallback_families,
+        get_fallback_fonts(),
     )
 }
 
@@ -94,7 +94,7 @@ pub(super) fn horizontal_ruby_spacing_with(
     texts: &[String],
     offset_map: &kinsoku::OffsetMap,
     font_provider: &skia::textlayout::TypefaceFontProvider,
-    fallback_families: &[String],
+    fallback_families: &FallbackFonts,
 ) -> HorizontalRubySpacing {
     let spans = paragraph.children();
     let mut spacing = HorizontalRubySpacing::empty(texts.len());
@@ -365,7 +365,7 @@ pub(crate) fn paint_horizontal_ruby(
     }
     let font_provider = get_resources().fonts.font_provider();
     let fallback_mgr = FontMgr::from(font_provider.clone());
-    let fallback_families: Vec<String> = get_fallback_fonts().iter().cloned().collect();
+    let fallback_families = get_fallback_fonts();
     let bounds = text_content.bounds();
     let plans = text_content.horizontal_plans();
     let Some(plan) = plans.get(paragraph_index) else {
@@ -389,7 +389,7 @@ pub(crate) fn paint_horizontal_ruby(
         let shaped = shape_segment_with_fallbacks(
             span.ruby_text(),
             span.ruby_font_size(),
-            &span_font_families(span, &fallback_families),
+            &span_font_families(span, fallback_families),
             font_provider,
             false,
             span.font_features,

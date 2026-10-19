@@ -7,6 +7,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use skia_safe::{textlayout::TypefaceFontProvider, FontMgr, Typeface};
 
+use crate::render::FallbackFonts;
 use crate::shapes::japanese::{classify, JapaneseClass};
 use crate::shapes::kinsoku::{forbidden_at_line_end, forbidden_at_line_start};
 use crate::shapes::text_japanese::{warichu_split_chars, WARICHU_FONT_SCALE};
@@ -29,7 +30,7 @@ const MIN_TCY_SCALE: f32 = 0.5;
 pub(super) struct Fonts<'a> {
     pub provider: &'a TypefaceFontProvider,
     pub fallback_mgr: &'a FontMgr,
-    pub fallback_families: &'a [String],
+    pub fallback_families: &'a FallbackFonts,
 }
 
 /// Centered punctuation (jlreq cl-05 中点類: middle dot, full-width colon and

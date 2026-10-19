@@ -5,6 +5,7 @@
 use skia_safe::{textlayout::TypefaceFontProvider, FontMgr};
 
 use crate::math::Rect;
+use crate::render::FallbackFonts;
 use crate::shapes::{
     FontFamily, FontStyle, GrowType, Paragraph, TextAlign, TextContent, TextDecoration,
     TextDirection, TextOrientation, TextSpan, WritingMode,
@@ -163,7 +164,7 @@ pub(super) fn layout_with_fallback(
         max_height,
         provider,
         FontMgr::from(provider.clone()),
-        fallback_families,
+        &FallbackFonts::from_families(fallback_families.iter().cloned()),
         content.bounds(),
     )
 }

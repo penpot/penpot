@@ -1367,11 +1367,18 @@
   (props/set-shape-shadows shadows))
 
 (defn- fallback-font-set
-  "Emoji and Noto faces covering `emoji?` and the scripts in `langs`."
+  "Emoji and Noto faces covering `emoji?` and the resolved scripts in `langs`."
   [emoji? langs]
   (-> #{}
       (cond-> ^boolean emoji? (cfnt/add-emoji-font))
-      (cfnt/add-noto-fonts (cfnt/resolve-ambiguous-cjk langs @i18n/locale))))
+      (cfnt/add-noto-fonts langs)))
+
+(defn- text-font-languages
+  "Scripts `text` needs, with Han resolved by the paragraph `language`
+   (nil when unset) and then the app locale."
+  [text language]
+  (-> (cfnt/collect-used-languages #{} text)
+      (cfnt/resolve-ambiguous-cjk language @i18n/locale)))
 
 (defn fonts-from-text-content [content fallback-fonts-only?]
   (let [paragraph-set (first (get content :children))
@@ -1392,7 +1399,7 @@
             (let [text          (apply str (map :text spans))
                   fallback-text (apply str (map #(str (:text %) (:ruby %)) spans))
                   emoji?        (if emoji? emoji? (cfnt/contains-emoji? fallback-text))
-                  langs         (cfnt/collect-used-languages langs fallback-text)]
+                  langs         (into langs (text-font-languages fallback-text (:text-language paragraph)))]
 
               ;; FIXME: this should probably be somewhere else
               (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
@@ -1409,6 +1416,13 @@
 ;; Fallback faces a composition waits on, so preview updates do not queue more relayouts.
 (defonce ^:private composition-pending-faces (atom #{}))
 
+(defn- caret-paragraph-language
+  "Language of the paragraph holding the editor caret in `shape-id`, or nil."
+  [shape-id]
+  (when-let [{:keys [focus-para]} (text-editor/text-editor-get-selection)]
+    (dm/get-in (text-editor/get-cached-content shape-id)
+               [:children 0 :children focus-para :text-language])))
+
 (defn load-composition-fonts!
   "Fetch the fallback faces (emoji, Noto, ...) that `text` needs and relayout
   `shape-id` once they are stored. For text that lives only in WASM, such as
@@ -1416,7 +1430,7 @@
   `set-shape-text-content`."
   [shape-id text]
   (let [emoji?  (cfnt/contains-emoji? text)
-        langs   (cfnt/collect-used-languages #{} text)
+        langs   (text-font-languages text (caret-paragraph-language shape-id))
         waiting @composition-pending-faces
         fonts   (into []
                       (comp (filter :is-fallback)

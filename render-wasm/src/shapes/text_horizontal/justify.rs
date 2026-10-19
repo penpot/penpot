@@ -72,6 +72,77 @@ pub(crate) fn horizontal_justify_spacing(
     spacing
 }
 
+/// Policy-based, bounded expansion for Chinese and Korean. The final line,
+/// annotation interiors, nonbreaking pairs and grapheme interiors stay solid.
+pub(crate) fn horizontal_policy_justify_spacing(
+    paragraph: &Paragraph,
+    laid_out: &skia::textlayout::Paragraph,
+    plan: &HorizontalParagraphPlan,
+    width: f32,
+) -> Vec<Vec<(usize, f32)>> {
+    use unicode_segmentation::UnicodeSegmentation;
+    let policy = paragraph.layout_policy();
+    let chars = line_chars(paragraph, plan);
+    let source: String = chars.iter().map(|c| c.ch).collect();
+    let starts: Vec<_> = source
+        .graphemes(true)
+        .scan(0usize, |at, g| {
+            let start = *at;
+            *at += g.chars().count();
+            Some(start)
+        })
+        .collect();
+    let mut result = vec![Vec::new(); plan.texts.len()];
+    let notes: Vec<_> = plan
+        .offsets
+        .ranges
+        .iter()
+        .filter(|range| range.warichu)
+        .collect();
+    let lines = laid_out.get_line_metrics();
+    for line in lines.iter().take(lines.len().saturating_sub(1)) {
+        let mut remaining = (width - line.width as f32 - JUSTIFY_EPSILON).max(0.0);
+        let mut opportunities = Vec::new();
+        let start = chars.partition_point(|c| c.utf16 < line.start_index);
+        let end = chars.partition_point(|c| c.utf16 < line.end_excluding_whitespaces);
+        for index in start..end.saturating_sub(1) {
+            let (before, after) = (&chars[index], &chars[index + 1]);
+            let note = notes.get(notes.partition_point(|r| r.builder_end <= before.utf16));
+            if before.utf16 < line.start_index
+                || after.utf16 >= line.end_excluding_whitespaces
+                || after.joined
+                || starts.binary_search(&(index + 1)).is_err()
+                || note.is_some_and(|r| {
+                    r.builder_start > before.utf16 && r.builder_start < after.utf16
+                })
+            {
+                continue;
+            }
+            let (priority, capacity) = policy.expansion_em(before.ch, after.ch);
+            if priority > 0 {
+                opportunities.push((
+                    index,
+                    priority,
+                    capacity * before.font_size.min(after.font_size),
+                ));
+            }
+        }
+        for priority in 1..=2 {
+            let caps: Vec<_> = opportunities
+                .iter()
+                .filter(|(_, p, _)| *p == priority)
+                .map(|(i, _, cap)| (*i, *cap))
+                .collect();
+            for (index, amount) in capped_equal_allocations(&caps, remaining) {
+                let ch = &chars[index];
+                result[ch.span].push((ch.index, amount));
+                remaining -= amount;
+            }
+        }
+    }
+    result
+}
+
 /// Lays a paragraph out with extra per-span sheds (char index, amount).
 pub(crate) type LayOutWithSheds<'a> =
     dyn Fn(&[Vec<(usize, f32)>]) -> skia::textlayout::Paragraph + 'a;
