@@ -53,6 +53,44 @@ test.describe("Viewport", () => {
   });
 });
 
+test.describe("Grid layout", () => {
+  test("Shows the grid layout options and the grid editor", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-9042.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "af2494d0-39ba-8184-8005-230696f6df5c",
+      pageId: "af2494d0-39ba-8184-8005-230696f6df5d",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    const section = page.getByTestId("inspect-layout");
+    await expect(section.getByRole("button", { name: "Edit grid" }))
+      .toBeVisible();
+    // The buttons are a small part of the section: compare every pixel.
+    await expect(section).toHaveScreenshot("grid-layout-options.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await section.getByRole("button", { name: "Edit grid" }).click();
+    await expect(workspace.rightSidebar.getByText("GRID LAYOUT")).toBeVisible();
+    // Expand the column tracks so their rows show too.
+    await workspace.rightSidebar.getByText(/^Columns? \d/).click();
+    await page.mouse.move(0, 0);
+    await expect(workspace.rightSidebar).toHaveScreenshot(
+      "grid-layout-editor.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+  });
+});
+
 test.describe("Design tab", () => {
   test("Shows the boolean options when selecting two shapes", async ({
     page,
