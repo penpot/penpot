@@ -116,7 +116,7 @@
           (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/template ::eml/comment-mention
+            ::eml/template "comment-mention"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -132,7 +132,7 @@
           (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/template ::eml/comment-thread
+            ::eml/template "comment-thread"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -148,7 +148,7 @@
           (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/template ::eml/comment-notification
+            ::eml/template "comment-notification"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname

@@ -801,7 +801,7 @@ RETURNING id, deleted_at;")
                      (str/trim user-name))]
     (db/tx-run! cfg (fn [tx-cfg]
                       (eml/send-template tx-cfg {::eml/reuse-conn true
-                                                 ::eml/template ::eml/renewal-notice
+                                                 ::eml/template "renewal-notice"
                                                  :public-uri   (cf/get :public-uri)
                                                  :to           user-email
                                                  :user-name    user-name

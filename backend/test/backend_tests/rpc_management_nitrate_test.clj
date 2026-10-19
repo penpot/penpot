@@ -1905,7 +1905,7 @@
                    emails))
           (doseq [email-params @sent]
             (t/is (= organization-name (:organization-name email-params)))
-            (t/is (= ::eml/organization-setup-sso (::eml/template email-params)))))))))
+            (t/is (= "organization-setup-sso" (::eml/template email-params)))))))))
 
 (t/deftest notify-organization-sso-change-skips-email-when-not-active
   (let [sent   (atom [])

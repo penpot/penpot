@@ -604,13 +604,14 @@
 ;; TEMPLATED SEND (render inside the worker)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Registry of template id (the same string stored as `:id` on the
-;; rendered email) to factory. The queue only carries the id plus the
-;; raw template data; the worker resolves the factory here and
-;; renders. `::template` params on `send-template` accept the
-;; qualified keyword (e.g. `::invite-to-team`); only its name is
-;; stored, which is plain-JSON safe (namespaced keyword values would
-;; lose their namespace when encoded).
+;; Registry of template id to factory. This map is the single source
+;; of truth for templated mail: `send-template` validates membership
+;; here before submitting (so a job that could never be rendered is
+;; rejected up front), and the worker resolves the factory here to
+;; render. Callers pass the id string itself (e.g. `"invite-to-team"`);
+;; keys stay `::eml/`-namespaced and values stay plain data, following
+;; the params convention. Plain strings are also plain-JSON safe for
+;; the `params` column.
 (def templates
   {"feedback"                             user-feedback
    "register"                             register
@@ -653,41 +654,41 @@
   unified jobs machinery. Unlike `send`, this does NOT render the
   email: it stores only the template id plus the raw template data as
   `:send-templated-mail` job params, and the worker renders and sends
-  the email. The `::template` param is the qualified template keyword
-  (e.g. `::invite-to-team`); `::reuse-conn` behaves like in `send`."
+  the email. The `::template` param is the template id string (one of
+  the keys of `templates`, e.g. `invite-to-team`);
+  `::reuse-conn` behaves like in `send`."
   [cfg {:keys [::template ::reuse-conn] :as params}]
   (when (and reuse-conn (nil? (::db/conn cfg)))
     (ex/raise :type :validation
               :code :missing-connection
               :hint "reuse-conn requires the caller cfg to carry ::db/conn (call inside a transaction)"))
-  (let [template-id (when (some? template) (name template))]
-    (when (nil? template-id)
-      (ex/raise :type :validation
-                :code :missing-template
-                :hint "template is mandatory for templated emails"))
-    (when-not (contains? templates template-id)
-      (ex/raise :type :validation
-                :code :unknown-email-template
-                :hint (str/ffmt "unknown email template: %", template-id)))
-    (let [recipe (-> params
-                     (dissoc ::reuse-conn ::template)
-                     ;; Present-but-nil extras (e.g. `:file-id` when there is
-                     ;; no file) would fail the job schema, while the old
-                     ;; inline render simply ignored them.
-                     (d/without-nils))]
-      (jobs/submit (cond-> (dissoc cfg ::db/conn)
-                     reuse-conn (assoc ::db/conn (::db/conn cfg)))
-                   {::jobs/name :send-templated-mail
-                    ::jobs/delay 0
-                    ::jobs/max-retries 4
-                    ::jobs/priority 200
-                    ::jobs/params (cond-> (assoc recipe :template template-id)
-                                    ;; `:public-uri` arrives as a URI record
-                                    ;; from config, which plain JSON cannot
-                                    ;; roundtrip; the templates only need its
-                                    ;; string form.
-                                    (some? (:public-uri recipe))
-                                    (update :public-uri str))}))))
+  (when (nil? template)
+    (ex/raise :type :validation
+              :code :missing-template
+              :hint "template is mandatory for templated emails"))
+  (when-not (contains? templates template)
+    (ex/raise :type :validation
+              :code :unknown-email-template
+              :hint (str/ffmt "unknown email template: %", template)))
+  (let [recipe (-> params
+                   (dissoc ::reuse-conn ::template)
+                   ;; Present-but-nil extras (e.g. `:file-id` when there is
+                   ;; no file) would fail the job schema, while the old
+                   ;; inline render simply ignored them.
+                   (d/without-nils))]
+    (jobs/submit (cond-> (dissoc cfg ::db/conn)
+                   reuse-conn (assoc ::db/conn (::db/conn cfg)))
+                 {::jobs/name :send-templated-mail
+                  ::jobs/delay 0
+                  ::jobs/max-retries 4
+                  ::jobs/priority 200
+                  ::jobs/params (cond-> (assoc recipe :template template)
+                                  ;; `:public-uri` arrives as a URI record
+                                  ;; from config, which plain JSON cannot
+                                  ;; roundtrip; the templates only need its
+                                  ;; string form.
+                                  (some? (:public-uri recipe))
+                                  (update :public-uri str))})))
 
 (defmethod ig/init-key ::templated-job-def
   [_ {sendmail ::sendmail}]

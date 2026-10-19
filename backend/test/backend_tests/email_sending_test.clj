@@ -182,17 +182,21 @@
   (t/testing "unknown template fails fast"
     (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"unknown email template"
                             (emails/send-template {} {:to "a@example.com"
-                                                      ::emails/template ::nope}))))
+                                                      ::emails/template "nope"}))))
+  (t/testing "template ids are strings, never keywords"
+    (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"unknown email template"
+                            (emails/send-template {} {:to "a@example.com"
+                                                      ::emails/template :app.email/register}))))
   (t/testing "reuse-conn without a caller connection fails fast"
     (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"reuse-conn"
                             (emails/send-template {} {:to "a@example.com"
                                                       ::emails/reuse-conn true
-                                                      ::emails/template ::emails/register})))))
+                                                      ::emails/template "register"})))))
 
 (t/deftest send-template-stores-recipe-not-rendered-mail
   (let [job-def  (templated-job-def (fn [_] nil))
         job-id   (submit-templated job-def (assoc invite-to-team-recipe
-                                                  ::emails/template ::emails/invite-to-team))
+                                                  ::emails/template "invite-to-team"))
         row      (th/db-get :job {:id job-id})
         params   (jobs/decode-params job-def (:params row))
         rendered (emails/render emails/invite-to-team invite-to-team-recipe)]
@@ -220,7 +224,7 @@
                   :team "Design Team"
                   :team-id team-id}
         job-id   (submit-templated job-def (assoc recipe
-                                                  ::emails/template ::emails/join-team))
+                                                  ::emails/template "join-team"))
         params   (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
     (t/testing "uuids survive the plain-JSON queue roundtrip typed"
       (t/is (uuid? (:team-id params)))
@@ -241,7 +245,7 @@
                   :feedback-content "content"
                   :profile {:id (random-uuid) :fullname "User" :email "user@example.com"}}
         job-id   (submit-templated job-def (assoc recipe
-                                                  ::emails/template ::emails/feedback))
+                                                  ::emails/template "feedback"))
         params   (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
     (t/testing "nested profile id survives the roundtrip typed"
       (t/is (uuid? (get-in params [:profile :id]))))

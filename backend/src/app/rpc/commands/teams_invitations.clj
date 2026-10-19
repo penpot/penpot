@@ -292,7 +292,7 @@
             (if organization
               (when (contains? cf/flags :admin-console)
                 (eml/send-template cfg {::eml/reuse-conn true
-                                        ::eml/template ::eml/invite-to-organization
+                                        ::eml/template "invite-to-organization"
                                         :public-uri (cf/get :public-uri)
                                         :to email
                                         :invited-by (:fullname profile)
@@ -301,7 +301,7 @@
                                         :token itoken
                                         :extra-data ptoken}))
               (eml/send-template cfg {::eml/reuse-conn true
-                                      ::eml/template ::eml/invite-to-team
+                                      ::eml/template "invite-to-team"
                                       :public-uri (cf/get :public-uri)
                                       :to email
                                       :invited-by (:fullname profile)
@@ -356,7 +356,7 @@
                 {:team-id team-id :email-to (:email member)})
 
     (eml/send-template cfg {::eml/reuse-conn true
-                            ::eml/template ::eml/join-team
+                            ::eml/template "join-team"
                             :public-uri (cf/get :public-uri)
                             :to (:email member)
                             :invited-by (:fullname profile)
@@ -811,16 +811,16 @@
     (let [request (upsert-team-access-request cfg team-id profile-id)
           template (cond
                      (and (some? file) (:is-default team) is-viewer)
-                     ::eml/request-file-access-yourpenpot-view
+                     "request-file-access-yourpenpot-view"
 
                      (and (some? file) (:is-default team))
-                     ::eml/request-file-access-yourpenpot
+                     "request-file-access-yourpenpot"
 
                      (some? file)
-                     ::eml/request-file-access
+                     "request-file-access"
 
                      :else
-                     ::eml/request-team-access)]
+                     "request-team-access")]
 
       (eml/send-template cfg {::eml/reuse-conn true
                               ::eml/template template

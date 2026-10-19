@@ -58,7 +58,7 @@
          {"error-report.txt" (:error-report params)})]
 
     (eml/send-template cfg {::eml/reuse-conn true
-                            ::eml/template ::eml/user-feedback
+                            ::eml/template "feedback"
                             :to       destination
                             :reply-to (:email profile)
                             :email    (:email profile)

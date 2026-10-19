@@ -1711,7 +1711,7 @@
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
       (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= ::eml/password-changed template))
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
@@ -1727,7 +1727,7 @@
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
       (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= ::eml/password-changed template))
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
@@ -1746,7 +1746,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (:call-count @mock)))
       (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= ::eml/password-changed template))
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
