@@ -235,11 +235,22 @@
           ys     (map #(js/Math.floor (+ 180 (* % step))) (range 81))]
       (t/is (every? pos? (map - (rest ys) ys))))))
 
-(t/deftest ^:async linux-and-windows-vertical-ime-anchor-stays-right-of-the-text-column
-  (doseq [platform [:linux :windows]
-          browser [:chrome :firefox :safari]]
+(t/deftest ^:async windows-vertical-ime-anchor-matches-the-text-column
+  (doseq [width [12 24 72]
+          browser [:chrome :edge :firefox]]
+    (let [rect   {:x 400 :y 180 :width width :height 1}
+          result (await (ime-surface-style :windows true rect 1 browser))]
+      ;; Windows opens vertical candidates to the left of the composition
+      ;; range. Keep that range in the text column so candidates clear it.
+      (t/is (= (+ (:x rect) width) (:right result)))
+      (t/is (= (:y rect) (:top result)))
+      (t/is (= "vertical-rl" (:writing-mode result)))
+      (t/is (= "scaleY(0.001)" (:transform result))))))
+
+(t/deftest ^:async linux-vertical-ime-anchor-stays-right-of-the-text-column
+  (doseq [browser [:chrome :firefox :safari]]
     (let [rect   {:x 400 :y 180 :width 24 :height 1}
-          result (await (ime-surface-style platform true rect 1 browser))]
+          result (await (ime-surface-style :linux true rect 1 browser))]
       ;; vertical-rl places the DOM caret in the rightmost cell of the surface.
       (t/is (> (- (:right result) (:width rect)) (+ (:x rect) (:width rect))))
       (t/is (= (:y rect) (:top result)))
