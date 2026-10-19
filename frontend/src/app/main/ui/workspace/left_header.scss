@@ -79,6 +79,8 @@
 }
 
 .file-name-input {
+  @include use-typography("title-small");
+
   display: flex;
   justify-content: center;
   align-items: center;
@@ -88,14 +90,7 @@
   padding: 0;
   border-radius: $br-4;
   background-color: var(--color-background-tertiary);
-
-  // TODO: No exact DS typography match found. Only the font size is set.
-  // Closest match: title-small.
-  font-size: px2rem(14);
   color: var(--color-foreground-secondary);
-
-  // TODO: No DS z-index token for 20.
-  z-index: 20;
   white-space: break-spaces;
 
   &:focus {
@@ -126,12 +121,10 @@
   flex-shrink: 0;
   background-color: var(--status-notification-background-color);
 
-  // TODO: No DS color matches the legacy warning #f5a91b (the DS orange is
-  // #fe9c07); keep the legacy color until design picks one.
   &.pending-status,
   &.saving-status,
   &.retrying-status {
-    --status-notification-background-color: var(--status-color-warning-500);
+    --status-notification-background-color: var(--color-accent-warning);
   }
 
   &.saved-status {
