@@ -474,10 +474,9 @@ pub(super) fn render_tree_pdf(
     canvas: &Canvas,
     id: &Uuid,
     tree: ShapesPoolRef,
-    scale: f32,
     page: skia::Rect,
 ) -> Result<()> {
-    render_tree_dispatch(shared, canvas, id, tree, scale, page, true)
+    render_tree_dispatch(shared, canvas, id, tree, 1.0, page, true)
 }
 
 #[allow(clippy::too_many_arguments)]
