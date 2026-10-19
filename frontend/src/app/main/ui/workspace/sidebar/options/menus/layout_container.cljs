@@ -192,13 +192,12 @@
 (mf/defc wrap-row
   {::mf/props :obj}
   [{:keys [wrap-type on-click]}]
-  [:button {:class (stl/css-case :wrap-button true
-                                 :selected (= wrap-type :wrap))
-            :title (if (= :wrap wrap-type)
-                     "No wrap"
-                     "Wrap")
-            :on-click on-click}
-   deprecated-icon/wrap])
+  [:> icon-button* {:variant "ghost"
+                    :tooltip-placement "top-left"
+                    :aria-pressed (= wrap-type :wrap)
+                    :aria-label "Wrap"
+                    :icon i/wrap
+                    :on-click on-click}])
 
 (mf/defc align-row
   {::mf/props :obj}
@@ -662,14 +661,13 @@
         (= type :multiple)
         [:> multiple-padding-selection* props])]
 
-     [:button {:class (stl/css-case
-                       :padding-toggle true
-                       :selected (= type :multiple))
-               :title (tr "workspace.layout-grid.editor.padding.expand")
-               :aria-label (tr "workspace.layout-grid.editor.padding.expand")
-               :data-type (d/name type)
-               :on-click on-type-change'}
-      deprecated-icon/padding-extended]]))
+     [:> icon-button* {:variant "ghost"
+                       :tooltip-placement "top-left"
+                       :aria-pressed (= type :multiple)
+                       :aria-label (tr "workspace.layout-grid.editor.padding.expand")
+                       :data-type (d/name type)
+                       :icon i/padding-extended
+                       :on-click on-type-change'}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GAP
