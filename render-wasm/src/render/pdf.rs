@@ -42,6 +42,7 @@ pub fn render_to_pdf(
     let metadata = skia::pdf::Metadata {
         creator: "Penpot".to_string(),
         producer: "Penpot (Skia PDF)".to_string(),
+        raster_dpi: Some(300.0),
         ..Default::default()
     };
 
