@@ -185,6 +185,7 @@
                           :on-click on-toggle-search
                           :aria-label (tr "workspace.assets.search")}]])
 
+     ;; Arrows for scrolling the color palette, those buttons no not form part of the DS
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)
                  :disabled (= offset 0)
