@@ -99,8 +99,8 @@ impl State {
         get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp, format)
     }
 
-    pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
-        crate::render::pdf::render_to_pdf(get_resources(), id, &self.shapes, scale)
+    pub fn render_shape_pdf(&mut self, id: &Uuid) -> Result<Vec<u8>> {
+        crate::render::pdf::render_to_pdf(get_resources(), id, &self.shapes)
     }
 
     pub fn render_shape_svg(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {

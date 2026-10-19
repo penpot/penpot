@@ -144,6 +144,10 @@ impl ShapesPoolImpl {
 
     pub fn get_mut(&mut self, id: &Uuid) -> Option<&mut Shape> {
         let idx = *self.uuid_to_idx.get(id)?;
+        // The caller may change the shape, so its modified copy goes stale.
+        if let Some(cell) = self.modified_shape_cache.get_mut(&idx) {
+            *cell = OnceCell::new();
+        }
         Some(&mut self.shapes[idx])
     }
 
@@ -575,5 +579,24 @@ impl Clone for ShapesPoolImpl {
             structure: self.structure.clone(),
             scale_content: self.scale_content.clone(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_mut_refreshes_the_modified_shape() {
+        let mut pool = ShapesPool::new();
+        pool.initialize(1);
+        let id = Uuid::new_v4();
+        pool.add_shape(id).set_opacity(1.0);
+
+        pool.set_modifiers(HashMap::from([(id, skia::Matrix::translate((10.0, 0.0)))]));
+        assert_eq!(pool.get(&id).expect("shape").opacity, 1.0);
+
+        pool.get_mut(&id).expect("shape").set_opacity(0.5);
+        assert_eq!(pool.get(&id).expect("shape").opacity, 0.5);
     }
 }

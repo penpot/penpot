@@ -1005,16 +1005,14 @@ impl Shape {
         let max_stroke = Stroke::max_bounds_width(self.strokes.iter(), self.is_open());
 
         let mut rect = bounds.to_rect();
-        for shadow in self.shadows_visible() {
-            if !shadow.hidden() {
-                if let Some(filter) = shadow.get_drop_shadow_filter() {
-                    let mut source = rect;
-                    if mitered && shadow.spread > 0.0 {
-                        let tip = (MITER_LIMIT - 1.0) * (max_stroke + shadow.spread);
-                        source.outset((tip, tip));
-                    }
-                    rect.join(filter.compute_fast_bounds(source));
+        for shadow in self.drop_shadows_visible() {
+            if let Some(filter) = shadow.get_drop_shadow_filter() {
+                let mut source = rect;
+                if mitered && shadow.spread > 0.0 {
+                    let tip = (MITER_LIMIT - 1.0) * (max_stroke + shadow.spread);
+                    source.outset((tip, tip));
                 }
+                rect.join(filter.compute_fast_bounds(source));
             }
         }
         Bounds::from_rect(&rect)
@@ -1148,8 +1146,26 @@ impl Shape {
         extrect
     }
 
-    fn own_extrect_bounds(&self) -> Bounds {
+    pub(crate) fn own_extrect_bounds(&self) -> Bounds {
         self.expand_own_bounds(self.own_base_bounds(), true)
+    }
+
+    /// Bounds for a headless export rooted at this shape.
+    ///
+    /// Frames keep the classic board-box crop of overflowing children, but
+    /// still expand by their own strokes / drop shadows / layer blur so those
+    /// effects are not clipped (parity with single-export `extrect` for the
+    /// board itself). Other shapes use full [`Self::extrect`].
+    pub fn export_root_bounds(&self, tree: ShapesPoolRef, scale: f32) -> math::Rect {
+        if matches!(self.shape_type, Type::Frame(_)) {
+            let mut bounds = self.own_extrect_bounds();
+            if !self.transform.is_identity() {
+                bounds.transform_mut(&self.centered_transform());
+            }
+            bounds.to_rect()
+        } else {
+            self.extrect(tree, scale)
+        }
     }
 
     /// The shape's own geometry bounds, before stroke/shadow/blur margins.
@@ -1494,10 +1510,6 @@ impl Shape {
             .iter()
             .rev()
             .filter(|shadow| shadow.style() == ShadowStyle::Inner && !shadow.hidden())
-    }
-
-    pub fn shadows_visible(&self) -> impl DoubleEndedIterator<Item = &Shadow> {
-        self.shadows.iter().rev().filter(|shadow| !shadow.hidden())
     }
 
     pub fn to_path_transform(&self) -> Option<Matrix> {
@@ -2551,6 +2563,35 @@ mod tests {
 
         assert!(extrect.right > 50.0 + 20.0);
         assert!(extrect.bottom > 50.0 + 20.0);
+    }
+
+    /// Inner shadows are drawn inside the shape; they must not inflate export
+    /// size (WebGL PNG surface uses `extrect`). Regression for #12386.
+    #[test]
+    fn leaf_extrect_ignores_inner_shadow_offset() {
+        let mut pool = ShapesPool::new();
+        pool.initialize(1);
+
+        let shape_id = Uuid::new_v4();
+        {
+            let shape = pool.add_shape(shape_id);
+            shape.set_shape_type(Type::Rect(Rect::default()));
+            shape.set_selrect(0.0, 0.0, 200.0, 200.0);
+            shape.add_shadow(inner_shadow(0.0, (0.0, 1.0)));
+        }
+
+        let shape = pool.get(&shape_id).expect("shape should exist");
+        let baseline = {
+            let mut no_shadow = shape.clone();
+            no_shadow.clear_shadows();
+            no_shadow.calculate_extrect(&pool, 1.0)
+        };
+        let extrect = shape.calculate_extrect(&pool, 1.0);
+
+        assert_eq!(extrect.height(), baseline.height());
+        assert_eq!(extrect.width(), baseline.width());
+        assert_eq!(extrect.height(), 200.0);
+        assert_eq!(extrect.width(), 200.0);
     }
 
     #[test]

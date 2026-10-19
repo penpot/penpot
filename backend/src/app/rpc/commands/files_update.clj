@@ -168,7 +168,8 @@
                      (assoc :file file)
                      (assoc :changes changes))
 
-        cfg      (assoc cfg ::timestamp (ct/now))
+        cfg      (assoc cfg ::timestamp (ct/now)
+                        ::validation-timings (atom {}))
 
         tpoint   (ct/tpoint)]
 
@@ -209,9 +210,39 @@
     (binding [l/*context* (some-> (meta params)
                                   (get :app.http/request)
                                   (errors/request->context))]
-      (-> (update-file* cfg params)
-          (rph/with-defer #(let [elapsed (tpoint)]
-                             (l/trace :hint "update-file" :time (ct/format-duration elapsed))))))))
+      (try
+        (-> (update-file* cfg params)
+            (rph/with-defer #(let [elapsed (tpoint)
+                                   timings @(::validation-timings cfg)]
+                               (l/dbg :hint "update-file"
+                                      :file-id (str (:id file))
+                                      :project-id (str (:project-id file))
+                                      :team-id (str (:team-id file))
+                                      :status "success"
+                                      :time (ct/format-duration elapsed)
+                                      :resolve-libs-ms (get timings :resolve-libs-ms)
+                                      :process-changes-ms (get timings :process-changes-ms)
+                                      :soft-validate-affected-ms (get timings :soft-validate-affected-ms)
+                                      :soft-validate-schema-ms (get timings :soft-validate-schema-ms)
+                                      :validate-affected-ms (get timings :validate-affected-ms)
+                                      :validate-schema-ms (get timings :validate-schema-ms)))))
+        (catch Throwable cause
+          ;; NOTE: `with-defer` hooks only run on the success path
+          ;; (`handle-response`), so timings collected before a hard
+          ;; validation failure would be lost without this inline log.
+          (let [timings @(::validation-timings cfg)]
+            (l/dbg :hint "update-file"
+                   :file-id (str (:id file))
+                   :project-id (str (:project-id file))
+                   :team-id (str (:team-id file))
+                   :status "error"
+                   :resolve-libs-ms (get timings :resolve-libs-ms)
+                   :process-changes-ms (get timings :process-changes-ms)
+                   :soft-validate-affected-ms (get timings :soft-validate-affected-ms)
+                   :soft-validate-schema-ms (get timings :soft-validate-schema-ms)
+                   :validate-affected-ms (get timings :validate-affected-ms)
+                   :validate-schema-ms (get timings :validate-schema-ms)))
+          (throw cause))))))
 
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
@@ -385,6 +416,16 @@
     (catch Throwable cause
       (l/error :hint "file schema validation error" :cause cause))))
 
+(defn- record-validation-timing
+  [cfg step-key step-label elapsed-ms]
+  (when-let [metrics (::mtx/metrics cfg)]
+    (when (mtx/metrics? metrics)
+      (mtx/run! metrics {:id :update-file-validation-timing
+                         :labels [step-label]
+                         :val (double elapsed-ms)})))
+  (when-let [timings (::validation-timings cfg)]
+    (swap! timings assoc step-key elapsed-ms)))
+
 (defn- soft-validate-file!
   [file libs changes]
   (try
@@ -395,11 +436,21 @@
 
 (defn- process-changes-and-validate
   [cfg file changes skip-validate]
-  (let [libs
-        (when (and (or (contains? cf/flags :file-validation)
-                       (contains? cf/flags :soft-file-validation))
-                   (not skip-validate))
-          (bfc/get-resolved-file-libraries cfg file))
+  (let [should-resolve-libs?
+        (and (or (contains? cf/flags :file-validation)
+                 (contains? cf/flags :soft-file-validation))
+             (not skip-validate))
+
+        tlibs
+        (ct/tpoint)
+
+        libs
+        (try
+          (when should-resolve-libs?
+            (bfc/get-resolved-file-libraries cfg file))
+          (finally
+            (when should-resolve-libs?
+              (record-validation-timing cfg :resolve-libs-ms "resolve-libs" (inst-ms (tlibs))))))
 
         ;; The main purpose of this atom is provide a contextual state
         ;; for the changes subsystem where optionally some hints can
@@ -409,32 +460,56 @@
         state
         (atom {})
 
-        file
-        (binding [cpc/*state* state]
-          (-> (files/check-version! file)
-              (update :revn inc)
-              (update :data cpc/process-changes changes)
-              (update :data d/without-nils)))
+        tproc
+        (ct/tpoint)
 
         file
-        (if-let [media-refs (-> @state :media-refs not-empty)]
-          (bfc/update-media-references! cfg file media-refs)
-          file)]
+        (try
+          (let [file
+                (binding [cpc/*state* state]
+                  (-> (files/check-version! file)
+                      (update :revn inc)
+                      (update :data cpc/process-changes changes)
+                      (update :data d/without-nils)))
+
+                file
+                (if-let [media-refs (-> @state :media-refs not-empty)]
+                  (bfc/update-media-references! cfg file media-refs)
+                  file)]
+            file)
+          (finally
+            (record-validation-timing cfg :process-changes-ms "process-changes" (inst-ms (tproc)))))]
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)
-        (soft-validate-file! file libs changes))
+        (let [t (ct/tpoint)]
+          (try
+            (soft-validate-file! file libs changes)
+            (finally
+              (record-validation-timing cfg :soft-validate-affected-ms "soft-validate-affected" (inst-ms (t)))))))
 
       (when (contains? cf/flags :soft-file-schema-validation)
-        (soft-validate-file-schema! file))
+        (let [t (ct/tpoint)]
+          (try
+            (soft-validate-file-schema! file)
+            (finally
+              (record-validation-timing cfg :soft-validate-schema-ms "soft-validate-schema" (inst-ms (t)))))))
 
       (when (and (contains? cf/flags :file-validation)
                  (not skip-validate))
-        (val/validate-file-affected! file libs changes))
+        (let [t (ct/tpoint)]
+          (try
+            (val/validate-file-affected! file libs changes)
+            (finally
+              (record-validation-timing cfg :validate-affected-ms "validate-affected" (inst-ms (t)))))))
 
       (when (and (contains? cf/flags :file-schema-validation)
                  (not skip-validate))
-        (val/validate-file-schema! file)))
+        (let [t (ct/tpoint)]
+          (try
+            (val/validate-file-schema! file)
+            (finally
+              (record-validation-timing cfg :validate-schema-ms "validate-schema" (inst-ms (t))))))))
 
     file))
 

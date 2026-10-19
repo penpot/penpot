@@ -43,6 +43,7 @@ Production runs the deployed toolbox, not the devenv one:
 - **Start from the ids, not from an inventory.** The ids come from the error or the logs. Unbounded queries over tables with tens of millions of rows (`storage_object`, `file_media_object`) do not finish in a reasonable time; bounded to an id list they are index lookups.
 - **One query per reference column.** Two columns in one `IN (col_a, col_b)` lose the index and scan the whole table; split them.
 - The read-only replica cuts long queries: see `mem:prod-infra/grafana`.
+- A migration that builds an index runs inside the migration transaction, so it cannot use `CONCURRENTLY`, and a plain `CREATE INDEX` locks the table against writes for the whole build. On a large table (file saves write to `file_change` on every save) build the index out of band, before deploying, with `CREATE INDEX CONCURRENTLY` on its own (never inside a transaction block); the shipped migration uses `IF NOT EXISTS`, finds it and does nothing. A concurrent build interrupted midway leaves the index invalid: drop it and retry (check `pg_indexes` and `pg_index.indisvalid`).
 
 ## See also
 

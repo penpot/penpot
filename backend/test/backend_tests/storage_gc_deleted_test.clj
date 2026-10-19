@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.storage :as sto]
+   [app.storage.impl :as impl]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -91,3 +92,66 @@
 
     (t/testing "the object of the next chunk is gone"
       (t/is (nil? (find-object last-id))))))
+
+(t/deftest failed-batch-is-not-visited-again-in-the-same-run
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+
+        ;; A full first batch of deletable objects.
+        batch1  (mapv (fn [_] (put-object! (ct/in-past "30m"))) (range chunk-size))
+
+        ;; The blocked object leads a second full batch, in `deleted_at` order
+        ;; after the first one: the whole batch fails and must be skipped, and
+        ;; the cursor must not come back to any of its objects.
+        blocked (blocked-object! (:id file))
+        fillers (mapv (fn [_] (put-object! (ct/in-past "20m"))) (range (dec chunk-size)))
+
+        ;; Objects after the failed batch: the next read batch starts right
+        ;; after the `(deleted_at, id)` of the last row of the failed one.
+        batch3  (mapv (fn [_] (put-object! (ct/in-past "5m"))) (range 5))
+
+        result  (th/run-task! :storage-gc-deleted {})]
+
+    (t/testing "the first and the last batches are fully deleted"
+      (t/is (= (+ (count batch1) (count batch3)) (:deleted result))))
+
+    (t/testing "the objects of the first batch are gone"
+      (t/is (every? #(nil? (find-object (:id %))) batch1)))
+
+    (t/testing "the objects of the failed batch are still pending"
+      (t/is (some? (find-object (:id blocked))))
+      (t/is (every? #(some? (find-object (:id %))) fillers)))
+
+    (t/testing "the objects after the failed batch are gone"
+      (t/is (every? #(nil? (find-object (:id %))) batch3)))))
+
+(t/deftest physical-failure-rolls-back-the-chunk-and-continues
+  "Pins the chunk rollback semantics: the physical delete of the first
+  chunk fails (mocked) after its rows were already deleted inside the
+  transaction, so the transaction must roll back (the rows stay pending)
+  while the run skips the failed chunk and deletes the rest."
+  (let [;; A full first chunk of deletable objects, older in
+        ;; `deleted_at` order than the rest, so the failing physical
+        ;; delete hits exactly this chunk.
+        old     (mapv (fn [_] (put-object! (ct/in-past "30m"))) (range chunk-size))
+        recent  (mapv (fn [_] (put-object! (ct/in-past "5m"))) (range 5))
+
+        failing (atom true)
+        orig    impl/del-objects-in-bulk
+        result  (with-redefs [impl/del-objects-in-bulk
+                              (fn [backend ids]
+                                (if @failing
+                                  (do (reset! failing false)
+                                      (throw (ex-info "simulated backend failure" {})))
+                                  (orig backend ids)))]
+                  (th/run-task! :storage-gc-deleted {}))]
+
+    (t/testing "the run finishes and only the objects after the failed chunk are deleted"
+      (t/is (= (count recent) (:deleted result))))
+
+    (t/testing "the objects of the failed chunk are still pending"
+      (t/is (every? #(some? (find-object (:id %))) old)))
+
+    (t/testing "the objects after the failed chunk are gone"
+      (t/is (every? #(nil? (find-object (:id %))) recent)))))

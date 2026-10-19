@@ -35,7 +35,9 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
 <p class="advice"><strong>Paste</strong> cannot be customized.</p>
 
 <h3 id="customize-shortcuts-layouts">Keyboard layouts</h3>
-<p>Punctuation keys (such as <kbd>-</kbd>, <kbd>[</kbd>, <kbd>/</kbd> or <kbd>'</kbd>) are recorded by their physical position on the keyboard, so they work the same on AZERTY, QWERTZ and other layouts. Letters and numbers are recorded by the character they type. With <kbd>Shift</kbd>, the base key is recorded, not the shifted character.</p>
+<p>Letters are recorded by the character they type, so they follow your layout (on AZERTY, the <kbd>A</kbd> key records <kbd>a</kbd>). With <kbd>Shift</kbd>, digit keys record the digit itself (<kbd>Shift</kbd><kbd>0</kbd>, not the shifted symbol), on every layout and in every browser.</p>
+<p>Punctuation keys (such as <kbd>-</kbd>, <kbd>[</kbd>, <kbd>/</kbd> or <kbd>'</kbd>) are recorded by their physical position on the keyboard, so the same key works on AZERTY, QWERTZ and other layouts — but only in browsers that expose the keyboard layout (Chromium). There, <kbd>Shift</kbd> with the <kbd>+</kbd> key records <kbd>Shift</kbd><kbd>+</kbd>. In browsers without that support, such as Firefox or Safari, punctuation falls back to the typed character (<kbd>Shift</kbd><kbd>*</kbd> instead): those shortcuts still work in the browser where you recorded them, but <kbd>Shift</kbd> combinations with punctuation may stop working if you switch browsers. If that affects you, record those shortcuts in a Chromium browser.</p>
+<p>Two known limitations: number keys set opacity (<kbd>0</kbd>–<kbd>9</kbd>) only where digits are typed without <kbd>Shift</kbd>, so AZERTY layouts need the numeric keypad for them; and <kbd>\</kbd> needs <kbd>AltGr</kbd> on some layouts (Spanish), where it is recorded with <kbd>Alt</kbd> and its exact form depends on the browser.</p>
 
 <h3 id="customize-shortcuts-reset">Reset to default</h3>
 <p>When you have custom shortcuts, a <strong>Reset all</strong> button appears next to the search field. It lists every shortcut that will go back to its default before you confirm.</p>

@@ -118,7 +118,10 @@ Some naming conventions:
   [path]
   (last (split-path path)))
 
-(defn inside-path? [child parent]
+(defn inside-path?
+  "Returns true when `child` equals `parent` or is nested inside it,
+   comparing both as path segments (e.g. 'a / b / c' is inside 'a / b')."
+  [child parent]
   (let [child-path  (split-path child)
         parent-path (split-path parent)]
     (and (<= (count parent-path) (count child-path))
@@ -135,90 +138,94 @@ Some naming conventions:
 
 ;; Tree building functions --------------------------------------------------
 
-"Build tree structure from flat list of paths"
-
-"`build-tree-root` is the main function to build the tree."
-
-"Receives a list of segments with 'name' properties representing paths,
-   and a separator string."
-"E.g segments = [{... :name 'one/two/three'} {... :name 'one/two/four'} {... :name 'one/five'}]"
-
-"Transforms into a tree structure like:
-   [{:name 'one'
-     :path 'one'
-     :depth 0
-     :leaf nil
-     :children [{:name 'two'
-                 :path 'one.two'
-                 :depth 1
-                 :leaf nil
-                 :children [{... :name 'three'} {... :name 'four'}]}
-                {:name 'five'
-                 :path 'one.five'
-                 :depth 1
-                 :leaf {... :name 'five'}
-                 :children nil}]}]"
-
-(defn- sort-by-children
-  "Sorts segments so that those with children come first."
-  [segments separator]
-  (sort-by (fn [segment]
-             (let [path (split-path (:name segment) :separator separator)
-                   path-length (count path)]
-               (if (= path-length 1)
-                 1
-                 0)))
-           segments))
+(defn- attach-remaining-path
+  "Annotates a segment with ::remaining-path: the vector of path segments
+   still to descend after the current level. Computed once, at the root,
+   from the segment :name."
+  [segment separator]
+  (assoc segment ::remaining-path (split-path (:name segment) :separator separator)))
 
 (defn- group-by-first-segment
-  "Groups segments by their first path segment and update segment name."
-  [segments separator]
+  "Groups segments by the first element of their ::remaining-path and
+   advances that path by one element.
+
+   A segment whose ::remaining-path becomes empty is a token that ends at
+   the current node; a non-empty one still has descendants below it."
+  [segments]
   (reduce (fn [acc segment]
-            (let [[first-segment & remaining-segments] (split-path (:name segment) :separator separator)
-                  rest-path (when (seq remaining-segments) (join-path remaining-segments :separator separator :with-spaces? false))]
-              (update acc first-segment (fnil conj [])
-                      (if rest-path
-                        (assoc segment :name rest-path)
-                        segment))))
+            (let [path (::remaining-path segment)]
+              (update acc (first path) (fnil conj [])
+                      (update segment ::remaining-path subvec 1))))
           {}
           segments))
 
 (defn- sort-and-group-segments
-  "Sorts elements and groups them by their first path segment."
-  [segments separator]
-  (let [sorted  (sort-by-children segments separator)
-        grouped (group-by-first-segment sorted separator)]
-    (into (sorted-map) grouped)))
+  "Groups elements by their first path segment, keyed in sorted order."
+  [segments]
+  (into (sorted-map) (group-by-first-segment segments)))
 
 (defn- build-tree-node
   "Builds a single tree node with computed children."
-  [segment-name remaining-segments separator parent-path depth]
+  [segment-name remaining-segments parent-path depth]
   (let [current-path (if parent-path
                        (str parent-path "." segment-name)
                        segment-name)
 
-        is-leaf? (and (seq remaining-segments)
-                      (every? (fn [segment]
-                                (let [remaining-segment-name (first (split-path (:name segment) :separator separator))]
-                                  (= segment-name remaining-segment-name)))
-                              remaining-segments))
+        leaf-segment (some (fn [segment]
+                             (when (empty? (::remaining-path segment))
+                               (-> segment
+                                   (assoc :name segment-name)
+                                   (dissoc ::remaining-path))))
+                           remaining-segments)
 
-        leaf-segment (when is-leaf? (first remaining-segments))
-        node {:name segment-name
-              :path current-path
-              :depth depth
-              :leaf leaf-segment
-              :children (when-not is-leaf?
-                          (let [grouped-elements (sort-and-group-segments remaining-segments separator)]
-                            (mapv (fn [[child-segment-name remaining-child-segments]]
-                                    (build-tree-node child-segment-name remaining-child-segments separator current-path (inc depth)))
-                                  grouped-elements)))}]
-    node))
+        child-segments (filter #(seq (::remaining-path %)) remaining-segments)
+
+        children (when (seq child-segments)
+                   (let [grouped-elements (sort-and-group-segments child-segments)]
+                     (mapv (fn [[child-segment-name remaining-child-segments]]
+                             (build-tree-node child-segment-name remaining-child-segments current-path (inc depth)))
+                           grouped-elements)))]
+
+    {:name segment-name
+     :path current-path
+     :depth depth
+     :leaf leaf-segment
+     :children children}))
+
+(defn- attach-remaining-paths
+  "Annotates every segment with its ::remaining-path vector."
+  [segments separator]
+  (map #(attach-remaining-path % separator) segments))
+
+(defn- build-root-node
+  "Builds a root-level tree node from a grouped element."
+  [[segment-name remaining-segments]]
+  (build-tree-node segment-name remaining-segments nil 0))
 
 (defn build-tree-root
-  "Builds the root level of the tree."
+  "Builds the root level of the tree from a flat list of path segments.
+
+   Receives a list of segments with a :name that represents a path, and
+   the separator used to split each name, e.g.:
+
+     [{... :name 'one/two/three'} {... :name 'one/two/four'} {... :name 'one/five'}]
+
+   Transforms them into a tree of nodes shaped like:
+
+     [{:name 'one'
+       :path 'one'
+       :depth 0
+       :leaf nil
+       :children [{:name 'two'
+                   :path 'one.two'
+                   :depth 1
+                   :leaf nil
+                   :children [{... :name 'three'} {... :name 'four'}]}
+                  {:name 'five'
+                   :path 'one.five'
+                   :depth 1
+                   :leaf {... :name 'five'}
+                   :children nil}]}]"
   [segments separator]
-  (let [grouped-elements (sort-and-group-segments segments separator)]
-    (mapv (fn [[segment-name remaining-segments]]
-            (build-tree-node segment-name remaining-segments separator nil 0))
-          grouped-elements)))
+  (let [grouped-elements (sort-and-group-segments (attach-remaining-paths segments separator))]
+    (mapv build-root-node grouped-elements)))

@@ -2650,24 +2650,28 @@
       (t/is (= :validation (:type out)))
       (t/is (= :max-file-size-reached (:code out))))))
 
-(t/deftest import-configures-finite-transaction-idle-timeout
-  ;; The binfile import transaction must set a finite ceiling for
-  ;; idle_in_transaction_session_timeout (20 min) instead of disabling
-  ;; it entirely: a stalled import must not retain a pool connection
-  ;; without any upper bound. The ceiling must be scoped with SET
-  ;; LOCAL: once the transaction ends, the pool session default must
-  ;; be restored for subsequent transactions.
-  (let [pg-setting-sql ["SELECT setting FROM pg_settings WHERE name = 'idle_in_transaction_session_timeout'"]
-        in-tx  (db/tx-run! th/*system*
-                           (fn [cfg]
-                             (bfc/configure-database-timeouts! cfg)
-                             (:setting (db/exec-one! cfg pg-setting-sql))))
-        ;; SET LOCAL must not leak past the transaction boundary
-        after  (db/tx-run! th/*system*
-                           (fn [cfg]
-                             (:setting (db/exec-one! cfg pg-setting-sql))))]
-    (t/is (= "1200000" in-tx))
-    (t/is (= "300000" after))))
+(def ^:private sql:current-idle-timeout
+  "SELECT current_setting('idle_in_transaction_session_timeout')::interval
+          = interval '30 minutes' AS ok")
+
+(t/deftest binfile-transactions-use-a-finite-idle-timeout
+  ;; The binfile import and export transactions must set a finite
+  ;; ceiling for idle_in_transaction_session_timeout (30 min) instead
+  ;; of disabling it entirely: a stalled transaction must not retain a
+  ;; pool connection without any upper bound. The ceiling is scoped
+  ;; with SET LOCAL: once the transaction ends, the pool session
+  ;; default is restored for subsequent transactions.
+  (db/tx-run! th/*system*
+              (fn [{::db/keys [conn] :as cfg}]
+                (t/testing "export transaction"
+                  (bfc/set-transaction-idle-timeout cfg)
+                  (t/is (true? (-> (db/exec-one! conn [sql:current-idle-timeout])
+                                   :ok))))
+
+                (t/testing "import transaction"
+                  (bfc/configure-import-transaction cfg)
+                  (t/is (true? (-> (db/exec-one! conn [sql:current-idle-timeout])
+                                   :ok)))))))
 
 (def ^:private index-test-file-id "22222222-2222-2222-2222-222222222222")
 (def ^:private index-test-page-id "44444444-4444-4444-4444-444444444444")

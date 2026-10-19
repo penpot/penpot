@@ -281,6 +281,7 @@ lectores
 letras
 manifiesto
 menos
+navegadores
 nosotros
 otras
 pero

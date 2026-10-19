@@ -40,6 +40,9 @@
 
 (declare create-file-media-object)
 
+;; TEMPORARILY DISABLED (2026-10-19): the media-storage-bytes-per-team
+;; quote check that used this lookup is disabled below. Kept active
+;; because the audit props of the upload still report the team id.
 (def ^:private sql:get-team-id-for-file
   "SELECT p.team_id
      FROM file AS f
@@ -66,11 +69,15 @@
   (media.v/validate-media-size! content)
 
   (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
-    (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
-                        ::quotes/profile-id profile-id
-                        ::quotes/team-id    team-id
-                        ::quotes/incr       (:size content)})
-
+    ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team
+    ;; quote performs a full SUM over storage_object per upload (3-12s in
+    ;; prod on a 3.5TB DB, ~34 slow executions/hour). Disabled until we
+    ;; land a cheaper approximation (cached counter / rewritten query).
+    ;; TODO: re-enable with the new implementation.
+    ;; (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
+    ;;                     ::quotes/profile-id profile-id
+    ;;                     ::quotes/team-id    team-id
+    ;;                     ::quotes/incr       (:size content)})
     (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                    ;; We get the minimal file for proper checking if
                    ;; file is not already deleted

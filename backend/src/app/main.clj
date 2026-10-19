@@ -28,7 +28,7 @@
    [app.jobs.gc :as-alias jobs.gc]
    [app.jobs.metrics :as jobs-metrics]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.metrics :as-alias mtx]
+   [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [app.msgbus :as-alias mbus]
    [app.redis :as-alias rds]
@@ -70,16 +70,25 @@
     ::mdef/help "A total number of bytes processed by update-file."
     ::mdef/type :counter}
 
+   :update-file-validation-timing
+   {::mdef/name "penpot_rpc_update_file_validation_timing"
+    ::mdef/help "update-file validation step timings (milliseconds)."
+    ::mdef/labels ["step"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
+    ::mdef/type :histogram}
+
    :rpc-main-timing
    {::mdef/name "penpot_rpc_main_timing"
     ::mdef/help "RPC command method call timing for main"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :rpc-management-timing
    {::mdef/name "penpot_rpc_management_timing"
     ::mdef/help "RPC command method call timing for management."
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :websocket-active-connections
@@ -112,12 +121,20 @@
     ;; panel or alert breaks.
     ::mdef/help "Deprecated: use penpot_jobs_execution_ms, which adds a queue label."
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-tasks-histogram-buckets
     ::mdef/type :histogram}
+
+   :storage-gc-deleted-objects
+   {::mdef/name "penpot_storage_gc_deleted_objects_total"
+    ::mdef/help "Storage objects permanently deleted by storage-gc-deleted, by backend."
+    ::mdef/labels ["backend"]
+    ::mdef/type :counter}
 
    :redis-eval-timing
    {::mdef/name "penpot_redis_eval_timing"
     ::mdef/help "Redis EVAL commands execution timings (ms)"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-redis-histogram-buckets
     ::mdef/type :histogram}
 
    :rpc-climit-waiting
@@ -136,6 +153,7 @@
    {::mdef/name "penpot_rpc_climit_timing"
     ::mdef/help "Summary of the time between queuing and executing on the CLIMIT"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :audit-http-handler-queue-size
@@ -154,6 +172,7 @@
    {::mdef/name "penpot_audit_http_handler_timing"
     ::mdef/help "Summary of the time between queuing and executing on the audit log http handler"
     ::mdef/labels []
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :storage-s3-requests
@@ -203,6 +222,7 @@
    {::mdef/name "penpot_http_server_dispatch_timing"
     ::mdef/help "Histogram of dispatch handler"
     ::mdef/labels []
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :http-worker-queue-size

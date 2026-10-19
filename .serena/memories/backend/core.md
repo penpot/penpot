@@ -4,7 +4,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 ## Focused memories
 
-- Cross-cutting backend subtleties (RPC, DB, workers, cron, CLIMIT, HTTP/sessions, storage, file data): `mem:backend/subtleties`
+- Cross-cutting backend subtleties (RPC, DB helpers, workers, cron, CLIMIT, config and HTTP/session middleware, http self-metrics, media processing, and file data persistence): `mem:backend/subtleties`
 - Storage abstraction, logical buckets, object lifecycle, deduplication, access, and garbage collection: `mem:backend/storage`.
 - Embedded Ladybug graph experiment, projection, incremental sync, console, and risks: `mem:backend/graph-experiment`
 - Session lifetime config, token `:exp`, and idle/absolute GC: `mem:backend/session-expiration`.

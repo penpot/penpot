@@ -2943,7 +2943,7 @@
           {:x x :y y :width w :height h})))))
 
 (defn render-shape-pdf
-  [shape-id scale]
+  [shape-id]
   (when (initialized?)
     (let [buffer (uuid/get-u32 shape-id)
 
@@ -2952,8 +2952,7 @@
                   (aget buffer 0)
                   (aget buffer 1)
                   (aget buffer 2)
-                  (aget buffer 3)
-                  scale)
+                  (aget buffer 3))
 
           heap (mem/get-heap-u8)
           heapu32 (mem/get-heap-u32)

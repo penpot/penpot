@@ -410,6 +410,10 @@ append-only `Review Log` (UTC ISO 8601, one line per entry):
 
 A plan approved with no changes goes `draft` → `done` directly.
 
+A plan is never staged or committed: the `done` status and its
+`Review Log` are session bookkeeping, not part of the change. Their
+absence from the commit is expected.
+
 ## 7. Connecting `gh` CLI with a token
 
 The `create-issue` and `create-pr` flows need an authenticated `gh`

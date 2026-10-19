@@ -12,6 +12,7 @@
    [app.main.data.event :as ev]
    [app.main.data.jobs :as dj]
    [app.main.data.modal :as modal]
+   [app.main.data.persistence :as dps]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
@@ -37,9 +38,25 @@
 (def check-export-files
   (sm/check-fn schema:export-files))
 
+;; Longest wait for the pending changes of the downloaded files to be saved.
+(def save-wait-timeout-ms 10000)
+
+(defn- show-export-dialog
+  "Opens the download dialog, flagging whether the files have changes not
+  saved yet."
+  [team-id files]
+  (ptk/reify ::show-export-dialog
+    ptk/WatchEvent
+    (watch [_ state _]
+      (rx/of (modal/show {:type ::export-files
+                          :team-id team-id
+                          :files files
+                          :unsaved (dps/unsaved-changes? state (into #{} (map :id) files))})))))
+
 (defn open-export-dialog
   [files]
-  (let [files (check-export-files files)]
+  (let [files    (check-export-files files)
+        file-ids (into #{} (map :id) files)]
     (ptk/reify ::export-files
       ptk/WatchEvent
       (watch [_ state _]
@@ -49,16 +66,17 @@
                              ::ev/origin "dashboard"
                              :format "binfile-v3"
                              :num-files (count files)}))
-           (->> (rx/from files)
-                (rx/mapcat
-                 (fn [file]
-                   (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
-                        (rx/map #(assoc file :has-libraries %)))))
-                (rx/reduce conj [])
-                (rx/map (fn [files]
-                          (modal/show {:type ::export-files
-                                       :team-id team-id
-                                       :files files}))))))))))
+           ;; The download is built from the server copy: send the pending
+           ;; changes first.
+           (rx/concat
+            (dps/force-persist-files-and-wait file-ids save-wait-timeout-ms)
+            (->> (rx/from files)
+                 (rx/mapcat
+                  (fn [file]
+                    (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
+                         (rx/map #(assoc file :has-libraries %)))))
+                 (rx/reduce conj [])
+                 (rx/map (partial show-export-dialog team-id))))))))))
 
 (defn- export-file
   "One file, one job: the file is exported on its own, so a failure does

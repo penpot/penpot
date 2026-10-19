@@ -80,6 +80,7 @@
 
 ## Storage and media
 
+- The `media-storage-bytes-per-team` quota check on `upload-file-media-object` is TEMPORARILY DISABLED (2026-10-19, kept commented in `app.rpc.commands.media` with its `sql:get-team-id-for-file` lookup still active for the audit props): the quote performs a full `SUM` over `storage_object` per upload and was too slow in production. The `upload-sessions-per-profile` quota is unaffected and stays active. Re-enable only with a cheaper approximation.
 - Storage abstraction, backend configuration, logical buckets, object lifecycle, deduplication, access rules, and garbage collection: `mem:backend/storage`.
 - SVG validation strips DOCTYPE and uses secure SAX parsing. Basic SVG info falls back to 100x100 dimensions when width/height/viewBox are missing.
 - Raster metadata is shell-derived with ImageMagick `identify`, verifies detected MIME against the supplied MIME, and swaps dimensions for EXIF orientations 6/8.
@@ -92,3 +93,11 @@
 - `fdata/upsert!` touches any storage object referenced by incoming metadata before storing the new row/blob.
 - Pointer-map fragments are persisted separately as type `fragment`, and only modified pointer maps are written.
 - `fdata/realize` combines pointer realization and object-map realization. Use it before operations that need complete in-memory file data instead of pointer placeholders.
+- A `file_data` row is one of three classes, told apart by `type`: `main` is the file's current state and carries `id = file_id`; `snapshot` is a point-in-time copy whose `id` is the one its `file_change` row shares; `fragment` is a piece of the pointer-map, referenced from the file's data.
+- Their lifecycles differ: `main` and `snapshot` live with the file (dated when it is deleted, undated when it is restored), while a `fragment` carries no date and is collected by `file_gc` once the file stops referencing it. Neither is a session buffer, so do not read a `fragment` as an ephemeral revision.
+- File snapshots (versions) keep their metadata row in `file_change` and their payload in `file_data` (`type = 'snapshot'`). With the `db` backend `file_change.data` stays NULL: that column is only written by the `legacy-db` backend, plus the rows written before the 2025-07 file storage refactor.
+- Tell a snapshot apart by `label IS NOT NULL` (with `created_by` / `deleted_at` as needed), never by `file_change.data IS NOT NULL`: the label holds with every file data backend, and the payload column stopped meaning "this is a snapshot" when the payload moved out. Queries that identify versions must use the label.
+- The version quota counts of `app.rpc.quotes` (`sql:get-snapshots-per-file`, `sql:get-snapshots-per-team`) are served by the partial index `file_change__user_snapshots__idx`, whose predicate mirrors their where clause; changing one without the other drops the index only scan and the count walks the whole table again.
+- Revisions live only in `file_change` and have no `file_data` counterpart. They are born already scheduled for deletion one hour later (`app.rpc.commands.files-update`) and the snapshot paths cannot reach one, because they resolve their row through a `label IS NOT NULL` filter.
+- A deletion date is assigned once and never moved: `restore-files` (`app.rpc.commands.files`) unmarks only durable history, the `:file` method of `app.tasks.delete-object` dates only rows that have no date yet, and `objects-gc` collects only rows that carry one. Unmarking a revision leaves it invisible to `objects-gc` for ever, because nothing sets that date again.
+- Binfile v1/v3 import and the v3 export `get-file` step run inside one long transaction. They raise `idle_in_transaction_session_timeout` to 30 min (`app.binfile.common/transaction-idle-timeout-ms`) instead of disabling it, so a connection left idle while the ZIP is decoded or the file data is realized is bounded; `statement_timeout` stays at 300 s.
