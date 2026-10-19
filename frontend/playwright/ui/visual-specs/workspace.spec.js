@@ -449,3 +449,39 @@ test.describe("Imported SVG attributes", () => {
     });
   });
 });
+
+test.describe("Grid cell options", () => {
+  test("Shows the grid cell options when selecting a cell", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-9042.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "af2494d0-39ba-8184-8005-230696f6df5c",
+      pageId: "af2494d0-39ba-8184-8005-230696f6df5d",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await page
+      .getByTestId("inspect-layout")
+      .getByRole("button", { name: "Edit grid" })
+      .click();
+
+    // Click the first cell of the grid editor.
+    const cell = page.locator("g.cell-editor > rect").first();
+    const box = await cell.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+    await expect(workspace.rightSidebar.getByText("Grid cell")).toBeVisible();
+    // The cell options are a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
