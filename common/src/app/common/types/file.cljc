@@ -1270,12 +1270,12 @@
 (defn get-touched-from-ref-chain-until-target-ref
   "Returns a set with the :touched of all the items on the shape
    ref chain until target-ref, including itself"
-  [container libraries shape target-ref]
+  [container libraries shape target-ref remove-slots?]
   (let [chain (get-ref-chain-until-target-ref container libraries shape target-ref)
         more-touched (->> chain
                           (map :touched)
                           (remove nil?)
                           (apply set/union)
-                          (remove ctk/swap-slot?)
+                          (remove #(and remove-slots? (ctk/swap-slot? %)))
                           set)]
     (set/union (or (:touched shape) #{}) more-touched)))

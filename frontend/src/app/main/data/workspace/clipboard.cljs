@@ -167,20 +167,25 @@
                                   (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
                                   0)]
                 (if (pos? level-delta)
-                  (reduce (partial advance-shape file libraries page level-delta)
+                  (reduce (partial advance-shape file libraries page level-delta (:id shape))
                           objects
                           (cfh/get-children-with-self objects (:id shape)))
                   objects))
               objects))
 
-          (advance-shape [file libraries page level-delta objects shape]
+          (advance-shape [file libraries page level-delta first-shape-id objects shape]
             (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
                   container     (ctn/make-container page :page)
-                  new-touched   (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref)]
+                  new-touched   (when (not= (:id shape) first-shape-id)
+                                  (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref false))]
               (cond-> objects
                 (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
                 (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
-                    (assoc-in [(:id shape) :touched] new-touched)))))
+                    (cond->
+                     (some? new-touched)
+                      (assoc-in [(:id shape) :touched] new-touched)
+                      (nil? new-touched)
+                      (d/dissoc-in [(:id shape) :touched]))))))
 
           (on-copy-error [error]
             (js/console.error "clipboard blocked:" error)
