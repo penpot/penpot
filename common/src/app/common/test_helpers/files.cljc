@@ -206,3 +206,37 @@
    Example: (thf/dump-file file :keys [:name :swap-slot-label] :show-refs? false)"
   [file & {:keys [] :as params}]
   (dump-page (current-page file) params))
+
+;; ----- Corruption builders (mirror production data)
+
+(defn corrupt-shape-types
+  "Corrupt file data the way production files look when the decoder
+  left unconverted types: shape `:type` as text, ids as text and
+  object/page-map keys as text/keyword instead of uuid. Defensive:
+  only converts values that are still unconverted, so it is safe to
+  run on already-corrupted data."
+  [data]
+  (letfn [(corrupt-shape [shape]
+            (cond-> shape
+              (keyword? (:type shape))
+              (assoc :type (name (:type shape)))
+
+              (uuid? (:id shape))
+              (assoc :id (str (:id shape)))
+
+              (uuid? (:parent-id shape))
+              (update :parent-id str)
+
+              (uuid? (:frame-id shape))
+              (update :frame-id str)))
+          (corrupt-objects [objects]
+            (into {}
+                  (map (fn [[id shape]]
+                         [(keyword (str id)) (corrupt-shape shape)]))
+                  objects))
+          (corrupt-page [[page-id page]]
+            [(str page-id) (update page :objects corrupt-objects)])]
+    (-> data
+        (update :pages (fn [pages] (mapv str pages)))
+        (update :pages-index (fn [pages-index]
+                               (into {} (map corrupt-page) pages-index))))))

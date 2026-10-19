@@ -290,7 +290,7 @@
   (t/is (not (contains? cf/flags :tiered-file-data-storage)))
   (let [profile (th/create-profile* 1)
         file    (create-file 1 profile)]
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id (:id file)}))))
     (th/run-pending-jobs)
     (t/testing "no offload job was enqueued"
       (t/is (empty? (th/db-query :job {:name "offload-file-data"}))))
@@ -519,7 +519,7 @@
         file    (create-file 1 profile)
         before  (db-rows (:id file))
         stale   (inc (or (:revn file) 0))]
-    (t/is (not (th/run-task! :file-gc {:file-id (:id file) :revn stale})))
+    (t/is (false? (:cleaned (th/run-task! :file-gc {:file-id (:id file) :revn stale}))))
     (th/run-pending-jobs)
     (t/testing "no offload job was enqueued"
       (t/is (empty? (th/db-query :job {:name "offload-file-data"}))))

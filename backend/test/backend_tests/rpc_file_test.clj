@@ -156,7 +156,7 @@
         shape-id (uuid/random)]
 
     ;; Preventive file-gc
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file) :revn (:revn file)})))
+    (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id (:id file) :revn (:revn file)}))))
 
     ;; Check the number of fragments before adding the page
     ;; (no churn: the preventive GC above reuses the single id).
@@ -187,7 +187,7 @@
     (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
 
     ;; The file-gc should mark for remove unused fragments
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
     ;; Check the number of fragments (no churn: unchanged pages keep
     ;; their ids, so nothing is marked and nothing new is persisted).
@@ -233,7 +233,7 @@
     (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
 
     ;; The file-gc should mark for remove unused fragments
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
     ;; Only the replaced page fragment is marked; the live pages keep
     ;; their ids instead of being re-persisted.
@@ -256,7 +256,7 @@
 
     ;; The file-gc should remove fragments related to changes
     ;; snapshots previously deleted.
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
     ;; Check the number of fragments; without churn the two live
     ;; pages simply stay where they are (was 4 with 2 re-persisted).
@@ -340,7 +340,7 @@
         (t/is (= 0 (:delete res))))
 
       ;; run the task again
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       ;; retrieve file and check trimmed attribute
       (let [row (th/db-get :file {:id (:id file)})]
@@ -384,7 +384,7 @@
       ;; Now, we have deleted the usage of pointers to the
       ;; file-media-objects, if we paste file-gc, they should be marked
       ;; as deleted.
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       ;; The deleted shape's fragment is pinned by the automatic
       ;; snapshot taken before the deletion, and its media is still
@@ -402,7 +402,7 @@
         (t/is (= 4 (:processed res))))
 
       ;; Rerun the file-gc and objects-gc
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       (let [res (th/run-task! :objects-gc {})]
         ;; 3 (was 4): the two orphaned page fragments plus the media
@@ -530,7 +530,7 @@
 
 
       ;; run the task again
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       (let [res (th/run-task! :objects-gc {})]
         ;; 0 (was 2, then 1): no churn orphans and every replaced page
@@ -577,7 +577,7 @@
       ;; Now, we have deleted the usage of pointers to the
       ;; file-media-objects, if we paste file-gc, they should be marked
       ;; as deleted.
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       ;; The deleted shapes' fragments stay pinned by the automatic
       ;; snapshots taken before the deletion, and the media is still
@@ -592,7 +592,7 @@
 
       ;; Rerun file-gc and objects-gc task for the same file once all snapshots are
       ;; "expired/deleted"
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
       (let [res (th/run-task! :objects-gc {})]
         ;; 7 (was 6, then 8): the two orphaned page fragments plus the
         ;; five media rows, all unreferenced once the snapshot file_data
@@ -706,7 +706,7 @@
         (t/is (= 1 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       ;; retrieve file and check trimmed attribute
       (let [row (th/db-get :file {:id (:id file)})]
@@ -736,7 +736,7 @@
                   :page-id page-id
                   :id frame-id-2}])
 
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id file-id})]
         (t/is (= 2 (count rows)))
@@ -773,7 +773,7 @@
                   :page-id page-id
                   :id frame-id-1}])
 
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id file-id})]
         (t/is (= 1 (count rows)))
@@ -1378,7 +1378,7 @@
       (th/sleep 300)
 
       ;; run the task
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       ;; check that object thumbnails are still here
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1407,7 +1407,7 @@
         (t/is (= 2 (count rows))))
 
       ;; run the task again
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       ;; check that we have all object thumbnails
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1540,7 +1540,7 @@
         (t/is (= 2 (count rows)))))
 
     (t/testing "gc task"
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 2 (count rows)))
@@ -1565,7 +1565,7 @@
         sobject  (volatile! nil)]
 
     ;; Preventive file-gc
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
     ;; Preventive objects-gc
     (let [result (th/run-task! :objects-gc {})]
@@ -1585,7 +1585,7 @@
 
     ;; Run FileGC again, with tiered storage activated
     (with-redefs [app.config/flags (conj app.config/flags :tiered-file-data-storage)]
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)}))))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file))))))
 
     ;; The FileGC task will schedule an inner taskq
     (th/run-pending-jobs)
@@ -1646,7 +1646,7 @@
 
 
     ;; The file-gc should mark for remove unused fragments
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
     ;; The file-gc only marks fragments nothing references: the live
     ;; pages keep their ids (no churn re-persist), row1 stays alive on
@@ -1764,7 +1764,7 @@
        :anotation nil}])
 
     ;; Run the task again
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
     ;; Retrieve file and check trimmed attribute
     (let [row (th/db-get :file {:id (:id file)})]
@@ -1810,7 +1810,7 @@
         (t/is (some? (not-empty (:objects component))))))
 
     ;; Re-run the file-gc task
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
     (let [row (th/db-get :file {:id (:id file)})]
       (t/is (true? (:has-media-trimmed row))))
 
@@ -1840,7 +1840,7 @@
 
     ;; Now, we have deleted the usage of component if we pass file-gc,
     ;; that component should be deleted
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
     ;; Check that component is properly removed
     (let [data {::th/type :get-file
@@ -1931,8 +1931,8 @@
               :component-id c-id})}])
 
     ;; Run the file-gc on file and library
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-2)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file-1)))))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file-2)))))
 
     ;; Check that component exists
     (let [data {::th/type :get-file
@@ -1974,7 +1974,7 @@
         (t/is (some? (not-empty (:objects component))))))
 
     ;; Re-run the file-gc task
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file-1)))))
 
     ;; Check that component is still there after file-gc task
     (let [data {::th/type :get-file
@@ -2005,7 +2005,7 @@
 
     ;; Now, we have deleted the usage of component if we pass file-gc,
     ;; that component should be deleted
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file-1)))))
 
     ;; Check that component is properly removed
     (let [data {::th/type :get-file
@@ -2154,8 +2154,8 @@
         (t/is (not= (:id fill) (:id fmedia)))))
 
     ;; Run the file-gc on file and library
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
-    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-2)})))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file-1)))))
+    (t/is (true? (:cleaned (th/run-file-gc! (:id file-2)))))
 
     ;; Now proceed to delete file and absorb it
     (let [data {::th/type :delete-file

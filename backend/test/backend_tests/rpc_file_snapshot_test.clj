@@ -393,7 +393,7 @@
                     (bfc/get-file cfg file-id :lock-for-share? true)
                     ;; The GC uses SKIP LOCKED on a different connection, so it
                     ;; must skip instead of blocking or marking.
-                    (t/is (not (th/run-task! :file-gc {:file-id file-id}))))))
+                    (t/is (false? (:cleaned (th/run-task! :file-gc {:file-id file-id})))))))
 
     (t/testing "creation cannot slip between gc scan and mark"
       ;; Deterministic interleaving: pause the GC right after its
@@ -420,7 +420,7 @@
                       (fn [& args]
                         (deliver reached-insert true)
                         (apply orig-create args))]
-          (let [gc-done (future (th/run-task! :file-gc {:file-id file-id}))]
+          (let [gc-done (future (:cleaned (th/run-task! :file-gc {:file-id file-id})))]
             (t/is (= true (deref scan-started 10000 ::timeout)))
             (let [created (future (do-create))]
               ;; The creation must not reach the insert while the GC
@@ -439,7 +439,7 @@
       ;; reattach keeps every id), therefore there is nothing to purge;
       ;; the snapshot keeps resolving afterwards.
       (t/is (zero? (:processed (th/run-task! :objects-gc {}))))
-      (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+      (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
       ;; The pinned snapshot (not an arbitrary autosnapshot: those may
       ;; reference fragments an earlier pass already marked) must keep
       ;; resolving after another GC cycle.
@@ -510,7 +510,7 @@
                     (fn [& args]
                       (deliver reached-insert true)
                       (apply orig-create args))]
-        (let [gc-done (future (th/run-task! :file-gc {:file-id file-id}))]
+        (let [gc-done (future (:cleaned (th/run-task! :file-gc {:file-id file-id})))]
           (t/is (= true (deref scan-started 10000 ::timeout)))
           (let [restored (future (do-restore))]
             (t/is (= ::timeout (deref reached-insert 10000 ::timeout)))

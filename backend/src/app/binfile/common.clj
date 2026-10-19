@@ -945,11 +945,27 @@
   This still requires at least one library at time to be loaded while
   access to it is performed, but it improves considerable not having
   the need of loading all the libraries at the same time."
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
-  (let [library-ids (->> (get-file-libraries conn (:id file))
+  [cfg {:keys [id] :as file}]
+  (let [library-ids (->> (get-file-libraries cfg (:id file))
                          (map :id)
                          (cons (:id file)))
-        load-fn     #(get-file cfg % :migrate? false)]
+        ;; Realize pointers on load with each library's own loader
+        ;; (pointers are file-local): values need no ambient *load-fn*
+        ;; binding to be dereferenced. The realize pass walks and
+        ;; materializes pointer content in memory — the accepted
+        ;; cost, since this load is always in-memory.
+        ;; Realize BEFORE sanitizing: an unresolved PointerMap throws
+        ;; on first touch (valAt during the schema decode) because
+        ;; no *load-fn* is bound around the loader itself, and the
+        ;; sanitizer needs to walk the decoded data we hand it.
+        ;; Note: realize-pointers takes [cfg file], so it cannot be
+        ;; threaded with `->` from here.
+        ;; Sanitize like the GC read path does: unconverted types
+        ;; would break ref resolution (and detach copies) downstream,
+        ;; and this load is always in-memory.
+        load-fn     (fn [id]
+                      (let [file (fdata/realize-pointers cfg (get-file cfg id :migrate? false))]
+                        (update file :data ctf/sanitize-file-data)))]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -87,7 +87,7 @@
       (t/is (nil? (:stroke-cap-start shape)) "top-level cap removed even with no strokes")
       (t/is (nil? (:stroke-cap-end shape)) "top-level cap removed even with no strokes"))))
 
-(t/deftest migration-0028-normalizes-constrained-shape-values
+(t/deftest migration-0029-normalizes-constrained-shape-values
   (let [file-id  (uuid/next)
         page-id  (uuid/next)
         shape-id (uuid/next)
@@ -142,7 +142,7 @@
                    (ctf/check-file-data data))
           "new schemas reject legacy negative values")
 
-    (let [data'  (cfm/migrate-data data "0028-normalize-constrained-values")
+    (let [data'  (cfm/migrate-data data "0029-normalize-constrained-values")
           shape' (get-in data' [:pages-index page-id :objects shape-id])]
       (t/is (= data' (ctf/check-file-data data')) "migrated file data passes the schema")
       (t/is (every? zero? (map #(get shape' %) [:r1 :r2 :r3 :r4])) "corner radii clamped")
@@ -167,7 +167,7 @@
       (t/is (= 0.01 (get-in shape' [:grids 0 :params :size])) "square grid size clamped")
       (t/is (= 1 (get-in shape' [:grids 1 :params :size])) "column grid count clamped"))))
 
-(t/deftest migration-0028-normalizes-page-grids-and-variant-properties
+(t/deftest migration-0029-normalizes-page-grids-and-variant-properties
   (let [file-id      (uuid/next)
         page-id      (uuid/next)
         component-id (uuid/next)
@@ -186,7 +186,7 @@
                                      :name "Variant"
                                      :variant-properties [{:name long-name
                                                            :value long-value}]}))
-        data'         (cfm/migrate-data data "0028-normalize-constrained-values")]
+        data'         (cfm/migrate-data data "0029-normalize-constrained-values")]
 
     (t/is (= 0.01 (get-in data' [:pages-index page-id :default-grids :square :size]))
           "default square grid size clamped")
@@ -198,11 +198,11 @@
           "variant property name truncated")
     (t/is (= 60 (count (get-in data' [:components component-id :variant-properties 0 :value])))
           "variant property value truncated")
-    (t/is (= data' (cfm/migrate-data data' "0028-normalize-constrained-values"))
+    (t/is (= data' (cfm/migrate-data data' "0029-normalize-constrained-values"))
           "migration is idempotent")))
 
-(t/deftest migration-0028-runs-through-file-migration
-  (let [migration-id "0028-normalize-constrained-values"
+(t/deftest migration-0029-runs-through-file-migration
+  (let [migration-id "0029-normalize-constrained-values"
         shape-id     (uuid/next)
         file         (ctf/make-file {:name "Legacy constrained values"})
         page-id      (first (get-in file [:data :pages]))
@@ -219,8 +219,8 @@
     (t/is (zero? (get-in file' [:data :pages-index page-id :objects shape-id :r1]))
           "migration repaired file data before schema validation")))
 
-(t/deftest migration-0029-moves-background-blur-out-of-blur
-  (let [migration-id "0029-move-background-blur-out-of-blur"
+(t/deftest migration-0030-moves-background-blur-out-of-blur
+  (let [migration-id "0030-move-background-blur-out-of-blur"
         file-id      (uuid/next)
         page-id      (uuid/next)
         shape-id     (uuid/next)
@@ -248,8 +248,8 @@
       (t/is (= data' (cfm/migrate-data data' migration-id))
             "migration is idempotent"))))
 
-(t/deftest migration-0029-keeps-existing-background-blur
-  (let [migration-id "0029-move-background-blur-out-of-blur"
+(t/deftest migration-0030-keeps-existing-background-blur
+  (let [migration-id "0030-move-background-blur-out-of-blur"
         page-id      (uuid/next)
         shape-id     (uuid/next)
         existing-bg  {:id (uuid/next)
@@ -270,8 +270,8 @@
     (t/is (= existing-bg (:background-blur shape'))
           "existing background blur preserved")))
 
-(t/deftest migration-0029-leaves-layer-blur-untouched
-  (let [migration-id "0029-move-background-blur-out-of-blur"
+(t/deftest migration-0030-leaves-layer-blur-untouched
+  (let [migration-id "0030-move-background-blur-out-of-blur"
         page-id      (uuid/next)
         shape-id     (uuid/next)
         blur         {:id (uuid/next)
@@ -287,8 +287,8 @@
     (t/is (= blur (:blur shape')) "layer blur untouched")
     (t/is (nil? (:background-blur shape')) "no background blur created")))
 
-(t/deftest migration-0029-migrates-component-blurs
-  (let [migration-id "0029-move-background-blur-out-of-blur"
+(t/deftest migration-0030-migrates-component-blurs
+  (let [migration-id "0030-move-background-blur-out-of-blur"
         component-id (uuid/next)
         shape-id     (uuid/next)
         blur         {:id (uuid/next)
@@ -305,8 +305,8 @@
     (t/is (= blur (:background-blur shape'))
           "component background blur moved to its own attribute")))
 
-(t/deftest migration-0029-runs-through-file-migration
-  (let [migration-id "0029-move-background-blur-out-of-blur"
+(t/deftest migration-0030-runs-through-file-migration
+  (let [migration-id "0030-move-background-blur-out-of-blur"
         shape-id     (uuid/next)
         blur-id      (uuid/next)
         blur         {:id blur-id
@@ -330,8 +330,8 @@
     (t/is (nil? (get-in file' [:data :pages-index page-id :objects shape-id :blur]))
           "mis-typed :blur removed")))
 
-(t/deftest migration-0030-removes-stroke-per-side-attr
-  (let [migration-id "0030-remove-stroke-per-side-attr"
+(t/deftest migration-0031-removes-stroke-per-side-attr
+  (let [migration-id "0031-remove-stroke-per-side-attr"
         page-id      (uuid/next)
         shape-id     (uuid/next)
         stroke       {:stroke-width 2
@@ -359,8 +359,8 @@
     (t/is (= data' (cfm/migrate-data data' migration-id))
           "migration is idempotent")))
 
-(t/deftest migration-0030-repairs-strokes-rejected-by-schema
-  (let [migration-id "0030-remove-stroke-per-side-attr"
+(t/deftest migration-0031-repairs-strokes-rejected-by-schema
+  (let [migration-id "0031-remove-stroke-per-side-attr"
         file-id      (uuid/next)
         page-id      (uuid/next)
         shape-id     (uuid/next)
@@ -384,8 +384,8 @@
       (t/is (= data' (ctf/check-file-data data'))
             "migrated data passes the schema"))))
 
-(t/deftest migration-0030-repairs-component-strokes
-  (let [migration-id "0030-remove-stroke-per-side-attr"
+(t/deftest migration-0031-repairs-component-strokes
+  (let [migration-id "0031-remove-stroke-per-side-attr"
         component-id (uuid/next)
         shape-id     (uuid/next)
         stroke       {:stroke-width 3
@@ -406,8 +406,8 @@
     (t/is (= 5 (:stroke-width-right stroke'))
           "component per-side width preserved")))
 
-(t/deftest migration-0030-keeps-strokes-without-the-obsolete-attr
-  (let [migration-id "0030-remove-stroke-per-side-attr"
+(t/deftest migration-0031-keeps-strokes-without-the-obsolete-attr
+  (let [migration-id "0031-remove-stroke-per-side-attr"
         page-id      (uuid/next)
         shape-id     (uuid/next)
         stroke       {:stroke-width 2
@@ -422,8 +422,8 @@
     (t/is (= data (cfm/migrate-data data migration-id))
           "a stroke without the obsolete attr is left untouched")))
 
-(t/deftest migration-0030-keeps-distinct-sides-when-the-attr-was-false
-  (let [migration-id "0030-remove-stroke-per-side-attr"
+(t/deftest migration-0031-keeps-distinct-sides-when-the-attr-was-false
+  (let [migration-id "0031-remove-stroke-per-side-attr"
         page-id      (uuid/next)
         shape-id     (uuid/next)
         ;; The old toggle set the flag to false without equalizing the sides,
@@ -445,8 +445,8 @@
     (t/is (= 8 (:stroke-width-right stroke'))
           "distinct side width kept instead of being equalized")))
 
-(t/deftest migration-0030-runs-through-file-migration
-  (let [migration-id "0030-remove-stroke-per-side-attr"
+(t/deftest migration-0031-runs-through-file-migration
+  (let [migration-id "0031-remove-stroke-per-side-attr"
         shape-id     (uuid/next)
         stroke       {:stroke-width 5
                       :stroke-width-top 5
@@ -472,7 +472,7 @@
           "obsolete attr removed before schema validation")
     (t/is (= 5 (:stroke-width stroke')) "stroke width preserved")))
 
-(t/deftest migration-0031-legacy-applied-token-is-not-recognized-before-migration
+(t/deftest migration-0032-legacy-applied-token-is-not-recognized-before-migration
   ;; Reproduces #12016: the editor reads only the per-side token attributes, so
   ;; a shape carrying the old global `:stroke-width` reference looks unapplied.
   (let [shape (-> (cts/setup-shape {:id (uuid/next) :type :rect})
@@ -481,8 +481,8 @@
                                           ctt/stroke-width-keys))
           "a legacy applied token is invisible to the token lookup")))
 
-(t/deftest migration-0031-recycles-global-stroke-width-token
-  (let [migration-id "0031-migrate-stroke-width-token-attr"
+(t/deftest migration-0032-recycles-global-stroke-width-token
+  (let [migration-id "0032-migrate-stroke-width-token-attr"
         page-id      (uuid/next)
         shape-id     (uuid/next)
         shape        (-> (cts/setup-shape {:id shape-id :type :rect})
@@ -503,8 +503,8 @@
                                      ctt/stroke-width-keys)
           "the token is recognized after migration")))
 
-(t/deftest migration-0031-keeps-side-token-that-was-already-set
-  (let [migration-id "0031-migrate-stroke-width-token-attr"
+(t/deftest migration-0032-keeps-side-token-that-was-already-set
+  (let [migration-id "0032-migrate-stroke-width-token-attr"
         page-id      (uuid/next)
         shape-id     (uuid/next)
         shape        (-> (cts/setup-shape {:id shape-id :type :rect})
@@ -518,8 +518,8 @@
           "an explicit side reference is not overwritten")
     (t/is (= "30" (:stroke-width-right applied')))))
 
-(t/deftest migration-0031-repairs-component-shapes
-  (let [migration-id "0031-migrate-stroke-width-token-attr"
+(t/deftest migration-0032-repairs-component-shapes
+  (let [migration-id "0032-migrate-stroke-width-token-attr"
         component-id (uuid/next)
         shape-id     (uuid/next)
         shape        (-> (cts/setup-shape {:id shape-id :type :rect})
@@ -532,8 +532,8 @@
     (t/is (= "30" (:stroke-width-left applied'))
           "component side reference created")))
 
-(t/deftest migration-0031-leaves-shapes-without-the-legacy-token
-  (let [migration-id "0031-migrate-stroke-width-token-attr"
+(t/deftest migration-0032-leaves-shapes-without-the-legacy-token
+  (let [migration-id "0032-migrate-stroke-width-token-attr"
         page-id      (uuid/next)
         shape-id     (uuid/next)
         shape        (-> (cts/setup-shape {:id shape-id :type :rect})
@@ -546,8 +546,8 @@
     (t/is (= data (cfm/migrate-data data migration-id))
           "a shape without the legacy token is left untouched")))
 
-(t/deftest migration-0031-runs-through-file-migration
-  (let [migration-id "0031-migrate-stroke-width-token-attr"
+(t/deftest migration-0032-runs-through-file-migration
+  (let [migration-id "0032-migrate-stroke-width-token-attr"
         shape-id     (uuid/next)
         file         (ctf/make-file {:name "Legacy stroke width token"})
         page-id      (first (get-in file [:data :pages]))
@@ -565,8 +565,8 @@
     (t/is (= "30" (:stroke-width-top applied'))
           "legacy token applied to the sides")))
 
-(t/deftest migration-0032-adds-unlisted-children-to-their-parent
-  (let [migration-id "0032-fix-children-not-in-parent"
+(t/deftest migration-0033-adds-unlisted-children-to-their-parent
+  (let [migration-id "0033-fix-children-not-in-parent"
         page-id      (uuid/next)
         parent-id    (uuid/next)
         listed-id    (uuid/next)
@@ -602,8 +602,8 @@
     (t/is (= data' (cfm/migrate-data data' migration-id))
           "migration is idempotent")))
 
-(t/deftest migration-0032-adds-unlisted-children-in-components
-  (let [migration-id "0032-fix-children-not-in-parent"
+(t/deftest migration-0033-adds-unlisted-children-in-components
+  (let [migration-id "0033-fix-children-not-in-parent"
         component-id (uuid/next)
         main-id      (uuid/next)
         child-id     (uuid/next)
@@ -714,8 +714,8 @@
     (t/is (= 4 (count (get-in file' [:data :pages-index page-id :objects shape-id :points])))
           "path points repaired before schema validation")))
 
-(t/deftest migration-0033-normalize-main-instance-diff-from-component
-  (let [migration-id "0033-normalize-main-instance-names"
+(t/deftest migration-0034-normalize-main-instance-diff-from-component
+  (let [migration-id "0034-normalize-main-instance-names"
         file         (-> (thf/sample-file :file1)
                          (tho/add-simple-component :component1 :root1 :child1
                                                    :component-params {:path "Group / Subgroup"
@@ -745,8 +745,8 @@
     (t/is (= "Group / Subgroup / Other Name" (:name root2')))
     (t/is (= "Other Group/Other Subgroup  /  Other Name" (:name shape1')))))
 
-(t/deftest migration-0033-normalize-variant-instance-diff-from-container
-  (let [migration-id "0033-normalize-main-instance-names"
+(t/deftest migration-0034-normalize-variant-instance-diff-from-container
+  (let [migration-id "0034-normalize-main-instance-names"
         file         (-> (thf/sample-file :file1)
                          (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
                          (ths/update-shape :variant1 :name "Group / Subgroup / Component")
@@ -777,8 +777,8 @@
     (t/is (= "Component" (:name component2')))
     (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
 
-(t/deftest migration-0033-normalize-variant-name-not-normalized
-  (let [migration-id "0033-normalize-main-instance-names"
+(t/deftest migration-0034-normalize-variant-name-not-normalized
+  (let [migration-id "0034-normalize-main-instance-names"
         file         (-> (thf/sample-file :file1)
                          (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
                          (ths/update-shape :variant1 :name "Group/Subgroup  /  Component")

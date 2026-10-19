@@ -67,6 +67,52 @@
       (t/is (= "Rect1" (:name child2')))
       (t/is (= "Group/Subgroup  /  Component2" (:name copy2'))))))
 
+(t/deftest repair-loop-explicit-nil-max-iterations
+  (t/testing "explicit nil :max-iterations behaves like the default"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                     (ths/update-shape :root1 :variant-id nil))
+          errors (cfv/validate-file file {})]
+      (t/is (some? (seq errors)) "the file is broken")
+      (let [fixed (cfr/repair-loop file {} :max-iterations nil)]
+        (t/is (nil? (cfv/validate-file fixed {})) "it converges")))))
+
+(t/deftest repair-loop-gives-up-after-max-iterations
+  (t/testing "errors that never clear return the input untouched"
+    (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                   (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                   (ths/update-shape :root1 :variant-id nil))]
+      (with-redefs [cfv/validate-file
+                    (fn [_ _] [{:code :definitely-not-a-real-error}])]
+        (let [result (cfr/repair-loop file {} :max-iterations 2)]
+          (t/is (identical? file result)
+                "no convergence, no partial persist"))))))
+
+(t/deftest repair-loop-keeps-original-on-error
+  (t/testing "a throwing repair returns the input untouched"
+    (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                   (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                   (ths/update-shape :root1 :variant-id nil))]
+      (with-redefs [cfr/repair-file
+                    (fn [& _] (throw (ex-info "boom" {})))]
+        (let [result (cfr/repair-loop file {})]
+          (t/is (identical? file result)
+                "the handler decides, the loop never half-persists"))))))
+
+;; AssertionError is a JVM Error, not an Exception, and does not
+;; exist in CLJS (where js/Error catches everything): JVM-only.
+#?(:clj
+   (t/deftest repair-loop-keeps-original-on-assertion-error
+     (t/testing "an assert on the repair path returns the input untouched"
+       (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                      (ths/update-shape :root1 :variant-id nil))]
+         (with-redefs [cfr/repair-file
+                       (fn [& _] (throw (AssertionError. "non-uuid id")))]
+           (let [result (cfr/repair-loop file {})]
+             (t/is (identical? file result)
+                   "asserts do not escape the loop")))))))
+
 (t/deftest repair-main-instance-not-a-variant
   (t/testing "detect and repair a variant component whose root shape is not a variant"
     (let [file    (-> (thf/sample-file :file1 :page-label :page1)

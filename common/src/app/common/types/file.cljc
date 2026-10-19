@@ -131,6 +131,66 @@
 (def check-file-data
   (sm/check-fn schema:data :hint "invalid file data"))
 
+(def decode-file-data
+  "Precompiled json decoder for file data. Compiling the decoder on
+  every call (via `sm/decode`) costs a schema walk per file; this one
+  is built once at load time. See `decode-file-metadata` below for
+  the same pattern."
+  (sm/decoder schema:data sm/json-transformer))
+
+(def decode-page-objects
+  "Precompiled json decoder for page `:objects` maps, used for the
+  explicit component-objects pass in `sanitize-file-data` (the
+  container schema keeps them opaque, so the top-level decode does
+  not descend into them)."
+  (sm/decoder ctp/schema:objects sm/json-transformer))
+
+(defn sanitize-file-data
+  "Decode file data with the file schema and drop nil page entries,
+  repairing the two corruption families seen in production: types
+  left unconverted by decoders (strings or keywords where the schema
+  expects keywords or uuids) and nil page entries that reappeared
+  after legacy-57. The schema itself drives the coercions
+  (`:decode/json` on shape types, json-transformer uuid decoders), so
+  there is no hand-rolled type table to keep in sync. Component
+  objects need an explicit pass because the container schema declares
+  them opaque (`:map`), so the top-level decode does not descend into
+  them. Total and idempotent: values the schema can coerce are
+  coerced, even when the result is still invalid (an unknown
+  shape type still gets keywordized), while genuinely
+  unknown values are left untouched — so files with real corruption
+  keep failing loudly instead of being silently rewritten. When
+  nothing is repaired (neither nil entries nor coercions), the input
+  itself is returned as is, same instance: lazy containers
+  (objects-map) keep their identity and callers can tell a real fix
+  from a no-op by comparing against the input, without re-diffing.
+  The walk still happens on every call — the decode runs over the
+  whole data — because that is the only way to name the corruption
+  families; the no-op case saves the callers the repair bookkeeping,
+  not the walk. Migration 0027 applies the same recipe when pending
+  (idempotent, one extra pass per file, then never again)."
+  [data]
+  (let [dropped (-> data
+                    (d/update-when :pages #(if (some nil? %)
+                                             (into (empty %) (remove nil?) %)
+                                             %))
+                    (d/update-when :pages-index #(cond-> % (contains? % nil) (dissoc nil))))
+        decoded (-> (decode-file-data dropped)
+                    ;; The container schema declares :objects opaque (:map), so
+                    ;; the top-level decode does not descend into component
+                    ;; shapes. Decode them explicitly with the page objects
+                    ;; schema, which carries the same shape decoders.
+                    (d/update-when :components (fn [components]
+                                                 (d/update-vals components
+                                                                (fn [component]
+                                                                  (d/update-when component :objects
+                                                                                 decode-page-objects))))))]
+    ;; Nothing repaired and no nil entries: return the input as is.
+    ;; Same instance keeps lazy containers (objects-map) untouched,
+    ;; avoids fake change-detection stamps, and lets callers find a
+    ;; real fix just by comparing against the input.
+    (if (= decoded dropped) dropped decoded)))
+
 (def check-file-media
   (sm/check-fn schema:media))
 

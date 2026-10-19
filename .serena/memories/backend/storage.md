@@ -30,6 +30,7 @@
 - Orphan watch: `SELECT COALESCE(metadata->>'bucket', metadata->>'~:bucket') AS bucket, count(*) FROM storage_object so WHERE touched_at IS NULL AND deleted_at IS NULL AND status = 'valid' AND NOT EXISTS (SELECT 1 FROM upload_session_chunk usc WHERE usc.object_id = so.id) GROUP BY 1;` Only the `upload-session` row of that output is a leak signal (its rows always have a mapping or a pending touch/deleted mark); other buckets use domain-table references, not this mapping.
 - `objects-gc` removes deleted domain rows and touches their storage object IDs. Each proc streams its pending keys with `db/plan` inside a read-only transaction and deletes them in chunks, each chunk in its own transaction with `FOR UPDATE SKIP LOCKED`: a chunk that fails is logged and skipped instead of aborting the run.
 - Use `::db/reuse-conn true` with `sto/resolve` inside a database transaction.
+- Background bulk writers (e.g. file-gc) intentionally resolve storage without `::db/reuse-conn`: `put-object!` commits in its own transaction and a rolled-back run leaves at most an unreferenced row, which deduplication reuses and storage GC reaps. Joining the main transaction would risk the opposite leak (backend content with no row).
 
 ## GC Cost Model
 

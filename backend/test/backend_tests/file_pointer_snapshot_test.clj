@@ -132,7 +132,7 @@
           orphan  (first (remove #(contains? new-ids %) old-ids))]
       (t/is (some? orphan))
 
-      (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+      (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
 
       ;; The old fragment is still alive because the snapshot needs it.
       (let [rows (fragment-rows file-id)
@@ -180,7 +180,7 @@
             orphan  (first (remove #(contains? new-ids %) old-ids))]
         (t/is (some? orphan))
 
-        (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+        (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
         (t/is (nil? (:deleted-at (first (filter #(= orphan (:id %))
                                                 (fragment-rows file-id))))))
 
@@ -196,7 +196,7 @@
         (th/run-pending-jobs)
         (t/is (pos? (:processed (th/run-task! :objects-gc {}))))
 
-        (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+        (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
         (let [row (first (filter #(= orphan (:id %)) (fragment-rows file-id)))]
           (t/is (some? row))
           (t/is (some? (:deleted-at row))))))))
@@ -211,10 +211,10 @@
         file-id (:id file)
         before  (live-fragment-ids file-id)]
     (t/is (pos? (count before)))
-    (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+    (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
     (let [after-first (live-fragment-ids file-id)]
       (t/is (= before after-first))
-      (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+      (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
       (t/is (= after-first (live-fragment-ids file-id)))
       (t/is (every? #(nil? (:deleted-at %)) (fragment-rows file-id))))))
 
@@ -243,7 +243,7 @@
       ;; test performs before asserting GC marking).
       (th/db-delete! :file-change {:file-id file-id})
       (th/db-delete! :file-data {:file-id file-id :type "snapshot"})
-      (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+      (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
       (let [row (first (filter #(= orphan (:id %)) (fragment-rows file-id)))]
         (t/is (some? row))
         (t/is (some? (:deleted-at row)))))))
@@ -319,7 +319,7 @@
     ;; Force a pending migration on the next save: drop one applied
     ;; migration row so `need-migration?` is true again.
     (th/db-delete! :file-migration {:file-id file-id
-                                    :name "0031-migrate-stroke-width-token-attr"})
+                                    :name "0032-migrate-stroke-width-token-attr"})
 
     (update-file! :profile-id (:id profile)
                   :file-id file-id
@@ -453,7 +453,7 @@
         ;; gc-marks test performs before asserting marking).
         (th/db-delete! :file-change {:file-id file-id})
         (th/db-delete! :file-data {:file-id file-id :type "snapshot"})
-        (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+        (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
         ;; Unchanged page kept its id through the pass.
         (let [f3     (bfc/get-file th/*system* file-id)
               pages-3 (:pages-index (:data f3))]
@@ -550,7 +550,7 @@
       (t/is (nil? (seq (th/db-query :file-data {:file-id file-id :type "snapshot"}))))
       (t/is (some? (:data (th/db-get :file-change {:id snap-id} {::db/remove-deleted false})))))
     ;; file-gc scans the legacy snapshot without failing...
-    (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+    (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
     ;; ...the live file still resolves fully...
     (let [live (:data (bfc/get-file th/*system* file-id :realize? true))]
       (t/is (empty? (fdata/get-used-pointer-ids live))))
@@ -591,7 +591,7 @@
                                (th/db-query :file-data {:file-id file-id})))))
     (th/db-delete! :file-change {:file-id file-id})
     (th/db-delete! :file-data {:file-id file-id :type "snapshot"})
-    (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+    (t/is (true? (:cleaned (th/run-task! :file-gc {:file-id file-id}))))
     (let [live (:data (bfc/get-file th/*system* file-id :realize? true))]
       (t/is (empty? (fdata/get-used-pointer-ids live))))
     ;; Every referenced fragment is live.
@@ -854,10 +854,10 @@
                                         {:stroke-width "token"}))])
 
     (let [ids-before (page-pointer-ids file-id)]
-      ;; Force the 0031 migration on the next read.
+      ;; Force the 0032 migration on the next read.
       (th/db-delete! :file-migration
                      {:file-id file-id
-                      :name "0031-migrate-stroke-width-token-attr"})
+                      :name "0032-migrate-stroke-width-token-attr"})
 
       (let [returned (db/tx-run! th/*system*
                                  (fn [cfg] (bfc/get-file cfg file-id)))]
@@ -898,7 +898,7 @@
 
     (th/db-delete! :file-migration
                    {:file-id file-id
-                    :name "0031-migrate-stroke-width-token-attr"})
+                    :name "0032-migrate-stroke-width-token-attr"})
 
     (let [ids-before (page-pointer-ids file-id {:migrate? false})
           returned   (db/tx-run! th/*system*
@@ -907,7 +907,7 @@
       (t/is (not (pmap/pointer-map? (get-in returned [:data :pages-index page-1]))))
       (t/is (empty? (th/db-query :file-migration
                                  {:file-id file-id
-                                  :name "0031-migrate-stroke-width-token-attr"})))
+                                  :name "0032-migrate-stroke-width-token-attr"})))
       (t/is (= ids-before (page-pointer-ids file-id {:migrate? false}))))
 
     ;; A normal read migrates, and the unchanged page keeps its id.
@@ -916,4 +916,4 @@
       (t/is (= ids-before (page-pointer-ids file-id)))
       (t/is (seq (th/db-query :file-migration
                               {:file-id file-id
-                               :name "0031-migrate-stroke-width-token-attr"}))))))
+                               :name "0032-migrate-stroke-width-token-attr"}))))))
