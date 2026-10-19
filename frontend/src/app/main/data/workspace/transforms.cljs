@@ -1593,6 +1593,59 @@
            (rx/of (dwm/apply-wasm-modifiers modifiers {:ignore-snap-pixel true}))
            (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true}))))))))
 
+;; -- Scale ---------------------------------------------------------
+
+(defn- anchor->point
+  "Return the point of `rect` that matches the `anchor`, a
+  `[horizontal vertical]` pair where horizontal is one of `:left`,
+  `:center` or `:right` and vertical one of `:top`, `:center` or
+  `:bottom`."
+  [rect [h v]]
+  (let [{:keys [x y width height]} rect]
+    (gpt/point (case h :left x :right (+ x width) (+ x (/ width 2)))
+               (case v :top y :bottom (+ y height) (+ y (/ height 2))))))
+
+(defn scale-selected
+  "Scale the selected shapes and their content (strokes, texts,
+  shadows...) by `factor`, keeping the `anchor` point of the selection
+  bounds in place. Behaves like a resize in the scale content mode."
+  [factor anchor]
+  (assert (and (number? factor) (pos? factor)) "expected a positive factor")
+  (ptk/reify ::scale-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shapes  (->> (dsh/lookup-selected state {:omit-blocked? true})
+                         (map (d/getf objects))
+                         (remove ctk/is-variant-container?))]
+        (if (or (empty? shapes) (mth/close? factor 1))
+          (rx/empty)
+          (let [ids    (map :id shapes)
+                origin (anchor->point (gsh/shapes->rect shapes) anchor)
+                scalev (gpt/point factor factor)
+
+                get-modifier
+                (fn [shape]
+                  (let [grow-type     (get shape :grow-type)
+                        new-grow-type (when (cfh/text-shape? shape)
+                                        (dwm/next-grow-type grow-type scalev))]
+                    (cond-> (ctm/resize-modifiers scalev origin)
+                      :always
+                      (ctm/scale-content factor)
+
+                      (and (some? new-grow-type) (not= new-grow-type grow-type))
+                      (ctm/change-property :grow-type new-grow-type))))
+
+                modif-tree (dwm/build-modif-tree ids objects get-modifier)]
+
+            (if (features/active-feature? state "render-wasm/v1")
+              (rx/of (dwm/apply-wasm-modifiers modif-tree
+                                               :ignore-constraints true
+                                               :ignore-snap-pixel true))
+              (rx/of (dwm/apply-modifiers {:modifiers modif-tree
+                                           :ignore-constraints true
+                                           :ignore-snap-pixel true})))))))))
+
 (defn fit-layout-modifiers
   [objects frame]
   ;; Set temporaly the auto flag and calculate a reflow to resize and position

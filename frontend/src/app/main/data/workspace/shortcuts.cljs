@@ -57,6 +57,14 @@
       (.preventDefault event)
       (st/emit! (toggle-layout-flag :display-guides)))))
 
+(defn- escape
+  "Leave the scale content mode when it is active, keeping the
+  selection; otherwise clear the current drawing and selection."
+  []
+  (if (contains? (deref refs/workspace-layout) :scale-text)
+    (st/emit! :interrupt (dw/remove-layout-flag :scale-text))
+    (st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))))
+
 (defn- emit-when-no-readonly
   [& events]
   (let [can-edit?  (:can-edit (deref refs/permissions))
@@ -178,7 +186,7 @@
                           :command "escape"
                           :subsections [:edit]
                           :section [:workspace]
-                          :fn #(st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))}
+                          :fn escape}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
                       :label (fn [] (tr "shortcuts.find"))

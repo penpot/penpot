@@ -8431,6 +8431,54 @@ msgstr "¡LA EXTENSIÓN '%s' HA SIDO INSTALADA PARA TU USUARIO!"
 msgid "workspace.plugins.try-out.try"
 msgstr "PROBAR PLUGIN"
 
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor-point"
+msgstr "Punto de anclaje"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-center"
+msgstr "Abajo en el centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-left"
+msgstr "Abajo a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-right"
+msgstr "Abajo a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-left"
+msgstr "Centro a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-right"
+msgstr "Centro a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-center"
+msgstr "Arriba en el centro"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-left"
+msgstr "Arriba a la izquierda"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-right"
+msgstr "Arriba a la derecha"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.scale"
+msgstr "Escala"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.title"
+msgstr "Escalado"
+
 #: src/app/main/ui/workspace/context_menu.cljs:659
 msgid "workspace.shape.menu.add-flex"
 msgstr "Añadir flex layout"

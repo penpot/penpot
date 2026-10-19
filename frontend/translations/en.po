@@ -8340,6 +8340,54 @@ msgstr "'%s' PLUGIN IS INSTALLED FOR YOUR USER!"
 msgid "workspace.plugins.try-out.try"
 msgstr "TRY PLUGIN"
 
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor-point"
+msgstr "Anchor point"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-center"
+msgstr "Bottom center"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-left"
+msgstr "Bottom left"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.bottom-right"
+msgstr "Bottom right"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-center"
+msgstr "Center"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-left"
+msgstr "Center left"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.center-right"
+msgstr "Center right"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-center"
+msgstr "Top center"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-left"
+msgstr "Top left"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.anchor.top-right"
+msgstr "Top right"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.scale"
+msgstr "Scale"
+
+#: src/app/main/ui/workspace/sidebar/scale.cljs
+msgid "workspace.scale.title"
+msgstr "Scale"
+
 #: src/app/main/ui/workspace/context_menu.cljs:659
 msgid "workspace.shape.menu.add-flex"
 msgstr "Add flex layout"

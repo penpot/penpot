@@ -235,6 +235,7 @@
 (def ^:icon-id rotation "rotation")
 (def ^:icon-id row "row")
 (def ^:icon-id row-reverse "row-reverse")
+(def ^:icon-id scale "scale")
 (def ^:icon-id search "search")
 (def ^:icon-id separate-nodes "separate-nodes")
 (def ^:icon-id settings "settings")
