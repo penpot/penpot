@@ -549,6 +549,37 @@
   [file-data f & args]
   (d/update-when file-data :tokens-status #(apply f % args)))
 
+(defn get-own-tokens-status
+  "The tokens status of the file's own tokens-lib, kept aside while the
+   tokens source is an external library."
+  [file-data]
+  (:own-tokens-status file-data))
+
+(defn set-own-tokens-status
+  "Keep aside the tokens status of the file's own tokens-lib. Setting it to
+   nil removes the attribute."
+  [file-data tokens-status]
+  (assert (or (nil? tokens-status) (ctos/tokens-status? tokens-status))
+          "expected nil or valid tokens-status")
+  (if (nil? tokens-status)
+    (dissoc file-data :own-tokens-status)
+    (assoc file-data :own-tokens-status tokens-status)))
+
+(defn detach-tokens-source
+  "Make the file its own tokens source again, restoring the tokens status
+   kept aside for its own tokens-lib. If none was kept, the tokens status
+   is removed."
+  [file-data]
+  (let [own-tokens-status (get-own-tokens-status file-data)]
+    (if (some? own-tokens-status)
+      (-> file-data
+          (set-tokens-source nil)
+          (set-own-tokens-status nil)
+          (assoc :tokens-status own-tokens-status))
+      (-> file-data
+          (set-tokens-source nil)
+          (dissoc :tokens-status)))))
+
 (defn absorb-tokens-lib
   "Copy the tokens-lib of the library into the file, replacing the
    previous one if any, and unset the tokens-source, so the file becomes
@@ -558,19 +589,26 @@
    one of the library is copied along with the tokens-lib.
 
    If the library has no tokens-lib, only the tokens-source is unset, and
-   the file keeps its own tokens-lib and tokens-status. If there is no
-   library-data, there is nothing to absorb and the file is returned
-   unchanged."
+   the file keeps its own tokens-lib, with the tokens status kept aside for
+   it if any. If there is no library-data, there is nothing to absorb and
+   the file is returned unchanged."
   [file-data library-data]
   (if (nil? library-data)
     file-data
     (let [tokens-lib (get-tokens-lib library-data)]
       (if (nil? tokens-lib)
-        (set-tokens-source file-data nil)
+        (let [own-tokens-status (get-own-tokens-status file-data)]
+          (cond-> (-> file-data
+                      (set-tokens-source nil)
+                      (set-own-tokens-status nil))
+            (some? own-tokens-status)
+            (assoc :tokens-status own-tokens-status)))
         (let [tokens-status (or (get-tokens-status file-data)
                                 (get-tokens-status library-data))]
           (cond-> (-> file-data
                       (set-tokens-source nil)
+                      ;; The kept status refers to the replaced tokens-lib
+                      (set-own-tokens-status nil)
                       (assoc :tokens-lib tokens-lib))
             (some? tokens-status)
             (assoc :tokens-status tokens-status)))))))

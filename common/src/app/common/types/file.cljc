@@ -90,7 +90,8 @@
    [:plugin-data {:optional true} schema:plugin-data]
    [:tokens-source {:optional true} ::sm/uuid]                ;; The tokens-lib may be in this file or in an external library
    [:tokens-lib {:optional true} ctob/schema:tokens-lib]
-   [:tokens-status {:optional true} ctos/schema:tokens-status]])
+   [:tokens-status {:optional true} ctos/schema:tokens-status]
+   [:own-tokens-status {:optional true} ctos/schema:tokens-status]])  ;; Kept aside while the tokens source is an external library
 
 (def schema:file-metadata
   [:map {:title "Metadata"}
@@ -1241,7 +1242,7 @@
 
     (cond-> (update-in file [:data :pages-index] detach-pages)
       (not (cfo/effective-tokens-source? (:data file) file-id))
-      (update :data dissoc :tokens-source :tokens-status))))
+      (update :data cfo/detach-tokens-source))))
 
 ;; Base font size
 

@@ -115,6 +115,54 @@
       (t/is (= (ctos/get-active-set-ids file-tokens-status)
                (ctos/get-active-set-ids undo-tokens-status)))))
 
+  (t/testing "the file's own tokens status is kept aside while a library is the source, and restored when going back"
+    (let [own-set-id   (uuid/next)
+          lib-set-id   (uuid/next)
+          lib2-set-id  (uuid/next)
+          library-file (tht/sample-file-with-tokens
+                        :file-id :library
+                        :lib-fn #(ctob/add-set % (ctob/make-token-set :id lib-set-id :name "library set"))
+                        :status-fn #(ctos/set-tokens-status % #{} #{lib-set-id}))
+          library2-file (tht/sample-file-with-tokens
+                         :file-id :library2
+                         :lib-fn #(ctob/add-set % (ctob/make-token-set :id lib2-set-id :name "library2 set"))
+                         :status-fn #(ctos/set-tokens-status % #{} #{lib2-set-id}))
+          file         (tht/sample-file-with-tokens
+                        :file-id :file1
+                        :lib-fn #(ctob/add-set % (ctob/make-token-set :id own-set-id :name "own set"))
+                        :status-fn #(ctos/set-tokens-status % #{} #{own-set-id}))
+          set-source   (fn [file library]
+                         (let [changes (-> (pcb/empty-changes)
+                                           (pcb/with-library-data (ctf/file-data file))
+                                           (clt/generate-set-tokens-source library))]
+                           [(thf/apply-changes file changes) changes]))
+          active-sets  #(some-> % ctos/get-active-set-ids)
+
+          [to-library to-library-changes] (set-source file library-file)
+          [to-library2 _]                 (set-source to-library library2-file)
+          [back-to-own back-changes]      (set-source to-library2 to-library2)
+          undo-to-library                 (thf/apply-undo-changes to-library to-library-changes)
+          undo-back-to-own                (thf/apply-undo-changes back-to-own back-changes)]
+
+      ;; A library as source: its status is used and the own status is kept aside
+      (t/is (= #{lib-set-id} (active-sets (tht/get-tokens-status to-library))))
+      (t/is (= #{own-set-id} (active-sets (tht/get-own-tokens-status to-library))))
+
+      ;; Another library as source: the own status is still kept aside
+      (t/is (= #{lib2-set-id} (active-sets (tht/get-tokens-status to-library2))))
+      (t/is (= #{own-set-id} (active-sets (tht/get-own-tokens-status to-library2))))
+
+      ;; Back to the file itself: the own status is restored, nothing is kept aside
+      (t/is (nil? (tht/get-tokens-source back-to-own)))
+      (t/is (= #{own-set-id} (active-sets (tht/get-tokens-status back-to-own))))
+      (t/is (nil? (tht/get-own-tokens-status back-to-own)))
+
+      ;; Undo works both ways
+      (t/is (= #{own-set-id} (active-sets (tht/get-tokens-status undo-to-library))))
+      (t/is (nil? (tht/get-own-tokens-status undo-to-library)))
+      (t/is (= #{lib2-set-id} (active-sets (tht/get-tokens-status undo-back-to-own))))
+      (t/is (= #{own-set-id} (active-sets (tht/get-own-tokens-status undo-back-to-own))))))
+
   (t/testing "if the library is nil, the tokens source is cleared and the tokens status is reset to empty"
     (let [set-id (uuid/next)
           file (tht/sample-file-with-tokens
