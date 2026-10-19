@@ -320,6 +320,39 @@ test.describe("Assets tab", () => {
   });
 });
 
+test.describe("Left header", () => {
+  test("Shows the shared badge and the save status", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-create-rect.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
+      pageId: "c1249a66-fce0-8175-8004-7433fe4be8bd",
+    });
+
+    const header = page.locator("header", { hasText: "Testing library 1" });
+    await expect(header).toBeVisible();
+    // The badge and the status dot are tiny: compare every pixel.
+    await expect(header).toHaveScreenshot("left-header-shared.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await workspace.rectShapeButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+    await expect(header.getByTitle("Saved")).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(header).toHaveScreenshot("left-header-saved.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Palette", () => {
   test("Shows the bottom palette expanded and collapsed", async ({ page }) => {
     const workspace = new WorkspacePage(page);
