@@ -484,7 +484,7 @@ PENPOT_SECRET_KEY: my-super-secure-key
 
 ### Database
 
-Penpot only supports PostgreSQL and we highly recommend >=13 version. If you are using official
+Penpot only supports PostgreSQL and we highly recommend >=16 version. If you are using official
 docker images this is already solved for you.
 
 Essential database configuration:

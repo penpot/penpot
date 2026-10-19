@@ -508,7 +508,10 @@
     :fn (mg/resource "app/migrations/sql/0154-del-legacy-file-object-thumbnail-table.sql")}
 
    {:name "0155-add-idx-to-file-change"
-    :fn (mg/resource "app/migrations/sql/0155-add-idx-to-file-change.sql")}])
+    :fn (mg/resource "app/migrations/sql/0155-add-idx-to-file-change.sql")}
+
+   {:name "0156-reset-pg-storage-defaults"
+    :fn (mg/resource "app/migrations/sql/0156-reset-pg-storage-defaults.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
