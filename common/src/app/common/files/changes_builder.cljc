@@ -1162,6 +1162,20 @@
                                     :enabled previous-enabled})
         (apply-changes-local))))
 
+(defn set-text-layout
+  [changes language enabled?]
+  (assert-file-data! changes)
+  (let [file-data (::file-data (meta changes))
+        previous-enabled (ctf/text-layout-enabled? file-data language)]
+    (-> changes
+        (update :redo-changes conj {:type :set-text-layout
+                                    :language language
+                                    :enabled enabled?})
+        (update :undo-changes conj {:type :set-text-layout
+                                    :language language
+                                    :enabled previous-enabled})
+        (apply-changes-local))))
+
 ;; Misc changes
 
 (defn reorder-children

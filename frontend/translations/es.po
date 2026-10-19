@@ -9769,3 +9769,79 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-layout.title"
+msgstr "Disposición del texto por idioma"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-layout.description"
+msgstr "Elige qué controles de disposición del texto están disponibles en todos los archivos."
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.chinese-layout.enable-all-files"
+msgstr "Activar la disposición del texto chino en todos los archivos"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.korean-layout.enable-all-files"
+msgstr "Activar la disposición del texto coreano en todos los archivos"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.enable-chinese-layout"
+msgstr "Activar la disposición del texto chino"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.disable-chinese-layout"
+msgstr "Desactivar la disposición del texto chino"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.enable-korean-layout"
+msgstr "Activar la disposición del texto coreano"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.disable-korean-layout"
+msgstr "Desactivar la disposición del texto coreano"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.chinese-layout"
+msgstr "Disposición del texto chino"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.korean-layout"
+msgstr "Disposición del texto coreano"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-profile"
+msgstr "Perfil de idioma"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-plain"
+msgstr "Sin perfil de idioma"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-japanese"
+msgstr "Japonés"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-simplified"
+msgstr "Chino simplificado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-traditional"
+msgstr "Chino tradicional"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-korean"
+msgstr "Coreano"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap"
+msgstr "Salto de línea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-syllable"
+msgstr "Por sílaba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-spaces-only"
+msgstr "En los espacios (experimental)"

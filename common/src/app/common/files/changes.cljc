@@ -440,6 +440,12 @@
      [:file-id ::sm/uuid]
      [:library-id [:maybe ::sm/uuid]]]]
 
+   [:set-text-layout
+    [:map {:title "SetTextLayout"}
+     [:type [:= :set-text-layout]]
+     [:language [:enum :japanese :chinese :korean]]
+     [:enabled ::sm/boolean]]]
+
    [:set-japanese-layout
     [:map {:title "SetJapaneseLayout"}
      [:type [:= :set-japanese-layout]]
@@ -1100,6 +1106,10 @@
 (defmethod process-change :set-japanese-layout
   [data {:keys [enabled]}]
   (ctf/set-japanese-layout-enabled data enabled))
+
+(defmethod process-change :set-text-layout
+  [data {:keys [language enabled]}]
+  (ctf/set-text-layout-enabled data language enabled))
 
 ;; === Operations
 

@@ -81,6 +81,22 @@
              (text-editor/selection-japanese-styles
               content (selection 0 1 0 2))))))
 
+(t/deftest paragraph-profiles-follow-the-editor-selection
+  (let [content {:type "root"
+                 :children [{:type "paragraph-set"
+                             :children [{:type "paragraph" :children [{:text "Plain"}]}
+                                        {:type "paragraph" :text-language "ko"
+                                         :korean-wrap "spaces-only"
+                                         :children [{:text "한국어"}]}]}]}]
+    (t/is (= {:text-language nil :korean-wrap nil}
+             (text-editor/selection-paragraph-styles content (selection 0 0 0 0))))
+    (t/is (= {:text-language "ko" :korean-wrap "spaces-only"}
+             (text-editor/selection-paragraph-styles content (selection 1 1 1 1))))
+    (t/is (= {:text-language :multiple :korean-wrap :multiple}
+             (text-editor/selection-paragraph-styles content (selection 0 0 1 1))))
+    (t/is (= {:text-language :multiple :korean-wrap :multiple}
+             (text-editor/selection-paragraph-styles content (selection 1 1 0 0))))))
+
 (t/deftest japanese-styles-report-mixed-ranges-and-follow-the-caret
   (let [content (editor-content
                  [{:text "平成"

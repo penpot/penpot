@@ -690,6 +690,17 @@
                           (pcb/set-japanese-layout enabled?))]
         (rx/of (dch/commit-changes changes))))))
 
+(defn set-text-layout
+  [language enabled?]
+  (ptk/reify ::set-text-layout
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-data (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-file-data file-data)
+                        (pcb/set-text-layout language enabled?))]
+        (rx/of (dch/commit-changes changes))))))
+
 ;; --- Profile
 
 (defn update-nudge

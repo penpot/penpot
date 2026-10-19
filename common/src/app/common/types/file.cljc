@@ -78,7 +78,9 @@
   [:map {:title "FileOptions"}
    [:components-v2 {:optional true} ::sm/boolean]
    [:base-font-size {:optional true} :string]
-   [:japanese-layout {:optional true} ::sm/boolean]])
+   [:japanese-layout {:optional true} ::sm/boolean]
+   [:chinese-layout {:optional true} ::sm/boolean]
+   [:korean-layout {:optional true} ::sm/boolean]])
 
 (def schema:data
   [:map {:title "FileData"}
@@ -1256,17 +1258,40 @@
   (assoc-in file-data [:options :base-font-size] base-font-size))
 
 
-;; Japanese text layout
+;; Text layout controls
+
+(defn text-layout-option
+  [language]
+  (case language
+    :japanese :japanese-layout
+    :chinese :chinese-layout
+    :korean :korean-layout))
+
+(defn text-layout-preference
+  [language]
+  (case language
+    :japanese :japanese-layout-all-files
+    :chinese :chinese-layout-all-files
+    :korean :korean-layout-all-files))
+
+(defn text-layout-enabled?
+  [file-data language]
+  (true? (get-in file-data [:options (text-layout-option language)])))
+
+(defn set-text-layout-enabled
+  [file-data language enabled?]
+  (let [option (text-layout-option language)]
+    (if enabled?
+      (assoc-in file-data [:options option] true)
+      (d/update-in-when file-data [:options] dissoc option))))
 
 (defn japanese-layout-enabled?
   [file-data]
-  (true? (get-in file-data [:options :japanese-layout])))
+  (text-layout-enabled? file-data :japanese))
 
 (defn set-japanese-layout-enabled
   [file-data enabled?]
-  (if enabled?
-    (assoc-in file-data [:options :japanese-layout] true)
-    (d/update-in-when file-data [:options] dissoc :japanese-layout)))
+  (set-text-layout-enabled file-data :japanese enabled?))
 
 
 ;; Ref Chains

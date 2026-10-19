@@ -9893,3 +9893,79 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-layout.title"
+msgstr "Text layout by language"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-layout.description"
+msgstr "Choose which text layout controls are available in all files."
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.chinese-layout.enable-all-files"
+msgstr "Enable Chinese text layout for all files"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.korean-layout.enable-all-files"
+msgstr "Enable Korean text layout for all files"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.enable-chinese-layout"
+msgstr "Enable Chinese text layout"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.disable-chinese-layout"
+msgstr "Disable Chinese text layout"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.enable-korean-layout"
+msgstr "Enable Korean text layout"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.disable-korean-layout"
+msgstr "Disable Korean text layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.chinese-layout"
+msgstr "Chinese text layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.korean-layout"
+msgstr "Korean text layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-profile"
+msgstr "Language profile"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-plain"
+msgstr "No language profile"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-japanese"
+msgstr "Japanese"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-simplified"
+msgstr "Simplified Chinese"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-chinese-traditional"
+msgstr "Traditional Chinese"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.profile-korean"
+msgstr "Korean"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap"
+msgstr "Line wrapping"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-syllable"
+msgstr "By syllable"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-spaces-only"
+msgstr "At spaces (experimental)"

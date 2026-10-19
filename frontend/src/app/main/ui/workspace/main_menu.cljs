@@ -44,7 +44,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.text.writing-mode :as wm]
+   [app.util.text.layout :as tl]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -230,13 +230,28 @@
         [:span {:class (stl/css :feedback :item-name)}
          (tr "labels.give-feedback")]])]))
 
+(mf/defc language-layout-menu-item*
+  [{:keys [language config can-edit read-only label on-toggle]}]
+  (let [toggle (mf/use-fn
+                (mf/deps language on-toggle)
+                #(on-toggle language %))]
+    (when (tl/file-action-visible? config can-edit read-only)
+      [:> dropdown-menu-item* {:on-click toggle
+                               :class (stl/css :base-menu-item :submenu-item)
+                               :on-key-down (fn [event]
+                                              (when (kbd/enter? event) (toggle event)))
+                               :data-testid (str (name language) "-layout")
+                               :id (str "file-menu-" (name language) "-layout")}
+       [:span {:class (stl/css :item-name)} label]])))
+
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [japanese-layout-enabled japanese-layout-all-files layout profile toggle-flag
-           on-close toggle-theme toggle-render toggle-japanese-layout]}]
+  [{:keys [layout-config layout profile toggle-flag
+           on-close toggle-theme toggle-render toggle-text-layout]}]
   (let [renderer                    (or (-> profile :props :renderer) :svg)
         read-only?                  (mf/use-ctx ctx/workspace-read-only?)
+        can-edit                    (:can-edit (mf/deref refs/permissions))
 
         show-nudge-options
         (mf/use-fn
@@ -319,20 +334,24 @@
                               :id          "file-menu-nudge"}
       [:span {:class (stl/css :item-name)} (tr "modals.nudge-title")]]
 
-     (when (and (not read-only?)
-                (not japanese-layout-all-files)
-                (wm/vertical-layout-active?))
-       [:> dropdown-menu-item* {:on-click    toggle-japanese-layout
-                                :class       (stl/css :base-menu-item :submenu-item)
-                                :on-key-down (fn [event]
-                                               (when (kbd/enter? event)
-                                                 (toggle-japanese-layout event)))
-                                :data-testid "japanese-layout"
-                                :id          "file-menu-japanese-layout"}
-        [:span {:class (stl/css :item-name)}
-         (if japanese-layout-enabled
-           (tr "workspace.header.menu.disable-japanese-layout")
-           (tr "workspace.header.menu.enable-japanese-layout"))]])
+     [:> language-layout-menu-item*
+      {:language :japanese :config (:japanese layout-config)
+       :can-edit can-edit :read-only read-only? :on-toggle toggle-text-layout
+       :label (if (get-in layout-config [:japanese :file?])
+                (tr "workspace.header.menu.disable-japanese-layout")
+                (tr "workspace.header.menu.enable-japanese-layout"))}]
+     [:> language-layout-menu-item*
+      {:language :chinese :config (:chinese layout-config)
+       :can-edit can-edit :read-only read-only? :on-toggle toggle-text-layout
+       :label (if (get-in layout-config [:chinese :file?])
+                (tr "workspace.header.menu.disable-chinese-layout")
+                (tr "workspace.header.menu.enable-chinese-layout"))}]
+     [:> language-layout-menu-item*
+      {:language :korean :config (:korean layout-config)
+       :can-edit can-edit :read-only read-only? :on-toggle toggle-text-layout
+       :label (if (get-in layout-config [:korean :file?])
+                (tr "workspace.header.menu.disable-korean-layout")
+                (tr "workspace.header.menu.enable-korean-layout"))}]
 
      [:> dropdown-menu-item* {:on-click    toggle-theme
                               :class       (stl/css :base-menu-item :submenu-item)
@@ -903,8 +922,7 @@
 (mf/defc menu*
   [{:keys [layout file]}]
   (let [profile            (mf/deref refs/profile)
-        japanese-layout    (mf/deref refs/japanese-layout-config)
-        japanese-layout-enabled (:file? japanese-layout)
+        layout-config      (mf/deref refs/text-layout-config)
 
         show-menu*         (mf/use-state false)
         show-menu?         (deref show-menu*)
@@ -966,12 +984,12 @@
            (dom/stop-propagation event)
            (st/emit! (du/toggle-theme))))
 
-        toggle-japanese-layout
+        toggle-text-layout
         (mf/use-fn
-         (mf/deps japanese-layout-enabled)
-         (fn [event]
+         (mf/deps layout-config)
+         (fn [language event]
            (dom/stop-propagation event)
-           (st/emit! (dw/set-japanese-layout (not japanese-layout-enabled)))
+           (st/emit! (dw/set-text-layout language (not (get-in layout-config [language :file?]))))
            (reset! show-menu* false)
            (reset! selected-sub-menu* nil)))
 
@@ -1174,13 +1192,12 @@
        :preferences
        [:> preferences-menu* {:layout layout
                               :profile profile
-                              :japanese-layout-enabled japanese-layout-enabled
-                              :japanese-layout-all-files (:all-files? japanese-layout)
+                              :layout-config layout-config
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
                               :toggle-render toggle-render
                               :show-shortcuts show-shortcuts
-                              :toggle-japanese-layout toggle-japanese-layout
+                              :toggle-text-layout toggle-text-layout
                               :on-close close-sub-menu}]
 
        :plugins
