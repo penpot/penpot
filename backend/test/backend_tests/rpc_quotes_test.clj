@@ -472,3 +472,97 @@
         (t/is (= :restriction (th/ex-type error)))
         (t/is (= :max-quote-reached (th/ex-code error)))
         (t/is (= "media-storage-bytes-per-team" (:target (ex-data error))))))))
+
+;; --- SNAPSHOTS (VERSIONS) QUOTES
+
+(defn- check-snapshot-ok
+  "Save a version of the file and check that it was created."
+  [profile file label]
+  (let [out (th/command! {::th/type :create-file-snapshot
+                          ::rpc/profile-id (:id profile)
+                          :file-id (:id file)
+                          :label label})]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (t/is (= label (get-in out [:result :label])))
+    out))
+
+(defn- check-snapshot-ko
+  "Try to save a version of the file and check that the quota refused it."
+  [profile file label target]
+  (let [out   (th/command! {::th/type :create-file-snapshot
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)
+                            :label label})
+        error (:error out)]
+    ;; (th/print-result! out)
+    (t/is (not (th/success? out)))
+    (t/is (= :restriction (th/ex-type error)))
+    (t/is (= :max-quote-reached (th/ex-code error)))
+    (t/is (= target (:target (ex-data error))))
+    out))
+
+(t/deftest snapshots-per-file-quote
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-snapshots-per-file 2
+                               :quotes-snapshots-per-team 1000})}]
+
+    (let [profile (th/create-profile* 1)
+          project (th/create-project* 1 {:profile-id (:id profile)
+                                         :team-id (:default-team-id profile)})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:id project)
+                                      :is-shared false})]
+
+      (check-snapshot-ok profile file "version1")
+      (check-snapshot-ok profile file "version2")
+      (check-snapshot-ko profile file "version3" "snapshots-per-file"))))
+
+(t/deftest snapshots-per-team-quote
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-snapshots-per-file 1000
+                               :quotes-snapshots-per-team 3})}]
+
+    (let [profile (th/create-profile* 1)
+          project (th/create-project* 1 {:profile-id (:id profile)
+                                         :team-id (:default-team-id profile)})
+          file-1  (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:id project)
+                                      :is-shared false})
+          file-2  (th/create-file* 2 {:profile-id (:id profile)
+                                      :project-id (:id project)
+                                      :is-shared false})]
+
+      ;; the quota adds up the versions of every file of the team
+      (check-snapshot-ok profile file-1 "version1")
+      (check-snapshot-ok profile file-2 "version2")
+      (check-snapshot-ok profile file-1 "version3")
+      (check-snapshot-ko profile file-2 "version4" "snapshots-per-team"))))
+
+(t/deftest snapshots-quote-freed-on-delete
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-snapshots-per-file 2
+                               :quotes-snapshots-per-team 1000})}]
+
+    (let [profile  (th/create-profile* 1)
+          project  (th/create-project* 1 {:profile-id (:id profile)
+                                          :team-id (:default-team-id profile)})
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:id project)
+                                       :is-shared false})
+          snapshot (:result (check-snapshot-ok profile file "version1"))]
+
+      (check-snapshot-ok profile file "version2")
+      (check-snapshot-ko profile file "version3" "snapshots-per-file")
+
+      ;; deleting a version takes it out of the count right away
+      (let [out (th/command! {::th/type :delete-file-snapshot
+                              ::rpc/profile-id (:id profile)
+                              :id (:id snapshot)})]
+        (t/is (nil? (:error out)))
+        (t/is (true? (:result out)))
+
+        (check-snapshot-ok profile file "version4")))))
