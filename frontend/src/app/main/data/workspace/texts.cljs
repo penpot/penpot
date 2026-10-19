@@ -1453,18 +1453,77 @@
                                            (gsh/transform-shape (ctm/change-size shape width height))))))
                                  {:undo-group (when new-shape? id)}))))))))
 
+(defn- layout-item
+  "The ancestor of `shape` (or `shape` itself) that is a direct child of its board."
+  [objects shape]
+  (loop [item shape]
+    (let [parent-id (:parent-id item)]
+      (if (or (= parent-id (:frame-id shape))
+              (nil? (get objects parent-id)))
+        item
+        (recur (get objects parent-id))))))
+
+(defn- v3-sync-text-layout
+  "Previews an auto-grow text's live size in its layout, so a fit-content parent
+  follows it while typing. Geometry is committed on finalize."
+  [id]
+  (ptk/reify ::v3-sync-text-layout
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects  (dsh/lookup-page-objects state)
+            shape    (get objects id)
+            preview? (and (cfh/text-shape? shape)
+                          (not= :fixed (:grow-type shape))
+                          (ctl/any-layout-descent? objects shape)
+                          (not (ctl/position-absolute? (layout-item objects shape))))
+            size     (when preview?
+                       (dwwt/get-wasm-text-new-size shape))
+            previous (or (get-in state [::layout-preview id])
+                         (select-keys (:selrect shape) [:width :height]))]
+        ;; Modifiers are costly, so skip keystrokes that keep the size.
+        (if (and (some? size)
+                 (not (and (mth/close? (:width size) (:width previous))
+                           (mth/close? (:height size) (:height previous)))))
+          (rx/of #(assoc-in % [::layout-preview id] size)
+                 (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers shape)))
+          (rx/empty))))))
+
+(defn v3-stop-text-layout-preview
+  "Drops the layout preview of the text `id` and leaves interactive render mode."
+  [id]
+  (ptk/reify ::v3-stop-text-layout-preview
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (contains? (get state ::layout-preview) id)
+        (rx/of #(update % ::layout-preview dissoc id)
+               (dwm/clear-local-transform))
+        (rx/empty)))))
+
+(defn v3-update-editor-content
+  "Commits `content` from the WASM editor to the text `shape-id` and, while
+  editing, previews its new size in the layout."
+  [shape-id content & {:keys [finalize?]}]
+  (let [text         (txt/content->text content)
+        name         (when (not= text "")
+                       (txt/generate-shape-name text))
+        update-event (v2-update-text-shape-content shape-id content
+                                                   :update-name? true
+                                                   :name name
+                                                   :finalize? finalize?)]
+    (if finalize?
+      update-event
+      (ptk/reify ::v3-update-editor-content
+        ptk/WatchEvent
+        (watch [_ _ _]
+          (rx/of update-event
+                 (v3-sync-text-layout shape-id)))))))
+
 (defn v3-sync-editor-content
   "Event pushing the WASM editor content back into the shape, or nil when there is
    nothing to sync. Every text edit commits through it, menu or keystroke alike."
   [& {:keys [finalize?]}]
   (when-let [{:keys [shape-id content]} (wasm.text-editor/text-editor-sync-content)]
-    (let [text (txt/content->text content)
-          name (when (not= text "")
-                 (txt/generate-shape-name text))]
-      (v2-update-text-shape-content shape-id content
-                                    :update-name? true
-                                    :name name
-                                    :finalize? finalize?))))
+    (v3-update-editor-content shape-id content :finalize? finalize?)))
 
 (defn- sync-editor-content-stream
   "Stream of the sync event for `reason`, after asking WASM to repaint."
