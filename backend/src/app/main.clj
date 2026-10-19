@@ -66,6 +66,13 @@
     ::mdef/help "A total number of bytes processed by update-file."
     ::mdef/type :counter}
 
+   :update-file-validation-timing
+   {::mdef/name "penpot_rpc_update_file_validation_timing"
+    ::mdef/help "update-file validation step timings (milliseconds)."
+    ::mdef/labels ["step"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
+    ::mdef/type :histogram}
+
    :rpc-main-timing
    {::mdef/name "penpot_rpc_main_timing"
     ::mdef/help "RPC command method call timing for main"

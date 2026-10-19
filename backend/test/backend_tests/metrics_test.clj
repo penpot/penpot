@@ -104,7 +104,8 @@
   ;; until done (300s postgres statement timeout), Redis only needs the
   ;; pathological case covered.
   (doseq [id [:rpc-main-timing :rpc-management-timing :rpc-climit-timing
-              :audit-http-handler-timing :http-server-dispatch-timing]]
+              :audit-http-handler-timing :http-server-dispatch-timing
+              :update-file-validation-timing]]
     (t/is (= mtx/default-request-histogram-buckets
              (get-in main/default-metrics [id ::mdef/buckets]))
           (str "request buckets on " id)))
@@ -140,4 +141,8 @@
     (t/is (nil? (bucket-value metrics "penpot_redis_eval_timing" ["name"] ["claim"] "15000.0")))
 
     (mtx/run! metrics :id :http-server-dispatch-timing :val 45000)
-    (t/is (= 1.0 (bucket-value metrics "penpot_http_server_dispatch_timing" [] [] "60000.0")))))
+    (t/is (= 1.0 (bucket-value metrics "penpot_http_server_dispatch_timing" [] [] "60000.0")))
+
+    (mtx/run! metrics :id :update-file-validation-timing :val 9000 :labels (into-array String ["validate-affected"]))
+    (t/is (= 0.0 (bucket-value metrics "penpot_rpc_update_file_validation_timing" ["step"] ["validate-affected"] "7500.0")))
+    (t/is (= 1.0 (bucket-value metrics "penpot_rpc_update_file_validation_timing" ["step"] ["validate-affected"] "10000.0")))))
