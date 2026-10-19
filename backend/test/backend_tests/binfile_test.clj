@@ -390,3 +390,20 @@
                     d)))]
       (t/is (= :validation (:type out)))
       (t/is (= :max-file-size-reached (:code out))))))
+
+(def ^:private sql:current-idle-timeout
+  "SELECT current_setting('idle_in_transaction_session_timeout')::interval
+          = interval '30 minutes' AS ok")
+
+(t/deftest binfile-transactions-use-a-finite-idle-timeout
+  (db/tx-run! th/*system*
+              (fn [{::db/keys [conn] :as cfg}]
+                (t/testing "export transaction"
+                  (bfc/set-transaction-idle-timeout cfg)
+                  (t/is (true? (-> (db/exec-one! conn [sql:current-idle-timeout])
+                                   :ok))))
+
+                (t/testing "import transaction"
+                  (bfc/configure-import-transaction cfg)
+                  (t/is (true? (-> (db/exec-one! conn [sql:current-idle-timeout])
+                                   :ok)))))))

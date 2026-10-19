@@ -660,10 +660,28 @@
             data
             library-ids)))
 
-(defn disable-database-timeouts!
+(def transaction-idle-timeout-ms
+  "Idle-in-transaction guard for the long binfile transactions: 30
+  minutes. The import and the export of a file run inside one
+  transaction that can go quiet while the ZIP is decoded and the file
+  data is realized. The longest operation observed in production is
+  under 8 minutes, so this leaves room for bigger files and still
+  aborts a connection that is left idle for half an hour."
+  1800000)
+
+(defn set-transaction-idle-timeout
+  "Set `idle_in_transaction_session_timeout` for the current
+  transaction. Must be called inside a transaction: `SET LOCAL` is
+  scoped to it."
   [cfg]
   (let [conn (db/get-connection cfg)]
-    (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
+    (db/exec-one! conn [(str "SET LOCAL idle_in_transaction_session_timeout = "
+                             transaction-idle-timeout-ms)])))
+
+(defn configure-import-transaction
+  [cfg]
+  (set-transaction-idle-timeout cfg)
+  (let [conn (db/get-connection cfg)]
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
 (defn invalidate-thumbnails

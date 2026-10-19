@@ -228,6 +228,7 @@
 
   (let [detach? (and (not embed-assets) (not include-libraries))]
     (db/tx-run! cfg (fn [cfg]
+                      (bfc/set-transaction-idle-timeout cfg)
                       (cond-> (bfc/get-file cfg file-id
                                             {:realize? true
                                              :include-deleted? true
@@ -934,7 +935,7 @@
 
 (defn- import-files*
   [{:keys [::manifest] :as cfg}]
-  (bfc/disable-database-timeouts! cfg)
+  (bfc/configure-import-transaction cfg)
 
   (vswap! bfc/*state* update :index bfc/update-index (:files manifest) :id)
 
@@ -962,7 +963,7 @@
               :hint "unable to perform in-place update with binfile containing more than 1 file"
               :manifest manifest))
 
-  (bfc/disable-database-timeouts! cfg)
+  (bfc/configure-import-transaction cfg)
 
   (let [ref-file (bfc/get-minimal-file cfg file-id ::db/for-update true)
         file     (first (get manifest :files))
