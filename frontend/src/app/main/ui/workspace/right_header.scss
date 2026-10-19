@@ -151,6 +151,8 @@
   border: $b-2 solid var(--color-background-tertiary);
   border-radius: $br-circle;
   background: var(--color-foreground-error);
-  inset-block-start: px2rem(6);
-  inset-inline-end: px2rem(6);
+
+  // Over the top right corner of the icon, 4px from the 24px button edge.
+  inset-block-start: var(--sp-xs);
+  inset-inline-end: var(--sp-xs);
 }

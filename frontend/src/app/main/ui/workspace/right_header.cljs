@@ -216,7 +216,7 @@
         :on-zoom-selected on-zoom-selected}]]
 
      [:div {:class (stl/css :comments-section)}
-      [:> icon-button* {:variant "ghost"
+      [:> icon-button* {:variant "action"
                         :class (stl/css :comments-btn)
                         :tooltip-placement "bottom-left"
                         :aria-pressed (= selected-drawtool :comments)
@@ -229,7 +229,7 @@
 
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}
-        [:> icon-button* {:variant "ghost"
+        [:> icon-button* {:variant "action"
                           :tooltip-placement "bottom-left"
                           :aria-pressed (contains? layout :document-history)
                           :aria-label (tr "workspace.sidebar.history")
@@ -242,7 +242,7 @@
             :on-click open-share-dialog}
         deprecated-icon/share])
 
-     [:> icon-button* {:variant "ghost"
+     [:> icon-button* {:variant "action"
                        :tooltip-placement "bottom-left"
                        :aria-label (tr "workspace.header.viewer" (get-tt :open-viewer))
                        :icon i/play
