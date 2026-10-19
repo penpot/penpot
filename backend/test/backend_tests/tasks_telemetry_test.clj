@@ -11,7 +11,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.archive-task :as at]
+   [app.loggers.audit.consumer-task :as at]
    [app.tasks.telemetry :as telemetry]
    [app.util.json :as json]
    [backend-tests.helpers :as th]
@@ -1006,14 +1006,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- insert-pending-pair!
-  "Queue the row for both archivers (from the archiver constants, not
+  "Queue the row for both consumers (from the consumer constants, not
   literals): the delete paths must face pending-ful rows."
   [row-id]
-  (doseq [archiver [at/archiver-nexus at/archiver-admin-console]]
-    (th/db-exec! ["INSERT INTO audit_log_pending (audit_log_id, archiver)
+  (doseq [consumer [at/consumer-nexus at/consumer-admin-console]]
+    (th/db-exec! ["INSERT INTO audit_log_pending (audit_log_id, consumer)
                    VALUES (?::uuid, ?::smallint)
                         ON CONFLICT DO NOTHING"
-                  row-id archiver])))
+                  row-id consumer])))
 
 (defn- count-pendings []
   (-> (th/db-exec-one! ["SELECT count(*) AS cnt FROM audit_log_pending"])
@@ -1021,7 +1021,7 @@
       long))
 
 (t/deftest test-delete-sent-events-removes-pendings-first
-  ;; Regression: telemetry rows carry pendings for both archivers, so
+  ;; Regression: telemetry rows carry pendings for both consumers, so
   ;; deleting the row must delete its pendings first, or the FK
   ;; rejects the delete and the batch is sent again next tick.
   (let [row (insert-telemetry-row! "navigate")]

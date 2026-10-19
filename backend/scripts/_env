@@ -68,7 +68,7 @@ export PENPOT_FLAGS="\
 
 # Uncomment for nexus integration testing
 # export PENPOT_FLAGS="$PENPOT_FLAGS enable-nexus";
-# export PENPOT_AUDIT_LOG_ARCHIVE_URI="http://localhost:6070/api/audit";
+# export PENPOT_NEXUS_URI="http://localhost:6070/";
 
 # Default deletion delay for devenv
 export PENPOT_DELETION_DELAY="24h"

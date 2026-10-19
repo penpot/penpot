@@ -1,8 +1,8 @@
--- Work queue for the audit log archivers: one row per (record,
--- archiver) pair still pending. Inserting a record creates its
--- pendings; each archiver deletes its own on completion, and whoever
--- deletes the last pending also deletes the record. Archiver ids are
--- fixed in code and never reused: 1 = nexus, 2 = nitrate.
+-- Work queue for the audit log consumers: one row per (record,
+-- consumer) pair still pending. Inserting a record creates its
+-- pendings; each consumer deletes its own on completion, and whoever
+-- deletes the last pending also deletes the record. Consumer ids are
+-- fixed in code and never reused: 1 = nexus, 2 = admin console.
 
 CREATE TABLE audit_log_pending (
   -- DEFERRABLE so the test-suite reset (which deletes table by table
@@ -11,8 +11,8 @@ CREATE TABLE audit_log_pending (
   -- (initially immediate) is enough: every deleter removes pendings
   -- before rows, so the check passes at each statement.
   audit_log_id uuid     NOT NULL REFERENCES audit_log(id) DEFERRABLE,
-  archiver     smallint NOT NULL CHECK (archiver BETWEEN 1 AND 20),
-  PRIMARY KEY (archiver, audit_log_id));
+  consumer     smallint NOT NULL CHECK (consumer BETWEEN 1 AND 20),
+  PRIMARY KEY (consumer, audit_log_id));
 
 -- Lets the final delete ask "is anything still pending for this
 -- record?" without scanning the whole queue.
@@ -31,8 +31,8 @@ DROP INDEX IF EXISTS audit_log__archived_at__idx;
 DROP INDEX IF EXISTS audit_log_id_archived_at_idx;
 ALTER TABLE audit_log DROP COLUMN IF EXISTS archived_at;
 
--- Serves the archivers' chronological scan (ORDER BY created_at, id):
--- one total order for every archiver, so concurrent drains cannot
+-- Serves the consumers' chronological scan (ORDER BY created_at, id):
+-- one total order for every consumer, so concurrent drains cannot
 -- deadlock on row locks. Covers the whole ORDER BY (bulk ingest
 -- shares request-at constantly, so ties are the norm).
 CREATE INDEX IF NOT EXISTS audit_log__created_at__idx

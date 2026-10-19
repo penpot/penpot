@@ -21,7 +21,7 @@
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.jobs :as jobs]
-   [app.loggers.audit.archive-task :as archive]
+   [app.loggers.audit.consumer-task :as consumer]
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -244,10 +244,10 @@
                    (update :ip-addr db/inet))
         params (select-keys params event-keys)
         row    (db/insert! cfg :audit-log params)]
-    ;; The archive queue follows the row in the same transaction: one
-    ;; pending per enabled archiver. A rollback takes both on its way
+    ;; The consumer queue follows the row in the same transaction: one
+    ;; pending per enabled consumer. A rollback takes both on its way
     ;; out, so a row never outlives its queue.
-    (archive/queue-pendings cfg [(:id row)])
+    (consumer/queue-pendings cfg [(:id row)])
     row))
 
 (def ^:private xf:filter-telemetry-props

@@ -139,7 +139,7 @@
         (t/is (= (:id prof) (:profile-id row)))
         (t/is (= "navigate" (:name row)))
         (t/is (= "frontend" (:source row)))
-        ;; The row is born pending for the enabled archiver.
+        ;; The row is born pending for the enabled consumer.
         (t/is (= 1 (count (th/db-exec! ["select * from audit_log_pending"]))))))))
 
 (t/deftest push-events-2
@@ -274,7 +274,7 @@
           (let [day-now (ct/truncate (ct/now) :days)]
             (t/is (= day-now (:created-at row2)))
             (t/is (= day-now (:tracked-at row2))))
-          ;; Both rows are born pending for the enabled archivers.
+          ;; Both rows are born pending for the enabled consumers.
           (t/is (= 4 (count (th/db-exec! ["select * from audit_log_pending"])))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

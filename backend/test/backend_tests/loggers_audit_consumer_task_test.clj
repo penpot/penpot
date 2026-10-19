@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns backend-tests.loggers-audit-archive-task-test
+(ns backend-tests.loggers-audit-consumer-task-test
   (:require
    [app.common.json :as json]
    [app.common.schema :as sm]
@@ -17,7 +17,7 @@
    [app.http.client :as-alias http]
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.archive-task :as archive]
+   [app.loggers.audit.consumer-task :as consumer]
    [app.main :as main]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
@@ -38,9 +38,9 @@
 
 (defn- insert-pendings!
   "Queue the row with the real producer helper: pendings for the
-  enabled archivers, like append-audit-entry does."
+  enabled consumers, like append-audit-entry does."
   [row-id]
-  (archive/queue-pendings (:app.db/pool th/*system*) [row-id]))
+  (consumer/queue-pendings (:app.db/pool th/*system*) [row-id]))
 
 (defn- pending-count
   []
@@ -70,13 +70,13 @@
     (:props (first (:events params)))))
 
 (defn- run-both!
-  "Run both archive jobs, Nexus first (the historical single-run
+  "Run both consumer jobs, Nexus first (the historical single-run
   order). The admin-console job takes no params (closed empty schema)."
   [params]
-  (th/run-task! :audit-log-archive-nexus params)
-  (th/run-task! :audit-log-archive-admin-console {}))
+  (th/run-task! :audit-log-consumer-nexus params)
+  (th/run-task! :audit-log-consumer-admin-console {}))
 
-(t/deftest archive-jobs-drain-their-own-queues
+(t/deftest consumer-jobs-drain-their-own-queues
   ;; Two separate jobs, one queue each: the nexus job sends without
   ;; touching the admin console, and only the admin-console job
   ;; deletes the last pending and the row. Create profile before
@@ -88,14 +88,14 @@
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "create-project")
         (insert-audit-row! (:id prof) "create-file")
-        (th/run-task! :audit-log-archive-nexus {:uri archive-uri})
+        (th/run-task! :audit-log-consumer-nexus {:uri archive-uri})
         (t/is (false? (:called? @admin-console-mock)))
         (t/is (:called? @http-mock))
         (t/is (= 1 (:call-count @http-mock)))
         ;; Nexus drained its own queue; both rows wait on the admin console.
         (t/is (= 2 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 2 (pending-count)))
-        (th/run-task! :audit-log-archive-admin-console {})
+        (th/run-task! :audit-log-consumer-admin-console {})
         (t/is (= 1 (:call-count @admin-console-mock)))
         (let [[_ method params] (:call-args @admin-console-mock)]
           (t/is (= :ingest-audit-log method))
@@ -106,7 +106,7 @@
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-filters-admin-console-event-names
+(t/deftest consumer-events-filters-admin-console-event-names
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
@@ -123,7 +123,7 @@
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-skips-admin-console-when-no-matching-names
+(t/deftest consumer-events-skips-admin-console-when-no-matching-names
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
@@ -135,31 +135,31 @@
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-admin-console-only-marks-without-uri
+(t/deftest consumer-events-admin-console-only-marks-without-uri
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "create-project")
-        (th/run-task! :audit-log-archive-admin-console {})
+        (th/run-task! :audit-log-consumer-admin-console {})
         (t/is (:called? @admin-console-mock))
         (t/is (false? (:called? @http-mock)))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-admin-console-only-marks-non-allowlisted
+(t/deftest consumer-events-admin-console-only-marks-non-allowlisted
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "unrelated-event")
-        (th/run-task! :audit-log-archive-admin-console {})
+        (th/run-task! :audit-log-consumer-admin-console {})
         (t/is (false? (:called? @admin-console-mock)))
         (t/is (false? (:called? @http-mock)))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-admin-console-error-still-drains-nexus
+(t/deftest consumer-events-admin-console-error-still-drains-nexus
   ;; Mirror of the nexus-throw test: an admin-console failure aborts
   ;; only the admin-console job; Nexus already drained its own queue
   ;; in its job. The row stays on the admin-console pending.
@@ -169,9 +169,9 @@
                                        :throw (ex-info "nitrate down" {})}
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "create-project")
-        (th/run-task! :audit-log-archive-nexus {:uri archive-uri})
+        (th/run-task! :audit-log-consumer-nexus {:uri archive-uri})
         (t/is (thrown? clojure.lang.ExceptionInfo
-                       (th/run-task! :audit-log-archive-admin-console {})))
+                       (th/run-task! :audit-log-consumer-admin-console {})))
         ;; Nexus already drained its queue; the admin-console failure no
         ;; longer blocks it, but the row stays on the admin-console pending.
         (t/is (:called? @admin-console-mock))
@@ -180,44 +180,44 @@
           (t/is (= 1 (count rows))))
         (t/is (= 1 (pending-count)))))))
 
-(t/deftest archive-events-uses-nexus-without-admin-console
+(t/deftest consumer-events-uses-nexus-without-admin-console
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:nexus}]
       (with-mocks [http-mock    {:target 'app.http.client/req :return {:status 204}}
                    admin-console-mock {:target 'app.nitrate/call :return nil}]
         (insert-audit-row! (:id prof) "create-project")
-        (th/run-task! :audit-log-archive-nexus {:uri archive-uri})
+        (th/run-task! :audit-log-consumer-nexus {:uri archive-uri})
         (t/is (false? (:called? @admin-console-mock)))
         (t/is (:called? @http-mock))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-skips-mark-when-nexus-fails
+(t/deftest consumer-events-skips-mark-when-nexus-fails
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:nexus}]
       (with-mocks [http-mock {:target 'app.http.client/req :return {:status 500}}]
         (insert-audit-row! (:id prof) "create-project")
         (t/is (thrown? clojure.lang.ExceptionInfo
-                       (th/run-task! :audit-log-archive-nexus {:uri archive-uri})))
+                       (th/run-task! :audit-log-consumer-nexus {:uri archive-uri})))
         (t/is (:called? @http-mock))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 1 (count rows))))))))
 
-(t/deftest archive-events-both-flags-skips-mark-when-nexus-fails
+(t/deftest consumer-events-both-flags-skips-mark-when-nexus-fails
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
                    http-mock    {:target 'app.http.client/req :return {:status 500}}]
         (insert-audit-row! (:id prof) "create-project")
         (t/is (thrown? clojure.lang.ExceptionInfo
-                       (th/run-task! :audit-log-archive-nexus {:uri archive-uri})))
-        (th/run-task! :audit-log-archive-admin-console {})
+                       (th/run-task! :audit-log-consumer-nexus {:uri archive-uri})))
+        (th/run-task! :audit-log-consumer-admin-console {})
         (t/is (:called? @admin-console-mock))
         (t/is (:called? @http-mock))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 1 (count rows))))))))
 
-(t/deftest archive-events-encodes-db-rows-for-admin-console
+(t/deftest consumer-events-encodes-db-rows-for-admin-console
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags  #{:nexus :admin-console}
                   cf/config (assoc cf/config
@@ -229,16 +229,16 @@
             client         (ig/init-key :app.nitrate/client
                                         {::http/client       (Object.)
                                          ::setup/shared-keys shared-keys})
-            ;; Each archive job is a job-def: the handler closes over the
+            ;; Each consumer job is a job-def: the handler closes over the
             ;; cfg it was given at init and takes a nil context, because
             ;; an in-process invocation has no job row to describe.
-            nexus-job-def    (ig/init-key :app.loggers.audit.archive-task/nexus-job-def
+            nexus-job-def    (ig/init-key :app.loggers.audit.consumer-task/nexus-job-def
                                           {::db/pool           (:app.db/pool th/*system*)
                                            ::setup/shared-keys shared-keys
                                            ::http/client       (:app.http.client/client th/*system*)
                                            ::mtx/metrics       (th/metrics-stub)
                                            :app.nitrate/client client})
-            admin-console-job-def  (ig/init-key :app.loggers.audit.archive-task/admin-console-job-def
+            admin-console-job-def  (ig/init-key :app.loggers.audit.consumer-task/admin-console-job-def
                                                 {::db/pool           (:app.db/pool th/*system*)
                                                  ::mtx/metrics       (th/metrics-stub)
                                                  :app.nitrate/client client})]
@@ -278,16 +278,32 @@
             (let [rows (th/db-exec! ["select * from audit_log"])]
               (t/is (= 0 (count rows))))))))))
 
-(t/deftest archive-nexus-job-requires-uri-when-nexus-flag-set
+(t/deftest consumer-nexus-default-uri-appends-api-audit
+  ;; Without an explicit :uri param, the job posts to the Nexus base
+  ;; URI plus the ingest path, mirroring generate-nitrate-uri.
+  (let [prof (th/create-profile* 1 {:is-active true})
+        uris (atom [])]
+    (with-redefs [cf/flags  #{:nexus}
+                  cf/config (assoc cf/config :nexus-uri (u/uri "http://nexus.example"))]
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :return (fn [_ params & _]
+                                        (swap! uris conj (str (:uri params)))
+                                        {:status 204})}]
+        (insert-audit-row! (:id prof) "create-project")
+        (th/run-task! :audit-log-consumer-nexus {})
+        (t/is (= ["http://nexus.example/api/audit"] @uris))
+        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))))
+
+(t/deftest consumer-nexus-job-requires-uri-when-nexus-flag-set
   (with-redefs [cf/flags #{:nexus}
-                cf/config (dissoc cf/config :audit-log-archive-uri)]
+                cf/config (dissoc cf/config :nexus-uri)]
     (let [data (ex-data (try
-                          (th/run-task! :audit-log-archive-nexus {})
+                          (th/run-task! :audit-log-consumer-nexus {})
                           (catch Throwable cause
                             cause)))]
       (t/is (= :task-not-configured (:code data))))))
 
-(t/deftest archive-events-enriches-team-name-and-emails
+(t/deftest consumer-events-enriches-team-name-and-emails
   (let [actor  (th/create-profile* 1 {:is-active true})
         member (th/create-profile* 2 {:is-active true})
         team   (th/create-team* 1 {:profile-id (:id actor)})]
@@ -300,7 +316,7 @@
                             :member-id (:id member)
                             ;; Producers store this as a string UUID.
                             :user-who-send-invitation (str (:id actor))})
-        (th/run-task! :audit-log-archive-admin-console {})
+        (th/run-task! :audit-log-consumer-admin-console {})
         (t/is (:called? @admin-console-mock))
         (let [props (admin-console-event-props admin-console-mock)]
           (t/is (= (:name team) (:team-name props)))
@@ -311,7 +327,7 @@
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-enriches-soft-deleted-team-and-profile
+(t/deftest consumer-events-enriches-soft-deleted-team-and-profile
   (let [actor (th/create-profile* 1 {:is-active true})
         other (th/create-profile* 2 {:is-active true})
         team  (th/create-team* 1 {:profile-id (:id actor)})]
@@ -322,14 +338,14 @@
         (insert-audit-row! (:id actor) "create-project"
                            {:team-id    (:id team)
                             :profile-id (:id other)})
-        (th/run-task! :audit-log-archive-admin-console {})
+        (th/run-task! :audit-log-consumer-admin-console {})
         (let [props (admin-console-event-props admin-console-mock)]
           (t/is (= (:name team) (:team-name props)))
           (t/is (= (:email other) (:profile-email props))))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-does-not-overwrite-existing-enrich-props
+(t/deftest consumer-events-does-not-overwrite-existing-enrich-props
   (let [actor (th/create-profile* 1 {:is-active true})
         team  (th/create-team* 1 {:profile-id (:id actor)})]
     (with-redefs [cf/flags #{:admin-console}]
@@ -345,7 +361,7 @@
                             :member-email  "already-member@example.com"
                             :user-who-send-invitation (str (:id actor))
                             :user-who-send-invitation-email "already-inviter@example.com"})
-        (th/run-task! :audit-log-archive-admin-console {})
+        (th/run-task! :audit-log-consumer-admin-console {})
         (let [props (admin-console-event-props admin-console-mock)]
           (t/is (= "already-set-name" (:team-name props)))
           (t/is (= "already-set@example.com" (:profile-email props)))
@@ -354,7 +370,7 @@
           (t/is (= "already-inviter@example.com"
                    (:user-who-send-invitation-email props))))))))
 
-(t/deftest archive-events-enrich-skips-missing-and-non-uuid-ids
+(t/deftest consumer-events-enrich-skips-missing-and-non-uuid-ids
   (let [actor (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
@@ -363,7 +379,7 @@
                             :profile-id (uuid/next)
                             :user-id    "not-a-uuid"
                             :member-id  42})
-        (th/run-task! :audit-log-archive-admin-console {})
+        (th/run-task! :audit-log-consumer-admin-console {})
         (t/is (:called? @admin-console-mock))
         (let [props (admin-console-event-props admin-console-mock)]
           (t/is (nil? (:team-name props)))
@@ -375,7 +391,7 @@
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-events-forwards-export-job-not-legacy-export
+(t/deftest consumer-events-forwards-export-job-not-legacy-export
   (let [actor (th/create-profile* 1 {:is-active true})
         team  (th/create-team* 1 {:profile-id (:id actor)})]
     (with-redefs [cf/flags #{:admin-console}]
@@ -387,7 +403,7 @@
                             :export-type "detach-libraries"})
         (insert-audit-row! (:id actor) "export-binfile"
                            {:file-id (uuid/next)})
-        (th/run-task! :audit-log-archive-admin-console {})
+        (th/run-task! :audit-log-consumer-admin-console {})
         (let [[_ _ params] (:call-args @admin-console-mock)
               events       (:events params)
               props        (:props (first events))]
@@ -397,13 +413,13 @@
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest archive-params-accept-empty-cron-props
+(t/deftest consumer-params-accept-empty-cron-props
   ;; Cron always submits (or props {}) — system deps live on the
   ;; job-def cfg, not in params. Requiring them here blocks every tick.
   ;; Both schemas are closed: a stale manual invocation must fail
   ;; validation loudly instead of skipping silently.
-  (let [nexus-valid?   (sm/validator archive/schema:audit-log-archive-nexus-params)
-        admin-console-valid? (sm/validator archive/schema:audit-log-archive-admin-console-params)]
+  (let [nexus-valid?   (sm/validator consumer/schema:audit-log-consumer-nexus-params)
+        admin-console-valid? (sm/validator consumer/schema:audit-log-consumer-admin-console-params)]
     (t/is (true? (nexus-valid? {})))
     (t/is (false? (nexus-valid? {:enabled true})))
     (t/is (true? (nexus-valid? {:uri (u/uri archive-uri)})))
@@ -419,20 +435,20 @@
 ;; (pattern from `jobs-metrics-test`), so assertions read exact values
 ;; instead of the shared test-system registry. `th/run-task!` would use
 ;; the latter and its counts would leak across tests.
-(def ^:private archive-metric-ids
-  [:audit-archive-events :audit-archive-discarded])
+(def ^:private consumer-metric-ids
+  [:audit-consumer-events :audit-consumer-discarded])
 
-(defn- make-archive-metrics
+(defn- make-consumer-metrics
   []
   (ig/init-key :app.metrics/metrics
-               {:default (select-keys main/default-metrics archive-metric-ids)}))
+               {:default (select-keys main/default-metrics consumer-metric-ids)}))
 
 (defn- invoke-nexus!
-  "Invoke the nexus archive handler in-process with an isolated
+  "Invoke the nexus consumer handler in-process with an isolated
   metrics registry. The handler takes a nil context because there is
   no job row to describe (same as `th/run-task!`)."
   [metrics params]
-  (let [job-def (ig/init-key :app.loggers.audit.archive-task/nexus-job-def
+  (let [job-def (ig/init-key :app.loggers.audit.consumer-task/nexus-job-def
                              {::db/pool           (:app.db/pool th/*system*)
                               ::setup/shared-keys {:admin-console "ac-key" :nexus "nexus-key"}
                               ::http/client       (:app.http.client/client th/*system*)
@@ -440,19 +456,19 @@
     ((::jobs/handler job-def) nil params)))
 
 (defn- invoke-admin-console!
-  "Invoke the admin-console archive handler in-process with an
+  "Invoke the admin-console consumer handler in-process with an
   isolated metrics registry. The admin-console client is the (nil in
   tests) system one: tests mock `app.nitrate/call`, so it is never
   dereferenced."
   [metrics]
-  (let [job-def (ig/init-key :app.loggers.audit.archive-task/admin-console-job-def
+  (let [job-def (ig/init-key :app.loggers.audit.consumer-task/admin-console-job-def
                              {::db/pool           (:app.db/pool th/*system*)
                               :app.nitrate/client (:app.nitrate/client th/*system*)
                               ::mtx/metrics       metrics})]
     ((::jobs/handler job-def) nil {})))
 
 (defn- invoke-both!
-  "Invoke both archive handlers sharing one isolated metrics
+  "Invoke both consumer handlers sharing one isolated metrics
   registry, Nexus first (the historical single-run order)."
   [metrics params]
   (invoke-nexus! metrics params)
@@ -465,23 +481,23 @@
         child     (.labels ^Counter instance (into-array String labels))]
     (.get ^Counter$Child child)))
 
-(t/deftest archive-records-metrics-on-success
+(t/deftest consumer-records-metrics-on-success
   ;; Smoke test: the run records its domain metrics into the wired
   ;; registry (isolated per test, pattern from `jobs-metrics-test`).
   ;; Logging itself is not asserted: `dbg` summaries run below the
   ;; test log level and failure `warn`s only repeat the outcome the
   ;; metrics already prove.
   (let [prof    (th/create-profile* 1 {:is-active true})
-        metrics (make-archive-metrics)]
+        metrics (make-consumer-metrics)]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "create-project")
         (insert-audit-row! (:id prof) "unrelated-event")
         (invoke-both! metrics {:uri archive-uri})
-        (t/is (= 2.0 (counter-value metrics :audit-archive-events ["nexus" "archived"])))
-        (t/is (= 1.0 (counter-value metrics :audit-archive-events ["admin-console" "archived"])))
-        (t/is (= 1.0 (counter-value metrics :audit-archive-events ["admin-console" "skipped"])))
+        (t/is (= 2.0 (counter-value metrics :audit-consumer-events ["nexus" "archived"])))
+        (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["admin-console" "archived"])))
+        (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["admin-console" "skipped"])))
         (t/is (= 0 (pending-count)))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
@@ -499,9 +515,9 @@
    :props {} :context {}
    :created-at (ct/now) :tracked-at (ct/now)})
 
-(t/deftest archive-submit-creates-pendings-for-enabled-archivers
+(t/deftest consumer-submit-creates-pendings-for-enabled-consumers
   ;; The producer hook: a row is born pending for the enabled
-  ;; archivers, in the same transaction as the row itself. Goes
+  ;; consumers, in the same transaction as the row itself. Goes
   ;; through submit* because the suite stubs submit itself (see
   ;; helpers/init-config).
   (let [prof (th/create-profile* 1 {:is-active true})]
@@ -511,7 +527,7 @@
       (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))
       (t/is (= 2 (pending-count))))))
 
-(t/deftest archive-submit-single-flag-creates-one-pending
+(t/deftest consumer-submit-single-flag-creates-one-pending
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:audit-log :nexus}]
       (audit/submit* {::db/pool (:app.db/pool th/*system*)}
@@ -519,7 +535,7 @@
       (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))
       (t/is (= 1 (pending-count))))))
 
-(t/deftest archive-submit-rollback-keeps-no-pendings
+(t/deftest consumer-submit-rollback-keeps-no-pendings
   ;; A rollback takes the row and its queue together: a row never
   ;; outlives its pendings, and no phantom pending pins nothing.
   (let [prof (th/create-profile* 1 {:is-active true})]
@@ -533,13 +549,13 @@
       (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
       (t/is (= 0 (pending-count))))))
 
-(t/deftest archive-keeps-row-until-last-archiver-done
+(t/deftest consumer-keeps-row-until-last-consumer-done
   ;; Nexus refuses the chunk: the nexus job aborts (failed count
   ;; recorded, isolated registry) while the admin-console job still
   ;; drains its own queue. The row and the nexus pending stay; once
   ;; nexus accepts, everything is gone.
   (let [prof    (th/create-profile* 1 {:is-active true})
-        metrics (make-archive-metrics)]
+        metrics (make-consumer-metrics)]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (insert-audit-row! (:id prof) "create-project")
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
@@ -548,10 +564,10 @@
                     (invoke-nexus! metrics {:uri archive-uri})
                     nil
                     (catch clojure.lang.ExceptionInfo cause cause))]
-          (t/is (= :archive-chunk-refused (:code (ex-data err)))))
+          (t/is (= :consumer-chunk-refused (:code (ex-data err)))))
         (invoke-admin-console! metrics)
         (t/is (:called? @admin-console-mock))
-        (t/is (= 1.0 (counter-value metrics :audit-archive-events ["nexus" "failed"])))
+        (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["nexus" "failed"])))
         (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 1 (pending-count))))
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
@@ -560,9 +576,9 @@
         (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 0 (pending-count)))))))
 
-(t/deftest archive-sweeps-orphan-rows
+(t/deftest consumer-sweeps-orphan-rows
   ;; A row with no pendings (old archived leftover, or born while no
-  ;; archiver was on) is deleted without any send.
+  ;; consumer was on) is deleted without any send.
   (let [prof (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
@@ -584,23 +600,23 @@
         (t/is (false? (:called? @http-mock)))
         (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))))
 
-(t/deftest archive-nexus-transport-failure-records-failed
+(t/deftest consumer-nexus-transport-failure-records-failed
   ;; A transport exception (timeout, DNS, refused) counts the events
   ;; as failed and aborts the nexus job: the chunk rolls back and
   ;; the rows stay for the next tick.
   (let [prof    (th/create-profile* 1 {:is-active true})
-        metrics (make-archive-metrics)]
+        metrics (make-consumer-metrics)]
     (with-redefs [cf/flags #{:nexus}]
       (with-mocks [http-mock {:target 'app.http.client/req
                               :throw (ex-info "timeout" {})}]
         (insert-audit-row! (:id prof) "create-project")
         (t/is (thrown? clojure.lang.ExceptionInfo
                        (invoke-nexus! metrics {:uri archive-uri})))
-        (t/is (= 1.0 (counter-value metrics :audit-archive-events ["nexus" "failed"])))
+        (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["nexus" "failed"])))
         (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 1 (pending-count)))))))
 
-(t/deftest archive-sends-chunks-in-chronological-order
+(t/deftest consumer-sends-chunks-in-chronological-order
   ;; Nexus numbers by arrival for order-sensitive consumers, so
   ;; multi-chunk drains must arrive oldest-first no matter how the
   ;; queue is scanned.
@@ -617,26 +633,26 @@
             (th/db-update! :audit-log
                            {:created-at (.plusSeconds ^java.time.Instant base (long i))}
                            {:id (:id row)})))
-        (th/run-task! :audit-log-archive-nexus {:uri archive-uri})
+        (th/run-task! :audit-log-consumer-nexus {:uri archive-uri})
         (let [received (mapcat #(:events (transit/decode %)) @bodies)
               times    (map :created-at received)]
           (t/is (= 130 (count received)))
           (t/is (= (sort times) times))
           (t/is (= 0 (count (th/db-exec! ["select * from audit_log"])))))))))
 
-(t/deftest archive-reaps-disabled-archiver-pendings
+(t/deftest consumer-reaps-disabled-consumer-pendings
   ;; R3 reap by its real path: an admin-console pending born while
   ;; admin-console was on is dropped once it is off; nexus still
   ;; archives its queue and the row is gone with nothing stuck. The
   ;; dropped pending counts as discarded (isolated registry).
   (let [prof    (th/create-profile* 1 {:is-active true})
-        metrics (make-archive-metrics)]
+        metrics (make-consumer-metrics)]
     (with-redefs [cf/flags #{:nexus}]
       (with-mocks [http-mock    {:target 'app.http.client/req :return {:status 204}}
                    admin-console-mock {:target 'app.nitrate/call :return nil}]
         (let [row (insert-audit-row! (:id prof) "create-project")]
           ;; Admin console was on at insert time: both pendings on purpose.
-          (th/db-exec! ["INSERT INTO audit_log_pending (audit_log_id, archiver)
+          (th/db-exec! ["INSERT INTO audit_log_pending (audit_log_id, consumer)
                          VALUES (?::uuid, 2)
                               ON CONFLICT DO NOTHING"
                         (:id row)])
@@ -644,16 +660,16 @@
           (invoke-nexus! metrics {:uri archive-uri})
           (t/is (:called? @http-mock))
           (t/is (false? (:called? @admin-console-mock)))
-          (t/is (= 1.0 (counter-value metrics :audit-archive-discarded ["reaped"])))
+          (t/is (= 1.0 (counter-value metrics :audit-consumer-discarded ["reaped"])))
           (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
           (t/is (= 0 (pending-count))))))))
 
-(t/deftest archive-sweeps-rows-born-with-no-archiver-on
+(t/deftest consumer-sweeps-rows-born-with-no-consumer-on
   ;; Accepted R3 consequence by its real path (not a hand-made
   ;; orphan): ingested with no send flag on, the row is swept
   ;; unarchived once the task runs, with zero sends.
   (let [prof    (th/create-profile* 1 {:is-active true})
-        metrics (make-archive-metrics)]
+        metrics (make-consumer-metrics)]
     (with-redefs [cf/flags #{:audit-log}]
       (audit/submit* {::db/pool (:app.db/pool th/*system*)}
                      (full-event (:id prof)))
@@ -665,16 +681,16 @@
         (t/is (false? (:called? @http-mock)))
         (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 0 (pending-count)))
-        (t/is (= 1.0 (counter-value metrics :audit-archive-discarded ["swept"])))
-        (t/is (= 0.0 (counter-value metrics :audit-archive-events ["nexus" "archived"])))))))
+        (t/is (= 1.0 (counter-value metrics :audit-consumer-discarded ["swept"])))
+        (t/is (= 0.0 (counter-value metrics :audit-consumer-events ["nexus" "archived"])))))))
 
-(t/deftest archive-nexus-throw-still-drains-admin-console
+(t/deftest consumer-nexus-throw-still-drains-admin-console
   ;; Consumer independence, now structural: a Nexus transport throw
   ;; aborts only the nexus job, and the admin-console job still drains
   ;; its own queue. Nexus keeps its pending (so the row stays); the
   ;; admin console completes its own queue.
   (let [prof    (th/create-profile* 1 {:is-active true})
-        metrics (make-archive-metrics)]
+        metrics (make-consumer-metrics)]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
                    http-mock    {:target 'app.http.client/req
@@ -684,11 +700,11 @@
                        (invoke-nexus! metrics {:uri archive-uri})))
         (invoke-admin-console! metrics)
         (t/is (:called? @admin-console-mock))
-        (t/is (= 1.0 (counter-value metrics :audit-archive-events ["nexus" "failed"])))
+        (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["nexus" "failed"])))
         (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 1 (pending-count)))))))
 
-(t/deftest archive-reap-then-sweeps-without-sends
+(t/deftest consumer-reap-then-sweeps-without-sends
   ;; End to end of the reap path: a row born with only an
   ;; admin-console pending is reaped once :admin-console goes off,
   ;; then swept with zero sends on either destination.
@@ -699,24 +715,24 @@
     (with-redefs [cf/flags #{:nexus}]
       (with-mocks [http-mock    {:target 'app.http.client/req :return {:status 204}}
                    admin-console-mock {:target 'app.nitrate/call :return nil}]
-        (th/run-task! :audit-log-archive-nexus {:uri archive-uri})
+        (th/run-task! :audit-log-consumer-nexus {:uri archive-uri})
         (t/is (false? (:called? @http-mock)))
         (t/is (false? (:called? @admin-console-mock)))
         (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 0 (pending-count)))))))
 
-(t/deftest archive-fully-filtered-admin-console-chunk-counts-skipped
+(t/deftest consumer-fully-filtered-admin-console-chunk-counts-skipped
   ;; An admin-console chunk with every event outside the allowlist
   ;; never calls ingest, but still counts its rows as skipped and
   ;; completes its queue.
   (let [prof    (th/create-profile* 1 {:is-active true})
-        metrics (make-archive-metrics)]
+        metrics (make-consumer-metrics)]
     (with-redefs [cf/flags #{:nexus :admin-console}]
       (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "unrelated-event")
         (invoke-both! metrics {:uri archive-uri})
         (t/is (false? (:called? @admin-console-mock)))
-        (t/is (= 1.0 (counter-value metrics :audit-archive-events ["admin-console" "skipped"])))
+        (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["admin-console" "skipped"])))
         (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 0 (pending-count)))))))
