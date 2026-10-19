@@ -124,6 +124,7 @@
    [frontend-tests.ui.shortcuts-labels-test]
    [frontend-tests.ui.shortcuts-recording-test]
    [frontend-tests.ui.sidebar-scroll-test]
+   [frontend-tests.ui.static-test]
    [frontend-tests.ui.stroke-menu-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
@@ -270,6 +271,7 @@
    'frontend-tests.ui.shortcuts-labels-test
    'frontend-tests.ui.shortcuts-recording-test
    'frontend-tests.ui.sidebar-scroll-test
+   'frontend-tests.ui.static-test
    'frontend-tests.ui.stroke-menu-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test
