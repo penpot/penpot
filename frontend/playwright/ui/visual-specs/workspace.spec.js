@@ -71,8 +71,9 @@ test.describe("Grid layout", () => {
 
     await workspace.clickLeafLayer("Board");
     const section = page.getByTestId("inspect-layout");
-    await expect(section.getByRole("button", { name: "Edit grid" }))
-      .toBeVisible();
+    await expect(
+      section.getByRole("button", { name: "Edit grid" }),
+    ).toBeVisible();
     // The buttons are a small part of the section: compare every pixel.
     await expect(section).toHaveScreenshot("grid-layout-options.png", {
       maxDiffPixelRatio: 0,
@@ -187,8 +188,9 @@ test.describe("Design tab", () => {
     await padding.click();
     await padding.blur();
     await page.mouse.move(0, 0);
-    await expect(section.getByRole("textbox", { name: /top padding/i }))
-      .toBeVisible();
+    await expect(
+      section.getByRole("textbox", { name: /top padding/i }),
+    ).toBeVisible();
     await expect(section).toHaveScreenshot("flex-layout-pressed.png", {
       maxDiffPixelRatio: 0,
       threshold: 0,
@@ -255,8 +257,9 @@ test.describe("Design tab", () => {
     await marginMode.click();
     await marginMode.blur();
     await page.mouse.move(0, 0);
-    await expect(section.getByRole("textbox", { name: "Top margin" }))
-      .toBeVisible();
+    await expect(
+      section.getByRole("textbox", { name: "Top margin" }),
+    ).toBeVisible();
     await expect(section).toHaveScreenshot("margin-multiple.png", {
       maxDiffPixelRatio: 0,
       threshold: 0,
