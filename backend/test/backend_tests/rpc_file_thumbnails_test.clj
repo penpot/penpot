@@ -117,7 +117,7 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (th/run-task! :file-gc {:file-id (:id file)})
+      (th/run-file-gc! (:id file))
 
       (let [result (th/run-task! :objects-gc {})]
         (t/is (= 3 (:processed result))))
@@ -221,7 +221,7 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
       (let [result (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed result))))

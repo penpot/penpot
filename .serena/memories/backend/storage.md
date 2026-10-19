@@ -29,6 +29,7 @@
 - `storage-gc-touched` finds references before it sets `deleted_at`.
 - `objects-gc` removes deleted domain rows and touches their storage object IDs. Each proc streams its pending keys with `db/plan` inside a read-only transaction and deletes them in chunks, each chunk in its own transaction with `FOR UPDATE SKIP LOCKED`: a chunk that fails is logged and skipped instead of aborting the run.
 - Use `::db/reuse-conn true` with `sto/resolve` inside a database transaction.
+- Background bulk writers (e.g. file-gc) intentionally resolve storage without `::db/reuse-conn`: `put-object!` commits in its own transaction and a rolled-back run leaves at most an unreferenced row, which deduplication reuses and storage GC reaps. Joining the main transaction would risk the opposite leak (backend content with no row).
 
 ## Deduplication
 

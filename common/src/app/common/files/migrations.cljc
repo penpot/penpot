@@ -1998,6 +1998,14 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0027-repair-unconverted-types-and-nil-pages"
+  ;; Re-apply the legacy-57 nil page cleanup (nils came back through a
+  ;; write path after it ran) and decode the data with the schema, which
+  ;; converts the unconverted types left by decoders. See
+  ;; ctf/sanitize-file-data.
+  [data _]
+  (ctf/sanitize-file-data data))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2081,4 +2089,5 @@
          "0023-repair-token-themes-with-inexistent-sets"
          "0024b-fix-stroke-cap-placement"
          "0025-repair-empty-text-content"
-         "0026-fix-svg-raw-shapes-uuids"]))
+         "0026-fix-svg-raw-shapes-uuids"
+         "0027-repair-unconverted-types-and-nil-pages"]))

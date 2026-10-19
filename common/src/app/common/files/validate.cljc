@@ -350,12 +350,22 @@
                   shape file page)))
 
 (defn- check-component-ref
-  "Validate that the referenced shape exists in the near component."
+  "Validate that the referenced shape exists in the near component.
+  A shape without :shape-ref is deliberately ignored here (instance
+  heads carry none, see get-ref-shape), so there is nothing to check
+  for it: without this guard the matching repair crashes on the
+  get-shape precondition instead of converging. Accepted consequence:
+  a copy root that genuinely lost its :shape-ref is neither reported
+  nor repaired through validate-file (debug endpoint, srepl, GC); a
+  dedicated repair-error for that case is tracked in
+  https://github.com/penpot/penpot/issues/12509."
   [shape file page libraries]
   (let [library-exists (library-exists? file libraries shape)
         ref-shape (when library-exists
                     (find-ref-shape* file page libraries shape))]
-    (when (and library-exists (nil? ref-shape))
+    (when (and library-exists
+               (some? (:shape-ref shape))
+               (nil? ref-shape))
       (report-error :ref-shape-not-found
                     (str/ffmt "Referenced shape % not found in near component" (:shape-ref shape))
                     shape file page))))
