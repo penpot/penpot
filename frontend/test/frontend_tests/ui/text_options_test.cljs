@@ -16,6 +16,8 @@
    [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.main.ui.workspace.sidebar.options.menus.text :as text-menu]
    [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
+   [app.main.ui.workspace.sidebar.options.menus.text-language-layout :as tll]
+   [app.util.text.layout :as tl]
    [app.util.text.writing-mode :as wm]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
@@ -35,14 +37,75 @@
    :annotation-clearance])
 
 
-(t/deftest japanese-layout-controls-follow-file-or-profile-configuration
+(t/deftest layout-controls-follow-file-or-profile-configuration
   (with-redefs [wm/vertical-layout-active? (constantly true)]
-    (t/is (false? (tjl/japanese-layout-config-enabled? {})))
-    (t/is (false? (tjl/japanese-layout-config-enabled? {:file? false :all-files? false})))
-    (t/is (true? (tjl/japanese-layout-config-enabled? {:file? true :all-files? false})))
-    (t/is (true? (tjl/japanese-layout-config-enabled? {:file? false :all-files? true}))))
+    (t/is (false? (tl/controls-enabled? {})))
+    (t/is (false? (tl/controls-enabled? {:feature-enabled true :file? false :all-files? false})))
+    (t/is (true? (tl/controls-enabled? {:feature-enabled true :file? true :all-files? false})))
+    (t/is (true? (tl/controls-enabled? {:feature-enabled true :file? false :all-files? true}))))
   (with-redefs [wm/vertical-layout-active? (constantly false)]
-    (t/is (false? (tjl/japanese-layout-config-enabled? {:file? true :all-files? true})))))
+    (t/is (false? (tl/controls-enabled? {:feature-enabled true :file? true :all-files? true})))))
+
+(t/deftest language-controls-and-menu-actions-respect-independent-preferences
+  (with-redefs [wm/vertical-layout-active? (constantly true)]
+    (doseq [file? [true false] all-files? [true false]]
+      (let [config {:feature-enabled true :file? file? :all-files? all-files?}]
+        (t/is (= (or file? all-files?) (tl/controls-enabled? config)))
+        (t/is (= (not all-files?) (tl/file-action-visible? config true false)))
+        (t/is (false? (tl/file-action-visible? config false false)))
+        (t/is (false? (tl/file-action-visible? config true true)))
+        (t/is (false? (tl/controls-enabled? (assoc config :feature-enabled false)))))))
+  (with-redefs [wm/vertical-layout-active? (constantly false)]
+    (t/is (false? (tl/controls-enabled? {:feature-enabled true :file? true})))
+    (t/is (false? (tl/file-action-visible? {:feature-enabled true :file? true} true false)))))
+
+(t/deftest choosing-a-profile-only-changes-the-paragraph-language
+  (t/is (= {:text-language "ko"} (tll/profile-change "ko")))
+  (t/is (= {:text-language nil} (tll/profile-change "")))
+  (t/is (tl/profile-matches? :japanese "ja-JP"))
+  (t/is (tl/profile-matches? :chinese "zh-Hant-TW"))
+  (t/is (tl/profile-matches? :korean "KO-kr"))
+  (t/is (not (tl/profile-matches? :chinese "ja")))
+  (t/is (not (tl/profile-matches? :korean :multiple)))
+  (t/is (not (tl/profile-matches? :japanese nil))))
+
+(t/deftest profile-choices-keep-mixed-and-other-language-values-visible
+  (let [mixed (last (tll/profile-options :korean :multiple identity))
+        other (last (tll/profile-options :chinese "ja" identity))]
+    (t/is (= {:id "multiple" :label "labels.mixed-values" :disabled true :dimmed true} mixed))
+    (t/is (= {:id "ja" :label "ja" :disabled true :dimmed true} other))
+    (t/is (= ["" "zh-Hans" "zh-Hant"]
+             (mapv :id (tll/profile-options :chinese nil identity))))))
+
+(t/deftest language-specific-controls-require-an-explicit-matching-profile
+  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+    (doseq [[language attr label] [[:japanese "ja" "workspace.options.text-options.line-adjustment"]
+                                   [:korean "ko" "workspace.options.text-options.korean-wrap"]]
+            profile [nil :multiple "zh-Hans" attr]]
+      (let [changes (atom [])
+            markup (rds/renderToStaticMarkup
+                    (mf/element tll/language-layout-options*
+                                #js {:language language
+                                     :values {:text-language profile}
+                                     :on-change #(swap! changes conj %)}))]
+        (t/is (= (= profile attr) (str/includes? markup label)))
+        (t/is (str/includes? markup "horizontal-tb-writing-mode"))
+        (t/is (empty? @changes) "Showing controls must not assign a profile")))))
+
+(t/deftest shared-writing-mode-controls-have-independent-radio-groups
+  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+    (let [markup (rds/renderToStaticMarkup
+                  (mf/html
+                   [:div
+                    [:> tll/language-layout-options* {:language :japanese :values {} :on-change identity}]
+                    [:> tll/language-layout-options* {:language :chinese :values {} :on-change identity}]
+                    [:> tll/language-layout-options* {:language :korean :values {} :on-change identity}]]))
+          inputs (re-seq #"<input[^>]+>" markup)
+          ids (map #(second (re-find #"id=\"([^\"]+)\"" %)) inputs)
+          names (map #(second (re-find #"name=\"([^\"]+)\"" %)) inputs)]
+      (t/is (= 6 (count (set ids))))
+      (t/is (= 3 (count (set names))))
+      (t/is (= 3 (count (filter #(str/includes? % "checked=\"\"") inputs)))))))
 
 (t/deftest text-emphasis-select-reports-and-restores-canonical-values
   (let [options     (tjl/text-emphasis-options identity)

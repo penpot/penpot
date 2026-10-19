@@ -18,7 +18,6 @@
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options* radio-selected]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [app.util.text.writing-mode :as wm]
    [rumext.v2 :as mf]))
 
 (def ^:private mixed-span-values
@@ -48,14 +47,6 @@
            :label    (tr "labels.mixed-values")
            :disabled true
            :dimmed   true})))
-
-(defn japanese-layout-config-enabled?
-  "True under the WASM renderer when Japanese layout is enabled for the file
-  or in the user's profile. `config` is a `refs/japanese-layout-config`
-  value."
-  [{:keys [file? all-files?]}]
-  (and ^boolean (wm/vertical-layout-active?)
-       (boolean (or file? all-files?))))
 
 (defn vertical-japanese-layout?
   "True when the Japanese layout controls are editing vertical text."
@@ -93,6 +84,10 @@
   "Radio group bound to one text attribute."
   [{:keys [values on-change on-blur attr default-value name class options]}]
   (let [selected (radio-selected (get values attr) default-value)
+        group-id (mf/use-id)
+        options (mf/with-memo [options group-id]
+                  (mapv #(update % :id (fn [id] (str group-id "-" id))) options))
+        name (str group-id "-" name)
         handle-change
         (mf/use-fn
          (mf/deps attr on-change on-blur)
@@ -126,6 +121,24 @@
     :id    "upright-text-orientation"
     :label (translate "workspace.options.text-options.text-orientation-upright")
     :icon  i/text-orientation-upright}])
+
+(mf/defc writing-mode-controls*
+  [{:keys [values on-change on-blur]}]
+  (let [props (mf/props {:values values :on-change on-change :on-blur on-blur})]
+    [:div {:class (stl/css :japanese-icon-options)}
+     [:> attr-radio-options* (mf/spread-props props
+                                              {:attr :writing-mode
+                                               :default-value (cjk/enum-default :writing-mode)
+                                               :name "writing-mode-options"
+                                               :class (stl/css :writing-mode-options)
+                                               :options (writing-mode-options tr)})]
+     (when (vertical-japanese-layout? values)
+       [:> attr-radio-options* (mf/spread-props props
+                                                {:attr :text-orientation
+                                                 :default-value (cjk/enum-default :text-orientation)
+                                                 :name "text-orientation-options"
+                                                 :class (stl/css :text-orientation-options)
+                                                 :options (text-orientation-options tr)})])]))
 
 ;; Warichu (割注): renders the selection as two half-size lines in one inline
 ;; position (top/bottom horizontally, right/left vertically).
