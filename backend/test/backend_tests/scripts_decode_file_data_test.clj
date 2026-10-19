@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS INC
 
 (ns backend-tests.scripts-decode-file-data-test
   (:require
@@ -51,8 +51,8 @@
           encoded (blob/encode data {:version version})
           payload (dfd/blob->json encoded)
           parsed  (json/decode payload)]
-      (t/is (map? parsed) (str "version " version " produce mapa JSON"))
-      (t/is (= 2 (count (get parsed "pages"))) (str "version " version " conserva páginas")))))
+      (t/is (map? parsed) (str "version " version " produces a JSON map"))
+      (t/is (= 2 (count (get parsed "pages"))) (str "version " version " keeps pages")))))
 
 (t/deftest summary-lists-pages-in-order-with-object-counts
   (let [data    (sample-file-data)

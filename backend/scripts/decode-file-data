@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Decodifica un blob de file_data (app.util.blob) a JSON para inspeccionar con jq.
+# Decode a file_data blob (app.util.blob) to JSON for inspection with jq.
 #
-# Uso offline (sin DB):
+# Offline use (no DB):
 #   backend/scripts/decode-file-data --input /tmp/blob.bin --format summary | jq .
 #
-# Uso con DB (backend arrancado, vía nREPL):
+# DB use (backend running, via nREPL):
 #   ./scripts/nrepl-eval.mjs "(require '[app.scripts.decode-file-data :as dfd] :reload)"
 #   ./scripts/nrepl-eval.mjs '(dfd/get-file-json sys/system #uuid "..." :format :summary)'
 

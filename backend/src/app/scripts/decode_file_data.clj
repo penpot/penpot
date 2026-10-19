@@ -2,30 +2,30 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.scripts.decode-file-data
-  "Investigación de `file_data`: decodifica el blob binario de un archivo
-  a JSON legible por `jq`.
+  "Decode a file's `file_data` binary blob to `jq`-readable JSON.
 
-  El contenido de `file_data.data` (y `file.data` en el backend `legacy-db`,
-  o el objeto `file-data` en storage) no es texto: es un blob codificado con
-  `app.util.blob` (versiones 1, 3, 4 y 5; transit+json o fressian más
-  lz4/zstd). Por eso no se puede inspeccionar con SQL directamente.
+  The content of `file_data.data` (and `file.data` on the `legacy-db`
+  backend, or the `file-data` object on storage) is not text: it is a blob
+  encoded with `app.util.blob` (versions 1, 3, 4 and 5; transit+json or
+  fressian plus lz4/zstd). That is why it cannot be inspected with SQL
+  directly.
 
-  Dos usos:
+  Two uses:
 
-  1. Offline (sin DB, solo el blob): vuelca el `bytea` a un fichero con
-     `psql` (`\\copy ...` o `encode(data, 'base64')`) y pásalo con `--input`.
-     No necesita sistema ni permisos de lectura de `file_data`.
+  1. Offline (no DB, just the blob): dump the `bytea` to a file with
+     `psql` (`\\copy ...` or `encode(data, 'base64')`) and pass it with `--input`.
+     Needs no system and no `file_data` read permissions.
 
      backend/scripts/decode-file-data --input /tmp/blob.bin --format summary | jq .
      backend/scripts/decode-file-data --input /tmp/blob.b64 --from-base64 --format pages | jq .
 
-  2. Dentro del contexto de penpot (nREPL con el backend arrancado, donde
-     `sys/system` ya existe): llama a `get-file-json` o `get-snapshot-json`.
-     Resuelven el backend (`legacy-db`, `db`, `storage`), realizan los
-     pointer-maps y objects-maps y devuelven JSON.
+  2. Inside the penpot context (nREPL with the backend running, where
+     `sys/system` already exists): call `get-file-json` or `get-snapshot-json`.
+     They resolve the backend (`legacy-db`, `db`, `storage`), realize the
+     pointer-maps and objects-maps and return JSON.
 
      (require '[app.scripts.decode-file-data :as dfd] :reload)
      (spit \"/tmp/maquette.json\"
@@ -35,8 +35,8 @@
        (dfd/get-snapshot-json sys/system #uuid \"9e056cfe-f83f-81f8-8008-cc885732f00d\"
                           #uuid \"<snapshot-id>\" :format :summary))
 
-  Después filtra con `jq`: `.pages`, `.data[\\\"pages-index\\\"] | keys`,
-  `[.data[\\\"pages-index\\\"][] | {id, name}]`, etc."
+  Then filter with `jq`: `.pages`, `.data[\"pages-index\"] | keys`,
+  `[.data[\"pages-index\"][] | {id, name}]`, etc."
   (:require
    [app.binfile.common :as bfc]
    [app.common.json :as json]
@@ -53,7 +53,7 @@
 (set! *warn-on-reflection* true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Sanitización a JSON
+;; JSON sanitization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- sanitize-key
@@ -75,12 +75,12 @@
               m)))
 
 (defn sanitize
-  "Convierte un valor decodificado del blob a datos planos aptos para JSON.
+  "Convert a blob-decoded value to plain JSON-ready data.
 
-  - Los punteros sin realizar se representan como `{\"$pointer\": \"<uuid>\"}`.
-  - Los `objects-map` se materializan a mapa plano.
-  - Los bytes se representan como `{\"$bytes\": \"<base64>\"}`.
-  - UUID, instantes, keywords y símbolos pasan a cadena."
+  - Unrealized pointers become `{\"$pointer\": \"<uuid>\"}`.
+  - `objects-map` instances are materialized to a plain map.
+  - Bytes become `{\"$bytes\": \"<base64>\"}`.
+  - UUIDs, instants, keywords and symbols become strings."
   [x]
   (cond
     (nil? x)     nil
@@ -117,23 +117,23 @@
     (str x)))
 
 (defn data->json
-  "Codifica datos ya sanitizables a cadena JSON."
+  "Encode sanitizable data to a JSON string."
   [data]
   (json/encode (sanitize data)))
 
 (defn blob->json
-  "Decodifica un blob `file_data` (`app.util.blob`) y lo devuelve como JSON."
+  "Decode a `file_data` blob (`app.util.blob`) and return it as JSON."
   [^bytes blob-bytes]
   (data->json (blob/decode blob-bytes)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Resumen orientado a investigación con jq
+;; jq-oriented investigation summary
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn summarize-data
-  "Resumen pequeño y estable para `jq`: páginas (en orden de `:pages`)
-  con recuento de objetos, más contadores de componentes, colores y
-  tipografías. Recibe el `:data` ya decodificado (no el JSON)."
+  "Small, stable summary for `jq`: pages (in `:pages` order) with object
+  counts, plus component, color and typography counters. Takes the already
+  decoded `:data` (not the JSON)."
   [data]
   (let [pages       (:pages data)
         pages-index (:pages-index data)
@@ -156,7 +156,7 @@
   (data->json (:pages (summarize-data data))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Acceso con DB (para usar desde nREPL con el backend arrancado)
+;; DB access (for use from nREPL with the backend running)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- write-output
@@ -167,10 +167,10 @@
   payload)
 
 (defn get-file-json
-  "Devuelve un archivo como JSON (realizado). Para nREPL.
+  "Return a file as JSON (realized). For nREPL.
 
-  `format` puede ser `:full` (todo el file), `:data` (solo `:data`),
-  `:summary` o `:pages`. Con `:output` además lo escribe a fichero."
+  `format` can be `:full` (whole file), `:data` (`:data` only),
+  `:summary` or `:pages`. With `:output` it also writes it to a file."
   [system file-id & {:keys [format output] :or {format :full}}]
   (let [file (db/run! system bfc/get-file file-id :realize? true)
         data (case format
@@ -181,9 +181,9 @@
     (write-output (data->json data) output)))
 
 (defn get-snapshot-json
-  "Devuelve un snapshot como JSON (realizado). Para nREPL.
+  "Return a snapshot as JSON (realized). For nREPL.
 
-  Acepta los mismos `format` y `output` que `get-file-json`."
+  Takes the same `format` and `output` as `get-file-json`."
   [system file-id snapshot-id & {:keys [format output] :or {format :full}}]
   (let [snapshot (db/run! system
                           (fn [cfg]
@@ -196,16 +196,16 @@
     (write-output (data->json data) output)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CLI offline: decodifica un fichero con el blob
+;; Offline CLI: decode a file holding the blob
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private cli-usage
-  (str "Uso: decode-file-data --input PATH [--output PATH] [--format full|data|summary|pages]\n"
+  (str "Usage: decode-file-data --input PATH [--output PATH] [--format full|data|summary|pages]\n"
        "                       [--from-base64|--from-hex]\n"
        "\n"
-       "Decodifica un blob de file_data (app.util.blob) a JSON para inspeccionar con jq.\n"
+       "Decode a file_data blob (app.util.blob) to JSON for inspection with jq.\n"
        "\n"
-       "Ejemplos:\n"
+       "Examples:\n"
        "  psql -c \"\\\\copy (select data from file_data where file_id='...' and id='...') to '/tmp/blob.bin' with binary\"\n"
        "  decode-file-data --input /tmp/blob.bin --format summary | jq .\n"
        "  decode-file-data --input /tmp/blob.b64 --from-base64 --format pages | jq .\n"))
@@ -237,7 +237,7 @@
           (recur (cons b rest-args) (assoc opts :from :hex))
 
           :else
-          (assoc opts :error (str "argumento desconocido: " a)))))))
+          (assoc opts :error (str "unknown argument: " a)))))))
 
 (defn- hex->bytes
   [^String s]
@@ -257,7 +257,7 @@
   [{:keys [input from]}]
   (cond
     (nil? input)
-    (throw (ex-info "falta --input" {}))
+    (throw (ex-info "missing --input" {}))
 
     (= from :base64)
     (.decode (Base64/getDecoder) ^String (str/trim (slurp (io/file input))))
@@ -279,10 +279,10 @@
       (do (binding [*out* *err*] (println error) (println cli-usage)) (System/exit 2))
 
       (nil? input)
-      (do (binding [*out* *err*] (println "falta --input") (println cli-usage)) (System/exit 2))
+      (do (binding [*out* *err*] (println "missing --input") (println cli-usage)) (System/exit 2))
 
       (not (contains? #{"full" "data" "summary" "pages"} (or format "full")))
-      (do (binding [*out* *err*] (println (str "formato desconocido: " format))) (System/exit 2))
+      (do (binding [*out* *err*] (println (str "unknown format: " format))) (System/exit 2))
 
       :else
       (let [blob-bytes (read-input-bytes opts)
@@ -292,8 +292,8 @@
                          "data"    (:data decoded (:data decoded decoded))
                          "summary" (summarize-data (:data decoded decoded))
                          "pages"   (:pages (summarize-data (:data decoded decoded))))
-            ;; NOTE: el blob de file_data ya ES el :data del archivo; pero si
-            ;; alguien vuelca la fila completa serializada, toleramos ambos.
+            ;; NOTE: the file_data blob already IS the file's :data; but if
+            ;; someone dumps the whole serialized row, tolerate both.
             out        (data->json payload)]
         (if output
           (spit output out)
