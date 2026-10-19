@@ -215,9 +215,9 @@
   keeps the caret cell size. macOS vertical characters retain nonempty
   screen bounds so its native IME can anchor to them. In vertical text the
   surface (`vertical-rl`, `line-height: 1`) aligns its caret cell with the
-  text column on macOS, except in Safari. Safari has been observed to show
-  horizontal candidates for vertical text, so it keeps the surface right
-  of the column, like other platforms whose windows open below the caret.
+  text column on Windows and on macOS outside Safari. Safari has been observed
+  to show horizontal candidates for vertical text, so it keeps the surface
+  right of the column, like Linux where candidates open below the caret.
 
   `origin` holds the pointer overlay's top-left and width, in the
   same page space as the caret rect."
@@ -241,8 +241,9 @@
                                       ime-surface-collapse) ")"))
             ;; vertical-rl puts the DOM caret in the surface's rightmost cell.
             ;; Safari's horizontal candidate window needs an anchor beside
-            ;; the column. Chrome and Firefox use the column itself on macOS.
-            (let [right (if (and macos-vertical? (not (cf/check-browser? :safari)))
+            ;; the column. Windows and non-Safari macOS use the column itself.
+            (let [right (if (or (cf/check-platform? :windows)
+                                (and macos-vertical? (not (cf/check-browser? :safari))))
                           (+ x width)
                           (+ x (* 2.15 width)))]
               (set! (.-left style) (dm/str (- right (:x origin) (:width origin)) "px"))))
