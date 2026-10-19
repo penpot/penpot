@@ -144,8 +144,10 @@
 
 
 (defn- resolve-value-tokenscript
-  [tokens prev-token value]
-  (let [{:keys [errors resolved-value]} (ts/resolve-token tokens (assoc prev-token :value value))]
+  "Resolves the draft against `token-sets`, the library's sets without
+  the token being edited (see `csu/use-edit-token-sets`)."
+  [token-sets prev-token token-name value]
+  (let [{:keys [errors resolved-value]} (ts/resolve-draft token-sets (csu/draft-token prev-token token-name value))]
     (rx/of
      (if (seq errors)
        {:error (first errors)}
@@ -204,6 +206,9 @@
             (rx/behavior-subject (:value token))
             (rx/subject)))
 
+        token-sets
+        (csu/use-edit-token-sets (:name token))
+
         hint*
         (mf/use-state {})
 
@@ -230,14 +235,14 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name token-name]
+    (mf/with-effect [resolve-stream tokens token-sets token input-name token-name]
 
       (let [resolve-value (if (contains? cf/flags :tokenscript)
-                            resolve-value-tokenscript
-                            resolve-value)
+                            (partial resolve-value-tokenscript token-sets token token-name)
+                            (partial resolve-value tokens token token-name))
             subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token token-name))
+                      (rx/mapcat resolve-value)
                       (rx/map (fn [result]
                                 (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs! (fn [{:keys [error value]}]

@@ -393,8 +393,27 @@
     {}
     (resolve-sets [[nil tokens]])))
 
-(defn resolve-token
-  "Resolves `token` against `tokens` (the token replaces any token with
-  the same name). Returns the resolved token."
-  [tokens token]
-  (get (resolve-tokens (assoc tokens (:name token) token)) (:name token)))
+;; A form resolves a draft on every keystroke. The last draft resolution is
+;; kept apart from the cache above, so that typing does not push out the
+;; resolutions the sidebar and the propagation reuse.
+(defonce ^:private draft-cache (volatile! nil))
+
+(defn resolve-draft
+  "Resolves `draft`, a token being edited in a form, on top of `sets` (see
+  `cfo/get-token-sets-for-edit`): it goes in a set of its own after them.
+  Called on every keystroke with the same `sets`, it re-resolves only the
+  draft and the tokens referencing it. Returns the resolved draft."
+  [sets draft]
+  (let [sets  (conj (vec sets) [::draft {(:name draft) draft}])
+        prev  @draft-cache
+        entry (cond
+                (and prev (same-sets? (:sets prev) sets))
+                prev
+
+                (and prev (= (mapv first (:sets prev)) (mapv first sets)))
+                (resolve-sets* sets prev)
+
+                :else
+                (resolve-sets* sets (or (cached-entry (pop sets)) (base-entry sets))))]
+    (vreset! draft-cache entry)
+    (get (:output entry) (:name draft))))

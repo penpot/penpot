@@ -54,34 +54,27 @@
 ;; validate data within the form state.
 
 (defn- resolve-value
-  [tokens prev-token _token-name value]
+  "Resolves the typed font families as a temporary font family token.
+  With tokenscript it is resolved against `token-sets` (see
+  `csu/use-edit-token-sets`), otherwise against the merged `tokens`."
+  [tokens token-sets prev-token _token-name value]
   (let [tmp-value (cto/split-font-family value)
-        tmp-name  "__PENPOT__FONT_FAMILY__PLACEHOLDER__"
 
-        ;; Create a temporary font-family token to validate the value
-        token
-        {:name tmp-name
-         :type :font-family
-         :value (if (= (:type prev-token) :typography)
-                  (assoc (:value prev-token) :font-family tmp-value)
-                  tmp-value)}
-
-        tokens
-        (update tokens (:name token) #(ctob/make-token (merge % prev-token token)))]
-    ;; TODO: Review this when tokenscript is fully integrated.
-    (if (cfo/token-circular-reference? tokens (:name token))
-      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
-      (->> (if (contains? cf/flags :tokenscript)
-             (rx/of (ts/resolve-tokens tokens))
-             (sd/resolve-tokens-interactive tokens))
-           (rx/mapcat
-            (fn [resolved-tokens]
-              (let [{:keys [errors resolved-value]} (get resolved-tokens (:name token))]
-                (if resolved-value
-                  (rx/of {:value resolved-value})
-                  (rx/of {:error (if errors
-                                   (first errors)
-                                   (wte/error-with-value :error/unknown value))})))))))))
+        ;; A temporary font-family token to validate the value
+        draft
+        (assoc prev-token
+               :name "__PENPOT__FONT_FAMILY__PLACEHOLDER__"
+               :type :font-family
+               :value (if (= (:type prev-token) :typography)
+                        (assoc (:value prev-token) :font-family tmp-value)
+                        tmp-value))]
+    (if (contains? cf/flags :tokenscript)
+      (rx/of (csu/resolved->result (ts/resolve-draft token-sets draft) value))
+      (let [tokens (update tokens (:name draft) #(ctob/make-token (merge % draft)))]
+        (if (cfo/token-circular-reference? tokens (:name draft))
+          (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+          (->> (sd/resolve-tokens-interactive tokens)
+               (rx/map #(csu/resolved->result (get % (:name draft)) value))))))))
 
 (defn- font-family->display
   "Tokenscript resolves font families to a vector of names,
@@ -96,6 +89,7 @@
   (let [form       (mf/use-ctx fc/context)
         input-name name
         token-name (get-in @form [:data :name] nil)
+        token-sets (csu/use-edit-token-sets nil)
 
         touched?
         (and (contains? (:data @form) input-name)
@@ -175,10 +169,10 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name token-name]
+    (mf/with-effect [resolve-stream tokens token-sets token input-name token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token token-name))
+                      (rx/mapcat (partial resolve-value tokens token-sets token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error wte/resolve-error-assoc-message)))
                       (rx/subs! (fn [{:keys [error value]}]
@@ -225,6 +219,7 @@
   (let [form       (mf/use-ctx fc/context)
         input-name name
         token-name (get-in @form [:data :name] nil)
+        token-sets (csu/use-edit-token-sets nil)
         error
         (get-in @form [:errors :value input-name])
 
@@ -300,10 +295,10 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name token-name]
+    (mf/with-effect [resolve-stream tokens token-sets token input-name token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token token-name))
+                      (rx/mapcat (partial resolve-value tokens token-sets token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs!

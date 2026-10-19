@@ -160,22 +160,12 @@
              (sm/validate cfo/schema:token-description (:description candidate)))
          (resolved-without-errors? resolved))))
 
-(defn- resolution-sets
-  "The sets `resolution-tokens` merges, unmerged: every set of the library
-  in order, with `set-id` moved last so its tokens take precedence."
-  [tokens-lib set-id]
-  (let [target (ctob/get-set tokens-lib set-id)]
-    (cond-> (into []
-                  (comp (remove #(= set-id (ctob/get-id %)))
-                        (map (fn [set] [(ctob/get-id set) (ctob/get-tokens- set)])))
-                  (ctob/get-sets tokens-lib))
-      target (conj [set-id (ctob/get-tokens- target)]))))
-
 (defn- resolve-set-tokens
-  "Tokens of the library resolved for `set-id`. Repeated calls with an
-  unchanged library are answered from the resolver's cache."
+  "Tokens of the library resolved for `set-id`: the sets
+  `resolution-tokens` merges, unmerged. Repeated calls with an unchanged
+  library are answered from the resolver's cache."
   [tokens-lib set-id]
-  (ts/resolve-sets (resolution-sets tokens-lib set-id)))
+  (ts/resolve-sets (cfo/get-token-sets-for-edit tokens-lib set-id nil)))
 
 (defn valid-token-resolution?
   "Checks that an existing token resolves without errors, which is the only

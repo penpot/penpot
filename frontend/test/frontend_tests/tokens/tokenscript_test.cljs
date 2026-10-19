@@ -180,9 +180,9 @@
     (t/is (= :error.token/empty-input (get-in resolved ["typography.empty" :errors 0 :error/code])))
     (t/is (= 12 (get-in resolved ["borderRadius.sm" :resolved-value])))))
 
-(t/deftest resolve-token-test
-  (let [tokens (tokens-map {:name "a" :value "8px" :type :border-radius})
-        resolved (ts/resolve-token tokens {:name "b" :value "{a} * 2" :type :border-radius})]
+(t/deftest resolve-draft-test
+  (let [sets [[:core (tokens-map {:name "a" :value "8px" :type :border-radius})]]
+        resolved (ts/resolve-draft sets {:name "b" :value "{a} * 2" :type :border-radius})]
     (t/is (= 16 (:resolved-value resolved)))))
 
 ;; Incremental resolution ------------------------------------------------------
@@ -291,6 +291,40 @@
         (t/is (= (values (ts/resolve-tokens (cfo/get-tokens-in-active-sets-force status lib (cthi/id :extra))))
                  (values forced)))
         (t/is (= 10 (get-in forced ["base" :resolved-value])))))))
+
+;; A token edited in a form resolves against every set of the library with
+;; the selected set on top, and the draft on top of that.
+(t/deftest resolve-edited-token-test
+  (let [lib (-> (ctob/make-tokens-lib)
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :base) :name "base"))
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :brand) :name "brand"))
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :other) :name "other"))
+                (ctob/add-token (cthi/id :base) (ctob/make-token {:name "size" :value "4" :type :sizing}))
+                (ctob/add-token (cthi/id :base) (ctob/make-token {:name "double" :value "{size} * 2" :type :sizing}))
+                (ctob/add-token (cthi/id :brand) (ctob/make-token {:name "size" :value "8" :type :sizing}))
+                (ctob/add-token (cthi/id :other) (ctob/make-token {:name "size" :value "16" :type :sizing})))
+        sets (cfo/get-token-sets-for-edit lib (cthi/id :brand) nil)
+        values (fn [resolved] (update-vals resolved :resolved-value))]
+    (t/testing "the selected set is moved last and wins, as when merged over all tokens"
+      (t/is (= [(cthi/id :base) (cthi/id :other) (cthi/id :brand)] (mapv first sets)))
+      (t/is (= (values (ts/resolve-tokens (merge (ctob/get-all-tokens-map lib) (ctob/get-tokens lib (cthi/id :brand)))))
+               (values (ts/resolve-sets sets))))
+      (t/is (= 8 (get-in (ts/resolve-sets sets) ["size" :resolved-value]))))
+    (t/testing "the draft wins over every set and its dependents see it"
+      (t/is (= 3 (:resolved-value (ts/resolve-draft sets {:name "size" :value "3" :type :sizing}))))
+      (t/is (= 14 (:resolved-value (ts/resolve-draft sets {:name "tmp" :value "{double} - 2" :type :sizing})))
+            "each draft replaces the previous one"))
+    (t/testing "a renamed token is left out of every set, so references to it break"
+      (let [sets (cfo/get-token-sets-for-edit lib (cthi/id :brand) "size")]
+        (t/is (not-any? #(contains? (second %) "size") sets))
+        (t/is (= :error.style-dictionary/missing-reference
+                 (get-in (ts/resolve-draft sets {:name "tmp" :value "{size}" :type :sizing}) [:errors 0 :error/code])))))
+    (t/testing "typing in a form does not push resolutions out of the cache"
+      (let [active (cfo/get-active-token-sets (ctos/make-tokens-status :active-set-ids #{(cthi/id :base)}) lib)
+            before (ts/resolve-sets active)]
+        (doseq [v (range 20)]
+          (ts/resolve-draft sets {:name "size" :value (str v) :type :sizing}))
+        (t/is (identical? before (ts/resolve-sets active)))))))
 
 (t/deftest resolve-sets-empty-test
   (t/is (= {} (ts/resolve-sets [])))

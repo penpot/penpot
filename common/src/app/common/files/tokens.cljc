@@ -760,6 +760,25 @@
                 (map (fn [set] [(ctob/get-id set) (ctob/get-tokens- set)])))
           (ctob/get-sets tokens-lib))))
 
+(defn get-token-sets-for-edit
+  "Every token set of the library, unmerged: `[[set-id tokens] ..]` in set
+  order with `set-id` moved last, so its tokens take precedence. These are
+  the sets `get-all-tokens-map` merges with the set of a token being edited
+  on top. With `excluded-name` that token is left out of every set, so
+  references to it break while it is renamed."
+  [tokens-lib set-id excluded-name]
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (let [entry  (fn [set]
+                 (let [tokens (ctob/get-tokens- set)]
+                   [(ctob/get-id set)
+                    (cond-> tokens
+                      (and excluded-name (contains? tokens excluded-name))
+                      (dissoc excluded-name))]))
+        sets   (ctob/get-sets tokens-lib)
+        target (when set-id (d/seek #(= set-id (ctob/get-id %)) sets))]
+    (cond-> (into [] (comp (remove #(identical? % target)) (map entry)) sets)
+      target (conj (entry target)))))
+
 (defn get-active-token-sets-force
   "Same as `get-active-token-sets` but force-including a set by id. A set
   that is not active comes first, with the lowest precedence, as in

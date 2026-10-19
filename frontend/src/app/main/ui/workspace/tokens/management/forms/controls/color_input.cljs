@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cfo]
    [app.common.types.color :as cl]
-   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
@@ -56,35 +55,29 @@
 ;; Both variants provide identical color-picker and text-input behavior, but
 ;; differ in how they persist the value within the form’s nested structure.
 
+(defn- resolved->result
+  [{:keys [errors resolved-value]}]
+  (if resolved-value
+    {:value resolved-value}
+    {:error (first errors)}))
+
 (defn- resolve-value
-  [tokens prev-token token-name value]
-  (let [valid-token-name?
-        (and (string? token-name)
-             (re-matches  cto/token-name-validation-regex token-name))
-
-        token
-        {:value value
-         :name (if (or (not valid-token-name?) (str/blank? token-name))
-                 "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
-                 token-name)}
-
-        tokens
-        (-> tokens
-            ;; Remove previous token when renaming a token
-            (dissoc (:name prev-token))
-            (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-    ;; TODO: Review this when tokenscript is fully integrated.
-    (if (cfo/token-circular-reference? tokens (:name token))
-      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
-      (->> (if (contains? cf/flags :tokenscript)
-             (rx/of (ts/resolve-tokens tokens))
-             (sd/resolve-tokens-interactive tokens))
-           (rx/mapcat
-            (fn [resolved-tokens]
-              (let [{:keys [errors resolved-value]} (get resolved-tokens (:name token))]
-                (if resolved-value
-                  (rx/of {:value resolved-value})
-                  (rx/of {:error (first errors)})))))))))
+  "Resolves the value typed for the token being edited. With tokenscript
+  the draft is resolved against `token-sets` (see
+  `csu/use-edit-token-sets`), otherwise against the merged `tokens`."
+  [tokens token-sets prev-token token-name value]
+  (let [draft (csu/draft-token prev-token token-name value)]
+    (if (contains? cf/flags :tokenscript)
+      (rx/of (resolved->result (ts/resolve-draft token-sets draft)))
+      (let [tokens
+            (-> tokens
+                ;; Remove previous token when renaming a token
+                (dissoc (:name prev-token))
+                (update (:name draft) #(ctob/make-token (merge % draft))))]
+        (if (cfo/token-circular-reference? tokens (:name draft))
+          (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+          (->> (sd/resolve-tokens-interactive tokens)
+               (rx/map #(resolved->result (get % (:name draft))))))))))
 
 (defn- hex->color-obj
   [hex]
@@ -145,6 +138,7 @@
   (let [form       (mf/use-ctx fc/context)
         input-name name
         token-name (get-in @form [:data :name] nil)
+        token-sets (csu/use-edit-token-sets (:name token))
 
 
         touched?
@@ -273,10 +267,10 @@
           :else
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name token-name]
+    (mf/with-effect [resolve-stream tokens token-sets token input-name token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token token-name))
+                      (rx/mapcat (partial resolve-value tokens token-sets token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error wte/resolve-error-message)))
                       (rx/subs! (fn [{:keys [error value]}]
@@ -329,6 +323,7 @@
   (let [form       (mf/use-ctx fc/context)
         input-name name
         token-name (get-in @form [:data :name] nil)
+        token-sets (csu/use-edit-token-sets (:name token))
 
         touched?
         (get-in @form [:touched :value value-subfield index input-name])
@@ -455,10 +450,10 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index value-subfield token-name]
+    (mf/with-effect [resolve-stream tokens token-sets token input-name index value-subfield token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token token-name))
+                      (rx/mapcat (partial resolve-value tokens token-sets token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error wte/resolve-error-assoc-message)))
 
