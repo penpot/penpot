@@ -298,16 +298,24 @@
   several languages map to one noto family and provisioning is concurrent —
   otherwise they all miss the byte cache at once and refetch the same TTF."
   [scene]
-  (let [texts  (for [shape (vals scene)
-                     :when (= :text (:type shape))
-                     node  (or (some->> (:content shape) (tree-seq :children :children)) [])
-                     text  [(:text node) (:ruby node)]
-                     :when (string? text)]
-                 text)
-        emoji? (boolean (some cfnt/contains-emoji? texts))
-        ;; The exporter has no user locale; Han-only text falls back to Chinese.
-        langs  (-> (reduce cfnt/collect-used-languages #{} texts)
-                   (cfnt/resolve-ambiguous-cjk nil))]
+  (let [paragraphs (for [shape (vals scene)
+                         :when (= :text (:type shape))
+                         node  (or (some->> (:content shape) (tree-seq :children :children)) [])
+                         :when (= "paragraph" (:type node))]
+                     node)
+        ;; Base text and ruby readings of each paragraph, which share its language.
+        texts      (map (fn [paragraph]
+                          (apply str (mapcat (juxt :text :ruby) (:children paragraph))))
+                        paragraphs)
+        emoji?     (boolean (some cfnt/contains-emoji? texts))
+        ;; The exporter has no user locale: Han follows the paragraph language,
+        ;; else the content, else Chinese.
+        langs      (reduce into #{}
+                           (map (fn [paragraph text]
+                                  (-> (cfnt/collect-used-languages #{} text)
+                                      (cfnt/resolve-ambiguous-cjk (:text-language paragraph) nil)))
+                                paragraphs
+                                texts))]
     (distinct
      (cond-> (cfnt/add-noto-fonts [] langs)
        emoji? (cfnt/add-emoji-font)))))

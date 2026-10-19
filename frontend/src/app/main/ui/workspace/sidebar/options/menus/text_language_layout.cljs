@@ -19,7 +19,11 @@
                       (case language
                         :japanese [{:id "ja" :label (translate "workspace.options.text-options.profile-japanese")}]
                         :chinese [{:id "zh-Hans" :label (translate "workspace.options.text-options.profile-chinese-simplified")}
-                                  {:id "zh-Hant" :label (translate "workspace.options.text-options.profile-chinese-traditional")}]
+                                  {:id "zh-Hant" :label (translate "workspace.options.text-options.profile-chinese-traditional")}
+                                  {:id "zh-Hans-CN" :label (translate "workspace.options.text-options.profile-chinese-mainland-simplified")}
+                                  {:id "zh-Hant-CN" :label (translate "workspace.options.text-options.profile-chinese-mainland-traditional")}
+                                  {:id "zh-Hant-TW" :label (translate "workspace.options.text-options.profile-chinese-taiwan")}
+                                  {:id "zh-Hant-HK" :label (translate "workspace.options.text-options.profile-chinese-hong-kong")}]
                         :korean [{:id "ko" :label (translate "workspace.options.text-options.profile-korean")}]))
         mixed? (= :multiple value)
         id (if mixed? "multiple" (or value ""))]
@@ -29,6 +33,13 @@
              :label (if mixed? (translate "labels.mixed-values") value)
              :disabled true
              :dimmed true}))))
+
+(defn korean-wrap-options
+  [value translate]
+  (cond-> [{:id "syllable" :label (translate "workspace.options.text-options.korean-wrap-syllable")}
+           {:id "keep-words" :label (translate "workspace.options.text-options.korean-wrap-keep-words")}]
+    (= value "spaces-only")
+    (conj {:id "spaces-only" :label (translate "workspace.options.text-options.korean-wrap-spaces-only")})))
 
 (defn profile-change
   [value]
@@ -65,5 +76,4 @@
                          {:attr :korean-wrap
                           :default-value "syllable"
                           :label (tr "workspace.options.text-options.korean-wrap")
-                          :options [{:id "syllable" :label (tr "workspace.options.text-options.korean-wrap-syllable")}
-                                    {:id "spaces-only" :label (tr "workspace.options.text-options.korean-wrap-spaces-only")}]})])]))
+                          :options (korean-wrap-options (:korean-wrap values) tr)})])]))

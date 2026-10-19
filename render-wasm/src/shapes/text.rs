@@ -30,6 +30,7 @@ use super::text_horizontal::*;
 use super::text_japanese::*;
 use super::{FontFamily, FontStyle};
 use crate::math::Point;
+use crate::render::FallbackFonts;
 use crate::shapes::{self, kinsoku, merge_fills, Shape, Type, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
@@ -277,10 +278,11 @@ impl std::fmt::Debug for VerticalLayoutCache {
 #[derive(Clone)]
 struct HorizontalPlansCache {
     version: u64,
+    width: f32,
     plans: Rc<Vec<HorizontalParagraphPlan>>,
 }
 
-/// Line adjustment of one horizontal Japanese paragraph at the layout width,
+/// Line adjustment of one horizontal paragraph at the layout width,
 /// per span: the sheds that squeeze its lines and the letter-spacing that
 /// justifies them.
 #[derive(Debug, Clone, Default)]
@@ -318,7 +320,7 @@ pub struct TextContentLayout {
     vertical: RefCell<Option<VerticalLayoutCache>>,
     /// Last horizontal paragraph plans, shared across clones.
     horizontal: RefCell<Option<HorizontalPlansCache>>,
-    /// Last Japanese line adjustment, shared across clones.
+    /// Last horizontal line adjustment, shared across clones.
     line_adjustment: RefCell<Option<LineAdjustmentCache>>,
 }
 
@@ -663,16 +665,23 @@ impl TextContent {
     }
 
     /// True when a horizontal paragraph gets its lines adjusted here rather
-    /// than by Skia: Japanese text that squeezes or is justified.
+    /// than by Skia: Japanese squeezing or policy-based CJK justification.
     fn adjusts_lines(&self, paragraph: &Paragraph, plan: &HorizontalParagraphPlan) -> bool {
-        uses_japanese_layout(paragraph, &plan.texts)
+        let policy = paragraph.layout_policy();
+        (uses_japanese_layout(paragraph, &plan.texts)
             && (self.line_adjustment == LineAdjustment::PushInFirst
-                || paragraph.text_align() == skia::textlayout::TextAlign::Justify)
+                || paragraph.text_align() == skia::textlayout::TextAlign::Justify))
+            || ((policy.is_chinese()
+                || matches!(
+                    policy,
+                    super::text_policy::TextLayoutPolicy::KoreanSyllable
+                        | super::text_policy::TextLayoutPolicy::KoreanWords
+                ))
+                && paragraph.text_align() == skia::textlayout::TextAlign::Justify)
     }
 
-    /// Squeeze sheds and justify spacing of each horizontal Japanese
-    /// paragraph at the layout width (see `horizontal_squeeze_sheds` and
-    /// `horizontal_justify_spacing`), cached until the content or the width
+    /// Squeeze sheds and justify spacing of each horizontal paragraph at
+    /// the layout width, cached until the content or the width
     /// changes. `None` when no paragraph needs them.
     fn horizontal_line_adjustments(&self) -> Option<HorizontalAdjustments> {
         if self.is_vertical() || self.grow_type() == GrowType::AutoWidth {
@@ -725,7 +734,10 @@ impl TextContent {
             laid_out.layout(width);
             laid_out
         };
-        let (sheds, laid_out) = if self.line_adjustment == LineAdjustment::PushInFirst {
+        let (sheds, laid_out) = if paragraph.layout_policy()
+            == super::text_policy::TextLayoutPolicy::Japanese
+            && self.line_adjustment == LineAdjustment::PushInFirst
+        {
             horizontal_squeeze_sheds(paragraph, plan, width, &lay_out)
         } else {
             let sheds = vec![Vec::new(); plan.texts.len()];
@@ -733,7 +745,11 @@ impl TextContent {
             (sheds, laid_out)
         };
         let spacing = if paragraph.text_align() == skia::textlayout::TextAlign::Justify {
-            horizontal_justify_spacing(&laid_out, plan, width)
+            if paragraph.layout_policy() == super::text_policy::TextLayoutPolicy::Japanese {
+                horizontal_justify_spacing(&laid_out, plan, width)
+            } else {
+                horizontal_policy_justify_spacing(paragraph, &laid_out, plan, width)
+            }
         } else {
             vec![Vec::new(); plan.texts.len()]
         };
@@ -788,22 +804,35 @@ impl TextContent {
     }
 
     /// Horizontal passes of every paragraph (kinsoku texts, offsets, aki
-    /// sheds, ruby spacing), cached until the content changes; clones share
-    /// them. A font load bumps the content version, which ruby spacing needs.
+    /// sheds, ruby spacing), cached until content or width changes; clones
+    /// share them. A font load bumps the content version for shaped spacing.
     pub(crate) fn horizontal_plans(&self) -> Rc<Vec<HorizontalParagraphPlan>> {
+        let width = self.get_width(self.bounds().width());
         if let Some(entry) = self.layout.horizontal.borrow().as_ref() {
-            if entry.version == self.content_version {
+            if entry.version == self.content_version && entry.width == width {
                 return Rc::clone(&entry.plans);
             }
         }
         let plans: Rc<Vec<HorizontalParagraphPlan>> = Rc::new(
             self.paragraphs
                 .iter()
-                .map(HorizontalParagraphPlan::new)
+                .map(|paragraph| {
+                    let mut plan = HorizontalParagraphPlan::new(paragraph);
+                    plan.relax_overlong_words(paragraph, width, |plan| {
+                        let sheds = vec![Vec::new(); plan.texts.len()];
+                        let mut measured = self
+                            .horizontal_measure_builder(paragraph, plan, &sheds)
+                            .build();
+                        measured.layout(width);
+                        measured
+                    });
+                    plan
+                })
                 .collect(),
         );
         *self.layout.horizontal.borrow_mut() = Some(HorizontalPlansCache {
             version: self.content_version,
+            width,
             plans: Rc::clone(&plans),
         });
         plans
@@ -1865,7 +1894,7 @@ pub struct Paragraph {
     writing_mode: WritingMode,
     text_orientation: TextOrientation,
     language: String,
-    korean_spaces_only: bool,
+    korean_wrap: super::text_policy::KoreanWrap,
     /// Paragraph in the content tree last exchanged with the editor host.
     source_position: u32,
     line_height: f32,
@@ -1883,7 +1912,7 @@ impl Default for Paragraph {
             writing_mode: WritingMode::default(),
             text_orientation: TextOrientation::default(),
             language: String::new(),
-            korean_spaces_only: false,
+            korean_wrap: super::text_policy::KoreanWrap::Syllable,
             source_position: u32::MAX,
             line_height: 1.0,
             letter_spacing: 0.0,
@@ -1911,7 +1940,7 @@ impl Paragraph {
             writing_mode: WritingMode::default(),
             text_orientation: TextOrientation::default(),
             language: String::new(),
-            korean_spaces_only: false,
+            korean_wrap: super::text_policy::KoreanWrap::Syllable,
             source_position: u32::MAX,
             line_height,
             letter_spacing,
@@ -1934,16 +1963,19 @@ impl Paragraph {
         self.language = language;
     }
 
-    pub fn korean_spaces_only(&self) -> bool {
-        self.korean_spaces_only
+    pub fn korean_wrap(&self) -> super::text_policy::KoreanWrap {
+        self.korean_wrap
     }
 
-    pub fn set_korean_spaces_only(&mut self, value: bool) {
-        self.korean_spaces_only = value;
+    pub fn set_korean_wrap(&mut self, value: super::text_policy::KoreanWrap) {
+        self.korean_wrap = value;
     }
 
     pub fn layout_policy(&self) -> super::text_policy::TextLayoutPolicy {
-        super::text_policy::TextLayoutPolicy::for_language(&self.language, self.korean_spaces_only)
+        super::text_policy::TextLayoutPolicy::for_language_with_wrap(
+            &self.language,
+            self.korean_wrap,
+        )
     }
 
     pub fn source_position(&self) -> u32 {
@@ -2397,7 +2429,7 @@ impl TextSpan {
     pub fn to_style(
         &self,
         content_bounds: &Rect,
-        fallback_fonts: &HashSet<String>,
+        fallback_fonts: &FallbackFonts,
         remove_alpha: bool,
         paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {
@@ -2413,7 +2445,7 @@ impl TextSpan {
     fn to_style_with_paint(
         &self,
         content_bounds: &Rect,
-        fallback_fonts: &HashSet<String>,
+        fallback_fonts: &FallbackFonts,
         remove_alpha: bool,
         paragraph_line_height: f32,
         fill_layer_from_bottom: Option<usize>,
@@ -2459,7 +2491,7 @@ impl TextSpan {
             DEFAULT_EMOJI_FONT.to_string(),
         ];
 
-        font_families.extend(fallback_fonts.iter().cloned());
+        font_families.extend(fallback_fonts.for_text(&self.language, &self.text));
         style.set_font_families(&font_families);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
@@ -2476,7 +2508,7 @@ impl TextSpan {
     pub fn to_stroke_style(
         &self,
         stroke_paint: &Paint,
-        fallback_fonts: &HashSet<String>,
+        fallback_fonts: &FallbackFonts,
         remove_alpha: bool,
         paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {

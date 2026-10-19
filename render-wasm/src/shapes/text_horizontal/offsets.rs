@@ -50,10 +50,17 @@ impl HorizontalOffsets {
             .get(source_char_offset)
             .copied()
             .unwrap_or_else(|| boundaries.last().copied().unwrap_or(0));
+        self.transformed_to_builder(source_utf16)
+    }
+
+    pub(super) fn transformed_to_builder(&self, source_utf16: usize) -> usize {
+        let at = self
+            .ranges
+            .partition_point(|range| range.source_end < source_utf16);
         let Some(range) = self
             .ranges
-            .iter()
-            .find(|range| source_utf16 >= range.source_start && source_utf16 <= range.source_end)
+            .get(at)
+            .filter(|range| source_utf16 >= range.source_start)
         else {
             return self
                 .ranges

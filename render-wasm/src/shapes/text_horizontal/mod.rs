@@ -50,6 +50,13 @@ pub(crate) fn uses_japanese_layout(paragraph: &Paragraph, texts: &[String]) -> b
 }
 
 pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku::OffsetMap) {
+    layout_span_texts_with_emergency(paragraph, &[])
+}
+
+fn layout_span_texts_with_emergency(
+    paragraph: &Paragraph,
+    emergency: &[usize],
+) -> (Vec<String>, kinsoku::OffsetMap) {
     let texts: Vec<String> = paragraph
         .children()
         .iter()
@@ -57,22 +64,18 @@ pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku:
         .collect();
     // Text without Japanese characters or ruby keeps plain Skia layout.
     let policy = paragraph.layout_policy();
-    if uses_japanese_layout(paragraph, &texts)
-        || matches!(
-            policy,
-            TextLayoutPolicy::Chinese
-                | TextLayoutPolicy::KoreanSyllable
-                | TextLayoutPolicy::KoreanSpacesOnly
-        )
-    {
+    if uses_japanese_layout(paragraph, &texts) || policy.is_chinese() || policy.is_korean() {
         let ruby_breaks: Vec<Option<Vec<usize>>> = paragraph
             .children()
             .iter()
             .map(|span| span.has_ruby().then(Vec::new))
             .collect();
-        if let Some((shifted, map)) =
+        let shifted = if emergency.is_empty() {
             kinsoku::apply_policy_to_span_texts(&texts, &ruby_breaks, policy)
-        {
+        } else {
+            kinsoku::apply_policy_with_emergency_breaks(&texts, &ruby_breaks, policy, emergency)
+        };
+        if let Some((shifted, map)) = shifted {
             return (shifted, map);
         }
     }
@@ -89,7 +92,7 @@ pub(crate) fn horizontal_aki_sheds(
     texts: &[String],
 ) -> Vec<Vec<(usize, f32)>> {
     if paragraph.layout_policy() != TextLayoutPolicy::Japanese {
-        return vec![Vec::new(); texts.len()];
+        return horizontal_policy_spacing(paragraph, texts);
     }
     let spans = paragraph.children();
     let half_em = |span: usize| spans.get(span).map_or(0.0, |span| span.font_size * 0.5);
@@ -117,6 +120,41 @@ pub(crate) fn horizontal_aki_sheds(
         sheds[span].push((index, half_em(amount_span)));
     }
     sheds
+}
+
+/// Signed advance changes: positive removes punctuation space, negative adds
+/// the regional Han/Latin gap. Source and builder text stay unchanged.
+fn horizontal_policy_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<(usize, f32)>> {
+    let mut result = vec![Vec::new(); texts.len()];
+    let policy = paragraph.layout_policy();
+    let mut previous: Option<(usize, usize, char)> = None;
+    for (span, text) in texts.iter().enumerate() {
+        for (index, ch) in text.chars().enumerate() {
+            if kinsoku::is_inserted_zero_width(ch) {
+                continue;
+            }
+            if let Some((before_span, before_index, before)) = previous {
+                let a = &paragraph.children()[before_span];
+                let b = &paragraph.children()[span];
+                if !a.has_ruby() && !b.has_ruby() && !a.is_warichu() && !b.is_warichu() {
+                    let em = a.font_size.min(b.font_size);
+                    let compression = if a.font_features == FontFeatures::Palt
+                        || b.font_features == FontFeatures::Palt
+                    {
+                        0.0
+                    } else {
+                        policy.compression_em(before, ch, false)
+                    };
+                    let amount = (compression - policy.script_spacing_em(before, ch)) * em;
+                    if amount != 0.0 {
+                        result[before_span].push((before_index, amount));
+                    }
+                }
+            }
+            previous = Some((span, index, ch));
+        }
+    }
+    result
 }
 
 /// Add a span to a horizontal paragraph builder. A warichu span becomes one
@@ -182,17 +220,21 @@ fn add_text_with_sheds(
     text_style: &skia::textlayout::TextStyle,
 ) {
     let tracking = text_style.letter_spacing();
+    let count = text.chars().count();
+    let mut amounts = vec![(0.0, 0.0); count];
+    for &(index, amount) in extra {
+        if let Some((added, _)) = amounts.get_mut(index) {
+            *added += amount;
+        }
+    }
+    for &(index, amount) in sheds {
+        if let Some((_, shed)) = amounts.get_mut(index) {
+            *shed += amount;
+        }
+    }
     let mut piece_start = 0;
     for (index, (byte, ch)) in text.char_indices().enumerate() {
-        let amount_at = |adjustments: &[(usize, f32)]| -> f32 {
-            adjustments
-                .iter()
-                .filter(|(char_index, _)| *char_index == index)
-                .map(|(_, amount)| amount)
-                .sum()
-        };
-        let added = amount_at(extra);
-        let shed = amount_at(sheds);
+        let (added, shed) = amounts[index];
         let letter_spacing = if kinsoku::is_inserted_zero_width(ch) {
             0.0
         } else {
@@ -225,7 +267,117 @@ pub(crate) struct HorizontalParagraphPlan {
 
 impl HorizontalParagraphPlan {
     pub(crate) fn new(paragraph: &Paragraph) -> Self {
-        let (texts, offset_map) = paragraph.layout_span_texts();
+        Self::with_emergency_breaks(paragraph, &[])
+    }
+
+    /// SkParagraph's emergency fallback can ignore punctuation joins inside
+    /// an overlong word. Measure whole units once, then reopen only safe
+    /// grapheme boundaries of units that cannot fit an empty line. The
+    /// replacement markers have identical UTF-8/UTF-16 lengths, so every
+    /// source/builder offset remains identical to the unrelaxed plan.
+    pub(crate) fn relax_overlong_words(
+        &mut self,
+        paragraph: &Paragraph,
+        width: f32,
+        measure: impl FnOnce(&Self) -> skia::textlayout::Paragraph,
+    ) {
+        use unicode_segmentation::UnicodeSegmentation;
+        let policy = paragraph.layout_policy();
+        if !(policy.is_chinese()
+            || matches!(
+                policy,
+                TextLayoutPolicy::KoreanWords | TextLayoutPolicy::KoreanSyllable
+            ))
+            || !width.is_finite()
+            || width <= 0.0
+            || width == f32::MAX
+        {
+            return;
+        }
+        let source: String = paragraph
+            .children()
+            .iter()
+            .map(TextSpan::apply_text_transform)
+            .collect();
+        let mut utf16 = 0;
+        let graphemes: Vec<_> = source
+            .graphemes(true)
+            .map(|g| {
+                let at = utf16;
+                utf16 += g.encode_utf16().count();
+                (at, g.chars().next().unwrap())
+            })
+            .collect();
+        let mut offset = 0;
+        let protected: Vec<_> = paragraph
+            .children()
+            .iter()
+            .filter_map(|span| {
+                let start = offset;
+                offset += span.apply_text_transform().encode_utf16().count();
+                (span.has_ruby() || span.is_warichu()).then_some(start..offset)
+            })
+            .collect();
+        let mut units = Vec::new();
+        let mut start = 0;
+        for at in 1..graphemes.len() {
+            if policy.break_allowed(graphemes[at - 1].1, graphemes[at].1) {
+                if at - start > 1 {
+                    units.push(start..at);
+                }
+                start = at;
+            }
+        }
+        if graphemes.len() - start > 1 {
+            units.push(start..graphemes.len());
+        }
+        if units.is_empty() {
+            return;
+        }
+        let measured = measure(self);
+        let line_starts: Vec<_> = measured
+            .get_line_metrics()
+            .iter()
+            .skip(1)
+            .map(|line| line.start_index)
+            .collect();
+        let mut emergency = Vec::new();
+        for unit in units {
+            let first = graphemes[unit.start].0;
+            let last = graphemes.get(unit.end).map_or(utf16, |g| g.0);
+            let from = self.offsets.transformed_to_builder(first);
+            let to = self.offsets.transformed_to_builder(last);
+            let split = line_starts.partition_point(|at| *at <= from);
+            if line_starts.get(split).is_none_or(|at| *at >= to) {
+                continue;
+            }
+            let extent: f32 = measured
+                .get_rects_for_range(from..to, RectHeightStyle::Tight, RectWidthStyle::Tight)
+                .iter()
+                .map(|box_| box_.rect.width())
+                .sum();
+            if extent <= width + 0.01 {
+                continue;
+            }
+            for at in unit.start + 1..unit.end {
+                let (position, after) = graphemes[at];
+                let before = graphemes[at - 1].1;
+                if policy.emergency_break_allowed(before, after)
+                    && protected
+                        .get(protected.partition_point(|r| r.end <= position))
+                        .is_none_or(|r| position <= r.start)
+                {
+                    emergency.push(position);
+                }
+            }
+        }
+        if !emergency.is_empty() {
+            *self = Self::with_emergency_breaks(paragraph, &emergency);
+        }
+    }
+
+    fn with_emergency_breaks(paragraph: &Paragraph, emergency: &[usize]) -> Self {
+        let (texts, offset_map) = layout_span_texts_with_emergency(paragraph, emergency);
         let sheds = horizontal_aki_sheds(paragraph, &texts);
         let ruby_spacing = horizontal_ruby_spacing(paragraph, &texts, &offset_map);
         let offsets = HorizontalOffsets::from_layout_texts(paragraph, &texts, offset_map);
