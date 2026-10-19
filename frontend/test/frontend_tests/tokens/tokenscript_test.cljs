@@ -6,8 +6,10 @@
 
 (ns frontend-tests.tokens.tokenscript-test
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.tokenscript :as ts]
    [cljs.test :as t :include-macros true]))
 
@@ -265,6 +267,30 @@
       (let [preview (ts/resolve-sets [[:core core] [:theme theme] [:draft (by-name (assoc core-base :value "1"))]])]
         (t/is (= 2 (get-in preview ["double" :resolved-value])))
         (t/is (identical? resolved (ts/resolve-sets [[:core core] [:theme theme]])))))))
+
+;; The active sets go to the resolver unmerged; the result is the one of
+;; the merged active tokens.
+(t/deftest resolve-active-sets-test
+  (let [lib (-> (ctob/make-tokens-lib)
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core) :name "core"))
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :dark) :name "dark"))
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :extra) :name "extra"))
+                (ctob/add-token (cthi/id :core) (ctob/make-token {:name "base" :value "8" :type :sizing}))
+                (ctob/add-token (cthi/id :core) (ctob/make-token {:name "double" :value "{base} * 2" :type :sizing}))
+                (ctob/add-token (cthi/id :dark) (ctob/make-token {:name "base" :value "10" :type :sizing}))
+                (ctob/add-token (cthi/id :extra) (ctob/make-token {:name "base" :value "1" :type :sizing})))
+        status (ctos/make-tokens-status :active-set-ids #{(cthi/id :core) (cthi/id :dark)})
+        values (fn [resolved] (update-vals resolved :resolved-value))
+        by-sets (ts/resolve-sets (cfo/get-active-token-sets status lib))]
+    (t/is (= {"base" 10 "double" 20} (values by-sets)))
+    (t/is (= (values (ts/resolve-tokens (cfo/get-tokens-in-active-sets status lib))) (values by-sets)))
+    (t/is (identical? by-sets (ts/resolve-sets (cfo/get-active-token-sets status lib)))
+          "the same sets from the library return the cached output")
+    (t/testing "a forced inactive set comes first, as in the merged variant"
+      (let [forced (ts/resolve-sets (cfo/get-active-token-sets-force status lib (cthi/id :extra)))]
+        (t/is (= (values (ts/resolve-tokens (cfo/get-tokens-in-active-sets-force status lib (cthi/id :extra))))
+                 (values forced)))
+        (t/is (= 10 (get-in forced ["base" :resolved-value])))))))
 
 (t/deftest resolve-sets-empty-test
   (t/is (= {} (ts/resolve-sets [])))

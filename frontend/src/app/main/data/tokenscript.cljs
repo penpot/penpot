@@ -296,14 +296,6 @@
                       value)}
       (some? type) (assoc :type (get cto/token-type->dtcg-token-type type (name type))))))
 
-(defn- merge-sets
-  "The tokens of `sets` as one map, later sets winning: the names of a
-  resolution."
-  [sets]
-  (if (= 1 (count sets))
-    (second (first sets))
-    (reduce (fn [acc [_ tokens]] (merge acc tokens)) {} sets)))
-
 (defn- output-token
   "`token` with `:resolved-value` and `:resolved-symbol`, or `:errors`,
   from the interpreter `result`."
@@ -321,44 +313,38 @@
 (defn- resolve-sets*
   "Resolves `sets` starting from `base`, the previous resolution (nil for
   the first). The sets go to the interpreter as they are, with
-  `read-token` as the reader. The interpreter keeps its state across
-  resolutions: it reads and re-resolves only the tokens that are not the
-  same objects as before and the tokens that can observe them, and only
-  those names are converted again. Every other entry of the output is the
-  one of `base`, the same object."
+  `read-token` as the reader; it merges them, and from `base` it looks
+  only into the sets that are not the same objects and re-resolves only
+  what changed. The output is the one of `base` with the names the
+  interpreter reports as `:changed` converted again."
   [sets base]
   (let [tpoint (ct/tpoint-ms)
-        winners (merge-sets sets)
         result (if base
-                 (processor/set-sets (get-in base [:result :state]) sets)
+                 (processor/set-sets (:state base) sets)
                  (tsc/build sets {:token-reader read-token}))
         resolved (:resolved result)
-        prev-winners (:winners base)
-        prev-resolved (get-in base [:result :resolved])
-        prev-output (:output base)
-        output (persistent!
-                (reduce-kv
-                 (fn [acc name token]
-                   (assoc! acc name
-                           (if (and (identical? token (get prev-winners name))
-                                    (identical? (get resolved name) (get prev-resolved name)))
-                             (get prev-output name)
-                             (output-token name token result))))
-                 (transient {})
-                 winners))]
-    (l/dbg :hint "tokenscript/resolve-sets" :elapsed (tpoint) :tokens (count winners))
+        names (if base (:changed result) (keys resolved))
+        output (if (empty? names)
+                 (or (:output base) {})
+                 (persistent!
+                  (reduce (fn [acc name]
+                            (if (contains? resolved name)
+                              (assoc! acc name (output-token name (processor/input result name) result))
+                              (dissoc! acc name)))
+                          (transient (or (:output base) {}))
+                          names)))]
+    (l/dbg :hint "tokenscript/resolve-sets" :elapsed (tpoint) :changed (count names))
     {:sets sets
-     :winners winners
-     :result result
+     :state (:state result)
      :output output}))
 
 ;; Several components resolve the same sets on every change (the sidebar,
 ;; the forms and the propagation each compute the active tokens
 ;; separately), and a form resolves a new map on every keystroke. The last
-;; few resolutions are kept with their interpreter state: a known input
-;; returns its output, a new one is resolved from the most recent entry,
-;; which re-resolves only what changed. The entries are values, so a
-;; preview resolved from an entry leaves it as it is.
+;; few resolutions are kept with their interpreter state: sets that are the
+;; same objects as an entry's return its output, others are resolved from
+;; the most recent entry, which re-resolves only what changed. The entries
+;; are values, so a preview resolved from an entry leaves it as it is.
 (def ^:private cache-size 8)
 
 (defonce ^:private cache (volatile! []))
@@ -373,9 +359,7 @@
 
 (defn- cached-entry
   [sets]
-  (let [entries @cache]
-    (or (some #(when (same-sets? (:sets %) sets) %) entries)
-        (some #(when (= (:sets %) sets) %) entries))))
+  (some #(when (same-sets? (:sets %) sets) %) @cache))
 
 (defn- remember
   "Puts `entry` first, dropping the oldest beyond `cache-size`."
@@ -386,26 +370,39 @@
                         entries)))
   entry)
 
+(defn- base-entry
+  "Entry to resolve `sets` from: the most recent one with the same set ids
+  in the same order, so that only the changed sets are looked into, else
+  the most recent one."
+  [sets]
+  (let [entries @cache
+        ids (mapv first sets)]
+    (or (some #(when (= ids (mapv first (:sets %))) %) entries)
+        (first entries))))
+
 (defn resolve-sets
   "Resolves the ordered token `sets`, `[[set-id tokens] ..]`, where `tokens`
   maps token names to tokens and a name defined by several sets is taken
-  from the last one. Returns a map of the names to their tokens with
-  `:resolved-value` and `:resolved-symbol`, or `:errors`, added.
+  from the last one (see `cfo/get-active-token-sets`). Returns a map of the
+  names to their tokens with `:resolved-value` and `:resolved-symbol`, or
+  `:errors`, added.
 
   Resolutions are incremental: the interpreter state of the last few
-  calls is kept, and a call re-resolves only the names whose token is not
-  the same object as in the previous call and the tokens referencing
-  them. The output keeps the previous entry for every other name, so the
-  tokens an edit did not reach stay identical between calls."
+  calls is kept. A call looks only into the sets that are not the same
+  objects as before, re-resolves the tokens in them that are not the same
+  objects and the tokens referencing them, and converts only those. Every
+  other entry of the output is the previous object."
   [sets]
   (:output (remember (or (cached-entry sets)
-                         (resolve-sets* sets (first @cache))))))
+                         (resolve-sets* sets (base-entry sets))))))
 
 (defn resolve-tokens
   "Resolves `tokens` (a map of token name to token), as one set. Returns
   the tokens with `:resolved-value` or `:errors` added. See `resolve-sets`."
   [tokens]
-  (resolve-sets [[nil tokens]]))
+  (if (empty? tokens)
+    {}
+    (resolve-sets [[nil tokens]])))
 
 (defn resolve-token
   "Resolves `token` against `tokens` (the token replaces any token with
