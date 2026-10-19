@@ -11,7 +11,7 @@ use skia_safe::{
     Font, FontMgr, GlyphId, Point as SkPoint, TextBlob, TextBlobBuilder, Typeface,
 };
 
-use crate::render::DEFAULT_EMOJI_FONT;
+use crate::render::{FallbackFonts, DEFAULT_EMOJI_FONT};
 use crate::shapes::{FontFeatures, TextSpan};
 
 use super::font_tables::upright_centre_metrics;
@@ -20,13 +20,13 @@ use super::font_tables::upright_centre_metrics;
 pub(super) const WESTERN_WORD_SPACING_EM: f32 = 1.0 / 3.0;
 
 /// Candidate families for a span: its own font first, then emoji and the
-/// registered fallback fonts (Noto etc.).
-pub(crate) fn span_font_families(span: &TextSpan, fallback_families: &[String]) -> Vec<String> {
+/// registered fallback fonts (Noto etc.) in the span language's order.
+pub(crate) fn span_font_families(span: &TextSpan, fallback_fonts: &FallbackFonts) -> Vec<String> {
     let mut families = vec![
         format!("{}", span.font_family),
         DEFAULT_EMOJI_FONT.to_string(),
     ];
-    families.extend(fallback_families.iter().cloned());
+    families.extend(fallback_fonts.for_text(&span.language, &span.text));
     families
 }
 
@@ -554,7 +554,6 @@ mod tests {
     fn selected_language_reaches_horizontal_and_vertical_localized_glyphs() {
         use crate::shapes::{GrowType, TextAlign};
         use skia_safe::textlayout::{FontCollection, ParagraphBuilder};
-        use std::collections::HashSet;
 
         let font_provider = provider(include_bytes!("../../fonts/cjk-locl-test.ttf"));
         let mut fonts = FontCollection::new();
@@ -567,7 +566,7 @@ mod tests {
             assert_eq!(layout.runs[0].glyphs, vec![glyph], "vertical {language}");
 
             let span = &paragraph.children()[0];
-            let style = span.to_style(&content.bounds(), &HashSet::new(), false, 1.0);
+            let style = span.to_style(&content.bounds(), &FallbackFonts::default(), false, 1.0);
             assert_eq!(style.locale(), language);
             let mut builder = ParagraphBuilder::new(&paragraph.paragraph_to_style(), &fonts);
             builder.push_style(&style);
@@ -584,7 +583,10 @@ mod tests {
 
     #[test]
     fn span_families_try_emoji_after_the_span_font() {
-        let families = span_font_families(&make_span("😆"), &["fallback".to_string()]);
+        let families = span_font_families(
+            &make_span("😆"),
+            &FallbackFonts::from_families(["fallback".to_string()]),
+        );
         assert_eq!(families[1], DEFAULT_EMOJI_FONT);
         assert_eq!(families[2], "fallback");
     }

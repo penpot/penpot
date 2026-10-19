@@ -20,6 +20,7 @@
    [app.render-wasm.api :as api]
    [app.render-wasm.api.texts :as texts]
    [app.render-wasm.text-editor :as text-editor]
+   [app.util.i18n :as i18n]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]))
 
@@ -404,6 +405,14 @@
   [dview]
   (mapv #(.getUint8 dview %) (:padding span-attr-offset)))
 
+(t/deftest paragraph-wrap-modes-have-stable-distinct-protocol-bytes
+  (doseq [[mode expected] [[nil 0] ["syllable" 0] ["spaces-only" 1] ["keep-words" 2] ["invalid" 0]]]
+    (let [dview (js/DataView. (js/ArrayBuffer. tc/PARAGRAPH-ATTR-U8-SIZE))]
+      (@#'tc/write-paragraph 0 dview {:text-language "ko" :korean-wrap mode})
+      (t/is (= expected (.getUint8 dview 6)))
+      (t/is (= 0 (.getUint8 dview 7)))
+      (t/is (= 2 (.getUint32 dview 16 true))))))
+
 (t/deftest write-spans-serializes-font-features
   (let [dview (serialized-span {:text "日本語" :font-features "vpal"})]
     (t/is (= 2 (span-byte dview :font-features)))
@@ -472,40 +481,70 @@
 (t/deftest resolve-kana-wins-over-locale
   ;; Kana in the same content implies Japanese regardless of locale.
   (t/is (= #{:japanese}
-           (cfnt/resolve-ambiguous-cjk #{:japanese :han :cjk-punctuation} "zh")))
+           (cfnt/resolve-ambiguous-cjk #{:japanese :han :cjk-punctuation} nil "zh")))
   (t/is (= #{:japanese}
-           (cfnt/resolve-ambiguous-cjk #{:japanese :han} "en"))))
+           (cfnt/resolve-ambiguous-cjk #{:japanese :han} nil "en"))))
 
 (t/deftest resolve-hangul-wins-over-locale
   (t/is (= #{:korean}
-           (cfnt/resolve-ambiguous-cjk #{:korean :han} "ja"))))
+           (cfnt/resolve-ambiguous-cjk #{:korean :han} nil "ja"))))
 
 (t/deftest resolve-han-only-uses-locale
-  (t/is (= #{:japanese} (cfnt/resolve-ambiguous-cjk #{:han} "ja")))
-  (t/is (= #{:japanese} (cfnt/resolve-ambiguous-cjk #{:han} "ja_paid")))
-  (t/is (= #{:korean}   (cfnt/resolve-ambiguous-cjk #{:han} "ko")))
-  (t/is (= #{:chinese}  (cfnt/resolve-ambiguous-cjk #{:han} "zh_cn"))))
+  (t/is (= #{:japanese} (cfnt/resolve-ambiguous-cjk #{:han} nil "ja")))
+  (t/is (= #{:japanese} (cfnt/resolve-ambiguous-cjk #{:han} nil "ja_paid")))
+  (t/is (= #{:korean}   (cfnt/resolve-ambiguous-cjk #{:han} nil "ko")))
+  (t/is (= #{:chinese}  (cfnt/resolve-ambiguous-cjk #{:han} nil "zh_cn"))))
 
 (t/deftest resolve-han-only-defaults-to-chinese
   ;; Without kana, hangul or a CJK locale, Han resolves to Chinese (Noto Sans SC).
-  (t/is (= #{:chinese} (cfnt/resolve-ambiguous-cjk #{:han} "en")))
-  (t/is (= #{:chinese} (cfnt/resolve-ambiguous-cjk #{:han} nil))))
+  (t/is (= #{:chinese} (cfnt/resolve-ambiguous-cjk #{:han} nil "en")))
+  (t/is (= #{:chinese} (cfnt/resolve-ambiguous-cjk #{:han} nil nil))))
 
 (t/deftest resolve-punctuation-only
-  (t/is (= #{:japanese} (cfnt/resolve-ambiguous-cjk #{:cjk-punctuation} "ja")))
-  (t/is (= #{:chinese}  (cfnt/resolve-ambiguous-cjk #{:cjk-punctuation} "en"))))
+  (t/is (= #{:japanese} (cfnt/resolve-ambiguous-cjk #{:cjk-punctuation} nil "ja")))
+  (t/is (= #{:chinese}  (cfnt/resolve-ambiguous-cjk #{:cjk-punctuation} nil "en"))))
+
+(t/deftest resolve-paragraph-language-wins
+  ;; The paragraph language decides Han, whatever the content or locale.
+  (t/is (= #{:japanese} (cfnt/resolve-ambiguous-cjk #{:han} "ja" "en")))
+  (t/is (= #{:chinese :japanese}
+           (cfnt/resolve-ambiguous-cjk #{:japanese :han} "zh-Hans" "ja")))
+  (t/is (= #{:korean} (cfnt/resolve-ambiguous-cjk #{:han} "ko" nil)))
+  ;; A non-CJK paragraph language leaves the content and locale to decide.
+  (t/is (= #{:japanese} (cfnt/resolve-ambiguous-cjk #{:han} "en-GB" "ja"))))
+
+(t/deftest resolve-regional-chinese
+  (t/is (= #{:chinese-traditional} (cfnt/resolve-ambiguous-cjk #{:han} "zh-Hant-TW" nil)))
+  (t/is (= #{:chinese-traditional} (cfnt/resolve-ambiguous-cjk #{:han} "zh-TW" nil)))
+  (t/is (= #{:chinese-hongkong} (cfnt/resolve-ambiguous-cjk #{:han} "zh-Hant-HK" nil)))
+  (t/is (= #{:chinese} (cfnt/resolve-ambiguous-cjk #{:han} "zh-CN" nil)))
+  ;; App locales use underscores.
+  (t/is (= #{:chinese-traditional} (cfnt/resolve-ambiguous-cjk #{:han} nil "zh_hant"))))
+
+(t/deftest paragraph-language-selects-the-han-fallback-font
+  (let [content (fn [language]
+                  {:children
+                   [{:children
+                     [{:text-language language
+                       :children [{:text "東京都"}]}]}]})
+        fonts   #(font-ids (api/fonts-from-text-content (content %) false))]
+    (with-redefs [i18n/locale (atom "en")]
+      (t/is (contains? (fonts "ja") "gfont-noto-sans-jp"))
+      (t/is (not (contains? (fonts "ja") "gfont-noto-sans-sc")))
+      (t/is (contains? (fonts "zh-Hant-TW") "gfont-noto-sans-tc"))
+      (t/is (contains? (fonts nil) "gfont-noto-sans-sc")))))
 
 (t/deftest resolve-leaves-unambiguous-sets-alone
-  (t/is (= #{:latin-ext} (cfnt/resolve-ambiguous-cjk #{:latin-ext} "ja")))
-  (t/is (= #{} (cfnt/resolve-ambiguous-cjk #{} "ja")))
+  (t/is (= #{:latin-ext} (cfnt/resolve-ambiguous-cjk #{:latin-ext} nil "ja")))
+  (t/is (= #{} (cfnt/resolve-ambiguous-cjk #{} nil "ja")))
   ;; Other detected languages survive resolution.
   (t/is (= #{:japanese :cyrillic}
-           (cfnt/resolve-ambiguous-cjk #{:han :cyrillic} "ja"))))
+           (cfnt/resolve-ambiguous-cjk #{:han :cyrillic} nil "ja"))))
 
 (t/deftest resolve-han-unification
   ;; A kanji-only Japanese address resolves to Japanese under a ja locale.
   (t/is (= #{:japanese}
-           (cfnt/resolve-ambiguous-cjk (langs "東京都渋谷区神南一丁目") "ja"))))
+           (cfnt/resolve-ambiguous-cjk (langs "東京都渋谷区神南一丁目") nil "ja"))))
 
 (t/deftest wasm-enum-exports-match-the-japanese-value-table
   (doseq [[attr values] cjk/enum-values]

@@ -109,9 +109,19 @@ pub fn apply_policy_to_span_texts(
     ruby_breaks: &[Option<Vec<usize>>],
     policy: TextLayoutPolicy,
 ) -> Option<(Vec<String>, OffsetMap)> {
+    apply_policy_with_emergency_breaks(span_texts, ruby_breaks, policy, &[])
+}
+
+pub fn apply_policy_with_emergency_breaks(
+    span_texts: &[String],
+    ruby_breaks: &[Option<Vec<usize>>],
+    policy: TextLayoutPolicy,
+    emergency_breaks: &[usize],
+) -> Option<(Vec<String>, OffsetMap)> {
     let source = span_texts.concat();
     let boundaries: Vec<usize> = source.grapheme_indices(true).map(|(at, _)| at).collect();
     let mut source_byte = 0;
+    let mut source_utf16 = 0;
     let mut inserted: Vec<usize> = Vec::new();
     let mut out: Vec<String> = Vec::with_capacity(span_texts.len());
     // Base character of the previous grapheme cluster, with its class.
@@ -126,6 +136,8 @@ pub fn apply_policy_to_span_texts(
         for c in text.chars() {
             let at_boundary = boundaries.binary_search(&source_byte).is_ok();
             source_byte += c.len_utf8();
+            let source_at = source_utf16;
+            source_utf16 += c.len_utf16();
             if !at_boundary {
                 shifted_text.push(c);
                 shifted_pos += c.len_utf16();
@@ -165,7 +177,11 @@ pub fn apply_policy_to_span_texts(
             }
             // After an inserted space, the joiner keeps the break blocked.
             if forbid_break {
-                insert(WORD_JOINER);
+                insert(if emergency_breaks.binary_search(&source_at).is_ok() {
+                    BREAK_OPPORTUNITY
+                } else {
+                    WORD_JOINER
+                });
             } else if policy == TextLayoutPolicy::Japanese
                 && current.1 == JapaneseClass::Inseparable
                 && prev.is_some_and(|p| pair_rule(p.1, current.1).break_allowed)

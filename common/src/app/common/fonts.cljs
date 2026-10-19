@@ -244,28 +244,36 @@
              used
              unicode-ranges))
 
-(defn- locale->cjk-language
-  "CJK language implied by an app locale string, or nil."
-  [locale]
-  (let [locale (str/lower (str locale))]
-    (cond
-      (str/starts-with? locale "ja") :japanese
-      (str/starts-with? locale "ko") :korean
-      (str/starts-with? locale "zh") :chinese
-      :else nil)))
+(defn- language->cjk-font
+  "CJK font class implied by a BCP 47 language tag or an app locale
+   (`ja`, `zh-Hant-TW`, `zh_hant`), or nil for a non-CJK language."
+  [language]
+  (let [[primary & subtags] (str/split (str/lower (str language)) #"[-_]")
+        subtags             (set subtags)]
+    (case primary
+      "ja" :japanese
+      "ko" :korean
+      "zh" (cond
+             (some subtags ["hk" "mo"])   :chinese-hongkong
+             (some subtags ["tw" "hant"]) :chinese-traditional
+             :else                        :chinese)
+      nil)))
 
 (defn resolve-ambiguous-cjk
   "Resolves the ambiguous CJK classes (:han, :cjk-punctuation) to a
-   concrete language: an unambiguous script in the same content wins
-   (kana implies Japanese, hangul implies Korean), then the `locale`
-   (nil when the host has none); Chinese is the final default."
-  [langs locale]
+   concrete font class: a CJK paragraph `language` wins, then an
+   unambiguous script in the same content (kana implies Japanese, hangul
+   implies Korean), then the app `locale`; Chinese is the final default.
+   `language` and `locale` are nil when unset."
+  [langs language locale]
   (if (or (contains? langs :han)
           (contains? langs :cjk-punctuation))
-    (let [resolved (cond
-                     (contains? langs :japanese) :japanese
-                     (contains? langs :korean)   :korean
-                     :else (or (locale->cjk-language locale) :chinese))]
+    (let [resolved (or (language->cjk-font language)
+                       (cond
+                         (contains? langs :japanese) :japanese
+                         (contains? langs :korean)   :korean)
+                       (language->cjk-font locale)
+                       :chinese)]
       (-> langs
           (disj :han :cjk-punctuation)
           (conj resolved)))
@@ -283,6 +291,8 @@
 (def noto-fonts
   {:japanese    {:font-id "gfont-noto-sans-jp"            :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :chinese     {:font-id "gfont-noto-sans-sc"            :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :chinese-traditional {:font-id "gfont-noto-sans-tc"    :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :chinese-hongkong {:font-id "gfont-noto-sans-hk"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :korean      {:font-id "gfont-noto-sans-kr"            :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :arabic      {:font-id "gfont-noto-sans-arabic"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :cyrillic    {:font-id "gfont-noto-sans"               :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}

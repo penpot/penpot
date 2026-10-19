@@ -289,21 +289,27 @@ pub(super) fn plan_policy_columns(
     for grapheme in text.graphemes(true) {
         let first = grapheme.chars().next().unwrap();
         let allowed = previous.is_none_or(|before| policy.break_allowed(before, first));
-        boundaries.push((offset, allowed));
+        let emergency = previous.is_none_or(|before| policy.emergency_break_allowed(before, first));
+        boundaries.push((offset, allowed, emergency));
         previous = Some(first);
         offset += grapheme.encode_utf16().count();
     }
-    boundaries.push((offset, true));
-    let mut atomic_start = Vec::with_capacity(cells.len());
+    boundaries.push((offset, true, true));
+    let mut emergency_start = Vec::with_capacity(cells.len());
     let mut unit_start = Vec::with_capacity(cells.len());
     let mut prefix = vec![0.0];
     for (i, flow) in cells.iter().enumerate() {
         let boundary = boundaries
-            .binary_search_by_key(&flow.cell.start, |(at, _)| *at)
+            .binary_search_by_key(&flow.cell.start, |b| b.0)
             .ok();
         let atomic =
             i > 0 && (flow.keep_with_previous || flow.shares_previous_box || boundary.is_none());
-        atomic_start.push(if atomic { atomic_start[i - 1] } else { i });
+        let emergency_joined = atomic || boundary.is_some_and(|at| !boundaries[at].2);
+        emergency_start.push(if i > 0 && emergency_joined {
+            emergency_start[i - 1]
+        } else {
+            i
+        });
         let joined = atomic || boundary.is_some_and(|at| !boundaries[at].1);
         unit_start.push(if i > 0 && joined {
             unit_start[i - 1]
@@ -312,19 +318,45 @@ pub(super) fn plan_policy_columns(
         });
         prefix.push(prefix[i] + flow.cell.extent);
     }
+    let mut unit_end = vec![cells.len(); cells.len()];
+    for i in (0..cells.len().saturating_sub(1)).rev() {
+        unit_end[i] = if unit_start[i] == unit_start[i + 1] {
+            unit_end[i + 1]
+        } else {
+            i + 1
+        };
+    }
     let mut placements = Vec::with_capacity(cells.len());
     let (mut column, mut column_start, mut cursor) = (0, 0, 0.0);
     for (i, flow) in cells.iter().enumerate() {
-        if cursor > 0.0 && cursor + flow.cell.extent > max_height + FIT_TOLERANCE {
+        let punctuation = |at: usize| {
+            cells
+                .get(at)
+                .and_then(|c| c.ch)
+                .is_some_and(|c| "，。、．！？：；…‥—―「」『』（）〔〕［］｛｝〈〉《》【】〖〗〘〙〚〛‘’“”.,;!?:()[]{}".contains(c))
+        };
+        let solitary = (i == 0 || !punctuation(i - 1)) && !punctuation(i + 1);
+        let hang = if solitary {
+            flow.ch
+                .map_or(0.0, |ch| policy.hanging_em(ch, true) * flow.cell.font_size)
+        } else {
+            0.0
+        };
+        if cursor > 0.0 && cursor + flow.cell.extent - hang > max_height + FIT_TOLERANCE {
             let candidate = unit_start[i];
-            let break_at = if candidate > column_start
-                && prefix[i + 1] - prefix[candidate] <= max_height + FIT_TOLERANCE
-            {
+            let end = if policy == TextLayoutPolicy::KoreanSpacesOnly {
+                i + 1
+            } else {
+                unit_end[i]
+            };
+            let fits_empty = prefix[end] - prefix[candidate] <= max_height + FIT_TOLERANCE;
+            let break_at = if candidate > column_start && fits_empty {
                 candidate
             } else {
-                atomic_start[i]
+                emergency_start[i]
             };
-            // An overlong unit may break, but a grapheme or annotation may not.
+            // Overlong words may use emergency boundaries; punctuation,
+            // graphemes, explicit no-break controls and annotations may not.
             if break_at > column_start {
                 column += 1;
                 cursor = 0.0;
@@ -339,6 +371,129 @@ pub(super) fn plan_policy_columns(
         cursor += flow.cell.extent;
     }
     placements
+}
+
+/// Source edge characters of every cell, including sideways runs. Offsets
+/// stay in UTF-16 source space; typography never inserts saved spaces.
+fn policy_cell_edges(cells: &[FlowCell], text: &str) -> Vec<(Option<char>, Option<char>)> {
+    let mut offset = 0;
+    let chars: Vec<_> = text
+        .chars()
+        .map(|ch| {
+            let at = offset;
+            offset += ch.len_utf16();
+            (at, ch)
+        })
+        .collect();
+    cells
+        .iter()
+        .map(|flow| {
+            let start = chars.partition_point(|(at, _)| *at < flow.cell.start);
+            let end = chars.partition_point(|(at, _)| *at < flow.cell.end);
+            (
+                chars.get(start).filter(|_| start < end).map(|(_, ch)| *ch),
+                end.checked_sub(1)
+                    .and_then(|at| chars.get(at))
+                    .filter(|_| start < end)
+                    .map(|(_, ch)| *ch),
+            )
+        })
+        .collect()
+}
+
+pub(super) fn apply_policy_spacing(cells: &mut [FlowCell], text: &str, policy: TextLayoutPolicy) {
+    let edges = policy_cell_edges(cells, text);
+    for i in 1..cells.len() {
+        if cells[i].keep_with_previous || cells[i].shares_previous_box {
+            continue;
+        }
+        let (Some(before), Some(after)) = (edges[i - 1].1, edges[i].0) else {
+            continue;
+        };
+        let em = cells[i - 1].cell.font_size.min(cells[i].cell.font_size);
+        let available = (cells[i - 1].cell.extent
+            - cells[i - 1].trailing_spacing
+            - 0.5 * cells[i - 1].cell.font_size)
+            .max(0.0);
+        let compression = (policy.compression_em(before, after, true) * em).min(available);
+        let gap = policy.script_spacing_em(before, after) * em;
+        cells[i - 1].cell.extent = (cells[i - 1].cell.extent + gap - compression)
+            .max(cells[i - 1].trailing_spacing.max(0.0));
+        cells[i - 1].cell.minimum_oikomi_extent = cells[i - 1].cell.extent;
+    }
+}
+
+/// Justify non-final columns over policy-approved gaps with bounded amounts.
+/// Korean word mode only expands spaces; grapheme and annotation interiors
+/// never become opportunities merely because a font/style run split them.
+pub(super) fn policy_aligned_tops(
+    cells: &[FlowCell],
+    text: &str,
+    policy: TextLayoutPolicy,
+    placements: &[(usize, f32)],
+    align: TextAlign,
+    budget: f32,
+) -> Vec<f32> {
+    let mut tops: Vec<f32> = placements.iter().map(|(_, top)| *top).collect();
+    let edges = policy_cell_edges(cells, text);
+    let graphemes: Vec<usize> = text
+        .graphemes(true)
+        .scan(0, |at, g| {
+            let start = *at;
+            *at += g.encode_utf16().count();
+            Some(start)
+        })
+        .collect();
+    let last_column = placements.last().map_or(0, |p| p.0);
+    let mut start = 0;
+    while start < cells.len() {
+        let column = placements[start].0;
+        let end = placements.partition_point(|p| p.0 <= column);
+        let used = placements[end - 1].1 + cells[end - 1].cell.extent;
+        let shift = align_offset_along_column(align, budget, used);
+        for top in &mut tops[start..end] {
+            *top += shift;
+        }
+        if align == TextAlign::Justify && column < last_column && is_bounded(budget) {
+            let mut remaining = (budget - used).max(0.0);
+            let mut extras = vec![0.0; end - start];
+            let mut opportunities = Vec::new();
+            for i in start..end - 1 {
+                if cells[i + 1].keep_with_previous
+                    || cells[i + 1].shares_previous_box
+                    || graphemes.binary_search(&cells[i + 1].cell.start).is_err()
+                {
+                    continue;
+                }
+                let (Some(before), Some(after)) = (edges[i].1, edges[i + 1].0) else {
+                    continue;
+                };
+                let (priority, cap) = policy.expansion_em(before, after);
+                let em = cells[i].cell.font_size.min(cells[i + 1].cell.font_size);
+                if priority > 0 {
+                    opportunities.push((i, priority, cap * em));
+                }
+            }
+            for priority in 1..=2 {
+                let caps: Vec<_> = opportunities
+                    .iter()
+                    .filter(|(_, p, _)| *p == priority)
+                    .map(|(i, _, cap)| (*i, *cap))
+                    .collect();
+                for (i, amount) in capped_equal_allocations(&caps, remaining) {
+                    extras[i - start] += amount;
+                    remaining -= amount;
+                }
+            }
+            let mut extra = 0.0;
+            for i in start..end {
+                tops[i] += extra;
+                extra += extras[i - start];
+            }
+        }
+        start = end;
+    }
+    tops
 }
 
 /// True when `max_height` is a real wrap budget (auto-width columns are
