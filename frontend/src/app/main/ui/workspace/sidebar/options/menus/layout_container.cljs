@@ -25,8 +25,9 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
@@ -847,10 +848,9 @@
            (if-not active?
              (st/emit! (udw/start-edition-mode id))
              (st/emit! :interrupt))))]
-    [:button
-     {:class (stl/css :edit-mode-btn)
-      :alt  "Grid edit mode"
-      :on-click toggle-edit-mode}
+    [:> button* {:variant "secondary"
+                 :class (stl/css :edit-mode-btn)
+                 :on-click toggle-edit-mode}
      (tr "workspace.layout-grid.editor.options.edit-grid")]))
 
 (mf/defc align-grid-row
@@ -990,7 +990,8 @@
      [:div {:class (stl/css :track-info-container)}
       [:div {:class (stl/css :track-info-dir-icon)
              :on-click handle-select-track}
-       (if is-column deprecated-icon/flex-vertical deprecated-icon/flex-horizontal)]
+       [:> icon* {:icon-id (if is-column i/flex-vertical i/flex-horizontal)
+                  :class (stl/css :track-info-dir)}]]
 
       [:div {:class (stl/css :track-info-value)}
        [:> deprecated-input/numeric-input* {:no-validate true
@@ -1038,11 +1039,13 @@
 
     [:div {:class (stl/css :grid-tracks) :data-testid testid}
      [:div {:class (stl/css :grid-track-header)}
-      [:button {:class (stl/css :expand-icon) :on-click toggle} deprecated-icon/menu]
+      [:button {:class (stl/css :expand-icon) :on-click toggle}
+       [:> icon* {:icon-id i/menu :class (stl/css :expand-icon-svg)}]]
       [:div {:class (stl/css :track-title) :on-click toggle}
        [:div {:class (stl/css :track-name) :title track-name} track-name]
        [:div {:class (stl/css :track-detail) :title track-detail} track-detail]]
-      [:button {:class (stl/css :add-column) :on-click add-track} deprecated-icon/add]]
+      [:button {:class (stl/css :add-column) :on-click add-track}
+       [:> icon* {:icon-id i/add :size "s" :class (stl/css :add-column-svg)}]]]
 
      (when expanded?
        [:> h/sortable-container* {}
@@ -1570,8 +1573,9 @@
                         :aria-label (tr "labels.help-center")
                         :on-click open-grid-help
                         :icon i/help}]
-      [:button {:class (stl/css :exit-btn)
-                :on-click #(st/emit! (udw/clear-edition-mode))}
+      [:> button* {:variant "secondary"
+                   :class (stl/css :exit-btn)
+                   :on-click #(st/emit! (udw/clear-edition-mode))}
        (tr "workspace.layout-grid.editor.options.exit")]]
 
      [:div {:class (stl/css :row :first-row)}
