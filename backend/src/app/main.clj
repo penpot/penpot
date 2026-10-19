@@ -517,6 +517,8 @@
      :audit-log-archive  (ig/ref :app.loggers.audit.archive-task/handler)
      :audit-log-gc       (ig/ref :app.loggers.audit.gc-task/handler)
 
+     :compact-file-snapshot
+     (ig/ref :app.tasks.compact-file-snapshot/handler)
      :delete-object
      (ig/ref :app.tasks.delete-object/handler)
      :demo-purge
@@ -567,6 +569,10 @@
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.offload-file-data/handler
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.tasks.compact-file-snapshot/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
 
