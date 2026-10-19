@@ -28,7 +28,7 @@
    [cuerdas.core :as str]
    [tokenscript.core :as tsc]
    [tokenscript.errors :as tse]
-   [tokenscript.processor :as processor]
+   [tokenscript.processor :as tsp]
    [tokenscript.symbols :as sym]))
 
 ;; Value conversion -----------------------------------------------------------
@@ -296,47 +296,36 @@
                       value)}
       (some? type) (assoc :type (get cto/token-type->dtcg-token-type type (name type))))))
 
-(defn- output-token
-  "`token` with `:resolved-value` and `:resolved-symbol`, or `:errors`,
-  from the interpreter `result`."
-  [name token {:keys [tokens issues]}]
-  (let [errors (token-errors (get issues name) token)
-        {:keys [value error]} (when-not errors (convert-token-value token (get tokens name)))
-        error (or error (when-not errors (validate-value token value)))]
-    (cond
-      errors (assoc token :errors (vec errors))
-      error (assoc token :errors [error])
-      :else (assoc token
-                   :resolved-value value
-                   :resolved-symbol (get tokens name)))))
+(defn- write-token
+  "Token writer for the interpreter: `token` with `:resolved-value` and
+  `:resolved-symbol`, or `:errors`, from its resolved symbol `s` and its
+  `issues`. The interpreter keeps these in `:output` and runs the writer
+  only for the tokens an operation changed."
+  [token s issues]
+  (if-let [errors (token-errors issues token)]
+    (assoc token :errors (vec errors))
+    (let [{:keys [value error]} (convert-token-value token s)]
+      (if-let [error (or error (validate-value token value))]
+        (assoc token :errors [error])
+        (assoc token
+               :resolved-value value
+               :resolved-symbol s)))))
 
 (defn- resolve-sets*
-  "Resolves `sets` starting from `base`, the previous resolution (nil for
+  "Resolves `sets` starting from `prev`, the previous resolution (nil for
   the first). The sets go to the interpreter as they are, with
-  `read-token` as the reader; it merges them, and from `base` it looks
-  only into the sets that are not the same objects and re-resolves only
-  what changed. The output is the one of `base` with the names the
-  interpreter reports as `:changed` converted again."
-  [sets base]
+  `read-token` and `write-token`; it merges them, and from `prev` it
+  looks only into the sets that are not the same objects, re-resolves
+  only what changed and writes only those tokens into its `:output`."
+  [sets prev]
   (let [tpoint (ct/tpoint-ms)
-        result (if base
-                 (processor/set-sets (:state base) sets)
-                 (tsc/build sets {:token-reader read-token}))
-        resolved (:resolved result)
-        names (if base (:changed result) (keys resolved))
-        output (if (empty? names)
-                 (or (:output base) {})
-                 (persistent!
-                  (reduce (fn [acc name]
-                            (if (contains? resolved name)
-                              (assoc! acc name (output-token name (processor/input result name) result))
-                              (dissoc! acc name)))
-                          (transient (or (:output base) {}))
-                          names)))]
-    (l/dbg :hint "tokenscript/resolve-sets" :elapsed (tpoint) :changed (count names))
+        result (if prev
+                 (tsp/set-sets (:state prev) sets)
+                 (tsc/build sets {:token-reader read-token :token-writer write-token}))]
+    (l/dbg :hint "tokenscript/resolve-sets" :elapsed (tpoint) :changed (count (:changed result)))
     {:sets sets
      :state (:state result)
-     :output output}))
+     :output (:output result)}))
 
 ;; Several components resolve the same sets on every change (the sidebar,
 ;; the forms and the propagation each compute the active tokens
