@@ -321,8 +321,7 @@
                                  (reset! hint* {:message error' :type "error"}))))
 
                            :else
-                           (let [value (font-family->display value)
-                                 message (tr "workspace.tokens.resolved-value" value)
+                           (let [message (tr "workspace.tokens.resolved-value" (font-family->display value))
                                  input-value (get-in @form [:data :value input-name] "")]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
