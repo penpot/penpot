@@ -373,15 +373,15 @@
     ::mdef/help "Total number of requests whose body the parser could not read."
     ::mdef/type :counter}
 
-   :audit-archive-events
-   {::mdef/name "penpot_audit_archive_events_total"
-    ::mdef/help "Audit log events sent by the archive task, by destination and outcome."
+   :audit-consumer-events
+   {::mdef/name "penpot_audit_consumer_events_total"
+    ::mdef/help "Audit log events drained by the consumer task, by destination and outcome."
     ::mdef/labels ["destination" "outcome"]
     ::mdef/type :counter}
 
-   :audit-archive-discarded
-   {::mdef/name "penpot_audit_archive_discarded_total"
-    ::mdef/help "Audit log entries discarded without archiving, by reason."
+   :audit-consumer-discarded
+   {::mdef/name "penpot_audit_consumer_discarded_total"
+    ::mdef/help "Audit log entries discarded without being archived, by reason."
     ::mdef/labels ["reason"]
     ::mdef/type :counter}
 
@@ -593,7 +593,7 @@
 
    :app.nitrate/client
    {::http.client/client (ig/ref ::http.client/client)
-    ;; No ::jobs/defs: nitrate never submits jobs, and archive-task's
+    ;; No ::jobs/defs: nitrate never submits jobs, and consumer-task's
     ;; job-def needs this client — that would cycle through jobs/defs.
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
 
@@ -639,8 +639,8 @@
     :telemetry                      (ig/ref :app.tasks.telemetry/job-def)
     :session-gc                     (ig/ref ::session/job-def)
     :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
-    :audit-log-archive-nexus        (ig/ref :app.loggers.audit.archive-task/nexus-job-def)
-    :audit-log-archive-admin-console (ig/ref :app.loggers.audit.archive-task/admin-console-job-def)}
+    :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumer-task/nexus-job-def)
+    :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumer-task/admin-console-job-def)}
 
    ::jobs/request-pool
    {::rds/client  (ig/ref ::rds/client)
@@ -729,13 +729,13 @@
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.archive-task/nexus-job-def
+   :app.loggers.audit.consumer-task/nexus-job-def
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.archive-task/admin-console-job-def
+   :app.loggers.audit.consumer-task/admin-console-job-def
    {::db/pool            (ig/ref ::db/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
@@ -861,11 +861,11 @@
 
      (when (contains? cf/flags :nexus)
        {:cron #penpot/cron "0 */5 * * * ?" ;; every 5m
-        :job :audit-log-archive-nexus})
+        :job :audit-log-consumer-nexus})
 
      (when (contains? cf/flags :admin-console)
        {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m, offset 30s from nexus
-        :job :audit-log-archive-admin-console})]}
+        :job :audit-log-consumer-admin-console})]}
 
    ::wrk/dispatcher
    {::rds/client  (ig/ref ::rds/client)

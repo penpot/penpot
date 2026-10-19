@@ -233,8 +233,8 @@
   so that the buffer stays bounded."
   [{:keys [::db/conn]}]
   ;; One transaction for both deletes: a crash between them would
-  ;; leave pending-less rows for the archive sweep to delete unsent.
-  ;; Pendings first: the queue holds a row per archiver for every
+  ;; leave pending-less rows for the consumer sweep to delete unsent.
+  ;; Pendings first: the queue holds a row per consumer for every
   ;; record, and the FK would reject deleting a row that still has
   ;; pendings.
   (db/tx-run! conn
@@ -289,7 +289,7 @@
 (defn- delete-sent-events
   "Delete rows by their ids after a successful send. One transaction
   for both deletes: a crash between them would leave pending-less
-  rows for the archive sweep to delete unsent."
+  rows for the consumer sweep to delete unsent."
   [conn ids]
   (db/tx-run! conn
               (fn [tx]

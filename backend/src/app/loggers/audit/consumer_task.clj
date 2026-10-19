@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.loggers.audit.archive-task
+(ns app.loggers.audit.consumer-task
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -27,59 +27,59 @@
 ;; This task drains the audit log buffer into the long-term archives.
 ;;
 ;; Two separate jobs share this namespace and the queue helpers, one
-;; per destination: `:audit-log-archive-nexus` and
-;; `:audit-log-archive-admin-console`. Each job drains only its own queue
+;; per destination: `:audit-log-consumer-nexus` and
+;; `:audit-log-consumer-admin-console`. Each job drains only its own queue
 ;; and deletes its pendings on completion; whoever deletes the last
 ;; pending also deletes the record ("last one out turns off the
 ;; light"), so no separate GC task is needed. Housekeeping (reaping
 ;; disabled pendings, sweeping orphans) lives in both jobs on purpose:
 ;; only the enabled job runs, so it must clean up for the rest.
 
-;; Archiver ids are fixed constants, never reuse one: retired
+;; Consumer ids are fixed constants, never reuse one: retired
 ;; pendings are reaped by id, so a reused id would inherit the
 ;; previous owner's queue.
-(def archiver-nexus 1)
-(def archiver-admin-console 2)
+(def consumer-nexus 1)
+(def consumer-admin-console 2)
 
-(def ^:private archivers
-  [{:id archiver-nexus          :flag :nexus         :label "nexus"}
-   {:id archiver-admin-console :flag :admin-console :label "admin-console"}])
+(def ^:private consumers
+  [{:id consumer-nexus          :flag :nexus         :label "nexus"}
+   {:id consumer-admin-console :flag :admin-console :label "admin-console"}])
 
-(def ^:private xf:enabled-archivers
-  "Static transducer: keep the archivers whose send flag is on.
+(def ^:private xf:enabled-consumers
+  "Static transducer: keep the consumers whose send flag is on.
   Allocated once so hot paths (every audited RPC) do not rebuild
   it per call; the flag lookup itself still reads the live flags."
   (comp (filter #(contains? cf/flags (:flag %)))
         (map :id)))
 
-(defn enabled-archivers
-  "Archivers allowed to work right now, from the send flags. Public:
-  producers queue every record for exactly these archivers."
+(defn enabled-consumers
+  "Consumers allowed to work right now, from the send flags. Public:
+  producers queue every record for exactly these consumers."
   []
-  (into [] xf:enabled-archivers archivers))
+  (into [] xf:enabled-consumers consumers))
 
 (defn queue-pendings
-  "Queue records for every enabled archiver, nothing when there is
-  nothing to queue or no archiver is on. One multi-row statement for
-  all ids instead of one per archiver: this runs inside every audited
+  "Queue records for every enabled consumer, nothing when there is
+  nothing to queue or no consumer is on. One multi-row statement for
+  all ids instead of one per consumer: this runs inside every audited
   RPC and the bulk frontend ingest. Runs inside the row transaction:
   a rollback takes both."
   [cfg ids]
-  (let [archivers (enabled-archivers)]
-    (when (and (seq ids) (seq archivers))
+  (let [consumers (enabled-consumers)]
+    (when (and (seq ids) (seq consumers))
       (db/insert-many! cfg :audit-log-pending
-                       [:audit-log-id :archiver]
+                       [:audit-log-id :consumer]
                        (for [id ids
-                             archiver archivers]
-                         [id archiver])
+                             consumer consumers]
+                         [id consumer])
                        {::sql/on-conflict-do-nothing true}))))
 
-(def ^:private archiver-labels
-  (into {} (map (juxt :id :label)) archivers))
+(def ^:private consumer-labels
+  (into {} (map (juxt :id :label)) consumers))
 
-(defn- archiver-label
-  [archiver]
-  (get archiver-labels archiver))
+(defn- consumer-label
+  [consumer]
+  (get consumer-labels consumer))
 
 (defn- decode-row
   [{:keys [props ip-addr context] :as row}]
@@ -122,7 +122,7 @@
 
 ;; NOTE: deliberately no SKIP LOCKED here. Batches must reach the
 ;; destinations in chronological order (Nexus numbers by arrival),
-;; so every archiver takes the same total order and a second
+;; so every consumer takes the same total order and a second
 ;; overlapping run waits for the first to commit, then sees whether
 ;; it was last. The brief blocking is accepted; skipping rows could
 ;; reorder archive arrival.
@@ -130,14 +130,14 @@
   "SELECT a.*
      FROM audit_log_pending p
      JOIN audit_log a ON a.id = p.audit_log_id
-    WHERE p.archiver = ?::smallint
+    WHERE p.consumer = ?::smallint
     ORDER BY a.created_at ASC, a.id ASC
     LIMIT 128
       FOR UPDATE OF a")
 
 (def ^:private sql:delete-pendings
   "DELETE FROM audit_log_pending
-    WHERE archiver = ?::smallint
+    WHERE consumer = ?::smallint
       AND audit_log_id = ANY(?)")
 
 (def ^:private sql:delete-drained
@@ -149,8 +149,8 @@
       )")
 
 (defn- get-pending-rows
-  [{:keys [::db/conn] :as cfg} archiver]
-  (->> (db/exec! conn [sql:pending-chunk archiver])
+  [{:keys [::db/conn] :as cfg} consumer]
+  (->> (db/exec! conn [sql:pending-chunk consumer])
        (not-empty)))
 
 (defn- complete-batch
@@ -158,9 +158,9 @@
   waiting for anymore. Two statements on purpose: inside a single
   statement the NOT EXISTS would still see the pending just deleted
   and never delete a record."
-  [{:keys [::db/conn]} archiver rows]
+  [{:keys [::db/conn]} consumer rows]
   (let [ids (db/create-array conn "uuid" (map :id rows))]
-    (db/exec! conn [sql:delete-pendings archiver ids])
+    (db/exec! conn [sql:delete-pendings consumer ids])
     (db/exec! conn [sql:delete-drained ids])))
 
 (defn- send-to-nexus
@@ -190,7 +190,7 @@
     (if (= (:status resp) 204)
       n
       (throw (ex/raise :type :internal
-                       :code :archive-chunk-refused
+                       :code :consumer-chunk-refused
                        :hint "nexus refused archive chunk"
                        :resp-status (:status resp)
                        :resp-body (truncate-body (:body resp) 500)
@@ -338,8 +338,8 @@
         total    (count rows)
         skipped  (- total (count events))
         uri-host (some-> (cf/get :admin-console-uri) u/uri u/get-domain)]
-    (l/dbg :hint "archive events chunk ready"
-           :archiver "admin-console"
+    (l/dbg :hint "consumer events chunk ready"
+           :consumer "admin-console"
            :uri-host uri-host
            :total total
            :skipped skipped)
@@ -352,15 +352,15 @@
             n        (count events)]
         (try
           (nitrate/call cfg :ingest-audit-log {:events enriched})
-          (l/dbg :hint "archive events chunk sent"
-                 :archiver "admin-console"
+          (l/dbg :hint "consumer events chunk sent"
+                 :consumer "admin-console"
                  :uri-host uri-host
                  :sent n
                  :skipped skipped)
           {:sent n :skipped skipped}
           (catch Throwable cause
-            (l/dbg :hint "archive events chunk failed"
-                   :archiver "admin-console"
+            (l/dbg :hint "consumer events chunk failed"
+                   :consumer "admin-console"
                    :uri-host uri-host
                    :events n
                    :code :admin-console-send-failed)
@@ -370,7 +370,7 @@
                              :cause cause
                              :events n))))))))
 
-(defn- archive-nexus-chunk
+(defn- consumer-nexus-chunk
   "Send one pending chunk to Nexus and complete it. Returns {:sent n}
   or nil when the queue is empty; throws on refusal. Takes a
   transactional cfg: the caller opens one transaction per chunk. No
@@ -378,40 +378,40 @@
   the caller records the success."
   [cfg]
   (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
-  (when-let [rows (get-pending-rows cfg archiver-nexus)]
+  (when-let [rows (get-pending-rows cfg consumer-nexus)]
     (let [events (mapv row->event (mapv decode-row rows))
           ;; send-to-nexus returns the count or throws: a refusal
           ;; aborts the job, the rows stay for the next tick.
           n      (send-to-nexus cfg events)]
 
-      (l/trc :hint "archive events chunk"
-             :archiver "nexus"
+      (l/trc :hint "consumer events chunk"
+             :consumer "nexus"
              :events n)
 
-      (complete-batch cfg archiver-nexus rows)
+      (complete-batch cfg consumer-nexus rows)
       {:sent n})))
 
-(defn- archive-admin-console-chunk
+(defn- consumer-admin-console-chunk
   "Send one pending chunk to the admin console and complete it. Returns
   {:sent :skipped} or nil when the queue is empty; throws on failure.
   Takes a transactional cfg, no metrics here: same contract as
-  archive-nexus-chunk."
+  consumer-nexus-chunk."
   [cfg]
   (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
-  (when-let [rows (get-pending-rows cfg archiver-admin-console)]
+  (when-let [rows (get-pending-rows cfg consumer-admin-console)]
     (let [decoded     (mapv decode-row rows)
-          _           (l/trc :hint "archive events chunk"
-                             :archiver "admin-console"
+          _           (l/trc :hint "consumer events chunk"
+                             :consumer "admin-console"
                              :events (count decoded))
           admin-console-res (send-to-admin-console cfg decoded)]
       ;; Filtered-out rows count as processed for the
       ;; admin-console queue: their pending is done, the
-      ;; record stays until every archiver is done.
-      (complete-batch cfg archiver-admin-console rows)
+      ;; record stays until every consumer is done.
+      (complete-batch cfg consumer-admin-console rows)
       admin-console-res)))
 
-(defn- drain-archiver
-  "Drain one archiver queue chunk by chunk, one transaction per chunk.
+(defn- drain-consumer
+  "Drain one consumer queue chunk by chunk, one transaction per chunk.
   Returns totals; a chunk the destination refuses (or that throws)
   aborts the drain with a throw, and the committed chunks so far
   stay sent."
@@ -431,11 +431,11 @@
       {:sent sent :skipped skipped :chunks chunks})))
 
 (defn- sql:reap-pendings
-  [archiver]
+  [consumer]
   (str "DELETE FROM audit_log_pending"
-       " WHERE archiver = " archiver
+       " WHERE consumer = " consumer
        "   AND audit_log_id IN (SELECT audit_log_id FROM audit_log_pending"
-       " WHERE archiver = " archiver
+       " WHERE consumer = " consumer
        " ORDER BY audit_log_id LIMIT 5000)"))
 
 (def ^:private sql:sweep-orphans
@@ -457,35 +457,35 @@
         total))))
 
 (defn- reap-disabled
-  "Drop the pendings of archivers that are off: a disabled destination
+  "Drop the pendings of consumers that are off: a disabled destination
   will never drain them, and without this they would pin their records
   forever. This also absorbs any later deactivation, with no manual step.
   Dropped pendings count as discarded: their rows may still be archived
-  by an enabled archiver, or swept unsent when nothing waits for them."
+  by an enabled consumer, or swept unsent when nothing waits for them."
   [cfg]
-  (let [total (->> archivers
+  (let [total (->> consumers
                    (remove #(contains? cf/flags (:flag %)))
                    (map #(delete-batched cfg (sql:reap-pendings (:id %))))
                    (reduce + 0))]
     (when (pos? total)
-      (record-count (mtx/instance cfg) :audit-archive-discarded ["reaped"] total))
+      (record-count (mtx/instance cfg) :audit-consumer-discarded ["reaped"] total))
     total))
 
 (defn- sweep-orphans
   "Delete records nobody waits for anymore: rows born while no
-  archiver was on, rows left pending-less by the reap, and leftovers
+  consumer was on, rows left pending-less by the reap, and leftovers
   archived by the old task. Batched and normally a no-op. Deleted rows
   count as discarded: on a live system they were never archived."
   [cfg]
   (let [total (delete-batched cfg sql:sweep-orphans)]
     (when (pos? total)
-      (record-count (mtx/instance cfg) :audit-archive-discarded ["swept"] total))
+      (record-count (mtx/instance cfg) :audit-consumer-discarded ["swept"] total))
     total))
 
-(declare execute-audit-log-archive-nexus)
-(declare execute-audit-log-archive-admin-console)
+(declare execute-audit-log-consumer-nexus)
+(declare execute-audit-log-consumer-admin-console)
 
-(def schema:audit-log-archive-nexus-params
+(def schema:audit-log-consumer-nexus-params
   "Overrides for the nexus job repl invocation defaults.
   Cron submits {}; system deps (pool, shared-keys, http) live on the
   job-def cfg closed over by the handler, not in job params.
@@ -494,7 +494,7 @@
   [:map {:closed true}
    [:uri {:optional true} ::sm/uri]])
 
-(def schema:audit-log-archive-admin-console-params
+(def schema:audit-log-consumer-admin-console-params
   "Params of the admin-console job: none. Cron submits {}; system deps
   (pool, admin-console client) live on the job-def cfg closed over by
   the handler, not in job params. Closed on purpose, same as the nexus
@@ -511,16 +511,16 @@
   [_ cfg]
   ;; Effective destination, once at boot: per-run logs carry counts,
   ;; the runner says the job started, this says where it sends.
-  (l/dbg :hint "audit log archive job initialized"
-         :archiver "nexus"
+  (l/dbg :hint "audit log consumer job initialized"
+         :consumer "nexus"
          :uri-host (some-> (cf/get :audit-log-archive-uri) u/uri u/get-domain))
-  {::jobs/name      :audit-log-archive-nexus
-   ::jobs/schema    schema:audit-log-archive-nexus-params
+  {::jobs/name      :audit-log-consumer-nexus
+   ::jobs/schema    schema:audit-log-consumer-nexus-params
    ::jobs/handler
    (fn [_context params]
-     (execute-audit-log-archive-nexus cfg params))
-   ::jobs/decoder   (sm/decoder schema:audit-log-archive-nexus-params sm/json-transformer)
-   ::jobs/validator (sm/validator schema:audit-log-archive-nexus-params)})
+     (execute-audit-log-consumer-nexus cfg params))
+   ::jobs/decoder   (sm/decoder schema:audit-log-consumer-nexus-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-consumer-nexus-params)})
 
 (defmethod ig/assert-key ::admin-console-job-def
   [_ cfg]
@@ -534,28 +534,28 @@
   ;; Same as the nexus job-def: destination host once at boot. The
   ;; ingest uri is resolved by nitrate/call at send time (it raises
   ;; when missing); here it is display-only.
-  (l/dbg :hint "audit log archive job initialized"
-         :archiver "admin-console"
+  (l/dbg :hint "audit log consumer job initialized"
+         :consumer "admin-console"
          :uri-host (some-> (cf/get :admin-console-uri) u/uri u/get-domain))
-  {::jobs/name      :audit-log-archive-admin-console
-   ::jobs/schema    schema:audit-log-archive-admin-console-params
+  {::jobs/name      :audit-log-consumer-admin-console
+   ::jobs/schema    schema:audit-log-consumer-admin-console-params
    ::jobs/handler
    (fn [_context params]
-     (execute-audit-log-archive-admin-console cfg params))
-   ::jobs/decoder   (sm/decoder schema:audit-log-archive-admin-console-params sm/json-transformer)
-   ::jobs/validator (sm/validator schema:audit-log-archive-admin-console-params)})
+     (execute-audit-log-consumer-admin-console cfg params))
+   ::jobs/decoder   (sm/decoder schema:audit-log-consumer-admin-console-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-consumer-admin-console-params)})
 
-(defn- run-single-archiver
-  "Drain one archiver queue, then housekeeping (reap disabled
+(defn- run-single-consumer
+  "Drain one consumer queue, then housekeeping (reap disabled
   pendings, sweep orphans) and the per-run summary. Housekeeping lives
   in both jobs: only the enabled job runs, so it must reap the queues
-  of the archivers that are off; both halves are idempotent deletes.
+  of the consumers that are off; both halves are idempotent deletes.
   A refused chunk (or a throw) aborts the job: the committed chunks
   stay sent, the rest waits for the next tick, and the cron retries.
   Every effect is rows and logs (drain metrics land here, outside
   every chunk transaction)."
-  [cfg archiver send-chunk tpoint]
-  (let [label   (archiver-label archiver)
+  [cfg consumer send-chunk tpoint]
+  (let [label   (consumer-label consumer)
         metrics (mtx/instance cfg)
         reaped  (reap-disabled cfg)
         ;; All drain metrics land here, outside every chunk
@@ -567,17 +567,17 @@
         ;; uncounted. The throw keeps rolling: a failed chunk aborts
         ;; the job, the cron retries.
         drained (try
-                  (drain-archiver cfg send-chunk)
+                  (drain-consumer cfg send-chunk)
                   (catch Throwable cause
                     (let [n (:events (ex-data cause))]
                       (when (and (integer? n) (pos? n))
-                        (record-count metrics :audit-archive-events [label "failed"] n)))
+                        (record-count metrics :audit-consumer-events [label "failed"] n)))
                     (throw cause)))
         _       (let [{:keys [sent skipped]} drained]
                   (when (pos? sent)
-                    (record-count metrics :audit-archive-events [label "archived"] sent))
+                    (record-count metrics :audit-consumer-events [label "archived"] sent))
                   (when (pos? skipped)
-                    (record-count metrics :audit-archive-events [label "skipped"] skipped)))
+                    (record-count metrics :audit-consumer-events [label "skipped"] skipped)))
         swept   (sweep-orphans cfg)
         sent    (:sent drained)
         skipped (:skipped drained)
@@ -590,9 +590,9 @@
              (zero? reaped)
              (zero? swept))
       (l/dbg :hint "no pending audit events"
-             :archiver label)
+             :consumer label)
       (l/dbg :hint "events archived"
-             :archiver label
+             :consumer label
              :elapsed elapsed
              :sent sent
              :skipped skipped
@@ -600,14 +600,14 @@
              :reaped reaped
              :swept swept))))
 
-(defn execute-audit-log-archive-nexus
+(defn execute-audit-log-consumer-nexus
   "Nexus job handler: drain the nexus queue in chunks, then clean up
   (heartbeat per iteration: the sent chunk batches can be long)."
   [cfg params]
   ;; NOTE: this let allows overwrite default configured values from
   ;; the repl, when manually invoking the task.
   (if-not (contains? cf/flags :nexus)
-    (l/dbg :hint "audit log archive (nexus) skipped, flag off")
+    (l/dbg :hint "audit log consumer (nexus) skipped, flag off")
     (let [uri (cf/get :audit-log-archive-uri)
           uri (or uri (:uri params))
           ;; Normalize to an uri object; params may carry a plain string
@@ -617,14 +617,14 @@
       (when-not uri
         (ex/raise :type :internal
                   :code :task-not-configured
-                  :hint "archive task not configured, missing uri"))
-      (run-single-archiver cfg archiver-nexus archive-nexus-chunk (ct/tpoint)))))
+                  :hint "consumer task not configured, missing uri"))
+      (run-single-consumer cfg consumer-nexus consumer-nexus-chunk (ct/tpoint)))))
 
-(defn execute-audit-log-archive-admin-console
+(defn execute-audit-log-consumer-admin-console
   "Admin-console job handler: drain the admin-console queue in chunks,
   then clean up (heartbeat per iteration: the sent chunk batches can
   be long)."
   [cfg _params]
   (if-not (contains? cf/flags :admin-console)
-    (l/dbg :hint "audit log archive (admin-console) skipped, flag off")
-    (run-single-archiver cfg archiver-admin-console archive-admin-console-chunk (ct/tpoint))))
+    (l/dbg :hint "audit log consumer (admin-console) skipped, flag off")
+    (run-single-consumer cfg consumer-admin-console consumer-admin-console-chunk (ct/tpoint))))

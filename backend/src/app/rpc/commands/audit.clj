@@ -16,7 +16,7 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.archive-task :as archive]
+   [app.loggers.audit.consumer-task :as consumer]
    [app.loggers.database :as loggers.db]
    [app.loggers.mattermost :as loggers.mm]
    [app.metrics :as mtx]
@@ -127,8 +127,8 @@
   (when (seq rows)
     (db/insert-many! tx :audit-log event-columns rows)
     ;; Same transaction as the rows: every ingested record is born
-    ;; pending for every enabled archiver (see archive-task).
-    (archive/queue-pendings tx (map first rows))))
+    ;; pending for every enabled consumer (see consumer-task).
+    (consumer/queue-pendings tx (map first rows))))
 
 (defn- handle-events
   [{:keys [::db/pool] :as cfg} params]
