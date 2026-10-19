@@ -371,6 +371,24 @@
    :http-malformed-requests-total
    {::mdef/name "penpot_http_malformed_requests_total"
     ::mdef/help "Total number of requests whose body the parser could not read."
+    ::mdef/type :counter}
+
+   :audit-archive-events
+   {::mdef/name "penpot_audit_archive_events_total"
+    ::mdef/help "Audit log events sent by the archive task, by destination and outcome."
+    ::mdef/labels ["destination" "outcome"]
+    ::mdef/type :counter}
+
+   :audit-archive-discarded
+   {::mdef/name "penpot_audit_archive_discarded_total"
+    ::mdef/help "Audit log entries discarded without archiving, by reason."
+    ::mdef/labels ["reason"]
+    ::mdef/type :counter}
+
+   :audit-ingest-events
+   {::mdef/name "penpot_audit_ingest_events_total"
+    ::mdef/help "Audit log frontend events ingested, by kind and outcome."
+    ::mdef/labels ["kind" "outcome"]
     ::mdef/type :counter}})
 
 (def system-config
@@ -604,25 +622,25 @@
     ::setup/shared-keys      (ig/ref ::setup/shared-keys)}
 
    ::jobs/defs
-   {:sendmail              (ig/ref ::email/job-def)
-    :delete-object         (ig/ref :app.tasks.delete-object/job-def)
-    :demo-purge            (ig/ref :app.tasks.demo-purge/job-def)
-    :run-webhook           (ig/ref ::webhooks/run-webhook-job-def)
-    :process-webhook-event (ig/ref ::webhooks/process-webhook-event-job-def)
-    :file-gc               (ig/ref :app.tasks.file-gc/job-def)
-    :offload-file-data     (ig/ref :app.tasks.offload-file-data/job-def)
-    :objects-gc            (ig/ref :app.tasks.objects-gc/job-def)
-    :export-binfile        (ig/ref :app.tasks.export-binfile/job-def)
-    :import-binfile        (ig/ref :app.tasks.import-binfile/job-def)
-    :storage-gc-deleted    (ig/ref ::sto.gc-deleted/job-def)
-    :storage-gc-touched    (ig/ref ::sto.gc-touched/job-def)
-    :storage-pending-gc    (ig/ref ::sto.pending-gc/job-def)
-    :jobs-gc               (ig/ref :app.jobs.gc/job-def)
-    :telemetry             (ig/ref :app.tasks.telemetry/job-def)
-    :session-gc            (ig/ref ::session/job-def)
-    :file-gc-scheduler     (ig/ref :app.tasks.file-gc-scheduler/job-def)
-    :audit-log-archive     (ig/ref :app.loggers.audit.archive-task/job-def)
-    :audit-log-gc          (ig/ref :app.loggers.audit.gc-task/job-def)}
+   {:sendmail                       (ig/ref ::email/job-def)
+    :delete-object                  (ig/ref :app.tasks.delete-object/job-def)
+    :demo-purge                     (ig/ref :app.tasks.demo-purge/job-def)
+    :run-webhook                    (ig/ref ::webhooks/run-webhook-job-def)
+    :process-webhook-event          (ig/ref ::webhooks/process-webhook-event-job-def)
+    :file-gc                        (ig/ref :app.tasks.file-gc/job-def)
+    :offload-file-data              (ig/ref :app.tasks.offload-file-data/job-def)
+    :objects-gc                     (ig/ref :app.tasks.objects-gc/job-def)
+    :export-binfile                 (ig/ref :app.tasks.export-binfile/job-def)
+    :import-binfile                 (ig/ref :app.tasks.import-binfile/job-def)
+    :storage-gc-deleted             (ig/ref ::sto.gc-deleted/job-def)
+    :storage-gc-touched             (ig/ref ::sto.gc-touched/job-def)
+    :storage-pending-gc             (ig/ref ::sto.pending-gc/job-def)
+    :jobs-gc                        (ig/ref :app.jobs.gc/job-def)
+    :telemetry                      (ig/ref :app.tasks.telemetry/job-def)
+    :session-gc                     (ig/ref ::session/job-def)
+    :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
+    :audit-log-archive-nexus        (ig/ref :app.loggers.audit.archive-task/nexus-job-def)
+    :audit-log-archive-admin-console (ig/ref :app.loggers.audit.archive-task/admin-console-job-def)}
 
    ::jobs/request-pool
    {::rds/client  (ig/ref ::rds/client)
@@ -711,16 +729,16 @@
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.archive-task/job-def
+   :app.loggers.audit.archive-task/nexus-job-def
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)
-    :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.gc-task/job-def
-   {::db/pool     (ig/ref ::db/pool)
-    ::mtx/metrics (ig/ref ::mtx/metrics)}
+   :app.loggers.audit.archive-task/admin-console-job-def
+   {::db/pool            (ig/ref ::db/pool)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
    ::email/blacklist
    {}
@@ -841,15 +859,13 @@
      {:cron #penpot/cron "0 30 */3,23 * * ?"
       :job :telemetry}
 
-     (when (or (contains? cf/flags :nexus)
-               (contains? cf/flags :admin-console))
+     (when (contains? cf/flags :nexus)
        {:cron #penpot/cron "0 */5 * * * ?" ;; every 5m
-        :job :audit-log-archive})
+        :job :audit-log-archive-nexus})
 
-     (when (or (contains? cf/flags :nexus)
-               (contains? cf/flags :admin-console))
-       {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m
-        :job :audit-log-gc})]}
+     (when (contains? cf/flags :admin-console)
+       {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m, offset 30s from nexus
+        :job :audit-log-archive-admin-console})]}
 
    ::wrk/dispatcher
    {::rds/client  (ig/ref ::rds/client)

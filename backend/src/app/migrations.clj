@@ -529,7 +529,10 @@
     :fn (mg/resource "app/migrations/sql/0155-add-idx-to-file-change.sql")}
 
    {:name "0156-reset-pg-storage-defaults"
-    :fn (mg/resource "app/migrations/sql/0156-reset-pg-storage-defaults.sql")}])
+    :fn (mg/resource "app/migrations/sql/0156-reset-pg-storage-defaults.sql")}
+
+   {:name "0157-add-audit-log-pending-table"
+    :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
