@@ -251,25 +251,39 @@
                 "The parent must use the updated bounds of both children")
           (assert-idempotent data changes))))))
 
-(t/deftest set-japanese-layout-file-option
-  (let [file-id  (uuid/custom 2 2)
-        page-id  (uuid/custom 1 1)
-        data     (make-file-data file-id page-id)
-        enabled  (ch/process-changes data [{:type :set-japanese-layout
-                                            :enabled true}])
-        disabled (ch/process-changes enabled [{:type :set-japanese-layout
-                                               :enabled false}])
-        changes  (-> (pcb/empty-changes)
-                     (pcb/with-file-data data)
-                     (pcb/set-japanese-layout true))]
-    (t/is (false? (ctf/japanese-layout-enabled? data)))
-    (t/is (true? (ctf/japanese-layout-enabled? enabled)))
-    (t/is (false? (ctf/japanese-layout-enabled? disabled)))
-    (t/is (not (contains? (:options disabled) :japanese-layout)))
-    (t/is (= [{:type :set-japanese-layout :enabled true}]
-             (:redo-changes changes)))
-    (t/is (= '({:type :set-japanese-layout :enabled false})
-             (:undo-changes changes)))))
+(t/deftest language-layout-changes-are-independent
+  (let [data (assoc (make-file-data (uuid/custom 2 2) (uuid/custom 1 1))
+                    :options {:japanese-layout true :base-font-size "16"})]
+    (doseq [language [:japanese :chinese :korean]]
+      (let [change {:type :set-text-layout :language language :enabled true}
+            enabled (ch/process-changes data [change])
+            disabled (ch/process-changes enabled [(assoc change :enabled false)])
+            option (case language
+                     :japanese :japanese-layout
+                     :chinese :chinese-layout
+                     :korean :korean-layout)]
+        (t/is (ch/valid-change? change))
+        (t/is (true? (get-in enabled [:options option])))
+        (t/is (not (contains? (:options disabled) option)))
+        (t/is (= (dissoc (:options data) option) (:options disabled)))
+        (t/is (= (dissoc data :options) (dissoc enabled :options))))))
+  (t/is (not (ch/valid-change? {:type :set-text-layout :language :english
+                                :enabled true}))))
+
+(t/deftest language-layout-switches-round-trip-through-undo
+  (let [data (assoc (make-file-data (uuid/custom 2 2) (uuid/custom 1 1))
+                    :options {:japanese-layout true :base-font-size "16"})]
+    (doseq [language [:japanese :chinese :korean]
+            enabled? [true false]]
+      (let [changes (-> (pcb/empty-changes)
+                        (pcb/with-file-data data)
+                        (pcb/set-text-layout language enabled?))
+            edited (ch/process-changes data (:redo-changes changes))
+            restored (ch/process-changes edited (:undo-changes changes))]
+        (t/is (= enabled? (ctf/text-layout-enabled? edited language)))
+        (t/is (= data restored))
+        (t/is (sm/validate ctf/schema:options (json-roundtrip (:options edited))))
+        (t/is (= (:options edited) (json-roundtrip (:options edited))))))))
 
 (t/deftest add-obj
   (let [file-id (uuid/custom 2 2)

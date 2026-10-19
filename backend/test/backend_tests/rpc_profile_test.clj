@@ -179,6 +179,29 @@
       (t/is (nil? (:error out)))
       (t/is (true? (get-in out [:result :props :japanese-layout-all-files]))))))
 
+(t/deftest update-profile-language-layout-settings
+  (let [profile (th/create-profile* 1)
+        props {:japanese-layout-all-files true
+               :chinese-layout-all-files true
+               :korean-layout-all-files false}
+        params {::th/type :update-profile-props
+                ::rpc/profile-id (:id profile)
+                :props props}
+        out (th/command! params)]
+    (t/is (nil? (:error out)))
+    (t/is (= props (select-keys (:result out) (keys props))))
+    (let [out (th/command! {::th/type :get-profile
+                            ::rpc/profile-id (:id profile)})]
+      (t/is (= props (select-keys (get-in out [:result :props]) (keys props)))))
+    (let [out (th/command! (assoc params :props {:chinese-layout-all-files false}))]
+      (t/is (nil? (:error out))))
+    (let [out (th/command! {::th/type :get-profile
+                            ::rpc/profile-id (:id profile)})]
+      (t/is (= {:japanese-layout-all-files true
+                :chinese-layout-all-files false
+                :korean-layout-all-files false}
+               (select-keys (get-in out [:result :props]) (keys props)))))))
+
 (t/deftest profile-deletion-1
   (let [prof (th/create-profile* 1)
         file (th/create-file* 1 {:profile-id (:id prof)

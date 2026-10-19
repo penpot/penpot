@@ -156,6 +156,7 @@
     ;; Show WASM renderer info label (hidden by default).
     :render-wasm-info
     :render-switch
+    :vertical-text-layout
     :hide-release-modal
     :subscriptions
     :inspect-styles

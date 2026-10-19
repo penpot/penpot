@@ -42,6 +42,11 @@
             :multiple)
           (get obj attr ::unset)))
 
+      ;; An absent language is the plain profile, so it must participate
+      ;; when reporting mixed text selections.
+      (#{:text-language :korean-wrap} attr)
+      (get obj attr)
+
       :else
       (get obj attr ::unset))))
 

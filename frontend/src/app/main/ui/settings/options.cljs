@@ -7,10 +7,12 @@
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -115,35 +117,46 @@
                    :on-change handle-render-change}]]
      [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]]))
 
-(mf/defc japanese-layout-settings*
-  [{:keys [enabled]}]
+(mf/defc language-layout-setting*
+  [{:keys [language label enabled]}]
   (let [handle-change
         (mf/use-fn
+         (mf/deps language)
          (fn [enabled?]
-           (st/emit! (ev/event {::ev/name (if enabled?
-                                            "enable-japanese-layout-all-files"
-                                            "disable-japanese-layout-all-files")
+           (st/emit! (ev/event {::ev/name (str (if enabled? "enable-" "disable-")
+                                               (name language) "-layout-all-files")
                                 ::ev/origin "settings"})
                      (du/update-profile-props
-                      {:japanese-layout-all-files enabled?})
+                      {(ctf/text-layout-preference language) enabled?})
                      (ntf/success (tr "notifications.profile-saved")))))]
-    [:section {:class (stl/css :japanese-layout-container)}
-     [:> heading* {:class (stl/css :title)
-                   :level 2
-                   :typography t/title-large}
-      (tr "dashboard.japanese-layout.title")]
-     [:> text* {:class (stl/css :description) :typography t/body-medium}
-      (tr "dashboard.japanese-layout.description")]
-     [:form {:class (stl/css :japanese-layout-form)}
-      [:> switch* {:label (tr "dashboard.japanese-layout.enable-all-files")
-                   :default-checked enabled
-                   :on-change handle-change}]]]))
+    [:> switch* {:label label
+                 :default-checked enabled
+                 :on-change handle-change}]))
+
+(mf/defc language-layout-settings*
+  [{:keys [config]}]
+  [:section {:class (stl/css :text-layout-container)}
+   [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large}
+    (tr "dashboard.text-layout.title")]
+   [:> text* {:class (stl/css :description) :typography t/body-medium}
+    (tr "dashboard.text-layout.description")]
+   [:div {:class (stl/css :text-layout-form)}
+    [:> language-layout-setting* {:language :japanese
+                                  :label (tr "dashboard.japanese-layout.enable-all-files")
+                                  :enabled (get-in config [:japanese :all-files?])}]
+    [:> language-layout-setting* {:language :chinese
+                                  :label (tr "dashboard.chinese-layout.enable-all-files")
+                                  :enabled (get-in config [:chinese :all-files?])}]
+    [:> language-layout-setting* {:language :korean
+                                  :label (tr "dashboard.korean-layout.enable-all-files")
+                                  :enabled (get-in config [:korean :all-files?])}]]])
 
 (mf/defc options-page*
   []
   (let [profile (mf/deref refs/profile)
         renderer (or (-> profile :props :renderer) :svg)
-        japanese-layout-enabled (:all-files? (mf/deref refs/japanese-layout-config))]
+        layout-config (mf/deref refs/text-layout-config)
+        layout-feature? (features/use-feature "vertical-text-layout")]
     (mf/use-effect
      #(dom/set-html-title (tr "title.settings.options")))
 
@@ -157,6 +170,7 @@
                      :id "options-section-title"}
         (tr "labels.settings")]
        [:> options-form*]]
-      [:> japanese-layout-settings* {:enabled japanese-layout-enabled}]
+      (when layout-feature?
+        [:> language-layout-settings* {:config layout-config}])
       (when (contains? cf/flags :render-switch)
         [:> webgl-settings* {:renderer renderer}])]]))

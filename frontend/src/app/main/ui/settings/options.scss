@@ -23,7 +23,7 @@
 
 /* Settings sections with standalone controls. */
 .webgl-container,
-.japanese-layout-container {
+.text-layout-container {
   display: grid;
   grid-auto-rows: auto;
   gap: var(--sp-s);
@@ -34,7 +34,10 @@
   color: var(--color-foreground-primary);
 }
 
-.japanese-layout-form {
+.text-layout-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
   padding-block-start: var(--sp-xs);
 }
 
