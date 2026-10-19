@@ -80,6 +80,7 @@
    [common-tests.math-test]
    [common-tests.media-test]
    [common-tests.path-names-test]
+   [common-tests.path-names-tree-test]
    [common-tests.record-test]
    [common-tests.schema-test]
    [common-tests.spec-test]
@@ -184,6 +185,7 @@
    'common-tests.math-test
    'common-tests.media-test
    'common-tests.path-names-test
+   'common-tests.path-names-tree-test
    'common-tests.record-test
    'common-tests.schema-test
    'common-tests.spec-test

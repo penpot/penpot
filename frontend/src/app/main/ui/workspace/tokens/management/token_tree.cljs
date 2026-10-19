@@ -31,8 +31,56 @@
    [:on-node-context-menu {:optional true} fn?]
    [:can-edit {:optional true} :boolean]])
 
+(defn- leaf-node?
+  "A tree node is a leaf when it holds a token and has no children."
+  [node]
+  (and (:leaf node) (not (seq (:children node)))))
+
+(defn- sort-nodes
+  "Sorts tree nodes so that leaf tokens come before groups, sorting each
+   set naturally by name."
+  [nodes]
+  (let [[leafs groups]
+        (reduce (fn [[leafs groups] node]
+                  (if (leaf-node? node)
+                    [(conj leafs node) groups]
+                    [leafs (conj groups node)]))
+                [[] []]
+                nodes)]
+    (concat (d/natural-sort-by :name leafs)
+            (d/natural-sort-by :name groups))))
+
+(def ^:private schema:leaf-node
+  [:map
+   [:leaf :any]
+   [:tokens-lib {:optional true} :any]
+   [:selected-token-set-id {:optional true} :any]
+   [:selected-shapes :any]
+   [:is-selected-inside-layout {:optional true} :boolean]
+   [:active-theme-tokens {:optional true} :any]
+   [:can-edit {:optional true} :boolean]
+   [:on-token-pill-click {:optional true} fn?]
+   [:on-pill-context-menu {:optional true} fn?]])
+
+(mf/defc leaf-node*
+  {::mf/private true
+   ::mf/schema schema:leaf-node}
+  [{:keys [leaf tokens-lib selected-token-set-id selected-shapes
+           is-selected-inside-layout active-theme-tokens can-edit
+           on-token-pill-click on-pill-context-menu]}]
+  (let [id    (:id leaf)
+        token (ctob/get-token tokens-lib selected-token-set-id id)]
+    [:> token-pill* {:token token
+                     :selected-shapes selected-shapes
+                     :is-selected-inside-layout is-selected-inside-layout
+                     :active-theme-tokens active-theme-tokens
+                     :on-click on-token-pill-click
+                     :can-edit can-edit
+                     :on-context-menu on-pill-context-menu}]))
+
 (mf/defc folder-node*
-  {::mf/schema schema:folder-node}
+  {::mf/private true
+   ::mf/schema schema:folder-node}
   [{:keys [node
            type
            folded-token-paths
@@ -47,20 +95,12 @@
            can-edit]}]
   (let [full-path            (str (name type) "." (:path node))
         is-folder-expanded   (not (contains? (set (or folded-token-paths [])) full-path))
+
         children             (:children node)
 
         sorted-children
         (mf/with-memo [children]
-          (let [[leafs groups]
-                (reduce (fn [[l g] item]
-                          (if (:leaf item)
-                            [(conj l item) g]
-                            [l (conj g item)]))
-                        [[] []]
-                        children)
-                sorted-leafs  (d/natural-sort-by :name leafs)
-                sorted-groups (d/natural-sort-by :name groups)]
-            (concat sorted-leafs sorted-groups)))
+          (sort-nodes children))
 
         swap-folder-expanded
         (mf/use-fn
@@ -80,40 +120,50 @@
                         :expanded is-folder-expanded
                         :aria-expanded is-folder-expanded
                         :aria-controls (str "folder-children-" (:path node))
-                        :is-expandable (not (:leaf node))
+                        :is-expandable (boolean (seq children))
                         :on-toggle-expand swap-folder-expanded
                         :on-context-menu node-context-menu-prep}]
      (when is-folder-expanded
        [:div {:class (stl/css :folder-children-wrapper)
               :id (str "folder-children-" (:path node))}
-        (when (seq children)
-          (for [child sorted-children]
-            (if (not (:leaf child))
-              [:ul {:class (stl/css :node-parent)
-                    :key (:path child)}
-               [:> folder-node* {:type type
-                                 :node child
-                                 :folded-token-paths folded-token-paths
-                                 :selected-shapes selected-shapes
-                                 :is-selected-inside-layout is-selected-inside-layout
-                                 :active-theme-tokens active-theme-tokens
-                                 :on-token-pill-click on-token-pill-click
-                                 :on-pill-context-menu on-pill-context-menu
-                                 :on-node-context-menu on-node-context-menu
-                                 :tokens-lib tokens-lib
-                                 :can-edit can-edit
-                                 :selected-token-set-id selected-token-set-id}]]
-              (let [id    (:id (:leaf child))
-                    token (ctob/get-token tokens-lib selected-token-set-id id)]
-                [:> token-pill*
-                 {:key id
-                  :token token
-                  :selected-shapes selected-shapes
-                  :is-selected-inside-layout is-selected-inside-layout
-                  :active-theme-tokens active-theme-tokens
-                  :on-click on-token-pill-click
-                  :can-edit can-edit
-                  :on-context-menu on-pill-context-menu}]))))])]))
+        (when-let [leaf (:leaf node)]
+          [:> leaf-node* {:key (:id leaf)
+                          :leaf leaf
+                          :tokens-lib tokens-lib
+                          :selected-token-set-id selected-token-set-id
+                          :selected-shapes selected-shapes
+                          :is-selected-inside-layout is-selected-inside-layout
+                          :active-theme-tokens active-theme-tokens
+                          :can-edit can-edit
+                          :on-token-pill-click on-token-pill-click
+                          :on-pill-context-menu on-pill-context-menu}])
+
+        (for [child sorted-children]
+          (if (leaf-node? child)
+            [:> leaf-node* {:key (:id (:leaf child))
+                            :leaf (:leaf child)
+                            :tokens-lib tokens-lib
+                            :selected-token-set-id selected-token-set-id
+                            :selected-shapes selected-shapes
+                            :is-selected-inside-layout is-selected-inside-layout
+                            :active-theme-tokens active-theme-tokens
+                            :can-edit can-edit
+                            :on-token-pill-click on-token-pill-click
+                            :on-pill-context-menu on-pill-context-menu}]
+            [:ul {:class (stl/css :node-parent)
+                  :key (:path child)}
+             [:> folder-node* {:type type
+                               :node child
+                               :folded-token-paths folded-token-paths
+                               :selected-shapes selected-shapes
+                               :is-selected-inside-layout is-selected-inside-layout
+                               :active-theme-tokens active-theme-tokens
+                               :on-token-pill-click on-token-pill-click
+                               :on-pill-context-menu on-pill-context-menu
+                               :on-node-context-menu on-node-context-menu
+                               :tokens-lib tokens-lib
+                               :can-edit can-edit
+                               :selected-token-set-id selected-token-set-id}]]))])]))
 
 (def ^:private schema:token-tree
   [:map
@@ -146,42 +196,35 @@
            on-node-context-menu
            can-edit
            can-edit-tokens]}]
-  (let [separator "."
-        raw-tree
+  (let [raw-tree
         (mf/with-memo [tokens]
-          (cpn/build-tree-root tokens separator))
+          (cpn/build-tree-root tokens ctob/token-separator))
 
-        on-node-context-menu (mf/use-fn
-                              (mf/deps can-edit-tokens on-node-context-menu)
-                              (fn [event node]
-                                (when can-edit-tokens
-                                  (on-node-context-menu event node))))
+        ordered-nodes
+        (mf/with-memo [raw-tree]
+          (sort-nodes raw-tree))
 
-        ordered-nodes (mf/with-memo [raw-tree]
-                        (let [[leafs groups]
-                              (reduce (fn [[l g] item]
-                                        (if (:leaf item)
-                                          [(conj l item) g]
-                                          [l (conj g item)]))
-                                      [[] []]
-                                      raw-tree)
-                              sorted-leafs  (d/natural-sort-by :name leafs)
-                              sorted-groups (d/natural-sort-by :name groups)]
-                          (concat sorted-leafs sorted-groups)))]
+        on-node-context-menu
+        (mf/use-fn
+         (mf/deps can-edit-tokens on-node-context-menu)
+         (fn [event node]
+           (when can-edit-tokens
+             (on-node-context-menu event node))))]
+
     [:div {:class (stl/css :token-tree-wrapper)}
      (for [node ordered-nodes]
-       (if (:leaf node)
-         (let [token (ctob/get-token tokens-lib selected-token-set-id (get-in node [:leaf :id]))]
-           [:> token-pill*
-            {:token token
-             :key (:id (:leaf node))
-             :selected-shapes selected-shapes
-             :is-selected-inside-layout is-selected-inside-layout
-             :active-theme-tokens active-theme-tokens
-             :on-click on-token-pill-click
-             :can-edit can-edit
-             :on-context-menu on-pill-context-menu}])
-         ;; Render segment folder
+       (if (leaf-node? node)
+         [:> leaf-node* {:key (:id (:leaf node))
+                         :leaf (:leaf node)
+                         :tokens-lib tokens-lib
+                         :selected-token-set-id selected-token-set-id
+                         :selected-shapes selected-shapes
+                         :is-selected-inside-layout is-selected-inside-layout
+                         :active-theme-tokens active-theme-tokens
+                         :can-edit can-edit
+                         :on-token-pill-click on-token-pill-click
+                         :on-pill-context-menu on-pill-context-menu}]
+
          [:ul {:class (stl/css :node-parent)
                :key (:path node)}
           [:> folder-node* {:node node

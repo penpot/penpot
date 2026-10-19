@@ -147,7 +147,9 @@
       (check-token-attrs)
       (map->Token)))
 
-(def ^:private token-separator ".")
+(def token-separator
+  "Separator used to split a token name into its path segments."
+  ".")
 
 (defn get-token-path
   [token]
@@ -167,9 +169,9 @@
    (rename-path node nil new-name))
   ([node token new-name]
    (let [element (if token (:name token) (:path node))
-         split-path (cpn/split-path element :separator ".")
+         split-path (cpn/split-path element :separator token-separator)
          updated-split-element-name (assoc split-path (:depth node) new-name)
-         new-element-path (cpn/join-path updated-split-element-name :separator "." :with-spaces? false)]
+         new-element-path (cpn/join-path updated-split-element-name :separator token-separator :with-spaces? false)]
      new-element-path)))
 
 ;; === Token Set
