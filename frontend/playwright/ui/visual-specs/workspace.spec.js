@@ -219,6 +219,25 @@ test.describe("Palette", () => {
   });
 });
 
+test.describe("Nudge modal", () => {
+  test("Shows the nudge amount modal", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await page.getByRole("button", { name: "Main menu" }).click();
+    await page.locator("#file-menu-preferences").click();
+    await page.locator("#file-menu-nudge").click();
+
+    await expect(page.getByText("Nudge amount")).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(workspace.page).toHaveScreenshot("nudge-modal.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Selected colors", () => {
   test("Shows the more colors button", async ({ page }) => {
     const workspace = new WorkspacePage(page);
