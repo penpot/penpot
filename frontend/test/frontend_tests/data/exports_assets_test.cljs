@@ -7,14 +7,18 @@
 (ns frontend-tests.data.exports-assets-test
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.persistence :as dwp]
    [app.main.repo :as repo]
    [app.main.store :as st]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
+   [app.util.webapi :as wapi]
    [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as h]
    [frontend-tests.helpers.events :as the]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
@@ -97,3 +101,376 @@
                        (de/request-multiple-export {:exports exports})
                        :the/end)))
         done))))
+
+
+(defn- selected-shape-state
+  [presets]
+  {:current-file-id #uuid "00000000-0000-0000-0000-000000000001"
+   :current-page-id #uuid "00000000-0000-0000-0000-000000000002"
+   :workspace-local {:selected [(:object-id export)]}
+   :files {#uuid "00000000-0000-0000-0000-000000000001"
+           {:data {:pages-index
+                   {#uuid "00000000-0000-0000-0000-000000000002"
+                    {:objects {(:object-id export)
+                               {:id (:object-id export)
+                                :name "Asset"
+                                :exports presets}}}}}}}})
+
+(defn- ^:async selected-shape-events
+  [state]
+  (let [events (atom [])]
+    (await (h/observe (ptk/watch (de/export-selected-shape) state nil)
+                      :on-next #(swap! events conj %)))
+    @events))
+
+(t/deftest ^:async export-selected-shape-preserves-presets-and-routes-export
+  (let [presets (mapv (fn [type] {:type type :scale 2 :suffix (str "-" (name type))})
+                      [:png :jpeg :webp :svg :pdf])]
+    (doseq [presets (conj (mapv vector presets) presets)]
+      (let [state    (selected-shape-state presets)
+            single?  (= 1 (count presets))
+            name     (if single? (str "Asset" (:suffix (first presets))) "Asset")
+            expected (mapv #(assoc % :name name
+                                   :file-id (:current-file-id state)
+                                   :page-id (:current-page-id state)
+                                   :object-id (:object-id export)) presets)]
+        (await
+         (mock/with-mocks*
+           {de/request-simple-export (fn [params] (ptk/data-event ::simple params))
+            de/request-multiple-export (fn [params] (ptk/data-event ::multiple params))}
+           (let [[request analytics :as events] (await (selected-shape-events state))]
+             (t/is (= [(if single? ::simple ::multiple) ::ev/event] (mapv ptk/type events)))
+             (t/is (= expected (:exports @request)))
+             (when single? (t/is (= (first expected) (:export @request))))
+             (t/is (= "workspace:shortcuts" (::ev/origin @analytics)))
+             (t/is (= (count presets) (:num-shapes @analytics))))))))))
+
+(t/deftest ^:async export-selected-shape-ignores-invalid-selection-or-context
+  (let [state (selected-shape-state [{:type :png :scale 1 :suffix ""}])]
+    (doseq [[reason state]
+            [["no selection" (assoc-in state [:workspace-local :selected] [])]
+             ["multiple selection" (assoc-in state [:workspace-local :selected]
+                                             [(:object-id export) (uuid/next)])]
+             ["missing shape" (assoc-in state [:workspace-local :selected] [(uuid/next)])]
+             ["no presets" (selected-shape-state nil)]
+             ["empty presets" (selected-shape-state [])]
+             ["missing file" (dissoc state :current-file-id)]
+             ["missing page" (dissoc state :current-page-id)]]]
+      (t/is (empty? (await (selected-shape-events state))) reason))))
+
+
+(t/deftest ^:async export-selected-shape-ignores-export-in-progress
+  (doseq [presets [[{:type :png :scale 1 :suffix ""}]
+                   [{:type :png :scale 1 :suffix ""}
+                    {:type :svg :scale 1 :suffix "-vector"}]]]
+    (let [state (assoc (selected-shape-state presets) :export {:in-progress true})]
+      (t/is (empty? (await (selected-shape-events state))))
+      (t/is (= 2 (count (await (selected-shape-events
+                                (assoc-in state [:export :in-progress] false)))))))))
+
+(t/deftest ^:async export-selected-shape-wasm-adds-suffix-once
+  (doseq [type [:png :jpeg :webp :svg :pdf]]
+    (let [downloads (atom [])
+          rendered (atom [])
+          preset {:type type :scale 2 :suffix "-final"}
+          state (assoc (selected-shape-state [preset])
+                       :features #{"render-wasm/v1"})]
+      (await
+       (mock/with-mocks*
+         {wasm.api/render-shape-pixels
+          (fn [id scale format]
+            (swap! rendered conj [id scale format])
+            (js/Uint8Array. #js [1]))
+          wasm.api/render-shape-pdf
+          (fn [id scale]
+            (swap! rendered conj [id scale :pdf])
+            (js/Uint8Array. #js [1]))
+          wasm.api/render-shape-svg
+          (fn [id scale]
+            (swap! rendered conj [id scale :svg])
+            (js/Uint8Array. #js [1]))
+          wapi/create-blob (mock/stub (fn [bytes _mtype] bytes))
+          wapi/create-uri (fn [_blob] "blob:export")
+          wapi/revoke-uri (fn [_uri])
+          dom/trigger-download-uri
+          (mock/stub (fn [filename mtype uri] (swap! downloads conj [filename mtype uri])))}
+         (let [[request] (await (selected-shape-events state))
+               effects (atom [])]
+           (await (h/observe (ptk/watch request (ptk/update request state) nil)
+                             :on-next #(swap! effects conj %)))
+           (doseq [effect @effects :when (ptk/effect? effect)]
+             (ptk/effect effect state nil))
+           (await (h/wait-for #(seq @downloads) "WASM download"))
+           (t/is (= [(str "Asset-final" (case type :pdf ".pdf" :svg ".svg" ""))]
+                    (mapv first @downloads)))
+           (t/is (= [[(:object-id export) 2 type]] @rendered))
+           (t/is (= "blob:export" (nth (first @downloads) 2)))))))))
+
+(t/deftest ^:async export-selected-shape-blocks-pending-multiple-preset-requests
+  (doseq [wasm? [false true]
+          terminal ["ended" "error"]]
+    (let [presets [{:type :png :scale 2 :suffix "-raster"}
+                   {:type :svg :scale 1 :suffix "-vector"}]
+          state (assoc (selected-shape-state presets)
+                       :features (if wasm? #{"render-wasm/v1"} #{}))
+          requests (atom [])
+          analytics (atom [])
+          errors (atom [])
+          response (rx/subject)
+          messages (rx/subject)
+          resource-id (uuid/next)]
+      (await
+       (mock/with-mocks*
+         {repo/cmd!
+          (mock/stub (fn [command params]
+                       (swap! requests conj [command params])
+                       (rx/take 1 (rx/observe-on :async response))))
+          ws/get-rcv-stream (fn [_conn] (rx/observe-on :async messages))
+          st/ongoing-tasks (atom #{})
+          dom/trigger-download-uri (mock/stub (fn [& _]))}
+         (let [store (ptk/store {:state state :on-error #(swap! errors conj %)})
+               subscription (->> (ptk/input-stream store)
+                                 (rx/filter #(= ::ev/event (ptk/type %)))
+                                 (rx/subs! #(swap! analytics conj %)))]
+           (try
+             (ptk/emit! store (de/export-selected-shape))
+             (await (h/wait-for #(seq @requests) "initial export request"))
+             (t/is (true? (get-in @store [:export :in-progress])))
+             (ptk/emit! store (de/export-selected-shape) (de/export-selected-shape))
+             (await (h/settle))
+             (t/is (= 1 (count @requests)) "no duplicates before RPC response")
+             (t/is (= 1 (count @analytics)) "no duplicate analytics")
+             (t/is (= (if wasm? :create-export-job :export) (ffirst @requests)))
+             (t/is (= presets (mapv #(select-keys % [:type :scale :suffix])
+                                    (get-in @requests [0 1 :exports]))))
+             (rx/push! response (if wasm?
+                                  {:id (uuid/next) :resource-id resource-id
+                                   :total 2 :state "running" :backend "wasm"}
+                                  {:id resource-id}))
+             (await (h/wait-for #(= resource-id (get-in @store [:export :resource-id]))
+                                "export initialized"))
+             (ptk/emit! store (de/export-selected-shape))
+             (await (h/settle))
+             (t/is (= 1 (count @requests)) "no duplicates while running")
+             (rx/push! messages {:type :message
+                                 :payload {:type :export-update :resource-id resource-id
+                                           :status terminal :done 2 :total 2
+                                           :filename "assets.zip" :mtype "application/zip"
+                                           :resource-uri "blob:assets"}})
+             (await (h/wait-for #(false? (get-in @store [:export :in-progress]))
+                                "terminal export status"))
+             (ptk/emit! store (de/export-selected-shape))
+             (await (h/wait-for #(= 2 (count @requests)) "retry after terminal status"))
+             (ptk/emit! store (de/clear-export-state resource-id) (de/export-selected-shape))
+             (await (h/settle))
+             (t/is (and (true? (get-in @store [:export :in-progress]))
+                        (= 2 (count @requests))) "old cleanup cannot release pending retry")
+             (let [retry-id (uuid/next)]
+               (rx/push! response (if wasm?
+                                    {:id (uuid/next) :resource-id retry-id
+                                     :total 2 :state "running" :backend "wasm"}
+                                    {:id retry-id}))
+               (await (h/wait-for #(= retry-id (get-in @store [:export :resource-id]))
+                                  "retry initialized"))
+               (ptk/emit! store (de/clear-export-state resource-id) (de/export-selected-shape))
+               (await (h/settle))
+               (t/is (and (true? (get-in @store [:export :in-progress]))
+                          (= 2 (count @requests))) "old cleanup cannot release running retry"))
+             (await (h/settle))
+             (t/is (= 2 (count @analytics)))
+             (t/is (empty? @errors))
+             (finally
+               (rx/end! response)
+               (rx/end! messages)
+               (await (js/Promise. (fn [resolve] (js/setTimeout resolve 650))))
+               (rx/dispose! subscription)
+               (rx/dispose! store)))))))))
+
+(t/deftest ^:async export-entry-points-share-pending-request-ownership
+  (doseq [wasm? [false true]
+          first-multiple? [false true]
+          shortcut-first? [false true]]
+    (let [presets [{:type :png :scale 1 :suffix ""}
+                   {:type :svg :scale 1 :suffix "-vector"}]
+          state (assoc (selected-shape-state (if first-multiple? presets [(first presets)]))
+                       :features (if wasm? #{"render-wasm/v1"} #{}))
+          requests (atom [])
+          response (rx/subject)
+          messages (rx/subject)
+          errors (atom [])]
+      ;; A WASM single export is synchronous; the other cases await an RPC.
+      (when (or first-multiple? (not wasm?))
+        (await
+         (mock/with-mocks*
+           {repo/cmd! (mock/stub (fn [command params]
+                                   (swap! requests conj [command params])
+                                   (rx/take 1 (rx/observe-on :async response))))
+            dwp/force-persist-and-wait (mock/stub (fn [_] (rx/empty)))
+            ws/get-rcv-stream (fn [_] (rx/observe-on :async messages))
+            st/ongoing-tasks (atom #{})}
+           (let [store (ptk/store {:state state :on-error #(swap! errors conj %)})]
+             (try
+               (ptk/emit! store (if shortcut-first?
+                                  (de/export-selected-shape)
+                                  (de/request-export {:exports (if first-multiple? presets [(first presets)])})))
+               (await (h/wait-for #(= 1 (count @requests)) "first request"))
+               (let [owner (:export @store)]
+                 ;; The dialog and sidebar call these events directly.
+                 (ptk/emit! store
+                            (de/request-multiple-export {:exports presets})
+                            (de/request-simple-export {:export (first presets)})
+                            (de/export-selected-shape))
+                 (await (h/settle))
+                 (t/is (= 1 (count @requests)) "all entry points respect the pending export")
+                 (t/is (= owner (:export @store)) "a refused request cannot replace the owner"))
+               (t/is (empty? @errors))
+               (finally
+                 (rx/end! response)
+                 (rx/end! messages)
+                 (await (js/Promise. (fn [resolve] (js/setTimeout resolve 650))))
+                 (rx/dispose! store))))))))))
+
+(t/deftest ^:async old-export-events-cannot-change-a-following-export
+  (doseq [wasm? [false true]]
+    (let [presets [{:type :png :scale 1 :suffix ""}
+                   {:type :svg :scale 1 :suffix "-vector"}]
+          state (assoc (selected-shape-state presets)
+                       :features (if wasm? #{"render-wasm/v1"} #{}))
+          requests (atom [])
+          downloads (atom [])
+          errors (atom [])
+          response (rx/subject)
+          cancellation (rx/subject)
+          messages (rx/subject)
+          first-id (uuid/next)
+          second-id (uuid/next)
+          job (fn [id] (if wasm?
+                         {:id (uuid/next) :resource-id id :total 2
+                          :state "running" :backend "wasm"}
+                         {:id id}))
+          message (fn [id status]
+                    {:type :message
+                     :payload {:type :export-update :resource-id id
+                               :status status :done 2 :total 2
+                               :filename "assets.zip" :mtype "application/zip"
+                               :resource-uri "blob:assets"}})]
+      (await
+       (mock/with-mocks*
+         {repo/cmd! (mock/stub (fn [command params]
+                                 (swap! requests conj [command params])
+                                 (rx/take 1 (rx/observe-on :async
+                                                           (if (= command :cancel-export-job)
+                                                             cancellation response)))))
+          ws/get-rcv-stream (fn [_] (rx/observe-on :async messages))
+          st/ongoing-tasks (atom #{})
+          dom/trigger-download-uri (mock/stub (fn [& args] (swap! downloads conj args) nil))}
+         (let [store (ptk/store {:state state :on-error #(swap! errors conj %)})]
+           (try
+             (ptk/emit! store (de/export-selected-shape))
+             (await (h/wait-for #(seq @requests) "first request"))
+             (rx/push! response (job first-id))
+             (await (h/wait-for #(= first-id (get-in @store [:export :id])) "first initialized"))
+             (when wasm?
+               (ptk/emit! store (de/cancel-export))
+               (await (h/wait-for #(= :cancel-export-job (first (last @requests))) "pending cancellation")))
+             (rx/push! messages (message first-id "ended"))
+             (await (h/wait-for #(false? (get-in @store [:export :in-progress])) "first ended"))
+             (ptk/emit! store (de/export-selected-shape))
+             (await (h/wait-for #(= (if wasm? 3 2) (count @requests)) "second request"))
+             (rx/push! response (job second-id))
+             (await (h/wait-for #(= second-id (get-in @store [:export :id])) "second initialized"))
+             (let [owner (:export @store)
+                   downloaded (count @downloads)]
+               (doseq [status ["running" "error" "cancelled" "ended"]]
+                 (rx/push! messages (message first-id status)))
+               (when wasm? (rx/push! cancellation nil))
+               (ptk/emit! store (de/clear-export-state first-id))
+               (await (h/settle))
+               (await (h/settle))
+               (t/is (= owner (:export @store)) "old progress, error, completion, cancel and cleanup preserve the new owner")
+               (t/is (= downloaded (count @downloads)) "old completion does not download again")
+               (await (js/Promise. (fn [resolve] (js/setTimeout resolve 650))))
+               (t/is (seq @st/ongoing-tasks) "old finalization does not remove the new ongoing task"))
+             (rx/push! messages (message second-id "ended"))
+             (await (h/wait-for #(false? (get-in @store [:export :in-progress])) "second ended"))
+             (t/is (empty? @errors))
+             (finally
+               (rx/end! response)
+               (rx/end! cancellation)
+               (rx/end! messages)
+               (await (js/Promise. (fn [resolve] (js/setTimeout resolve 650))))
+               (rx/dispose! store)))))))))
+
+(t/deftest ^:async single-export-cleanup-belongs-to-one-request
+  (let [state (selected-shape-state [{:type :png :scale 1 :suffix ""}])
+        requests (atom 0)
+        cleanups (atom [])
+        response (rx/subject)
+        errors (atom [])]
+    (await
+     (mock/with-mocks*
+       {repo/cmd! (mock/stub (fn [& _]
+                               (swap! requests inc)
+                               (rx/take 1 (rx/observe-on :async response))))
+        dwp/force-persist-and-wait (mock/stub (fn [_] (rx/empty)))
+        dom/trigger-download-uri (mock/stub (fn [& _]))}
+       (let [store (ptk/store {:state state :on-error #(swap! errors conj %)})
+             subscription (->> (ptk/input-stream store)
+                               (rx/filter #(= ::de/clear-export-state (ptk/type %)))
+                               (rx/subs! #(swap! cleanups conj %)))]
+         (try
+           (ptk/emit! store (de/export-selected-shape))
+           (await (h/wait-for #(= 1 @requests) "first single export"))
+           (rx/push! response {:filename "asset.png" :mtype "image/png" :uri "blob:asset"})
+           (await (h/wait-for #(seq @cleanups) "first cleanup"))
+           (t/is (nil? (:export @store)))
+           (ptk/emit! store (de/export-selected-shape))
+           (await (h/wait-for #(= 2 @requests) "next single export"))
+           (let [owner (:export @store)]
+             (ptk/emit! store (first @cleanups))
+             (await (h/settle))
+             (t/is (= owner (:export @store)) "an old simple-export cleanup cannot release a new request"))
+           (rx/push! response {:filename "asset.png" :mtype "image/png" :uri "blob:asset"})
+           (await (h/wait-for #(nil? (:export @store)) "second cleanup"))
+           (t/is (empty? @errors))
+           (finally
+             (rx/end! response)
+             (rx/dispose! subscription)
+             (rx/dispose! store))))))))
+
+(t/deftest old-cleanup-preserves-a-new-request-failure
+  (let [old-id (uuid/next)
+        request (de/request-multiple-export {:exports [export export]})
+        pending (ptk/update request {})
+        request-id (get-in pending [:export :id])
+        failed (ptk/update (#'de/export-failed request-id [export export]
+                                               :export-shapes (ex-info "Queue full" {:code :queue-full}))
+                           pending)]
+    (t/is (= :queue-full (get-in failed [:export :error-code])))
+    (t/is (= failed (ptk/update (de/clear-export-state old-id) failed)))))
+
+(t/deftest ^:async single-wasm-export-respects-busy-owner-and-reports-render-errors
+  (let [preset {:type :png :scale 1 :suffix ""}
+        state (assoc (selected-shape-state [preset]) :features #{"render-wasm/v1"})
+        owner {:in-progress true :id (uuid/next)}
+        rendered (atom 0)
+        errors (atom [])
+        cause (js/Error. "render failed")]
+    (await
+     (mock/with-mocks*
+       {wasm.api/render-shape-pixels (fn [& _] (swap! rendered inc) (throw cause))}
+       (let [store (ptk/store {:state (assoc state :export owner)
+                               :on-error #(swap! errors conj %)})]
+         (try
+           (ptk/emit! store (de/request-simple-export {:export preset}))
+           (await (h/settle))
+           (t/is (= owner (:export @store)))
+           (t/is (zero? @rendered))
+           (t/is (empty? @errors))
+           (ptk/emit! store #(dissoc % :export)
+                      (de/request-simple-export {:export preset}))
+           (await (h/wait-for #(seq @errors) "synchronous WASM render error"))
+           (t/is (= [cause] @errors))
+           (t/is (= 1 @rendered))
+           (t/is (nil? (:export @store)) "a failed synchronous renderer leaves no pending owner")
+           (finally (rx/dispose! store))))))))
