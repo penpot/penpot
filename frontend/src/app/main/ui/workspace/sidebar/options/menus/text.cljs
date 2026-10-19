@@ -32,6 +32,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
+   [app.main.ui.workspace.sidebar.options.menus.text-language-layout :as tll]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options* typography-entry*]]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
@@ -39,6 +40,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.text.content :as content]
+   [app.util.text.layout :as tl]
    [app.util.text.ui :as txu]
    [app.util.text.writing-mode :as wm]
    [app.util.timers :as ts]
@@ -314,6 +316,10 @@
                      (get n-values :text-decoration))
          (identical? (get o-values :text-direction)
                      (get n-values :text-direction))
+         (identical? (get o-values :text-language)
+                     (get n-values :text-language))
+         (identical? (get o-values :korean-wrap)
+                     (get n-values :korean-wrap))
          (identical? (get o-values :writing-mode)
                      (get n-values :writing-mode))
          (identical? (get o-values :text-orientation)
@@ -355,6 +361,26 @@
 ;; Main component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(mf/defc language-layout-section*
+  [{:keys [language title config options-props]}]
+  (let [open* (mf/use-state true)
+        open? (deref open*)
+        toggle-open (mf/use-fn #(swap! open* not))]
+    (when (tl/controls-enabled? config)
+      [:section {:class (stl/css :element-set)
+                 :data-keep-editing-on-blur true
+                 :aria-label title}
+       [:div {:class (stl/css :element-title)}
+        [:> title-bar* {:collapsable true
+                        :collapsed (not open?)
+                        :on-collapsed toggle-open
+                        :title title
+                        :class (stl/css :title-spacing-text)}]]
+       (when open?
+         [:div {:class (stl/css :element-content)}
+          [:> tll/language-layout-options*
+           (mf/spread-props options-props {:language language})]])])))
+
 (mf/defc text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
   [{:keys [ids type values ruby-values text-selection-active
@@ -362,15 +388,11 @@
 
   (let [;; --- UI state
         menu-state*          (mf/use-state {:main-menu true
-                                            :more-options false
-                                            :japanese-layout true})
+                                            :more-options false})
         menu-state           (deref menu-state*)
         main-menu-open?      (:main-menu menu-state)
         more-options-open?   (:more-options menu-state)
-        japanese-layout-open? (:japanese-layout menu-state)
-
-        japanese-layout-config-enabled?
-        (tjl/japanese-layout-config-enabled? (mf/deref refs/japanese-layout-config))
+        layout-config (mf/deref refs/text-layout-config)
 
         font-id         (or (:font-id values) (:font-id txt/default-typography))
 
@@ -460,10 +482,6 @@
         toggle-more-options
         (mf/use-fn
          #(swap! menu-state* update :more-options not))
-
-        toggle-japanese-layout
-        (mf/use-fn
-         #(swap! menu-state* update :japanese-layout not))
 
         toggle-token-dropdown
         (mf/use-fn
@@ -563,7 +581,7 @@
                        :show-recent true
                        :on-blur     on-text-blur})
 
-        japanese-layout-props
+        language-layout-props
         (mf/props
          {:ids                         ids
           :values                      values
@@ -683,17 +701,15 @@
             [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
             [:> text-direction-options* common-props]])])]
 
-     (when japanese-layout-config-enabled?
-       [:section {:class      (stl/css :element-set)
-                  ;; Focusing these controls must not exit the v3 text editor (see `keep-editing-on-blur?`).
-                  :data-keep-editing-on-blur true
-                  :aria-label (tr "workspace.options.text-options.japanese-layout")}
-        [:div {:class (stl/css :element-title)}
-         [:> title-bar* {:collapsable  true
-                         :collapsed    (not japanese-layout-open?)
-                         :on-collapsed toggle-japanese-layout
-                         :title        (tr "workspace.options.text-options.japanese-layout")
-                         :class        (stl/css :title-spacing-text)}]]
-        (when japanese-layout-open?
-          [:div {:class (stl/css :element-content)}
-           [:> tjl/japanese-layout-options* japanese-layout-props]])])]))
+     [:> language-layout-section* {:language :japanese
+                                   :title (tr "workspace.options.text-options.japanese-layout")
+                                   :config (:japanese layout-config)
+                                   :options-props language-layout-props}]
+     [:> language-layout-section* {:language :chinese
+                                   :title (tr "workspace.options.text-options.chinese-layout")
+                                   :config (:chinese layout-config)
+                                   :options-props language-layout-props}]
+     [:> language-layout-section* {:language :korean
+                                   :title (tr "workspace.options.text-options.korean-layout")
+                                   :config (:korean layout-config)
+                                   :options-props language-layout-props}]]))

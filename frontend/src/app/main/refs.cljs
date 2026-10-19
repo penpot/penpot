@@ -290,13 +290,21 @@
   "Currently working file data on workspace"
   (l/derived dsh/lookup-file-data st/state))
 
-(def japanese-layout-config
-  "Japanese layout switches: `:file?` for the workspace file and
-  `:all-files?` from the profile."
-  (l/derived (fn [state]
-               {:file?      (ctf/japanese-layout-enabled? (dsh/lookup-file-data state))
-                :all-files? (true? (dm/get-in state [:profile :props :japanese-layout-all-files]))})
-             st/state =))
+(def text-layout-config
+  "Control availability by language; it never changes paragraph profiles."
+  (l/derived
+   (fn [state]
+     (let [file-data (dsh/lookup-file-data state)
+           props (dm/get-in state [:profile :props])
+           feature? (contains? (:features state) "vertical-text-layout")
+           config (fn [language]
+                    {:feature-enabled feature?
+                     :file? (ctf/text-layout-enabled? file-data language)
+                     :all-files? (true? (get props (ctf/text-layout-preference language)))})]
+       {:japanese (config :japanese)
+        :chinese (config :chinese)
+        :korean (config :korean)}))
+   st/state =))
 
 (def workspace-file-colors
   (l/derived (fn [{:keys [id] :as data}]

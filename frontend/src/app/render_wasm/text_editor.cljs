@@ -808,13 +808,36 @@
                 {}
                 spans)))))
 
+(defn selection-paragraph-styles
+  "Profile attrs of the selected paragraphs, including unset and mixed values."
+  [content selection]
+  (when (and content selection)
+    (let [{:keys [start-para end-para]} (normalize-selection selection)
+          paragraphs (-> content :children first :children)]
+      (reduce
+       (fn [result paragraph]
+         (reduce
+          (fn [result attr]
+            (let [value (get paragraph attr)]
+              (assoc result attr
+                     (if (and (contains? result attr)
+                              (not= (get result attr) value))
+                       :multiple
+                       value))))
+          result
+          [:text-language :korean-wrap]))
+       {}
+       (subvec paragraphs start-para (inc end-para))))))
+
 (defn text-editor-get-current-japanese-styles
-  "Japanese span styles of the active WASM editor selection."
+  "Japanese span styles and paragraph profiles of the active editor selection."
   []
   (when (wasm/ready?)
     (let [shape-id  (text-editor-get-active-shape-id)
-          selection (text-editor-get-selection)]
-      (selection-japanese-styles (get-cached-content shape-id) selection))))
+          selection (text-editor-get-selection)
+          content (get-cached-content shape-id)]
+      (merge (selection-japanese-styles content selection)
+             (selection-paragraph-styles content selection)))))
 
 (defn apply-attrs-to-paragraph
   "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."

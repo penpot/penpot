@@ -149,3 +149,11 @@
           result (attrs/get-attrs-multi objs [:x])]
       (t/is (= {:x :multiple} result)
             "Different positions should be :multiple"))))
+(t/deftest unset-language-profile-counts-as-a-distinct-value
+  (t/is (= {:text-language :multiple :korean-wrap :multiple}
+           (attrs/get-attrs-multi [{} {:text-language "ko" :korean-wrap "spaces-only"}]
+                                  [:text-language :korean-wrap])))
+  (t/is (= {:text-language :multiple}
+           (attrs/get-attrs-multi [{:text-language "ko"} {}] [:text-language])))
+  (t/is (= {:text-language nil :korean-wrap nil}
+           (attrs/get-attrs-multi [{} {}] [:text-language :korean-wrap]))))
