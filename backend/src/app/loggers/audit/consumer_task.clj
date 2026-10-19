@@ -163,6 +163,16 @@
     (db/exec! conn [sql:delete-pendings consumer ids])
     (db/exec! conn [sql:delete-drained ids])))
 
+(defn- generate-nexus-uri
+  "Joins relative path segments to the Nexus backend URI, same shape
+  as the admin-console helper in `app.nitrate` (there the ingest path
+  is `api/audit-log`; here it is `api/audit`).
+  Segments must not start with `/`. Returns nil when no base URI is
+  configured, so the caller keeps the `:task-not-configured` guard."
+  [& segments]
+  (when-let [base (cf/get :nexus-uri)]
+    (apply cf/join-uri base segments)))
+
 (defn- send-to-nexus
   "POST events to Nexus. Returns the number of events sent; throws on
   transport failure or non-204 refusal, carrying the attempted count
@@ -513,7 +523,7 @@
   ;; the runner says the job started, this says where it sends.
   (l/dbg :hint "audit log consumer job initialized"
          :consumer "nexus"
-         :uri-host (some-> (cf/get :audit-log-archive-uri) u/uri u/get-domain))
+         :uri-host (some-> (cf/get :nexus-uri) u/uri u/get-domain))
   {::jobs/name      :audit-log-consumer-nexus
    ::jobs/schema    schema:audit-log-consumer-nexus-params
    ::jobs/handler
@@ -608,8 +618,7 @@
   ;; the repl, when manually invoking the task.
   (if-not (contains? cf/flags :nexus)
     (l/dbg :hint "audit log consumer (nexus) skipped, flag off")
-    (let [uri (cf/get :audit-log-archive-uri)
-          uri (or uri (:uri params))
+    (let [uri (or (:uri params) (generate-nexus-uri "api/audit"))
           ;; Normalize to an uri object; params may carry a plain string
           ;; on direct invocations (validation only applies on submit!).
           uri (u/uri uri)

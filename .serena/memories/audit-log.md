@@ -312,13 +312,13 @@ Flags (`common/src/app/common/flags.cljc`, varia; enabled with `PENPOT_FLAGS=ena
 | Flag | What it does |
 |---|---|
 | `:audit-log` | Stores full rows; turns on `wrap-audit` and frontend ingest |
-| `:nexus` | Send flag of the Nexus archive job `:audit-log-consumer-nexus` (cron `0 */5 * * * ?`; needs `:audit-log-archive-uri`) |
+| `:nexus` | Send flag of the Nexus archive job `:audit-log-consumer-nexus` (cron `0 */5 * * * ?`; needs `:nexus-uri` (ingest path `api/audit` appended by the job)) |
 | `:admin-console` | Send flag of the admin-console archive job `:audit-log-consumer-admin-console` (cron `30 */5 * * * ?`, 30s after Nexus); also the module flag for the admin-console integration |
 | `:audit-log-logger` | Structured `app.audit` log per event |
 | `:error-reporting` | Starts the error reporters (off by default); database reporter on flag alone, Mattermost on flag plus webhook URL |
 | `:telemetry` | Stores shadow rows and turns on shipping (auto with `:telemetry-enabled`) |
 
-Config (`backend/src/app/config.clj`): `:audit-log-archive-uri`, `:telemetry-uri` (default `https://telemetry.penpot.app/`), `:nexus-shared-key` / instance secret, `:public-uri` (sent as `origin` to Nexus).
+Config (`backend/src/app/config.clj`): `:nexus-uri`, `:telemetry-uri` (default `https://telemetry.penpot.app/`), `:nexus-shared-key` / instance secret, `:public-uri` (sent as `origin` to Nexus).
 
 ## 14. Practical guide: add or change events
 

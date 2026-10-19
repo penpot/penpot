@@ -278,9 +278,25 @@
             (let [rows (th/db-exec! ["select * from audit_log"])]
               (t/is (= 0 (count rows))))))))))
 
+(t/deftest consumer-nexus-default-uri-appends-api-audit
+  ;; Without an explicit :uri param, the job posts to the Nexus base
+  ;; URI plus the ingest path, mirroring generate-nitrate-uri.
+  (let [prof (th/create-profile* 1 {:is-active true})
+        uris (atom [])]
+    (with-redefs [cf/flags  #{:nexus}
+                  cf/config (assoc cf/config :nexus-uri (u/uri "http://nexus.example"))]
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :return (fn [_ params & _]
+                                        (swap! uris conj (str (:uri params)))
+                                        {:status 204})}]
+        (insert-audit-row! (:id prof) "create-project")
+        (th/run-task! :audit-log-consumer-nexus {})
+        (t/is (= ["http://nexus.example/api/audit"] @uris))
+        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))))
+
 (t/deftest consumer-nexus-job-requires-uri-when-nexus-flag-set
   (with-redefs [cf/flags #{:nexus}
-                cf/config (dissoc cf/config :audit-log-consumer-uri)]
+                cf/config (dissoc cf/config :nexus-uri)]
     (let [data (ex-data (try
                           (th/run-task! :audit-log-consumer-nexus {})
                           (catch Throwable cause
