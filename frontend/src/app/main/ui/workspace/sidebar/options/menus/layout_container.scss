@@ -61,25 +61,6 @@
   grid-column: span 4;
 }
 
-// TODO: Replace this buttons with DS buttons
-.wrap-button {
-  @extend %button-tertiary;
-
-  border-radius: $br-8;
-  block-size: $sz-32;
-  inline-size: $sz-32;
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--color-foreground-secondary);
-  }
-
-  &.selected {
-    @extend %button-icon-selected;
-  }
-}
-
 .second-row,
 .third-row {
   grid-column: 1 / -1;
@@ -153,25 +134,6 @@
   grid-column: span 2;
   grid-template-columns: subgrid;
   gap: var(--sp-xs);
-}
-
-// TODO: Replace this buttons with DS buttons
-.padding-toggle {
-  @extend %button-tertiary;
-
-  block-size: $sz-32;
-  inline-size: $sz-32;
-  border-radius: $br-8;
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--color-foreground-secondary);
-  }
-
-  &.selected {
-    @extend %button-icon-selected;
-  }
 }
 
 .grid-layout-menu {

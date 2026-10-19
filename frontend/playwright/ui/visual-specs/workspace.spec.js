@@ -110,6 +110,53 @@ test.describe("Design tab", () => {
     await expect(workspace.page).toHaveScreenshot();
   });
 
+  test("Shows the wrap and padding modes of a flex layout", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-7760.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-7760.json",
+    );
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-create-rect.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "cd90e028-326a-80b4-8004-7cdec16ffad5",
+      pageId: "cd90e028-326a-80b4-8004-7cdec16ffad6",
+    });
+
+    await workspace.clickLeafLayer("Flex Board");
+
+    const section = workspace.rightSidebar.getByRole("region", {
+      name: "Layout container section",
+    });
+    const wrap = section.getByRole("button", { name: /^(No w|W)rap$/ });
+    const padding = section.getByRole("button", {
+      name: "Show 4 sided padding options",
+    });
+    await expect(wrap).toBeVisible();
+    // The buttons are a small part of the section: compare every pixel.
+    await expect(section).toHaveScreenshot("flex-layout-rest.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await wrap.click();
+    await padding.click();
+    await padding.blur();
+    await page.mouse.move(0, 0);
+    await expect(section.getByRole("textbox", { name: /top padding/i }))
+      .toBeVisible();
+    await expect(section).toHaveScreenshot("flex-layout-pressed.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
   test("Shows the align options when selecting two shapes", async ({
     page,
   }) => {
