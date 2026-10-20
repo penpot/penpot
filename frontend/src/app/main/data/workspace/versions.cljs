@@ -77,7 +77,13 @@
               (rx/mapcat
                (fn [{:keys [id]}]
                  (rx/of (update-versions-state {:editing id})
-                        (fetch-versions))))))))))
+                        (fetch-versions))))
+              ;; A version of the file without the unsaved changes would
+              ;; lose them, so none is made and the user is told why
+              (rx/catch (fn [cause]
+                          (if (= :persistence (:type (ex-data cause)))
+                            (rx/of (ntf/warn (tr "workspace.versions.create-failed-unsaved")))
+                            (rx/throw cause))))))))))
 
 (defn rename-version
   [id label]

@@ -266,11 +266,11 @@ msgstr ""
 msgid "dasboard.team-hero.title"
 msgstr "¡Forma equipo!"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:234
+#: src/app/main/ui/dashboard/file_menu.cljs:233
 msgid "dashboard-restore-file-confirmation.description"
 msgstr "Vas a restaurar %s."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:233
+#: src/app/main/ui/dashboard/file_menu.cljs:232
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restaurar archivo"
 
@@ -278,7 +278,7 @@ msgstr "Restaurar archivo"
 msgid "dashboard.add-file"
 msgstr "Añadir archivo"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:701
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/workspace/main_menu.cljs:701
 msgid "dashboard.add-shared"
 msgstr "Añadir como Biblioteca Compartida"
 
@@ -370,7 +370,7 @@ msgstr "Borrar búsqueda"
 msgid "dashboard.clear-trash-button"
 msgstr "Vaciar papelera"
 
-#: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
+#: src/app/main/data/dashboard.cljs:318, src/app/main/data/dashboard.cljs:568, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(copia)"
 
@@ -396,17 +396,17 @@ msgstr ""
 "¿Estás seguro de que quieres eliminar para siempre todos tus proyectos y "
 "archivos eliminados? Esta es una acción irreversible."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:247
+#: src/app/main/ui/dashboard/file_menu.cljs:246
 msgid "dashboard.delete-file-forever-confirmation.description"
 msgstr ""
 "¿Estás seguro de que quieres eliminar para siempre %s? Esta es una acción "
 "irreversible."
 
-#: src/app/main/data/dashboard.cljs:810
+#: src/app/main/data/dashboard.cljs:842
 msgid "dashboard.delete-files-success-notification"
 msgstr "%s ficheros han sido eliminados correctamente."
 
-#: src/app/main/ui/dashboard/deleted.cljs:55, src/app/main/ui/dashboard/deleted.cljs:57, src/app/main/ui/dashboard/deleted.cljs:273, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:246, src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/deleted.cljs:55, src/app/main/ui/dashboard/deleted.cljs:57, src/app/main/ui/dashboard/deleted.cljs:273, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:245, src/app/main/ui/dashboard/file_menu.cljs:247
 msgid "dashboard.delete-forever-confirmation.title"
 msgstr "Eliminar para siempre"
 
@@ -421,7 +421,7 @@ msgstr ""
 "eliminarlo para siempre junto con todos los archivos que contiene. Esta es "
 "una acción irreversible."
 
-#: src/app/main/data/dashboard.cljs:809, src/app/main/data/dashboard.cljs:843
+#: src/app/main/data/dashboard.cljs:841, src/app/main/data/dashboard.cljs:875
 msgid "dashboard.delete-success-notification"
 msgstr "%s ha sido eliminado correctamente."
 
@@ -437,17 +437,27 @@ msgstr "Tu papelera está vacía. Los archivos y proyectos eliminados aparecerá
 msgid "dashboard.deleted.will-be-deleted-at"
 msgstr "Se eliminará %s"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/workspace/main_menu.cljs:738
+#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:738
 msgid "dashboard.download-binary-file"
 msgstr "Descargar archivo Penpot (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:302, src/app/main/ui/dashboard/project_menu.cljs:94
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/dashboard/project_menu.cljs:94
 msgid "dashboard.duplicate"
 msgstr "Duplicar"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:269
+#: src/app/main/ui/dashboard/file_menu.cljs:268
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicar %s archivos"
+
+#: src/app/main/data/dashboard.cljs:549
+msgid "dashboard.duplicate-unsaved-changes"
+msgid_plural "dashboard.duplicate-unsaved-changes"
+msgstr[0] ""
+"Se ha duplicado tu archivo, pero la copia no incluye tus últimos cambios "
+"porque aún no se han guardado."
+msgstr[1] ""
+"Se han duplicado tus archivos, pero las copias no incluyen tus últimos "
+"cambios porque aún no se han guardado."
 
 #: src/app/main/ui/dashboard/files.cljs:243, src/app/main/ui/dashboard/projects.cljs:318
 msgid "dashboard.empty-placeholder-drafts-subtitle"
@@ -509,27 +519,27 @@ msgstr "Importa un fichero .penpot"
 msgid "dashboard.empty-project.start"
 msgstr "Empieza a crear cosas increíbles"
 
-#: src/app/main/data/dashboard.cljs:813
+#: src/app/main/data/dashboard.cljs:845
 msgid "dashboard.errors.error-on-delete-files"
 msgstr "Hubo un error al eliminar archivos."
 
-#: src/app/main/data/dashboard.cljs:846
+#: src/app/main/data/dashboard.cljs:878
 msgid "dashboard.errors.error-on-delete-project"
 msgstr "Hubo un error al eliminar el proyecto %s"
 
-#: src/app/main/data/dashboard.cljs:941, src/app/main/ui/dashboard/file_menu.cljs:227
+#: src/app/main/data/dashboard.cljs:973, src/app/main/ui/dashboard/file_menu.cljs:226
 msgid "dashboard.errors.error-on-restore-file"
 msgstr "Hubo un error al restaurar el archivo %s."
 
-#: src/app/main/data/dashboard.cljs:942
+#: src/app/main/data/dashboard.cljs:974
 msgid "dashboard.errors.error-on-restore-files"
 msgstr "Hubo un error al restaurar los archivos."
 
-#: src/app/main/data/dashboard.cljs:974
+#: src/app/main/data/dashboard.cljs:1006
 msgid "dashboard.errors.error-on-restoring-project"
 msgstr "Hubo un error al restaurar el proyecto %s y sus archivos."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:279
+#: src/app/main/ui/dashboard/file_menu.cljs:278
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
 
@@ -567,13 +577,13 @@ msgstr "No hay elementos con configuraciones de exportación."
 msgid "dashboard.export-shapes.title"
 msgstr "Exportar selección"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:263
+#: src/app/main/ui/dashboard/file_menu.cljs:262
 msgid "dashboard.file-menu.delete-files-permanently-option"
 msgid_plural "dashboard.file-menu.delete-files-permanently-option"
 msgstr[0] "Eliminar archivo"
 msgstr[1] "Eliminar archivos"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:261
+#: src/app/main/ui/dashboard/file_menu.cljs:260
 msgid "dashboard.file-menu.restore-files-option"
 msgid_plural "dashboard.file-menu.restore-files-option"
 msgstr[0] "Restaurar archivo"
@@ -924,11 +934,11 @@ msgstr "cargando tus fuentes …"
 msgid "dashboard.mark-all-as-read.success"
 msgstr "Se han marcado todas las noficaciones como leídas"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:308, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:307, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Mover a"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:272
+#: src/app/main/ui/dashboard/file_menu.cljs:271
 msgid "dashboard.move-to-multi"
 msgstr "Mover %s archivos a"
 
@@ -940,7 +950,7 @@ msgstr "Mover a otro equipo"
 msgid "dashboard.new-file"
 msgstr "+ Nuevo Archivo"
 
-#: src/app/main/data/dashboard.cljs:524, src/app/main/data/dashboard.cljs:636
+#: src/app/main/data/dashboard.cljs:525, src/app/main/data/dashboard.cljs:668
 msgid "dashboard.new-file-prefix"
 msgstr "Nuevo Archivo"
 
@@ -948,7 +958,7 @@ msgstr "Nuevo Archivo"
 msgid "dashboard.new-project"
 msgstr "+ Nuevo proyecto"
 
-#: src/app/main/data/dashboard.cljs:269, src/app/main/data/dashboard.cljs:639
+#: src/app/main/data/dashboard.cljs:270, src/app/main/data/dashboard.cljs:671
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo Proyecto"
 
@@ -1016,7 +1026,7 @@ msgstr "Ver notificaciones"
 msgid "dashboard.num-of-members"
 msgstr "%s integrantes"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:294
+#: src/app/main/ui/dashboard/file_menu.cljs:293
 msgid "dashboard.open-in-new-tab"
 msgstr "Abrir en una pestaña nueva"
 
@@ -1032,7 +1042,7 @@ msgstr "Ordenar por rol"
 msgid "dashboard.order-invitations-by-status"
 msgstr "Ordenar por estado"
 
-#: src/app/main/data/dashboard.cljs:721
+#: src/app/main/data/dashboard.cljs:753
 msgid "dashboard.organization-deleted"
 msgstr "La organización %s se ha borrado."
 
@@ -1080,19 +1090,19 @@ msgstr "No se puede analizar el manifiest de la extensión"
 msgid "dashboard.plugins.try-plugin"
 msgstr "Prueba la extensión: "
 
-#: src/app/main/data/dashboard.cljs:754
+#: src/app/main/data/dashboard.cljs:786
 msgid "dashboard.progress-notification.deleting-files"
 msgstr "Eliminando archivos…"
 
-#: src/app/main/data/dashboard.cljs:875
+#: src/app/main/data/dashboard.cljs:907
 msgid "dashboard.progress-notification.restoring-files"
 msgstr "Restaurando archivos…"
 
-#: src/app/main/data/dashboard.cljs:755
+#: src/app/main/data/dashboard.cljs:787
 msgid "dashboard.progress-notification.slow-delete"
 msgstr "Eliminación inesperadamente lenta"
 
-#: src/app/main/data/dashboard.cljs:876
+#: src/app/main/data/dashboard.cljs:908
 msgid "dashboard.progress-notification.slow-restore"
 msgstr "Restauración inesperadamente lenta"
 
@@ -1120,7 +1130,7 @@ msgstr "Restaurar todos los proyectos y archivos"
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Restaurar todo"
 
-#: src/app/main/data/dashboard.cljs:935
+#: src/app/main/data/dashboard.cljs:967
 msgid "dashboard.restore-files-success-notification"
 msgstr "%s ficheros han sido restaurado correctamente."
 
@@ -1136,7 +1146,7 @@ msgstr "Vas a restaurar el proyecto %s y todos los archivos que contiene."
 msgid "dashboard.restore-project-confirmation.title"
 msgstr "Restaurar proyecto"
 
-#: src/app/main/data/dashboard.cljs:907, src/app/main/data/dashboard.cljs:934, src/app/main/data/dashboard.cljs:971, src/app/main/ui/dashboard/file_menu.cljs:224
+#: src/app/main/data/dashboard.cljs:939, src/app/main/data/dashboard.cljs:966, src/app/main/data/dashboard.cljs:1003, src/app/main/ui/dashboard/file_menu.cljs:223
 msgid "dashboard.restore-success-notification"
 msgstr "%s ha sido restaurado correctamente."
 
@@ -1287,7 +1297,7 @@ msgstr "Ver todos los archivos"
 msgid "dashboard.show-version-history"
 msgstr "Histórico de versiones"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:129
+#: src/app/main/ui/dashboard/file_menu.cljs:128
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Tu archivo ha sido borrado con éxito"
@@ -1297,7 +1307,7 @@ msgstr[1] "Tus archivos han sido borrado con éxito"
 msgid "dashboard.success-delete-project"
 msgstr "Tu proyecto ha sido borrado con éxito"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:124
+#: src/app/main/data/dashboard.cljs:553
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Tu archivo ha sido duplicado con éxito"
@@ -1307,11 +1317,11 @@ msgstr[1] "Tus archivos han sido duplicado con éxito"
 msgid "dashboard.success-duplicate-project"
 msgstr "Tu proyecto ha sido duplicado con éxito"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:162, src/app/main/ui/dashboard/grid.cljs:729, src/app/main/ui/dashboard/sidebar.cljs:130
+#: src/app/main/ui/dashboard/file_menu.cljs:161, src/app/main/ui/dashboard/grid.cljs:729, src/app/main/ui/dashboard/sidebar.cljs:130
 msgid "dashboard.success-move-file"
 msgstr "Tu archivo ha sido movido con éxito"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:161
+#: src/app/main/ui/dashboard/file_menu.cljs:160
 msgid "dashboard.success-move-files"
 msgstr "Tus archivos han sido movidos con éxito"
 
@@ -1403,7 +1413,7 @@ msgstr ""
 msgid "dashboard.type-something"
 msgstr "Escribe algo para buscar"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"
 msgstr "Despublicar Biblioteca"
 
@@ -1411,7 +1421,7 @@ msgstr "Despublicar Biblioteca"
 msgid "dashboard.update-settings"
 msgstr "Actualizar opciones"
 
-#: src/app/main/data/dashboard.cljs:689
+#: src/app/main/data/dashboard.cljs:721
 #, backend
 msgid "dashboard.user-no-longer-belong-organization"
 msgstr "Ya no perteneces a la organización %s"
@@ -1660,7 +1670,7 @@ msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 msgid "errors.export-failed"
 msgstr "La exportación ha fallado. Inténtalo de nuevo en un momento."
 
-#: src/app/main/data/exports/assets.cljs:372
+#: src/app/main/data/exports/assets.cljs:377
 msgid "errors.export-too-large"
 msgstr "El archivo es demasiado grande, prueba con otra escala"
 
@@ -1715,7 +1725,7 @@ msgstr "Ha ocurrido un problema con el web worker."
 msgid "errors.invalid-color"
 msgstr "Color no válido"
 
-#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:537, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Datos no válidos"
 
@@ -1865,17 +1875,17 @@ msgstr[1] ""
 "Ya no puedes editar este archivo, así que %s cambios no se han podido "
 "guardar. Recarga la página para ver el archivo como está ahora."
 
-#: src/app/main/data/persistence.cljs:647
+#: src/app/main/data/persistence.cljs:680
 msgid "errors.save-rejected-changes-undone"
 msgstr ""
 "Algunos de tus últimos cambios no se han podido guardar y se han deshecho. "
 "El resto de tu trabajo está guardado."
 
-#: src/app/main/data/persistence.cljs:526
+#: src/app/main/data/persistence.cljs:528
 msgid "errors.save-retrying"
 msgstr "Se ha perdido la conexión. Reintentando guardar los cambios."
 
-#: src/app/main/data/persistence.cljs:525
+#: src/app/main/data/persistence.cljs:527
 msgid "errors.save-retrying-busy"
 msgstr "El servidor está ocupado. Reintentando guardar tus cambios."
 
@@ -3025,7 +3035,7 @@ msgstr "Contacta con soporte"
 msgid "labels.contact-us"
 msgstr "Contáctanos"
 
-#: src/app/main/ui/auth/login.cljs:209, src/app/main/ui/dashboard/deleted.cljs:47, src/app/main/ui/dashboard/deleted.cljs:287, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:764, src/app/main/ui/dashboard/team.cljs:907, src/app/main/ui/exports/files.cljs:452, src/app/main/ui/settings/subscription.cljs:337, src/app/main/ui/settings/subscription.cljs:371, src/app/main/ui/settings/subscription.cljs:923
+#: src/app/main/ui/auth/login.cljs:209, src/app/main/ui/dashboard/deleted.cljs:47, src/app/main/ui/dashboard/deleted.cljs:287, src/app/main/ui/dashboard/file_menu.cljs:234, src/app/main/ui/dashboard/import.cljs:764, src/app/main/ui/dashboard/team.cljs:907, src/app/main/ui/exports/files.cljs:452, src/app/main/ui/settings/subscription.cljs:337, src/app/main/ui/settings/subscription.cljs:371, src/app/main/ui/settings/subscription.cljs:923
 msgid "labels.continue"
 msgstr "Continuar"
 
@@ -3073,7 +3083,7 @@ msgstr "Panel"
 msgid "labels.default"
 msgstr "Valor por defecto"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:335, src/app/main/ui/dashboard/fonts.cljs:303, src/app/main/ui/dashboard/fonts.cljs:380, src/app/main/ui/dashboard/fonts.cljs:414, src/app/main/ui/dashboard/import.cljs:319, src/app/main/ui/dashboard/project_menu.cljs:116, src/app/main/ui/dashboard/team.cljs:1454, src/app/main/ui/settings/integrations.cljs:376, src/app/main/ui/settings/profile.cljs:123, src/app/main/ui/settings/profile.cljs:137, src/app/main/ui/settings/profile.cljs:138, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:257, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:394
+#: src/app/main/ui/dashboard/file_menu.cljs:334, src/app/main/ui/dashboard/fonts.cljs:303, src/app/main/ui/dashboard/fonts.cljs:380, src/app/main/ui/dashboard/fonts.cljs:414, src/app/main/ui/dashboard/import.cljs:319, src/app/main/ui/dashboard/project_menu.cljs:116, src/app/main/ui/dashboard/team.cljs:1454, src/app/main/ui/settings/integrations.cljs:376, src/app/main/ui/settings/profile.cljs:123, src/app/main/ui/settings/profile.cljs:137, src/app/main/ui/settings/profile.cljs:138, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:257, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:394
 msgid "labels.delete"
 msgstr "Borrar"
 
@@ -3089,7 +3099,7 @@ msgstr "Eliminar hilo"
 msgid "labels.delete-invitation"
 msgstr "Eliminar invitation"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:289
+#: src/app/main/ui/dashboard/file_menu.cljs:288
 msgid "labels.delete-multi-files"
 msgstr "Borrar %s archivos"
 
@@ -3145,7 +3155,7 @@ msgstr "Vacío"
 msgid "labels.error"
 msgstr "Error"
 
-#: src/app/main/data/workspace/versions.cljs:314
+#: src/app/main/data/workspace/versions.cljs:320
 msgid "labels.exit"
 msgstr "Salir"
 
@@ -3287,7 +3297,7 @@ msgstr "Centro de aprendizaje"
 msgid "labels.libraries-and-templates"
 msgstr "Bibliotecas y Plantillas"
 
-#: src/app/main/ui/auth/verify_token.cljs:137, src/app/main/ui/dashboard/fonts.cljs:519, src/app/main/ui/dashboard/grid.cljs:127, src/app/main/ui/dashboard/grid.cljs:143, src/app/main/ui/dashboard/placeholder.cljs:139, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/mcp_authorize.cljs:140, src/app/main/ui/nitrate/entry.cljs:26, src/app/main/ui/static.cljs:694, src/app/main/ui/viewer.cljs:652, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:263, src/app/main/ui/workspace.cljs:132
+#: src/app/main/ui/auth/verify_token.cljs:137, src/app/main/ui/dashboard/fonts.cljs:519, src/app/main/ui/dashboard/grid.cljs:127, src/app/main/ui/dashboard/grid.cljs:143, src/app/main/ui/dashboard/placeholder.cljs:139, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/mcp_authorize.cljs:140, src/app/main/ui/nitrate/entry.cljs:26, src/app/main/ui/static.cljs:694, src/app/main/ui/viewer.cljs:652, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:263, src/app/main/ui/workspace.cljs:133
 msgid "labels.loading"
 msgstr "Cargando…"
 
@@ -3493,7 +3503,7 @@ msgstr "Quitar"
 msgid "labels.remove-member"
 msgstr "Eliminar integrante"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:187, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:297, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:187, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "Renombrar"
 
@@ -3529,7 +3539,7 @@ msgstr "Reenviar"
 msgid "labels.resend-invitation"
 msgstr "Reenviar invitacion"
 
-#: src/app/main/data/workspace/versions.cljs:246, src/app/main/data/workspace/versions.cljs:319, src/app/main/ui/workspace/sidebar/versions.cljs:238
+#: src/app/main/data/workspace/versions.cljs:252, src/app/main/data/workspace/versions.cljs:325, src/app/main/ui/workspace/sidebar/versions.cljs:238
 msgid "labels.restore"
 msgstr "Restaurar"
 
@@ -3696,7 +3706,7 @@ msgstr "Error desconocido"
 msgid "labels.unlock"
 msgstr "Desbloquear"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:283
+#: src/app/main/ui/dashboard/file_menu.cljs:282
 msgid "labels.unpublish-multi-files"
 msgstr "Despublicar %s archivos"
 
@@ -4028,27 +4038,27 @@ msgstr "¿Seguro que quieres borrar esta nota?"
 msgid "modals.delete-component-annotation.title"
 msgstr "Borrar nota"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:155
+#: src/app/main/ui/dashboard/file_menu.cljs:154
 msgid "modals.delete-file-confirm.accept"
 msgstr "Borrar archivo"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:154
+#: src/app/main/ui/dashboard/file_menu.cljs:153
 msgid "modals.delete-file-confirm.message"
 msgstr "¿Seguro que quieres borrar este archivo?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:153
+#: src/app/main/ui/dashboard/file_menu.cljs:152
 msgid "modals.delete-file-confirm.title"
 msgstr "Borrando archivo"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:149
+#: src/app/main/ui/dashboard/file_menu.cljs:148
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "Borrar archivos"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:148
+#: src/app/main/ui/dashboard/file_menu.cljs:147
 msgid "modals.delete-file-multi-confirm.message"
 msgstr "¿Seguro que quieres borrar %s archivos?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:147
+#: src/app/main/ui/dashboard/file_menu.cljs:146
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Borrando %s archivos"
 
@@ -4986,15 +4996,15 @@ msgstr "Empezar a diseñar"
 msgid "options.deleted-token-with-name"
 msgstr "El token {%s} no existe o ha sido borrado."
 
-#: src/app/plugins/utils.cljs:555
+#: src/app/plugins/utils.cljs:575
 msgid "plugins.validation.invalid-value"
 msgstr "esperado %s, obtenido %s (%s)"
 
-#: src/app/plugins/utils.cljs:569
+#: src/app/plugins/utils.cljs:589
 msgid "plugins.validation.message"
 msgstr "El campo %s no es válido: %s"
 
-#: src/app/plugins/utils.cljs:558
+#: src/app/plugins/utils.cljs:578
 msgid "plugins.validation.received-value"
 msgstr "obtenido %s (%s)"
 
@@ -6319,7 +6329,7 @@ msgstr "Webhooks - %s - Penpot"
 msgid "title.viewer"
 msgstr "%s - Modo de visualización - Penpot"
 
-#: src/app/main/ui/workspace.cljs:240
+#: src/app/main/ui/workspace.cljs:241
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
@@ -6750,11 +6760,67 @@ msgstr "Eliminar guía"
 msgid "workspace.debug.title"
 msgstr "Herramientas de depuración"
 
-#: src/app/main/data/exports/assets.cljs:47
+#: src/app/main/data/exports/assets.cljs:388, src/app/main/data/exports/assets.cljs:564
 msgid "workspace.export.unsaved-changes"
 msgstr ""
 "Algunos de tus últimos cambios aún no se han guardado, así que puede que "
 "esta exportación no los incluya."
+
+#: src/app/main/data/exports/assets.cljs:370, src/app/main/data/exports/assets.cljs:612
+msgid "workspace.export.unsaved-changes-included"
+msgstr ""
+"Algunos de tus últimos cambios aún no se han guardado. Esta exportación los "
+"incluye."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:59
+msgid "workspace.file-restored.accept"
+msgstr "Entendido"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:30
+msgid "workspace.file-restored.message"
+msgstr ""
+"%s ha restaurado una versión anterior de este archivo. Los cambios "
+"posteriores ya no están en el archivo."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:31
+msgid "workspace.file-restored.message-anonymous"
+msgstr ""
+"Un miembro del equipo ha restaurado una versión anterior de este archivo. "
+"Los cambios posteriores ya no están en el archivo."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:28
+msgid "workspace.file-restored.message-date"
+msgstr ""
+"%s ha restaurado la versión del %s. Los cambios posteriores ya no están en "
+"el archivo."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:29
+msgid "workspace.file-restored.message-date-anonymous"
+msgstr ""
+"Un miembro del equipo ha restaurado la versión del %s. Los cambios "
+"posteriores ya no están en el archivo."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:26
+msgid "workspace.file-restored.message-label"
+msgstr ""
+"%s ha restaurado la versión «%s». Los cambios posteriores ya no están en el "
+"archivo."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:27
+msgid "workspace.file-restored.message-label-anonymous"
+msgstr ""
+"Un miembro del equipo ha restaurado la versión «%s». Los cambios "
+"posteriores ya no están en el archivo."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:50
+msgid "workspace.file-restored.title"
+msgstr "Se ha restaurado este archivo"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:55
+msgid "workspace.file-restored.unsaved-changes"
+msgstr ""
+"No se han podido guardar tus últimos cambios porque se ha restaurado una "
+"versión del archivo."
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:924
 msgid "workspace.focus.focus-mode"
@@ -7298,7 +7364,7 @@ msgstr "ACTUALIZACIONES"
 msgid "workspace.notification-pill.detail"
 msgstr "Detalles"
 
-#: src/app/main/data/workspace/notifications.cljs:282
+#: src/app/main/data/workspace/notifications.cljs:283
 msgid "workspace.notifications.file-repaired"
 msgstr ""
 "Hemos corregido algunos problemas de este archivo. Hay una copia de la "
@@ -9894,7 +9960,7 @@ msgstr "tipografía"
 msgid "workspace.undo.entry.unknown"
 msgstr "Operación sobre %s"
 
-#: src/app/main/data/workspace/libraries.cljs:1500, src/app/main/data/workspace/versions.cljs:241
+#: src/app/main/data/workspace/libraries.cljs:1500, src/app/main/data/workspace/versions.cljs:247
 msgid "workspace.updates.dismiss"
 msgstr "Ignorar"
 
@@ -9914,7 +9980,7 @@ msgstr "Actualizar"
 msgid "workspace.versions.autosaved.entry"
 msgstr "%s versiones de autoguardado"
 
-#: src/app/main/data/workspace/versions.cljs:301, src/app/main/ui/workspace/sidebar/versions.cljs:300
+#: src/app/main/data/workspace/versions.cljs:307, src/app/main/ui/workspace/sidebar/versions.cljs:300
 msgid "workspace.versions.autosaved.version"
 msgstr "Autoguardado %s"
 
@@ -9933,6 +9999,10 @@ msgstr "Restaurar versión"
 #: src/app/main/ui/workspace/sidebar/versions.cljs:425, src/app/main/ui/workspace/sidebar/versions.cljs:427
 msgid "workspace.versions.button.save"
 msgstr "Guardar versión"
+
+#: src/app/main/data/workspace/versions.cljs:85
+msgid "workspace.versions.create-failed-unsaved"
+msgstr "No se ha creado la versión porque tus cambios no se han podido guardar."
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:434
 msgid "workspace.versions.empty"
@@ -9962,15 +10032,15 @@ msgstr "Versiones de %s"
 msgid "workspace.versions.loading"
 msgstr "Cargando..."
 
-#: src/app/main/data/workspace/versions.cljs:312
+#: src/app/main/data/workspace/versions.cljs:318
 msgid "workspace.versions.preview-banner-title"
 msgstr "Previsualizando version: %s"
 
-#: src/app/main/data/workspace/versions.cljs:306
+#: src/app/main/data/workspace/versions.cljs:312
 msgid "workspace.versions.preview.unnamed"
 msgstr "Versión sin nombre"
 
-#: src/app/main/data/workspace/versions.cljs:239
+#: src/app/main/data/workspace/versions.cljs:245
 msgid "workspace.versions.restore-warning"
 msgstr "¿Quieres restaurar esta versión?"
 

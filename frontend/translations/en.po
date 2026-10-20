@@ -260,11 +260,11 @@ msgstr ""
 msgid "dasboard.team-hero.title"
 msgstr "Team up!"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:234
+#: src/app/main/ui/dashboard/file_menu.cljs:233
 msgid "dashboard-restore-file-confirmation.description"
 msgstr "You're going to restore %s."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:233
+#: src/app/main/ui/dashboard/file_menu.cljs:232
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restore file"
 
@@ -272,7 +272,7 @@ msgstr "Restore file"
 msgid "dashboard.add-file"
 msgstr "Add file"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:701
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/workspace/main_menu.cljs:701
 msgid "dashboard.add-shared"
 msgstr "Add as Shared Library"
 
@@ -364,7 +364,7 @@ msgstr "Clear search"
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
 
-#: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
+#: src/app/main/data/dashboard.cljs:318, src/app/main/data/dashboard.cljs:568, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
@@ -390,15 +390,15 @@ msgstr ""
 "Are you sure you want to delete forever all your deleted projects and "
 "files? This is a non reversible action."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:247
+#: src/app/main/ui/dashboard/file_menu.cljs:246
 msgid "dashboard.delete-file-forever-confirmation.description"
 msgstr "Are you sure you want to delete forever %s? This is a non reversible action."
 
-#: src/app/main/data/dashboard.cljs:810
+#: src/app/main/data/dashboard.cljs:842
 msgid "dashboard.delete-files-success-notification"
 msgstr "%s files have been successfully deleted."
 
-#: src/app/main/ui/dashboard/deleted.cljs:55, src/app/main/ui/dashboard/deleted.cljs:57, src/app/main/ui/dashboard/deleted.cljs:273, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:246, src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/deleted.cljs:55, src/app/main/ui/dashboard/deleted.cljs:57, src/app/main/ui/dashboard/deleted.cljs:273, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:245, src/app/main/ui/dashboard/file_menu.cljs:247
 msgid "dashboard.delete-forever-confirmation.title"
 msgstr "Delete forever"
 
@@ -413,7 +413,7 @@ msgstr ""
 "it forever an all of the files contained in it. This is a non reversible "
 "action."
 
-#: src/app/main/data/dashboard.cljs:809, src/app/main/data/dashboard.cljs:843
+#: src/app/main/data/dashboard.cljs:841, src/app/main/data/dashboard.cljs:875
 msgid "dashboard.delete-success-notification"
 msgstr "%s has been successfully deleted."
 
@@ -429,17 +429,27 @@ msgstr "Your trash is empty. Deleted files and projects will appear here."
 msgid "dashboard.deleted.will-be-deleted-at"
 msgstr "Will be deleted %s"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/workspace/main_menu.cljs:738
+#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:738
 msgid "dashboard.download-binary-file"
 msgstr "Download Penpot file (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:302, src/app/main/ui/dashboard/project_menu.cljs:94
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/dashboard/project_menu.cljs:94
 msgid "dashboard.duplicate"
 msgstr "Duplicate"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:269
+#: src/app/main/ui/dashboard/file_menu.cljs:268
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicate %s files"
+
+#: src/app/main/data/dashboard.cljs:549
+msgid "dashboard.duplicate-unsaved-changes"
+msgid_plural "dashboard.duplicate-unsaved-changes"
+msgstr[0] ""
+"Your file has been duplicated, but the copy doesn't include your latest "
+"changes because they aren't saved yet."
+msgstr[1] ""
+"Your files have been duplicated, but the copies don't include your latest "
+"changes because they aren't saved yet."
 
 #: src/app/main/ui/dashboard/files.cljs:243, src/app/main/ui/dashboard/projects.cljs:318
 msgid "dashboard.empty-placeholder-drafts-subtitle"
@@ -501,27 +511,27 @@ msgstr "Import a .penpot file"
 msgid "dashboard.empty-project.start"
 msgstr "Start building amazing stuff"
 
-#: src/app/main/data/dashboard.cljs:813
+#: src/app/main/data/dashboard.cljs:845
 msgid "dashboard.errors.error-on-delete-files"
 msgstr "There was an error while deleting the files."
 
-#: src/app/main/data/dashboard.cljs:846
+#: src/app/main/data/dashboard.cljs:878
 msgid "dashboard.errors.error-on-delete-project"
 msgstr "There was an error while deleting the project %s."
 
-#: src/app/main/data/dashboard.cljs:941, src/app/main/ui/dashboard/file_menu.cljs:227
+#: src/app/main/data/dashboard.cljs:973, src/app/main/ui/dashboard/file_menu.cljs:226
 msgid "dashboard.errors.error-on-restore-file"
 msgstr "There was an error while restoring the file %s."
 
-#: src/app/main/data/dashboard.cljs:942
+#: src/app/main/data/dashboard.cljs:974
 msgid "dashboard.errors.error-on-restore-files"
 msgstr "There was an error while restoring the files."
 
-#: src/app/main/data/dashboard.cljs:974
+#: src/app/main/data/dashboard.cljs:1006
 msgid "dashboard.errors.error-on-restoring-project"
 msgstr "There was an error while restoring the project %s and its files."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:279
+#: src/app/main/ui/dashboard/file_menu.cljs:278
 msgid "dashboard.export-binary-multi"
 msgstr "Download %s Penpot files (.penpot)"
 
@@ -559,13 +569,13 @@ msgstr "There are no elements with export settings."
 msgid "dashboard.export-shapes.title"
 msgstr "Export selection"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:263
+#: src/app/main/ui/dashboard/file_menu.cljs:262
 msgid "dashboard.file-menu.delete-files-permanently-option"
 msgid_plural "dashboard.file-menu.delete-files-permanently-option"
 msgstr[0] "Delete file"
 msgstr[1] "Delete files"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:261
+#: src/app/main/ui/dashboard/file_menu.cljs:260
 msgid "dashboard.file-menu.restore-files-option"
 msgid_plural "dashboard.file-menu.restore-files-option"
 msgstr[0] "Restore file"
@@ -907,11 +917,11 @@ msgstr "loading your fonts …"
 msgid "dashboard.mark-all-as-read.success"
 msgstr "Marked all notifications as read"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:308, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:307, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Move to"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:272
+#: src/app/main/ui/dashboard/file_menu.cljs:271
 msgid "dashboard.move-to-multi"
 msgstr "Move %s files to"
 
@@ -923,7 +933,7 @@ msgstr "Move to other team"
 msgid "dashboard.new-file"
 msgstr "+ New File"
 
-#: src/app/main/data/dashboard.cljs:524, src/app/main/data/dashboard.cljs:636
+#: src/app/main/data/dashboard.cljs:525, src/app/main/data/dashboard.cljs:668
 msgid "dashboard.new-file-prefix"
 msgstr "New File"
 
@@ -931,7 +941,7 @@ msgstr "New File"
 msgid "dashboard.new-project"
 msgstr "+ New project"
 
-#: src/app/main/data/dashboard.cljs:269, src/app/main/data/dashboard.cljs:639
+#: src/app/main/data/dashboard.cljs:270, src/app/main/data/dashboard.cljs:671
 msgid "dashboard.new-project-prefix"
 msgstr "New Project"
 
@@ -997,7 +1007,7 @@ msgstr "View notifications"
 msgid "dashboard.num-of-members"
 msgstr "%s members"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:294
+#: src/app/main/ui/dashboard/file_menu.cljs:293
 msgid "dashboard.open-in-new-tab"
 msgstr "Open file in a new tab"
 
@@ -1013,7 +1023,7 @@ msgstr "Order by role"
 msgid "dashboard.order-invitations-by-status"
 msgstr "Order by status"
 
-#: src/app/main/data/dashboard.cljs:721
+#: src/app/main/data/dashboard.cljs:753
 msgid "dashboard.organization-deleted"
 msgstr "The %s organization has been deleted."
 
@@ -1061,19 +1071,19 @@ msgstr "Cannot parse the plugin manifest"
 msgid "dashboard.plugins.try-plugin"
 msgstr "Try plugin: "
 
-#: src/app/main/data/dashboard.cljs:754
+#: src/app/main/data/dashboard.cljs:786
 msgid "dashboard.progress-notification.deleting-files"
 msgstr "Deleting files…"
 
-#: src/app/main/data/dashboard.cljs:875
+#: src/app/main/data/dashboard.cljs:907
 msgid "dashboard.progress-notification.restoring-files"
 msgstr "Restoring files…"
 
-#: src/app/main/data/dashboard.cljs:755
+#: src/app/main/data/dashboard.cljs:787
 msgid "dashboard.progress-notification.slow-delete"
 msgstr "Deletion unexpectedly slow"
 
-#: src/app/main/data/dashboard.cljs:876
+#: src/app/main/data/dashboard.cljs:908
 msgid "dashboard.progress-notification.slow-restore"
 msgstr "Restore unexpectedly slow"
 
@@ -1101,7 +1111,7 @@ msgstr "Restore all projects and files"
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Restore All"
 
-#: src/app/main/data/dashboard.cljs:935
+#: src/app/main/data/dashboard.cljs:967
 msgid "dashboard.restore-files-success-notification"
 msgstr "%s files have been successfully restored."
 
@@ -1117,7 +1127,7 @@ msgstr "You're going to restore %s project and all the files contained in it."
 msgid "dashboard.restore-project-confirmation.title"
 msgstr "Restore Project"
 
-#: src/app/main/data/dashboard.cljs:907, src/app/main/data/dashboard.cljs:934, src/app/main/data/dashboard.cljs:971, src/app/main/ui/dashboard/file_menu.cljs:224
+#: src/app/main/data/dashboard.cljs:939, src/app/main/data/dashboard.cljs:966, src/app/main/data/dashboard.cljs:1003, src/app/main/ui/dashboard/file_menu.cljs:223
 msgid "dashboard.restore-success-notification"
 msgstr "%s has been successfully restored."
 
@@ -1267,7 +1277,7 @@ msgstr "Show all files"
 msgid "dashboard.show-version-history"
 msgstr "Version history"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:129
+#: src/app/main/ui/dashboard/file_menu.cljs:128
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Your file has been deleted successfully"
@@ -1277,7 +1287,7 @@ msgstr[1] "Your files have been deleted successfully"
 msgid "dashboard.success-delete-project"
 msgstr "Your project has been deleted successfully"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:124
+#: src/app/main/data/dashboard.cljs:553
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Your file has been duplicated successfully"
@@ -1287,11 +1297,11 @@ msgstr[1] "Your files have been duplicated successfully"
 msgid "dashboard.success-duplicate-project"
 msgstr "Your project has been duplicated successfully"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:162, src/app/main/ui/dashboard/grid.cljs:729, src/app/main/ui/dashboard/sidebar.cljs:130
+#: src/app/main/ui/dashboard/file_menu.cljs:161, src/app/main/ui/dashboard/grid.cljs:729, src/app/main/ui/dashboard/sidebar.cljs:130
 msgid "dashboard.success-move-file"
 msgstr "Your file has been moved successfully"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:161
+#: src/app/main/ui/dashboard/file_menu.cljs:160
 msgid "dashboard.success-move-files"
 msgstr "Your files have been moved successfully"
 
@@ -1383,7 +1393,7 @@ msgstr ""
 msgid "dashboard.type-something"
 msgstr "Type to search results"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:693
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:693
 msgid "dashboard.unpublish-shared"
 msgstr "Unpublish Library"
 
@@ -1391,7 +1401,7 @@ msgstr "Unpublish Library"
 msgid "dashboard.update-settings"
 msgstr "Update settings"
 
-#: src/app/main/data/dashboard.cljs:689
+#: src/app/main/data/dashboard.cljs:721
 #, backend
 msgid "dashboard.user-no-longer-belong-organization"
 msgstr "You are no longer a member of the organization %s"
@@ -1638,7 +1648,7 @@ msgstr "The email «%s» has been reported as spam or permanently bounce."
 msgid "errors.export-failed"
 msgstr "The export failed. Try again in a moment."
 
-#: src/app/main/data/exports/assets.cljs:372
+#: src/app/main/data/exports/assets.cljs:377
 msgid "errors.export-too-large"
 msgstr "Too large to export, try a smaller scale"
 
@@ -1693,7 +1703,7 @@ msgstr "Something wrong has happened with the web worker."
 msgid "errors.invalid-color"
 msgstr "Invalid color"
 
-#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:537, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Invalid data"
 
@@ -1832,17 +1842,17 @@ msgstr[1] ""
 "You can no longer edit this file, so %s changes could not be saved. Reload "
 "the page to see the file as it is now."
 
-#: src/app/main/data/persistence.cljs:647
+#: src/app/main/data/persistence.cljs:680
 msgid "errors.save-rejected-changes-undone"
 msgstr ""
 "Some of your latest changes couldn't be saved and were undone. The rest of "
 "your work is saved."
 
-#: src/app/main/data/persistence.cljs:526
+#: src/app/main/data/persistence.cljs:528
 msgid "errors.save-retrying"
 msgstr "Connection lost. Retrying to save your changes."
 
-#: src/app/main/data/persistence.cljs:525
+#: src/app/main/data/persistence.cljs:527
 msgid "errors.save-retrying-busy"
 msgstr "The server is busy. Retrying to save your changes."
 
@@ -2976,7 +2986,7 @@ msgstr "Contact support"
 msgid "labels.contact-us"
 msgstr "Contact us"
 
-#: src/app/main/ui/auth/login.cljs:209, src/app/main/ui/dashboard/deleted.cljs:47, src/app/main/ui/dashboard/deleted.cljs:287, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:764, src/app/main/ui/dashboard/team.cljs:907, src/app/main/ui/exports/files.cljs:452, src/app/main/ui/settings/subscription.cljs:337, src/app/main/ui/settings/subscription.cljs:371, src/app/main/ui/settings/subscription.cljs:923
+#: src/app/main/ui/auth/login.cljs:209, src/app/main/ui/dashboard/deleted.cljs:47, src/app/main/ui/dashboard/deleted.cljs:287, src/app/main/ui/dashboard/file_menu.cljs:234, src/app/main/ui/dashboard/import.cljs:764, src/app/main/ui/dashboard/team.cljs:907, src/app/main/ui/exports/files.cljs:452, src/app/main/ui/settings/subscription.cljs:337, src/app/main/ui/settings/subscription.cljs:371, src/app/main/ui/settings/subscription.cljs:923
 msgid "labels.continue"
 msgstr "Continue"
 
@@ -3024,7 +3034,7 @@ msgstr "Dashboard"
 msgid "labels.default"
 msgstr "Default"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:335, src/app/main/ui/dashboard/fonts.cljs:303, src/app/main/ui/dashboard/fonts.cljs:380, src/app/main/ui/dashboard/fonts.cljs:414, src/app/main/ui/dashboard/import.cljs:319, src/app/main/ui/dashboard/project_menu.cljs:116, src/app/main/ui/dashboard/team.cljs:1454, src/app/main/ui/settings/integrations.cljs:376, src/app/main/ui/settings/profile.cljs:123, src/app/main/ui/settings/profile.cljs:137, src/app/main/ui/settings/profile.cljs:138, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:257, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:394
+#: src/app/main/ui/dashboard/file_menu.cljs:334, src/app/main/ui/dashboard/fonts.cljs:303, src/app/main/ui/dashboard/fonts.cljs:380, src/app/main/ui/dashboard/fonts.cljs:414, src/app/main/ui/dashboard/import.cljs:319, src/app/main/ui/dashboard/project_menu.cljs:116, src/app/main/ui/dashboard/team.cljs:1454, src/app/main/ui/settings/integrations.cljs:376, src/app/main/ui/settings/profile.cljs:123, src/app/main/ui/settings/profile.cljs:137, src/app/main/ui/settings/profile.cljs:138, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:257, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:394
 msgid "labels.delete"
 msgstr "Delete"
 
@@ -3040,7 +3050,7 @@ msgstr "Delete thread"
 msgid "labels.delete-invitation"
 msgstr "Delete invitation"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:289
+#: src/app/main/ui/dashboard/file_menu.cljs:288
 msgid "labels.delete-multi-files"
 msgstr "Delete %s files"
 
@@ -3096,7 +3106,7 @@ msgstr "Empty"
 msgid "labels.error"
 msgstr "Error"
 
-#: src/app/main/data/workspace/versions.cljs:314
+#: src/app/main/data/workspace/versions.cljs:320
 msgid "labels.exit"
 msgstr "Exit"
 
@@ -3236,7 +3246,7 @@ msgstr "Learning Center"
 msgid "labels.libraries-and-templates"
 msgstr "Libraries & Templates"
 
-#: src/app/main/ui/auth/verify_token.cljs:137, src/app/main/ui/dashboard/fonts.cljs:519, src/app/main/ui/dashboard/grid.cljs:127, src/app/main/ui/dashboard/grid.cljs:143, src/app/main/ui/dashboard/placeholder.cljs:139, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/mcp_authorize.cljs:140, src/app/main/ui/nitrate/entry.cljs:26, src/app/main/ui/static.cljs:694, src/app/main/ui/viewer.cljs:652, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:263, src/app/main/ui/workspace.cljs:132
+#: src/app/main/ui/auth/verify_token.cljs:137, src/app/main/ui/dashboard/fonts.cljs:519, src/app/main/ui/dashboard/grid.cljs:127, src/app/main/ui/dashboard/grid.cljs:143, src/app/main/ui/dashboard/placeholder.cljs:139, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/mcp_authorize.cljs:140, src/app/main/ui/nitrate/entry.cljs:26, src/app/main/ui/static.cljs:694, src/app/main/ui/viewer.cljs:652, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:263, src/app/main/ui/workspace.cljs:133
 msgid "labels.loading"
 msgstr "Loading…"
 
@@ -3440,7 +3450,7 @@ msgstr "Remove"
 msgid "labels.remove-member"
 msgstr "Remove member"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:187, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:297, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:187, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "Rename"
 
@@ -3476,7 +3486,7 @@ msgstr "Resend"
 msgid "labels.resend-invitation"
 msgstr "Resend invitation"
 
-#: src/app/main/data/workspace/versions.cljs:246, src/app/main/data/workspace/versions.cljs:319, src/app/main/ui/workspace/sidebar/versions.cljs:238
+#: src/app/main/data/workspace/versions.cljs:252, src/app/main/data/workspace/versions.cljs:325, src/app/main/ui/workspace/sidebar/versions.cljs:238
 msgid "labels.restore"
 msgstr "Restore"
 
@@ -3643,7 +3653,7 @@ msgstr "Unknown error"
 msgid "labels.unlock"
 msgstr "Unlock"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:283
+#: src/app/main/ui/dashboard/file_menu.cljs:282
 msgid "labels.unpublish-multi-files"
 msgstr "Unpublish %s files"
 
@@ -3997,27 +4007,27 @@ msgstr "Are you sure you want to delete this annotation?"
 msgid "modals.delete-component-annotation.title"
 msgstr "Delete annotation"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:155
+#: src/app/main/ui/dashboard/file_menu.cljs:154
 msgid "modals.delete-file-confirm.accept"
 msgstr "Delete file"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:154
+#: src/app/main/ui/dashboard/file_menu.cljs:153
 msgid "modals.delete-file-confirm.message"
 msgstr "Are you sure you want to delete this file?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:153
+#: src/app/main/ui/dashboard/file_menu.cljs:152
 msgid "modals.delete-file-confirm.title"
 msgstr "Deleting file"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:149
+#: src/app/main/ui/dashboard/file_menu.cljs:148
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "Delete files"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:148
+#: src/app/main/ui/dashboard/file_menu.cljs:147
 msgid "modals.delete-file-multi-confirm.message"
 msgstr "Are you sure you want to delete %s files?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:147
+#: src/app/main/ui/dashboard/file_menu.cljs:146
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Deleting %s files"
 
@@ -4939,15 +4949,15 @@ msgstr "Start designing"
 msgid "options.deleted-token-with-name"
 msgstr "{%s} token does not exist or has been deleted."
 
-#: src/app/plugins/utils.cljs:555
+#: src/app/plugins/utils.cljs:575
 msgid "plugins.validation.invalid-value"
 msgstr "expected %s, got %s (%s)"
 
-#: src/app/plugins/utils.cljs:569
+#: src/app/plugins/utils.cljs:589
 msgid "plugins.validation.message"
 msgstr "Field %s is invalid: %s"
 
-#: src/app/plugins/utils.cljs:558
+#: src/app/plugins/utils.cljs:578
 msgid "plugins.validation.received-value"
 msgstr "got %s (%s)"
 
@@ -6255,7 +6265,7 @@ msgstr "Webhooks - %s - Penpot"
 msgid "title.viewer"
 msgstr "%s - View mode - Penpot"
 
-#: src/app/main/ui/workspace.cljs:240
+#: src/app/main/ui/workspace.cljs:241
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
@@ -6683,11 +6693,65 @@ msgstr "Remove guide"
 msgid "workspace.debug.title"
 msgstr "Debugging tools"
 
-#: src/app/main/data/exports/assets.cljs:47
+#: src/app/main/data/exports/assets.cljs:388, src/app/main/data/exports/assets.cljs:564
 msgid "workspace.export.unsaved-changes"
 msgstr ""
 "Some of your latest changes are not saved yet, so this export may not "
 "include them."
+
+#: src/app/main/data/exports/assets.cljs:370, src/app/main/data/exports/assets.cljs:612
+msgid "workspace.export.unsaved-changes-included"
+msgstr "Some of your latest changes are not saved yet. This export includes them."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:59
+msgid "workspace.file-restored.accept"
+msgstr "Got it"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:30
+msgid "workspace.file-restored.message"
+msgstr ""
+"%s restored an earlier version of this file. Changes made after it are no "
+"longer in the file."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:31
+msgid "workspace.file-restored.message-anonymous"
+msgstr ""
+"A teammate restored an earlier version of this file. Changes made after it "
+"are no longer in the file."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:28
+msgid "workspace.file-restored.message-date"
+msgstr ""
+"%s restored the version from %s. Changes made after it are no longer in the "
+"file."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:29
+msgid "workspace.file-restored.message-date-anonymous"
+msgstr ""
+"A teammate restored the version from %s. Changes made after it are no "
+"longer in the file."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:26
+msgid "workspace.file-restored.message-label"
+msgstr ""
+"%s restored the version “%s”. Changes made after it are no longer in the "
+"file."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:27
+msgid "workspace.file-restored.message-label-anonymous"
+msgstr ""
+"A teammate restored the version “%s”. Changes made after it are no longer "
+"in the file."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:50
+msgid "workspace.file-restored.title"
+msgstr "This file was restored"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:55
+msgid "workspace.file-restored.unsaved-changes"
+msgstr ""
+"Your latest changes couldn't be saved because a version of the file was "
+"restored."
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:924
 msgid "workspace.focus.focus-mode"
@@ -7231,7 +7295,7 @@ msgstr "UPDATES"
 msgid "workspace.notification-pill.detail"
 msgstr "Details"
 
-#: src/app/main/data/workspace/notifications.cljs:282
+#: src/app/main/data/workspace/notifications.cljs:283
 msgid "workspace.notifications.file-repaired"
 msgstr ""
 "We fixed some issues in this file. You can find a copy of the original "
@@ -9805,7 +9869,7 @@ msgstr "typography asset"
 msgid "workspace.undo.entry.unknown"
 msgstr "Operation over %s"
 
-#: src/app/main/data/workspace/libraries.cljs:1500, src/app/main/data/workspace/versions.cljs:241
+#: src/app/main/data/workspace/libraries.cljs:1500, src/app/main/data/workspace/versions.cljs:247
 msgid "workspace.updates.dismiss"
 msgstr "Dismiss"
 
@@ -9825,7 +9889,7 @@ msgstr "Update"
 msgid "workspace.versions.autosaved.entry"
 msgstr "%s autosave versions"
 
-#: src/app/main/data/workspace/versions.cljs:301, src/app/main/ui/workspace/sidebar/versions.cljs:300
+#: src/app/main/data/workspace/versions.cljs:307, src/app/main/ui/workspace/sidebar/versions.cljs:300
 msgid "workspace.versions.autosaved.version"
 msgstr "Autosaved %s"
 
@@ -9844,6 +9908,10 @@ msgstr "Restore version"
 #: src/app/main/ui/workspace/sidebar/versions.cljs:425, src/app/main/ui/workspace/sidebar/versions.cljs:427
 msgid "workspace.versions.button.save"
 msgstr "Save version"
+
+#: src/app/main/data/workspace/versions.cljs:85
+msgid "workspace.versions.create-failed-unsaved"
+msgstr "The version was not created because your changes could not be saved."
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:434
 msgid "workspace.versions.empty"
@@ -9873,15 +9941,15 @@ msgstr "%s's versions"
 msgid "workspace.versions.loading"
 msgstr "Loading..."
 
-#: src/app/main/data/workspace/versions.cljs:312
+#: src/app/main/data/workspace/versions.cljs:318
 msgid "workspace.versions.preview-banner-title"
 msgstr "Previewing version: %s"
 
-#: src/app/main/data/workspace/versions.cljs:306
+#: src/app/main/data/workspace/versions.cljs:312
 msgid "workspace.versions.preview.unnamed"
 msgstr "Unnamed version"
 
-#: src/app/main/data/workspace/versions.cljs:239
+#: src/app/main/data/workspace/versions.cljs:245
 msgid "workspace.versions.restore-warning"
 msgstr "Do you want to restore this version?"
 

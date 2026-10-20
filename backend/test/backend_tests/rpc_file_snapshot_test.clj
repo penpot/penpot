@@ -23,6 +23,7 @@
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.http :as http]
+   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
@@ -92,11 +93,19 @@
                     ::rpc/profile-id (:id profile)
                     :file-id (:id file)
                     :id @snapshot-id}
-            out    (th/command! params)]
+            calls  (atom [])
+            out    (with-redefs [mbus/pub! (fn [_cfg & {:keys [message]}]
+                                             (swap! calls conj message))]
+                     (th/command! params))
+            sent   (first (filter #(= :file-restored (:type %)) @calls))]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out))))
+        (t/is (nil? (:result out)))
+        ;; Peers learn who restored which version
+        (t/is (= (:id profile) (:profile-id sent)))
+        (t/is (= "label1" (:label sent)))
+        (t/is (ct/inst? (:created-at sent))))
 
       (let [[row1 row2 :as rows]
             (th/db-query :file-change
