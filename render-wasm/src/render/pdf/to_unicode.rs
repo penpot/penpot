@@ -781,7 +781,7 @@ mod tests {
             .add(family, LIGATURE_FONT, false, false)
             .expect("ligature font");
         let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
-        let pdf = super::super::render_to_pdf(&mut resources, &id, &pool, 1.0).expect("pdf");
+        let pdf = super::super::render_to_pdf(&mut resources, &id, &pool).expect("pdf");
 
         let trailer = parse_xref(&pdf).expect("xref").trailer;
         assert!(

@@ -1998,6 +1998,25 @@ impl Shape {
             })
     }
 
+    /// Source graphic with every visible inner shadow of the masked group over
+    /// it, for the CPU export renderer; `None` without inner shadows.
+    pub fn masked_group_inner_shadow_filter(&self) -> Option<skia::ImageFilter> {
+        if !self.is_masked_group() {
+            return None;
+        }
+
+        let mut layers: Vec<Option<skia::ImageFilter>> = vec![None];
+        for shadow in self.inner_shadows_visible() {
+            layers.push(shadow.get_inner_shadow_filter());
+        }
+
+        if layers.len() > 1 {
+            skia::image_filters::merge(layers, None)
+        } else {
+            None
+        }
+    }
+
     /// Image filter for the `save_layer` that wraps a masked group, i.e. for
     /// the result *after* the mask has been composited into it.
     ///
@@ -2388,6 +2407,28 @@ mod tests {
 
     fn unit_rect() -> math::Rect {
         math::Rect::from_ltrb(0.0, 0.0, 100.0, 100.0)
+    }
+
+    #[test]
+    fn masked_group_inner_shadow_filter_needs_an_inner_shadow() {
+        let drop_only = masked_group_with(vec![drop_shadow(4.0, 0.0, (10.0, 10.0))], None);
+        assert!(drop_only.masked_group_inner_shadow_filter().is_none());
+
+        let inner = masked_group_with(vec![inner_shadow(4.0, (10.0, 10.0))], None);
+        assert!(inner.masked_group_inner_shadow_filter().is_some());
+
+        let mut unmasked = inner.clone();
+        unmasked.set_masked(false);
+        assert!(unmasked.masked_group_inner_shadow_filter().is_none());
+    }
+
+    #[test]
+    fn masked_group_inner_shadow_filter_keeps_imperceptible_shadows() {
+        // Too small for the workspace filter at 1x, but export draws it.
+        let shape = masked_group_with(vec![inner_shadow(1.0, (0.0, 0.0))], None);
+
+        assert!(shape.masked_group_layer_filter(1.0, false, false).is_none());
+        assert!(shape.masked_group_inner_shadow_filter().is_some());
     }
 
     #[test]
