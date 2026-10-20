@@ -206,6 +206,7 @@
     [:allow-demo-users {:optional true} ::sm/boolean]
     [:error-report-webhook {:optional true} :string]
     [:user-feedback-destination {:optional true} :string]
+    [:mcp-feedback-email {:optional true} ::sm/email]
 
     [:default-rpc-rlimit {:optional true} [::sm/vec :string]]
     [:rpc-rlimit-config {:optional true} ::fs/path]
