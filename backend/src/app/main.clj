@@ -647,6 +647,8 @@
     :run-webhook                    (ig/ref ::webhooks/run-webhook-job-def)
     :process-webhook-event          (ig/ref ::webhooks/process-webhook-event-job-def)
     :file-gc                        (ig/ref :app.tasks.file-gc/job-def)
+    :schedule-team-storage           (ig/ref :app.tasks.team-storage/job-def)
+    :recompute-team-storage         (ig/ref :app.tasks.team-storage/worker-job-def)
     :offload-file-data              (ig/ref :app.tasks.offload-file-data/job-def)
     :objects-gc                     (ig/ref :app.tasks.objects-gc/job-def)
     :export-binfile                 (ig/ref :app.tasks.export-binfile/job-def)
@@ -659,7 +661,8 @@
     :session-gc                     (ig/ref ::session/job-def)
     :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
     :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumer-task/nexus-job-def)
-    :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumer-task/admin-console-job-def)}
+    :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumer-task/admin-console-job-def)
+    :audit-log-consumer-storage-usage (ig/ref :app.loggers.audit.consumer-task/storage-usage-job-def)}
 
    ::jobs/request-pool
    {::rds/client  (ig/ref ::rds/client)
@@ -691,6 +694,14 @@
    :app.tasks.file-gc/job-def
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.tasks.team-storage/job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.tasks.team-storage/worker-job-def
+   {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.offload-file-data/job-def
@@ -758,6 +769,10 @@
    {::db/pool            (ig/ref ::db/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
+
+   :app.loggers.audit.consumer-task/storage-usage-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::email/blacklist
    {}
@@ -854,37 +869,46 @@
     ::db/pool                 (ig/ref ::db/pool)
     ::mtx/metrics             (ig/ref ::mtx/metrics)
     ::wrk/entries
-    [{:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :job :session-gc}
+    ;; a flag may contribute several entries (storage-usage does): each
+    ;; element is one entry or a seq of them
+    (into [] (mapcat #(if (map? %) [%] %))
+          [{:cron #penpot/cron "0 0 0 * * ?" ;; daily
+            :job :session-gc}
 
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :job :objects-gc}
+           {:cron #penpot/cron "0 0 0 * * ?" ;; daily
+            :job :objects-gc}
 
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :job :storage-gc-deleted}
+           {:cron #penpot/cron "0 0 0 * * ?" ;; daily
+            :job :storage-gc-deleted}
 
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :job :storage-gc-touched}
+           {:cron #penpot/cron "0 0 0 * * ?" ;; daily
+            :job :storage-gc-touched}
 
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :job :storage-pending-gc}
+           {:cron #penpot/cron "0 0 0 * * ?" ;; daily
+            :job :storage-pending-gc}
 
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :job :jobs-gc}
+           {:cron #penpot/cron "0 0 0 * * ?" ;; daily
+            :job :jobs-gc}
 
-     {:cron #penpot/cron "0 0 2 * * ?" ;; daily
-      :job :file-gc-scheduler}
+           {:cron #penpot/cron "0 0 2 * * ?" ;; daily
+            :job :file-gc-scheduler}
 
-     {:cron #penpot/cron "0 30 */3,23 * * ?"
-      :job :telemetry}
+           {:cron #penpot/cron "0 30 */3,23 * * ?"
+            :job :telemetry}
 
-     (when (contains? cf/flags :nexus)
-       {:cron #penpot/cron "0 */5 * * * ?" ;; every 5m
-        :job :audit-log-consumer-nexus})
+           (when (contains? cf/flags :nexus)
+             {:cron #penpot/cron "0 */5 * * * ?" ;; every 5m
+              :job :audit-log-consumer-nexus})
 
-     (when (contains? cf/flags :admin-console)
-       {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m, offset 30s from nexus
-        :job :audit-log-consumer-admin-console})]}
+           (when (contains? cf/flags :admin-console)
+             {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m, offset 30s from nexus
+              :job :audit-log-consumer-admin-console})
+
+           (when (contains? cf/flags :storage-usage)
+             [{:cron #penpot/cron "15 */5 * * * ?" ;; every 5m, offset 15s
+               :job :audit-log-consumer-storage-usage}
+              {:cron #penpot/cron "45 */10 * * * ?" ;; every 10m, after the drain
+               :job :schedule-team-storage}])])}
 
    ::wrk/dispatcher
    {::rds/client  (ig/ref ::rds/client)
@@ -920,6 +944,18 @@
    [::binfile ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-binfile-parallelism 1)
     ::wrk/queue       :binfile
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::jobs/defs       (ig/ref ::jobs/defs)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
+
+   ;; the storage recompute runs the slow per-team SUM: it must not
+   ;; share the runner of the deletion cascades
+   [::storage ::wrk/runner]
+   {::wrk/parallelism (cf/get :worker-storage-parallelism 2)
+    ::wrk/queue       :storage
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
     ::jobs/defs       (ig/ref ::jobs/defs)

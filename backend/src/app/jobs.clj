@@ -716,21 +716,6 @@
                              :created-at created-at})))
       {:event-id id :created-at created-at :kind kind :payload payload})))
 
-(defn- own-transaction
-  "A cfg for a job write that must own its transaction.
-
-  A lifecycle write reports on work that already happened elsewhere, so
-  it never joins the transaction of whoever called it: the `::db/conn` is
-  dropped and `db/tx-run!` opens its own transaction on its own
-  connection. Because that transaction joins no other, it owns its
-  after-commit context too, so the write and its metric commit or vanish
-  together and a rollback of the surrounding work can undo neither.
-
-  `submit` is the deliberate exception: creating a job is part of the
-  business unit of work of whoever asks for it."
-  [cfg]
-  (dissoc cfg ::db/conn))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HEARTBEAT / PROGRESS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -825,10 +810,10 @@
   here, so a progress event can never land on an already terminal job.
   Returns 1 when the event was stored.
 
-  Like every lifecycle write it owns its transaction (see `own-transaction`),
+  Like every lifecycle write it owns its transaction (see `db/own-transaction`),
   so a beat survives the rollback of the work around it."
   [cfg job-id progress]
-  (db/tx-run! (own-transaction cfg)
+  (db/tx-run! (db/own-transaction cfg)
               (fn [{:keys [::db/conn] :as tx-cfg}]
                 (if (db/exec-one! conn [sql:lock-active-job job-id])
                   (do
@@ -940,7 +925,7 @@
 ;; Every metric is registered with `db/after-commit` from inside the
 ;; transaction, next to the event, so it lands on the outermost commit
 ;; whatever that is: a rolled back transition is never counted. Each
-;; writer owns that transaction (see `own-transaction`), so the commit
+;; writer owns that transaction (see `db/own-transaction`), so the commit
 ;; in question is always its own.
 ;;
 ;; That callback swallows exceptions, which is why every writer below
@@ -1042,7 +1027,7 @@
   attempt this run consumes from the retry budget."
   [cfg job-id scheduled-at]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
-  (db/tx-run! (own-transaction cfg)
+  (db/tx-run! (db/own-transaction cfg)
               (fn [{:keys [::db/conn] :as tx-cfg}]
                 (if-let [{:keys [retry-num]}
                          (db/exec-one! conn [sql:claim-job job-id scheduled-at])]
@@ -1074,7 +1059,7 @@
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
   (let [job     (get-job cfg job-id)
         encoded (db/json (check-job-error error))]
-    (db/tx-run! (own-transaction cfg)
+    (db/tx-run! (db/own-transaction cfg)
                 (fn [{:keys [::db/conn] :as tx-cfg}]
                   (if-let [{:keys [retry-num]}
                            (db/exec-one! conn [sql:retry-job (ct/now) scheduled-at
@@ -1149,7 +1134,7 @@
   [cfg & {:keys [job-id result resource-id]}]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
   (check-resource-id resource-id)
-  (let [n (db/tx-run! (own-transaction cfg)
+  (let [n (db/tx-run! (db/own-transaction cfg)
                       (fn [{:keys [::db/conn] :as tx-cfg}]
                         (let [job    (some-> (db/exec-one! conn [sql:lock-job job-id])
                                              decode-row)
@@ -1204,7 +1189,7 @@
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
   (let [job     (get-job cfg job-id)
         encoded (db/json (check-job-error error))
-        n       (db/tx-run! (own-transaction cfg)
+        n       (db/tx-run! (db/own-transaction cfg)
                             (fn [{:keys [::db/conn] :as tx-cfg}]
                               (if (db/exec-one! conn [sql:fail-job (ct/now) encoded job-id])
                                 (do
@@ -1237,7 +1222,7 @@
   [cfg job-id]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
   (let [job     (get-job cfg job-id)
-        n       (db/tx-run! (own-transaction cfg)
+        n       (db/tx-run! (db/own-transaction cfg)
                             (fn [{:keys [::db/conn] :as tx-cfg}]
                               (if (db/exec-one! conn [sql:cancel-job (ct/now) job-id])
                                 (do
