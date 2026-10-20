@@ -151,6 +151,26 @@
     (when (and (some? file-id) (some? page-id) (some? id))
       (locate-shape file-id page-id id))))
 
+(defn- shape-not-found
+  [id]
+  (ex-info (dm/str "[PENPOT PLUGIN] Shape not found: " id)
+           {:type ::shape-not-found}))
+
+(defn check-shape-located
+  "Throws when shape `id` no longer exists (removed by an undo, a peer or
+  a rejected save), so a write to it does not vanish silently. Always
+  throws, whatever the plugin's validation flag: `handle-error` lets this
+  error through."
+  [file-id page-id id]
+  (when (nil? (locate-shape file-id page-id id))
+    (throw (shape-not-found id))))
+
+(defn check-shape-exists
+  "`check-shape-located` for the shape behind `proxy`."
+  [proxy]
+  (when (nil? (proxy->shape proxy))
+    (throw (shape-not-found (obj/get proxy "$id")))))
+
 (defn inside-component-copy?
   "True when `shape` is nested inside a component copy. The copy root itself is
   movable as a whole; its descendants are structural copy content and must not
@@ -581,6 +601,10 @@
     (let [explain (-> cause ex-data ::sm/explain)
           throw? (throw-validation-errors? plugin-id)]
       (cond
+        ;; A write to a removed shape always reaches the plugin
+        (= ::shape-not-found (-> cause ex-data :type))
+        (throw cause)
+
         ;; If it's a clojure error we throw as a validation error
         (and throw? explain)
         (throw-not-valid :error (error-messages explain))
