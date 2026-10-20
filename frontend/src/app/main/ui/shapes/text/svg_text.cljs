@@ -269,9 +269,15 @@
            [:defs
             [:& fills/fills          {:shape shape :render-id render-id}]]
 
-           (if (:emphasis-mark data)
+           (cond
+             (:zhuyin-glyph data)
+             [:> :text #js {:x (:x data) :y (:y data)
+                            :style (annotation-style data font-size false nil annotation-fill)} (:text data)]
+
+             (:emphasis-mark data)
              ;; Emphasis marks (圏点) are not stroked.
              [:> :text (emphasis-mark-props data annotation-fill) (:text data)]
+             :else
              [:*
               [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
                (if (= "warichu" (:warichu data))

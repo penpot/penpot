@@ -172,6 +172,12 @@
               (wasm.text-editor/get-cached-content id)
               (wasm.text-editor/text-editor-get-selection)))
 
+        zhuyin-selection-active
+        (and reading-selection-active
+             (wasm.text-editor/zhuyin-selection?
+              (wasm.text-editor/get-cached-content id)
+              (wasm.text-editor/text-editor-get-selection)))
+
         fill-values
         (dwt/current-text-values
          {:editor-styles editor-styles
@@ -256,6 +262,7 @@
        :ruby-values ruby-values
        :text-selection-active text-selection-active
        :reading-selection-active reading-selection-active
+       :zhuyin-selection-active zhuyin-selection-active
        :libraries libraries
        :file-id file-id
        :typographies typographies}]

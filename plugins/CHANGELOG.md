@@ -2,6 +2,8 @@
 
 ### 🚀 Features
 
+- **plugin-types:** Add `rubyZhuyin` to text shapes and ranges for typed Mandarin annotations.
+
 - **plugin-types:** Added independent `textEmphasisPosition` and `textUnderlinePosition` properties to text shapes and ranges.
 
 - **plugin-types, plugins-runtime:** `penpotMgmt` returns `Team`, `Project` and `ProjectFile` objects. Assigning `name` renames teams, projects and files, `project.pinned` pins a project and `file.shared` shares a file as a team library; `createProject`, `createFile`, `moveTo`, `duplicate`, `remove` and `restore` live on the objects. Added `penpotMgmt.listTeams`, `penpotMgmt.createTeam`, `penpotMgmt.getFile`, `listDeletedProjects` and `listDeletedFiles`, and the `manage:projects`, `manage:teams` and `manage:delete` permissions. Restoration uses the dashboard's Trash operation; projects need recoverable files and empty projects cannot be restored; the API exposes no permanent deletion method. Team deletion is not exposed.

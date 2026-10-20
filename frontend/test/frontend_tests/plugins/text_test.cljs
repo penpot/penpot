@@ -351,3 +351,13 @@
         [^js text shape] (text-proxy-over content)]
     (with-redefs [u/proxy->shape (constantly shape)]
       (t/is (= "none" (.-textEmphasis text))))))
+
+(t/deftest zhuyin-mode-is-a-boolean-on-shapes-and-ranges
+  (let [range (plugins.text/text-range-proxy plugin-id (random-uuid) (random-uuid) (random-uuid) 0 1)
+        result (capture-japanese-update range "rubyZhuyin" true two-span-content)
+        bad (capture-japanese-update range "rubyZhuyin" "yes" two-span-content)
+        [text] (text-proxy-over two-span-content)
+        shape (capture-japanese-update text "rubyZhuyin" false two-span-content)]
+    (t/is (= {:ruby-zhuyin true} (:attrs result)))
+    (t/is (nil? (:attrs bad)))
+    (t/is (= {:ruby-zhuyin false} (:attrs shape)))))

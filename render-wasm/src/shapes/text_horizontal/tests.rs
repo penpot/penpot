@@ -1582,3 +1582,24 @@ fn horizontal_squeeze_keeps_the_next_character_on_the_line() {
     assert_eq!(squeezed_chars, commas, "both commas give up aki");
     assert!((sheds[0][0].1 - sheds[0][1].1).abs() < 0.01, "equally");
 }
+
+#[test]
+fn horizontal_zhuyin_reserves_its_right_strip_without_changing_line_leading() {
+    init_state();
+    for reading in ["ㄓ", "ㄋㄧˇ", "˙ㄉㄜ", "ㄓㄨㄤˋ"] {
+        let span = TextSpan {
+            ruby: reading.into(),
+            ruby_zhuyin: true,
+            annotation_clearance: AnnotationClearance::Auto,
+            ..make_span("中", 0.0)
+        };
+        let paragraph = make_paragraph(vec![span.clone(), make_span("文", 0.0)], 0.0);
+        let spacing = test_ruby_spacing(&paragraph);
+        assert_eq!(spacing.adjustments[0], vec![(0, span.font_size * 0.6)]);
+        assert_eq!(span.annotation_room_em(), 0.0);
+        let rect = skia::Rect::from_xywh(0.0, 0.0, span.font_size * 1.6, span.font_size);
+        let origin = horizontal_zhuyin_origin(&span, rect);
+        assert!((origin.x - span.font_size).abs() < 0.001);
+        assert_eq!(origin.y, 0.0);
+    }
+}

@@ -225,7 +225,15 @@ impl From<RawTextSpan> for shapes::TextSpan {
         span.ruby_size = RawRubySize::from(value.ruby_size).into();
         span.ruby_align = RawRubyAlign::from(value.ruby_align).into();
         span.ruby_overhang = RawRubyOverhang::from(value.ruby_overhang).into();
-        span.ruby_side = RawRubySide::from(value.ruby_side).into();
+        // Bit 1 selects Zhuyin; bit 0 retains the existing over/under side.
+        // Reject unknown flags instead of treating corrupt bytes as Zhuyin.
+        let ruby_flags = if value.ruby_side <= 3 {
+            value.ruby_side
+        } else {
+            0
+        };
+        span.ruby_side = RawRubySide::from(ruby_flags & 1).into();
+        span.ruby_zhuyin = ruby_flags & 2 != 0;
         span
     }
 }
@@ -523,6 +531,23 @@ mod tests {
     /// attr bytes after the u32 span count, and SPAN-ATTR-U8-SIZE (80)
     /// attr bytes before the fills block. These sizes must match the struct
     /// layouts.
+    #[test]
+    fn zhuyin_flags_keep_legacy_side_and_header_size() {
+        for (flags, zhuyin, side) in [
+            (0, false, RubySide::Over),
+            (1, false, RubySide::Under),
+            (2, true, RubySide::Over),
+            (3, true, RubySide::Under),
+            (255, false, RubySide::Over),
+        ] {
+            let mut bytes = [0u8; std::mem::size_of::<RawTextSpan>()];
+            bytes[13] = flags;
+            let span: shapes::TextSpan = RawTextSpan::from(bytes).into();
+            assert_eq!(span.ruby_zhuyin, zhuyin);
+            assert_eq!(span.ruby_side, side);
+        }
+    }
+
     #[test]
     fn raw_struct_sizes_match_cljs_writer() {
         const PARAGRAPH_ATTR_U8_SIZE: usize = 20;

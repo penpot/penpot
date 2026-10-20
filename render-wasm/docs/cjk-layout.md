@@ -142,3 +142,43 @@ References checked on 2026-10-19:
   sections 7.1 and 7.2: syllable/word wrapping and justification restrictions.
 - [CSS Text 3](https://www.w3.org/TR/css-text-3/#word-break-property):
   letter-breaking policy is distinct from punctuation and overflow handling.
+
+### Mandarin Zhuyin annotations
+
+An optional span flag, `ruby-zhuyin`, selects dedicated right-side Zhuyin.
+Absent or false retains normal ruby. Each span maps one Han character
+(optionally with one variation selector) to one typed Mandarin syllable in
+`ruby`. Enter 1–3 U+3105–U+3129 symbols and at most one tone: U+02C9, U+02CA,
+U+02C7, U+02CB or U+02D9. Neutral tone may precede or follow the symbols;
+other tones must follow them. The editor validates this syntax; it does not
+check pronunciation, infer mappings or generate readings. Unsupported API
+content keeps its text and falls back to ordinary ruby.
+
+Symbols remain upright to the base's right in horizontal and vertical text.
+Their size is 0.3 em. A 0.6 em strip holds symbols and tones, including an
+empty tone lane for unmarked first tone. Non-neutral tones sit outside the
+upper right of the last symbol; neutral tone sits above the symbol stack.
+The stack centres vertically on the base. These rules follow CLREQ
+sections 5.5.3.2–5.5.3.3, retrieved 2026-10-20:
+<https://www.w3.org/TR/clreq/>. The strip is wider than the reference's
+half-em minimum to contain a full-width tone fallback glyph.
+
+Horizontal layout reserves the strip in the inline advance. Vertical Auto
+clearance reserves it in the right gutter, outside a same-side underline
+and inside same-side emphasis. Fixed clearance may allow overlaps, as with
+ordinary ruby. Zhuyin ignores ruby size, alignment, overhang and side;
+hiding a reading removes its room without clearing saved text or mode.
+
+The mode uses bit 1 of span header byte 13; bit 0 keeps over/under for normal
+ruby. Header size stays unchanged. Unknown flag bits fall back to ordinary
+over ruby. Position-data direction 5 carries a single upright annotation
+glyph with offsets into the original ruby string and its drawing baseline.
+Both layout paths use it for SVG; canvas, PNG, PDF and vertical outlines use
+the same shaped glyph positions. HTML handoff uses positioned symbol boxes;
+font metrics can make it differ from the renderer's ink-centred placement.
+
+This slice supports Mandarin, one base per span. Group-to-syllable mapping,
+dialectal symbols/tones, automatic pronunciation, native IME acceptance and
+native-reader approval remain outside this slice. Changing a base into a
+group preserves the reading and uses normal ruby until a single base is
+restored. Existing Pinyin and Japanese readings keep their saved behavior.

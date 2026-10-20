@@ -55,7 +55,7 @@
 
 ;; Ruby attrs that change how a reading looks, not the reading itself.
 (def ruby-presentation-attrs
-  [:ruby-hidden :ruby-size :ruby-align :ruby-overhang :ruby-side])
+  [:ruby-hidden :ruby-zhuyin :ruby-size :ruby-align :ruby-overhang :ruby-side])
 
 ;; Span attrs; `:ruby` holds the reading (furigana) of the span.
 (def span-attrs
@@ -70,7 +70,7 @@
 
 ;; Values of the span attrs above when a span does not store them.
 (def span-attr-defaults
-  (into {:ruby "" :ruby-hidden false}
+  (into {:ruby "" :ruby-hidden false :ruby-zhuyin false}
         (comp (filter #(contains? enum-values %))
               (map (juxt identity enum-default)))
         span-attrs))
@@ -125,6 +125,37 @@
   (and (string? ruby)
        (not (str/blank? ruby))
        (not (re-find #"[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]" ruby))))
+
+(def ^:private zhuyin-base-pattern
+  #?(:clj (re-pattern "[\\u3400-\\u9FFF\\uF900-\\uFAFF\\x{20000}-\\x{323AF}][\\uFE00-\\uFE0F\\x{E0100}-\\x{E01EF}]?")
+     :cljs (js/RegExp. "[\\u3400-\\u9FFF\\uF900-\\uFAFF\\u{20000}-\\u{323AF}][\\uFE00-\\uFE0F\\u{E0100}-\\u{E01EF}]?" "u")))
+
+(defn zhuyin-base?
+  "One Han character, optionally followed by a variation selector."
+  [text]
+  (boolean (and (string? text) (re-matches zhuyin-base-pattern text))))
+
+(defn zhuyin-reading?
+  "One Mandarin syllable: one to three symbols and an optional tone."
+  [reading]
+  (boolean (and (string? reading)
+                (re-matches #"(?:[\u3105-\u3129]{1,3}[ˉˊˇˋ˙]?|˙[\u3105-\u3129]{1,3})" (str/trim reading)))))
+
+(defn zhuyin-slots
+  "Upright symbol ink centres in base em for HTML handoff. Input is one valid
+   Mandarin syllable. The canvas positions font ink around the same centres."
+  [reading]
+  (let [chars (vec (str/trim reading))
+        symbols (vec (keep-indexed (fn [idx ch] (when (re-matches #"[\u3105-\u3129]" (str ch)) idx)) chars))
+        neutral? (some #(= "˙" (str %)) chars)
+        lead (if neutral? (/ 1 15) 0)
+        top (/ (- 1 (* (count symbols) 0.3) lead) 2)]
+    (mapv (fn [idx ch]
+            (if-let [symbol (first (keep-indexed #(when (= idx %2) %1) symbols))]
+              {:text (str ch) :x 0.15 :y (+ top lead (* (+ symbol 0.5) 0.3))}
+              {:text (str ch) :x (if neutral? 0.15 0.45)
+               :y (+ top (if neutral? (/ lead 2) (* (dec (count symbols)) 0.3)))}))
+          (range (count chars)) chars)))
 
 (defn ruby-span?
   "True when a text node carries a ruby reading, hidden or not."

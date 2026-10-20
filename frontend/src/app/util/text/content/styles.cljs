@@ -22,6 +22,7 @@
 
 (def mapping
   {:fills [encode decode]
+   :ruby-zhuyin [encode decode]
    :typography-ref-id [encode decode]
    :typography-ref-file [encode decode]
    :font-id [identity identity]
