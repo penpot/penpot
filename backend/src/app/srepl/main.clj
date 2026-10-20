@@ -767,12 +767,17 @@
   "Mark a project for deletion"
   [file-id]
   (let [file-id (h/parse-uuid file-id)
-        tnow    (ct/now)]
+        tnow    (ct/now)
+        ;; The event carries its team: the storage-usage drain never
+        ;; joins production tables, and a keyless event would trip its
+        ;; "producer stopped keying" warn.
+        team-id (first (audit/get-team-ids sys/system {:file-ids [file-id]}))]
 
     (audit/insert sys/system
                   {:name "delete-file"
                    :type "action"
-                   :props {:id file-id}
+                   :props (cond-> {:id file-id}
+                            (some? team-id) (assoc :team-id team-id))
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-file!"}
                    :tracked-at tnow})
@@ -792,11 +797,14 @@
                   (when-let [file (db/get* system :file
                                            {:id file-id}
                                            {::db/remove-deleted false
-                                            ::sql/columns [:id :name]})]
+                                            ::sql/columns [:id :name :project-id]})]
                     (audit/insert system
                                   {:name "restore-file"
                                    :type "action"
-                                   :props file
+                                   :props (assoc file
+                                                 :team-id (first (audit/get-team-ids
+                                                                  system
+                                                                  {:project-ids [(:project-id file)]})))
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-file!"}})
 
@@ -920,7 +928,7 @@
                     (audit/insert system
                                   {:name "restore-team"
                                    :type "action"
-                                   :props team
+                                   :props (assoc team :team-id (:id team))
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-team!"}})
 
@@ -957,20 +965,28 @@
                                                       {:id profile-id}
                                                       {::db/remove-deleted false})
                                              (profile/decode-row))]
-                    (audit/insert system
-                                  {:name "restore-profile"
-                                   :type "action"
-                                   :props (audit/profile->props profile)
-                                   :context {:triggered-by "srepl"
-                                             :cause "explicit call to restore-profile!"}})
-
                     (db/update! system :profile
                                 {:deleted-at nil}
                                 {:id profile-id}
                                 {::db/return-keys false})
 
-                    (doseq [{:keys [id]} (profile/get-owned-teams system profile-id)]
-                      (restore-team* system id))
+                    ;; Owned teams are still soft-deleted here, so resolve
+                    ;; them through the membership table: the read
+                    ;; path only sees live ones.
+                    (let [team-ids (mapv :id (profile/get-owned-teams system (:id profile)
+                                                                      :include-deleted? true))]
+                      (doseq [id team-ids]
+                        (restore-team* system id))
+
+                      ;; The drain never joins tables, so the event
+                      ;; carries the restored teams explicitly.
+                      (audit/insert system
+                                    {:name "restore-profile"
+                                     :type "action"
+                                     :props (assoc (audit/profile->props profile)
+                                                   :team-ids team-ids)
+                                     :context {:triggered-by "srepl"
+                                               :cause "explicit call to restore-profile!"}}))
 
                     :restored)))))
 

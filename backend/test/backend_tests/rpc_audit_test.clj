@@ -274,8 +274,9 @@
           (let [day-now (ct/truncate (ct/now) :days)]
             (t/is (= day-now (:created-at row2)))
             (t/is (= day-now (:tracked-at row2))))
-          ;; Both rows are born pending for the enabled consumers.
-          (t/is (= 4 (count (th/db-exec! ["select * from audit_log_pending"])))))))))
+          ;; Both rows are born pending for Nexus; the admin-console
+          ;; consumer is selective and "navigate" is not allowlisted.
+          (t/is (= 2 (count (th/db-exec! ["select * from audit_log_pending"])))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BACKEND PROCESS-EVENT PATH (RPC commands)
@@ -932,7 +933,8 @@
       (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))
       (t/is (= 1.0 (ingest-counter metrics "shadow" "inserted")))
       (t/is (= 2 (count (th/db-exec! ["select * from audit_log"]))))
-      (t/is (= 4 (count (th/db-exec! ["select * from audit_log_pending"])))))))
+      ;; Nexus only: "navigate" is not in the admin-console allowlist.
+      (t/is (= 2 (count (th/db-exec! ["select * from audit_log_pending"])))))))
 
 (t/deftest push-handle-events-records-failed-on-error
   (let [prof    (th/create-profile* 1 {:is-active true})

@@ -171,6 +171,22 @@
           (t/is (nil? (:profile-id event)))
           (t/is (= (:id profile) (get-in event [:props :id]))))))))
 
+(t/deftest delete-file-carries-its-team
+  ;; The storage-usage drain keys on props, so the SREPL event must
+  ;; carry the team: a keyless one trips the "producer stopped keying"
+  ;; warn.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
+               wrk-mock {:target 'app.jobs/invoke :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          team-id (:default-team-id profile)
+          proj    (th/create-project* 1 {:profile-id (:id profile) :team-id team-id})
+          file    (th/create-file* 1 {:profile-id (:id profile) :project-id (:id proj)})]
+      (with-redefs [sys/system th/*system*]
+        (srepl/delete-file! (str (:id file))))
+      (let [event (-> @audit-mock :call-args-list first second)]
+        (t/is (= "delete-file" (:name event)))
+        (t/is (= team-id (get-in event [:props :team-id])))))))
+
 (t/deftest delete-team-emits-identifiable-audit-event
   (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
                wrk-mock {:target 'app.jobs/invoke :return nil}]

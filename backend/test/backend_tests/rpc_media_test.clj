@@ -11,6 +11,7 @@
    [app.http.client :as http]
    [app.media :as media]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.media :as cmd-media]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -22,6 +23,56 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(t/deftest media-object-assemble-pays-the-storage-quota
+  ;; The chunked upload path writes bytes too: it must pay the same
+  ;; quota as the multipart upload.
+  (let [prof (th/create-profile* 3)
+        file (th/create-file* 3 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        path (th/tempfile "backend_tests/test_files/sample.jpg")]
+    (with-redefs [cmd-media/assemble-chunks
+                  (fn [_ _ _]
+                    {:filename "assembled.jpg"
+                     :path path
+                     :mtype "image/jpeg"
+                     :size 312043})]
+      (with-mocks [mock {:target 'app.config/get
+                         :return (th/config-get-mock {:quotes-media-storage-bytes-per-team 100})}]
+        (let [out (th/command! {::th/type :assemble-file-media-object
+                                ::rpc/profile-id (:id prof)
+                                :session-id (uuid/next)
+                                :file-id (:id file)
+                                :is-local true
+                                :name "assembled"
+                                :mtype "image/jpeg"})]
+          (t/is (some? (:error out)))
+          (t/is (= :max-quote-reached (:code (ex-data (:error out))))))))))
+
+(t/deftest media-object-from-url-pays-the-storage-quota
+  ;; The URL path writes bytes like a plain upload: with a low limit it
+  ;; must be refused instead of bypassing the quota.
+  (let [prof (th/create-profile* 2)
+        file (th/create-file* 2 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        path (th/tempfile "backend_tests/test_files/sample.jpg")]
+    (with-redefs [media/download-image
+                  (fn [_ _]
+                    {:filename "remote.jpg"
+                     :path path
+                     :mtype "image/jpeg"
+                     :size 312043})]
+      (with-mocks [mock {:target 'app.config/get
+                         :return (th/config-get-mock {:quotes-media-storage-bytes-per-team 100})}]
+        (let [out (th/command! {::th/type :create-file-media-object-from-url
+                                ::rpc/profile-id (:id prof)
+                                :file-id (:id file)
+                                :is-local true
+                                :url "https://example.com/x.jpg"})]
+          (t/is (some? (:error out)))
+          (t/is (= :max-quote-reached (:code (ex-data (:error out))))))))))
 
 (t/deftest media-object-from-url
   (let [prof   (th/create-profile* 1)

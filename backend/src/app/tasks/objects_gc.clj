@@ -42,7 +42,10 @@
   chunk carries only its own entity key (`:team-ids`, `:project-ids`
   or `:file-ids`); a single event spanning sections could never share
   their transactions. Runs inside the caller transaction, next to the
-  deletes: if the purge aborts, the event aborts with it."
+  deletes: if the purge aborts, the event aborts with it. No team-id
+  resolution: the live quota total only counts rows without `deleted_at`,
+  which a physical purge cannot change, so no team-keyed consumer needs
+  these events."
   [cfg ids-key ids]
   (when (contains? cf/flags :audit-log)
     (audit/submit cfg

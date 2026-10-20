@@ -643,6 +643,10 @@
 
 ;; --- HELPERS
 
+;; Owned teams with their participant count. The second parameter
+;; decides whether soft-deleted teams count: the restore path needs
+;; them (the delete cascade took the teams with the profile), the read
+;; path never does.
 (def sql:owned-teams
   "WITH owner_teams AS (
       SELECT tpr.team_id AS id
@@ -650,7 +654,7 @@
         JOIN team AS t ON (t.id = tpr.team_id)
        WHERE tpr.is_owner IS TRUE
          AND tpr.profile_id = ?
-         AND t.deleted_at IS NULL
+         AND (?::boolean OR t.deleted_at IS NULL)
    )
    SELECT tpr.team_id AS id,
           count(tpr.profile_id) - 1 AS participants
@@ -659,8 +663,11 @@
     GROUP BY 1")
 
 (defn get-owned-teams
-  [conn profile-id]
-  (db/exec! conn [sql:owned-teams profile-id]))
+  "Teams the profile owns. `:include-deleted?` also returns the ones
+  the delete cascade soft-deleted: the restore path needs them, the
+  read path does not."
+  [conn profile-id & {:keys [include-deleted?]}]
+  (db/exec! conn [sql:owned-teams profile-id (boolean include-deleted?)]))
 
 (def ^:private sql:profile-existence
   "select exists (select * from profile

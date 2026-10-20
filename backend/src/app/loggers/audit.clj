@@ -48,6 +48,17 @@
     "incomplete-user-info"
     "unexpected-error"})
 
+(def ^:private telemetry-sources
+  #{"telemetry:backend" "telemetry:frontend"})
+
+(defn telemetry-shadow-source?
+  "True for the anonymized shadow sources of the telemetry consumer. A
+  selective consumer must skip them: the full row already queues, and
+  the shadow keeps the event name, so queueing it would ingest the
+  same event twice (once full, once anonymized)."
+  [source]
+  (contains? telemetry-sources (str source)))
+
 (def ^:private safe-backend-context-keys
   #{:version
     :initiator
@@ -244,10 +255,27 @@
                    (update :ip-addr db/inet))
         params (select-keys params event-keys)
         row    (db/insert! cfg :audit-log params)]
-    ;; The consumer queue follows the row in the same transaction: one
-    ;; pending per enabled consumer. A rollback takes both on its way
-    ;; out, so a row never outlives its queue.
-    (consumer/queue-pendings cfg [(:id row)])
+    ;; The consumer queue follows the row in the same transaction: a
+    ;; rollback takes both on its way out, so a row never outlives its
+    ;; queue. Nexus takes every row; the two `when`s below add the
+    ;; pendings of the selective consumers (storage-usage,
+    ;; admin-console), each gated on its own flag.
+    (consumer/queue-nexus-pendings cfg [(:id row)])
+
+    ;; The storage-usage consumer is selective: only the events that
+    ;; can change per-team media storage queue its pending, and never
+    ;; for telemetry shadows (the full row already queues).
+    (when (and (contains? cf/flags :storage-usage)
+               (contains? consumer/storage-usage-event-names (:name params))
+               (not (telemetry-shadow-source? (:source params))))
+      (consumer/queue-pendings cfg [(:id row)] consumer/consumer-storage-usage))
+
+    ;; The admin-console consumer is selective too: only allowlisted
+    ;; names queue its pending, and never a telemetry shadow.
+    (when (and (contains? cf/flags :admin-console)
+               (contains? consumer/event-names-for-admin-console (:name params))
+               (not (telemetry-shadow-source? (:source params))))
+      (consumer/queue-pendings cfg [(:id row)] consumer/consumer-admin-console))
     row))
 
 (def ^:private xf:filter-telemetry-props
@@ -333,13 +361,13 @@
     event))
 
 (defn submit*
-  "A public API, lower-level than submit, assumes all required fields are filled"
+  "A public API, lower-level than submit, assumes all required fields are
+  filled. A failure propagates: an event that cannot be stored is lost,
+  and a lost event is a stale consumer (the media-storage counter would
+  never learn about it). Swallowing it here made that invisible."
   [cfg event]
-  (try
-    (let [event (check-event event)]
-      (db/tx-run! cfg process-event event))
-    (catch Throwable cause
-      (l/error :hint "unexpected error processing event" :cause cause))))
+  (let [event (check-event event)]
+    (db/tx-run! cfg process-event event)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API
@@ -418,15 +446,57 @@
 
     coerced))
 
-(def ^:private sql:team-id-by-project
-  "SELECT id FROM team
-    WHERE id = (SELECT team_id FROM project WHERE id = ?)")
+(def ^:private sql:team-ids-by-projects
+  "SELECT team_id
+     FROM project
+    WHERE id = ANY(?::uuid[])")
 
-(def ^:private sql:team-id-by-file
-  "SELECT t.id FROM team AS t
-     JOIN project AS p ON (p.team_id = t.id)
-     JOIN file AS f ON (f.project_id = p.id)
-    WHERE f.id = ?")
+(def ^:private sql:team-ids-by-files
+  "SELECT p.team_id AS team_id
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE f.id = ANY(?::uuid[])")
+
+(def ^:private xf:team-ids
+  "Transducer: pull the team id out of a team/project/file resolution
+  row. Allocated once so hot paths (every audited RPC) do not rebuild
+  it per call."
+  (map :team-id))
+
+(defn- resolve-team-ids
+  "Resolve one bag of project or file ids to team ids with one ANY(?)
+  query on a plain connection. The result holds one tiny row per id,
+  so neither a cursor nor a transaction is needed."
+  [cfg kind ids]
+  ;; Fetch inside the connection, reduce outside it: the rows are
+  ;; already materialized, so the pool connection is held as briefly
+  ;; as possible.
+  (->> (db/run! cfg
+                (fn [{:keys [::db/conn]}]
+                  (db/exec! conn [(case kind
+                                    :project sql:team-ids-by-projects
+                                    :file sql:team-ids-by-files)
+                                  (db/create-array conn "uuid" ids)])))
+       (into #{} xf:team-ids)))
+
+(defn get-team-ids
+  "Resolve a mixed bag of team, project and file ids to team ids with
+  two batched lookups. Producers of cascade-style events call it so
+  consumers never join production tables. The pure part runs without
+  touching the database; each lookup resolves its connection lazily,
+  only when it has ids (reusing the caller transaction). Every id
+  reaching this function is a UUID already (RPC params and frontend
+  ingest travel as transit, jobs read DB rows): anything else is a
+  bug at the source, never coerced here."
+  [cfg {:keys [team-ids project-ids file-ids]}]
+  (let [direct (into #{} team-ids)]
+    (-> direct
+        (into (if (seq project-ids)
+                (resolve-team-ids cfg :project project-ids)
+                #{}))
+        (into (if (seq file-ids)
+                (resolve-team-ids cfg :file file-ids)
+                #{})))))
 
 (def ^:private read-event-names
   "Read commands excluded from team-id resolution on top of the `get-*`
@@ -453,9 +523,9 @@
     (let [project-id (:project-id props)
           file-id    (:file-id props)
           team-id    (or (when (some? project-id)
-                           (:id (db/exec-one! cfg [sql:team-id-by-project project-id])))
+                           (first (get-team-ids cfg {:project-ids [project-id]})))
                          (when (some? file-id)
-                           (:id (db/exec-one! cfg [sql:team-id-by-file file-id]))))]
+                           (first (get-team-ids cfg {:file-ids [file-id]}))))]
       (cond-> props
         (some? team-id) (assoc :team-id team-id)))))
 

@@ -26,13 +26,14 @@
 
 ;; This task drains the audit log buffer into the long-term archives.
 ;;
-;; Two separate jobs share this namespace and the queue helpers, one
-;; per destination: `:audit-log-consumer-nexus` and
-;; `:audit-log-consumer-admin-console`. Each job drains only its own queue
+;; Three separate jobs share this namespace and the queue helpers, one
+;; per destination: `:audit-log-consumer-nexus`,
+;; `:audit-log-consumer-admin-console` and
+;; `:audit-log-consumer-storage-usage`. Each job drains only its own queue
 ;; and deletes its pendings on completion; whoever deletes the last
 ;; pending also deletes the record ("last one out turns off the
 ;; light"), so no separate GC task is needed. Housekeeping (reaping
-;; disabled pendings, sweeping orphans) lives in both jobs on purpose:
+;; disabled pendings, sweeping orphans) lives in every job on purpose:
 ;; only the enabled job runs, so it must clean up for the rest.
 
 ;; Consumer ids are fixed constants, never reuse one: retired
@@ -40,10 +41,17 @@
 ;; previous owner's queue.
 (def consumer-nexus 1)
 (def consumer-admin-console 2)
+(def consumer-storage-usage 3)
 
 (def ^:private consumers
-  [{:id consumer-nexus          :flag :nexus         :label "nexus"}
-   {:id consumer-admin-console :flag :admin-console :label "admin-console"}])
+  [{:id consumer-nexus          :flag :nexus         :label "nexus"
+    :outcome "archived"}
+   {:id consumer-admin-console :flag :admin-console :label "admin-console"
+    :outcome "archived"}
+   ;; marks teams dirty, it archives nothing
+   {:id consumer-storage-usage :flag :storage-usage :label "storage-usage"
+    :outcome "processed"
+    :summary "teams marked dirty"}])
 
 (def ^:private xf:enabled-consumers
   "Static transducer: keep the consumers whose send flag is on.
@@ -53,33 +61,116 @@
         (map :id)))
 
 (defn enabled-consumers
-  "Consumers allowed to work right now, from the send flags. Public:
-  producers queue every record for exactly these consumers."
+  "Consumers allowed to work right now, from the send flags. A test
+  helper: producers name their consumer explicitly
+  (`queue-nexus-pendings`, or `queue-pendings` with an id at the
+  selective call sites) and housekeeping walks the private table."
   []
   (into [] xf:enabled-consumers consumers))
 
-(defn queue-pendings
-  "Queue records for every enabled consumer, nothing when there is
-  nothing to queue or no consumer is on. One multi-row statement for
-  all ids instead of one per consumer: this runs inside every audited
-  RPC and the bulk frontend ingest. Runs inside the row transaction:
-  a rollback takes both."
-  [cfg ids]
-  (let [consumers (enabled-consumers)]
-    (when (and (seq ids) (seq consumers))
-      (db/insert-many! cfg :audit-log-pending
-                       [:audit-log-id :consumer]
-                       (for [id ids
-                             consumer consumers]
-                         [id consumer])
-                       {::sql/on-conflict-do-nothing true}))))
+(def ^:private single-insert-max-ids
+  "Below this many pendings, a single `insert-many!` stays far below
+  the PostgreSQL parameter limit; above it, chunk. An if is cheaper
+  than the chunking overhead on the hot path (every audited RPC)."
+  1000)
 
-(def ^:private consumer-labels
-  (into {} (map (juxt :id :label)) consumers))
+(defn queue-pendings
+  "Queue records for one consumer, nothing when there is nothing to
+  queue. One multi-row statement for all ids, chunked past
+  `single-insert-max-ids`: this runs inside every audited RPC and the
+  bulk frontend ingest. Runs inside the row transaction: a rollback
+  takes both. Callers name their consumer explicitly: nexus through
+  `queue-nexus-pendings`, the selective ones at their own call sites."
+  ([cfg ids consumer-id]
+   (when (seq ids)
+     (let [rows (mapv (fn [id] [id consumer-id]) ids)]
+       (if (< (count rows) single-insert-max-ids)
+         (db/insert-many! cfg :audit-log-pending
+                          [:audit-log-id :consumer]
+                          rows
+                          {::sql/on-conflict-do-nothing true})
+         (db/insert-many-chunked! cfg :audit-log-pending
+                                  [:audit-log-id :consumer]
+                                  rows
+                                  {::sql/on-conflict-do-nothing true}))))))
+
+(defn queue-nexus-pendings
+  "Queue records for nexus, the only non-selective consumer. Gated on
+  its flag here so callers never rely on what the `queue-pendings`
+  default happens to exclude today."
+  [cfg ids]
+  (when (contains? cf/flags :nexus)
+    (queue-pendings cfg ids consumer-nexus)))
+
+(def ^:private default-team-keys
+  "Key map of the events that carry a single :team-id in props."
+  {:paths [[:team-id]]
+   :keys  [:team-id]})
+
+(def ^:private team-keys-by-name
+  "Single source of the storage-usage contract: event name -> where its
+  team ids live. `:paths` are the prop paths `team-ids-of-event` reads;
+  `:keys` are the top-level props `carries-team-keys?` checks with
+  `contains?`, so an explicit empty collection counts as a fact and not
+  as a producer that lost its keys. Adding a name here also adds it to
+  `storage-usage-event-names`, so the two cannot drift."
+  {"upload-file-media-object"          default-team-keys
+   "create-file-media-object-from-url" default-team-keys
+   "clone-file-media-object"           default-team-keys
+   "assemble-file-media-object"        default-team-keys
+   ;; Files created in bulk (import, clone, duplicate) may carry media,
+   ;; so they can change the total even though create-file itself adds
+   ;; no bytes: do not drop it, and do not copy it to cheaper events.
+   "create-file"                       default-team-keys
+   "create-font-variant"               default-team-keys
+   "delete-font"                       default-team-keys
+   "delete-font-variant"               default-team-keys
+   "delete-file"                       default-team-keys
+   "delete-object-with-cascade"        {:paths [[:team-ids] [:cascade :team-ids]]
+                                        :keys  [:team-ids :cascade]}
+   "move-files"                        {:paths [[:source-team-id] [:dest-team-id]]
+                                        :keys  [:source-team-id :dest-team-id]}
+   "move-project"                      {:paths [[:source-team-id] [:dest-team-id]]
+                                        :keys  [:source-team-id :dest-team-id]}
+   "permanently-delete-team-files"     default-team-keys
+   "restore-deleted-team-files"        default-team-keys
+   "restore-file"                      default-team-keys
+   "restore-profile"                   {:paths [[:team-ids] [:cascade :team-ids]]
+                                        :keys  [:team-ids :cascade]}
+   "restore-project"                   default-team-keys
+   "restore-team"                      default-team-keys
+   "file-gc"                           default-team-keys})
+
+(def storage-usage-event-names
+  "Audit event names that can change per-team media storage. Only these
+  queue a pending for the storage-usage consumer; everything else skips
+  it, so unrelated traffic pays no extra row and the drain stays lean.
+  Derived from `team-keys-by-name` so the allowlist and the key map
+  cannot disagree. Purges (`hard-delete-objects`) are excluded on
+  purpose: the physical delete only removes rows the live SUM already
+  ignores (everything with `deleted_at` set), so queueing them would
+  recompute the same total — and purged teams would violate the usage
+  table foreign key."
+  (set (keys team-keys-by-name)))
+
+(def ^:private consumers-by-id
+  (into {} (map (juxt :id identity)) consumers))
 
 (defn- consumer-label
   [consumer]
-  (get consumer-labels consumer))
+  (get-in consumers-by-id [consumer :label]))
+
+(defn- consumer-outcome
+  "Success outcome of a consumer in the events metric: storage-usage
+  marks teams dirty, it archives nothing."
+  [consumer]
+  (get-in consumers-by-id [consumer :outcome]))
+
+(defn- consumer-summary
+  "Run-summary hint of a consumer: the default ones archive, so only
+  the exception names its own."
+  [consumer]
+  (get-in consumers-by-id [consumer :summary] "events archived"))
 
 (defn- decode-row
   [{:keys [props ip-addr context] :as row}]
@@ -135,6 +226,20 @@
     LIMIT 128
       FOR UPDATE OF a")
 
+(def ^:private sql:pending-chunk-unordered
+  "The same chunk for a consumer that does not archive and does not
+  care about order (storage-usage only marks teams dirty, and the mark
+  is idempotent). SKIP LOCKED keeps it from waiting on an archive job
+  holding the oldest rows: that wait could hit lock_timeout and abort
+  the run."
+  "SELECT a.*
+     FROM audit_log_pending p
+     JOIN audit_log a ON a.id = p.audit_log_id
+    WHERE p.consumer = ?::smallint
+    ORDER BY a.created_at ASC, a.id ASC
+    LIMIT 128
+      FOR UPDATE OF a SKIP LOCKED")
+
 (def ^:private sql:delete-pendings
   "DELETE FROM audit_log_pending
     WHERE consumer = ?::smallint
@@ -150,8 +255,11 @@
 
 (defn- get-pending-rows
   [{:keys [::db/conn] :as cfg} consumer]
-  (->> (db/exec! conn [sql:pending-chunk consumer])
-       (not-empty)))
+  (let [sql (if (= consumer consumer-storage-usage)
+              sql:pending-chunk-unordered
+              sql:pending-chunk)]
+    (->> (db/exec! conn [sql consumer])
+         (not-empty))))
 
 (defn- complete-batch
   "Delete our pendings for the batch, then the records nobody is
@@ -206,7 +314,7 @@
                        :resp-body (truncate-body (:body resp) 500)
                        :events n)))))
 
-(def ^:private event-names-for-admin-console
+(def event-names-for-admin-console
   #{"accept-organization-invitation"
     "accept-organization-invitation-from"
     "accept-team-invitation"
@@ -437,7 +545,7 @@
   [cfg]
   (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
   (when-let [rows (get-pending-rows cfg consumer-nexus)]
-    (let [events (mapv row->event (mapv decode-row rows))
+    (let [events (mapv (comp row->event decode-row) rows)
           ;; send-to-nexus returns the count or throws: a refusal
           ;; aborts the job, the rows stay for the next tick.
           n      (send-to-nexus cfg events)]
@@ -467,6 +575,114 @@
       ;; record stays until every consumer is done.
       (complete-batch cfg consumer-admin-console rows)
       admin-console-res)))
+
+(def ^:private sql:mark-storage-usage-dirty
+  "INSERT INTO team_storage_usage AS tsu (team_id, dirty_at)
+   SELECT id, now() FROM unnest(?::uuid[]) AS u(id)
+   WHERE EXISTS (SELECT 1 FROM team AS t WHERE t.id = u.id)
+   ON CONFLICT (team_id) DO UPDATE
+      SET dirty_at = EXCLUDED.dirty_at
+    WHERE tsu.dirty_at IS NULL")
+
+(defn- team-ids-of-event
+  "Team ids of one storage-usage event, read through its key map (see
+  team-keys-by-name). Throws on a present non-UUID: a producer bug,
+  never coerced; the caller logs the row and skips that event."
+  [{:keys [name props]}]
+  (let [{:keys [paths]} (get team-keys-by-name name default-team-keys)
+        ;; A path holds either one id (:team-id) or a collection
+        ;; (:team-ids): normalize both to a seq.
+        ids (mapcat (fn [path]
+                      (let [v (get-in props path)]
+                        (cond (nil? v) nil
+                              (coll? v) v
+                              :else     [v])))
+                    paths)]
+    (doseq [id ids :when (some? id)]
+      (when-not (uuid? id)
+        (ex/raise :type :validation
+                  :code :non-uuid-team-id
+                  :hint "non-uuid team id in storage-usage event"
+                  :event name)))
+    ids))
+
+(defn- carries-team-keys?
+  "True when the event carries any of the team keys its key map names,
+  even an empty collection: an explicit empty list (a profile that owns
+  no team) is a fact, not a producer bug."
+  [{:keys [name props]}]
+  (let [{:keys [keys]} (get team-keys-by-name name default-team-keys)]
+    ;; `some?` on the value, not `contains?`: an explicit empty
+    ;; collection counts (a fact), a nil value does not (the producer
+    ;; failed to resolve its team).
+    (boolean (some #(some? (get props %)) keys))))
+
+(defn- collect-storage-usage-team-ids
+  "Team ids whose media storage may have changed in this chunk, read
+  straight from props: producers key their events by team so the drain
+  never joins production tables. Each event name maps to its keys
+  explicitly; anything else falls back to the single :team-id in
+  props. A present non-UUID is a producer bug (see get-team-ids, never
+  coerced): that event is logged with its row id and skipped, so one
+  bad row cannot wedge the queue. The key map lives in
+  team-keys-by-name; storage-usage-queueing-covers-every-listed-name
+  pins the real prop shape of every listed name."
+  [entries]
+  (into #{}
+        (comp (map (fn [[id event]]
+                     (try
+                       (team-ids-of-event event)
+                       (catch Throwable cause
+                         (l/warn :hint "skipping storage-usage event with invalid team ids"
+                                 :audit-log-id (str id)
+                                 :event (:name event)
+                                 :cause cause)
+                         nil))))
+              (mapcat (fn [ids] (or ids [])))
+              (filter some?))
+        entries))
+
+(defn- mark-storage-usage-dirty
+  [conn team-ids]
+  (when (seq team-ids)
+    ;; Keeps the oldest dirty mark: a team marked twice in one window
+    ;; is recomputed once.
+    (db/exec-one! conn [sql:mark-storage-usage-dirty
+                        (db/create-array conn "uuid" team-ids)])))
+
+(defn- consumer-storage-usage-chunk
+  "Mark dirty the teams changed in one pending chunk and complete it.
+  Returns {:sent :skipped} like the other chunk fns: relevant events
+  count as sent, anything else (defense in depth, the queue is
+  selective) as skipped. Takes a transactional cfg, no metrics here:
+  same contract as the other chunk fns."
+  [cfg]
+  (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
+  (when-let [rows (get-pending-rows cfg consumer-storage-usage)]
+    (let [pairs    (mapv (fn [row]
+                           [(:id row) ((comp row->event decode-row) row)])
+                         rows)
+          relevant (into []
+                         (filter (fn [[_ event]]
+                                   (contains? storage-usage-event-names (:name event))))
+                         pairs)
+          skipped  (- (count pairs) (count relevant))
+          teams    (collect-storage-usage-team-ids relevant)
+          _        (mark-storage-usage-dirty (::db/conn cfg) teams)
+          ;; No relevant event carries any team key: a producer
+          ;; stopped keying its events. An explicit empty collection
+          ;; does not count (see carries-team-keys?).
+          _        (when (and (seq relevant)
+                              (not-any? (comp carries-team-keys? second) relevant))
+                     (l/warn :hint "storage-usage chunk resolved no team ids"
+                             :events (count relevant)
+                             :ids (mapv (comp str first) relevant)))]
+      (l/trc :hint "consumer events chunk"
+             :consumer "storage-usage"
+             :events (count relevant)
+             :teams (count teams))
+      (complete-batch cfg consumer-storage-usage rows)
+      {:sent (count relevant) :skipped skipped})))
 
 (defn- drain-consumer
   "Drain one consumer queue chunk by chunk, one transaction per chunk.
@@ -542,6 +758,7 @@
 
 (declare execute-audit-log-consumer-nexus)
 (declare execute-audit-log-consumer-admin-console)
+(declare execute-audit-log-consumer-storage-usage)
 
 (def schema:audit-log-consumer-nexus-params
   "Overrides for the nexus job repl invocation defaults.
@@ -603,19 +820,43 @@
    ::jobs/decoder   (sm/decoder schema:audit-log-consumer-admin-console-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-consumer-admin-console-params)})
 
+(def schema:audit-log-consumer-storage-usage-params
+  "Params of the storage-usage job: none. Cron submits {}; system deps
+  (pool) live on the job-def cfg closed over by the handler, not in
+  job params. Closed on purpose, same as the admin-console schema."
+  [:map {:closed true}])
+
+(defmethod ig/assert-key ::storage-usage-job-def
+  [_ cfg]
+  (assert (db/pool? (::db/pool cfg)) "expected a valid database pool")
+  (assert (mtx/metrics? (::mtx/metrics cfg)) "expected a valid metrics instance"))
+
+(defmethod ig/init-key ::storage-usage-job-def
+  [_ cfg]
+  (l/dbg :hint "audit log consumer job initialized"
+         :consumer "storage-usage")
+  {::jobs/name      :audit-log-consumer-storage-usage
+   ::jobs/schema    schema:audit-log-consumer-storage-usage-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-audit-log-consumer-storage-usage cfg params))
+   ::jobs/decoder   (sm/decoder schema:audit-log-consumer-storage-usage-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-consumer-storage-usage-params)})
+
 (defn- run-single-consumer
   "Drain one consumer queue, then housekeeping (reap disabled
   pendings, sweep orphans) and the per-run summary. Housekeeping lives
-  in both jobs: only the enabled job runs, so it must reap the queues
+  in every job: only the enabled job runs, so it must reap the queues
   of the consumers that are off; both halves are idempotent deletes.
   A refused chunk (or a throw) aborts the job: the committed chunks
   stay sent, the rest waits for the next tick, and the cron retries.
   Every effect is rows and logs (drain metrics land here, outside
   every chunk transaction)."
   [cfg consumer send-chunk tpoint]
-  (let [label   (consumer-label consumer)
-        metrics (mtx/instance cfg)
-        reaped  (reap-disabled cfg)
+  (let [label      (consumer-label consumer)
+        ok-outcome (consumer-outcome consumer)
+        metrics    (mtx/instance cfg)
+        reaped     (reap-disabled cfg)
         ;; All drain metrics land here, outside every chunk
         ;; transaction. Success is recorded on the totals: a normal
         ;; chunk return means its transaction committed (a rollback
@@ -633,7 +874,7 @@
                     (throw cause)))
         _       (let [{:keys [sent skipped]} drained]
                   (when (pos? sent)
-                    (record-count metrics :audit-consumer-events [label "archived"] sent))
+                    (record-count metrics :audit-consumer-events [label ok-outcome] sent))
                   (when (pos? skipped)
                     (record-count metrics :audit-consumer-events [label "skipped"] skipped)))
         swept   (sweep-orphans cfg)
@@ -649,7 +890,7 @@
              (zero? swept))
       (l/dbg :hint "no pending audit events"
              :consumer label)
-      (l/dbg :hint "events archived"
+      (l/dbg :hint (consumer-summary consumer)
              :consumer label
              :elapsed elapsed
              :sent sent
@@ -679,9 +920,17 @@
 
 (defn execute-audit-log-consumer-admin-console
   "Admin-console job handler: drain the admin-console queue in chunks,
-  then clean up (heartbeat per iteration: the sent chunk batches can
-  be long)."
+  then clean up (heartbeat per iteration: the batches can be long)."
   [cfg _params]
   (if-not (contains? cf/flags :admin-console)
     (l/dbg :hint "audit log consumer (admin-console) skipped, flag off")
     (run-single-consumer cfg consumer-admin-console consumer-admin-console-chunk (ct/tpoint))))
+
+(defn execute-audit-log-consumer-storage-usage
+  "Storage-usage job handler: drain the storage-usage queue in chunks,
+  marking dirty the teams whose media storage may have changed
+  (heartbeat per iteration: a burst can span many chunks)."
+  [cfg _params]
+  (if-not (contains? cf/flags :storage-usage)
+    (l/dbg :hint "audit log consumer (storage-usage) skipped, flag off")
+    (run-single-consumer cfg consumer-storage-usage consumer-storage-usage-chunk (ct/tpoint))))

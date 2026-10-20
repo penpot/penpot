@@ -26,6 +26,7 @@
    [app.features.fdata :as feat.fdata]
    [app.features.file-snapshots :as fsnap]
    [app.jobs :as jobs]
+   [app.loggers.audit :as audit]
    [app.storage :as sto]
    [integrant.core :as ig]))
 
@@ -63,6 +64,17 @@
       (l/trc :obj "media-object"
              :file-id (str id)
              :id (str id)))
+
+    ;; The storage-usage consumer learns about this shrink path only
+    ;; through this event: no RPC runs here. The team id travels in
+    ;; props so the drain never joins production tables.
+    (when (and (seq unused-media) (contains? cf/flags :audit-log))
+      (let [team-id (first (audit/get-team-ids cfg {:file-ids [id]}))]
+        (audit/submit cfg {:name "file-gc"
+                           :type "action"
+                           :props (cond-> {:file-id id}
+                                    (some? team-id) (assoc :team-id team-id))
+                           :context {:triggered-by "cron-task"}})))
 
     file))
 
