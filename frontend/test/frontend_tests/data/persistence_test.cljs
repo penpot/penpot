@@ -770,7 +770,10 @@
   (t/is (not (dps/terminal-status? {:status :retrying :queue [1]})))
   (t/is (not (dps/terminal-status? {:status :saving :queue [1]})))
   (t/is (not (dps/terminal-status? {:status :pending :queue [1]})))
-  (t/is (not (dps/terminal-status? {:status :saved :queue [1]}))))
+  (t/is (not (dps/terminal-status? {:status :saved :queue [1]})))
+  (t/is (not (dps/terminal-status? {:status :saved :queue [] :buffer [{:id 1}]}))
+        "commits still buffered keep the waiters waiting")
+  (t/is (dps/terminal-status? {:status :error :queue [] :buffer [{:id 1}]})))
 
 ;; Scenario: the queue references a commit id with no matching commit
 ;; (plus a dangling run id) when persistence initializes. It must error
@@ -1280,6 +1283,32 @@
          (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                 "the save lands")))))))
 
+;; Scenario: a save is in flight while a later edit waits in the buffer, and
+;; something waits for the edits to be saved (as a library sync does before
+;; marking the library synced). The save lands and the queue empties, so the
+;; status turns :saved. Proves: the waiter is released only once the
+;; buffered edit is saved too.
+(t/deftest ^:async waiting-for-the-save-covers-the-buffered-edits
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (let [released? #(dps/terminal-status? (:persistence @store))]
+         (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the first edit is sent"))
+         (ptk/emit! store (local-commit file-id))
+         (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
+                                "the second edit waits in the buffer"))
+         (rx/push! response {:revn 1})
+         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                      (empty? (get-in @store [:persistence :queue])))
+                                "the first save lands"))
+         (t/is (seq (get-in @store [:persistence :buffer])))
+         (t/is (not (released?)) "the buffered edit is not saved yet")
+         (ptk/emit! store ::dps/force-persist)
+         (await (async/wait-for #(= 2 (count @requests)) "the buffered edit is sent"))
+         (rx/push! response {:revn 2})
+         (await (async/wait-for released? "the waiters are released")))))))
+
 ;; Rollback of rejected commits.
 
 ;; Scenario: the first save carries two commits; while it is in flight a
@@ -1601,6 +1630,41 @@
             (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                    "the queue drains")))))))))
 
+;; Scenario: as above, while the user has an undo transaction open. Proves:
+;; the undo commit gets its own group, not the transaction's, so a later
+;; rejection in the transaction does not revert it.
+(t/deftest ^:async the-undo-of-a-saved-commit-stays-out-of-an-open-transaction
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (await
+        (mock/with-mocks*
+          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
+          (let [lib-id    (uuid/next)
+                page-id   (uuid/next)
+                shape-id  (uuid/next)
+                lshape-id (uuid/next)
+                group     (uuid/next)
+                linked    (grouped (rename-commit lib-id page-id lshape-id "X" "Y") group)
+                commit    (grouped (rename-commit file-id page-id shape-id "A" "B") group)]
+            (ptk/emit! store (with-library file-id lib-id page-id shape-id "B" lshape-id "Y"))
+            (ptk/emit! store linked commit ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first"))
+            (rx/push! response {:revn 1})
+            (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent"))
+            (ptk/emit! store (dwu/start-undo-transaction (js/Symbol) :timeout 0))
+            (let [tx-group (get-in @store [:workspace-undo :transaction :commit-group])]
+              (rx/push! response (rejected-second commit))
+              (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
+                                     "a new commit undoes the library's"))
+              (t/is (some? tx-group))
+              (t/is (not= tx-group (get-in @store [:persistence :buffer 0 :undo-group])))
+              (ptk/emit! store ::dps/force-persist)
+              (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent"))
+              (rx/push! response {:revn 2})
+              (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
+                                     "the queue drains"))))))))))
+
 ;; Scenario: as above, but the library is no longer loaded when this file's
 ;; save comes back. Proves: the undo of the library's saved commit is still
 ;; sent, without touching local data the library no longer has.
@@ -1692,6 +1756,80 @@
             (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                    "the queue drains")))))))))
 
+;; Scenario: applying a token to five shapes makes three commits inside one
+;; undo transaction, all sent in one save; the server keeps the first two
+;; and rejects the third. Proves: the whole action is reverted, the kept
+;; commits by a new commit, so opacity and applied tokens are back to their
+;; starting values on every shape.
+(t/deftest ^:async a-rejection-reverts-every-commit-of-an-undo-transaction
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (await
+        (mock/with-mocks*
+          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
+          (let [page-id   (uuid/next)
+                shape-ids (into [] (repeatedly 5 uuid/next))
+                shapes    (map #(cts/setup-shape {:id % :type :rect :name "R" :opacity 1
+                                                  :parent-id uuid/zero :frame-id uuid/zero})
+                               shape-ids)
+                apply-to  (fn [ids]
+                            (dch/commit-changes
+                             {:redo-changes (into []
+                                                  (mapcat (fn [id]
+                                                            [(set-attr page-id id :opacity 0.5)
+                                                             (set-attr page-id id :applied-tokens {:opacity "half"})]))
+                                                  ids)
+                              :undo-changes (into []
+                                                  (mapcat (fn [id]
+                                                            [(set-attr page-id id :opacity 1)
+                                                             (set-attr page-id id :applied-tokens nil)]))
+                                                  ids)}))
+                tx-id     (js/Symbol)]
+            (ptk/emit! store #(-> %
+                                  (assoc :current-page-id page-id)
+                                  (assoc-in [:files file-id :data]
+                                            {:pages [page-id]
+                                             :pages-index {page-id {:id page-id
+                                                                    :name "Page"
+                                                                    :objects (into {uuid/zero (cts/setup-shape {:id uuid/zero :type :frame
+                                                                                                                :shapes shape-ids})}
+                                                                                   (map (juxt :id identity))
+                                                                                   shapes)}}})))
+            (ptk/emit! store
+                       (dwu/start-undo-transaction tx-id :timeout 0)
+                       (apply-to (subvec shape-ids 0 2))
+                       (apply-to (subvec shape-ids 2 4))
+                       (apply-to (subvec shape-ids 4 5))
+                       (dwu/commit-undo-transaction tx-id)
+                       ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @requests)) "the action is sent"))
+            (let [groups (get-in (first @requests) [1 :changes-with-metadata])
+                  third  (:commit-id (nth groups 2))]
+              (t/is (= 3 (count groups)) "the save carries the three commits")
+              (rx/push! response {:revn 0
+                                  :rejected {:commit-ids [third]
+                                             :failed-commit-id third
+                                             :error {:type :validation :code :referential-integrity}}}))
+            (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
+                                   "a new commit undoes the kept ones"))
+            (ptk/emit! store ::dps/force-persist)
+            (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent"))
+            (doseq [id shape-ids]
+              (t/is (= 1 (shape-attr store file-id page-id id :opacity)))
+              (t/is (nil? (shape-attr store file-id page-id id :applied-tokens))))
+            (t/is (= #{1}
+                     (into #{}
+                           (comp (mapcat :changes)
+                                 (mapcat :operations)
+                                 (filter #(= :opacity (:attr %)))
+                                 (map :val))
+                           (get-in (second @requests) [1 :changes-with-metadata])))
+                  "the new commit puts the kept opacity back on the server")
+            (rx/push! response {:revn 1})
+            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
+                                   "the queue drains")))))))))
+
 ;; Scenario: the rejected commit added the text being edited. Proves: the
 ;; rollback leaves edition mode, so the editor does not keep pointing at a
 ;; shape that no longer exists.
@@ -1739,7 +1877,9 @@
         undo       (:workspace-undo (ptk/update (dwu/forget-undo-groups #{g2 g3}) state))]
     (t/is (= [g1] (mapv :undo-group (:items undo))))
     (t/is (= 0 (:index undo)))
-    (t/is (empty? (get-in undo [:transaction :undo-changes])) "the open transaction is emptied")))
+    (t/is (empty? (get-in undo [:transaction :undo-changes])) "the open transaction is emptied")
+    (t/is (= g3 (get-in undo [:transaction :commit-group]))
+          "its later commits keep the group of its earlier ones")))
 
 (t/deftest forgetting-undo-groups-clears-the-history-without-a-match
   (let [state {:workspace-undo {:items [{:undo-group (uuid/next)}] :index 0}}
