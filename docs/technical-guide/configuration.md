@@ -634,37 +634,25 @@ run `(app.srepl.main/set-online)`. Drain one instance at a time.
 
 ### Running several exporters
 
-Exporters can run side by side, usually one per machine, as long as they share
-the same Valkey (`PENPOT_REDIS_URI`). Put a load balancer in front of them and
-point the frontend's `PENPOT_EXPORTER_URI` at it. Any exporter can create an
-export, report its state or cancel it, whichever one is running it.
+Exporters can run on separate machines behind a load balancer, as long as they
+share the same Valkey (`PENPOT_REDIS_URI`). Point the frontend's
+`PENPOT_EXPORTER_URI` at the load balancer.
 
-Each exporter needs a name of its own that stays the same when it restarts. On
-startup, an exporter uses this name to find the exports it was running before
-it stopped, and marks them as cancelled. It leaves the other exporters' exports
-alone. Set the name on each exporter:
+Give each exporter its own name, and keep it across restarts and upgrades:
 
 ```bash
 # Exporter
 PENPOT_EXPORTER_REPLICA_ID: exporter-1
 ```
 
-Without it, the exporter uses its hostname. Inside a Docker container that is
-the container ID, which changes when the container is recreated (for example,
-after an upgrade). In Kubernetes it is the pod name, which changes when the pod
-is replaced.
+On startup, an exporter cancels the exports it left unfinished, and only those.
+Without a name, it falls back to its hostname, which changes when the container
+is recreated; the exports it left unfinished then show as running for up to an
+hour.
 
-Keep in mind:
-
-- The export queue and its limits (`PENPOT_EXPORTER_MAX_CONCURRENT_JOBS`,
-  `PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE`, `PENPOT_EXPORTER_QUEUE_MAX`) apply to
-  each exporter on its own. With two exporters and the default per-profile limit
-  of 2, one user can run up to four exports at once.
-- Each exporter runs its own browsers and render workers, so plan memory and
-  CPU per exporter.
-- If an exporter comes back under a new name, the exports it was running show
-  as running until they expire (`PENPOT_EXPORTER_JOB_TTL`, one hour by
-  default).
+The export queue and its limits (`PENPOT_EXPORTER_MAX_CONCURRENT_JOBS`,
+`PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE`, `PENPOT_EXPORTER_QUEUE_MAX`) apply to
+each exporter on its own.
 
 ## Backend
 
