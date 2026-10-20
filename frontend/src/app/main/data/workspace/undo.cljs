@@ -42,6 +42,7 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
@@ -205,7 +206,9 @@
       (update state :workspace-undo
               (fn [undo-state]
                 (-> undo-state
-                    (update :transaction #(d/nilv % empty-tx))
+                    ;; Commits made while it is open without an undo group of
+                    ;; their own get this one
+                    (update :transaction #(d/nilv % (assoc empty-tx :commit-group (uuid/next))))
                     (update :transactions-pending assoc id (ct/now))))))
 
     ptk/WatchEvent
@@ -237,7 +240,7 @@
     (if (and (some? current-tx)
              (empty? pending-tx))
       (-> state
-          (add-undo-entry current-tx)
+          (add-undo-entry (dissoc current-tx :commit-group))
           (update :workspace-undo dissoc :transaction))
       state)))
 
@@ -253,7 +256,8 @@
 
 (defn forget-undo-groups
   "Drops the undo history from the first entry of `undo-groups` on, or all
-  of it if none matches, and empties the open transaction."
+  of it if none matches, and empties the open transaction. Later commits
+  of that transaction keep the undo group of its earlier ones."
   [undo-groups]
   (ptk/reify ::forget-undo-groups
     ptk/UpdateEvent
@@ -270,7 +274,9 @@
                     (dissoc :items :index)
 
                     (some? transaction)
-                    (assoc :transaction empty-tx))))))))
+                    (assoc :transaction
+                           (assoc empty-tx :commit-group (or (:undo-group transaction)
+                                                             (:commit-group transaction)))))))))))
 
 (def reinitialize-undo
   "Clears the undo stack, removing all entries and transactions."

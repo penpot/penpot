@@ -259,13 +259,14 @@
    Options:
    - save-undo?: if set to false, do not add undo changes.
    - undo-group: if some consecutive changes (or even transactions) share the same
-                 undo-group, they will be undone or redone in a single step
+                 undo-group, they will be undone or redone in a single step. Without
+                 it, a commit made while an undo transaction is open joins the
+                 transaction's group, and any other gets a new one.
    "
   [{:keys [redo-changes undo-changes save-undo? undo-group tags stack-undo? file-id
            translation? skip-component-sync?]
     :or {save-undo? true
          stack-undo? false
-         undo-group (uuid/next)
          tags #{}}
     :as params}]
   (ptk/reify ::commit-changes
@@ -287,7 +288,11 @@
                  (not (dm/get-in state [:workspace-global :preview-id])))
           (do
             (log/trace :hint "commit-changes" :redo-changes redo-changes)
-            (let [selected (dm/get-in state [:workspace-local :selected])]
+            (let [selected   (dm/get-in state [:workspace-local :selected])
+                  tx         (dm/get-in state [:workspace-undo :transaction])
+                  ;; Inside an undo transaction, the group of its history entry
+                  ;; (taken from its first commit), or the one it was opened with
+                  undo-group (or undo-group (:undo-group tx) (:commit-group tx) (uuid/next))]
               (rx/of (-> params
                          (assoc :undo-group undo-group)
                          (assoc :features features)
