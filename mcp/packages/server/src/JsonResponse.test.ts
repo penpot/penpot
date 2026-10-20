@@ -23,6 +23,8 @@ test("opt-in JSON replies preserve request IDs, errors and user isolation across
     delete process.env.PENPOT_MCP_REDIS_URI;
     const server = new PenpotMcpServer(true);
     let plugin: WebSocket | undefined;
+    let stopped = false;
+    let onHeld: (() => void) | undefined;
     try {
         await server.start();
         const internals = server as any;
@@ -35,6 +37,10 @@ test("opt-in JSON replies preserve request IDs, errors and user isolation across
         plugin = new WebSocket(`ws://127.0.0.1:${wsServer.address().port}/?userToken=fixture-owner`);
         plugin.on("message", (raw) => {
             const task = JSON.parse(raw.toString());
+            if (task.params.code === "__hold__") {
+                onHeld?.();
+                return;
+            }
             plugin!.send(JSON.stringify({ id: task.id, success: true, data: { result: task.params.code } }));
         });
         await once(plugin, "open");
@@ -71,6 +77,7 @@ test("opt-in JSON replies preserve request IDs, errors and user isolation across
             assert.equal(reply.id, id);
             assert.ok(reply.result.content.length);
         }
+        const ownerSession = headers["mcp-session-id"];
         // A fresh unauthenticated session must not access the authenticated plugin.
         delete headers["mcp-session-id"];
         const anonymous = url.split("?")[0];
@@ -101,12 +108,37 @@ test("opt-in JSON replies preserve request IDs, errors and user isolation across
         const denial: any = await denied.json();
         assert.equal(denial.id, 301);
         assert.match(JSON.stringify(denial), /authentication|userToken/);
+        headers["mcp-session-id"] = ownerSession;
+        const held = new Promise<void>((resolve) => {
+            onHeld = resolve;
+        });
+        const pending = post({
+            jsonrpc: "2.0",
+            id: 400,
+            method: "tools/call",
+            params: { name: "execute_code", arguments: { code: "__hold__" } },
+        }).then(
+            () => false,
+            () => true
+        );
+        await held;
+        const closed = once(plugin, "close");
+        plugin.terminate();
+        await closed;
+        await Promise.race([
+            server.stop(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("shutdown hung with a pending JSON response")), 1000).unref()
+            ),
+        ]);
+        stopped = true;
+        assert.equal(await pending, true, "lost pending reply must fail, never appear successful");
     } finally {
-        if (plugin) {
+        if (plugin && plugin.readyState !== WebSocket.CLOSED) {
             plugin.terminate();
             await once(plugin, "close");
         }
-        await server.stop();
+        if (!stopped) await server.stop();
         names.forEach((name, index) =>
             previous[index] === undefined ? delete process.env[name] : (process.env[name] = previous[index])
         );

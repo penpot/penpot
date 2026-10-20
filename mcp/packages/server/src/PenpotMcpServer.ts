@@ -512,6 +512,9 @@ export class PenpotMcpServer {
         for (const session of Object.values(this.streamableTransports)) await session.transport.close();
         for (const session of Object.values(this.sseTransports)) await session.transport.close();
         if (this.httpServer) {
+            // JSON response promises can remain pending after SDK transport.close().
+            // Closing their sockets makes shutdown bounded and reports loss to callers.
+            this.httpServer.closeAllConnections();
             await new Promise<void>((resolve, reject) =>
                 this.httpServer!.close((error) => (error ? reject(error) : resolve()))
             );

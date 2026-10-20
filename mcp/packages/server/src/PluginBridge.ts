@@ -472,6 +472,10 @@ export class PluginBridge {
      * Closes the WebSocket server and all connected client sockets.
      */
     public async close(): Promise<void> {
+        for (const id of this.pendingTasks.keys()) {
+            this.rejectPendingTask(id, new Error("Plugin bridge is shutting down; task outcome may be unknown"));
+        }
+        for (const socket of this.connectedClients.keys()) socket.terminate();
         return new Promise((resolve) => {
             this.wsServer.close(() => {
                 this.logger.info("WebSocket server closed");
