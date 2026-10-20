@@ -15,6 +15,9 @@ use super::layout::{layout_vertical, VerticalLayout};
 
 pub(crate) const TEST_FONT: &[u8] = include_bytes!("../../fonts/sourcesanspro-regular.ttf");
 
+/// Work Sans subset with Latin letters and combining Pinyin tone marks.
+pub(crate) const PINYIN_TEST_FONT: &[u8] = include_bytes!("../../fonts/pinyin-test.ttf");
+
 /// Noto Sans JP subset with `vmtx`/`vhea`: 〱 advances 2em vertically, あ/く 1em.
 pub(super) const VMTX_TEST_FONT: &[u8] = include_bytes!("../../fonts/notosansjp-vmtx-test.ttf");
 

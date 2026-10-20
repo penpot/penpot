@@ -50,6 +50,17 @@
    :focus-para focus-para
    :focus-offset focus-offset})
 
+(t/deftest reading-selection-stays-with-one-base-group
+  (let [content (editor-content [{:text "你好"} {:text "世界" :font-weight "700"}]
+                                [{:text "中国" :ruby "zhōng guó"}])]
+    (doseq [range [(selection 0 0 0 1) (selection 0 2 0 0)
+                   (selection 0 2 0 4) (selection 1 0 1 2)]]
+      (t/is (true? (text-editor/reading-selection? content range))))
+    (doseq [range [(selection 0 1 0 3) (selection 0 0 1 2)
+                   (selection 0 1 0 1) (selection 1 0 1 1)]]
+      (t/is (false? (text-editor/reading-selection? content range))))
+    (t/is (false? (text-editor/reading-selection? nil nil)))))
+
 (t/deftest japanese-styles-follow-the-selected-span
   (let [content (editor-content
                  [{:text "日" :ruby "にち" :text-emphasis "filled-dot"}

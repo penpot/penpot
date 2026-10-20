@@ -1205,6 +1205,69 @@ fn horizontal_ruby_glyphs_share_one_baseline() {
 }
 
 #[test]
+fn horizontal_pinyin_tones_keep_canonical_shaping_and_group_alignment() {
+    use crate::shapes::text_vertical::test_support::{provider, EM, PINYIN_TEST_FONT};
+    use crate::shapes::{FontFamily, FontStyle};
+
+    let font_provider = provider(PINYIN_TEST_FONT);
+    let family = format!("{}", FontFamily::new(Uuid::nil(), 400, FontStyle::Normal));
+    let mut shapes = Vec::new();
+    for reading in ["nǐ hǎo", "ni\u{30c} ha\u{30c}o"] {
+        let shaped = shape_segment_with_fallbacks(
+            reading,
+            EM / 2.0,
+            std::slice::from_ref(&family),
+            &font_provider,
+            false,
+            FontFeatures::None,
+            &FontMgr::from(font_provider.clone()),
+            "zh-Hans-CN",
+        );
+        assert_eq!(
+            shaped
+                .iter()
+                .map(|run| run.text.as_str())
+                .collect::<String>(),
+            reading
+        );
+        let glyphs = ruby_glyph_refs(reading, &shaped, EM / 2.0);
+        assert!(glyphs.iter().all(|(_, _, _, western)| *western));
+        assert!(shaped
+            .iter()
+            .flat_map(|run| &run.glyphs)
+            .all(|glyph| *glyph != 0));
+        let span = TextSpan {
+            ruby: reading.to_string(),
+            ..make_span("你好", 0.0)
+        };
+        let base = skia::Rect::from_xywh(0.0, 0.0, EM * 2.0, EM);
+        let lefts = RubyLine {
+            span: &span,
+            shaped: &shaped,
+            glyphs: &glyphs,
+            base,
+            leading_gap: 0.0,
+            room: (0.0, 0.0),
+        }
+        .glyph_lefts();
+        for (index, pair) in lefts.windows(2).enumerate() {
+            assert!((pair[1] - pair[0] - glyphs[index].2).abs() < 0.01);
+        }
+        let width: f32 = glyphs.iter().map(|(_, _, advance, _)| advance).sum();
+        assert!((lefts[0] - (base.width() - width) / 2.0).abs() < 0.01);
+        shapes.push((
+            shaped
+                .iter()
+                .flat_map(|run| run.glyphs.clone())
+                .collect::<Vec<_>>(),
+            width,
+        ));
+    }
+    assert_eq!(shapes[0].0, shapes[1].0);
+    assert!((shapes[0].1 - shapes[1].1).abs() < 0.01);
+}
+
+#[test]
 fn horizontal_western_ruby_keeps_its_word_whole() {
     // JLREQ Fig 112: "editor" over 編集者 is centred as one word, never
     // spread letter by letter.

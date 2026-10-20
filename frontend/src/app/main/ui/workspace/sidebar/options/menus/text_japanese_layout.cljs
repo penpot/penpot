@@ -237,7 +237,7 @@
                     :on-change        handle-change}]])))
 
 (mf/defc ruby-options*
-  [{:keys [values on-change on-blur advanced-open on-toggle-advanced]}]
+  [{:keys [values on-change on-blur advanced-open on-toggle-advanced labels]}]
   (let [ruby       (span-input-value (:ruby values))
         ruby*      (mf/use-state ruby)
         dirty*     (mf/use-state false)
@@ -272,15 +272,15 @@
 
     [:div {:class (stl/css :ruby-options)}
      [:> input* {:class       (stl/css :ruby-input)
-                 :label       (tr "workspace.options.text-options.ruby")
-                 :placeholder (tr "workspace.options.text-options.ruby-placeholder")
+                 :label       (or (:input labels) (tr "workspace.options.text-options.ruby"))
+                 :placeholder (or (:placeholder labels) (tr "workspace.options.text-options.ruby-placeholder"))
                  :value       value
                  :on-change   handle-change
                  :on-blur     commit!
                  :on-key-down handle-key-down}]
      [:> icon-button* {:variant     "ghost"
                        :selected    advanced-open
-                       :aria-label  (tr "workspace.options.text-options.ruby-advanced-options")
+                       :aria-label  (or (:advanced labels) (tr "workspace.options.text-options.ruby-advanced-options"))
                        :aria-expanded advanced-open
                        :data-testid "ruby-advanced-options-toggle"
                        :on-click    on-toggle-advanced
@@ -306,20 +306,21 @@
                   :on-change        handle-change}]]))
 
 (defn- ruby-common-props
-  [values on-change on-blur]
+  [values on-change on-blur labels]
   (mf/props
    {:values    values
     :on-change on-change
-    :on-blur   on-blur}))
+    :on-blur   on-blur
+    :labels    labels}))
 
 (mf/defc ruby-hidden-option*
-  [{:keys [values on-change on-blur]}]
+  [{:keys [values on-change on-blur labels]}]
   (let [value (:ruby-hidden values)
         enabled? (cond
                    (mixed-span-value? value) nil
                    (true? value) true
                    :else false)
-        label (tr "workspace.options.text-options.ruby-hidden")
+        label (or (:hidden labels) (tr "workspace.options.text-options.ruby-hidden"))
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
@@ -333,8 +334,8 @@
                   :on-change       handle-change}]]))
 
 (mf/defc ruby-customization-options*
-  [{:keys [values on-change on-blur]}]
-  (let [common-props (ruby-common-props values on-change on-blur)
+  [{:keys [values on-change on-blur labels]}]
+  (let [common-props (ruby-common-props values on-change on-blur labels)
         options      (mf/with-memo []
                        {:ruby-size     (ruby-size-options tr)
                         :ruby-align    (ruby-align-options tr)
@@ -345,30 +346,30 @@
      [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-size
                                                :default-value (jl/enum-default :ruby-size)
-                                               :label (tr "workspace.options.text-options.ruby-size")
+                                               :label (or (:size labels) (tr "workspace.options.text-options.ruby-size"))
                                                :options (:ruby-size options)})]
      [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-align
                                                :default-value (jl/enum-default :ruby-align)
-                                               :label (tr "workspace.options.text-options.ruby-align")
+                                               :label (or (:align labels) (tr "workspace.options.text-options.ruby-align"))
                                                :options (:ruby-align options)})]
      [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-overhang
                                                :default-value (jl/enum-default :ruby-overhang)
-                                               :label (tr "workspace.options.text-options.ruby-overhang")
+                                               :label (or (:overhang labels) (tr "workspace.options.text-options.ruby-overhang"))
                                                :options (:ruby-overhang options)})]
      [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-side
                                                :default-value (jl/enum-default :ruby-side)
-                                               :label (tr "workspace.options.text-options.ruby-side")
+                                               :label (or (:side labels) (tr "workspace.options.text-options.ruby-side"))
                                                :options (:ruby-side options)})]]))
 
 (mf/defc ruby-advanced-options*
-  [{:keys [values on-change on-blur]}]
+  [{:keys [values on-change on-blur labels]}]
   (let [open*       (mf/use-state false)
         open?       (deref open*)
         toggle-open (mf/use-fn #(swap! open* not))
-        common-props (ruby-common-props values on-change on-blur)]
+        common-props (ruby-common-props values on-change on-blur labels)]
     [:div {:class (stl/css :ruby-advanced-options)}
      [:> ruby-options* (mf/spread-props common-props
                                         {:advanced-open     open?
@@ -378,15 +379,15 @@
       [:> ruby-customization-options* common-props]]]))
 
 (mf/defc ruby-presentation-options*
-  [{:keys [values on-change on-blur]}]
+  [{:keys [values on-change on-blur labels]}]
   (let [open*        (mf/use-state false)
         open?        (deref open*)
         toggle-open  (mf/use-fn #(swap! open* not))
-        common-props (ruby-common-props values on-change on-blur)]
+        common-props (ruby-common-props values on-change on-blur labels)]
     [:div {:class (stl/css :ruby-advanced-options)}
      [:> title-bar* {:collapsable     true
                      :collapsed       (not open?)
-                     :title           (tr "workspace.options.text-options.ruby-advanced-options")
+                     :title           (or (:advanced labels) (tr "workspace.options.text-options.ruby-advanced-options"))
                      :on-collapsed    toggle-open
                      :aria-expanded   open?
                      :data-testid     "ruby-presentation-options-toggle"}]
