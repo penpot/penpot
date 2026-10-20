@@ -11,6 +11,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as dps]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -172,3 +173,28 @@
              (await (async/observe (ptk/watch (dd/initialize team-id) state stream)
                                    :on-next #(swap! processed conj (ptk/type %))))))
     (t/is (= 1 (count (filter #{::dcm/handle-organization-change-sso} @processed))))))
+
+;; Scenario: the user duplicates a file whose workspace still has a change
+;; waiting to be saved. Proves: the copy is requested once the save is done,
+;; and the user is told the copy misses what could not be saved.
+(t/deftest ^:async duplicating-a-file-waits-for-its-pending-changes
+  (let [file-id   (uuid/next)
+        commit-id (uuid/next)
+        calls     (atom [])
+        store     (ptk/store {:state {:files {}
+                                      :persistence {:queue (conj #queue [] commit-id)
+                                                    :index {commit-id {:id commit-id :file-id file-id}}}}})]
+    (await
+     (mock/with-mocks*
+       {dps/force-persist-files-and-wait (mock/stub (fn [file-ids _]
+                                                      (swap! calls conj [:wait file-ids])
+                                                      (rx/empty)))
+        rp/cmd!                          (mock/stub (fn [cmd _]
+                                                      (swap! calls conj [cmd])
+                                                      (rx/of {:id (uuid/next)})))
+        i18n/tr                          (mock/stub #(str "translated:" %))}
+       (ptk/emit! store (dd/duplicate-file {:id file-id :name "File"}))
+       (await (async/wait-for #(= 2 (count @calls)) "the copy is requested"))
+       (t/is (= [[:wait #{file-id}] [:duplicate-file]] @calls))
+       (t/is (= "translated:dashboard.duplicate-unsaved-changes"
+                (get-in @store [:notification :content])))))))

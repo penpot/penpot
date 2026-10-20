@@ -1511,7 +1511,8 @@
                                :element-type (cfh/get-selected-type objects ids)
                                :moved moved-count}))))
 
-         (when (and (some? frame-id) (d/not-empty? changes))
+         ;; Shapes that already belong to the frame leave nothing to move
+         (when (and (some? frame-id) (seq ids))
            (rx/of (dch/commit-changes changes)
                   (dwc/expand-collapse frame-id)))
          (when add-component-to-variant?

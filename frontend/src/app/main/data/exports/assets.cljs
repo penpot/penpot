@@ -36,13 +36,13 @@
   (into #{} (keep :file-id) exports))
 
 (defn- warn-unsaved-changes
-  "Warns that the export may miss the changes of `file-ids` not saved yet."
-  [file-ids]
+  "Shows `message` when some changes of `file-ids` are not saved yet."
+  [file-ids message]
   (ptk/reify ::warn-unsaved-changes
     ptk/WatchEvent
     (watch [_ state _]
       (when (dwp/unsaved-changes? state file-ids)
-        (rx/of (ntf/show {:content (tr "workspace.export.unsaved-changes")
+        (rx/of (ntf/show {:content message
                           :type :toast
                           :level :warning
                           :timeout 8000}))))))
@@ -339,8 +339,13 @@
       ptk/WatchEvent
       (watch [_ state _]
         (case @target
+          ;; Drawn from the local data, which a rejected save may still change
           :client
-          (rx/of (request-simple-export-wasm export))
+          (rx/concat
+           (dwp/force-persist-files-and-wait (export-file-ids [export]) save-wait-timeout-ms)
+           (rx/of (warn-unsaved-changes (export-file-ids [export])
+                                        (tr "workspace.export.unsaved-changes-included"))
+                  (request-simple-export-wasm export)))
 
           :too-large
           (rx/of (ntf/error (tr "errors.export-too-large")))
@@ -353,7 +358,8 @@
                                                             :is-wasm (wasm-export-enabled? state)})]
             (rx/concat
              (dwp/force-persist-files-and-wait (export-file-ids [export]) save-wait-timeout-ms)
-             (rx/of (warn-unsaved-changes (export-file-ids [export])))
+             (rx/of (warn-unsaved-changes (export-file-ids [export])
+                                          (tr "workspace.export.unsaved-changes")))
 
              (->> (rp/cmd! :export params)
                   (rx/map (fn [{:keys [filename mtype uri]}]
@@ -407,7 +413,7 @@
 
           (rx/concat
            (dwp/force-persist-files-and-wait file-ids save-wait-timeout-ms)
-           (rx/of (warn-unsaved-changes file-ids))
+           (rx/of (warn-unsaved-changes file-ids (tr "workspace.export.unsaved-changes")))
            (rx/merge
             ;; Updates the export state with each progress message, until
             ;; shortly after the export ends or fails.

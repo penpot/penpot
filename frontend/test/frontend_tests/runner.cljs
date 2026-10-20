@@ -34,6 +34,7 @@
    [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
+   [frontend-tests.data.workspace-notifications-test]
    [frontend-tests.data.workspace-pages-test]
    [frontend-tests.data.workspace-path-edition-test]
    [frontend-tests.data.workspace-reflow-test]
@@ -55,6 +56,7 @@
    [frontend-tests.logic.copying-and-duplicating-test]
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
+   [frontend-tests.logic.move-shapes-to-frame-test]
    [frontend-tests.logic.nudge-selected-shapes-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.logic.path-actions-test]
@@ -190,6 +192,7 @@
    'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
+   'frontend-tests.data.workspace-notifications-test
    'frontend-tests.data.workspace-pages-test
    'frontend-tests.data.workspace-path-edition-test
    'frontend-tests.data.workspace-reflow-test
@@ -211,6 +214,7 @@
    'frontend-tests.logic.copying-and-duplicating-test
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test
+   'frontend-tests.logic.move-shapes-to-frame-test
    'frontend-tests.logic.nudge-selected-shapes-test
    'frontend-tests.logic.path-actions-test
    'frontend-tests.logic.path-clipboard-test
