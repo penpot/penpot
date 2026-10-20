@@ -9290,6 +9290,16 @@ msgstr ""
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "Type '%s' is not supported (%s):"
 
+#: src/app/main/data/workspace/tokens/import_export.cljs:80
+msgid "workspace.tokens.unsupported-token-data-message"
+msgstr ""
+"Import was successful, but some token data was skipped because Penpot "
+"does not support it. Expand details to see what was skipped."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:83
+msgid "workspace.tokens.unsupported-token-data-section"
+msgstr "'%s' is not supported (%s):"
+
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:249, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:200
 msgid "workspace.tokens.use-reference"
 msgstr "Use a reference"

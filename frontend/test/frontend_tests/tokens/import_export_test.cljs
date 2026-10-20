@@ -104,3 +104,24 @@ color.value tries to reference missing, which is not defined.")))
                          (t/is (instance? ctob/TokensLib tokens-lib))
                          (t/is (= "{missing}" (:value (ctob/get-token-by-name tokens-lib "core" "color"))))
                          (done))))))))
+
+(t/deftest import-dtcg-2025-json-test
+  (t/async
+    done
+    (t/testing "imports DTCG 2025.10 object values"
+      (let [json (-> {"core" {"space" {"$type" "dimension"
+                                       "sm" {"$value" {"value" 4 "unit" "px"}}}
+                              "color" {"$type" "color"
+                                       "brand" {"$value" {"colorSpace" "srgb" "components" [1 0 0]}
+                                                "$extensions" {"com.figma" {"scopes" ["ALL"]}}}}}
+                      "$metadata" {"tokenSetOrder" ["core"]}}
+                     (json/encode {:type :json-verbose}))]
+        (->> (rx/of json)
+             (dwti/import-file-stream "")
+             (rx/subs! (fn [tokens-lib]
+                         (t/is (= "4px" (:value (ctob/get-token-by-name tokens-lib "core" "space.sm"))))
+                         (t/is (= "#ff0000" (:value (ctob/get-token-by-name tokens-lib "core" "color.brand"))))
+                         (done))
+                       (fn [err]
+                         (t/do-report {:type :error :message "Stream error" :actual err})
+                         (done))))))))

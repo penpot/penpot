@@ -9396,6 +9396,17 @@ msgstr ""
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "El tipo '%s' no está soportado (%s):"
 
+#: src/app/main/data/workspace/tokens/import_export.cljs:80
+msgid "workspace.tokens.unsupported-token-data-message"
+msgstr ""
+"La importación se ha realizado correctamente, pero algunos datos de los "
+"tokens fueron omitidos porque Penpot no los soporta. Expande los detalles "
+"para ver qué se omitió."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:83
+msgid "workspace.tokens.unsupported-token-data-section"
+msgstr "'%s' no está soportado (%s):"
+
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:249, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:200
 msgid "workspace.tokens.use-reference"
 msgstr "Usa una referencia"

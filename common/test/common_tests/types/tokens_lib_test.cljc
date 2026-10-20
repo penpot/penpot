@@ -1893,6 +1893,106 @@
            (t/is (= (:type original-ref) (:type imported-ref)))
            (t/is (= (:value imported-ref) (:value original-ref))))))))
 
+#?(:clj
+   (t/deftest import-dtcg-2025-values
+     (let [json {"space" {"$type" "dimension"
+                          "sm" {"$value" {"value" 4 "unit" "px"}}}
+                 "color" {"$type" "color"
+                          "brand" {"$value" {"colorSpace" "srgb" "components" [1 0 0] "hex" "#ff0000"}}
+                          "accent" {"$value" {"colorSpace" "oklch" "components" [0.628 0.2577 29.23] "alpha" 0.5}}}
+                 "font" {"body" {"$type" "fontFamily" "$value" ["Inter" "sans-serif"]}
+                         "bold" {"$type" "fontWeight" "$value" "bold"}}
+                 "type" {"h1" {"$type" "typography"
+                               "$value" {"fontFamily" "Roboto"
+                                         "fontSize" {"value" 42 "unit" "px"}
+                                         "fontWeight" "700"
+                                         "letterSpacing" {"value" 0.1 "unit" "px"}}}}
+                 "shadow" {"sm" {"$type" "shadow"
+                                 "$value" {"color" "{color.brand}"
+                                           "offsetX" {"value" 0 "unit" "px"}
+                                           "offsetY" {"value" 2 "unit" "px"}
+                                           "blur" {"value" 4 "unit" "px"}
+                                           "spread" {"value" 0 "unit" "px"}}}}}
+           lib (ctob/parse-decoded-json json "set")
+           value (fn [token-name] (:value (ctob/get-token-by-name lib "set" token-name)))]
+       (t/is (= :dimensions (:type (ctob/get-token-by-name lib "set" "space.sm"))))
+       (t/is (= "4px" (value "space.sm")))
+       (t/is (= "#ff0000" (value "color.brand")))
+       (t/is (= "#ff000080" (value "color.accent")))
+       (t/is (= :font-family (:type (ctob/get-token-by-name lib "set" "font.body"))))
+       (t/is (= ["Inter" "sans-serif"] (value "font.body")))
+       (t/is (= :font-weight (:type (ctob/get-token-by-name lib "set" "font.bold"))))
+       (t/is (= {:font-family ["Roboto"] :font-size "42px" :font-weight "700" :letter-spacing "0.1px"}
+                (value "type.h1")))
+       (t/is (= [{:color "{color.brand}" :offset-x "0px" :offset-y "2px" :blur "4px" :spread "0px" :inset false}]
+                (value "shadow.sm"))))))
+
+#?(:clj
+   (t/deftest import-warnings-for-dropped-data
+     (let [json {"core" {"color" {"$type" "color"
+                                  "$description" "Colors"
+                                  "old" {"$value" "#000"
+                                         "$deprecated" true
+                                         "$extensions" {"com.figma" {"scopes" ["ALL"]}}}
+                                  "lab" {"$value" {"colorSpace" "lab" "components" [50 20 30]}}}
+                         "motion" {"fast" {"$type" "duration" "$value" {"value" 100 "unit" "ms"}}}
+                         "own" {"$type" "dimension"
+                                "$value" {"value" 4 "unit" "px"}
+                                "$extensions" {"com.penpot" {"type" "spacing"}}}}
+                 "$metadata" {"tokenSetOrder" ["core"]}}
+           {:keys [tokens-lib unknown-types unsupported]} (ctob/import-decoded-json json "")]
+       (t/testing "the tokens are imported without the dropped data"
+         (t/is (= "#000" (:value (ctob/get-token-by-name tokens-lib "core" "color.old"))))
+         (t/is (nil? (ctob/get-token-by-name tokens-lib "core" "color.lab"))))
+       (t/testing "penpot's own namespace restores the type and is not reported"
+         (t/is (= :spacing (:type (ctob/get-token-by-name tokens-lib "core" "own")))))
+       (t/is (= {"core.motion.fast" "duration"} unknown-types))
+       (t/is (= #{{:property "$deprecated" :path "core.color.old"}
+                  {:property "$extensions" :path "core.color.old"}
+                  {:property "$description" :path "core.color"}
+                  {:property "$value" :path "core.color.lab"}}
+                (set unsupported))))))
+
+#?(:clj
+   (t/deftest import-theme-set-statuses
+     (let [json {"core" {"a" {"$value" "1" "$type" "number"}}
+                 "light" {"b" {"$value" "2" "$type" "number"}}
+                 "dark" {"b" {"$value" "3" "$type" "number"}}
+                 "$themes" [{"name" "light" "group" "mode"
+                             "selectedTokenSets" {"core" "source" "light" "enabled" "dark" "disabled"}}
+                            {"name" "dark" "group" "mode"
+                             "selectedTokenSets" {"core" "source" "dark" "enabled"}}]
+                 "$metadata" {"tokenSetOrder" ["core" "light" "dark"]
+                              "activeThemes" ["mode/light" "mode/dark"]}}
+           lib (ctob/parse-decoded-json json "")]
+       (t/testing "source and enabled sets are part of the theme, disabled ones are not"
+         (t/is (= #{"core" "light"} (:sets (ctob/get-theme-by-name lib "mode" "light")))))
+       (t/testing "activating a theme deactivates the other themes of its group"
+         (t/is (= #{"mode/dark"} (disj (ctob/get-legacy-active-themes lib) ctob/hidden-theme-path)))))))
+
+#?(:clj
+   (t/deftest export-dtcg-2025-round-trip
+     (let [tokens-lib (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set
+                                         :name "core"
+                                         :tokens {"space.sm" (ctob/make-token {:name "space.sm" :type :spacing :value "4px"})
+                                                  "color.brand" (ctob/make-token {:name "color.brand" :type :color :value "#ff0000"})
+                                                  "space.md" (ctob/make-token {:name "space.md" :type :spacing :value "{space.sm} * 2"})})))
+           exported (ctob/export-dtcg-json tokens-lib (ctos/make-tokens-status) {:profile :dtcg})
+           imported (ctob/parse-decoded-json exported "")]
+       (t/is (= {"$value" {"value" 4 "unit" "px"}
+                 "$type" "dimension"
+                 "$description" ""
+                 "$extensions" {"com.penpot" {"type" "spacing"}}}
+                (get-in exported ["core" "space" "sm"])))
+       (t/is (= "srgb" (get-in exported ["core" "color" "brand" "$value" "colorSpace"])))
+       (t/testing "penpot reads its own export back with its types"
+         (doseq [token-name ["space.sm" "color.brand" "space.md"]]
+           (let [original (ctob/get-token-by-name tokens-lib "core" token-name)
+                 token (ctob/get-token-by-name imported "core" token-name)]
+             (t/is (= (:type original) (:type token)))
+             (t/is (= (:value original) (:value token)))))))))
+
 (t/deftest token-name-path-exists?-test
   (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {"sm" {:name "sm"}}})))
   (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {:name "sm"}})))
