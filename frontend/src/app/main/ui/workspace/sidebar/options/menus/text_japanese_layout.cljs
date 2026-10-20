@@ -244,11 +244,13 @@
         value      (deref ruby*)
         dirty?     (deref dirty*)
 
+        valid? (or (empty? value) (nil? (:validate labels)) ((:validate labels) value))
+
         commit!
         (mf/use-fn
-         (mf/deps dirty? value on-change on-blur)
+         (mf/deps dirty? valid? value on-change on-blur)
          (fn []
-           (when dirty?
+           (when (and dirty? valid?)
              (on-change {:ruby value})
              (reset! dirty* false))
            (when (some? on-blur) (on-blur))))
@@ -278,13 +280,16 @@
                  :on-change   handle-change
                  :on-blur     commit!
                  :on-key-down handle-key-down}]
-     [:> icon-button* {:variant     "ghost"
-                       :selected    advanced-open
-                       :aria-label  (or (:advanced labels) (tr "workspace.options.text-options.ruby-advanced-options"))
-                       :aria-expanded advanced-open
-                       :data-testid "ruby-advanced-options-toggle"
-                       :on-click    on-toggle-advanced
-                       :icon        i/menu}]]))
+     (when-not valid?
+       [:p {:role "alert"} (:invalid labels)])
+     (when on-toggle-advanced
+       [:> icon-button* {:variant     "ghost"
+                         :selected    advanced-open
+                         :aria-label  (or (:advanced labels) (tr "workspace.options.text-options.ruby-advanced-options"))
+                         :aria-expanded advanced-open
+                         :data-testid "ruby-advanced-options-toggle"
+                         :on-click    on-toggle-advanced
+                         :icon        i/menu}])]))
 
 (mf/defc span-select-option*
   "Select bound to one span attribute, with a disabled entry for mixed values."

@@ -72,6 +72,7 @@
               :text-underline-position "auto"
               :ruby "にち"
               :ruby-hidden false
+              :ruby-zhuyin false
               :ruby-size "half"
               :ruby-align "space-around"
               :ruby-overhang "auto"
@@ -87,6 +88,7 @@
               :text-underline-position "auto"
               :ruby ""
               :ruby-hidden false
+              :ruby-zhuyin false
               :ruby-size "half"
               :ruby-align "space-around"
               :ruby-overhang "auto"
@@ -129,6 +131,7 @@
                    :annotation-clearance "auto"}
                   {:text "年"
                    :ruby-hidden false
+                   :ruby-zhuyin false
                    :warichu "warichu"
                    :font-features "vpal"}])]
     (t/is (= {:text-combine-upright :multiple
@@ -137,6 +140,7 @@
               :text-underline-position :multiple
               :ruby :multiple
               :ruby-hidden :multiple
+              :ruby-zhuyin false
               :ruby-size :multiple
               :ruby-align :multiple
               :ruby-overhang :multiple
@@ -577,3 +581,32 @@
 (t/deftest a-collapsed-decoration-range-does-not-restyle-a-reading
   (let [paragraph {:type "paragraph" :children [{:text "你好" :ruby "nǐ hǎo"}]}]
     (t/is (= paragraph (text-editor/apply-attrs-to-paragraph paragraph 1 1 {:text-emphasis-position "under-left"})))))
+
+(t/deftest zhuyin-mode-round-trips-in-existing-span-flags
+  (doseq [[attrs expected] [[{} 0] [{:ruby-side "under"} 1]
+                            [{:ruby-zhuyin true} 2]
+                            [{:ruby-zhuyin true :ruby-side "under"} 3]]]
+    (t/is (= expected (span-byte (serialized-span attrs) :ruby-side)))))
+
+(t/deftest zhuyin-selection-requires-a-whole-single-han-base
+  (let [content (editor-content [{:text "你好"} {:text "𠀀"}] [{:text "中" :ruby "ㄓㄨㄥ" :ruby-zhuyin true}])]
+    (t/is (true? (text-editor/zhuyin-selection? content (selection 0 0 0 1))))
+    (t/is (true? (text-editor/zhuyin-selection? content (selection 0 2 0 4))))
+    (t/is (true? (text-editor/zhuyin-selection? content (selection 1 0 1 1))))
+    (t/is (false? (text-editor/zhuyin-selection? content (selection 0 0 0 2))))
+    (t/is (false? (text-editor/zhuyin-selection? content (selection 0 2 0 3))))))
+
+(t/deftest dom-style-data-keeps-zhuyin-as-a-boolean
+  (let [attrs {:ruby-zhuyin true :ruby "ㄋㄧˇ"}
+        encoded (content-styles/attrs->styles attrs)
+        decoded (content-styles/styles->attrs (js->clj encoded))]
+    (t/is (true? (:ruby-zhuyin decoded)))
+    (t/is (= "ㄋㄧˇ" (:ruby decoded)))))
+
+(t/deftest zhuyin-export-retains-default-fonts-when-optional-span-fonts-are-absent
+  (let [entry (@#'api/zhuyin-glyph-entry
+               {:text "中" :ruby "ㄓ" :ruby-zhuyin true}
+               {:start-pos 0 :end-pos 1 :x 10 :y 20 :width 6 :height 6})]
+    (t/is (= "sourcesanspro" (:font-family entry)))
+    (t/is (= "ㄓ" (:text entry)))
+    (t/is (= 26 (:y entry)))))

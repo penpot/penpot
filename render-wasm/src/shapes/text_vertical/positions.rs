@@ -198,27 +198,50 @@ fn ruby_entries(layout: &VerticalLayout, (origin_x, origin_y): (f32, f32)) -> Ve
     layout
         .ruby_cells
         .iter()
-        .filter_map(|ruby| {
-            let (first, last) = (ruby.glyphs.first()?, ruby.glyphs.last()?);
-            let column = &layout.columns[ruby.column];
-            let top = ruby.glyph_tops.iter().copied().fold(f32::MAX, f32::min);
-            let bottom = ruby
-                .glyph_tops
-                .iter()
-                .zip(&ruby.glyphs)
-                .map(|(top, glyph)| top + glyph.extent)
-                .fold(f32::MIN, f32::max);
-            Some(PositionData {
-                paragraph: ruby.paragraph as u32,
-                span: ruby.span as u32,
-                start_pos: first.utf16_start as u32,
-                end_pos: last.utf16_end as u32,
-                x: origin_x + ruby.strip_x(column),
-                y: origin_y + top,
-                width: ruby.font_size,
-                height: bottom - top,
-                direction: DIRECTION_VERTICAL_RUBY,
-            })
+        .flat_map(|ruby| {
+            if let Some(origins) = &ruby.zhuyin_origins {
+                let column = &layout.columns[ruby.column];
+                return ruby
+                    .glyphs
+                    .iter()
+                    .zip(origins)
+                    .map(|(glyph, origin)| PositionData {
+                        paragraph: ruby.paragraph as u32,
+                        span: ruby.span as u32,
+                        start_pos: glyph.utf16_start as u32,
+                        end_pos: glyph.utf16_end as u32,
+                        x: origin_x + ruby.strip_x(column) + origin.x,
+                        y: origin_y + origin.y - ruby.font_size,
+                        width: ruby.font_size,
+                        height: ruby.font_size,
+                        direction: super::super::text_zhuyin::DIRECTION_ZHUYIN,
+                    })
+                    .collect::<Vec<_>>();
+            }
+            (|| {
+                let (first, last) = (ruby.glyphs.first()?, ruby.glyphs.last()?);
+                let column = &layout.columns[ruby.column];
+                let top = ruby.glyph_tops.iter().copied().fold(f32::MAX, f32::min);
+                let bottom = ruby
+                    .glyph_tops
+                    .iter()
+                    .zip(&ruby.glyphs)
+                    .map(|(top, glyph)| top + glyph.extent)
+                    .fold(f32::MIN, f32::max);
+                Some(PositionData {
+                    paragraph: ruby.paragraph as u32,
+                    span: ruby.span as u32,
+                    start_pos: first.utf16_start as u32,
+                    end_pos: last.utf16_end as u32,
+                    x: origin_x + ruby.strip_x(column),
+                    y: origin_y + top,
+                    width: ruby.font_size,
+                    height: bottom - top,
+                    direction: DIRECTION_VERTICAL_RUBY,
+                })
+            })()
+            .into_iter()
+            .collect::<Vec<_>>()
         })
         .collect()
 }

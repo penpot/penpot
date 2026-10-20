@@ -795,6 +795,15 @@
             (or (not (jl/annotated-span? span))
                 (= (- end-offset start-offset) (count (:text span)))))))))
 
+(defn zhuyin-selection?
+  "True when the reading selection is exactly one Han base."
+  [content selection]
+  (and (reading-selection? content selection)
+       (let [{:keys [start-para start-offset end-offset]} (normalize-selection selection)
+             paragraph (get-in content [:children 0 :children start-para])
+             text (apply str (map :text (:children paragraph)))]
+         (jl/zhuyin-base? (subs text start-offset end-offset)))))
+
 (defn selection-japanese-styles
   "Japanese span styles of a WASM selection, read from the cached content.
    A range with differing values reports :multiple; a caret reports its

@@ -292,6 +292,8 @@
          (identical? (unchecked-get n-props "readingSelectionActive")
                      (unchecked-get o-props "readingSelectionActive"))
          (= n-ruby-values o-ruby-values)
+         (= (unchecked-get o-props "zhuyinSelectionActive")
+            (unchecked-get n-props "zhuyinSelectionActive"))
          (identical? (get o-values :fills)
                      (get n-values :fills))
          (identical? (get o-values :font-family)
@@ -342,6 +344,8 @@
                      (get n-values :text-underline-position))
          (identical? (get o-values :ruby)
                      (get n-values :ruby))
+         (identical? (get o-values :ruby-zhuyin)
+                     (get n-values :ruby-zhuyin))
          (identical? (get o-values :ruby-hidden)
                      (get n-values :ruby-hidden))
          (identical? (get o-values :ruby-size)
@@ -389,7 +393,7 @@
 
 (mf/defc text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values ruby-values text-selection-active reading-selection-active
+  [{:keys [ids type values ruby-values text-selection-active reading-selection-active zhuyin-selection-active
            applied-tokens libraries file-id typographies]}]
 
   (let [;; --- UI state
@@ -594,6 +598,7 @@
           :ruby-values                 ruby-values
           :text-selection-active       text-selection-active
           :reading-selection-active    reading-selection-active
+          :zhuyin-selection-active     zhuyin-selection-active
           :on-change                   on-change
           :on-ruby-presentation-change on-ruby-presentation-change
           :on-blur                     on-text-blur})]

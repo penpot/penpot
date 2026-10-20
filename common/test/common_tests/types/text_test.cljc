@@ -398,6 +398,7 @@
                            :text-emphasis "open-sesame"
                            :ruby "かんじ"
                            :ruby-hidden true
+                           :ruby-zhuyin true
                            :ruby-size "quarter"
                            :ruby-align "space-between"
                            :ruby-overhang "none"
@@ -413,6 +414,7 @@
   (doseq [attrs [{:text-combine-upright "digits5"}
                  {:text-emphasis "dot"}
                  {:ruby-hidden "yes"}
+                 {:ruby-zhuyin "yes"}
                  {:ruby-size "full"}
                  {:ruby-align "end"}
                  {:ruby-overhang "always"}
@@ -511,3 +513,23 @@
       (t/is (ctst/valid-content? (with-span-attrs {attr value}))))
     (t/is (not (ctst/valid-content? (with-span-attrs {attr "invalid"}))))
     (t/is (not (jl/valid-enum-value? attr "invalid")))))
+
+(t/deftest zhuyin-validates-one-han-base-and-one-mandarin-syllable
+  (doseq [base ["你" "中" "𠀀" "中︀"]]
+    (t/is (jl/zhuyin-base? base)))
+  (doseq [base [nil "" "你好" "a" "한" "ㄋ"]]
+    (t/is (not (jl/zhuyin-base? base))))
+  (doseq [reading ["ㄓ" "ㄋㄧˇ" "ㄓㄨㄤˋ" "˙ㄉㄜ" "ㄉㄜ˙" "ㄇㄚˉ"]]
+    (t/is (jl/zhuyin-reading? reading)))
+  (doseq [reading [nil "" "nǐ" "ˇ" "ㄋˇㄧ" "ㄋㄧˇˋ" "ㄋ ㄧ" "ㄅㄆㄇㄈ"]]
+    (t/is (not (jl/zhuyin-reading? reading))))
+  (t/is (false? (:ruby-zhuyin jl/span-attr-defaults))))
+
+(t/deftest zhuyin-neutral-tone-is-above-and-other-tones-are-outside-the-last-symbol
+  (let [[neutral first-symbol second-symbol] (jl/zhuyin-slots "˙ㄉㄜ")
+        [first-normal last-normal tone] (jl/zhuyin-slots "ㄋㄧˇ")]
+    (t/is (< (:y neutral) (:y first-symbol) (:y second-symbol)))
+    (t/is (= (:x neutral) (:x first-symbol) (:x second-symbol)))
+    (t/is (< (:y first-normal) (:y last-normal)))
+    (t/is (> (:x tone) (:x last-normal)))
+    (t/is (< (:y tone) (:y last-normal)))))

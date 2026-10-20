@@ -2873,6 +2873,7 @@
 (def ^:private POSITION-DATA-VERTICAL 2)
 (def ^:private POSITION-DATA-RUBY 3)
 (def ^:private POSITION-DATA-EMPHASIS-MARK 4)
+(def ^:private POSITION-DATA-ZHUYIN 5)
 
 (defn- emphasis-mark-entry
   "Position-data entry for one emphasis mark (圏点): the geometry is the
@@ -2930,6 +2931,20 @@
            :fills (get element :fills)
            :text text}))))))
 
+(defn- zhuyin-glyph-entry
+  "One upright Zhuyin glyph at the renderer's drawing baseline."
+  [element {:keys [start-pos end-pos x y width height]}]
+  (when-let [reading (jl/visible-ruby element)]
+    (d/patch-object
+     (txt/get-default-text-attrs)
+     (d/without-nils
+      {:x x :y (+ y height) :width width :height height
+       :direction "ltr" :zhuyin-glyph true
+       :font-id (:font-id element) :font-family (:font-family element)
+       :font-size (dm/str width "px") :font-weight (:font-weight element)
+       :font-style (:font-style element) :fills (:fills element)
+       :text (subs reading start-pos end-pos)}))))
+
 (defn- text-strip-entry
   "Position-data entry for a strip of base text. Be aware that for RTL texts
    `start-pos` can be greater than `end-pos`."
@@ -2964,7 +2979,10 @@
          ;; Each warichu sub-line has its own entry, drawn at half size.
          :warichu         (when (= "warichu" (get element :warichu)) "warichu")
          ;; Horizontal data has no ruby strip; the base entry carries ruby for SVG export.
-         :ruby            (when (and (not vertical?) (seq element-text)) ruby)
+         :ruby            (when (and (not vertical?) (seq element-text)
+                                     (not (and (true? (:ruby-zhuyin element))
+                                               (jl/zhuyin-base? element-text)
+                                               (jl/zhuyin-reading? ruby)))) ruby)
          :ruby-size       (get element :ruby-size)
          :ruby-align      (get element :ruby-align)
          :ruby-overhang   (get element :ruby-overhang)
@@ -3008,6 +3026,7 @@
                      element        (-> paragraph-node :children (get span))]
                  (condp = direction
                    POSITION-DATA-RUBY          (ruby-strip-entry element entry)
+                   POSITION-DATA-ZHUYIN        (zhuyin-glyph-entry element entry)
                    POSITION-DATA-EMPHASIS-MARK (emphasis-mark-entry element entry)
                    (text-strip-entry paragraph-node element entry)))))
             result))))

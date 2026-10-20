@@ -507,6 +507,11 @@
      :get (fn [self] (range-japanese-value self start end :ruby-hidden))
      :set (range-attr-setter plugin-id page-id id start end :rubyHidden :ruby-hidden boolean?)}
 
+    :rubyZhuyin
+    {:this true
+     :get (fn [self] (range-japanese-value self start end :ruby-zhuyin))
+     :set (range-attr-setter plugin-id page-id id start end :rubyZhuyin :ruby-zhuyin boolean?)}
+
     :rubySize
     {:this true
      :get (fn [self] (range-japanese-value self start end :ruby-size))
@@ -983,6 +988,10 @@
      {:name "rubyHidden"
       :get #(shape-japanese-value % :ruby-hidden)
       :set (shape-attr-setter plugin-id page-id :rubyHidden :ruby-hidden boolean?)}
+
+     {:name "rubyZhuyin"
+      :get #(shape-japanese-value % :ruby-zhuyin)
+      :set (shape-attr-setter plugin-id page-id :rubyZhuyin :ruby-zhuyin boolean?)}
 
      {:name "rubySize"
       :get #(shape-japanese-value % :ruby-size)
