@@ -506,6 +506,7 @@ JSON, REPL access, and so on.
 | [`jq-json-processor`](skills/jq-json-processor/SKILL.md) | Slice, filter, and reshape JSON output. |
 | [`nrepl-eval`](skills/nrepl-eval/SKILL.md) | Run Clojure or ClojureScript code in the live REPL sessions (backend and frontend). |
 | [`taiga`](skills/taiga/SKILL.md) | Look up Penpot issues, user stories, and tasks in Taiga. |
+| [`posthog-timeline`](skills/posthog-timeline/SKILL.md) | Build a timeline from PostHog of what a user did around a bug, and check whether other users hit the same error. Needs the PostHog MCP server. |
 | [`testing`](skills/testing/SKILL.md) | The repo's testing rules and TDD workflow, loaded before writing tests. |
 | [`local-ci`](skills/local-ci/SKILL.md) | Run CI-style lint, test, and format checks for the modules you touched with `scripts/ci`, and read the logs when they fail. |
 | [`security-and-hardening`](skills/security-and-hardening/SKILL.md) | Security checks for code that handles user input, auth, or external services. |
