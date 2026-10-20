@@ -202,7 +202,10 @@
 (defonce ^:private
   thumbnails-stream
   (->> thumbnails-queue
-       (rx/mapcat render-thumbnail-with-wasm)
+       (rx/mapcat (fn [{:keys [id] :as message}]
+                    (->> (render-thumbnail-with-wasm message)
+                         (rx/catch (fn [cause]
+                                     (rx/of {:id id :error cause}))))))
        (rx/share)))
 
 (defmethod impl/handler :thumbnails/generate-for-file-wasm
@@ -213,8 +216,10 @@
            sid (->> thumbnails-stream
                     (rx/filter #(= id (:id %)))
                     (rx/subs!
-                     (fn [result]
-                       (rx/push! subs result)
-                       (rx/end! subs))))]
+                     (fn [{:keys [error] :as result}]
+                       (if error
+                         (rx/error! subs error)
+                         (do (rx/push! subs result)
+                             (rx/end! subs))))))]
        (rx/push! thumbnails-queue (assoc message :id id))
        #(rx/dispose! sid)))))
