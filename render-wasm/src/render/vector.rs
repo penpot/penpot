@@ -823,7 +823,7 @@ fn render_group(
     if masked {
         // Inner shadows filter the masked pixels, so they follow the mask's
         // outline. The canvas matrix already carries `scale`.
-        let inner_shadows = element.masked_group_inner_shadow_filter(1.0);
+        let inner_shadows = element.masked_group_inner_shadow_filter();
         if let Some(filter) = &inner_shadows {
             let mut paint = Paint::default();
             paint.set_image_filter(filter.clone());
