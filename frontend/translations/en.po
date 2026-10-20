@@ -1586,6 +1586,10 @@ msgstr "The email «%s» has been reported as spam or permanently bounce."
 msgid "errors.export-failed"
 msgstr "The export failed. Try again in a moment."
 
+#: src/app/main/data/exports/assets.cljs:346
+msgid "errors.export-too-large"
+msgstr "Too large to export, try a smaller scale"
+
 #: src/app/main/errors.cljs:974
 msgid "errors.feature-mismatch"
 msgstr ""
