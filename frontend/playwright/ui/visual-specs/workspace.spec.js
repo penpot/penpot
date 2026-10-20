@@ -419,6 +419,28 @@ test.describe("Guides", () => {
   });
 });
 
+test.describe("Viewport top bar", () => {
+  test("Shows the view only bar of the inspect tab", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await workspace.rightSidebar.getByRole("tab", { name: "Inspect" }).click();
+    const bar = page.getByText("Inspecting code").locator("../../..");
+    await expect(bar).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(bar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Left header", () => {
   test("Shows the shared badge and the save status", async ({ page }) => {
     const workspace = new WorkspacePage(page);
