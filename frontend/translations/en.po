@@ -437,6 +437,10 @@ msgstr "Duplicate"
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicate %s files"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.duplicate-unsaved-changes"
+msgstr "Some of your latest changes are not saved yet, so the copy will not include them."
+
 #: src/app/main/ui/dashboard/files.cljs:233, src/app/main/ui/dashboard/projects.cljs:309
 msgid "dashboard.empty-placeholder-drafts-subtitle"
 msgstr "Once a project member creates a draft, it will be displayed here."
@@ -6460,6 +6464,22 @@ msgstr "Debugging tools"
 #: src/app/main/data/exports/assets.cljs
 msgid "workspace.export.unsaved-changes"
 msgstr "Some of your latest changes are not saved yet, so this export may not include them."
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export.unsaved-changes-included"
+msgstr "Some of your latest changes are not saved yet. This export includes them."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.message"
+msgstr "%s restored an earlier version of this file. You are now seeing that version."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.message-anonymous"
+msgstr "A teammate restored an earlier version of this file. You are now seeing that version."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.title"
+msgstr "This file was restored"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:907
 msgid "workspace.focus.focus-mode"

@@ -445,6 +445,10 @@ msgstr "Duplicar"
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicar %s archivos"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.duplicate-unsaved-changes"
+msgstr "Algunos de tus últimos cambios aún no se han guardado, así que la copia no los incluirá."
+
 #: src/app/main/ui/dashboard/files.cljs:233, src/app/main/ui/dashboard/projects.cljs:309
 msgid "dashboard.empty-placeholder-drafts-subtitle"
 msgstr "Cuando un miembro del equipo cree algún borrador, este aparecerá aquí."
@@ -6526,6 +6530,22 @@ msgstr "Herramientas de depuración"
 #: src/app/main/data/exports/assets.cljs
 msgid "workspace.export.unsaved-changes"
 msgstr "Algunos de tus últimos cambios aún no se han guardado, así que puede que esta exportación no los incluya."
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export.unsaved-changes-included"
+msgstr "Algunos de tus últimos cambios aún no se han guardado. Esta exportación los incluye."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.message"
+msgstr "%s ha restaurado una versión anterior de este archivo. Ahora ves esa versión."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.message-anonymous"
+msgstr "Un miembro del equipo ha restaurado una versión anterior de este archivo. Ahora ves esa versión."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.title"
+msgstr "Se ha restaurado este archivo"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:907
 msgid "workspace.focus.focus-mode"

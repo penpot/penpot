@@ -23,6 +23,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as dps]
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
@@ -529,6 +530,21 @@
 
 ;; --- EVENT: duplicate-file
 
+;; Longest wait for the pending changes of a file to be saved before copying it.
+(def ^:private save-wait-timeout-ms 10000)
+
+(defn- warn-unsaved-copy
+  "Warns that the copy of `file-id` misses the changes not saved yet."
+  [file-id]
+  (ptk/reify ::warn-unsaved-copy
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (dps/unsaved-changes? state #{file-id})
+        (rx/of (ntf/show {:content (tr "dashboard.duplicate-unsaved-changes")
+                          :type :toast
+                          :level :warning
+                          :timeout 8000}))))))
+
 (defn duplicate-file
   [{:keys [id name] :as params}]
   (dm/assert! (uuid? id))
@@ -546,10 +562,14 @@
                                     (when (> copy-count 1)
                                       (str " " copy-count))))
             new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
-        (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
-             (rx/tap on-success)
-             (rx/map file-created)
-             (rx/catch on-error))))))
+        ;; The copy is made from the server's data: send the pending changes first.
+        (rx/concat
+         (dps/force-persist-files-and-wait #{id} save-wait-timeout-ms)
+         (rx/of (warn-unsaved-copy id))
+         (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
+              (rx/tap on-success)
+              (rx/map file-created)
+              (rx/catch on-error)))))))
 
 ;; --- EVENT: move-files
 
