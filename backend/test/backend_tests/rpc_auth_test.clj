@@ -122,7 +122,7 @@
         (.close ^AutoCloseable conn)))))
 
 (t/deftest login-with-password-locks-after-max-attempts
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 200 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 4 failed attempts — not yet locked
@@ -141,7 +141,7 @@
         (t/is (th/ex-of-code? (:error out) :account-locked))))))
 
 (t/deftest login-with-password-returns-rate-limit-when-locked
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 201 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; Trigger lockout
@@ -161,7 +161,7 @@
           (t/is (pos? ttl) "ttl should be a positive number"))))))
 
 (t/deftest successful-login-clears-failed-attempts
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 202 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 3 failed attempts
@@ -184,7 +184,7 @@
           (t/is (th/ex-of-code? (:error out) :wrong-credentials)))))))
 
 (t/deftest lockout-does-not-apply-when-flag-disabled
-  (with-redefs [app.config/flags (flags/parse flags/default [])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:disable-admin-console])]
     (let [profile (th/create-profile* 203 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 10 failed attempts — no lockout without the flag
@@ -199,7 +199,7 @@
   "Verify that login-with-ldap short-circuits when account is locked,
    without attempting LDAP authentication. Calls the actual command
    function with a mock provider to test the full flow."
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :login-with-ldap])
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :login-with-ldap :disable-admin-console])
                 ldap/authenticate (constantly nil)]
     (let [profile (th/create-profile* 204 {:is-active true})
           cfg (assoc th/*system* ::ldap/provider {})]
@@ -217,7 +217,7 @@
 
 (t/deftest recover-profile-clears-lockout
   "Verify that clearing attempts (e.g. after password reset) unlocks the account."
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 205 {:is-active true})
           cfg th/*system*]
       (cleanup-redis (:id profile))
