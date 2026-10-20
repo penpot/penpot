@@ -40,7 +40,10 @@
   flex-direction: column;
   min-block-size: $sz-32;
   margin: var(--sp-xs);
-  padding: var(--sp-xs) var(--sp-s);
+
+  // The end padding is small because the details button leaves 6px
+  // around its 12px arrow.
+  padding: var(--sp-xs) var(--sp-xxs) var(--sp-xs) var(--sp-s);
   border: $b-2 solid var(--entry-border-color);
   border-radius: $br-8;
   background-color: var(--entry-background-color);
@@ -51,10 +54,8 @@
     display: flex;
     align-items: center;
 
-    // The DS icon draws 12px inside a 16px box; the old icon box was 12px.
     .history-entry-summary-icon {
       display: flex;
-      margin-inline: px2rem(-2);
       color: var(--entry-foreground-color);
     }
 
@@ -62,7 +63,10 @@
       display: flex;
       flex-direction: column;
       gap: var(--sp-xxs);
-      margin: 0 var(--sp-s);
+
+      // The DS icon draws 12px inside a 16px box: a smaller start margin
+      // keeps the text where it was.
+      margin-inline: var(--sp-xs) var(--sp-s);
       color: var(--color-foreground-primary);
       min-inline-size: 0;
     }
@@ -104,10 +108,9 @@
       white-space: nowrap;
     }
 
-    // Tooltip wrapper of the details button: pushed to the end of the
-    // row, with the arrow in the same place as the old 12px icon.
+    // Tooltip wrapper of the details button, pushed to the end of the row.
     .history-entry-summary-button-wrapper {
-      margin-inline: auto px2rem(-6);
+      margin-inline-start: auto;
     }
 
     .history-entry-summary-button {
