@@ -192,7 +192,7 @@
                                                   :file-id file-id
                                                   :revn revn}))
                                      (rx/end! subs)))))))
-                 (rx/end! subs))
+                 (rx/error! subs (ex-info "unable to init wasm canvas" {:file-id file-id})))
                nil)))))))
 
 (defonce ^:private
