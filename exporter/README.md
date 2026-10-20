@@ -88,6 +88,7 @@ section, with a `?job-id=` filter.
 | `PENPOT_EXPORTER_MAX_CONCURRENT_JOBS` | `4`     | Admission limit                       |
 | `PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE`| `2`     | Per-profile admission limit           |
 | `PENPOT_EXPORTER_QUEUE_MAX`           | `64`    | Queue cap; over it, `429 :queue-full` |
+| `PENPOT_EXPORTER_REPLICA_ID`          | hostname | Names this replica; must survive restarts |
 | `PENPOT_WASM_WORKER_POOL_MAX`         | `2`     | Headless render worker threads; min 1 |
 | `PENPOT_WASM_WORKER_POOL_MIN`         | `1`     | Workers kept warm; clamped to the max |
 | `PENPOT_WASM_WORKER_IDLE_TIMEOUT`     | `300`   | Silence before a worker is terminated, in seconds |
@@ -97,3 +98,21 @@ A headless job leases one render worker for its whole run, so it is admitted
 only when a worker is free: `PENPOT_WASM_WORKER_POOL_MAX` is the real limit for
 them, and `PENPOT_EXPORTER_MAX_CONCURRENT_JOBS` bounds the browser ones
 alongside.
+
+## Replicas
+
+Several exporters can share one Redis behind a load balancer. Job records and
+`:export-update` messages go through Redis, so any replica can answer
+`GET /jobs/{id}`, and `DELETE /jobs/{id}` on a replica that does not own the
+job is passed on over the cancel topic.
+
+Each job records the replica that runs it. On boot, a replica cancels only its
+own jobs left mid-flight, so it never touches a sibling's live work. That needs
+an id that survives a restart and differs between replicas: the hostname does
+both under Docker and Kubernetes, but set `PENPOT_EXPORTER_REPLICA_ID` when
+replicas share a hostname (e.g. host networking). Jobs of a replica that never
+comes back under the same id stay `running` until their TTL.
+
+The queue and every admission limit are per replica: with two replicas,
+`PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE` of `2` lets one profile run up to four
+jobs.

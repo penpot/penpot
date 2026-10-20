@@ -33,6 +33,7 @@
       (l/info :msg "initializing"
               :public-uri (str (cf/get :public-uri))
               :internal-uri (str (cf/get-internal-uri))
+              :replica cf/replica-id
               :version (:full cf/version))
       (l/info :msg "headless wasm export available"
               :wasm-dir wasm/artifact-dir
