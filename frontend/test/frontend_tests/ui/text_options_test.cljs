@@ -101,6 +101,55 @@
         (t/is (str/includes? markup "horizontal-tb-writing-mode"))
         (t/is (empty? @changes) "Showing controls must not assign a profile")))))
 
+
+(t/deftest pinyin-reading-editor-requires-a-chinese-profile-and-text-selection
+  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+    (doseq [profile [nil :multiple "ja" "ko" "zh-Hans" "zh-Hant-TW"]
+            selected [false true]]
+      (let [changes (atom [])
+            markup (rds/renderToStaticMarkup
+                    (mf/element tll/language-layout-options*
+                                (mf/props {:language :chinese
+                                           :values {:text-language profile :ruby "nǐ hǎo"}
+                                           :ruby-values {:ruby-hidden true}
+                                           :text-selection-active selected
+                                           :reading-selection-active selected
+                                           :on-change #(swap! changes conj %)
+                                           :on-ruby-presentation-change #(swap! changes conj %)})))
+            chinese (tl/profile-matches? :chinese profile)]
+        (t/is (= (and chinese selected)
+                 (str/includes? markup "workspace.options.text-options.pinyin-placeholder")))
+        (t/is (= chinese
+                 (str/includes? markup "workspace.options.text-options.pinyin-advanced-options")))
+        (t/is (not (str/includes? markup "workspace.options.text-options.ruby-placeholder")))
+        (t/is (empty? @changes) "Showing Pinyin controls must not edit text")))))
+
+(t/deftest pinyin-reading-editor-rejects-a-selection-across-text-styles
+  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+    (let [markup (rds/renderToStaticMarkup
+                  (mf/element tll/language-layout-options*
+                              (mf/props {:language :chinese
+                                         :values {:text-language "zh-Hans"}
+                                         :text-selection-active true
+                                         :reading-selection-active false
+                                         :on-change identity})))]
+      (t/is (str/includes? markup "workspace.options.text-options.pinyin-selection-hint"))
+      (t/is (not (str/includes? markup "workspace.options.text-options.pinyin-placeholder"))))))
+
+(t/deftest pinyin-presentation-offers-guidance-without-a-text-selection
+  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+    (let [markup (rds/renderToStaticMarkup
+                  (mf/element tll/language-layout-options*
+                              (mf/props {:language :chinese
+                                         :values {:text-language "zh-Hant-HK"}
+                                         :ruby-values {}
+                                         :text-selection-active false
+                                         :on-change identity
+                                         :on-ruby-presentation-change identity})))]
+      (t/is (str/includes? markup "workspace.options.text-options.pinyin-selection-hint"))
+      (t/is (str/includes? markup "ruby-presentation-options-toggle"))
+      (t/is (not (str/includes? markup "ruby-advanced-options-toggle"))))))
+
 (t/deftest shared-writing-mode-controls-have-independent-radio-groups
   (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
     (let [markup (rds/renderToStaticMarkup

@@ -45,8 +45,38 @@
   [value]
   {:text-language (when (seq value) value)})
 
+(mf/defc pinyin-options*
+  [{:keys [values ruby-values text-selection-active reading-selection-active
+           on-change on-ruby-presentation-change on-blur]}]
+  (let [labels {:input (tr "workspace.options.text-options.pinyin")
+                :placeholder (tr "workspace.options.text-options.pinyin-placeholder")
+                :advanced (tr "workspace.options.text-options.pinyin-advanced-options")
+                :hidden (tr "workspace.options.text-options.pinyin-hidden")
+                :size (tr "workspace.options.text-options.pinyin-size")
+                :align (tr "workspace.options.text-options.pinyin-align")
+                :overhang (tr "workspace.options.text-options.pinyin-overhang")
+                :side (tr "workspace.options.text-options.pinyin-side")}
+        props (mf/props {:values values :on-change on-change
+                         :on-blur on-blur :labels labels})]
+    [:div {:class (stl/css :pinyin-options)}
+     (if reading-selection-active
+       [:> tjl/ruby-advanced-options* props]
+       [:*
+        [:p {:class (stl/css :selection-hint)}
+         (tr "workspace.options.text-options.pinyin-selection-hint")]
+        (when-not text-selection-active
+          [:> tjl/ruby-presentation-options*
+           (mf/spread-props props {:values ruby-values
+                                   :on-change on-ruby-presentation-change})])])
+     (when (or reading-selection-active (not text-selection-active))
+       [:> tjl/span-select-option*
+        (mf/spread-props props {:attr :annotation-clearance
+                                :default-value "none"
+                                :label (tr "workspace.options.text-options.annotation-clearance")
+                                :options (tjl/annotation-clearance-options)})])]))
+
 (mf/defc language-layout-options*
-  [{:keys [language values ruby-values text-selection-active
+  [{:keys [language values ruby-values text-selection-active reading-selection-active
            on-change on-ruby-presentation-change on-blur]}]
   (let [profile (:text-language values)
         selected (if (= :multiple profile) "multiple" (or profile ""))
@@ -70,6 +100,12 @@
                                 :text-selection-active text-selection-active
                                 :on-ruby-presentation-change on-ruby-presentation-change})]
        [:> tjl/writing-mode-controls* props])
+     (when (and (= :chinese language) matches?)
+       [:> pinyin-options*
+        (mf/spread-props props {:ruby-values ruby-values
+                                :text-selection-active text-selection-active
+                                :reading-selection-active reading-selection-active
+                                :on-ruby-presentation-change on-ruby-presentation-change})])
      (when (and (= :korean language) matches?)
        [:> tjl/span-select-option*
         (mf/spread-props props

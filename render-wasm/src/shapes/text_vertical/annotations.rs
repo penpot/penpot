@@ -389,10 +389,16 @@ fn ruby_glyphs(
         })
         .collect();
     let ruby_end = leading_utf16 + ruby_text.encode_utf16().count();
-    for index in 0..glyphs.len() {
-        glyphs[index].utf16_end = glyphs
-            .get(index + 1)
-            .map_or(ruby_end, |next| next.utf16_start);
+    // A base letter and its combining marks can share a cluster. Every
+    // glyph in that cluster covers the same source range, even when the
+    // shaper emits more than one glyph or orders clusters right to left.
+    let mut boundaries: Vec<usize> = glyphs.iter().map(|glyph| glyph.utf16_start).collect();
+    boundaries.push(ruby_end);
+    boundaries.sort_unstable();
+    boundaries.dedup();
+    for glyph in &mut glyphs {
+        let next = boundaries.partition_point(|offset| *offset <= glyph.utf16_start);
+        glyph.utf16_end = boundaries.get(next).copied().unwrap_or(ruby_end);
     }
     glyphs
 }
@@ -911,6 +917,64 @@ mod tests {
         assert!(
             second_start - first_end >= EM / 2.0 - 0.01,
             "a ruby em apart"
+        );
+    }
+
+    #[test]
+    fn vertical_pinyin_keeps_tone_clusters_and_base_groups() {
+        let mut results = Vec::new();
+        for reading in ["nǐ hǎo", "ni\u{30c} ha\u{30c}o"] {
+            let mut content = ruby_content("你好", reading, 400.0);
+            content.paragraphs_mut()[0].set_language("zh-Hans-CN".to_string());
+            let layout = layout_with_height(&provider(PINYIN_TEST_FONT), &content, 400.0);
+            assert_eq!(layout.ruby_cells.len(), 1);
+            let ruby = &layout.ruby_cells[0];
+            assert_eq!((ruby.paragraph, ruby.span), (0, 0));
+            assert!(ruby.glyphs.iter().all(|glyph| glyph.sideways));
+            for glyph in &ruby.glyphs {
+                let run = &layout.ruby_runs[glyph.run];
+                assert_ne!(
+                    run.glyphs[glyph.glyph], 0,
+                    "the pinned font covers tone marks"
+                );
+                assert!(glyph.utf16_start < glyph.utf16_end);
+            }
+            for (index, pair) in ruby.glyph_tops.windows(2).enumerate() {
+                assert!((pair[1] - pair[0] - ruby.glyphs[index].extent).abs() < 0.01);
+            }
+            let width: f32 = ruby.glyphs.iter().map(|glyph| glyph.extent).sum();
+            results.push((
+                ruby.glyphs
+                    .iter()
+                    .map(|glyph| layout.ruby_runs[glyph.run].glyphs[glyph.glyph])
+                    .collect::<Vec<_>>(),
+                width,
+            ));
+        }
+        assert_eq!(results[0].0, results[1].0);
+        assert!((results[0].1 - results[1].1).abs() < 0.01);
+
+        let content = spans_content(
+            vec![
+                TextSpan {
+                    ruby: "nǐ".to_string(),
+                    ..make_span("你")
+                },
+                TextSpan {
+                    ruby: "hǎo".to_string(),
+                    ..make_span("好")
+                },
+            ],
+            400.0,
+        );
+        let layout = layout_with_height(&provider(PINYIN_TEST_FONT), &content, 400.0);
+        assert_eq!(
+            layout
+                .ruby_cells
+                .iter()
+                .map(|ruby| ruby.span)
+                .collect::<Vec<_>>(),
+            vec![0, 1]
         );
     }
 

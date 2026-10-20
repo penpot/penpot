@@ -289,6 +289,8 @@
                      (unchecked-get o-props "typographies"))
          (identical? (unchecked-get n-props "textSelectionActive")
                      (unchecked-get o-props "textSelectionActive"))
+         (identical? (unchecked-get n-props "readingSelectionActive")
+                     (unchecked-get o-props "readingSelectionActive"))
          (= n-ruby-values o-ruby-values)
          (identical? (get o-values :fills)
                      (get n-values :fills))
@@ -383,7 +385,7 @@
 
 (mf/defc text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values ruby-values text-selection-active
+  [{:keys [ids type values ruby-values text-selection-active reading-selection-active
            applied-tokens libraries file-id typographies]}]
 
   (let [;; --- UI state
@@ -587,6 +589,7 @@
           :values                      values
           :ruby-values                 ruby-values
           :text-selection-active       text-selection-active
+          :reading-selection-active    reading-selection-active
           :on-change                   on-change
           :on-ruby-presentation-change on-ruby-presentation-change
           :on-blur                     on-text-blur})]

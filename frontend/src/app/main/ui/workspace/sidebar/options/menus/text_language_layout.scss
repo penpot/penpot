@@ -25,3 +25,16 @@
 
   color: var(--color-foreground-secondary);
 }
+
+.pinyin-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.selection-hint {
+  @include t.use-typography("body-small");
+
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
