@@ -16,6 +16,7 @@ use skia_safe::{
     textlayout::{ParagraphBuilder, RectHeightStyle, RectWidthStyle, StyleMetrics, TextDecoration},
     Canvas, ImageFilter, Paint,
 };
+use std::borrow::Cow;
 use text_vertical::GlyphOutput;
 
 /// Vertical text: shadows, fill, strokes and the debug grid, all painted from
@@ -169,17 +170,50 @@ pub fn stroke_paragraph_builder_group_from_text(
     let mut group_layer_opacity: Option<f32> = None;
 
     let plans = text_content.horizontal_plans();
-    for (paragraph, plan) in text_content.paragraphs().iter().zip(plans.iter()) {
+    let adjustments = plans
+        .iter()
+        .any(|plan| plan.has_atomic_overflow())
+        .then(|| text_content.horizontal_line_adjustments())
+        .flatten();
+    for (index, (paragraph, plan)) in text_content
+        .paragraphs()
+        .iter()
+        .zip(plans.iter())
+        .enumerate()
+    {
+        let adjustment = plan
+            .has_atomic_overflow()
+            .then(|| {
+                adjustments
+                    .as_ref()
+                    .and_then(|adjustments| adjustments[index].as_ref())
+            })
+            .flatten();
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
-        for (((span, text), sheds), extra) in paragraph
+        for (span_index, (((span, text), sheds), extra)) in paragraph
             .children()
             .iter()
             .zip(&plan.texts)
             .zip(&plan.sheds)
             .zip(&plan.ruby_spacing.adjustments)
+            .enumerate()
         {
+            let sheds: Cow<'_, [(usize, f32)]> = adjustment
+                .map_or(Cow::Borrowed(sheds.as_slice()), |a| {
+                    Cow::Owned(sheds.iter().chain(&a.sheds[span_index]).copied().collect())
+                });
+            let extra: Cow<'_, [(usize, f32)]> =
+                adjustment.map_or(Cow::Borrowed(extra.as_slice()), |a| {
+                    Cow::Owned(
+                        extra
+                            .iter()
+                            .chain(&a.spacing[span_index])
+                            .copied()
+                            .collect(),
+                    )
+                });
             let (stroke_paints, stroke_layer_opacity) =
                 get_text_stroke_paints(stroke, bounds, remove_stroke_alpha);
 
@@ -189,7 +223,13 @@ pub fn stroke_paragraph_builder_group_from_text(
 
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
-                    let paragraph_style = paragraph.paragraph_to_style();
+                    let mut paragraph_style = paragraph.paragraph_to_style();
+                    if plan.has_atomic_overflow() {
+                        paragraph_style.set_apply_rounding_hack(false);
+                        if paragraph.text_align() == skia::textlayout::TextAlign::Justify {
+                            paragraph_style.set_text_align(skia::textlayout::TextAlign::Left);
+                        }
+                    }
                     ParagraphBuilder::new(&paragraph_style, fonts)
                 });
                 let stroke_paint = stroke_paint.clone();
@@ -201,7 +241,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                     paragraph.line_height(),
                 );
                 builder.push_style(&stroke_style);
-                add_horizontal_span(builder, span, text, sheds, extra, &stroke_style, fonts);
+                add_horizontal_span(builder, span, text, &sheds, &extra, &stroke_style, fonts);
             }
         }
 
@@ -571,6 +611,10 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
         let Some(paragraph) = group.first() else {
             continue;
         };
+        let x = x + plans
+            .get(index)
+            .zip(text_content.paragraphs().get(index))
+            .map_or(0.0, |(plan, model)| plan.x_offset(model, selrect.width()));
         paragraph.paint(canvas, (x, y_accum));
         if let (Some(text_paragraph), Some(plan)) =
             (text_content.paragraphs().get(index), plans.get(index))

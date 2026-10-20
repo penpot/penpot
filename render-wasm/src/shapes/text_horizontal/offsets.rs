@@ -24,6 +24,7 @@ pub(crate) struct HorizontalOffsets {
 }
 
 impl HorizontalOffsets {
+    #[cfg(test)]
     pub(crate) fn new(paragraph: &Paragraph) -> Self {
         let (span_texts, offset_map) = paragraph.layout_span_texts();
         Self::from_layout_texts(paragraph, &span_texts, offset_map)
@@ -81,8 +82,15 @@ impl HorizontalOffsets {
 
     /// Paragraph source character offset of a builder-text UTF-16 offset.
     pub(crate) fn builder_to_source(&self, builder_offset: usize) -> usize {
-        let source_utf16 = self
-            .ranges
+        let source_utf16 = self.builder_to_transformed(builder_offset);
+        let boundaries = &self.boundaries;
+        boundaries
+            .partition_point(|boundary| *boundary < source_utf16)
+            .min(boundaries.len().saturating_sub(1))
+    }
+
+    pub(super) fn builder_to_transformed(&self, builder_offset: usize) -> usize {
+        self.ranges
             .iter()
             .find(|range| {
                 builder_offset >= range.builder_start && builder_offset <= range.builder_end
@@ -106,11 +114,7 @@ impl HorizontalOffsets {
                     .last()
                     .map(|range| range.source_end)
                     .unwrap_or(0)
-            });
-        let boundaries = &self.boundaries;
-        boundaries
-            .partition_point(|boundary| *boundary < source_utf16)
-            .min(boundaries.len().saturating_sub(1))
+            })
     }
 
     /// Builder-text ranges of the selected source characters
@@ -172,11 +176,28 @@ fn span_ranges(
             let source_start = offset_map.to_original(shifted_start);
             let source_end = offset_map.to_original(shifted_end);
             let warichu = span.is_warichu();
+            let leading_break =
+                usize::from(warichu && text.starts_with(kinsoku::FORCED_LINE_BREAK));
+            builder_cursor += leading_break;
+            builder_byte_cursor += leading_break * kinsoku::FORCED_LINE_BREAK.len_utf8();
             let builder_start = builder_cursor;
             let style_anchor_start = if warichu {
                 builder_byte_cursor + '\u{FFFC}'.len_utf8()
             } else {
+                // A forced separator belongs to the preceding line and has
+                // no style metrics. Anchor annotations to the first source
+                // character rather than a leading layout-only control.
+                let mut shifted = shifted_start;
                 builder_byte_cursor
+                    + text
+                        .chars()
+                        .take_while(|ch| {
+                            let inserted = offset_map.is_inserted(shifted);
+                            shifted += ch.len_utf16();
+                            inserted
+                        })
+                        .map(char::len_utf8)
+                        .sum::<usize>()
             };
             builder_cursor += if warichu {
                 HORIZONTAL_WARICHU_BUILDER_LEN

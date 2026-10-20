@@ -53,10 +53,17 @@ Their offset maps therefore stay identical for drawing, hit testing, carets,
 selection, text paths and export. Width participates in the plan cache key;
 resizing a box restores whole-word joins when the word fits again.
 
-A horizontal indivisible unit wider than the entire box remains subject to
-SkParagraph's last-resort fallback. Very narrow boxes containing punctuation
-or annotation units need further work; this implementation does not claim
-complete CSS `keep-all` conformance.
+If an indivisible Chinese or Korean punctuation/annotation unit exceeds the
+box width, the plan lets it overflow together. It first measures surrounding
+text at the original width, then records those line starts with layout-only
+line separators before giving Skia enough physical width for the unit.
+Ordinary text keeps its original wrap budget. Source text stays unchanged;
+the plan's offset map accounts for every inserted separator.
+
+Painting, strokes, caret/selection geometry, hit testing, annotations, paths
+and exports share the plan and its alignment offset. The width cache also
+rebuilds these breaks on resize. Legacy Korean `spaces-only` keeps its earlier
+behavior; the supported modes do not claim complete CSS `keep-all` conformance.
 
 ## Pinyin readings
 
@@ -132,7 +139,7 @@ mode. Both WASM consumers use the same writer and byte values: 0 syllable,
 
 Real Pinyin, Zhuyin and Korean IME checks and native-reader review remain
 release checks. Font glyph coverage and localized forms still depend on the
-chosen fonts. Dedicated Zhuyin layout remains a Stage 4 follow-up.
+chosen fonts. Dedicated Zhuyin layout is described below.
 
 References checked on 2026-10-19:
 

@@ -18,11 +18,14 @@ pub const WORD_JOINER: char = '\u{2060}';
 /// ZERO WIDTH SPACE: opens a break UAX #14 forbids but JLREQ allows, before
 /// an inseparable mark such as … (JLREQ only keeps two of them together).
 pub const BREAK_OPPORTUNITY: char = '\u{200B}';
+/// Layout-only line separator used to retain the original wrap budget when
+/// an indivisible CJK unit needs more width than its container.
+pub const FORCED_LINE_BREAK: char = '\u{2028}';
 
 /// True for the zero-width characters this pass inserts to steer breaks;
 /// they take no letter-spacing and count as no character.
 pub fn is_inserted_zero_width(ch: char) -> bool {
-    ch == WORD_JOINER || ch == BREAK_OPPORTUNITY
+    ch == WORD_JOINER || ch == BREAK_OPPORTUNITY || ch == FORCED_LINE_BREAK
 }
 /// Unicode FOUR-PER-EM SPACE, used for the preferred Japanese/Western gap.
 pub const JAPANESE_WESTERN_SPACE: char = '\u{2005}';
@@ -104,19 +107,21 @@ fn apply_to_span_texts_with_ruby_breaks(
     apply_policy_to_span_texts(span_texts, ruby_breaks, TextLayoutPolicy::Japanese)
 }
 
+#[cfg(test)]
 pub fn apply_policy_to_span_texts(
     span_texts: &[String],
     ruby_breaks: &[Option<Vec<usize>>],
     policy: TextLayoutPolicy,
 ) -> Option<(Vec<String>, OffsetMap)> {
-    apply_policy_with_emergency_breaks(span_texts, ruby_breaks, policy, &[])
+    apply_policy_with_breaks(span_texts, ruby_breaks, policy, &[], &[])
 }
 
-pub fn apply_policy_with_emergency_breaks(
+pub fn apply_policy_with_breaks(
     span_texts: &[String],
     ruby_breaks: &[Option<Vec<usize>>],
     policy: TextLayoutPolicy,
     emergency_breaks: &[usize],
+    forced_breaks: &[usize],
 ) -> Option<(Vec<String>, OffsetMap)> {
     let source = span_texts.concat();
     let boundaries: Vec<usize> = source.grapheme_indices(true).map(|(at, _)| at).collect();
@@ -176,7 +181,9 @@ pub fn apply_policy_with_emergency_breaks(
                 insert(JAPANESE_WESTERN_SPACE);
             }
             // After an inserted space, the joiner keeps the break blocked.
-            if forbid_break {
+            if forced_breaks.binary_search(&source_at).is_ok() {
+                insert(FORCED_LINE_BREAK);
+            } else if forbid_break {
                 insert(if emergency_breaks.binary_search(&source_at).is_ok() {
                     BREAK_OPPORTUNITY
                 } else {
