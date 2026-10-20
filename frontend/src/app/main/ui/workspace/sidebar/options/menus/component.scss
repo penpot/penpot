@@ -318,6 +318,11 @@
 .swap-group {
   @include t.use-typography("body-small");
 
+  inline-size: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: start;
   cursor: pointer;
   display: grid;
   grid-template-columns: 1fr var(--sp-m);

@@ -292,6 +292,31 @@ test.describe("Component options", () => {
     });
   });
 
+  test("Shows the groups of the swap panel", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-9066-swap-groups.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickToggableLayer("Group");
+    await workspace.layers.getByText("A", { exact: true }).click();
+    await workspace.rightSidebar.getByRole("button", { name: /^A / }).click();
+
+    await expect(workspace.rightSidebar.getByText("Letters")).toBeVisible();
+    await workspace.rightSidebar.getByText("Letters").hover();
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
   test("Shows the annotation actions of a main component", async ({ page }) => {
     const workspace = new WorkspacePage(page);
     await workspace.setupEmptyFile();
