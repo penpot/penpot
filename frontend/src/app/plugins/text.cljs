@@ -477,6 +477,16 @@
      :get (fn [self] (range-japanese-value self start end :text-emphasis))
      :set (range-attr-setter plugin-id page-id id start end :textEmphasis :text-emphasis (enum-value? :text-emphasis))}
 
+    :textEmphasisPosition
+    {:this true
+     :get (fn [self] (range-japanese-value self start end :text-emphasis-position))
+     :set (range-attr-setter plugin-id page-id id start end :textEmphasisPosition :text-emphasis-position (enum-value? :text-emphasis-position))}
+
+    :textUnderlinePosition
+    {:this true
+     :get (fn [self] (range-japanese-value self start end :text-underline-position))
+     :set (range-attr-setter plugin-id page-id id start end :textUnderlinePosition :text-underline-position (enum-value? :text-underline-position))}
+
     :warichu
     {:this true
      :get (fn [self] (range-japanese-value self start end :warichu))
@@ -945,6 +955,14 @@
      {:name "textEmphasis"
       :get #(shape-japanese-value % :text-emphasis)
       :set (shape-attr-setter plugin-id page-id :textEmphasis :text-emphasis (enum-value? :text-emphasis))}
+
+     {:name "textEmphasisPosition"
+      :get #(shape-japanese-value % :text-emphasis-position)
+      :set (shape-attr-setter plugin-id page-id :textEmphasisPosition :text-emphasis-position (enum-value? :text-emphasis-position))}
+
+     {:name "textUnderlinePosition"
+      :get #(shape-japanese-value % :text-underline-position)
+      :set (shape-attr-setter plugin-id page-id :textUnderlinePosition :text-underline-position (enum-value? :text-underline-position))}
 
      {:name "warichu"
       :get #(shape-japanese-value % :warichu)

@@ -65,7 +65,9 @@
 
 (t/deftest japanese-range-properties-accept-only-supported-values
   (doseq [[property attr accepted rejected]
-          [["fontFeatures" :font-features ["none" "palt" "vpal"] ["liga" "palt,vpal"]]
+          [["textEmphasisPosition" :text-emphasis-position ["auto" "over-right" "over-left" "under-right" "under-left"] ["over" "right"]]
+           ["textUnderlinePosition" :text-underline-position ["auto" "under" "left" "right" "under-left" "under-right"] ["above"]]
+           ["fontFeatures" :font-features ["none" "palt" "vpal"] ["liga" "palt,vpal"]]
            ["annotationClearance" :annotation-clearance ["none" "auto"] ["always"]]
            ["rubySize" :ruby-size ["half" "third" "quarter"] ["full"]]
            ["rubyAlign" :ruby-align ["space-around" "center" "start" "space-between"] ["end"]]

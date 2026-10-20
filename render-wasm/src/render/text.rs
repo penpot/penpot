@@ -1428,11 +1428,31 @@ pub fn decoration_segments(
                 }
                 None => (0.0, 0.0),
             };
-            let (y, thickness) = if kind == TextDecoration::LINE_THROUGH {
+            let (mut y, thickness) = if kind == TextDecoration::LINE_THROUGH {
                 (strike_y, max_strike_thickness)
             } else {
                 (underline_y, max_underline_thickness)
             };
+            if kind == TextDecoration::UNDERLINE {
+                let index = offsets
+                    .ranges
+                    .partition_point(|range| range.builder_start <= seg_start)
+                    .saturating_sub(1);
+                if let Some(span) = offsets
+                    .ranges
+                    .get(index)
+                    .and_then(|range| text_paragraph.children().get(range.span))
+                    .filter(|span| span.underline_below_ink())
+                {
+                    let bottom = rects
+                        .iter()
+                        .map(|r| r.rect.bottom())
+                        .fold(f32::NEG_INFINITY, f32::max);
+                    if bottom.is_finite() {
+                        y = Some(y_accum + bottom + span.font_size / 9.0 + thickness / 2.0);
+                    }
+                }
+            }
             segments.push(TextDecorationSegment {
                 kind,
                 text_style: (*metrics.text_style).clone(),

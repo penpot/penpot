@@ -5,7 +5,7 @@ use skia_safe::{Contains, Point as SkPoint};
 use crate::math::Rect;
 use crate::shapes::{PositionData, VerticalAlign};
 
-use super::annotations::{emphasis_mark_center, ruby_strip_x};
+use super::annotations::emphasis_mark_center;
 use super::layout::{column_base_center, CellKind, VerticalCell, VerticalLayout};
 
 /// Position-data `direction` of a vertical-rl strip; 0/1 are rtl/ltr.
@@ -213,7 +213,7 @@ fn ruby_entries(layout: &VerticalLayout, (origin_x, origin_y): (f32, f32)) -> Ve
                 span: ruby.span as u32,
                 start_pos: first.utf16_start as u32,
                 end_pos: last.utf16_end as u32,
-                x: origin_x + ruby_strip_x(column, ruby.font_size, ruby.base_font_size, ruby.side),
+                x: origin_x + ruby.strip_x(column),
                 y: origin_y + top,
                 width: ruby.font_size,
                 height: bottom - top,

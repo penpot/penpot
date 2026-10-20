@@ -484,9 +484,11 @@ impl RubyLine<'_> {
         let over = self.span.ruby_side == RubySide::Over;
         let edge = ruby_line_ink_edge(self.shaped, self.glyphs, over);
         if over {
-            y + horizontal_annotation_over_top(self.base, self.span.font_size) - edge
+            y + horizontal_annotation_over_top(self.base, self.span.font_size)
+                - edge
+                - self.span.ruby_decoration_offset(false)
         } else {
-            y + self.base.bottom() - edge
+            y + self.base.bottom() - edge + self.span.ruby_decoration_offset(false)
         }
     }
 }
