@@ -482,6 +482,31 @@
         (t/is (= (:library-file-id item) (:id file3)))))))
 
 
+(t/deftest move-files-from-multiple-teams-is-rejected
+  ;; A single move carries one origin team in its props: mixed origins
+  ;; are refused before anything moves.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project1 (th/create-project* 1 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        project2 (th/create-project* 2 {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        file1    (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project1)})
+        file3    (th/create-file* 3 {:profile-id (:id profile)
+                                     :project-id (:id project2)})]
+    (let [out   (th/command! {::th/type :move-files
+                              ::rpc/profile-id (:id profile)
+                              :project-id (:id project2)
+                              :ids #{(:id file1) (:id file3)}})
+          error (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :cant-move-from-multiple-teams)))
+    (t/is (= 1 (count (th/db-query :file {:project-id (:id project1)}))))
+    (t/is (= 1 (count (th/db-query :file {:project-id (:id project2)}))))))
+
+
 (t/deftest move-library-to-other-team
   (let [profile  (th/create-profile* 1 {:is-active true})
         team     (th/create-team* 1 {:profile-id (:id profile)})

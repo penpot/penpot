@@ -648,6 +648,19 @@
          (finally
            (reset! context [])))))))
 
+(defn own-transaction
+  "A cfg for a write that must own its transaction: drops `::db/conn`
+  so the next `tx-run!` opens its own transaction on its own
+  connection, and `::db/read-only` so that transaction is writable
+  even when the caller runs read-only (as the storage scheduler does
+  for its plan cursor). It never joins the transaction of whoever
+  called it; because that transaction joins no other, it owns its
+  after-commit context too, so the write and its metric commit or
+  vanish together and a rollback of the surrounding work can undo
+  neither."
+  [cfg]
+  (dissoc cfg ::conn ::read-only))
+
 (defn tx-run!
   "Run a function in a transaction."
   [system f & params]
