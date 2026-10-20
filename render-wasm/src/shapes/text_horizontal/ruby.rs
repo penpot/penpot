@@ -295,7 +295,12 @@ pub(super) fn horizontal_ruby_targets(
         .iter()
         .zip(&offsets.ranges)
         .filter(|(span, range)| span.has_ruby() && range.builder_start < range.builder_end)
-        .map(|(_, range)| (range.span, range.builder_start..range.builder_end))
+        .map(|(_, range)| {
+            (
+                range.span,
+                offsets.transformed_to_builder(range.source_start)..range.builder_end,
+            )
+        })
         .collect()
 }
 

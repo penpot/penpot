@@ -243,18 +243,37 @@ pub(crate) fn cursor_rect(
             .iter()
             .map(|paragraph| paragraph.height())
             .sum::<f32>();
-    let rect = horizontal_caret_rect(&paragraphs[cursor.paragraph], laid_out_para, cursor.offset);
-    Some(rect.with_offset((0.0, y_offset)))
+    let plans = text_content.horizontal_plans();
+    let plan = plans.get(cursor.paragraph)?;
+    let model = &paragraphs[cursor.paragraph];
+    let rect =
+        horizontal_caret_rect_with_offsets(model, laid_out_para, cursor.offset, &plan.offsets);
+    Some(rect.with_offset((plan.x_offset(model, shape.selrect.width()), y_offset)))
 }
 
 /// Caret rect at the source character offset `char_pos` of a laid-out
 /// horizontal paragraph, in the paragraph's coordinates. It covers the
 /// character at the offset (overtype carets use its width), or follows the
 /// last character at the paragraph end.
+#[cfg(test)]
 fn horizontal_caret_rect(
     para: &crate::shapes::Paragraph,
     laid_out_para: &skia_safe::textlayout::Paragraph,
     char_pos: usize,
+) -> Rect {
+    horizontal_caret_rect_with_offsets(
+        para,
+        laid_out_para,
+        char_pos,
+        &crate::shapes::HorizontalOffsets::new(para),
+    )
+}
+
+fn horizontal_caret_rect_with_offsets(
+    para: &crate::shapes::Paragraph,
+    laid_out_para: &skia_safe::textlayout::Paragraph,
+    char_pos: usize,
+    offsets: &crate::shapes::HorizontalOffsets,
 ) -> Rect {
     if let Some(rect) = crate::shapes::horizontal_warichu_caret_rect(para, laid_out_para, char_pos)
     {
@@ -272,7 +291,6 @@ fn horizontal_caret_rect(
 
     // Cursor offsets count source characters; the laid-out paragraph indexes
     // the transformed, kinsoku-shifted builder text.
-    let offsets = crate::shapes::HorizontalOffsets::new(para);
     let first_rect = |start: usize, end: usize| {
         laid_out_para
             .get_rects_for_range(start..end, RectHeightStyle::Max, RectWidthStyle::Tight)
@@ -351,6 +369,7 @@ fn range_rects(
     let mut rects = Vec::new();
     let (start_paragraph, start_offset) = start;
     let (end_paragraph, end_offset) = end;
+    let plans = text_content.horizontal_plans();
 
     let paragraphs = text_content.paragraphs();
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
@@ -368,6 +387,8 @@ fn range_rects(
 
         // Calculate character range for this paragraph
         let para = &paragraphs[para_idx];
+        let plan = &plans[para_idx];
+        let x_offset = plan.x_offset(para, shape.selrect.width());
         let para_char_count: usize = para
             .children()
             .iter()
@@ -397,14 +418,15 @@ fn range_rects(
             );
             for r in warichu_rects {
                 rects.push(Rect::from_xywh(
-                    r.left(),
+                    r.left() + x_offset,
                     y_offset + r.top(),
                     r.width(),
                     r.height(),
                 ));
             }
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-            for builder_range in crate::shapes::HorizontalOffsets::new(para)
+            for builder_range in plan
+                .offsets
                 .normal_selection_ranges(para, range_start, range_end)
             {
                 for text_box in laid_out_para.get_rects_for_range(
@@ -414,7 +436,7 @@ fn range_rects(
                 ) {
                     let r = text_box.rect;
                     rects.push(Rect::from_xywh(
-                        r.left(),
+                        r.left() + x_offset,
                         y_offset + r.top(),
                         r.width(),
                         r.height(),
@@ -586,5 +608,236 @@ mod tests {
         let laid_out = laid_out("");
         let caret = horizontal_caret_rect(&paragraph(""), &laid_out, 0);
         assert_eq!(caret, Rect::from_xywh(0.0, 0.0, 1.0, laid_out.height()));
+    }
+    #[test]
+    fn narrow_cjk_layout_shares_alignment_with_carets_selection_hit_testing_and_exports() {
+        use crate::shapes::calculate_text_layout_data;
+        use crate::shapes::text_paths::TextPaths;
+        use crate::shapes::text_vertical::test_support::provider;
+        use crate::shapes::{GrowType, TextPositionWithAffinity, VerticalAlign};
+        crate::globals::design_init();
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let mut fonts = resources.fonts.font_collection().clone();
+        fonts.set_asset_font_manager(Some(
+            provider(include_bytes!("../fonts/cjk-locl-test.ttf")).into(),
+        ));
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        for align in [
+            TextAlign::Left,
+            TextAlign::Right,
+            TextAlign::Center,
+            TextAlign::Justify,
+        ] {
+            for grow in [GrowType::Fixed, GrowType::AutoHeight] {
+                let spans = ["文文", "文", "。", "文文"]
+                    .iter()
+                    .map(|text| TextSpan {
+                        text: text.to_string(),
+                        font_size: 20.0,
+                        line_height: 1.0,
+                        ..TextSpan::default()
+                    })
+                    .collect();
+                let mut model =
+                    Paragraph::new(align, TextDirection::LTR, None, None, 1.0, 0.0, spans);
+                model.set_language("zh-Hant-TW".to_owned());
+                let mut content =
+                    TextContent::new(crate::math::Rect::from_xywh(0.0, 0.0, 20.0, 300.0), grow);
+                content.add_paragraph(model.clone());
+                content.add_paragraph(model);
+                let mut shape = Shape::new(crate::Uuid::nil());
+                shape.set_selrect(0.0, 0.0, 20.0, 300.0);
+                content.update_layout(shape.selrect);
+                let plans = content.horizontal_plans();
+                let mut editor = TextEditorState::new();
+                let data = calculate_text_layout_data(
+                    &shape,
+                    &content,
+                    &mut content.paragraph_builder_group_from_text(None),
+                    false,
+                );
+                let mut paragraph_y = 0.0;
+                for paragraph_index in 0..2 {
+                    let laid_out = &content.layout.paragraphs[paragraph_index][0];
+                    let plan = &plans[paragraph_index];
+                    let x_offset = plan.x_offset(&content.paragraphs()[paragraph_index], 20.0);
+                    let lines = laid_out.get_line_metrics();
+                    assert_eq!(lines.len(), 5, "{align:?} {grow:?}");
+                    let atomic_left = lines[2].left as f32 + x_offset;
+                    let expected_left = match align {
+                        TextAlign::Right => -20.0,
+                        TextAlign::Center => -10.0,
+                        _ => 0.0,
+                    };
+                    assert!(
+                        (atomic_left - expected_left).abs() < 0.02,
+                        "{align:?}: {atomic_left}"
+                    );
+                    assert!(
+                        (lines[0].left as f32 + x_offset).abs() < 0.02,
+                        "ordinary text stays within its box"
+                    );
+                    for (offset, line_index) in [0, 1, 2, 2, 3, 4].into_iter().enumerate() {
+                        let position = TextPositionWithAffinity::new_downstream_affinity(
+                            paragraph_index,
+                            offset,
+                        );
+                        editor.selection.set_caret(position);
+                        let caret = cursor_rect(&editor, &content, &shape).expect("caret");
+                        let line_top = paragraph_y
+                            + lines[..line_index]
+                                .iter()
+                                .map(|line| line.height as f32)
+                                .sum::<f32>();
+                        assert!(
+                            (caret.top() - line_top).abs() < 0.1,
+                            "caret {offset} in {align:?}: {caret:?}"
+                        );
+                        let hit = content
+                            .get_caret_position_from_shape_coords(
+                                &crate::math::Point::new(
+                                    caret.left() + caret.width() * 0.1,
+                                    caret.center_y(),
+                                ),
+                                &shape.selrect,
+                                VerticalAlign::Top,
+                            )
+                            .expect("hit");
+                        assert_eq!(
+                            (hit.paragraph, hit.offset),
+                            (paragraph_index, offset),
+                            "{align:?}, caret={caret:?}"
+                        );
+                    }
+                    editor.selection.anchor =
+                        TextPositionWithAffinity::new_downstream_affinity(paragraph_index, 2);
+                    editor.selection.focus =
+                        TextPositionWithAffinity::new_downstream_affinity(paragraph_index, 4);
+                    let selected = calculate_selection_rects(&editor.selection, &content, &shape);
+                    assert!(!selected.is_empty());
+                    assert!(selected.iter().all(|rect| (rect.top()
+                        - paragraph_y
+                        - lines[..2]
+                            .iter()
+                            .map(|line| line.height as f32)
+                            .sum::<f32>())
+                    .abs()
+                        < 0.1));
+                    assert!((selected.iter().map(|r| r.width()).sum::<f32>() - 40.0).abs() < 0.1);
+                    let exported = &data.paragraphs[paragraph_index];
+                    assert!((exported.x - x_offset).abs() < 0.01);
+                    assert!((exported.y - paragraph_y).abs() < 0.01);
+                    assert_eq!(exported.paragraph.get_line_metrics().len(), 5);
+                    paragraph_y += laid_out.height();
+                }
+                let paths = TextPaths::new(content.clone()).get_paths(VerticalAlign::Top);
+                assert!(!paths.is_empty());
+                let mut bounds = skia_safe::Rect::new_empty();
+                for path in paths {
+                    bounds.join(path.bounds());
+                }
+                assert!(
+                    bounds.height() > paragraph_y - 30.0,
+                    "paths include both paragraphs"
+                );
+                assert!(
+                    bounds.width() > 20.0,
+                    "paths include the overflowing punctuation unit: {align:?} {bounds:?}"
+                );
+                assert!(
+                    content.get_height(160.0) < paragraph_y / 2.0,
+                    "prospective width uses a fresh plan"
+                );
+                let before: Vec<_> = plans.iter().map(|plan| plan.texts.clone()).collect();
+                content.update_layout(crate::math::Rect::from_xywh(0.0, 0.0, 160.0, 300.0));
+                assert!(content
+                    .layout
+                    .paragraphs
+                    .iter()
+                    .all(|group| group[0].get_line_metrics().len() == 1));
+                assert!(content.horizontal_plans().iter().all(|plan| !plan
+                    .texts
+                    .concat()
+                    .contains(crate::shapes::kinsoku::FORCED_LINE_BREAK)));
+                content.update_layout(shape.selrect);
+                assert_eq!(
+                    content
+                        .horizontal_plans()
+                        .iter()
+                        .map(|plan| plan.texts.clone())
+                        .collect::<Vec<_>>(),
+                    before,
+                    "narrow/wide/narrow restores the plan"
+                );
+                assert_eq!(
+                    content.paragraphs()[0]
+                        .children()
+                        .iter()
+                        .map(|s| s.text.as_str())
+                        .collect::<String>(),
+                    "文文文。文文"
+                );
+            }
+        }
+    }
+    #[test]
+    fn narrow_cjk_fractional_strokes_share_the_fill_breaks_and_advances() {
+        use crate::shapes::text_vertical::test_support::provider;
+        use crate::shapes::{GrowType, Stroke, StrokeStyle};
+        crate::globals::design_init();
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let mut fonts = resources.fonts.font_collection().clone();
+        fonts.set_asset_font_manager(Some(
+            provider(include_bytes!("../fonts/cjk-locl-test.ttf")).into(),
+        ));
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let spans = ["文文", "文", "。", "文文"]
+            .iter()
+            .map(|text| TextSpan {
+                text: text.to_string(),
+                font_size: 20.125,
+                line_height: 1.0,
+                ..TextSpan::default()
+            })
+            .collect();
+        let mut model = Paragraph::new(
+            TextAlign::Justify,
+            TextDirection::LTR,
+            None,
+            None,
+            1.0,
+            0.0,
+            spans,
+        );
+        model.set_language("zh-Hant-TW".to_owned());
+        let mut content = TextContent::new(
+            crate::math::Rect::from_xywh(0.0, 0.0, 32.25, 300.0),
+            GrowType::Fixed,
+        );
+        content.add_paragraph(model);
+        content.update_layout(content.bounds());
+        let stroke = Stroke::new_center_stroke(1.0, StrokeStyle::Solid, None, None, None, None);
+        let (mut builders, _) = crate::render::text::stroke_paragraph_builder_group_from_text(
+            &content,
+            &stroke,
+            &content.bounds(),
+            None,
+        );
+        assert!(!builders[0].is_empty());
+        let mut stroked = builders[0][0].build();
+        stroked.layout(content.horizontal_plans()[0].layout_width(32.25));
+        let fill_lines = content.layout.paragraphs[0][0].get_line_metrics();
+        let stroke_lines = stroked.get_line_metrics();
+        assert_eq!(fill_lines.len(), stroke_lines.len());
+        for (fill, stroke) in fill_lines.iter().zip(&stroke_lines) {
+            assert_eq!(
+                (fill.start_index, fill.end_index),
+                (stroke.start_index, stroke.end_index)
+            );
+            assert!((fill.width - stroke.width).abs() < 0.01);
+            assert!((fill.left - stroke.left).abs() < 0.01);
+        }
     }
 }
