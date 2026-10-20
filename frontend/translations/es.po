@@ -7448,6 +7448,10 @@ msgstr "Columnas"
 msgid "workspace.options.grid.params.color"
 msgstr "Color"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:44
+msgid "workspace.options.grid.params.guide-defaults"
+msgstr "Valores por defecto de la guía"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:302
 msgid "workspace.options.grid.params.gutter"
 msgstr "Espaciado"
