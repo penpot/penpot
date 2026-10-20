@@ -9403,6 +9403,10 @@ msgstr "There are no history changes so far"
 msgid "workspace.undo.entry.by"
 msgstr "by %s"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.show-details"
+msgstr "Show details"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:154
 msgid "workspace.undo.entry.delete"
 msgstr "Deleted %s"

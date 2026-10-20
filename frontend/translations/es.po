@@ -9509,6 +9509,10 @@ msgstr "Todavía no hay cambios en el histórico"
 msgid "workspace.undo.entry.by"
 msgstr "por %s"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.show-details"
+msgstr "Mostrar detalles"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:154
 msgid "workspace.undo.entry.delete"
 msgstr "%s eliminado"

@@ -45,12 +45,11 @@
     display: flex;
     align-items: center;
 
+    // The DS icon draws 12px inside a 16px box; the old icon box was 12px.
     .history-entry-summary-icon {
-      svg {
-        @extend %button-icon-small;
-
-        stroke: var(--entry-foreground-color);
-      }
+      display: flex;
+      margin-inline: calc(-1 * deprecated.$s-2);
+      color: var(--entry-foreground-color);
     }
 
     .history-entry-summary-text {
@@ -99,20 +98,22 @@
       white-space: nowrap;
     }
 
+    // Tooltip wrapper of the details button: pushed to the end of the
+    // row, with the arrow in the same place as the old 12px icon.
+    .history-entry-summary-button-wrapper {
+      margin-left: auto;
+      margin-right: calc(-1 * deprecated.$s-6);
+    }
+
     .history-entry-summary-button {
       opacity: deprecated.$op-0;
-      margin-left: auto;
 
-      &.button-opened {
-        svg {
-          transform: rotate(90deg);
-        }
+      &:focus-visible {
+        opacity: deprecated.$op-10;
       }
 
-      svg {
-        @extend %button-icon-small;
-
-        stroke: var(--entry-foreground-color);
+      &.button-opened .history-entry-summary-arrow {
+        transform: rotate(90deg);
       }
     }
   }
@@ -139,19 +140,11 @@
 
     .history-entry-summary {
       .history-entry-summary-icon {
-        svg {
-          stroke: var(--entry-foreground-color-hover);
-        }
+        color: var(--entry-foreground-color-hover);
       }
 
       .history-entry-summary-button {
         opacity: deprecated.$op-10;
-
-        &.button-opened {
-          svg {
-            transform: rotate(90deg);
-          }
-        }
       }
     }
   }

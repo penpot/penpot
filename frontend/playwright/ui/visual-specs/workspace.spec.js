@@ -560,6 +560,42 @@ test.describe("Right header", () => {
   });
 });
 
+test.describe("Undo history", () => {
+  test("Shows the actions list with an entry expanded", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-empty.json",
+    );
+    await workspace.mockRPC(
+      "get-file-snapshots?file-id=*",
+      "workspace/versions-snapshot-1.json",
+    );
+    await workspace.goToWorkspace();
+
+    await page.keyboard.press("r");
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+
+    await page.keyboard.press("Control+Alt+h");
+    await page.getByRole("tab", { name: "Actions" }).click();
+    const panel = page.getByRole("tabpanel", { name: "Actions" });
+    const entry = panel.getByText("New rectangle");
+    // The short id and the relative time change on every run.
+    const mask = [page.locator('[class*="history-entry-meta"]')];
+
+    // The expand arrow only shows while the entry is hovered.
+    await entry.hover();
+    await expect(panel).toHaveScreenshot({ mask });
+
+    // The data attribute exists before and after the DS migration.
+    await panel.locator('[data-has-entry="true"]').click();
+    await expect(panel.getByText("Rectangle", { exact: true })).toBeVisible();
+    await entry.hover();
+    await expect(panel).toHaveScreenshot({ mask });
+  });
+});
+
 test.describe("Palette", () => {
   test("Shows the bottom palette expanded and collapsed", async ({ page }) => {
     const workspace = new WorkspacePage(page);
