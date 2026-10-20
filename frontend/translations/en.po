@@ -2177,6 +2177,10 @@ msgstr "This file is not a valid shortcuts export."
 msgid "import-shortcuts.no-changes"
 msgstr "No differences found between the current and imported shortcuts."
 
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+msgid "import-shortcuts.skipped-entries"
+msgstr "These entries don't match any Penpot shortcut and will not be imported:"
+
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
 msgstr "Color"

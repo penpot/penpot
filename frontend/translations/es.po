@@ -2203,6 +2203,10 @@ msgstr "Este archivo no es una exportación de atajos válida."
 msgid "import-shortcuts.no-changes"
 msgstr "No se encontraron diferencias entre los atajos actuales y los importados."
 
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+msgid "import-shortcuts.skipped-entries"
+msgstr "Estas entradas no corresponden a ningún atajo de Penpot y no se importarán:"
+
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
 msgstr "Color"

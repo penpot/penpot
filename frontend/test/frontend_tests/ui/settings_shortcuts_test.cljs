@@ -1,7 +1,11 @@
 (ns frontend-tests.ui.settings-shortcuts-test
   (:require
    [app.config :as cf]
+   [app.main.data.dashboard.shortcuts :as dsc]
    [app.main.data.profile :as du]
+   [app.main.data.viewer.shortcuts :as vsc]
+   [app.main.data.workspace.path.shortcuts :as psc]
+   [app.main.data.workspace.shortcuts :as wsc]
    [app.main.data.shortcuts :as ds]
    [app.main.ui.settings.import-shortcuts-diff-modal :as diff-modal]
    [app.main.ui.settings.restore-shortcuts-modal :as restore-modal]
@@ -86,6 +90,120 @@
   (t/is (= false (:valid? (sut/validate-imported-shortcuts (js/Date.)))))
   (t/is (= false (:valid? (sut/validate-imported-shortcuts #{:workspace}))))
   (t/is (= false (:valid? (sut/validate-imported-shortcuts (fn []))))))
+
+(t/deftest sanitize-imported-shortcuts-skips-unknown-action-keys
+  (t/is (= {:shortcuts {:workspace {:escape "escape"}}
+            :skipped ["workspace/not-a-real-shortcut"]}
+           (sut/sanitize-imported-shortcuts
+            {:workspace {:escape "escape"
+                         :not-a-real-shortcut "x"}}))))
+
+(t/deftest sanitize-imported-shortcuts-skips-unknown-contexts
+  (t/is (= {:shortcuts {:workspace {:escape "escape"}}
+            :skipped ["unknown-context"]}
+           (sut/sanitize-imported-shortcuts
+            {:workspace {:escape "escape"}
+             :unknown-context {:escape "escape"}}))))
+
+(t/deftest sanitize-imported-shortcuts-skips-non-string-commands
+  (t/is (= {:shortcuts {:workspace {:zoom-lense-decrease "alt+z"}}
+            :skipped ["workspace/escape" "workspace/increase-zoom"]}
+           (sut/sanitize-imported-shortcuts
+            {:workspace {:escape 123
+                         :increase-zoom ["+"]
+                         :zoom-lense-decrease "alt+z"}}))))
+
+(t/deftest sanitize-imported-shortcuts-skips-invalid-commands
+  (t/is (= {:shortcuts {:workspace {:zoom-lense-decrease "alt+z"}}
+            :skipped ["workspace/escape" "workspace/increase-zoom"]}
+           (sut/sanitize-imported-shortcuts
+            {:workspace {:escape "foo+bar"
+                         :increase-zoom "ctrl+"
+                         :zoom-lense-decrease "alt+z"}}))))
+
+(t/deftest sanitize-imported-shortcuts-skips-non-map-context
+  (t/is (= {:shortcuts {:viewer {:next-frame "right"}}
+            :skipped ["workspace"]}
+           (sut/sanitize-imported-shortcuts
+            {:workspace "not-a-map"
+             :viewer {:next-frame "right"}}))))
+
+(t/deftest sanitize-imported-shortcuts-drops-context-without-viable-entries
+  (t/testing "a context whose entries are all skipped is left out, so the
+              import does not clear the user's shortcuts in that context"
+    (t/is (= {:shortcuts {}
+              :skipped ["viewer/not-a-real-shortcut"]}
+             (sut/sanitize-imported-shortcuts
+              {:viewer {:not-a-real-shortcut "x"}})))))
+
+(t/deftest sanitize-imported-shortcuts-keeps-empty-context
+  (t/is (= {:shortcuts {:workspace {}}
+            :skipped []}
+           (sut/sanitize-imported-shortcuts {:workspace {}}))))
+
+(t/deftest sanitize-imported-shortcuts-returns-nil-for-non-maps
+  (t/is (nil? (sut/sanitize-imported-shortcuts nil)))
+  (t/is (nil? (sut/sanitize-imported-shortcuts "shortcuts")))
+  (t/is (nil? (sut/sanitize-imported-shortcuts 42)))
+  (t/is (nil? (sut/sanitize-imported-shortcuts []))))
+
+(t/deftest sanitize-imported-shortcuts-output-is-valid
+  (let [{:keys [shortcuts]} (sut/sanitize-imported-shortcuts
+                             {:workspace {:escape "escape"
+                                          :not-a-real-shortcut "x"
+                                          :increase-zoom 1}
+                              :dashboard "not-a-map"
+                              :viewer {:next-frame "right"}
+                              :unknown-context {}})]
+    (t/is (= {:valid? true}
+             (sut/validate-imported-shortcuts shortcuts)))))
+
+(t/deftest valid-command-accepts-key-combinations
+  (t/are [command] (true? (ui-shortcuts/valid-command? command))
+    ""
+    "a"
+    "ctrl+shift+k"
+    "Ctrl+s"
+    "command+alt+ñ"
+    "+"
+    "shift++"
+    "ctrl+plus"
+    "shift+\""
+    "g v"
+    "escape"
+    "Escape"
+    "f1"
+    "f12"
+    "f24"
+    "num5"
+    "alt"))
+
+(t/deftest valid-command-rejects-other-strings
+  (t/are [command] (false? (ui-shortcuts/valid-command? command))
+    "foo"
+    "foo+bar"
+    "a+b"
+    "ctrl+foo"
+    "ctrl+"
+    "ctrl+shift"
+    "++"
+    "f25"
+    "   "
+    " a"
+    "a "
+    "a  b"
+    "🙂"
+    nil
+    123))
+
+(t/deftest valid-command-accepts-every-default-command
+  (t/testing "a profile exported by Penpot always holds valid commands"
+    (doseq [shortcuts [psc/shortcuts wsc/shortcuts dsc/shortcuts vsc/shortcuts]
+            [shortcut-key {:keys [command]}] shortcuts
+            command (if (vector? command) command [command])
+            :when (some? command)]
+      (t/is (ui-shortcuts/valid-command? command)
+            (str shortcut-key " -> " (pr-str command))))))
 
 (t/deftest import-custom-shortcuts-updates-multiple-contexts
   (let [imported {:workspace {:add-comment "alt+c"}

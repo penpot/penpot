@@ -68,6 +68,82 @@
    "Meta"       "meta"
    " "          "space"})
 
+;; Mirrors how mousetrap reads a bind string (`_keysFromString` and
+;; `_getKeyInfo` in @penpot/mousetrap), so a command is valid exactly when
+;; mousetrap can match it.
+
+(def ^:private command-aliases
+  {"ctrl"    "ctrl"
+   "control" "ctrl"
+   "alt"     "alt"
+   "option"  "alt"
+   "shift"   "shift"
+   "meta"    "meta"
+   "command" "meta"
+   "mod"     "meta"
+   "return"  "enter"
+   "enter"   "enter"
+   "esc"     "escape"
+   "escape"  "escape"
+   "del"     "del"
+   "delete"  "del"
+   "ins"     "ins"
+   "insert"  "ins"
+   "space"   "space"
+   "plus"    "+"})
+
+(def ^:private command-modifiers
+  #{"ctrl" "alt" "shift" "meta"})
+
+(def ^:private command-named-keys
+  (into #{} (remove command-modifiers) (vals key-name-map)))
+
+(defn- canonical-command-key
+  [token]
+  (or (get command-aliases token)
+      (if (= 1 (count token))
+        (str/lower token)
+        (str/lower (get key-name-map token token)))))
+
+(defn- command-step-keys
+  "Splits one step of a command (\"ctrl+shift+z\") into canonical keys.
+   A lone \"+\" is the plus key, and \"++\" ends a step with it."
+  [step]
+  (if (= "+" step)
+    ["+"]
+    (->> (.split (str/replace step #"\+{2}" "+plus") "+")
+         (mapv canonical-command-key))))
+
+(defn- final-command-key?
+  [k]
+  (or (= 1 (count k))
+      (contains? command-named-keys k)
+      ;; Two-digit alternatives first: cljs `re-matches` does not
+      ;; backtrack into a longer alternative.
+      (some? (re-matches #"f(?:1[0-9]|2[0-4]|[1-9])" k))
+      (some? (re-matches #"num[0-9]" k))))
+
+(defn- valid-command-step?
+  "A lone modifier is a valid step: `:show-measure` binds a bare `alt`."
+  [step-keys]
+  (let [final-key (peek step-keys)]
+    (if (contains? command-modifiers final-key)
+      (= 1 (count step-keys))
+      (and (every? command-modifiers (pop step-keys))
+           (final-command-key? final-key)))))
+
+(defn valid-command?
+  "True when `command` is a key combination mousetrap can match: steps
+   separated by single spaces, each a lone modifier or modifiers joined
+   with \"+\" ending with a single character, a named key (`escape`, `up`,
+   ...), a function key (`f1`..`f24`) or a numpad digit (`num0`..`num9`).
+   The empty string is valid: it disables the shortcut."
+  [command]
+  (and (string? command)
+       (or (= "" command)
+           (every? (comp valid-command-step? command-step-keys)
+                   (.split command " ")))))
+
 (defn- event->native
   "Unwraps a goog.events.BrowserEvent to the native event, since the
    wrapper copies `key` but not `code`."
