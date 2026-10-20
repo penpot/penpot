@@ -5,7 +5,7 @@ import type { Express } from "express";
 import { z } from "zod";
 import { AsyncLocalStorage } from "async_hooks";
 import { ExecuteCodeTool } from "./tools/ExecuteCodeTool";
-import { PluginBridge } from "./PluginBridge";
+import { HEARTBEAT_STALE_THRESHOLD_MS, PluginBridge } from "./PluginBridge";
 import { RedisBridge } from "./RedisBridge";
 import { ConfigurationLoader } from "./ConfigurationLoader";
 import { createLogger } from "./logger";
@@ -67,6 +67,11 @@ export class PenpotMcpServer {
      */
     public static isDevEnvEnabled(env: Record<string, string | undefined>): boolean {
         return env.PENPOT_MCP_DEVENV === "true";
+    }
+
+    public static heartbeatStaleMs(env: Record<string, string | undefined>): number {
+        const value = parseInt(env.PENPOT_MCP_HEARTBEAT_STALE_MS ?? "", 10);
+        return value > 0 ? value : HEARTBEAT_STALE_THRESHOLD_MS;
     }
 
     /**
@@ -152,6 +157,7 @@ export class PenpotMcpServer {
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
         this.tenant = process.env.PENPOT_TENANT ?? "default";
         const toolTimeoutSecs = parseInt(process.env.PENPOT_MCP_TOOL_TIMEOUT_S ?? "120", 10);
+        const heartbeatStaleMs = PenpotMcpServer.heartbeatStaleMs(process.env);
 
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
@@ -173,7 +179,13 @@ export class PenpotMcpServer {
             this.redisBridge = new RedisBridge(redisUri, this.tenant);
         }
 
-        this.pluginBridge = new PluginBridge(this, this.webSocketPort, toolTimeoutSecs, this.redisBridge);
+        this.pluginBridge = new PluginBridge(
+            this,
+            this.webSocketPort,
+            toolTimeoutSecs,
+            this.redisBridge,
+            heartbeatStaleMs
+        );
 
         if (shouldStartReplServer(PenpotMcpServer.isReplEnabled(process.env), this.isMultiUserMode())) {
             this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.replHost);
