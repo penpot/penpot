@@ -20,6 +20,7 @@ Keep this memory free of internal names: no host names, no deployed versions, no
 ## Main dashboard
 
 - `Production status`, uid `penpot-production-status`. Sections: general state and deploy, `RPC y CLIMIT`, PostgreSQL and pool, Redis/msgbus, tasks, JVM/process. Variables `$env` and `$host` (custom), no auto refresh. Every section opens collapsed except `RPC y CLIMIT`, which is the one read on a normal day.
+  - `$host` is a custom multi-variable: its `options` list and its `allValue` regex must both enumerate every host. A host added to `query` but missing from `options`/`allValue` is silently dropped when `All` is selected, so panels that filter with `instance=~"$host..."` stop showing it (panel 104 is the visible symptom). Update all three places together when adding a host.
 - Per-host investigation dashboards are separate, and the alert rules deeplink into them.
 - The PostgreSQL section ends with a block of vacuum panels: two stats (autovacuum workers active on the primary, and the launcher alive), a Loki timeseries of finished vacuums per interval and table, and then the `Vacuum TXID age` table, which is the last panel of the section. The worker stat is an approximation — it counts the `pg_stat_activity` bucket described above, because the exporter publishes no `backend_type` — and the Loki panel is retrospective by construction. A per-table, in-flight view (table, phase, progress) needs a `pg_stat_progress_vacuum` collector added to the exporter itself.
 
