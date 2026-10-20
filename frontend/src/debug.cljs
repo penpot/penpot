@@ -626,7 +626,7 @@
 
 (def ^:private request-faults
   "Debug faults that fail the whole save, as an infrastructure error does."
-  #{"sql" "io" "interrupted" "not-found" "stack-overflow"})
+  #{"sql" "io" "eof" "interrupted" "not-found" "stack-overflow"})
 
 (defn- debug-plugin-data-change
   "A change that removes plugin data `key` of the file, which is never set,
@@ -739,9 +739,11 @@
   (default 0) on. Needs the `debug-save-faults` backend flag.
 
   Faults 'validation', 'runtime', 'ex-info' and 'assertion' reject the
-  commits from that one on; 'sql', 'io', 'interrupted', 'not-found' and
-  'stack-overflow' fail the whole save, as an infrastructure error does.
-  A retry is a new save and counts against `times`.
+  commits from that one on; 'sql', 'io', 'eof', 'interrupted', 'not-found'
+  and 'stack-overflow' fail the whole save, as an infrastructure error
+  does. Of these, 'sql', 'io' and 'interrupted' pass on their own (503,
+  retried); the rest do not. A retry is a new save and counts against
+  `times`.
 
   debug.failNextSave({fault: 'sql'})
   debug.failNextSave({fault: 'runtime', commit: 2, times: 3, fileId: '…'})"

@@ -23,7 +23,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as g]
    [app.util.http :as http]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -622,8 +622,10 @@
 
 (def ^:private delegated-persistence-types
   "Save failure causes routed to their own error handler: retaining the
-  changes cannot resolve them."
-  #{:authentication :not-found})
+  changes cannot resolve them. A save answered not-found (file gone, edit
+  rights lost, missing data) is not here: it keeps the workspace open and
+  notifies like any other failed save."
+  #{:authentication})
 
 (defn- delegated-persistence-failure?
   [{:keys [type cause-type code]}]
@@ -673,8 +675,9 @@
 (defn flash-persistence
   "Notifies a save failure. With `:retrying` the failure is transient and
   the queue keeps trying in the background, so the toast says the changes
-  are kept and offers no reload, which would lose them."
-  [cause & {:keys [retrying]}]
+  are kept and offers no reload, which would lose them. `:busy` tells that
+  the server was too busy, not out of reach."
+  [cause & {:keys [retrying busy]}]
   (let [data (ex-data cause)]
     (cond
       (delegated-persistence-failure? data)
@@ -689,7 +692,18 @@
              :timeout nil
              :tag persistence-failed-tag
              :report-link? true
-             :hint (tr "errors.save-still-retrying"))
+             :hint (if busy
+                     (tr "errors.save-still-retrying-busy")
+                     (tr "errors.save-still-retrying")))
+
+      (= :save-permission-denied (:code data))
+      (flash :cause cause
+             :type (persistence-report-type data)
+             :timeout nil
+             :tag persistence-failed-tag
+             :report-link? true
+             :links [(reload-page-link)]
+             :hint (tr "errors.save-permission-lost" (i18n/c (:unsaved-commits data 0))))
 
       :else
       (flash :cause cause

@@ -1556,7 +1556,7 @@ msgstr "El proveedor de autenticación no permitido para este perfil de usuario"
 msgid "errors.auth-provider-not-configured"
 msgstr "Proveedor de autenticación no configurado."
 
-#: src/app/main/errors.cljs:743
+#: src/app/main/errors.cljs:757
 msgid "errors.auth.unable-to-login"
 msgstr "Parece que no has iniciado sesión, o la sesión ha expirado."
 
@@ -1576,7 +1576,7 @@ msgstr "No se puede cargar el archivo multimedia."
 msgid "errors.character-limit-exceeded"
 msgstr "Se ha superado el límite de caracteres"
 
-#: src/app/main/data/workspace/libraries.cljs:1784
+#: src/app/main/data/workspace/libraries.cljs:1836
 msgid "errors.circular-library-reference"
 msgstr "No se puede añadir la biblioteca: crearía una dependencia circular"
 
@@ -1596,7 +1596,7 @@ msgstr ""
 "Acceso al portapapeles denegado. Permite el acceso al portapapeles en tu "
 "navegador para pegar contenido."
 
-#: src/app/main/errors.cljs:945
+#: src/app/main/errors.cljs:959
 msgid "errors.comment-error"
 msgstr "Ha habido un error con el comentario"
 
@@ -1606,21 +1606,21 @@ msgstr ""
 "No se puede conectar con el servidor. Comprueba tu conexión e inténtalo de "
 "nuevo."
 
-#: src/app/main/errors.cljs:1014
+#: src/app/main/errors.cljs:1028
 msgid "errors.deprecated"
 msgstr ""
 "¡Lo sentimos! Este es un fichero antiguo que utiliza un tipo de recurso de "
 "Penpot obsoleto, y no puedes abrirlo."
 
-#: src/app/main/errors.cljs:1017
+#: src/app/main/errors.cljs:1031
 msgid "errors.deprecated.contact.after"
 msgstr "para que podamos ayudarte."
 
-#: src/app/main/errors.cljs:1015
+#: src/app/main/errors.cljs:1029
 msgid "errors.deprecated.contact.before"
 msgstr "Aunque Penpot ya no da soporte a este tipo de Recursos, puedes"
 
-#: src/app/main/errors.cljs:1016
+#: src/app/main/errors.cljs:1030
 msgid "errors.deprecated.contact.text"
 msgstr "contactar con nosotros"
 
@@ -1664,13 +1664,13 @@ msgstr "La exportación ha fallado. Inténtalo de nuevo en un momento."
 msgid "errors.export-too-large"
 msgstr "El archivo es demasiado grande, prueba con otra escala"
 
-#: src/app/main/errors.cljs:991
+#: src/app/main/errors.cljs:1005
 msgid "errors.feature-mismatch"
 msgstr ""
 "Parece que está abriendo un archivo que tiene la función '%s' habilitada, "
 "pero la versión actual de penpot no la admite o la tiene deshabilitada."
 
-#: src/app/main/errors.cljs:995, src/app/main/errors.cljs:1009
+#: src/app/main/errors.cljs:1009, src/app/main/errors.cljs:1023
 msgid "errors.feature-not-supported"
 msgstr "Caracteristica no soportada: '%s'."
 
@@ -1690,7 +1690,7 @@ msgstr "Campo vacio"
 msgid "errors.field-not-all-whitespace"
 msgstr "Debe contener algún carácter diferente de espacio."
 
-#: src/app/main/errors.cljs:987
+#: src/app/main/errors.cljs:1001
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "Parece que hay discordancia entre las features habilitadas y las features "
@@ -1707,7 +1707,7 @@ msgstr ""
 msgid "errors.generic"
 msgstr "Ha ocurrido algún error."
 
-#: src/app/main/errors.cljs:924
+#: src/app/main/errors.cljs:938
 msgid "errors.internal-worker-error"
 msgstr "Ha ocurrido un problema con el web worker."
 
@@ -1759,7 +1759,7 @@ msgstr "Esta invitación puede haber sido cancelada o ha expirado."
 msgid "errors.ldap-disabled"
 msgstr "La autheticacion via LDAP esta deshabilitada."
 
-#: src/app/main/errors.cljs:1003, src/app/main/ui/dashboard/team.cljs:218, src/app/main/ui/dashboard/team.cljs:1124, src/app/main/ui/onboarding/team_choice.cljs:117
+#: src/app/main/errors.cljs:1017, src/app/main/ui/dashboard/team.cljs:218, src/app/main/ui/dashboard/team.cljs:1124, src/app/main/ui/onboarding/team_choice.cljs:117
 msgid "errors.max-quota-reached"
 msgstr "Ha alcalzando el maximo de la quota '%s'. Contacte con soporte tecnico."
 
@@ -1789,15 +1789,15 @@ msgstr ""
 "El perfil que esta invitando tiene los emails silenciados (por reportes de "
 "spam o alto índice de rebote)."
 
-#: src/app/main/errors.cljs:977
+#: src/app/main/errors.cljs:991
 msgid "errors.migration-in-progress"
 msgstr "Migración en proceso"
 
-#: src/app/main/errors.cljs:870
+#: src/app/main/errors.cljs:884
 msgid "errors.only-creator-can-lock"
 msgstr "Solo el creador de la versión puede bloquearla"
 
-#: src/app/main/errors.cljs:878
+#: src/app/main/errors.cljs:892
 msgid "errors.only-creator-can-unlock"
 msgstr "Solo el creador de la versión puede desbloquearla"
 
@@ -1823,7 +1823,7 @@ msgstr "La contraseña de confirmación debe coincidir"
 msgid "errors.password-too-short"
 msgstr "La contraseña debe tener 8 caracteres como mínimo"
 
-#: src/app/main/errors.cljs:851
+#: src/app/main/errors.cljs:865
 msgid "errors.paste-data-validation"
 msgstr "Datos inválidos en el portapapeles"
 
@@ -1837,7 +1837,7 @@ msgstr ""
 "Tu perfil tiene los emails silenciados (por reportes de spam o alto índice "
 "de rebote)."
 
-#: src/app/main/errors.cljs:887
+#: src/app/main/errors.cljs:901
 msgid "errors.profile-props-too-large"
 msgstr ""
 "La configuración de tu perfil es demasiado grande y no se puede guardar. "
@@ -1847,7 +1847,7 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "El registro está actualmente desactivado."
 
-#: src/app/main/errors.cljs:701
+#: src/app/main/errors.cljs:715
 msgid "errors.save-failed"
 msgstr ""
 "El autoguardado se ha detenido en esta sesión, así que los cambios desde el "
@@ -1855,28 +1855,49 @@ msgstr ""
 "ayudarnos a arreglarlo y recarga la página, o sal de este fichero y vuelve "
 "a abrirlo, para seguir editando."
 
-#: src/app/main/data/persistence.cljs:602
+#: src/app/main/errors.cljs:706
+msgid "errors.save-permission-lost"
+msgid_plural "errors.save-permission-lost"
+msgstr[0] ""
+"Ya no puedes editar este archivo, así que 1 cambio no se ha podido guardar. "
+"Recarga la página para ver el archivo como está ahora."
+msgstr[1] ""
+"Ya no puedes editar este archivo, así que %s cambios no se han podido "
+"guardar. Recarga la página para ver el archivo como está ahora."
+
+#: src/app/main/data/persistence.cljs:647
 msgid "errors.save-rejected-changes-undone"
 msgstr ""
 "Algunos de tus últimos cambios no se han podido guardar y se han deshecho. "
 "El resto de tu trabajo está guardado."
 
-#: src/app/main/data/persistence.cljs:492
+#: src/app/main/data/persistence.cljs:526
 msgid "errors.save-retrying"
 msgstr "Se ha perdido la conexión. Reintentando guardar los cambios."
 
-#: src/app/main/errors.cljs:692
+#: src/app/main/data/persistence.cljs:525
+msgid "errors.save-retrying-busy"
+msgstr "El servidor está ocupado. Reintentando guardar tus cambios."
+
+#: src/app/main/errors.cljs:697
 msgid "errors.save-still-retrying"
 msgstr ""
 "Tus cambios aún no se han guardado porque Penpot no puede conectar con el "
 "servidor. Se conservan y Penpot seguirá intentando guardarlos. Mantén esta "
 "pestaña abierta hasta que se guarden."
 
-#: src/app/main/errors.cljs:936
+#: src/app/main/errors.cljs:696
+msgid "errors.save-still-retrying-busy"
+msgstr ""
+"Tus cambios aún no se han guardado porque el servidor está ocupado. Se "
+"conservan y Penpot seguirá intentando guardarlos. Mantén esta pestaña "
+"abierta hasta que se guarden."
+
+#: src/app/main/errors.cljs:950
 msgid "errors.svg-parser.invalid-svg"
 msgstr "El SVG no es válido o está mal formado"
 
-#: src/app/main/errors.cljs:982
+#: src/app/main/errors.cljs:996
 msgid "errors.team-feature-mismatch"
 msgstr "Detectada funcionalidad incompatible '%s'"
 
@@ -2076,15 +2097,15 @@ msgstr "Ha ocurrido un error inesperado."
 msgid "errors.unexpected-token"
 msgstr "Token desconocido"
 
-#: src/app/main/errors.cljs:895
+#: src/app/main/errors.cljs:909
 msgid "errors.version-already-locked"
 msgstr "Esta versión ya está bloqueada"
 
-#: src/app/main/errors.cljs:862
+#: src/app/main/errors.cljs:876
 msgid "errors.version-locked"
 msgstr "Esta versión está bloqueada y otras personas no pueden eliminarla"
 
-#: src/app/main/errors.cljs:999
+#: src/app/main/errors.cljs:1013
 msgid "errors.version-not-supported"
 msgstr "El fichero tiene un número de versión incompatible"
 
@@ -3460,7 +3481,7 @@ msgstr "Recargar"
 msgid "labels.release-notes"
 msgstr "Notas de versión"
 
-#: src/app/main/errors.cljs:664, src/app/main/ui/static.cljs:388
+#: src/app/main/errors.cljs:666, src/app/main/ui/static.cljs:388
 msgid "labels.reload-page"
 msgstr "Recargar página"
 
@@ -8668,6 +8689,16 @@ msgstr "¡LA EXTENSIÓN '%s' HA SIDO INSTALADA PARA TU USUARIO!"
 msgid "workspace.plugins.try-out.try"
 msgstr "PROBAR PLUGIN"
 
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:46
+#, markdown
+msgid "workspace.save-failure.retrying"
+msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:47
+#, markdown
+msgid "workspace.save-failure.stopped"
+msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
+
 #: src/app/main/ui/workspace/context_menu.cljs:667
 msgid "workspace.shape.menu.add-flex"
 msgstr "Añadir flex layout"
@@ -9346,7 +9377,7 @@ msgstr "Actualmente no existen temas."
 msgid "workspace.tokens.not-remap"
 msgstr "No actualizar"
 
-#: src/app/main/data/workspace/libraries.cljs:848
+#: src/app/main/data/workspace/libraries.cljs:850
 msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
 msgstr "Los sets o temas de la fuente de tokens se han modificado"
 
@@ -9698,20 +9729,20 @@ msgstr "Tipografías (%s)"
 msgid "workspace.toolbar.toggle-toolbar"
 msgstr "Alternar barra de herramientas"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:45
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:64
 msgid "workspace.top-bar.read-only.done"
 msgstr "Hecho"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:40
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:53
 #, markdown
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspeccionando código** (View only)"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:39
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:50
 msgid "workspace.top-bar.webgl-context-lost"
 msgstr "Renderizado no disponible. Recarga la página para restaurar la edición."
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:43
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:60
 msgid "workspace.top-bar.webgl-context-lost.reload"
 msgstr "Recargar"
 
@@ -9863,19 +9894,19 @@ msgstr "tipografía"
 msgid "workspace.undo.entry.unknown"
 msgstr "Operación sobre %s"
 
-#: src/app/main/data/workspace/libraries.cljs:1448, src/app/main/data/workspace/versions.cljs:241
+#: src/app/main/data/workspace/libraries.cljs:1500, src/app/main/data/workspace/versions.cljs:241
 msgid "workspace.updates.dismiss"
 msgstr "Ignorar"
 
-#: src/app/main/data/workspace/libraries.cljs:1446
+#: src/app/main/data/workspace/libraries.cljs:1498
 msgid "workspace.updates.more-info"
 msgstr "Más información"
 
-#: src/app/main/data/workspace/libraries.cljs:1444
+#: src/app/main/data/workspace/libraries.cljs:1496
 msgid "workspace.updates.there-are-updates"
 msgstr "Hay actualizaciones en bibliotecas compartidas"
 
-#: src/app/main/data/workspace/libraries.cljs:1450
+#: src/app/main/data/workspace/libraries.cljs:1502
 msgid "workspace.updates.update"
 msgstr "Actualizar"
 
