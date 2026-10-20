@@ -17,6 +17,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace :as-alias dw]
@@ -302,13 +303,27 @@
   [:map {:title "handle-file-restored"}
    [:type :keyword]
    [:file-id ::sm/uuid]
-   [:vern :int]])
+   [:vern :int]
+   [:profile-id {:optional true} ::sm/uuid]
+   [:label {:optional true} :string]
+   [:created-at {:optional true} ::ct/inst]])
 
 (def ^:private check-file-restored-params
   (sm/check-fn schema:handle-file-restored))
 
+(defn- restorer-fullname
+  "Name of the user who restored the file, when known: by `profile-id`, or
+  else by the presence of the session that restored it."
+  [state profile-id session-id]
+  (when-let [profile-id (or profile-id
+                            (dm/get-in state [:workspace-presence session-id :profile-id]))]
+    (dm/get-in state [:profiles profile-id :fullname])))
+
 (defn handle-file-restored
-  [{:keys [file-id vern] :as msg}]
+  "Reloads the file a peer restored to an earlier version and tells the
+  user who restored which version, and whether their edits not saved yet
+  were dropped with the replaced version."
+  [{:keys [file-id vern session-id profile-id label created-at] :as msg}]
 
   (assert (check-file-restored-params msg)
           "expected valid parameters")
@@ -320,9 +335,16 @@
             file            (dsh/lookup-file state curr-file-id)
             curr-vern       (:vern file)]
 
-        (when (and (= file-id curr-file-id)
-                   (not= vern curr-vern))
-          (rx/of (ptk/event ::dw/reload-current-file)))))))
+        (if (and (= file-id curr-file-id)
+                 (not= vern curr-vern))
+          (rx/of (ptk/event ::dw/reload-current-file)
+                 (modal/show :file-restored
+                             {:fullname   (restorer-fullname state profile-id session-id)
+                              :label      label
+                              :created-at created-at
+                              ;; Made on the replaced version, so the reload drops them
+                              :unsaved    (boolean (seq (dps/pending-file-changes state file)))}))
+          (rx/empty))))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

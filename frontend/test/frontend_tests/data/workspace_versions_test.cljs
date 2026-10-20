@@ -8,6 +8,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.pages :as dwpg]
@@ -27,6 +28,7 @@
       (let [file-id  (uuid/next)
             resolved (atom [])
             rejected (atom [])
+            emitted  (atom [])
             requests (atom [])
             state    {:current-file-id file-id}
             event    (case operation
@@ -42,12 +44,22 @@
                       rx/timeout (mock/stub (fn [_ fallback source]
                                               (if (= failure :timeout) fallback source)))]
           (->> (ptk/watch event state (rx/empty))
-               (rx/subs! (fn [_]) #(swap! rejected conj %)))
+               (rx/subs! #(swap! emitted conj %) #(swap! rejected conj %)))
           (t/is (empty? @requests) "Do not create a version without saving")
           (t/is (empty? @resolved) "Do not resolve the plugin promise on failure")
-          (t/is (= 1 (count @rejected)))
-          (t/is (= (if (= failure :error) :save-permission-denied :save-timeout)
-                   (:code (ex-data (first @rejected))))))))))
+          (if (= operation :create)
+            ;; The save failure is reported on its own; the user is told
+            ;; why the version is missing instead
+            (let [notice (some #(when (= ::ntf/show (ptk/type %))
+                                  (:notification (ptk/update % {})))
+                               @emitted)]
+              (t/is (empty? @rejected))
+              (t/is (= "workspace.versions.create-failed-unsaved" (:content notice)))
+              (t/is (= :warning (:level notice))))
+            (do
+              (t/is (= 1 (count @rejected)))
+              (t/is (= (if (= failure :error) :save-permission-denied :save-timeout)
+                       (:code (ex-data (first @rejected))))))))))))
 
 (t/deftest leaving-the-workspace-clears-the-preview-flags
   (let [team-id  (uuid/next)
