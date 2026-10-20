@@ -1778,3 +1778,176 @@ fn narrow_atomic_overflow_keeps_ruby_and_warichu_with_their_closing_marks() {
         }
     }
 }
+
+#[test]
+fn adjacent_horizontal_ruby_bases_retain_each_annotation_style() {
+    use crate::shapes::text_vertical::test_support::provider;
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let mut fonts = resources.fonts.font_collection().clone();
+    fonts.set_asset_font_manager(Some(
+        provider(include_bytes!("../../fonts/cjk-locl-test.ttf")).into(),
+    ));
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    for width in [240.0, 48.0] {
+        let spans = ["文", "文", "文", "文"]
+            .iter()
+            .map(|text| TextSpan {
+                text: text.to_string(),
+                font_size: 24.0,
+                ruby: "wén".to_string(),
+                text_emphasis: TextEmphasis::FilledDot,
+                annotation_clearance: AnnotationClearance::Auto,
+                ..make_span(text, 0.0)
+            })
+            .collect();
+        let mut paragraph = make_paragraph(spans, 0.0);
+        paragraph.set_language("zh-Hant-TW".to_string());
+        let (plan, layout) = cjk_layout_paragraph(&paragraph, width, &fonts);
+        assert_eq!(
+            horizontal_emphasis_placements(&paragraph, &plan.offsets, &layout).len(),
+            4
+        );
+        for range in &plan.offsets.ranges {
+            let style = horizontal_span_style(&layout, range);
+            assert!(
+                style.is_some(),
+                "missing style for adjacent ruby base {} at {width}px",
+                range.span
+            );
+            assert_eq!(style.unwrap().font_size(), 24.0);
+        }
+    }
+}
+
+#[test]
+fn adjacent_ruby_emphasis_paints_a_mark_for_every_base_on_either_side() {
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let fonts = resources.fonts.font_collection().clone();
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    for position in [
+        TextEmphasisPosition::OverRight,
+        TextEmphasisPosition::UnderRight,
+    ] {
+        let spans = ["A", "B", "C", "D"]
+            .iter()
+            .map(|text| TextSpan {
+                font_size: 48.0,
+                fills: vec![crate::shapes::Fill::Solid(crate::shapes::SolidColor(
+                    skia::Color::BLACK,
+                ))],
+                ruby: "a".to_string(),
+                text_emphasis: TextEmphasis::FilledDot,
+                text_emphasis_position: position,
+                annotation_clearance: AnnotationClearance::Auto,
+                ..make_span(text, 0.0)
+            })
+            .collect();
+        let mut paragraph = make_paragraph(spans, 0.0);
+        paragraph.set_language("zh-Hant-TW".to_string());
+        let (plan, layout) = cjk_layout_paragraph(&paragraph, 400.0, &fonts);
+        let placements = horizontal_emphasis_placements(&paragraph, &plan.offsets, &layout);
+        assert_eq!(placements.len(), 4);
+        let mut surface = skia::surfaces::raster_n32_premul((440, 200)).unwrap();
+        surface.canvas().clear(skia::Color::TRANSPARENT);
+        paint_horizontal_emphasis(surface.canvas(), &paragraph, &plan, &layout, 20.0, 40.0);
+        let image = surface.image_snapshot();
+        let pixels = image.peek_pixels().expect("raster pixels");
+        for placement in placements {
+            let left = (20.0 + placement.rect.left()).ceil() as i32;
+            let right = (20.0 + placement.rect.right()).floor() as i32;
+            let ink = (0..200).any(|y| (left..right).any(|x| pixels.get_color((x, y)).a() > 0));
+            assert!(
+                ink,
+                "missing {position:?} emphasis on adjacent ruby base {}",
+                placement.span
+            );
+        }
+    }
+}
+
+#[test]
+fn annotation_style_keeps_utf16_lines_separate_from_utf8_style_keys() {
+    use crate::shapes::text_vertical::test_support::{provider, TEST_FONT};
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let mut fonts = resources.fonts.font_collection().clone();
+    fonts.set_asset_font_manager(Some(provider(TEST_FONT).into()));
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    let prefix = make_span("😀\n", 0.0);
+    let spans = vec![
+        prefix,
+        TextSpan {
+            font_size: 24.0,
+            ruby: "a".to_string(),
+            ..make_span("A", 0.0)
+        },
+        TextSpan {
+            font_size: 24.0,
+            ruby: "b".to_string(),
+            ..make_span("B", 0.0)
+        },
+    ];
+    let mut paragraph = make_paragraph(spans, 0.0);
+    paragraph.set_language("zh-Hant-TW".to_string());
+    let (plan, layout) = cjk_layout_paragraph(&paragraph, 240.0, &fonts);
+    for (range, expected) in plan.offsets.ranges.iter().zip([16.0, 24.0, 24.0]) {
+        let style = horizontal_span_style(&layout, range).expect("style on the base's line");
+        assert_eq!(style.font_size(), expected);
+    }
+}
+
+#[test]
+fn horizontal_emphasis_export_bounds_include_every_adjacent_ruby_mark() {
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    for grow in [
+        crate::shapes::GrowType::Fixed,
+        crate::shapes::GrowType::AutoHeight,
+        crate::shapes::GrowType::AutoWidth,
+    ] {
+        let spans = ["A", "B", "C", "D"]
+            .iter()
+            .map(|text| TextSpan {
+                font_size: 48.0,
+                language: "zh-Hant-TW".to_string(),
+                ruby: "a".to_string(),
+                text_emphasis: TextEmphasis::FilledDot,
+                text_decoration: Some(skia::textlayout::TextDecoration::UNDERLINE),
+                annotation_clearance: AnnotationClearance::Auto,
+                ..make_span(text, 0.0)
+            })
+            .collect();
+        let mut paragraph = make_paragraph(spans, 0.0);
+        paragraph.set_language("zh-Hant-TW".to_string());
+        let bounds = crate::math::Rect::from_xywh(0.0, 0.0, 360.0, 160.0);
+        let mut content = TextContent::new(bounds, grow);
+        content.add_paragraph(paragraph);
+        content.update_layout(bounds);
+        let mut shape = crate::shapes::Shape::new(Uuid::nil());
+        shape.set_selrect(0.0, 0.0, 360.0, 160.0);
+        let export = content.calculate_bounds(&shape, false).to_rect();
+        let plans = content.horizontal_plans();
+        let paragraph = &content.paragraphs()[0];
+        let placements = horizontal_emphasis_placements(
+            paragraph,
+            &plans[0].offsets,
+            &content.layout.paragraphs[0][0],
+        );
+        assert_eq!(placements.len(), 4);
+        for placement in placements {
+            let mark =
+                horizontal_emphasis_mark_box(&paragraph.children()[placement.span], &placement);
+            assert!(
+                export.bottom() >= mark.bottom(),
+                "{grow:?}: export {export:?} crops mark {mark:?}"
+            );
+        }
+    }
+}
