@@ -68,3 +68,46 @@
         headers  (::yres/headers response)]
     (t/is (= 429 (::yres/status response)))
     (t/is (nil? (get headers "retry-after")))))
+
+(defn- psql-exception
+  [state]
+  (org.postgresql.util.PSQLException. "database failure" state))
+
+(t/deftest transient-database-failures-answer-503
+  (doseq [state [org.postgresql.util.PSQLState/CONNECTION_FAILURE
+                 org.postgresql.util.PSQLState/CONNECTION_UNABLE_TO_CONNECT
+                 org.postgresql.util.PSQLState/SERIALIZATION_FAILURE
+                 org.postgresql.util.PSQLState/DEADLOCK_DETECTED]]
+    (let [response (http-errors/handle (psql-exception state) {})]
+      (t/is (= 503 (::yres/status response)) (str state))
+      (t/is (= :server-error (-> response ::yres/body :type))))))
+
+(t/deftest other-database-failures-answer-500
+  (let [response (http-errors/handle (psql-exception org.postgresql.util.PSQLState/UNIQUE_VIOLATION) {})]
+    (t/is (= 500 (::yres/status response)))
+    (t/is (= :database-error (-> response ::yres/body :code)))))
+
+(t/deftest database-timeouts-keep-answering-504
+  (let [response (http-errors/handle (psql-exception org.postgresql.util.PSQLState/QUERY_CANCELED) {})]
+    (t/is (= 504 (::yres/status response)))
+    (t/is (= :statement-timeout (-> response ::yres/body :code)))))
+
+(t/deftest transient-connection-failures-answer-503
+  (doseq [cause [(java.sql.SQLTransientConnectionException. "pool exhausted")
+                 (java.net.SocketException. "broken pipe")
+                 (java.net.ConnectException. "connection refused")
+                 (java.net.SocketTimeoutException. "read timed out")
+                 (java.net.UnknownHostException. "storage.example.com")
+                 (InterruptedException. "shutting down")]]
+    (let [response (http-errors/handle cause {})]
+      (t/is (= 503 (::yres/status response)) (str (class cause)))
+      (t/is (= :server-error (-> response ::yres/body :type))))))
+
+(t/deftest permanent-io-failures-answer-500
+  (doseq [cause [(java.io.IOException. "generic")
+                 (java.io.EOFException. "truncated blob")
+                 (java.nio.file.NoSuchFileException. "/data/missing")
+                 (com.fasterxml.jackson.core.JsonParseException. nil "bad json")]]
+    (let [response (http-errors/handle cause {})]
+      (t/is (= 500 (::yres/status response)) (str (class cause)))
+      (t/is (= :io-exception (-> response ::yres/body :code))))))

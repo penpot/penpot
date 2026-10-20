@@ -271,6 +271,7 @@ estándar
 expirada
 funcionalidades
 granulares
+guardarlos
 hay
 hubo
 importada
@@ -296,6 +297,7 @@ puesto
 regenerada
 restaurarlo
 restaurarlos
+sal
 seleccionada
 selector
 servidores

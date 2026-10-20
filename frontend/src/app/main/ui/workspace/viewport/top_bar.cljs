@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.top-bar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.persistence :as dps]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
@@ -29,18 +30,36 @@
            (st/emit! :interrupt
                      (dw/set-options-mode :design)
                      (dwc/set-workspace-read-only false))))
-        render-context-lost? (mf/deref refs/render-context-lost?)]
-    [:div {:class (stl/css :viewport-actions)}
+        render-context-lost? (mf/deref refs/render-context-lost?)
+        save-locked?         (some? (mf/deref refs/persistence-lock))
+        persistence          (mf/deref refs/persistence)]
+    [:div {:class (stl/css-case :viewport-actions true
+                                :viewport-actions-save-failed save-locked?)}
      [:div {:class (stl/css :viewport-actions-container)}
-      [:div {:class (stl/css :viewport-actions-title)}
+      [:div {:class (stl/css :viewport-actions-title)
+             :role (when save-locked? "status")}
        [:> i18n/tr-html*
         {:tag-name "span"
-         :content (if render-context-lost?
+         :content (cond
+                    save-locked?
+                    (if (dps/save-retrying? persistence)
+                      (tr "workspace.save-failure.retrying")
+                      (tr "workspace.save-failure.stopped"))
+
+                    render-context-lost?
                     (tr "workspace.top-bar.webgl-context-lost")
+
+                    :else
                     (tr "workspace.top-bar.view-only"))}]]
-      (if render-context-lost?
+      (cond
+        save-locked?
+        nil
+
+        render-context-lost?
         [:> button* {:variant "primary" :on-click (fn [] (js/location.reload))}
          (tr "workspace.top-bar.webgl-context-lost.reload")]
+
+        :else
         [:> button* {:on-click on-close}
          (tr "workspace.top-bar.read-only.done")])]]))
 
