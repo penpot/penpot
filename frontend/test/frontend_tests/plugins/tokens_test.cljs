@@ -897,6 +897,38 @@
         (t/is (= token-id (:token-id @captured)))
         (t/is (= ["Inter" "Arial"] (get-in @captured [:attrs :value])))))))
 
+(t/deftest shadow-token-value-round-trips
+  (let [set-id   (cthi/new-id! :token-set)
+        token-id (cthi/new-id! :shadow-token)
+        shadow   [{:offset-x "1" :offset-y "2" :blur "4" :spread "0" :color "#000000" :inset false}]
+        file     (-> (cthf/sample-file :file1 :page-label :page1)
+                     (ctht/add-tokens-lib)
+                     (ctht/update-tokens-lib
+                      #(-> %
+                           (ctob/add-set
+                            (ctob/make-token-set :id set-id
+                                                 :name "shadows"))
+                           (ctob/add-token
+                            set-id
+                            (ctob/make-token :id token-id
+                                             :name "shadow.card"
+                                             :type :shadow
+                                             :value shadow)))))
+        store    (ths/setup-store file)
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        file-id  (:id file)
+        captured (atom nil)]
+    (with-redefs [r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  dwtl/update-token (mock/stub (fn [_ _ attrs]
+                                                 (reset! captured attrs)
+                                                 :update-token))
+                  st/emit! mock/noop]
+      (let [token (ptok/token-proxy "plugin-id" file-id set-id token-id)]
+        (set! (.-value token) (.-value token))
+        (t/is (= shadow (:value @captured)))))))
+
 (t/deftest typography-token-resolved-value-is-plugin-array-shape
   (let [token (ctob/make-token
                {:name "type.body"

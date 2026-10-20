@@ -50,23 +50,38 @@
   (reduce (fn [acc [k v]]
             (update acc v conj k)) {} m))
 
-(defn- show-unknown-types-warning [unknown-tokens]
-  (let [type->tokens (group-by-value unknown-tokens)]
-    (l/wrn :hint "unsupported token types found during import"
-           :tokens (str/join ", " (map (fn [[path type]] (str path " (" type ")")) unknown-tokens)))
-    (ntf/show {:content (tr "workspace.tokens.unknown-token-type-message")
+(defn- skipped-detail
+  "HTML lists of the skipped token paths, one section per label, with
+  `section-fn` called with the label and the count text."
+  [section-fn label->paths]
+  (->> (for [[label paths] (sort-by key label->paths)]
+         (str (section-fn (dom/escape-html label)
+                          (tr "labels.warning-count" (i18n/c (count paths))))
+              "<ul>"
+              (->> paths
+                   (sort)
+                   (map #(str "<li>" (dom/escape-html %) "</li>"))
+                   (str/join ""))
+              "</ul>"))
+       (str/join "")))
+
+(defn- show-import-warnings
+  "One toast for what the import skipped: tokens of types penpot does not
+  have, and token data it does not store (`$extensions`, `$deprecated`,
+  group descriptions, values it cannot read)."
+  [unknown-types unsupported]
+  (l/wrn :hint "token data skipped during import"
+         :types (str/join ", " (map (fn [[path type]] (str path " (" type ")")) unknown-types))
+         :data (str/join ", " (map (fn [{:keys [path property]}] (str path " (" property ")")) unsupported)))
+  (let [content (if (seq unsupported)
+                  (tr "workspace.tokens.unsupported-token-data-message")
+                  (tr "workspace.tokens.unknown-token-type-message"))]
+    (ntf/show {:content content
                :is-html true
-               :detail (->> (for [[token-type token-paths] type->tokens]
-                              (str (tr "workspace.tokens.unknown-token-type-section"
-                                       (dom/escape-html token-type)
-                                       (tr "labels.warning-count" (i18n/c (count token-paths))))
-                                   "<ul>"
-                                   (->> token-paths
-                                        (sort)
-                                        (map #(str "<li>" (dom/escape-html %) "</li>"))
-                                        (str/join ""))
-                                   "</ul>"))
-                            (str/join ""))
+               :detail (str (skipped-detail #(tr "workspace.tokens.unknown-token-type-section" %1 %2)
+                                            (group-by-value unknown-types))
+                            (skipped-detail #(tr "workspace.tokens.unsupported-token-data-section" %1 %2)
+                                            (update-vals (group-by :property unsupported) #(mapv :path %))))
                :type :toast
                :level :info})))
 
@@ -80,8 +95,7 @@
 (defn- parse-decoded-json
   [decoded-json file-name]
   (try
-    {:tokens-lib (ctob/parse-decoded-json decoded-json file-name)
-     :unknown-tokens (ctob/get-tokens-of-unknown-type decoded-json {})}
+    (ctob/import-decoded-json decoded-json file-name)
     (catch js/Error e
       (let [err (or (extract-error-with-code e)
                     (extract-name-error e)
@@ -91,9 +105,9 @@
 (defn- validate-library
   "Resolve tokens in the library and search for errors. Reference errors are ignored, since
    it can be resolved by the user in the UI. All the other errors are thrown as exceptions."
-  [{:keys [tokens-lib unknown-tokens]}]
-  (when unknown-tokens
-    (st/emit! (show-unknown-types-warning unknown-tokens)))
+  [{:keys [tokens-lib unknown-types unsupported]}]
+  (when (or unknown-types unsupported)
+    (st/emit! (show-import-warnings unknown-types unsupported)))
   (try
     (let [tokens-tree     (ctob/get-all-tokens-map tokens-lib)
           resolved-tokens (if (contains? cf/flags :tokenscript)
