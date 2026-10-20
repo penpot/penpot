@@ -80,7 +80,6 @@
    "shift"   "shift"
    "meta"    "meta"
    "command" "meta"
-   "mod"     "meta"
    "return"  "enter"
    "enter"   "enter"
    "esc"     "escape"
@@ -100,10 +99,19 @@
 
 (defn- canonical-command-key
   [token]
-  (or (get command-aliases token)
-      (if (= 1 (count token))
-        (str/lower token)
-        (str/lower (get key-name-map token token)))))
+  (cond
+    ;; `mod` follows the platform, like `ds/c-mod`.
+    (= "mod" token)
+    (if (cf/check-platform? :macos) "meta" "ctrl")
+
+    (contains? command-aliases token)
+    (get command-aliases token)
+
+    (= 1 (count token))
+    (str/lower token)
+
+    :else
+    (str/lower (get key-name-map token token))))
 
 (defn- command-step-keys
   "Splits one step of a command (\"ctrl+shift+z\") into canonical keys.
@@ -143,6 +151,38 @@
        (or (= "" command)
            (every? (comp valid-command-step? command-step-keys)
                    (.split command " ")))))
+
+(defn- canonical-command-step
+  "One step in the form mousetrap matches on: canonical keys with the
+   modifiers sorted, so `Shift+Ctrl+Z` and `ctrl+shift+z` compare equal."
+  [step]
+  (let [step-keys (command-step-keys step)
+        final-key (peek step-keys)]
+    (str/join "+" (conj (vec (sort (pop step-keys))) final-key))))
+
+(defn- reserved-command-steps
+  "Key combinations of the non-customizable workspace shortcuts (cancel,
+   copy, paste): assigning them to another action would bind one key to two
+   actions. The path editor's cancel also binds `v`, the move tool key,
+   so path shortcuts are left out."
+  []
+  (into #{}
+        (comp (filter #(false? (:customizable (val %))))
+              (mapcat #(let [command (:command (val %))]
+                         (if (vector? command) command [command])))
+              (mapcat #(.split % " "))
+              (map canonical-command-step))
+        wsc/shortcuts))
+
+(defn reserved-command?
+  "True when any step of `command` is a combination Penpot keeps for a
+   non-customizable shortcut."
+  [command]
+  (and (string? command)
+       (not= "" command)
+       (let [reserved (reserved-command-steps)]
+         (some? (some #(contains? reserved (canonical-command-step %))
+                      (.split command " "))))))
 
 (defn- event->native
   "Unwraps a goog.events.BrowserEvent to the native event, since the
@@ -677,12 +717,16 @@
                       effective-section-key))
            (clean-editing-state)))
 
+        reserved?              (and (some? recorded-command)
+                                    (not reset-pending)
+                                    (reserved-command? recorded-command))
+
         save-fn
         (mf/use-fn
-         (mf/deps recorded-command conflict command effective-section-key)
+         (mf/deps recorded-command reserved? conflict command effective-section-key)
          (fn [event]
            (dom/prevent-default event)
-           (when recorded-command
+           (when (and recorded-command (not reserved?))
              (if (deref reset-pending*)
                (st/emit! (customize/reset-custom-shortcut command recorded-command effective-section-key))
                (st/emit! (customize/set-custom-shortcut
@@ -786,9 +830,16 @@
                                 :has-conflict? false}]])
 
         (when (and recorded-command (not reset-pending))
-          (if conflict
+          (cond
+            reserved?
+            [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
+             (tr "shortcuts.edit-modal.reserved")]
+
+            conflict
             [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
              (tr "shortcuts.edit-modal.conflict" (:name conflict))]
+
+            :else
             [:> context-notification* {:level :success :class (stl/css :modal-success-msg)}
              (tr "shortcuts.edit-modal.success")]))
         [:div {:class (stl/css :edit-buttons)}
@@ -801,6 +852,7 @@
           [:> icon-button* {:variant "primary"
                             :aria-label (tr "labels.save")
                             :on-click save-fn
+                            :disabled reserved?
                             :icon i/tick
                             :icon-size "m"}]]
          [:div {:class (stl/css :confirmation-buttons)}

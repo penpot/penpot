@@ -131,7 +131,9 @@
   [result ctx entries known-keys]
   (let [viable (reduce-kv
                 (fn [viable k command]
-                  (if (and (contains? known-keys k) (ss/valid-command? command))
+                  (if (and (contains? known-keys k)
+                           (ss/valid-command? command)
+                           (not (ss/reserved-command? command)))
                     (assoc viable k command)
                     viable))
                 {}
@@ -148,8 +150,9 @@
 (defn sanitize-imported-shortcuts
   "Splits an imported custom-shortcuts payload into the entries Penpot can
    apply and the ones it must skip: unknown contexts, unknown or
-   non-customizable shortcut keys, and commands that are not a key
-   combination (see `app.main.ui.shortcuts/valid-command?`).
+   non-customizable shortcut keys, commands that are not a key combination
+   (see `app.main.ui.shortcuts/valid-command?`) and reserved combinations
+   (see `app.main.ui.shortcuts/reserved-command?`).
 
    Returns {:shortcuts <viable payload> :skipped [\"context/key\" ...]}, or
    nil when the payload is not a map."
