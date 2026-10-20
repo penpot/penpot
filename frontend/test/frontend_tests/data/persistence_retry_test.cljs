@@ -685,6 +685,44 @@
            (rx/throw (ex-info "offline" {:type :offline}))
            (rx/of {:revn 1})))))))
 
+;; Scenario: the network stays down past the backoff, so the slow cycle
+;; takes over. The workspace stays read-only through each slow attempt,
+;; including while one is in flight, and goes back to editable once one
+;; lands. Proves: the lock follows the failure, not the status flips of
+;; the slow cycle.
+(t/deftest ^:async the-slow-cycle-keeps-the-workspace-locked-until-a-save-lands
+  (let [calls     (atom 0)
+        cycles    (atom [])
+        attempt-s (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (slow-cycle-timer cycles))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(and (= 1 (count @cycles))
+                                         (some? (get-in @store [:workspace-global :persistence-lock])))
+                                   "the spent backoff locks the workspace"))
+            (t/is (true? (get-in @store [:workspace-global :read-only?])))
+            (t/is (dps/save-retrying? (:persistence @store)))
+
+            (rx/push! (last @cycles) :tick)
+            (await (async/wait-for #(= 5 @calls) "the slow attempt is sent"))
+            (await (async/settle))
+            (t/is (= :saving (get-in @store [:persistence :status])))
+            (t/is (some? (get-in @store [:workspace-global :persistence-lock]))
+                  "a slow attempt in flight keeps the lock")
+
+            (rx/push! attempt-s {:revn 1})
+            (await (async/wait-for #(nil? (get-in @store [:workspace-global :persistence-lock]))
+                                   "the landed save lifts the lock"))
+            (t/is (false? (get-in @store [:workspace-global :read-only?]))))))
+       (fn [_ _]
+         (if (< (swap! calls inc) 5)
+           (rx/throw (ex-info "offline" {:type :offline}))
+           (->> attempt-s (rx/take 1) (rx/observe-on :async))))))))
+
 ;; Scenario: a gateway error outlasts the backoff, then the proxy recovers.
 ;; Proves: each gateway status takes the slow cycle and saves the held edit.
 (t/deftest ^:async a-gateway-error-arms-the-slow-cycle
@@ -822,6 +860,35 @@
          (if (< (swap! calls inc) 5)
            (rx/throw (ex-info "offline" {:type :offline}))
            (rx/of {:revn 1})))))))
+
+;; Scenario: saves keep failing on a transport error, so the slow cycle
+;; holds the edit, and the user is made a viewer; the role event comes again
+;; while the user is still a viewer. Proves: the edit stays queued and the
+;; leave warning stays on until edit rights return, instead of being dropped
+;; while the canvas still shows it.
+(t/deftest ^:async a-viewer-keeps-the-edit-held-by-the-slow-cycle
+  (let [cycles (atom [])]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (slow-cycle-timer cycles))}
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 1 (count @cycles)) "the slow cycle is armed"))
+            (ptk/emit! store
+                       #(assoc-in % [:permissions :can-edit] false)
+                       (ptk/data-event :app.main.data.common/change-team-role))
+            (await (async/wait-for #(= :save-permission-denied
+                                       (get-in @store [:persistence :error :code]))
+                                   "the viewer cannot send the edit"))
+            (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+            (await (async/settle))
+            (t/is (= :error (get-in @store [:persistence :status])))
+            (t/is (= 1 (count (get-in @store [:persistence :queue])))
+                  "the edit stays queued while the user is a viewer")
+            (t/is (= 4 (count @requests)) "a viewer sends nothing"))))
+       (fn [_ _] (rx/throw (ex-info "offline" {:type :offline})))))))
 
 ;; Leaving the workspace tests.
 

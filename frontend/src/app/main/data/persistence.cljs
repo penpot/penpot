@@ -18,6 +18,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence.commits :as pcm]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.undo :as dwu]
@@ -152,6 +153,13 @@
     (and (= from :retrying) (#{:pending :saving} to)) from
     :else                                          to))
 
+(defn- count-unsaved-commits
+  "Local commits not saved yet, queued or buffered, of every file."
+  [state]
+  (let [{:keys [queue index buffer]} (:persistence state)]
+    (+ (count (mapcat #(get-in index [% :commits]) queue))
+       (count buffer))))
+
 (defn- nothing-to-save?
   [{:keys [buffer queue]}]
   (and (empty? buffer) (empty? queue)))
@@ -233,6 +241,13 @@
        (transient-error? error)
        (retry-window-open? pstate)
        (< (or slow-failures 0) max-slow-failures)))
+
+(defn save-retrying?
+  "True while the slow cycle keeps resending a failed queue, including
+  while one of its attempts is in flight."
+  [pstate]
+  (or (true? (:recovering pstate))
+      (slow-retry-pending? pstate)))
 
 (defn- report-stalled-persistence
   [now]
@@ -567,6 +582,21 @@
                   :features features
                   :remote-seq (dm/get-in state [:persistence :remote-seq] 0))]))))))
 
+(defn- apply-rollback-plan
+  "Events that revert the local data as `plan` says: pending commits are
+  undone, saved ones undone by a new commit, and their groups leave the
+  undo history."
+  [origin state {:keys [files compensate groups]}]
+  (rx/concat
+   (rx/from (map (fn [[fid plan]] (dch/rebase-commits fid plan)) files))
+   (rx/from (map (fn [[fid commits]] (compensate-commits origin state fid commits))
+                 (group-by :file-id compensate)))
+   (rx/of (dwu/forget-undo-groups groups)
+          (prune-removed-shapes)
+          ;; Tells listeners (e.g. a library sync) which files lost commits
+          (ptk/data-event ::rolled-back
+                          {:file-ids (into (set (keys files)) (map :file-id) compensate)}))))
+
 (defn- rollback-rejected
   "Reverts the commits `rejected` in the save of `entry`, the later commits
   of its file and the rest of their undo groups. Pending commits are undone
@@ -583,13 +613,7 @@
 
       ptk/WatchEvent
       (watch [it state _]
-        (let [{:keys [files compensate groups]} @plan]
-          (rx/concat
-           (rx/from (map (fn [[fid plan]] (dch/rebase-commits fid plan)) files))
-           (rx/from (map (fn [[fid commits]] (compensate-commits it state fid commits))
-                         (group-by :file-id compensate)))
-           (rx/of (dwu/forget-undo-groups groups)
-                  (prune-removed-shapes)))))
+        (apply-rollback-plan it state @plan))
 
       ptk/EffectEvent
       (effect [_ _ _]
@@ -720,7 +744,8 @@
                                                   (ex-info hint {:type :persistence
                                                                  :code code
                                                                  :commit-id commit-id
-                                                                 :file-id (:file-id commit)}))))]
+                                                                 :file-id (:file-id commit)
+                                                                 :unsaved-commits (count-unsaved-commits state)}))))]
           (if (and (some? token)
                    (not= token (dm/get-in state [:persistence :retry-token])))
             ;; Stale retry timer: its episode was superseded. Stay silent.
@@ -832,18 +857,35 @@
   rejecting: callers use it to avoid snapshotting a file whose edits were
   never saved. What must not survive is the halt. Left in place, the failed
   commits sit at the head of the queue forever and, because the queue is
-  shared, they also block the pending edits of every other file."
-  []
-  (ptk/reify ::release-failed-file
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [commit-id (get-in state [:persistence :error :commit-id])
-            file-id   (get-in state [:persistence :index commit-id :file-id])]
-        (update state :persistence
-                #(-> %
+  shared, they also block the pending edits of every other file.
+
+  With `revert?` the file is still open with the released edits applied,
+  so they are rolled back as a rejection would be: undone on screen and
+  cut from the undo history."
+  [revert?]
+  (let [plan (volatile! nil)]
+    (ptk/reify ::release-failed-file
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [pstate    (:persistence state)
+              commit-id (get-in pstate [:error :commit-id])
+              file-id   (get-in pstate [:index commit-id :file-id])
+              plan'     (when (and revert? file-id)
+                          (pcm/release-plan pstate file-id))]
+          (vreset! plan plan')
+          (assoc state :persistence
+                 (-> (if plan'
+                       (pcm/without-rolled-back pstate {:file-id file-id} plan')
+                       pstate)
                      (drop-file-commits file-id)
                      (pcm/prune-remote-changes file-id)
-                     (dissoc :failing-since :slow-failures)))))))
+                     (dissoc :failing-since :slow-failures)))))
+
+      ptk/WatchEvent
+      (watch [it state _]
+        (if-let [plan @plan]
+          (apply-rollback-plan it state plan)
+          (rx/empty))))))
 
 (defn- queue-needs-a-runner?
   "True when the queue still holds commits that nobody is sending.
@@ -914,6 +956,16 @@
            (rx/of (flush-buffer))
            (rx/empty)))))))
 
+(defn- notify-kept-failure
+  "Shows the save failure the queue keeps again, so the count of unsaved
+  changes replaces the notice the role change shows."
+  []
+  (ptk/reify ::notify-kept-failure
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [error (dm/get-in state [:persistence :error])]
+        (errors/flash-persistence (ex-info (:hint error) error))))))
+
 (defn- recover-persistence
   "Lifts a halted queue when a file is opened again or the role changes.
 
@@ -931,7 +983,8 @@
 
   A lost permission is not a temporary condition. The backend raises
   `:not-found` for it, and replaying the save to find that out routes the
-  user to the exception page."
+  user to the exception page. A role change that leaves the user a viewer
+  keeps those edits; the one that brings edit rights back releases them."
   [opened-file?]
   (ptk/reify ::recover-persistence
     ptk/WatchEvent
@@ -953,8 +1006,17 @@
            (slow-retry-pending? (:persistence state))
            (rx/of (resume-persistence true))
 
+           ;; A viewer's edits wait for edit rights to come back, still
+           ;; queued and on screen.
+           (and (not opened-file?)
+                (= :save-permission-denied (dm/get-in state [:persistence :error :code]))
+                (not (dm/get-in state [:permissions :can-edit])))
+           (rx/of (notify-kept-failure))
+
+           ;; An opened file was loaded without the released edits; one
+           ;; still open shows them, so they are reverted.
            (= :error status)
-           (rx/of (release-failed-file) (resume-persistence))
+           (rx/of (release-failed-file (not opened-file?)) (resume-persistence))
 
            (queue-needs-a-runner? (:persistence state))
            (rx/of (resume-persistence))
@@ -1098,6 +1160,16 @@
                                     (ptk/type? ::rollback-rejected %)
                                     (ptk/type? ::release-failed-file %)))))
               (rx/map (fn [_] (sync-unload-guard)))
+              (rx/take-until stoper-s))
+
+         ;; Locks the workspace while saves fail and the user can edit
+         (->> stream
+              (rx/filter #(or (ptk/type? ::update-status %)
+                              (ptk/type? ::persistence-failed %)
+                              (ptk/type? ::resume-persistence %)
+                              (ptk/type? ::discard-commit %)
+                              (ptk/type? ::dc/change-team-role %)))
+              (rx/map (fn [_] (plk/sync-failure-lock)))
               (rx/take-until stoper-s))
 
          (->> local-commits-s

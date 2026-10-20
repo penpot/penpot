@@ -30,6 +30,7 @@
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-interactions-test]
+   [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
    [frontend-tests.data.workspace-pages-test]
@@ -129,6 +130,7 @@
    [frontend-tests.ui.sidebar-scroll-test]
    [frontend-tests.ui.static-test]
    [frontend-tests.ui.stroke-menu-test]
+   [frontend-tests.ui.viewport-top-bar-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
@@ -179,6 +181,7 @@
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
    'frontend-tests.data.workspace-interactions-test
+   'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
    'frontend-tests.data.workspace-pages-test
@@ -279,6 +282,7 @@
    'frontend-tests.ui.sidebar-scroll-test
    'frontend-tests.ui.static-test
    'frontend-tests.ui.stroke-menu-test
+   'frontend-tests.ui.viewport-top-bar-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test

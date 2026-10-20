@@ -1788,6 +1788,12 @@ msgid "errors.save-failed"
 msgstr ""
 "El autoguardado se ha detenido en esta sesión, así que los cambios desde el último guardado correcto no se podrán guardar. Descarga el informe para ayudarnos a arreglarlo y recarga la página, o sal de este fichero y vuelve a abrirlo, para seguir editando."
 
+#: src/app/main/errors.cljs
+msgid "errors.save-permission-lost"
+msgid_plural "errors.save-permission-lost"
+msgstr[0] "Ya no puedes editar este archivo, así que 1 cambio no se ha podido guardar. Recarga la página para ver el archivo como está ahora."
+msgstr[1] "Ya no puedes editar este archivo, así que %s cambios no se han podido guardar. Recarga la página para ver el archivo como está ahora."
+
 #: src/app/main/data/persistence.cljs
 msgid "errors.save-rejected-changes-undone"
 msgstr "Algunos de tus últimos cambios no se han podido guardar y se han deshecho. El resto de tu trabajo está guardado."
@@ -8401,6 +8407,16 @@ msgstr "¡LA EXTENSIÓN '%s' HA SIDO INSTALADA PARA TU USUARIO!"
 #: src/app/main/ui/workspace/plugins.cljs:528
 msgid "workspace.plugins.try-out.try"
 msgstr "PROBAR PLUGIN"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs
+#, markdown
+msgid "workspace.save-failure.retrying"
+msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs
+#, markdown
+msgid "workspace.save-failure.stopped"
+msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
 
 #: src/app/main/ui/workspace/context_menu.cljs:659
 msgid "workspace.shape.menu.add-flex"

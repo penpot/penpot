@@ -37,6 +37,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as dps]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
@@ -107,6 +108,7 @@
     (map extract-change changes)))
 
 (declare sync-file)
+(declare notify-sync-file)
 
 (defn extract-path-if-missing
   [item]
@@ -1201,6 +1203,30 @@
                  (when-not (= (:frame-id shape) uuid/zero)
                    (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))))
 
+(defn- mark-library-synced
+  "Tells the backend that `file-id` is synced with `library-id`. Only the
+  update notice depends on it, so a failure (e.g. edit rights lost
+  meanwhile) is logged and ignored."
+  [file-id library-id]
+  (->> (rp/cmd! :update-file-library-sync-status
+                {:file-id file-id
+                 :library-id library-id})
+       (rx/catch (fn [cause]
+                   (log/warn :hint "unable to mark the library as synced"
+                             :file-id (str file-id)
+                             :library-id (str library-id)
+                             :cause cause)
+                   (rx/empty)))))
+
+(defn- restore-library-synced-at
+  "Puts back the sync date of `library-id` a rejected sync moved forward,
+  so its update notice can show again."
+  [library-id synced-at]
+  (ptk/reify ::restore-library-synced-at
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:files library-id] assoc :synced-at synced-at))))
+
 (defn sync-file
   "Synchronize the given file from the given library. Walk through all
   shapes in all pages in the file that use some color, typography or
@@ -1221,70 +1247,96 @@
                    (contains? valid-asset-types asset-type)))
    (dm/assert! (or (nil? asset-id)
                    (uuid? asset-id)))
-   (ptk/reify ::sync-file
-     ptk/UpdateEvent
-     (update [_ state]
-       (if (and (not= library-id (:current-file-id state))
-                (nil? asset-id))
-         (d/update-in-when state [:files library-id] assoc :synced-at (ct/now))
-         state))
+   (let [;; The sync date this sync replaced, if it replaced one
+         synced-at (volatile! ::unchanged)]
+     (ptk/reify ::sync-file
+       ptk/UpdateEvent
+       (update [_ state]
+         (if (and (not= library-id (:current-file-id state))
+                  (nil? asset-id))
+           (do (vreset! synced-at (dm/get-in state [:files library-id :synced-at]))
+               (d/update-in-when state [:files library-id] assoc :synced-at (ct/now)))
+           state))
 
-     ptk/WatchEvent
-     (watch [it state _]
-       (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
-         (log/info :msg "SYNC-FILE"
-                   :file (debug-pretty-file file-id state)
-                   :library (debug-pretty-file library-id state)
-                   :asset-type asset-type
-                   :asset-id asset-id
-                   :undo-group undo-group)
-         (let [ldata           (dsh/lookup-file-data state file-id)
-               libraries       (dsh/lookup-libraries state)
-               current-file-id (:current-file-id state)
+       ptk/WatchEvent
+       (watch [it state stream]
+         (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
+           (log/info :msg "SYNC-FILE"
+                     :file (debug-pretty-file file-id state)
+                     :library (debug-pretty-file library-id state)
+                     :asset-type asset-type
+                     :asset-id asset-id
+                     :undo-group undo-group)
+           (let [ldata           (dsh/lookup-file-data state file-id)
+                 libraries       (dsh/lookup-libraries state)
+                 current-file-id (:current-file-id state)
 
-               changes         (cll/generate-sync-file-changes
-                                (pcb/empty-changes it)
-                                undo-group
-                                asset-type
-                                file-id
-                                asset-id
-                                library-id
-                                libraries
-                                current-file-id)
+                 changes         (cll/generate-sync-file-changes
+                                  (pcb/empty-changes it)
+                                  undo-group
+                                  asset-type
+                                  file-id
+                                  asset-id
+                                  library-id
+                                  libraries
+                                  current-file-id)
 
-               find-frames     (fn [change]
-                                 (->> (ch/frames-changed ldata change)
-                                      (map #(assoc %1 :page-id (:page-id change)))))
+                 find-frames     (fn [change]
+                                   (->> (ch/frames-changed ldata change)
+                                        (map #(assoc %1 :page-id (:page-id change)))))
 
-               updated-frames  (->> changes
-                                    :redo-changes
-                                    (mapcat find-frames)
-                                    distinct)
+                 updated-frames  (->> changes
+                                      :redo-changes
+                                      (mapcat find-frames)
+                                      distinct)
 
-               pending-ids     (sync-file-pending-ids file-id changes)
+                 pending-ids     (sync-file-pending-ids file-id changes)
 
-               frontend-sync
-               (sync-file-frontend-events
-                file-id changes updated-frames undo-group)]
+                 frontend-sync
+                 (sync-file-frontend-events
+                  file-id changes updated-frames undo-group)]
 
-           (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
-                                                              (:redo-changes changes)
-                                                              ldata))
-           (rx/concat
-            ;; Keep the sync pending until its layout work starts.
-            (wrf/with-pending :sync-file pending-ids frontend-sync)
+             (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
+                                                                (:redo-changes changes)
+                                                                ldata))
+             (rx/concat
+              ;; Keep the sync pending until its layout work starts.
+              (wrf/with-pending :sync-file pending-ids frontend-sync)
 
-            (when (not= file-id library-id)
-              ;; When we have just updated the library file, give some time for the
-              ;; update to finish, before marking this file as synced.
-              ;; TODO: look for a more precise way of syncing this.
-              ;; Maybe by using the stream (second argument passed to watch)
-              ;; to wait for the corresponding changes-committed and then proceed
-              ;; with the :update-file-library-sync-status mutation.
-              (rx/concat (rx/timer 3000)
-                         (rp/cmd! :update-file-library-sync-status
-                                  {:file-id file-id
-                                   :library-id library-id}))))))))))
+              (when (not= file-id library-id)
+                (let [stopper-s (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
+                      restore   (if (= ::unchanged @synced-at)
+                                  (rx/empty)
+                                  (rx/of (restore-library-synced-at library-id @synced-at)))]
+                  (->> (rx/merge
+                        ;; The server rejected the sync: its commits were undone
+                        (->> stream
+                             (rx/filter (ptk/type? ::dps/rolled-back))
+                             (rx/filter #(contains? (:file-ids (deref %)) file-id))
+                             (rx/map (constantly ::rolled-back)))
+                        ;; The flush of the sync commits starts within 3 s; a save
+                        ;; that fails for good ends the wait with no value
+                        (->> (rx/timer 3000)
+                             (rx/mapcat (fn [_] (dps/wait-persisted)))
+                             (rx/map (constantly ::saved))
+                             (rx/if-empty ::failed)))
+                       (rx/take 1)
+                       (rx/take-until stopper-s)
+                       (rx/mapcat (fn [outcome]
+                                    (case outcome
+                                      ::saved
+                                      (mark-library-synced file-id library-id)
+
+                                      ;; Never saved: the update notice can show again
+                                      ::failed
+                                      restore
+
+                                      ::rolled-back
+                                      (rx/concat
+                                       restore
+                                       ;; Checked once the rollback has undone the sync locally
+                                       (->> (dps/wait-persisted)
+                                            (rx/map (fn [_] (notify-sync-file)))))))))))))))))))
 
 
 ;; FIXME: the data should be set on the backend for clock consistency
