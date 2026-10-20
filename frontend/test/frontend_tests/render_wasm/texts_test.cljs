@@ -20,6 +20,7 @@
    [app.render-wasm.api :as api]
    [app.render-wasm.api.texts :as texts]
    [app.render-wasm.text-editor :as text-editor]
+   [app.util.text.content.styles :as content-styles]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]))
 
@@ -67,6 +68,8 @@
                   {:text "本"}])]
     (t/is (= {:text-combine-upright "none"
               :text-emphasis "filled-dot"
+              :text-emphasis-position "auto"
+              :text-underline-position "auto"
               :ruby "にち"
               :ruby-hidden false
               :ruby-size "half"
@@ -80,6 +83,8 @@
               content (selection 0 0 0 1))))
     (t/is (= {:text-combine-upright "none"
               :text-emphasis "none"
+              :text-emphasis-position "auto"
+              :text-underline-position "auto"
               :ruby ""
               :ruby-hidden false
               :ruby-size "half"
@@ -113,6 +118,8 @@
                  [{:text "平成"
                    :text-combine-upright "digits2"
                    :text-emphasis "filled-dot"
+                   :text-emphasis-position "under-left"
+                   :text-underline-position "right"
                    :ruby "へいせい"
                    :ruby-hidden true
                    :ruby-size "third"
@@ -126,6 +133,8 @@
                    :font-features "vpal"}])]
     (t/is (= {:text-combine-upright :multiple
               :text-emphasis :multiple
+              :text-emphasis-position :multiple
+              :text-underline-position :multiple
               :ruby :multiple
               :ruby-hidden :multiple
               :ruby-size :multiple
@@ -394,6 +403,8 @@
    :ruby-align           11
    :ruby-overhang        12
    :ruby-side            13
+   :text-emphasis-position 14
+   :text-underline-position 15
    :padding              [14 15]
    :ruby-length          72})
 
@@ -535,3 +546,34 @@
   (t/is (= 0 (sr/translate-japanese-enum :ruby-side "left")))
   (t/is (= 1 (sr/translate-japanese-enum :ruby-side "under")))
   (t/is (= 1 (sr/translate-japanese-enum :ruby-side :under))))
+
+
+(t/deftest decoration-positions-use-the-former-padding-bytes
+  (let [view (serialized-span {:text "中文" :text-emphasis-position "under-left"
+                               :text-underline-position "under-right"})]
+    (t/is (= 4 (span-byte view :text-emphasis-position)))
+    (t/is (= 5 (span-byte view :text-underline-position)))
+    (t/is (= 16 (.getFloat32 view 16 true)))))
+
+
+(t/deftest decoration-edits-preserve-an-existing-reading-as-one-group
+  (let [paragraph {:type "paragraph" :children [{:text "你好" :ruby "nǐ hǎo"}
+                                                {:text "世界" :font-weight "700"}]}
+        result (text-editor/apply-attrs-to-paragraph paragraph 1 3 {:text-emphasis-position "under-left"})]
+    (t/is (= [{:text "你好" :ruby "nǐ hǎo" :text-emphasis-position "under-left"}
+              {:text "世" :font-weight "700" :text-emphasis-position "under-left"}
+              {:text "界" :font-weight "700"}]
+             (:children result)))))
+
+
+(t/deftest dom-editor-style-data-keeps-decoration-positions
+  (let [attrs {:text-emphasis-position "under-left" :text-underline-position "under-right"}
+        styles (content-styles/attrs->styles attrs)]
+    (t/is (= "under-left" (aget styles "--text-emphasis-position")))
+    (t/is (= "under-right" (aget styles "--text-underline-position")))
+    (t/is (= attrs (content-styles/styles->attrs (js->clj styles))))))
+
+
+(t/deftest a-collapsed-decoration-range-does-not-restyle-a-reading
+  (let [paragraph {:type "paragraph" :children [{:text "你好" :ruby "nǐ hǎo"}]}]
+    (t/is (= paragraph (text-editor/apply-attrs-to-paragraph paragraph 1 1 {:text-emphasis-position "under-left"})))))

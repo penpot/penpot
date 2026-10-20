@@ -4751,6 +4751,25 @@ export interface Text extends ShapeBase {
    */
   warichu: 'none' | 'warichu' | 'mixed';
 
+  /** Emphasis position in horizontal and vertical text; auto uses the language default. */
+  textEmphasisPosition:
+    | 'auto'
+    | 'over-right'
+    | 'over-left'
+    | 'under-right'
+    | 'under-left'
+    | 'mixed';
+
+  /** Underline depth and vertical side; independent of emphasis and readings. */
+  textUnderlinePosition:
+    | 'auto'
+    | 'under'
+    | 'left'
+    | 'right'
+    | 'under-left'
+    | 'under-right'
+    | 'mixed';
+
   /**
    * OpenType proportional metrics for Japanese text: `palt` for horizontal
    * writing, `vpal` for vertical. `none` (the default) turns them off.
@@ -4915,6 +4934,27 @@ export interface TextRange {
 
   /** Warichu applied to the range, or 'mixed' for different span values. */
   warichu: 'none' | 'warichu' | 'mixed' | null;
+
+  /** Emphasis position in horizontal and vertical text; auto uses the language default. */
+  textEmphasisPosition:
+    | 'auto'
+    | 'over-right'
+    | 'over-left'
+    | 'under-right'
+    | 'under-left'
+    | 'mixed'
+    | null;
+
+  /** Underline depth and vertical side; independent of emphasis and readings. */
+  textUnderlinePosition:
+    | 'auto'
+    | 'under'
+    | 'left'
+    | 'right'
+    | 'under-left'
+    | 'under-right'
+    | 'mixed'
+    | null;
 
   /**
    * OpenType proportional metrics for the range: `palt` (horizontal), `vpal`

@@ -7,7 +7,7 @@ use skia_safe::{
 use crate::math::Rect;
 use crate::shapes::{Stroke, StrokeKind, TextContent, VerticalAlign};
 
-use super::annotations::{emphasis_mark_center, ruby_strip_x, EmphasisMark, RubyCell};
+use super::annotations::{emphasis_mark_center, EmphasisMark, RubyCell};
 use super::font_tables::upright_baseline;
 use super::layout::{column_base_center, CellKind, VerticalCell, VerticalLayout};
 use super::shaping::{single_glyph_blob, ShapedRun};
@@ -247,9 +247,7 @@ fn warichu_line_draws(runs: &[ShapedRun], x_center: f32, y_top: f32) -> Vec<Glyp
 /// own fallback-font run.
 fn ruby_draws(layout: &VerticalLayout, ruby: &RubyCell, origin: (f32, f32)) -> Vec<GlyphDraw> {
     let column = &layout.columns[ruby.column];
-    let gutter_center = origin.0
-        + ruby_strip_x(column, ruby.font_size, ruby.base_font_size, ruby.side)
-        + ruby.font_size / 2.0;
+    let gutter_center = origin.0 + ruby.strip_x(column) + ruby.font_size / 2.0;
     ruby.glyphs
         .iter()
         .zip(&ruby.glyph_tops)
@@ -689,9 +687,8 @@ fn push_text_path(
 }
 
 /// Decoration bar of a cell in absolute coordinates. Underline runs along
-/// the *left* side of the column (the under side in `vertical-rl`);
-/// line-through runs down the centre. Both span the cell's extent, so
-/// adjacent decorated cells form one bar.
+/// the selected side of the column; line-through runs down the centre.
+/// Both span the cell's extent, so adjacent decorated cells form one bar.
 fn decoration_bar(
     layout: &VerticalLayout,
     cell: &VerticalCell,
@@ -706,7 +703,12 @@ fn decoration_bar(
     let bar_x = if line_through {
         x_center
     } else {
-        x_center - cell.font_size / 2.0 - cell.font_size / 9.0
+        let sign = if cell.underline_side == crate::shapes::RubySide::Over {
+            1.0
+        } else {
+            -1.0
+        };
+        x_center + sign * (cell.font_size / 2.0 + cell.font_size / 9.0)
     };
     skia::Rect::from_ltrb(
         bar_x - thickness / 2.0,
@@ -801,6 +803,25 @@ mod tests {
         );
         assert!((path_bounds.width() - normalized_bounds.width()).abs() < 0.01);
         assert!((path_bounds.height() - normalized_bounds.height()).abs() < 0.01);
+    }
+
+    #[test]
+    fn underline_side_changes_the_bar_without_moving_the_base_or_strike() {
+        let mut content = decorated_content("中文", TextDecoration::UNDERLINE);
+        let left = layout_content(&content, 400.0);
+        content.paragraphs_mut()[0].children_mut()[0].text_underline_position =
+            crate::shapes::TextUnderlinePosition::Right;
+        let right = layout_content(&content, 400.0);
+        let left_bar = decoration_bar(&left, &left.cells[0], 0.0, 0.0, false);
+        let right_bar = decoration_bar(&right, &right.cells[0], 0.0, 0.0, false);
+        let center = column_base_center(&left.columns[0]);
+        assert!(left_bar.center_x() < center);
+        assert!(right_bar.center_x() > center);
+        assert_eq!(left.cells[0].top, right.cells[0].top);
+        assert_eq!(
+            decoration_bar(&left, &left.cells[0], 0.0, 0.0, true),
+            decoration_bar(&right, &right.cells[0], 0.0, 0.0, true)
+        );
     }
 
     #[test]
@@ -910,8 +931,7 @@ mod tests {
         let ruby = &layout.ruby_cells[0];
         let column = &layout.columns[ruby.column];
         let (origin_x, origin_y) = layout.origin(&bounds, VerticalAlign::Top);
-        let strip_x =
-            origin_x + ruby_strip_x(column, ruby.font_size, ruby.base_font_size, ruby.side);
+        let strip_x = origin_x + ruby.strip_x(column);
         let strip = skia::Rect::from_xywh(strip_x, origin_y, ruby.font_size, 400.0);
 
         let mut surface = skia::surfaces::raster_n32_premul((256, 512)).unwrap();

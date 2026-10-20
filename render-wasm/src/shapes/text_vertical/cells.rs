@@ -204,6 +204,7 @@ impl<'a> SpanCells<'a> {
             paint: self.paint,
             font_size: self.span.font_size,
             decoration: self.span.text_decoration,
+            underline_side: self.span.text_underline_position.side(),
             glyph_flow_shift: 0.0,
         }
     }

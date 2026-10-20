@@ -9,7 +9,6 @@ use skia_safe::{
 use crate::globals::get_resources;
 use crate::math::Rect;
 use crate::shapes::japanese::JapaneseClass;
-use crate::shapes::text_japanese::EMPHASIS_FONT_SCALE;
 use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{
     merge_fills, AppliedTextTransform, FontFeatures, GrowType, LineAdjustment, Paragraph, RubySide,
@@ -100,6 +99,7 @@ pub struct VerticalCell {
     pub font_size: f32,
     /// Span text decoration, painted as vertical bars along the column.
     pub decoration: Option<TextDecoration>,
+    pub underline_side: RubySide,
     /// Draw-only flow shift for half-width opening punctuation (jlreq aki).
     pub glyph_flow_shift: f32,
 }
@@ -256,37 +256,45 @@ impl ColumnGeometry {
         // on the logical annotation side. In vertical-rl, `over` is right and
         // `under` is left. `None` keeps the column advance, as horizontal
         // keeps the line height.
-        let reserves = |span: &&TextSpan| span.annotation_clearance.is_auto();
-        let ruby_gutter = |side| {
-            spans
+        let gutter = |side| {
+            let ruby = spans
                 .iter()
-                .filter(reserves)
-                .filter(|span| span.has_ruby() && span.ruby_side == side)
+                .filter(|span| {
+                    span.annotation_clearance.is_auto() && span.has_ruby() && span.ruby_side == side
+                })
                 .map(TextSpan::ruby_font_size)
-                .fold(0.0, f32::max)
+                .fold(0.0, f32::max);
+            let emphasis = spans
+                .iter()
+                .filter(|span| {
+                    span.annotation_clearance.is_auto()
+                        && !span.text_emphasis.is_none()
+                        && span.emphasis_side(true) == side
+                })
+                .map(|span| span.font_size * crate::shapes::text_japanese::EMPHASIS_FONT_SCALE)
+                .fold(0.0, f32::max);
+            let decoration = spans
+                .iter()
+                .map(|span| span.font_size * span.decoration_room_em(side, true))
+                .fold(0.0, f32::max);
+            // Keep the original mixed-font gutter: when any span stacks the
+            // two annotations, reserve their independent maximum sizes.
+            let stacked = spans.iter().any(|span| {
+                !span.text_emphasis.is_none()
+                    && span.ruby_side == side
+                    && span.stacks_emphasis_outside_ruby(true)
+            });
+            decoration
+                + if stacked {
+                    ruby + emphasis
+                } else {
+                    ruby.max(emphasis)
+                }
         };
-        let ruby_over_gutter = ruby_gutter(RubySide::Over);
-        // Emphasis takes the over (right) side. Auto-clearance spans with both
-        // annotations stack there; under-side ruby stays separate.
-        let emphasis_gutter = spans
-            .iter()
-            .filter(reserves)
-            .filter(|span| !span.text_emphasis.is_none())
-            .map(|span| span.font_size * EMPHASIS_FONT_SCALE)
-            .fold(0.0, f32::max);
-        let stacked = spans
-            .iter()
-            .any(|s| s.stacks_emphasis_outside_ruby() && !s.text_emphasis.is_none());
-        let over_gutter = if stacked {
-            ruby_over_gutter + emphasis_gutter
-        } else {
-            ruby_over_gutter.max(emphasis_gutter)
-        };
-
         Self {
             base_width: max_font_size * line_height,
-            under_gutter: ruby_gutter(RubySide::Under),
-            over_gutter,
+            under_gutter: gutter(RubySide::Under),
+            over_gutter: gutter(RubySide::Over),
         }
     }
 

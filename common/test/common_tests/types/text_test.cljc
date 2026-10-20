@@ -499,3 +499,15 @@
   (doseq [language ["zh-Hans-CN" "zh-Hant-CN" "zh-Hant-TW" "zh-Hant-HK" "ko-KR"]]
     (t/is (ctst/valid-content?
            (with-paragraph-attrs {:text-language language :korean-wrap "keep-words"})))))
+
+
+(t/deftest annotation-position-enums-are-independent-span-styles
+  (doseq [[attr values] [[:text-emphasis-position ["auto" "over-right" "over-left" "under-right" "under-left"]]
+                         [:text-underline-position ["auto" "under" "left" "right" "under-left" "under-right"]]]]
+    (t/is (= "auto" (jl/enum-default attr)))
+    (t/is (some #{attr} jl/span-attrs))
+    (doseq [value values]
+      (t/is (jl/valid-enum-value? attr value))
+      (t/is (ctst/valid-content? (with-span-attrs {attr value}))))
+    (t/is (not (ctst/valid-content? (with-span-attrs {attr "invalid"}))))
+    (t/is (not (jl/valid-enum-value? attr "invalid")))))

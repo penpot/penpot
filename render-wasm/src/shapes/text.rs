@@ -2275,6 +2275,8 @@ pub struct TextSpan {
     pub text_combine_upright: TextCombineUpright,
     /// Emphasis mark (圏点 / bouten) applied to each base character.
     pub text_emphasis: TextEmphasis,
+    pub text_emphasis_position: TextEmphasisPosition,
+    pub text_underline_position: TextUnderlinePosition,
     /// Ruby (furigana) annotation for this span; empty means no ruby.
     pub ruby: String,
     pub ruby_size: RubySize,
@@ -2307,6 +2309,8 @@ impl Default for TextSpan {
             text_orientation: TextOrientation::default(),
             text_combine_upright: TextCombineUpright::default(),
             text_emphasis: TextEmphasis::default(),
+            text_emphasis_position: TextEmphasisPosition::default(),
+            text_underline_position: TextUnderlinePosition::default(),
             ruby: String::default(),
             ruby_size: RubySize::default(),
             ruby_align: RubyAlign::default(),
@@ -2395,34 +2399,79 @@ impl TextSpan {
     /// the line height: the ruby at its size plus the emphasis marks. `None`
     /// keeps the set line height, so annotations sit in the line gap.
     pub fn annotation_room_em(&self) -> f32 {
+        self.annotation_side_room_em(RubySide::Over, false)
+            + self.annotation_side_room_em(RubySide::Under, false)
+    }
+
+    pub fn emphasis_side(&self, vertical: bool) -> RubySide {
+        self.text_emphasis_position.side(
+            vertical,
+            super::text_policy::TextLayoutPolicy::for_language(&self.language, false).is_chinese(),
+        )
+    }
+
+    pub fn underline_below_ink(&self) -> bool {
+        self.text_underline_position.below_ink(
+            super::text_policy::TextLayoutPolicy::for_language(&self.language, false).is_chinese(),
+        )
+    }
+
+    /// Only readings on the same side stack with emphasis marks.
+    pub fn stacks_emphasis_outside_ruby(&self, vertical: bool) -> bool {
+        self.annotation_clearance.is_auto()
+            && self.has_ruby()
+            && self.ruby_side == self.emphasis_side(vertical)
+    }
+
+    pub fn decoration_room_em(&self, side: RubySide, vertical: bool) -> f32 {
+        let underline = self
+            .text_decoration
+            .is_some_and(|kind| kind.contains(TextDecoration::UNDERLINE));
+        let underline_side = if vertical {
+            self.text_underline_position.side()
+        } else {
+            RubySide::Under
+        };
+        let positioned = self.text_underline_position != TextUnderlinePosition::Auto
+            || self.text_emphasis_position != TextEmphasisPosition::Auto
+            || super::text_policy::TextLayoutPolicy::for_language(&self.language, false)
+                .is_chinese();
+        if self.annotation_clearance.is_auto() && underline && positioned && side == underline_side
+        {
+            0.18
+        } else {
+            0.0
+        }
+    }
+
+    pub fn ruby_decoration_offset(&self, vertical: bool) -> f32 {
+        self.font_size * self.decoration_room_em(self.ruby_side, vertical)
+    }
+
+    pub fn emphasis_outside_offset(&self, vertical: bool) -> f32 {
+        let ruby = if self.stacks_emphasis_outside_ruby(vertical) {
+            self.ruby_font_size()
+        } else {
+            0.0
+        };
+        ruby + self.font_size * self.decoration_room_em(self.emphasis_side(vertical), vertical)
+    }
+
+    pub fn annotation_side_room_em(&self, side: RubySide, vertical: bool) -> f32 {
         if !self.annotation_clearance.is_auto() {
             return 0.0;
         }
-        let ruby = if self.has_ruby() {
+        let ruby = if self.has_ruby() && self.ruby_side == side {
             self.ruby_size.scale()
         } else {
             0.0
         };
-        let emphasis = if self.text_emphasis.is_none() {
-            0.0
-        } else {
+        let emphasis = if !self.text_emphasis.is_none() && self.emphasis_side(vertical) == side {
             super::text_japanese::EMPHASIS_FONT_SCALE
-        };
-        ruby + emphasis
-    }
-
-    /// Automatic clearance stacks emphasis marks outside an over-side ruby.
-    pub fn stacks_emphasis_outside_ruby(&self) -> bool {
-        self.annotation_clearance.is_auto() && self.has_ruby() && self.ruby_side == RubySide::Over
-    }
-
-    /// Cross-axis offset of the emphasis marks past a stacked ruby layer.
-    pub fn emphasis_ruby_offset(&self) -> f32 {
-        if self.stacks_emphasis_outside_ruby() {
-            self.ruby_font_size()
         } else {
             0.0
-        }
+        };
+        ruby + emphasis + self.decoration_room_em(side, vertical)
     }
 
     pub fn to_style(

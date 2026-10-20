@@ -126,6 +126,64 @@ impl From<RawTextEmphasis> for TextEmphasis {
 
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[repr(u8)]
+pub enum RawTextEmphasisPosition {
+    Auto = 0,
+    OverRight = 1,
+    OverLeft = 2,
+    UnderRight = 3,
+    UnderLeft = 4,
+}
+
+raw_enum_from_byte!(
+    RawTextEmphasisPosition,
+    Auto,
+    [Auto, OverRight, OverLeft, UnderRight, UnderLeft]
+);
+
+impl From<RawTextEmphasisPosition> for shapes::TextEmphasisPosition {
+    fn from(value: RawTextEmphasisPosition) -> Self {
+        match value {
+            RawTextEmphasisPosition::Auto => Self::Auto,
+            RawTextEmphasisPosition::OverRight => Self::OverRight,
+            RawTextEmphasisPosition::OverLeft => Self::OverLeft,
+            RawTextEmphasisPosition::UnderRight => Self::UnderRight,
+            RawTextEmphasisPosition::UnderLeft => Self::UnderLeft,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+pub enum RawTextUnderlinePosition {
+    Auto = 0,
+    Under = 1,
+    Left = 2,
+    Right = 3,
+    UnderLeft = 4,
+    UnderRight = 5,
+}
+
+raw_enum_from_byte!(
+    RawTextUnderlinePosition,
+    Auto,
+    [Auto, Under, Left, Right, UnderLeft, UnderRight]
+);
+
+impl From<RawTextUnderlinePosition> for shapes::TextUnderlinePosition {
+    fn from(value: RawTextUnderlinePosition) -> Self {
+        match value {
+            RawTextUnderlinePosition::Auto => Self::Auto,
+            RawTextUnderlinePosition::Under => Self::Under,
+            RawTextUnderlinePosition::Left => Self::Left,
+            RawTextUnderlinePosition::Right => Self::Right,
+            RawTextUnderlinePosition::UnderLeft => Self::UnderLeft,
+            RawTextUnderlinePosition::UnderRight => Self::UnderRight,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
 pub enum RawWarichu {
     None = 0,
     Warichu = 1,
