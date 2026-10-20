@@ -45,6 +45,26 @@
   color: var(--color-foreground-secondary);
   padding-left: deprecated.$s-8;
   width: max-content;
+
+  strong {
+    font-weight: deprecated.$fw700;
+  }
+}
+
+.viewport-actions-save-failed {
+  width: max-content;
+  min-width: min(#{deprecated.$s-400}, calc(100% - var(--sp-xl)));
+  max-width: calc(100% - var(--sp-xl));
+
+  .viewport-actions-container {
+    height: auto;
+    min-height: deprecated.$s-48;
+    min-width: 0;
+  }
+
+  .viewport-actions-title {
+    width: auto;
+  }
 }
 
 .done-btn {

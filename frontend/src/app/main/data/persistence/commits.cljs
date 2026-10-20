@@ -128,6 +128,14 @@
      :compensate (into [] (filter #(contains? groups (:undo-group %))) saved)
      :groups     groups}))
 
+(defn release-plan
+  "How to roll back every pending commit of `file-id`, as if the server had
+  rejected them all, together with the rest of their undo groups."
+  [pstate file-id]
+  (rollback-plan pstate
+                 {:file-id file-id :commits []}
+                 {:commit-ids (map :id (pending-commits pstate file-id))}))
+
 (defn rollback-summary
   "Counts the commits `plan` reverts and the files they belong to."
   [{:keys [files compensate]}]

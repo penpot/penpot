@@ -611,8 +611,10 @@
       "runtime"        (throw (RuntimeException. message))
       "ex-info"        (throw (ex-info message {}))
       "assertion"      (throw (AssertionError. message))
-      "sql"            (throw (java.sql.SQLException. message))
-      "io"             (throw (java.io.IOException. message))
+      "sql"            (throw (org.postgresql.util.PSQLException.
+                               message org.postgresql.util.PSQLState/CONNECTION_FAILURE))
+      "io"             (throw (java.net.SocketTimeoutException. message))
+      "eof"            (throw (java.io.EOFException. message))
       "interrupted"    (throw (InterruptedException. message))
       "not-found"      (ex/raise :type :not-found :code :object-not-found :hint message)
       "stack-overflow" (throw (StackOverflowError. message))

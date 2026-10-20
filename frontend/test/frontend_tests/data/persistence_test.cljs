@@ -26,6 +26,7 @@
    [app.main.data.persistence.commits :as pcm]
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
@@ -613,10 +614,12 @@
        (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
                                     (= 1 (count (get-in @store [:persistence :queue]))))
                               "the save fails terminally"))
-       ;; The user acts again: a team-role change is one of the two real
+       ;; Edit rights come back: a team-role change is one of the two real
        ;; recovery triggers (the other is opening a file, whose event does
        ;; real work and is not usable as a bare signal here).
-       (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+       (ptk/emit! store
+                  #(assoc-in % [:permissions :can-edit] true)
+                  (ptk/data-event :app.main.data.common/change-team-role))
        (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
                                     (empty? (get-in @store [:persistence :queue])))
                               "re-entering the file settles the queue"))
@@ -625,6 +628,135 @@
        (t/is (empty? @requests)
              "the edit that cannot be saved is not replayed on re-entry")
        (t/is (= 1 (count @failures)) "the user is still notified exactly once")))))
+
+;; Scenario: the user renames a shape and is made a viewer before the save,
+;; so it fails for lost permission; the role event comes again, then edit
+;; rights return. Proves: the edit is kept while the user is a viewer, and
+;; released with edit rights back, the file goes back to the server's data
+;; and the history loses the edit, so the canvas never shows a change the
+;; server does not have.
+(t/deftest ^:async regaining-edit-rights-reverts-the-released-edit
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests failures store]}]
+       (await
+        (mock/with-mocks*
+          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
+          (let [page-id  (uuid/next)
+                shape-id (uuid/next)
+                commit   (rename-commit file-id page-id shape-id "A" "B")]
+            (ptk/emit! store
+                       #(-> %
+                            (assoc :current-page-id page-id)
+                            (assoc-in [:files file-id :data] (file-data page-id shape-id "B"))
+                            (assoc :workspace-undo {:items [{:undo-group (:undo-group @commit)
+                                                             :undo-groups #{(:undo-group @commit)}
+                                                             :undo-changes (:undo-changes @commit)
+                                                             :redo-changes (:redo-changes @commit)
+                                                             :tags #{}}]
+                                                    :index 0}))
+                       commit
+                       #(assoc-in % [:permissions :can-edit] false)
+                       ::dps/force-persist)
+            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                   "lost permission fails the save"))
+
+            (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+            (await (async/settle))
+            (t/is (= 1 (count (get-in @store [:persistence :queue])))
+                  "a viewer keeps the edit")
+            (t/is (= "B" (shape-name store file-id page-id shape-id)))
+            (t/is (= 2 (count @failures))
+                  "the count notice shows again over the role change notice")
+
+            (ptk/emit! store
+                       #(assoc-in % [:permissions :can-edit] true)
+                       (ptk/data-event :app.main.data.common/change-team-role))
+            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                         (empty? (get-in @store [:persistence :queue])))
+                                   "edit rights back release the edit"))
+            (t/is (= "A" (shape-name store file-id page-id shape-id))
+                  "the file shows the server's data")
+            (t/is (empty? (get-in @store [:workspace-undo :items]))
+                  "the released edit leaves the history")
+            (t/is (empty? @requests) "the released edit is not sent"))))))))
+
+;; Answers every save with an unexpected server error, a terminal failure.
+(defn- server-error
+  [_ _]
+  (rp/handle-response {:status 500
+                       :body {:type :server-error :code :unhandled}
+                       :uri "https://penpot.example.com/api/main/methods/update-file"}))
+
+;; Scenario: the user is in the Inspect tab (read-only) when a save fails
+;; terminally, then goes back to Design while the dialog is up. The
+;; workspace stays read-only until the failure is released, and then takes
+;; the mode the user last asked for. Proves: the lock does not lose the
+;; read-only mode the workspace had.
+(t/deftest ^:async a-failed-save-locks-the-workspace-until-it-recovers
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (ptk/emit! store #(assoc-in % [:workspace-global :read-only?] true)
+                  (local-commit file-id)
+                  ::dps/force-persist)
+       (await (async/wait-for #(some? (get-in @store [:workspace-global :persistence-lock]))
+                              "the failed save locks the workspace"))
+       (t/is (true? (get-in @store [:workspace-global :read-only?])))
+       (t/is (true? (get-in @store [:workspace-global :persistence-lock :read-only?])))
+
+       (ptk/emit! store (dwc/set-workspace-read-only false))
+       (await (async/wait-for #(false? (get-in @store [:workspace-global :persistence-lock :read-only?]))
+                              "the requested mode is kept for later"))
+       (t/is (true? (get-in @store [:workspace-global :read-only?]))
+             "the workspace stays read-only while saves fail")
+
+       (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+       (await (async/wait-for #(nil? (get-in @store [:workspace-global :persistence-lock]))
+                              "recovery lifts the lock"))
+       (t/is (false? (get-in @store [:workspace-global :read-only?]))
+             "the workspace takes the mode the user asked for"))
+     server-error)))
+
+;; Scenario: the user is made a viewer while an edit waits to be saved. The
+;; save fails for lost permission, but the workspace is already read-only
+;; for a viewer: no lock and no dialog, only the failure toast. Proves: a
+;; viewer is never blocked from looking at the file.
+(t/deftest ^:async a-viewer-is-not-locked-by-a-failed-save
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id failures store]}]
+       (ptk/emit! store (local-commit file-id)
+                  #(assoc-in % [:permissions :can-edit] false)
+                  ::dps/force-persist)
+       (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                              "lost permission fails the save"))
+       (await (async/settle))
+       (t/is (nil? (get-in @store [:workspace-global :persistence-lock])))
+       (t/is (nil? (get-in @store [:workspace-global :read-only?])))
+       (t/is (= 1 (count @failures)) "the user is told by the toast")))))
+
+;; Scenario: saves fail, then the WebGL context is lost, then saves recover
+;; before the context comes back. Proves: lifting the save lock does not
+;; unlock a workspace the lost context still holds read-only.
+(t/deftest ^:async a-lost-render-context-outlasts-the-save-lock
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+       (await (async/wait-for #(some? (get-in @store [:workspace-global :persistence-lock]))
+                              "the failed save locks the workspace"))
+       (ptk/emit! store (drw/context-lost)
+                  (ptk/data-event :app.main.data.common/change-team-role))
+       (await (async/wait-for #(nil? (get-in @store [:workspace-global :persistence-lock]))
+                              "recovery lifts the save lock"))
+       (t/is (true? (get-in @store [:workspace-global :read-only?]))
+             "the lost context keeps the workspace read-only")
+
+       (ptk/emit! store (drw/context-restored))
+       (await (async/wait-for #(false? (get-in @store [:workspace-global :read-only?]))
+                              "the restored context brings back the first mode")))
+     server-error)))
 
 ;; Scenario: two files have pending edits and the first send fails
 ;; terminally. Opening a file again releases the failed file, the other file
@@ -1031,7 +1163,9 @@
                               "the save fails terminally"))
        (await (async/settle))
        (t/is (contains? @tasks :persistence) "the retained edit keeps the guard on")
-       (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+       (ptk/emit! store
+                  #(assoc-in % [:permissions :can-edit] true)
+                  (ptk/data-event :app.main.data.common/change-team-role))
        (await (async/wait-for #(empty? (get-in @store [:persistence :queue]))
                               "recovery releases the edit"))
        (await (async/wait-for #(not (contains? @tasks :persistence))

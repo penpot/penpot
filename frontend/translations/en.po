@@ -1768,6 +1768,12 @@ msgid "errors.save-failed"
 msgstr ""
 "Autosave has stopped for this session, so your changes since the last successful save cannot be saved. Download the report to help us fix it, then reload the page, or leave this file and open it again, to keep editing."
 
+#: src/app/main/errors.cljs
+msgid "errors.save-permission-lost"
+msgid_plural "errors.save-permission-lost"
+msgstr[0] "You can no longer edit this file, so 1 change could not be saved. Reload the page to see the file as it is now."
+msgstr[1] "You can no longer edit this file, so %s changes could not be saved. Reload the page to see the file as it is now."
+
 #: src/app/main/data/persistence.cljs
 msgid "errors.save-rejected-changes-undone"
 msgstr "Some of your latest changes couldn't be saved and were undone. The rest of your work is saved."
@@ -1780,10 +1786,6 @@ msgstr "Connection lost. Retrying to save your changes."
 msgid "errors.save-still-retrying"
 msgstr ""
 "Your changes are not saved yet because Penpot cannot reach the server. They are kept, and Penpot will keep trying to save them. Keep this tab open until they are saved."
-
-#: src/app/main/data/persistence.cljs:307
-msgid "errors.save-retrying"
-msgstr "Connection lost. Retrying to save your changes."
 
 #: src/app/main/errors.cljs:773
 msgid "errors.svg-parser.invalid-svg"
@@ -8331,6 +8333,16 @@ msgstr "'%s' PLUGIN IS INSTALLED FOR YOUR USER!"
 #: src/app/main/ui/workspace/plugins.cljs:528
 msgid "workspace.plugins.try-out.try"
 msgstr "TRY PLUGIN"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs
+#, markdown
+msgid "workspace.save-failure.retrying"
+msgstr "**Editing is disabled** because changes can’t be saved."
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs
+#, markdown
+msgid "workspace.save-failure.stopped"
+msgstr "**Editing is disabled** because changes can’t be saved."
 
 #: src/app/main/ui/workspace/context_menu.cljs:659
 msgid "workspace.shape.menu.add-flex"

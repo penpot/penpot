@@ -626,7 +626,8 @@
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
-          (update :workspace-global dissoc :read-only? :preview-id :default-font)
+          (update :workspace-global dissoc :read-only? :preview-id :default-font
+                  :persistence-lock)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
