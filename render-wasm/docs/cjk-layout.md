@@ -58,6 +58,29 @@ SkParagraph's last-resort fallback. Very narrow boxes containing punctuation
 or annotation units need further work; this implementation does not claim
 complete CSS `keep-all` conformance.
 
+## Pinyin readings
+
+The Chinese layout panel offers typed Pinyin readings when the selected
+paragraph has an explicit Chinese profile. In the WASM text editor, select
+one character or a group within one text style, then enter its reading.
+To edit an existing reading, select its whole base. Selections across styles
+or paragraphs do not offer a reading field, which prevents repeated readings.
+For character-by-character readings, annotate each character separately.
+
+Readings use the saved `ruby` attributes and the shared annotation renderer.
+They support size, alignment, overhang, side, hiding and annotation clearance.
+Without a text selection, presentation changes affect existing readings.
+Horizontal readings form one Latin group above or below the base; vertical
+readings form one sideways Latin group beside it. Pronunciation is entered
+by the author; the editor does not generate or distribute syllables.
+
+Composed and combining tone marks retain their source text and shaping.
+Glyphs sharing a cluster retain the same complete source range. Tests use
+`src/fonts/pinyin-test.ttf`, an 8 KB subset of the repository's Work Sans
+Regular font, with letters, umlauts and combining tone marks. The subset
+retains its copyright and SIL Open Font License metadata; its family name
+is Pinyin Test. FontTools generated it from the Pinyin test strings.
+
 ## Evidence and release checks
 
 Renderer tests cover regional geometry, horizontal/vertical wrapping,
@@ -68,7 +91,8 @@ mode. Both WASM consumers use the same writer and byte values: 0 syllable,
 
 Real Pinyin, Zhuyin and Korean IME checks and native-reader review remain
 release checks. Font glyph coverage and localized forms still depend on the
-chosen fonts. Pinyin/Zhuyin annotation tools belong to Stage 4.
+chosen fonts. Dedicated Zhuyin layout and decoration positions remain
+Stage 4 follow-ups.
 
 References checked on 2026-10-19:
 

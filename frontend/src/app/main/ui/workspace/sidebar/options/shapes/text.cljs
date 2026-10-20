@@ -29,6 +29,7 @@
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu*]]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.text-editor :as wasm.text-editor]
    [rumext.v2 :as mf]))
 
 (defn- dom-text-range-selected?
@@ -164,6 +165,13 @@
            :else
            (draft-text-range-selected? editor-state)))
 
+        reading-selection-active
+        (and text-selection-active
+             text-editor-wasm?
+             (wasm.text-editor/reading-selection?
+              (wasm.text-editor/get-cached-content id)
+              (wasm.text-editor/text-editor-get-selection)))
+
         fill-values
         (dwt/current-text-values
          {:editor-styles editor-styles
@@ -247,6 +255,7 @@
        :values text-values
        :ruby-values ruby-values
        :text-selection-active text-selection-active
+       :reading-selection-active reading-selection-active
        :libraries libraries
        :file-id file-id
        :typographies typographies}]

@@ -785,6 +785,21 @@
                                         (if (= idx end-para) end-offset (para-char-count para)))))
           (range start-para (inc end-para))))
 
+(defn reading-selection?
+  "True for characters in one span, including the whole base of an existing reading."
+  [content selection]
+  (boolean
+   (when (and content selection)
+     (let [{:keys [start-para start-offset end-para end-offset] :as range}
+           (normalize-selection selection)
+           paragraphs (-> content :children first :children)
+           spans (selected-spans paragraphs range)
+           span (first spans)]
+       (and (= start-para end-para)
+            (= 1 (count spans))
+            (or (not (cjk/annotated-span? span))
+                (= (- end-offset start-offset) (count (:text span)))))))))
+
 (defn selection-japanese-styles
   "Japanese span styles of a WASM selection, read from the cached content.
    A range with differing values reports :multiple; a caret reports its
