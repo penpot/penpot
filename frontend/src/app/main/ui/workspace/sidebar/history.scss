@@ -4,13 +4,14 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 
 .history-toolbox {
   display: flex;
   flex-direction: column;
-  background-color: var(--panel-background-color);
+  background-color: var(--color-background-primary);
 }
 
 .history-entry-empty {
@@ -22,21 +23,26 @@
 }
 
 .history-entries {
-  height: calc(100vh - deprecated.$s-100);
-  padding: deprecated.$s-12;
+  block-size: calc(100vh - #{px2rem(100)});
+  padding: var(--sp-m);
   overflow: hidden auto;
-  font-size: deprecated.$fs-12;
+  font-size: px2rem(12);
 }
 
 .history-entry {
+  --entry-background-color: var(--color-background-tertiary);
+  --entry-foreground-color: var(--color-foreground-secondary);
+  --entry-border-color: transparent;
+  --entry-arrow-opacity: 0;
+
   display: flex;
   justify-content: center;
   flex-direction: column;
-  min-height: deprecated.$s-32;
-  margin: deprecated.$s-4;
-  padding: deprecated.$s-4 deprecated.$s-8;
-  border: deprecated.$s-2 solid transparent;
-  border-radius: deprecated.$s-8;
+  min-block-size: $sz-32;
+  margin: var(--sp-xs);
+  padding: var(--sp-xs) var(--sp-s);
+  border: $b-2 solid var(--entry-border-color);
+  border-radius: $br-8;
   background-color: var(--entry-background-color);
   cursor: pointer;
   transition: border 0.2s;
@@ -48,15 +54,15 @@
     // The DS icon draws 12px inside a 16px box; the old icon box was 12px.
     .history-entry-summary-icon {
       display: flex;
-      margin-inline: calc(-1 * deprecated.$s-2);
+      margin-inline: px2rem(-2);
       color: var(--entry-foreground-color);
     }
 
     .history-entry-summary-text {
       display: flex;
       flex-direction: column;
-      gap: deprecated.$s-2;
-      margin: 0 deprecated.$s-8;
+      gap: var(--sp-xxs);
+      margin: 0 var(--sp-s);
       color: var(--color-foreground-primary);
       min-inline-size: 0;
     }
@@ -72,7 +78,7 @@
     // template ("hash · time by Name") survive rendering. Issue #7660.
     .history-entry-meta {
       color: var(--color-foreground-secondary);
-      font-size: deprecated.$fs-10;
+      font-size: px2rem(10);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -101,15 +107,14 @@
     // Tooltip wrapper of the details button: pushed to the end of the
     // row, with the arrow in the same place as the old 12px icon.
     .history-entry-summary-button-wrapper {
-      margin-left: auto;
-      margin-right: calc(-1 * deprecated.$s-6);
+      margin-inline: auto px2rem(-6);
     }
 
     .history-entry-summary-button {
-      opacity: deprecated.$op-0;
+      opacity: var(--entry-arrow-opacity);
 
       &:focus-visible {
-        opacity: deprecated.$op-10;
+        --entry-arrow-opacity: 1;
       }
 
       &.button-opened .history-entry-summary-arrow {
@@ -120,8 +125,8 @@
 
   .history-entry-detail {
     display: block;
-    padding-top: deprecated.$s-16;
-    color: var(--modal-text-foreground-color);
+    padding-block-start: var(--sp-l);
+    color: var(--color-foreground-secondary);
 
     .history-entry-details-list {
       margin: 0;
@@ -129,23 +134,16 @@
   }
 
   &.disabled {
-    border-color: var(--entry-border-color-disabled);
-    background-color: var(--entry-background-color-disabled);
+    --entry-background-color: var(--color-background-primary);
+    --entry-border-color: var(--color-background-quaternary);
   }
 
   &.hover,
   &:hover {
-    background-color: var(--entry-background-color-hover);
-    color: var(--entry-foreground-color-hover);
+    --entry-background-color: var(--color-background-quaternary);
+    --entry-foreground-color: var(--color-foreground-primary);
+    --entry-arrow-opacity: 1;
 
-    .history-entry-summary {
-      .history-entry-summary-icon {
-        color: var(--entry-foreground-color-hover);
-      }
-
-      .history-entry-summary-button {
-        opacity: deprecated.$op-10;
-      }
-    }
+    color: var(--color-foreground-primary);
   }
 }
