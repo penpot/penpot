@@ -527,7 +527,8 @@
           (t/is (th/success? out))
           (t/is (not (contains? (:result out) :organization-invitation-audit)))))
 
-      (let [event (organization-event)]
+      (let [event      (organization-event)
+            from-event (first (emitted-events "accept-organization-invitation-from"))]
         (t/is (= organization-id (get-in event [:props :organization-id])))
         (t/is (= (:id invitee) (get-in event [:props :profile-id])))
         (t/is (= (:id inviter) (get-in event [:props :invited-by])))
@@ -541,10 +542,38 @@
         (t/is (not (contains? (:props event) :invitation-origin)))
         (t/is (not (contains? (:context event) :event-origin)))
         (t/is (= 1 (count (emitted-events "accept-organization-invitation"))))
+        (t/is (= 1 (count (emitted-events "accept-organization-invitation-from"))))
+        (t/is (= (:id inviter) (:profile-id from-event)))
+        (t/is (= (:props event) (:props from-event)))
         (t/is (not-any? #(contains? #{"accept-team-invitation"
                                       "accept-team-invitation-from"}
                                     (:name (second %)))
                         (:call-args-list @audit-mock))))
+
+      ;; Legacy org invitation with no :created-by → invitee event only, no -from.
+      (th/reset-mock! audit-mock)
+      (db/insert! (:app.db/pool th/*system*)
+                  :team-invitation
+                  {:org-id organization-id
+                   :email-to (:email invitee)
+                   :role "editor"
+                   :valid-until (ct/in-future "48h")})
+
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership {:organization-id organization-id
+                                                      :is-member false}
+                        :get-organization-members [(:id inviter) (uuid/random) (uuid/random)]
+                        nil))
+                    teams/initialize-user-in-organization
+                    (fn [& _] default-team-id)]
+        (let [out (verify! direct-token)]
+          (t/is (th/success? out))))
+
+      (t/is (= 1 (count (emitted-events "accept-organization-invitation"))))
+      (t/is (empty? (emitted-events "accept-organization-invitation-from")))
 
       (th/reset-mock! audit-mock)
       (db/insert! (:app.db/pool th/*system*)
@@ -569,8 +598,9 @@
           (t/is (th/success? out))
           (t/is (not (contains? (:result out) :organization-invitation-audit)))))
 
-      (let [events (mapv second (:call-args-list @audit-mock))
-            event  (organization-event)]
+      (let [events         (mapv second (:call-args-list @audit-mock))
+            event          (organization-event)
+            org-from-event (first (emitted-events "accept-organization-invitation-from"))]
         (t/is (some #(= "accept-team-invitation" (:name %)) events))
         (t/is (some #(= "accept-team-invitation-from" (:name %)) events))
         (t/is (= (:id team) (get-in event [:props :team-id])))
@@ -583,7 +613,10 @@
         (t/is (= 5 (get-in event [:props :organization-member-count-before])))
         (t/is (not (contains? (:props event) :invitation-origin)))
         (t/is (not (contains? (:context event) :event-origin)))
-        (t/is (= 1 (count (emitted-events "accept-organization-invitation")))))
+        (t/is (= 1 (count (emitted-events "accept-organization-invitation"))))
+        (t/is (= 1 (count (emitted-events "accept-organization-invitation-from"))))
+        (t/is (= (:id inviter) (:profile-id org-from-event)))
+        (t/is (= (:props event) (:props org-from-event))))
 
       (let [from-event (first (emitted-events "accept-team-invitation-from"))]
         (t/is (= (:id team) (get-in from-event [:props :team-id])))
