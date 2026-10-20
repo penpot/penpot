@@ -6719,6 +6719,14 @@ msgstr "Full screen"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom to selected"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.columns"
+msgstr "Columns"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.rows"
+msgstr "Rows"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:296, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:854
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Edit grid"
