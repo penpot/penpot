@@ -76,6 +76,9 @@ For character-by-character readings, annotate each character separately.
 
 Readings use the saved `ruby` attributes and the shared annotation renderer.
 They support size, alignment, overhang, side, hiding and annotation clearance.
+Adjacent reading spans recover the style covering each base even when Skia
+merges their styles. Emphasis marks retain their per-base placement across
+wraps; text bounds include the marks so individual exports keep them whole.
 Without a text selection, presentation changes affect existing readings.
 Horizontal readings form one Latin group above or below the base; vertical
 readings form one sideways Latin group beside it. Pronunciation is entered

@@ -9,7 +9,10 @@ pub(crate) struct HorizontalSpanRange {
     pub source_start: usize,
     pub source_end: usize,
     pub warichu: bool,
+    /// UTF-8 byte anchor for indexed Skia style metrics.
     pub style_anchor_start: usize,
+    /// UTF-16 anchor for choosing the line containing those metrics.
+    pub style_anchor_utf16: usize,
 }
 
 /// Offset maps of one horizontal paragraph between source characters, the
@@ -181,23 +184,27 @@ fn span_ranges(
             builder_cursor += leading_break;
             builder_byte_cursor += leading_break * kinsoku::FORCED_LINE_BREAK.len_utf8();
             let builder_start = builder_cursor;
-            let style_anchor_start = if warichu {
-                builder_byte_cursor + '\u{FFFC}'.len_utf8()
+            let (style_anchor_start, style_anchor_utf16) = if warichu {
+                (
+                    builder_byte_cursor + '\u{FFFC}'.len_utf8(),
+                    builder_start + 1,
+                )
             } else {
                 // A forced separator belongs to the preceding line and has
                 // no style metrics. Anchor annotations to the first source
                 // character rather than a leading layout-only control.
                 let mut shifted = shifted_start;
-                builder_byte_cursor
-                    + text
-                        .chars()
-                        .take_while(|ch| {
-                            let inserted = offset_map.is_inserted(shifted);
-                            shifted += ch.len_utf16();
-                            inserted
-                        })
-                        .map(char::len_utf8)
-                        .sum::<usize>()
+                let (bytes, utf16) = text
+                    .chars()
+                    .take_while(|ch| {
+                        let inserted = offset_map.is_inserted(shifted);
+                        shifted += ch.len_utf16();
+                        inserted
+                    })
+                    .fold((0, 0), |(bytes, utf16), ch| {
+                        (bytes + ch.len_utf8(), utf16 + ch.len_utf16())
+                    });
+                (builder_byte_cursor + bytes, builder_start + utf16)
             };
             builder_cursor += if warichu {
                 HORIZONTAL_WARICHU_BUILDER_LEN
@@ -221,6 +228,7 @@ fn span_ranges(
                 source_end,
                 warichu,
                 style_anchor_start,
+                style_anchor_utf16,
             }
         })
         .collect()
