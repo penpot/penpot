@@ -1060,10 +1060,20 @@ RETURNING id, deleted_at;")
                 [:updated-props ::sm/boolean]
                 [:announce-activation ::sm/boolean]]
    ::rpc/auth false}
-  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props announce-activation]}]
+  [{:keys [::db/pool] :as cfg}
+   {:keys [organization-id updated-props announce-activation] :as params}]
   (when updated-props
     (rpc/invalidate-organization-sso-cache-by-organization! organization-id)
-    (session/clear-organization-sso-sessions! pool organization-id))
+    (session/clear-organization-sso-sessions! pool organization-id)
+    (let [request (-> params meta ::http/request)
+          context (-> (audit/prepare-context-from-request request)
+                      (assoc :request-id (::rpc/request-id params)))]
+      (audit/submit cfg {:type "action"
+                         :name "organization-sso-token-revoked"
+                         :profile-id uuid/zero
+                         :ip-addr (::rpc/ip-addr params)
+                         :props {:organization-id organization-id}
+                         :context (d/without-nils context)})))
   (notifications/notify-organization-change-sso cfg organization-id)
   (when announce-activation
     (neh/send-organization-setup-sso-emails! cfg organization-id))

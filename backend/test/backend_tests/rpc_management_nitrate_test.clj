@@ -576,6 +576,34 @@
       (t/is (= :organization-change-sso (:type msg)))
       (t/is (= organization-id (:organization-id msg))))))
 
+(t/deftest notify-organization-sso-change-emits-token-revoked-when-updated-props
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [organization-id (uuid/random)
+          out             (with-redefs [mbus/pub! (constantly nil)]
+                            (th/management-command! {::th/type :notify-organization-sso-change
+                                                     :organization-id organization-id
+                                                     :updated-props true
+                                                     :announce-activation false}))
+          revoked         (->> (:call-args-list @audit-mock)
+                               (map second)
+                               (filter #(= "organization-sso-token-revoked" (:name %))))]
+      (t/is (th/success? out))
+      (t/is (= 1 (count revoked)))
+      (t/is (= uuid/zero (:profile-id (first revoked))))
+      (t/is (= {:organization-id organization-id} (:props (first revoked))))))
+
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [out (with-redefs [mbus/pub! (constantly nil)]
+                (th/management-command! {::th/type :notify-organization-sso-change
+                                         :organization-id (uuid/random)
+                                         :updated-props false
+                                         :announce-activation false}))
+          revoked (->> (:call-args-list @audit-mock)
+                       (map second)
+                       (filter #(= "organization-sso-token-revoked" (:name %))))]
+      (t/is (th/success? out))
+      (t/is (empty? revoked)))))
+
 (t/deftest notify-user-organizations-deletion-renames-or-deletes-teams-and-publishes-per-organization-events
   ;; --- Deferred owned-organizations: nil during setup, filled before RPC ---
   (let [owned-organizations-ref (atom nil)]
