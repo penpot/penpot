@@ -4,13 +4,15 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-// TODO: When button replace remove this @use
 @use "ds/_utils.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as t;
 @use "ds/spacing.scss" as *;
 @use "ds/mixins.scss" as *;
+
+// Only for %input-element and %disabled-input (numeric inputs) and the
+// secondary and tertiary placeholders of the raw track header buttons.
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
