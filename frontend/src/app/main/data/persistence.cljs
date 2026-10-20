@@ -16,11 +16,13 @@
    [app.main.data.common :as-alias dc]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.modal :as-alias modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence.commits :as pcm]
    [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.path.state :as path.state]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
@@ -536,24 +538,54 @@
   "How long the rejected changes notice stays; the report is sent anyway."
   10000)
 
+(defn- discard-path-edit
+  "Forgets the path editor's state for `id`, so leaving the edition saves
+  nothing from it."
+  [id]
+  (ptk/reify ::discard-path-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :edit-path] dissoc id))))
+
 (defn- prune-removed-shapes
-  "Deselects the shapes missing from the current page and leaves edition
-  mode if the edited one is missing."
-  []
+  "Deselects the shapes missing from the current page, closing the color
+  picker that edits them, and leaves edition mode if the edited one is
+  missing. A path the rollback changed (`edited` is the edited shape before
+  it) leaves edition too: the editor works on its own copy of the shape,
+  which still holds the reverted content. Text editors stay open and show
+  the reverted text."
+  [edited]
   (ptk/reify ::prune-removed-shapes
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (dsh/lookup-page-objects state)]
-        (d/update-in-when state [:workspace-local :selected]
-                          (fn [selected]
-                            (into (empty selected) (filter #(contains? objects %)) selected)))))
+      (let [objects  (dsh/lookup-page-objects state)
+            selected (dm/get-in state [:workspace-local :selected])
+            kept     (some->> selected (into (empty selected) (filter #(contains? objects %))))]
+        (cond-> state
+          (some? selected)
+          (assoc-in [:workspace-local :selected] kept)
+
+          (and (not= (count selected) (count kept))
+               (= :colorpicker (dm/get-in state [::modal/modal :type])))
+          (dissoc ::modal/modal))))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [edition (dm/get-in state [:workspace-local :edition])]
-        (if (and (some? edition)
-                 (not (contains? (dsh/lookup-page-objects state) edition)))
+      (let [edition (dm/get-in state [:workspace-local :edition])
+            shape   (get (dsh/lookup-page-objects state) edition)]
+        (cond
+          (nil? edition)
+          (rx/empty)
+
+          (nil? shape)
           (rx/of (dwe/clear-edition-mode))
+
+          (and (path.state/editing? state)
+               (not= edited shape))
+          (rx/of (discard-path-edit edition)
+                 (dwe/clear-edition-mode))
+
+          :else
           (rx/empty))))))
 
 (defn- compensate-commits
@@ -586,13 +618,14 @@
   "Events that revert the local data as `plan` says: pending commits are
   undone, saved ones undone by a new commit, and their groups leave the
   undo history."
-  [origin state {:keys [files compensate groups]}]
+  [origin state {:keys [files compensate groups undo-index]}]
   (rx/concat
    (rx/from (map (fn [[fid plan]] (dch/rebase-commits fid plan)) files))
    (rx/from (map (fn [[fid commits]] (compensate-commits origin state fid commits))
                  (group-by :file-id compensate)))
-   (rx/of (dwu/forget-undo-groups groups)
-          (prune-removed-shapes)
+   (rx/of (dwu/forget-undo-groups groups undo-index)
+          (prune-removed-shapes (get (dsh/lookup-page-objects state)
+                                     (dm/get-in state [:workspace-local :edition])))
           ;; Tells listeners (e.g. a library sync) which files lost commits
           (ptk/data-event ::rolled-back
                           {:file-ids (into (set (keys files)) (map :file-id) compensate)}))))
