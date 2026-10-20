@@ -254,7 +254,9 @@
                :target "_blank"
                :on-click #(st/emit! (ev/event {::ev/name "open-plugins-list"}))}
            (tr "workspace.plugins.plugin-list-link")
-           [:> icon* {:icon-id i/external-link :size "s"}]]]
+           [:> icon* {:icon-id i/external-link
+                      :size "s"
+                      :class (stl/css :plugins-link-icon)}]]]
 
          [:*
           [:> title-bar* {:collapsable false
