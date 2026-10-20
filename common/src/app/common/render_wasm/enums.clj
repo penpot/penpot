@@ -40,6 +40,8 @@
    ["text-orientation" "RawTextOrientation"]
    ["text-combine-upright" "RawTextCombineUpright"]
    ["text-emphasis" "RawTextEmphasis"]
+   ["text-emphasis-position" "RawTextEmphasisPosition"]
+   ["text-underline-position" "RawTextUnderlinePosition"]
    ["warichu" "RawWarichu"]
    ["font-features" "RawFontFeatures"]
    ["annotation-clearance" "RawAnnotationClearance"]

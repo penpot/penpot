@@ -10077,3 +10077,43 @@ msgstr "Pinyin side"
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.pinyin-selection-hint"
 msgstr "Select characters within one text style to add a reading. Select the whole base to edit an existing reading."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.emphasis-position"
+msgstr "Emphasis position"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.underline-position"
+msgstr "Underline position"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-auto"
+msgstr "Automatic"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-over-right"
+msgstr "Above / right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-over-left"
+msgstr "Above / left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-under-right"
+msgstr "Below / right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-under-left"
+msgstr "Below / left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-under"
+msgstr "Below text"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-left"
+msgstr "Left in vertical"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-right"
+msgstr "Right in vertical"

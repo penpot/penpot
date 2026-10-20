@@ -176,7 +176,9 @@
              ruby-size            (sr/translate-text-layout-enum :ruby-size (get span :ruby-size))
              ruby-align           (sr/translate-text-layout-enum :ruby-align (get span :ruby-align))
              ruby-overhang        (sr/translate-text-layout-enum :ruby-overhang (get span :ruby-overhang))
-             ruby-side            (sr/translate-text-layout-enum :ruby-side (get span :ruby-side))]
+             ruby-side            (sr/translate-text-layout-enum :ruby-side (get span :ruby-side))
+             emphasis-position    (sr/translate-text-layout-enum :text-emphasis-position (get span :text-emphasis-position))
+             underline-position   (sr/translate-text-layout-enum :text-underline-position (get span :text-underline-position))]
          (-> offset
              (mem/write-u8 dview font-style)
              (mem/write-u8 dview text-decoration)
@@ -192,9 +194,9 @@
              (mem/write-u8 dview ruby-align)
              (mem/write-u8 dview ruby-overhang)
              (mem/write-u8 dview ruby-side)
-             ;; Alignment padding; must match RawTextSpan in Rust.
-             (mem/write-u8 dview 0)
-             (mem/write-u8 dview 0)
+             ;; Use the former padding bytes; the span header stays the same size.
+             (mem/write-u8 dview emphasis-position)
+             (mem/write-u8 dview underline-position)
              (mem/write-f32 dview font-size)
              (mem/write-f32 dview line-height)
              (mem/write-f32 dview letter-spacing)

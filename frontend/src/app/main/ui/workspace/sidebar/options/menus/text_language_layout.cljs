@@ -45,6 +45,44 @@
   [value]
   {:text-language (when (seq value) value)})
 
+(defn emphasis-position-options
+  [translate]
+  [{:id "auto" :label (translate "workspace.options.text-options.position-auto")}
+   {:id "over-right" :label (translate "workspace.options.text-options.position-over-right")}
+   {:id "over-left" :label (translate "workspace.options.text-options.position-over-left")}
+   {:id "under-right" :label (translate "workspace.options.text-options.position-under-right")}
+   {:id "under-left" :label (translate "workspace.options.text-options.position-under-left")}])
+
+(defn underline-position-options
+  [translate]
+  [{:id "auto" :label (translate "workspace.options.text-options.position-auto")}
+   {:id "under" :label (translate "workspace.options.text-options.position-under")}
+   {:id "left" :label (translate "workspace.options.text-options.position-left")}
+   {:id "right" :label (translate "workspace.options.text-options.position-right")}
+   {:id "under-left" :label (translate "workspace.options.text-options.position-under-left")}
+   {:id "under-right" :label (translate "workspace.options.text-options.position-under-right")}])
+
+(mf/defc chinese-decoration-options*
+  [{:keys [values on-change on-blur]}]
+  (let [props (mf/props {:values values :on-change on-change :on-blur on-blur})]
+    [:div {:class (stl/css :decoration-options)}
+     [:> tjl/span-select-option*
+      (mf/spread-props props {:attr :text-emphasis :default-value "none"
+                              :label (tr "workspace.options.text-options.text-emphasis")
+                              :options (tjl/text-emphasis-options tr)})]
+     [:> tjl/span-select-option*
+      (mf/spread-props props {:attr :text-emphasis-position :default-value "auto"
+                              :label (tr "workspace.options.text-options.emphasis-position")
+                              :options (emphasis-position-options tr)})]
+     [:> tjl/span-select-option*
+      (mf/spread-props props {:attr :text-underline-position :default-value "auto"
+                              :label (tr "workspace.options.text-options.underline-position")
+                              :options (underline-position-options tr)})]
+     [:> tjl/span-select-option*
+      (mf/spread-props props {:attr :annotation-clearance :default-value "none"
+                              :label (tr "workspace.options.text-options.annotation-clearance")
+                              :options (tjl/annotation-clearance-options)})]]))
+
 (mf/defc pinyin-options*
   [{:keys [values ruby-values text-selection-active reading-selection-active
            on-change on-ruby-presentation-change on-blur]}]
@@ -67,13 +105,7 @@
         (when-not text-selection-active
           [:> tjl/ruby-presentation-options*
            (mf/spread-props props {:values ruby-values
-                                   :on-change on-ruby-presentation-change})])])
-     (when (or reading-selection-active (not text-selection-active))
-       [:> tjl/span-select-option*
-        (mf/spread-props props {:attr :annotation-clearance
-                                :default-value "none"
-                                :label (tr "workspace.options.text-options.annotation-clearance")
-                                :options (tjl/annotation-clearance-options)})])]))
+                                   :on-change on-ruby-presentation-change})])])]))
 
 (mf/defc language-layout-options*
   [{:keys [language values ruby-values text-selection-active reading-selection-active
@@ -100,6 +132,8 @@
                                 :text-selection-active text-selection-active
                                 :on-ruby-presentation-change on-ruby-presentation-change})]
        [:> tjl/writing-mode-controls* props])
+     (when (and (= :chinese language) matches?)
+       [:> chinese-decoration-options* props])
      (when (and (= :chinese language) matches?)
        [:> pinyin-options*
         (mf/spread-props props {:ruby-values ruby-values

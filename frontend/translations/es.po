@@ -9953,3 +9953,43 @@ msgstr "Lado del pinyin"
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.pinyin-selection-hint"
 msgstr "Selecciona caracteres con un mismo estilo para añadir una lectura. Selecciona toda la base para editar su lectura."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.emphasis-position"
+msgstr "Posición del énfasis"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.underline-position"
+msgstr "Posición del subrayado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-auto"
+msgstr "Automática"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-over-right"
+msgstr "Arriba / derecha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-over-left"
+msgstr "Arriba / izquierda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-under-right"
+msgstr "Abajo / derecha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-under-left"
+msgstr "Abajo / izquierda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-under"
+msgstr "Debajo del texto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-left"
+msgstr "Izquierda en vertical"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-right"
+msgstr "Derecha en vertical"

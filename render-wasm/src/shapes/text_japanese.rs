@@ -283,9 +283,61 @@ impl TextCombineUpright {
     }
 }
 
+/// Independent emphasis positions in the two writing directions.
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub enum TextEmphasisPosition {
+    #[default]
+    Auto,
+    OverRight,
+    OverLeft,
+    UnderRight,
+    UnderLeft,
+}
+
+impl TextEmphasisPosition {
+    pub fn side(self, vertical: bool, chinese: bool) -> RubySide {
+        let under = if vertical {
+            matches!(self, Self::OverLeft | Self::UnderLeft)
+        } else {
+            matches!(self, Self::UnderRight | Self::UnderLeft) || (self == Self::Auto && chinese)
+        };
+        if under {
+            RubySide::Under
+        } else {
+            RubySide::Over
+        }
+    }
+}
+
+/// CSS underline position: horizontal depth and vertical side are independent.
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub enum TextUnderlinePosition {
+    #[default]
+    Auto,
+    Under,
+    Left,
+    Right,
+    UnderLeft,
+    UnderRight,
+}
+
+impl TextUnderlinePosition {
+    pub fn side(self) -> RubySide {
+        if matches!(self, Self::Right | Self::UnderRight) {
+            RubySide::Over
+        } else {
+            RubySide::Under
+        }
+    }
+
+    pub fn below_ink(self, chinese: bool) -> bool {
+        matches!(self, Self::Under | Self::UnderLeft | Self::UnderRight)
+            || (self == Self::Auto && chinese)
+    }
+}
+
 /// Emphasis mark (圏点 / bouten) applied per span, mirroring CSS
-/// `text-emphasis-style`. The mark is drawn above each eligible horizontal
-/// base character or to the right of its vertical column.
+/// `text-emphasis-style`. Position is a separate style with a language default.
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub enum TextEmphasis {
     #[default]

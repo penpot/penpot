@@ -19,6 +19,8 @@
    ;; Emphasis mark (圏点 / bouten) applied per span.
    :text-emphasis        ["none" "filled-dot" "open-dot" "filled-circle"
                           "open-circle" "filled-sesame" "open-sesame"]
+   :text-emphasis-position ["auto" "over-right" "over-left" "under-right" "under-left"]
+   :text-underline-position ["auto" "under" "left" "right" "under-left" "under-right"]
    ;; Warichu (割注): two half-size lines in one line position.
    :warichu              ["none" "warichu"]
    :font-features        ["none" "palt" "vpal"]
@@ -57,7 +59,7 @@
 
 ;; Span attrs; `:ruby` holds the reading (furigana) of the span.
 (def span-attrs
-  (into [:text-combine-upright :text-emphasis :ruby]
+  (into [:text-combine-upright :text-emphasis :text-emphasis-position :text-underline-position :ruby]
         (concat ruby-presentation-attrs
                 [:warichu :font-features :annotation-clearance])))
 

@@ -854,40 +854,58 @@
       (merge (selection-japanese-styles content selection)
              (selection-paragraph-styles content selection)))))
 
+(defn- annotation-style-range
+  [paragraph start end styles]
+  (if (and (< start end)
+           (map? styles)
+           (some #(contains? styles %) [:text-emphasis :text-emphasis-position
+                                        :text-decoration :text-underline-position :annotation-clearance]))
+    (let [[start end]
+          (reduce (fn [[from to offset] span]
+                    (let [span-end (+ offset (count (:text span)))]
+                      (if (and (< offset end) (< start span-end) (cjk/annotated-span? span))
+                        [(min from offset) (max to span-end) span-end]
+                        [from to span-end])))
+                  [start end 0]
+                  (:children paragraph))]
+      [start end])
+    [start end]))
+
 (defn apply-attrs-to-paragraph
   "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."
   [para sel-start sel-end styles]
-  (let [spans  (:children para)
+  (let [[sel-start sel-end] (annotation-style-range para sel-start sel-end styles)
+        spans               (:children para)
 
-        result (loop [spans spans
-                      pos   0
-                      acc   []]
-                 (if (empty? spans)
-                   acc
-                   (let [span      (first spans)
-                         text      (:text span)
-                         span-len  (count text)
-                         span-end  (+ pos span-len)
-                         ol-start  (max pos sel-start)
-                         ol-end    (min span-end sel-end)
-                         ;; An empty span has no range to overlap, but an empty
-                         ;; line inside the selection still has to be restyled.
-                         has-overlap? (or (< ol-start ol-end)
-                                          (and (zero? span-len)
-                                               (<= sel-start pos sel-end)))]
-                     (if (not has-overlap?)
-                       (recur (rest spans) span-end (conj acc span))
-                       (let [before   (when (> ol-start pos)
-                                        (assoc span :text (subs text 0 (- ol-start pos))))
-                             selected (-> (if (fn? styles)
-                                            (styles span)
-                                            (merge span styles))
-                                          (assoc :text (subs text (- ol-start pos) (- ol-end pos))))
-                             after    (when (< ol-end span-end)
-                                        (assoc span :text (subs text (- ol-end pos))))]
-                         (recur (rest spans) span-end
-                                (-> acc
-                                    (into (keep identity [before selected after])))))))))]
+        result              (loop [spans spans
+                                   pos   0
+                                   acc   []]
+                              (if (empty? spans)
+                                acc
+                                (let [span      (first spans)
+                                      text      (:text span)
+                                      span-len  (count text)
+                                      span-end  (+ pos span-len)
+                                      ol-start  (max pos sel-start)
+                                      ol-end    (min span-end sel-end)
+                                      ;; An empty span has no range to overlap, but an empty
+                                      ;; line inside the selection still has to be restyled.
+                                      has-overlap? (or (< ol-start ol-end)
+                                                       (and (zero? span-len)
+                                                            (<= sel-start pos sel-end)))]
+                                  (if (not has-overlap?)
+                                    (recur (rest spans) span-end (conj acc span))
+                                    (let [before   (when (> ol-start pos)
+                                                     (assoc span :text (subs text 0 (- ol-start pos))))
+                                          selected (-> (if (fn? styles)
+                                                         (styles span)
+                                                         (merge span styles))
+                                                       (assoc :text (subs text (- ol-start pos) (- ol-end pos))))
+                                          after    (when (< ol-end span-end)
+                                                     (assoc span :text (subs text (- ol-end pos))))]
+                                      (recur (rest spans) span-end
+                                             (-> acc
+                                                 (into (keep identity [before selected after])))))))))]
     (assoc para :children result)))
 
 (defn selection-fills
