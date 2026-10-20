@@ -9917,3 +9917,39 @@ msgstr "Hong Kong"
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.korean-wrap-keep-words"
 msgstr "Mantener las palabras juntas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin"
+msgstr "Pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-placeholder"
+msgstr "nǐ hǎo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-advanced-options"
+msgstr "Opciones de pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-hidden"
+msgstr "Ocultar pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-size"
+msgstr "Tamaño del pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-align"
+msgstr "Alineación del pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-overhang"
+msgstr "Saliente del pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-side"
+msgstr "Lado del pinyin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-selection-hint"
+msgstr "Selecciona caracteres con un mismo estilo para añadir una lectura. Selecciona toda la base para editar su lectura."
