@@ -599,6 +599,49 @@ test.describe("Layers panel", () => {
   });
 });
 
+test.describe("Layers", () => {
+  test("Shows the buttons of the layer rows", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-empty.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickToggableLayer("Group");
+    const layer = workspace.layers.getByText("A", { exact: true });
+    await layer.click();
+    await layer.hover();
+    await workspace.layers.getByRole("button", { name: "Hide" }).click();
+    await workspace.layers.getByRole("button", { name: "Lock" }).click();
+    await expect(
+      workspace.layers.getByRole("button", { name: "Show" }),
+    ).toBeVisible();
+    await expect(
+      workspace.layers.getByRole("button", { name: "Unlock" }),
+    ).toBeVisible();
+
+    // Selected, hidden and blocked layer, with the pointer on its row.
+    await expect(workspace.layers).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    // The pointer on a collapsed group, away from the selected layer.
+    await workspace.layers.getByText("Board", { exact: true }).hover();
+    await expect(workspace.layers).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Guides", () => {
   test("Shows the advanced options of a square guide", async ({ page }) => {
     // A taller window keeps the whole Design tab visible: a scrolled
