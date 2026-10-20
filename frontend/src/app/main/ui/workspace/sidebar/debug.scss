@@ -16,7 +16,11 @@
   margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
 }
 
+// The options list scrolls under the title when it does not fit.
 .debug-panel-inner {
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
   padding: deprecated.$s-16 deprecated.$s-8;
 }
 
