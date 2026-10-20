@@ -35,6 +35,7 @@ mod text_japanese;
 pub mod text_paths;
 pub mod text_policy;
 pub mod text_vertical;
+mod text_zhuyin;
 mod transform;
 
 pub use blend::*;

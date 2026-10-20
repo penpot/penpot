@@ -2280,6 +2280,7 @@ pub struct TextSpan {
     pub text_underline_position: TextUnderlinePosition,
     /// Ruby (furigana) annotation for this span; empty means no ruby.
     pub ruby: String,
+    pub ruby_zhuyin: bool,
     pub ruby_size: RubySize,
     pub ruby_align: RubyAlign,
     pub ruby_overhang: RubyOverhang,
@@ -2313,6 +2314,7 @@ impl Default for TextSpan {
             text_emphasis_position: TextEmphasisPosition::default(),
             text_underline_position: TextUnderlinePosition::default(),
             ruby: String::default(),
+            ruby_zhuyin: false,
             ruby_size: RubySize::default(),
             ruby_align: RubyAlign::default(),
             ruby_overhang: RubyOverhang::default(),
@@ -2388,7 +2390,32 @@ impl TextSpan {
     }
 
     pub fn ruby_font_size(&self) -> f32 {
-        self.font_size * self.ruby_size.scale()
+        self.font_size
+            * if self.is_zhuyin() {
+                super::text_zhuyin::FONT_SCALE
+            } else {
+                self.ruby_size.scale()
+            }
+    }
+
+    pub fn is_zhuyin(&self) -> bool {
+        super::text_zhuyin::syllable(self).is_some()
+    }
+
+    pub fn effective_ruby_side(&self) -> RubySide {
+        if self.is_zhuyin() {
+            RubySide::Over
+        } else {
+            self.ruby_side
+        }
+    }
+
+    pub fn ruby_cross_room_em(&self) -> f32 {
+        if self.is_zhuyin() {
+            super::text_zhuyin::STRIP_WIDTH
+        } else {
+            self.ruby_size.scale()
+        }
     }
 
     /// Warichu needs at least two characters to fill its two sub-lines.
@@ -2421,7 +2448,8 @@ impl TextSpan {
     pub fn stacks_emphasis_outside_ruby(&self, vertical: bool) -> bool {
         self.annotation_clearance.is_auto()
             && self.has_ruby()
-            && self.ruby_side == self.emphasis_side(vertical)
+            && (!self.is_zhuyin() || vertical)
+            && self.effective_ruby_side() == self.emphasis_side(vertical)
     }
 
     pub fn decoration_room_em(&self, side: RubySide, vertical: bool) -> f32 {
@@ -2446,12 +2474,12 @@ impl TextSpan {
     }
 
     pub fn ruby_decoration_offset(&self, vertical: bool) -> f32 {
-        self.font_size * self.decoration_room_em(self.ruby_side, vertical)
+        self.font_size * self.decoration_room_em(self.effective_ruby_side(), vertical)
     }
 
     pub fn emphasis_outside_offset(&self, vertical: bool) -> f32 {
         let ruby = if self.stacks_emphasis_outside_ruby(vertical) {
-            self.ruby_font_size()
+            self.font_size * self.ruby_cross_room_em()
         } else {
             0.0
         };
@@ -2462,8 +2490,11 @@ impl TextSpan {
         if !self.annotation_clearance.is_auto() {
             return 0.0;
         }
-        let ruby = if self.has_ruby() && self.ruby_side == side {
-            self.ruby_size.scale()
+        let ruby = if self.has_ruby()
+            && (!self.is_zhuyin() || vertical)
+            && self.effective_ruby_side() == side
+        {
+            self.ruby_cross_room_em()
         } else {
             0.0
         };
@@ -2786,6 +2817,14 @@ impl HorizontalPositionEntries<'_> {
             } else {
                 entries.extend(self.span_entries(range));
             }
+        }
+        for mut entry in
+            horizontal_zhuyin_entries(self.paragraph, self.offsets, &self.layout.paragraph)
+        {
+            entry.paragraph = self.paragraph_index as u32;
+            entry.x += self.layout.x;
+            entry.y += self.layout.y;
+            entries.push(entry);
         }
         for placement in
             horizontal_emphasis_placements(self.paragraph, self.offsets, &self.layout.paragraph)

@@ -3,6 +3,53 @@ use std::collections::HashMap;
 
 use super::*;
 
+pub(crate) fn horizontal_zhuyin_origin(span: &TextSpan, rect: skia::Rect) -> skia::Point {
+    skia::Point::new(
+        rect.right() - span.font_size * super::super::text_zhuyin::STRIP_WIDTH,
+        rect.top.max(rect.bottom - span.font_size),
+    )
+}
+
+pub(crate) fn horizontal_zhuyin_entries(
+    paragraph: &Paragraph,
+    offsets: &HorizontalOffsets,
+    laid_out: &skia::textlayout::Paragraph,
+) -> Vec<crate::shapes::PositionData> {
+    if !paragraph.children().iter().any(TextSpan::is_zhuyin) {
+        return Vec::new();
+    }
+    let provider = get_resources().fonts.font_provider();
+    let fallbacks = get_fallback_fonts();
+    let mut entries = Vec::new();
+    for (index, range) in horizontal_ruby_targets(paragraph, offsets) {
+        let span = &paragraph.children()[index];
+        let Some(syllable) = super::super::text_zhuyin::syllable(span) else {
+            continue;
+        };
+        let rects =
+            laid_out.get_rects_for_range(range, RectHeightStyle::Tight, RectWidthStyle::Tight);
+        let Some(rect) = rects.first() else {
+            continue;
+        };
+        let origin = horizontal_zhuyin_origin(span, rect.rect);
+        let size = span.ruby_font_size();
+        for glyph in super::super::text_zhuyin::shape(span, &syllable, provider, fallbacks) {
+            entries.push(crate::shapes::PositionData {
+                paragraph: 0,
+                span: index as u32,
+                start_pos: glyph.range.start as u32,
+                end_pos: glyph.range.end as u32,
+                x: origin.x + glyph.origin.x,
+                y: origin.y + glyph.origin.y - size,
+                width: size,
+                height: size,
+                direction: super::super::text_zhuyin::DIRECTION_ZHUYIN,
+            });
+        }
+    }
+    entries
+}
+
 /// Extra spacing for long horizontal ruby, per span of a paragraph.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct HorizontalRubySpacing {
@@ -138,6 +185,17 @@ pub(super) fn horizontal_ruby_spacing_with(
         let Some(&last) = base.last() else {
             continue;
         };
+        if span.is_zhuyin() {
+            // Inter-character annotations consume inline space, not ruby's
+            // above/below leading. Reserve the strip even at a line end.
+            for char_index in &base {
+                spacing.adjustments[index].push((
+                    *char_index,
+                    span.font_size * super::super::text_zhuyin::STRIP_WIDTH,
+                ));
+            }
+            continue;
+        }
         let ruby_font_size = span.ruby_font_size();
         let base_width = advances(span, &span.apply_text_transform(), span.font_size)
             .iter()
@@ -386,6 +444,28 @@ pub(crate) fn paint_horizontal_ruby(
             skia::textlayout::RectHeightStyle::Tight,
             skia::textlayout::RectWidthStyle::Tight,
         );
+        if let Some(syllable) = super::super::text_zhuyin::syllable(span) {
+            if let Some(rect) = rects.first() {
+                for glyph in super::super::text_zhuyin::shape(
+                    span,
+                    &syllable,
+                    font_provider,
+                    fallback_families,
+                ) {
+                    if let Some(blob) =
+                        single_glyph_blob(&glyph.run.font, glyph.run.glyphs[glyph.glyph])
+                    {
+                        let origin = horizontal_zhuyin_origin(span, rect.rect);
+                        canvas.draw_text_blob(
+                            &blob,
+                            (x + origin.x + glyph.origin.x, y + origin.y + glyph.origin.y),
+                            &paint,
+                        );
+                    }
+                }
+            }
+            continue;
+        }
         let shaped = shape_segment_with_fallbacks(
             span.ruby_text(),
             span.ruby_font_size(),

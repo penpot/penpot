@@ -8220,6 +8220,9 @@ msgstr "Alinear al centro"
 msgid "workspace.options.text-options.align-top"
 msgstr "Alinear arriba"
 
+msgid "workspace.options.text-options.chinese-reading-format"
+msgstr "Formato de lectura"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:100
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
@@ -8287,6 +8290,26 @@ msgstr "Texto de selección"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:207
 msgid "workspace.options.text-options.underline"
 msgstr "Subrayado (%s)"
+
+msgid "workspace.options.text-options.zhuyin"
+msgstr "Zhuyin"
+
+msgid "workspace.options.text-options.zhuyin-hidden"
+msgstr "Ocultar zhuyin"
+
+msgid "workspace.options.text-options.zhuyin-invalid"
+msgstr ""
+"Escribe entre 1 y 3 símbolos zhuyin con un solo tono como máximo. Coloca el "
+"tono neutro antes o después de los símbolos, y los demás tonos al final."
+
+msgid "workspace.options.text-options.zhuyin-placeholder"
+msgstr "p. ej. ㄋㄧˇ"
+
+msgid "workspace.options.text-options.zhuyin-selection-hint"
+msgstr ""
+"Selecciona un carácter han. Escribe entre 1 y 3 símbolos zhuyin y un tono "
+"opcional. Los símbolos se colocan a la derecha; el tono neutro se sitúa "
+"encima. Este modo tiene tamaño y posición fijos."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"

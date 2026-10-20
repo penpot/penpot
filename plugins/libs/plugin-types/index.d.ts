@@ -4812,6 +4812,9 @@ export interface Text extends ShapeBase {
   /** Whether ruby may extend past its base text: `auto` (default) or `none`. */
   rubyOverhang: 'auto' | 'none' | 'mixed';
 
+  /** Set one Han base and one typed Mandarin syllable as upright right-side Zhuyin. */
+  rubyZhuyin: boolean | 'mixed';
+
   /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
   rubySide: 'over' | 'under' | 'mixed';
 
@@ -4995,6 +4998,9 @@ export interface TextRange {
 
   /** Whether ruby may extend past its base text: `auto` (default) or `none`. */
   rubyOverhang: 'auto' | 'none' | 'mixed' | null;
+
+  /** Set one Han base and one typed Mandarin syllable as upright right-side Zhuyin. */
+  rubyZhuyin: boolean | 'mixed' | null;
 
   /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
   rubySide: 'over' | 'under' | 'mixed' | null;

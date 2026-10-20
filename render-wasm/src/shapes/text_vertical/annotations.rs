@@ -48,6 +48,7 @@ pub struct RubyCell {
     pub column: usize,
     /// Flow-axis top of each glyph.
     pub glyph_tops: Vec<f32>,
+    pub zhuyin_origins: Option<Vec<skia::Point>>,
     pub font_size: f32,
     pub base_font_size: f32,
     pub outside_offset: f32,
@@ -142,16 +143,20 @@ pub(super) fn ruby_base_units(
             span: span_index,
             start: span_starts[span_index],
             end: span_starts[span_index] + transform.text.encode_utf16().count(),
-            ruby_length: ruby_glyphs(
-                span.ruby_text(),
-                0,
-                &shape_ruby(span, fonts),
-                0,
-                span.ruby_font_size(),
-            )
-            .iter()
-            .map(|glyph| glyph.extent)
-            .sum(),
+            ruby_length: if span.is_zhuyin() {
+                span.font_size
+            } else {
+                ruby_glyphs(
+                    span.ruby_text(),
+                    0,
+                    &shape_ruby(span, fonts),
+                    0,
+                    span.ruby_font_size(),
+                )
+                .iter()
+                .map(|glyph| glyph.extent)
+                .sum()
+            },
             ruby_font_size: span.ruby_font_size(),
             overhang: span.ruby_overhang,
             room: (0.0, 0.0),
@@ -468,6 +473,43 @@ pub(super) fn layout_ruby(
             ) else {
                 continue;
             };
+            if let Some(syllable) = super::super::text_zhuyin::syllable(span) {
+                let shaped = super::super::text_zhuyin::shape(
+                    span,
+                    &syllable,
+                    fonts.provider,
+                    fonts.fallback_families,
+                );
+                let top = first.top + (first.extent - span.font_size) / 2.0;
+                let mut glyphs = Vec::new();
+                let mut origins = Vec::new();
+                for glyph in shaped {
+                    glyphs.push(RubyGlyph {
+                        run: ruby_runs.len(),
+                        glyph: glyph.glyph,
+                        utf16_start: glyph.range.start,
+                        utf16_end: glyph.range.end,
+                        sideways: false,
+                        extent: span.ruby_font_size(),
+                    });
+                    origins.push(skia::Point::new(glyph.origin.x, top + glyph.origin.y));
+                    ruby_runs.push(glyph.run);
+                }
+                ruby_cells.push(RubyCell {
+                    glyph_tops: origins.iter().map(|p| p.y).collect(),
+                    zhuyin_origins: Some(origins),
+                    glyphs,
+                    paragraph: paragraph_index,
+                    span: span_index,
+                    column: first.column,
+                    font_size: span.ruby_font_size(),
+                    base_font_size: span.font_size,
+                    outside_offset: span.ruby_decoration_offset(true),
+                    side: RubySide::Over,
+                    paint: first.paint,
+                });
+                continue;
+            }
             let ruby_text = span.ruby_text();
             let ruby_font_size = span.ruby_font_size();
             let shaped = shape_ruby(span, fonts);
@@ -517,6 +559,7 @@ pub(super) fn layout_ruby(
                 span: span_index,
                 column: first.column,
                 glyph_tops,
+                zhuyin_origins: None,
                 font_size: ruby_font_size,
                 base_font_size: span.font_size,
                 outside_offset: span.ruby_decoration_offset(true),
@@ -724,6 +767,58 @@ mod tests {
             400.0,
             GrowType::Fixed,
         )
+    }
+
+    #[test]
+    fn zhuyin_is_upright_per_base_and_tones_have_exact_source_ranges() {
+        use crate::shapes::text_zhuyin;
+        let content = spans_content(
+            vec![
+                TextSpan {
+                    ruby: "˙ㄉㄜ".into(),
+                    ruby_zhuyin: true,
+                    annotation_clearance: crate::shapes::AnnotationClearance::Auto,
+                    ..make_span("中")
+                },
+                TextSpan {
+                    ruby: "ㄋㄧˇ".into(),
+                    ruby_zhuyin: true,
+                    annotation_clearance: crate::shapes::AnnotationClearance::Auto,
+                    ..make_span("文")
+                },
+            ],
+            400.0,
+        );
+        let layout = layout_with(
+            &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
+            &content,
+        );
+        assert_eq!(layout.ruby_cells.len(), 2);
+        for ruby in &layout.ruby_cells {
+            assert_eq!(ruby.glyphs.len(), 3);
+            assert!(ruby.glyphs.iter().all(|glyph| !glyph.sideways));
+            let origins = ruby.zhuyin_origins.as_ref().unwrap();
+            assert_eq!(origins.len(), 3);
+            assert!((ruby.font_size - EM * 0.3).abs() < 0.01);
+        }
+        let neutral = layout.ruby_cells[0].zhuyin_origins.as_ref().unwrap();
+        assert!(neutral[0].y < neutral[1].y);
+        let tone = layout.ruby_cells[1].zhuyin_origins.as_ref().unwrap();
+        assert!(tone[2].x > tone[1].x);
+        assert!(tone[2].y < tone[1].y);
+        let entries = super::super::positions::position_data(
+            &layout,
+            &content.bounds(),
+            crate::shapes::VerticalAlign::Top,
+        );
+        let readings: Vec<_> = entries
+            .iter()
+            .filter(|p| p.direction == text_zhuyin::DIRECTION_ZHUYIN)
+            .collect();
+        assert_eq!(readings.len(), 6);
+        assert!(readings
+            .iter()
+            .all(|p| p.end_pos == p.start_pos + 1 && p.width == EM * 0.3));
     }
 
     #[test]

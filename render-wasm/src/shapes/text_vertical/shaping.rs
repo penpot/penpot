@@ -33,6 +33,7 @@ pub(crate) fn span_font_families(span: &TextSpan, fallback_fonts: &FallbackFonts
 /// One shaped run: glyphs from a single font, pen-relative positions,
 /// per-glyph horizontal advances and per-glyph UTF-8 cluster starts
 /// (relative to the shaped segment text).
+#[derive(Clone)]
 pub struct ShapedRun {
     pub font: Font,
     pub glyphs: Vec<GlyphId>,

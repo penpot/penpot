@@ -22,13 +22,30 @@
                 (sts/generate-text-styles shape node))
         class (when is-code (:$id node))
         ruby  (cjk/visible-ruby node)]
-    (if (some? ruby)
+    (cond
+      (and (true? (:ruby-zhuyin node)) (cjk/zhuyin-base? text) (cjk/zhuyin-reading? ruby))
+      [:span {:style #js {:display "inline-block" :position "relative"
+                          :width "1.6em" :height "1em" :verticalAlign "middle"
+                          :writingMode "horizontal-tb" :direction "ltr"
+                          :fontSize (.-fontSize style) :fontFamily (.-fontFamily style)
+                          :fontWeight (.-fontWeight style) :fontStyle (.-fontStyle style)}
+              :class (when is-code (dm/str class "-ruby"))}
+       [:span.text-node {:style style :class class} (sts/text-children text node)]
+       (for [[idx slot] (d/enumerate (cjk/zhuyin-slots ruby))]
+         [:span {:key idx :style #js {:position "absolute" :writingMode "horizontal-tb"
+                                      :left (dm/str (+ 1 (:x slot)) "em")
+                                      :top (dm/str (:y slot) "em")
+                                      :transform "translate(-50%, -50%)" :lineHeight 1}}
+          [:span {:style #js {:fontSize "0.3em"}} (:text slot)]])]
+
+      (some? ruby)
       [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)
                         :class (when is-code (dm/str class "-ruby"))}
        [:span.text-node {:style style :class class} (sts/text-children text node)]
        [:rt {:style (sts/generate-ruby-styles shape node)
              :class (when is-code (dm/str class "-rt"))}
         ruby]]
+      :else
       [:span.text-node {:style style :class class}
        (if (= text "") "\u00A0" (sts/text-children text node))])))
 

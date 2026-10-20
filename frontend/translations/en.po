@@ -10117,3 +10117,21 @@ msgstr "Left in vertical"
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.position-right"
 msgstr "Right in vertical"
+
+msgid "workspace.options.text-options.zhuyin"
+msgstr "Zhuyin"
+
+msgid "workspace.options.text-options.zhuyin-placeholder"
+msgstr "e.g. ㄋㄧˇ"
+
+msgid "workspace.options.text-options.chinese-reading-format"
+msgstr "Reading format"
+
+msgid "workspace.options.text-options.zhuyin-selection-hint"
+msgstr "Select one Han character. Enter 1–3 Zhuyin symbols and an optional tone. Symbols stay upright on the right; the neutral tone sits above. Size and position are fixed for this mode."
+
+msgid "workspace.options.text-options.zhuyin-invalid"
+msgstr "Enter 1–3 Zhuyin symbols with at most one tone. Place a neutral tone before or after the symbols; place other tones at the end."
+
+msgid "workspace.options.text-options.zhuyin-hidden"
+msgstr "Hide Zhuyin"

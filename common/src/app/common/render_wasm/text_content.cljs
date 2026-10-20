@@ -193,7 +193,7 @@
              (mem/write-u8 dview ruby-size)
              (mem/write-u8 dview ruby-align)
              (mem/write-u8 dview ruby-overhang)
-             (mem/write-u8 dview ruby-side)
+             (mem/write-u8 dview (bit-or ruby-side (if (true? (:ruby-zhuyin span)) 2 0)))
              ;; Use the former padding bytes; the span header stays the same size.
              (mem/write-u8 dview emphasis-position)
              (mem/write-u8 dview underline-position)
