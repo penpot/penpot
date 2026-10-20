@@ -36,8 +36,11 @@ impl GuidePool {
         }
 
         let world_tolerance = tolerance / zoom;
-        let vertical = Self::find_closest_in_axis(&self.vertical, x, world_tolerance);
-        let horizontal = Self::find_closest_in_axis(&self.horizontal, y, world_tolerance);
+        // Vertical guides run along y; horizontal along x. Pass the along-line
+        // coordinate so board-bound guides are only hittable inside their
+        // frame_range (matching the solid drawn segment).
+        let vertical = Self::find_closest_in_axis(&self.vertical, x, y, world_tolerance);
+        let horizontal = Self::find_closest_in_axis(&self.horizontal, y, x, world_tolerance);
 
         match (vertical, horizontal) {
             (Some(v), Some(h)) => {
@@ -53,7 +56,12 @@ impl GuidePool {
         }
     }
 
-    fn find_closest_in_axis(guides: &[Guide], coord: f32, world_tolerance: f32) -> Option<&Guide> {
+    fn find_closest_in_axis(
+        guides: &[Guide],
+        coord: f32,
+        along: f32,
+        world_tolerance: f32,
+    ) -> Option<&Guide> {
         if guides.is_empty() {
             return None;
         }
@@ -66,6 +74,9 @@ impl GuidePool {
         for candidate_idx in [idx.wrapping_sub(1), idx] {
             if candidate_idx < guides.len() {
                 let guide = &guides[candidate_idx];
+                if !guide.contains_along(along) {
+                    continue;
+                }
                 let dist = (guide.position() - coord).abs();
                 if dist <= world_tolerance && dist <= closest_dist {
                     closest_dist = dist;
@@ -183,6 +194,24 @@ mod tests {
         )
     }
 
+    fn vertical_board_guide(x: f32, y0: f32, y1: f32, index: usize) -> Guide {
+        Guide::new(
+            GuideKind::Vertical(x),
+            Color::BLACK,
+            Some(index),
+            Some((y0, y1)),
+        )
+    }
+
+    fn horizontal_board_guide(y: f32, x0: f32, x1: f32, index: usize) -> Guide {
+        Guide::new(
+            GuideKind::Horizontal(y),
+            Color::BLACK,
+            Some(index),
+            Some((x0, x1)),
+        )
+    }
+
     fn pool_with(guides: Vec<Guide>) -> GuidePool {
         let mut pool = GuidePool::new();
         pool.set(guides);
@@ -263,5 +292,50 @@ mod tests {
 
         assert!(pool.find_at(104.0, 0.0, 2.0, 8.0).is_some());
         assert!(pool.find_at(105.0, 0.0, 2.0, 8.0).is_none());
+    }
+
+    #[test]
+    fn find_at_hits_vertical_board_guide_inside_frame_range() {
+        let pool = pool_with(vec![vertical_board_guide(100.0, 0.0, 200.0, 0)]);
+        let guide = pool.find_at(102.0, 50.0, 1.0, 8.0).unwrap();
+        assert_eq!(guide.index, 0);
+    }
+
+    #[test]
+    fn find_at_misses_vertical_board_guide_outside_frame_range() {
+        let pool = pool_with(vec![vertical_board_guide(100.0, 0.0, 200.0, 0)]);
+        assert!(pool.find_at(102.0, 250.0, 1.0, 8.0).is_none());
+    }
+
+    #[test]
+    fn find_at_hits_horizontal_board_guide_inside_frame_range() {
+        let pool = pool_with(vec![horizontal_board_guide(200.0, 0.0, 300.0, 1)]);
+        let guide = pool.find_at(50.0, 203.0, 1.0, 8.0).unwrap();
+        assert_eq!(guide.index, 1);
+    }
+
+    #[test]
+    fn find_at_misses_horizontal_board_guide_outside_frame_range() {
+        let pool = pool_with(vec![horizontal_board_guide(200.0, 0.0, 300.0, 1)]);
+        assert!(pool.find_at(350.0, 203.0, 1.0, 8.0).is_none());
+    }
+
+    #[test]
+    fn find_at_free_guide_still_hits_outside_any_board() {
+        let pool = pool_with(vec![vertical_guide(100.0, 0)]);
+        let guide = pool.find_at(102.0, 999.0, 1.0, 8.0).unwrap();
+        assert_eq!(guide.index, 0);
+    }
+
+    #[test]
+    fn find_at_misses_hidden_board_guide_empty_range() {
+        // Serializer uses [Infinity, Infinity] for rotated / non-root boards.
+        let pool = pool_with(vec![vertical_board_guide(
+            100.0,
+            f32::INFINITY,
+            f32::INFINITY,
+            0,
+        )]);
+        assert!(pool.find_at(100.0, 50.0, 1.0, 8.0).is_none());
     }
 }
