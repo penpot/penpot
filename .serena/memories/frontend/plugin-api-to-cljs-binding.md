@@ -23,6 +23,7 @@
 
 - Public Plugin API objects are lightweight handles, not durable snapshots. Most getters locate fresh state from `app.main.store/state` using hidden `$id`, `$file`, `$page`, etc.
 - `not-valid` logs by default but throws when the plugin flag `throwValidationErrors` is enabled. The MCP execute-code handler deliberately enables that flag while running code.
+- A write to a removed shape always throws `Shape not found`, whatever that flag: setters through the shape proxy's `:on-set u/check-shape-exists` (runs outside the error handling), and methods that must not vanish silently (`resize`, `rotate`) call `u/check-shape-located` first. Methods run inside `:on-error (u/handle-error ...)`, which logs instead of throwing when the flag is off, so it rethrows errors whose `ex-data :type` is `::u/shape-not-found`.
 - `naturalChildOrdering` and `throwValidationErrors` are stored per plugin under `[:plugins :flags plugin-id ...]`; changing default behavior affects automation and MCP diagnostics.
 - Plugin data is stored under keyword namespaces: private data uses `(keyword "plugin" plugin-id)`, shared data uses `(keyword "shared" namespace)`.
 

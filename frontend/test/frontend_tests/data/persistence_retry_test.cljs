@@ -15,7 +15,6 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.persistence :as dps]
    [app.main.errors :as errors]
@@ -27,61 +26,8 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
+   [frontend-tests.helpers.persistence :refer [local-commit with-persistence]]
    [potok.v2.core :as ptk]))
-
-(defn- local-commit
-  "Builds a synthetic local commit event for `file-id`: a page edit as redo,
-  no undo, from the `:local` source."
-  [file-id]
-  (ptk/data-event ::dch/commit
-                  {:id (uuid/next)
-                   :file-id file-id
-                   :file-revn 0
-                   :file-vern 0
-                   :source :local
-                   :features #{}
-                   :redo-changes [{:type :mod-page :id (uuid/next) :name "Edited"}]
-                   :undo-changes []}))
-
-(defn- with-persistence
-  "Async fixture for the persistence tests: mocks the transport, flash and
-  the leave-page task set (`:tasks`), and runs `f` with persistence
-  initialized.
-
-  Evaluates to a promise resolving once `f` settles and teardown completes;
-  `await` it from an `^:async` test.
-
-  By default the transport responds through the `:response` subject. Pass a
-  `respond` function (`(fn [cmd params] observable)`) to drive the transport
-  response directly instead. Delivery through the subject is asynchronous
-  (`observe-on :async`): await each effect — via `wait-for` — before
-  asserting it."
-  [f & [respond]]
-  (let [file-id  (uuid/next)
-        response (rx/subject)
-        failures (atom [])
-        requests (atom [])
-        tasks    (atom #{})
-        store    (ptk/store {:state {:current-file-id file-id
-                                     :permissions {:can-edit true}
-                                     :files {file-id {:id file-id :revn 0}}}
-                             :on-error #(t/is false (str %))})]
-    (mock/with-mocks*
-      {rp/cmd!          (mock/stub (fn [cmd params]
-                                     (swap! requests conj [cmd params])
-                                     (if respond
-                                       (respond cmd params)
-                                       (->> response (rx/take 1) (rx/observe-on :async)))))
-       errors/flash     (fn [& {:keys [cause]}]
-                          (swap! failures conj cause))
-       st/ongoing-tasks tasks}
-      (try
-        (ptk/emit! store (dps/initialize-persistence))
-        (await (f {:file-id file-id :response response :failures failures
-                   :requests requests :store store :tasks tasks}))
-        (finally
-          (rx/dispose! store)
-          (rx/end! response))))))
 
 (defn- instant-backoff
   "Timer double: the backoff delays fire at once and the slow cycle never

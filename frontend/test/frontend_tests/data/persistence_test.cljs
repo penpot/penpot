@@ -9,7 +9,8 @@
   read-only saves, the stalled-save watchdog, the core save pipeline
   (queueing, failures, recovery), and the transient/terminal failure
   classification. Retry-episode behavior lives in
-  `frontend-tests.data.persistence-retry-test`.
+  `frontend-tests.data.persistence-retry-test`, the rollback of a partly
+  rejected save in `frontend-tests.data.persistence-rollback-test`.
 
   The watchdog and read-only tests are fully async: `mock/with-mocks*`
   installs the doubles, `^:async` bodies `await` observable effects (never
@@ -27,17 +28,16 @@
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.worker :as mw]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
+   [frontend-tests.helpers.persistence :as thp :refer [local-commit with-persistence]]
    [okulary.core :as l]
    [potok.v2.core :as ptk]))
 
@@ -62,9 +62,6 @@
                              :pages-index {page-id {:id page-id :name "Page"
                                                     :objects {uuid/zero
                                                               (cts/setup-shape {:id uuid/zero :type :frame})}}}}}
-            rename   (fn [name]
-                       {:type :mod-obj :id shape-id :page-id page-id
-                        :operations [{:type :set :attr :name :val name}]})
             pstate   {:status status
                       :error {:cause-type cause-type :commit-id first-id}
                       :queue (into #queue [] [first-id next-id other-id])
@@ -73,9 +70,9 @@
                                                                    :page-id page-id :parent-id uuid/zero
                                                                    :frame-id uuid/zero}]}]}
                               next-id {:file-id file-id :file-vern 0
-                                       :commits [{:redo-changes [(rename "Retained rectangle")]}]}
+                                       :commits [{:redo-changes [(thp/rename page-id shape-id "Retained rectangle")]}]}
                               other-id {:file-id (uuid/next) :file-vern 0
-                                        :commits [{:redo-changes [(rename "Another file")]}]}}}
+                                        :commits [{:redo-changes [(thp/rename page-id shape-id "Another file")]}]}}}
             state    {:persistence pstate}
             loaded   (ptk/update (#'dw/bundle-fetched {:file file :file-id file-id :thumbnails {}})
                                  state)
@@ -94,9 +91,6 @@
   (let [file-id   (uuid/next)
         page-id   (uuid/next)
         commit-id (uuid/next)
-        rename    (fn [name]
-                    {:type :mod-obj :id uuid/zero :page-id page-id
-                     :operations [{:type :set :attr :name :val name}]})
         file      {:id file-id
                    :vern 0
                    :data {:pages [page-id]
@@ -106,9 +100,9 @@
         pstate    {:status :saving
                    :queue (into #queue [] [commit-id])
                    :index {commit-id {:file-id file-id :file-vern 0
-                                      :commits [{:redo-changes [(rename "Queued")]}]}}
-                   :buffer [{:file-id file-id :file-vern 0 :redo-changes [(rename "Buffered")]}
-                            {:file-id (uuid/next) :file-vern 0 :redo-changes [(rename "Another file")]}]}
+                                      :commits [{:redo-changes [(thp/rename page-id uuid/zero "Queued")]}]}}
+                   :buffer [{:file-id file-id :file-vern 0 :redo-changes [(thp/rename page-id uuid/zero "Buffered")]}
+                            {:file-id (uuid/next) :file-vern 0 :redo-changes [(thp/rename page-id uuid/zero "Another file")]}]}
         loaded    (ptk/update (#'dw/bundle-fetched {:file file :file-id file-id :thumbnails {}})
                               {:persistence pstate})]
     (t/is (= "Buffered"
@@ -135,20 +129,6 @@
                               {:persistence pstate})]
     (t/is (identical? data (get-in loaded [:files file-id :data])))
     (t/is (identical? pstate (:persistence loaded)))))
-
-(defn- local-commit
-  "Builds a synthetic local commit event for `file-id`: a page edit as redo,
-  no undo, from the `:local` source."
-  [file-id]
-  (ptk/data-event ::dch/commit
-                  {:id (uuid/next)
-                   :file-id file-id
-                   :file-revn 0
-                   :file-vern 0
-                   :source :local
-                   :features #{}
-                   :redo-changes [{:type :mod-page :id (uuid/next) :name "Edited"}]
-                   :undo-changes []}))
 
 (defn- ^:async run-read-only-phases
   "Drives the read-only save scenario presuming asynchronous APIs: every
@@ -539,46 +519,8 @@
 ;;
 ;; Same async pattern as the watchdog tests: triggers stay bare, every
 ;; assert block is preceded by `wait-for` on its leading signal (or a bare
-;; `settle` tick when it asserts only absence).
-(defn- with-persistence
-  "Async fixture for the persistence tests: mocks the transport, flash and
-  the leave-page task set (`:tasks`), and runs `f` with persistence
-  initialized.
-
-  Evaluates to a promise resolving once `f` settles and teardown completes;
-  `await` it from an `^:async` test.
-
-  By default the transport responds through the `:response` subject. Pass a
-  `respond` function (`(fn [cmd params] observable)`) to drive the transport
-  response directly instead. Delivery through the subject is asynchronous
-  (`observe-on :async`): await each effect — via `wait-for` — before
-  asserting it."
-  [f & [respond]]
-  (let [file-id  (uuid/next)
-        response (rx/subject)
-        failures (atom [])
-        requests (atom [])
-        tasks    (atom #{})
-        store    (ptk/store {:state {:current-file-id file-id
-                                     :permissions {:can-edit true}
-                                     :files {file-id {:id file-id :revn 0}}}
-                             :on-error #(t/is false (str %))})]
-    (mock/with-mocks*
-      {rp/cmd!          (mock/stub (fn [cmd params]
-                                     (swap! requests conj [cmd params])
-                                     (if respond
-                                       (respond cmd params)
-                                       (->> response (rx/take 1) (rx/observe-on :async)))))
-       errors/flash     (fn [& {:keys [cause]}]
-                          (swap! failures conj cause))
-       st/ongoing-tasks tasks}
-      (try
-        (ptk/emit! store (dps/initialize-persistence))
-        (await (f {:file-id file-id :response response :failures failures
-                   :requests requests :store store :tasks tasks}))
-        (finally
-          (rx/dispose! store)
-          (rx/end! response))))))
+;; `settle` tick when it asserts only absence). The fixture is
+;; `with-persistence` (`frontend-tests.helpers.persistence`).
 
 ;; Scenario: edit permission is revoked with an edit queued. The save fails
 ;; without sending anything, the queue keeps the edit and the user is
@@ -639,47 +581,37 @@
   (await
    (with-persistence
      (^:async fn [{:keys [file-id requests failures store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id  (uuid/next)
-                shape-id (uuid/next)
-                commit   (rename-commit file-id page-id shape-id "A" "B")]
-            (ptk/emit! store
-                       #(-> %
-                            (assoc :current-page-id page-id)
-                            (assoc-in [:files file-id :data] (file-data page-id shape-id "B"))
-                            (assoc :workspace-undo {:items [{:undo-group (:undo-group @commit)
-                                                             :undo-groups #{(:undo-group @commit)}
-                                                             :undo-changes (:undo-changes @commit)
-                                                             :redo-changes (:redo-changes @commit)
-                                                             :tags #{}}]
-                                                    :index 0}))
-                       commit
-                       #(assoc-in % [:permissions :can-edit] false)
-                       ::dps/force-persist)
-            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                   "lost permission fails the save"))
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             commit   (thp/rename-commit file-id page-id shape-id "A" "B")]
+         (ptk/emit! store
+                    (thp/open-file file-id page-id (thp/file-data page-id shape-id "B"))
+                    #(assoc % :workspace-undo {:items [(thp/undo-entry commit)] :index 0})
+                    commit
+                    #(assoc-in % [:permissions :can-edit] false)
+                    ::dps/force-persist)
+         (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
+                                "lost permission fails the save"))
 
-            (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
-            (await (async/settle))
-            (t/is (= 1 (count (get-in @store [:persistence :queue])))
-                  "a viewer keeps the edit")
-            (t/is (= "B" (shape-name store file-id page-id shape-id)))
-            (t/is (= 2 (count @failures))
-                  "the count notice shows again over the role change notice")
+         (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
+         (await (async/settle))
+         (t/is (= 1 (count (get-in @store [:persistence :queue])))
+               "a viewer keeps the edit")
+         (t/is (= "B" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= 2 (count @failures))
+               "the count notice shows again over the role change notice")
 
-            (ptk/emit! store
-                       #(assoc-in % [:permissions :can-edit] true)
-                       (ptk/data-event :app.main.data.common/change-team-role))
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "edit rights back release the edit"))
-            (t/is (= "A" (shape-name store file-id page-id shape-id))
-                  "the file shows the server's data")
-            (t/is (empty? (get-in @store [:workspace-undo :items]))
-                  "the released edit leaves the history")
-            (t/is (empty? @requests) "the released edit is not sent"))))))))
+         (ptk/emit! store
+                    #(assoc-in % [:permissions :can-edit] true)
+                    (ptk/data-event :app.main.data.common/change-team-role))
+         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                      (empty? (get-in @store [:persistence :queue])))
+                                "edit rights back release the edit"))
+         (t/is (= "A" (thp/shape-name store file-id page-id shape-id))
+               "the file shows the server's data")
+         (t/is (empty? (get-in @store [:workspace-undo :items]))
+               "the released edit leaves the history")
+         (t/is (empty? @requests) "the released edit is not sent"))))))
 
 ;; Answers every save with an unexpected server error, a terminal failure.
 (defn- server-error
@@ -1330,40 +1262,6 @@
          (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                 "the save lands")))))))
 
-(defn- rename
-  [page-id shape-id name]
-  {:type :mod-obj :id shape-id :page-id page-id
-   :operations [{:type :set :attr :name :val name}]})
-
-(defn- rename-commit
-  "A local commit of `file-id` that renames the shape from `from` to `to`,
-  with its own undo group."
-  [file-id page-id shape-id from to]
-  (ptk/data-event ::dch/commit
-                  {:id (uuid/next)
-                   :file-id file-id
-                   :file-revn 0
-                   :file-vern 0
-                   :source :local
-                   :features #{}
-                   :undo-group (uuid/next)
-                   :redo-changes [(rename page-id shape-id to)]
-                   :undo-changes [(rename page-id shape-id from)]}))
-
-(defn- file-data
-  "File data with one page holding one rectangle named `name`."
-  [page-id shape-id name]
-  {:pages [page-id]
-   :pages-index {page-id {:id page-id
-                          :name "Page"
-                          :objects {uuid/zero (cts/setup-shape {:id uuid/zero :type :frame :shapes [shape-id]})
-                                    shape-id (cts/setup-shape {:id shape-id :type :rect :name name
-                                                               :parent-id uuid/zero :frame-id uuid/zero})}}}})
-
-(defn- shape-name
-  [store file-id page-id shape-id]
-  (get-in @store [:files file-id :data :pages-index page-id :objects shape-id :name]))
-
 ;; Scenario: an edit waits in the buffer when another user's change to the
 ;; same attribute arrives. The server will apply the remote change first and
 ;; the buffered edit after it, so the local file must end the same way.
@@ -1372,27 +1270,38 @@
   (await
    (with-persistence
      (^:async fn [{:keys [file-id store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id  (uuid/next)
-                shape-id (uuid/next)
-                local    (rename-commit file-id page-id shape-id "Original" "Local")]
-            (ptk/emit! store #(-> %
-                                  (assoc :current-page-id page-id)
-                                  (assoc-in [:files file-id :data] (file-data page-id shape-id "Local"))))
-            (ptk/emit! store local)
-            (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                   "the local edit is buffered"))
-            (ptk/emit! store (dch/commit {:file-id file-id
-                                          :file-revn 1
-                                          :file-vern 0
-                                          :source :remote
-                                          :save-undo? false
-                                          :redo-changes [(rename page-id shape-id "Remote")]
-                                          :undo-changes []}))
-            (await (async/settle))
-            (t/is (= "Local" (shape-name store file-id page-id shape-id))))))))))
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             local    (thp/rename-commit file-id page-id shape-id "Original" "Local")]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Local")))
+         (ptk/emit! store local)
+         (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
+                                "the local edit is buffered"))
+         (ptk/emit! store (thp/remote-commit file-id 1 [(thp/rename page-id shape-id "Remote")]))
+         (await (async/settle))
+         (t/is (= "Local" (thp/shape-name store file-id page-id shape-id))))))))
+
+;; Scenario: a library edit waits to be saved when a peer's change to this
+;; file arrives, and both files have a shape with the same id. Proves: a
+;; remote commit goes under the pending commits of its own file only.
+(t/deftest ^:async a-remote-commit-ignores-the-pending-commits-of-other-files
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (let [lib-id   (uuid/next)
+             page-id  (uuid/next)
+             shape-id (uuid/next)]
+         (ptk/emit! store (thp/open-file-with-library file-id lib-id page-id
+                                                      (thp/file-data page-id shape-id "A")
+                                                      (thp/file-data page-id shape-id "Y")))
+         (ptk/emit! store (thp/rename-commit lib-id page-id shape-id "X" "Y"))
+         (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
+                                "the library edit is buffered"))
+         (ptk/emit! store (thp/remote-commit file-id 1 [(thp/set-attr page-id shape-id :opacity 0.3)]))
+         (await (async/settle))
+         (t/is (= 0.3 (thp/shape-attr store file-id page-id shape-id :opacity)))
+         (t/is (= "A" (thp/shape-name store file-id page-id shape-id))
+               "the library edit is not replayed on this file"))))))
 
 ;; Commit boundaries.
 
@@ -1442,581 +1351,3 @@
          (await (async/wait-for #(= 2 (count @requests)) "the buffered edit is sent"))
          (rx/push! response {:revn 2})
          (await (async/wait-for released? "the waiters are released")))))))
-
-;; Rollback of rejected commits.
-
-;; Scenario: the first save carries two commits; while it is in flight a
-;; third one is queued, an edit of another file is queued too, and a fourth
-;; one waits in the buffer. The server keeps the first commit and rejects
-;; the second. The file goes back to the first commit: the rejected one and
-;; every later one of that file are undone and dropped from the queue, the
-;; buffer and the undo history, while the other file's edit is still sent.
-;; Proves: a rejection leaves the file as the server holds it and the queue
-;; keeps going.
-(t/deftest ^:async a-rejected-save-undoes-the-rejected-commit-and-every-later-one
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store failures]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id  (uuid/next)
-                shape-id (uuid/next)
-                other-id (uuid/next)
-                commit1  (rename-commit file-id page-id shape-id "A" "B")
-                commit2  (rename-commit file-id page-id shape-id "B" "C")
-                commit3  (rename-commit file-id page-id shape-id "C" "D")
-                commit4  (rename-commit file-id page-id shape-id "D" "E")
-                other    (local-commit other-id)
-                entry    (fn [commit] {:undo-group (:undo-group @commit)
-                                       :undo-changes (:undo-changes @commit)
-                                       :redo-changes (:redo-changes @commit)
-                                       :tags #{}})]
-            ;; The local data already holds the four renames
-            (ptk/emit! store
-                       #(-> %
-                            (assoc :current-page-id page-id)
-                            (assoc-in [:files file-id :data] (file-data page-id shape-id "E"))
-                            (assoc-in [:files other-id] {:id other-id :revn 0})
-                            (assoc :workspace-undo {:items (mapv entry [commit1 commit2 commit3 commit4])
-                                                    :index 3})
-                            (assoc-in [:workspace-local :selected] #{shape-id})))
-            (ptk/emit! store commit1 commit2 ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the first two commits are sent"))
-            (ptk/emit! store commit3 other ::dps/force-persist)
-            (await (async/wait-for #(= 3 (count (get-in @store [:persistence :queue])))
-                                   "the third commit and the other file's edit are queued"))
-            (ptk/emit! store commit4)
-            (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                   "the fourth commit is buffered"))
-
-            (rx/push! response {:revn 0
-                                :rejected {:commit-ids [(:id @commit2)]
-                                           :failed-commit-id (:id @commit2)
-                                           :error {:type :validation :code :referential-integrity}}})
-            (await (async/wait-for #(= 2 (count @requests)) "the other file's edit is sent next"))
-
-            (t/is (= "B" (shape-name store file-id page-id shape-id))
-                  "the file holds the commits the server kept")
-            (t/is (= [other-id] (mapv #(get-in @store [:persistence :index % :file-id])
-                                      (get-in @store [:persistence :queue])))
-                  "only the other file's edit is still queued")
-            (t/is (empty? (get-in @store [:persistence :buffer])))
-            (t/is (= [(:undo-group @commit1)]
-                     (mapv :undo-group (get-in @store [:workspace-undo :items]))))
-            (t/is (= 0 (get-in @store [:workspace-undo :index])))
-            (t/is (= 1 (count @failures)) "the user is told once")
-            (t/is (= other-id (get-in (second @requests) [1 :id])))
-            (rx/push! response {:revn 1})
-            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                   "the queue drains")))))))))
-
-;; Scenario: an edit is buffered while a save is in flight and the save comes
-;; back rejected, so the rollback drops the edit; the 200 ms pending notice
-;; of that edit fires afterwards. Proves: with nothing left to save the
-;; notice is ignored and the status stays :saved, so waiters such as "Pin
-;; this version" are not left hanging.
-(t/deftest ^:async a-pending-notice-after-a-rollback-leaves-the-status-saved
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id  (uuid/next)
-                shape-id (uuid/next)
-                commit1  (rename-commit file-id page-id shape-id "A" "B")
-                commit2  (rename-commit file-id page-id shape-id "B" "C")]
-            (ptk/emit! store
-                       #(-> %
-                            (assoc :current-page-id page-id)
-                            (assoc-in [:files file-id :data] (file-data page-id shape-id "C"))))
-            (ptk/emit! store commit1 ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the first commit is sent"))
-            (ptk/emit! store commit2)
-            (rx/push! response {:revn 0
-                                :rejected {:commit-ids [(:id @commit1)]
-                                           :failed-commit-id (:id @commit1)
-                                           :error {:type :validation :code :referential-integrity}}})
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :buffer])))
-                                   "the rollback drops both commits"))
-            ;; The notice the dropped edit scheduled
-            (ptk/emit! store (#'dps/update-status :pending))
-            (await (async/settle))
-            (t/is (= :saved (get-in @store [:persistence :status]))))))))))
-
-(defn- set-attr
-  [page-id shape-id attr val]
-  {:type :mod-obj :id shape-id :page-id page-id
-   :operations [{:type :set :attr attr :val val}]})
-
-(defn- attr-commit
-  "A local commit of `file-id` that sets `attr` from `from` to `to`."
-  [file-id page-id shape-id attr from to]
-  (ptk/data-event ::dch/commit
-                  {:id (uuid/next)
-                   :file-id file-id
-                   :file-revn 0
-                   :file-vern 0
-                   :source :local
-                   :features #{}
-                   :undo-group (uuid/next)
-                   :redo-changes [(set-attr page-id shape-id attr to)]
-                   :undo-changes [(set-attr page-id shape-id attr from)]}))
-
-(defn- remote-commit
-  [file-id revn changes]
-  (dch/commit {:file-id file-id
-               :file-revn revn
-               :file-vern 0
-               :source :remote
-               :save-undo? false
-               :redo-changes changes
-               :undo-changes []}))
-
-(defn- shape-attr
-  [store file-id page-id shape-id attr]
-  (get-in @store [:files file-id :data :pages-index page-id :objects shape-id attr]))
-
-(def ^:private rejected-second
-  (fn [commit]
-    {:revn 0
-     :rejected {:commit-ids [(:id @commit)]
-                :failed-commit-id (:id @commit)
-                :error {:type :validation :code :referential-integrity}}}))
-
-;; Scenario: two edits wait in the buffer, the second one changing the
-;; opacity, when a peer's opacity change arrives. The server keeps the first
-;; edit and rejects the second. The server holds the peer's opacity, so the
-;; local file must too, not the opacity from before the rejected edit.
-;; Proves: the rollback applies the peer's changes again over the undone
-;; commits.
-(t/deftest ^:async a-rollback-keeps-a-peer-change-to-the-same-attribute
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id  (uuid/next)
-                shape-id (uuid/next)
-                commit1  (rename-commit file-id page-id shape-id "A" "B")
-                commit2  (attr-commit file-id page-id shape-id :opacity 0.5 0.9)]
-            (ptk/emit! store #(-> %
-                                  (assoc :current-page-id page-id)
-                                  (assoc-in [:files file-id :data]
-                                            (-> (file-data page-id shape-id "B")
-                                                (assoc-in [:pages-index page-id :objects shape-id :opacity] 0.9)))))
-            (ptk/emit! store commit1 commit2)
-            (await (async/wait-for #(= 2 (count (get-in @store [:persistence :buffer])))
-                                   "both edits are buffered"))
-            (ptk/emit! store (remote-commit file-id 1 [(set-attr page-id shape-id :opacity 0.3)]))
-            (await (async/settle))
-            (t/is (= 0.9 (shape-attr store file-id page-id shape-id :opacity))
-                  "the local edit stays on top of the peer's while pending")
-            (ptk/emit! store ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the edits are sent"))
-            (rx/push! response (rejected-second commit2))
-            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                   "the rollback settles"))
-            (t/is (= 0.3 (shape-attr store file-id page-id shape-id :opacity))
-                  "the peer's opacity, as on the server")
-            (t/is (= "B" (shape-name store file-id page-id shape-id))
-                  "the kept edit stays"))))))))
-
-;; Scenario: a peer's opacity change arrives while an opacity edit is
-;; pending; that edit is saved (on the server it lands after the peer's).
-;; Later two new edits are sent and the second is rejected. The rollback
-;; must not apply the old peer change again, which would undo the saved
-;; edit. Proves: remote changes older than the oldest pending commit are
-;; forgotten once the commits pending before them are saved.
-(t/deftest ^:async a-rollback-ignores-peer-changes-older-than-the-pending-commits
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id  (uuid/next)
-                shape-id (uuid/next)
-                commit0  (attr-commit file-id page-id shape-id :opacity 0.5 0.7)
-                commit1  (rename-commit file-id page-id shape-id "A" "B")
-                commit2  (rename-commit file-id page-id shape-id "B" "C")]
-            (ptk/emit! store #(-> %
-                                  (assoc :current-page-id page-id)
-                                  (assoc-in [:files file-id :data]
-                                            (-> (file-data page-id shape-id "A")
-                                                (assoc-in [:pages-index page-id :objects shape-id :opacity] 0.7)))))
-            (ptk/emit! store commit0)
-            (await (async/wait-for #(seq (get-in @store [:persistence :buffer])) "the edit is buffered"))
-            (ptk/emit! store (remote-commit file-id 1 [(set-attr page-id shape-id :opacity 0.3)]))
-            (ptk/emit! store ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the opacity edit is sent"))
-            (rx/push! response {:revn 1})
-            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                   "the opacity edit is saved"))
-            (t/is (empty? (get-in @store [:persistence :remote-changes file-id]))
-                  "nothing pending, nothing kept")
-            (ptk/emit! store
-                       #(assoc-in % [:files file-id :data :pages-index page-id :objects shape-id :name] "C")
-                       commit1 commit2 ::dps/force-persist)
-            (await (async/wait-for #(= 2 (count @requests)) "the renames are sent"))
-            (rx/push! response (rejected-second commit2))
-            (await (async/wait-for #(= "B" (shape-name store file-id page-id shape-id))
-                                   "the rejected rename is undone"))
-            (t/is (= 0.7 (shape-attr store file-id page-id shape-id :opacity))
-                  "the saved opacity edit stays"))))))))
-
-(defn- grouped
-  "`commit` with its undo group set to `group`: one action that makes
-  several commits gives them the same undo group."
-  [commit group]
-  (ptk/data-event ::dch/commit (assoc @commit :undo-group group)))
-
-(defn- with-library
-  "Store state holding this file's data and a library file `lib-id` with
-  one rectangle each, named `name` and `lib-name`."
-  [file-id lib-id page-id shape-id name lshape-id lib-name]
-  #(-> %
-       (assoc :current-page-id page-id)
-       (assoc-in [:files file-id :data] (file-data page-id shape-id name))
-       (assoc-in [:files lib-id] {:id lib-id :revn 0 :data (file-data page-id lshape-id lib-name)})))
-
-(defn- sent-changes
-  "The changes of each group of the `n`th save request."
-  [requests n]
-  (mapv :changes (get-in (nth @requests n) [1 :changes-with-metadata])))
-
-;; Scenario: one action makes a commit in this file and one in a library
-;; (as updating a main component from a copy does). The library also has an
-;; unrelated edit before the action and another after it. This file's save
-;; comes back with the action's commit rejected while the library's commits
-;; are still queued. Proves: the rejection reverts the whole action, so the
-;; library drops its commit of the action and every later one, and keeps
-;; the edit made before it.
-(t/deftest ^:async a-rejection-reverts-the-pending-commits-of-the-same-action-in-other-files
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [lib-id    (uuid/next)
-                page-id   (uuid/next)
-                shape-id  (uuid/next)
-                lshape-id (uuid/next)
-                group     (uuid/next)
-                commit1   (rename-commit file-id page-id shape-id "A" "B")
-                commit2   (grouped (rename-commit file-id page-id shape-id "B" "C") group)
-                before    (rename-commit lib-id page-id lshape-id "X" "Y")
-                linked    (grouped (rename-commit lib-id page-id lshape-id "Y" "Z") group)
-                after     (rename-commit lib-id page-id lshape-id "Z" "W")]
-            (ptk/emit! store (with-library file-id lib-id page-id shape-id "C" lshape-id "W"))
-            (ptk/emit! store commit1 commit2 before linked after ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "this file's save is sent"))
-            (rx/push! response (rejected-second commit2))
-            (await (async/wait-for #(= 2 (count @requests)) "the library's save is sent next"))
-            (t/is (= "B" (shape-name store file-id page-id shape-id)))
-            (t/is (= "Y" (shape-name store lib-id page-id lshape-id))
-                  "the library goes back to the edit made before the action")
-            (t/is (= lib-id (get-in (second @requests) [1 :id])))
-            (t/is (= [[(rename page-id lshape-id "Y")]] (sent-changes requests 1))
-                  "only the library's edit made before the action is saved")
-            (rx/push! response {:revn 1})
-            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                   "the queue drains")))))))))
-
-;; Scenario: one action makes a commit in a library and one in this file.
-;; The library's is saved first; then this file's save comes back with the
-;; action's commit rejected. The library's commit can no longer be dropped.
-;; Proves: a new commit undoes the saved part of the rejected action.
-(t/deftest ^:async a-rejection-undoes-the-saved-commits-of-the-same-action-with-a-new-commit
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [lib-id    (uuid/next)
-                page-id   (uuid/next)
-                shape-id  (uuid/next)
-                lshape-id (uuid/next)
-                group     (uuid/next)
-                linked    (grouped (rename-commit lib-id page-id lshape-id "X" "Y") group)
-                commit    (grouped (rename-commit file-id page-id shape-id "A" "B") group)]
-            (ptk/emit! store (with-library file-id lib-id page-id shape-id "B" lshape-id "Y"))
-            (ptk/emit! store linked commit ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first"))
-            (t/is (= lib-id (get-in (first @requests) [1 :id])))
-            (rx/push! response {:revn 1})
-            (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent"))
-            (rx/push! response (rejected-second commit))
-            (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                   "a new commit undoes the library's"))
-            (ptk/emit! store ::dps/force-persist)
-            (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent"))
-            (t/is (= lib-id (get-in (nth @requests 2) [1 :id])))
-            (t/is (= [[(rename page-id lshape-id "X")]] (sent-changes requests 2)))
-            (t/is (= "A" (shape-name store file-id page-id shape-id)))
-            (t/is (= "X" (shape-name store lib-id page-id lshape-id)))
-            (rx/push! response {:revn 2})
-            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                   "the queue drains")))))))))
-
-;; Scenario: as above, while the user has an undo transaction open. Proves:
-;; the undo commit gets its own group, not the transaction's, so a later
-;; rejection in the transaction does not revert it.
-(t/deftest ^:async the-undo-of-a-saved-commit-stays-out-of-an-open-transaction
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [lib-id    (uuid/next)
-                page-id   (uuid/next)
-                shape-id  (uuid/next)
-                lshape-id (uuid/next)
-                group     (uuid/next)
-                linked    (grouped (rename-commit lib-id page-id lshape-id "X" "Y") group)
-                commit    (grouped (rename-commit file-id page-id shape-id "A" "B") group)]
-            (ptk/emit! store (with-library file-id lib-id page-id shape-id "B" lshape-id "Y"))
-            (ptk/emit! store linked commit ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first"))
-            (rx/push! response {:revn 1})
-            (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent"))
-            (ptk/emit! store (dwu/start-undo-transaction (js/Symbol) :timeout 0))
-            (let [tx-group (get-in @store [:workspace-undo :transaction :commit-group])]
-              (rx/push! response (rejected-second commit))
-              (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                     "a new commit undoes the library's"))
-              (t/is (some? tx-group))
-              (t/is (not= tx-group (get-in @store [:persistence :buffer 0 :undo-group])))
-              (ptk/emit! store ::dps/force-persist)
-              (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent"))
-              (rx/push! response {:revn 2})
-              (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                     "the queue drains"))))))))))
-
-;; Scenario: as above, but the library is no longer loaded when this file's
-;; save comes back. Proves: the undo of the library's saved commit is still
-;; sent, without touching local data the library no longer has.
-(t/deftest ^:async a-rejection-queues-the-undo-of-a-saved-commit-of-a-file-not-loaded
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [lib-id    (uuid/next)
-                page-id   (uuid/next)
-                shape-id  (uuid/next)
-                lshape-id (uuid/next)
-                group     (uuid/next)
-                linked    (grouped (rename-commit lib-id page-id lshape-id "X" "Y") group)
-                commit    (grouped (rename-commit file-id page-id shape-id "A" "B") group)]
-            (ptk/emit! store (with-library file-id lib-id page-id shape-id "B" lshape-id "Y"))
-            (ptk/emit! store linked commit ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first"))
-            (rx/push! response {:revn 1})
-            (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent"))
-            (ptk/emit! store #(update % :files dissoc lib-id))
-            (rx/push! response (rejected-second commit))
-            (await (async/wait-for #(= 3 (count @requests)) "the undo is queued and sent"))
-            (t/is (= lib-id (get-in (nth @requests 2) [1 :id])))
-            (t/is (= [[(rename page-id lshape-id "X")]] (sent-changes requests 2)))
-            (t/is (empty? (get-in @store [:persistence :buffer])))
-            (t/is (nil? (get-in @store [:files lib-id])) "no local data is made up")
-            (t/is (= "A" (shape-name store file-id page-id shape-id)))
-            (rx/push! response {:revn 2})
-            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                   "the queue drains")))))))))
-
-;; Scenario: a library edit waits to be saved when a peer's change to this
-;; file arrives, and both files have a shape with the same id. Proves: a
-;; remote commit goes under the pending commits of its own file only.
-(t/deftest ^:async a-remote-commit-ignores-the-pending-commits-of-other-files
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [lib-id   (uuid/next)
-                page-id  (uuid/next)
-                shape-id (uuid/next)]
-            (ptk/emit! store (with-library file-id lib-id page-id shape-id "A" shape-id "Y"))
-            (ptk/emit! store (rename-commit lib-id page-id shape-id "X" "Y"))
-            (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                   "the library edit is buffered"))
-            (ptk/emit! store (remote-commit file-id 1 [(set-attr page-id shape-id :opacity 0.3)]))
-            (await (async/settle))
-            (t/is (= 0.3 (shape-attr store file-id page-id shape-id :opacity)))
-            (t/is (= "A" (shape-name store file-id page-id shape-id))
-                  "the library edit is not replayed on this file"))))))))
-
-;; Scenario: one action makes two commits in this file and the save keeps
-;; the first and rejects the second. Proves: the kept commit of the action
-;; is undone too, with a new commit, so no action is left half done.
-(t/deftest ^:async a-rejection-undoes-the-kept-commits-of-the-same-action
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id  (uuid/next)
-                shape-id (uuid/next)
-                group    (uuid/next)
-                commit1  (grouped (rename-commit file-id page-id shape-id "A" "B") group)
-                commit2  (grouped (attr-commit file-id page-id shape-id :opacity 1 0.5) group)]
-            (ptk/emit! store #(-> %
-                                  (assoc :current-page-id page-id)
-                                  (assoc-in [:files file-id :data]
-                                            (-> (file-data page-id shape-id "B")
-                                                (assoc-in [:pages-index page-id :objects shape-id :opacity] 0.5)))))
-            (ptk/emit! store commit1 commit2 ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the action is sent"))
-            (rx/push! response (rejected-second commit2))
-            (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                   "a new commit undoes the kept one"))
-            (ptk/emit! store ::dps/force-persist)
-            (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent"))
-            (t/is (= [[(rename page-id shape-id "A")]] (sent-changes requests 1)))
-            (t/is (= "A" (shape-name store file-id page-id shape-id)))
-            (t/is (= 1 (shape-attr store file-id page-id shape-id :opacity)))
-            (rx/push! response {:revn 1})
-            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                   "the queue drains")))))))))
-
-;; Scenario: applying a token to five shapes makes three commits inside one
-;; undo transaction, all sent in one save; the server keeps the first two
-;; and rejects the third. Proves: the whole action is reverted, the kept
-;; commits by a new commit, so opacity and applied tokens are back to their
-;; starting values on every shape.
-(t/deftest ^:async a-rejection-reverts-every-commit-of-an-undo-transaction
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id   (uuid/next)
-                shape-ids (into [] (repeatedly 5 uuid/next))
-                shapes    (map #(cts/setup-shape {:id % :type :rect :name "R" :opacity 1
-                                                  :parent-id uuid/zero :frame-id uuid/zero})
-                               shape-ids)
-                apply-to  (fn [ids]
-                            (dch/commit-changes
-                             {:redo-changes (into []
-                                                  (mapcat (fn [id]
-                                                            [(set-attr page-id id :opacity 0.5)
-                                                             (set-attr page-id id :applied-tokens {:opacity "half"})]))
-                                                  ids)
-                              :undo-changes (into []
-                                                  (mapcat (fn [id]
-                                                            [(set-attr page-id id :opacity 1)
-                                                             (set-attr page-id id :applied-tokens nil)]))
-                                                  ids)}))
-                tx-id     (js/Symbol)]
-            (ptk/emit! store #(-> %
-                                  (assoc :current-page-id page-id)
-                                  (assoc-in [:files file-id :data]
-                                            {:pages [page-id]
-                                             :pages-index {page-id {:id page-id
-                                                                    :name "Page"
-                                                                    :objects (into {uuid/zero (cts/setup-shape {:id uuid/zero :type :frame
-                                                                                                                :shapes shape-ids})}
-                                                                                   (map (juxt :id identity))
-                                                                                   shapes)}}})))
-            (ptk/emit! store
-                       (dwu/start-undo-transaction tx-id :timeout 0)
-                       (apply-to (subvec shape-ids 0 2))
-                       (apply-to (subvec shape-ids 2 4))
-                       (apply-to (subvec shape-ids 4 5))
-                       (dwu/commit-undo-transaction tx-id)
-                       ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the action is sent"))
-            (let [groups (get-in (first @requests) [1 :changes-with-metadata])
-                  third  (:commit-id (nth groups 2))]
-              (t/is (= 3 (count groups)) "the save carries the three commits")
-              (rx/push! response {:revn 0
-                                  :rejected {:commit-ids [third]
-                                             :failed-commit-id third
-                                             :error {:type :validation :code :referential-integrity}}}))
-            (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                   "a new commit undoes the kept ones"))
-            (ptk/emit! store ::dps/force-persist)
-            (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent"))
-            (doseq [id shape-ids]
-              (t/is (= 1 (shape-attr store file-id page-id id :opacity)))
-              (t/is (nil? (shape-attr store file-id page-id id :applied-tokens))))
-            (t/is (= #{1}
-                     (into #{}
-                           (comp (mapcat :changes)
-                                 (mapcat :operations)
-                                 (filter #(= :opacity (:attr %)))
-                                 (map :val))
-                           (get-in (second @requests) [1 :changes-with-metadata])))
-                  "the new commit puts the kept opacity back on the server")
-            (rx/push! response {:revn 1})
-            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                   "the queue drains")))))))))
-
-;; Scenario: the rejected commit added the text being edited. Proves: the
-;; rollback leaves edition mode, so the editor does not keep pointing at a
-;; shape that no longer exists.
-(t/deftest ^:async a-rollback-leaves-the-edition-of-a-removed-shape
-  (await
-   (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
-       (await
-        (mock/with-mocks*
-          {mw/ask! (mock/stub (fn [_] (rx/empty)))}
-          (let [page-id  (uuid/next)
-                shape-id (uuid/next)
-                text-id  (uuid/next)
-                text     (cts/setup-shape {:id text-id :type :text :parent-id uuid/zero :frame-id uuid/zero})
-                commit   (ptk/data-event ::dch/commit
-                                         {:id (uuid/next)
-                                          :file-id file-id
-                                          :file-revn 0
-                                          :file-vern 0
-                                          :source :local
-                                          :features #{}
-                                          :undo-group (uuid/next)
-                                          :redo-changes [{:type :add-obj :id text-id :page-id page-id
-                                                          :parent-id uuid/zero :frame-id uuid/zero :obj text}]
-                                          :undo-changes [{:type :del-obj :id text-id :page-id page-id}]})]
-            (ptk/emit! store #(-> %
-                                  (assoc :current-page-id page-id)
-                                  (assoc-in [:files file-id :data]
-                                            (-> (file-data page-id shape-id "A")
-                                                (assoc-in [:pages-index page-id :objects text-id] text)
-                                                (update-in [:pages-index page-id :objects uuid/zero :shapes] conj text-id)))
-                                  (assoc-in [:workspace-local :edition] text-id)))
-            (ptk/emit! store commit ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the new text is sent"))
-            (rx/push! response (rejected-second commit))
-            (await (async/wait-for #(nil? (get-in @store [:workspace-local :edition]))
-                                   "the rollback leaves edition mode"))
-            (t/is (nil? (get-in @store [:files file-id :data :pages-index page-id :objects text-id]))))))))))
-
-(t/deftest forgetting-undo-groups-cuts-the-history-at-the-first-match
-  (let [[g1 g2 g3] (repeatedly 3 uuid/next)
-        state      {:workspace-undo {:items [{:undo-group g1} {:undo-group g2} {:undo-group g3}]
-                                     :index 2
-                                     :transaction {:undo-group g3 :undo-changes [{:type :mod-page}]}}}
-        undo       (:workspace-undo (ptk/update (dwu/forget-undo-groups #{g2 g3}) state))]
-    (t/is (= [g1] (mapv :undo-group (:items undo))))
-    (t/is (= 0 (:index undo)))
-    (t/is (empty? (get-in undo [:transaction :undo-changes])) "the open transaction is emptied")
-    (t/is (= g3 (get-in undo [:transaction :commit-group]))
-          "its later commits keep the group of its earlier ones")))
-
-(t/deftest forgetting-undo-groups-clears-the-history-without-a-match
-  (let [state {:workspace-undo {:items [{:undo-group (uuid/next)}] :index 0}}
-        undo  (:workspace-undo (ptk/update (dwu/forget-undo-groups #{(uuid/next)}) state))]
-    (t/is (empty? (:items undo)))
-    (t/is (nil? (:index undo)))))
