@@ -10,9 +10,6 @@ fi
 
 . ./_build_env frontend
 
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp-pdf-simd.tar.gz"}
-
-
 ALLOWED_RULES="-D static_mut_refs"
 
 # ./lint --fix

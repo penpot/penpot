@@ -307,6 +307,7 @@
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
    ::sm/params schema:update-profile-photo
+   ::rpc/multipart-only-params [:file]
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
@@ -540,7 +541,8 @@
   {::doc/added "1.0"
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (let [teams      (get-owned-teams conn profile-id)
+  (let [profile    (db/get* conn :profile {:id profile-id} {::db/remove-deleted false})
+        teams      (get-owned-teams conn profile-id)
         deleted-at (ct/now)]
 
     ;; If we found owned teams with participants, we don't allow
@@ -581,6 +583,12 @@
     (session/invalidate-all cfg profile-id)
 
     (-> (rph/wrap nil)
+        (rph/with-meta {::audit/props {:id (:id profile)
+                                       :email (:email profile)
+                                       :fullname (:fullname profile)
+                                       :created-at (:created-at profile)
+                                       :modified-at (:modified-at profile)
+                                       :deleted-at deleted-at}})
         (rph/with-transform (session/delete-fn cfg)))))
 
 (def sql:get-subscription-editors

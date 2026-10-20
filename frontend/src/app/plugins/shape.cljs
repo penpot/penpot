@@ -31,7 +31,9 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.stroke :as types.stroke]
    [app.common.types.text :as txt]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
@@ -64,7 +66,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -273,21 +275,27 @@
       (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))
 
 (defn commit-strokes!
-  [plugin-id ^js self value]
-  (let [id    (obj/get self "$id")
-        value (parser/parse-strokes value)]
-    (cond
-      (not (sm/validate [:vector cts/schema:stroke] value))
-      (u/not-valid plugin-id :strokes value)
+  ([plugin-id self value]
+   (commit-strokes! plugin-id self value nil))
+  ([plugin-id ^js self value options]
+   (let [id    (obj/get self "$id")
+         value (parser/parse-strokes value)]
+     (cond
+       (not (sm/validate [:vector cts/schema:stroke] value))
+       (u/not-valid plugin-id :strokes value)
 
-      (not (r/check-permission plugin-id "content:write"))
-      (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
+       (not (r/check-permission plugin-id "content:write"))
+       (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
 
-      (not (u/page-active? (obj/get self "$page")))
-      (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
+       (not (u/page-active? (obj/get self "$page")))
+       (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
 
-      :else
-      (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
+       (and (not (ctt/per-side-stroke-shape? (:type (u/proxy->shape self))))
+            (some #(= :multiple (types.stroke/width-type %)) value))
+       (u/not-valid plugin-id :strokes "Per-side stroke widths require a board or rectangle")
+
+       :else
+       (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value) options))))))
 
 (defn commit-shadows!
   [plugin-id ^js self value]
@@ -992,8 +1000,12 @@
            :strokes
            {:this true
             :get (fn [^js self]
-                   (strokes/format-strokes (-> self u/proxy->shape :strokes)
-                                           #(commit-strokes! plugin-id self %)))
+                   (let [shape (u/proxy->shape self)]
+                     (strokes/format-strokes
+                      (:strokes shape)
+                      #(commit-strokes! plugin-id self %1 %2)
+                      {:per-side-allowed? (ctt/per-side-stroke-shape? (:type shape))
+                       :not-valid (fn [code value] (u/not-valid plugin-id code value))})))
             :set (fn [self value] (commit-strokes! plugin-id self value))}
 
            :layoutChild
@@ -1575,6 +1587,38 @@
                                                target-id
                                                true)))))
 
+           :updateMain
+           (fn []
+             (let [shape     (u/locate-shape file-id page-id id)
+                   objects   (u/locate-objects file-id page-id)
+                   component (when (:component-id shape)
+                               (u/locate-library-component (:component-file shape) (:component-id shape)))]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'content:write' permission")
+
+                 (not (r/check-permission plugin-id "library:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'library:write' permission")
+
+                 (not= file-id (:current-file-id @st/state))
+                 (u/not-valid plugin-id :updateMain "Can only update a component from a copy in the current file")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :updateMain "Cannot modify a page that is not currently active")
+
+                 (not (and (ctk/instance-head? shape) (ctk/in-component-copy? shape)))
+                 (u/not-valid plugin-id :updateMain "The shape is not a component copy head")
+
+                 (u/inside-component-copy? objects shape)
+                 (u/not-valid plugin-id :updateMain "Cannot update the main from a shape inside another component copy")
+
+                 (or (nil? component) (:deleted component))
+                 (u/not-valid plugin-id :updateMain "The main component does not exist or is deleted")
+
+                 :else
+                 (st/emit! (-> (dwl/update-component-sync id (:component-file shape))
+                               (se/add-event plugin-id))))))
+
            :resetOverrides
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]
@@ -1782,7 +1826,7 @@
                   (let [set-id   (obj/get token "$set-id")
                         token-id (obj/get token "$id")
                         token    (u/locate-token file-id set-id token-id)
-                        kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
+                        kw-attrs (expand-token-attrs attrs)]
                     (cond
                       (not (r/check-permission plugin-id "content:write"))
                       (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")

@@ -904,6 +904,40 @@
       new-shape)
     shape))
 
+(defn merge-live-text-dimensions
+  "Pick displayed width/height while editing auto-grow text.
+
+  Geometry commits are finalize-only (see `v2-update-text-shape-content`), so the
+  Design tab and edition outline read live WASM layout for growing axes:
+  - `:auto-width` → live width and height
+  - `:auto-height` → selrect width, live height
+  - `:fixed` → selrect for both
+
+  Nil or non-positive live axes fall back to the committed selrect so a missing
+  WASM measure never flashes `0`."
+  [grow-type {:keys [width height]} live]
+  (let [lw (when (map? live) (:width live))
+        lh (when (map? live) (:height live))]
+    {:width  (if (and (= grow-type :auto-width) (number? lw) (pos? lw)) lw width)
+     :height (if (and (not= grow-type :fixed) (number? lh) (pos? lh)) lh height)}))
+
+(defn shape-with-live-text-dimensions
+  "Display-only patch of shape selrect (and :width/:height) from live WASM text
+  layout. Does not write to the store. Returns `shape` unchanged when WASM is
+  unavailable or dimensions do not change."
+  [shape]
+  (let [selrect (:selrect shape)
+        live    (when (wasm.api/initialized?)
+                  (wasm.api/get-text-dimensions (:id shape)))
+        {:keys [width height]} (merge-live-text-dimensions (:grow-type shape) selrect live)]
+    (if (and (mth/close? width (:width selrect))
+             (mth/close? height (:height selrect)))
+      shape
+      (-> shape
+          (assoc :selrect (grc/make-rect (:x selrect) (:y selrect) width height))
+          (cond-> (contains? shape :width) (assoc :width width))
+          (cond-> (contains? shape :height) (assoc :height height))))))
+
 (defn commit-update-text-modifier
   []
   (ptk/reify ::commit-update-text-modifier
@@ -1434,12 +1468,72 @@
                                   :name name
                                   :finalize? finalize?)))
 
+(defn- layout-item
+  "The ancestor of `shape` (or `shape` itself) that is a direct child of its board."
+  [objects shape]
+  (loop [item shape]
+    (let [parent-id (:parent-id item)]
+      (if (or (= parent-id (:frame-id shape))
+              (nil? (get objects parent-id)))
+        item
+        (recur (get objects parent-id))))))
+
+(defn- v3-sync-text-layout
+  "Previews an auto-grow text's live size in its layout, so a fit-content parent
+  follows it while typing. Geometry is committed on finalize."
+  [id]
+  (ptk/reify ::v3-sync-text-layout
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects  (dsh/lookup-page-objects state)
+            shape    (get objects id)
+            preview? (and (cfh/text-shape? shape)
+                          (not= :fixed (:grow-type shape))
+                          (ctl/any-layout-descent? objects shape)
+                          (not (ctl/position-absolute? (layout-item objects shape))))
+            size     (when preview?
+                       (dwwt/get-wasm-text-new-size shape))
+            previous (or (get-in state [::layout-preview id])
+                         (select-keys (:selrect shape) [:width :height]))]
+        ;; Modifiers are costly, so skip keystrokes that keep the size.
+        (if (and (some? size)
+                 (not (and (mth/close? (:width size) (:width previous))
+                           (mth/close? (:height size) (:height previous)))))
+          (rx/of #(assoc-in % [::layout-preview id] size)
+                 (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers shape)
+                                         :interactive? false))
+          (rx/empty))))))
+
+(defn v3-stop-text-layout-preview
+  "Drops the layout preview of the text `id` and leaves interactive render mode."
+  [id]
+  (ptk/reify ::v3-stop-text-layout-preview
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (contains? (get state ::layout-preview) id)
+        (rx/of #(update % ::layout-preview dissoc id)
+               (dwm/clear-local-transform))
+        (rx/empty)))))
+
+(defn v3-update-editor-content
+  "Commits `content` from the WASM editor to the text `shape-id` and, while
+  editing, previews its new size in the layout."
+  [shape-id content & {:keys [finalize?]}]
+  (let [update-event (editor-content-update shape-id content :finalize? finalize?)]
+    (if finalize?
+      update-event
+      (ptk/reify ::v3-update-editor-content
+        ptk/WatchEvent
+        (watch [_ _ _]
+          (rx/of update-event
+                 (v3-sync-text-layout shape-id)))))))
+
 (defn v3-sync-editor-content
   "Event pushing the WASM editor content back into the shape, or nil when there is
    nothing to sync. Every text edit commits through it, menu or keystroke alike."
   [& {:keys [finalize?]}]
   (when-let [{:keys [shape-id content]} (wasm.text-editor/text-editor-sync-content)]
-    (editor-content-update shape-id content :finalize? finalize?)))
+    (v3-update-editor-content shape-id content :finalize? finalize?)))
 
 (defn v3-apply-pending-caret-styles
   "Event saving an insertion made at `before` that consumed the pending caret style:
@@ -1449,7 +1543,7 @@
     ;; Sync first so the cached content stays index-aligned with WASM.
     (wasm.text-editor/text-editor-sync-content)
     (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
-      (editor-content-update shape-id content)
+      (v3-update-editor-content shape-id content)
       (v3-sync-editor-content))))
 
 (defn- sync-editor-content-stream
@@ -1602,7 +1696,7 @@
         ;; Sync first so the cached content stays index-aligned with WASM.
         (wasm.text-editor/text-editor-sync-content)
         (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start penpot?)]
-          (editor-content-update shape-id content)
+          (v3-update-editor-content shape-id content)
           (v3-sync-editor-content)))
 
       pending?

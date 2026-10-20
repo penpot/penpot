@@ -211,11 +211,10 @@
     [:rpc-rlimit-config {:optional true} ::fs/path]
     [:rpc-climit-config {:optional true} ::fs/path]
 
-    [:audit-log-archive-uri {:optional true} :string]
+    [:nexus-uri {:optional true} ::sm/uri]
     [:audit-log-http-handler-concurrency {:optional true} ::sm/int]
 
     [:default-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
-    [:scheduled-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
     [:worker-default-parallelism {:optional true} ::sm/int]
     [:worker-webhook-parallelism {:optional true} ::sm/int]
     [:worker-cron-parallelism {:optional true} ::sm/int]

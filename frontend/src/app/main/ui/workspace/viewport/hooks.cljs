@@ -402,7 +402,7 @@
 
 (defn inside-vbox [vbox objects frame-id]
   (let [frame (get objects frame-id)]
-    (and (some? frame) (gsh/overlaps? frame vbox))))
+    (and (some? frame) (some? vbox) (gsh/overlaps? frame vbox))))
 
 (defn setup-active-frames
   [objects hover-ids selected active-frames zoom transform vbox]

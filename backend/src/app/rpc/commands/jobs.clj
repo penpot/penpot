@@ -110,6 +110,25 @@
 ;; EXPORT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- single-team-id
+  "The team id when every `file-ids` entry resolves and they share one
+  team. Otherwise nil."
+  [cfg file-ids]
+  (when (seq file-ids)
+    (db/run! cfg
+             (fn [{:keys [::db/conn]}]
+               (let [arr   (db/create-array conn "uuid" file-ids)
+                     rows  (db/exec! conn
+                                     ["SELECT f.id AS file_id, t.id AS team_id
+                                         FROM file AS f
+                                         JOIN project AS p ON (p.id = f.project_id)
+                                         JOIN team AS t ON (t.id = p.team_id)
+                                        WHERE f.id = ANY(?)" arr])
+                     teams (into #{} (map :team-id) rows)]
+                 (when (and (= (count file-ids) (count rows))
+                            (= 1 (count teams)))
+                   (first teams)))))))
+
 (sv/defmethod ::create-export-binfile-job
   "Create a durable job that exports a set of files as a `.penpot`
    package.
@@ -146,11 +165,13 @@
                         ::quotes/profile-id profile-id})
 
     (let [summary (get-job-summary cfg (submit-job cfg job-def :export-binfile
-                                                   params profile-id))]
+                                                   params profile-id))
+          team-id (single-team-id cfg file-ids)]
       (with-meta summary
-        {::audit/props {:job-id      (:id summary)
-                        :files       (count file-ids)
-                        :export-type (d/name (:export-type params))}}))))
+        {::audit/props (cond-> {:job-id      (:id summary)
+                                :files       (count file-ids)
+                                :export-type (d/name (:export-type params))}
+                         team-id (assoc :team-id team-id))}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPORT
@@ -309,11 +330,15 @@
   "Read a job the caller created: its state and, once it is over, what it
   produced or why it failed.
 
-  The result of a finished job is the plain JSON the row holds, because a
-  result has no schema of its own like the params do: a uuid comes back as
-  the text it is on disk. The progress and the history of the job are not
-  part of the answer: a client that follows a job takes its progress from
-  the websocket, and the event log still has no read surface."
+  The result of a finished job is the JSON the row holds, decoded with the
+  result schema its job-def declares: a job that keys its result by uuid
+  (the import resolution) answers with the types it stored, and a job whose
+  job-def declares no schema answers with the JSON as it is on disk, where a
+  uuid is text and a uuid used as a map key is a keyword. A result that does
+  not conform to the declared schema never reaches the column: the substrate
+  validates it when the job is completed. The progress and the history of
+  the job are not part of the answer: a client that follows a job takes its
+  progress from the websocket, and the event log still has no read surface."
   {::doc/added "2.20"
    ::sm/params schema:get-job
    ::sm/result schema:job-detail}

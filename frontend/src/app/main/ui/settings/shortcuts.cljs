@@ -23,6 +23,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.settings.import-shortcuts-diff-modal]
    [app.main.ui.settings.restore-shortcuts-modal]
@@ -41,7 +42,7 @@
    [:> search-bar* {:on-change on-search-term-change
                     :on-clear on-search-clear-click
                     :value filter-term
-                    :placeholder (tr "shortcuts.title")
+                    :placeholder (tr "shortcuts.search")
                     :icon-id i/search
                     :auto-focus true}]
    (when (and show-restore-all has-custom-shortcuts)
@@ -50,7 +51,7 @@
        :on-click on-restore-all
        :class (stl/css :restore-all-button)
        :icon i/reload}
-      (tr "dashboard.restore-all-deleted-button")])])
+      (tr "shortcuts.reset-all")])])
 
 (defn- filter-shortcuts-tree
   [tree shortcut-filter search-term]
@@ -457,9 +458,9 @@
                                                   :imported-shortcuts shortcuts
                                                   :custom-shortcuts custom-shortcuts
                                                   :all-shortcuts-raw all-shortcuts-raw}))
-                           (st/emit! (ntf/error (tr "errors.invalid-data")))))
+                           (st/emit! (ntf/error (tr "import-shortcuts.invalid-file")))))
                        (catch :default _
-                         (st/emit! (ntf/error (tr "errors.invalid-data"))))))))
+                         (st/emit! (ntf/error (tr "import-shortcuts.invalid-file"))))))))
 
              (-> (mf/ref-val input-ref)
                  (dom/set-value! "")))))]
@@ -477,6 +478,10 @@
        [:> icon* {:icon-id i/info
                   :class (stl/css :shortcuts-description-icon)}]
        (tr "shortcuts.reload-hint")]
+      (when-not (ds/layout-map-supported?)
+        [:> context-notification* {:level :warning
+                                   :class (stl/css :layout-map-warning)}
+         (tr "shortcuts.layout-map-missing")])
 
       [:> (mf/provider ctx/shortcuts-ctx) {:value shortcuts-ctx-value}
        [:div {:class (stl/css :shortcuts-content)}

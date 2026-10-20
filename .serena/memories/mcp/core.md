@@ -85,6 +85,21 @@ From the `mcp/` directory, run
 
 * `pnpm run build` to test the build of all packages
 * `pnpm run fmt` to apply the auto-formatter
+* `pnpm run test` runs the tests of `plugin` (node test runner) and `server` (tsx).
+  The committed `typescript` version is 6.x: the 7.x line ships only a version stub
+  at the `typescript` entry point, and its synchronous compiler API is gone, so
+  `ts.transpileModule` (used by the plugin tests to compile `main.ts`/`plugin.ts`
+  into a sandboxed browser-like context) fails there.
+* `packages/server` type-checks against the built `dist` of `@penpot/mcp-common`;
+  a stale `packages/common/dist` makes `types:check` fail with missing exports
+  (e.g. `PenpotSession`). Run `pnpm --filter mcp-common run build` first.
+* The server logger (`packages/server/src/logger.ts`) uses pino transports only
+  outside `node:test` (`logTransportTargets`). A transport spawns a worker thread
+  whose message port stays referenced once a line is in flight, so the test child
+  process keeps running after the tests finish and the suite hangs intermittently
+  (node reports `Promise resolution is still pending but the event loop has
+  already resolved` for the file's root test). Inside tests the logger writes to
+  stdout directly. `NODE_TEST_CONTEXT` is the env var `node --test` sets.
 * Cross-cutting testing principles and anti-patterns: `mem:testing`.
 
 ## Devenv plugin/server wiring

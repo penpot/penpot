@@ -61,6 +61,9 @@ Flags:
 
 - `mcp` has no lint task (shows as skipped). `render-wasm` uses `./lint`,
   `./test`, and `cargo fmt`.
+- Exports `PENPOT_FLAGS` with `enable-backend-asserts` appended to any
+  existing value, so backend test runs compile in and exercise
+  precondition asserts; see `mem:backend/testing`.
 - Test tasks are long-running (backend: `clojure -M:dev:test`); use a
   generous timeout when calling it from an agent shell.
 - Skill entry point: `.agents/skills/local-ci/SKILL.md`.

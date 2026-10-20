@@ -455,7 +455,7 @@
 (defn- read-import-v1
   [{:keys [::db/conn ::bfc/project-id ::bfc/profile-id ::bfc/input] :as cfg}]
 
-  (bfc/configure-database-timeouts! cfg)
+  (bfc/configure-import-transaction cfg)
 
   (pu/with-open [input (zstd-input-stream input)
                  input (io/data-input-stream input)]
@@ -482,9 +482,9 @@
         (bfm/apply-pending-migrations! cfg)
 
         ;; Knowing that the ids of the created files are in index,
-        ;; just lookup them and return it as a set
+        ;; just lookup them and return them in the same shape as v3.
         (let [files (-> bfc/*state* deref :files)]
-          (into #{} (keep #(get-in @bfc/*state* [:index %])) files))))))
+          {:file-ids (into [] (keep #(get-in @bfc/*state* [:index %])) files)})))))
 
 (defmethod read-import :v1
   [options]

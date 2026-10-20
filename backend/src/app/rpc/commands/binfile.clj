@@ -16,7 +16,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
-   [app.loggers.audit :as-alias audit]
+   [app.loggers.audit :as audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
@@ -83,7 +83,7 @@
 ;; --- Command: import-binfile
 
 (defn- import-binfile
-  [{:keys [::db/pool] :as cfg} {:keys [profile-id project-id version name file upload-id]}]
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id project-id version name file upload-id] :as params}]
   (let [team
         (teams/get-team pool
                         :profile-id profile-id
@@ -116,6 +116,14 @@
                 {:id project-id}
                 {::db/return-keys false})
 
+    ;; The imported files get no event from their own command, so emit one per
+    ;; file inside a single transaction.
+    (db/tx-run! cfg
+                (fn [cfg]
+                  (doseq [file-id (:file-ids result)]
+                    (audit/submit-file-created-event cfg params file-id
+                                                     {:team-id (:id team)}))))
+
     result))
 
 (def ^:private schema:import-binfile
@@ -145,6 +153,7 @@
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile
+   ::rpc/multipart-only-params [:file]
    ::climit/id [[:import-binfile/by-profile ::rpc/profile-id]
                 [:import-binfile/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version upload-id] :as params}]

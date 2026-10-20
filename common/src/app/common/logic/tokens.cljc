@@ -15,15 +15,34 @@
 
 ;; Tokens source
 
+(defn- own-tokens-status
+  "The current tokens status of `file-data`, keeping only the themes and sets
+   that exist in its own tokens lib."
+  [file-data]
+  (let [tokens-status (cfo/get-tokens-status file-data)
+        tokens-lib    (cfo/get-tokens-lib file-data)]
+    (if (and tokens-status tokens-lib)
+      (cfo/sync-tokens-status-with-lib tokens-status tokens-lib)
+      (ctos/make-tokens-status))))
+
 (defn generate-set-tokens-source
   "Create changes for setting the tokens source of a file to `library`,
-   copying the library's tokens status. If the library is nil, the tokens source
-   is removed and the tokens status is cleared."
+   copying the library's tokens status. If the library is the file itself,
+   the themes and sets that don't exist in its own tokens lib are deactivated.
+   If the library is nil, the tokens source is removed and the tokens status
+   is cleared."
   [changes library]
   (let [library-id (:id library)
-        library-tokens-status (if library
-                                (-> library ctf/file-data cfo/get-tokens-status)
-                                (ctos/make-tokens-status))]
+        file-data  (pcb/get-library-data changes)
+        library-tokens-status (cond
+                                (nil? library)
+                                (ctos/make-tokens-status)
+
+                                (= library-id (:id file-data))
+                                (own-tokens-status file-data)
+
+                                :else
+                                (-> library ctf/file-data cfo/get-tokens-status))]
     (-> changes
         (pcb/set-tokens-source library-id)
         (pcb/set-tokens-status library-tokens-status))))

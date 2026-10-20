@@ -8,6 +8,7 @@ use crate::shapes::{
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
+use super::children_paint_order;
 use super::shape_renderer::ShapeRenderer;
 use super::text;
 use super::RenderResources;
@@ -473,10 +474,9 @@ pub(super) fn render_tree_pdf(
     canvas: &Canvas,
     id: &Uuid,
     tree: ShapesPoolRef,
-    scale: f32,
     page: skia::Rect,
 ) -> Result<()> {
-    render_tree_dispatch(shared, canvas, id, tree, scale, page, true)
+    render_tree_dispatch(shared, canvas, id, tree, 1.0, page, true)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -821,34 +821,7 @@ fn render_group(
     let child_opts = opts.for_children_of(element);
 
     if masked {
-        // Mirror the GPU mask: render all children (including the mask shape)
-        // as content, then re-draw the mask silhouette (the group's first child)
-        // with DstIn to clip everything to it.
-        let paint = Paint::default();
-        let subtree_bounds = element.extrect(tree, scale);
-        canvas.save_layer(
-            &skia::canvas::SaveLayerRec::default()
-                .bounds(&subtree_bounds)
-                .paint(&paint),
-        );
-
-        for child_id in &children {
-            render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
-        }
-
-        if let Some(mask_id) = element.mask_id() {
-            let mut mask_paint = Paint::default();
-            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
-            canvas.save_layer(
-                &skia::canvas::SaveLayerRec::default()
-                    .bounds(&subtree_bounds)
-                    .paint(&mask_paint),
-            );
-            render_tree_inner(shared, canvas, mask_id, tree, scale, &child_opts)?;
-            canvas.restore(); // mask layer
-        }
-
-        canvas.restore(); // composition layer
+        render_masked_children(shared, canvas, element, &children, tree, scale, &child_opts)?;
     } else {
         for child_id in &children {
             render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
@@ -859,6 +832,42 @@ fn render_group(
         canvas.restore(); // opacity/blend layer
     }
     canvas.restore();
+    Ok(())
+}
+
+fn render_masked_children(
+    shared: &mut RenderResources,
+    canvas: &Canvas,
+    element: &Shape,
+    children: &[Uuid],
+    tree: ShapesPoolRef,
+    scale: f32,
+    child_opts: &TreeOpts,
+) -> Result<()> {
+    let subtree_bounds = element.extrect(tree, scale);
+    canvas.save_layer(
+        &skia::canvas::SaveLayerRec::default()
+            .bounds(&subtree_bounds)
+            .paint(&Paint::default()),
+    );
+
+    for child_id in children {
+        render_tree_inner(shared, canvas, child_id, tree, scale, child_opts)?;
+    }
+
+    if let Some(mask_id) = element.mask_id() {
+        let mut mask_paint = Paint::default();
+        mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+        canvas.save_layer(
+            &skia::canvas::SaveLayerRec::default()
+                .bounds(&subtree_bounds)
+                .paint(&mask_paint),
+        );
+        render_tree_inner(shared, canvas, mask_id, tree, scale, child_opts)?;
+        canvas.restore(); // mask layer
+    }
+
+    canvas.restore(); // composition layer
     Ok(())
 }
 
@@ -934,7 +943,7 @@ fn render_frame(
     }
 
     // Children (absolute coords, no frame transform).
-    let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+    let children = children_paint_order(tree, element);
     let child_opts = opts.for_children_of(element);
     for child_id in &children {
         render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
@@ -988,10 +997,14 @@ fn render_container_drop_shadows(
             renderer.draw_fills(element, &element.fills)?;
         }
 
-        let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+        let children = children_paint_order(tree, element);
         let child_opts = opts.for_children_of(element);
-        for child_id in &children {
-            render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
+        if element.is_masked_group() {
+            render_masked_children(shared, canvas, element, &children, tree, scale, &child_opts)?;
+        } else {
+            for child_id in &children {
+                render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;
+            }
         }
 
         canvas.restore();

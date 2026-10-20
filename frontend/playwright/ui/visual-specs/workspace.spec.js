@@ -53,7 +53,71 @@ test.describe("Viewport", () => {
   });
 });
 
+test.describe("Grid layout", () => {
+  test("Shows the grid layout options and the grid editor", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-9042.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "af2494d0-39ba-8184-8005-230696f6df5c",
+      pageId: "af2494d0-39ba-8184-8005-230696f6df5d",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    const section = page.getByTestId("inspect-layout");
+    await expect(
+      section.getByRole("button", { name: "Edit grid" }),
+    ).toBeVisible();
+    // The buttons are a small part of the section: compare every pixel.
+    await expect(section).toHaveScreenshot("grid-layout-options.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await section.getByRole("button", { name: "Edit grid" }).click();
+    await expect(workspace.rightSidebar.getByText("GRID LAYOUT")).toBeVisible();
+    // Expand the column tracks so their rows show too.
+    await workspace.rightSidebar.getByText(/^Columns? \d/).click();
+    await page.mouse.move(0, 0);
+    await expect(workspace.rightSidebar).toHaveScreenshot(
+      "grid-layout-editor.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+  });
+});
+
 test.describe("Design tab", () => {
+  test("Shows the boolean options when selecting two shapes", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await workspace.rectShapeButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+    await workspace.clickLeafLayer("Rectangle");
+    await page.keyboard.press("Control+D");
+    await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
+    await page.keyboard.press("Control+A");
+
+    await expect(
+      workspace.rightSidebar.getByRole("button", { name: "Flatten" }),
+    ).toBeVisible();
+    // The boolean options are a small part of the sidebar: compare every
+    // pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
   test("Shows the design tab when selecting a shape", async ({ page }) => {
     const workspace = new WorkspacePage(page);
     await workspace.setupEmptyFile();
@@ -84,6 +148,189 @@ test.describe("Design tab", () => {
 
     await expect(workspace.page).toHaveScreenshot();
   });
+
+  test("Shows the wrap and padding modes of a flex layout", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-7760.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-7760.json",
+    );
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-create-rect.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "cd90e028-326a-80b4-8004-7cdec16ffad5",
+      pageId: "cd90e028-326a-80b4-8004-7cdec16ffad6",
+    });
+
+    await workspace.clickLeafLayer("Flex Board");
+
+    const section = workspace.rightSidebar.getByRole("region", {
+      name: "Layout container section",
+    });
+    const wrap = section.getByRole("button", { name: /^(No w|W)rap$/ });
+    const padding = section.getByRole("button", {
+      name: "Show 4 sided padding options",
+    });
+    await expect(wrap).toBeVisible();
+    // The buttons are a small part of the section: compare every pixel.
+    await expect(section).toHaveScreenshot("flex-layout-rest.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await wrap.click();
+    await padding.click();
+    await padding.blur();
+    await page.mouse.move(0, 0);
+    await expect(
+      section.getByRole("textbox", { name: /top padding/i }),
+    ).toBeVisible();
+    await expect(section).toHaveScreenshot("flex-layout-pressed.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
+  test("Shows the align options when selecting two shapes", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await workspace.rectShapeButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+    await workspace.clickLeafLayer("Rectangle");
+    await page.keyboard.press("Control+D");
+    await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
+    await page.keyboard.press("Control+A");
+
+    await expect(
+      workspace.rightSidebar.getByRole("button", { name: /^Align left/ }),
+    ).toBeVisible();
+    // The align options are a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
+  test("Shows the margin modes of a flex layout element", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-7760.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-7760.json",
+    );
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-create-rect.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "cd90e028-326a-80b4-8004-7cdec16ffad5",
+      pageId: "cd90e028-326a-80b4-8004-7cdec16ffad6",
+    });
+
+    await workspace.clickToggableLayer("Flex Board");
+    await workspace.clickLeafLayer("Rectangle");
+
+    const section = workspace.rightSidebar.getByRole("region", {
+      name: "Layout item section",
+    });
+    const marginMode = section.getByRole("button", {
+      name: "Margin - multiple",
+    });
+    await expect(marginMode).toBeVisible();
+    // The margin button is a small part of the section: compare every pixel.
+    await expect(section).toHaveScreenshot("margin-simple.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await marginMode.click();
+    await marginMode.blur();
+    await page.mouse.move(0, 0);
+    await expect(
+      section.getByRole("textbox", { name: "Top margin" }),
+    ).toBeVisible();
+    await expect(section).toHaveScreenshot("margin-multiple.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Component options", () => {
+  test("Shows the component pill of a copy", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickToggableLayer("Group");
+    await workspace.layers.getByText("A", { exact: true }).click();
+
+    await expect(
+      workspace.rightSidebar.getByTestId("component-pill-button"),
+    ).toBeVisible();
+    // The component pill is a small part of the sidebar: compare every
+    // pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
+  test("Shows the annotation actions of a main component", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickToggableLayer("Group");
+    await workspace.layers.getByText("B", { exact: true }).click();
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Options" })
+      .click();
+    await workspace.rightSidebar.getByText("Create annotation").click();
+
+    // Creating: save (disabled while the text is empty) and discard.
+    const annotation = workspace.rightSidebar.locator("#annotation-textarea");
+    await expect(annotation).toBeFocused();
+    await expect(workspace.rightSidebar).toHaveScreenshot(
+      "annotation-creating.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    // Saved: edit and delete show when hovering the title.
+    await annotation.fill("An annotation");
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Create", exact: true })
+      .click();
+    const title = workspace.rightSidebar.getByText("Annotation", {
+      exact: true,
+    });
+    await title.hover();
+    await expect(workspace.rightSidebar).toHaveScreenshot(
+      "annotation-saved.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+  });
 });
 
 test.describe("Assets tab", () => {
@@ -109,10 +356,15 @@ test.describe("Assets tab", () => {
     await workspace.openLibrariesModal();
     await expect(workspace.page).toHaveScreenshot();
 
+    await workspace.librariesModal
+      .getByRole("tab", { name: "Libraries" })
+      .click();
+    await expect(workspace.page).toHaveScreenshot();
+
+    // Now the get-file call should return a library
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
     await workspace.clickLibrary("Testing library 1");
-    await expect(
-      workspace.librariesModal.getByText("File library"),
-    ).toBeVisible();
+    await expect(workspace.librariesModal.getByText("Added")).toBeVisible();
     await expect(workspace.page).toHaveScreenshot();
   });
 
@@ -134,6 +386,69 @@ test.describe("Assets tab", () => {
     await workspace.sidebar.getByTitle("List view").click();
 
     await expect(workspace.page).toHaveScreenshot();
+  });
+});
+
+test.describe("Guides", () => {
+  test("Shows the advanced options of a square guide", async ({ page }) => {
+    // A taller window keeps the whole Design tab visible: a scrolled
+    // sidebar can land on a fractional offset and change the antialiasing.
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await workspace.boardButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 200);
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Add guide" })
+      .click();
+
+    // The advanced options toggle has no accessible name yet.
+    await workspace.rightSidebar
+      .locator("button[class*='frame_grid__show-options']")
+      .click();
+    await expect(workspace.rightSidebar.getByText("Color")).toBeVisible();
+    // The guide options are a small part of the sidebar: compare every
+    // pixel. The color rows antialias their rounded corners one color step
+    // differently between runs, so allow that much and nothing more.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0.02,
+    });
+  });
+});
+
+test.describe("Left header", () => {
+  test("Shows the shared badge and the save status", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-create-rect.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
+      pageId: "c1249a66-fce0-8175-8004-7433fe4be8bd",
+    });
+
+    const header = page.locator("header", { hasText: "Testing library 1" });
+    await expect(header).toBeVisible();
+    // The badge and the status dot are tiny: compare every pixel.
+    await expect(header).toHaveScreenshot("left-header-shared.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await workspace.rectShapeButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+    await expect(header.getByTitle("Saved")).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(header).toHaveScreenshot("left-header-saved.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
   });
 });
 
@@ -162,5 +477,110 @@ test.describe("Palette", () => {
         "There are no color styles in your library yet",
       ),
     ).toBeVisible();
+  });
+});
+
+test.describe("Nudge modal", () => {
+  test("Shows the nudge amount modal", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await page.getByRole("button", { name: "Main menu" }).click();
+    await page.locator("#file-menu-preferences").click();
+    await page.locator("#file-menu-nudge").click();
+
+    await expect(page.getByText("Nudge amount")).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(workspace.page).toHaveScreenshot("nudge-modal.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Selected colors", () => {
+  test("Shows the more colors button", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await page.keyboard.press("Control+A");
+
+    await expect(
+      workspace.rightSidebar.getByRole("button", { name: "More colors" }),
+    ).toBeVisible();
+    // The button is a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Imported SVG attributes", () => {
+  test("Shows the attributes of an imported SVG shape", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9930.json");
+    await workspace.goToWorkspace({
+      fileId: "8f843b59-7fbb-81ce-8005-aa6d47ae3111",
+      pageId: "fb9798e7-a547-80ae-8005-9ffda4a13e2c",
+    });
+
+    // The fourth "workspace" board holds the imported SVG groups.
+    await workspace.clickToggableLayer("workspace", {}, 3);
+    await workspace.clickToggableLayer("Canvas");
+    await workspace.clickLeafLayer("Rectangle 760 (Stroke)");
+
+    const section = workspace.rightSidebar.getByText("Imported SVG Attributes");
+    await section.scrollIntoViewIfNeeded();
+    await expect(section).toBeVisible();
+    // The attributes are a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Grid cell options", () => {
+  test("Shows the grid cell options when selecting a cell", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-9042.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "af2494d0-39ba-8184-8005-230696f6df5c",
+      pageId: "af2494d0-39ba-8184-8005-230696f6df5d",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await page
+      .getByTestId("inspect-layout")
+      .getByRole("button", { name: "Edit grid" })
+      .click();
+
+    // Click the first cell of the grid editor.
+    const cell = page.locator("g.cell-editor > rect").first();
+    const box = await cell.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+    await expect(workspace.rightSidebar.getByText("Grid cell")).toBeVisible();
+    // The cell options are a small part of the sidebar: compare every pixel.
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
   });
 });

@@ -19,6 +19,7 @@
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.common :as soc]
@@ -408,12 +409,13 @@
         (= type :multiple)
         [:> margin-multiple* props])]
 
-     [:button {:class (stl/css-case
-                       :margin-mode true
-                       :selected (= type :multiple))
-               :title "Margin - multiple"
-               :on-click on-type-change'}
-      deprecated-icon/margin]]))
+     [:> icon-button* {:variant "ghost"
+                       :tooltip-class (stl/css :margin-mode)
+                       :tooltip-placement "top-left"
+                       :aria-pressed (= type :multiple)
+                       :aria-label "Margin - multiple"
+                       :icon i/margin
+                       :on-click on-type-change'}]]))
 
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj
@@ -602,7 +604,6 @@
             :input-type :min-width
             :nillable true
             :applied-token applied-token-to-min-w
-            :tooltip-class (stl/css :tooltip-wrapper)
             :value min-w}]
 
           [:div {:class (stl/css :layout-item-min-w)
@@ -632,7 +633,6 @@
             :attr :layout-item-max-w
             :property (tr "workspace.options.layout-item.layout-item-max-w")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
             :applied-token applied-token-to-max-w
             :value max-w}]
 
@@ -663,7 +663,6 @@
             :attr :layout-item-min-h
             :property (tr "workspace.options.layout-item.layout-item-min-h")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
 
             :applied-token applied-token-to-min-h
             :value min-h}]
@@ -694,7 +693,6 @@
             :attr :layout-item-max-h
             :property (tr "workspace.options.layout-item.layout-item-max-h")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
             :applied-token applied-token-to-max-h
             :value max-h}]
 

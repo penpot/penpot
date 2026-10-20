@@ -161,7 +161,7 @@
                                  :input input})]
     (with-progress cfg context
       #(let [result (case (int version)
-                      1 {:file-ids (vec (bf.v1/import-files! cfg))}
+                      1 (bf.v1/import-files! cfg)
                       3 (bf.v3/import-files! cfg)
                       (ex/raise :type :validation
                                 :code :unsupported-version

@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
@@ -19,8 +20,10 @@
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.variants :as dwv]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
@@ -845,12 +848,81 @@
 
     :remove
     (fn []
-      (cond
-        (not (r/check-permission plugin-id "library:write"))
-        (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
+      (let [component (u/locate-library-component file-id id)]
+        (cond
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :remove "Plugin doesn't have 'library:write' permission")
 
-        :else
-        (st/emit! (dwl/delete-component {:id id}))))
+          (not= file-id (:current-file-id @st/state))
+          (u/not-valid plugin-id :remove "Can only remove components from the current file's library")
+
+          (nil? component)
+          (u/not-valid plugin-id :remove "Component does not exist")
+
+          (not (:deleted component))
+          (st/emit! (-> (dwl/delete-component {:id id})
+                        (se/add-event plugin-id))))))
+
+    :annotation
+    {:get (fn [] (:annotation (u/locate-library-component file-id id)))
+     :set
+     (fn [value]
+       (let [component (u/locate-library-component file-id id)]
+         (cond
+           (not (r/check-permission plugin-id "library:write"))
+           (u/not-valid plugin-id :annotation "Plugin doesn't have 'library:write' permission")
+
+           (not= file-id (:current-file-id @st/state))
+           (u/not-valid plugin-id :annotation "Can only edit annotations in the current file's library")
+
+           (nil? component)
+           (u/not-valid plugin-id :annotation "Component does not exist")
+
+           (:deleted component)
+           (u/not-valid plugin-id :annotation "Cannot edit a deleted component")
+
+           (not (or (nil? value) (and (string? value) (<= (count value) 300))))
+           (u/not-valid plugin-id :annotation "Expected null or a string of at most 300 characters")
+
+           :else
+           (st/emit! (-> (dw/update-component-annotation id value)
+                         (se/add-event plugin-id))))))}
+
+    :duplicate
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (cond
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :duplicate "Plugin doesn't have 'library:write' permission")
+
+          (not= file-id (:current-file-id @st/state))
+          (u/not-valid plugin-id :duplicate "Can only duplicate components in the current file's library")
+
+          (nil? component)
+          (u/not-valid plugin-id :duplicate "Component does not exist")
+
+          (:deleted component)
+          (u/not-valid plugin-id :duplicate "Cannot duplicate a deleted component")
+
+          :else
+          (let [new-id (uuid/next)]
+            (st/emit! (-> (dwl/duplicate-component file-id id new-id)
+                          (se/add-event plugin-id)))
+            (lib-component-proxy plugin-id file-id new-id)))))
+
+    :restore
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (cond
+          (not (r/check-permission plugin-id "library:write"))
+          (u/not-valid plugin-id :restore "Plugin doesn't have 'library:write' permission")
+
+          (nil? component)
+          (u/not-valid plugin-id :restore "Component does not exist")
+
+          (:deleted component)
+          (st/emit! (-> (dwl/restore-component file-id id)
+                        (se/add-event plugin-id))))))
 
     :instance
     (fn []
@@ -1080,6 +1152,16 @@
                              (map #(lib-component-proxy plugin-id file-id %)))]
          (apply array components)))}
 
+    :deletedComponents
+    {:get
+     (fn []
+       (let [components (->> (u/locate-file file-id)
+                             :data
+                             :components
+                             (filter (comp :deleted second))
+                             (map #(lib-component-proxy plugin-id file-id (first %))))]
+         (apply array components)))}
+
     :tokens
     {:this true
      :get
@@ -1206,6 +1288,25 @@
         (let [file (u/locate-file file-id)]
           (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)]))))))))
 
+(defn- loaded-file-ids
+  "Ids of the files whose data is loaded: the open file and its libraries.
+  Files left behind by earlier workspaces stay in `:files` without data."
+  [state]
+  (into #{} (keep (fn [[id file]] (when (:data file) id))) (:files state)))
+
+(defn- on-library-loaded
+  "Calls `f` once the data of `library-id` is in the workspace state."
+  [library-id f]
+  (let [key     (js/Symbol)
+        loaded? #(some? (dm/get-in % [:files library-id :data]))]
+    (if (loaded? @st/state)
+      (f)
+      (add-watch st/state key
+                 (fn [_ _ _ state]
+                   (when (loaded? state)
+                     (remove-watch st/state key)
+                     (f)))))))
+
 (defn library-subcontext
   [plugin-id]
   (obj/reify {:name "PenpotLibrarySubcontext"}
@@ -1217,15 +1318,45 @@
     :connected
     {:get
      (fn []
-       (let [libraries (get @st/state :files)]
-         (apply array (->> libraries keys (map (partial library-proxy plugin-id))))))}
+       (apply array (map (partial library-proxy plugin-id) (loaded-file-ids @st/state))))}
+
+    :tokensSource
+    {:get
+     (fn []
+       (let [file-id   (:current-file-id @st/state)
+             file-data (ctf/file-data (u/locate-file file-id))]
+         (library-proxy plugin-id (cfo/get-effective-tokens-source file-data))))
+     :set
+     (fn [value]
+       (let [file-id      (:current-file-id @st/state)
+             library-id   (when (library-proxy? value) (obj/get value "$id"))
+             library      (some-> library-id u/locate-file)
+             library-data (some-> library ctf/file-data)
+             file-data    (ctf/file-data (u/locate-file file-id))]
+         (cond
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :tokensSource "Plugin doesn't have 'content:write' permission")
+
+           (not (library-proxy? value))
+           (u/not-valid plugin-id :tokensSource value)
+
+           (nil? library)
+           (u/not-valid plugin-id :tokensSource "Library is not connected")
+
+           (and (not= library-id file-id)
+                (not (cfo/tokens-provider? library-data)))
+           (u/not-valid plugin-id :tokensSource "Library must have its own tokens")
+
+           (not (cfo/effective-tokens-source? file-data library-id))
+           (st/emit! (-> (dwtl/set-tokens-source library-id)
+                         (se/add-event plugin-id))))))}
 
     :availableLibraries
     (fn []
       (let [team-id (:current-team-id @st/state)]
         (js/Promise.
          (fn [resolve reject]
-           (let [current-libs (into #{} (map first) (get @st/state :files))]
+           (let [current-libs (loaded-file-ids @st/state)]
              (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
                   (rx/map (fn [result]
                             (->> result
@@ -1267,7 +1398,11 @@
                          (->> st/stream
                               (rx/filter (ptk/type? ::dwl/link-file-to-library-finished))
                               (rx/take 1)
-                              (rx/subs! #(resolve (library-proxy plugin-id library-id)) reject))
+                              (rx/subs! (fn [_]
+                                          (on-library-loaded
+                                           library-id
+                                           #(resolve (library-proxy plugin-id library-id))))
+                                        reject))
                          (st/emit! (-> (dwl/link-file-to-library file-id library-id)
                                        (se/add-event plugin-id))))))
                    reject)))))))))

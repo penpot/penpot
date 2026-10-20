@@ -993,7 +993,7 @@ msgstr "Sesuatu yang salah terjadi."
 msgid "errors.invalid-color"
 msgstr "Warna tidak valid"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Data tidak valid"
 
@@ -1632,7 +1632,7 @@ msgstr "Sembunyikan"
 msgid "labels.hide-resolved-comments"
 msgstr "Sembunyikan komentar yang telah diselesaikan"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Impor"
 
@@ -3307,7 +3307,7 @@ msgstr "Zum"
 msgid "shortcuts.thumbnail-set"
 msgstr "Tetapkan gambar kecil"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "Pintasan papan ketik"
 

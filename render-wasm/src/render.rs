@@ -24,6 +24,7 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use options::RenderOptions;
+pub(crate) use strokes::per_side_stroke_outline;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};
@@ -347,6 +348,13 @@ fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -
     } else {
         children_ids
     }
+}
+
+/// Children bottom to top, in the same order the GPU renderer paints them.
+pub(crate) fn children_paint_order(tree: ShapesPoolRef, element: &Shape) -> Vec<Uuid> {
+    let mut ids = sort_z_index(tree, element, element.children_ids(false));
+    ids.reverse();
+    ids
 }
 
 /// Whether this `render_shape_exit` pass closes the shape's focus scope. A

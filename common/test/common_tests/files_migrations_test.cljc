@@ -8,10 +8,20 @@
   (:require
    [app.common.data :as d]
    [app.common.files.migrations :as cfm]
+   [app.common.files.tokens :as cfo]
+   [app.common.test-helpers.components :as thk]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.variants :as thv]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
+
+(t/use-fixtures :each thi/test-fixture)
 
 (defmethod cfm/migrate-data "test/1" [data _] (update data :sum inc))
 (defmethod cfm/migrate-data "test/2" [data _] (update data :sum inc))
@@ -459,3 +469,284 @@
     (t/is (nil? (:stroke-per-side stroke'))
           "obsolete attr removed before schema validation")
     (t/is (= 5 (:stroke-width stroke')) "stroke width preserved")))
+
+(t/deftest migration-0031-legacy-applied-token-is-not-recognized-before-migration
+  ;; Reproduces #12016: the editor reads only the per-side token attributes, so
+  ;; a shape carrying the old global `:stroke-width` reference looks unapplied.
+  (let [shape (-> (cts/setup-shape {:id (uuid/next) :type :rect})
+                  (assoc :applied-tokens {:stroke-width "30"}))]
+    (t/is (not (cfo/shapes-token-applied? {:name "30"} [shape]
+                                          ctt/stroke-width-keys))
+          "a legacy applied token is invisible to the token lookup")))
+
+(t/deftest migration-0031-recycles-global-stroke-width-token
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"
+                                                 :fill "red"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        shape'       (get-in (cfm/migrate-data data migration-id)
+                             [:pages-index page-id :objects shape-id])
+        applied'     (:applied-tokens shape')]
+
+    (t/is (nil? (:stroke-width applied')) "legacy key removed")
+    (t/is (= "30" (:stroke-width-top applied')))
+    (t/is (= "30" (:stroke-width-right applied')))
+    (t/is (= "30" (:stroke-width-bottom applied')))
+    (t/is (= "30" (:stroke-width-left applied')))
+    (t/is (= "red" (:fill applied')) "unrelated tokens preserved")
+    (t/is (cfo/shapes-token-applied? {:name "30"} [shape']
+                                     ctt/stroke-width-keys)
+          "the token is recognized after migration")))
+
+(t/deftest migration-0031-keeps-side-token-that-was-already-set
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"
+                                                 :stroke-width-top "10"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        applied'     (get-in (cfm/migrate-data data migration-id)
+                             [:pages-index page-id :objects shape-id :applied-tokens])]
+
+    (t/is (= "10" (:stroke-width-top applied'))
+          "an explicit side reference is not overwritten")
+    (t/is (= "30" (:stroke-width-right applied')))))
+
+(t/deftest migration-0031-repairs-component-shapes
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        component-id (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"}))
+        data         {:components {component-id {:objects {shape-id shape}}}}
+        applied'     (get-in (cfm/migrate-data data migration-id)
+                             [:components component-id :objects shape-id :applied-tokens])]
+
+    (t/is (nil? (:stroke-width applied')) "legacy key removed")
+    (t/is (= "30" (:stroke-width-left applied'))
+          "component side reference created")))
+
+(t/deftest migration-0031-leaves-shapes-without-the-legacy-token
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width-top "30"
+                                                 :stroke-width-right "30"
+                                                 :stroke-width-bottom "30"
+                                                 :stroke-width-left "30"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}]
+
+    (t/is (= data (cfm/migrate-data data migration-id))
+          "a shape without the legacy token is left untouched")))
+
+(t/deftest migration-0031-runs-through-file-migration
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        shape-id     (uuid/next)
+        file         (ctf/make-file {:name "Legacy stroke width token"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"}))
+        file         (-> file
+                         (assoc :migrations (disj cfm/available-migrations migration-id))
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file {})
+        applied'     (get-in file' [:data :pages-index page-id :objects shape-id :applied-tokens])]
+
+    (t/is (cfm/need-migration? file) "new migration detected")
+    (t/is (not (cfm/need-migration? file')) "new migration recorded")
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (= "30" (:stroke-width-top applied'))
+          "legacy token applied to the sides")))
+
+(t/deftest migration-0032-adds-unlisted-children-to-their-parent
+  (let [migration-id "0032-fix-children-not-in-parent"
+        page-id      (uuid/next)
+        parent-id    (uuid/next)
+        listed-id    (uuid/next)
+        unlisted1-id (uuid/next)
+        unlisted2-id (uuid/next)
+        orphan-id    (uuid/next)
+        root         (cts/setup-shape {:id uuid/zero :type :frame :shapes [parent-id orphan-id]})
+        parent       (cts/setup-shape {:id parent-id :type :frame :parent-id uuid/zero
+                                       :shapes [listed-id]})
+        child        (fn [id parent-id]
+                       (cts/setup-shape {:id id :type :rect :parent-id parent-id}))
+        data         {:pages-index
+                      {page-id
+                       {:objects {uuid/zero    root
+                                  parent-id    parent
+                                  listed-id    (child listed-id parent-id)
+                                  unlisted1-id (child unlisted1-id parent-id)
+                                  unlisted2-id (child unlisted2-id parent-id)
+                                  orphan-id    (child orphan-id (uuid/next))}}}}
+        data'        (cfm/migrate-data data migration-id)
+        objects'     (get-in data' [:pages-index page-id :objects])
+        shapes'      (get-in objects' [parent-id :shapes])]
+
+    (t/is (= listed-id (first shapes')) "already listed children keep their place")
+    (t/is (= #{listed-id unlisted1-id unlisted2-id} (set shapes'))
+          "unlisted children added to the parent")
+    (t/is (= 3 (count shapes')) "no duplicated children")
+    (t/is (= [parent-id orphan-id] (get-in objects' [uuid/zero :shapes]))
+          "root unchanged")
+    (t/is (= (get-in data [:pages-index page-id :objects orphan-id])
+             (get objects' orphan-id))
+          "shapes whose parent does not exist are left untouched")
+    (t/is (= data' (cfm/migrate-data data' migration-id))
+          "migration is idempotent")))
+
+(t/deftest migration-0032-adds-unlisted-children-in-components
+  (let [migration-id "0032-fix-children-not-in-parent"
+        component-id (uuid/next)
+        main-id      (uuid/next)
+        child-id     (uuid/next)
+        data         {:components
+                      {component-id
+                       {:objects {main-id  (cts/setup-shape {:id main-id :type :frame :shapes []})
+                                  child-id (cts/setup-shape {:id child-id :type :rect
+                                                             :parent-id main-id})}}}}
+        data'        (cfm/migrate-data data migration-id)]
+
+    (t/is (= [child-id] (get-in data' [:components component-id :objects main-id :shapes])))))
+
+(defn- make-path-shape
+  [shape-id]
+  (cts/setup-shape {:id shape-id
+                    :type :path
+                    :content [{:command :move-to :params {:x 10 :y 20}}
+                              {:command :line-to :params {:x 110 :y 70}}]}))
+
+(t/deftest migration-legacy-6-repairs-paths-without-points
+  (let [migration-id "legacy-6"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (make-path-shape shape-id)]
+
+    (doseq [points [nil []]]
+      (let [data   {:pages-index {page-id {:objects {shape-id (assoc shape :points points)}}}}
+            data'  (cfm/migrate-data data migration-id)
+            shape' (get-in data' [:pages-index page-id :objects shape-id])]
+
+        (t/is (= (:points shape) (:points shape'))
+              (str "points rebuilt from content when they were " (pr-str points)))
+        (t/is (= (:selrect shape) (:selrect shape'))
+              "selrect rebuilt from content")))))
+
+(t/deftest migration-legacy-6-runs-through-file-migration
+  ;; A file saved before version 6 runs every migration from legacy-6 on,
+  ;; and the whole chain must succeed for the file to load.
+  (let [migration-id "legacy-6"
+        shape-id     (uuid/next)
+        file         (ctf/make-file {:name "Legacy path without points"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (make-path-shape shape-id)
+                         (assoc :points []))
+        file         (-> file
+                         (dissoc :migrations)
+                         (assoc :version 5)
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file (delay {}))]
+
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (= 4 (count (get-in file' [:data :pages-index page-id :objects shape-id :points])))
+          "path points repaired before schema validation")))
+
+(t/deftest migration-0033-normalize-main-instance-diff-from-component
+  (let [migration-id "0033-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-simple-component :component1 :root1 :child1
+                                                   :component-params {:path "Group / Subgroup"
+                                                                      :name "Name"}
+                                                   :root-params {:name "Group/Subgroup   /   Name"})
+                         (tho/add-simple-component :component2 :root2 :child2
+                                                   :component-params {:path "Group / Subgroup"
+                                                                      :name "Other Name"}
+                                                   :root-params {:name "Group / Subgroup / Other Name"})
+                         (ths/add-sample-shape :shape1 :name "Other Group/Other Subgroup  /  Other Name"))
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        shape1'      (ths/get-shape file' :shape1)]
+
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Name" (:name component1')))
+    (t/is (= "Group / Subgroup / Name" (:name root1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Other Name" (:name component2')))
+    (t/is (= "Group / Subgroup / Other Name" (:name root2')))
+    (t/is (= "Other Group/Other Subgroup  /  Other Name" (:name shape1')))))
+
+(t/deftest migration-0033-normalize-variant-instance-diff-from-container
+  (let [migration-id "0033-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                         (ths/update-shape :variant1 :name "Group / Subgroup / Component")
+                         (ths/update-shape :root1 :name "Group / Subgroup / Component")
+                         (ths/update-shape :root2 :name "Group  /  Subgroup/Component")  ;; Bad path
+                         (thk/update-component :component1 {:path "Group / Subgroup" :name "Component"})
+                         (thk/update-component :component2 {:path "Group / Subgroup" :name "Component"})
+                         (thk/instantiate-component :component2 :copy2)
+                         (ths/update-shape :copy2 :name "Group  /  Subgroup/Component"))  ;; Allowed name in copies
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        variant1'    (ths/get-shape file' :variant1)
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        copy2'       (ths/get-shape file' :copy2)]
+
+    (t/is (= "Group / Subgroup / Component" (:name variant1')))
+    (t/is (= "Group / Subgroup / Component" (:name root1')))
+    (t/is (= "Group / Subgroup / Component" (:name root2')))
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Component" (:name component1')))
+    (t/is (= "Component" (:name component2')))
+    (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
+
+(t/deftest migration-0033-normalize-variant-name-not-normalized
+  (let [migration-id "0033-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                         (ths/update-shape :variant1 :name "Group/Subgroup  /  Component")
+                         (ths/update-shape :root1 :name "Group/Subgroup  /  Component")
+                         (ths/update-shape :root2 :name "Group/Subgroup  /  Component")  ;; Bad path
+                         (thk/update-component :component1 {:path "Group / Subgroup" :name "Component"})
+                         (thk/update-component :component2 {:path "Group / Subgroup" :name "Component"})
+                         (thk/instantiate-component :component2 :copy2)
+                         (ths/update-shape :copy2 :name "Group  /  Subgroup/Component"))  ;; Allowed name in copies
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        variant1'    (ths/get-shape file' :variant1)
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        copy2'       (ths/get-shape file' :copy2)]
+
+    (t/is (= "Group / Subgroup / Component" (:name variant1')))
+    (t/is (= "Group / Subgroup / Component" (:name root1')))
+    (t/is (= "Group / Subgroup / Component" (:name root2')))
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Component" (:name component1')))
+    (t/is (= "Component" (:name component2')))
+    (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))

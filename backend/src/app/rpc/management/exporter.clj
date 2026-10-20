@@ -31,6 +31,7 @@
 (sv/defmethod ::upload-tempfile
   {::doc/added "2.12"
    ::sm/params schema:upload-tempfile-params
+   ::rpc/multipart-only-params [:content]
    ::sm/result schema:upload-tempfile-result}
   [cfg {:keys [::rpc/profile-id content]}]
   (media.v/validate-media-type! content cm/tempfile-types)

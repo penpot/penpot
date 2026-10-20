@@ -16,6 +16,7 @@
    [app.main.data.project :as dpj]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.mcp-menu :refer [dashboard-mcp-menu*]]
    [app.main.ui.dashboard.deleted :as deleted]
@@ -127,8 +128,9 @@
         on-nav
         (mf/use-fn
          (mf/deps project-id)
-         (fn []
-           (st/emit! (dcm/go-to-dashboard-files :project-id project-id))))
+         (fn [event]
+           (st/emit! (dcm/go-to-dashboard-files :project-id project-id
+                                                ::rt/new-window (kbd/mod? event)))))
 
         toggle-pin
         (mf/use-fn
@@ -286,7 +288,7 @@
                    :tab-index "0"
                    :on-key-down (fn [event]
                                   (when (kbd/enter? event)
-                                    (on-nav)))}
+                                    (on-nav event)))}
           (tr "dashboard.show-all-files")
           [:> icon* {:icon-id i/arrow-right}]])]]
 

@@ -11,7 +11,6 @@
    [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.schema :as sm]
-   [app.common.types.file :as ctf]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -79,15 +78,38 @@
   (let [k (cond-> k (string? k) keyword)]
     (get map:token-attr-plugin->token-attr k k)))
 
+(def ^:private stroke-width-alias
+  "Uniform stroke width alias that expands to all four side token attributes."
+  :stroke-width)
+
+(defn expand-token-attrs
+  "Resolves token attributes to internal keywords and expands `:stroke-width`
+  to all four side attributes."
+  [attrs]
+  (let [attrs (into #{} (map token-attr-plugin->token-attr) attrs)]
+    (if (contains? attrs stroke-width-alias)
+      (into (disj attrs stroke-width-alias) cto/per-side-stroke-width-keys)
+      attrs)))
+
 (defn applied-tokens-plugin->applied-tokens
   [value]
-  (into {}
-        (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
-        value))
+  (let [value    (into {}
+                       (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
+                       value)
+        per-side (map #(get value %)
+                      [:stroke-width-top :stroke-width-right
+                       :stroke-width-bottom :stroke-width-left])]
+    (cond-> value
+      ;; Exposes `strokeWidth` when all four sides share the same token.
+      (and (every? some? per-side)
+           (apply = per-side))
+      (assoc :stroke-width (first per-side)))))
 
 (defn token-attr?
   [attr]
-  (cto/token-attr? (token-attr-plugin->token-attr attr)))
+  (let [attr (token-attr-plugin->token-attr attr)]
+    (or (= attr stroke-width-alias)
+        (cto/token-attr? attr))))
 
 (defn- token-name-schema
   [file-id set-id token]
@@ -180,7 +202,7 @@
         :else
         (st/emit!
          (-> (dwta/toggle-token {:token token
-                                 :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
+                                 :attrs (expand-token-attrs attrs)
                                  :shape-ids shape-ids
                                  :expand-with-children false})
              (se/add-event plugin-id)))))))
@@ -229,13 +251,10 @@
 
 (defn- font-families-resolved-value->js
   "Converts a resolved fontFamilies value (a tokenscript list symbol) into the
-   documented `string[]` shape rather than leaking the raw tokenscript structure."
+   documented `string[]` shape."
   [resolved-value]
-  (let [v (ts/tokenscript-symbols->penpot-unit resolved-value)]
-    (cond
-      (nil? v) nil
-      (sequential? v) (clj->js v)
-      :else #js [v])))
+  (some-> (ts/font-family-symbols->penpot-unit resolved-value)
+          (clj->js)))
 
 (defn- get-resolved-value
   [token tokens-tree]
@@ -489,14 +508,20 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
+          (not (dwtl/editable-tokens-status? @st/state file-id))
+          (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
+
           :else
-          (st/emit! (dwtl/set-enabled-token-set id value))))}  ;; This can be done even with tokens in an external library
+          (st/emit! (dwtl/set-enabled-token-set id value))))}
 
      :toggleActive
      (fn []
        (cond
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
+
+         (not (dwtl/editable-tokens-status? @st/state file-id))
+         (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
          :else
          (st/emit! (dwtl/toggle-token-set id))))
@@ -714,6 +739,9 @@
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
+         (not (dwtl/editable-tokens-status? @st/state file-id))
+         (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
+
          :else
          (st/emit! (dwtl/set-token-theme-active id value))))}
 
@@ -722,6 +750,9 @@
       (cond
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
+
+        (not (dwtl/editable-tokens-status? @st/state file-id))
+        (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
         :else
         (st/emit! (dwtl/toggle-token-theme-active id))))
@@ -816,8 +847,7 @@
      :enumerable false
      :get
      (fn []
-       (let [file (u/locate-file file-id)]
-         (cfo/editable-tokens? (ctf/file-data file))))}
+       (dwtl/editable-tokens? @st/state file-id))}
 
     :themes
     {:this true

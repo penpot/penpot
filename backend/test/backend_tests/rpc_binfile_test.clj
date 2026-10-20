@@ -6,13 +6,17 @@
 
 (ns backend-tests.rpc-binfile-test
   (:require
+   [app.binfile.v3 :as bf.v3]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [datoteka.fs :as fs]))
+   [datoteka.fs :as fs]
+   [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -40,6 +44,50 @@
     ;; Params with file-id should fail (schema closed)
     (t/is (false? (validator params-with-file-id))
           "params with file-id should be rejected")))
+
+(t/deftest import-binfile-schema-accepts-path-object
+  ;; Documents the schema hole: a server-side Path object in :file passes
+  ;; validation on shape alone. The multipart guard in the handler (not the
+  ;; schema) is what rejects client-forged paths.
+  (let [schema @#'binfile/schema:import-binfile
+        validator (sm/lazy-validator schema)]
+    (t/is (true? (validator {:name "pwned"
+                             :project-id (uuid/random)
+                             :version 3
+                             :file {:filename "evil.zip"
+                                    :size 123
+                                    :path (fs/path "/etc/passwd")}})))))
+
+(t/deftest import-binfile-rejects-forged-file-without-multipart
+  ;; Path-traversal PoC at command level: a transit body like
+  ;; {"~:file": {"~:path": ["~#path", "/etc/passwd"]}} decodes to this exact
+  ;; map. Without a multipart request it must fail at params validation,
+  ;; before any file is read.
+  (let [prof (th/create-profile* 1)
+        out  (th/command! {::th/type :import-binfile
+                           ::rpc/profile-id (:id prof)
+                           :name "pwned"
+                           :version 3
+                           :project-id (:default-project-id prof)
+                           :file {:filename "evil.zip"
+                                  :size 123
+                                  :path (fs/path "/etc/passwd")}})]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest import-binfile-rejects-forged-file-with-forged-flag
+  ;; The multipart flag is server-side: smuggling it in the body must not
+  ;; bypass the guard (prepare-rpc-params overwrites it from the request).
+  (let [prof (th/create-profile* 1)
+        out  (th/command! {::th/type :import-binfile
+                           ::rpc/profile-id (:id prof)
+                           :app.rpc/is-multipart true
+                           :name "pwned"
+                           :version 3
+                           :project-id (:default-project-id prof)
+                           :file {:filename "evil.zip"
+                                  :size 123
+                                  :path (fs/path "/etc/passwd")}})]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
 
 (t/deftest import-binfile-schema-rejects-unsupported-version
   ;; T1-N2-03: version parameter should be restricted to supported values (1 or 3)
@@ -72,3 +120,38 @@
     ;; Version 4 should be rejected
     (t/is (false? (validator (assoc base-params :version 4)))
           "version 4 should be rejected")))
+
+(t/deftest import-binfile-audit-events-carry-entity-ids
+  ;; The imported files are created inside the importer, so the command emits a
+  ;; create-file event per file for a local projection.
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (with-redefs [cf/flags (conj cf/flags :audit-log)]
+      (let [profile (th/create-profile* 1 {:is-active true})
+            team    (th/create-team* 51 {:profile-id (:id profile)})
+            project (th/create-project* 51 {:profile-id (:id profile)
+                                            :team-id (:id team)})
+            ;; A real row: `submit-file-created-event` reads the light
+            ;; columns back, so a phantom id would emit no event.
+            file    (th/create-file* 99 {:profile-id (:id profile)
+                                         :project-id (:id project)})
+            file-id (:id file)]
+        (with-redefs [bf.v3/import-files! (fn [_cfg] {:file-ids [file-id]})]
+          (#'binfile/import-binfile
+           th/*system*
+           {::rpc/profile-id (:id profile)
+            :profile-id (:id profile)
+            :project-id (:id project)
+            :version 3
+            :name "imported"
+            :file {:filename "package.penpot"
+                   :path (th/tempfile "backend_tests/test_files/svg-attrs-camel-case.penpot")
+                   :mtype "application/zip"
+                   :size 1}}))
+
+        (let [events (->> (:call-args-list @audit-mock)
+                          (map second)
+                          (filter #(= "create-file" (:name %))))]
+          (t/is (= 1 (count events)))
+          (t/is (= file-id (get-in (first events) [:props :id])))
+          (t/is (= (:id project) (get-in (first events) [:props :project-id])))
+          (t/is (= (:id team) (get-in (first events) [:props :team-id]))))))))

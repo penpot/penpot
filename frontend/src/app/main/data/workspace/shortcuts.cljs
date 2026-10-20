@@ -567,8 +567,7 @@
 
    :toggle-guides        {:tooltip (ds/meta "'")
                           :label (fn [] (tr "shortcuts.toggle-guides"))
-                          ;;https://github.com/ccampbell/mousetrap/issues/85
-                          :command [(ds/c-mod "'") (ds/c-mod "219")]
+                          :command (ds/c-mod "'")
                           :show-command (ds/c-mod "'")
                           :subsections [:main-menu]
                           :section [:workspace]
@@ -619,8 +618,7 @@
 
    :toggle-snap-guides      {:tooltip (ds/meta-shift "'")
                              :label (fn [] (tr "shortcuts.toggle-snap-guides"))
-                             ;;https://github.com/ccampbell/mousetrap/issues/85
-                             :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
+                             :command (ds/c-mod "shift+'")
                              :show-command (ds/c-mod "shift+'")
                              :subsections [:main-menu]
                              :section [:workspace]
@@ -679,7 +677,8 @@
 
    :hide-ui              {:tooltip "\\"
                           :label (fn [] (tr "shortcuts.hide-ui"))
-                          :command "\\"
+                          :command ["\\" "alt+\\" "alt+º"]
+                          :show-command "\\"
                           :subsections [:panels :basics]
                           :section [:workspace :basics]
                           :fn #(st/emit! (toggle-layout-flag :hide-ui))}
@@ -716,7 +715,8 @@
 
    :zoom-selected        {:tooltip (ds/shift "2")
                           :label (fn [] (tr "shortcuts.zoom-selected"))
-                          :command ["shift+2" "shift+num2" "@" "\""]
+                          :command ["shift+2" "shift+num2" "shift+'" "shift+\""]
+                          :show-command "shift+2"
                           :subsections [:zoom-workspace]
                           :section [:workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}

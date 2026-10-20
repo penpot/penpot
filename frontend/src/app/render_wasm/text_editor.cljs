@@ -840,11 +840,17 @@
 
 (defn- clean-styles
   "Drop nil-valued attrs (unlike the DOM path, our merge would keep them and fail
-   the backend schema); a per-span fn is passed through untouched."
+   the backend schema); a per-span fn is passed through untouched. A nil
+   `:text-decoration` is the panel's toggle-off, so it becomes \"none\"."
   [styles]
   (if (fn? styles)
     styles
-    (into {} (remove (comp nil? val)) styles)))
+    (into {}
+          (keep (fn [[k v]]
+                  (cond
+                    (some? v)              [k v]
+                    (= k :text-decoration) [k "none"])))
+          styles)))
 
 (defn apply-styles-to-selection
   "Apply `styles` (attrs map, or a fn per span) to the selected spans; `:with-fills?` also returns `:fills`."

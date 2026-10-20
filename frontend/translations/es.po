@@ -1030,7 +1030,7 @@ msgstr "Vas a restaurar todos tus proyectos y archivos. Esto puede tardar un poc
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "Restaurar todos los proyectos y archivos"
 
-#: src/app/main/ui/dashboard/deleted.cljs:317, src/app/main/ui/settings/shortcuts.cljs:53
+#: src/app/main/ui/dashboard/deleted.cljs:317
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Restaurar todo"
 
@@ -1236,7 +1236,7 @@ msgstr "Tu proyecto ha sido movido con éxito"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "Este equipo ahora es parte de la organización %s"
+msgstr "%s ahora pertenece a %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1249,7 +1249,7 @@ msgstr "Integrantes del equipo"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Este equipo ya no es parte de la organización %s"
+msgstr "%s ya no forma parte de %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"
@@ -1570,7 +1570,11 @@ msgstr "El correo electrónico «%s» tiene varios reportes de rebote permanente
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 
-#: src/app/main/errors.cljs:828
+#: src/app/main/data/exports/assets.cljs
+msgid "errors.export-failed"
+msgstr "La exportación ha fallado. Inténtalo de nuevo en un momento."
+
+#: src/app/main/errors.cljs:974
 msgid "errors.feature-mismatch"
 msgstr ""
 "Parece que está abriendo un archivo que tiene la función '%s' habilitada, "
@@ -1621,7 +1625,7 @@ msgstr "Ha ocurrido un problema con el web worker."
 msgid "errors.invalid-color"
 msgstr "Color no válido"
 
-#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462, src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:517, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Datos no válidos"
 
@@ -1756,9 +1760,12 @@ msgstr "El registro está actualmente desactivado."
 #: src/app/main/errors.cljs:538
 msgid "errors.save-failed"
 msgstr ""
-"El autoguardado se ha detenido debido a un error. Contacta soporte para "
-"informar del error y recarga para continuar desde los últimos cambios "
-"guardados."
+"El autoguardado se ha detenido en esta sesión, así que los cambios desde el último guardado correcto no se podrán guardar. Descarga el informe para ayudarnos a arreglarlo y recarga la página, o sal de este fichero y vuelve a abrirlo, para seguir editando."
+
+#: src/app/main/errors.cljs
+msgid "errors.save-still-retrying"
+msgstr ""
+"Tus cambios aún no se han guardado porque Penpot no puede conectar con el servidor. Se conservan y Penpot seguirá intentando guardarlos. Mantén esta pestaña abierta hasta que se guarden."
 
 #: src/app/main/data/persistence.cljs:307
 msgid "errors.save-retrying"
@@ -2146,21 +2153,33 @@ msgstr ""
 msgid "files-export-modal.options.merge-libraries.title"
 msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
+#: src/app/main/ui/exports/files.cljs
+msgid "files-download-modal.unsaved-changes"
+msgstr "Algunos de tus últimos cambios aún no se han guardado, así que esta descarga no los incluirá."
+
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
 msgstr "Ha ocurrido un error"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
 msgid "import-shortcuts.apply"
-msgstr "Aplicar"
+msgstr "Importar"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
 msgid "import-shortcuts.diff-modal-text"
-msgstr "Los siguientes atajos se modificarán con la configuración importada."
+msgstr "Estos atajos cambiarán:"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:98
 msgid "import-shortcuts.diff-modal-title"
 msgstr "Importar atajos"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113
+msgid "import-shortcuts.imported"
+msgstr "Importado"
+
+#: src/app/main/ui/settings/shortcuts.cljs:460, src/app/main/ui/settings/shortcuts.cljs:462
+msgid "import-shortcuts.invalid-file"
+msgstr "Este archivo no es una exportación de atajos válida."
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:148
 msgid "import-shortcuts.no-changes"
@@ -3019,7 +3038,7 @@ msgstr "Ocultar"
 msgid "labels.hide-resolved-comments"
 msgstr "Ocultar comentarios resueltos"
 
-#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
+#: src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Importar"
 
@@ -4783,22 +4802,20 @@ msgid "profile.recovery.go-to-login"
 msgstr "Ir al login"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:109, src/app/main/ui/settings/restore_shortcuts_modal.cljs:100
-msgid "restore-shortcuts.acction"
+msgid "restore-shortcuts.action"
 msgstr "Acción"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
 msgid "restore-shortcuts.modal-text"
-msgstr ""
-"Los siguientes atajos de teclado se restaurarán a sus valores "
-"predeterminados."
+msgstr "Estos atajos volverán a su valor por defecto:"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
 msgid "restore-shortcuts.modal-title"
-msgstr "Restaurar la configuración predeterminada"
+msgstr "Restablecer todos los atajos por defecto"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
 msgid "restore-shortcuts.restore"
-msgstr "Restaurar"
+msgstr "Restablecer"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:425
 msgid "settings.detach"
@@ -4992,21 +5009,25 @@ msgstr "Texto"
 msgid "shortcuts.duplicate"
 msgstr "Duplicar"
 
+#: src/app/main/ui/shortcuts.cljs:589
+msgid "shortcuts.edit"
+msgstr "Editar %s"
+
 #: src/app/main/ui/shortcuts.cljs:645
 msgid "shortcuts.edit-modal.conflict"
-msgstr "Combinación usada en \"%s\". Guardar este atajo hará que se elimine allí."
+msgstr "Ya asignado a \"%s\". Al guardar, pasará a esta acción."
 
 #: src/app/main/ui/shortcuts.cljs:636
 msgid "shortcuts.edit-modal.reset-pending"
-msgstr "Si guardas, este atajo volvera a su valor original:"
+msgstr "Al guardar, este atajo volverá a su valor por defecto:"
 
 #: src/app/main/ui/shortcuts.cljs:647
 msgid "shortcuts.edit-modal.success"
-msgstr "Esta combinación de teclas está disponible y puede asignarse sin conflictos."
+msgstr "Atajo disponible."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
 msgid "shortcuts.edit-on-settings"
-msgstr "Personalízalos en ajustes"
+msgstr "Personalízalos"
 
 #: src/app/main/data/workspace/grid_layout/shortcuts.cljs:37, src/app/main/data/workspace/path/shortcuts.cljs:175, src/app/main/data/workspace/shortcuts.cljs:177
 msgid "shortcuts.escape"
@@ -5038,11 +5059,11 @@ msgstr "Voltear verticalmente"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
 msgid "shortcuts.font-size-dec"
-msgstr "Decrementar el tamaño de fuente"
+msgstr "Reducir el tamaño de fuente"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
 msgid "shortcuts.font-size-inc"
-msgstr "Incrementar el tamaño de fuente"
+msgstr "Aumentar el tamaño de fuente"
 
 #: src/app/main/data/dashboard/shortcuts.cljs:29
 msgid "shortcuts.go-to-drafts"
@@ -5090,7 +5111,14 @@ msgstr "Unir nodos"
 
 #: src/app/main/ui/shortcuts.cljs:624
 msgid "shortcuts.key-combo"
-msgstr "Pulsa la combinación de teclas deseada"
+msgstr "Pulsa las nuevas teclas"
+
+#: src/app/main/ui/settings/shortcuts.cljs:484
+msgid "shortcuts.layout-map-missing"
+msgstr ""
+"Este navegador no expone el mapa de teclado, así que los atajos que "
+"combinan Shift con puntuación (por ejemplo Shift+,) pueden no funcionar "
+"aquí. Siguen funcionando en navegadores Chromium."
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
@@ -5162,7 +5190,7 @@ msgstr "No hay atajos deshabilitados."
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
 msgid "shortcuts.no-personalized"
-msgstr "Dirígete a TODO para personalizar tus atajos."
+msgstr "Aún no hay atajos personalizados. Personaliza uno desde la pestaña Todo."
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
 msgid "shortcuts.no-shortcuts"
@@ -5170,7 +5198,7 @@ msgstr "No hay atajos que coincidan con tu búsqueda."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
 msgid "shortcuts.not-found"
-msgstr "No hay resultados"
+msgstr "No hay atajos que coincidan con tu búsqueda."
 
 #: src/app/main/data/workspace/shortcuts.cljs:848
 msgid "shortcuts.opacity-0"
@@ -5246,7 +5274,7 @@ msgstr " o "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
 msgid "shortcuts.overwritten-by"
-msgstr "Este atajo ha sido reasignado a %s"
+msgstr "Reasignado a \"%s\""
 
 #: src/app/main/ui/settings/shortcuts.cljs:468
 msgid "shortcuts.page"
@@ -5294,6 +5322,10 @@ msgstr "Renombrar"
 msgid "shortcuts.reset"
 msgstr "Restablecer valor por defecto"
 
+#: src/app/main/ui/settings/shortcuts.cljs:53
+msgid "shortcuts.reset-all"
+msgstr "Restablecer todo"
+
 #: src/app/main/data/viewer/shortcuts.cljs:48, src/app/main/data/workspace/grid_layout/shortcuts.cljs:69, src/app/main/data/workspace/path/shortcuts.cljs:220, src/app/main/data/workspace/shortcuts.cljs:704
 msgid "shortcuts.reset-zoom"
 msgstr "Reiniciar zoom"
@@ -5301,6 +5333,10 @@ msgstr "Reiniciar zoom"
 #: src/app/main/data/workspace/shortcuts.cljs:474
 msgid "shortcuts.scale"
 msgstr "Escalado"
+
+#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+msgid "shortcuts.search"
+msgstr "Buscar atajos"
 
 # SECTIONS
 #: src/app/main/ui/shortcuts.cljs:126, src/app/main/ui/shortcuts.cljs:298
@@ -5410,7 +5446,7 @@ msgstr "Formas"
 
 #: src/app/main/ui/shortcuts.cljs:143
 msgid "shortcuts.subsection.text-editor"
-msgstr "Textos"
+msgstr "Texto"
 
 #: src/app/main/ui/shortcuts.cljs:144
 msgid "shortcuts.subsection.tools"
@@ -5428,7 +5464,7 @@ msgstr "Zoom"
 msgid "shortcuts.thumbnail-set"
 msgstr "Activar miniaturas"
 
-#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132, src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+#: src/app/main/ui/settings/shortcuts.cljs:170, src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
 msgid "shortcuts.title"
 msgstr "Atajos de teclado"
 
@@ -5872,7 +5908,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
-msgstr "Miembro de penpot desde: %s"
+msgstr "Miembro de penpot desde: %s."
 
 #: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
@@ -5943,6 +5979,9 @@ msgstr "Suscríbete"
 #: src/app/main/ui/settings/subscription.cljs:707
 msgid "subscription.settings.subscribed-since"
 msgstr "Llevas en el plan %s desde %s."
+
+msgid "subscription.settings.trial-ends-on"
+msgstr "Tu prueba gratuita acaba el %s."
 
 #: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
@@ -6504,7 +6543,11 @@ msgstr "Eliminar guía"
 msgid "workspace.debug.title"
 msgstr "Herramientas de depuración"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:885
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export.unsaved-changes"
+msgstr "Algunos de tus últimos cambios aún no se han guardado, así que puede que esta exportación no los incluya."
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:907
 msgid "workspace.focus.focus-mode"
 msgstr "Modo foco"
 
@@ -6812,6 +6855,14 @@ msgstr "Mostrar"
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Mostrar grid layout"
 
+#: src/app/main/ui/workspace/libraries.cljs:898
+msgid "workspace.libraries.add-shared-library"
+msgstr "Añadir una biblioteca compartida"
+
+#: src/app/main/ui/workspace/libraries.cljs:801
+msgid "workspace.libraries.assets-in-this-file"
+msgstr "RECURSOS EN ESTE ARCHIVO"
+
 #: src/app/main/ui/workspace/libraries.cljs:126, src/app/main/ui/workspace/libraries.cljs:155, src/app/main/ui/workspace/libraries.cljs:199
 msgid "workspace.libraries.colors"
 msgid_plural "workspace.libraries.colors"
@@ -6965,6 +7016,10 @@ msgstr "Desvincular todos los recursos"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:554
 msgid "workspace.libraries.text.multiple-token-tooltip"
 msgstr "Desvincular todos los tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:1136
+msgid "workspace.libraries.this-file"
+msgstr "Este archivo"
 
 #: src/app/main/ui/workspace/libraries.cljs:167, src/app/main/ui/workspace/libraries.cljs:211
 msgid "workspace.libraries.token-sets"
@@ -7393,6 +7448,10 @@ msgstr "Columnas"
 msgid "workspace.options.grid.params.color"
 msgstr "Color"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:44
+msgid "workspace.options.grid.params.guide-defaults"
+msgstr "Valores por defecto de la guía"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:302
 msgid "workspace.options.grid.params.gutter"
 msgstr "Espaciado"
@@ -7792,6 +7851,10 @@ msgstr "Más colores de la biblioteca"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:268
 msgid "workspace.options.more-token-colors"
 msgstr "Más tokens de color"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:502
+msgid "workspace.options.no-font-results"
+msgstr "No hay fuentes coincidentes"
 
 #: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:518
 msgid "workspace.options.no-size-preset-results"
@@ -8326,6 +8389,18 @@ msgstr "Leer la información de sus bibliotecas y recursos."
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Leer y modificar la información de sus bibliotecas y recursos."
 
+#: src/app/main/ui/workspace/plugins.cljs:360
+msgid "workspace.plugins.permissions.manage-delete"
+msgstr "Eliminar tus archivos y proyectos."
+
+#: src/app/main/ui/workspace/plugins.cljs:346
+msgid "workspace.plugins.permissions.manage-projects"
+msgstr "Crear, renombrar, fijar y duplicar tus proyectos."
+
+#: src/app/main/ui/workspace/plugins.cljs:353
+msgid "workspace.plugins.permissions.manage-teams"
+msgstr "Ver, crear y renombrar tus equipos, y mover proyectos entre ellos."
+
 #: src/app/main/ui/workspace/plugins.cljs:387
 msgid "workspace.plugins.permissions.title"
 msgstr "LA EXTENSIÓN '%s' SOLICITA PERMISO PARA ACCEDER:"
@@ -8734,6 +8809,10 @@ msgstr "Formas"
 #: src/app/main/ui/workspace/sidebar/layers.cljs:653, src/app/main/ui/workspace/sidebar/layers.cljs:728
 msgid "workspace.sidebar.layers.texts"
 msgstr "Textos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:53
+msgid "workspace.sidebar.options.svg-attrs.remove"
+msgstr "Eliminar atributo"
 
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:113
 msgid "workspace.sidebar.options.svg-attrs.title"

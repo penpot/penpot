@@ -469,7 +469,14 @@
           (= subscription-type "enterprise") (tr "subscription.settings.enterprise"))
 
         subscription-is-trial?
-        (= (:status subscription) "trialing")
+        (if nitrate?
+          (= (:status nitrate-license) "trialing")
+          (= (:status subscription) "trialing"))
+
+        trial-end-date
+        (if nitrate?
+          (ct/format-inst (:trial-end nitrate-license) "d MMMM, yyyy")
+          (ct/format-inst (:trial-end subscription) "d MMMM, yyyy"))
 
         member-since
         (ct/format-inst (:created-at profile) "d MMMM, yyyy")
@@ -701,12 +708,19 @@
        [:div {:class (stl/css :membership-container)}
         (when (or nitrate?
                   (and subscribed-since (not= subscription-type "professional")))
-          [:div {:class (stl/css :membership)}
-           [:> icon* {:class (stl/css :subscription-member)
-                      :icon-id "crown"
-                      :size "m"}]
-           [:span {:class (stl/css :membership-date)}
-            (tr "subscription.settings.subscribed-since" subscription-name subscribed-since)]])
+          (if subscription-is-trial?
+            [:div {:class (stl/css :membership)}
+             [:> icon* {:class (stl/css :subscription-member)
+                        :icon-id "hourglass"
+                        :size "m"}]
+             [:span {:class (stl/css :membership-date)}
+              (tr "subscription.settings.trial-ends-on" trial-end-date)]]
+            [:div {:class (stl/css :membership)}
+             [:> icon* {:class (stl/css :subscription-member)
+                        :icon-id "crown"
+                        :size "m"}]
+             [:span {:class (stl/css :membership-date)}
+              (tr "subscription.settings.subscribed-since" subscription-name subscribed-since)]]))
 
         [:div {:class (stl/css :membership)}
          [:> icon* {:class (stl/css :penpot-member)
