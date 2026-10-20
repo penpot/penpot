@@ -70,12 +70,15 @@
 
 (defn terminal-status?
   "True when a persistence snapshot releases waiters: a failed save, or
-  a settled (`nil` / `:saved`) empty queue. Anything else — `:pending`,
-  `:saving` and the `:retrying` episode — keeps waiting."
-  [{:keys [status queue]}]
+  a settled (`nil` / `:saved`) empty queue and buffer. Anything else —
+  `:pending`, `:saving`, the `:retrying` episode, or commits still in the
+  buffer (the status turns `:saved` as soon as the queue empties) — keeps
+  waiting."
+  [{:keys [status queue buffer]}]
   (boolean
    (or (= status :error)
        (and (empty? queue)
+            (empty? buffer)
             (or (nil? status) (= status :saved))))))
 
 (defn wait-persisted-or-error
@@ -548,7 +551,9 @@
       (dch/commit-changes (assoc changes
                                  :origin origin
                                  :file-id file-id
-                                 :save-undo? false))
+                                 :save-undo? false
+                                 ;; Its own group, never that of an open undo transaction
+                                 :undo-group (uuid/next)))
       (let [{:keys [file-revn file-vern features]} (peek commits)]
         (append-commit
          (pcm/queue-entry
