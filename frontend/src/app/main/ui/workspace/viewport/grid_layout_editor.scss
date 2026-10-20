@@ -66,15 +66,17 @@
   height: calc(deprecated.$s-20 / var(--zoom));
   opacity: 0;
   pointer-events: none;
+}
 
-  svg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: calc(deprecated.$s-16 / var(--zoom));
-    height: auto;
-    stroke: var(--grid-editor-marker-color);
-  }
+// The DS icon has a fixed 16px size: scale it down with the zoom, as the
+// rest of the track editor, so it keeps the same size on screen.
+.grid-editor-button-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(calc(1 / var(--zoom)));
+  transform-origin: top left;
+  color: var(--grid-editor-marker-color);
 }
 
 .grid-editor-wrapper:hover .grid-editor-button {

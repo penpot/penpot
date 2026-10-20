@@ -92,6 +92,63 @@ test.describe("Grid layout", () => {
   });
 });
 
+test.describe("Grid editor", () => {
+  test("Shows the track options button on the canvas", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-9042.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "af2494d0-39ba-8184-8005-230696f6df5c",
+      pageId: "af2494d0-39ba-8184-8005-230696f6df5d",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    // Tracks need 110px or more on screen to show their options button.
+    await page.keyboard.press("Control+=");
+    await page.keyboard.press("Control+=");
+    await page
+      .getByTestId("inspect-layout")
+      .getByRole("button", { name: "Edit grid" })
+      .click();
+
+    const shotTrack = async () => {
+      const track = page.getByTestId("grid-track-editor-wrapper").first();
+      await track.hover();
+      await expect(
+        page.getByTestId("grid-track-options-btn").first(),
+      ).toBeVisible();
+      // Wait until the zoom animation leaves the track in place.
+      let box = await track.boundingBox();
+      await expect
+        .poll(async () => {
+          const prev = box;
+          box = await track.boundingBox();
+          return prev.x === box.x && prev.width === box.width;
+        })
+        .toBe(true);
+      await expect(page).toHaveScreenshot({
+        clip: {
+          x: Math.floor(box.x) - 8,
+          y: Math.floor(box.y) - 8,
+          width: Math.ceil(box.width) + 16,
+          height: Math.ceil(box.height) + 16,
+        },
+        maxDiffPixelRatio: 0,
+        threshold: 0,
+      });
+    };
+
+    // The track editors draw at a fixed screen size at any zoom.
+    await shotTrack();
+    await page.keyboard.press("Control+=");
+    await shotTrack();
+  });
+});
+
 test.describe("Design tab", () => {
   test("Shows the boolean options when selecting two shapes", async ({
     page,
