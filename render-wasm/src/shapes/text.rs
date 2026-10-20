@@ -899,6 +899,47 @@ impl TextContent {
         }
     }
 
+    /// Emphasis paints outside the base glyph metrics. Use its placement
+    /// geometry for culling and export bounds as well as position data.
+    fn horizontal_emphasis_bounds(&self, selrect: &Rect, valign: VerticalAlign) -> Option<Rect> {
+        if !self
+            .paragraphs
+            .iter()
+            .flat_map(Paragraph::children)
+            .any(|span| !span.text_emphasis.is_none())
+        {
+            return None;
+        }
+        let total_height: f32 = self
+            .layout
+            .paragraphs
+            .iter()
+            .filter_map(|group| group.first())
+            .map(|paragraph| paragraph.height())
+            .sum();
+        let mut y = selrect.y() + vertical_align_offset(selrect.height(), total_height, valign);
+        let plans = self.horizontal_plans();
+        let mut bounds = Rect::new_empty();
+        for ((group, model), plan) in self
+            .layout
+            .paragraphs
+            .iter()
+            .zip(&self.paragraphs)
+            .zip(plans.iter())
+        {
+            let Some(paragraph) = group.first() else {
+                continue;
+            };
+            let x = selrect.x() + plan.x_offset(model, selrect.width());
+            for placement in horizontal_emphasis_placements(model, &plan.offsets, paragraph) {
+                let span = &model.children()[placement.span];
+                bounds.join(horizontal_emphasis_mark_box(span, &placement).with_offset((x, y)));
+            }
+            y += paragraph.height();
+        }
+        (!bounds.is_empty()).then_some(bounds)
+    }
+
     /// Compute a tight text rect from laid-out Skia paragraphs using glyph
     /// metrics (fm.top for overshoot, line descent for bottom, line left/width
     /// for horizontal extent).
@@ -955,7 +996,11 @@ impl TextContent {
         }
 
         if has_lines {
-            Some(Rect::from_ltrb(min_x, min_y, max_x, max_y))
+            let mut bounds = Rect::from_ltrb(min_x, min_y, max_x, max_y);
+            if let Some(emphasis) = self.horizontal_emphasis_bounds(selrect, valign) {
+                bounds.join(emphasis);
+            }
+            Some(bounds)
         } else {
             None
         }
@@ -976,7 +1021,11 @@ impl TextContent {
             return self.vertical_extrect(selrect, valign);
         }
         if self.grow_type() == GrowType::AutoWidth {
-            return self.content_rect(selrect, valign);
+            let mut bounds = self.content_rect(selrect, valign);
+            if let Some(emphasis) = self.horizontal_emphasis_bounds(selrect, valign) {
+                bounds.join(emphasis);
+            }
+            return bounds;
         }
 
         let layout_matches_container = self

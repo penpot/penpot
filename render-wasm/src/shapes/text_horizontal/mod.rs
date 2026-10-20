@@ -420,15 +420,18 @@ pub(crate) fn horizontal_span_style(
     laid_out: &skia::textlayout::Paragraph,
     range: &HorizontalSpanRange,
 ) -> Option<skia::textlayout::TextStyle> {
-    // Indexed style metrics use builder UTF-8 byte positions, unlike the
-    // UTF-16 offsets of glyph and line ranges.
-    let anchor = range.style_anchor_start..range.style_anchor_start + 1;
-    laid_out.get_line_metrics().iter().find_map(|line| {
-        line.get_style_metrics(anchor.clone())
-            .into_iter()
-            .next()
-            .map(|(_, metric)| metric.text_style.clone())
-    })
+    // Lines use UTF-16, while their style entries use UTF-8 run starts.
+    // Skia can merge neighboring spans into one run, so an exact lookup at
+    // the later span's anchor may be empty. Recover the preceding style on
+    // the line containing the base, without carrying a style across lines.
+    let lines = laid_out.get_line_metrics();
+    let line = lines.iter().find(|line| {
+        line.start_index <= range.style_anchor_utf16
+            && range.style_anchor_utf16 < line.end_including_newline
+    })?;
+    line.get_style_metrics(0..range.style_anchor_start.saturating_add(1))
+        .last()
+        .map(|(_, metric)| metric.text_style.clone())
 }
 
 /// Top of the horizontal base em inside SkParagraph's typographic rect, less
