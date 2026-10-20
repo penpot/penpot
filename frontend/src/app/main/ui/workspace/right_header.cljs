@@ -74,10 +74,12 @@
         zoom (fmt/format-percent zoom {:precision 0})]
 
     [:*
-     [:div {:on-click open-dropdown
-            :class (stl/css-case :zoom-widget true
-                                 :selected open?)
-            :title (tr "workspace.header.zoom")}
+     [:button {:type "button"
+               :on-click open-dropdown
+               :class (stl/css-case :zoom-widget true
+                                    :selected open?)
+               :title (tr "workspace.header.zoom")
+               :aria-expanded open?}
       [:span {:class (stl/css :label)} zoom]]
      [:& dropdown {:show open? :on-close close-dropdown}
       [:ul {:class (stl/css :dropdown)}
