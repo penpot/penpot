@@ -28,13 +28,15 @@ impl TextPaths {
         }
 
         let layout_width = self.0.get_width(self.bounds.width());
+        let plans = self.0.horizontal_plans();
         let mut paragraph_builders = self.0.paragraph_builder_group_from_text(None);
         let mut paragraphs: Vec<SkiaParagraph> = paragraph_builders
             .iter_mut()
             .filter_map(|group| group.first_mut())
-            .map(|paragraph_builder| {
+            .enumerate()
+            .map(|(index, paragraph_builder)| {
                 let mut paragraph = paragraph_builder.build();
-                paragraph.layout(layout_width);
+                paragraph.layout(plans[index].layout_width(layout_width));
                 paragraph
             })
             .collect();
@@ -44,9 +46,21 @@ impl TextPaths {
             + vertical_align_offset(self.bounds.height(), total_height, vertical_align);
 
         let mut paths = Vec::new();
-        for (paragraph, text_paragraph) in paragraphs.iter_mut().zip(self.0.paragraphs()) {
-            let origin = Point::new(self.bounds.x(), offset_y);
-            Self::collect_paragraph_paths(paragraph, text_paragraph, origin, &mut paths);
+        for (index, (paragraph, text_paragraph)) in
+            paragraphs.iter_mut().zip(self.0.paragraphs()).enumerate()
+        {
+            let plan = &plans[index];
+            let origin = Point::new(
+                self.bounds.x() + plan.x_offset(text_paragraph, layout_width),
+                offset_y,
+            );
+            Self::collect_paragraph_paths(
+                paragraph,
+                text_paragraph,
+                &plan.offsets,
+                origin,
+                &mut paths,
+            );
             offset_y += paragraph.height();
         }
 
@@ -56,11 +70,11 @@ impl TextPaths {
     fn collect_paragraph_paths(
         paragraph: &mut SkiaParagraph,
         text_paragraph: &Paragraph,
+        offsets: &crate::shapes::HorizontalOffsets,
         origin: Point,
         paths: &mut Vec<skia::Path>,
     ) {
-        let offsets = crate::shapes::HorizontalOffsets::new(text_paragraph);
-        for deco in decoration_segments(paragraph, text_paragraph, &offsets, origin.x, origin.y) {
+        for deco in decoration_segments(paragraph, text_paragraph, offsets, origin.x, origin.y) {
             let mut builder = skia::PathBuilder::new();
             builder.add_rect(deco.rect(), None, None);
             paths.push(builder.detach());

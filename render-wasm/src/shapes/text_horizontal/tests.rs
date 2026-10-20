@@ -18,7 +18,6 @@ fn cjk_horizontal_layout(
     skia::textlayout::Paragraph,
 ) {
     use crate::shapes::text_vertical::test_support::{provider, EM};
-    use std::collections::HashSet;
     init_state();
     let provider = provider(include_bytes!("../../fonts/cjk-locl-test.ttf"));
     let mut fonts = skia::textlayout::FontCollection::new();
@@ -34,11 +33,21 @@ fn cjk_horizontal_layout(
     let mut paragraph = make_paragraph(spans, 0.0);
     paragraph.set_language(language.to_owned());
     paragraph.set_korean_wrap(wrap);
-    let mut plan = HorizontalParagraphPlan::new(&paragraph);
+    let (plan, layout) = cjk_layout_paragraph(&paragraph, width, &fonts);
+    (paragraph, plan, layout)
+}
+
+fn cjk_layout_paragraph(
+    paragraph: &Paragraph,
+    width: f32,
+    fonts: &skia::textlayout::FontCollection,
+) -> (HorizontalParagraphPlan, skia::textlayout::Paragraph) {
+    use std::collections::HashSet;
+    let mut plan = HorizontalParagraphPlan::new(paragraph);
     let lay_out = |plan: &HorizontalParagraphPlan, width: f32| {
         let mut paragraph_style = paragraph.paragraph_to_style();
         paragraph_style.set_apply_rounding_hack(false);
-        let mut builder = ParagraphBuilder::new(&paragraph_style, &fonts);
+        let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
         for (index, span) in paragraph.children().iter().enumerate() {
             let style = span.to_style(
                 &crate::math::Rect::from_xywh(0.0, 0.0, width, 200.0),
@@ -52,9 +61,9 @@ fn cjk_horizontal_layout(
                 span,
                 &plan.texts[index],
                 &plan.sheds[index],
-                &[],
+                &plan.ruby_spacing.adjustments[index],
                 &style,
-                &fonts,
+                fonts,
             );
             builder.pop();
         }
@@ -62,9 +71,10 @@ fn cjk_horizontal_layout(
         layout.layout(width);
         layout
     };
-    plan.relax_overlong_words(&paragraph, width, |plan| lay_out(plan, width));
-    let layout = lay_out(&plan, width);
-    (paragraph, plan, layout)
+    plan.relax_overlong_words(paragraph, width, |plan| lay_out(plan, width));
+    plan.retain_atomic_overflow(paragraph, width, lay_out);
+    let layout = lay_out(&plan, plan.layout_width(width));
+    (plan, layout)
 }
 
 #[test]
@@ -223,10 +233,9 @@ fn cjk_emergency_wrapping_keeps_safe_boundaries_across_box_widths() {
 #[test]
 fn narrower_than_atomic_unit_layout_keeps_source_offsets_and_finite_geometry() {
     use crate::shapes::text_policy::KoreanWrap;
-    // These widths cannot fit the punctuation unit. This checks data safety;
-    // it does not claim SkParagraph retains the policy's forbidden boundaries.
+    // Overflow preserves both the punctuation rule and editable positions.
     for language in ["zh-Hant-TW", "ko"] {
-        for width in [1.0, 10.0, 19.0, 20.0, 30.0, 39.0] {
+        for width in [1.0, 10.0, 19.0, 20.0, 30.0, 39.0, 39.999] {
             let (paragraph, plan, layout) =
                 cjk_horizontal_layout(&["文", "。"], language, KoreanWrap::KeepWords, width);
             let original = HorizontalParagraphPlan::new(&paragraph);
@@ -235,6 +244,7 @@ fn narrower_than_atomic_unit_layout_keeps_source_offsets_and_finite_geometry() {
                 assert_eq!(plan.offsets.builder_to_source(builder), at);
                 assert_eq!(builder, original.offsets.source_to_builder(at));
             }
+            assert_eq!(layout.get_line_metrics().len(), 1);
             assert!(layout.height().is_finite() && layout.height() > 0.0);
             for line in layout.get_line_metrics() {
                 assert!(line.width.is_finite() && line.width >= 0.0);
@@ -1598,5 +1608,173 @@ fn horizontal_zhuyin_reserves_its_right_strip_without_changing_line_leading() {
         let origin = horizontal_zhuyin_origin(&span, rect);
         assert!((origin.x - span.font_size).abs() < 0.001);
         assert_eq!(origin.y, 0.0);
+    }
+}
+
+#[test]
+fn horizontal_indivisible_punctuation_unit_overflows_a_narrow_box() {
+    use crate::shapes::text_policy::KoreanWrap;
+    for language in ["zh-Hant-TW", "zh-Hans-CN", "zh-Hant-HK", "ko"] {
+        let (_, plan, layout) =
+            cjk_horizontal_layout(&["文", "。"], language, KoreanWrap::KeepWords, 20.0);
+        let starts: Vec<_> = layout
+            .get_line_metrics()
+            .iter()
+            .map(|line| plan.offsets.builder_to_source(line.start_index))
+            .collect();
+        assert_eq!(
+            starts,
+            vec![0],
+            "{language}: a closing mark must stay with its base"
+        );
+        assert!(
+            layout.longest_line() > 20.0,
+            "the unit overflows rather than splitting"
+        );
+    }
+}
+
+#[test]
+fn narrow_atomic_overflow_retains_normal_wrap_budget_and_explicit_newlines() {
+    use crate::shapes::text_policy::KoreanWrap;
+    for language in ["zh-Hant-TW", "zh-Hans-CN", "zh-Hant-HK", "ko"] {
+        for (texts, expected) in [
+            (vec!["文文文", "。", "文文文"], vec![0, 1, 2, 4, 5, 6]),
+            (vec!["文\n", "文", "。", "\n文"], vec![0, 2, 5]),
+            (vec!["文（", "文）", "文文"], vec![0, 1, 4, 5]),
+        ] {
+            let (paragraph, plan, layout) =
+                cjk_horizontal_layout(&texts, language, KoreanWrap::KeepWords, 20.0);
+            let starts: Vec<_> = layout
+                .get_line_metrics()
+                .iter()
+                .map(|line| plan.offsets.builder_to_source(line.start_index))
+                .collect();
+            assert_eq!(starts, expected, "{language}: {texts:?}");
+            for at in 0..=paragraph
+                .children()
+                .iter()
+                .map(|s| s.text.chars().count())
+                .sum()
+            {
+                assert_eq!(
+                    plan.offsets
+                        .builder_to_source(plan.offsets.source_to_builder(at)),
+                    at
+                );
+            }
+            assert_eq!(
+                paragraph
+                    .children()
+                    .iter()
+                    .map(|s| s.text.as_str())
+                    .collect::<String>(),
+                texts.concat()
+            );
+        }
+    }
+}
+
+#[test]
+fn narrow_atomic_units_preserve_controls_numeric_expressions_and_graphemes() {
+    use crate::shapes::text_policy::KoreanWrap;
+    for language in ["zh-Hant-TW", "zh-Hans-CN", "zh-Hant-HK", "ko"] {
+        for unit in [
+            "文。",
+            "（文）",
+            "$1.5%",
+            "1℃",
+            "文\u{a0}文",
+            "文\u{2060}文",
+            "e\u{301}。",
+            "😀。",
+            "👩‍👩‍👧‍👦。",
+        ] {
+            for width in [1.0, 10.0, 20.0, 29.0, 39.0] {
+                let source = format!("文文{unit}文文");
+                let (_, plan, layout) =
+                    cjk_horizontal_layout(&[&source], language, KoreanWrap::KeepWords, width);
+                let end = 2 + unit.chars().count();
+                for line in layout.get_line_metrics().iter().skip(1) {
+                    let at = plan.offsets.builder_to_source(line.start_index);
+                    assert!(
+                        !(2 < at && at < end),
+                        "{language} {width}px breaks {unit} at {at}"
+                    );
+                }
+                assert!(
+                    layout
+                        .get_line_metrics()
+                        .iter()
+                        .all(|line| line.width > 0.0),
+                    "no synthetic empty lines in {source}"
+                );
+                for at in 0..=source.chars().count() {
+                    assert_eq!(
+                        plan.offsets
+                            .builder_to_source(plan.offsets.source_to_builder(at)),
+                        at,
+                        "{source} at {at}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn narrow_atomic_overflow_keeps_ruby_and_warichu_with_their_closing_marks() {
+    use crate::shapes::text_vertical::test_support::provider;
+    init_state();
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(
+        provider(include_bytes!("../../fonts/cjk-locl-test.ttf")).into(),
+    ));
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    for warichu in [false, true] {
+        let mut annotation = make_span("文文文文", 0.0);
+        annotation.font_size = 20.0;
+        annotation.warichu = warichu;
+        if !warichu {
+            annotation.ruby = "wén wén".to_string();
+        }
+        let mut paragraph = make_paragraph(
+            vec![make_span("文文", 0.0), annotation, make_span("。文文", 0.0)],
+            0.0,
+        );
+        paragraph.set_language("zh-Hant-TW".to_string());
+        let (plan, layout) = cjk_layout_paragraph(&paragraph, 20.0, &fonts);
+        let starts: Vec<_> = layout
+            .get_line_metrics()
+            .iter()
+            .map(|line| plan.offsets.builder_to_source(line.start_index))
+            .collect();
+        assert_eq!(starts, vec![0, 1, 2, 7, 8], "warichu={warichu}");
+        for at in [0, 1, 2, 6, 7, 8, 9] {
+            assert_eq!(
+                plan.offsets
+                    .builder_to_source(plan.offsets.source_to_builder(at)),
+                at,
+                "warichu={warichu}, {at}"
+            );
+        }
+        assert!(
+            horizontal_span_style(&layout, &plan.offsets.ranges[1]).is_some(),
+            "warichu={warichu}"
+        );
+        if !warichu {
+            let targets = horizontal_ruby_targets(&paragraph, &plan.offsets);
+            assert_eq!(targets.len(), 1);
+            let rects = layout.get_rects_for_range(
+                targets[0].1.clone(),
+                RectHeightStyle::Tight,
+                RectWidthStyle::Tight,
+            );
+            assert!(rects
+                .iter()
+                .all(|r| (r.rect.top() - rects[0].rect.top()).abs() < 0.01));
+        }
     }
 }
