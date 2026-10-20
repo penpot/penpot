@@ -123,6 +123,7 @@ export class PenpotMcpServer {
     private readonly tools: ToolInfo[];
     public readonly configLoader: ConfigurationLoader;
     private app: any;
+    private httpServer?: import("node:http").Server;
     public readonly pluginBridge: PluginBridge;
     private readonly replServer: ReplServer | null;
     private apiDocs: ApiDocs;
@@ -383,6 +384,8 @@ export class PenpotMcpServer {
                 const { randomUUID } = await import("node:crypto");
                 const server = this.createMcpServer();
                 transport = new StreamableHTTPServerTransport({
+                    // Opt in to bounded JSON-RPC replies when an intermediary drops POST SSE streams.
+                    enableJsonResponse: process.env.PENPOT_MCP_JSON_RESPONSE === "true",
                     // For an adopted session, reuse the existing ID; otherwise generate a new one.
                     sessionIdGenerator: () => (isAdoptedSession ? sessionId! : randomUUID()),
                     onsessioninitialized: (id) => {
@@ -470,7 +473,7 @@ export class PenpotMcpServer {
         this.setupHttpEndpoints();
 
         return new Promise((resolve) => {
-            this.app.listen(this.port, this.host, async () => {
+            this.httpServer = this.app.listen(this.port, this.host, async () => {
                 this.logger.info(`Multi-user mode: ${this.isMultiUserMode()}`);
                 this.logger.info(
                     `Multi-instance mode with Redis-backed transport: ${this.redisBridge ? "true" : "false"}`
@@ -506,6 +509,13 @@ export class PenpotMcpServer {
     public async stop(): Promise<void> {
         this.logger.info("Stopping Penpot MCP Server...");
         clearInterval(this.sessionTimeoutInterval);
+        for (const session of Object.values(this.streamableTransports)) await session.transport.close();
+        for (const session of Object.values(this.sseTransports)) await session.transport.close();
+        if (this.httpServer) {
+            await new Promise<void>((resolve, reject) =>
+                this.httpServer!.close((error) => (error ? reject(error) : resolve()))
+            );
+        }
         await this.pluginBridge.close();
         await this.redisBridge?.close();
         if (this.replServer) {
