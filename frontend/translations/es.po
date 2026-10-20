@@ -6839,6 +6839,14 @@ msgstr "Padding superior"
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Padding vertical"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.select-column"
+msgstr "Seleccionar columna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.select-row"
+msgstr "Seleccionar fila"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
 msgstr "Editando rejilla"

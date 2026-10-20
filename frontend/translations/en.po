@@ -6755,6 +6755,14 @@ msgstr "Top padding"
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Vertical padding"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.select-column"
+msgstr "Select column"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.select-row"
+msgstr "Select row"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
 msgstr "Editing grid"
