@@ -31,7 +31,9 @@ use super::text_japanese::*;
 use super::{FontFamily, FontStyle};
 use crate::math::Point;
 use crate::render::FallbackFonts;
-use crate::shapes::{self, kinsoku, merge_fills, Shape, Type, VerticalAlign};
+#[cfg(test)]
+use crate::shapes::kinsoku;
+use crate::shapes::{self, merge_fills, Shape, Type, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
 
@@ -287,8 +289,8 @@ struct HorizontalPlansCache {
 /// justifies them.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct HorizontalAdjustment {
-    sheds: Vec<Vec<(usize, f32)>>,
-    spacing: Vec<Vec<(usize, f32)>>,
+    pub(crate) sheds: Vec<Vec<(usize, f32)>>,
+    pub(crate) spacing: Vec<Vec<(usize, f32)>>,
 }
 
 /// Per paragraph; `None` for paragraphs laid out by Skia alone.
@@ -428,34 +430,40 @@ fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> b
 }
 
 fn paragraph_intersects<'a>(
-    paragraphs: impl Iterator<Item = &'a skia::textlayout::Paragraph>,
+    paragraphs: impl Iterator<Item = (&'a skia::textlayout::Paragraph, f32)>,
     x_pos: f32,
     y_pos: f32,
 ) -> bool {
     paragraphs
-        .scan(0.0_f32, |height, p| {
+        .scan(0.0_f32, |height, (p, x_offset)| {
             let prev_height = *height;
             *height += p.height();
-            Some((prev_height, p))
+            Some((prev_height, p, x_offset))
         })
-        .any(|(height, p)| intersects(p, x_pos, y_pos - height))
+        .any(|(height, p, x_offset)| intersects(p, x_pos - x_offset, y_pos - height))
 }
 
 // Performs a text auto layout without width limits.
 // This should be the same as text_auto_layout.
-pub fn build_paragraphs_from_paragraph_builders(
+pub(crate) fn build_paragraphs_from_paragraph_builders(
     paragraph_builders: &mut [ParagraphBuilderGroup],
     width: f32,
+    plans: &[HorizontalParagraphPlan],
 ) -> Vec<Vec<skia::textlayout::Paragraph>> {
     let paragraphs = paragraph_builders
         .iter_mut()
-        .map(|builders| {
+        .enumerate()
+        .map(|(index, builders)| {
             builders
                 .iter_mut()
                 .map(|builder| {
                     let mut paragraph = builder.build();
                     // For auto-width, always layout with infinite width first to get intrinsic width
-                    paragraph.layout(width);
+                    paragraph.layout(
+                        plans
+                            .get(index)
+                            .map_or(width, |plan| plan.layout_width(width)),
+                    );
                     paragraph
                 })
                 .collect()
@@ -465,15 +473,20 @@ pub fn build_paragraphs_from_paragraph_builders(
 }
 
 /// Calculate the normalized line height from paragraph builders
-pub fn calculate_normalized_line_height(
+pub(crate) fn calculate_normalized_line_height(
     paragraph_builders: &mut [ParagraphBuilderGroup],
     width: f32,
+    plans: &[HorizontalParagraphPlan],
 ) -> f32 {
     let mut normalized_line_height = 0.0;
-    for paragraph_builder_group in paragraph_builders.iter_mut() {
+    for (index, paragraph_builder_group) in paragraph_builders.iter_mut().enumerate() {
         for paragraph_builder in paragraph_builder_group.iter_mut() {
             let mut paragraph = paragraph_builder.build();
-            paragraph.layout(width);
+            paragraph.layout(
+                plans
+                    .get(index)
+                    .map_or(width, |plan| plan.layout_width(width)),
+            );
             let baseline = paragraph.ideographic_baseline();
             if baseline > normalized_line_height {
                 normalized_line_height = baseline;
@@ -683,7 +696,7 @@ impl TextContent {
     /// Squeeze sheds and justify spacing of each horizontal paragraph at
     /// the layout width, cached until the content or the width
     /// changes. `None` when no paragraph needs them.
-    fn horizontal_line_adjustments(&self) -> Option<HorizontalAdjustments> {
+    pub(crate) fn horizontal_line_adjustments(&self) -> Option<HorizontalAdjustments> {
         if self.is_vertical() || self.grow_type() == GrowType::AutoWidth {
             return None;
         }
@@ -731,7 +744,7 @@ impl TextContent {
             let mut laid_out = self
                 .horizontal_measure_builder(paragraph, plan, extra_sheds)
                 .build();
-            laid_out.layout(width);
+            laid_out.layout(plan.layout_width(width));
             laid_out
         };
         let (sheds, laid_out) = if paragraph.layout_policy()
@@ -807,7 +820,11 @@ impl TextContent {
     /// sheds, ruby spacing), cached until content or width changes; clones
     /// share them. A font load bumps the content version for shaped spacing.
     pub(crate) fn horizontal_plans(&self) -> Rc<Vec<HorizontalParagraphPlan>> {
-        let width = self.get_width(self.bounds().width());
+        let width = if self.grow_type() == GrowType::AutoWidth {
+            f32::MAX
+        } else {
+            self.bounds().width()
+        };
         if let Some(entry) = self.layout.horizontal.borrow().as_ref() {
             if entry.version == self.content_version && entry.width == width {
                 return Rc::clone(&entry.plans);
@@ -819,6 +836,14 @@ impl TextContent {
                 .map(|paragraph| {
                     let mut plan = HorizontalParagraphPlan::new(paragraph);
                     plan.relax_overlong_words(paragraph, width, |plan| {
+                        let sheds = vec![Vec::new(); plan.texts.len()];
+                        let mut measured = self
+                            .horizontal_measure_builder(paragraph, plan, &sheds)
+                            .build();
+                        measured.layout(width);
+                        measured
+                    });
+                    plan.retain_atomic_overflow(paragraph, width, |plan, width| {
                         let sheds = vec![Vec::new(); plan.texts.len()];
                         let mut measured = self
                             .horizontal_measure_builder(paragraph, plan, &sheds)
@@ -897,8 +922,10 @@ impl TextContent {
         let mut has_lines = false;
         let mut y_accum = base_y + vertical_offset;
 
-        for group in paragraphs.iter() {
+        let plans = self.horizontal_plans();
+        for (index, group) in paragraphs.iter().enumerate() {
             if let Some(paragraph) = group.first() {
+                let x = x + plans[index].x_offset(&self.paragraphs[index], selrect.width());
                 let line_metrics = paragraph.get_line_metrics();
                 for line in &line_metrics {
                     let line_baseline = y_accum + line.baseline as f32;
@@ -1136,7 +1163,12 @@ impl TextContent {
                 // Skia's get_glyph_position_at_coordinate expects coordinates relative to
                 // the paragraph's top-left. For multi-paragraph or wrapped text, each
                 // paragraph has its own origin; subtract start_y so we pass paragraph-local coords.
-                let para_pt = Point::new(point.x, point.y - start_y);
+                let plans = self.horizontal_plans();
+                let x_offset = plans
+                    .get(paragraph_index)
+                    .zip(self.paragraphs().get(paragraph_index))
+                    .map_or(0.0, |(plan, model)| plan.x_offset(model, selrect.width()));
+                let para_pt = Point::new(point.x - x_offset, point.y - start_y);
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
                     if let Some(original_position) =
                         horizontal_warichu_hit_test(paragraph, layout_paragraph, para_pt)
@@ -1294,7 +1326,7 @@ impl TextContent {
                 .and_then(|adjustments| adjustments.get(paragraph_index))
                 .and_then(Option::as_ref);
             let mut paragraph_style = paragraph.paragraph_to_style();
-            if self.adjusts_lines(paragraph, plan) {
+            if self.adjusts_lines(paragraph, plan) || plan.has_atomic_overflow() {
                 // Line adjustment gives characters runs of their own; rounding
                 // each run up would wrap the adjusted lines. The measuring
                 // pass shares this style so both break alike.
@@ -1420,11 +1452,17 @@ impl TextContent {
             None,
         );
 
-        let normalized_line_height =
-            calculate_normalized_line_height(&mut measure_builders, f32::MAX);
+        let normalized_line_height = calculate_normalized_line_height(
+            &mut measure_builders,
+            f32::MAX,
+            &self.horizontal_plans(),
+        );
 
-        let measure_paragraphs =
-            build_paragraphs_from_paragraph_builders(&mut measure_builders, f32::MAX);
+        let measure_paragraphs = build_paragraphs_from_paragraph_builders(
+            &mut measure_builders,
+            f32::MAX,
+            &self.horizontal_plans(),
+        );
 
         let content_width = measure_paragraphs
             .iter()
@@ -1436,8 +1474,11 @@ impl TextContent {
 
         // Re-layout at the intrinsic width (without the HTML margin slack).
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
-        let paragraphs =
-            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, content_width);
+        let paragraphs = build_paragraphs_from_paragraph_builders(
+            &mut paragraph_builders,
+            content_width,
+            &self.horizontal_plans(),
+        );
         let height = paragraphs
             .iter()
             .flatten()
@@ -1461,10 +1502,17 @@ impl TextContent {
         let width = self.width();
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
 
-        let normalized_line_height =
-            calculate_normalized_line_height(&mut paragraph_builders, width);
+        let normalized_line_height = calculate_normalized_line_height(
+            &mut paragraph_builders,
+            width,
+            &self.horizontal_plans(),
+        );
 
-        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs = build_paragraphs_from_paragraph_builders(
+            &mut paragraph_builders,
+            width,
+            &self.horizontal_plans(),
+        );
         let height = paragraphs
             .iter()
             .flatten()
@@ -1485,10 +1533,17 @@ impl TextContent {
         let width = self.width();
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
 
-        let normalized_line_height =
-            calculate_normalized_line_height(&mut paragraph_builders, width);
+        let normalized_line_height = calculate_normalized_line_height(
+            &mut paragraph_builders,
+            width,
+            &self.horizontal_plans(),
+        );
 
-        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs = build_paragraphs_from_paragraph_builders(
+            &mut paragraph_builders,
+            width,
+            &self.horizontal_plans(),
+        );
         let paragraph_height = paragraphs
             .iter()
             .flatten()
@@ -1514,8 +1569,21 @@ impl TextContent {
     }
 
     pub fn get_height(&self, width: f32) -> f32 {
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
-        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        // A prospective width needs its own plan: frozen overflow breaks
+        // from the current bounds must not determine a resized box's height.
+        let mut content = self.clone();
+        content.set_xywh(
+            self.bounds.x(),
+            self.bounds.y(),
+            width,
+            self.bounds.height(),
+        );
+        let mut paragraph_builders = content.paragraph_builder_group_from_text(None);
+        let paragraphs = build_paragraphs_from_paragraph_builders(
+            &mut paragraph_builders,
+            width,
+            &content.horizontal_plans(),
+        );
         let paragraph_height = paragraphs
             .iter()
             .flatten()
@@ -1832,13 +1900,22 @@ impl TextContent {
         let x_pos = result.x - rect.x();
         let y_pos = result.y - rect.y();
 
+        let plans = self.horizontal_plans();
         if !self.layout.paragraphs.is_empty() {
             // Reuse stored laid-out paragraphs
             paragraph_intersects(
                 self.layout
                     .paragraphs
                     .iter()
-                    .flat_map(|group| group.first()),
+                    .enumerate()
+                    .filter_map(|(index, group)| {
+                        group.first().map(|paragraph| {
+                            (
+                                paragraph,
+                                plans[index].x_offset(&self.paragraphs[index], rect.width()),
+                            )
+                        })
+                    }),
                 x_pos,
                 y_pos,
             )
@@ -1846,9 +1923,20 @@ impl TextContent {
             let width = self.width();
             let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
             let paragraphs =
-                build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+                build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width, &plans);
 
-            paragraph_intersects(paragraphs.iter().flatten(), x_pos, y_pos)
+            paragraph_intersects(
+                paragraphs.iter().enumerate().filter_map(|(index, group)| {
+                    group.first().map(|paragraph| {
+                        (
+                            paragraph,
+                            plans[index].x_offset(&self.paragraphs[index], width),
+                        )
+                    })
+                }),
+                x_pos,
+                y_pos,
+            )
         }
     }
 }
@@ -2124,6 +2212,7 @@ impl Paragraph {
     /// plus the map from original to builder-text UTF-16 offsets. Consumers
     /// of laid-out offsets must translate through the map. Only paragraphs
     /// with an explicit typography profile are transformed.
+    #[cfg(test)]
     pub fn layout_span_texts(&self) -> (Vec<String>, kinsoku::OffsetMap) {
         layout_span_texts(self)
     }
@@ -2710,13 +2799,13 @@ pub fn calculate_text_layout_data(
     let mut paragraph_heights: Vec<f32> = Vec::new();
     let mut built_groups: Vec<Vec<skia::textlayout::Paragraph>> =
         Vec::with_capacity(paragraph_builder_groups.len());
-    for paragraph_builder_group in paragraph_builder_groups.iter_mut() {
+    for (index, paragraph_builder_group) in paragraph_builder_groups.iter_mut().enumerate() {
         let group_len = paragraph_builder_group.len();
         let mut paragraph_offset_y = previous_line_height;
         let mut group_paragraphs: Vec<skia::textlayout::Paragraph> = Vec::with_capacity(group_len);
         for (builder_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut skia_paragraph = paragraph_builder.build();
-            skia_paragraph.layout(text_width);
+            skia_paragraph.layout(plans[index].layout_width(text_width));
             if builder_index == group_len - 1 {
                 if skia_paragraph.get_line_metrics().is_empty() {
                     paragraph_offset_y = skia_paragraph.ideographic_baseline();
@@ -2742,6 +2831,7 @@ pub fn calculate_text_layout_data(
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
+            let x = x + plans[i].x_offset(&text_paragraphs[i], text_width);
             let decorations = text_paragraphs
                 .get(i)
                 .zip(plans.get(i))

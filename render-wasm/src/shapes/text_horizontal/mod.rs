@@ -5,6 +5,7 @@
 mod emphasis;
 mod justify;
 mod offsets;
+mod overflow;
 mod ruby;
 mod warichu;
 
@@ -49,13 +50,15 @@ pub(crate) fn uses_japanese_layout(paragraph: &Paragraph, texts: &[String]) -> b
                 .any(|text| text.chars().any(is_japanese_text_char)))
 }
 
+#[cfg(test)]
 pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku::OffsetMap) {
-    layout_span_texts_with_emergency(paragraph, &[])
+    layout_span_texts_with_breaks(paragraph, &[], &[])
 }
 
-fn layout_span_texts_with_emergency(
+fn layout_span_texts_with_breaks(
     paragraph: &Paragraph,
     emergency: &[usize],
+    forced: &[usize],
 ) -> (Vec<String>, kinsoku::OffsetMap) {
     let texts: Vec<String> = paragraph
         .children()
@@ -70,11 +73,8 @@ fn layout_span_texts_with_emergency(
             .iter()
             .map(|span| span.has_ruby().then(Vec::new))
             .collect();
-        let shifted = if emergency.is_empty() {
-            kinsoku::apply_policy_to_span_texts(&texts, &ruby_breaks, policy)
-        } else {
-            kinsoku::apply_policy_with_emergency_breaks(&texts, &ruby_breaks, policy, emergency)
-        };
+        let shifted =
+            kinsoku::apply_policy_with_breaks(&texts, &ruby_breaks, policy, emergency, forced);
         if let Some((shifted, map)) = shifted {
             return (shifted, map);
         }
@@ -172,6 +172,9 @@ pub(crate) fn add_horizontal_span(
     fonts: &skia::textlayout::FontCollection,
 ) {
     if span.is_warichu() {
+        if builder_text.starts_with(kinsoku::FORCED_LINE_BREAK) {
+            builder.add_text(kinsoku::FORCED_LINE_BREAK.to_string());
+        }
         let text = span.apply_text_transform();
         let (first, second) = warichu_text_lines(&text);
         let mut mini_style = text_style.clone();
@@ -263,6 +266,8 @@ pub(crate) struct HorizontalParagraphPlan {
     pub(crate) offsets: HorizontalOffsets,
     pub(crate) sheds: Vec<Vec<(usize, f32)>>,
     pub(crate) ruby_spacing: HorizontalRubySpacing,
+    emergency_breaks: Vec<usize>,
+    overflow_width: Option<f32>,
 }
 
 impl HorizontalParagraphPlan {
@@ -377,7 +382,11 @@ impl HorizontalParagraphPlan {
     }
 
     fn with_emergency_breaks(paragraph: &Paragraph, emergency: &[usize]) -> Self {
-        let (texts, offset_map) = layout_span_texts_with_emergency(paragraph, emergency);
+        Self::with_breaks(paragraph, emergency, &[])
+    }
+
+    fn with_breaks(paragraph: &Paragraph, emergency: &[usize], forced: &[usize]) -> Self {
+        let (texts, offset_map) = layout_span_texts_with_breaks(paragraph, emergency, forced);
         let sheds = horizontal_aki_sheds(paragraph, &texts);
         let ruby_spacing = horizontal_ruby_spacing(paragraph, &texts, &offset_map);
         let offsets = HorizontalOffsets::from_layout_texts(paragraph, &texts, offset_map);
@@ -386,6 +395,8 @@ impl HorizontalParagraphPlan {
             offsets,
             sheds,
             ruby_spacing,
+            emergency_breaks: emergency.to_vec(),
+            overflow_width: None,
         }
     }
 }

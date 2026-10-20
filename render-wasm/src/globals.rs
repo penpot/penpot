@@ -56,17 +56,30 @@ pub(crate) fn has_render_state() -> bool {
     unsafe { !RENDER_STATE.is_null() }
 }
 
+/// The render resources in use: in tests, the ones this thread installed with
+/// [`TestRenderResourcesGuard`], else the global ones.
+#[inline(always)]
+fn render_resources() -> *mut RenderResources {
+    #[cfg(test)]
+    {
+        let installed = TEST_RENDER_RESOURCES.with(std::cell::Cell::get);
+        if !installed.is_null() {
+            return installed;
+        }
+    }
+    unsafe { RENDER_RESOURCES }
+}
+
 #[inline(always)]
 pub(crate) fn has_render_resources() -> bool {
-    unsafe { !RENDER_RESOURCES.is_null() }
+    !render_resources().is_null()
 }
 
 #[inline(always)]
 pub(crate) fn get_resources() -> &'static mut RenderResources {
-    unsafe {
-        debug_assert!(!RENDER_RESOURCES.is_null(), "Render Resources is null");
-        &mut *RENDER_RESOURCES
-    }
+    let resources = render_resources();
+    debug_assert!(!resources.is_null(), "Render Resources is null");
+    unsafe { &mut *resources }
 }
 
 #[inline(always)]
@@ -120,7 +133,16 @@ macro_rules! with_current_shape {
     };
 }
 
-/// Scoped override of the global render resources pointer for unit tests.
+#[cfg(test)]
+thread_local! {
+    /// Render resources a test installed for its own thread. Tests run on
+    /// parallel threads, and Skia font collections are not thread-safe, so
+    /// another test must never reach them.
+    static TEST_RENDER_RESOURCES: std::cell::Cell<*mut RenderResources> =
+        const { std::cell::Cell::new(std::ptr::null_mut()) };
+}
+
+/// Scoped override of the render resources for the current test thread.
 #[cfg(test)]
 pub(crate) struct TestRenderResourcesGuard {
     prev: *mut RenderResources,
@@ -136,8 +158,7 @@ impl TestRenderResourcesGuard {
         let lock = TEST_RENDER_RESOURCES_LOCK
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let prev = unsafe { RENDER_RESOURCES };
-        unsafe { RENDER_RESOURCES = resources as *mut _ };
+        let prev = TEST_RENDER_RESOURCES.replace(resources as *mut _);
         Self { prev, _lock: lock }
     }
 }
@@ -145,7 +166,7 @@ impl TestRenderResourcesGuard {
 #[cfg(test)]
 impl Drop for TestRenderResourcesGuard {
     fn drop(&mut self) {
-        unsafe { RENDER_RESOURCES = self.prev };
+        TEST_RENDER_RESOURCES.set(self.prev);
     }
 }
 
