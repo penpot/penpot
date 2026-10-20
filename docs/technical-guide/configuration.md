@@ -634,54 +634,25 @@ run `(app.srepl.main/set-online)`. Drain one instance at a time.
 
 ### Running several exporters
 
-Exporters can run side by side as long as they share the same Valkey
-(`PENPOT_REDIS_URI`). Any of them can create an export, report its state or
-cancel it, whichever one is running it.
+Exporters can run side by side, usually one per machine, as long as they share
+the same Valkey (`PENPOT_REDIS_URI`). Put a load balancer in front of them and
+point the frontend's `PENPOT_EXPORTER_URI` at it. Any exporter can create an
+export, report its state or cancel it, whichever one is running it.
 
 Each exporter needs a name of its own that stays the same when it restarts. On
 startup, an exporter uses this name to find the exports it was running before
 it stopped, and marks them as cancelled. It leaves the other exporters' exports
-alone. By default the name is the container hostname, which works for both
-Docker and Kubernetes:
-
-- **Docker Compose:** each container's hostname is its container ID. It stays
-  the same across restarts and differs between replicas.
-- **Kubernetes:** each pod's hostname is its pod name. It stays the same when
-  the container restarts inside the pod.
-
-With Docker Compose, add `deploy.replicas` to the `penpot-exporter` service:
-
-```yaml
-  penpot-exporter:
-    image: "penpotapp/exporter:${PENPOT_VERSION:-2.18}"
-    restart: always
-    deploy:
-      replicas: 2
-    # ...the rest of the service stays as it is
-```
-
-Do not set `hostname` or `container_name` on that service: every replica would
-get the same value. Then start them and restart the frontend, so that its nginx
-picks up the address of every exporter:
-
-```bash
-docker compose up -d
-docker compose restart penpot-frontend
-```
-
-The frontend's nginx looks up the exporter addresses only when it starts.
-Restart it again whenever you change the number of exporters, or after
-`docker compose up` recreates them (for example, after an upgrade). In
-Kubernetes, point `PENPOT_EXPORTER_URI` at a Service and this step is not
-needed.
-
-If your exporters share a hostname (for example, with host networking), give
-each one its own name:
+alone. Set the name on each exporter:
 
 ```bash
 # Exporter
 PENPOT_EXPORTER_REPLICA_ID: exporter-1
 ```
+
+Without it, the exporter uses its hostname. Inside a Docker container that is
+the container ID, which changes when the container is recreated (for example,
+after an upgrade). In Kubernetes it is the pod name, which changes when the pod
+is replaced.
 
 Keep in mind:
 
@@ -690,10 +661,10 @@ Keep in mind:
   each exporter on its own. With two exporters and the default per-profile limit
   of 2, one user can run up to four exports at once.
 - Each exporter runs its own browsers and render workers, so plan memory and
-  CPU per replica.
-- If an exporter is replaced and comes back under a new name (a recreated
-  container or a new pod), the exports it was running show as running until
-  they expire (`PENPOT_EXPORTER_JOB_TTL`, one hour by default).
+  CPU per exporter.
+- If an exporter comes back under a new name, the exports it was running show
+  as running until they expire (`PENPOT_EXPORTER_JOB_TTL`, one hour by
+  default).
 
 ## Backend
 

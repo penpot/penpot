@@ -108,10 +108,10 @@ job is passed on over the cancel topic.
 
 Each job records the replica that runs it. On boot, a replica cancels only its
 own jobs left mid-flight, so it never touches a sibling's live work. That needs
-an id that survives a restart and differs between replicas: the hostname does
-both under Docker and Kubernetes, but set `PENPOT_EXPORTER_REPLICA_ID` when
-replicas share a hostname (e.g. host networking). Jobs of a replica that never
-comes back under the same id stay `running` until their TTL.
+an id that survives a restart and differs between replicas, so set
+`PENPOT_EXPORTER_REPLICA_ID` on each one. The hostname fallback changes when a
+container is recreated or a pod replaced. Jobs of a replica that never comes
+back under the same id stay `running` until their TTL.
 
 The queue and every admission limit are per replica: with two replicas,
 `PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE` of `2` lets one profile run up to four
