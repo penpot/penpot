@@ -247,6 +247,23 @@ fn warichu_line_draws(runs: &[ShapedRun], x_center: f32, y_top: f32) -> Vec<Glyp
 /// own fallback-font run.
 fn ruby_draws(layout: &VerticalLayout, ruby: &RubyCell, origin: (f32, f32)) -> Vec<GlyphDraw> {
     let column = &layout.columns[ruby.column];
+    if let Some(origins) = &ruby.zhuyin_origins {
+        return ruby
+            .glyphs
+            .iter()
+            .zip(origins)
+            .filter_map(|(glyph, offset)| {
+                let run = &layout.ruby_runs[glyph.run];
+                Some(GlyphDraw::at(
+                    run.glyph_blob(glyph.glyph)?,
+                    (
+                        origin.0 + ruby.strip_x(column) + offset.x,
+                        origin.1 + offset.y,
+                    ),
+                ))
+            })
+            .collect();
+    }
     let gutter_center = origin.0 + ruby.strip_x(column) + ruby.font_size / 2.0;
     ruby.glyphs
         .iter()

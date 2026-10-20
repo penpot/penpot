@@ -503,3 +503,15 @@
     (let [before (mf/props {:values {attr "auto"}})
           after (mf/props {:values {attr "under-left"}})]
       (t/is (false? (@#'text-menu/check-props before after))))))
+
+(t/deftest zhuyin-handoff-sets-symbols-upright-in-a-right-side-strip
+  (let [html (rds/renderToStaticMarkup
+              (mf/element html-text/render-text*
+                          {:node {:text "中" :ruby "ㄋㄧˇ" :ruby-zhuyin true :font-size "40"}
+                           :shape {} :parent {}}))]
+    (t/is (str/includes? html "width:1.6em"))
+    (t/is (str/includes? html "writing-mode:horizontal-tb"))
+    (t/is (str/includes? html "ㄋ"))
+    (t/is (str/includes? html "ㄧ"))
+    (t/is (str/includes? html "ˇ"))
+    (t/is (not (str/includes? html "<rt")))))

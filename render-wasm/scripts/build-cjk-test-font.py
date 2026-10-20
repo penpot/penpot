@@ -18,6 +18,7 @@ def main():
     names = [".notdef", "base", "japanese", "chinese", "korean", "square", "space", "thirdEm"]
     builder.setupGlyphOrder(names)
     cmap = {ord(char): "square" for char in "文あっ한국어문장한글한「」，。"}
+    cmap.update({ord(char): "square" for char in "ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦˉˊˇˋ˙"})
     cmap.update({0x4E2D: "base", 0x20: "space", 0x2004: "thirdEm"})
     builder.setupCharacterMap(cmap)
     glyphs = {}
