@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.files.builder
   "Internal implementation of file builder. Mainly used as base impl
@@ -16,6 +16,7 @@
    [app.common.files.helpers :as cph]
    [app.common.files.migrations :as fmig]
    [app.common.geom.shapes :as gsh]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.time :as dt]
@@ -102,7 +103,8 @@
                      (str/capital (d/name type)))))
 
     :always
-    (update :name unique-name state)))
+    (-> (update :name cpn/clean-path)
+        (update :name unique-name state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS

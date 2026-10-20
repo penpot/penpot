@@ -9,6 +9,7 @@ on:
     paths:
       - 'exporter/**'
       - 'common/**'
+      - 'render-wasm/**'
 
     types:
       - opened
@@ -23,10 +24,14 @@ on:
     paths:
       - 'exporter/**'
       - 'common/**'
+      - 'render-wasm/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   test-exporter:
@@ -41,7 +46,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Lint
         working-directory: ./exporter
@@ -54,3 +61,8 @@ jobs:
         working-directory: ./exporter
         run: |
           ./scripts/test
+
+      - name: Check no invoke_* in exporter JS glue
+        working-directory: ./render-wasm
+        run: |
+          ./check-no-invoke-v export

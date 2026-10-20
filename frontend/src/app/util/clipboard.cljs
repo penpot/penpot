@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.clipboard
   (:require
    ["./clipboard.js" :as impl]
    [app.common.transit :as t]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -21,6 +22,16 @@
 (def ^:private default-options
   #js {:decodeTransit t/decode-str
        :allowHTMLPaste false})
+
+(defn plain-text->html
+  "Minimal text/html clipboard payload for `text`, with `hidden-html` before it.
+  Windows apps prefer CF_HTML, and may otherwise paste the editor's empty `<br>`."
+  ([text] (plain-text->html text nil))
+  ([text hidden-html]
+   (let [escaped (-> (or text "")
+                     (dom/escape-html)
+                     (str/replace "\n" "<br>"))]
+     (str "<meta charset=\"utf-8\">" hidden-html escaped))))
 
 (defn- from-data-transfer
   "Get clipboard stream from DataTransfer instance"
@@ -202,3 +213,62 @@
 
       :else
       (unavailable-error))))
+
+(defn read-text
+  "Read the system clipboard as plain text. Always returns a Promise, rejecting
+   like `to-clipboard` when the asynchronous Clipboard API is not exposed."
+  []
+  (let [clipboard (get-clipboard)]
+    (if (and clipboard (unchecked-get clipboard "readText"))
+      (.readText ^js clipboard)
+      (unavailable-error))))
+
+(defn- read-item-type
+  "Promise of the `mime` text of clipboard `item`, or of nil when it has none."
+  [^js item mime]
+  (if (some #{mime} (some-> item .-types array-seq))
+    (-> (.getType item mime) (.then #(.text ^js %)))
+    (js/Promise.resolve nil)))
+
+(defn read-html-and-text
+  "Promise of the system clipboard as {:html :text}, either may be nil. Rejects like
+   `to-clipboard` when the asynchronous Clipboard API is not exposed."
+  []
+  (let [clipboard (get-clipboard)]
+    (cond
+      (and clipboard (unchecked-get clipboard "read"))
+      (-> (.read ^js clipboard)
+          (.then (fn [items]
+                   (let [item (first items)]
+                     (-> (js/Promise.all #js [(read-item-type item "text/html")
+                                              (read-item-type item "text/plain")])
+                         (.then (fn [[html text]] {:html html :text text})))))))
+
+      (and clipboard (unchecked-get clipboard "readText"))
+      (-> (.readText ^js clipboard)
+          (.then (fn [text] {:html nil :text text})))
+
+      :else
+      (unavailable-error))))
+
+(defn permission-error?
+  "True for the `NotAllowedError` DOMException raised when access is denied."
+  [cause]
+  (and (instance? js/DOMException cause)
+       (= (.-name cause) "NotAllowedError")))
+
+(defn unavailable-error?
+  "True when `navigator.clipboard` is undefined, e.g. on an insecure origin."
+  [cause]
+  (and (instance? js/Error cause)
+       (str/starts-with? (.-message cause) "Clipboard API is unavailable.")))
+
+(defn error-message
+  "Translated message for a clipboard failure, or nil for any other error."
+  [cause]
+  (cond
+    (permission-error? cause)
+    (tr "errors.clipboard-permission-denied")
+
+    (unavailable-error? cause)
+    (tr "errors.clipboard-api-unavailable")))

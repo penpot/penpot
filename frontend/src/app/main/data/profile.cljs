@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.profile
   (:require
@@ -77,8 +77,7 @@
   (let [data (ex-data cause)]
     (if (and (= :authorization (:type data))
              (= :challenge-required (:code data)))
-      (let [path (rt/get-current-path)
-            href (->> path
+      (let [href (->> (rt/get-current-href)
                       (js/encodeURIComponent)
                       (str "/challenge.html?redirect="))]
         (rx/of (rt/nav-raw :href href)))

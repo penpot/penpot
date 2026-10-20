@@ -2,12 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.shapes.text.text-edition-outline
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
@@ -22,16 +21,16 @@
     (let [selrect-transform (mf/deref refs/workspace-selrect)
           [selrect transform] (dsh/get-selrect selrect-transform shape)
 
-          [sr-width sr-height]
-          (if (or (mth/close? (:width selrect) 0.01) (mth/close? (:height selrect) 0.01))
-            (let [{:keys [width height]} (wasm.api/get-text-dimensions (:id shape))]
-              [width height])
-            [(:width selrect) (:height selrect)])]
+          ;; While editing, the committed selrect lags the text (geometry is
+          ;; finalize-only), so measure the live WASM text for the growing axes.
+          live (wasm.api/get-text-dimensions (:id shape))
+          {:keys [width height]} (dwt/merge-live-text-dimensions
+                                  (:grow-type shape) selrect live)]
       [:rect.main.viewport-selrect
        {:x (:x selrect)
         :y (:y selrect)
-        :width sr-width
-        :height sr-height
+        :width width
+        :height height
         :transform transform
         :style {:stroke "var(--color-accent-tertiary)"
                 :stroke-width (/ 1 zoom)

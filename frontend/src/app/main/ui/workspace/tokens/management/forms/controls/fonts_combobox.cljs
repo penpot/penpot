@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.tokens.management.forms.controls.fonts-combobox
   (:require-macros [app.main.style :as stl])
@@ -78,7 +78,7 @@
             (fn [resolved-tokens]
               (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
                     resolved-value (if (contains? cf/flags :tokenscript)
-                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     (ts/resolved-value->penpot-unit (:type token) resolved-value)
                                      resolved-value)]
                 (if resolved-value
                   (rx/of {:value resolved-value})

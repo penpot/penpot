@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-management-nitrate-test
   (:require
@@ -14,15 +14,17 @@
    [app.db :as db]
    [app.email :as eml]
    [app.http :as-alias http]
+   [app.jobs :as jobs]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.profile :as profile]
    [app.util.ssrf :as ssrf]
-   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
    [clojure.test :as t]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once (t/compose-fixtures
@@ -52,7 +54,7 @@
 
 (t/deftest create-and-update-organization-invitations-audit-props
   (let [owner-id-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+    (with-mocks [email-mock {:target 'app.email/send :return nil}
                  audit-mock {:target 'app.loggers.audit/submit :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method params]
@@ -101,7 +103,7 @@
 
 (t/deftest invite-to-organization-rejects-non-owner
   (let [organization-summary-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+    (with-mocks [email-mock {:target 'app.email/send :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method _params]
                                          (when (= method :get-organization-summary)
@@ -129,7 +131,7 @@
         (t/is (not (:called? @email-mock)))))))
 
 (t/deftest invite-to-organization-rejects-unknown-organization
-  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile         (th/create-profile* 105 {:is-active true})
           organization-id (uuid/random)
@@ -148,7 +150,7 @@
 
 (t/deftest invite-to-organization-uses-authoritative-branding
   (let [organization-summary-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send! :return nil}
+    (with-mocks [email-mock {:target 'app.email/send :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method _params]
                                          (when (= method :get-organization-summary)
@@ -174,7 +176,7 @@
                                                                       :logo "https://evil.example/logo.png"
                                                                       :avatar-bg-url "https://evil.example/avatar.svg"
                                                                       :sso-active false}})
-              email-params    (first (:call-args @email-mock))
+              email-params    (second (:call-args @email-mock))
               organization    (:organization email-params)]
           (t/is (th/success? out))
           (t/is (= "Trusted Organization" (:name organization)))
@@ -225,6 +227,78 @@
       (t/is (= #{(:name owned-team)}
                (->> out :result (map :name) set))))))
 
+(t/deftest get-member-teams-returns-all-active-memberships
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile      (th/create-profile* 1 {:is-active true})
+          other        (th/create-profile* 2 {:is-active true})
+          default-team (th/db-get :team {:id (:default-team-id profile)})
+          owned-team   (th/create-team* 1 {:profile-id (:id profile)})
+          member-team  (th/create-team* 2 {:profile-id (:id other)})
+          _            (th/create-team-role* {:team-id (:id member-team)
+                                              :profile-id (:id profile)
+                                              :role :editor})
+          deleted-team (th/create-team* 3 {:profile-id (:id profile)})
+          _            (th/db-update! :team
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted-team)})
+          out          (th/management-command! {::th/type :get-member-teams
+                                                ::rpc/profile-id (:id profile)})]
+      (t/is (th/success? out))
+      (let [teams-by-id (->> out :result (d/index-by :id))]
+        (t/is (= #{(:id default-team) (:id owned-team) (:id member-team)}
+                 (set (keys teams-by-id))))
+        (t/is (true? (get-in teams-by-id [(:id default-team) :is-default])))
+        (t/is (false? (get-in teams-by-id [(:id owned-team) :is-default])))
+        (t/is (false? (get-in teams-by-id [(:id member-team) :is-default])))))))
+
+(t/deftest update-profile-theme-updates-only-theme
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true
+                                         :fullname "Nitrate User"
+                                         :lang "es"
+                                         :theme "light"})
+          _       (th/db-update! :profile
+                                 {:lang "es"}
+                                 {:id (:id profile)})
+          out     (th/management-command! {::th/type :update-profile-theme
+                                           ::rpc/profile-id (:id profile)
+                                           :theme "dark"})
+          saved   (-> (th/db-get :profile {:id (:id profile)})
+                      (profile/decode-row))]
+      (t/is (th/success? out))
+      (t/is (= "dark" (:theme saved)))
+      (t/is (= "Nitrate User" (:fullname saved)))
+      (t/is (= "es" (:lang saved))))))
+
+(t/deftest update-profile-theme-rejects-invalid-theme
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :update-profile-theme
+                                           ::rpc/profile-id (:id profile)
+                                           :theme "invalid"})
+          error   (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :params-validation)))))
+
+(t/deftest update-profile-props-merges-onboarding-props
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :update-profile-props
+                                           ::rpc/profile-id (:id profile)
+                                           :props {:nitrate-onboarding-viewed true
+                                                   :onboarding-questions-answered true
+                                                   :onboarding-questions
+                                                   {:role "developer"
+                                                    :company-size "2-100"}}})
+          saved   (-> (th/db-get :profile {:id (:id profile)})
+                      (profile/decode-row))]
+      (t/is (th/success? out))
+      (t/is (true? (get-in saved [:props :nitrate-onboarding-viewed])))
+      (t/is (true? (get-in saved [:props :onboarding-questions-answered])))
+      (t/is (= {:role "developer" :company-size "2-100"}
+               (get-in saved [:props :onboarding-questions]))))))
+
 (t/deftest notify-team-change-publishes-event
   (let [team-id          (uuid/random)
         organization-id  (uuid/random)
@@ -243,7 +317,7 @@
                                                     :organization organization}))]
     (t/is (th/success? out))
     (t/is (= 1 (count @calls)))
-    (t/is (= uuid/zero (-> @calls first :topic)))
+    (t/is (= team-id (-> @calls first :topic)))
     (let [msg (-> @calls first :message)]
       (t/is (= :team-organization-change (:type msg)))
       (t/is (= nil (:notification msg)))
@@ -254,6 +328,26 @@
       (t/is (= (:slug organization) (-> msg :team :organization :slug)))
       (t/is (= (:owner-id organization) (-> msg :team :organization :owner-id)))
       (t/is (= (:avatar-bg-url organization) (str (-> msg :team :organization :avatar-bg-url)))))))
+
+(t/deftest notify-team-removal-publishes-event
+  (let [team-id           (uuid/random)
+        organization-name "OrgA"
+        calls             (atom [])
+        out               (with-redefs [mbus/pub! (fn [_cfg & {:keys [topic message]}]
+                                                    (swap! calls conj {:topic topic
+                                                                       :message message}))]
+                            (th/management-command! {::th/type :notify-team-change
+                                                     :id team-id
+                                                     :organization {:name organization-name}}))]
+    (t/is (th/success? out))
+    (t/is (= 1 (count @calls)))
+    (t/is (= team-id (-> @calls first :topic)))
+    (let [msg (-> @calls first :message)]
+      (t/is (= :team-organization-change (:type msg)))
+      (t/is (= "dashboard.team-no-longer-belong-organization" (:notification msg)))
+      (t/is (= team-id (-> msg :team :id)))
+      (t/is (= organization-name (-> msg :team :organization :name)))
+      (t/is (nil? (-> msg :team :organization :id))))))
 
 (t/deftest notify-user-added-to-organization-creates-default-organization-team
   (with-mocks [nitrate-mock {:target 'app.nitrate/call
@@ -395,7 +489,7 @@
                                  @organization-summary-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submission ---
-       wrk-mock    {:target 'app.worker/submit! :return nil}
+       wrk-mock    {:target 'app.jobs/submit :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -455,7 +549,7 @@
         ;; --- Verify: exactly one organization-deleted event is published on the message bus ---
         (t/is (:called? @mbus-mock))
         (let [msg (apply hash-map (rest (:call-args @mbus-mock)))]
-          (t/is (= uuid/zero (:topic msg)))
+          (t/is (= organization-id (:topic msg)))
           (t/is (= :organization-deleted (:type (:message msg))))
           (t/is (= organization-id (:organization-id (:message msg))))
           (t/is (= organization-name (:organization-name (:message msg))))
@@ -463,6 +557,52 @@
                    (set (:teams (:message msg)))))
           (t/is (= #{(:id empty-team)}
                    (set (:deleted-teams (:message msg))))))))))
+
+(t/deftest notify-organization-change-sso-publishes-event
+  (let [organization-id (uuid/random)
+        calls           (atom [])
+        out             (with-redefs [mbus/pub! (fn [_cfg & {:keys [topic message]}]
+                                                  (swap! calls conj {:topic topic
+                                                                     :message message}))]
+                          (th/management-command! {::th/type :notify-organization-sso-change
+                                                   ::rpc/profile-id (uuid/random)
+                                                   :organization-id organization-id
+                                                   :updated-props true
+                                                   :announce-activation false}))]
+    (t/is (th/success? out))
+    (t/is (= 1 (count @calls)))
+    (t/is (= organization-id (-> @calls first :topic)))
+    (let [msg (-> @calls first :message)]
+      (t/is (= :organization-change-sso (:type msg)))
+      (t/is (= organization-id (:organization-id msg))))))
+
+(t/deftest notify-organization-sso-change-emits-token-revoked-when-updated-props
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [organization-id (uuid/random)
+          out             (with-redefs [mbus/pub! (constantly nil)]
+                            (th/management-command! {::th/type :notify-organization-sso-change
+                                                     :organization-id organization-id
+                                                     :updated-props true
+                                                     :announce-activation false}))
+          revoked         (->> (:call-args-list @audit-mock)
+                               (map second)
+                               (filter #(= "organization-sso-token-revoked" (:name %))))]
+      (t/is (th/success? out))
+      (t/is (= 1 (count revoked)))
+      (t/is (= uuid/zero (:profile-id (first revoked))))
+      (t/is (= {:organization-id organization-id} (:props (first revoked))))))
+
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [out (with-redefs [mbus/pub! (constantly nil)]
+                (th/management-command! {::th/type :notify-organization-sso-change
+                                         :organization-id (uuid/random)
+                                         :updated-props false
+                                         :announce-activation false}))
+          revoked (->> (:call-args-list @audit-mock)
+                       (map second)
+                       (filter #(= "organization-sso-token-revoked" (:name %))))]
+      (t/is (th/success? out))
+      (t/is (empty? revoked)))))
 
 (t/deftest notify-user-organizations-deletion-renames-or-deletes-teams-and-publishes-per-organization-events
   ;; --- Deferred owned-organizations: nil during setup, filled before RPC ---
@@ -476,7 +616,7 @@
                                  :get-owned-organizations @owned-organizations-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submissions ---
-       wrk-mock    {:target 'app.worker/submit! :return nil}
+       wrk-mock    {:target 'app.jobs/submit :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -571,7 +711,7 @@
 
         ;; --- Verify: one organization-deleted event per organization, all on correct topic ---
         (t/is (= 2 (count msgs)))
-        (t/is (every? #(= uuid/zero (:topic %))
+        (t/is (every? #(contains? #{organization-1-id organization-2-id} (:topic %))
                       (->> (:call-args-list @mbus-mock)
                            (map #(apply hash-map (rest %))))))
         (t/is (= #{:organization-deleted} (set (map :type msgs))))
@@ -1723,8 +1863,8 @@
                                      nil))
                                  nil))}
        ;; --- Email mock: capture sent emails ---
-       email-mock  {:target 'app.email/send!
-                    :return (fn [params] (swap! sent conj params) nil)}]
+       email-mock  {:target 'app.email/send
+                    :return (fn [_cfg params] (swap! sent conj params) nil)}]
 
       ;; --- Setup: create profiles, team, organization-summary ---
       (let [owner       (th/create-profile* 1 {:is-active true :fullname "Owner"})
@@ -1801,7 +1941,7 @@
                 :organization-id (uuid/random)
                 :updated-props false
                 :announce-activation false}]
-    (with-redefs [eml/send! (fn [params] (swap! sent conj params))]
+    (with-redefs [eml/send (fn [_cfg params] (swap! sent conj params))]
       (th/management-command! params))
     (t/is (empty? @sent))))
 
@@ -1878,6 +2018,9 @@
                               :type "action"}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are counted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (t/is (:called? @audit-mock))
@@ -1898,6 +2041,9 @@
                               :profile-id (:id prof)}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]
@@ -1917,6 +2063,9 @@
                               :type "action"}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are counted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (t/is (= 2 (:call-count @audit-mock)))
@@ -1936,6 +2085,9 @@
                                         :foo "bar"}}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]
@@ -1960,9 +2112,78 @@
             params (with-meta params
                      {::http/request (assoc http-request
                                             ::http/auth-key-id :admin-console)})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]
           (t/is (= "custom-val" (get-in event [:context :custom-key])))
           (t/is (= "admin-console" (get-in event [:context :initiator])))
           (t/is (string? (get-in event [:context :initiator]))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests: send-renewal-email
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- send-renewal-email-params
+  [profile user-name]
+  {::th/type :send-renewal-email
+   :profile-id (:id profile)
+   :user-email (:email profile)
+   :user-name user-name
+   :renewal-date "2026-01-01"
+   :estimated-amount 42.0
+   :organizations [{:id (uuid/random)
+                    :name "Acme"
+                    :initials "AC"
+                    :logo nil
+                    :avatar-bg-url nil}]})
+
+(t/deftest send-renewal-email-falls-back-to-profile-fullname-when-name-is-nil
+  ;; `nil` user-name means "no override": the RPC must look up the
+  ;; account owner's real name instead of sending a blank greeting.
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile nil))]
+      (t/is (th/success? out))
+      (let [[_cfg params] (:call-args @email-mock)]
+        (t/is (= "Nitrate User" (:user-name params)))))))
+
+(t/deftest send-renewal-email-keeps-explicit-empty-name
+  ;; An explicit "" means the caller deliberately wants no name shown
+  ;; and must not be replaced by the profile's fullname.
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile ""))]
+      (t/is (th/success? out))
+      (let [[_cfg params] (:call-args @email-mock)]
+        (t/is (= "" (:user-name params)))))))
+
+(t/deftest send-renewal-email-treats-blank-name-as-empty
+  ;; A blank name is trimmed and follows the same path as "": no name
+  ;; is shown and the profile's fullname is not used.
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile "   "))]
+      (t/is (th/success? out))
+      (let [[_cfg params] (:call-args @email-mock)]
+        (t/is (= "" (:user-name params)))))))
+
+(t/deftest upload-organization-logo-rejects-forged-content
+  ;; Same transit-forgery vector through the management API: without a
+  ;; multipart request the wrapper must reject it at params validation.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          params  {::th/type :upload-organization-logo
+                   ::rpc/profile-id (:id profile)
+                   :organization-id (uuid/random)
+                   :content {:filename "evil.png"
+                             :path (fs/path "/etc/passwd")
+                             :mtype "image/png"
+                             :size 123}}
+          out     (th/management-command! params)]
+      (t/is (th/ex-of-code? (:error out) :params-validation)))))

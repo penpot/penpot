@@ -2,15 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.metrics
   (:refer-clojure :exclude [run!])
   (:require
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.metrics.definition :as-alias mdef]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    io.prometheus.client.CollectorRegistry
    io.prometheus.client.Counter
@@ -58,11 +60,17 @@
 
 (def ^:private schema:definitions
   [:map-of :keyword
-   [:map {:title "definition"}
+   [:map {:title "definition" :closed true}
     [::mdef/name :string]
     [::mdef/help :string]
     [::mdef/type [:enum :gauge :counter :summary :histogram]]
     [::mdef/labels {:optional true} [::sm/vec :string]]
+    [::mdef/quantiles {:optional true} [::sm/vec [:tuple :double :double]]]
+    [::mdef/max-age {:optional true} :int]
+    ;; NB: in :summary, buckets are the age buckets; in :histogram,
+    ;; the observation buckets.
+    [::mdef/buckets {:optional true} [::sm/vec [:or :int :double]]]
+    [::mdef/reg {:optional true} ::registry]
     [::mdef/instance {:optional true} ::collector]]])
 
 (defn metrics?
@@ -131,15 +139,116 @@
 (def default-histogram-buckets
   [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500])
 
+(defn label
+  "Coerce a metric label value to string, falling back when absent."
+  [value fallback]
+  (cond
+    (string? value)  value
+    (keyword? value) (name value)
+    (number? value)  (str value)
+    :else            fallback))
+
+;; Tail for request and wait timings (RPC, CLIMIT waits, audit handler,
+;; HTTP dispatch): covers the 30s/60s CLIMIT timeouts while keeping the
+;; sub-7.5s resolution of the default buckets untouched.
+(def default-request-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500
+   10000 15000 30000 60000])
+
+;; Tail for background tasks (GC sweeps, file workers): they run until
+;; done with no CLIMIT timeout, bounded in practice by the 300s postgres
+;; statement timeout.
+(def default-tasks-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500
+   10000 15000 30000 60000 120000 300000])
+
+;; Tail for Redis eval: sub-second in practice, one extra bucket covers
+;; the pathological (timeout) case without adding idle series.
+(def default-redis-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500 10000])
+
 (defmulti run-collector! (fn [mdef _] (::mdef/type mdef)))
 (defmulti create-collector ::mdef/type)
 
+(defonce ^:private warned-hints (atom #{}))
+
+(defn- report-safe-failure!
+  [hint cause]
+  (if (contains? @warned-hints hint)
+    (l/dbg :hint hint :cause cause)
+    (do
+      (swap! warned-hints conj hint)
+      (l/wrn :hint hint :cause cause))))
+
+(defn instance
+  "Resolve the metrics instance from a cfg; raises when it is absent.
+
+  The shared resolver: a module that records metrics takes a cfg and
+  calls this, so no caller has to know where the instance lives or
+  capture it beforehand. That matters most inside an
+  `app.db/after-commit` callback, which closes over whatever it was
+  given and cannot read the cfg again later.
+
+  Raises on purpose. A cfg without metrics is a wiring bug, and it must
+  surface where the metric is recorded rather than disappear: a caller
+  that resolved this at the top of a write and dropped the value is
+  precisely the pattern this replaces."
+  [cfg]
+  (or (::metrics cfg)
+      (ex/raise :type :assertion
+                :code :missing-metrics
+                :hint "missing ::mtx/metrics on the provided cfg")))
+
 (defn run!
+  "Record a metric.
+
+  Recording never throws: a metrics bug must not change the behavior of
+  the operation being measured. The first failure per metric id logs at
+  warn level and later ones at debug, so a broken setup surfaces once
+  without flooding the log on every request.
+
+  The `instance` precondition is a plain assert: it holds because every
+  component is wired with metrics (`::mtx/metrics` is required by the
+  component schemas). The collector lookup stays outside the recording
+  guard, so a missing instance also fails hard when asserts are
+  disabled."
   [instance & {:keys [id] :as params}]
   (assert (metrics? instance) "expected valid metrics instance")
+
   (when-let [mobj (get-collector instance id)]
-    (run-collector! mobj params)
-    true))
+    (try
+      (run-collector! mobj params)
+      true
+      (catch Throwable cause
+        (report-safe-failure! (str "unable to record metric " (pr-str id)) cause)
+        nil))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SAMPLER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-sampler
+  "Create a daemon scheduler that runs `sample` every `interval-ms`,
+  starting right away. A single thread is used, named after `name`
+  (default `metrics`), and an unexpected error on a single sample does NOT
+  cancel the following runs: the next run is scheduled in a `finally`.
+  The caller owns the returned scheduler and has to shut it down
+  (`px/shutdown-now`) when its component halts."
+  ([interval-ms sample]
+   (create-sampler interval-ms sample {}))
+  ([interval-ms sample {:keys [name] :or {name "metrics"}}]
+   (let [prefix    (str "penpot/" name "/")
+         scheduler (px/scheduled-executor
+                    :parallelism 1
+                    :factory (px/thread-factory :prefix prefix :daemon true))
+         task      (fn task []
+                     (try
+                       (sample)
+                       (finally
+                         (px/schedule scheduler interval-ms task))))]
+
+     (px/schedule scheduler 0 task)
+     scheduler)))
 
 (defn- create-registry
   []

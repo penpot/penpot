@@ -2,16 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.email-sending-test
   (:require
    [app.config :as cf]
    [app.db :as db]
    [app.email :as emails]
+   [app.jobs :as jobs]
+   [app.metrics :as-alias mtx]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
+   [integrant.core :as ig]
    [promesa.core :as p]))
 
 (t/use-fixtures :once th/state-init)
@@ -89,3 +92,53 @@
                                :token "test-token"})]
     (t/is (not (str/includes? (email-text-body result) sso-notice-snippet)))
     (t/is (not (str/includes? (get-in result [:body "text/html"]) sso-notice-snippet)))))
+
+(defn- renewal-notice-params
+  [user-name]
+  {:to "billing@example.com"
+   :public-uri (cf/get :public-uri)
+   :user-name user-name
+   :renewal-date "2026-01-01"
+   :estimated-amount "$42.00"
+   :organizations [{:name "Acme"
+                    :initials "AC"}]})
+
+(t/deftest renewal-notice-greets-by-name-when-user-name-present
+  (let [result (emails/render emails/renewal-notice (renewal-notice-params "Acme Org"))]
+    (t/is (str/includes? (email-text-body result) "Hi Acme Org,"))
+    (t/is (str/includes? (get-in result [:body "text/html"]) "Hi Acme Org,"))))
+
+(t/deftest renewal-notice-omits-space-before-comma-when-user-name-is-empty
+  (let [result (emails/render emails/renewal-notice (renewal-notice-params ""))]
+    (t/is (str/includes? (email-text-body result) "Hi,"))
+    (t/is (not (str/includes? (email-text-body result) "Hi ,")))
+    (t/is (str/includes? (get-in result [:body "text/html"]) "Hi,"))
+    (t/is (not (str/includes? (get-in result [:body "text/html"]) "Hi ,")))))
+
+(t/deftest renewal-notice-omits-space-before-comma-when-user-name-is-nil
+  (let [result (emails/render emails/renewal-notice (renewal-notice-params nil))]
+    (t/is (str/includes? (email-text-body result) "Hi,"))
+    (t/is (not (str/includes? (email-text-body result) "Hi ,")))
+    (t/is (str/includes? (get-in result [:body "text/html"]) "Hi,"))
+    (t/is (not (str/includes? (get-in result [:body "text/html"]) "Hi ,")))))
+
+(t/deftest send-with-reuse-conn-and-no-conn-raises
+  (t/testing "reuse-conn without a caller connection fails fast"
+    (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"reuse-conn"
+                            (emails/send {}
+                                         {::emails/reuse-conn true
+                                          ::emails/factory (fn [_] {:to "a@example.com"})})))))
+
+(t/deftest send-with-reuse-conn-joins-caller-transaction
+  (let [job-def (ig/init-key ::emails/job-def
+                             {::emails/sendmail (fn [_] nil)})
+        defs    {:sendmail job-def}
+        email   {:to "a@example.com" :subject "hi" :body "hello"}
+        job-id  (db/tx-run! {::db/pool th/*pool*}
+                            (fn [cfg]
+                              (emails/send (assoc cfg
+                                                  ::jobs/defs defs
+                                                  ::mtx/metrics (get th/*system* :app.metrics/metrics))
+                                           (assoc email ::emails/reuse-conn true))))]
+    (t/testing "the email job is submitted through the caller conn"
+      (t/is (= "sendmail" (:name (th/db-get :job {:id job-id})))))))

@@ -11,7 +11,7 @@ If you can't get in, your account probably isn't in the directory yet. To get ac
 
 Accept invitation using this link:
 
-{{ public-uri }}/#/auth/verify-token?token={{token}}
+{{ public-uri }}/?screen=auth-verify-token&token={{token}}
 
 Enjoy!
 The Penpot team.

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.loggers.mattermost
   "A mattermost integration for error reporting."
@@ -11,7 +11,6 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
-   [app.common.uri :as u]
    [app.config :as cf]
    [app.http.client :as http]
    [app.loggers.audit :as audit]
@@ -28,7 +27,7 @@
   (let [type (get report :type)
         text (str "#" type " | " (d/escape-markdown (get report :hint)) "\n"
                   (when id
-                    (str (u/join (cf/get :public-uri) "/dbg/error/" id) " "))
+                    (str (cf/get-public-uri "dbg/error/" id) " "))
 
                   (when-let [pid (:profile-id report)]
                     (if (uuid? pid)
@@ -135,8 +134,10 @@
 
 (defmethod ig/init-key ::reporter
   [_ cfg]
-  (when-let [uri (cf/get :error-report-webhook)]
-    (let [input  (sp/chan :buf (sp/sliding-buffer 256))
+  (when (and (contains? cf/flags :error-reporting)
+             (cf/get :error-report-webhook))
+    (let [uri    (cf/get :error-report-webhook)
+          input  (sp/chan :buf (sp/sliding-buffer 256))
           thread (px/thread
                    {:name "penpot/reporter/mattermost"}
                    (l/info :hint "initializing error reporter" :uri uri)

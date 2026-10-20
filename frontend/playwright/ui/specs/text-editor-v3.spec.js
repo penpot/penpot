@@ -23,6 +23,48 @@ async function openEditorAndSelectAll(workspace) {
   await workspace.page.keyboard.press("ControlOrMeta+a");
 }
 
+test("Typography at a collapsed caret only styles newly typed text", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  const fontSize = workspace.textEditor.fontSize;
+  const editorInput = page.getByTestId("text-editor-container");
+
+  // Draw a text box, focus it, and type some text; the caret ends up collapsed
+  // after it.
+  await workspace.createTextShape(200, 150, 460, 260);
+  await workspace.clickAt(210, 160);
+  await expect(editorInput).toBeFocused();
+  await page.keyboard.type("ab");
+
+  const originalSize = await fontSize.inputValue();
+  const newSize = String(Number(originalSize) + 20);
+
+  // Change the font size with a collapsed caret. This must not restyle the
+  // existing text; it is stashed as a pending style for the next input. Focus
+  // returns to the editor once the sidebar input blurs.
+  await workspace.textEditor.changeFontSize(newSize);
+  await expect(editorInput).toBeFocused();
+
+  // Typing now adopts the pending size as its own span.
+  await page.keyboard.type("X");
+
+  // The just-typed "X" carries the new size...
+  await page.keyboard.press("Shift+ArrowLeft");
+  await expect(fontSize).toHaveValue(newSize);
+
+  // ...while the pre-existing "ab" keeps the original size (the bug applied the
+  // change to the whole shape instead).
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(fontSize).toHaveValue(originalSize);
+});
+
 test.describe("BUG 10502 - Mixed families and variants", () => {
   test("Multiple variants of the same font family", async ({ page }) => {
     const workspace = new WasmWorkspacePage(page, { textEditor: true });
@@ -114,6 +156,67 @@ test.describe("BUG 10530 - Empty text box left behind when leaving the editor", 
   });
 });
 
+test.describe("BUG 11083 - Changing typography must not quit the editor", () => {
+  test("Changing a numeric input must not quit the editor", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    const layerRows = workspace.layers.getByTestId("layer-row");
+
+    // Draw an empty text box and, without typing anything, change the font size.
+    await workspace.createTextShape(200, 150, 320, 210);
+    await expect(layerRows).toHaveCount(1);
+
+    await workspace.textEditor.changeFontSize(24);
+
+    // The shape is not deleted and the editor is still mounted.
+    await expect(layerRows).toHaveCount(1);
+    await expect(page.getByTestId("text-editor")).toBeVisible();
+
+    // The edition survives, so we can click back into the box and keep typing.
+    await workspace.clickAt(210, 160);
+    await page.keyboard.type("hello");
+    await workspace.textEditor.stopEditing();
+
+    await layerRows.first().click();
+    await workspace.waitForSelectedShapeName("hello");
+  });
+
+  test("Opening the font family selector must not quit the editor", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    const layerRows = workspace.layers.getByTestId("layer-row");
+
+    // Draw an empty text box and, without typing anything, open the font family
+    // selector
+    await workspace.createTextShape(200, 150, 320, 210);
+    await expect(layerRows).toHaveCount(1);
+
+    await workspace.rightSidebar.getByTitle("Font Family").click();
+
+    // The shape is not deleted and the editor is still mounted.
+    await expect(layerRows).toHaveCount(1);
+    await expect(page.getByTestId("text-editor")).toBeVisible();
+
+    // The edition survives, so we can click back into the box and keep typing.
+    await workspace.clickAt(210, 160);
+    await page.keyboard.type("hello");
+    await workspace.textEditor.stopEditing();
+
+    await layerRows.first().click();
+    await workspace.waitForSelectedShapeName("hello");
+  });
+});
+
 test("BUG 10467 - Auto-width text captures every typed character", async ({
   page,
 }) => {
@@ -133,6 +236,140 @@ test("BUG 10467 - Auto-width text captures every typed character", async ({
   // Assert the whole typed text made it into the shape
   await workspace.layers.getByTestId("layer-row").first().click();
   await workspace.waitForSelectedShapeName("hello world");
+});
+
+test.describe("BUG 10910 - Text is not replaced when there is a selection", () => {
+  // Non-ascii on purpose: selection offsets are counted in characters.
+  test("Typing over a selection replaces it", async ({ page }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.createAutoWidthTextShape(200, 150, "Añadir");
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("nuevo");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("nuevo");
+  });
+
+  test("Typing over a selection that contains emoji replaces it", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.createAutoWidthTextShape(200, 150, "Hola 😀");
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+
+  test("Backspace deletes the selection", async ({ page }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.createAutoWidthTextShape(200, 150, "Añadir texto");
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+});
+
+test.describe("BUG 12187 - Typing after a triple-click selection", () => {
+  // Creates a text and enters the editor again, so the input surface is fresh.
+  async function editNewText(page, text) {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.createAutoWidthTextShape(200, 150, text);
+    await workspace.textEditor.stopEditing();
+    await workspace.textEditor.startEditing();
+
+    return workspace;
+  }
+
+  async function tripleClickText(page) {
+    await page
+      .getByTestId("text-editor-container")
+      .click({ position: { x: 10, y: 8 }, clickCount: 3 });
+  }
+
+  // Some browsers (Chrome on Linux) select the whole input surface on a
+  // triple-click. That selection is not editable, so typing fires no input.
+  async function selectWholeInputSurface(page) {
+    await page.evaluate(() => {
+      const range = document.createRange();
+      range.selectNode(document.getElementById("text-editor-wasm-input"));
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+  }
+
+  test("Typing over a triple-click selection replaces it", async ({ page }) => {
+    const workspace = await editNewText(page, "Hello brave new world");
+
+    await tripleClickText(page);
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+
+  test("Typing works when the browser selects the whole input surface", async ({
+    page,
+  }) => {
+    const workspace = await editNewText(page, "Hello brave new world");
+
+    await tripleClickText(page);
+    await selectWholeInputSurface(page);
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+
+  test("Typing works after deleting a whole input surface selection", async ({
+    page,
+  }) => {
+    const workspace = await editNewText(page, "Hello brave new world");
+
+    await tripleClickText(page);
+    await selectWholeInputSurface(page);
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type("ok");
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
 });
 
 test("BUG 10531 - Entering the editor auto-selects the whole text", async ({
@@ -168,10 +405,13 @@ test.describe("BUG 10934 - Double-clicking a text side handle sets auto-size", (
     await workspace.goToWorkspace();
     await workspace.waitForFirstRender();
 
-    // Select the text and zoom to fit, so it is fully visible in the viewport
+    // Select the text and zoom to fit, so it is fully visible in the viewport.
+    // Wait for the zoom label to change so the handles are at their final spot.
     await workspace.clickLeafLayer("Fixed text");
+    const zoomLabel = page.getByTitle("Zoom", { exact: true });
+    const initialZoom = await zoomLabel.innerText();
     await page.keyboard.press("Shift+1");
-    await workspace.waitForIdle();
+    await expect(zoomLabel).not.toHaveText(initialZoom);
 
     return workspace;
   }
@@ -242,5 +482,270 @@ test.describe("BUG 10934 - Double-clicking a text side handle sets auto-size", (
     await expect
       .poll(async () => Number(await heightInput.inputValue()))
       .toBeLessThan(initialHeight);
+  });
+});
+
+test.describe("Text Editor context menu", () => {
+  // Loads a file that already holds a text shape and enters edit mode, which
+  // leaves the whole text selected.
+  async function editText(page) {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.clickLeafLayer("Lorem ipsum");
+    await workspace.textEditor.startEditing();
+
+    return workspace;
+  }
+
+  // Right-clicks over the first characters of the text. The capture surface
+  // starts at the shape's top left corner, so its own box gives us the point.
+  async function rightClickOnText(workspace) {
+    const box = await workspace.page
+      .getByTestId("text-editor-container")
+      .boundingBox();
+    await workspace.page.mouse.click(box.x + 10, box.y + box.height / 2, {
+      button: "right",
+    });
+  }
+
+  function contextMenu(page) {
+    return page.getByTestId("context-menu");
+  }
+
+  function menuItem(page, name) {
+    return contextMenu(page).getByRole("listitem").filter({ hasText: name });
+  }
+
+  function readClipboard(page) {
+    return page.evaluate(() => navigator.clipboard.readText());
+  }
+
+  test("Right-clicking the text being edited opens the text menu", async ({
+    page,
+  }) => {
+    const workspace = await editText(page);
+
+    await rightClickOnText(workspace);
+
+    await expect(menuItem(page, "Cut")).toBeVisible();
+    await expect(menuItem(page, "Copy")).toBeVisible();
+    await expect(menuItem(page, "Paste")).toBeVisible();
+    await expect(menuItem(page, "Select all")).toBeVisible();
+
+    // The menu acts on the text, so the shape entries are not offered.
+    await expect(menuItem(page, "Duplicate")).toHaveCount(0);
+  });
+
+  test("Copying from the menu copies the selected text", async ({ page }) => {
+    const workspace = await editText(page);
+
+    // Entering the editor selects the whole text, and the right click keeps it.
+    await rightClickOnText(workspace);
+    await menuItem(page, "Copy").click();
+
+    await expect.poll(() => readClipboard(page)).toBe("Lorem ipsum");
+  });
+
+  test("Cutting from the menu removes the selected text", async ({ page }) => {
+    const workspace = await editText(page);
+
+    await rightClickOnText(workspace);
+    await menuItem(page, "Cut").click();
+
+    await expect.poll(() => readClipboard(page)).toBe("Lorem ipsum");
+    await expect(contextMenu(page)).toBeHidden();
+
+    // The text is gone, so what we type now is all the shape has left. Typing
+    // also shows the editor kept the focus while the menu was open.
+    await page.keyboard.type("ok");
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+
+  test("Pasting from the menu replaces the selection", async ({ page }) => {
+    const workspace = await editText(page);
+
+    await page.evaluate(() => navigator.clipboard.writeText("pasted"));
+
+    // The whole text is selected, so the paste replaces it.
+    await rightClickOnText(workspace);
+    await menuItem(page, "Paste").click();
+    await expect(contextMenu(page)).toBeHidden();
+
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("pasted");
+  });
+
+  test("Selecting all from the menu selects the whole text", async ({
+    page,
+  }) => {
+    const workspace = await editText(page);
+
+    // Collapse the selection the editor starts with.
+    await page.keyboard.press("End");
+
+    await rightClickOnText(workspace);
+    await menuItem(page, "Select all").click();
+    await expect(contextMenu(page)).toBeHidden();
+
+    // Everything is selected again, so typing replaces the whole text.
+    await page.keyboard.type("ok");
+    await workspace.textEditor.stopEditing();
+
+    await workspace.layers.getByTestId("layer-row").first().click();
+    await workspace.waitForSelectedShapeName("ok");
+  });
+
+  // Presses a button over the text, moves and releases: the gesture that used to
+  // start a drag-selection and destroy whatever was selected.
+  async function dragOverText(workspace, button) {
+    const { page } = workspace;
+    const box = await page.getByTestId("text-editor-container").boundingBox();
+    const y = box.y + box.height / 2;
+
+    await page.mouse.move(box.x + 10, y);
+    await page.mouse.down({ button });
+    // Steps, so the moves are actually delivered to the page.
+    await page.mouse.move(box.x + 40, y, { steps: 10 });
+    await page.mouse.up({ button });
+  }
+
+  // Copies with the keyboard and resolves with what reached the clipboard. The
+  // sentinel keeps a value left by an earlier test from passing as a result.
+  async function copiedText(page) {
+    await page.evaluate(() => navigator.clipboard.writeText("sentinel"));
+    await page.keyboard.press("ControlOrMeta+C");
+    return readClipboard(page);
+  }
+
+  test("The selection survives a right button drag", async ({ page }) => {
+    const workspace = await editText(page);
+
+    await dragOverText(workspace, "right");
+
+    // The whole text is still selected, so the copy takes all of it.
+    await expect.poll(() => copiedText(page)).toBe("Lorem ipsum");
+  });
+
+  test("Moving the caret with a right click drops the pending style", async ({
+    page,
+  }) => {
+    const workspace = await editText(page);
+    const fontSize = workspace.textEditor.fontSize;
+
+    // Collapse the caret at the end and stage a font size for whatever is typed
+    // next, which is what the sidebar does at a collapsed caret.
+    await page.keyboard.press("End");
+    const originalSize = await fontSize.inputValue();
+    const newSize = String(Number(originalSize) + 20);
+    await workspace.textEditor.changeFontSize(newSize);
+
+    // The right click moves the caret, which abandons that staged size. The menu
+    // is left open on purpose: Escape would clear the staged size by itself, and
+    // the assertion below would then hold whether or not the caret move did.
+    await rightClickOnText(workspace);
+    await expect(contextMenu(page)).toBeVisible();
+
+    await page.keyboard.type("X");
+
+    // The typed character takes the size of the text around it, not the one
+    // staged for the caret position we left behind.
+    await page.keyboard.press("Shift+ArrowLeft");
+    await expect(fontSize).toHaveValue(originalSize);
+  });
+
+  test("Cut and copy are disabled when there is no selection", async ({
+    page,
+  }) => {
+    const workspace = await editText(page);
+
+    // Collapse the selection the editor starts with.
+    await page.keyboard.press("End");
+
+    await rightClickOnText(workspace);
+
+    await expect(menuItem(page, "Cut")).toHaveAttribute("disabled");
+    await expect(menuItem(page, "Copy")).toHaveAttribute("disabled");
+    await expect(menuItem(page, "Paste")).not.toHaveAttribute("disabled");
+    await expect(menuItem(page, "Select all")).not.toHaveAttribute("disabled");
+  });
+});
+
+test.describe("BUG 12325 - Fit-content flex board follows an auto-width text while typing", () => {
+  // Two grey fit-content flex boards, one per test. The content
+  // (0, 0)-(121, 117) loads centred in the viewport at zoom 1.
+  const CONTENT_CENTER = { x: 60.5, y: 58.5 };
+
+  // Screenshot of a small canvas patch centred on (x, y), in canvas
+  // coordinates.
+  async function patchAt(workspace, x, y) {
+    const viewport = await workspace.viewport.boundingBox();
+    const px = viewport.x + viewport.width / 2 + x - CONTENT_CENTER.x;
+    const py = viewport.y + viewport.height / 2 + y - CONTENT_CENTER.y;
+    return workspace.page.screenshot({
+      clip: { x: px - 2, y: py - 2, width: 4, height: 4 },
+    });
+  }
+
+  async function openFile(page) {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.mockGetFile("text-editor/get-file-12325.json");
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+    return workspace;
+  }
+
+  // Shrinks `text` to its first character while editing and checks that a spot
+  // in the right part of its board, at `boardY`, shows the empty canvas.
+  async function expectBoardShrinksWhileTyping(workspace, text, boardY) {
+    const x = 80;
+    const inside = boardY + 8;
+    const outside = boardY + 50;
+    expect(await patchAt(workspace, x, inside)).not.toEqual(
+      await patchAt(workspace, x, outside),
+    );
+
+    await workspace.textEditor.startEditing();
+    await workspace.page.keyboard.press("End");
+    for (let i = 0; i < text.length - 1; i++) {
+      await workspace.page.keyboard.press("Backspace");
+    }
+
+    // Without leaving the editor, the board already shrank around the text, so
+    // the spot shows the empty canvas.
+    await expect
+      .poll(async () =>
+        (await patchAt(workspace, x, inside)).equals(
+          await patchAt(workspace, x, outside),
+        ),
+      )
+      .toBe(true);
+  }
+
+  test("The board shrinks with the text", async ({ page }) => {
+    const workspace = await openFile(page);
+    await workspace.clickToggableLayer("Text board");
+    await workspace.clickLeafLayer("Hello wide world");
+
+    await expectBoardShrinksWhileTyping(workspace, "Hello wide world", 0);
+  });
+
+  test("The board shrinks with a text inside a group", async ({ page }) => {
+    const workspace = await openFile(page);
+    await workspace.clickToggableLayer("Group board");
+    // The first "Group" match is the board row.
+    await workspace.clickToggableLayer("Group", {}, 1);
+    await workspace.clickLeafLayer("Hello grouped world");
+
+    await expectBoardShrinksWhileTyping(workspace, "Hello grouped world", 100);
   });
 });

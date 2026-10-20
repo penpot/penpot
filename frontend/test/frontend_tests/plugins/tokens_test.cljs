@@ -2,31 +2,442 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.plugins.tokens-test
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.tokens :as ctht]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.library :as library]
    [app.plugins.register :as r]
    [app.plugins.tokens :as ptok]
    [app.plugins.utils :as u]
+   [app.util.object :as obj]
    [cljs.test :as t :include-macros true]
+   [clojure.datafy :refer [datafy]]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
+   [frontend-tests.tokens.helpers.state :as tohs]
    [potok.v2.core :as ptk]))
 
-(t/use-fixtures :each {:before cthi/reset-idmap!})
+(t/use-fixtures :each
+  {:before (fn []
+             (cthi/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after thw/teardown-wasm-mocks!})
 
 (def ^:private get-resolved-value @#'ptok/get-resolved-value)
+
+(t/deftest ^:async stroke-property-edits-only-remove-related-token-bindings
+  (let [tokens {:stroke-color "border.color"
+                :stroke-width-top "border.top"
+                :stroke-width-right "border.right"
+                :stroke-width-bottom "border.bottom"
+                :stroke-width-left "border.left"}
+        cases  [[0 "strokeWidthTop" 8 #{:stroke-width-top}]
+                [0 "strokeWidthRight" 8 #{:stroke-width-right}]
+                [0 "strokeWidthBottom" 8 #{:stroke-width-bottom}]
+                [0 "strokeWidthLeft" 8 #{:stroke-width-left}]
+                [0 "strokeWidth" 8 ctt/per-side-stroke-width-keys]
+                [0 "strokeColor" "#ff0000" #{:stroke-color}]
+                [0 "strokeOpacity" 0.5 #{:stroke-color}]
+                [0 "strokeStyle" "dashed" #{}]
+                [0 "strokeAlignment" "center" #{}]
+                [1 "strokeWidthTop" 8 #{}]
+                [1 "strokeWidth" 8 #{}]
+                [1 "strokeColor" "#ff0000" #{}]]]
+    (doseq [[index property value removed] cases]
+      (t/testing (str "stroke " index " property " property)
+        (let [store   (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+              _       (set! st/state store)
+              ^js ctx (api/create-context "00000000-0000-0000-0000-000000000000")
+              ^js rect (.createRectangle ctx)
+              id      (obj/get rect "$id")
+              path    [:files (:current-file-id @store) :data :pages-index
+                       (:current-page-id @store) :objects id :applied-tokens]]
+          (set! (.-strokes rect)
+                #js [#js {:strokeColor "#000000" :strokeWidth 1 :strokeWidthRight 2}
+                     #js {:strokeColor "#000000" :strokeWidth 1}])
+          (ptk/emit! store (dwsh/update-shapes [id] #(assoc % :applied-tokens tokens)))
+          (obj/set! (aget (.-strokes rect) index) property value)
+          (await (async/settle))
+          (t/is (= (apply dissoc tokens removed) (get-in @store path)))
+          (t/is (= value (obj/get (aget (.-strokes rect) index) property))))))))
+
+(t/deftest ^:async stroke-gradient-edits-preserve-width-token-bindings
+  (let [store   (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+        _       (set! st/state store)
+        ^js ctx (api/create-context "00000000-0000-0000-0000-000000000000")
+        ^js rect (.createRectangle ctx)
+        id      (obj/get rect "$id")
+        path    [:files (:current-file-id @store) :data :pages-index
+                 (:current-page-id @store) :objects id :applied-tokens]
+        tokens  {:stroke-color "border.color"
+                 :stroke-width-top "border.width"
+                 :stroke-width-right "border.width"
+                 :stroke-width-bottom "border.width"
+                 :stroke-width-left "border.width"}]
+    (set! (.-strokes rect)
+          #js [#js {:strokeWidth 1
+                    :strokeColorGradient
+                    #js {:type "linear" :startX 0 :startY 0 :endX 1 :endY 1 :width 1
+                         :stops #js [#js {:color "#000000" :opacity 1 :offset 0}
+                                     #js {:color "#ffffff" :opacity 1 :offset 1}]}}])
+    (ptk/emit! store (dwsh/update-shapes [id] #(assoc % :applied-tokens tokens)))
+    (let [^js gradient (obj/get (aget (.-strokes rect) 0) "strokeColorGradient")]
+      (set! (.-startX gradient) 0.5)
+      (await (async/settle))
+      (t/is (= (dissoc tokens :stroke-color) (get-in @store path)))
+      (t/is (= 0.5 (obj/get (obj/get (aget (.-strokes rect) 0) "strokeColorGradient") "startX")))
+      (ptk/emit! store (dwsh/update-shapes [id] #(assoc % :applied-tokens tokens)))
+      (obj/set! (aget (.-stops gradient) 0) "color" "#ff0000")
+      (await (async/settle))
+      (t/is (= (dissoc tokens :stroke-color) (get-in @store path)))
+      (t/is (= "#ff0000" (obj/get (aget (obj/get (obj/get (aget (.-strokes rect) 0) "strokeColorGradient") "stops") 0) "color"))))))
+
+(defn- token-source-file
+  [file-label]
+  (let [set-id (uuid/next)]
+    (ctht/sample-file-with-tokens
+     :file-id file-label
+     :lib-fn #(-> %
+                  (ctob/add-set (ctob/make-token-set :id set-id :name "Core"))
+                  (ctob/add-theme (ctob/make-token-theme :name "Light"
+                                                         :group "Mode"
+                                                         :sets #{"Core"}))
+                  (ctob/add-token set-id (ctob/make-token :name "color.primary"
+                                                          :type :color
+                                                          :value "#FF0000")))
+     :status-fn #(ctos/set-tokens-status % #{} #{set-id}))))
+
+(defn- with-active-theme
+  "The tokens status of `file` with its first visible theme activated."
+  [file]
+  (let [tokens-lib (ctht/get-tokens-lib file)
+        theme-id   (:id (first (remove ctob/hidden-theme? (ctob/get-themes tokens-lib))))]
+    (cfo/activate-theme (ctht/get-tokens-status file) tokens-lib theme-id)))
+
+(defn- tokens-unchanged?
+  "True when the token attributes of `file` in the store are the original ones."
+  [store file]
+  (let [attrs [:tokens-lib :tokens-status :tokens-source]]
+    (= (select-keys (:data file) attrs)
+       (select-keys (get-in @store [:files (:id file) :data]) attrs))))
+
+(defn- record-not-valid
+  "A `u/not-valid` stub that collects each call into `errors`."
+  [errors]
+  (mock/stub (fn [plugin-id code value] (swap! errors conj [plugin-id code value]))))
+
+(t/deftest ^:async library-tokens-source-switches-to-connected-library
+  (let [file         (token-source-file :local)
+        source       (token-source-file :source)
+        store        (ths/setup-store file {:libraries [source]})
+        ^js context  (library/library-subcontext (str uuid/zero))
+        source-proxy (library/library-proxy (str uuid/zero) (:id source))]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (t/is (= (str (:id file)) (.. context -tokensSource -id)))
+       (set! (.-tokensSource context) source-proxy)
+       (await (async/wait-for #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
+                              "library token source"))
+       (t/is (= (str (:id source)) (.. context -tokensSource -id)))
+       (t/is (= (datafy (ctht/get-tokens-status source))
+                (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
+       (t/is (= (ctht/get-tokens-lib source) (u/locate-tokens-lib (:id file))))
+       (t/is (false? (.. context -local -tokens -isEditableTokens)))
+       (t/is (= (ctht/get-tokens-lib file)
+                (get-in @store [:files (:id file) :data :tokens-lib])))
+       (t/is (tokens-unchanged? store source))))))
+
+(t/deftest ^:async library-tokens-source-restores-local-tokens
+  (let [source      (token-source-file :source)
+        file        (-> (token-source-file :local)
+                        (assoc-in [:data :tokens-source] (:id source))
+                        (assoc-in [:data :tokens-status] (with-active-theme source)))
+        store       (ths/setup-store file {:libraries [source]})
+        ^js context (library/library-subcontext (str uuid/zero))]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (set! (.-tokensSource context) (.-local context))
+       (await (async/wait-for #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
+                              "local token source"))
+       (let [^js catalog (.. context -local -tokens)]
+         (t/is (= (str (:id file)) (.. context -tokensSource -id)))
+         (t/is (true? (.-isEditableTokens catalog)))
+         (t/is (= (ctht/get-tokens-lib file) (u/locate-tokens-lib (:id file))))
+         (t/is (= #{} (ctos/get-active-set-ids (get-in @store [:files (:id file) :data :tokens-status]))))
+         (t/is (not-any? #(.-active ^js %) (.-themes catalog))))))))
+
+(t/deftest ^:async library-tokens-source-supports-undo-and-redo
+  (let [file         (token-source-file :local)
+        source       (token-source-file :source)
+        store        (ths/setup-store file {:libraries [source]})
+        ^js context  (library/library-subcontext (str uuid/zero))
+        source-proxy (library/library-proxy (str uuid/zero) (:id source))]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (st/emit! (tohs/watch-undo-stack))
+       (set! (.-tokensSource context) source-proxy)
+       (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
+                              "token source undo entry"))
+       (st/emit! dwu/undo)
+       (await (async/wait-for #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
+                              "undo token source"))
+       (t/is (= (datafy (ctht/get-tokens-status file))
+                (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
+       (st/emit! dwu/redo)
+       (await (async/wait-for #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
+                              "redo token source"))
+       (t/is (= (datafy (ctht/get-tokens-status source))
+                (datafy (get-in @store [:files (:id file) :data :tokens-status]))))))))
+
+(t/deftest ^:async library-tokens-source-keeps-status-when-source-is-unchanged
+  (let [source       (token-source-file :source)
+        file         (-> (token-source-file :local)
+                         (assoc-in [:data :tokens-source] (:id source)))
+        store        (ths/setup-store file {:libraries [source]})
+        ^js context  (library/library-subcontext (str uuid/zero))
+        source-proxy (library/library-proxy (str uuid/zero) (:id source))]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (set! (.-tokensSource context) source-proxy)
+       (await (async/settle))
+       (t/is (tokens-unchanged? store file))))))
+
+(t/deftest ^:async library-tokens-source-rejects-invalid-libraries
+  (let [file        (token-source-file :local)
+        empty-lib   (ctht/sample-file-with-tokens :file-id :empty)
+        indirect    (-> (token-source-file :indirect)
+                        (assoc-in [:data :tokens-source] (uuid/next)))
+        store       (ths/setup-store file {:libraries [empty-lib indirect]})
+        plugin-id   (str uuid/zero)
+        ^js context (library/library-subcontext plugin-id)
+        errors      (atom [])]
+    (await
+     (mock/with-mocks* {st/state store
+                        st/stream (ptk/input-stream store)
+                        u/not-valid (record-not-valid errors)}
+       (doseq [[label value message]
+               [["not a library" "invalid" "invalid"]
+                ["not connected" (library/library-proxy plugin-id (uuid/next)) "Library is not connected"]
+                ["without own tokens" (library/library-proxy plugin-id (:id empty-lib)) "Library must have its own tokens"]
+                ["with another tokens source" (library/library-proxy plugin-id (:id indirect)) "Library must have its own tokens"]]]
+         (t/testing label
+           (reset! errors [])
+           (set! (.-tokensSource context) value)
+           (t/is (= [[plugin-id :tokensSource message]] @errors))))
+       (await (async/settle))
+       (t/is (tokens-unchanged? store file))))))
+
+(t/deftest ^:async external-catalogs-reject-tokens-changes
+  (let [source    (token-source-file :source)
+        other     (token-source-file :other)
+        file      (-> (token-source-file :local)
+                      (assoc-in [:data :tokens-source] (:id source)))
+        store     (ths/setup-store file {:libraries [source other]})
+        plugin-id (str uuid/zero)]
+    (swap! store assoc-in [:plugins :flags plugin-id :throw-validation-errors] true)
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (doseq [[catalog-label ^js catalog]
+               [["local catalog" (.. (library/library-subcontext plugin-id) -local -tokens)]
+                ["source catalog" (.. (library/library-subcontext plugin-id) -tokensSource -tokens)]
+                ["other connected catalog" (.-tokens (library/library-proxy plugin-id (:id other)))]]]
+         (t/testing catalog-label
+           (let [^js token-set (aget (.-sets catalog) 0)
+                 ^js token     (aget (.-tokens token-set) 0)
+                 ^js theme     (aget (.-themes catalog) 0)]
+             (t/is (false? (.-isEditableTokens catalog)))
+             (doseq [[label mutate]
+                     [["create set" #(.addSet catalog #js {:name "New"})]
+                      ["rename set" #(set! (.-name token-set) "Renamed")]
+                      ["duplicate set" #(.duplicate token-set)]
+                      ["remove set" #(.remove token-set)]
+                      ["create token" #(.addToken token-set #js {:name "color.new" :type "color" :value "#00FF00"})]
+                      ["rename token" #(set! (.-name token) "color.renamed")]
+                      ["change token value" #(set! (.-value token) "#00FF00")]
+                      ["change token description" #(set! (.-description token) "New description")]
+                      ["duplicate token" #(.duplicate token)]
+                      ["remove token" #(.remove token)]
+                      ["create theme" #(.addTheme catalog #js {:name "Dark" :group "Mode"})]
+                      ["rename theme" #(set! (.-name theme) "Dark")]
+                      ["change theme group" #(set! (.-group theme) "Other")]
+                      ["add set to theme" #(.addSet theme token-set)]
+                      ["remove set from theme" #(.removeSet theme token-set)]
+                      ["duplicate theme" #(.duplicate theme)]
+                      ["remove theme" #(.remove theme)]]]
+               (t/testing label
+                 (t/is (thrown-with-msg? js/Error #"Cannot modify tokens in an external library"
+                                         (mutate)))
+                 (await (async/settle))
+                 (t/is (tokens-unchanged? store file))
+                 (t/is (tokens-unchanged? store source))
+                 (t/is (tokens-unchanged? store other)))))))))))
+
+(t/deftest ^:async external-catalogs-reject-status-changes
+  (let [source    (token-source-file :source)
+        other     (token-source-file :other)
+        file      (-> (token-source-file :local)
+                      (assoc-in [:data :tokens-source] (:id source))
+                      (assoc-in [:data :tokens-status] (with-active-theme source)))
+        store     (ths/setup-store file {:libraries [source other]})
+        plugin-id (str uuid/zero)
+        message   "Cannot change activation through a connected library; use penpot.library.local.tokens"
+        errors    (atom [])]
+    (await
+     (mock/with-mocks* {st/state store
+                        st/stream (ptk/input-stream store)
+                        u/not-valid (record-not-valid errors)}
+       (let [^js context (library/library-subcontext plugin-id)]
+         (t/is (true? (.-active ^js (aget (.. context -local -tokens -themes) 0))))
+         (doseq [[catalog-label ^js catalog]
+                 [["source catalog" (.. context -tokensSource -tokens)]
+                  ["other connected catalog" (.-tokens (library/library-proxy plugin-id (:id other)))]]]
+           (t/testing catalog-label
+             (let [^js token-set (aget (.-sets catalog) 0)
+                   ^js theme     (aget (.-themes catalog) 0)]
+               (t/testing "reports the status of its own file"
+                 (t/is (true? (.-active token-set)))
+                 (t/is (false? (.-active theme))))
+               (reset! errors [])
+               (set! (.-active token-set) false)
+               (.toggleActive token-set)
+               (set! (.-active theme) true)
+               (.toggleActive theme)
+               (await (async/settle))
+               (t/is (= [[plugin-id :active message]
+                         [plugin-id :toggleActive message]
+                         [plugin-id :active message]
+                         [plugin-id :toggleActive message]]
+                        @errors))
+               (t/is (tokens-unchanged? store file))
+               (t/is (tokens-unchanged? store source))
+               (t/is (tokens-unchanged? store other))))))))))
+
+(t/deftest ^:async external-token-source-allows-set-activation
+  (let [source     (token-source-file :source)
+        file       (-> (token-source-file :local)
+                       (assoc-in [:data :tokens-source] (:id source))
+                       (assoc-in [:data :tokens-status] (ctht/get-tokens-status source)))
+        store      (ths/setup-store file {:libraries [source]})]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (let [^js catalog   (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+             ^js token-set (aget (.-sets catalog) 0)]
+         (t/is (true? (.-active token-set)))
+         (set! (.-active token-set) false)
+         (await (async/wait-for #(false? (.-active token-set)) "deactivate set"))
+         (.toggleActive token-set)
+         (await (async/wait-for #(true? (.-active token-set)) "toggle set"))
+         (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
+         (t/is (tokens-unchanged? store source)))))))
+
+(t/deftest ^:async external-token-source-allows-theme-activation
+  (let [source     (token-source-file :source)
+        file       (-> (token-source-file :local)
+                       (assoc-in [:data :tokens-source] (:id source))
+                       (assoc-in [:data :tokens-status] (ctht/get-tokens-status source)))
+        store      (ths/setup-store file {:libraries [source]})]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (let [^js catalog (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+             ^js theme   (aget (.-themes catalog) 0)]
+         (t/is (false? (.-active theme)))
+         (set! (.-active theme) true)
+         (await (async/wait-for #(true? (.-active theme)) "activate theme"))
+         (.toggleActive theme)
+         (await (async/wait-for #(false? (.-active theme)) "toggle theme"))
+         (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
+         (t/is (tokens-unchanged? store source)))))))
+
+(t/deftest ^:async external-token-source-theme-toggle-supports-undo
+  (let [source (token-source-file :source)
+        status (with-active-theme source)
+        file   (-> (token-source-file :local)
+                   (assoc-in [:data :tokens-source] (:id source))
+                   (assoc-in [:data :tokens-status] status))
+        store  (ths/setup-store file {:libraries [source]})]
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (let [^js catalog (.. (library/library-subcontext (str uuid/zero)) -local -tokens)
+             ^js theme   (aget (.-themes catalog) 0)]
+         (st/emit! (tohs/watch-undo-stack))
+         (.toggleActive theme)
+         (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
+                                "theme toggle undo entry"))
+         (t/is (false? (.-active theme)))
+         (st/emit! dwu/undo)
+         (await (async/wait-for #(= (datafy status)
+                                    (datafy (get-in @store [:files (:id file) :data :tokens-status])))
+                                "undo external theme toggle"))
+         (t/is (tokens-unchanged? store source)))))))
+
+(t/deftest ^:async external-token-source-allows-applying-tokens-to-shapes
+  (let [source     (token-source-file :source)
+        file       (-> (token-source-file :local)
+                       (assoc-in [:data :tokens-source] (:id source))
+                       (assoc-in [:data :tokens-status] (ctht/get-tokens-status source))
+                       (ctho/add-rect :rect1)
+                       (ctho/add-rect :rect2)
+                       (ctho/add-rect :rect3))
+        store      (ths/setup-store file {:libraries [source]})
+        page-id    (cthf/current-page-id file)]
+    (swap! store assoc-in [:workspace-local :selected] #{(cthi/id :rect3)})
+    (await
+     (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
+       (let [^js context   (api/create-context (str uuid/zero))
+             ^js page      (.-currentPage context)
+             ^js catalog   (.. context -library -local -tokens)
+             ^js token-set (aget (.-sets catalog) 0)
+             ^js token     (aget (.-tokens token-set) 0)
+             ^js rect1     (.getShapeById page (str (cthi/id :rect1)))
+             ^js rect2     (.getShapeById page (str (cthi/id :rect2)))]
+         (.applyToken rect1 token #js ["fill"])
+         (.applyToShapes token #js [rect2] #js ["fill"])
+         (.applyToSelected token #js ["fill"])
+         (doseq [label [:rect1 :rect2 :rect3]]
+           (let [shape-path [:files (:id file) :data :pages-index page-id :objects (cthi/id label)]]
+             (await (async/wait-for #(= "color.primary" (get-in @store (conj shape-path :applied-tokens :fill)))
+                                    (str "apply external token to " label)))
+             (await (async/wait-for #(= "#ff0000" (get-in @store (conj shape-path :fills 0 :fill-color)))
+                                    (str "resolve external token on " label)))))
+         (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
+         (t/is (= (datafy (ctht/get-tokens-status file))
+                  (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
+         (t/is (tokens-unchanged? store source)))))))
+
+(t/deftest ^:async library-tokens-source-requires-content-write-permission
+  (let [file         (token-source-file :local)
+        source       (token-source-file :source)
+        plugin-id    "read-only-plugin"
+        store        (ths/setup-store file {:libraries [source]})
+        ^js context  (library/library-subcontext plugin-id)
+        source-proxy (library/library-proxy plugin-id (:id source))
+        errors       (atom [])]
+    (await
+     (mock/with-mocks* {st/state store
+                        st/stream (ptk/input-stream store)
+                        u/not-valid (record-not-valid errors)}
+       (set! (.-tokensSource context) source-proxy)
+       (t/is (= [[plugin-id :tokensSource "Plugin doesn't have 'content:write' permission"]] @errors))
+       (await (async/settle))
+       (t/is (tokens-unchanged? store file))))))
 
 ;; Regression coverage for issue #9162.
 ;;
@@ -81,6 +492,18 @@
   (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom)))
   (t/is (= :m4 (ptok/token-attr-plugin->token-attr :margin-left))))
 
+(t/deftest token-attr-plugin->token-attr-resolves-font-family-alias
+  ;; Plugin-facing `fontFamilies` (kebab-cased to `:font-families` by the
+  ;; schema layer) maps to the canonical internal `:font-family`.
+  (t/is (= :font-family (ptok/token-attr-plugin->token-attr :font-families)))
+  (t/is (= :font-family (ptok/token-attr-plugin->token-attr "font-families"))))
+
+(t/deftest token-attr->token-attr-plugin-resolves-font-family-alias
+  ;; Symmetric direction: the canonical internal attribute maps to the
+  ;; plural plugin-facing name so applied-token readback serializes as
+  ;; camelCase `fontFamilies`, not the undocumented singular `fontFamily`.
+  (t/is (= :font-families (ptok/token-attr->token-attr-plugin :font-family))))
+
 (t/deftest token-attr-plugin->token-attr-coerces-string-input
   ;; This is the actual regression — JS plugin calls supply strings.
   (t/is (= :fill (ptok/token-attr-plugin->token-attr "fill")))
@@ -103,29 +526,49 @@
   (t/is (true? (boolean (ptok/token-attr? "r1"))))
   (t/is (true? (boolean (ptok/token-attr? "m3")))))
 
+(t/deftest token-attr?-accepts-per-side-stroke-width
+  ;; Accepts the uniform width alias and side attributes as keywords or strings.
+  (t/is (true? (boolean (ptok/token-attr? :stroke-width))))
+  (t/is (true? (boolean (ptok/token-attr? "stroke-width"))))
+  (t/is (true? (boolean (ptok/token-attr? :stroke-width-top))))
+  (t/is (true? (boolean (ptok/token-attr? "stroke-width-left")))))
+
+(t/deftest expand-token-attrs-expands-uniform-stroke-width
+  (t/testing "the uniform alias becomes the four per-side attributes"
+    (t/is (= ctt/per-side-stroke-width-keys
+             (ptok/expand-token-attrs #{:stroke-width})))
+    (t/is (= ctt/per-side-stroke-width-keys
+             (ptok/expand-token-attrs #{"stroke-width"}))))
+
+  (t/testing "per-side and unrelated attributes pass through unchanged"
+    (t/is (= #{:stroke-width-top} (ptok/expand-token-attrs #{:stroke-width-top})))
+    (t/is (= #{:fill} (ptok/expand-token-attrs #{:fill})))
+    (t/is (= #{} (ptok/expand-token-attrs nil)))))
+
 (t/deftest shape-apply-token-accepts-padding-top
   (t/async
     done
     (let [set-id    (cthi/new-id! :token-set)
           token-id  (cthi/new-id! :spacing-token)
-          file      (-> (cthf/sample-file :file1 :page-label :page1)
-                        (ctho/add-frame :frame1 {:layout :flex})
-                        (ctht/add-tokens-lib)
-                        (ctht/update-tokens-lib
-                         #(-> %
-                              (ctob/add-set
-                               (ctob/make-token-set :id set-id
-                                                    :name "spacing"))
-                              (ctob/add-theme
-                               (ctob/make-token-theme :name "theme"
-                                                      :sets #{"spacing"}))
-                              (ctob/set-active-themes #{"/theme"})
-                              (ctob/add-token
-                               set-id
-                               (ctob/make-token :id token-id
-                                                :name "spacing.medium"
-                                                :type :spacing
-                                                :value 16)))))
+          theme-id  (cthi/new-id! :theme)
+          file      (-> (ctht/sample-file-with-tokens
+                         :file-id :file1
+                         :lib-fn #(-> %
+                                      (ctob/add-set
+                                       (ctob/make-token-set :id set-id
+                                                            :name "spacing"))
+                                      (ctob/add-theme
+                                       (ctob/make-token-theme :id theme-id
+                                                              :name "theme"
+                                                              :sets #{"spacing"}))
+                                      (ctob/add-token
+                                       set-id
+                                       (ctob/make-token :id token-id
+                                                        :name "spacing.medium"
+                                                        :type :spacing
+                                                        :value "16")))
+                         :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
+                        (ctho/add-frame :frame1 {:layout :flex}))
           store     (ths/setup-store file)
           _         (set! st/state store)
           _         (set! st/stream (ptk/input-stream store))
@@ -147,6 +590,59 @@
                     (get-in @store
                             [:files (:id file) :data :pages-index page-id
                              :objects shape-id :applied-tokens :p1])))
+           (done)))
+       0))))
+
+(t/deftest shape-apply-token-accepts-font-families
+  (t/async
+    done
+    (let [theme-id  (cthi/new-id! :token-theme)
+          set-id    (cthi/new-id! :token-set)
+          token-id  (cthi/new-id! :font-family-token)
+          file      (-> (cthf/sample-file :file1 :page-label :page1)
+                        (ctho/add-text :text1 "Hello World!")
+                        (ctht/add-tokens-lib)
+                        (ctht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set
+                               (ctob/make-token-set :id set-id
+                                                    :name "fonts"))
+                              (ctob/add-theme
+                               (ctob/make-token-theme :name "theme"
+                                                      :sets #{"fonts"}))
+                              (ctob/add-token
+                               set-id
+                               (ctob/make-token :id token-id
+                                                :name "font.primary"
+                                                :type :font-family
+                                                :value ["Inter"]))))
+                        (ctht/update-tokens-status
+                         #(ctos/set-tokens-status % #{theme-id} #{set-id})))
+          store     (ths/setup-store file)
+          _         (set! st/state store)
+          _         (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :text1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str token-id))]
+      (.applyToken shape token #js ["fontFamilies"])
+      (js/setTimeout
+       (fn []
+         (let [shape-id (cthi/id :text1)
+               page-id  (cthf/current-page-id file)]
+           ;; Plugin readback exposes the documented plural key.
+           (t/is (= "font.primary" (.. shape -tokens -fontFamilies)))
+           ;; The undocumented singular spelling must not leak.
+           (t/is (undefined? (.. shape -tokens -fontFamily)))
+           ;; Internal state keeps the canonical `:font-family` key.
+           (t/is (= "font.primary"
+                    (get-in @store
+                            [:files (:id file) :data :pages-index page-id
+                             :objects shape-id :applied-tokens :font-family])))
            (done)))
        0))))
 
@@ -192,10 +688,11 @@
   ;; Demonstrates the bug: resolving the new token against active sets
   ;; only leaves the reference unresolved.
   (let [tokens-lib (inactive-set-library)
+        tokens-status (cfo/make-tokens-status-from-lib tokens-lib)
         token (ctob/make-token {:name "color.bg.default"
                                 :value "{color.gray.50}"
                                 :type :color})
-        tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+        tokens-tree (-> (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
                         (assoc (:name token) token))
         resolved (ts/resolve-tokens tokens-tree)
         {:keys [errors resolved-value]} (get resolved (:name token))]
@@ -235,16 +732,18 @@
 (t/deftest token-set-duplicate-returns-the-duplicated-set
   (let [file-id (cthi/new-id! :file)
         set-id  (cthi/new-id! :set)
-        dup-id  (cthi/new-id! :dup)
-        proxy   (ptok/token-set-proxy "plugin-id" file-id set-id)]
-    (with-redefs [r/check-permission (constantly true)
+        dup-id  (cthi/new-id! :dup)]
+    (with-redefs [u/locate-tokens-lib (constantly nil)
+                  r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
                   dwtl/duplicate-token-set
                   (mock/stub (fn [id {:keys [id-ref]}]
                                (t/is (= set-id id))
                                (reset! id-ref dup-id)
                                :duplicate-token-set))
                   st/emit! mock/noop]
-      (let [dup (.duplicate proxy)]
+      (let [proxy (ptok/token-set-proxy "plugin-id" file-id set-id)
+            dup   (.duplicate proxy)]
         (t/is (ptok/token-set-proxy? dup))
         (t/is (= (str dup-id) (.-id dup)))))))
 
@@ -252,10 +751,10 @@
   (let [file-id  (cthi/new-id! :file)
         theme-id (cthi/new-id! :theme)
         set-id   (cthi/new-id! :set)
-        set      (ptok/token-set-proxy "plugin-id" file-id set-id "Primitives")
-        theme    (ptok/token-theme-proxy "plugin-id" file-id theme-id)
         captured (atom [])]
-    (with-redefs [r/check-permission (constantly true)
+    (with-redefs [u/locate-tokens-lib (constantly nil)
+                  r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
                   u/locate-token-theme
                   (fn [_file _theme]
                     (ctob/make-token-theme :id theme-id
@@ -266,22 +765,39 @@
                     (swap! captured conj {:id id :theme theme})
                     :update-token-theme)
                   st/emit! mock/noop]
-      (.addSet theme set)
-      (.removeSet theme set)
-      (t/is (= [theme-id theme-id] (mapv :id @captured)))
-      (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
-      (t/is (not (contains? (-> @captured second :theme :sets) "Primitives"))))))
+      (let [set   (ptok/token-set-proxy "plugin-id" file-id set-id "Primitives")
+            theme (ptok/token-theme-proxy "plugin-id" file-id theme-id)]
+        (.addSet theme set)
+        (.removeSet theme set)
+        (t/is (= [theme-id theme-id] (mapv :id @captured)))
+        (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
+        (t/is (not (contains? (-> @captured second :theme :sets) "Primitives")))))))
 
 (t/deftest font-family-token-value-accepts-a-string
-  (let [file-id  (cthi/new-id! :file)
-        set-id   (cthi/new-id! :set)
-        token-id (cthi/new-id! :token)
+  ;; The setter validates the candidate token against the file tokens library,
+  ;; so the token has to live in a real library.
+  (let [set-id   (cthi/new-id! :token-set)
+        token-id (cthi/new-id! :font-token)
+        file     (-> (cthf/sample-file :file1 :page-label :page1)
+                     (ctht/add-tokens-lib)
+                     (ctht/update-tokens-lib
+                      #(-> %
+                           (ctob/add-set
+                            (ctob/make-token-set :id set-id
+                                                 :name "fonts"))
+                           (ctob/add-token
+                            set-id
+                            (ctob/make-token :id token-id
+                                             :name "font.primary"
+                                             :type :font-family
+                                             :value ["Inter"])))))
+        store    (ths/setup-store file)
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        file-id  (:id file)
         captured (atom nil)]
     (with-redefs [r/check-permission (constantly true)
-                  u/locate-token (constantly {:id token-id
-                                              :name "font.primary"
-                                              :type :font-family
-                                              :value ["Inter"]})
+                  u/check-editable-tokens (constantly nil)
                   dwtl/update-token (mock/stub (fn [set-id token-id attrs]
                                                  (reset! captured {:set-id set-id
                                                                    :token-id token-id
@@ -342,6 +858,71 @@
     (t/is (array? result))
     (t/is (= ["Inter" "Arial"] (vec result)))))
 
+(t/deftest font-family-token-resolved-value-keeps-multi-word-families
+  ;; An unquoted family whose name has several words resolves to a list of word
+  ;; symbols, so the family name is the string form of each entry.
+  (let [token (ctob/make-token
+               {:name "font.body"
+                :type :font-family
+                :value ["Hanken Grotesk" "IBM Plex Mono"]})
+        result (get-resolved-value token {(:name token) token})]
+    (t/is (array? result))
+    (t/is (= ["Hanken Grotesk" "IBM Plex Mono"] (vec result)))))
+
+(t/deftest typography-token-resolved-value-keeps-multi-word-families
+  (let [token (ctob/make-token
+               {:name "type.body"
+                :type :typography
+                :value {:font-family ["Hanken Grotesk" "Arial"]
+                        :font-size "16px"}})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (= ["Hanken Grotesk" "Arial"] (vec (aget entry "fontFamilies"))))))
+
+(t/deftest font-family-token-resolved-value-keeps-names-with-expression-words
+  ;; Words like `Red` or `Black` read as colors and `2P` as a number and a word
+  ;; when tokenscript parses the family name.
+  (let [families ["Red Hat Display" "Crimson Pro" "Archivo Black"
+                  "Press Start 2P" "M PLUS 1p" "Crimson"]
+        token    (ctob/make-token
+                  {:name "font.display"
+                   :type :font-family
+                   :value families})
+        result   (get-resolved-value token {(:name token) token})]
+    (t/is (= families (vec result)))))
+
+(t/deftest font-family-token-resolved-value-mixes-references-and-names
+  (let [base   (ctob/make-token
+                {:name "font.base"
+                 :type :font-family
+                 :value ["Red Hat Text"]})
+        token  (ctob/make-token
+                {:name "font.stack"
+                 :type :font-family
+                 :value ["{font.base}" "Rock 3D"]})
+        result (get-resolved-value token {(:name base)  base
+                                          (:name token) token})]
+    (t/is (= ["Red Hat Text" "Rock 3D"] (vec result)))))
+
+(t/deftest font-family-token-resolved-value-keeps-quoted-names
+  (let [token  (ctob/make-token
+                {:name "font.quoted"
+                 :type :font-family
+                 :value ["\"Red Hat Mono\"" "'Black Ops One'"]})
+        result (get-resolved-value token {(:name token) token})]
+    (t/is (= ["Red Hat Mono" "Black Ops One"] (vec result)))))
+
+(t/deftest typography-token-resolved-value-keeps-names-with-expression-words
+  (let [token  (ctob/make-token
+                {:name "type.display"
+                 :type :typography
+                 :value {:font-family ["Red Hat Display" "Press Start 2P"]
+                         :font-size "16px"}})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (= ["Red Hat Display" "Press Start 2P"]
+             (vec (aget entry "fontFamilies"))))))
+
 (t/deftest token-theme-add-set-accepts-token-set-id
   (let [plugin-id "plugin-id"
         file-id   (uuid/next)
@@ -351,13 +932,15 @@
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
         invalid   (atom [])]
-    (with-redefs [r/check-permission (constantly true)
-                  u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
-                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
-                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+    (with-redefs [r/check-permission      (constantly true)
+                  u/locate-tokens-lib     (constantly nil)
+                  u/locate-token-set      (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme    (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid             (fn [_ code value] (swap! invalid conj [code value]))
                   dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
-                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
-                                         ([event & _] (swap! emitted conj event) nil))]
+                  st/emit!                (fn ([event] (swap! emitted conj event) nil)
+                                            ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
         (.addSet theme-proxy (str set-id))
         (t/is (= #{"Core"} (-> @emitted first :theme :sets)))
@@ -372,13 +955,15 @@
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
         invalid   (atom [])]
-    (with-redefs [r/check-permission (constantly true)
-                  u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
-                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
-                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+    (with-redefs [r/check-permission      (constantly true)
+                  u/locate-tokens-lib     (constantly nil)
+                  u/locate-token-set      (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme    (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid             (fn [_ code value] (swap! invalid conj [code value]))
                   dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
-                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
-                                         ([event & _] (swap! emitted conj event) nil))]
+                  st/emit!                (fn ([event] (swap! emitted conj event) nil)
+                                            ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)
             set-proxy   (ptok/token-set-proxy plugin-id file-id set-id "Core")]
         (.addSet theme-proxy set-proxy)
@@ -391,20 +976,24 @@
         theme-id  (uuid/next)
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
-        errors    (atom [])]
-    (with-redefs [u/locate-token-set         (constantly nil)
-                  u/locate-token-theme       (fn [_ id] (when (= id theme-id) theme))
+        invalid   (atom [])]
+    (with-redefs [u/locate-tokens-lib        (constantly nil)
+                  u/locate-token-set         (constantly nil)
                   u/throw-validation-errors? (constantly true)
+                  u/locate-token-theme       (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens    (constantly nil)
+                  u/handle-error             (fn [plugin-id]
+                                               (fn [cause]
+                                                 (u/not-valid plugin-id :error (str cause))))
                   dwtl/update-token-theme    (fn [id theme] {:id id :theme theme})
                   st/emit!                   (fn ([event] (swap! emitted conj event) nil)
                                                ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
-        ;; Non-id, non-proxy arguments are rejected by the schema coercer.
-        (try (.addSet theme-proxy 42) (catch :default e (swap! errors conj e)))
-        (try (.removeSet theme-proxy nil) (catch :default e (swap! errors conj e)))
+        (try (.addSet theme-proxy 42) (catch :default e (swap! invalid conj e)))
+        (try (.removeSet theme-proxy nil) (catch :default e (swap! invalid conj e)))
         (t/is (empty? @emitted))
-        (t/is (= 2 (count @errors)))
-        (t/is (every? #(instance? js/Error %) @errors))))))
+        (t/is (= 2 (count @invalid)))
+        (t/is (every? #(instance? js/Error %) @invalid))))))
 
 ;; ═══════════════════════════════════════════════════════════════
 ;; Permission check tests (T9-F-01)
@@ -514,7 +1103,7 @@
                   u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
                   r/check-permission (constantly false)
                   st/emit!        mock/noop]
-      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id)]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id "test-plugin")]
         (.toggleActive proxy)
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :toggleActive "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
@@ -706,4 +1295,3 @@
         (.addSet catalog #js {"name" "NewSet"})
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :addSet "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
-

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.features
   "A thin, frontend centric abstraction layer and collection of
@@ -58,10 +58,11 @@
                         :else
                         features)]
 
-    ;; The WASM renderer requires the v2 text editor (hard dependency).
-    ;; Ensure it's always enabled whenever render-wasm/v1 is active.
+    ;; The WASM renderer uses the WASM text editor (v3). Keep forcing
+    ;; text-editor/v2 as before; the viewport prefers wasm when both are on.
+    ;; Classic clears both editor features (SVG v1).
     (if (contains? features "render-wasm/v1")
-      (conj features "text-editor/v2")
+      (conj features "text-editor/v2" "text-editor-wasm/v1")
       (disj features "text-editor/v2" "text-editor-wasm/v1"))))
 
 (defn get-enabled-features

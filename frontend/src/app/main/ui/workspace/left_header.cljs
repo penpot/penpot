@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.left-header
   (:require-macros [app.main.style :as stl])
@@ -15,6 +15,7 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.main-menu :as main-menu]
    [app.util.dom :as dom]
@@ -115,23 +116,20 @@
                          :pending (stl/css :status-notification :pending-status)
                          :saving (stl/css :status-notification :saving-status)
                          :saved (stl/css :status-notification :saved-status)
+                         :retrying (stl/css :status-notification :retrying-status)
                          :error (stl/css :status-notification :error-status)
                          (stl/css :status-notification))
                 :title (case persistence-status
                          :pending (tr "workspace.header.saving")
                          :saving (tr "workspace.header.saving")
                          :saved (tr "workspace.header.saved")
+                         :retrying (tr "workspace.header.retrying")
                          :error (tr "workspace.header.save-error")
-                         nil)}
-          (case persistence-status
-            :pending deprecated-icon/status-alert
-            :saving deprecated-icon/status-alert
-            :saved deprecated-icon/status-tick
-            :error deprecated-icon/status-wrong
-            nil)]
+                         nil)}]
          [:div {:class (stl/css :file-name-label)} file-name]])]
      (when ^boolean shared?
-       [:span {:class (stl/css :shared-badge)} deprecated-icon/library])
+       [:span {:class (stl/css :shared-badge)}
+        [:> icon* {:icon-id i/library :class (stl/css :shared-badge-icon)}]])
      [:div {:class (stl/css :menu-section)}
       [:> main-menu/menu* {:layout layout
                            :file file}]]]))

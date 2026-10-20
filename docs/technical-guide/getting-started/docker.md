@@ -83,7 +83,10 @@ Penpot provides a script (`manage.py`) with some administrative tasks to perform
 flag set in the docker-compose.yaml file. For older versions of docker-compose.yaml file,
 this flag is set in the backend service.
 
-For instance, if  the registration is disabled, the only way to create a new user is with this script:
+For users who do not have a team invitation, if public registration is disabled, the
+way to create a new user is with this script. Users with a valid and active team
+invitation can register through the invitation link when password login is enabled.
+The invitation must still exist and must not have expired.
 
 ```bash
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile
@@ -95,6 +98,10 @@ or
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile --skip-tutorial --skip-walkthrough
 ```
 
+**NOTE:** profiles created with this command have no verified email. If the
+`disable-email-verification` flag is set, inviting these users to a team adds them to it
+directly, without sending any invitation email, so SMTP is not required for this flow.
+Check the [Configuration][1] section for more detail.
 
 **NOTE:** the exact container name depends on your docker version and platform.
 For example it could be <code class="language-bash">penpot-penpot-backend-1</code> or <code class="language-bash">penpot_penpot-backend-1</code>.
@@ -309,6 +316,50 @@ server {
 ```
 
 For full documentation, go to the [official website][2]
+
+#### Serve Penpot from a subpath with NGINX
+
+First, set the complete public URL in `docker-compose.yaml`:
+
+```yaml
+PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+```
+
+Then route the subpath to the Penpot frontend, forwarding the path unchanged:
+
+```nginx
+server {
+  listen 443 ssl;
+  server_name mycompany.com;
+
+  client_max_body_size 367001600;
+
+  # Configure TLS and logs following your organization's practices.
+  ssl_certificate /path/to/fullchain;
+  ssl_certificate_key /path/to/privkey;
+
+  location = /penpot {
+    return 301 /penpot/;
+  }
+
+  location /penpot/ {
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Scheme $scheme;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_redirect off;
+    proxy_pass http://localhost:9001;
+  }
+}
+```
+
+This single location covers every Penpot endpoint, WebSockets included. Keep
+the trailing slash in `PENPOT_PUBLIC_URI`, and do not add a path to `proxy_pass`
+(such as `http://localhost:9001/`): NGINX would then replace the `/penpot/`
+prefix instead of forwarding it.
 
 ### Example with CADDY SERVER
 

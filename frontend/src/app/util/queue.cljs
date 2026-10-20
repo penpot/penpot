@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.queue
   "Low-Level queuing mechanism, mainly used for process thumbnails"
@@ -107,10 +107,33 @@
     (when-not (has-requested-process? queue)
       (request-process queue 0 (next-process-time queue)))))
 
+(defn- find-last
+  "Portable `Array.prototype.findLast`, which is missing in older
+  browsers."
+  [^js items pred]
+  (loop [index (dec (.-length items))]
+    (when (>= index 0)
+      (let [item (aget items index)]
+        (if (pred item)
+          item
+          (recur (dec index)))))))
+
+(defn- merge-into-pending
+  "Makes the pending `item` run `f` (the most recent request's work) and
+  forwards the item's result into `result`."
+  [item f result]
+  (unchecked-set item "f" f)
+  (rx/subscribe (unchecked-get item "result") result))
+
 (defn enqueue-unique
+  "Enqueues `request` to be processed by `f`. When a pending item
+  matches the request, no new item is queued: the pending one takes `f`
+  and both callers receive its result. An item is removed from the
+  queue before it runs, so only work that has not started is merged."
   [queue request f]
   (let [items   (unchecked-get queue "items")
         find-fn (unchecked-get queue "find-fn")
+        match?  (fn [item] (find-fn request item))
         result  (rx/subject)]
 
     (unchecked-set request "result" result)
@@ -120,17 +143,13 @@
     ;; so that they are processed first, anything else is added to the
     ;; end of the queue.
     (if (= (unchecked-get request "tag") "frame")
-      (let [item (.find ^js items find-fn)]
-        (if item
-          (let [other-result (unchecked-get item "result")]
-            (rx/subscribe other-result result))
-          (enqueue-first queue request)))
+      (if-let [item (.find ^js items match?)]
+        (merge-into-pending item f result)
+        (enqueue-first queue request))
 
-      (let [item (.findLast ^js items find-fn)]
-        (if item
-          (let [other-result (unchecked-get item "result")]
-            (rx/subscribe other-result result))
-          (enqueue-last queue request))))
+      (if-let [item (find-last items match?)]
+        (merge-into-pending item f result)
+        (enqueue-last queue request)))
 
     (rx/to-observable result)))
 

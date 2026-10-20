@@ -29,7 +29,7 @@ mkdir -p target/dist;
 
 # Build render wasm binary
 pushd ../render-wasm;
-./build
+./build frontend
 popd
 
 pushd ../mcp;

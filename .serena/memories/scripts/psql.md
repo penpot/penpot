@@ -16,21 +16,27 @@ development.
 # Default connection (penpot db, localhost)
 scripts/psql -c "SELECT version();"
 
-# Test database
+# Test database (ws0)
 scripts/psql --test -c "SELECT * FROM migrations;"
+
+# Isolated test database of another instance (ws1+)
+scripts/psql --test --ws 1 -c "SELECT * FROM migrations;"
 
 # Custom host/user/database
 scripts/psql --host myhost --user myuser --db mydb
 ```
 
+`--ws N` only applies together with `--test` (the main database is
+shared by all instances): it selects `penpot_test` on `--ws 0` and
+`penpot_test_wsN` on `--ws N`. `scripts/db-schema` accepts the same flags.
+
 `scripts/psql` must be invoked from the repo root so the path resolves.
 
-## Native Tool Available (opencode)
+## Native Tool Available (OpenCode V2)
 
-A native opencode tool `penpot-psql` is available (defined in
-`.opencode/plugins/penpot.js`, which registers it for both opencode V1 via
-`server()` and opencode V2 via `setup()`). The LLM can call it directly
-with:
+A native OpenCode V2 tool `penpot-psql` is available. It is defined in
+`.opencode/plugins/penpot.js` and registered through `setup()`. The LLM can
+call it directly with:
 - `sql`: SQL command string to execute
 - `test`: Boolean flag to use the `penpot_test` database
 

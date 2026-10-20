@@ -2,17 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.tokens.propagation
   (:require
    [app.common.data :as d]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.types.token :as ctt]
-   [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
+   [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
@@ -131,8 +133,27 @@
                update-infos)))
           shapes-update-info))
 
+(defn- update-canvas-background
+  "Set the background of `page-id` to the resolved value of its linked
+  color token, when that value differs from the current background."
+  [page-id resolved-tokens]
+  (ptk/reify ::update-canvas-background
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page       (dsh/lookup-page state page-id)
+            token-name (:background-token page)
+            color      (some-> (get-in resolved-tokens [token-name :resolved-value])
+                               (dwta/value->color)
+                               (:color))]
+        (when (and (some? color) (not= color (:background page)))
+          (rx/of (dch/commit-changes
+                  (-> (pcb/empty-changes it)
+                      (pcb/with-page page)
+                      (pcb/mod-page {:background color})))))))))
+
 (defn propagate-tokens
-  "Propagate tokens values to all shapes where they are applied"
+  "Propagate tokens values to all shapes and page backgrounds where they
+  are applied"
   [state resolved-tokens]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
@@ -168,6 +189,9 @@
                (when (seq observable) (apply rx/merge observable))
                (when (seq normal) (rx/concat-all (rx/of normal)))
 
+               (when (:background-token page)
+                 (rx/of (update-canvas-background page-id resolved-tokens)))
+
                (->> (rx/from frame-ids)
                     (rx/mapcat (fn [frame-id]
                                  (rx/of (dwt/clear-thumbnail file-id page-id frame-id "frame")
@@ -188,27 +212,29 @@
   (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens-tree (-> (dsh/lookup-file-data state)
-                                 (get :tokens-lib)
-                                 (ctob/get-tokens-in-active-sets))]
-        (->> (if (contains? cf/flags :tokenscript)
-               (rx/of (-> (ts/resolve-tokens tokens-tree)
-                          (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
-               (sd/resolve-tokens tokens-tree))
-             (rx/mapcat
-              (fn [sd-tokens]
-                (let [undo-id (js/Symbol)]
-                  (rx/concat
-                   (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+      (let [tokens-lib    (dsh/lookup-tokens-lib state)
+            tokens-status (dsh/lookup-tokens-status state)]
+        (when (and tokens-lib tokens-status)
+          (when-let [tokens-tree (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
+            (->> (if (contains? cf/flags :tokenscript)
+                   (rx/of (-> (ts/resolve-tokens tokens-tree)
+                              (d/update-vals #(update % :resolved-value
+                                                      (partial ts/resolved-value->penpot-unit (:type %))))))
+                   (sd/resolve-tokens tokens-tree))
+                 (rx/mapcat
+                  (fn [sd-tokens]
+                    (let [undo-id (js/Symbol)]
+                      (rx/concat
+                       (rx/of (dwu/start-undo-transaction undo-id :timeout false))
 
-                   ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
-                   ;; into a single commit-changes. This is not really the best way, the token application
-                   ;; should be done with a changes_builder and sending only one `commit-changes` instead
-                   ;; of creating lots of `update-shapes`.
-                   (rx/of (dwsh/update-shapes-buffer-start))
-                   (->> (propagate-tokens state sd-tokens)
-                        (rx/catch #(rx/concat
-                                    (rx/of (dwsh/update-shapes-buffer-stop))
-                                    (rx/throw %))))
-                   (rx/of (dwsh/update-shapes-buffer-stop))
-                   (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
+                       ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
+                       ;; into a single commit-changes. This is not really the best way, the token application
+                       ;; should be done with a changes_builder and sending only one `commit-changes` instead
+                       ;; of creating lots of `update-shapes`.
+                       (rx/of (dwsh/update-shapes-buffer-start))
+                       (->> (propagate-tokens state sd-tokens)
+                            (rx/catch #(rx/concat
+                                        (rx/of (dwsh/update-shapes-buffer-stop))
+                                        (rx/throw %))))
+                       (rx/of (dwsh/update-shapes-buffer-stop))
+                       (rx/of (dwu/commit-undo-transaction undo-id)))))))))))))

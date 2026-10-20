@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.comments
   (:require
@@ -19,7 +19,9 @@
    [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (def ^:private schema:comment-thread
@@ -65,6 +67,13 @@
 (declare refresh-comment-thread)
 
 (def r-mentions #"@\[([^\]]*)\]\(([^\)]*)\)")
+
+(defn valid-comment-content?
+  [content]
+  (when (string? content)
+    (let [content (str/trim content)]
+      (and (not (str/blank? content))
+           (not= content "\u200b")))))
 
 (defn extract-mentions
   "Retrieves the mentions in the content as an array of uuids"
@@ -521,6 +530,35 @@
     (update [_ state]
       (update state :comments-local dissoc :expanded))))
 
+(def ^:private hide-resolved-comments-storage-key
+  :app.main.data.comments/hide-resolved-comments?)
+
+(defn- load-hide-resolved-comments?
+  []
+  (= true (get @storage/user hide-resolved-comments-storage-key)))
+
+(defn- persist-hide-resolved-comments!
+  [hide?]
+  (swap! storage/user assoc hide-resolved-comments-storage-key hide?))
+
+(defn merge-persisted-filters
+  "Merge persisted hide-resolved preference into comments local state."
+  [local]
+  (let [local (or local {})]
+    (if (contains? local :show)
+      local
+      (assoc local :show (if (load-hide-resolved-comments?)
+                           :pending
+                           :all)))))
+
+(defn initialize-comments-filters
+  "Load persisted comment filter preferences into `:comments-local`."
+  []
+  (ptk/reify ::initialize-comments-filters
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :comments-local merge-persisted-filters))))
+
 (defn update-filters
   [{:keys [mode show list] :as params}]
   (ptk/reify ::update-filters
@@ -536,7 +574,12 @@
                   (assoc :show show)
 
                   (some? list)
-                  (assoc :list list)))))))
+                  (assoc :list list)))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (when (some? show)
+        (persist-hide-resolved-comments! (= :pending show))))))
 
 (defn update-options
   [params]
@@ -693,5 +736,4 @@
         (->> (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id})
              (rx/map (fn [profiles]
                        #(update % :profiles merge (d/index-by :id profiles)))))))))
-
 

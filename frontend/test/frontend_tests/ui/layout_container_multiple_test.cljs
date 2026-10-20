@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.ui.layout-container-multiple-test
   (:require
@@ -44,3 +44,41 @@
     (t/is (= {:p1 10 :p2 20 :p3 10 :p4 20}
              (:layout-padding values)))
     (t/is (= :multiple (:layout-padding-type values)))))
+
+(defn- fill-tokens
+  [shapes]
+  (let [[_ids _values tokens] (multiple/get-attrs* shapes {} :fill)]
+    tokens))
+
+(defn- text-shape
+  [id applied-tokens]
+  (cond-> {:id id :type :text :fills []}
+    applied-tokens (assoc :applied-tokens applied-tokens)))
+
+(defn- rect-shape
+  [id applied-tokens]
+  (cond-> {:id id :type :rect :fills []}
+    applied-tokens (assoc :applied-tokens applied-tokens)))
+
+(t/deftest multiple-text-selection-same-fill-token
+  (t/is (= {:fill "color.primary"}
+           (fill-tokens [(text-shape :text-1 {:fill "color.primary"})
+                         (text-shape :text-2 {:fill "color.primary"})]))))
+
+(t/deftest multiple-text-selection-different-fill-tokens
+  (t/is (= {:fill :multiple}
+           (fill-tokens [(text-shape :text-1 {:fill "color.primary"})
+                         (text-shape :text-2 {:fill "color.secondary"})]))))
+
+(t/deftest multiple-text-selection-token-and-no-token
+  (t/is (= {:fill :multiple}
+           (fill-tokens [(text-shape :text-1 {:fill "color.primary"})
+                         (text-shape :text-2 nil)]))))
+
+(t/deftest multiple-selection-rect-and-text-fill-tokens
+  (t/is (= {:fill "color.primary"}
+           (fill-tokens [(rect-shape :rect-1 {:fill "color.primary"})
+                         (text-shape :text-1 {:fill "color.primary"})])))
+  (t/is (= {:fill :multiple}
+           (fill-tokens [(rect-shape :rect-1 {:fill "color.primary"})
+                         (text-shape :text-1 {:fill "color.secondary"})]))))

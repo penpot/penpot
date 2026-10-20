@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.srepl.main
   #_:clj-kondo/ignore
@@ -25,7 +25,9 @@
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.health :as health]
    [app.http.session :as session]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
@@ -39,7 +41,6 @@
    [app.system :as sys]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
-   [app.worker :as wrk]
    [clojure.datafy :refer [datafy]]
    [clojure.java.io :as io]
    [clojure.pprint :refer [print-table]]
@@ -56,44 +57,69 @@
 ;; TASKS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn print-tasks
+(defn print-jobs
   []
-  (let [tasks (:app.worker/registry sys/system)]
-    (pp/pprint (keys tasks) :level 200)))
+  (let [jobs (:app.jobs/defs sys/system)]
+    (pp/pprint (into (sorted-set) (keys jobs)))))
 
-(defn run-task!
+(defn run-job
+  "Execute the job handler in-process (no job row)."
   ([tname]
-   (run-task! tname {}))
+   (run-job tname {}))
   ([tname params]
-   (wrk/invoke! (-> sys/system
-                    (assoc ::wrk/task tname)
-                    (assoc ::wrk/params params)))))
+   (jobs/invoke (-> sys/system
+                    (assoc ::jobs/name tname)
+                    (assoc ::jobs/params params)))))
 
-(defn schedule-task!
+(defn submit-job
+  "Submit a durable job to the queue."
   ([name]
-   (schedule-task! name {}))
+   (submit-job name {}))
   ([name params]
-   (wrk/submit! (-> sys/system
-                    (assoc ::wrk/task name)
-                    (assoc ::wrk/params params)))))
+   (jobs/submit sys/system
+                {::jobs/name name
+                 ::jobs/params params})))
 
-(defn send-test-email!
+(defn send-test-email
   [destination]
   (assert (string? destination) "destination should be provided")
-  (-> sys/system
-      (assoc ::wrk/task :sendmail)
-      (assoc ::wrk/params {:body "test email"
-                           :subject "test email"
-                           :to [destination]})
-      (wrk/invoke!)))
+  (jobs/submit sys/system
+               {::jobs/name :sendmail
+                ::jobs/params {:body "test email"
+                               :subject "test email"
+                               :to [destination]}}))
 
-(defn resend-email-verification-email!
+(defn resend-email-verification-email
   [email]
   (db/tx-run! sys/system
               (fn [{:keys [::db/conn] :as cfg}]
                 (let [email   (profile/clean-email email)
                       profile (profile/get-profile-by-email conn email)]
                   (#'auth/send-email-verification! cfg profile)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INSTANCE AVAILABILITY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-offline
+  "Take this instance out of the load balancer.
+
+  The `/readyz` endpoint starts answering 503, so the load balancer
+  removes the instance from rotation. Requests already in flight are
+  still served; wait for the load balancer to notice and for the traffic
+  to drop before restarting the process.
+
+  A restarted process comes back online on its own."
+  []
+  (health/set-offline))
+
+(defn set-online
+  "Put this instance back into the load balancer rotation.
+
+  Only needed to undo a `set-offline` without a restart; a restarted
+  process starts online."
+  []
+  (health/set-online))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROFILES MANAGEMENT
@@ -125,7 +151,7 @@
                                          {:columns [:id :email]})]
                (when-not (:is-blocked profile)
                  (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
-                 (db/delete! conn :http-session {:profile-id (:id profile)})
+                 (session/invalidate-all system (:id profile))
                  :blocked))))))
 
 (defn reset-password!
@@ -143,6 +169,66 @@
                (-> (db/exec-one! conn ["update profile set password=? where email=?" password email])
                    (db/get-update-count)
                    (pos?)))))))
+
+(defn parse-emails
+  "Parse the emails into a seq of cleaned emails. Accepts a single
+  email, a comma separated list of emails or a coll of emails.
+  Blank entries are skipped."
+  [emails]
+  (->> (cond
+         (string? emails)
+         (str/split emails #",")
+
+         (sequential? emails)
+         emails
+
+         :else
+         (throw (ex-info "expected email or comma separated list of emails"
+                         {:emails emails})))
+       (map str/trim)
+       (remove str/empty?)))
+
+(defn- delete-profile-by-email*
+  [system email deleted-at cause]
+  (when-let [profile (some-> (db/get* system :profile
+                                      {:email (str/lower email)}
+                                      {::db/remove-deleted false})
+                             (profile/decode-row))]
+    (audit/insert system
+                  {:name "delete-profile"
+                   :type "action"
+                   :profile-id (:id profile)
+                   :tracked-at deleted-at
+                   :props (audit/profile->props profile)
+                   :context {:triggered-by "srepl"
+                             :cause cause}})
+
+    (jobs/invoke (-> system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :profile
+                                           :deleted-at deleted-at
+                                           :id (:id profile)})))
+    (:id profile)))
+
+(defn delete-profiles-by-email!
+  "Mark profiles for deletion by email. Accepts a single email or a
+  comma separated list of emails (or a coll of emails).
+
+  The deletion is immediate: the deleted-at is backdated with the
+  configured deletion-delay so the profiles and their owned teams are
+  purged on the next gc pass."
+  [emails]
+  (let [emails     (parse-emails emails)
+        deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))
+        cause      "explicit call to delete-profiles-by-email!"]
+    (db/tx-run! sys/system
+                (fn [system]
+                  (reduce (fn [acc email]
+                            (if-let [id (delete-profile-by-email* system email deleted-at cause)]
+                              (update acc :deleted conj id)
+                              (update acc :not-found conj email)))
+                          {:total (count emails) :deleted [] :not-found []}
+                          emails)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FEATURES
@@ -398,6 +484,53 @@
                         (println (sm/humanize-explain explain))
                         (ex/print-throwable cause))))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GRAPH / LADYBUG
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; The graph namespaces resolve at call time, never at the top of this
+;; namespace. `app.graph.ladybug` imports `com.ladybugdb.*`, and this namespace
+;; loads with the REPL server on every boot, so a top-level require would link
+;; the Ladybug native library into every backend, graph or not. Calling one of
+;; the functions below loads the library at that point: the operator has asked
+;; for it explicitly. The `:graph` flag gates the request path
+;; (`app.http.debug`), not the REPL.
+
+(defn graph-smoke-test!
+  "Execute a basic Ladybug smoke test (CREATE + count).
+
+  Uses the embedded Ladybug Java API. Use :db-path \":memory:\" (default)
+  or a filesystem path such as /tmp/test.lbug."
+  [& {:keys [db-path] :or {db-path ":memory:"}}]
+  ((requiring-resolve 'app.graph.ladybug/smoke-test!) :db-path db-path))
+
+(defn graph-query-test!
+  "Query Document count for a file's graph db (REPL diagnostic)."
+  [file-id & {:keys [db-path]}]
+  (let [file-id       (h/parse-uuid file-id)
+        db-path       (or db-path ((requiring-resolve 'app.graph.ladybug/db-path-for-file) file-id))
+        query-scalar! (requiring-resolve 'app.graph.ladybug/query-scalar!)
+        stmt          "MATCH (n:Document) RETURN count(n) AS Document_c;"]
+    (query-scalar! db-path stmt)))
+
+(defn ingest-file-to-graph!
+  "Project a Penpot file into a per-file Ladybug database.
+
+  Loads and realizes the file from the database, ensures the slice schema,
+  projects Document/Page/shape nodes, and returns graph stats.
+
+  Options:
+  - `:db-path` path or `:memory:`
+  - `:reset-db?` delete any existing db first (default true)
+  - `:skip-stats?` skip post-ingest MATCH count queries (default false)"
+  [file-id & opts]
+  (let [ingest-file!  (requiring-resolve 'app.graph.ingest/ingest-file!)
+        print-ingest! (requiring-resolve 'app.graph.report/print-ingest!)
+        result        (apply ingest-file! sys/system file-id opts)]
+    (print-ingest! result)
+    result))
+
+
 (defn repair-file!
   "Repair the list of errors detected by validation."
   [file-id & {:keys [rollback?] :or {rollback? true} :as options}]
@@ -560,11 +693,11 @@
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-file!"}
                    :tracked-at tnow})
-    (wrk/invoke! (-> sys/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :file
-                                          :deleted-at tnow
-                                          :id file-id})))
+    (jobs/invoke (-> sys/system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :file
+                                           :deleted-at tnow
+                                           :id file-id})))
     :deleted))
 
 (defn restore-file!
@@ -601,11 +734,11 @@
                              :cause "explicit call to delete-project!"}
                    :tracked-at tnow})
 
-    (wrk/invoke! (-> sys/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :project
-                                          :deleted-at tnow
-                                          :id project-id})))
+    (jobs/invoke (-> sys/system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :project
+                                           :deleted-at tnow
+                                           :id project-id})))
     :deleted))
 
 (defn- restore-project*
@@ -650,15 +783,24 @@
                    :type "action"
                    :props {:id team-id}
                    :context {:triggered-by "srepl"
-                             :cause "explicit call to delete-profile!"}
+                             :cause "explicit call to delete-team!"}
                    :tracked-at tnow})
 
-    (wrk/invoke! (-> sys/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :team
-                                          :deleted-at tnow
-                                          :id team-id})))
+    (jobs/invoke (-> sys/system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :team
+                                           :deleted-at tnow
+                                           :id team-id})))
     :deleted))
+
+(def ^:private sql:restore-font-file-objects
+  "UPDATE storage_object
+      SET deleted_at = null
+    WHERE deleted_at IS NOT NULL
+      AND id IN (SELECT unnest(array[woff1_file_id, woff2_file_id, otf_file_id, ttf_file_id])
+                   FROM team_font_variant
+                  WHERE team_id = ?::uuid
+                    AND deleted_at IS NULL)")
 
 (defn- restore-team*
   [{:keys [::db/conn] :as cfg} team-id]
@@ -669,6 +811,11 @@
   (db/update! conn :team-font-variant
               {:deleted-at nil}
               {:team-id team-id})
+
+  ;; Same as in `restore-files`: the font objects of the variants we just
+  ;; brought back must stop being marked for deletion, or the storage GC will
+  ;; skip them forever (those foreign keys are `NO ACTION`).
+  (db/exec-one! conn [sql:restore-font-file-objects team-id])
 
   (doseq [{:keys [id]} (db/query conn :project
                                  {:team-id team-id}
@@ -705,15 +852,16 @@
     (audit/insert sys/system
                   {:name "delete-profile"
                    :type "action"
+                   :props {:id profile-id}
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-profile!"}
                    :tracked-at tnow})
 
-    (wrk/invoke! (-> sys/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :profile
-                                          :deleted-at tnow
-                                          :id profile-id})))
+    (jobs/invoke (-> sys/system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :profile
+                                           :deleted-at tnow
+                                           :id profile-id})))
     :deleted))
 
 (defn restore-profile!
@@ -745,91 +893,92 @@
 
 (defn delete-profiles-in-bulk!
   [system path]
-  (letfn [(process-data! [system deleted-at emails]
-            (loop [emails  emails
-                   deleted 0
-                   total   0]
-              (if-let [email (first emails)]
-                (if-let [profile (some-> (db/get* system :profile
-                                                  {:email (str/lower email)}
-                                                  {::db/remove-deleted false})
-                                         (profile/decode-row))]
-                  (do
-                    (audit/insert system
-                                  {:name "delete-profile"
-                                   :type "action"
-                                   :profile-id (:id profile)
-                                   :tracked-at deleted-at
-                                   :props (audit/profile->props profile)
-                                   :context {:triggered-by "srepl"
-                                             :cause "explicit call to delete-profiles-in-bulk!"}})
-                    (wrk/invoke! (-> system
-                                     (assoc ::wrk/task :delete-object)
-                                     (assoc ::wrk/params {:object :profile
-                                                          :deleted-at deleted-at
-                                                          :id (:id profile)})))
-                    (recur (rest emails)
-                           (inc deleted)
-                           (inc total)))
-                  (recur (rest emails)
-                         deleted
-                         (inc total)))
-                {:deleted deleted :total total})))]
+  (let [path       (fs/path path)
+        deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))
+        cause      "explicit call to delete-profiles-in-bulk!"]
 
-    (let [path       (fs/path path)
-          deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))]
+    (when-not (fs/exists? path)
+      (throw (ex-info "path does not exists" {:path path})))
 
-      (when-not (fs/exists? path)
-        (throw (ex-info "path does not exists" {:path path})))
-
-      (db/tx-run! system
-                  (fn [system]
-                    (with-open [reader (io/reader path)]
-                      (process-data! system deleted-at (line-seq reader))))))))
+    (db/tx-run! system
+                (fn [system]
+                  (with-open [reader (io/reader path)]
+                    (loop [emails  (line-seq reader)
+                           deleted 0
+                           total   0]
+                      (if-let [email (first emails)]
+                        (if (delete-profile-by-email* system email deleted-at cause)
+                          (recur (rest emails) (inc deleted) (inc total))
+                          (recur (rest emails) deleted (inc total)))
+                        {:deleted deleted :total total})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CASCADE FIXING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- submit-deleted-cascade
+  "Replay the deletion cascade of every soft-deleted row of `table`, by
+  submitting one `:delete-object` job per row.
+
+  Reads the rows with a server-side cursor (`db/plan`) instead of materialising
+  the whole table, and enqueues the job instead of running it inline, so it
+  can be used against production in bounded batches. The job is idempotent (it
+  only marks the children with the row's own date), `label` is the row id and
+  `dedupe` drops not-yet-due duplicates.
+
+  Options: `:limit` (max rows read), `:ids` (restrict the run to these row ids)
+  and `:dry-run?` (count without enqueueing). `table` and `object` are internal
+  constants, never operator input.
+
+  Returns `{:found n :submitted m}`.
+
+  Note: the submissions are given the outer `system` (with the pool) on
+  purpose; handing them the read-only transaction cfg would write on it."
+  [system {:keys [table object limit ids dry-run?]}]
+  (let [clauses (cond-> ["deleted_at is not null"]
+                  (seq ids) (conj "id = any(?)"))
+        sql     (str "select id, deleted_at from " table
+                     " where " (str/join " and " clauses)
+                     (when limit (str " limit " (long limit))))]
+
+    (db/tx-run! (assoc system ::db/read-only true)
+                (fn [{:keys [::db/conn]}]
+                  (let [query (cond-> [sql]
+                                (seq ids) (conj (db/create-array conn "uuid" ids)))
+                        found (reduce (fn [total {:keys [id deleted-at]}]
+                                        (when-not dry-run?
+                                          (jobs/submit system
+                                                       {::jobs/name :delete-object
+                                                        ::jobs/params {:object object
+                                                                       :deleted-at deleted-at
+                                                                       :id id}
+                                                        ::jobs/label (str id)
+                                                        ::jobs/dedupe true}))
+                                        (inc total))
+                                      0
+                                      (db/plan conn query))]
+                    {:found found
+                     :submitted (if dry-run? 0 found)})))))
+
 (defn process-deleted-profiles-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from profile where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :profile
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+  "Replay the deletion cascade of every soft-deleted profile."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "profile" :object :profile} opts)))
 
 (defn process-deleted-teams-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from team where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :team
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+  "Replay the deletion cascade of every soft-deleted team."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "team" :object :team} opts)))
 
 (defn process-deleted-projects-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from project where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :project
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+  "Replay the deletion cascade of every soft-deleted project."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "project" :object :project} opts)))
 
 (defn process-deleted-files-cascade
-  []
-  (->> (db/exec! sys/system ["select id, deleted_at from file where deleted_at is not null"])
-       (run! (fn [{:keys [id deleted-at]}]
-               (wrk/invoke! (-> sys/system
-                                (assoc ::wrk/task :delete-object)
-                                (assoc ::wrk/params {:object :file
-                                                     :deleted-at deleted-at
-                                                     :id id})))))))
+  "Replay the deletion cascade of every soft-deleted file."
+  [& {:as opts}]
+  (submit-deleted-cascade sys/system (merge {:table "file" :object :file} opts)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SSO
@@ -892,4 +1041,4 @@
                       (let [params (-> rel
                                        (assoc :id (uuid/next))
                                        (assoc :team-id (:id team)))]
-                        (teams/add-profile-to-team! cfg params {::db/return-keys false}))))))))
+                        (teams/add-profile-to-team! cfg params))))))))

@@ -2,16 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.shape.interactions
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.bounds :as gsb]
    [app.common.schema :as sm]
-   [app.common.schema.generators :as sg]))
+   [app.common.schema.generators :as sg]
+   [app.common.uri :as uri]
+   [cuerdas.core :as str]))
 
 ;; WARNING: options are not deleted when changing event or action
 ;; type, so it can be restored if the user changes it back later.
@@ -217,15 +218,17 @@
 (declare calc-overlay-pos-initial)
 (declare allowed-animation?)
 
+(defn valid-event-type-for-shape?
+  [shape event-type]
+  (and (contains? event-types event-type)
+       (or (not= event-type :after-delay)
+           (cfh/frame-shape? shape))))
+
 (defn set-event-type
   [interaction event-type shape]
   (assert (check-interaction interaction))
-  (assert (contains? event-types event-type)
-          "should be a valid event type")
-
-  (assert (or (not= event-type :after-delay)
-              (cfh/frame-shape? shape))
-          "the `:after-delay` event type incompatible with not frame shapes")
+  (assert (valid-event-type-for-shape? shape event-type)
+          "event type incompatible with shape")
 
   (if (= (:event-type interaction) event-type)
     interaction
@@ -291,11 +294,18 @@
 (defn set-delay
   [interaction delay]
   (assert (check-interaction interaction))
-  (assert (sm/check-safe-int delay))
+  (assert (and (sm/check-safe-int delay) (not (neg? delay))))
   (assert (has-delay interaction)
           "expected compatible interaction event type")
 
   (assoc interaction :delay delay))
+
+(defn valid-delay?
+  [interaction]
+  (or (not (has-delay interaction))
+      (let [delay (:delay interaction)]
+        (and (sm/valid-safe-int? delay)
+             (not (neg? delay))))))
 
 ;; FIXME: rename to proper name, very confusing one because it does
 ;; not checks if interaction has distination, it checks if it can have
@@ -325,6 +335,32 @@
         (= (:action-type interaction) :toggle-overlay))
     (assoc :overlay-pos-type :center
            :overlay-position (gpt/point 0 0))))
+
+(defn valid-destination?
+  [objects shape destination]
+  (or (nil? destination)
+      (let [target (get objects destination)]
+        (and (cfh/frame-shape? target)
+             (not= destination (:id shape))
+             (not= destination (:frame-id shape))))))
+
+(defn normalize-url
+  [value]
+  (when (string? value)
+    (let [value (str/trim value)
+          ;; A colon followed by a digit is a port (`localhost:3000`), not a scheme
+          explicit-scheme? (re-find #"(?i)^[a-z][a-z0-9+.-]*:(?!\d)" value)]
+      (when (or (not explicit-scheme?)
+                (re-find #"(?i)^https?://" value))
+        (let [value (if explicit-scheme? value (str "http://" value))]
+          (try
+            (let [parsed (uri/uri value)]
+              (when (and (not (re-find #"\s" value))
+                         (contains? #{"http" "https"} (:scheme parsed))
+                         (seq (:host parsed)))
+                value))
+            (catch #?(:clj Exception :cljs :default) _
+              nil)))))))
 
 (defn has-preserve-scroll
   [interaction]
@@ -482,7 +518,13 @@
 
     (if (nil? dest-frame)
       [(gpt/point 0 0) [:top :left]]
-      (let [overlay-size           (gsb/get-object-bounds objects dest-frame)
+      (let [;; Use the destination frame selrect (the visible frame box) to compute
+            ;; the overlay position, not its full object bounds. Bounds include
+            ;; padding for shadows, blur, strokes and overflowing children, which
+            ;; would make centered/right/bottom positions off by half that padding
+            ;; (the visible frame ends up shifted). The viewer reserves the bounds
+            ;; size and re-aligns the selrect separately (see viewer/calculate-delta).
+            overlay-size           (:selrect dest-frame)
             base-frame-size        (:selrect base-frame)
             relative-to-shape-size (:selrect relative-to-shape)
             relative-to-adjusted-to-base-frame {:x (- (:x relative-to-shape-size) (:x base-frame-size))

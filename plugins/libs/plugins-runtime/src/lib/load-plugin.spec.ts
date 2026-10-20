@@ -3,6 +3,7 @@ import {
   loadPlugin,
   ɵloadPlugin,
   ɵloadPluginByUrl,
+  ɵunloadPlugin,
   setContextBuilder,
   getPlugins,
 } from './load-plugin';
@@ -32,7 +33,7 @@ vi.mock('./ses.js', () => ({
 describe('plugin-loader', () => {
   let mockContext: Context;
   let manifest: Manifest;
-  let mockPluginApi: Awaited<ReturnType<typeof createPlugin>>;
+  let mockPluginApi: NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
   let mockClose: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -60,7 +61,7 @@ describe('plugin-loader', () => {
         close: mockClose,
         sendMessage: vi.fn(),
       },
-    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
 
     mockContext = {
       addListener: vi.fn(),
@@ -83,6 +84,7 @@ describe('plugin-loader', () => {
       manifest,
       expect.any(Function),
       undefined,
+      expect.any(AbortSignal),
     );
     expect(mockPluginApi.plugin.close).not.toHaveBeenCalled();
     expect(getPlugins()).toHaveLength(1);
@@ -120,13 +122,125 @@ describe('plugin-loader', () => {
   });
 
   it('should handle messages sent to plugins', async () => {
+    const mockIframeWindow = { nodeType: 1 } as unknown as Window;
+    const mockPluginWithIframe = {
+      plugin: {
+        close: mockClose,
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: mockIframeWindow,
+      manifest: { ...manifest, host: 'http://localhost:4202' },
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginWithIframe);
+
     await loadPlugin(manifest);
 
-    window.dispatchEvent(new MessageEvent('message', { data: 'test-message' }));
+    const event = new MessageEvent('message', {
+      data: 'test-message',
+      origin: 'http://localhost:4202',
+    });
+    Object.defineProperty(event, 'source', { value: mockIframeWindow });
+    window.dispatchEvent(event);
 
-    expect(mockPluginApi.plugin.sendMessage).toHaveBeenCalledWith(
+    expect(mockPluginWithIframe.plugin.sendMessage).toHaveBeenCalledWith(
       'test-message',
     );
+  });
+
+  it('should reject messages from unrecognized sources', async () => {
+    await loadPlugin(manifest);
+
+    const event = new MessageEvent('message', {
+      data: 'malicious-message',
+      origin: 'https://evil.com',
+    });
+    Object.defineProperty(event, 'source', {
+      value: { nodeType: 999 } as unknown as Window,
+    });
+    window.dispatchEvent(event);
+
+    expect(mockPluginApi.plugin.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('should only route messages to the sender plugin', async () => {
+    const mockIframeWindow1 = { nodeType: 1 } as unknown as Window;
+    const mockIframeWindow2 = { nodeType: 2 } as unknown as Window;
+
+    const mockPluginApi1 = {
+      plugin: {
+        close: vi.fn(),
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: mockIframeWindow1,
+      manifest: { ...manifest, host: 'http://localhost:4202' },
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
+
+    const mockPluginApi2 = {
+      plugin: {
+        close: vi.fn(),
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: mockIframeWindow2,
+      manifest: { ...manifest, host: 'http://localhost:4203' },
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginApi1);
+    await loadPlugin(manifest);
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginApi2);
+    await loadPlugin(manifest);
+
+    const event = new MessageEvent('message', {
+      data: 'test',
+      origin: 'http://localhost:4203',
+    });
+    Object.defineProperty(event, 'source', { value: mockIframeWindow2 });
+    window.dispatchEvent(event);
+
+    expect(mockPluginApi2.plugin.sendMessage).toHaveBeenCalledWith('test');
+    expect(mockPluginApi1.plugin.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('should keep background plugins registered when loading another plugin', async () => {
+    const backgroundIframeWindow = { nodeType: 1 } as unknown as Window;
+    const backgroundClose = vi.fn();
+    const backgroundPluginApi = {
+      plugin: {
+        close: backgroundClose,
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: backgroundIframeWindow,
+      manifest: {
+        ...manifest,
+        pluginId: 'background-plugin',
+        allowBackground: true,
+      },
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
+
+    vi.mocked(createPlugin).mockResolvedValue(backgroundPluginApi);
+    await loadPlugin(manifest);
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginApi);
+    await loadPlugin(manifest);
+
+    expect(backgroundClose).not.toHaveBeenCalled();
+    expect(getPlugins()).toContain(backgroundPluginApi);
+
+    const event = new MessageEvent('message', { data: 'from-background' });
+    Object.defineProperty(event, 'source', { value: backgroundIframeWindow });
+    window.dispatchEvent(event);
+
+    expect(backgroundPluginApi.plugin.sendMessage).toHaveBeenCalledWith(
+      'from-background',
+    );
+
+    ɵunloadPlugin('background-plugin');
+    expect(backgroundClose).toHaveBeenCalledTimes(1);
+
+    // the runtime's close callback deregisters the plugin
+    vi.mocked(createPlugin).mock.calls[0][2]();
+    expect(getPlugins()).not.toContain(backgroundPluginApi);
   });
 
   it('should load plugin using ɵloadPlugin', async () => {
@@ -137,6 +251,7 @@ describe('plugin-loader', () => {
       manifest,
       expect.any(Function),
       undefined,
+      expect.any(AbortSignal),
     );
   });
 
@@ -152,6 +267,7 @@ describe('plugin-loader', () => {
       manifest,
       expect.any(Function),
       undefined,
+      expect.any(AbortSignal),
     );
   });
 });

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.shapes
   (:require
@@ -109,8 +109,8 @@
    (update-shapes-buffer ids update-fn nil))
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr
-            translation?]
+            ignore-touched undo-group with-objects? changed-sub-attr changed-item-index
+            translation? skip-grid-reassignment? skip-component-sync? resize-ids]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -148,11 +148,14 @@
                          nil
                          {:attrs attrs
                           :changed-sub-attr changed-sub-attr
+                          :changed-item-index changed-item-index
                           :ignore-tree ignore-tree
                           :ignore-touched ignore-touched
-                          :with-objects? with-objects?})
-                        (cond-> reg-objects? (pcb/resize-parents ids))
-                        (pcb/set-translation? translation?))))]
+                          :with-objects? with-objects?
+                          :skip-grid-reassignment? skip-grid-reassignment?})
+                        (cond-> reg-objects? (pcb/resize-parents (or resize-ids ids)))
+                        (pcb/set-translation? translation?)
+                        (pcb/set-skip-component-sync? skip-component-sync?))))]
              ;; Check buffered text candidates when the buffer is committed.
              (if (or (empty? text-ids)
                      (not (wrfs/text-reflow-candidate? state props)))
@@ -181,13 +184,34 @@
                               ::update-shapes-buffer-event))))
            (rx/empty)))))))
 
+(defn- any-group-like?
+  "Whether any of `ids` or their ancestors is group-like."
+  [objects ids]
+  (let [cache (js/Map.)
+        group-like?
+        (fn group-like? [id]
+          (let [cached (.get cache id)]
+            (if (some? cached)
+              cached
+              (let [shape     (get objects id)
+                    parent-id (:parent-id shape)
+                    result    (boolean
+                               (or (cfh/group-like-shape? shape)
+                                   (and (some? parent-id)
+                                        (not= parent-id id)
+                                        (group-like? parent-id))))]
+                (.set cache id result)
+                result))))]
+    (boolean (some group-like? ids))))
+
 (defn update-shapes
   ([ids update-fn]
    (update-shapes ids update-fn nil))
   ([ids update-fn
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr translation?]
+            ignore-touched undo-group with-objects? changed-sub-attr changed-item-index translation?
+            skip-grid-reassignment? skip-component-sync? resize-ids]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -208,22 +232,30 @@
                objects   (dsh/lookup-page-objects state page-id)
                ids       (into [] (filter some?) ids)
 
+               ;; Parent resizing only reads the builder objects for groups
+               skip-local?
+               (and translation? (not (any-group-like? objects ids)))
+
                changes
                (-> (pcb/empty-changes it page-id)
                    (pcb/set-save-undo? save-undo?)
                    (pcb/set-stack-undo? stack-undo?)
+                   (pcb/skip-local skip-local?)
                    (cls/generate-update-shapes ids
                                                update-fn
                                                objects
                                                {:attrs attrs
                                                 :changed-sub-attr changed-sub-attr
+                                                :changed-item-index changed-item-index
                                                 :ignore-tree ignore-tree
                                                 :ignore-touched ignore-touched
                                                 :with-objects? with-objects?
-                                                :translation? translation?})
+                                                :translation? translation?
+                                                :skip-grid-reassignment? skip-grid-reassignment?})
                    (cond-> undo-group
                      (pcb/set-undo-group undo-group))
-                   (pcb/set-translation? translation?))
+                   (pcb/set-translation? translation?)
+                   (pcb/set-skip-component-sync? skip-component-sync?))
 
                changed-objects
                (pcb/lookup-objects changes)
@@ -243,7 +275,7 @@
               (rx/empty))
 
             (if (seq (:redo-changes changes))
-              (let [changes (cond-> changes reg-objects? (pcb/resize-parents ids))]
+              (let [changes (cond-> changes reg-objects? (pcb/resize-parents (or resize-ids ids)))]
                 (rx/of (dch/commit-changes changes)))
               (rx/empty))
 
@@ -390,7 +422,8 @@
              selected  (dsh/lookup-selected state)
              base      (cfh/get-base-shape objects selected)
 
-             parent-id (if (or (and (= 1 (count selected))
+             parent-id (if (or (nil? base)
+                               (and (= 1 (count selected))
                                     (cfh/frame-shape? (get objects (first selected))))
                                (empty? selected))
                          frame-id

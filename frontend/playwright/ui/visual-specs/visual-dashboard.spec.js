@@ -9,7 +9,7 @@ test("User goes to an empty dashboard", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
 
   await dashboardPage.goToDashboard();
-  await expect(dashboardPage.page).toHaveURL(/dashboard/);
+  await expect(dashboardPage.page).toHaveURL(/screen=dashboard/);
 
   await expect(dashboardPage.mainHeading).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
@@ -227,7 +227,7 @@ test("User opens team management dropdown", async ({ page }) => {
   await dashboardPage.goToSecondTeamDashboard();
   await expect(page.getByText("Team Up")).toBeVisible();
 
-  await page.getByRole("button", { name: "team-management" }).click();
+  await page.getByTestId("team-options-button").click();
 
   await expect(page.getByTestId("team-members")).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();

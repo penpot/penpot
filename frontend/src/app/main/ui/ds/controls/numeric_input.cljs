@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.ds.controls.numeric-input
   (:require-macros [app.main.style :as stl])
@@ -100,6 +100,17 @@
   [options]
   (some #(when (focusable-option? %) (:id %)) options))
 
+(defn token-shortcut
+  "Returns the token shortcut triggered by `event`: `:open` for `{` and
+  `:apply` for `}`. Returns nil when tokens are disabled for the input
+  (for example, strokes after the first one), so the shortcuts are inert
+  there."
+  [event token-disabled?]
+  (when-not token-disabled?
+    (cond
+      (kbd/is-key? event "{") :open
+      (kbd/is-key? event "}") :apply)))
+
 (defn next-focus-index
   [options focused-id direction]
   (let [options (if (delay? options) @options options)
@@ -145,7 +156,9 @@
    [:step {:optional true} [:maybe [:or :int :float]]]
    [:is-selected-on-focus {:optional true} :boolean]
    [:nillable {:optional true} :boolean]
-   [:applied-token {:optional true} [:maybe [:or :string [:= :multiple]]]]
+   [:applied-token-name {:optional true} [:maybe [:or :string [:= :multiple]]]]
+   [:token-disabled {:optional true} [:maybe :boolean]]
+   [:token-tooltip {:optional true} [:maybe :string]]
    [:empty-to-end {:optional true} :boolean]
    [:on-change {:optional true} fn?]
    [:on-change-start {:optional true} fn?]
@@ -165,6 +178,7 @@
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token-name empty-to-end
+           token-disabled token-tooltip
            on-change on-change-start on-change-end
            on-blur on-focus on-detach
            property align ref name
@@ -199,6 +213,8 @@
         ;; Default props
         nillable        (d/nilv nillable false)
         disabled        (d/nilv disabled false)
+        token-disabled? (d/nilv token-disabled false)
+        token-tooltip   (d/nilv token-tooltip (tr "ds.inputs.numeric-input.open-token-list-dropdown"))
         select-on-focus (d/nilv is-selected-on-focus true)
 
         default         (mf/with-memo [default nillable]
@@ -228,6 +244,10 @@
         token-applied-name   (deref token-applied-name*)
         is-token-applied? (and (some? token-applied-name)
                                (not= :multiple token-applied-name))
+
+        scrubbable?     (and (some? value)
+                             (not disabled)
+                             (not is-token-applied?))
 
         focused-id*     (mf/use-state nil)
         focused-id      (deref focused-id*)
@@ -429,7 +449,7 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps is-open apply-value update-input is-open focused-id handle-focus-change)
+         (mf/deps is-open apply-value update-input is-open focused-id handle-focus-change token-disabled?)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
            (let [up?          (kbd/up-arrow? event)
@@ -437,8 +457,9 @@
                  enter?       (kbd/enter? event)
                  esc?         (kbd/esc? event)
                  node         (mf/ref-val ref)
-                 open-tokens  (kbd/is-key? event "{")
-                 close-tokens (kbd/is-key? event "}")
+                 shortcut     (token-shortcut event token-disabled?)
+                 open-tokens  (= :open shortcut)
+                 close-tokens (= :apply shortcut)
                  options      (mf/ref-val options-ref)
                  options      (if (delay? options) @options options)]
 
@@ -555,24 +576,22 @@
 
         on-scrub-pointer-down
         (mf/use-fn
-         (mf/deps disabled is-open is-multiple? ref min max nillable default is-token-applied?)
+         (mf/deps is-open ref min max nillable default scrubbable?)
          (fn [event]
-           (when-not (or disabled is-open is-multiple?  is-token-applied?)
-             (let [has-token (some? (deref token-applied-name*))]
-               (when-not has-token
-                 (let [client-x  (.-clientX event)
-                       parsed    (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
-                       start-val (or parsed default 0)]
-                   (mf/set-ref-val! drag-state* :maybe-dragging)
-                   (mf/set-ref-val! drag-start-x* client-x)
-                   (mf/set-ref-val! drag-start-val* start-val)
-                   (dom/capture-pointer event)))))))
+           (when (and (not is-open) scrubbable?)
+             (let [client-x  (.-clientX event)
+                   parsed    (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
+                   start-val (or parsed default 0)]
+               (mf/set-ref-val! drag-state* :maybe-dragging)
+               (mf/set-ref-val! drag-start-x* client-x)
+               (mf/set-ref-val! drag-start-val* start-val)
+               (dom/capture-pointer event)))))
 
         on-scrub-pointer-move
         (mf/use-fn
-         (mf/deps apply-value update-input step min max on-change-start is-token-applied?)
+         (mf/deps apply-value update-input step min max on-change-start scrubbable?)
          (fn [event]
-           (when-not is-token-applied?
+           (when scrubbable?
              (let [state (mf/ref-val drag-state*)]
                (when (or (= state :maybe-dragging) (= state :dragging))
                  (let [client-x (.-clientX event)
@@ -722,7 +741,7 @@
                                 :id id
                                 :class inner-class
                                 :placeholder (if is-multiple?
-                                               (tr "labels.mixed-values")
+                                               (tr "settings.multiple")
                                                placeholder)
                                 :default-value (fmt/format-number (or (mf/ref-val last-value*) value))
                                 :on-blur handle-blur
@@ -743,10 +762,11 @@
                                                                          :icon i/tokens
                                                                          :tooltip-class (stl/css :button-tooltip)
                                                                          :class (stl/css :invisible-button)
-                                                                         :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
+                                                                         :aria-label token-tooltip
                                                                          :ref open-dropdown-ref
                                                                          :tooltip-placement tooltip-placement
-                                                                         :on-click open-dropdown}])))
+                                                                         :on-click open-dropdown
+                                                                         :disabled token-disabled?}])))
                                 :max-length max-length})
 
         token-props
@@ -839,9 +859,9 @@
     (mf/with-effect [handle-unmount] handle-unmount)
 
     [:div {:class [class (stl/css-case :input-wrapper true
-                                       :resizable (and (not is-token-applied?)
-                                                       (not disabled)))]
+                                       :scrubbable scrubbable?)]
            :ref wrapper-ref
+           :data-testid "numeric-input-wrapper"
            :on-pointer-down on-scrub-pointer-down
            :on-pointer-move on-scrub-pointer-move
            :on-pointer-up on-scrub-pointer-up

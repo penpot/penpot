@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.colorpicker.ramp
   (:require-macros [app.main.style :as stl])
@@ -121,10 +121,15 @@
              (reset! internal-color* color)
              (on-change color))))]
 
+    ;; Syncs with color changes made outside the ramp; the colors the ramp
+    ;; emits come back with the same components and are skipped
     (mf/use-effect
      (mf/deps color)
      (fn []
-       (reset! internal-color* (enrich-color-map color))))
+       (let [color (enrich-color-map color)]
+         (when (not= (select-keys color [:h :s :v :alpha])
+                     (select-keys internal-color [:h :s :v :alpha]))
+           (reset! internal-color* color)))))
 
     [:*
      [:> value-saturation-selector*

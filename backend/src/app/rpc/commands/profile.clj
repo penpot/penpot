@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.profile
   (:require
@@ -12,13 +12,15 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.plugins :refer [schema:plugin-registry]]
+   [app.common.transit :as t]
+   [app.common.types.plugins :as ctp]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.email :as eml]
    [app.http.session :as session]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
@@ -32,10 +34,10 @@
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
+(declare check-props-size)
 (declare decode-row)
 (declare filter-props)
 (declare get-profile)
@@ -54,11 +56,11 @@
 
 (def system-managed-props
   "Props keys managed by the system (not user-writable via RPC)."
-  #{:subscription})
+  #{:subscription :plugins})
 
 (def schema:props
   [:map {:title "ProfileProps" :closed true}
-   [:plugins {:optional true} schema:plugin-registry]
+   [:plugins {:optional true} ctp/schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
    [:mcp-enabled {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
@@ -76,6 +78,10 @@
    [:custom-shortcuts {:optional true}
     [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
    [:nudge {:optional true} schema:nudge]])
+
+(def schema:props-writeable
+  "Props schema for user-writable fields (excludes system-managed keys)."
+  (reduce sm/dissoc-key schema:props system-managed-props))
 
 (def schema:profile
   [:map {:title "Profile"}
@@ -219,6 +225,12 @@
 
     (update-profile-password! cfg (assoc profile :password password))
 
+    (eml/send cfg {::eml/reuse-conn true
+                   ::eml/factory eml/password-changed
+                   :public-uri (cf/get :public-uri)
+                   :to (:email profile)
+                   :name (:fullname profile)})
+
     (->> (rph/get-request params)
          (session/get-session)
          (session/invalidate-others cfg))
@@ -273,7 +285,8 @@
 
         props
         (-> (get profile :props)
-            (assoc :notifications notifications))]
+            (assoc :notifications notifications)
+            (check-props-size))]
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
@@ -294,6 +307,7 @@
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
    ::sm/params schema:update-profile-photo
+   ::rpc/multipart-only-params [:file]
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
@@ -447,14 +461,14 @@
                 :email (:email profile)
                 :hint "looks like the email has spam complaint reports"))
 
-    (eml/send! {::eml/conn conn
-                ::eml/factory eml/change-email
-                :public-uri (cf/get :public-uri)
-                :to (:email profile)
-                :name (:fullname profile)
-                :pending-email email
-                :token token
-                :extra-data ptoken})
+    (eml/send cfg {::eml/reuse-conn true
+                   ::eml/factory eml/change-email
+                   :public-uri (cf/get :public-uri)
+                   :to (:email profile)
+                   :name (:fullname profile)
+                   :pending-email email
+                   :token token
+                   :extra-data ptoken})
     nil))
 
 ;; --- MUTATION: Update Profile Props
@@ -462,20 +476,48 @@
 (def ^:private
   schema:update-profile-props
   [:map {:title "update-profile-props"}
-   [:props schema:props]])
+   [:props schema:props-writeable]])
+
+(def default-props-max-size
+  "Default total serialized size limit (in bytes) for profile props.
+  Overridable with the :profile-props-max-size config entry."
+  (* 1024 1024 2)) ;; 2 MiB
+
+(defn- props-size
+  "Returns the serialized size in UTF-8 bytes of the props map."
+  [props]
+  (if props
+    (alength ^bytes (t/encode props {:type :json-verbose}))
+    0))
+
+(defn check-props-size
+  "Raises :props-too-large when props exceed the total size limit.
+  Returns props unchanged so it can be threaded into the write.
+
+  Used by the user-facing props writers; system writers (OIDC login,
+  management subscription) write fixed-key props and skip it."
+  [props]
+  (let [limit (cf/get :profile-props-max-size default-props-max-size)
+        size  (props-size props)]
+    (when (> size limit)
+      (ex/raise :type :validation
+                :code :props-too-large
+                :hint "profile props exceed maximum size"))
+    props))
 
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
   (let [profile (get-profile conn profile-id ::db/for-update true)
-        props   (reduce-kv (fn [props k v]
-                             ;; We don't accept namespaced keys
-                             (if (simple-ident? k)
-                               (if (nil? v)
-                                 (dissoc props k)
-                                 (assoc props k v))
-                               props))
-                           (:props profile)
-                           (apply dissoc props system-managed-props))]
+        props   (->> (apply dissoc props system-managed-props)
+                     (reduce-kv (fn [props k v]
+                                  ;; We don't accept namespaced keys
+                                  (if (simple-ident? k)
+                                    (if (nil? v)
+                                      (dissoc props k)
+                                      (assoc props k v))
+                                    props))
+                                (:props profile))
+                     (check-props-size))]
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
@@ -499,7 +541,8 @@
   {::doc/added "1.0"
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (let [teams      (get-owned-teams conn profile-id)
+  (let [profile    (db/get* conn :profile {:id profile-id} {::db/remove-deleted false})
+        teams      (get-owned-teams conn profile-id)
         deleted-at (ct/now)]
 
     ;; If we found owned teams with participants, we don't allow
@@ -529,17 +572,23 @@
                     {:profile-id profile-id}))
 
     ;; Schedule cascade deletion to a worker
-    (wrk/submit! {::db/conn conn
-                  ::wrk/task :delete-object
-                  ::wrk/params {:object :profile
-                                :deleted-at deleted-at
-                                :id profile-id}})
+    (jobs/submit cfg
+                 {::jobs/name :delete-object
+                  ::jobs/params {:object :profile
+                                 :deleted-at deleted-at
+                                 :id profile-id}})
 
     ;; Invalidate all sessions for this profile to ensure immediate
     ;; access revocation across all devices
     (session/invalidate-all cfg profile-id)
 
     (-> (rph/wrap nil)
+        (rph/with-meta {::audit/props {:id (:id profile)
+                                       :email (:email profile)
+                                       :fullname (:fullname profile)
+                                       :created-at (:created-at profile)
+                                       :modified-at (:modified-at profile)
+                                       :deleted-at deleted-at}})
         (rph/with-transform (session/delete-fn cfg)))))
 
 (def sql:get-subscription-editors
@@ -648,8 +697,41 @@
   [props]
   (into {} (filter (fn [[k _]] (simple-ident? k))) props))
 
+(defn- truncate-string
+  "Cuts s to at most n chars without splitting a surrogate pair."
+  [^String s n]
+  (if (> (count s) n)
+    (let [n (if (Character/isHighSurrogate (.charAt s (dec n))) (dec n) n)]
+      (subs s 0 n))
+    s))
+
+(defn- clamp-plugin-entry
+  [entry]
+  (reduce-kv (fn [entry k n]
+               (let [v (get entry k)]
+                 (if (and (string? v) (> (count v) n))
+                   (assoc entry k (truncate-string v n))
+                   entry)))
+             entry
+             ctp/registry-entry-max-lengths))
+
+(defn clamp-plugins-registry
+  "Fits a plugin registry into the registry schema caps: keeps the
+  first `ctp/max-plugins` plugins with data and truncates the bounded
+  strings. Applied on read, so a stored registry over the caps cannot
+  keep the profile over the props size limit."
+  [{:keys [ids data] :as plugins}]
+  (let [ids  (->> ids
+                  (filter #(contains? data %))
+                  (distinct)
+                  (take ctp/max-plugins)
+                  (vec))
+        data (update-vals (select-keys data ids) clamp-plugin-entry)]
+    (assoc plugins :ids ids :data data)))
+
 (defn decode-row
   [{:keys [props] :as row}]
   (cond-> row
     (db/pgobject? props "jsonb")
-    (assoc :props (db/decode-transit-pgobject props))))
+    (assoc :props (-> (db/decode-transit-pgobject props)
+                      (d/update-when :plugins #(cond-> % (map? %) (clamp-plugins-registry)))))))

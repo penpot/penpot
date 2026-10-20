@@ -9,6 +9,7 @@ repository via GraphQL and REST APIs through the authenticated `gh` CLI.
 - Finding issues with no milestone.
 - Fetching PR details by number or by milestone.
 - Comparing milestone issues against CHANGES.md to find missing entries.
+- Explicitly linking a GitHub issue to a pull request.
 - Listing or inspecting GitHub Security Advisories (GHSA).
 
 ## Prerequisites
@@ -48,11 +49,13 @@ python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
 - Issues with type "Task" are excluded (`--include-tasks` to keep them).
 - Issues with "Rejected" project status are excluded (`--include-rejected` to keep them).
 
+Every issue entry carries `assignees` (logins) and `projects` (board titles); every PR entry carries `assignees`.
+
 **Output**: JSON array to stdout; progress to stderr.
 
 ### `prs`
 
-Fetch PR details by number or by milestone.
+Fetch PR details by number or by milestone. Every entry includes a `milestone` field (title or null).
 
 ```bash
 # Fetch specific PRs
@@ -72,6 +75,23 @@ python3 scripts/gh.py prs --milestone "2.16.0" --state all
 ```
 
 **Output**: JSON array to stdout; progress to stderr.
+
+### `issue`
+
+Fetch issue details by number in batches of 50 (same input styles as `prs`: numbers, `--file`, `--stdin`). No filters. A dead number fails its whole batch (unlike PRs, issues error instead of resolving to null), so the batch falls back to one-by-one lookups and reports misses as `{"number", "error": "not_found"}`. Any other failure aborts.
+
+**Output**: JSON array to stdout; progress to stderr.
+
+### `link-issue`
+
+Explicitly assign a GitHub issue to a pull request:
+
+```bash
+python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
+# Short alias: python3 scripts/gh.py link <ISSUE_NUMBER> <PR_NUMBER>
+```
+
+The command resolves both node IDs and calls `addCloseIssueReferences`. It trusts the successful mutation instead of re-querying, because GitHub does not reliably report mutation-created links through `closedByPullRequestsReferences(userLinkedOnly: true)`. It is safe to rerun, works for merged PRs, and does not close an issue retroactively. JSON goes to stdout; progress and errors go to stderr; a missing issue/PR or a failed mutation exits non-zero.
 
 ### `advisories`
 
@@ -99,7 +119,11 @@ python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 
 ## Key principles
 
+- `issues --compare` collects every `#NNNN` token in the file regardless of its link target, so a same-numbered reference to another tracker (e.g. `[Taiga #12312](...)`) or an inline prose number falsely marks that GitHub issue as already listed; verify against `changelog.py cross-ref` when a number collides.
+- Changelog-specific checks (merge-status verification, milestone-vs-changelog cross-reference, anomaly report) live in `scripts/changelog.py`, which calls this script via subprocess — see `mem:scripts/changelog`.
+
 - All output is JSON — pipe into `jq` or other tools for further processing.
+- Transient HTTP 504 responses from `gh` are retried automatically (3 attempts, 5s/15s backoff); any other error fails fast with no retry.
 - Milestone lookup is by exact title match.
 - `issues` subcommand auto-paginates (100 items per page).
 - `prs` subcommand batches PR number lookups (50 per GraphQL query).

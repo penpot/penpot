@@ -1,6 +1,7 @@
 ---
 name: create-issue
 description: Create or update GitHub issues (from PR, from draft body, retitle existing). Routes to the canonical flow in `mem:workflow/creating-issues`.
+slash: true
 ---
 
 # Skill: create-issue

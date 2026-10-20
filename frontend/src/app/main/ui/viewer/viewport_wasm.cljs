@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.viewer.viewport-wasm
   (:require-macros [app.main.style :as stl])
@@ -49,7 +49,9 @@
   (let [{:keys [width height]} (canvas-dimensions scale size)]
     [:div {:style {:position "absolute"
                    :top 0
-                   :left 0}}
+                   :left 0
+                   :width (:width size)
+                   :height (:height size)}}
      [:canvas {:ref canvas-ref :width width :height height :style {:width "100%"
                                                                    :height "100%"
                                                                    :background "transparent"

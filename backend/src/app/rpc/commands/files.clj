@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.files
   (:require
@@ -14,6 +14,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.files.stats :as cfs]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
@@ -21,6 +22,8 @@
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.plugins :as ctpg]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
@@ -28,6 +31,7 @@
    [app.features.fdata :as feat.fdata]
    [app.features.logical-deletion :as ldel]
    [app.http.sse :as sse]
+   [app.jobs :as jobs]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
@@ -43,7 +47,6 @@
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 ;; --- FEATURES
@@ -520,18 +523,29 @@
 
         components-sample
         (-> (sample-assets components 4)
-            (update :sample load-objects))]
+            (update :sample load-objects))
+
+        tokens-lib         (cfo/get-tokens-lib data)
+        tokens-count       (if (some? tokens-lib) (count (ctob/get-all-tokens tokens-lib)) 0)
+        token-sets-count   (if (some? tokens-lib) (count (ctob/get-sets tokens-lib)) 0)
+        token-themes-count (if (some? tokens-lib) (count (ctob/get-themes-no-hidden tokens-lib)) 0)]
 
     {:components components-sample
      :variants {:count (count variant-ids)}
      :colors (sample-assets (:colors data) 3)
-     :typographies (sample-assets (:typographies data) 3)}))
+     :typographies (sample-assets (:typographies data) 3)
+     :tokens-count tokens-count
+     :token-sets-count token-sets-count
+     :token-themes-count token-themes-count}))
 
 (def ^:private file-summary-cache-key-ttl
   (ct/duration {:days 30}))
 
-(def file-summary-cache-key-prefix
-  "penpot.library-summary.")
+(defn file-summary-cache-key
+  "Build the redis cache key for the file library summary. The tenant is
+   included to prevent key collisions between tenants sharing a redis instance"
+  [id]
+  (str "penpot.library-summary." (cf/get :tenant) "." id))
 
 (defn- get-file-with-summary
   "Get a file without data with a summary of its local library content"
@@ -560,7 +574,7 @@
                    (rds/build-set-args {:ex file-summary-cache-key-ttl})))]
 
     (if (contains? cf/flags :redis-cache)
-      (let [cache-key (str file-summary-cache-key-prefix id)]
+      (let [cache-key (file-summary-cache-key id)]
         (or (rds/run! cfg get-from-cache cache-key)
             (let [file (calculate-from-db)]
               (rds/run! cfg persist-to-cache (:library-summary file) cache-key)
@@ -706,6 +720,53 @@
   [cfg {:keys [::rpc/profile-id id]}]
   (check-read-permissions! cfg profile-id id)
   (get-file-stats cfg id))
+
+
+;; --- COMMAND QUERY: get-file-plugin-data
+
+(def ^:private schema:get-file-plugin-data
+  [:map {:title "get-file-plugin-data"}
+   [:id ::sm/uuid]
+   [:namespace {:optional true} :keyword]])
+
+(sv/defmethod ::get-file-plugin-data
+  "Return the file-level plugin data: the arbitrary key/value metadata
+   stored on the file root through the Plugin API. Optionally narrowed
+   to a single `namespace`. Lets external tooling read metadata such as
+   issue or commit references without downloading the whole file."
+  {::doc/added "2.20"
+   ::sm/params schema:get-file-plugin-data
+   ::sm/result ctpg/schema:plugin-data
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id namespace]}]
+  (check-read-permissions! conn profile-id id)
+  (let [plugin-data (-> (bfc/get-file cfg id)
+                        (get-in [:data :plugin-data]))]
+    (if namespace
+      (select-keys plugin-data [namespace])
+      (or plugin-data {}))))
+
+;; --- COMMAND QUERY: get-file-tokens
+
+(def ^:private schema:get-file-tokens
+  [:map {:title "get-file-tokens"}
+   [:file-id ::sm/uuid]])
+
+(sv/defmethod ::get-file-tokens
+  "Return the design tokens of a file as a DTCG document, or nil when
+   the file has none. Active themes and sets come from the file's
+   tokens status. Cheap alternative to `get-file` when only the tokens
+   are needed."
+  {::doc/added "2.20"
+   ::sm/params schema:get-file-tokens
+   ::sm/result [:maybe [:map-of :string :any]]}
+  [cfg {:keys [::rpc/profile-id file-id]}]
+  (bfc/check-file-exists cfg file-id)
+  (check-read-permissions! cfg profile-id file-id)
+  (let [{:keys [data]} (bfc/get-file cfg file-id)]
+    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+      (when-let [tokens-lib (cfo/get-tokens-lib data)]
+        (ctob/export-dtcg-json tokens-lib (cfo/get-tokens-status data))))))
 
 
 ;; --- COMMAND QUERY: get-file-libraries
@@ -927,7 +988,11 @@
     (let [file (-> (bfc/get-file cfg file-id
                                  :include-deleted? true
                                  :lock-for-update? true)
-                   (update :data ctf/absorb-assets ldata))]
+                   (update :data ctf/absorb-assets ldata)
+                   (update :data (fn [data]
+                                   (cond-> data
+                                     (cfo/effective-tokens-source? data (:id ldata))
+                                     (cfo/absorb-tokens-lib ldata)))))]
 
       (l/trc :hint "library absorbed"
              :library-id (str (:id ldata))
@@ -940,16 +1005,21 @@
                              :modified-at (ct/now)
                              :has-media-trimmed false}))))
 
+(defn- get-referenced-files
+  [cfg library-id]
+  (->> (db/exec! cfg [sql:get-referenced-files library-id])
+       (into [] bfc/xf-map-id)))
+
 (defn- absorb-library*
-  "Find all files using a shared library, and absorb all library assets
-  into the file local libraries"
-  [cfg {:keys [id data] :as library}]
+  "Absorb all library assets, and its tokens lib if it is their tokens
+  source, into the local libraries of the files that use it. The files
+  are the given file-ids, or the ones linked to the library if nil."
+  [cfg {:keys [id data] :as library} file-ids]
 
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
-  (let [ids (->> (db/exec! cfg [sql:get-referenced-files id])
-                 (sequence bfc/xf-map-id))]
+  (let [ids (or file-ids (get-referenced-files cfg id))]
 
     (l/trc :hint "absorbing library"
            :library-id (str id)
@@ -959,7 +1029,9 @@
     library))
 
 (defn absorb-library
-  [{:keys [::db/conn] :as cfg} id]
+  "Absorb the library into the files that use it. The files are the given
+  file-ids, or the ones linked to the library if omitted."
+  [{:keys [::db/conn] :as cfg} id & {:keys [file-ids]}]
   (let [file (-> (bfc/get-file cfg id
                                :realize? true
                                :lock-for-update? true
@@ -975,7 +1047,7 @@
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-file-features! (:features file)))
 
-    (absorb-library* cfg file)))
+    (absorb-library* cfg file file-ids)))
 
 (defn- set-file-shared
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
@@ -1042,23 +1114,28 @@
 ;; --- MUTATION COMMAND: delete-file
 
 (defn- mark-file-deleted
-  [conn team file-id]
+  [{:keys [::db/conn] :as cfg} team file-id]
   (let [delay (ldel/get-deletion-delay team)
         file  (db/update! conn :file
                           {:deleted-at (ct/in-future delay)}
                           {:id file-id}
                           {::db/return-keys [:id :name :is-shared :deleted-at
-                                             :project-id :created-at :modified-at]})]
+                                             :project-id :created-at :modified-at]})
+        ;; Files using the library, captured before their relations are removed
+        file-ids (when (:is-shared file)
+                   (get-referenced-files conn file-id))]
 
     ;; Remove all possible relations for that file
     (db/delete! conn :file-library-rel
                 {:library-file-id file-id})
 
-    (wrk/submit! {::db/conn conn
-                  ::wrk/task :delete-object
-                  ::wrk/params {:object :file
-                                :deleted-at (:deleted-at file)
-                                :id file-id}})
+    (jobs/submit cfg
+                 {::jobs/name :delete-object
+                  ::jobs/params (cond-> {:object :file
+                                         :deleted-at (:deleted-at file)
+                                         :id file-id}
+                                  (some? file-ids)
+                                  (assoc :file-ids file-ids))})
     file))
 
 (def ^:private
@@ -1072,7 +1149,7 @@
   (let [team (teams/get-team conn
                              :profile-id profile-id
                              :file-id id)
-        file (mark-file-deleted conn team id)
+        file (mark-file-deleted cfg team id)
         msgbus (::mbus/msgbus cfg)]
 
     (mbus/pub! msgbus
@@ -1082,10 +1159,12 @@
                          :profile-id profile-id})
 
     (rph/with-meta (rph/wrap)
-      {::audit/props {:project-id (:project-id file)
+      {::audit/props {:team-id (:id team)
+                      :project-id (:project-id file)
                       :name (:name file)
                       :created-at (:created-at file)
-                      :modified-at (:modified-at file)}})))
+                      :modified-at (:modified-at file)
+                      :deleted-at (:deleted-at file)}})))
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
@@ -1252,7 +1331,7 @@
    [:ids [::sm/set ::sm/uuid]]])
 
 (defn- permanently-delete-team-files
-  [{:keys [::db/conn]} {:keys [::rpc/request-at team-id ids]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/request-at team-id ids]}]
   (let [ids (into #{}
                   d/xf:map-id
                   (db/exec! conn [sql:get-delete-team-files-candidates team-id
@@ -1264,11 +1343,11 @@
                           {:deleted-at request-at}
                           {:id id}
                           {::db/return-keys false})
-              (wrk/submit! {::db/conn conn
-                            ::wrk/task :delete-object
-                            ::wrk/params {:object :file
-                                          :deleted-at request-at
-                                          :id id}})
+              (jobs/submit cfg
+                           {::jobs/name :delete-object
+                            ::jobs/params {:object :file
+                                           :deleted-at request-at
+                                           :id id}})
               (conj acc id))
             #{}
             ids)))
@@ -1305,8 +1384,16 @@
     WHERE file_id = ANY(?::uuid[])")
 
 (def ^:private sql:restore-file-changes
+  ;; Only durable history comes back: a snapshot (carries `label`) or a legacy
+  ;; payload row (carries `data`, the column the new model replaces with
+  ;; `file_data`). Revisions have neither and are deliberately left alone: they
+  ;; are born already scheduled for deletion one hour later, and the collector
+  ;; only looks at rows that carry a date, so unmarking one here would keep it
+  ;; in the table for ever. The `data` half is a guard for the rows still
+  ;; pending migration, not a dependency: drop it with the last one.
   "UPDATE file_change SET deleted_at = null
-    WHERE file_id = ANY(?::uuid[])")
+    WHERE file_id = ANY(?::uuid[])
+      AND (label IS NOT NULL OR data IS NOT NULL)")
 
 (def ^:private sql:restore-file-data
   "UPDATE file_data SET deleted_at = null
@@ -1320,6 +1407,40 @@
   "UPDATE file_tagged_object_thumbnail SET deleted_at = null
     WHERE file_id = ANY(?::uuid[])")
 
+(def ^:private sql:restore-storage-objects
+  "WITH ids AS (SELECT unnest(?::uuid[]) AS file_id)
+
+   UPDATE storage_object
+      SET deleted_at = null
+    WHERE deleted_at IS NOT NULL
+      AND (id IN (SELECT media_id
+                    FROM file_media_object AS fmo
+                    JOIN ids ON (ids.file_id = fmo.file_id)
+                   WHERE fmo.deleted_at IS NULL
+                     AND fmo.media_id IS NOT NULL
+                  UNION
+                  SELECT thumbnail_id
+                    FROM file_media_object AS fmo
+                    JOIN ids ON (ids.file_id = fmo.file_id)
+                   WHERE fmo.deleted_at IS NULL
+                     AND fmo.thumbnail_id IS NOT NULL
+                  UNION
+                  SELECT ft.media_id
+                    FROM file_thumbnail AS ft
+                    JOIN ids ON (ids.file_id = ft.file_id)
+                   WHERE ft.deleted_at IS NULL
+                     AND ft.media_id IS NOT NULL
+                  UNION
+                  SELECT fot.media_id
+                    FROM file_tagged_object_thumbnail AS fot
+                    JOIN ids ON (ids.file_id = fot.file_id)
+                   WHERE fot.deleted_at IS NULL
+                     AND fot.media_id IS NOT NULL)
+           OR id::text IN (SELECT fd.metadata->>'storage-ref-id'
+                             FROM file_data AS fd
+                             JOIN ids ON (ids.file_id = fd.file_id)
+                            WHERE fd.deleted_at IS NULL))")
+
 (defn- restore-files
   [conn file-ids]
   (let [file-ids (db/create-array conn "uuid" file-ids)]
@@ -1328,7 +1449,13 @@
     (db/exec-one! conn [sql:restore-file-changes file-ids])
     (db/exec-one! conn [sql:restore-file-data file-ids])
     (db/exec-one! conn [sql:restore-file-thumbnails file-ids])
-    (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])))
+    (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])
+
+    ;; NOTE: the storage objects referenced by the rows we just brought back
+    ;; must stop being marked for deletion. The storage GC cannot delete an
+    ;; object that a live row references (those foreign keys are `NO ACTION`),
+    ;; so a marked object that comes back to life is skipped forever otherwise.
+    (db/exec-one! conn [sql:restore-storage-objects file-ids])))
 
 (def ^:private sql:restore-projects
   "UPDATE project SET deleted_at = null WHERE id = ANY(?::uuid[])")

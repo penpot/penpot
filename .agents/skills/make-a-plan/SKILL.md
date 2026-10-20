@@ -1,6 +1,7 @@
 ---
 name: make-a-plan
-description: Planning flow — research the subject of this session, produce an implementation plan with the planner skill, resolve open questions with the user in plain language, and save the final plan to .agents/plans/. Use it when the user asks to plan, design, or break down a task, in any phrasing.
+description: Planning flow — research the subject of this session, produce an implementation plan with the planner skill, resolve open questions with the user in plain language, and save the final plan to .agents/plans/.
+slash: true
 ---
 
 # Make a Plan
@@ -106,9 +107,6 @@ the final response by suggesting the next steps, in this order:
 These are suggestions, not a required pipeline — any instruction from me
 overrides them (for example, asking you to implement the plan directly).
 
-## User context
+## User input, overrides and additional context
 
-Extra context in the user's invocation (the message that triggered this skill)
-plays the role command arguments play elsewhere: for example, `delegated` to
-hand the research and drafting to the `general` subagent, or corrections and
-feedback about a previous plan.
+$ARGUMENTS

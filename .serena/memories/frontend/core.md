@@ -37,6 +37,7 @@ See `mem:scripts/paren-repair`.
 UI and packages:
 - App UI components, SCSS modules, style-system boundaries, accessibility, i18n, and render performance: `mem:frontend/ui-conventions-and-style-system`.
 - JS/TS packages, shared UI package, text editor, Storybook, and package builds: `mem:frontend/ui-packages-text-editor-workflow`.
+- PO translation workflow and per-locale conventions: `mem:frontend/translations`.
 
 Workspace behavior:
 - Workspace state, commits, persistence, undo, repo calls, and refs: `mem:frontend/workspace-state-persistence-subtleties`.

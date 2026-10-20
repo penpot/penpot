@@ -20,11 +20,19 @@
 
 `./build` sources `_build_env`, which sets the Emscripten paths and `EMCC_CFLAGS`. The WASM heap starts at 256 MB and uses geometric growth.
 
+- Linux builds require `flock` (util-linux).
+- `build`, target cleanup, and each watch rebuild share `render-wasm/.render-wasm-build.lock` per checkout. The dispatcher for both targets does not hold the lock in its parent process.
+- The lock covers setup, Cargo build, and artifact copy. The watch process releases it while waiting for changes. The operating system releases it on success, error, or signal; the file remains.
+- The lock only coordinates repository scripts. Manual Cargo commands do not take it.
+- Set `RENDER_WASM_LOCK_FILE` to the same path only when separate checkouts intentionally share a `CARGO_TARGET_DIR`.
+- Build output is gitignored and stays untracked everywhere it lands: `frontend/resources/public/js/render-wasm.{js,wasm}` and `frontend/src/app/render_wasm/api/shared.js` from `./build`, plus `exporter/resources/wasm/render-wasm.{js,wasm}` and `exporter/src/app/wasm/shared.js`. Never commit generated JS/WASM; rebuild instead.
+
 ## Commands
 
 From `render-wasm/`:
-- Build/copy frontend artifacts: `./build`.
-- Watch rebuild: `./watch`.
+- Build/copy frontend artifacts: `./build [frontend|export]`; no target builds frontend, then export.
+- Clean one target: `./clean [frontend|export]`; never run root `cargo clean` on the shared `target/`.
+- Watch rebuild: `./watch [frontend|export]`; its initial and change-triggered builds use `./build`.
 - Rust tests: `./test` or `cargo test <name>`.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Lint: `./lint`.

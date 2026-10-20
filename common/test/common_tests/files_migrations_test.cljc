@@ -2,15 +2,26 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.files-migrations-test
   (:require
    [app.common.data :as d]
    [app.common.files.migrations :as cfm]
+   [app.common.files.tokens :as cfo]
+   [app.common.test-helpers.components :as thk]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.variants :as thv]
    [app.common.types.file :as ctf]
+   [app.common.types.shape :as cts]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
+
+(t/use-fixtures :each thi/test-fixture)
 
 (defmethod cfm/migrate-data "test/1" [data _] (update data :sum inc))
 (defmethod cfm/migrate-data "test/2" [data _] (update data :sum inc))
@@ -73,3 +84,669 @@
     (let [shape (get-in data' [:pages-index page-id :objects shape-id])]
       (t/is (nil? (:stroke-cap-start shape)) "top-level cap removed even with no strokes")
       (t/is (nil? (:stroke-cap-end shape)) "top-level cap removed even with no strokes"))))
+
+(t/deftest migration-0028-normalizes-constrained-shape-values
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-id (uuid/next)
+        shape     (-> (cts/setup-shape {:id shape-id :type :frame})
+                      (assoc :r1 -1
+                             :r2 -2
+                             :r3 -3
+                             :r4 -4
+                             :layout-gap {:row-gap -5 :column-gap -6}
+                             :layout-padding {:p1 -7 :p2 -8 :p3 -9 :p4 -10}
+                             :layout-grid-rows [{:type :fixed :value -11}]
+                             :layout-grid-columns [{:type :percent :value -12}]
+                             :layout-item-min-w -13
+                             :layout-item-max-w -14
+                             :layout-item-min-h -15
+                             :layout-item-max-h -16
+                             :strokes [{:stroke-color "#000000"
+                                        :stroke-width -17
+                                        :stroke-width-top -18
+                                        :stroke-width-right -19
+                                        :stroke-width-bottom -20
+                                        :stroke-width-left -21}]
+                             :shadow [{:id nil
+                                       :style :drop-shadow
+                                       :offset-x 0
+                                       :offset-y 0
+                                       :blur -22
+                                       :spread 0
+                                       :hidden false
+                                       :color {:color "#000000" :opacity 1}}]
+                             :blur {:id (uuid/next)
+                                    :type :layer-blur
+                                    :value -23
+                                    :hidden false}
+                             :background-blur {:id (uuid/next)
+                                               :type :background-blur
+                                               :value -24
+                                               :hidden false}
+                             :exports [{:type :png :scale 0 :suffix ""}]
+                             :grids [{:type :square
+                                      :display true
+                                      :params {:size 0
+                                               :color {:color "#000000" :opacity 1}}}
+                                     {:type :column
+                                      :display true
+                                      :params {:size -25
+                                               :color {:color "#000000" :opacity 1}}}]))
+        data      (-> (ctf/make-file-data file-id page-id)
+                      (assoc-in [:pages-index page-id :objects shape-id] shape))]
+
+    (t/is (thrown? #?(:clj Exception :cljs js/Error)
+                   (ctf/check-file-data data))
+          "new schemas reject legacy negative values")
+
+    (let [data'  (cfm/migrate-data data "0028-normalize-constrained-values")
+          shape' (get-in data' [:pages-index page-id :objects shape-id])]
+      (t/is (= data' (ctf/check-file-data data')) "migrated file data passes the schema")
+      (t/is (every? zero? (map #(get shape' %) [:r1 :r2 :r3 :r4])) "corner radii clamped")
+      (t/is (= {:row-gap 0 :column-gap 0} (:layout-gap shape')) "layout gaps clamped")
+      (t/is (= {:p1 0 :p2 0 :p3 0 :p4 0} (:layout-padding shape')) "layout padding clamped")
+      (t/is (= [0] (mapv :value (:layout-grid-rows shape'))) "row tracks clamped")
+      (t/is (= [0] (mapv :value (:layout-grid-columns shape'))) "column tracks clamped")
+      (t/is (every? zero?
+                    (map #(get shape' %)
+                         [:layout-item-min-w :layout-item-max-w
+                          :layout-item-min-h :layout-item-max-h]))
+            "layout item bounds clamped")
+      (t/is (every? zero?
+                    (map (first (:strokes shape'))
+                         [:stroke-width :stroke-width-top :stroke-width-right
+                          :stroke-width-bottom :stroke-width-left]))
+            "stroke widths clamped")
+      (t/is (zero? (get-in shape' [:shadow 0 :blur])) "shadow blur clamped")
+      (t/is (zero? (get-in shape' [:blur :value])) "layer blur clamped")
+      (t/is (zero? (get-in shape' [:background-blur :value])) "background blur clamped")
+      (t/is (= 1 (get-in shape' [:exports 0 :scale])) "export scale reset to default")
+      (t/is (= 0.01 (get-in shape' [:grids 0 :params :size])) "square grid size clamped")
+      (t/is (= 1 (get-in shape' [:grids 1 :params :size])) "column grid count clamped"))))
+
+(t/deftest migration-0028-normalizes-page-grids-and-variant-properties
+  (let [file-id      (uuid/next)
+        page-id      (uuid/next)
+        component-id (uuid/next)
+        long-name    (apply str (repeat 61 "n"))
+        long-value   (apply str (repeat 61 "v"))
+        data          (-> (ctf/make-file-data file-id page-id)
+                          (assoc-in [:pages-index page-id :default-grids]
+                                    {:square {:size -1
+                                              :color {:color "#000000" :opacity 1}}
+                                     :row {:size 0.5
+                                           :color {:color "#000000" :opacity 1}}
+                                     :column {:size -2
+                                              :color {:color "#000000" :opacity 1}}})
+                          (assoc-in [:components component-id]
+                                    {:id component-id
+                                     :name "Variant"
+                                     :variant-properties [{:name long-name
+                                                           :value long-value}]}))
+        data'         (cfm/migrate-data data "0028-normalize-constrained-values")]
+
+    (t/is (= 0.01 (get-in data' [:pages-index page-id :default-grids :square :size]))
+          "default square grid size clamped")
+    (t/is (= 1 (get-in data' [:pages-index page-id :default-grids :row :size]))
+          "default row grid count reset")
+    (t/is (= 1 (get-in data' [:pages-index page-id :default-grids :column :size]))
+          "default column grid count reset")
+    (t/is (= 60 (count (get-in data' [:components component-id :variant-properties 0 :name])))
+          "variant property name truncated")
+    (t/is (= 60 (count (get-in data' [:components component-id :variant-properties 0 :value])))
+          "variant property value truncated")
+    (t/is (= data' (cfm/migrate-data data' "0028-normalize-constrained-values"))
+          "migration is idempotent")))
+
+(t/deftest migration-0028-runs-through-file-migration
+  (let [migration-id "0028-normalize-constrained-values"
+        shape-id     (uuid/next)
+        file         (ctf/make-file {:name "Legacy constrained values"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :r1 -1))
+        file         (-> file
+                         (assoc :migrations (disj cfm/available-migrations migration-id))
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file {})]
+
+    (t/is (cfm/need-migration? file) "new migration detected")
+    (t/is (not (cfm/need-migration? file')) "new migration recorded")
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (zero? (get-in file' [:data :pages-index page-id :objects shape-id :r1]))
+          "migration repaired file data before schema validation")))
+
+(t/deftest migration-0029-moves-background-blur-out-of-blur
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        file-id      (uuid/next)
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        blur-id      (uuid/next)
+        blur         {:id blur-id
+                      :type :background-blur
+                      :value 10
+                      :hidden false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur blur))
+        data         (-> (ctf/make-file-data file-id page-id)
+                         (assoc-in [:pages-index page-id :objects shape-id] shape))]
+
+    (t/is (thrown? #?(:clj Exception :cljs js/Error)
+                   (ctf/check-file-data data))
+          "new schema rejects a background blur stored in :blur")
+
+    (let [data'  (cfm/migrate-data data migration-id)
+          shape' (get-in data' [:pages-index page-id :objects shape-id])]
+      (t/is (nil? (:blur shape')) "mis-typed :blur removed")
+      (t/is (= blur (:background-blur shape'))
+            "background blur moved to its own attribute")
+      (t/is (= data' (ctf/check-file-data data'))
+            "migrated file data passes the schema")
+      (t/is (= data' (cfm/migrate-data data' migration-id))
+            "migration is idempotent"))))
+
+(t/deftest migration-0029-keeps-existing-background-blur
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        existing-bg  {:id (uuid/next)
+                      :type :background-blur
+                      :value 5
+                      :hidden false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur {:id (uuid/next)
+                                       :type :background-blur
+                                       :value 10
+                                       :hidden false}
+                                :background-blur existing-bg))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        shape'       (get-in data' [:pages-index page-id :objects shape-id])]
+
+    (t/is (nil? (:blur shape')) "mis-typed :blur dropped")
+    (t/is (= existing-bg (:background-blur shape'))
+          "existing background blur preserved")))
+
+(t/deftest migration-0029-leaves-layer-blur-untouched
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        blur         {:id (uuid/next)
+                      :type :layer-blur
+                      :value 8
+                      :hidden false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur blur))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        shape'       (get-in data' [:pages-index page-id :objects shape-id])]
+
+    (t/is (= blur (:blur shape')) "layer blur untouched")
+    (t/is (nil? (:background-blur shape')) "no background blur created")))
+
+(t/deftest migration-0029-migrates-component-blurs
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        component-id (uuid/next)
+        shape-id     (uuid/next)
+        blur         {:id (uuid/next)
+                      :type :background-blur
+                      :value 12
+                      :hidden false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur blur))
+        data         {:components {component-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        shape'       (get-in data' [:components component-id :objects shape-id])]
+
+    (t/is (nil? (:blur shape')) "component mis-typed :blur removed")
+    (t/is (= blur (:background-blur shape'))
+          "component background blur moved to its own attribute")))
+
+(t/deftest migration-0029-runs-through-file-migration
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        shape-id     (uuid/next)
+        blur-id      (uuid/next)
+        blur         {:id blur-id
+                      :type :background-blur
+                      :value 10
+                      :hidden false}
+        file         (ctf/make-file {:name "Legacy background blur"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur blur))
+        file         (-> file
+                         (assoc :migrations (disj cfm/available-migrations migration-id))
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file {})]
+
+    (t/is (cfm/need-migration? file) "new migration detected")
+    (t/is (not (cfm/need-migration? file')) "new migration recorded")
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (= blur (get-in file' [:data :pages-index page-id :objects shape-id :background-blur]))
+          "background blur moved before schema validation")
+    (t/is (nil? (get-in file' [:data :pages-index page-id :objects shape-id :blur]))
+          "mis-typed :blur removed")))
+
+(t/deftest migration-0030-removes-stroke-per-side-attr
+  (let [migration-id "0030-remove-stroke-per-side-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        stroke       {:stroke-width 2
+                      :stroke-width-top 2
+                      :stroke-width-right 4
+                      :stroke-width-bottom 3
+                      :stroke-width-left 6
+                      :stroke-color "#000000"
+                      :stroke-per-side true}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :strokes [stroke]))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        shape'       (get-in data' [:pages-index page-id :objects shape-id])
+        stroke'      (first (:strokes shape'))]
+
+    (t/is (nil? (:stroke-per-side stroke')) "obsolete :stroke-per-side removed")
+    (t/is (= (dissoc stroke :stroke-per-side) stroke')
+          "no other stroke attr changed")
+    (t/is (= [2 4 3 6] [(:stroke-width-top stroke')
+                        (:stroke-width-right stroke')
+                        (:stroke-width-bottom stroke')
+                        (:stroke-width-left stroke')])
+          "per-side widths preserved")
+    (t/is (= data' (cfm/migrate-data data' migration-id))
+          "migration is idempotent")))
+
+(t/deftest migration-0030-repairs-strokes-rejected-by-schema
+  (let [migration-id "0030-remove-stroke-per-side-attr"
+        file-id      (uuid/next)
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        stroke       {:stroke-width 1
+                      :stroke-width-top 1
+                      :stroke-width-right 1
+                      :stroke-width-bottom 1
+                      :stroke-width-left 1
+                      :stroke-color "#000000"
+                      :stroke-per-side true}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :strokes [stroke]))
+        data         (-> (ctf/make-file-data file-id page-id)
+                         (assoc-in [:pages-index page-id :objects shape-id] shape))]
+
+    (t/is (thrown? #?(:clj Exception :cljs js/Error)
+                   (ctf/check-file-data data))
+          "new schema rejects a stroke carrying :stroke-per-side")
+
+    (let [data' (cfm/migrate-data data migration-id)]
+      (t/is (= data' (ctf/check-file-data data'))
+            "migrated data passes the schema"))))
+
+(t/deftest migration-0030-repairs-component-strokes
+  (let [migration-id "0030-remove-stroke-per-side-attr"
+        component-id (uuid/next)
+        shape-id     (uuid/next)
+        stroke       {:stroke-width 3
+                      :stroke-width-top 3
+                      :stroke-width-right 5
+                      :stroke-width-bottom 3
+                      :stroke-width-left 3
+                      :stroke-color "#000000"
+                      :stroke-per-side true}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :strokes [stroke]))
+        data         {:components {component-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        stroke'      (get-in data' [:components component-id :objects shape-id :strokes 0])]
+
+    (t/is (nil? (:stroke-per-side stroke'))
+          "obsolete attr removed from a component stroke")
+    (t/is (= 5 (:stroke-width-right stroke'))
+          "component per-side width preserved")))
+
+(t/deftest migration-0030-keeps-strokes-without-the-obsolete-attr
+  (let [migration-id "0030-remove-stroke-per-side-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        stroke       {:stroke-width 2
+                      :stroke-width-top 2
+                      :stroke-width-right 2
+                      :stroke-width-bottom 2
+                      :stroke-width-left 2}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :strokes [stroke]))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}]
+
+    (t/is (= data (cfm/migrate-data data migration-id))
+          "a stroke without the obsolete attr is left untouched")))
+
+(t/deftest migration-0030-keeps-distinct-sides-when-the-attr-was-false
+  (let [migration-id "0030-remove-stroke-per-side-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        ;; The old toggle set the flag to false without equalizing the sides,
+        ;; so the per-side values are the saved design intent and must survive.
+        stroke       {:stroke-width 1
+                      :stroke-width-top 1
+                      :stroke-width-right 8
+                      :stroke-width-bottom 1
+                      :stroke-width-left 1
+                      :stroke-color "#000000"
+                      :stroke-per-side false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :strokes [stroke]))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        stroke'      (get-in (cfm/migrate-data data migration-id)
+                             [:pages-index page-id :objects shape-id :strokes 0])]
+
+    (t/is (nil? (:stroke-per-side stroke')) "obsolete attr removed")
+    (t/is (= 8 (:stroke-width-right stroke'))
+          "distinct side width kept instead of being equalized")))
+
+(t/deftest migration-0030-runs-through-file-migration
+  (let [migration-id "0030-remove-stroke-per-side-attr"
+        shape-id     (uuid/next)
+        stroke       {:stroke-width 5
+                      :stroke-width-top 5
+                      :stroke-width-right 5
+                      :stroke-width-bottom 5
+                      :stroke-width-left 5
+                      :stroke-color "#000000"
+                      :stroke-per-side true}
+        file         (ctf/make-file {:name "Legacy per-side stroke"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :strokes [stroke]))
+        file         (-> file
+                         (assoc :migrations (disj cfm/available-migrations migration-id))
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file {})
+        stroke'      (get-in file' [:data :pages-index page-id :objects shape-id :strokes 0])]
+
+    (t/is (cfm/need-migration? file) "new migration detected")
+    (t/is (not (cfm/need-migration? file')) "new migration recorded")
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (nil? (:stroke-per-side stroke'))
+          "obsolete attr removed before schema validation")
+    (t/is (= 5 (:stroke-width stroke')) "stroke width preserved")))
+
+(t/deftest migration-0031-legacy-applied-token-is-not-recognized-before-migration
+  ;; Reproduces #12016: the editor reads only the per-side token attributes, so
+  ;; a shape carrying the old global `:stroke-width` reference looks unapplied.
+  (let [shape (-> (cts/setup-shape {:id (uuid/next) :type :rect})
+                  (assoc :applied-tokens {:stroke-width "30"}))]
+    (t/is (not (cfo/shapes-token-applied? {:name "30"} [shape]
+                                          ctt/stroke-width-keys))
+          "a legacy applied token is invisible to the token lookup")))
+
+(t/deftest migration-0031-recycles-global-stroke-width-token
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"
+                                                 :fill "red"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        shape'       (get-in (cfm/migrate-data data migration-id)
+                             [:pages-index page-id :objects shape-id])
+        applied'     (:applied-tokens shape')]
+
+    (t/is (nil? (:stroke-width applied')) "legacy key removed")
+    (t/is (= "30" (:stroke-width-top applied')))
+    (t/is (= "30" (:stroke-width-right applied')))
+    (t/is (= "30" (:stroke-width-bottom applied')))
+    (t/is (= "30" (:stroke-width-left applied')))
+    (t/is (= "red" (:fill applied')) "unrelated tokens preserved")
+    (t/is (cfo/shapes-token-applied? {:name "30"} [shape']
+                                     ctt/stroke-width-keys)
+          "the token is recognized after migration")))
+
+(t/deftest migration-0031-keeps-side-token-that-was-already-set
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"
+                                                 :stroke-width-top "10"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        applied'     (get-in (cfm/migrate-data data migration-id)
+                             [:pages-index page-id :objects shape-id :applied-tokens])]
+
+    (t/is (= "10" (:stroke-width-top applied'))
+          "an explicit side reference is not overwritten")
+    (t/is (= "30" (:stroke-width-right applied')))))
+
+(t/deftest migration-0031-repairs-component-shapes
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        component-id (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"}))
+        data         {:components {component-id {:objects {shape-id shape}}}}
+        applied'     (get-in (cfm/migrate-data data migration-id)
+                             [:components component-id :objects shape-id :applied-tokens])]
+
+    (t/is (nil? (:stroke-width applied')) "legacy key removed")
+    (t/is (= "30" (:stroke-width-left applied'))
+          "component side reference created")))
+
+(t/deftest migration-0031-leaves-shapes-without-the-legacy-token
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width-top "30"
+                                                 :stroke-width-right "30"
+                                                 :stroke-width-bottom "30"
+                                                 :stroke-width-left "30"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}]
+
+    (t/is (= data (cfm/migrate-data data migration-id))
+          "a shape without the legacy token is left untouched")))
+
+(t/deftest migration-0031-runs-through-file-migration
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        shape-id     (uuid/next)
+        file         (ctf/make-file {:name "Legacy stroke width token"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"}))
+        file         (-> file
+                         (assoc :migrations (disj cfm/available-migrations migration-id))
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file {})
+        applied'     (get-in file' [:data :pages-index page-id :objects shape-id :applied-tokens])]
+
+    (t/is (cfm/need-migration? file) "new migration detected")
+    (t/is (not (cfm/need-migration? file')) "new migration recorded")
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (= "30" (:stroke-width-top applied'))
+          "legacy token applied to the sides")))
+
+(t/deftest migration-0032-adds-unlisted-children-to-their-parent
+  (let [migration-id "0032-fix-children-not-in-parent"
+        page-id      (uuid/next)
+        parent-id    (uuid/next)
+        listed-id    (uuid/next)
+        unlisted1-id (uuid/next)
+        unlisted2-id (uuid/next)
+        orphan-id    (uuid/next)
+        root         (cts/setup-shape {:id uuid/zero :type :frame :shapes [parent-id orphan-id]})
+        parent       (cts/setup-shape {:id parent-id :type :frame :parent-id uuid/zero
+                                       :shapes [listed-id]})
+        child        (fn [id parent-id]
+                       (cts/setup-shape {:id id :type :rect :parent-id parent-id}))
+        data         {:pages-index
+                      {page-id
+                       {:objects {uuid/zero    root
+                                  parent-id    parent
+                                  listed-id    (child listed-id parent-id)
+                                  unlisted1-id (child unlisted1-id parent-id)
+                                  unlisted2-id (child unlisted2-id parent-id)
+                                  orphan-id    (child orphan-id (uuid/next))}}}}
+        data'        (cfm/migrate-data data migration-id)
+        objects'     (get-in data' [:pages-index page-id :objects])
+        shapes'      (get-in objects' [parent-id :shapes])]
+
+    (t/is (= listed-id (first shapes')) "already listed children keep their place")
+    (t/is (= #{listed-id unlisted1-id unlisted2-id} (set shapes'))
+          "unlisted children added to the parent")
+    (t/is (= 3 (count shapes')) "no duplicated children")
+    (t/is (= [parent-id orphan-id] (get-in objects' [uuid/zero :shapes]))
+          "root unchanged")
+    (t/is (= (get-in data [:pages-index page-id :objects orphan-id])
+             (get objects' orphan-id))
+          "shapes whose parent does not exist are left untouched")
+    (t/is (= data' (cfm/migrate-data data' migration-id))
+          "migration is idempotent")))
+
+(t/deftest migration-0032-adds-unlisted-children-in-components
+  (let [migration-id "0032-fix-children-not-in-parent"
+        component-id (uuid/next)
+        main-id      (uuid/next)
+        child-id     (uuid/next)
+        data         {:components
+                      {component-id
+                       {:objects {main-id  (cts/setup-shape {:id main-id :type :frame :shapes []})
+                                  child-id (cts/setup-shape {:id child-id :type :rect
+                                                             :parent-id main-id})}}}}
+        data'        (cfm/migrate-data data migration-id)]
+
+    (t/is (= [child-id] (get-in data' [:components component-id :objects main-id :shapes])))))
+
+(defn- make-path-shape
+  [shape-id]
+  (cts/setup-shape {:id shape-id
+                    :type :path
+                    :content [{:command :move-to :params {:x 10 :y 20}}
+                              {:command :line-to :params {:x 110 :y 70}}]}))
+
+(t/deftest migration-legacy-6-repairs-paths-without-points
+  (let [migration-id "legacy-6"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (make-path-shape shape-id)]
+
+    (doseq [points [nil []]]
+      (let [data   {:pages-index {page-id {:objects {shape-id (assoc shape :points points)}}}}
+            data'  (cfm/migrate-data data migration-id)
+            shape' (get-in data' [:pages-index page-id :objects shape-id])]
+
+        (t/is (= (:points shape) (:points shape'))
+              (str "points rebuilt from content when they were " (pr-str points)))
+        (t/is (= (:selrect shape) (:selrect shape'))
+              "selrect rebuilt from content")))))
+
+(t/deftest migration-legacy-6-runs-through-file-migration
+  ;; A file saved before version 6 runs every migration from legacy-6 on,
+  ;; and the whole chain must succeed for the file to load.
+  (let [migration-id "legacy-6"
+        shape-id     (uuid/next)
+        file         (ctf/make-file {:name "Legacy path without points"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (make-path-shape shape-id)
+                         (assoc :points []))
+        file         (-> file
+                         (dissoc :migrations)
+                         (assoc :version 5)
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file (delay {}))]
+
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (= 4 (count (get-in file' [:data :pages-index page-id :objects shape-id :points])))
+          "path points repaired before schema validation")))
+
+(t/deftest migration-0033-normalize-main-instance-diff-from-component
+  (let [migration-id "0033-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-simple-component :component1 :root1 :child1
+                                                   :component-params {:path "Group / Subgroup"
+                                                                      :name "Name"}
+                                                   :root-params {:name "Group/Subgroup   /   Name"})
+                         (tho/add-simple-component :component2 :root2 :child2
+                                                   :component-params {:path "Group / Subgroup"
+                                                                      :name "Other Name"}
+                                                   :root-params {:name "Group / Subgroup / Other Name"})
+                         (ths/add-sample-shape :shape1 :name "Other Group/Other Subgroup  /  Other Name"))
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        shape1'      (ths/get-shape file' :shape1)]
+
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Name" (:name component1')))
+    (t/is (= "Group / Subgroup / Name" (:name root1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Other Name" (:name component2')))
+    (t/is (= "Group / Subgroup / Other Name" (:name root2')))
+    (t/is (= "Other Group/Other Subgroup  /  Other Name" (:name shape1')))))
+
+(t/deftest migration-0033-normalize-variant-instance-diff-from-container
+  (let [migration-id "0033-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                         (ths/update-shape :variant1 :name "Group / Subgroup / Component")
+                         (ths/update-shape :root1 :name "Group / Subgroup / Component")
+                         (ths/update-shape :root2 :name "Group  /  Subgroup/Component")  ;; Bad path
+                         (thk/update-component :component1 {:path "Group / Subgroup" :name "Component"})
+                         (thk/update-component :component2 {:path "Group / Subgroup" :name "Component"})
+                         (thk/instantiate-component :component2 :copy2)
+                         (ths/update-shape :copy2 :name "Group  /  Subgroup/Component"))  ;; Allowed name in copies
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        variant1'    (ths/get-shape file' :variant1)
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        copy2'       (ths/get-shape file' :copy2)]
+
+    (t/is (= "Group / Subgroup / Component" (:name variant1')))
+    (t/is (= "Group / Subgroup / Component" (:name root1')))
+    (t/is (= "Group / Subgroup / Component" (:name root2')))
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Component" (:name component1')))
+    (t/is (= "Component" (:name component2')))
+    (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
+
+(t/deftest migration-0033-normalize-variant-name-not-normalized
+  (let [migration-id "0033-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                         (ths/update-shape :variant1 :name "Group/Subgroup  /  Component")
+                         (ths/update-shape :root1 :name "Group/Subgroup  /  Component")
+                         (ths/update-shape :root2 :name "Group/Subgroup  /  Component")  ;; Bad path
+                         (thk/update-component :component1 {:path "Group / Subgroup" :name "Component"})
+                         (thk/update-component :component2 {:path "Group / Subgroup" :name "Component"})
+                         (thk/instantiate-component :component2 :copy2)
+                         (ths/update-shape :copy2 :name "Group  /  Subgroup/Component"))  ;; Allowed name in copies
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        variant1'    (ths/get-shape file' :variant1)
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        copy2'       (ths/get-shape file' :copy2)]
+
+    (t/is (= "Group / Subgroup / Component" (:name variant1')))
+    (t/is (= "Group / Subgroup / Component" (:name root1')))
+    (t/is (= "Group / Subgroup / Component" (:name root2')))
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Component" (:name component1')))
+    (t/is (= "Component" (:name component2')))
+    (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))

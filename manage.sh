@@ -69,7 +69,7 @@ PENPOT_PORT_BASE_STORYBOOK=${PENPOT_STORYBOOK_PORT:?missing in defaults.env}
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
-export IMAGEMAGICK_VERSION=7.1.2-27
+export IMAGEMAGICK_VERSION=7.1.2-32
 
 # Safe directory to avoid ownership errors with Git
 git config --global --add safe.directory /home/penpot/penpot || true
@@ -94,6 +94,9 @@ set -e
 #   instance-compose        wrap 'docker compose' for one instance's main
 #                           project, injecting that instance's overrides
 #   instance-env-overrides  the per-instance KEY=VALUE overrides
+#   instance-test-db-name   test database name for one instance
+#   instance-test-redis-db  Valkey DB number for one instance's tests
+#   ensure-instance-test-database  create one instance's test database
 #   devenv-main-container   resolve the 'main' container id via compose ps
 #   devenv-main-running     true if 'main' is up
 #
@@ -301,6 +304,43 @@ function ensure-infra-up {
     infra-compose up -d --wait --wait-timeout 60 --remove-orphans
 }
 
+# Create the backend-test database for <instance> on the shared Postgres
+# if it does not exist yet. Idempotent: safe to run on every bring-up.
+# Needed because postgresql_init.sql only runs when the Postgres volume is
+# created for the first time, so per-instance test databases (which did not
+# exist back then) would otherwise never be created on existing volumes.
+# The backend applies migrations itself on first use, so an empty database
+# is enough here. (Two plain SQL round-trips on purpose: psql -c does not
+# reliably mix SQL with psql-only commands like \gexec.)
+function ensure-instance-test-database {
+    local instance="$1"
+    local dbname
+    dbname=$(instance-test-db-name "$instance")
+
+    local pg_container
+    pg_container=$(infra-compose ps -q postgres 2>/dev/null)
+    if [[ -z "$pg_container" ]]; then
+        echo "[${instance}] postgres container not found; is shared infra up?" >&2
+        return 1
+    fi
+
+    local -a psql_base=(docker exec
+        -e "PGPASSWORD=${PENPOT_DATABASE_PASSWORD:-penpot}"
+        "$pg_container"
+        psql -h 127.0.0.1 -U "${PENPOT_DATABASE_USERNAME:-penpot}"
+        -d postgres -v ON_ERROR_STOP=1 -tA)
+
+    local exists
+    exists=$("${psql_base[@]}" -c "SELECT 1 FROM pg_database WHERE datname = '${dbname}'")
+    if [[ "$exists" == "1" ]]; then
+        echo "[${instance}] test database ${dbname} already exists."
+        return 0
+    fi
+
+    echo "[${instance}] creating test database ${dbname} ..."
+    "${psql_base[@]}" -c "CREATE DATABASE \"${dbname}\""
+}
+
 # Refuse to sync workspaces if the live repo is in a fragile Git state.
 # Copying a partial rebase/merge/cherry-pick into all workspaces would leave
 # every instance in the same broken state.
@@ -333,6 +373,33 @@ function instance-port {
     echo $(( base + n * PENPOT_INSTANCE_PORT_STRIDE ))
 }
 
+# Echo the backend-test database name for <instance>. ws0 keeps the
+# historical name so existing flows stay untouched; ws1+ get an isolated
+# database each on the shared Postgres server. The main database stays
+# shared by all instances on purpose.
+function instance-test-db-name {
+    local instance="$1"
+    local n=0
+    [[ "$instance" =~ ^ws([0-9]+)$ ]] && n="${BASH_REMATCH[1]}"
+    if (( n == 0 )); then
+        echo "penpot_test"
+    else
+        echo "penpot_test_ws${n}"
+    fi
+}
+
+# Echo the Valkey DB number reserved for the backend tests of <instance>.
+# Runtime backends already occupy 0..PENPOT_MAX_WS_INDEX on the shared
+# Valkey, so test DBs start right after to never share a DB with a
+# running backend. (Resolved at call time; PENPOT_MAX_WS_INDEX is defined
+# further below but always set before any call.)
+function instance-test-redis-db {
+    local instance="$1"
+    local n=0
+    [[ "$instance" =~ ^ws([0-9]+)$ ]] && n="${BASH_REMATCH[1]}"
+    echo $(( PENPOT_MAX_WS_INDEX + 1 + n ))
+}
+
 # Echo the per-instance Compose variable overrides for a workspace, one
 # KEY=VALUE per line, for instance-compose to inject into its `env -i` line.
 # Compose gives shell-env precedence over --env-file, so these override the
@@ -358,11 +425,15 @@ function instance-env-overrides {
     opencode=$(instance-port "$instance" "$PENPOT_PORT_BASE_OPENCODE")
     mdts=$(instance-port "$instance" "$PENPOT_PORT_BASE_MDTS")
     storybook=$(instance-port "$instance" "$PENPOT_PORT_BASE_STORYBOOK")
+    test_db=$(instance-test-db-name "$instance")
+    test_redis_db=$(instance-test-redis-db "$instance")
     printf '%s\n' \
         "PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main" \
         "PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data" \
         "PENPOT_PUBLIC_URI=https://localhost:${public_https}" \
         "PENPOT_REDIS_URI=redis://valkey/${n}" \
+        "PENPOT_TEST_DATABASE_URI=postgresql://postgres/${test_db}" \
+        "PENPOT_TEST_REDIS_URI=redis://valkey/${test_redis_db}" \
         "PENPOT_PUBLIC_HTTPS_PORT=${public_https}" \
         "PENPOT_PUBLIC_HTTP_PORT=${public}" \
         "PENPOT_MCP_SERVER_PORT=${mcp}" \
@@ -708,6 +779,8 @@ function start-instance {
     local git_user_name="${3:-}"
     local git_user_email="${4:-}"
     local agentic="${5:-true}"
+
+    ensure-instance-test-database "$instance"
 
     instance-compose "$instance" up -d main
 
@@ -1198,7 +1271,7 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright (c) KALEIDOS INC Sucursal en España SL
+Copyright (c) KALEIDOS SUBSIDIARY SL
 EOF
 }
 
@@ -1234,6 +1307,22 @@ function build-mcp-bundle {
     echo ">> bundle mcp end";
 }
 
+
+function build-media-processor-bundle {
+    echo ">> bundle media-processor start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/media-processor";
+
+    build "media-processor";
+
+    rm -rf $bundle_dir;
+    mv ./media-processor/target $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle media-processor end";
+}
 
 function build-backend-bundle {
     echo ">> bundle backend start";
@@ -1350,6 +1439,10 @@ function build-mcp-docker-image {
     _build-release-docker-image mcp bundle-mcp Dockerfile.mcp "$@"
 }
 
+function build-media-processor-docker-image {
+    _build-release-docker-image media-processor bundle-media-processor Dockerfile.media-processor "$@"
+}
+
 function build-storybook-docker-image {
     _build-release-docker-image storybook bundle-storybook Dockerfile.storybook "$@"
 }
@@ -1428,6 +1521,7 @@ function usage {
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
     echo "- build-mcp-bundle                 Build mcp bundle."
+    echo "- build-media-processor-bundle     Build media-processor bundle."
     echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
@@ -1439,6 +1533,7 @@ function usage {
     echo "- build-backend-docker-image [--tag TAG]    Build backend docker image."
     echo "- build-exporter-docker-image [--tag TAG]   Build exporter docker image."
     echo "- build-mcp-docker-image [--tag TAG]         Build mcp docker image."
+    echo "- build-media-processor-docker-image [--tag TAG]  Build media-processor docker image."
     echo "- build-storybook-docker-image [--tag TAG]  Build storybook docker image."
     echo "- build-imagemagick-docker-image [--tag TAG] [--push]"
     echo "                                   Build the imagemagick docker image. Local-only by default (single-"
@@ -1494,6 +1589,7 @@ case $1 in
     build-bundle)
         build-frontend-bundle;
         build-mcp-bundle;
+        build-media-processor-bundle;
         build-backend-bundle;
         build-exporter-bundle;
         build-storybook-bundle;
@@ -1505,6 +1601,10 @@ case $1 in
 
     build-mcp-bundle)
         build-mcp-bundle;
+        ;;
+
+    build-media-processor-bundle)
+        build-media-processor-bundle;
         ;;
 
     build-backend-bundle)
@@ -1528,6 +1628,7 @@ case $1 in
         build-backend-docker-image "${@:2}"
         build-exporter-docker-image "${@:2}"
         build-mcp-docker-image "${@:2}"
+        build-media-processor-docker-image "${@:2}"
         build-storybook-docker-image "${@:2}"
         ;;
 
@@ -1545,6 +1646,10 @@ case $1 in
 
     build-mcp-docker-image)
         build-mcp-docker-image "${@:2}"
+        ;;
+
+    build-media-processor-docker-image)
+        build-media-processor-docker-image "${@:2}"
         ;;
 
     build-storybook-docker-image)

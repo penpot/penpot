@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.fix-deleted-fonts
   (:require
@@ -65,15 +65,18 @@
   [{:keys [objects id]}]
   (reduce-kv (fn [changes shape-id shape]
                (if (shape-has-invalid-font-family?? shape)
-                 (conj changes {:type :mod-obj
-                                :id shape-id
-                                :page-id id
-                                :operations [{:type :set
-                                              :attr :content
-                                              :val (fix-shape-content shape)}
-                                             {:type :set
-                                              :attr :position-data
-                                              :val nil}]})
+                 (let [fixed-content (fix-shape-content shape)]
+                   (if (not= fixed-content (:content shape))
+                     (conj changes {:type :mod-obj
+                                    :id shape-id
+                                    :page-id id
+                                    :operations [{:type :set
+                                                  :attr :content
+                                                  :val fixed-content}
+                                                 {:type :set
+                                                  :attr :position-data
+                                                  :val nil}]})
+                     changes))
                  changes))
              []
              objects))
@@ -82,8 +85,11 @@
   [fdata]
   (reduce-kv (fn [changes _ typography]
                (if (has-invalid-font-family? typography)
-                 (conj changes {:type :mod-typography
-                                :typography (fix-typography typography)})
+                 (let [fixed-typography (fix-typography typography)]
+                   (if (not= fixed-typography typography)
+                     (conj changes {:type :mod-typography
+                                    :typography fixed-typography})
+                     changes))
                  changes))
              []
              (:typographies fdata)))

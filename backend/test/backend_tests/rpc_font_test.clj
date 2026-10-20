@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-font-test
   (:require
@@ -76,11 +76,11 @@
     (when (uuid? session-id)
       (doseq [[idx chunk-data] (map-indexed vector chunks)]
         (let [mfile (make-chunk-mfile chunk-data mtype)
-              out   (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           idx
-                                  :content         mfile})]
+              out   (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           idx
+                                            :content         mfile})]
           (t/is (nil? (:error out))))))
     session-id))
 
@@ -140,7 +140,7 @@
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font
                   ::rpc/profile-id (:id prof)
@@ -158,12 +158,15 @@
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res)))))
+        ;; processed = 4: the 2 font variants plus the 2 consumed upload sessions
+        (t/is (= 4 (:processed res)))))
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
-        (t/is (= 6 (:delete res)))))))
+        ;; deleted = 8: the 6 font objects plus the 2 chunk objects touched
+        ;; by objects-gc when purging the consumed sessions
+        (t/is (= 8 (:delete res)))))))
 
 (t/deftest font-deletion-2
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -206,7 +209,7 @@
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font
                   ::rpc/profile-id (:id prof)
@@ -224,12 +227,15 @@
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 1 (:processed res)))))
+        ;; processed = 3: the font plus the 2 consumed upload sessions
+        (t/is (= 3 (:processed res)))))
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
-        (t/is (= 3 (:delete res)))))))
+        ;; deleted = 5: the 3 font objects plus the 2 chunk objects touched
+        ;; by objects-gc when purging the consumed sessions
+        (t/is (= 5 (:delete res)))))))
 
 (t/deftest font-deletion-3
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -254,7 +260,7 @@
     ;; freeze with hours 3 clock
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font-variant ::rpc/profile-id (:id prof)
                   :team-id team-id :id (-> out1 :result :id)}
@@ -271,12 +277,15 @@
     ;; objects-gc at days 8, then storage-gc-touched at days 8 + 3h
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 1 (:processed res)))))
+        ;; processed = 3: the font variant plus the 2 consumed upload sessions
+        (t/is (= 3 (:processed res)))))
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
-        (t/is (= 3 (:delete res)))))))
+        ;; deleted = 5: the 3 font objects plus the 2 chunk objects touched
+        ;; by objects-gc when purging the consumed sessions
+        (t/is (= 5 (:delete res)))))))
 
 (t/deftest input-sanitization-1
   (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
@@ -429,11 +438,11 @@
       ;; Upload all real chunks except the last one (omit it so the session is incomplete)
       (doseq [[idx chunk-data] (map-indexed vector (butlast chunks))]
         (let [mfile (make-chunk-mfile chunk-data "font/ttf")
-              out   (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           idx
-                                  :content         mfile})]
+              out   (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           idx
+                                            :content         mfile})]
           (t/is (nil? (:error out)))))
 
       (let [out (th/command! {::th/type    :create-font-variant

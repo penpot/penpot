@@ -288,34 +288,6 @@ test.skip("Update text letter spacing selecting a part of it (starting)", async 
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("BUG 11552 - Apply styles to the current caret", async ({ page }) => {
-  const workspace = new WasmWorkspacePage(page);
-  await workspace.setupEmptyFile();
-  await workspace.mockGetFile("text-editor/get-file-11552.json");
-  await workspace.mockRPC(
-    "update-file?id=*",
-    "text-editor/update-file-11552.json",
-  );
-  await workspace.goToWorkspace();
-  await workspace.doubleClickLeafLayer("Lorem ipsum");
-
-  const fontSizeInput = workspace.rightSidebar.getByRole("textbox", {
-    name: "Font Size",
-  });
-  await expect(fontSizeInput).toBeVisible();
-
-  await page.keyboard.press("Enter");
-  await page.keyboard.press("ArrowRight");
-
-  await fontSizeInput.fill("36");
-
-  await workspace.clickLeafLayer("Lorem ipsum");
-
-  // display Mixed placeholder
-  await expect(fontSizeInput).toHaveValue("");
-  await expect(fontSizeInput).toHaveAttribute("placeholder", "Mixed");
-});
-
 // This is to prevent QA tests from failing due to playwright
 // considering 0-width text boxes as invisible
 test("BUG 14098 - Fix text editor having 0 width or height", async ({ page }) => {
@@ -328,7 +300,7 @@ test("BUG 14098 - Fix text editor having 0 width or height", async ({ page }) =>
   await workspace.textShapeButton.click();
   await workspace.clickAt(200, 200);
 
-  const textEditor = workspace.page.locator(`div[class*="viewport"]`).first().getByRole('textbox').first();
+  const textEditor = workspace.page.getByTestId("text-editor-container");
   await expect(textEditor).toBeVisible();
 });
 

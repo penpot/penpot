@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.verify-token
   (:require
@@ -20,6 +20,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.commands.teams-invitations :as teams-invitations]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
@@ -97,15 +98,13 @@
                     (profile/strip-private-attrs)
                     (update :props profile/filter-props)
                     (with-nitrate-licence cfg))]
-    (assoc claims :profile profile)))
+    ;; The command is anonymous, so the audit event has no caller to fall
+    ;; back on and the profile must be declared here. The claims also carry
+    ;; a `:profile-id`, but the audit layer ignores the response on purpose.
+    (-> (assoc claims :profile profile)
+        (rph/with-meta {::audit/profile-id (:id profile)}))))
 
 ;; --- Team Invitation
-
-(def ^:private sql:get-organization-invitation
-  "SELECT *
-     FROM team_invitation
-    WHERE email_to = ?
-      AND org_id = ?")
 
 (def ^:private sql:delete-organization-invitation
   "DELETE FROM team_invitation
@@ -174,6 +173,7 @@
    [:map {:title "TeamInvitationClaims"}
     [:iss :keyword]
     [:exp ::ct/inst]
+    ;; The inviter: always the `created-by` of the invitation row.
     [:profile-id ::sm/uuid]
     [:role types.team/schema:role]
     [:team-id {:optional true} ::sm/uuid]
@@ -196,17 +196,16 @@
               :code :invalid-invitation-token
               :hint "invitation token contains unexpected data"))
 
-  (let [invitation             (if organization-id
-                                 (db/exec-one! conn [sql:get-organization-invitation member-email organization-id])
-                                 (db/get* conn :team-invitation
-                                          {:email-to member-email
-                                           :team-id team-id}))
+  (let [member-email           (profile/clean-email member-email)
+        claims                 (assoc claims :member-email member-email)
+        invitation             (teams-invitations/active-invitation
+                                cfg
+                                claims
+                                {::db/for-update true})
         profile                (db/get* conn :profile
                                         {:id profile-id}
                                         {:columns [:id :email :default-team-id]})
-        registration-disabled? (not (contains? cf/flags :registration))
-
-        organization-invitation?        (and (contains? cf/flags :admin-console) organization-id)]
+        organization-invitation? (and (contains? cf/flags :admin-console) organization-id)]
 
     (if profile
       (do
@@ -250,12 +249,6 @@
                   "direct-organization-invitation"
                   "team-invitation"))
 
-              organization-event-origin
-              (when organization-id-on-add
-                (if organization-id
-                  "organization-invitation-acceptance"
-                  "team-invitation-acceptance"))
-
               organization-member-count-before
               (when organization-id-on-add
                 (count
@@ -296,42 +289,64 @@
                               (-> (audit/event-from-rpc-params params)
                                   (assoc :profile-id created-by)
                                   (assoc :name "accept-team-invitation-from")
-                                  (assoc :props (assoc props
-                                                       :profile-id (:id profile)
-                                                       :email (:email profile)))))))
+                                  (assoc :props (-> props
+                                                    (assoc :invited-by (:created-by invitation))
+                                                    (assoc :profile-id (:id profile))
+                                                    (assoc :profile-email (:email profile))
+                                                    (audit/clean-props)))))))
 
             (let [accepted-team-id (accept-invitation cfg claims invitation profile)]
+              ;; NOTE: the browser used to re-submit a copy of this event from
+              ;; the `:organization-invitation-audit` payload of this response,
+              ;; which wrote two rows per acceptance with two prop vocabularies
+              ;; for the same name, and tied the record to the browser finishing
+              ;; the flow. Everything the copy carried is computed above.
               (when organization-id-on-add
-                (audit/submit
-                 cfg
-                 (-> (audit/event-from-rpc-params params)
-                     (assoc :name "accept-organization-invitation")
-                     (assoc :props
-                            (-> props
-                                (assoc :organization-id organization-id-on-add
-                                       :user-id (:id profile)
-                                       :user-who-send-invitation (:created-by invitation))
-                                (audit/clean-props))))))
+                (let [org-props (-> props
+                                    (assoc :organization-id organization-id-on-add
+                                           :invited-by (:created-by invitation)
+                                           :profile-id (:id profile)
+                                           :profile-email (:email profile)
+                                           :organization-member-add-source
+                                           organization-add-source
+                                           :belongs-to-team-on-add
+                                           (boolean team-id)
+                                           :organization-member-count-before
+                                           organization-member-count-before)
+                                    (audit/clean-props))]
+                  (audit/submit cfg (-> (audit/event-from-rpc-params params)
+                                        (assoc :name "accept-organization-invitation"
+                                               :props org-props)))
+                  (when-let [created-by (:created-by invitation)]
+                    (audit/submit cfg (-> (audit/event-from-rpc-params params)
+                                          (assoc :profile-id created-by
+                                                 :name "accept-organization-invitation-from"
+                                                 :props org-props))))))
 
-              (cond-> (assoc claims :state :created)
+              (cond-> (assoc claims
+                             :state :created
+                             ;; The invitation row is authoritative for the
+                             ;; inviter: backfill :profile-id so the response
+                             ;; stays consistent even with tokens minted
+                             ;; before :profile-id was aligned with
+                             ;; :created-by (or re-requested by someone else).
+                             :profile-id (or (:created-by invitation)
+                                             (:profile-id claims))
+                             ;; Likewise, the accepting profile is
+                             ;; authoritative for the invitee: backfill
+                             ;; :member-id (nil for invitations sent to an
+                             ;; unregistered email, possibly stale
+                             ;; otherwise).
+                             :member-id (:id profile))
                 ;; when the invitation is to an organization, instead of a team, add the
                 ;; accepted-team-id as :organization-team-id
                 (:organization-id claims)
                 (assoc :organization-team-id accepted-team-id)
-
-                organization-id-on-add
-                (assoc :organization-invitation-audit
-                       {:origin organization-event-origin
-                        :props
-                        (-> props
-                            (assoc :organization-id organization-id-on-add
-                                   :organization-member-add-source organization-add-source
-                                   :belongs-to-team-on-add (boolean team-id)
-                                   :user-id (:id profile)
-                                   :user-who-send-invitation (:created-by invitation)
-                                   :organization-member-count-before
-                                   organization-member-count-before)
-                            (audit/clean-props))}))))))
+                ;; The response carries the inviter's profile-id, so the
+                ;; audit event has to name the accepting profile explicitly
+                ;; or the invitation gets logged against the wrong user.
+                :always
+                (rph/with-meta {::audit/profile-id (:id profile)}))))))
 
       (do
         ;; If the user is not logged-in and the invitation has been canceled
@@ -347,11 +362,12 @@
                             "no invitation associated with the token")))
 
         ;; If we have not logged-in user, and invitation comes with member-id we
-        ;; redirect user to login, if no member-id is present and  in the invitation
-        ;; token and registration is enabled, we redirect user the the register page.
+        ;; redirect user to login. If no member-id is present this is an invitation
+        ;; for a new user — send them to the register page. Invitations bypass
+        ;; the disable-registration flag per documentation.
         {:invitation-token token
          :iss :team-invitation
-         :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
+         :redirect-to (if member-id :auth-login :auth-register)
          :state :pending}))))
 
 ;; --- Default

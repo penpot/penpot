@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.inspect.exports
   (:require-macros [app.main.style :as stl])
@@ -14,7 +14,9 @@
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
    [app.util.keyboard :as kbd]
@@ -135,6 +137,7 @@
                       {:value "1" :label "1x"}
                       {:value "1.5" :label "1.5x"}
                       {:value "2" :label "2x"}
+                      {:value "3" :label "3x"}
                       {:value "4" :label "4x"}
                       {:value "6" :label "6x"}]
 
@@ -160,17 +163,19 @@
       [:> title-bar* {:collapsable false
                       :title       (tr "workspace.options.export")
                       :class       (stl/css :title-spacing-export-viewer)}
-       [:button {:class (stl/css :add-export)
-                 :on-click add-export} deprecated-icon/add]]]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.options.export.add-export")
+                         :on-click add-export
+                         :icon i/add}]]]
 
      (cond
        (= :multiple exports)
        [:div {:class (stl/css :multiple-exports)}
         [:div {:class (stl/css :label)} (tr "settings.multiple")]
         [:div {:class (stl/css :actions)}
-         [:button {:class (stl/css :action-btn)
-                   :on-click ()}
-          deprecated-icon/remove-icon]]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.export.remove-export")
+                           :icon i/remove}]]]
 
        (seq @exports)
        [:div {:class (stl/css :element-set-content)}
@@ -182,14 +187,14 @@
              [:& select
               {:default-value (d/name (:type export))
                :options format-options
-               :dropdown-class (stl/css :dropdown-upwards)
+               :dropdown-class (stl/css :dropdown)
                :on-change (partial on-type-change index)}]]
             (when (scale-enabled? export)
               [:div {:class (stl/css :size-select)}
                [:& select
                 {:default-value (str (:scale export))
                  :options size-options
-                 :dropdown-class (stl/css :dropdown-upwards)
+                 :dropdown-class (stl/css :dropdown)
                  :on-change (partial on-scale-change index)}]])
             [:label {:class (stl/css :suffix-input)
                      :for "suffix-export-input"}
@@ -202,16 +207,15 @@
                       :on-change on-suffix-change
                       :on-key-down manage-key-down}]]]
 
-           [:button {:class (stl/css :action-btn)
-                     :on-click (partial delete-export index)}
-            deprecated-icon/remove-icon]])])
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "workspace.options.export.remove-export")
+                             :on-click (partial delete-export index)
+                             :icon i/remove}]])])
      (when (or (= :multiple exports) (seq @exports))
-       [:button
-        {:on-click (when-not in-progress? on-download)
-         :class (stl/css-case
-                 :export-btn true
-                 :btn-disabled in-progress?)
-         :disabled in-progress?}
+       [:> button* {:variant "secondary"
+                    :class (stl/css :export-btn)
+                    :on-click (when-not in-progress? on-download)
+                    :disabled in-progress?}
         (if in-progress?
           (tr "workspace.options.exporting-object")
           (tr "workspace.options.export-object" (c (count shapes))))])]))

@@ -1,0 +1,8 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="137.64102" height="117.64102" viewBox="0 0 137.64102 117.64102"><defs><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="137.64102" height="117.64102" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feBlend mode="normal" in="SourceGraphic" in2="bg" result="shape"/><feGaussianBlur in="shape" stdDeviation="6.2735023"/></filter></defs><g filter="url(#fx0)">
+	<rect fill="red" transform="translate(18.8205 18.8205)" width="100" height="80"/>
+</g></svg>

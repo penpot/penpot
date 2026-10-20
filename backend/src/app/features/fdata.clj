@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.features.fdata
   "A `fdata/*` related feature migration helpers"
@@ -151,6 +151,13 @@
 
   (cond
     (= backend "storage")
+    ;; IMPORTANT: we strongly do not reuse the main connection that can
+    ;; run inside a transaction because the storage upload process can
+    ;; fail in the middle of uploading and leave garbage on the underlying
+    ;; backend, if we participate in the main transaction and it aborts
+    ;; we will lose all registry of the pending to reconcile blobs
+    ;; what the storage subsystem registers in other parallel
+    ;; transaction
     (let [storage  (sto/resolve cfg)
           content  (sto/content data)
           sobject  (sto/put-object! storage

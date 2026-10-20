@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.auth.recovery
   (:require-macros [app.main.style :as stl])
@@ -22,7 +22,7 @@
     [:token ::sm/text]
     [:password-1 ::sm/password]
     [:password-2 ::sm/password]]
-   [:fn {:error/code "errors.password-invalid-confirmation"
+   [:fn {:error/fn #(tr "errors.password-invalid-confirmation")
          :error/field :password-2}
     (fn [{:keys [password-1 password-2]}]
       (= password-1 password-2))]])
@@ -32,6 +32,12 @@
   (let [{:keys [type code] :as edata} (ex-data error)]
     (if (= [:validation :weak-password] [type code])
       (let [details (:details edata)
+            ;; Execution time translation strings (keys sent by the backend):
+            ;;   (tr "errors.weak-password.too-short")
+            ;;   (tr "errors.weak-password.insufficient-digits")
+            ;;   (tr "errors.weak-password.insufficient-lowercase")
+            ;;   (tr "errors.weak-password.insufficient-uppercase")
+            ;;   (tr "errors.weak-password.insufficient-special")
             options (when (seq details)
                       (mapv tr details))]
         (swap! form assoc-in [:extra-errors :password-1]

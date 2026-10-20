@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.inspect.styles
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape.layout :as ctl]
@@ -111,11 +112,17 @@
         panels             (type->panel-group shape-type)
 
         tokens-lib         (mf/deref refs/tokens-lib)
-        active-themes      (mf/deref refs/workspace-active-theme-paths-no-hidden)
-        active-sets        (mf/with-memo [tokens-lib]
-                             (some-> tokens-lib (ctob/get-active-themes-set-names)))
-        active-tokens      (mf/with-memo [tokens-lib]
-                             (some-> tokens-lib (ctob/get-tokens-in-active-sets)))
+        tokens-status      (mf/deref refs/tokens-status)
+        active-theme-ids   (mf/deref refs/workspace-active-theme-ids)
+        active-themes      (mf/with-memo [active-theme-ids tokens-lib]
+                             (when tokens-lib
+                               (keep #(some-> (ctob/get-theme tokens-lib %) ctob/get-name) active-theme-ids)))
+        active-sets        (mf/with-memo [tokens-status tokens-lib]
+                             (when (and tokens-status tokens-lib)
+                               (cfo/get-active-sets tokens-status tokens-lib)))
+        active-tokens      (mf/with-memo [tokens-status tokens-lib]
+                             (when (and tokens-status tokens-lib)
+                               (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))
         resolved-active-tokens (sd/use-resolved-tokens* active-tokens)
         has-visibility-props? (mf/use-fn
                                (fn [shape]
@@ -152,7 +159,7 @@
       (when (or (seq active-themes) (seq active-sets))
         [:li
          [:> style-box* {:panel :token}
-          [:> tokens-panel* {:theme-paths active-themes :set-names active-sets}]]])
+          [:> tokens-panel* {:theme-names active-themes :set-names (map ctob/get-name active-sets)}]]])
       (for [panel panels]
         [:li {:key (d/name panel)}
          (case panel

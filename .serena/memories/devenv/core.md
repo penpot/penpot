@@ -1,6 +1,6 @@
 # Devenv startup and configuration
 
-Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Parallel instances share infra + Postgres + RustFS; each instance has its own `main` container, Valkey, source checkout, tmux session.
+Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Parallel instances share infra + Postgres + RustFS; each instance has its own `main` container, Valkey, source checkout, tmux session. The main database (`penpot`) and the S3 bucket (`penpot`) are shared by all instances on purpose; backend-test databases are isolated per instance (`penpot_test` on ws0, `penpot_test_wsN` on wsN) with per-instance Valkey DB numbers (`6+N`, since runtime backends occupy `0..5`).
 
 ## Compose project layout
 
@@ -12,7 +12,8 @@ Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Par
 ## Source-of-truth files
 
 - `docker/devenv/defaults.env`: ws0 baseline — container/volume names, runtime env, published host ports, tmux defaults. `manage.sh` aborts if unreadable.
-- For ws1+, `instance-env-overrides` computes the per-instance overrides (container/volume names, host ports offset `10000·N`, `PENPOT_PUBLIC_URI`, `PENPOT_REDIS_URI`, `PENPOT_BACKEND_WORKER=false`) and `instance-compose` injects them as env vars at compose time — never written to disk, recomputed each call so they can't drift. ws0 uses `defaults.env` as-is.
+- For ws1+, `instance-env-overrides` computes the per-instance overrides (container/volume names, host ports offset `10000·N`, `PENPOT_PUBLIC_URI`, `PENPOT_REDIS_URI`, `PENPOT_TEST_DATABASE_URI`, `PENPOT_TEST_REDIS_URI`) and `instance-compose` injects them as env vars at compose time — never written to disk, recomputed each call so they can't drift. ws0 uses `defaults.env` as-is.
+- Per-instance test databases are created by `ensure-instance-test-database` (called from `start-instance`): `CREATE DATABASE` guarded by a `pg_database` existence check, so it is idempotent. Needed because `postgresql_init.sql` only runs on first volume creation. The backend applies migrations itself on first use, so an empty database is enough.
 - `backend/scripts/_env`: backend-internal only — secret keys, `PENPOT_FLAGS` (with `enable-backend-worker` gated on `PENPOT_BACKEND_WORKER`), `JAVA_OPTS`, `setup_s3_bucket()`. Never duplicates `defaults.env`.
 - Compose files use pure `${VAR}` substitution; missing var = compose fails.
 
@@ -23,10 +24,12 @@ Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Par
 - Network aliases (`- main`, `- redis`) are not declared in main.yml. Compose's auto-service-alias still registers `redis` on the shared network, so DNS for `redis` is non-deterministic with multiple instances. Backend uses `PENPOT_REDIS_URI=redis://penpot-devenv-wsN-valkey/0` (container_name) instead.
 - No cross-project `depends_on`. `manage.sh ensure-infra-up` uses Compose `--wait`; PostgreSQL, RustFS, and Mailpit expose healthchecks. PostgreSQL checks TCP so its temporary init server cannot report ready.
 - `JAVA_OPTS` in `manage.sh` is shadowed inside the container by `_env`. The `-e JAVA_OPTS=...` flag only matters for processes that don't source `_env`.
+- opencode is not part of the devenv image. `scripts/setup-opencode` installs the `@opencode/cli` global pnpm package into the penpot user's `$PNPM_HOME` (`/home/penpot/.local/share/pnpm`, inside the user-data volume, so it survives a container re-creation); nothing pins the version in the repo, it tracks the `latest` dist-tag at install time. pnpm 12 puts the global packages in `$PNPM_HOME/global` and the bin dir in `$PNPM_HOME/bin`, and aborts with `ERR_PNPM_GLOBAL_BIN_DIR_NOT_IN_PATH` unless that bin dir is on `PATH`; `files/bashrc` and the script both add it. The script exports `PNPM_HOME` itself because non-interactive shells never read `~/.bashrc`.
+- `files/entrypoint.sh` chowns penpot's whole `~/.local` and `~/.cache` on every start, because `EXTERNAL_UID` remaps penpot's UID to the host user and build-time ownership then stops matching. That covers pnpm's global dir, store, `package-manager-store` and metadata cache, plus opencode's own state; without it, global installs and pnpm's `packageManager` auto-download fail on permissions. The dotfiles copied from `/root` (`.bashrc`, `.vimrc`, `.tmux.conf`) are chowned in the same pass. `~/.config` stays out on purpose (the opencode overlay bind-mounts a host directory inside it) and so does `/home/penpot` itself, which holds the repo bind mount.
 
 ## Worker policy
 
-Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. Workers are pure fire-and-forget: `wrk/submit!` inserts a row into the shared Postgres `task` table and returns; RPC handlers never wait on completion and workers never publish to msgbus. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across submitters); details in `mem:prod-infra/core`.
+Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. Workers are pure fire-and-forget: `jobs/submit` inserts a row into the shared Postgres `job` table and returns (the legacy `task` table stays dormant); RPC handlers never wait on completion and workers never publish to msgbus. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances, `jobs/submit` `dedupe` is racy across submitters); details in `mem:prod-infra/core`.
 
 Each workspace is independent and can be started/stopped in any order. Shared infra (Postgres, RustFS, etc.) is shut down only when no instances remain running.
 

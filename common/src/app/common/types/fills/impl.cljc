@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.fills.impl
   (:require
@@ -58,6 +58,27 @@
         result (bit-shift-left result 24)
         result (bit-or result n)]
     result))
+
+(defn encode-mtype
+  "Encode an image media type as the 16-bit code shared with render-wasm."
+  [mtype]
+  (case mtype
+    "image/jpeg"    0x01
+    "image/png"     0x02
+    "image/gif"     0x03
+    "image/webp"    0x04
+    "image/svg+xml" 0x05
+    0x00))
+
+(defn decode-mtype
+  [code]
+  (case code
+    0x01 "image/jpeg"
+    0x02 "image/png"
+    0x03 "image/gif"
+    0x04 "image/webp"
+    0x05 "image/svg+xml"
+    nil))
 
 (defn- get-color-hex
   [n]
@@ -119,19 +140,34 @@
 
 (defn write-image-fill
   [offset buffer opacity image]
-  (let [image-id     (get image :id)
-        image-width  (get image :width)
-        image-height (get image :height)
-        alpha      (mth/floor (* opacity 0xff))
-        keep-aspect-ratio  (if (get image :keep-aspect-ratio false) 0x01 0x00)
-        flags        (bit-or keep-aspect-ratio 0x00)]
+  (let [image-id          (get image :id)
+        image-width       (get image :width)
+        image-height      (get image :height)
+        alpha             (mth/floor (* opacity 0xff))
+        keep-aspect-ratio (if (get image :keep-aspect-ratio false) 0x01 0x00)
+        transform         (get image :transform)
+        has-transform?    (some? transform)
+        transform-flag    (if has-transform? 0x02 0x00)
+        flags             (bit-or keep-aspect-ratio transform-flag)
+        mtype             (encode-mtype (get image :mtype))]
     (buf/write-byte  buffer (+ offset  0) 0x03)
     (buf/write-uuid  buffer (+ offset  4) image-id)
     (buf/write-byte  buffer (+ offset 20) alpha)
     (buf/write-byte  buffer (+ offset 21) flags)
-    (buf/write-short buffer (+ offset 22) 0) ;; 2-byte padding (reserved for future use)
+    (buf/write-short buffer (+ offset 22) mtype)
     (buf/write-int   buffer (+ offset 24) image-width)
     (buf/write-int   buffer (+ offset 28) image-height)
+    (if has-transform?
+      (do
+        (buf/write-float buffer (+ offset 32) (double (get transform :x 0.0)))
+        (buf/write-float buffer (+ offset 36) (double (get transform :y 0.0)))
+        (buf/write-float buffer (+ offset 40) (double (get transform :width 1.0)))
+        (buf/write-float buffer (+ offset 44) (double (get transform :height 1.0))))
+      (do
+        (buf/write-float buffer (+ offset 32) 0.0)
+        (buf/write-float buffer (+ offset 36) 0.0)
+        (buf/write-float buffer (+ offset 40) 1.0)
+        (buf/write-float buffer (+ offset 44) 1.0)))
     (+ offset FILL-U8-SIZE)))
 
 (defn- write-metadata
@@ -141,13 +177,7 @@
         mtype    (dm/get-in fill [:fill-image :mtype])]
 
     (when mtype
-      (let [val (case mtype
-                  "image/jpeg"    0x01
-                  "image/png"     0x02
-                  "image/gif"     0x03
-                  "image/webp"    0x04
-                  "image/svg+xml" 0x05)]
-        (buf/write-short buffer (+ offset 2) val)))
+      (buf/write-short buffer (+ offset 2) (encode-mtype mtype)))
 
     (if (and (some? ref-file)
              (some? ref-id))
@@ -208,28 +238,30 @@
                                            :type type}})
 
                   3 ;; image fill
-                  (let [id      (buf/read-uuid  dbuffer (+ doffset 4))
-                        alpha   (buf/read-unsigned-byte dbuffer (+ doffset 20))
-                        opacity (mth/precision (/ alpha 0xff) 2)
-                        flags   (buf/read-unsigned-byte dbuffer (+ doffset 21))
-                        ratio   (boolean (bit-and flags 0x01))
-                        width   (buf/read-int   dbuffer (+ doffset 24))
-                        height  (buf/read-int   dbuffer (+ doffset 28))
-                        mtype   (buf/read-short mbuffer (+ moffset 2))
-                        mtype   (case mtype
-                                  0x01 "image/jpeg"
-                                  0x02 "image/png"
-                                  0x03 "image/gif"
-                                  0x04 "image/webp"
-                                  0x05 "image/svg+xml")]
+                  (let [id        (buf/read-uuid  dbuffer (+ doffset 4))
+                        alpha     (buf/read-unsigned-byte dbuffer (+ doffset 20))
+                        opacity   (mth/precision (/ alpha 0xff) 2)
+                        flags     (buf/read-unsigned-byte dbuffer (+ doffset 21))
+                        ratio     (not (zero? (bit-and flags 0x01)))
+                        has-tf    (not (zero? (bit-and flags 0x02)))
+                        width     (buf/read-int   dbuffer (+ doffset 24))
+                        height    (buf/read-int   dbuffer (+ doffset 28))
+                        transform (when has-tf
+                                    {:x      (buf/read-float dbuffer (+ doffset 32))
+                                     :y      (buf/read-float dbuffer (+ doffset 36))
+                                     :width  (buf/read-float dbuffer (+ doffset 40))
+                                     :height (buf/read-float dbuffer (+ doffset 44))})
+                        mtype     (decode-mtype (buf/read-short mbuffer (+ moffset 2)))]
                     {:fill-opacity opacity
-                     :fill-image {:id id
-                                  :width width
-                                  :height height
-                                  :mtype mtype
-                                  :keep-aspect-ratio ratio
-                                  ;; FIXME: we are not encodign the name, looks useless
-                                  :name "sample"}}))]
+                     :fill-image   (cond-> {:id                id
+                                            :width             width
+                                            :height            height
+                                            :mtype             mtype
+                                            :keep-aspect-ratio ratio
+                                            ;; FIXME: we are not encodign the name, looks useless
+                                            :name              "sample"}
+                                     (some? transform)
+                                     (assoc :transform transform))}))]
 
     (if refs?
       (let [ref-file (buf/read-uuid mbuffer (+ moffset 4))

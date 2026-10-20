@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.logic.shapes
   (:require
@@ -29,7 +29,7 @@
   "When updating attributes that have a token applied, we must unapply it, because the value
   of the attribute now has been given directly, and does not come from the token.
   When applying a typography asset style we also unapply any typographic tokens."
-  [changes objects changed-sub-attr]
+  [changes objects changed-sub-attr changed-item-index]
   (let [new-objects     (pcb/get-objects changes)
         mod-obj-changes (->> (:redo-changes changes)
                              (filter #(= (:type %) :mod-obj)))
@@ -53,9 +53,18 @@
         (fn [shape changes attr]
           (let [shape-id    (dm/get-prop shape :id)
                 tokens      (get shape :applied-tokens {})
-                token-attrs (if (and (cfh/text-shape? shape) (= attr :content))
-                              (text-changed-attrs shape)
-                              (cto/shape-attr->token-attrs attr changed-sub-attr))]
+                ;; Fill and stroke tokens only ever live on the first item of
+                ;; the collection, so editing a later item or reordering items
+                ;; while the first one stays in place must not unapply them.
+                later-item? (and (contains? #{:fills :strokes} attr)
+                                 (if (some? changed-item-index)
+                                   (not (zero? changed-item-index))
+                                   (= (first (get shape attr))
+                                      (first (get (get new-objects shape-id) attr)))))
+                token-attrs (when-not later-item?
+                              (if (and (cfh/text-shape? shape) (= attr :content))
+                                (text-changed-attrs shape)
+                                (cto/shape-attr->token-attrs attr changed-sub-attr)))]
 
             (if (some #(contains? tokens %) token-attrs)
               (pcb/update-shapes changes [shape-id] #(cto/unapply-tokens-from-shape % token-attrs))
@@ -75,7 +84,7 @@
     (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects? translation?]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment?]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
@@ -86,9 +95,9 @@
                    (cond-> changes
                      (some? objects) (pcb/with-objects objects))
                    ids)
-        ;; Translation doesn't shift children between grid cells, so
-        ;; cell reassignment + child reorder are no-ops.
-        grid-ids (when-not translation?
+        ;; Translation keeps cell assignments; direction changes reflow them
+        ;; explicitly.
+        grid-ids (when-not (or translation? skip-grid-reassignment?)
                    (->> ids (filter (partial ctl/grid-layout? objects))))
         changes (cond-> changes
                   (seq grid-ids)
@@ -96,7 +105,7 @@
                       (pcb/reorder-grid-children ids))
 
                   (not ignore-touched)
-                  (generate-unapply-tokens objects changed-sub-attr))]
+                  (generate-unapply-tokens objects changed-sub-attr changed-item-index))]
     changes))
 
 (defn- generate-update-shape-flags

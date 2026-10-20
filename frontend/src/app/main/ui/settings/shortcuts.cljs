@@ -23,6 +23,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.settings.import-shortcuts-diff-modal]
    [app.main.ui.settings.restore-shortcuts-modal]
@@ -41,7 +42,7 @@
    [:> search-bar* {:on-change on-search-term-change
                     :on-clear on-search-clear-click
                     :value filter-term
-                    :placeholder (tr "shortcuts.title")
+                    :placeholder (tr "shortcuts.search")
                     :icon-id i/search
                     :auto-focus true}]
    (when (and show-restore-all has-custom-shortcuts)
@@ -50,7 +51,7 @@
        :on-click on-restore-all
        :class (stl/css :restore-all-button)
        :icon i/reload}
-      (tr "dashboard.restore-all-deleted-button")])])
+      (tr "shortcuts.reset-all")])])
 
 (defn- filter-shortcuts-tree
   [tree shortcut-filter search-term]
@@ -93,10 +94,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private known-shortcut-keys
-  "Known shortcut keys per context, derived from the default shortcuts maps."
-  {:workspace (set (keys wsc/shortcuts))
-   :dashboard (set (keys dsc/shortcuts))
-   :viewer    (set (keys vsc/shortcuts))})
+  "Known shortcut keys per context, derived from the default shortcuts maps.
+   Shortcuts marked :customizable false are excluded."
+  (letfn [(collect-keys [shortcuts]
+            (reduce-kv (fn [s k v]
+                         (if (false? (:customizable v))
+                           s
+                           (conj s k)))
+                       #{}
+                       shortcuts))]
+    {:workspace (into (collect-keys psc/shortcuts) (collect-keys wsc/shortcuts))
+     :dashboard (collect-keys dsc/shortcuts)
+     :viewer    (collect-keys vsc/shortcuts)}))
 
 (def ^:private schema:imported-shortcuts
   "Malli schema for an imported custom-shortcuts payload.
@@ -373,7 +382,8 @@
         (mf/with-memo []
           (fn [_ shortcut search-term]
             (or (str/blank? search-term)
-                (matches-search (:translation shortcut) search-term))))
+                (matches-search (:translation shortcut) search-term)
+                (matches-search (ss/shortcut->command-string shortcut) search-term))))
 
         filter-personalized
         (mf/use-fn
@@ -385,8 +395,10 @@
                  customized? (and (contains? group-map shortcut-key)
                                   (not (str/blank? (get group-map shortcut-key))))]
              (and customized?
+                  (not (false? (:customizable shortcut)))
                   (or (str/blank? search-term)
-                      (matches-search (:translation shortcut) search-term))))))
+                      (matches-search (:translation shortcut) search-term)
+                      (matches-search (ss/shortcut->command-string shortcut) search-term))))))
 
         filter-disabled
         (mf/use-fn
@@ -398,8 +410,10 @@
                  in-group? (contains? group-map shortcut-key)
                  blank? (str/blank? (get group-map shortcut-key))]
              (and in-group? blank?
+                  (not (false? (:customizable shortcut)))
                   (or (str/blank? search-term)
-                      (matches-search (:translation shortcut) search-term))))))
+                      (matches-search (:translation shortcut) search-term)
+                      (matches-search (ss/shortcut->command-string shortcut) search-term))))))
 
         on-import-file
         (mf/use-fn
@@ -414,11 +428,16 @@
 
         on-export
         (mf/use-fn
-         (mf/deps shortcuts-json has-custom-shortcuts)
+         (mf/deps shortcuts-json has-custom-shortcuts (:fullname profile))
          (fn []
            (when has-custom-shortcuts
-             (->> (wapi/create-blob shortcuts-json "application/json")
-                  (dom/trigger-download "penpot-shortcuts.json")))))
+             (let [fullname (-> (or (:fullname profile) "user")
+                                (str/replace #"[^a-zA-Z0-9\-_ ]" "")
+                                (str/replace #"\s+" "_"))
+                   date     (.slice (.toISOString (js/Date.)) 0 10)
+                   filename (str "penpot-shortcuts-" fullname "-" date ".json")]
+               (->> (wapi/create-blob shortcuts-json "application/json")
+                    (dom/trigger-download filename))))))
 
         on-file-selected
         (mf/use-fn
@@ -439,9 +458,9 @@
                                                   :imported-shortcuts shortcuts
                                                   :custom-shortcuts custom-shortcuts
                                                   :all-shortcuts-raw all-shortcuts-raw}))
-                           (st/emit! (ntf/error (tr "errors.invalid-data")))))
+                           (st/emit! (ntf/error (tr "import-shortcuts.invalid-file")))))
                        (catch :default _
-                         (st/emit! (ntf/error (tr "errors.invalid-data"))))))))
+                         (st/emit! (ntf/error (tr "import-shortcuts.invalid-file"))))))))
 
              (-> (mf/ref-val input-ref)
                  (dom/set-value! "")))))]
@@ -459,6 +478,10 @@
        [:> icon* {:icon-id i/info
                   :class (stl/css :shortcuts-description-icon)}]
        (tr "shortcuts.reload-hint")]
+      (when-not (ds/layout-map-supported?)
+        [:> context-notification* {:level :warning
+                                   :class (stl/css :layout-map-warning)}
+         (tr "shortcuts.layout-map-missing")])
 
       [:> (mf/provider ctx/shortcuts-ctx) {:value shortcuts-ctx-value}
        [:div {:class (stl/css :shortcuts-content)}

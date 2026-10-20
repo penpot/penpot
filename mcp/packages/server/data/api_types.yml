@@ -86,12 +86,13 @@ Penpot:
         distributeVertical(shapes: Shape[]): void;
         flatten(shapes: Shape[]): Path[];
         createVariantFromComponents(shapes: Board[]): VariantContainer;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
     Hierarchy
 
-    * Omit<Context, "addListener" | "removeListener">
+    * Omit<Context, "addListener" | "removeListener" | "management">
       + Penpot
   members:
     Properties:
@@ -880,6 +881,27 @@ Penpot:
         Returns VariantContainer
 
         The variant container created
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the layout settles, the promise is rejected. Defaults to
+          30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the layout is updated. It is
+        rejected with an Error, both on timeout and on an invalid timeout value.
 ActiveUser:
   overview: |-
     Interface ActiveUser
@@ -1118,9 +1140,9 @@ Board:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -1185,6 +1207,7 @@ Board:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -1533,9 +1556,9 @@ Board:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -2175,6 +2198,27 @@ Board:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 VariantContainer:
   overview: |-
     Interface VariantContainer
@@ -2271,9 +2315,9 @@ VariantContainer:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -2338,6 +2382,7 @@ VariantContainer:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -2689,9 +2734,9 @@ VariantContainer:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -3331,6 +3376,27 @@ VariantContainer:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 Boolean:
   overview: |-
     Interface Boolean
@@ -3414,9 +3480,9 @@ Boolean:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -3481,6 +3547,7 @@ Boolean:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -3786,9 +3853,9 @@ Boolean:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -4375,6 +4442,27 @@ Boolean:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 CloseOverlay:
   overview: |-
     Interface CloseOverlay
@@ -4742,9 +4830,9 @@ CommonLayout:
         rightPadding: number;
         bottomPadding: number;
         leftPadding: number;
-        horizontalSizing: "fill"
-        | "auto"
-        | "fix";
+        paddingType: "simple"
+        | "multiple";
+        horizontalSizing: "fill" | "auto" | "fix";
         verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
     }
@@ -4873,6 +4961,16 @@ CommonLayout:
         ```
 
         The `leftPadding` property specifies the padding at the left of the container.
+      paddingType: |-
+        ```
+        paddingType: "simple" | "multiple"
+        ```
+
+        The `paddingType` property specifies how the four padding values are applied.
+        It can be one of the following values:
+
+        * 'simple': the vertical and horizontal paddings are mirrored across both sides.
+        * 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
       horizontalSizing: |-
         ```
         horizontalSizing: "fill" | "auto" | "fix"
@@ -4904,6 +5002,595 @@ CommonLayout:
         The `remove` method removes the layout.
 
         Returns void
+WorkspaceContext:
+  overview: |-
+    Interface WorkspaceContext
+    ==========================
+
+    Current workspace of this browser tab.
+
+    ```
+    interface WorkspaceContext {
+        status: "none" | "loading" | "ready";
+        fileId: string | null;
+        fileName: string | null;
+        teamId: string | null;
+    }
+    ```
+
+    Referenced by: EventsMap, PenpotMgmt
+  members:
+    Properties:
+      status: |-
+        ```
+        readonly status: "none" | "loading" | "ready"
+        ```
+      fileId: |-
+        ```
+        readonly fileId: string | null
+        ```
+      fileName: |-
+        ```
+        readonly fileName: string | null
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string | null
+        ```
+Team:
+  overview: |-
+    Interface Team
+    ==============
+
+    A team the user belongs to. Requires `manage:teams`.
+
+    Values are a snapshot taken when the team was listed; changes made through
+    this object update it.
+    Property assignments run asynchronously and update values after success.
+    Backend failures are logged to the console; assignments cannot be awaited.
+
+    ```
+    interface Team {
+        id: string;
+        isDefault: boolean;
+        name: string;
+        listProjects(): Promise<Project[]>;
+        listDeletedProjects(): Promise<Project[]>;
+        listDeletedFiles(): Promise<ProjectFile[]>;
+        createProject(options: { name: string }): Promise<Project>;
+    }
+    ```
+
+    Referenced by: PenpotMgmt, Project
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+      isDefault: |-
+        ```
+        readonly isDefault: boolean
+        ```
+
+        Whether this is the user's personal team.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The team name. Assigning renames the team; requires `manage:teams`.
+        Trims the name and requires 1 to 250 characters.
+    Methods:
+      listProjects: |-
+        ```
+        listProjects(): Promise<Project[]>
+        ```
+
+        Lists the team's projects. Requires `content:read`.
+
+        Returns Promise<Project[]>
+
+        Example
+        ```
+        const [team] = await penpotMgmt.listTeams();const projects = await team.listProjects();
+        ```
+      listDeletedProjects: |-
+        ```
+        listDeletedProjects(): Promise<Project[]>
+        ```
+
+        Lists projects still recoverable from Trash. Requires `content:read`.
+
+        Returns Promise<Project[]>
+      listDeletedFiles: |-
+        ```
+        listDeletedFiles(): Promise<ProjectFile[]>
+        ```
+
+        Lists files still recoverable from Trash. Requires `content:read`.
+
+        Returns Promise<ProjectFile[]>
+      createProject: |-
+        ```
+        createProject(options: { name: string }): Promise<Project>
+        ```
+
+        Creates a project in the team. Requires `manage:projects`.
+
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not change navigation.
+
+        Parameters
+
+        * options: { name: string }
+
+        Returns Promise<Project>
+
+        Example
+        ```
+        const project = await team.createProject({ name: 'Design system' });
+        ```
+Project:
+  overview: |-
+    Interface Project
+    =================
+
+    A project in the dashboard.
+
+    Values are a snapshot taken when the project was listed; changes made through
+    this object update it.
+    Property assignments run asynchronously and update values after success.
+    Backend failures are logged to the console; assignments cannot be awaited.
+
+    ```
+    interface Project {
+        id: string;
+        teamId: string;
+        isDefault: boolean;
+        fileCount: number;
+        name: string;
+        pinned: boolean;
+        listFiles(): Promise<ProjectFile[]>;
+        listDeletedFiles(): Promise<ProjectFile[]>;
+        restore(): Promise<void>;
+        createFile(options: { name: string }): Promise<ProjectFile>;
+        duplicate(options?: { name?: string }): Promise<Project>;
+        moveTo(team: Team): Promise<void>;
+        remove(): Promise<void>;
+    }
+    ```
+
+    Referenced by: PenpotMgmt, Project, ProjectFile, Team
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string
+        ```
+      isDefault: |-
+        ```
+        readonly isDefault: boolean
+        ```
+
+        Whether this is the team's Drafts project.
+      fileCount: |-
+        ```
+        readonly fileCount: number
+        ```
+
+        Number of files when the project was listed; file operations do not update it.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The project name. Assigning renames the project; requires `manage:projects`.
+        Trims the name and requires 1 to 250 characters.
+      pinned: |-
+        ```
+        pinned: boolean
+        ```
+
+        Whether the project is pinned in the sidebar. Assigning requires `manage:projects`.
+    Methods:
+      listFiles: |-
+        ```
+        listFiles(): Promise<ProjectFile[]>
+        ```
+
+        Lists the files in the project. Requires `content:read`.
+
+        Returns Promise<ProjectFile[]>
+
+        Example
+        ```
+        const files = await project.listFiles();
+        ```
+      listDeletedFiles: |-
+        ```
+        listDeletedFiles(): Promise<ProjectFile[]>
+        ```
+
+        Lists the project's files still recoverable from Trash. Requires `content:read`.
+
+        Returns Promise<ProjectFile[]>
+      restore: |-
+        ```
+        restore(): Promise<void>
+        ```
+
+        Restores the project through its files using the dashboard's Trash operation.
+        Requires `manage:projects` and team edit access. Does not require `manage:delete`.
+        Rejects if the project has no recoverable files, including empty projects.
+
+        Returns Promise<void>
+      createFile: |-
+        ```
+        createFile(options: { name: string }): Promise<ProjectFile>
+        ```
+
+        Creates a file with an initial page in the project. Requires `content:write`.
+
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not open the file. Use `ProjectFile.open` to edit it.
+
+        Parameters
+
+        * options: { name: string }
+
+        Returns Promise<ProjectFile>
+
+        Example
+        ```
+        const file = await project.createFile({ name: 'Login' });await file.open();
+        ```
+      duplicate: |-
+        ```
+        duplicate(options?: { name?: string }): Promise<Project>
+        ```
+
+        Duplicates the project with all its files. Requires `manage:projects`.
+
+        `name` defaults to the name the backend chooses.
+
+        Parameters
+
+        * options: { name?: string }
+
+        Returns Promise<Project>
+      moveTo: |-
+        ```
+        moveTo(team: Team): Promise<void>
+        ```
+
+        Moves the project to another team. Requires `manage:teams`.
+
+        Parameters
+
+        * team: Team
+
+        Returns Promise<void>
+      remove: |-
+        ```
+        remove(): Promise<void>
+        ```
+
+        Moves the project and its files to Trash. Requires `manage:delete`.
+        They can be restored during the retention period. Cannot permanently delete.
+
+        Returns Promise<void>
+ProjectFile:
+  overview: |-
+    Interface ProjectFile
+    =====================
+
+    A file in the dashboard, which may or may not be open.
+
+    Values are a snapshot taken when the file was listed; changes made through
+    this object update it. To read or edit its content, `open` it and use
+    `penpot.currentFile`.
+    Property assignments run asynchronously and update values after success.
+    Backend failures are logged to the console; assignments cannot be awaited.
+
+    ```
+    interface ProjectFile {
+        id: string;
+        teamId: string;
+        projectId: string;
+        modifiedAt: string;
+        name: string;
+        shared: boolean;
+        open(): Promise<void>;
+        restore(): Promise<void>;
+        moveTo(project: Project): Promise<void>;
+        duplicate(options?: { name?: string }): Promise<ProjectFile>;
+        remove(): Promise<void>;
+    }
+    ```
+
+    Referenced by: PenpotMgmt, Project, ProjectFile
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+      teamId: |-
+        ```
+        readonly teamId: string
+        ```
+      projectId: |-
+        ```
+        readonly projectId: string
+        ```
+      modifiedAt: |-
+        ```
+        readonly modifiedAt: string
+        ```
+
+        Last modification time as an ISO 8601 string in UTC.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The file name. Assigning renames the file; requires `content:write`.
+        Trims the name and requires 1 to 250 characters.
+      shared: |-
+        ```
+        shared: boolean
+        ```
+
+        Whether the file is shared as a library with its team. Assigning requires
+        `library:write`. A shared file is listed by
+        `penpot.library.availableLibraries()`; unsharing copies its assets into
+        every file that uses it and disconnects them.
+    Methods:
+      open: |-
+        ```
+        open(): Promise<void>
+        ```
+
+        Opens the file in this tab and resolves once its workspace and page are
+        ready. Requires `content:read`.
+
+        Returns Promise<void>
+      restore: |-
+        ```
+        restore(): Promise<void>
+        ```
+
+        Restores the file using the dashboard's Trash operation, including its parent
+        project if deleted. Requires `content:write` and team edit access.
+        Rejects if the file no longer exists. Does not require `manage:delete`.
+
+        Returns Promise<void>
+      moveTo: |-
+        ```
+        moveTo(project: Project): Promise<void>
+        ```
+
+        Moves the file to another project of the same team. Requires `content:write`.
+        Rejects a destination that currently belongs to another team.
+
+        Parameters
+
+        * project: Project
+
+        Returns Promise<void>
+      duplicate: |-
+        ```
+        duplicate(options?: { name?: string }): Promise<ProjectFile>
+        ```
+
+        Duplicates the file in its project. Requires `content:write`.
+
+        `name` defaults to the name the backend chooses.
+
+        Parameters
+
+        * options: { name?: string }
+
+        Returns Promise<ProjectFile>
+      remove: |-
+        ```
+        remove(): Promise<void>
+        ```
+
+        Moves the file to Trash. Requires `manage:delete`.
+        It can be restored during the retention period. Cannot permanently delete.
+
+        Returns Promise<void>
+PenpotMgmt:
+  overview: |-
+    Interface PenpotMgmt
+    ====================
+
+    Application management API exposed as `penpotMgmt` to global plugins.
+
+    * Lists teams, projects and files, and opens files, from the dashboard or a
+      file workspace. Teams, projects and files are objects with their own
+      properties and methods.
+    * Listing and opening require `content:read`; teams require `manage:teams`.
+    * File operations on `penpot` require a ready workspace.
+    * Reacquire file, page and shape objects after changing files.
+
+    ```
+    interface PenpotMgmt {
+        workspace: WorkspaceContext;
+        listTeams(): Promise<Team[]>;
+        createTeam(options: { name: string }): Promise<Team>;
+        listProjects(options?: { teamId?: string }): Promise<Project[]>;
+        listDeletedProjects(options?: { teamId?: string }): Promise<Project[]>;
+        listDeletedFiles(options?: { teamId?: string }): Promise<ProjectFile[]>;
+        getFile(fileId: string): Promise<ProjectFile>;
+        openFile(fileId: string, options?: { teamId?: string }): Promise<void>;
+        on(
+            type: "workspacechange",
+            callback: (workspace: WorkspaceContext) => void,
+        ): symbol;
+        off(listenerId: symbol): void;
+    }
+    ```
+
+    Referenced by: Context
+  members:
+    Properties:
+      workspace: |-
+        ```
+        readonly workspace: WorkspaceContext
+        ```
+
+        Current workspace availability and metadata; usable for file operations when status is `ready`.
+    Methods:
+      listTeams: |-
+        ```
+        listTeams(): Promise<Team[]>
+        ```
+
+        Lists the teams of the user. Requires `manage:teams`.
+
+        Returns Promise<Team[]>
+
+        Example
+        ```
+        const teams = await penpotMgmt.listTeams();
+        ```
+      createTeam: |-
+        ```
+        createTeam(options: { name: string }): Promise<Team>
+        ```
+
+        Creates a team with the user as owner. Requires `manage:teams`.
+
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not change navigation.
+
+        Parameters
+
+        * options: { name: string }
+
+        Returns Promise<Team>
+
+        Example
+        ```
+        const team = await penpotMgmt.createTeam({ name: 'Marketing' });
+        ```
+      listProjects: |-
+        ```
+        listProjects(options?: { teamId?: string }): Promise<Project[]>
+        ```
+
+        Lists the projects of a team. Requires `content:read`.
+
+        * `teamId` defaults to the current team.
+        * Rejects invalid identifiers and backend access errors.
+
+        Parameters
+
+        * options: { teamId?: string }
+
+        Returns Promise<Project[]>
+
+        Example
+        ```
+        const projects = await penpotMgmt.listProjects();
+        ```
+      listDeletedProjects: |-
+        ```
+        listDeletedProjects(options?: { teamId?: string }): Promise<Project[]>
+        ```
+
+        Lists projects still recoverable from Trash. Requires `content:read`.
+        `teamId` defaults to the current team. Use `Project.restore` to recover them.
+
+        Parameters
+
+        * options: { teamId?: string }
+
+        Returns Promise<Project[]>
+      listDeletedFiles: |-
+        ```
+        listDeletedFiles(options?: { teamId?: string }): Promise<ProjectFile[]>
+        ```
+
+        Lists files still recoverable from Trash. Requires `content:read`.
+        `teamId` defaults to the current team. Use `ProjectFile.restore` to recover them.
+
+        Parameters
+
+        * options: { teamId?: string }
+
+        Returns Promise<ProjectFile[]>
+      getFile: |-
+        ```
+        getFile(fileId: string): Promise<ProjectFile>
+        ```
+
+        Loads a file by id, open or not. Requires `content:read`.
+
+        Parameters
+
+        * fileId: string
+
+        Returns Promise<ProjectFile>
+
+        Example
+        ```
+        const file = await penpotMgmt.getFile(penpotMgmt.workspace.fileId!);file.name = 'Checkout';
+        ```
+      openFile: |-
+        ```
+        openFile(fileId: string, options?: { teamId?: string }): Promise<void>
+        ```
+
+        Opens a file in this tab and resolves once its workspace and page are ready.
+
+        * `teamId` defaults to the current team.
+        * Rejects invalid identifiers, failed or superseded navigation, and waits exceeding 30 seconds.
+
+        Parameters
+
+        * fileId: string
+        * options: { teamId?: string }
+
+        Returns Promise<void>
+
+        Example
+        ```
+        await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+        ```
+      on: |-
+        ```
+        on(
+            type: "workspacechange",
+            callback: (workspace: WorkspaceContext) => void,
+        ): symbol
+        ```
+
+        Subscribes to workspace availability and metadata changes.
+
+        Parameters
+
+        * type: "workspacechange"
+        * callback: (workspace: WorkspaceContext) => void
+
+        Returns symbol
+      off: |-
+        ```
+        off(listenerId: symbol): void
+        ```
+
+        Parameters
+
+        * listenerId: symbol
+
+        Returns void
 Context:
   overview: |-
     Interface Context
@@ -4913,6 +5600,7 @@ Context:
 
     ```
     interface Context {
+        management?: Omit<PenpotMgmt, "on" | "off">;
         version: string;
         root: Shape | null;
         currentFile: File | null;
@@ -4979,10 +5667,18 @@ Context:
         distributeVertical(shapes: Shape[]): void;
         flatten(shapes: Shape[]): Path[];
         createVariantFromComponents(shapes: Board[]): VariantContainer;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
   members:
     Properties:
+      management: |-
+        ```
+        readonly management?: Omit<PenpotMgmt, "on" | "off">
+        ```
+
+        Backs `penpotMgmt`. Its events go through the plugin listener registry,
+        so `on` and `off` are not part of it.
       version: |-
         ```
         readonly version: string
@@ -5666,6 +6362,27 @@ Context:
         Returns VariantContainer
 
         The variant container created
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the layout settles, the promise is rejected. Defaults to
+          30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the layout is updated. It is
+        rejected with an Error, both on timeout and on an invalid timeout value.
 ContextGeometryUtils:
   overview: |-
     Interface ContextGeometryUtils
@@ -6074,9 +6791,9 @@ Ellipse:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -6141,6 +6858,7 @@ Ellipse:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -6418,9 +7136,9 @@ Ellipse:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -6952,6 +7670,27 @@ Ellipse:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 EventsMap:
   overview: |-
     Interface EventsMap
@@ -6967,6 +7706,8 @@ EventsMap:
 
     ```
     interface EventsMap {
+        workspacechange: WorkspaceContext;
+        logout: void;
         pagechange: Page;
         filechange: File;
         selectionchange: string[];
@@ -6980,6 +7721,14 @@ EventsMap:
     Referenced by: Context, Penpot
   members:
     Properties:
+      workspacechange: |-
+        ```
+        readonly workspacechange: WorkspaceContext
+        ```
+      logout: |-
+        ```
+        readonly logout: void
+        ```
       pagechange: |-
         ```
         readonly pagechange: Page
@@ -7086,7 +7835,11 @@ File:
         pages: Page[];
         export(
             exportType: "penpot" | "zip",
-            libraryExportType?: "all" | "merge" | "detach",
+            libraryExportType?:
+                | "include-libraries"
+                | "merge-libraries"
+                | "detach-libraries"
+                | "link-later",
         ): Promise<Uint8Array<ArrayBufferLike>>;
         findVersions(criteria?: { createdBy: User }): Promise<FileVersion[]>;
         saveVersion(label: string): Promise<FileVersion>;
@@ -7137,7 +7890,11 @@ File:
         ```
         export(
             exportType: "penpot" | "zip",
-            libraryExportType?: "all" | "merge" | "detach",
+            libraryExportType?:
+                | "include-libraries"
+                | "merge-libraries"
+                | "detach-libraries"
+                | "link-later",
         ): Promise<Uint8Array<ArrayBufferLike>>
         ```
 
@@ -7146,13 +7903,13 @@ File:
         Parameters
 
         * exportType: "penpot" | "zip"
-        * libraryExportType: "all" | "merge" | "detach"
+        * libraryExportType: "include-libraries" | "merge-libraries" | "detach-libraries" | "link-later"
 
         Returns Promise<Uint8Array<ArrayBufferLike>>
 
         Example
         ```
-        const exportedData = await file.export('penpot', 'all');
+        const exportedData = await file.export('penpot', 'include-libraries');
         ```
       findVersions: |-
         ```
@@ -7578,9 +8335,9 @@ FlexLayout:
         rightPadding: number;
         bottomPadding: number;
         leftPadding: number;
-        horizontalSizing: "fill"
-        | "auto"
-        | "fix";
+        paddingType: "simple"
+        | "multiple";
+        horizontalSizing: "fill" | "auto" | "fix";
         verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
         dir: "row" | "row-reverse" | "column" | "column-reverse";
@@ -7713,6 +8470,16 @@ FlexLayout:
         ```
 
         The `leftPadding` property specifies the padding at the left of the container.
+      paddingType: |-
+        ```
+        paddingType: "simple" | "multiple"
+        ```
+
+        The `paddingType` property specifies how the four padding values are applied.
+        It can be one of the following values:
+
+        * 'simple': the vertical and horizontal paddings are mirrored across both sides.
+        * 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
       horizontalSizing: |-
         ```
         horizontalSizing: "fill" | "auto" | "fix"
@@ -8136,9 +8903,9 @@ GridLayout:
         rightPadding: number;
         bottomPadding: number;
         leftPadding: number;
-        horizontalSizing: "fill"
-        | "auto"
-        | "fix";
+        paddingType: "simple"
+        | "multiple";
+        horizontalSizing: "fill" | "auto" | "fix";
         verticalSizing: "fill" | "auto" | "fix";
         remove(): void;
         dir: "row" | "column";
@@ -8280,6 +9047,16 @@ GridLayout:
         ```
 
         The `leftPadding` property specifies the padding at the left of the container.
+      paddingType: |-
+        ```
+        paddingType: "simple" | "multiple"
+        ```
+
+        The `paddingType` property specifies how the four padding values are applied.
+        It can be one of the following values:
+
+        * 'simple': the vertical and horizontal paddings are mirrored across both sides.
+        * 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
       horizontalSizing: |-
         ```
         horizontalSizing: "fill" | "auto" | "fix"
@@ -8622,9 +9399,9 @@ Group:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -8689,6 +9466,7 @@ Group:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -8970,9 +9748,9 @@ Group:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -9570,6 +10348,27 @@ Group:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 GuideColumn:
   overview: |-
     Interface GuideColumn
@@ -9903,9 +10702,9 @@ Image:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -9970,6 +10769,7 @@ Image:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -10247,9 +11047,9 @@ Image:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -10781,6 +11581,27 @@ Image:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 Interaction:
   overview: |-
     Interface Interaction
@@ -10917,6 +11738,7 @@ LayoutChildProperties:
         rightMargin: number;
         bottomMargin: number;
         leftMargin: number;
+        marginType: "simple" | "multiple";
         maxWidth: number | null;
         maxHeight: number | null;
         minWidth: number | null;
@@ -11015,6 +11837,16 @@ LayoutChildProperties:
 
         Sets the left margin of the child element.
         This is the space to the left of the element.
+      marginType: |-
+        ```
+        marginType: "simple" | "multiple"
+        ```
+
+        The `marginType` property specifies how the four margin values are applied.
+        It can be one of the following values:
+
+        * 'simple': the vertical and horizontal margins are mirrored across both sides.
+        * 'multiple': each of the four sides (top, right, bottom, left) is honoured independently.
       maxWidth: |-
         ```
         maxWidth: number | null
@@ -12950,9 +13782,9 @@ Page:
                 nameLike?: string;
                 type?:
                     | "boolean"
-                    | "path"
                     | "ellipse"
                     | "image"
+                    | "path"
                     | "text"
                     | "group"
                     | "board"
@@ -13066,9 +13898,9 @@ Page:
                 nameLike?: string;
                 type?:
                     | "boolean"
-                    | "path"
                     | "ellipse"
                     | "image"
+                    | "path"
                     | "text"
                     | "group"
                     | "board"
@@ -13088,9 +13920,9 @@ Page:
               nameLike?: string;  
               type?:  
                   | "boolean"  
-                  | "path"  
                   | "ellipse"  
                   | "image"  
+                  | "path"  
                   | "text"  
                   | "group"  
                   | "board"  
@@ -13432,9 +14264,9 @@ Path:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -13499,6 +14331,7 @@ Path:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -13798,9 +14631,9 @@ Path:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -14346,6 +15179,27 @@ Path:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 PathCommand:
   overview: |-
     Interface PathCommand
@@ -14791,9 +15645,9 @@ Rectangle:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -14858,6 +15712,7 @@ Rectangle:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -15135,9 +15990,9 @@ Rectangle:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -15669,6 +16524,27 @@ Rectangle:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 RulerGuide:
   overview: |-
     Interface RulerGuide
@@ -15869,9 +16745,9 @@ ShapeBase:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -15936,6 +16812,7 @@ ShapeBase:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
     }
     ```
 
@@ -16212,9 +17089,9 @@ ShapeBase:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -16746,6 +17623,27 @@ ShapeBase:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 Slide:
   overview: |-
     Interface Slide
@@ -16756,7 +17654,7 @@ Slide:
     ```
     interface Slide {
         type: "slide";
-        way: "in" | "out";
+        way: "out" | "in";
         direction: "left" | "right" | "up" | "down";
         duration: number;
         offsetEffect?: boolean;
@@ -16775,7 +17673,7 @@ Slide:
         Type of the animation.
       way: |-
         ```
-        readonly way: "in" | "out"
+        readonly way: "out" | "in"
         ```
 
         Indicate if the slide will be either in-to-out `in` or out-to-in `out`.
@@ -16824,6 +17722,7 @@ Stroke:
         strokeCapStart?: StrokeCap;
         strokeCapEnd?: StrokeCap;
         strokeColorGradient?: Gradient;
+        strokeImage?: ImageData;
     }
     ```
 
@@ -16891,6 +17790,12 @@ Stroke:
         ```
 
         The optional gradient stroke defined by a Gradient object.
+      strokeImage: |-
+        ```
+        strokeImage?: ImageData
+        ```
+
+        The optional image stroke defined by an ImageData object.
 SvgRaw:
   overview: |-
     Interface SvgRaw
@@ -16967,9 +17872,9 @@ SvgRaw:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -17034,6 +17939,7 @@ SvgRaw:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
         type: "svg-raw";
     }
     ```
@@ -17304,9 +18210,9 @@ SvgRaw:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -17844,6 +18750,27 @@ SvgRaw:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
 Text:
   overview: |-
     Interface Text
@@ -17920,9 +18847,9 @@ Text:
         tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -17987,6 +18914,7 @@ Text:
         applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
+        waitForLayoutUpdate(timeout?: number): Promise<void>;
         type: "text";
         characters: string;
         growType: "fixed" | "auto-width" | "auto-height";
@@ -18275,9 +19203,9 @@ Text:
         readonly tokens: {
             width: string;
             height: string;
-            fill: string;
             x: string;
             y: string;
+            fill: string;
             all: string;
             borderRadiusTopLeft: string;
             borderRadiusTopRight: string;
@@ -18917,6 +19845,27 @@ Text:
         Removes the shape from its parent.
 
         Returns void
+      waitForLayoutUpdate: |-
+        ```
+        waitForLayoutUpdate(timeout?: number): Promise<void>
+        ```
+
+        This method returns a promise that will be resolved when all the
+        pending layout updates have finished and the components have synchronized.
+        If no layout work is pending the promise resolves immediately.
+
+        Parameters
+
+        * timeout: number
+
+          Maximum time to wait, in milliseconds. If the timeout
+          elapses before the shape's layout settles, the promise is rejected.
+          Defaults to 30000; the promise never waits indefinitely.
+
+        Returns Promise<void>
+
+        The promise to be resolved when the shape's layout is updated. It
+        is rejected with an Error, both on timeout and on an invalid timeout value.
       getRange: |-
         ```
         getRange(start: number, end: number): TextRange
@@ -22066,6 +23015,7 @@ TokenCatalog:
 
     ```
     interface TokenCatalog {
+        isEditableTokens: boolean;
         themes: TokenTheme[];
         sets: TokenSet[];
         addTheme(group: { group: string; name: string }): TokenTheme;
@@ -22078,6 +23028,17 @@ TokenCatalog:
     Referenced by: Library
   members:
     Properties:
+      isEditableTokens: |-
+        ```
+        readonly isEditableTokens: boolean
+        ```
+
+        Returns true if the tokens in this catalog can be edited. Only the
+        catalog of the current file (`penpot.library.local.tokens`) can be
+        edited, and only when the file is its own tokens source.
+        When the tokens come from an external library, the local catalog
+        can still change the active themes and sets, and its tokens can
+        still be applied to shapes.
       themes: |-
         ```
         readonly themes: TokenTheme[]
@@ -22212,7 +23173,8 @@ TokenSet:
         active: boolean
         ```
 
-        Indicates if the set is currently active.
+        Indicates if the set is active in the file that owns this catalog.
+        Only sets from `penpot.library.local.tokens` can be changed.
       tokens: |-
         ```
         readonly tokens: Token[]
@@ -22232,6 +23194,7 @@ TokenSet:
         ```
 
         Toggles the active status of this set.
+        Only sets from `penpot.library.local.tokens` can be changed.
 
         Returns void
       getTokenById: |-
@@ -22355,7 +23318,8 @@ TokenTheme:
         active: boolean
         ```
 
-        Indicates if the theme is currently active.
+        Indicates if the theme is active in the file that owns this catalog.
+        Only themes from `penpot.library.local.tokens` can be changed.
       activeSets: |-
         ```
         readonly activeSets: TokenSet[]
@@ -22369,6 +23333,7 @@ TokenTheme:
         ```
 
         Toggles the active status of this theme.
+        Only themes from `penpot.library.local.tokens` can be changed.
 
         Returns void
       addSet: |-
@@ -22884,7 +23849,7 @@ ImageData:
     }
     ```
 
-    Referenced by: Color, Context, Fill, LibraryColor, Penpot
+    Referenced by: Color, Context, Fill, LibraryColor, Penpot, Stroke
   members:
     Properties:
       name: |-
@@ -22945,6 +23910,7 @@ LibraryContext:
     type LibraryContext = {
         local: Library;
         connected: Library[];
+        tokensSource: Library;
         availableLibraries(): Promise<LibrarySummary[]>;
         connectLibrary(libraryId: string): Promise<Library>;
     }
@@ -22974,6 +23940,33 @@ LibraryContext:
         Example
         ```
         const connectedLibraries = libraryContext.connected;
+        ```
+      tokensSource: |-
+        ```
+        tokensSource: Library
+        ```
+
+        The library that supplies tokens to the current file.
+        Defaults to the local library.
+
+        Assign a connected library that has its own tokens to use it as the
+        source. This copies its active themes and sets to the current file.
+        Assign `local` to use the file's own tokens again. Themes and sets
+        that don't exist in the local tokens are deactivated.
+        Setting the source requires `content:write` permission and supports undo.
+        Assigning the current source again keeps the active themes and sets.
+
+        The catalog of an external `tokensSource` is read-only and reports the
+        library's own active themes and sets. To change which ones are active
+        in the current file, use `penpot.library.local.tokens`, which lists the
+        tokens of the source.
+
+        Example
+        ```
+        const source = await penpot.library.connectLibrary('library-id');
+        penpot.library.tokensSource = source;
+        // Restore local tokens:
+        penpot.library.tokensSource = penpot.library.local;
         ```
     Methods:
       availableLibraries: |-

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.binfile.v1
   "A custom, perfromance and efficiency focused binfile format impl"
@@ -174,7 +174,7 @@
     (assert-mark m :obj)
     (let [size (read-long! input)]
       (assert (pos? size) "incorrect header size found on reading header")
-      (when (> size bfc/max-object-size)
+      (when (> size bfc/default-max-binary-entry-size)
         (ex/raise :type :validation
                   :code :max-file-size-reached
                   :hint (dm/str "unable to import object with size " size " bytes")))
@@ -249,7 +249,7 @@
         p (tmp/tempfile :prefix "penpot.binfile.")]
     (assert-mark m :stream)
 
-    (when (> s bfc/max-object-size)
+    (when (> s bfc/default-max-binary-entry-size)
       (ex/raise :type :validation
                 :code :max-file-size-reached
                 :hint (str/ffmt "unable to import storage object with size % bytes" s)))
@@ -305,8 +305,9 @@
 (defn write-export!
   [{:keys [::bfc/include-libraries ::bfc/embed-assets] :as cfg}]
   (when (and include-libraries embed-assets)
-    (throw (IllegalArgumentException.
-            "the `include-libraries` and `embed-assets` are mutally excluding options")))
+    (ex/raise :type :validation
+              :code :incompatible-options
+              :hint "the `include-libraries` and `embed-assets` are mutually exclusive options"))
 
   (write-export cfg))
 
@@ -454,7 +455,7 @@
 (defn- read-import-v1
   [{:keys [::db/conn ::bfc/project-id ::bfc/profile-id ::bfc/input] :as cfg}]
 
-  (bfc/disable-database-timeouts! cfg)
+  (bfc/configure-import-transaction cfg)
 
   (pu/with-open [input (zstd-input-stream input)
                  input (io/data-input-stream input)]
@@ -481,9 +482,9 @@
         (bfm/apply-pending-migrations! cfg)
 
         ;; Knowing that the ids of the created files are in index,
-        ;; just lookup them and return it as a set
+        ;; just lookup them and return them in the same shape as v3.
         (let [files (-> bfc/*state* deref :files)]
-          (into #{} (keep #(get-in @bfc/*state* [:index %])) files))))))
+          {:file-ids (into [] (keep #(get-in @bfc/*state* [:index %])) files)})))))
 
 (defmethod read-import :v1
   [options]
@@ -606,16 +607,26 @@
 
     (doseq [expected-storage-id ids]
       (let [id    (read-uuid! input)
-            mdata (read-obj! input)]
+            mdata (d/update-when (read-obj! input) :content-type bfc/normalize-content-type)]
 
         (when (not= id expected-storage-id)
           (ex/raise :type :validation
                     :code :inconsistent-penpot-file
                     :hint "the penpot file seems corrupt, found unexpected uuid (storage-object-id)"))
 
+        (bfc/check-storage-content-type mdata)
+
         (l/dbg :hint "readed storage object" :id (str id) ::l/sync? true)
 
         (let [[size resource] (read-stream! input)
+              [resource size] (if (bfc/svg-object? mdata)
+                                (let [raw (if (bytes? resource)
+                                            resource
+                                            (with-open [istream (jio/input-stream resource)]
+                                              (io/read istream)))
+                                      {:keys [bytes size]} (bfc/sanitize-imported-svg mdata raw)]
+                                  [bytes size])
+                                [resource size])
               hash            (sto/calculate-hash resource)
               content         (-> (sto/content resource size)
                                   (sto/wrap-with-hash hash))

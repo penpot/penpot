@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
@@ -34,7 +34,6 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;; FIXME: this is a workaround until we export this class on beicon library
@@ -125,13 +124,22 @@
         success-register
         (mf/use-fn
          (fn [data]
-           (reset! register-token (:token data))
-           (reset! current-section :register-validate)))
+           (cond
+             (:invitation-token data)
+             (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+
+             (:is-active data)
+             (st/emit! (rt/reload true))
+
+             :else
+             (do
+               (reset! user-email (:email data))
+               (reset! current-section :register-email-sent)))))
 
         register-email-sent
         (mf/use-fn
-         (fn [email]
-           (reset! user-email email)
+         (fn [data]
+           (reset! user-email (if (string? data) data (:email data)))
            (reset! current-section :register-email-sent)))
 
         recovery-email-sent
@@ -551,21 +559,25 @@
 (mf/defc exception-section*
   {::mf/private true}
   [{:keys [data] :as props}]
-  (let [type   (get data :type)
-        cause  (get data ::errors/instance)
+  (let [type        (get data :type)
+        cause       (get data ::errors/instance)
+        environment (errors/environment-error? cause)
 
-        report (mf/with-memo [cause]
-                 (when (ex/exception? cause)
-                   (errors/generate-report cause)))
+        report      (mf/with-memo [cause]
+                      (when (ex/exception? cause)
+                        (errors/generate-report cause {:format (if environment :compact :full)})))
 
-        props  (mf/spread-props props {:report report})]
+        props       (mf/spread-props props {:report report})]
 
     (mf/with-effect [report type cause]
       (when (and (ex/exception? cause)
                  (not (contains? #{:not-found :authentication} type)))
-        (errors/submit-report :event-name "exception-page"
+        ;; Environment pages are audit-only: they use the canonical
+        ;; `handled-exception` event instead of `exception-page`.
+        (errors/submit-report :event-name (if environment "handled-exception" "exception-page")
                               :report report
-                              :hint (ex/get-hint cause))))
+                              :hint (ex/get-hint cause)
+                              :cause cause)))
 
     (case type
       :not-found
@@ -600,12 +612,12 @@
   [{:keys [data route] :as props}]
 
   (let [type        (:type data)
-        path        (:path route)
         params      (:query-params route)
 
-        workspace?  (str/includes? path "workspace")
-        dashboard?  (str/includes? path "dashboard")
-        view?       (str/includes? path "view")
+        screen      (get params :screen)
+        workspace?  (= screen "workspace")
+        dashboard?  (= screen "dashboard")
+        view?       (= screen "view")
 
         ;; We store the request access info int this state
         info*       (mf/use-state nil)

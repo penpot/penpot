@@ -12,6 +12,13 @@ export class PenpotSync {
      * explicit "wait for propagation" primitive.
      */
     static awaitPropagation(): Promise<void> {
-        return new Promise((resolve) => setTimeout(resolve, PenpotSync.PROPAGATION_MS));
+        // @ts-ignore
+        if (penpot.waitForLayoutUpdate) {
+            // @ts-ignore
+            return penpot.waitForLayoutUpdate();
+        } else {
+            throw new Error("PenpotSync.awaitPropagation: waitForLayoutUpdate is not available");
+            return new Promise((resolve) => setTimeout(resolve, PenpotSync.PROPAGATION_MS));
+        }
     }
 }

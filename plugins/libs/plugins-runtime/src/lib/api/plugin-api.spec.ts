@@ -54,6 +54,138 @@ describe('Plugin api', () => {
     vi.clearAllMocks();
   });
 
+  describe('management', () => {
+    it.each(['none', 'loading', 'ready'])(
+      'lists teams and projects and loads files with workspace status %s',
+      async (status) => {
+        const teams = [{ id: 'team-id' }];
+        const projects = [{ id: 'project-id' }];
+        const file = { id: 'file-id' };
+        const management = {
+          workspace: { status },
+          listTeams: vi.fn().mockResolvedValue(teams),
+          createTeam: vi.fn().mockResolvedValue(teams[0]),
+          listProjects: vi.fn().mockResolvedValue(projects),
+          listDeletedProjects: vi.fn().mockResolvedValue(projects),
+          listDeletedFiles: vi.fn().mockResolvedValue([file]),
+          getFile: vi.fn().mockResolvedValue(file),
+        };
+        const { penpotMgmt } = createApi({
+          ...pluginManager,
+          manifest: {
+            ...pluginManager.manifest,
+            permissions: ['content:read', 'manage:teams'],
+            scope: 'global',
+          },
+          context: { ...pluginManager.context, management },
+        } as any);
+
+        await expect(penpotMgmt.listTeams()).resolves.toEqual(teams);
+        await expect(
+          penpotMgmt.createTeam({ name: 'Marketing' }),
+        ).resolves.toEqual(teams[0]);
+        expect(management.createTeam).toHaveBeenCalledWith({
+          name: 'Marketing',
+        });
+        await expect(penpotMgmt.listProjects()).resolves.toEqual(projects);
+        expect(management.listProjects).toHaveBeenLastCalledWith(undefined);
+        await penpotMgmt.listProjects({ teamId: 'team-id' });
+        expect(management.listProjects).toHaveBeenLastCalledWith({
+          teamId: 'team-id',
+        });
+        await expect(
+          penpotMgmt.listDeletedProjects({ teamId: 'team-id' }),
+        ).resolves.toEqual(projects);
+        expect(management.listDeletedProjects).toHaveBeenCalledWith({
+          teamId: 'team-id',
+        });
+        await expect(penpotMgmt.listDeletedFiles()).resolves.toEqual([file]);
+        expect(management.listDeletedFiles).toHaveBeenCalledWith(undefined);
+        await expect(penpotMgmt.getFile('file-id')).resolves.toEqual(file);
+        expect(management.getFile).toHaveBeenCalledWith('file-id');
+      },
+    );
+
+    it('requires content:read before listing projects or loading files', () => {
+      const management = {
+        listProjects: vi.fn(),
+        listDeletedProjects: vi.fn(),
+        listDeletedFiles: vi.fn(),
+        getFile: vi.fn(),
+      };
+      const { penpotMgmt } = createApi({
+        ...pluginManager,
+        manifest: {
+          ...pluginManager.manifest,
+          permissions: [],
+          scope: 'global',
+        },
+        context: { ...pluginManager.context, management },
+      } as any);
+
+      expect(() => penpotMgmt.listProjects()).toThrow(
+        'Permission content:read is not granted',
+      );
+      expect(() => penpotMgmt.getFile('file-id')).toThrow(
+        'Permission content:read is not granted',
+      );
+      expect(() => penpotMgmt.listDeletedProjects()).toThrow(
+        'Permission content:read is not granted',
+      );
+      expect(() => penpotMgmt.listDeletedFiles()).toThrow(
+        'Permission content:read is not granted',
+      );
+      expect(management.listProjects).not.toHaveBeenCalled();
+      expect(management.listDeletedProjects).not.toHaveBeenCalled();
+      expect(management.listDeletedFiles).not.toHaveBeenCalled();
+      expect(management.getFile).not.toHaveBeenCalled();
+    });
+
+    it('requires manage:teams before listing or creating teams', () => {
+      const management = { listTeams: vi.fn(), createTeam: vi.fn() };
+      const { penpotMgmt } = createApi({
+        ...pluginManager,
+        manifest: {
+          ...pluginManager.manifest,
+          permissions: ['content:read'],
+          scope: 'global',
+        },
+        context: { ...pluginManager.context, management },
+      } as any);
+
+      expect(() => penpotMgmt.listTeams()).toThrow(
+        'Permission manage:teams is not granted',
+      );
+      expect(() => penpotMgmt.createTeam({ name: 'Marketing' })).toThrow(
+        'Permission manage:teams is not granted',
+      );
+      expect(management.listTeams).not.toHaveBeenCalled();
+      expect(management.createTeam).not.toHaveBeenCalled();
+    });
+
+    it('preserves backend errors', async () => {
+      const error = new Error('Access denied');
+      const { penpotMgmt } = createApi({
+        ...pluginManager,
+        manifest: {
+          ...pluginManager.manifest,
+          permissions: ['content:read', 'manage:teams'],
+          scope: 'global',
+        },
+        context: {
+          ...pluginManager.context,
+          management: {
+            listTeams: vi.fn().mockRejectedValue(error),
+            getFile: vi.fn().mockRejectedValue(error),
+          },
+        },
+      } as any);
+
+      await expect(penpotMgmt.listTeams()).rejects.toBe(error);
+      await expect(penpotMgmt.getFile('file-id')).rejects.toBe(error);
+    });
+  });
+
   describe('ui', () => {
     describe.concurrent('permissions', () => {
       const api = createApi({

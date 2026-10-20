@@ -85,6 +85,21 @@ From the `mcp/` directory, run
 
 * `pnpm run build` to test the build of all packages
 * `pnpm run fmt` to apply the auto-formatter
+* `pnpm run test` runs the tests of `plugin` (node test runner) and `server` (tsx).
+  The committed `typescript` version is 6.x: the 7.x line ships only a version stub
+  at the `typescript` entry point, and its synchronous compiler API is gone, so
+  `ts.transpileModule` (used by the plugin tests to compile `main.ts`/`plugin.ts`
+  into a sandboxed browser-like context) fails there.
+* `packages/server` type-checks against the built `dist` of `@penpot/mcp-common`;
+  a stale `packages/common/dist` makes `types:check` fail with missing exports
+  (e.g. `PenpotSession`). Run `pnpm --filter mcp-common run build` first.
+* The server logger (`packages/server/src/logger.ts`) uses pino transports only
+  outside `node:test` (`logTransportTargets`). A transport spawns a worker thread
+  whose message port stays referenced once a line is in flight, so the test child
+  process keeps running after the tests finish and the suite hangs intermittently
+  (node reports `Promise resolution is still pending but the event loop has
+  already resolved` for the file's root test). Inside tests the logger writes to
+  stdout directly. `NODE_TEST_CONTEXT` is the env var `node --test` sets.
 * Cross-cutting testing principles and anti-patterns: `mem:testing`.
 
 ## Devenv plugin/server wiring
@@ -94,3 +109,10 @@ In the normal Penpot devenv MCP path, the browser plugin does not discover or ro
 The live plugin connection registry is in-memory inside each MCP server process (`PluginBridge.connectedClients` / `clientsByToken`). The database only stores MCP access tokens and profile props such as `mcp-enabled`; it does not manage which plugin is connected to which MCP server.
 
 For parallel devenvs, prefer same-origin MCP routing: each Penpot instance should expose `/mcp/ws` through its own nginx/Caddy path to the MCP server running inside the same main container. Keep container-internal ports fixed (MCP defaults `4401/4402/4403`, backend/exporter/frontend defaults, etc.) and only offset host-side published ports per instance. If internal ports are offset, hardcoded local proxy config such as `docker/devenv/files/nginx.conf` will misroute unless templated too.
+
+## Plugin reconnect policy
+
+- The plugin treats WebSocket close code `1008` (policy violation) as terminal: it stops auto-reconnecting and stays disconnected until the user explicitly reconnects. Other close codes keep the capped-backoff retry. The decision lives in `ReconnectPolicy.ts` (`shouldReconnectAfterClose`), kept as a pure module so it is unit-testable without DOM/CSS.
+- The MCP server emits `1008` for a missing `userToken` in multi-user mode, for missing/invalid connection metadata, and to close a connection displaced by a newer one with the same user and session ID.
+- Session IDs are deterministic per tab and file, so a reconnect reuses its ID while the old socket may be half-open: the newest connection wins (`PluginBridge.displaceConnection`). Across instances, each new connection publishes a session claim on a per-user Redis channel; an instance displaces its local connection only on a foreign claim that arrives after its own claim (channel order, no clocks). Discovery deduplicates by session ID.
+- A tab rejected with `1008` never reaches `connected`, so the frontend's 60s reconnect watcher (`start-reconnect-watcher` in `app.main.data.workspace.mcp`, started only on `connected`) does not engage; recovery is manual via the MCP menu.

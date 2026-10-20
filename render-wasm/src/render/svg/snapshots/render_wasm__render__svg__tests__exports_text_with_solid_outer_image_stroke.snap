@@ -1,0 +1,21 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="580" height="260" viewBox="0 0 580 260"><defs><style type="text/css"><![CDATA[@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:400;src:url("fonts/sourcesanspro-regular.ttf") format("truetype");}]]></style><mask id="txtstrokemask0" maskUnits="userSpaceOnUse">
+	<rect transform="translate(10 10)" x="-100000" y="-100000" width="200000" height="200000"/>
+	<defs/>
+	<text fill="none" stroke="white" stroke-width="20" stroke-miterlimit="4" transform="translate(10 10)" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984" y="181">
+			HOLA
+	</text>
+</mask><mask id="tmask1" maskUnits="userSpaceOnUse">
+	<rect fill="white" transform="translate(10 10)" x="-100000" y="-100000" width="200000" height="200000"/>
+	<text transform="translate(10 10)" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984" y="181">
+			HOLA
+	</text>
+</mask></defs>
+	<text fill="#E17FDA" transform="translate(10 10)" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984" y="181">
+			HOLA
+	</text>
+<g mask="url(#tmask1)"><g mask="url(#txtstrokemask0)"><image href="images/test-fill.svg" x="0" y="-20" width="560" height="280" preserveAspectRatio="xMidYMid slice" transform="matrix(1 0 0 1 10 10)"/></g></g></svg>

@@ -2,8 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_borders.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
 // COMMENT DROPDOWN ON HEADER
@@ -92,7 +93,12 @@
 }
 
 .separator {
-  height: deprecated.$s-8;
+  position: relative;
+  block-size: var(--sp-xs);
+  inline-size: calc(100% + var(--sp-s));
+  border-top: $b-1 solid var(--color-background-quaternary);
+  left: calc(-1 * var(--sp-xs));
+  margin-top: var(--sp-s);
 }
 
 // FLOATING COMMENT

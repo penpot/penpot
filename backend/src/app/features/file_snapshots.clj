@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.features.file-snapshots
   (:require
@@ -19,9 +19,9 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [app.util.blob :as blob]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (def sql:snapshots
@@ -326,8 +326,11 @@
     (let [file (d/update-when row :metadata fdata/decode-metadata)
           vern (rand-int Integer/MAX_VALUE)
 
+          ;; We reuse the main connection here for storage operations
+          ;; becaue the main operations are touching and we need them
+          ;; to be atomic with the current transaction
           storage
-          (sto/resolve cfg {::db/reuse-conn true})
+          (sto/resolve cfg ::db/reuse-conn true)
 
           snapshot
           (get-snapshot cfg file-id snapshot-id)]
@@ -403,12 +406,12 @@
   (assert (uuid? file-id) "missing file-id")
   (assert (ct/inst? deleted-at) "missing deleted-at")
 
-  (wrk/submit! {::db/conn (db/get-connection cfg)
-                ::wrk/task :delete-object
-                ::wrk/params {:object :snapshot
-                              :deleted-at deleted-at
-                              :file-id file-id
-                              :id id}})
+  (jobs/submit cfg
+               {::jobs/name :delete-object
+                ::jobs/params {:object :snapshot
+                               :deleted-at deleted-at
+                               :file-id file-id
+                               :id id}})
   (db/update! cfg :file-change
               {:deleted-at deleted-at}
               {:id id :file-id file-id}

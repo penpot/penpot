@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-file-snapshot-test
   (:require
@@ -131,7 +131,7 @@
               (t/is (= (:code data) :system-snapshots-cant-be-deleted)))))
 
         ;; this will run pending task triggered by deleting user snapshot
-        (th/run-pending-tasks!)
+        (th/run-pending-jobs)
 
         (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
           (let [res (th/run-task! :objects-gc {})]

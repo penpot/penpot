@@ -1,5 +1,6 @@
 target/
 debug/
+.render-wasm-build.lock
 
 **/*.rs.bk
 

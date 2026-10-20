@@ -1,0 +1,20 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="560" height="240" viewBox="0 0 560 240"><defs><style type="text/css"><![CDATA[@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:400;src:url("fonts/sourcesanspro-regular.ttf") format("truetype");}]]></style><mask id="txtstrokemask0" maskUnits="userSpaceOnUse">
+	<rect x="-100000" y="-100000" width="200000" height="200000"/>
+	<defs/>
+	<text fill="none" stroke="white" stroke-width="16" stroke-miterlimit="4" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984" y="181">
+			HOLA
+	</text>
+</mask><clipPath id="tclip1" clipPathUnits="userSpaceOnUse">
+	<text font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984" y="181">
+			HOLA
+	</text>
+</clipPath></defs>
+	<text fill="#E17FDA" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984" y="181">
+			HOLA
+	</text>
+<g clip-path="url(#tclip1)"><g mask="url(#txtstrokemask0)"><image href="images/test-fill.svg" x="0" y="-20" width="560" height="280" preserveAspectRatio="xMidYMid slice" transform="matrix(1 0 0 1 0 0)"/></g></g></svg>

@@ -2,20 +2,33 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.color-selection
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.types.library :as ctl]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
+
+(defn- cached-shape-colors
+  [prev-cache cache libraries-colors shape file-id libraries]
+  (let [inputs [(:type shape) (:fills shape) (:strokes shape) (:shadow shape)
+                (:applied-tokens shape) (:content shape) file-id libraries-colors]
+        [cached-inputs cached] (when prev-cache (.get prev-cache (:id shape)))
+        colors (if (and cached-inputs (every? true? (map identical? cached-inputs inputs)))
+                 cached
+                 (dwc/shape-colors shape file-id libraries))]
+    (.set cache (:id shape) [inputs colors])
+    colors))
 
 (defn- prepare-colors
   "Prepares and groups extracted color information from shapes.
@@ -62,8 +75,11 @@
    This structure allows fast lookups of all shapes using the same visual color,
    regardless of whether it comes from local fills, strokes or shadow-colors."
 
-  [shapes file-id libraries]
-  (let [data           (into [] (remove nil?) (dwc/extract-all-colors shapes file-id libraries))
+  [prev-cache cache libraries-colors shapes file-id libraries]
+  (let [data           (into []
+                             (comp (mapcat #(cached-shape-colors prev-cache cache libraries-colors % file-id libraries))
+                                   (remove nil?))
+                             shapes)
         groups         (d/group-by :attrs #(dissoc % :attrs) data)
 
         ;; Unique color attribute maps
@@ -98,9 +114,19 @@
 (mf/defc color-selection-menu*
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [{:keys [shapes file-id libraries]}]
-  (let [{:keys [groups library-colors colors token-colors]}
+  (let [cache*            (mf/use-ref nil)
+        libraries-colors* (mf/use-ref nil)
+
+        {:keys [groups library-colors colors token-colors]}
         (mf/with-memo [file-id shapes libraries]
-          (prepare-colors shapes file-id libraries))
+          (let [current          (mapv (fn [[id library]] [id (ctl/get-colors (:data library))]) libraries)
+                previous         (mf/ref-val libraries-colors*)
+                libraries-colors (if (= previous current) previous current)
+                cache            (js/Map.)
+                result           (prepare-colors (mf/ref-val cache*) cache libraries-colors shapes file-id libraries)]
+            (mf/set-ref-val! libraries-colors* libraries-colors)
+            (mf/set-ref-val! cache* cache)
+            result))
 
         open*            (mf/use-state true)
         open?            (deref open*)
@@ -222,8 +248,9 @@
                :origin :color-selection
                :on-close on-close}]))
          (when (and (false? @expand-lib-color) (< 3 (count library-colors)))
-           [:button  {:class (stl/css :more-colors-btn)
-                      :on-click #(reset! expand-lib-color true)}
+           [:> button* {:variant "secondary"
+                        :class (stl/css :more-colors-btn)
+                        :on-click #(reset! expand-lib-color true)}
             (tr "workspace.options.more-lib-colors")])]
 
         [:div {:class (stl/css :selected-color-group)}
@@ -240,8 +267,9 @@
              :on-close on-close}])
 
          (when (and (false? @expand-color) (< 3 (count colors)))
-           [:button  {:class (stl/css :more-colors-btn)
-                      :on-click #(reset! expand-color true)}
+           [:> button* {:variant "secondary"
+                        :class (stl/css :more-colors-btn)
+                        :on-click #(reset! expand-color true)}
             (tr "workspace.options.more-colors")])]
 
         [:div {:class (stl/css :selected-color-group)}
@@ -263,6 +291,7 @@
 
          (when (and (false? @expand-token-color)
                     (< 3 (count token-colors)))
-           [:button {:class (stl/css :more-colors-btn)
-                     :on-click #(reset! expand-token-color true)}
+           [:> button* {:variant "secondary"
+                        :class (stl/css :more-colors-btn)
+                        :on-click #(reset! expand-token-color true)}
             (tr "workspace.options.more-token-colors")])]])]))

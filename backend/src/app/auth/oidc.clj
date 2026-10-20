@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.auth.oidc
   "OIDC client implementation."
@@ -629,7 +629,7 @@
         (l/warn :hint "received incomplete user info object (please set correct scopes)" :info info)
         (ex/raise :type :internal
                   :code :incomplete-user-info
-                  :hint "inconmplete user info"
+                  :hint "incomplete user info"
                   :info info)))
 
     ;; If the provider is OIDC, we can proceed to check
@@ -685,10 +685,8 @@
 (defn- redirect-with-error
   ([error] (redirect-with-error error nil))
   ([error hint]
-   (let [params {:error error :hint hint}
-         params (d/without-nils params)
+   (let [params {:screen "auth-login" :error error :hint hint}
          uri    (-> (u/uri (cf/get :public-uri))
-                    (assoc :path "/#/auth/login")
                     (assoc :query (u/map->query-string params)))]
      (redirect-response uri))))
 
@@ -707,21 +705,19 @@
                       :iss :prepared-register
                       :exp (ct/in-future {:hours 48}))
 
-        params {:token (tokens/generate cfg info)
+        params {:screen "auth-register-validate"
+                :token (tokens/generate cfg info)
                 :provider (:provider (:id provider))
-                :fullname (:fullname info)}
-        params (d/without-nils params)]
+                :fullname (:fullname info)}]
 
     (redirect-response
      (-> (u/uri (cf/get :public-uri))
-         (assoc :path "/#/auth/register/validate")
          (assoc :query (u/map->query-string params))))))
 
 (defn- redirect-to-verify-token
   [token]
-  (let [params {:token token}
+  (let [params {:screen "auth-verify-token" :token token}
         uri    (-> (u/uri (cf/get :public-uri))
-                   (assoc :path "/#/auth/verify-token")
                    (assoc :query (u/map->query-string params)))]
 
     (redirect-response uri)))
@@ -1041,7 +1037,9 @@
         (when (and session organization-id)
           (let [props (-> (or (:props session) {})
                           (update :sso assoc organization-id exp))]
-            (session/update-session (::session/manager cfg) (assoc session :props props))))
+            (session/update-session (::session/manager cfg) (assoc session :props props))
+            (submit-organization-sso-auth-event
+             cfg request (:profile-id session) organization-id "organization-sso-token-issued")))
         (submit-organization-sso-auth-event
          cfg request (:profile-id session) organization-id "organization-sso-auth-succeeded")
         (redirect-response dest-url))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.pages
   (:require
@@ -114,6 +114,7 @@
            (rx/of (dwth/watch-state-changes file-id page-id)))
 
          (rx/of (dwl/watch-component-changes))
+         (rx/of (dwl/watch-token-changes))
 
          (let [profile (:profile state)
                props   (get profile :props)]

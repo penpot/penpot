@@ -7,6 +7,9 @@ pub mod constraints;
 mod flex;
 mod grid;
 
+pub use align::{RawAlignContent, RawAlignItems, RawAlignSelf, RawJustifyContent, RawJustifyItems};
+pub use flex::{RawFlexDirection, RawWrapType};
+
 #[derive(Debug, Clone, PartialEq, Copy, ToJs)]
 #[repr(u8)]
 #[allow(dead_code)]

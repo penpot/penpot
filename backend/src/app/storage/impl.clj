@@ -2,15 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.storage.impl
   "Storage backends abstraction layer."
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.db :as db]
    [app.storage :as-alias sto]
+   [app.storage.schema :as stsch]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as jio]
@@ -26,7 +26,7 @@
   [{:keys [metadata] :as row}]
   (cond-> row
     (some? metadata)
-    (assoc :metadata (db/decode-transit-pgobject metadata))))
+    (assoc :metadata (stsch/decode-metadata metadata))))
 
 ;; --- API Definition
 
@@ -71,9 +71,20 @@
             :code :invalid-storage-backend
             :context cfg))
 
-(defmulti del-objects-in-bulk (fn [cfg _] (::sto/type cfg)))
+(defmulti del-objects-in-bulk
+  "Delete multiple objects in bulk. Returns #{fail-ids} — the set of ids
+  whose blob deletion failed. Empty set = all succeeded."
+  (fn [cfg _] (::sto/type cfg)))
 
 (defmethod del-objects-in-bulk :default
+  [cfg _]
+  (ex/raise :type :internal
+            :code :invalid-storage-backend
+            :context cfg))
+
+(defmulti exists-object? (fn [cfg _] (::sto/type cfg)))
+
+(defmethod exists-object? :default
   [cfg _]
   (ex/raise :type :internal
             :code :invalid-storage-backend

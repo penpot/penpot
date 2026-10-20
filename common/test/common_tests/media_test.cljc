@@ -2,12 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.media-test
   (:require
    [app.common.media :as media]
    [clojure.test :as t]))
+
+(t/deftest test-storage-object-types
+  (t/testing "covers every image and font type the system stores"
+    (t/is (every? #(contains? media/storage-object-types %) media/image-types))
+    (t/is (every? #(contains? media/storage-object-types %) media/font-types))
+    (t/is (contains? media/storage-object-types "image/svg+xml"))
+    (t/is (contains? media/storage-object-types "application/octet-stream"))))
 
 (t/deftest test-parse-font-weight
   (t/testing "matches weight tokens with proper boundaries"
@@ -28,7 +35,12 @@
     (t/is (= 400 (media/parse-font-weight "Lighthaus")))
     (t/is (= 400 (media/parse-font-weight "Blackwood")))
     (t/is (= 400 (media/parse-font-weight "Thinker")))
-    (t/is (= 400 (media/parse-font-weight "Mediaeval")))))
+    (t/is (= 400 (media/parse-font-weight "Mediaeval"))))
+
+  (t/testing "defaults to regular when the variant metadata is missing"
+    (t/is (= 400 (media/parse-font-weight nil)))
+    (t/is (= 400 (media/parse-font-weight "")))
+    (t/is (= 400 (media/parse-font-weight "  ")))))
 
 (t/deftest test-parse-font-style
   (t/testing "matches italic with proper boundaries"
@@ -40,7 +52,12 @@
 
   (t/testing "does not match italic embedded in words"
     (t/is (= "normal" (media/parse-font-style "Italica")))
-    (t/is (= "normal" (media/parse-font-style "Roboto-Regular")))))
+    (t/is (= "normal" (media/parse-font-style "Roboto-Regular"))))
+
+  (t/testing "defaults to normal when the variant metadata is missing"
+    (t/is (= "normal" (media/parse-font-style nil)))
+    (t/is (= "normal" (media/parse-font-style "")))
+    (t/is (= "normal" (media/parse-font-style "  ")))))
 
 (t/deftest test-strip-image-extension
   (t/testing "removes extension from supported image files"

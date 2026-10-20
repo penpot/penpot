@@ -210,7 +210,7 @@ test("Multiselection of text and typographies", async ({ page }) => {
   );
 
   await workspacePage.goToWorkspace({
-    fileId: "1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+    fileId: "c7ce0794-0992-8105-8004-38f280443849",
     pageId: "1062e0a0-8fe0-80ae-8007-e70b4993f5f0",
   });
 

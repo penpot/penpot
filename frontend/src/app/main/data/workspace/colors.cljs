@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.colors
   (:require
@@ -16,6 +16,7 @@
    [app.common.types.library :as ctl]
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :as types.shadow]
+   [app.common.types.stroke :as cts]
    [app.common.types.text :as txt]
    [app.main.broadcast :as mbc]
    [app.main.data.helpers :as dsh]
@@ -333,13 +334,15 @@
   [:stroke-style
    :stroke-alignment
    :stroke-width
-   :stroke-per-side
+   :stroke-dash
+   :stroke-gap
    :stroke-width-top
    :stroke-width-right
    :stroke-width-bottom
    :stroke-width-left
    :stroke-cap-start
-   :stroke-cap-end])
+   :stroke-cap-end
+   :hidden])
 
 ;; FIXME: this function initializes an empty stroke, maybe we can move
 ;; it to common.types
@@ -399,7 +402,9 @@
    (ptk/reify ::change-stroke-color
      ptk/WatchEvent
      (watch [_ _ _]
-       (rx/of (let [options (assoc options :changed-sub-attr [:stroke-color])]
+       (rx/of (let [options (assoc options
+                                   :changed-sub-attr [:stroke-color]
+                                   :changed-item-index index)]
                 (dwsh/update-shapes ids #(update-shape-stroke-color % index color) options)))))))
 
 (defn change-stroke-attrs
@@ -409,7 +414,9 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (let [changed-sub-attr (keys attrs)
-             options (assoc options :changed-sub-attr changed-sub-attr)]
+             options          (assoc options
+                                     :changed-sub-attr changed-sub-attr
+                                     :changed-item-index index)]
          (rx/of (dwsh/update-shapes
                  ids
                  (fn [shape]
@@ -423,6 +430,54 @@
                        :always
                        (assoc-in [:strokes index] attrs))))
                  options)))))))
+
+;; --- Stroke side width
+
+(defn change-stroke-side-width
+  "Change the width of one side on the stroke at `index` of each shape. All
+  four per-side keys are materialized so consumers never fall back to
+  `:stroke-width`: the edited side takes `value`, the others keep their
+  current width (0 when the shape has no stroke). `:stroke-width` mirrors the
+  top side for legacy readers. Only the edited key (+ `:stroke-width` when
+  top) is reported as changed, so a token on an untouched side is not
+  unapplied."
+  ([ids attr value index] (change-stroke-side-width ids attr value index nil))
+  ([ids attr value index options]
+   (when (number? value)
+     (ptk/reify ::change-stroke-side-width
+       ptk/WatchEvent
+       (watch [_ _ _]
+         (let [changed-sub-attr (if (= attr :stroke-width-top)
+                                  [attr :stroke-width]
+                                  [attr])
+               options          (assoc options
+                                       :changed-sub-attr changed-sub-attr
+                                       :changed-item-index index)]
+           (rx/of (dwsh/update-shapes
+                   ids
+                   (fn [shape]
+                     (let [current (get-in shape [:strokes index])
+                           stroke  (cts/materialize-stroke-side-widths
+                                    current #{attr} value)]
+                       (cond-> shape
+                         (not (contains? shape :strokes))
+                         (assoc :strokes [])
+
+                         :always
+                         (assoc-in [:strokes index] stroke))))
+                   options))))))))
+
+;; --- Per-side controls expansion
+
+(defn toggle-stroke-per-side
+  "Toggles per-side controls for stroke `index` on shapes `ids` in UI state."
+  [ids index]
+  (ptk/reify ::toggle-stroke-per-side
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :stroke-per-side [ids index]] not))))
+
+;; --- Shadows
 
 (defn change-shadow
   [ids attrs index]
@@ -501,7 +556,8 @@
                 (update shape :strokes remove-fill-by-index position))]
         (rx/of (dwsh/update-shapes ids
                                    remove-stroke
-                                   {:attrs [:strokes]}))))))
+                                   {:attrs [:strokes]
+                                    :changed-item-index position}))))))
 
 (defn remove-all-strokes
   [ids]
@@ -1292,6 +1348,43 @@
        :shape-id (:shape-id fill)
        :index (:index fill)})))
 
+(defn shape-colors
+  [shape file-id libraries]
+  (let [applied-tokens (:applied-tokens shape)
+        applied-fill   (get applied-tokens :fill)
+        applied-stroke (get applied-tokens :stroke-color)
+        fills          (:fills shape)
+        strokes        (:strokes shape)
+        shadows        (:shadow shape)
+        shape-id       (:id shape)
+
+        fills* (map-indexed
+                (fn [index fill]
+                  (cond-> (assoc fill :shape-id shape-id :index index)
+                    (and (zero? index) applied-fill)
+                    (assoc :has-token-applied true
+                           :token-name applied-fill)))
+                fills)
+
+        strokes* (map-indexed
+                  (fn [index stroke]
+                    (cond-> (assoc stroke :shape-id shape-id :index index)
+                      (and (zero? index) applied-stroke)
+                      (assoc :has-token-applied true
+                             :token-name applied-stroke)))
+                  strokes)
+
+        shadows* (map-indexed #(assoc %2 :shape-id shape-id :index %1) shadows)]
+    (if (= :text (:type shape))
+      (-> []
+          (into (keep #(stroke->color-att % file-id libraries)) strokes*)
+          (into (map #(shadow->color-attr % file-id libraries)) shadows*)
+          (into (extract-text-colors shape file-id libraries)))
+      (-> []
+          (into (keep #(fill->color-att % file-id libraries)) fills*)
+          (into (keep #(stroke->color-att % file-id libraries)) strokes*)
+          (into (map #(shadow->color-attr % file-id libraries)) shadows*)))))
+
 (defn extract-all-colors
   "Extracts color information from a list of shapes, including fills, strokes, and shadows.
      If a shape has applied tokens of type :fill or :stroke-color, the first fill or stroke
@@ -1307,41 +1400,4 @@
      Returns:
      A vector of color attribute maps with metadata for each shape."
   [shapes file-id libraries]
-  (reduce
-   (fn [result shape]
-     (let [applied-tokens (:applied-tokens shape)
-           applied-fill   (get applied-tokens :fill)
-           applied-stroke (get applied-tokens :stroke-color)
-           fills          (:fills shape)
-           strokes        (:strokes shape)
-           shadows        (:shadow shape)
-           shape-id       (:id shape)
-
-           fills* (map-indexed
-                   (fn [index fill]
-                     (cond-> (assoc fill :shape-id shape-id :index index)
-                       (and (zero? index) applied-fill)
-                       (assoc :has-token-applied true
-                              :token-name applied-fill)))
-                   fills)
-
-           strokes* (map-indexed
-                     (fn [index stroke]
-                       (cond-> (assoc stroke :shape-id shape-id :index index)
-                         (and (zero? index) applied-stroke)
-                         (assoc :has-token-applied true
-                                :token-name applied-stroke)))
-                     strokes)
-
-           shadows* (map-indexed #(assoc %2 :shape-id shape-id :index %1) shadows)]
-       (if (= :text (:type shape))
-         (-> result
-             (into (keep #(stroke->color-att % file-id libraries)) strokes*)
-             (into (map #(shadow->color-attr % file-id libraries)) shadows*)
-             (into (extract-text-colors shape file-id libraries)))
-         (-> result
-             (into (keep #(fill->color-att % file-id libraries)) fills*)
-             (into (keep #(stroke->color-att % file-id libraries)) strokes*)
-             (into (map #(shadow->color-attr % file-id libraries)) shadows*)))))
-   []
-   shapes))
+  (into [] (mapcat #(shape-colors % file-id libraries)) shapes))

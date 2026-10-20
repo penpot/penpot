@@ -2,13 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.viewer.login
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.logging :as log]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-dialog*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page*]]
@@ -68,8 +70,17 @@
 
         success-register
         (fn [data]
-          (reset! register-token (:token data))
-          (set-current-section :register-validate))]
+          (cond
+            (:invitation-token data)
+            (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+
+            (:is-active data)
+            (st/emit! (modal/hide))
+
+            :else
+            (do
+              (reset! user-email (:email data))
+              (set-current-section :email-sent))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
@@ -92,12 +103,13 @@
             [:a {:on-click set-section
                  :data-value "recovery-request"}
              (tr "auth.forgot-password")]]
-           [:div
-            [:span
-             (tr "auth.register") " "]
-            [:a {:on-click set-section
-                 :data-value "register"}
-             (tr "auth.register-submit")]]]]
+           (when (contains? cf/flags :registration)
+             [:div
+              [:span
+               (tr "auth.register") " "]
+              [:a {:on-click set-section
+                   :data-value "register"}
+               (tr "auth.register-submit")]])]]
 
          :register
          [:div {:class (stl/css :login-form)}

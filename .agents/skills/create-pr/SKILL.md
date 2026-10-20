@@ -73,7 +73,8 @@ one. Title or description fixes belong to Update mode.
 Write the title and body following `mem:workflow/creating-prs` (title format,
 description structure, writing principles) and `mem:workflow/creating-commits`
 (commit type emojis). Derive the title and body from the commits and, when
-there is one, from the issue body. Reference the issue with `Closes #NNNN`.
+there is one, from the issue body. Include `Closes #NNNN` for readable context,
+but do not treat it as the link; use `python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>` after creating the PR.
 
 Repeat the `AI-assisted-by:` trailer in the body, once per model that worked
 on the branch, so the PR states the assistance where a reviewer reads it. The
@@ -92,6 +93,13 @@ gh pr create --repo penpot/penpot --base "<BASE>" --title "<TITLE>" \
 repository default, which is wrong for a branch cut from `staging`. `--project
 "Main"` is required by `mem:workflow/creating-prs`.
 
+If an issue is present, run the explicit assignment command from
+`mem:workflow/creating-prs` before reporting success:
+
+```bash
+python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
+```
+
 ### 5. Report
 
 Report the PR URL and stop.
@@ -106,6 +114,13 @@ Report the PR URL and stop.
 ```bash
 gh pr edit <NUMBER> --repo penpot/penpot --title "<TITLE>" --body-file /tmp/pr-body.md
 gh pr view <NUMBER> --repo penpot/penpot --json title,body
+```
+
+If the updated body contains `Closes #NNNN`, run the explicit assignment
+command from `mem:workflow/creating-prs`:
+
+```bash
+python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
 ```
 
 4. Report and stop.

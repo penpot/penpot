@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.tokens.logic.token-remapping-test
   (:require
@@ -13,6 +13,7 @@
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.remapping :as dwtr]
    [cljs.test :as t :include-macros true]))
 
@@ -27,19 +28,20 @@
                      :name "color.secondary"
                      :value "{color.primary}"
                      :type :color}]
-    (-> (cthf/sample-file :file-1 :page-label :page-1)
-        (ctho/add-rect :rect-1)
-        (ctho/add-rect :rect-2)
-        (assoc-in [:data :tokens-lib]
-                  (-> (ctob/make-tokens-lib)
-                      (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
-                      (ctob/set-active-themes #{"/Theme A"})
+    (-> (ctht/sample-file-with-tokens
+         :lib-fn #(-> %
                       (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
                                                          :name "Set A"))
+                      (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme-a)
+                                                             :name "Theme A"
+                                                             :sets #{"Set A"}))
                       (ctob/add-token (cthi/id :set-a)
                                       (ctob/make-token color-token))
                       (ctob/add-token (cthi/id :set-a)
-                                      (ctob/make-token alias-token))))
+                                      (ctob/make-token alias-token)))
+         :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme-a)} #{(cthi/id :set-a)}))
+        (ctho/add-rect :rect-1)
+        (ctho/add-rect :rect-2)
         ;; Apply the token to rect-1
         (ctht/apply-token-to-shape :rect-1 "color.primary" [:fill] [:fill] "#FF0000"))))
 
@@ -118,6 +120,39 @@
       (let [result (dwtr/validate-token-remapping "color.primary" "brand.primary")]
         (t/is (true? (:valid? result)))))))
 
+(t/deftest test-remap-keeps-applied-attributes-per-shape
+  (t/testing "renaming a token only renames the attributes each shape already had"
+    (let [stroke-token {:id (cthi/new-id! :sw-10)
+                        :name "sw-10"
+                        :value "10"
+                        :type :stroke-width}
+          file         (-> (ctht/sample-file-with-tokens
+                            :lib-fn #(-> %
+                                         (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
+                                                                            :name "Set A"))
+                                         (ctob/add-token (cthi/id :set-a)
+                                                         (ctob/make-token stroke-token))))
+                           (ctho/add-rect :top-rect)
+                           (ctho/add-rect :all-rect)
+                           (ctht/apply-token-to-shape :top-rect "sw-10"
+                                                      [:stroke-width-top] [] nil)
+                           (ctht/apply-token-to-shape :all-rect "sw-10"
+                                                      cto/stroke-width-keys [] nil)
+                           ;; The production flow renames the token first,
+                           ;; then remaps the shapes that use it.
+                           (update-in [:data :tokens-lib]
+                                      ctob/update-token (cthi/id :set-a) (cthi/id :sw-10)
+                                      #(assoc % :name "sw-big")))
+          changes      (dwtr/build-remap-changes (:data file) "sw-10" "sw-big")
+          file'        (cthf/apply-changes file changes)
+          top-rect'    (cths/get-shape file' :top-rect)
+          all-rect'    (cths/get-shape file' :all-rect)]
+
+      (t/is (= {:stroke-width-top "sw-big"}
+               (:applied-tokens top-rect')))
+      (t/is (= (zipmap cto/stroke-width-keys (repeat "sw-big"))
+               (:applied-tokens all-rect'))))))
+
 (defn- setup-file-with-component-copy-and-token
   "Create a file containing a component, an instance copy of it, and a single
    `color.primary` token already applied to both the main and the copy shape.
@@ -132,22 +167,23 @@
                          :name "color.secondary"
                          :value "#00FF00"
                          :type :color}]
-    (-> (cthf/sample-file :file-1 :page-label :page-1)
+    (-> (ctht/sample-file-with-tokens
+         :lib-fn #(-> %
+                      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
+                                                         :name "Set A"))
+                      (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme-a)
+                                                             :name "Theme A"
+                                                             :sets #{"Set A"}))
+                      (ctob/add-token (cthi/id :set-a)
+                                      (ctob/make-token color-primary))
+                      (ctob/add-token (cthi/id :set-a)
+                                      (ctob/make-token color-secondary)))
+         :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme-a)} #{(cthi/id :set-a)}))
         (ctho/add-simple-component-with-copy :component1
                                              :main-root
                                              :main-child
                                              :copy-root
                                              :copy-root-params {:children-labels [:copy-child]})
-        (assoc-in [:data :tokens-lib]
-                  (-> (ctob/make-tokens-lib)
-                      (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
-                      (ctob/set-active-themes #{"/Theme A"})
-                      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
-                                                         :name "Set A"))
-                      (ctob/add-token (cthi/id :set-a)
-                                      (ctob/make-token color-primary))
-                      (ctob/add-token (cthi/id :set-a)
-                                      (ctob/make-token color-secondary))))
         (ctht/apply-token-to-shape :main-child "color.primary" [:fill] [:fill] "#FF0000")
         (ctht/apply-token-to-shape :copy-child "color.primary" [:fill] [:fill] "#FF0000"))))
 

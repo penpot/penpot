@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.geom.shapes.grid-layout.params
   (:require
@@ -154,8 +154,8 @@
            layout-grid-columns (mapv (constantly ctl/default-track-value) cols)
 
            parent-childs-vector (gpt/to-vec (gpo/origin (:points parent)) (gpt/point all-shapes-rect))
-           p-left (:x parent-childs-vector)
-           p-top  (:y parent-childs-vector)]
+           p-left (max 0 (:x parent-childs-vector))
+           p-top  (max 0 (:y parent-childs-vector))]
 
        (-> {:layout-grid-columns layout-grid-columns
             :layout-grid-rows layout-grid-rows

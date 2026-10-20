@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.comments
   (:require
@@ -83,7 +83,7 @@
   (not= :none (-> props :notifications :email-comments)))
 
 (defn send-comment-emails!
-  [conn profile comment thread file]
+  [{:keys [::db/conn] :as cfg} profile comment thread file]
   (let [team-users        (get-team-users conn (:team-id file))
         comment-reference (format-comment-ref thread file)
         comment-content   (format-comment comment)
@@ -113,8 +113,9 @@
     (doseq [mention comment-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send!
-           {::eml/conn conn
+          (eml/send
+           cfg
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-mention
             :public-uri (cf/get :public-uri)
             :to email
@@ -128,8 +129,9 @@
     (doseq [mention thread-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send!
-           {::eml/conn conn
+          (eml/send
+           cfg
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-thread
             :public-uri (cf/get :public-uri)
             :to email
@@ -143,8 +145,9 @@
     (doseq [user-id notificate-users-ids]
       (let [{:keys [id fullname email props]} (get team-users user-id)]
         (when (notification-email? id (:owner-id thread) props)
-          (eml/send!
-           {::eml/conn conn
+          (eml/send
+           cfg
+           {::eml/reuse-conn true
             ::eml/factory eml/comment-notification
             :public-uri (cf/get :public-uri)
             :to email
@@ -486,7 +489,7 @@
     (let [params (assoc params ::file file)
           thread (db/tx-run! cfg create-comment-thread params)]
 
-      (vary-meta thread assoc ::audit/props thread))))
+      (vary-meta thread assoc ::audit/props (assoc thread :team-id team-id)))))
 
 (defn- create-comment-thread
   [{:keys [::db/conn] :as cfg}
@@ -538,7 +541,7 @@
     (update-thread-seqn conn file-id seqn)
 
     ;; Send mentions emails
-    (send-comment-emails! conn profile comment thread file)
+    (send-comment-emails! cfg profile comment thread file)
 
     (-> thread
         (add-owner profile)
@@ -648,9 +651,9 @@
       ;; Update the current profile status in relation to the current thread
       (upsert-comment-thread-status! conn profile-id thread-id)
 
-      (send-comment-emails! conn profile comment thread file)
+      (send-comment-emails! cfg profile comment thread file)
 
-      (vary-meta comment assoc ::audit/props comment))))
+      (vary-meta comment assoc ::audit/props (assoc comment :team-id team-id)))))
 
 ;; --- COMMAND: Update Comment
 

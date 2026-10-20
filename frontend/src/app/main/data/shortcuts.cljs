@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.shortcuts
   (:refer-clojure :exclude [meta reset!])
@@ -16,6 +16,37 @@
    [potok.v2.core :as ptk]))
 
 (log/set-level! :warn)
+
+;; Keyboard layout map shared by the shortcut recorder
+;; (`app.main.ui.shortcuts`) and the Mousetrap dispatcher: punctuation
+;; resolves by physical position through this map, so recording and
+;; dispatch use the same token. `nil` until `getLayoutMap` resolves (or
+;; when the browser has no keyboard API); both sides then fall back to
+;; the typed glyph, which keeps them consistent with and without a map.
+(defonce layout-map (atom nil))
+
+(defn layout-map-supported?
+  "Synchronous keyboard-layout API probe: true when the browser exposes
+   navigator.keyboard.getLayoutMap (Chromium). Punctuation then resolves
+   by physical position; without it both sides fall back to the typed
+   glyph, so Shift+punctuation shortcuts may not fire."
+  ([] (layout-map-supported?
+       (when (exists? js/navigator) js/navigator)))
+  ([navigator]
+   (let [keyboard (when (some? navigator) (.-keyboard ^js navigator))]
+     (boolean
+      (and (some? keyboard)
+           (exists? (.-getLayoutMap ^js keyboard)))))))
+
+(let [navigator (when (exists? js/navigator) js/navigator)]
+  (when (layout-map-supported? navigator)
+    (-> (.getLayoutMap ^js (.-keyboard ^js navigator))
+        (.then (fn [m]
+                 (cljs.core/reset! layout-map m)
+                 (.setLayoutMap mousetrap m))
+               (fn [_]
+                 (cljs.core/reset! layout-map nil)
+                 (.setLayoutMap mousetrap nil))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers

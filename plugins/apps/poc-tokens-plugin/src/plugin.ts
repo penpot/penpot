@@ -58,6 +58,14 @@ function sendMessage(message: PluginMessageEvent) {
 function loadLibrary() {
   const tokensCatalog = penpot.library.local.tokens;
 
+  const isEditableTokens = tokensCatalog.isEditableTokens;
+
+  penpot.ui.sendMessage({
+    source: 'penpot',
+    type: 'set-is-editable-tokens',
+    isEditableTokens,
+  });
+
   const themes = tokensCatalog.themes;
 
   const themesData = themes.map((theme) => {

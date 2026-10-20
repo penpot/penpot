@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.shape
   (:require
@@ -31,9 +31,10 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.stroke :as types.stroke]
    [app.common.types.text :as txt]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.persistence :as dwp]
@@ -49,6 +50,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.exports :as exports]
@@ -64,7 +66,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -78,6 +80,24 @@
 
 (defn interaction-proxy? [p]
   (obj/type-of? p "InteractionProxy"))
+
+(defn- valid-interaction-action?
+  [file-id page-id source raw-action interaction]
+  (let [page              (u/locate-page file-id page-id)
+        destination-proxy (obj/get raw-action "destination")
+        destination-id    (:destination interaction)
+        animation-type    (get-in interaction [:animation :animation-type])]
+    (and (sm/validate ctsi/schema:interaction interaction)
+         (ctsi/valid-delay? interaction)
+         ;; Interactions keep a stale destination after switching to an action
+         ;; without one, so only check it for actions that use it
+         (or (not (ctsi/has-destination interaction))
+             (and (or (nil? destination-proxy)
+                      (and (shape-proxy? destination-proxy)
+                           (= file-id (obj/get destination-proxy "$file"))
+                           (= page-id (obj/get destination-proxy "$page"))))
+                  (ctsi/valid-destination? (:objects page) source destination-id)))
+         (ctsi/allowed-animation? (:action-type interaction) animation-type))))
 
 (defn interaction-proxy
   "Proxy over one interaction of a shape.
@@ -106,9 +126,10 @@
        :set
        (fn [_ value]
          (let [value (parser/parse-keyword value)
+               shape (u/locate-shape file-id page-id shape-id)
                index (locate-index)]
            (cond
-             (not (contains? ctsi/event-types value))
+             (not (ctsi/valid-event-type-for-shape? shape value))
              (u/not-valid plugin-id :trigger value)
 
              (not (r/check-permission plugin-id "content:write"))
@@ -120,11 +141,11 @@
              :else
              (do
                (st/emit! (dwi/update-interaction
-                          (u/locate-shape file-id page-id shape-id)
+                          shape
                           index
-                          #(assoc % :event-type value)
+                          #(ctsi/set-event-type % value shape)
                           {:page-id page-id}))
-               (swap! current assoc :event-type value)))))}
+               (swap! current ctsi/set-event-type value shape)))))}
 
       :delay
       {:this true
@@ -156,11 +177,11 @@
        :get #(-> % u/proxy->interaction (format/format-action plugin-id file-id page-id))
        :set
        (fn [self value]
-         (let [params (parser/parse-action value)
-               index  (locate-index)
-               interaction
-               (-> (u/proxy->interaction self)
-                   (d/patch-object params))]
+         (let [shape       (u/locate-shape file-id page-id shape-id)
+               params      (parser/parse-action value)
+               index       (locate-index)
+               interaction (-> (u/proxy->interaction self)
+                               (d/patch-object params))]
            (cond
              (not (r/check-permission plugin-id "content:write"))
              (u/not-valid plugin-id :action "Plugin doesn't have 'content:write' permission")
@@ -170,13 +191,13 @@
              (nil? index)
              (u/not-valid plugin-id :action "The interaction is not part of the shape anymore")
 
-             (not (sm/validate ctsi/schema:interaction interaction))
+             (not (valid-interaction-action? file-id page-id shape value interaction))
              (u/not-valid plugin-id :action interaction)
 
              :else
              (do
                (st/emit! (dwi/update-interaction
-                          (u/locate-shape file-id page-id shape-id)
+                          shape
                           index
                           #(d/patch-object % params)
                           {:page-id page-id}))
@@ -254,21 +275,27 @@
       (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))
 
 (defn commit-strokes!
-  [plugin-id ^js self value]
-  (let [id    (obj/get self "$id")
-        value (parser/parse-strokes value)]
-    (cond
-      (not (sm/validate [:vector cts/schema:stroke] value))
-      (u/not-valid plugin-id :strokes value)
+  ([plugin-id self value]
+   (commit-strokes! plugin-id self value nil))
+  ([plugin-id ^js self value options]
+   (let [id    (obj/get self "$id")
+         value (parser/parse-strokes value)]
+     (cond
+       (not (sm/validate [:vector cts/schema:stroke] value))
+       (u/not-valid plugin-id :strokes value)
 
-      (not (r/check-permission plugin-id "content:write"))
-      (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
+       (not (r/check-permission plugin-id "content:write"))
+       (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
 
-      (not (u/page-active? (obj/get self "$page")))
-      (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
+       (not (u/page-active? (obj/get self "$page")))
+       (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
 
-      :else
-      (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
+       (and (not (ctt/per-side-stroke-shape? (:type (u/proxy->shape self))))
+            (some #(= :multiple (types.stroke/width-type %)) value))
+       (u/not-valid plugin-id :strokes "Per-side stroke widths require a board or rectangle")
+
+       :else
+       (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value) options))))))
 
 (defn commit-shadows!
   [plugin-id ^js self value]
@@ -534,7 +561,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-number? value))
+                  (not (sm/valid-non-negative-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusTopLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -553,7 +580,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-number? value))
+                  (not (sm/valid-non-negative-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusTopRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -572,7 +599,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-number? value))
+                  (not (sm/valid-non-negative-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusBottomRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -591,7 +618,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-number? value))
+                  (not (sm/valid-non-negative-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusBottomLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -973,8 +1000,12 @@
            :strokes
            {:this true
             :get (fn [^js self]
-                   (strokes/format-strokes (-> self u/proxy->shape :strokes)
-                                           #(commit-strokes! plugin-id self %)))
+                   (let [shape (u/proxy->shape self)]
+                     (strokes/format-strokes
+                      (:strokes shape)
+                      #(commit-strokes! plugin-id self %1 %2)
+                      {:per-side-allowed? (ctt/per-side-stroke-shape? (:type shape))
+                       :not-valid (fn [code value] (u/not-valid plugin-id code value))})))
             :set (fn [self value] (commit-strokes! plugin-id self value))}
 
            :layoutChild
@@ -1528,7 +1559,12 @@
 
            :swapComponent
            (fn [component]
-             (let [shape (u/locate-shape file-id page-id id)]
+             (let [shape            (u/locate-shape file-id page-id id)
+                   objects          (u/locate-objects file-id page-id)
+                   valid-component? (obj/type-of? component "LibraryComponentProxy")
+                   target-file      (when valid-component? (obj/get component "$file"))
+                   target-id        (when valid-component? (obj/get component "$id"))
+                   target-data      (some-> (u/locate-file target-file) :data)]
                (cond
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :swapComponent "Plugin doesn't have 'content:write' permission")
@@ -1536,17 +1572,52 @@
                  (not (u/page-active? page-id))
                  (u/not-valid plugin-id :swapComponent "Cannot modify a page that is not currently active")
 
-                 (not (obj/type-of? component "LibraryComponentProxy"))
+                 (not valid-component?)
                  (u/not-valid plugin-id :swapComponent "Component not valid")
 
                  (not (ctk/in-component-copy? shape))
                  (u/not-valid plugin-id :swapComponent "The shape is not a component copy instance")
 
+                 (dwl/component-swap-nesting-loop? objects shape target-data target-id)
+                 (u/not-valid plugin-id :swapComponent "The swap would create a component nesting loop")
+
                  :else
                  (st/emit! (dwl/component-swap shape
-                                               (obj/get component "$file")
-                                               (obj/get component "$id")
+                                               target-file
+                                               target-id
                                                true)))))
+
+           :updateMain
+           (fn []
+             (let [shape     (u/locate-shape file-id page-id id)
+                   objects   (u/locate-objects file-id page-id)
+                   component (when (:component-id shape)
+                               (u/locate-library-component (:component-file shape) (:component-id shape)))]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'content:write' permission")
+
+                 (not (r/check-permission plugin-id "library:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'library:write' permission")
+
+                 (not= file-id (:current-file-id @st/state))
+                 (u/not-valid plugin-id :updateMain "Can only update a component from a copy in the current file")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :updateMain "Cannot modify a page that is not currently active")
+
+                 (not (and (ctk/instance-head? shape) (ctk/in-component-copy? shape)))
+                 (u/not-valid plugin-id :updateMain "The shape is not a component copy head")
+
+                 (u/inside-component-copy? objects shape)
+                 (u/not-valid plugin-id :updateMain "Cannot update the main from a shape inside another component copy")
+
+                 (or (nil? component) (:deleted component))
+                 (u/not-valid plugin-id :updateMain "The main component does not exist or is deleted")
+
+                 :else
+                 (st/emit! (-> (dwl/update-component-sync id (:component-file shape))
+                               (se/add-event plugin-id))))))
 
            :resetOverrides
            (fn []
@@ -1576,74 +1647,80 @@
                  (u/not-valid plugin-id :export "Plugin doesn't have 'content:read' permission")
 
                  :else
-                 (if (and (contains? cf/flags :wasm-export)
-                          (contains? #{:jpeg :webp :png} (:type value :png)))
-                   ;; New export with wasm
-                   (let [uri (wasm.exports/export-image-uri
-                              {:file-id   file-id
-                               :page-id   page-id
-                               :object-id id
-                               :type      (:type value :png)
-                               :scale     (:scale value 1)})]
-                     (js/Promise.
-                      (fn [resolve reject]
-                        (->> (http/send!
-                              {:method :get
-                               :uri uri
-                               :response-type :blob
-                               :omit-default-headers true})
-                             (rx/map :body)
-                             (rx/mapcat #(.arrayBuffer %))
-                             (rx/map #(js/Uint8Array. %))
-                             (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "wasm")))
-                             (rx/subs! resolve reject)))))
+                 (let [export-type (:type value :png)
+                       wasm-enabled? (features/active-feature? @st/state "render-wasm/v1")]
+                   (if (and wasm-enabled?
+                            (contains? #{:jpeg :webp :png :pdf :svg} export-type))
+                     ;; Render in the browser with render-wasm.
+                     (let [export {:file-id   file-id
+                                   :page-id   page-id
+                                   :object-id id
+                                   :type      export-type
+                                   :scale     (:scale value 1)}
+                           uri (case export-type
+                                 :pdf (wasm.exports/export-pdf-uri export)
+                                 :svg (wasm.exports/export-svg-uri export)
+                                 (wasm.exports/export-image-uri export))]
+                       (js/Promise.
+                        (fn [resolve reject]
+                          (->> (http/send!
+                                {:method :get
+                                 :uri uri
+                                 :response-type :blob
+                                 :omit-default-headers true})
+                               (rx/map :body)
+                               (rx/mapcat #(.arrayBuffer %))
+                               (rx/map #(js/Uint8Array. %))
+                               (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "wasm")))
+                               (rx/subs! resolve reject)))))
 
-                   ;; Old export through exporter
-                   (let [shape (u/locate-shape file-id page-id id)
-                         payload
-                         {:cmd :export-shapes
-                          :profile-id (:profile-id @st/state)
-                          :wait true
-                          :is-wasm false
-                          :exports [(de/normalize-export {:file-id   file-id
-                                                          :page-id   page-id
-                                                          :object-id id
-                                                          :name      (:name shape)
-                                                          :type      (:type value :png)
-                                                          :suffix    (:suffix value "")
-                                                          :scale     (:scale value 1)})]}]
-                     (js/Promise.
-                      (fn [resolve reject]
-                        ;; The exporter renders the file from its persisted
-                        ;; state, so flush pending local changes and wait until
-                        ;; they are saved before invoking it. Otherwise it may
-                        ;; export a stale/empty shape. (The wasm export above
-                        ;; renders locally and does not need this.)
-                        (st/emit! ::dwp/force-persist)
-                        (->> (rx/concat
-                              (->> (dwp/wait-persisted 5000)
-                                   (rx/ignore))
-                              (rp/cmd! :export payload))
-                             (rx/mapcat (fn [{:keys [uri]}]
-                                          (->> (http/send! {:method :get
-                                                            :uri uri
-                                                            :response-type :blob
-                                                            :omit-default-headers true})
-                                               (rx/map :body))))
-                             (rx/mapcat #(.arrayBuffer %))
-                             (rx/map #(js/Uint8Array. %))
-                             (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "exporter")))
-                             (rx/subs! resolve reject)))))))))
-
+                     ;; Render via the exporter service.
+                     (let [shape (u/locate-shape file-id page-id id)
+                           payload
+                           {:cmd :export-shapes
+                            :profile-id (:profile-id @st/state)
+                            :wait true
+                            :is-wasm wasm-enabled?
+                            :exports [(de/normalize-export {:file-id   file-id
+                                                            :page-id   page-id
+                                                            :object-id id
+                                                            :name      (:name shape)
+                                                            :type      export-type
+                                                            :suffix    (:suffix value "")
+                                                            :scale     (:scale value 1)})]}]
+                       (js/Promise.
+                        (fn [resolve reject]
+                          ;; Exporter reads persisted file state; flush first
+                          ;; so the export is not stale. Browser WASM above
+                          ;; renders from local state and needs no flush.
+                          (st/emit! ::dwp/force-persist)
+                          (->> (rx/concat
+                                (->> (dwp/wait-persisted 5000)
+                                     (rx/ignore))
+                                (rp/cmd! :export payload))
+                               (rx/mapcat (fn [{:keys [uri]}]
+                                            (->> (http/send! {:method :get
+                                                              :uri uri
+                                                              :response-type :blob
+                                                              :omit-default-headers true})
+                                                 (rx/map :body))))
+                               (rx/mapcat #(.arrayBuffer %))
+                               (rx/map #(js/Uint8Array. %))
+                               (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "exporter")))
+                               (rx/subs! resolve reject))))))))))
 
            ;; Interactions
            :addInteraction
            (fn [trigger action delay]
-             (let [interaction
-                   (-> ctsi/default-interaction
-                       (d/patch-object (parser/parse-interaction trigger action delay)))]
+             (let [shape       (u/locate-shape file-id page-id id)
+                   event-type  (parser/parse-keyword trigger)
+                   interaction (when (ctsi/valid-event-type-for-shape? shape event-type)
+                                 (-> ctsi/default-interaction
+                                     (ctsi/set-event-type event-type shape)
+                                     (d/patch-object (parser/parse-action action))
+                                     (cond-> (some? delay) (assoc :delay delay))))]
                (cond
-                 (not (sm/validate ctsi/schema:interaction interaction))
+                 (not (valid-interaction-action? file-id page-id shape action interaction))
                  (u/not-valid plugin-id :addInteraction interaction)
 
                  (not (r/check-permission plugin-id "content:write"))
@@ -1746,14 +1823,22 @@
                      [:fn token-proxy?]
                      [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
             :fn (fn [token attrs]
-                  (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
-                        kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
+                  (let [set-id   (obj/get token "$set-id")
+                        token-id (obj/get token "$id")
+                        token    (u/locate-token file-id set-id token-id)
+                        kw-attrs (expand-token-attrs attrs)]
                     (cond
-                      (some #(not (token-attr? %)) kw-attrs)
-                      (u/not-valid plugin-id :applyToken attrs)
-
                       (not (r/check-permission plugin-id "content:write"))
                       (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")
+
+                      (nil? token)
+                      (u/not-valid plugin-id :applyToken token-id)
+
+                      (not (valid-token-resolution? file-id set-id token-id))
+                      (u/not-valid plugin-id :applyToken (:value token))
+
+                      (some #(not (token-attr? %)) kw-attrs)
+                      (u/not-valid plugin-id :applyToken attrs)
 
                       :else
                       (st/emit!
@@ -1777,21 +1862,24 @@
            :switchVariant
            (fn [pos value]
              (cond
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :switchVariant "Cannot modify a page that is not currently active")
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/not-valid plugin-id :switchVariant "Plugin doesn't have 'content:write' permission")
+
                (not (nat-int? pos))
                (u/not-valid plugin-id :pos pos)
 
                (not (string? value))
                (u/not-valid plugin-id :value value)
 
-               (not (r/check-permission plugin-id "content:write"))
-               (u/not-valid plugin-id :switchVariant "Plugin doesn't have 'content:write' permission")
-
                :else
-               (let [shape     (u/locate-shape file-id page-id id)
-                     component (u/locate-library-component file-id (:component-id shape))]
-                 (when  (and component (ctk/is-variant? component))
+               (let [shape (u/locate-shape file-id page-id id)]
+                 (if (dwv/valid-variant-switch? @st/state shape pos value)
                    (st/emit! (-> (dwv/variants-switch {:shapes [shape] :pos pos :val value})
-                                 (se/add-event plugin-id)))))))
+                                 (se/add-event plugin-id)))
+                   (u/not-valid plugin-id :switchVariant "Shape, property, or value is not valid")))))
 
            :combineAsVariants
            (fn [ids]
@@ -1813,13 +1901,7 @@
                                  (distinct))
                            ids)
 
-                     valid?
-                     (every?
-                      (fn [id]
-                        (let [shape     (u/locate-shape file-id page-id id)
-                              component (u/locate-library-component file-id (:component-id shape))]
-                          (not (ctk/is-variant? component))))
-                      ids)]
+                     valid? (dwv/valid-components-for-variants? @st/state page-id ids)]
 
                  (if valid?
                    (let [variant-id (uuid/next)]
@@ -1827,7 +1909,7 @@
                                     ids
                                     {:trigger "plugin:combine-as-variants" :variant-id variant-id})
                                    (se/add-event plugin-id)))
-                     (shape-proxy plugin-id variant-id))
+                     (shape-proxy plugin-id file-id page-id variant-id))
 
                    (u/not-valid plugin-id :ids "One of the components is not on the same page or is already a variant"))))))
 

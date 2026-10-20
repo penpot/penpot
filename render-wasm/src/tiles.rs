@@ -211,6 +211,22 @@ impl TileViewbox {
 
 pub const TILE_SIZE: f32 = 512.;
 
+/// Screen-space top-left of `tile`: `round(-offset) + tile * tile_size`.
+pub fn tile_screen_xy(tile: Tile, tile_size: f32, offset: skia::Point) -> (f32, f32) {
+    (
+        (-offset.x).round() + tile.x() as f32 * tile_size,
+        (-offset.y).round() + tile.y() as f32 * tile_size,
+    )
+}
+
+/// Screen-space top-left of `doc_rect`: `doc * scale + round(pan * scale)`.
+pub fn doc_rect_screen_xy(doc_rect: skia::Rect, pan: skia::Point, scale: f32) -> (f32, f32) {
+    (
+        doc_rect.left * scale + (pan.x * scale).round(),
+        doc_rect.top * scale + (pan.y * scale).round(),
+    )
+}
+
 #[inline(always)]
 pub fn get_tile_dimensions() -> skia::ISize {
     (TILE_SIZE as i32, TILE_SIZE as i32).into()
@@ -256,6 +272,45 @@ pub fn get_tile_rect(tile: Tile, scale: f32) -> skia::Rect {
     let (tx, ty) = get_tile_pos(tile, scale);
     let ts = get_tile_size(scale);
     skia::Rect::from_xywh(tx, ty, ts, ts)
+}
+
+/// Physical atlas cell size so `needed_slots` fit in a square `atlas_px`
+/// texture. Never larger than `TILE_SIZE` (tiles are stored 1:1 when they
+/// fit). Smaller cells mean more slots, scaled down on blit into the atlas.
+pub fn tile_atlas_slot_size(needed_slots: usize, atlas_px: i32) -> i32 {
+    const MIN_SLOT: i32 = 64;
+    let needed = needed_slots.max(1);
+    let side = (needed as f64).sqrt().ceil() as i32;
+    let side = side.max(1);
+    (atlas_px / side).clamp(MIN_SLOT, TILE_SIZE as i32)
+}
+
+/// 1px pad around packed-slot content so Linear compose does not bleed into
+/// the next cell. The drawable is written into the inner rect (full spatial
+/// coverage); sampling that inner rect avoids the edge-drop gaps of #11696.
+pub const TILE_ATLAS_SAMPLE_INSET: f32 = 1.0;
+
+/// Rect inside `slot` that holds the tile drawable (inset when packed).
+pub fn tile_atlas_content_rect(slot: skia::Rect, slot_size: i32) -> skia::Rect {
+    if slot_size < TILE_SIZE as i32 {
+        let i = TILE_ATLAS_SAMPLE_INSET;
+        skia::Rect::new(slot.left + i, slot.top + i, slot.right - i, slot.bottom - i)
+    } else {
+        slot
+    }
+}
+
+pub fn tile_atlas_compose_src_size(slot_size: i32) -> f32 {
+    tile_atlas_content_rect(
+        skia::Rect::from_wh(slot_size as f32, slot_size as f32),
+        slot_size,
+    )
+    .width()
+    .max(1.0)
+}
+
+pub fn tile_atlas_compose_scale(slot_size: i32) -> f32 {
+    TILE_SIZE / tile_atlas_compose_src_size(slot_size)
 }
 
 // This structure is useful to keep all the shape uuids by shape id.
@@ -323,6 +378,8 @@ pub struct PendingTiles {
     pub visible_uncached: Vec<Tile>,
     pub interest_cached: Vec<Tile>,
     pub interest_uncached: Vec<Tile>,
+    /// Interest-ring tiles deferred until after the viewport has been presented.
+    deferred_interest: Vec<Tile>,
 }
 
 impl PendingTiles {
@@ -335,14 +392,22 @@ impl PendingTiles {
             visible_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             interest_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             interest_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            deferred_interest: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
         }
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces, only_visible: bool) {
+    pub fn update(
+        &mut self,
+        tile_viewbox: &TileViewbox,
+        surfaces: &Surfaces,
+        scale: f32,
+        only_visible: bool,
+    ) {
         self.list.clear();
+        self.deferred_interest.clear();
 
         // During interactive transform, skip the interest-area ring
-        // entirely — the user is dragging, every rAF is on the critical
+        // entirely: the user is dragging, every rAF is on the critical
         // path, and pre-rendering tiles outside the viewport is wasted
         // work that just gets evicted on the next pointer move. The ring
         // is repopulated naturally on gesture end / on idle rAFs.
@@ -384,7 +449,7 @@ impl PendingTiles {
         for (_, tile) in self.tile_order.iter() {
             let tile = *tile;
             let is_visible = tile_viewbox.visible_rect.contains(&tile);
-            let is_cached = surfaces.has_cached_tile_surface(tile);
+            let is_cached = surfaces.has_cached_tile_surface(tile, scale);
 
             match (is_visible, is_cached) {
                 (true, true) => self.visible_cached.push(tile),
@@ -394,13 +459,139 @@ impl PendingTiles {
             }
         }
 
-        self.list.extend(self.interest_uncached.iter());
-        self.list.extend(self.interest_cached.iter());
-        self.list.extend(self.visible_uncached.iter());
-        self.list.extend(self.visible_cached.iter());
+        // Visible tiles first. Interest-ring work is deferred so we can present
+        // as soon as the viewport is ready (see `promote_deferred_interest`).
+        // Interactive/`only_visible` already excludes the ring from `tile_rect`.
+        if only_visible {
+            self.list.extend(self.visible_uncached.iter());
+            self.list.extend(self.visible_cached.iter());
+        } else {
+            self.deferred_interest.extend(self.interest_uncached.iter());
+            self.deferred_interest.extend(self.interest_cached.iter());
+            self.list.extend(self.visible_uncached.iter());
+            self.list.extend(self.visible_cached.iter());
+        }
+    }
+
+    /// Move deferred interest-ring tiles onto the pending list.
+    /// Returns true when there is interest work left to do.
+    pub fn promote_deferred_interest(&mut self) -> bool {
+        if self.deferred_interest.is_empty() {
+            return false;
+        }
+        self.list.append(&mut self.deferred_interest);
+        true
     }
 
     pub fn pop(&mut self) -> Option<Tile> {
         self.list.pop()
+    }
+}
+
+pub fn join_nonempty(mut acc: skia::Rect, rect: skia::Rect) -> skia::Rect {
+    if rect.is_empty() {
+        return acc;
+    }
+    if acc.is_empty() {
+        rect
+    } else {
+        acc.join(rect);
+        acc
+    }
+}
+
+/// old ∪ new ∪ indexed tile coverage for post-edit cache eviction.
+pub fn union_edit_dirty_rect(
+    old: Option<skia::Rect>,
+    new: skia::Rect,
+    indexed: skia::Rect,
+) -> skia::Rect {
+    [old, Some(new), Some(indexed)]
+        .into_iter()
+        .flatten()
+        .fold(skia::Rect::new_empty(), join_nonempty)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use skia_safe as skia;
+
+    #[test]
+    fn tile_screen_xy_keeps_neighbors_abutted_at_half_pixel_offset() {
+        let offset = skia::Point::new(103.5, 0.0);
+        let (x0, y0) = tile_screen_xy(Tile(0, 0), TILE_SIZE, offset);
+        let (x1, y1) = tile_screen_xy(Tile(1, 0), TILE_SIZE, offset);
+        let (x2, y2) = tile_screen_xy(Tile(0, 1), TILE_SIZE, offset);
+        assert_eq!(x1 - x0, TILE_SIZE);
+        assert_eq!(y2 - y0, TILE_SIZE);
+        assert_eq!(y1, y0);
+        assert_eq!(x2, x0);
+    }
+
+    #[test]
+    fn doc_rect_screen_xy_keeps_neighbors_abutted_at_half_pixel_pan() {
+        let pan = skia::Point::new(-103.5, 0.0);
+        let scale = 1.0_f32;
+        let a = skia::Rect::from_xywh(0.0, 0.0, TILE_SIZE, TILE_SIZE);
+        let b = skia::Rect::from_xywh(TILE_SIZE, 0.0, TILE_SIZE, TILE_SIZE);
+        let (x0, _) = doc_rect_screen_xy(a, pan, scale);
+        let (x1, _) = doc_rect_screen_xy(b, pan, scale);
+        assert_eq!(x1 - x0, TILE_SIZE);
+    }
+
+    #[test]
+    fn atlas_slot_is_full_size_when_tiles_fit() {
+        assert_eq!(tile_atlas_slot_size(64, 4096), 512);
+        assert_eq!(tile_atlas_slot_size(1, 4096), 512);
+    }
+
+    #[test]
+    fn atlas_slot_shrinks_to_pack_interest_tiles() {
+        // 150 slots → 13×13 grid, 4096/13 = 315.
+        assert_eq!(tile_atlas_slot_size(150, 4096), 315);
+        let side = 4096 / 315;
+        assert!(side * side >= 150);
+    }
+
+    #[test]
+    fn atlas_compose_scale_is_one_at_full_slot() {
+        assert_eq!(tile_atlas_compose_scale(512), 1.0);
+    }
+
+    #[test]
+    fn atlas_compose_scale_keeps_dest_tile_size_when_packed() {
+        let slot = 315;
+        let scale = tile_atlas_compose_scale(slot);
+        let src = tile_atlas_compose_src_size(slot);
+        assert!((scale * src - TILE_SIZE).abs() < 1e-4);
+        assert!(src < slot as f32);
+    }
+
+    #[test]
+    fn atlas_content_rect_matches_compose_src_when_packed() {
+        let slot = skia::Rect::from_xywh(10.0, 20.0, 315.0, 315.0);
+        let inner = tile_atlas_content_rect(slot, 315);
+        assert_eq!(inner, skia::Rect::new(11.0, 21.0, 324.0, 334.0));
+        assert_eq!(tile_atlas_content_rect(slot, 512), slot);
+        assert!((inner.width() - tile_atlas_compose_src_size(315)).abs() < 1e-4);
+    }
+
+    #[test]
+    fn edit_dirty_rect_includes_pre_rotate_extent_outside_current_index() {
+        // Indexed tiles are interest-clipped; old AABB still covers wings.
+        let old = skia::Rect::from_ltrb(-1103.0, 1871.1, 4693.2, 3559.9);
+        let new = skia::Rect::from_ltrb(1445.0, -164.4, 2144.9, 5598.0);
+        let indexed = skia::Rect::from_ltrb(663.1, 1989.4, 2652.6, 3315.7);
+        let left_wing = skia::Rect::from_ltrb(-3926.0, 0.0, 0.0, 3926.0);
+        let right_wing = skia::Rect::from_ltrb(3926.0, 0.0, 7852.0, 3926.0);
+
+        let without_old = union_edit_dirty_rect(None, new, indexed);
+        assert!(!without_old.intersects(left_wing));
+        assert!(!without_old.intersects(right_wing));
+
+        let dirty = union_edit_dirty_rect(Some(old), new, indexed);
+        assert!(dirty.intersects(left_wing));
+        assert!(dirty.intersects(right_wing));
     }
 }

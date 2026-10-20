@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.plugins.shape-bugfixes-test
   (:require
@@ -176,6 +176,7 @@
     (with-redefs [u/locate-shape (fn [_file _page id] {:id id :component-id id})
                   u/locate-library-component (constantly {:id (uuid/next)})
                   ctk/is-variant? (constantly false)
+                  dwv/valid-components-for-variants? (constantly true)
                   dwv/combine-as-variants
                   (fn [ids opts]
                     (reset! captured {:ids ids :opts opts})
@@ -381,6 +382,7 @@
         errors    (atom [])]
     (with-redefs [u/locate-shape (constantly {:id shape-id :component-id shape-id})
                   u/locate-library-component (constantly {:id (uuid/next)})
+                  u/page-active? (constantly true)
                   u/not-valid    (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
                   r/check-permission (constantly false)
                   st/emit!       mock/noop]

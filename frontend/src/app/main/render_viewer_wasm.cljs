@@ -2,15 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.render-viewer-wasm
   "WASM offscreen rendering for the shared viewer (snapshot + fixed-scroll)."
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.render-wasm.api.select :as wselect]
+   [app.common.render-wasm.wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
    [app.util.webapi :as webapi]
@@ -83,14 +84,14 @@
   (when (seq include-ids)
     (wasm.api/set-render-include-filter! include-ids))
   (doseq [id clear-fills-ids]
-    (wasm.api/use-shape id)
+    (wselect/use-shape id)
     (wasm.api/clear-shape-fills!)))
 
 (defn- viewer-restore-layer-mask!
   [page-objects clear-fills-ids]
   (wasm.api/clear-render-include-filter!)
   (doseq [id clear-fills-ids]
-    (wasm.api/use-shape id)
+    (wselect/use-shape id)
     (wasm.api/set-shape-fills id (get-in page-objects [id :fills] []) false)))
 
 (defn- viewer-do-render!

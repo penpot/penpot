@@ -9,10 +9,7 @@ use crate::shapes::{
 use crate::uuid::Uuid;
 use crate::wasm::text::helpers::{self as text_helpers, find_text_span_at_offset};
 use crate::wasm::text_editor::CursorDirection;
-use skia_safe::{
-    textlayout::{Affinity, PositionWithAffinity},
-    Color,
-};
+use skia_safe::Color;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TextSelection {
@@ -329,7 +326,7 @@ impl TextComposition {
 
         let focus = selection.focus;
         let previous_len = self.previous.chars().count();
-        let anchor = TextPositionWithAffinity::new_without_affinity(
+        let anchor = TextPositionWithAffinity::new_downstream_affinity(
             focus.paragraph,
             focus.offset + previous_len,
         );
@@ -437,9 +434,22 @@ impl TextEditorState {
         true
     }
 
-    pub fn select_all(&mut self, text_content: &TextContent) -> bool {
+    fn select_range(
+        &mut self,
+        text_content: &TextContent,
+        start: &TextPositionWithAffinity,
+        end: &TextPositionWithAffinity,
+    ) {
         self.is_pointer_selection_active = false;
-        self.set_caret_from_position(&TextPositionWithAffinity::empty());
+        self.is_click_event_skipped = false;
+        self.set_caret_from_position(start);
+        self.extend_selection_from_position(end);
+        self.update_styles(text_content);
+        self.reset_blink();
+        self.push_event(TextEditorEvent::SelectionChanged);
+    }
+
+    pub fn select_all(&mut self, text_content: &TextContent) -> bool {
         let num_paragraphs = text_content.paragraphs().len().saturating_sub(1);
         let Some(last_paragraph) = text_content.paragraphs().last() else {
             return false;
@@ -447,21 +457,13 @@ impl TextEditorState {
         let Some(_last_text_span) = last_paragraph.children().last() else {
             return false;
         };
-        let mut offset = 0;
-        for span in last_paragraph.children() {
-            offset += span.text.len();
-        }
-        self.extend_selection_from_position(&TextPositionWithAffinity::new(
-            PositionWithAffinity {
-                position: offset as i32,
-                affinity: Affinity::Upstream,
-            },
-            num_paragraphs,
-            offset,
-        ));
-        self.update_styles(text_content);
-        self.reset_blink();
-        self.push_event(TextEditorEvent::SelectionChanged);
+        // Offsets are counted in characters, not bytes.
+        let offset = text_helpers::paragraph_char_count(last_paragraph);
+        self.select_range(
+            text_content,
+            &TextPositionWithAffinity::empty(),
+            &TextPositionWithAffinity::new_upstream_affinity(num_paragraphs, offset),
+        );
 
         true
     }
@@ -471,8 +473,6 @@ impl TextEditorState {
         text_content: &TextContent,
         position: &TextPositionWithAffinity,
     ) {
-        self.is_pointer_selection_active = false;
-
         let paragraphs = text_content.paragraphs();
         if paragraphs.is_empty() || position.paragraph >= paragraphs.len() {
             return;
@@ -487,7 +487,7 @@ impl TextEditorState {
 
         let chars: Vec<char> = paragraph_text.chars().collect();
         if chars.is_empty() {
-            self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+            self.set_caret_from_position(&TextPositionWithAffinity::new_downstream_affinity(
                 position.paragraph,
                 0,
             ));
@@ -509,7 +509,7 @@ impl TextEditorState {
         }
 
         if !text_helpers::is_word_char(chars[offset]) {
-            self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
+            self.set_caret_from_position(&TextPositionWithAffinity::new_downstream_affinity(
                 position.paragraph,
                 position.offset.min(chars.len()),
             ));
@@ -529,17 +529,31 @@ impl TextEditorState {
             end += 1;
         }
 
-        self.set_caret_from_position(&TextPositionWithAffinity::new_without_affinity(
-            position.paragraph,
-            start,
-        ));
-        self.extend_selection_from_position(&TextPositionWithAffinity::new_without_affinity(
-            position.paragraph,
-            end,
-        ));
-        self.update_styles(text_content);
-        self.reset_blink();
-        self.push_event(TextEditorEvent::SelectionChanged);
+        self.select_range(
+            text_content,
+            &TextPositionWithAffinity::new_downstream_affinity(position.paragraph, start),
+            &TextPositionWithAffinity::new_downstream_affinity(position.paragraph, end),
+        );
+    }
+
+    pub fn select_paragraph(
+        &mut self,
+        text_content: &TextContent,
+        position: &TextPositionWithAffinity,
+    ) {
+        let paragraphs = text_content.paragraphs();
+        if paragraphs.is_empty() || position.paragraph >= paragraphs.len() {
+            return;
+        }
+
+        // Offsets are counted in characters, not bytes.
+        let offset = text_helpers::paragraph_char_count(&paragraphs[position.paragraph]);
+
+        self.select_range(
+            text_content,
+            &TextPositionWithAffinity::new_downstream_affinity(position.paragraph, 0),
+            &TextPositionWithAffinity::new_upstream_affinity(position.paragraph, offset),
+        );
     }
 
     pub fn set_caret_from_position(&mut self, position: &TextPositionWithAffinity) {
@@ -550,6 +564,16 @@ impl TextEditorState {
         // (`move_cursor`, `select_all`) which already reset the blink.
         self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
+    }
+
+    /// Places the caret and refreshes `current_styles` (emits `StylesChanged`).
+    pub fn place_caret_from_position(
+        &mut self,
+        text_content: &TextContent,
+        position: &TextPositionWithAffinity,
+    ) {
+        self.set_caret_from_position(position);
+        self.update_styles(text_content);
     }
 
     pub fn extend_selection_from_position(&mut self, position: &TextPositionWithAffinity) {
@@ -798,8 +822,7 @@ impl TextEditorState {
             }
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         self.reset_blink();
         self.push_event(TextEditorEvent::ContentChanged);
@@ -824,8 +847,7 @@ impl TextEditorState {
             self.selection.set_caret(clamped);
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         self.reset_blink();
         self.push_event(TextEditorEvent::ContentChanged);
@@ -842,12 +864,11 @@ impl TextEditorState {
         let cursor = self.selection.focus;
         if text_helpers::split_paragraph_at_cursor(text_content, &cursor) {
             let new_cursor =
-                TextPositionWithAffinity::new_without_affinity(cursor.paragraph + 1, 0);
+                TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph + 1, 0);
             self.selection.set_caret(new_cursor);
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         self.reset_blink();
         self.push_event(TextEditorEvent::ContentChanged);
@@ -864,6 +885,23 @@ impl TextEditorState {
         let paragraphs = text_content.paragraphs();
         if paragraphs.is_empty() {
             return false;
+        }
+
+        // With a range selected, Left/Right collapse to that edge and stop.
+        // Extending (Shift) keeps the normal move-from-focus path below.
+        if self.selection.is_selection() && !extend_selection {
+            let edge = match direction {
+                CursorDirection::Backward => Some(self.selection.start()),
+                CursorDirection::Forward => Some(self.selection.end()),
+                _ => None,
+            };
+            if let Some(caret) = edge {
+                self.selection.set_caret(caret);
+                self.update_styles(text_content);
+                self.reset_blink();
+                self.push_event(TextEditorEvent::SelectionChanged);
+                return true;
+            }
         }
 
         let focus = self.selection.focus;
@@ -902,6 +940,11 @@ impl TextEditorState {
             CursorDirection::LineAfter => {
                 text_helpers::move_cursor_down(&focus, paragraphs, text_content)
             }
+            CursorDirection::LineStart if word_boundary => TextPositionWithAffinity::empty(),
+            CursorDirection::LineEnd if word_boundary => text_helpers::move_cursor_line_end(
+                &TextPositionWithAffinity::new_downstream_affinity(paragraphs.len() - 1, 0),
+                paragraphs,
+            ),
             CursorDirection::LineStart => text_helpers::move_cursor_line_start(&focus, paragraphs),
             CursorDirection::LineEnd => text_helpers::move_cursor_line_end(&focus, paragraphs),
         };
@@ -928,4 +971,223 @@ impl Default for TextEditorState {
 
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::math::Rect;
+    use crate::shapes::{
+        Fill, FontFamily, FontStyle, GrowType, Paragraph, SolidColor, TextAlign, TextSpan,
+    };
+    use skia_safe::Color;
+
+    fn span(text: &str, font_size: f32, fill: Fill) -> TextSpan {
+        TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            font_size,
+            1.2,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![fill],
+        )
+    }
+
+    fn hello_world_content() -> TextContent {
+        let black = Fill::Solid(SolidColor(Color::BLACK));
+        let red = Fill::Solid(SolidColor(Color::RED));
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), GrowType::Fixed);
+        content.add_paragraph(Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![span("Hello ", 24.0, black), span("world", 40.0, red)],
+        ));
+        content
+    }
+
+    fn content(text: &str) -> TextContent {
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), GrowType::Fixed);
+        content.add_paragraph(Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![span(text, 14.0, Fill::Solid(SolidColor(Color::BLACK)))],
+        ));
+        content
+    }
+
+    fn drain_events(editor: &mut TextEditorState) -> Vec<TextEditorEvent> {
+        let mut events = Vec::new();
+        loop {
+            let ev = editor.poll_event();
+            if ev == TextEditorEvent::None {
+                break;
+            }
+            events.push(ev);
+        }
+        events
+    }
+
+    fn pos(offset: usize) -> TextPositionWithAffinity {
+        TextPositionWithAffinity::new_downstream_affinity(0, offset)
+    }
+
+    #[test]
+    fn set_caret_from_position_alone_does_not_emit_styles_changed() {
+        let content = hello_world_content();
+        let mut editor = TextEditorState::new();
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 1),
+        );
+        drain_events(&mut editor);
+
+        editor.set_caret_from_position(&TextPositionWithAffinity::new_downstream_affinity(0, 8));
+        let events = drain_events(&mut editor);
+
+        assert!(!events.contains(&TextEditorEvent::StylesChanged));
+        assert_eq!(editor.current_styles.font_size.value(), &Some(24.0));
+    }
+
+    #[test]
+    fn place_caret_from_position_syncs_styles_and_emits_styles_changed() {
+        let content = hello_world_content();
+        let mut editor = TextEditorState::new();
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 1),
+        );
+        drain_events(&mut editor);
+        assert_eq!(editor.current_styles.font_size.value(), &Some(24.0));
+
+        // Offset 8 is inside the second span ("world").
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 8),
+        );
+        let events = drain_events(&mut editor);
+
+        assert!(events.contains(&TextEditorEvent::StylesChanged));
+        assert_eq!(editor.current_styles.font_size.value(), &Some(40.0));
+        assert_eq!(
+            editor.current_styles.fills,
+            vec![Fill::Solid(SolidColor(Color::RED))]
+        );
+    }
+
+    #[test]
+    fn place_caret_from_position_clears_mixed_selection_styles() {
+        let content = hello_world_content();
+        let mut editor = TextEditorState::new();
+        editor.select_all(&content);
+        assert!(editor.current_styles.font_size.is_multiple());
+        assert!(editor.current_styles.fills_are_multiple);
+        drain_events(&mut editor);
+
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 8),
+        );
+        let events = drain_events(&mut editor);
+
+        assert!(events.contains(&TextEditorEvent::StylesChanged));
+        assert_eq!(editor.current_styles.font_size.value(), &Some(40.0));
+        assert!(!editor.current_styles.fills_are_multiple);
+        assert_eq!(
+            editor.current_styles.fills,
+            vec![Fill::Solid(SolidColor(Color::RED))]
+        );
+    }
+
+    #[test]
+    fn move_backward_with_selection_collapses_to_start() {
+        // "Third paragraph" — select "aph" at the end, then Left.
+        let content = content("Third paragraph");
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(pos(12));
+        editor.selection.extend_to(pos(15));
+
+        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 12);
+    }
+
+    #[test]
+    fn move_forward_with_selection_collapses_to_end() {
+        // Caret between "parag" and "raph", Shift+Left twice selects "ag", then Right.
+        let content = content("Third paragraph");
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(pos(11));
+        editor.selection.extend_to(pos(9));
+
+        editor.move_cursor(&content, CursorDirection::Forward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 11);
+    }
+
+    #[test]
+    fn move_backward_with_full_selection_collapses_to_document_start() {
+        let content = content("Hello");
+        let mut editor = TextEditorState::new();
+        editor.select_all(&content);
+
+        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 0);
+    }
+
+    #[test]
+    fn move_forward_with_full_selection_collapses_to_document_end() {
+        let content = content("Hello");
+        let mut editor = TextEditorState::new();
+        editor.select_all(&content);
+
+        editor.move_cursor(&content, CursorDirection::Forward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 5);
+    }
+
+    #[test]
+    fn move_backward_while_extending_still_moves_from_focus() {
+        let content = content("Third paragraph");
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(pos(15));
+        editor.selection.extend_to(pos(12));
+
+        editor.move_cursor(&content, CursorDirection::Backward, false, true);
+
+        assert!(editor.selection.is_selection());
+        assert_eq!(editor.selection.anchor.offset, 15);
+        assert_eq!(editor.selection.focus.offset, 11);
+    }
+
+    #[test]
+    fn move_backward_with_collapsed_caret_still_moves() {
+        let content = content("Hello");
+        let mut editor = TextEditorState::new();
+        editor.selection.set_caret(pos(3));
+
+        editor.move_cursor(&content, CursorDirection::Backward, false, false);
+
+        assert!(editor.selection.is_collapsed());
+        assert_eq!(editor.selection.focus.offset, 2);
+    }
 }

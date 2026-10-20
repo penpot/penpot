@@ -79,15 +79,9 @@ pub fn render_to_raster(
     let Some(shape) = tree.get(id) else {
         return Ok((Vec::new(), 0, 0));
     };
-    // Boards export at their own bounds (like the classic exporter, which
-    // screenshots exactly the board box): content overflowing a board lands
-    // outside the page/surface and is cropped. Other shapes keep the extended
-    // rect so their own shadows/blur are included.
-    let bounds = if matches!(shape.shape_type, crate::shapes::Type::Frame(_)) {
-        shape.selrect()
-    } else {
-        shape.extrect(tree, scale)
-    };
+    // Boards crop overflowing children (classic board box) but keep their own
+    // strokes/shadows/blur. Other shapes use full extrect.
+    let bounds = shape.export_root_bounds(tree, scale);
 
     let width = (bounds.width() * scale).ceil() as i32;
     let height = (bounds.height() * scale).ceil() as i32;

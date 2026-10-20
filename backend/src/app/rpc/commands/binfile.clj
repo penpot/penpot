@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.binfile
   (:refer-clojure :exclude [assert])
@@ -10,14 +10,13 @@
    [app.binfile.common :as bfc]
    [app.binfile.v1 :as bf.v1]
    [app.binfile.v3 :as bf.v3]
-   [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
-   [app.loggers.audit :as-alias audit]
+   [app.loggers.audit :as audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
@@ -42,17 +41,17 @@
   schema:export-binfile
   [:map {:title "export-binfile"}
    [:file-id ::sm/uuid]
-   [:include-libraries ::sm/boolean]
-   [:embed-assets ::sm/boolean]])
+   [:type {:optional true} [::sm/one-of #{:include-libraries :merge-libraries :detach-libraries :link-later}]]
+   [:include-libraries {:optional true} ::sm/boolean]
+   [:embed-assets {:optional true} ::sm/boolean]])
 
 (defn- export-binfile
-  [{:keys [::sto/storage] :as cfg} {:keys [file-id include-libraries embed-assets]}]
-  (let [output  (tmp/tempfile*)]
+  [{:keys [::sto/storage] :as cfg} {:keys [file-id] :as params}]
+  (let [output (tmp/tempfile*)]
+
     (try
-      (-> cfg
-          (assoc ::bfc/ids #{file-id})
-          (assoc ::bfc/embed-assets embed-assets)
-          (assoc ::bfc/include-libraries include-libraries)
+      (-> (bfc/export-cfg cfg {:ids #{file-id}
+                               :export-type (bfc/resolve-export-type params)})
           (bf.v3/export-files! output))
 
       (let [data   (sto/content output)
@@ -63,7 +62,8 @@
                                      :bucket sto/tempfile-bucket})]
 
         (-> (cf/get :public-uri)
-            (u/join "/assets/by-id/")
+            (u/ensure-path-slash)
+            (u/join "assets/by-id/")
             (u/join (str (:id object)))))
 
       (finally
@@ -72,7 +72,8 @@
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
-   ::doc/changes [["2.12" "Remove version parameter, only one version is supported"]]
+   ::doc/changes [["2.12" "Remove version parameter, only one version is supported"]
+                  ["2.19" "Deprecated `include-libraries` and `embed-assets` params"]]
    ::webhooks/event? true
    ::sm/params schema:export-binfile}
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
@@ -82,26 +83,20 @@
 ;; --- Command: import-binfile
 
 (defn- import-binfile
-  [{:keys [::db/pool] :as cfg} {:keys [profile-id project-id version name file upload-id]}]
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id project-id version name file upload-id] :as params}]
   (let [team
         (teams/get-team pool
                         :profile-id profile-id
                         :project-id project-id)
 
         cfg
-        (-> cfg
-            (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
-            (assoc ::bfc/project-id project-id)
-            (assoc ::bfc/profile-id profile-id)
-            (assoc ::bfc/name name)
-            (assoc ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size))
-            (assoc ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)))
+        (bfc/import-cfg cfg {:profile-id profile-id
+                             :project-id project-id
+                             :team team
+                             :name name
+                             :input (:path file)})
 
-        input-path (:path file)
-        owned?     (some? upload-id)
-
-        cfg
-        (assoc cfg ::bfc/input input-path)
+        owned? (some? upload-id)
 
         result
         (try
@@ -114,18 +109,26 @@
                              :version version})))
           (finally
             (when owned?
-              (fs/delete input-path))))]
+              (fs/delete (:path file)))))]
 
     (db/update! pool :project
                 {:modified-at (ct/now)}
                 {:id project-id}
                 {::db/return-keys false})
 
+    ;; The imported files get no event from their own command, so emit one per
+    ;; file inside a single transaction.
+    (db/tx-run! cfg
+                (fn [cfg]
+                  (doseq [file-id (:file-ids result)]
+                    (audit/submit-file-created-event cfg params file-id
+                                                     {:team-id (:id team)}))))
+
     result))
 
 (def ^:private schema:import-binfile
   [:and
-   [:map {:title "import-binfile"}
+   [:map {:title "import-binfile" :closed true}
     [:name [:or [:string {:max 250}]
             [:map-of ::sm/uuid [:string {:max 250}]]]]
     [:project-id ::sm/uuid]
@@ -150,6 +153,7 @@
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile
+   ::rpc/multipart-only-params [:file]
    ::climit/id [[:import-binfile/by-profile ::rpc/profile-id]
                 [:import-binfile/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version upload-id] :as params}]
@@ -171,7 +175,7 @@
         manifest
         (case (int version)
           1 nil
-          3 (bf.v3/get-manifest (-> params :file :path))
+          3 (bf.v3/get-manifest cfg (-> params :file :path))
           (throw (ex-info (str "Unsupported binfile version: " version)
                           {:type :validation
                            :code :unsupported-version

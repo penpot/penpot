@@ -2,20 +2,18 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.notifications
   (:require
-   [app.common.uuid :as uuid]
    [app.msgbus :as mbus]))
 
 (defn notify-team-change
   [cfg team notification]
-  (let [msgbus (::mbus/msgbus cfg)]
+  (let [msgbus (::mbus/msgbus cfg)
+        team-id (:id team)]
     (mbus/pub! msgbus
-               ;;TODO There is a bug on dashboard with teams notifications.
-               ;;For now we send it to uuid/zero instead of team-id
-               :topic uuid/zero
+               :topic team-id
                :message {:type :team-organization-change
                          :team team
                          :notification notification})))
@@ -37,7 +35,7 @@
   [cfg organization-id organization-name teams deleted-teams]
   (let [msgbus (::mbus/msgbus cfg)]
     (mbus/pub! msgbus
-               :topic uuid/zero
+               :topic organization-id
                :message {:type :organization-deleted
                          :organization-id organization-id
                          :organization-name organization-name
@@ -48,6 +46,6 @@
   [cfg organization-id]
   (let [msgbus (::mbus/msgbus cfg)]
     (mbus/pub! msgbus
-               :topic uuid/zero
+               :topic organization-id
                :message {:type :organization-change-sso
                          :organization-id organization-id})))

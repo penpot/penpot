@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.ui.measures-menu-props-test
   (:require
@@ -48,4 +48,16 @@
   (t/testing "re-renders when width changes"
     (t/is (false? (check-measures-menu-props
                    (props base-values)
-                   (props (assoc base-values :width 150)))))))
+                   (props (assoc base-values :width 150))))))
+
+  (t/testing "re-renders when absolute positioning changes but nothing else does"
+    ;; Regression test: toggling static <-> absolute on a flex child must
+    ;; force a re-render so the X/Y inputs enabled/disabled state updates.
+    (t/is (false? (check-measures-menu-props
+                   (props (assoc base-values :layout-item-absolute false))
+                   (props (assoc base-values :layout-item-absolute true))))))
+
+  (t/testing "re-renders when clip content changes but nothing else does"
+    (t/is (false? (check-measures-menu-props
+                   (props (assoc base-values :show-content false))
+                   (props (assoc base-values :show-content true)))))))

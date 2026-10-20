@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   const login = new LoginPage(page);
   await login.initWithLoggedOutUser();
 
-  await page.goto("/#/auth/login");
+  await page.goto("/?screen=auth-login");
 });
 
 test("User is redirected to the login page when logged out", async ({
@@ -17,11 +17,22 @@ test("User is redirected to the login page when logged out", async ({
 
   await loginPage.setupLoggedInUser();
 
-  await expect(loginPage.page).toHaveURL(/auth\/login$/);
+  await expect(loginPage.page).toHaveURL(/screen=auth-login$/);
   await expect(loginPage.initialHeading).toBeVisible();
 });
 
 test.describe("Login form", () => {
+  test("User navigates to register by clicking the create account link", async ({
+    page,
+  }) => {
+    await LoginPage.mockConfigFlags(page, ["registration"]);
+    await page.goto("/?screen=auth-login");
+
+    await page.getByTestId("register-submit").click();
+
+    await expect(page).toHaveURL(/screen=auth-register/);
+  });
+
   test("User logs in by filling the login form", async ({ page }) => {
     const loginPage = new LoginPage(page);
     await loginPage.setupLoginSuccess();
@@ -30,8 +41,8 @@ test.describe("Login form", () => {
     await loginPage.fillEmailAndPasswordInputs("foo@example.com", "loremipsum");
     await loginPage.clickLoginButton();
 
-    await page.waitForURL("**/dashboard/**");
-    await expect(loginPage.page).toHaveURL(/dashboard/);
+    await page.waitForURL(/screen=dashboard/);
+    await expect(loginPage.page).toHaveURL(/screen=dashboard/);
   });
 
   test("User gets error message when submitting an bad formatted email ", async ({
@@ -58,6 +69,6 @@ test.describe("Login form", () => {
     await loginPage.clickLoginButton();
 
     await expect(loginPage.invalidCredentialsError).toBeVisible();
-    await expect(loginPage.page).toHaveURL(/auth\/login$/);
+    await expect(loginPage.page).toHaveURL(/screen=auth-login$/);
   });
 });

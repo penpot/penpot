@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.measures
   (:require-macros [app.main.style :as stl])
@@ -50,10 +50,11 @@
    :show-content
    :hide-in-viewer
 
-   ;; Needed to disable/enable width/height
+   ;; Needed to disable/enable width/height and x/y
    ;; otherwise the memo will not detect changes
    :layout-item-h-sizing
-   :layout-item-v-sizing])
+   :layout-item-v-sizing
+   :layout-item-absolute])
 
 (def ^:private generic-options
   #{:size :position :rotation})
@@ -153,6 +154,8 @@
                      (get n-values :rotation))
          (identical? (get o-values :hide-in-viewer)
                      (get n-values :hide-in-viewer))
+         (identical? (get o-values :show-content)
+                     (get n-values :show-content))
          (identical? (get o-values :width)
                      (get n-values :width))
          (identical? (get o-values :height)
@@ -161,6 +164,8 @@
                      (get n-values :layout-item-h-sizing))
          (identical? (get o-values :layout-item-v-sizing)
                      (get n-values :layout-item-v-sizing))
+         (identical? (get o-values :layout-item-absolute)
+                     (get n-values :layout-item-absolute))
          (identical? (get o-values :points)
                      (get n-values :points))
          (identical? (get o-values :selrect)
@@ -175,6 +180,29 @@
                      (get n-values :r4))
          (identical? (get o-values :proportion-lock)
                      (get n-values :proportion-lock)))))
+
+(mf/defc node-position-menu*
+  "X and Y inputs for the current path selection."
+  [{:keys [values on-x-change on-y-change]}]
+  ;; Match the shape position input layout.
+  [:section {:class (stl/css :element-set)}
+   [:div {:class (stl/css :position)}
+    [:div {:class (stl/css :x-position)
+           :title (tr "workspace.options.x")}
+     [:span {:class (stl/css :icon-text)} "X"]
+     [:> deprecated-input/numeric-input* {:no-validate true
+                                          :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
+                                          :on-change on-x-change
+                                          :class (stl/css :numeric-input)
+                                          :value (:x values)}]]
+    [:div {:class (stl/css :y-position)
+           :title (tr "workspace.options.y")}
+     [:span {:class (stl/css :icon-text)} "Y"]
+     [:> deprecated-input/numeric-input* {:no-validate true
+                                          :placeholder (if (= :multiple (:y values)) (tr "settings.multiple") "--")
+                                          :on-change on-y-change
+                                          :class (stl/css :numeric-input)
+                                          :value (:y values)}]]]])
 
 (mf/defc measures-menu*
   {::mf/wrap [#(mf/memo' % check-measures-menu-props)]}
@@ -373,10 +401,8 @@
          (mf/deps ids shapes)
          (fn [value attr]
            (if (or (string? value) (number? value))
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (udw/update-dimensions-coalesced ids attr value))
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/apply-token-from-input {:token (first value)
+             (st/emit! (udw/update-dimensions-coalesced ids attr value))
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{attr}
                                                      :shape-ids ids})))))
 
@@ -393,11 +419,8 @@
          (mf/deps ids)
          (fn [value attr]
            (if (or (string? value) (number? value))
-             (do
-               (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (st/emit! (udw/update-positions ids {attr value})))
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/apply-token-from-input {:token (first value)
+             (st/emit! (udw/update-positions ids {attr value}))
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{attr}
                                                      :shape-ids ids})))))
 
@@ -407,10 +430,8 @@
          (fn [value]
            (if (or (string? value) (number? value))
              (let [value (fixed-decimal-value value)]
-               (st/emit! (udw/trigger-bounding-box-cloaking ids))
                (st/emit! (udw/increase-rotation-coalesced ids value)))
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (dwta/apply-token-from-input {:token (first value)
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
                                                      :attrs #{:rotation}
                                                      :shape-ids ids})))))
 

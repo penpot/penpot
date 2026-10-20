@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.tokens-status
   (:require
@@ -76,9 +76,12 @@
    [:active-set-ids {:optional true} [:set {:gen/max 5} ::sm/uuid]]])
 
 (def schema:tokens-status
-  [:and {:gen/gen (->> (sg/generator schema:tokens-status-attrs)
-                       (sg/fmap #(make-tokens-status %)))}
-   [:fn tokens-status?]])
+  (sm/type-schema
+   {:type ::tokens-status
+    :pred tokens-status?
+    :type-properties {:decode/json #(some-> % make-tokens-status)
+                      :gen/gen (->> (sg/generator schema:tokens-status-attrs)
+                                    (sg/fmap #(make-tokens-status %)))}}))
 
 (def ^:private check-tokens-status-attrs
   (sm/check-fn schema:tokens-status-attrs

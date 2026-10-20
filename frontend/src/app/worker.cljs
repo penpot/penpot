@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.worker
   (:require
@@ -12,7 +12,6 @@
    [app.common.types.objects-map]
    [app.util.object :as obj]
    [app.worker.impl :as impl]
-   [app.worker.import]
    [app.worker.index]
    [app.worker.messages :as wm]
    [app.worker.thumbnails]

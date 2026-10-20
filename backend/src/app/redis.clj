@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.redis
   "The msgbus abstraction implemented using redis as underlying backend."
@@ -29,6 +29,7 @@
    io.lettuce.core.api.sync.RedisScriptingCommands
    io.lettuce.core.codec.RedisCodec
    io.lettuce.core.codec.StringCodec
+   io.lettuce.core.KeyScanCursor
    io.lettuce.core.KeyValue
    io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
    io.lettuce.core.pubsub.RedisPubSubListener
@@ -40,6 +41,8 @@
    io.lettuce.core.RedisURI
    io.lettuce.core.resource.ClientResources
    io.lettuce.core.resource.DefaultClientResources
+   io.lettuce.core.ScanArgs
+   io.lettuce.core.ScanCursor
    io.lettuce.core.ScriptOutputType
    io.lettuce.core.SetArgs
    io.netty.channel.nio.NioEventLoopGroup
@@ -71,8 +74,11 @@
   (-blpop [_ timeout keys])
   (-eval [_ script])
   (-get [_ key])
+  (-scan [_ cursor pattern limit])
+  (-hget [_ key field])
   (-set [_ key val args])
   (-del [_ key-or-keys])
+  (-expire [_ key seconds])
   (-ping [_]))
 
 (defprotocol IPubSubConnection
@@ -205,6 +211,20 @@
     (assert (string? key) "key expected to be string")
     (.get cmd ^String key))
 
+  (-scan [_ cursor pattern limit]
+    (let [args   (-> (ScanArgs.)
+                     (.match ^String pattern)
+                     (.limit (long limit)))
+          result (.scan cmd
+                        ^ScanCursor (ScanCursor/of ^String cursor)
+                        ^ScanArgs args)]
+      (MapEntry/create
+       (.getCursor ^KeyScanCursor result)
+       (vec (.getKeys ^KeyScanCursor result)))))
+
+  (-hget [_ key field]
+    (.hget cmd ^String key ^String field))
+
   (-set [_ key val args]
     (.set cmd
           ^String key
@@ -214,6 +234,10 @@
   (-del [_ keys]
     (let [keys (into-array String keys)]
       (.del cmd ^String/1 keys)))
+
+  (-expire [_ key seconds]
+    (assert (string? key) "key expected to be string")
+    (.expire cmd ^String key ^long seconds))
 
   (-ping [_]
     (.ping cmd))
@@ -345,6 +369,26 @@
       (l/err :hint "timeout on get redis key" :key key :cause cause)
       nil)))
 
+(defn scan
+  [conn cursor pattern limit]
+  (assert (string? cursor) "cursor must be string instance")
+  (assert (string? pattern) "pattern must be string instance")
+  (try
+    (-scan conn cursor pattern limit)
+    (catch RedisCommandTimeoutException cause
+      (l/err :hint "timeout on scan" :pattern pattern :cause cause)
+      nil)))
+
+(defn hget
+  [conn key field]
+  (assert (string? key) "key must be string instance")
+  (assert (string? field) "field must be string instance")
+  (try
+    (-hget conn key field)
+    (catch RedisCommandTimeoutException cause
+      (l/err :hint "timeout on hget" :key key :cause cause)
+      nil)))
+
 (defn set
   ([conn key val]
    (set conn key val nil))
@@ -471,6 +515,11 @@
 (defn timeout-exception?
   [cause]
   (instance? RedisCommandTimeoutException cause))
+
+(defn expire
+  [conn key seconds]
+  (assert (string? key) "key must be string instance")
+  (-expire conn key seconds))
 
 (defn exception?
   [cause]

@@ -33,6 +33,39 @@ function unique(prefix: string): string {
   return `${prefix}-${runTag}-${counter}`;
 }
 
+async function rectangleWithStrokeTokens(ctx: TestContext) {
+  const set = activeSet(ctx, unique('stroke-set'));
+  const width = set.addToken({
+    type: 'borderWidth',
+    name: unique('border.width'),
+    value: '4',
+  });
+  const color = set.addToken({
+    type: 'color',
+    name: unique('border.color'),
+    value: '#112233',
+  });
+  const rect = ctx.penpot.createRectangle();
+  ctx.board.appendChild(rect);
+  rect.strokes = [
+    { strokeColor: '#000000', strokeWidth: 1 },
+    { strokeColor: '#ffffff', strokeWidth: 2 },
+  ];
+  rect.applyToken(width, ['strokeWidth']);
+  await waitFor(() => rect.tokens.strokeWidth === width.name);
+  rect.applyToken(color, ['strokeColor']);
+  await waitFor(() => rect.tokens.strokeColor === color.name);
+  expect(rect.tokens).toEqual({
+    strokeColor: color.name,
+    strokeWidth: width.name,
+    strokeWidthTop: width.name,
+    strokeWidthRight: width.name,
+    strokeWidthBottom: width.name,
+    strokeWidthLeft: width.name,
+  });
+  return { rect, width, color };
+}
+
 /** Token application and theme/set wiring update the store asynchronously. */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -56,6 +89,20 @@ describe('Tokens', () => {
       expect(cat.themes.length).toBeGreaterThan(0);
       expect(cat.getThemeById(theme.id)).toBeDefined();
     });
+
+    test('catalog name validation uses current state and rejects blank names', (ctx) => {
+      const cat = catalog(ctx);
+      const name = unique('live-set');
+      cat.addSet({ name });
+      expect(() => cat.addSet({ name })).toThrow();
+      expect(() => cat.addSet({ name: '   ' })).toThrow();
+      expect(() => cat.addTheme({ group: '', name: '   ' })).toThrow();
+
+      const group = unique('live-theme-group');
+      const themeName = unique('live-theme');
+      cat.addTheme({ group, name: themeName });
+      expect(() => cat.addTheme({ group, name: themeName })).toThrow();
+    });
   });
 
   describe('Set', () => {
@@ -68,6 +115,17 @@ describe('Tokens', () => {
       expect(set.active).toBe(false);
       set.toggleActive();
       expect(set.active).toBe(true);
+    });
+
+    test('retained set proxies validate names against current state', (ctx) => {
+      const first = activeSet(ctx, unique('set'));
+      const second = activeSet(ctx, unique('set'));
+      expect(() => {
+        first.name = second.name;
+      }).toThrow();
+      expect(() => {
+        first.name = '   ';
+      }).toThrow();
     });
 
     // Community report (forum #10700, issue #14): toggling a token set's
@@ -148,15 +206,42 @@ describe('Tokens', () => {
         }),
       ).toThrow();
     });
+
+    test('empty composites and line-height without font-size throw', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      expect(() =>
+        set.addToken({
+          type: 'typography',
+          name: unique('empty-typography.'),
+          value: {} as never,
+        }),
+      ).toThrow();
+      expect(() =>
+        set.addToken({
+          type: 'shadow',
+          name: unique('empty-shadow.'),
+          value: [] as never,
+        }),
+      ).toThrow();
+      expect(() =>
+        set.addToken({
+          type: 'typography',
+          name: unique('line-height-only.'),
+          value: { lineHeight: '1.2' } as never,
+        }),
+      ).toThrow();
+    });
   });
 
   describe('Theme', () => {
     test('group, name and active round-trip', (ctx) => {
       const theme = catalog(ctx).addTheme({ group: '', name: unique('theme') });
-      theme.group = 'brand';
-      theme.name = 'dark';
-      expect(theme.group).toBe('brand');
-      expect(theme.name).toBe('dark');
+      const group = unique('brand');
+      const name = unique('dark');
+      theme.group = group;
+      theme.name = name;
+      expect(theme.group).toBe(group);
+      expect(theme.name).toBe(name);
       theme.active = true;
       expect(theme.active).toBe(true);
       theme.toggleActive();
@@ -190,6 +275,33 @@ describe('Tokens', () => {
       const dup = theme.duplicate();
       expect(dup.id).not.toBe(theme.id);
       dup.remove();
+    });
+
+    test('theme names stay unique within their current group', (ctx) => {
+      const cat = catalog(ctx);
+      const group = unique('group');
+      const first = cat.addTheme({ group, name: unique('theme') });
+      const second = cat.addTheme({ group, name: unique('theme') });
+      expect(() => {
+        first.name = second.name;
+      }).toThrow();
+      expect(() => {
+        first.name = '   ';
+      }).toThrow();
+
+      const duplicate = first.duplicate();
+      expect(duplicate.name).not.toBe(first.name);
+      duplicate.remove();
+    });
+
+    test('moving a retained theme cannot create a group/name collision', (ctx) => {
+      const cat = catalog(ctx);
+      const name = unique('shared-theme');
+      const first = cat.addTheme({ group: unique('group-a'), name });
+      const second = cat.addTheme({ group: unique('group-b'), name });
+      expect(() => {
+        first.group = second.group;
+      }).toThrow();
     });
   });
 
@@ -306,6 +418,127 @@ describe('Tokens', () => {
       expect(Object.keys(b.tokens)).toContain('paddingLeft');
     });
 
+    // The target is a text shape because the attribute set of a board excludes
+    // the font-family property, so the application is filtered out there and
+    // the assertions pass vacuously.
+    // The family comes from the bundled Google fonts catalog, available in every
+    // run. `Red` in its name reads as a color if the resolver parses the words.
+    test('applyToken binds a fontFamilies token to a text shape', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const font = ctx.penpot.fonts.findByName('Red Hat Display');
+      if (!font) throw new Error('Red Hat Display font not found');
+      const token = set.addToken({
+        type: 'fontFamilies',
+        name: unique('fontFamilies.'),
+        value: [font.fontFamily],
+      });
+
+      const t = ctx.penpot.createText('Hello Penpot');
+      if (!t) throw new Error('createText returned null');
+      ctx.board.appendChild(t);
+
+      t.applyToken(token, ['fontFamilies']);
+      await waitFor(() => t.fontFamily === font.fontFamily);
+      expect(Object.keys(t.tokens)).toContain('fontFamilies');
+      expect(t.fontFamily).toBe(font.fontFamily);
+    });
+
+    test('applyToken accepts the uniform strokeWidth property', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+
+      rect.applyToken(token, ['strokeWidth']);
+
+      await waitFor(() => Object.keys(rect.tokens).length > 0);
+      const keys = Object.keys(rect.tokens);
+      expect(keys).toContain('strokeWidthTop');
+      expect(keys).toContain('strokeWidthRight');
+      expect(keys).toContain('strokeWidthBottom');
+      expect(keys).toContain('strokeWidthLeft');
+    });
+
+    test('applyToken binds a single per-side stroke width property', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+
+      rect.applyToken(token, ['strokeWidthTop']);
+
+      await waitFor(() => Object.keys(rect.tokens).includes('strokeWidthTop'));
+      const keys = Object.keys(rect.tokens);
+      expect(keys).toContain('strokeWidthTop');
+      expect(keys).not.toContain('strokeWidthRight');
+    });
+
+    for (const side of [
+      'strokeWidthTop',
+      'strokeWidthRight',
+      'strokeWidthBottom',
+      'strokeWidthLeft',
+    ] as const) {
+      test(`${side} edits preserve unrelated stroke tokens`, async (ctx) => {
+        const { rect } = await rectangleWithStrokeTokens(ctx);
+        const expected: Partial<typeof rect.tokens> = { ...rect.tokens };
+        delete expected[side];
+        delete expected.strokeWidth;
+
+        rect.strokes[0][side] = 8;
+        await ctx.penpot.waitForLayoutUpdate();
+
+        expect(rect.strokes[0][side]).toBe(8);
+        expect(rect.tokens).toEqual(expected);
+      });
+    }
+
+    test('uniform stroke width edits preserve the color token', async (ctx) => {
+      const { rect, color } = await rectangleWithStrokeTokens(ctx);
+      rect.strokes[0].strokeWidth = 8;
+      await ctx.penpot.waitForLayoutUpdate();
+
+      expect(rect.tokens).toEqual({ strokeColor: color.name });
+      expect(rect.strokes[0].strokeWidthType).toBe('simple');
+      expect(rect.strokes[0].strokeWidthTop).toBe(8);
+      expect(rect.strokes[0].strokeWidthRight).toBe(8);
+      expect(rect.strokes[0].strokeWidthBottom).toBe(8);
+      expect(rect.strokes[0].strokeWidthLeft).toBe(8);
+    });
+
+    test('stroke color edits preserve the width tokens', async (ctx) => {
+      const { rect } = await rectangleWithStrokeTokens(ctx);
+      const expected: Partial<typeof rect.tokens> = { ...rect.tokens };
+      delete expected.strokeColor;
+      rect.strokes[0].strokeColor = '#ff0000';
+      await ctx.penpot.waitForLayoutUpdate();
+
+      expect(rect.strokes[0].strokeColor).toBe('#ff0000');
+      expect(rect.tokens).toEqual(expected);
+    });
+
+    test('later stroke edits preserve the first stroke tokens', async (ctx) => {
+      const { rect } = await rectangleWithStrokeTokens(ctx);
+      const expected = { ...rect.tokens };
+      rect.strokes[1].strokeWidthTop = 8;
+      rect.strokes[1].strokeColor = '#ff0000';
+      await ctx.penpot.waitForLayoutUpdate();
+
+      expect(rect.strokes[1].strokeWidthTop).toBe(8);
+      expect(rect.strokes[1].strokeColor).toBe('#ff0000');
+      expect(rect.strokes[0].strokeWidthTop).toBe(4);
+      expect(rect.strokes[0].strokeColor).toBe('#112233');
+      expect(rect.tokens).toEqual(expected);
+    });
+
     test('duplicate and remove a token', (ctx) => {
       const set = activeSet(ctx, unique('set'));
       const token = set.addToken({
@@ -315,7 +548,129 @@ describe('Tokens', () => {
       });
       const dup = token.duplicate();
       expect(dup.id).not.toBe(token.id);
+      expect(dup.name).not.toBe(token.name);
       dup.remove();
+    });
+
+    test('token edits reject missing, self, cyclic, and dotted-name conflicts', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const prefix = unique('tree');
+      set.addToken({
+        type: 'dimension',
+        name: `${prefix}.child`,
+        value: '8',
+      });
+      const token = set.addToken({
+        type: 'dimension',
+        name: unique('editable.'),
+        value: '4',
+      });
+      expect(() => {
+        token.name = prefix;
+      }).toThrow();
+      expect(() => {
+        token.value = `{${token.name}}`;
+      }).toThrow();
+      expect(() => {
+        token.value = '{missing-token}';
+      }).toThrow();
+
+      const other = set.addToken({
+        type: 'dimension',
+        name: unique('other.'),
+        value: '2',
+      });
+      token.value = `{${other.name}}`;
+      expect(() => {
+        other.value = `{${token.name}}`;
+      }).toThrow();
+    });
+
+    test('retained token proxies validate names against current state', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const retained = set.addToken({
+        type: 'dimension',
+        name: unique('retained.'),
+        value: '1',
+      });
+      const later = set.addToken({
+        type: 'dimension',
+        name: unique('later.'),
+        value: '2',
+      });
+      expect(() => {
+        retained.name = later.name;
+      }).toThrow();
+    });
+
+    test('renaming validates the whole token and rejects a new self-reference', (ctx) => {
+      const targetName = unique('rename-target');
+      activeSet(ctx, unique('target-set')).addToken({
+        type: 'dimension',
+        name: targetName,
+        value: '8',
+      });
+      const token = activeSet(ctx, unique('source-set')).addToken({
+        type: 'dimension',
+        name: unique('rename-source'),
+        value: `{${targetName}}`,
+      });
+
+      expect(() => {
+        token.name = targetName;
+      }).toThrow();
+    });
+
+    test('composite token updates reject empty values and missing font size', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const typography = set.addToken({
+        type: 'typography',
+        name: unique('typography.'),
+        value: { fontSizes: '14', lineHeight: '1.2' } as never,
+      }) as TokenTypography;
+      const shadow = set.addToken({
+        type: 'shadow',
+        name: unique('shadow.'),
+        value: {
+          color: '#000000',
+          inset: 'false',
+          offsetX: '0',
+          offsetY: '0',
+          spread: '0',
+          blur: '1',
+        },
+      }) as TokenShadow;
+
+      expect(() => {
+        typography.value = {} as never;
+      }).toThrow();
+      expect(() => {
+        typography.value = { lineHeight: '1.2' } as never;
+      }).toThrow();
+      expect(() => {
+        shadow.value = [];
+      }).toThrow();
+    });
+
+    test('tokens with newly broken references cannot be applied', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const base = set.addToken({
+        type: 'borderRadius',
+        name: unique('base.'),
+        value: '8',
+      });
+      const ref = set.addToken({
+        type: 'borderRadius',
+        name: unique('ref.'),
+        value: `{${base.name}}`,
+      });
+      base.remove();
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+      ctx.penpot.selection = [rect];
+      expect(() => ref.applyToShapes([rect])).toThrow();
+      expect(() => ref.applyToSelected()).toThrow();
+      expect(() => rect.applyToken(ref)).toThrow();
     });
 
     // Reference resolution — a token referencing another resolves transitively.
@@ -398,6 +753,39 @@ describe('Token types', () => {
     const resolved = token.resolvedValue;
     expect(Array.isArray(resolved)).toBe(true);
     expect(resolved as unknown as string[]).toContain('Arial');
+  });
+
+  // The resolver parses a family whose name has several words as a list of
+  // word symbols, so each family name must survive as a single entry. A
+  // single-word family takes the simpler path the test above covers.
+  test('fontFamilies token resolvedValue keeps multi-word families whole', (ctx) => {
+    const set = activeSet(ctx, unique('set'));
+    const token = set.addToken({
+      type: 'fontFamilies',
+      name: unique('fontFamilies.'),
+      value: ['Hanken Grotesk'],
+    });
+    // The stored value keeps the family whole, isolating resolution below.
+    expect(token.value).toEqual(['Hanken Grotesk']);
+
+    const resolved = token.resolvedValue as unknown as string[];
+    expect(Array.isArray(resolved)).toBe(true);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]).toBe('Hanken Grotesk');
+  });
+
+  // Words like `Red` or `Black` read as colors and `2P` as a number and a word
+  // when the resolver parses the family name.
+  test('fontFamilies token resolvedValue keeps names with expression words', (ctx) => {
+    const set = activeSet(ctx, unique('set'));
+    const families = ['Red Hat Display', 'Archivo Black', 'Press Start 2P'];
+    const token = set.addToken({
+      type: 'fontFamilies',
+      name: unique('fontFamilies.'),
+      value: families,
+    });
+
+    expect(token.resolvedValue as unknown as string[]).toEqual(families);
   });
 
   test('shadow token exposes its composite value', (ctx) => {

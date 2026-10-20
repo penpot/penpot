@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.files-snapshot
   (:require
@@ -171,7 +171,7 @@
   {::doc/added "1.20"
    ::sm/params schema:remove-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id]}]
   (let [snapshot (fsnap/get-minimal-snapshot conn id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
@@ -194,7 +194,7 @@
                                 :profile-id profile-id
                                 :file-id (:file-id snapshot))
           delay (ldel/get-deletion-delay team)]
-      (fsnap/delete! conn (assoc snapshot :deleted-at (ct/in-future delay))))))
+      (fsnap/delete! cfg (assoc snapshot :deleted-at (ct/in-future delay))))))
 
 ;;; Lock/unlock version endpoints
 

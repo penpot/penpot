@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.data-test
   (:require
@@ -34,7 +34,18 @@
   (t/is (= "AB" (d/get-initials "123 Alpha ## beta")))
   (t/is (= "PD" (d/get-initials "  penpot   design  tool ")))
   (t/is (= "" (d/get-initials nil)))
-  (t/is (= "" (d/get-initials "!!! ???"))))
+  (t/is (= "" (d/get-initials "!!! ???")))
+  ;; Accented / Unicode letters (org default avatars)
+  (t/is (= "Á" (d/get-initials "Ábaco")))
+  (t/is (= "Ó" (d/get-initials "Órbita")))
+  (t/is (= "ÁN" (d/get-initials "Álvaro Núñez")))
+  ;; Sequential calls must stay stable (CLJS global RegExp lastIndex)
+  (t/is (= ["Á" "BB" "JG" "L" "Á"]
+           (mapv d/get-initials ["Ábaco"
+                                 "Black Bird"
+                                 "Jean Grey Academy"
+                                 "Library"
+                                 "Ábaco"]))))
 
 (t/deftest normalize-string-test
   ;; nil input returns empty string
@@ -1031,3 +1042,31 @@
   ;; Clamp out-of-range positions
   (t/is (= [:b :c :d :a] (d/reorder [:a :b :c :d] 0 100)))
   (t/is (= [:a :b :c :d] (d/reorder [:a :b :c :d] -5 0))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Commonly used transducers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest xf-add-index-adds-index-to-each-item
+  (t/is (= [{:id 1 ::d/index 0}
+            {:id 2 ::d/index 1}
+            {:id 3 ::d/index 2}]
+           (into [] d/xf:add-index [{:id 1} {:id 2} {:id 3}]))))
+
+(t/deftest xf-add-index-preserves-input-order
+  (t/is (= [0 1 2]
+           (mapv ::d/index (into [] d/xf:add-index [{:id :c} {:id :a} {:id :b}])))))
+
+(t/deftest xf-add-index-handles-empty-and-nil-input
+  (t/is (= [] (into [] d/xf:add-index [])))
+  (t/is (= [] (into [] d/xf:add-index nil))))
+
+(t/deftest xf-add-index-composes-with-other-transducers
+  ;; The index is assigned after previous stages run, so it always
+  ;; reflects the position in the output of the chain.
+  (t/is (= [{:id 1 :keep? true ::d/index 0}
+            {:id 3 :keep? true ::d/index 1}]
+           (into [] (comp (filter :keep?) d/xf:add-index)
+                 [{:id 1 :keep? true}
+                  {:id 2 :keep? false}
+                  {:id 3 :keep? true}]))))

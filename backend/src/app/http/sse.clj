@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.sse
   "SSE (server sent events) helpers"
@@ -60,14 +60,13 @@
                                     (partial write! output)
                                     (partial pu/close! output))]
                       (try
-                        (binding [events/*channel* channel]
-                          (let [result (handler)]
-                            (events/tap :end result)))
-
-                        (catch Throwable cause
-                          (let [result (errors/handle' cause request)]
-                            (events/tap channel :error result)))
-
+                        (binding [events/*sink* channel]
+                          (try
+                            (let [result (handler)]
+                              (events/tap :end result))
+                            (catch Throwable cause
+                              (let [result (errors/handle' cause request)]
+                                (events/tap :error result)))))
                         (finally
                           (sp/close! channel)
                           (px/await! listener))))))}))

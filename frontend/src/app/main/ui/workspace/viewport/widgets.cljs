@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.viewport.widgets
   (:require-macros [app.main.style :as stl])
@@ -259,10 +259,12 @@
 
 (mf/defc frame-titles*
   {::mf/wrap [mf/memo]}
-  [{:keys [objects zoom selected focus is-show-artboard-names
+  [{:keys [objects base-objects zoom selected focus is-show-artboard-names
            on-frame-enter on-frame-leave on-frame-select]}]
   (let [selected       (or selected #{})
-        shapes         (ctt/get-frames objects {:skip-copies? true :ignore-index? true})
+        frame-ids      (mf/with-memo [base-objects]
+                         (vec (ctt/get-frames-ids base-objects {:skip-copies? true :ignore-index? true})))
+        shapes         (into [] (keep (d/getf objects)) frame-ids)
         shapes         (if (dbg/enabled? :shape-titles)
                          (into (set shapes)
                                (map (d/getf objects))

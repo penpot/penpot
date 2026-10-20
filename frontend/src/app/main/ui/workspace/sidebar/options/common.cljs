@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.common
   (:require-macros [app.main.style :as stl])
@@ -35,4 +35,15 @@
      (dwta/toggle-token {:token     (first value)
                          :attrs     attrs
                          :shape-ids ids}))))
+
+(defn tokens-allowed-position?
+  "Design tokens only apply to the first fill or stroke in a shape's ordered list,
+  so token controls are only enabled for the entry at `index` zero.
+
+  `first-only?` marks the lists where that rule applies. Other color rows
+  (shadows, gradients, the selection color list) reuse `index` for their own row
+  order and must keep their token controls enabled."
+  [first-only? index]
+  (or (not first-only?)
+      (and (some? index) (zero? index))))
 

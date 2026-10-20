@@ -302,6 +302,60 @@ describe('Text', () => {
     }).toThrow();
   });
 
+  test('text numeric fields require complete numbers within editor bounds', (ctx) => {
+    const t = text(ctx);
+    for (const value of ['.', '-', '12px', '2', '1001']) {
+      expect(() => {
+        t.fontSize = value;
+      }).toThrow();
+    }
+    for (const value of ['.', '-', '12px', '-201', '201']) {
+      expect(() => {
+        t.lineHeight = value;
+      }).toThrow();
+      expect(() => {
+        t.letterSpacing = value;
+      }).toThrow();
+    }
+  });
+
+  test('text range numeric fields use the same validation', (ctx) => {
+    const range = text(ctx, 'Hello').getRange(0, 5);
+    expect(() => {
+      range.fontSize = '12px';
+    }).toThrow();
+    expect(() => {
+      range.lineHeight = '12px';
+    }).toThrow();
+    expect(() => {
+      range.letterSpacing = '12px';
+    }).toThrow();
+  });
+
+  test('text and range font fields reject missing fonts and variants', (ctx) => {
+    const t = text(ctx, 'Hello');
+    expect(() => {
+      t.fontId = 'missing-font';
+    }).toThrow();
+    expect(() => {
+      t.fontFamily = 'Missing Font Family';
+    }).toThrow();
+    expect(() => {
+      t.fontVariantId = 'missing-variant';
+    }).toThrow();
+
+    const range = t.getRange(0, 5);
+    expect(() => {
+      range.fontId = 'missing-font';
+    }).toThrow();
+    expect(() => {
+      range.fontFamily = 'Missing Font Family';
+    }).toThrow();
+    expect(() => {
+      range.fontVariantId = 'missing-variant';
+    }).toThrow();
+  });
+
   test('invalid align value throws', (ctx) => {
     const t = text(ctx);
     expect(() => {
@@ -313,6 +367,9 @@ describe('Text', () => {
     const t = text(ctx);
     expect(() => {
       t.textTransform = 'UPPERCASE' as unknown as 'uppercase';
+    }).toThrow();
+    expect(() => {
+      t.getRange(0, 1).textTransform = 'UPPERCASE' as unknown as 'uppercase';
     }).toThrow();
   });
 

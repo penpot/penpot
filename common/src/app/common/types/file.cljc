@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.file
   (:require
@@ -11,6 +11,7 @@
    [app.common.features :as cfeat]
    [app.common.files.defaults :refer [version]]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.tree-seq :as gsts]
@@ -87,7 +88,7 @@
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
    [:plugin-data {:optional true} schema:plugin-data]
-   [:tokens-source {:optional true} ::sm/uuid]                ;; Forward-compat: UUID of external library containing tokens-lib (full support in follow-up PR)
+   [:tokens-source {:optional true} ::sm/uuid]                ;; The tokens-lib may be in this file or in an external library
    [:tokens-lib {:optional true} ctob/schema:tokens-lib]
    [:tokens-status {:optional true} ctos/schema:tokens-status]])
 
@@ -1238,7 +1239,9 @@
         (fn [pages-index]
           (d/update-vals pages-index #(update % :objects detach-objects)))]
 
-    (update-in file [:data :pages-index] detach-pages)))
+    (cond-> (update-in file [:data :pages-index] detach-pages)
+      (not (cfo/effective-tokens-source? (:data file) file-id))
+      (update :data dissoc :tokens-source :tokens-status))))
 
 ;; Base font size
 

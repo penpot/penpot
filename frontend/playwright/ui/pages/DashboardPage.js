@@ -235,63 +235,63 @@ export class DashboardPage extends BaseWebSocketPage {
 
   async goToDashboard() {
     await this.page.goto(
-      `#/dashboard/recent?team-id=${DashboardPage.anyTeamId}`,
+      `/?screen=dashboard-recent&team-id=${DashboardPage.anyTeamId}`,
     );
     await expect(this.mainHeading).toBeVisible();
   }
 
   async goToSecondTeamDashboard() {
     await this.page.goto(
-      `#/dashboard/recent?team-id=${DashboardPage.secondTeamId}`,
+      `/?screen=dashboard-recent&team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamMembersSection() {
     await this.page.goto(
-      `#/dashboard/members?team-id=${DashboardPage.secondTeamId}`,
+      `/?screen=dashboard-members&team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamInvitationsSection() {
     await this.page.goto(
-      `#/dashboard/invitations?team-id=${DashboardPage.secondTeamId}`,
+      `/?screen=dashboard-invitations&team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamWebhooksSection() {
     await this.page.goto(
-      `#/dashboard/webhooks?team-id=${DashboardPage.secondTeamId}`,
+      `/?screen=dashboard-webhooks&team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamWebhooksSection() {
     await this.page.goto(
-      `#/dashboard/webhooks?team-id=${DashboardPage.secondTeamId}`,
+      `/?screen=dashboard-webhooks&team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamSettingsSection() {
     await this.page.goto(
-      `#/dashboard/settings?team-id=${DashboardPage.secondTeamId}`,
+      `/?screen=dashboard-settings&team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSearch() {
     await this.page.goto(
-      `#/dashboard/search?team-id=${DashboardPage.anyTeamId}`,
+      `/?screen=dashboard-search&team-id=${DashboardPage.anyTeamId}`,
     );
   }
 
   async goToDrafts() {
     await this.page.goto(
-      `#/dashboard/files?team-id=${DashboardPage.anyTeamId}&project-id=${DashboardPage.draftProjectId}`,
+      `/?screen=dashboard-files&team-id=${DashboardPage.anyTeamId}&project-id=${DashboardPage.draftProjectId}`,
     );
     await expect(this.mainHeading).toHaveText("Drafts");
   }
 
   async goToFonts() {
     await this.page.goto(
-      `#/dashboard/fonts?team-id=${DashboardPage.anyTeamId}`,
+      `/?screen=dashboard-fonts&team-id=${DashboardPage.anyTeamId}`,
     );
     await expect(this.mainHeading).toHaveText("Fonts");
   }
@@ -304,14 +304,14 @@ export class DashboardPage extends BaseWebSocketPage {
 
   async goToLibraries() {
     await this.page.goto(
-      `#/dashboard/libraries?team-id=${DashboardPage.anyTeamId}`,
+      `/?screen=dashboard-libraries&team-id=${DashboardPage.anyTeamId}`,
     );
     await expect(this.mainHeading).toHaveText("Libraries");
   }
 
   async goToDeleted() {
     await this.page.goto(
-      `#/dashboard/deleted?team-id=${DashboardPage.anyTeamId}`,
+      `/?screen=dashboard-deleted&team-id=${DashboardPage.anyTeamId}`,
     );
     await expect(this.mainHeading).toHaveText("Projects");
   }

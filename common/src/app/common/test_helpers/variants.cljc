@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.test-helpers.variants
   (:require
@@ -62,7 +62,6 @@
         (thc/make-component component2-label root2-label)
         (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value2"}]}))))
 
-
 (defn add-variant-with-copy
   [file variant-label component1-label root1-label component2-label root2-label child1-label child2-label component-copy-label]
   (let [file (ths/add-sample-shape file variant-label :type :frame :is-variant-container true)
@@ -76,8 +75,6 @@
         (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value1"}]})
         (thc/make-component component2-label root2-label)
         (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value2"}]}))))
-
-
 
 (defn add-variant-with-text
   [file variant-label component1-label root1-label component2-label root2-label child1-label child2-label text1 text2

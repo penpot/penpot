@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.helpers.wasm
   "Test helpers for mocking WASM API boundary functions.
@@ -20,6 +20,7 @@
    verify the WASM code path was exercised."
   (:require
    [app.common.data :as d]
+   [app.common.render-wasm.api.select :as wselect]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.api.fonts :as wasm.fonts]))
 
@@ -58,7 +59,7 @@
   This effectively tells the caller \"apply exactly the transform that
   was requested\", which is what the real WASM engine does for simple
   moves / resizes without constraints."
-  [entries _pixel-precision]
+  [entries _snap-pixel? _snap-ignore-axis]
   (track! :propagate-modifiers)
   (when (d/not-empty? entries)
     (into []
@@ -198,7 +199,7 @@
   ;; Save originals
   (reset! originals
           {:initialized?            wasm.api/initialized?
-           :use-shape               wasm.api/use-shape
+           :use-shape                wselect/use-shape
            :calculate-position-data wasm.api/calculate-position-data
            :request-render          wasm.api/request-render
            :clean-modifiers         wasm.api/clean-modifiers
@@ -217,7 +218,7 @@
            :get-content-fonts       wasm.fonts/get-content-fonts})
   ;; Install mocks
   (set! wasm.api/initialized?            mock-initialized?)
-  (set! wasm.api/use-shape               mock-use-shape)
+  (set! wselect/use-shape               mock-use-shape)
   (set! wasm.api/calculate-position-data mock-calculate-position-data)
   (set! wasm.api/request-render          mock-request-render)
   (set! wasm.api/clean-modifiers         mock-clean-modifiers)
@@ -248,7 +249,7 @@
   []
   (when-let [orig (not-empty @originals)]
     (set! wasm.api/initialized?            (:initialized? orig))
-    (set! wasm.api/use-shape               (:use-shape orig))
+    (set! wselect/use-shape               (:use-shape orig))
     (set! wasm.api/calculate-position-data (:calculate-position-data orig))
     (set! wasm.api/request-render          (:request-render orig))
     (set! wasm.api/clean-modifiers         (:clean-modifiers orig))

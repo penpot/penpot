@@ -4,6 +4,12 @@
 monorepo modules and prints a per-task summary. It is the local equivalent
 of CI; use it to verify changes before declaring work done.
 
+It also exports `PENPOT_FLAGS` with `enable-backend-asserts` appended (keeping
+whatever the caller already set), which is what puts `clojure.core/assert`
+into the compiled test code. Prefer it over calling `clojure -M:dev:test` by
+hand for that reason alone: without the flag the suite passes while every
+assertion is compiled out. GitHub Actions sets the same flag.
+
 ## When to use
 
 - After implementing or fixing code in a module: run its checks before
@@ -55,6 +61,9 @@ Flags:
 
 - `mcp` has no lint task (shows as skipped). `render-wasm` uses `./lint`,
   `./test`, and `cargo fmt`.
+- Exports `PENPOT_FLAGS` with `enable-backend-asserts` appended to any
+  existing value, so backend test runs compile in and exercise
+  precondition asserts; see `mem:backend/testing`.
 - Test tasks are long-running (backend: `clojure -M:dev:test`); use a
   generous timeout when calling it from an agent shell.
 - Skill entry point: `.agents/skills/local-ci/SKILL.md`.

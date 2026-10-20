@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.data.workspace-texts-test
   (:require
@@ -14,6 +14,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.texts-events :as dwte]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]))
@@ -312,7 +313,7 @@
           store     (ths/setup-store file)
           events    [;; Pre-select the text shape so add-typography can find it
                      (fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
@@ -339,7 +340,7 @@
           file-id   (:id file)
           store     (ths/setup-store file)
           events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
@@ -366,7 +367,7 @@
           file-id   (:id file)
           store     (ths/setup-store file)
           events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
@@ -377,6 +378,74 @@
                  "exactly one typography was added")
            (t/is (= "0.1" (:letter-spacing (first typographies)))
                  "float letter-spacing is normalised to 2-decimal string")))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: add-typography must not create an asset from a deleted font
+;;
+;; A text shape can keep referencing a font-id that is no longer installed
+;; (the font was removed, or belongs to an unavailable library). Creating a
+;; typography from it would bake that broken font-id into a brand-new asset.
+;; ---------------------------------------------------------------------------
+
+(t/deftest add-typography-skips-shape-with-deleted-font
+  (t/async
+    done
+    (let [content   (txt/change-text nil "hello" :font-id "deleted-font-id")
+          file      (-> (cthf/sample-file :file1)
+                        (cths/add-sample-shape :text1
+                                               :type    :text
+                                               :x 0 :y 0
+                                               :content content))
+          shape-id  (:id (cths/get-shape file :text1))
+          file-id   (:id file)
+          store     (ths/setup-store file)
+          events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
+                     (dwte/add-typography file-id)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'        (ths/get-file-from-state new-state)
+               typographies (vals (get-in file' [:data :typographies]))
+               shape'       (cths/get-shape file' :text1)]
+           (t/is (= 0 (count typographies))
+                 "no typography was added for a shape with a deleted font")
+           (t/is (nil? (:typography-ref-id shape'))
+                 "the shape was not linked to a typography")))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: add-typography must not create an asset from two or more selected texts
+;;
+;; Deriving a typography from a specific text only makes sense for a single
+;; shape; with several texts selected there is no one style to capture.
+;; ---------------------------------------------------------------------------
+
+(t/deftest add-typography-skips-multiple-selected-texts
+  (t/async
+    done
+    (let [file      (-> (cthf/sample-file :file1)
+                        (cths/add-sample-shape :text1
+                                               :type    :text
+                                               :x 0 :y 0
+                                               :content (txt/change-text nil "hello"))
+                        (cths/add-sample-shape :text2
+                                               :type    :text
+                                               :x 0 :y 100
+                                               :content (txt/change-text nil "world")))
+          shape-id-1 (:id (cths/get-shape file :text1))
+          shape-id-2 (:id (cths/get-shape file :text2))
+          file-id   (:id file)
+          store     (ths/setup-store file)
+          events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id-1 shape-id-2}))
+                     (dwte/add-typography file-id)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'        (ths/get-file-from-state new-state)
+               typographies (vals (get-in file' [:data :typographies]))]
+           (t/is (= 0 (count typographies))
+                 "no typography was added when two texts are selected")))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Tests: save-default-font must not persist typography refs into the global default font
@@ -512,3 +581,48 @@
   (t/testing "a non-root content (e.g. paragraph) is left alone"
     (let [node {:type "paragraph" :children []}]
       (t/is (= node (dwt/ensure-valid-text-content node))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: merge-live-text-dimensions (Design tab / edition outline)
+;; ---------------------------------------------------------------------------
+
+(t/deftest merge-live-text-dimensions-auto-width-uses-live-axes
+  (t/testing "auto-width takes live width and height"
+    (let [selrect {:width 0.01 :height 0.01}
+          live    {:width 70 :height 17}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect live)]
+      (t/is (= 70 (:width result)))
+      (t/is (= 17 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-auto-height-keeps-width
+  (t/testing "auto-height keeps selrect width and takes live height"
+    (let [selrect {:width 300 :height 40}
+          live    {:width 120 :height 80}
+          result  (dwt/merge-live-text-dimensions :auto-height selrect live)]
+      (t/is (= 300 (:width result)))
+      (t/is (= 80 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-fixed-keeps-selrect
+  (t/testing "fixed keeps both selrect axes"
+    (let [selrect {:width 300 :height 60}
+          live    {:width 90 :height 20}
+          result  (dwt/merge-live-text-dimensions :fixed selrect live)]
+      (t/is (= 300 (:width result)))
+      (t/is (= 60 (:height result))))))
+
+(t/deftest merge-live-text-dimensions-nil-live-falls-back
+  (t/testing "nil live map falls back to selrect"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect nil)]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result)))))
+  (t/testing "nil live axes fall back per axis"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect {:width nil :height nil})]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result)))))
+  (t/testing "non-positive live axes do not wipe selrect"
+    (let [selrect {:width 50 :height 25}
+          result  (dwt/merge-live-text-dimensions :auto-width selrect {:width 0 :height 0})]
+      (t/is (= 50 (:width result)))
+      (t/is (= 25 (:height result))))))

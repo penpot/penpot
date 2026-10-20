@@ -2,22 +2,44 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.storage-test
   (:require
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
+   [app.storage.fs :as-alias sto.fs]
+   [app.storage.gc-deleted :as gcd]
+   [app.storage.gc-touched :as gc-touched]
+   [app.storage.impl :as impl]
+   [app.storage.s3 :as-alias sto.s3]
+   [app.storage.schema :as stsch]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]
-   [mockery.core :refer [with-mocks]]))
+   [mockery.core :refer [with-mocks]]
+   [promesa.core :as p])
+  (:import
+   (io.prometheus.client
+    Counter
+    Counter$Child)
+   (org.postgresql.util
+    PGobject)
+   (software.amazon.awssdk.services.s3
+    S3AsyncClient)
+   (software.amazon.awssdk.services.s3.model
+    NoSuchKeyException)
+   (software.amazon.awssdk.services.s3.presigner
+    S3Presigner)))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each (th/serial
@@ -30,23 +52,50 @@
   [storage]
   (assoc storage ::sto/backend :fs))
 
+(defn- poison-counter-value
+  "Read the process-wide gc-poison counter from the test system metrics."
+  []
+  (let [metrics   (:app.metrics/metrics th/*system*)
+        collector (mtx/get-collector metrics :storage-gc-poison)
+        instance  (::mdef/instance collector)]
+    (.get ^Counter$Child (.labels ^Counter instance (into-array String [])))))
+
 (t/deftest put-and-retrieve-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
-                                          :content-type "text/plain"
-                                          :other "data"})]
+                                          :content-type "text/plain"})]
 
     (t/is (sto/object? object))
     (t/is (fs/path? (sto/get-object-path storage object)))
 
     (t/is (nil? (:expired-at object)))
     (t/is (= :fs (:backend object)))
-    (t/is (= "data" (:other (meta object))))
+    (t/is (= "file-media-object" (:bucket (meta object))))
     (t/is (= "text/plain" (:content-type (meta object))))
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
     (t/is (= "content" (slurp (sto/get-object-path storage object))))))
+
+(t/deftest put-and-retrieve-with-json-metadata-flag
+  ;; End-to-end through the jsonb column: with the flag on, the row is
+  ;; stored as plain JSON and still decodes to native types.
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+    (let [storage (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+          profile (uuid/random)
+          object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                            :bucket "tempfile"
+                                            :content-type "application/zip"
+                                            :profile-id profile})
+          row     (th/db-exec-one! ["select metadata::text as metadata from storage_object where id = ?"
+                                    (:id object)])]
+      (t/is (not (str/includes? (:metadata row) "\"~:")))
+      (t/is (str/includes? (:metadata row) "\"bucket\""))
+      (let [loaded (sto/get-object storage (:id object))]
+        (t/is (= "tempfile" (:bucket (meta loaded))))
+        (t/is (= "application/zip" (:content-type (meta loaded))))
+        (t/is (= profile (:profile-id (meta loaded))))))))
 
 (t/deftest tempfile-objects-are-not-deduplicated
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -62,6 +111,44 @@
                                           ::sto/deduplicate? true
                                           ::sto/touched-at (ct/in-future {:minutes 10})
                                           :bucket "tempfile"
+                                          :content-type "text/plain"})]
+    (t/is (not= (:id object1) (:id object2)))))
+
+(t/deftest job-resource-objects-require-an-owner
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")]
+
+    (t/testing "an object of this bucket cannot be stored without its owner"
+      (t/is (thrown? Throwable
+                     (sto/put-object! storage {::sto/content content
+                                               :bucket sto/job-resource-bucket
+                                               :content-type "text/plain"}))))
+
+    (t/testing "and storing it with an owner still works"
+      (t/is (some? (sto/put-object! storage {::sto/content content
+                                             :bucket sto/job-resource-bucket
+                                             :profile-id (uuid/next)
+                                             :content-type "text/plain"}))))))
+
+(t/deftest job-resource-objects-are-not-deduplicated
+  ;; An object in this bucket belongs to one profile: sharing a blob
+  ;; between two owners would serve one user's artifact to another.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/now)
+                                          :bucket sto/job-resource-bucket
+                                          :profile-id (uuid/next)
+                                          :content-type "text/plain"})
+        object2 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/now)
+                                          :bucket sto/job-resource-bucket
+                                          :profile-id (uuid/next)
                                           :content-type "text/plain"})]
     (t/is (not= (:id object1) (:id object2)))))
 
@@ -83,10 +170,9 @@
                     (configure-storage-backend))
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
-                                          :content-type "text/plain"
-                                          :expired-at (ct/in-future {:seconds 1})})]
+                                          :content-type "text/plain"})]
     (t/is (sto/object? object))
-    (t/is (true? (sto/del-object! storage object)))
+    (t/is (true? (sto/del-object! storage (:id object))))
 
     ;; retrieving the same object should be not nil because the
     ;; deletion is not immediate
@@ -97,6 +183,18 @@
     ;; But you can't retrieve the object again because in database is
     ;; marked as deleted/expired.
     (t/is (nil? (sto/get-object storage (:id object))))))
+
+(t/deftest delete-expired-object-returns-false
+  ;; An object stored with `::sto/expired-at` is born with `deleted_at`
+  ;; set, so deleting it is a no-op and must report `false`.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"
+                                          ::sto/expired-at (ct/in-future {:hours 1})})]
+    (t/is (some? (:expired-at object)))
+    (t/is (false? (sto/del-object! storage (:id object))))))
 
 (t/deftest deleted-gc-task
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -152,8 +250,8 @@
                  :name "testfile"
                  :content mfile}
 
-        out1    (th/command! params)
-        out2    (th/command! params)]
+        out1    (th/multipart-command! params)
+        out2    (th/multipart-command! params)]
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
@@ -210,11 +308,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})]
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
     (assert (nil? (:error out)))
     session-id))
 
@@ -259,7 +357,7 @@
                  :font-style "normal"
                  :uploads {"font/ttf" session-id}}
 
-        out1     (th/command! params1)
+        out1     (th/multipart-command! params1)
         out2     (th/command! params2)]
 
     ;; (th/print-result! out)
@@ -270,8 +368,10 @@
     ;; run the touched gc task
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 5 (:freeze res)))
-      (t/is (= 1 (:delete res)))
+      (t/is (= 6 (:freeze res)))
+      ;; the consumed-but-not-yet-purged session keeps its mapping,
+      ;; so its chunk freezes instead of being marked
+      (t/is (= 0 (:delete res)))
 
       (let [result-1 (:result out1)
             result-2 (:result out2)]
@@ -281,8 +381,9 @@
                        {:id (:id result-2)})
 
         ;; run the objects gc task for permanent deletion
+        ;; (processed = 2: the consumed upload session plus the font variant)
         (let [res (th/run-task! :objects-gc {})]
-          (t/is (= 1 (:processed res))))
+          (t/is (= 2 (:processed res))))
 
         ;; revert touched state to all storage objects
 
@@ -323,8 +424,8 @@
                  :name "testfile"
                  :content mfile}
 
-        out1    (th/command! params)
-        out2    (th/command! params)]
+        out1    (th/multipart-command! params)
+        out2    (th/multipart-command! params)]
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
@@ -368,27 +469,1050 @@
         now      (ct/now)
 
         object1  (sto/put-object! storage {::sto/content content1
-                                           ::sto/touched-at (ct/plus now {:minutes 1})
+                                           ::sto/touched-at (ct/plus now {:hours 1})
                                            :bucket "tempfile"
                                            :content-type "text/plain"})]
 
-
+    ;; not eligible while the touched-at is in the future
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 0 (:delete res)))))
 
-
-    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 3}))]
+    ;; still not eligible: touched-at (now+1h) is beyond the threshold
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 2}))]
       (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+
+    ;; eligible: marked for deletion immediately, without any extra delay
+    (let [clock (ct/plus now {:hours 3})]
+      (binding [ct/*clock* (ct/fixed-clock clock)]
+        (let [res (th/run-task! :storage-gc-touched {})]
+          (t/is (= 0 (:freeze res)))
+          (t/is (= 1 (:delete res)))))
+
+      (let [row (th/db-exec-one! ["select deleted_at from storage_object where id = ?" (:id object1)])]
+        (t/is (ct/is-before-or-equal? (:deleted-at row) (ct/plus clock {:seconds 1})))))
+
+    ;; removed on the next deleted gc run
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 4}))]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 1 (:deleted res)))))))
+
+(t/deftest touched-gc-task-skip-delay
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content1")
+        now     (ct/now)
+
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/touched-at now
+                                          :bucket "tempfile"
+                                          :content-type "text/plain"})]
+
+    ;; too recent: not processed without skip-delay
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+
+    ;; processed immediately with skip-delay, bypassing min-age
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 1 (:delete res)))))
 
+    ;; and marked for deletion without any additional delay
+    (let [row (th/db-exec-one! ["select deleted_at from storage_object where id = ?" (:id object1)])]
+      (t/is (ct/is-before-or-equal? (:deleted-at row) (ct/plus now {:seconds 1}))))))
 
-    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 1}))]
-      (let [res (th/run-task! :storage-gc-deleted {})]
-        (t/is (= 0 (:deleted res)))))
+(t/deftest storage-gc-touched-null-metadata
+  ;; A NULL metadata column (predates any normalization) flows through
+  ;; the lookup fallback with a warning instead of breaking the GC loop.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          ::sto/touch true
+                                          :content-type "text/plain"})]
+    (th/db-exec! ["update storage_object set metadata = null where id = ?" (:id object)])
+    (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 1 (:delete res))))))
 
-    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 2}))]
-      (let [res (th/run-task! :storage-gc-deleted {})]
-        (t/is (= 0 (:deleted res)))))))
+(t/deftest storage-gc-touched-defers-corrupt-metadata
+  ;; A non-map metadata row neither blocks the chunk nor gets
+  ;; collected: it is logged and deferred exactly one day, keeping its
+  ;; metadata intact for a later repair.
+  (let [now     (ct/now)
+        before  (poison-counter-value)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        healthy (sto/put-object! storage {::sto/content (sto/content "healthy")
+                                          ::sto/touched-at now
+                                          :content-type "text/plain"})
+        poison  (uuid/random)]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                  poison now])
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 1 (:delete res)))))
+    (let [row (th/db-exec-one! ["select metadata::text as metadata, touched_at from storage_object where id = ?" poison])]
+      (t/is (= "[]" (:metadata row)))
+      ;; inst-ms: timestamptz keeps micros, the frozen clock has nanos.
+      (t/is (= (inst-ms (ct/plus now {:days 1}))
+               (inst-ms (:touched-at row)))))
+    ;; One poison row observed, one increment.
+    (t/is (= (inc before) (poison-counter-value)))))
+
+(t/deftest storage-gc-touched-poison-only
+  ;; A chunk made only of poison rows still terminates: the rows are
+  ;; deferred, the next scan returns nothing, and no delete is counted.
+  (let [now    (ct/now)
+        poison (uuid/random)]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                  poison now])
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+    (let [row (th/db-exec-one! ["select touched_at from storage_object where id = ?" poison])]
+      (t/is (= (inst-ms (ct/plus now {:days 1}))
+               (inst-ms (:touched-at row)))))))
+
+(t/deftest storage-gc-touched-drains-past-a-poison-only-batch
+  ;; A full batch of poison rows must not stop the run: they are deferred
+  ;; and the loop keeps draining, so a healthy row queued behind the
+  ;; LIMIT (later touched_at) still gets collected.
+  (let [now     (ct/now)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        earlier (ct/minus now {:seconds 1})
+        healthy (sto/put-object! storage {::sto/content (sto/content "healthy")
+                                          ::sto/touched-at now
+                                          :content-type "text/plain"})
+        poisons (repeatedly 10 uuid/random)]
+    (doseq [id poisons]
+      (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                    id earlier]))
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 1 (:delete res)))))
+    (doseq [id poisons]
+      (let [row (th/db-exec-one! ["select touched_at from storage_object where id = ?" id])]
+        (t/is (= (inst-ms (ct/plus now {:days 1}))
+                 (inst-ms (:touched-at row))))))))
+
+(def ^:private migration-0155-fixtures
+  ;; [id transit-metadata]: production-shaped legacy rows (nil payload
+  ;; means a NULL column).
+  [["11111111-1111-1111-1111-111111111111"
+    "{\"~:reference\":\"~:file-media-object\",\"~:content-type\":\"image/png\",\"~:hash\":\"blake2b:aaa\"}"]
+   ["22222222-2222-2222-2222-222222222222"
+    "{\"~:content-type\":\"image/svg+xml\"}"]
+   ["33333333-3333-3333-3333-333333333333"
+    "{\"~:bucket\":\"tempfile\",\"~:reference\":\"~:tempfile\",\"~:content-type\":\"application/zip\"}"]
+   ["44444444-4444-4444-4444-444444444444"
+    "{\"~:bucket\":\"tempfile\",\"~:content-type\":\"application/zip\",\"~:upload-id\":\"~u86907e95-1cb8-8122-8008-4eb7ba07d89d\",\"~:chunk-index\":3}"]
+   ["55555555-5555-5555-5555-555555555555"
+    nil]])
+
+(defn- run-migration-0155!
+  ;; Re-runs the 0155 statements (not migratus: it already applied at
+  ;; bootstrap) over the fixture rows above.
+  []
+  (let [sql (-> (io/resource "app/migrations/sql/0155-normalize-storage-object-metadata.sql")
+                (slurp))
+        no-comments (->> (.split ^String sql "\n")
+                         (remove #(.startsWith ^String (str/trim %) "--"))
+                         (str/join "\n"))]
+    (doseq [stmt (->> (.split ^String no-comments ";")
+                      (map str/trim)
+                      (remove str/blank?))]
+      (th/db-exec! [stmt]))))
+
+(defn- get-metadata-by-id
+  [id]
+  (:metadata (th/db-exec-one! ["select metadata from storage_object where id = ?"
+                               (parse-uuid id)])))
+
+(t/deftest storage-migration-0155-normalizes-legacy-rows
+  (doseq [[id mdata] migration-0155-fixtures]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata) values (?, 'fs', ?::jsonb)"
+                  (parse-uuid id) mdata]))
+  (run-migration-0155!)
+  (let [mdata (fn [id] (stsch/decode-metadata (get-metadata-by-id id)))]
+    (t/is (= {:bucket "file-media-object"
+              :content-type "image/png"
+              :hash "blake2b:aaa"}
+             (mdata "11111111-1111-1111-1111-111111111111")))
+    (t/is (= {:bucket "file-media-object"
+              :content-type "image/svg+xml"}
+             (mdata "22222222-2222-2222-2222-222222222222")))
+    (t/is (= {:bucket "tempfile"
+              :content-type "application/zip"}
+             (mdata "33333333-3333-3333-3333-333333333333")))
+    (t/is (= {:bucket "tempfile"
+              :content-type "application/zip"}
+             (mdata "44444444-4444-4444-4444-444444444444")))
+    (t/is (= {:bucket "file-media-object"}
+             (mdata "55555555-5555-5555-5555-555555555555"))))
+  ;; second run changes nothing (idempotent)
+  (let [raw    (fn [] (mapv #(.getValue ^PGobject (get-metadata-by-id %))
+                            (map first migration-0155-fixtures)))
+        before (raw)]
+    (run-migration-0155!)
+    (t/is (= before (raw)))))
+
+(t/deftest storage-gc-deleted-immediate
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content1")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"})]
+
+    ;; mark as deleted right now
+    (th/db-exec! ["update storage_object set deleted_at = ?" (ct/now)])
+
+    ;; the deleted gc removes it on the next run
+    (let [res (th/run-task! :storage-gc-deleted {})]
+      (t/is (= 1 (:deleted res))))))
+
+(t/deftest storage-gc-deleted-commits-each-chunk-separately
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        ;; more than one chunk (chunk-size is 25); distinct contents so
+        ;; the storage layer does not deduplicate them into one row
+        ids     (doall (for [i (range 26)]
+                         (:id (sto/put-object! storage
+                                               {::sto/content (sto/content (str "content" i))
+                                                :content-type "text/plain"}))))]
+    (t/is (= 26 (count ids)))
+    (th/db-exec! ["update storage_object set deleted_at = ?" (ct/now)])
+
+    (let [orig  @#'gcd/process-chunk-deletion
+          calls (atom 0)]
+      (alter-var-root #'gcd/process-chunk-deletion
+                      (constantly (fn [& args]
+                                    (when (= 2 (swap! calls inc))
+                                      (throw (ex-info "boom" {})))
+                                    (apply orig args))))
+      (try
+        (let [result (th/run-task! :storage-gc-deleted {})]
+          (t/testing "the fault of the second chunk is skipped, the run finishes"
+            (t/is (= 25 (:deleted result)))))
+
+        (t/testing "first chunk committed before the fault"
+          (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM storage_object WHERE deleted_at IS NOT NULL"])))))
+        (finally
+          (alter-var-root #'gcd/process-chunk-deletion (constantly orig)))))))
+
+(t/deftest objects-gc-task-skip-delay
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        prof    (th/create-profile* 1)
+        proj    (th/create-project* 1 {:profile-id (:id prof)
+                                       :team-id (:default-team-id prof)})
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:default-project-id prof)
+                                    :is-shared false})
+        mfile   {:filename "sample.jpg"
+                 :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                 :mtype "image/jpeg"
+                 :size 312043}
+        params  {::th/type :upload-file-media-object
+                 ::rpc/profile-id (:id prof)
+                 :file-id (:id file)
+                 :is-local true
+                 :name "testfile"
+                 :content mfile}
+        out1    (th/multipart-command! params)
+        out2    (th/multipart-command! params)]
+
+    (t/is (nil? (:error out1)))
+    (t/is (nil? (:error out2)))
+
+    (let [result-1 (:result out1)
+          result-2 (:result out2)]
+
+      ;; mark as deleted but in the future (not yet eligible)
+      (th/db-update! :file-media-object
+                     {:deleted-at (ct/in-future {:days 1})}
+                     {:id (:id result-1)})
+
+      ;; without skip-delay the future deleted row is not processed
+      (let [res (th/run-task! :objects-gc {})]
+        (t/is (= 0 (:processed res))))
+
+      ;; with skip-delay the future deleted row IS processed immediately
+      (let [res (th/run-task! :objects-gc {:skip-delay true})]
+        (t/is (= 1 (:processed res)))
+        (t/is (nil? (th/db-get :file-media-object {:id (:id result-1)})))))))
+
+(t/deftest put-object-write-failure-leaves-pending-row
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        ;; Point the fs backend at a path that is actually a file so the
+        ;; blob write fails.
+        blocked (fs/path "/tmp/penpot" (str "blocked-" (uuid/next)))
+        _       (spit (str blocked) "x")]
+    (try
+      (let [broken  (assoc-in storage [::sto/backends :fs ::sto.fs/directory] (str blocked))
+            content (sto/content "content")
+            ex      (try
+                      (sto/put-object! broken {::sto/content content
+                                               :content-type "text/plain"})
+                      nil
+                      (catch Throwable cause cause))]
+        (t/is (some? ex))
+
+        ;; the pending row stays behind and is reclaimed asynchronously
+        ;; by the :storage-pending-gc task
+        (let [rows (th/db-query :storage-object {:status "pending"})]
+          (t/is (= 1 (count rows)))
+
+          (th/db-update! :storage-object
+                         {:created-at (ct/in-past {:days 2})}
+                         {:id (:id (first rows))})
+
+          (let [res (th/run-task! :storage-pending-gc {})]
+            (t/is (= 1 (:processed res))))
+
+          (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+            (t/is (= 0 (:count row))))))
+      (finally
+        (fs/delete blocked)))))
+
+(t/deftest pending-gc-reclaims-unpromoted-object
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"})
+        path    (sto/get-object-path storage object)]
+
+    ;; valid objects are never reclaimed
+    (let [res (th/run-task! :storage-pending-gc {})]
+      (t/is (= 0 (:processed res))))
+
+    ;; simulate a crash: the object was created but never promoted
+    (th/db-update! :storage-object {:status "pending"
+                                    :created-at (ct/in-past {:days 2})}
+                   {:id (:id object)})
+
+    (t/is (fs/exists? path))
+
+    (let [res (th/run-task! :storage-pending-gc {})]
+      (t/is (= 1 (:processed res))))
+
+    ;; both the row and the orphaned blob are removed
+    (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" (:id object)])]
+      (t/is (= 0 (:count row))))
+    (t/is (not (fs/exists? path)))))
+
+(t/deftest pending-objects-excluded-from-gc-touched
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          ::sto/touched-at (ct/now)
+                                          :content-type "text/plain"})]
+
+    ;; mark it pending and touched in the past
+    (th/db-update! :storage-object {:status "pending"
+                                    :touched-at (ct/in-past {:days 1})}
+                   {:id (:id object)})
+
+    (binding [ct/*clock* (ct/fixed-clock (ct/now))]
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+
+    ;; still present and not marked as deleted
+    (let [row (th/db-exec-one! ["select * from storage_object where id = ?" (:id object)])]
+      (t/is (some? row))
+      (t/is (nil? (:deleted-at row))))))
+
+(t/deftest pending-objects-excluded-from-get
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"})]
+
+    (t/is (some? (sto/get-object storage (:id object))))
+
+    (th/db-update! :storage-object {:status "pending"} {:id (:id object)})
+
+    (t/is (nil? (sto/get-object storage (:id object))))))
+
+(t/deftest pending-objects-excluded-from-dedup
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+
+    ;; mark the only matching row as pending
+    (th/db-update! :storage-object {:status "pending"} {:id (:id object1)})
+
+    (let [object2 (sto/put-object! storage {::sto/content content
+                                            ::sto/deduplicate? true
+                                            :bucket "file-media-object"
+                                            :content-type "text/plain"})]
+      (t/is (not= (:id object1) (:id object2))))))
+
+(t/deftest dedup-reuses-existing-blob
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})
+        object2 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+    (t/is (= (:id object1) (:id object2)))
+    (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+      (t/is (= 1 (:count row))))))
+
+(t/deftest dedup-reuses-json-encoded-blob
+  ;; With the JSON flag on, the dedup lookup must find the row it just
+  ;; wrote; a "~:"-only lookup used to miss it and duplicate the blob.
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+    (let [storage (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+          content (-> (sto/content "json-content")
+                      (sto/wrap-with-hash "json-hash"))
+          params  {::sto/content content
+                   ::sto/deduplicate? true
+                   :bucket "file-media-object"
+                   :content-type "text/plain"}
+          object1 (sto/put-object! storage params)
+          object2 (sto/put-object! storage params)]
+      (t/is (= (:id object1) (:id object2)))
+      (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+        (t/is (= 1 (:count row)))))))
+
+(t/deftest dedup-json-put-finds-transit-row
+  ;; Both encodings coexist during the transition: a JSON write must
+  ;; reuse a blob already stored as Transit.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "mixed-content")
+                    (sto/wrap-with-hash "mixed-hash"))
+        params  {::sto/content content
+                 ::sto/deduplicate? true
+                 :bucket "file-media-object"
+                 :content-type "text/plain"}
+        object1 (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+                  (sto/put-object! storage params))
+        object2 (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+                  (sto/put-object! storage params))]
+    (t/is (= (:id object1) (:id object2)))
+    (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+      (t/is (= 1 (:count row))))))
+
+(t/deftest dedup-repairs-stale-object
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+
+    ;; remove the physical blob to simulate a stale/broken object
+    (let [path (sto/get-object-path storage object1)]
+      (fs/delete path))
+
+    ;; re-uploading identical content repairs the same reference in place
+    (let [object2 (sto/put-object! storage {::sto/content content
+                                            ::sto/deduplicate? true
+                                            :bucket "file-media-object"
+                                            :content-type "text/plain"})]
+      (t/is (= (:id object1) (:id object2)))
+
+      ;; the row stays live: no tombstone and no extra row
+      (let [row (th/db-exec-one! ["select status, deleted_at from storage_object where id = ?" (:id object1)])]
+        (t/is (= "valid" (:status row)))
+        (t/is (nil? (:deleted-at row))))
+
+      (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+        (t/is (= 1 (:count row))))
+
+      ;; the repaired blob is readable again under the original id
+      (t/is (= "content" (slurp (sto/get-object-data storage object2)))))))
+
+(t/deftest gc-deleted-removes-broken-object
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"})]
+
+    ;; mark as deleted and remove the physical blob
+    (th/db-update! :storage-object {:deleted-at (ct/in-past {:minutes 1})}
+                   {:id (:id object)})
+    (let [path (sto/get-object-path storage object)]
+      (fs/delete path))
+
+    ;; the deleted gc removes the row without error even though the blob is
+    ;; missing (the physical deletion is best-effort)
+    (let [res (th/run-task! :storage-gc-deleted {})]
+      (t/is (= 1 (:deleted res))))
+
+    (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" (:id object)])]
+      (t/is (= 0 (:count row))))))
+
+(t/deftest pending-objects-excluded-from-gc-deleted
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"})]
+    ;; mark as pending + deleted in the past
+    (th/db-update! :storage-object {:status "pending"
+                                    :deleted-at (ct/in-past {:minutes 1})}
+                   {:id (:id object)})
+    ;; gc-deleted skips it because status != 'valid'
+    (let [res (th/run-task! :storage-gc-deleted {})]
+      (t/is (= 0 (:deleted res))))
+    ;; row still exists (with deleted_at set — we set it above)
+    (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?"
+                                (:id object)])]
+      (t/is (= 1 (:count row))))))
+
+(t/deftest dedup-reuses-existing-blob-with-touch
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        t0      (ct/now)
+        params  {::sto/deduplicate? true
+                 ::sto/touch true
+                 :bucket "file-media-object"
+                 :content-type "text/plain"}
+        object1 (binding [ct/*clock* (ct/fixed-clock t0)]
+                  (sto/put-object! storage (assoc params ::sto/content content)))]
+
+    ;; a touched hit reuses the object and updates its touched_at
+    (let [object2 (binding [ct/*clock* (ct/fixed-clock (ct/plus t0 {:hours 1}))]
+                    (sto/put-object! storage (assoc params ::sto/content content)))]
+      (t/is (= (:id object1) (:id object2)))
+
+      (let [row (th/db-exec-one! ["select touched_at from storage_object where id = ?" (:id object1)])]
+        (t/is (ct/is-after? (:touched-at row) t0))))
+
+    ;; with the blob removed, the touched hit repairs the stale row in
+    ;; place: the same id is kept, the row is not deleted and touched_at
+    ;; is left untouched (the touch flag only applies to healthy hits)
+    (let [path (sto/get-object-path storage object1)]
+      (fs/delete path))
+
+    (let [object3 (binding [ct/*clock* (ct/fixed-clock (ct/plus t0 {:hours 2}))]
+                    (sto/put-object! storage (assoc params ::sto/content content)))]
+      (t/is (= (:id object1) (:id object3)))
+
+      (let [row (th/db-exec-one! ["select deleted_at, touched_at from storage_object where id = ?" (:id object1)])]
+        (t/is (nil? (:deleted-at row)))
+        ;; the touch flag does not apply to repairs: touched_at was last
+        ;; set by the healthy hit and is not bumped by the repair
+        (t/is (ct/is-before? (:touched-at row) (ct/plus t0 {:hours 2})))))))
+
+(t/deftest put-object-repair-failure-leaves-row-intact
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object  (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})
+        path    (sto/get-object-path storage object)
+
+        ;; Point the fs backend at a path that is actually a file so the
+        ;; blob write fails.
+        blocked (fs/path "/tmp/penpot" (str "blocked-" (uuid/next)))
+        _       (spit (str blocked) "x")]
+    (try
+      ;; remove the physical blob to simulate a stale/broken object
+      (fs/delete path)
+
+      (let [broken (assoc-in storage [::sto/backends :fs ::sto.fs/directory] (str blocked))
+            ex     (try
+                     (sto/put-object! broken {::sto/content content
+                                              ::sto/deduplicate? true
+                                              :bucket "file-media-object"
+                                              :content-type "text/plain"})
+                     nil
+                     (catch Throwable cause cause))]
+        (t/is (some? ex))
+
+        ;; the failed repair leaves the original row exactly as it was:
+        ;; live and valid, so a later upload can retry the healing
+        (let [row (th/db-exec-one! ["select status, deleted_at from storage_object where id = ?" (:id object)])]
+          (t/is (= "valid" (:status row)))
+          (t/is (nil? (:deleted-at row))))
+
+        (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+          (t/is (= 1 (:count row)))))
+      (finally
+        (fs/delete blocked)))))
+
+(t/deftest upload-chunks-exclude-pending
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        file       (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
+
+    (t/is (nil? (:error out)))
+
+    ;; mark all the chunks of this session as pending (simulates rows that
+    ;; were never promoted)
+    (th/db-exec! ["update storage_object set status = 'pending' where id in (select object_id from upload_session_chunk where session_id = ?)"
+                  session-id])
+
+    ;; assembling fails because no chunk is visible anymore
+    (let [assemble-out (th/command! {::th/type :assemble-file-media-object
+                                     ::rpc/profile-id (:id prof)
+                                     :session-id session-id
+                                     :file-id (:id file)
+                                     :is-local true
+                                     :name "assembled-image"
+                                     :mtype "image/jpeg"})]
+      (t/is (some? (:error assemble-out))))))
+
+(t/deftest upload-session-stalled-purge-lifecycle
+  ;; Full lifecycle of a stalled session: objects-gc purges the session and
+  ;; its mappings while touching the objects, touched-gc marks them deleted
+  ;; and deleted-gc removes rows and blobs.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
+
+    (t/is (nil? (:error out)))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+
+    ;; backdate the session so it counts as stalled
+    (th/db-exec! ["update upload_session set created_at = now() - interval '2 hours' where id = ?"
+                  session-id])
+
+    ;; objects-gc purges session and mappings, touching the objects
+    (let [res (th/run-task! :objects-gc {})]
+      (t/is (= 1 (:processed res))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session where id = ?"
+                                         session-id]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"]))))
+
+    ;; touched-gc marks the orphaned object as deleted
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 1 (:delete res))))
+
+    ;; deleted-gc removes the row and the blob (clock past the mark time)
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 4}))]
+                (th/run-task! :storage-gc-deleted {}))]
+      (t/is (= 1 (:deleted res))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from storage_object"]))))))
+
+(t/deftest upload-session-chunk-frozen-while-referenced
+  ;; A chunk whose session mapping is still alive must be frozen, not
+  ;; marked for deletion: the reference scan owns the liveness decision.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
+    (t/is (nil? (:error out)))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+
+    ;; the session is neither consumed nor stalled: the mapping is alive
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 1 (:freeze res)))
+      (t/is (= 0 (:delete res))))
+
+    ;; frozen: untouched, not marked, mapping intact
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from storage_object where deleted_at is not null"]))))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))))
+
+(t/deftest upload-session-freeze-reverify
+  ;; The freeze recheck runs under row locks: an object whose mapping
+  ;; disappeared (plus a concurrent touch) after the first check is
+  ;; reclassified to deletion instead of swallowing the touch.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})
+        object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
+                                                 session-id]))
+        check      @#'gc-touched/has-upload-session-chunk-refs?
+        verify     @#'gc-touched/verify-frozen]
+    (t/is (nil? (:error out)))
+
+    ;; mapping alive: stays frozen
+    (let [[frozen deletable] (db/transact! th/*pool* (fn [conn] (verify conn check "upload-session" [{:id object-id}])))]
+      (t/is (= #{object-id} frozen))
+      (t/is (= #{} deletable)))
+
+    ;; simulate a purge that committed after the first check: mapping
+    ;; gone, touch bumped
+    (th/db-exec! ["delete from upload_session_chunk where session_id = ?" session-id])
+    (th/db-exec! ["update storage_object set touched_at = ? where id = ?" (ct/now) object-id])
+
+    ;; recheck moves it to deletion
+    (let [[frozen deletable] (db/transact! th/*pool* (fn [conn] (verify conn check "upload-session" [{:id object-id}])))]
+      (t/is (= #{} frozen))
+      (t/is (= #{object-id} deletable)))))
+
+(t/deftest upload-session-gc-deleted-skips-live-mapping
+  ;; A row marked for deletion while its mapping is still alive must NOT
+  ;; be reaped silently: the chunk is skipped loud (logged) and retried
+  ;; once objects-gc purges the session. This pins the mark-time
+  ;; invariant instead of breaking sessions quietly.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})
+        object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
+                                                 session-id]))]
+    (t/is (nil? (:error out)))
+
+    ;; force the anomaly: mark deleted while the mapping is alive
+    (th/db-exec! ["update storage_object set deleted_at = ? where id = ?" (ct/now) object-id])
+
+    (let [res (th/run-task! :storage-gc-deleted {})]
+      (t/is (= 0 (:deleted res))))
+
+    ;; row and mapping both intact for the retry
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where id = ?" object-id]))))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))))
+
+(t/deftest upload-session-mapping-blocks-gc-deleted
+  ;; A live upload-session chunk mapping references its object with a NO
+  ;; ACTION foreign key: gc-deleted cannot purge that object while the
+  ;; session is intact. The blocked chunk fails and is skipped, and both
+  ;; the object row and the mapping stay in place, so the stalled session
+  ;; stays retryable; objects-gc owns purging the mapping before the
+  ;; object (see upload-session-consumed-purge below).
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})
+        object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
+                                                 session-id]))]
+    (t/is (nil? (:error out)))
+    (th/db-exec! ["update storage_object set deleted_at = ? where id = ?" (ct/in-past {:minutes 5}) object-id])
+
+    (th/run-task! :storage-gc-deleted {})
+
+    ;; the object row survives the run: the mapping blocks its deletion
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where id = ?"
+                                         object-id]))))
+    ;; mapping kept: the session is intact for the retry
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))))
+
+(t/deftest upload-session-consumed-purge
+  ;; An assembled session is marked as consumed and objects-gc purges it
+  ;; right away, without waiting for the stalled threshold.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        file       (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
+
+    (t/is (nil? (:error out)))
+
+    (let [assemble-out (th/command! {::th/type :assemble-file-media-object
+                                     ::rpc/profile-id (:id prof)
+                                     :session-id session-id
+                                     :file-id (:id file)
+                                     :is-local true
+                                     :name "assembled-image"
+                                     :mtype "image/jpeg"})]
+      (t/is (nil? (:error assemble-out))))
+
+    ;; mappings stay, session row stays marked as consumed; objects-gc
+    ;; purges both
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+    (t/is (some? (:deleted-at (th/db-exec-one! ["select deleted_at from upload_session where id = ?"
+                                                session-id]))))
+
+    ;; objects-gc purges the consumed session immediately
+    (let [res (th/run-task! :objects-gc {})]
+      (t/is (= 1 (:processed res))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session where id = ?"
+                                         session-id]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))))
+
+(t/deftest upload-session-profile-purge
+  ;; Sessions owned by a profile pending purge are drained first, so the
+  ;; profile delete (which cascades to its sessions) never hits the chunk
+  ;; RESTRICT foreign keys.
+  (let [prof       (th/create-profile* 1)
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
+    (t/is (nil? (:error out)))
+
+    ;; soft-delete the profile; the live session is neither consumed nor stalled
+    (th/db-update! :profile {:deleted-at (ct/now)} {:id (:id prof)})
+
+    (th/run-task! :objects-gc {})
+
+    ;; session and mappings are gone, profile row deletes cleanly
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session where id = ?"
+                                         session-id]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from profile where id = ?"
+                                         (:id prof)]))))
+    ;; and the chunk object was touched for the storage GC
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"]))))))
+
+(defn- fake-s3-backend
+  []
+  {::sto/type         :s3
+   ::sto.s3/client    (reify S3AsyncClient)
+   ::sto.s3/presigner (reify S3Presigner)})
+
+(t/deftest s3-exists-object-returns-true-on-found
+  (with-mocks [mock {:target 'app.storage.s3/head-object
+                     :return (p/resolved {})}]
+    (t/is (true? (impl/exists-object? (fake-s3-backend) {:id (uuid/next)})))
+    (t/is (= 1 (:call-count @mock)))))
+
+(t/deftest s3-exists-object-returns-false-on-missing-key
+  (with-mocks [mock {:target 'app.storage.s3/head-object
+                     :return (p/rejected (-> (NoSuchKeyException/builder)
+                                             (.message "no key")
+                                             (.build)))}]
+    (t/is (false? (impl/exists-object? (fake-s3-backend) {:id (uuid/next)})))
+    ;; a missing key is a definitive answer: no retries
+    (t/is (= 1 (:call-count @mock)))))
+
+(t/deftest s3-exists-object-retries-transient-errors
+  (let [calls (atom 0)]
+    (with-mocks [_mock {:target 'app.storage.s3/head-object
+                        :return (fn [& _]
+                                  (swap! calls inc)
+                                  (if (< @calls 3)
+                                    (p/rejected (RuntimeException. "boom"))
+                                    (p/resolved {})))}]
+      (t/is (true? (impl/exists-object? (fake-s3-backend) {:id (uuid/next)})))
+      (t/is (= 3 @calls)))))
+
+(t/deftest s3-exists-object-throws-after-retries-exhausted
+  (with-mocks [mock {:target 'app.storage.s3/head-object
+                     :return (p/rejected (RuntimeException. "boom"))}]
+    ;; p/await returns the rejection wrapped in an ExecutionException
+    (let [ex (try
+               (impl/exists-object? (fake-s3-backend) {:id (uuid/next)})
+               nil
+               (catch Throwable cause cause))]
+      (t/is (some? ex))
+      (t/is (= "boom" (ex-message (ex-cause ex)))))
+    ;; one initial attempt plus max-retries
+    (t/is (= 4 (:call-count @mock)))))
+
+(t/deftest touched-gc-job-resource-bucket
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        job-id  (uuid/next)
+        object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                          :content-type "text/plain"
+                                          :profile-id (uuid/next)
+                                          :bucket sto/job-resource-bucket})]
+
+    ;; the object is created with the job-resource bucket in metadata
+    (t/is (= sto/job-resource-bucket (:bucket (meta object))))
+
+    ;; a live job row referencing the object keeps it frozen
+    (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+    (th/db-insert! :job {:id           job-id
+                         :name         "test-job"
+                         :tenant       (cf/get :tenant)
+                         :queue        "default"
+                         :params       (db/json {})
+                         :priority     100
+                         :max-retries  3
+                         :retry-num    0
+                         :status       "running"
+                         :resource-id  (:id object)
+                         :scheduled-at (ct/now)
+                         :created-at   (ct/now)
+                         :modified-at  (ct/now)})
+
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 1 (:freeze res)))
+      (t/is (= 0 (:delete res)))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :touched-at))))
+      (t/is (nil? (:deleted-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :deleted-at)))))
+
+    ;; once the referencing row is gone, the touched object becomes
+    ;; eligible for deletion (the job table is deletion-protected)
+    (th/db-force-delete :job {:id job-id})
+    (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 1 (:delete res)))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :touched-at))))
+      (t/is (some? (:deleted-at (th/db-get :storage-object
+                                           {:id (:id object)}
+                                           {::db/remove-deleted false})))))
+
+    ;; a touched object with no referencing job row at all is deleted too
+    (let [object (sto/put-object! storage {::sto/content (sto/content "content")
+                                           :content-type "text/plain"
+                                           :profile-id (uuid/next)
+                                           :bucket sto/job-resource-bucket})]
+      (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
+        (t/is (= 0 (:freeze res)))
+        (t/is (>= (:delete res) 1))
+        (t/is (some? (:deleted-at (th/db-get :storage-object
+                                             {:id (:id object)}
+                                             {::db/remove-deleted false}))))))))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
@@ -100,9 +100,9 @@
                                             "disable-webgl-rendering")
                                 ::ev/origin "settings"})
                      (du/update-profile-props {:renderer (if enabled? :wasm :svg)})
-                     (ntf/success (tr (if enabled?
-                                        "webgl.toast.webgl-render-enabled"
-                                        "webgl.toast.webgl-render-disabled"))))))]
+                     (ntf/success (if enabled?
+                                    (tr "webgl.toast.webgl-render-enabled")
+                                    (tr "webgl.toast.webgl-render-disabled"))))))]
     [:section {:class (stl/css :webgl-container)}
      [:header {:class (stl/css :webgl-header)}
       [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large} (tr "dashboard.webgl-switch.title")]

@@ -1,0 +1,8 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100" viewBox="0 0 200 100"><foreignObject x="-10" y="-10" width="220" height="120"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(3.3867512px);-webkit-backdrop-filter:blur(3.3867512px);clip-path:path(nonzero,'M10 10L210 10L210 110L10 110Z');height:100%;width:100%"></div></foreignObject>
+	<rect fill="#00C800" x="10" y="10" width="80" height="80"/>
+</svg>

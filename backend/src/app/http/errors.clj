@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.errors
   "A errors handling for the http server."
@@ -77,9 +77,16 @@
 
 (defmethod handle-error :rate-limit
   [err _ _]
-  (let [headers (-> err ex-data ::http/headers)]
-    {::yres/status 429
-     ::yres/headers headers}))
+  (let [data    (ex-data err)
+        headers (cond-> (::http/headers data)
+                  (some? (:ttl data))
+                  (assoc "retry-after" (str (:ttl data))))]
+    {::yres/status  429
+     ::yres/headers headers
+     ::yres/body    {:type :rate-limit
+                     :code (:code data)
+                     :hint (:hint data)
+                     :ttl  (:ttl data)}}))
 
 (defmethod handle-error :concurrency-limit
   [err _ _]
@@ -115,7 +122,11 @@
           {::yres/status 400 ::yres/body data}))
 
       :else
-      {::yres/status 400 ::yres/body data})))
+      (let [explain (ex/explain data)]
+        {::yres/status 400
+         ::yres/body   (-> data
+                           (dissoc ::sm/explain)
+                           (cond-> explain (assoc :explain explain)))}))))
 
 (defmethod handle-error :assertion
   [error request parent-cause]

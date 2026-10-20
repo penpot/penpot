@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.viewer
   (:require-macros [app.main.style :as stl])
@@ -644,5 +644,13 @@
 
 (mf/defc viewer-page*
   {::mf/lazy-load true}
-  [props]
-  [:> viewer* props])
+  [{:keys [file-id] :as props}]
+
+  (mf/with-effect [file-id]
+    (when-not (uuid? file-id)
+      (ex/raise :type :not-found
+                :code :missing-file-id
+                :hint "provided file-id is invalid uuid or nil")))
+
+  (when (uuid? file-id)
+    [:> viewer* props]))

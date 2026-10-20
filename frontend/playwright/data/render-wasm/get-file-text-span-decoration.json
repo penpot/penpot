@@ -1,0 +1,2339 @@
+{
+  "~:features": {
+    "~#set": [
+      "fdata/path-data",
+      "plugins/runtime",
+      "design-tokens/v1",
+      "layout/grid",
+      "styles/v2",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "render-wasm/v1",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:team-id": "~u1091e979-bbec-8194-8005-f7aa420b5660",
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "text-span-decoration",
+  "~:revn": 7,
+  "~:modified-at": "~m1749629891313",
+  "~:vern": 0,
+  "~:id": "~u1d0f6a4c-0000-8000-8006-000000000001",
+  "~:is-shared": false,
+  "~:migrations": {
+    "~#ordered-set": [
+      "legacy-2",
+      "legacy-3",
+      "legacy-5",
+      "legacy-6",
+      "legacy-7",
+      "legacy-8",
+      "legacy-9",
+      "legacy-10",
+      "legacy-11",
+      "legacy-12",
+      "legacy-13",
+      "legacy-14",
+      "legacy-16",
+      "legacy-17",
+      "legacy-18",
+      "legacy-19",
+      "legacy-25",
+      "legacy-26",
+      "legacy-27",
+      "legacy-28",
+      "legacy-29",
+      "legacy-31",
+      "legacy-32",
+      "legacy-33",
+      "legacy-34",
+      "legacy-36",
+      "legacy-37",
+      "legacy-38",
+      "legacy-39",
+      "legacy-40",
+      "legacy-41",
+      "legacy-42",
+      "legacy-43",
+      "legacy-44",
+      "legacy-45",
+      "legacy-46",
+      "legacy-47",
+      "legacy-48",
+      "legacy-49",
+      "legacy-50",
+      "legacy-51",
+      "legacy-52",
+      "legacy-53",
+      "legacy-54",
+      "legacy-55",
+      "legacy-56",
+      "legacy-57",
+      "legacy-59",
+      "legacy-62",
+      "legacy-65",
+      "legacy-66",
+      "legacy-67",
+      "0001-remove-tokens-from-groups",
+      "0002-normalize-bool-content",
+      "0002-clean-shape-interactions",
+      "0003-fix-root-shape",
+      "0003-convert-path-content",
+      "0004-clean-shadow-and-colors",
+      "0005-deprecate-image-type",
+      "0006-fix-old-texts-fills",
+      "0007-clear-invalid-strokes-and-fills-v2",
+      "0008-fix-library-colors-opacity"
+    ]
+  },
+  "~:version": 67,
+  "~:project-id": "~u1091e979-bbec-8194-8005-f7aa420b8b07",
+  "~:created-at": "~m1749629823499",
+  "~:data": {
+    "~:pages": [
+      "~u1d0f6a4c-0000-8000-8006-000000000002"
+    ],
+    "~:pages-index": {
+      "~u1d0f6a4c-0000-8000-8006-000000000002": {
+        "~:objects": {
+          "~u00000000-0000-0000-0000-000000000000": {
+            "~#shape": {
+              "~:y": 0,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Root Frame",
+              "~:width": 0.01,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 0.0,
+                    "~:y": 0.0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0.0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0.01
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.0,
+                    "~:y": 0.01
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u00000000-0000-0000-0000-000000000000",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 0,
+              "~:proportion": 1.0,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 0,
+                  "~:y": 0,
+                  "~:width": 0.01,
+                  "~:height": 0.01,
+                  "~:x1": 0,
+                  "~:y1": 0,
+                  "~:x2": 0.01,
+                  "~:y2": 0.01
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#FFFFFF",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 0.01,
+              "~:flip-y": null,
+              "~:shapes": [
+                "~u1d0f6a4c-0000-8000-8006-000000000003",
+                "~u1d0f6a4c-0000-8000-8006-000000000004"
+              ]
+            }
+          },
+          "~u1d0f6a4c-0000-8000-8006-000000000003": {
+            "~:y": 100.0,
+            "~:transform": {
+              "~#matrix": {
+                "~:a": 1.0,
+                "~:b": 0.0,
+                "~:c": 0.0,
+                "~:d": 1.0,
+                "~:e": 0.0,
+                "~:f": 0.0
+              }
+            },
+            "~:rotation": 0,
+            "~:grow-type": "~:fixed",
+            "~:content": {
+              "~:type": "root",
+              "~:key": "span-decoration-root",
+              "~:children": [
+                {
+                  "~:type": "paragraph-set",
+                  "~:children": [
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "plain "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "under"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " mid "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "struck"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " tail"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-same-fill",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "plain "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#1A7FDA",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "under"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " mid "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#DA1A1A",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "struck"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " tail"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-mixed-fill",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "a "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "one"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " b "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "two"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " c"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-two-underlines",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "x "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "one"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " y "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "cut"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " z "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u5",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "two"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-underline-strike-underline",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "When three bodies orbit "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "each"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " other, the "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "resulting"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w5",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "dynamical"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w6",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " system is "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w7",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "chaotic"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w8",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " for most initial "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w9",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "conditions"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-wrapped",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "m "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "one"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " n "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "cut"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " o"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-two-fills",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    }
+                  ]
+                }
+              ],
+              "~:vertical-align": "top"
+            },
+            "~:hide-in-viewer": false,
+            "~:name": "span decorations",
+            "~:width": 800.0,
+            "~:type": "~:text",
+            "~:points": [
+              {
+                "~#point": {
+                  "~:x": 100.0,
+                  "~:y": 100.0
+                }
+              },
+              {
+                "~#point": {
+                  "~:x": 900.0,
+                  "~:y": 100.0
+                }
+              },
+              {
+                "~#point": {
+                  "~:x": 900.0,
+                  "~:y": 700.0
+                }
+              },
+              {
+                "~#point": {
+                  "~:x": 100.0,
+                  "~:y": 700.0
+                }
+              }
+            ],
+            "~:layout-item-h-sizing": "~:fix",
+            "~:transform-inverse": {
+              "~#matrix": {
+                "~:a": 1.0,
+                "~:b": 0.0,
+                "~:c": 0.0,
+                "~:d": 1.0,
+                "~:e": 0.0,
+                "~:f": 0.0
+              }
+            },
+            "~:layout-item-v-sizing": "~:fix",
+            "~:id": "~u1d0f6a4c-0000-8000-8006-000000000003",
+            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+            "~:x": 100.0,
+            "~:selrect": {
+              "~#rect": {
+                "~:x": 100.0,
+                "~:y": 100.0,
+                "~:width": 800.0,
+                "~:height": 600.0,
+                "~:x1": 100.0,
+                "~:y1": 100.0,
+                "~:x2": 900.0,
+                "~:y2": 700.0
+              }
+            },
+            "~:flip-x": null,
+            "~:height": 600.0,
+            "~:flip-y": null
+          },
+          "~u1d0f6a4c-0000-8000-8006-000000000004": {
+            "~:y": 760.0,
+            "~:transform": {
+              "~#matrix": {
+                "~:a": 1.0,
+                "~:b": 0.0,
+                "~:c": 0.0,
+                "~:d": 1.0,
+                "~:e": 0.0,
+                "~:f": 0.0
+              }
+            },
+            "~:rotation": 0,
+            "~:grow-type": "~:fixed",
+            "~:content": {
+              "~:type": "root",
+              "~:key": "span-decoration-root",
+              "~:children": [
+                {
+                  "~:type": "paragraph-set",
+                  "~:children": [
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "plain "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "under"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " mid "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "struck"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "sf4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " tail"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-same-fill",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "plain "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#1A7FDA",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "under"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " mid "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#DA1A1A",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "struck"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "mf4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " tail"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-mixed-fill",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "a "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "one"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " b "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "two"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "t4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " c"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-two-underlines",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "x "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "one"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " y "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "cut"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " z "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "u5",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "two"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-underline-strike-underline",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "When three bodies orbit "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "each"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " other, the "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "resulting"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w5",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "dynamical"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w6",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " system is "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w7",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "chaotic"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w8",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " for most initial "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "w9",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "conditions"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-wrapped",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    },
+                    {
+                      "~:line-height": "1.2",
+                      "~:font-style": "normal",
+                      "~:children": [
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v0",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "m "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v1",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "underline",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "one"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v2",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " n "
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v3",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "line-through",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": "cut"
+                        },
+                        {
+                          "~:line-height": "1.2",
+                          "~:font-style": "normal",
+                          "~:typography-ref-id": null,
+                          "~:text-transform": "none",
+                          "~:font-id": "sourcesanspro",
+                          "~:key": "v4",
+                          "~:font-size": "48",
+                          "~:font-weight": "400",
+                          "~:typography-ref-file": null,
+                          "~:font-variant-id": "regular",
+                          "~:text-decoration": "none",
+                          "~:letter-spacing": "0",
+                          "~:fills": [
+                            {
+                              "~:fill-color": "#2E7D32",
+                              "~:fill-opacity": 0.5
+                            },
+                            {
+                              "~:fill-color": "#000000",
+                              "~:fill-opacity": 1
+                            }
+                          ],
+                          "~:font-family": "sourcesanspro",
+                          "~:text": " o"
+                        }
+                      ],
+                      "~:typography-ref-id": null,
+                      "~:text-transform": "none",
+                      "~:text-align": "left",
+                      "~:font-id": "sourcesanspro",
+                      "~:key": "p-two-fills",
+                      "~:font-size": "48",
+                      "~:font-weight": "400",
+                      "~:typography-ref-file": null,
+                      "~:text-direction": "ltr",
+                      "~:type": "paragraph",
+                      "~:font-variant-id": "regular",
+                      "~:text-decoration": "none",
+                      "~:letter-spacing": "0",
+                      "~:fills": [
+                        {
+                          "~:fill-color": "#000000",
+                          "~:fill-opacity": 1
+                        }
+                      ],
+                      "~:font-family": "sourcesanspro"
+                    }
+                  ]
+                }
+              ],
+              "~:vertical-align": "top"
+            },
+            "~:hide-in-viewer": false,
+            "~:name": "span decorations with shadow",
+            "~:width": 800.0,
+            "~:type": "~:text",
+            "~:points": [
+              {
+                "~#point": {
+                  "~:x": 100.0,
+                  "~:y": 760.0
+                }
+              },
+              {
+                "~#point": {
+                  "~:x": 900.0,
+                  "~:y": 760.0
+                }
+              },
+              {
+                "~#point": {
+                  "~:x": 900.0,
+                  "~:y": 1360.0
+                }
+              },
+              {
+                "~#point": {
+                  "~:x": 100.0,
+                  "~:y": 1360.0
+                }
+              }
+            ],
+            "~:layout-item-h-sizing": "~:fix",
+            "~:transform-inverse": {
+              "~#matrix": {
+                "~:a": 1.0,
+                "~:b": 0.0,
+                "~:c": 0.0,
+                "~:d": 1.0,
+                "~:e": 0.0,
+                "~:f": 0.0
+              }
+            },
+            "~:layout-item-v-sizing": "~:fix",
+            "~:id": "~u1d0f6a4c-0000-8000-8006-000000000004",
+            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+            "~:x": 100.0,
+            "~:selrect": {
+              "~#rect": {
+                "~:x": 100.0,
+                "~:y": 760.0,
+                "~:width": 800.0,
+                "~:height": 600.0,
+                "~:x1": 100.0,
+                "~:y1": 760.0,
+                "~:x2": 900.0,
+                "~:y2": 1360.0
+              }
+            },
+            "~:flip-x": null,
+            "~:height": 600.0,
+            "~:flip-y": null,
+            "~:shadow": [
+              {
+                "~:id": "~u1d0f6a4c-0000-8000-8006-0000000000f1",
+                "~:style": "~:drop-shadow",
+                "~:color": {
+                  "~:color": "#DA1A1A",
+                  "~:opacity": 1
+                },
+                "~:offset-x": 8,
+                "~:offset-y": 8,
+                "~:blur": 0,
+                "~:spread": 0,
+                "~:hidden": false
+              }
+            ]
+          }
+        },
+        "~:id": "~u1d0f6a4c-0000-8000-8006-000000000002",
+        "~:name": "Page 1"
+      }
+    },
+    "~:id": "~u1d0f6a4c-0000-8000-8006-000000000001",
+    "~:options": {
+      "~:components-v2": true,
+      "~:base-font-size": "16px"
+    }
+  }
+}

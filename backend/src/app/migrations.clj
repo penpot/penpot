@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.migrations
   (:require
@@ -499,7 +499,40 @@
     :fn (mg/resource "app/migrations/sql/0152-improve-uuid-defaults-and-drop-extension.sql")}
 
    {:name "0152-rename-version-and-add-indexes-to-server-error-report"
-    :fn (mg/resource "app/migrations/sql/0152-rename-version-and-add-indexes-to-server-error-report.sql")}])
+    :fn (mg/resource "app/migrations/sql/0152-rename-version-and-add-indexes-to-server-error-report.sql")}
+
+   {:name "0153-add-storage-object-status-and-deletion-attempts"
+    :fn (mg/resource "app/migrations/sql/0153-add-storage-object-status-and-deletion-attempts.sql")}
+
+   {:name "0154-add-upload-session-chunk-table"
+    :fn (mg/resource "app/migrations/sql/0154-add-upload-session-chunk-table.sql")}
+
+   {:name "0154-add-job-table"
+    :fn (mg/resource "app/migrations/sql/0154-add-job-table.sql")}
+
+   {:name "0155-normalize-storage-object-metadata"
+    :fn (mg/resource "app/migrations/sql/0155-normalize-storage-object-metadata.sql")}
+
+   {:name "0155-drop-http-session-table"
+    :fn (mg/resource "app/migrations/sql/0155-drop-http-session-table.sql")}
+
+   {:name "0156-add-storage-object-json-dedup-index"
+    :fn (mg/resource "app/migrations/sql/0156-add-storage-object-json-dedup-index.sql")}
+
+   {:name "0153-del-orphan-profile-rels-after-team-leave"
+    :fn (mg/resource "app/migrations/sql/0153-del-orphan-profile-rels-after-team-leave.sql")}
+
+   {:name "0154-del-legacy-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0154-del-legacy-file-object-thumbnail-table.sql")}
+
+   {:name "0155-add-idx-to-file-change"
+    :fn (mg/resource "app/migrations/sql/0155-add-idx-to-file-change.sql")}
+
+   {:name "0156-reset-pg-storage-defaults"
+    :fn (mg/resource "app/migrations/sql/0156-reset-pg-storage-defaults.sql")}
+
+   {:name "0157-add-audit-log-pending-table"
+    :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

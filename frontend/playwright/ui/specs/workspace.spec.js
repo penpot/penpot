@@ -171,10 +171,12 @@ test("Selection size badge shows dimensions for path shapes", async ({ page }) =
   // Workaround: hover viewport first to avoid nil mouse position crash
   await workspacePage.viewport.hover();
 
-  // Draw a path
+  // Draw a path with two segments; a single straight segment places
+  // the size badge along the line instead
   await workspacePage.pathButton.click();
   await workspacePage.clickAt(779, 163);
   await workspacePage.clickAt(951, 258);
+  await workspacePage.clickAt(1050, 163);
 
   // Finish drawing (commits path, path enters edition mode)
   await page.keyboard.press("Escape");
@@ -185,6 +187,45 @@ test("Selection size badge shows dimensions for path shapes", async ({ page }) =
   const badgeText = page.locator(".selection-size-badge text");
   await expect(badgeText).toBeVisible();
   await expect(badgeText).toHaveText(/\d+\.?\d* x \d+\.?\d*/);
+});
+
+test("Selection size badge runs along straight line paths", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
+  await workspacePage.goToWorkspace();
+
+  // Workaround: hover viewport first to avoid nil mouse position crash
+  await workspacePage.viewport.hover();
+
+  // Draw a path with a single straight segment, going down to the right
+  await workspacePage.pathButton.click();
+  await workspacePage.clickAt(779, 163);
+  await workspacePage.clickAt(951, 258);
+
+  // Finish drawing (commits path, path enters edition mode)
+  await page.keyboard.press("Escape");
+
+  // Exit edition mode (path stays selected)
+  await page.keyboard.press("Escape");
+
+  await expect(page.locator(".line-controls")).toBeVisible();
+
+  // A straight line shows its length, with two decimals at most
+  const badge = page.locator(".selection-size-badge");
+  await expect(badge.locator("text")).toHaveText(/^\d+(\.\d{1,2})?$/);
+
+  // The badge follows the line angle, about 29 degrees
+  const transform = await badge.getAttribute("transform");
+  const rotation = Number(transform.match(/rotate\(([^)]+)\)/)[1]);
+  expect(rotation).toBeGreaterThan(20);
+  expect(rotation).toBeLessThan(40);
 });
 
 test("User makes a group", async ({ page }) => {
@@ -283,6 +324,7 @@ test("User adds a library and its automatically selected in the color palette", 
   // Now the get-file call should return a library
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
   await workspacePage.openLibrariesModal();
+  await workspacePage.librariesModal.getByRole("tab", { name: "Libraries" }).click();
   await workspacePage.clickLibrary("Testing library 1");
   await workspacePage.closeLibrariesModal();
 

@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.assets
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.components-list :as ctkl]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -21,6 +22,7 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library*]]
+   [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -33,6 +35,12 @@
   [{:keys [filters]}]
   (let [file-id   (mf/use-ctx ctx/current-file-id)
         files     (mf/deref refs/files)
+        current-file-data
+        (mf/deref refs/workspace-data)
+        tokens-source
+        (mf/with-memo [current-file-data]
+          (cfo/get-effective-tokens-source current-file-data))
+
         libraries (mf/with-memo [files file-id]
                     (->> (refs/select-libraries files file-id)
                          (vals)
@@ -46,6 +54,7 @@
        {:key (dm/str (:id file))
         :file file
         :is-local false
+        :is-tokens-source (= (:id file) tokens-source)
         :is-default-open false
         :filters filters}])))
 
@@ -57,11 +66,16 @@
 (mf/defc assets-local-library*
   {::mf/private true}
   [{:keys [filters]}]
-  (let [file (mf/deref ref:local-library)]
+  (let [file (mf/deref ref:local-library)
+
+        is-tokens-source
+        (mf/with-memo [file]
+          (cfo/effective-tokens-source? (:data file) (:id file)))]
     [:> file-library*
      {:file file
       :is-local true
       :is-default-open true
+      :is-tokens-source is-tokens-source
       :filters filters}]))
 
 (defn- toggle-values
@@ -76,8 +90,9 @@
 
 (mf/defc assets-toolbox*
   {::mf/wrap [mf/memo]}
-  [{:keys [size file-id]}]
+  [{:keys [size file-id scroll-store]}]
   (let [read-only?     (mf/use-ctx ctx/workspace-read-only?)
+        assets-ref     (mf/use-ref nil)
         filters*       (mf/use-state
                         (fn []
                           (-> (or (get @session-filters* file-id)
@@ -137,6 +152,12 @@
          (fn []
            (modal/show! :libraries-dialog {:file-id file-id})))
 
+        on-scroll-save
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:assets file-id] event)))
+
         on-open-menu
         (mf/use-fn  #(swap! filters* update :open-menu not))
 
@@ -171,7 +192,12 @@
     (mf/with-effect [file-id term section]
       (swap! session-filters* assoc file-id {:term term :section section}))
 
-    [:article  {:class (stl/css :assets-bar)}
+    (sc/use-restore-scroll scroll-store :assets file-id assets-ref)
+
+    [:article  {:class (stl/css :assets-bar)
+                :data-scroll-container true
+                :on-scroll on-scroll-save
+                :ref assets-ref}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
         (if (and (= num-libs 1) (empty? components) (not shared?))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-nitrate-test
   (:require
@@ -584,6 +584,8 @@
                   :teams-to-transfer 0
                   :teams-to-exit 0
                   :teams-to-detach 0
+                  :team-ids-to-delete []
+                  :transferable-teams []
                   :member-added-at (ct/inst "2026-07-17T12:00:00Z")
                   :organization-member-count-before 2}
                  (:result out)))))))
@@ -618,9 +620,49 @@
                   :teams-to-transfer 0
                   :teams-to-exit 0
                   :teams-to-detach 1
+                  :team-ids-to-delete [(:id extra-team)]
+                  :transferable-teams []
                   :member-added-at (ct/inst "2026-07-17T12:00:00Z")
                   :organization-member-count-before 2}
                  (:result out)))))))
+
+(t/deftest get-leave-organization-summary-lists-transferable-teams-with-members
+  (let [profile-owner  (th/create-profile* 1 {:is-active true})
+        profile-user   (th/create-profile* 2 {:is-active true})
+        ;; profile-user owns both; only pair-team has another member
+        solo-team      (th/create-team* 1 {:profile-id (:id profile-user)})
+        pair-team      (th/create-team* 2 {:profile-id (:id profile-user)})
+        _              (th/create-team-role* {:team-id    (:id pair-team)
+                                              :profile-id (:id profile-owner)
+                                              :role       :admin})
+        organization-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
+
+        organization-id (uuid/random)
+        your-penpot-id  (:id organization-default-team)
+        organization-summary (make-organization-summary
+                              :organization-id organization-id
+                              :organization-name "Test Org"
+                              :owner-id (:id profile-owner)
+                              :your-penpot-teams [your-penpot-id]
+                              :organization-teams [(:id solo-team) (:id pair-team)])]
+
+    (with-redefs [nitrate/call (nitrate-organization-summary-only-mock organization-summary)]
+      (let [out    (th/command! {::th/type :get-leave-organization-summary
+                                 ::rpc/profile-id (:id profile-user)
+                                 :id organization-id
+                                 :default-team-id your-penpot-id})
+            result (:result out)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:teams-to-transfer result)))
+        (t/is (= [(:id solo-team)] (:team-ids-to-delete result)))
+        ;; The members that can take over pair-team, without profile-user
+        (t/is (= [{:id      (:id pair-team)
+                   :name    (:name pair-team)
+                   :members [{:id       (:id profile-owner)
+                              :name     (:fullname profile-owner)
+                              :email    (:email profile-owner)
+                              :is-admin true}]}]
+                 (:transferable-teams result)))))))
 
 (t/deftest leave-organization-error-organization-owner-cannot-leave
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
@@ -1155,7 +1197,7 @@
                                  :sso-active? true
                                  :set-team-params set-team-params})
                   teams/initialize-user-in-organization (fn [& _] nil)
-                  eml/send! (fn [params] (swap! sent conj params))]
+                  eml/send (fn [_cfg params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
                               :team-id (:id team)
@@ -1286,13 +1328,97 @@
                                  :team-id (:id team)
                                  :sso-active? false})
                   teams/initialize-user-in-organization (fn [& _] nil)
-                  eml/send! (fn [params] (swap! sent conj params))]
+                  eml/send (fn [_cfg params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
                               :team-id (:id team)
                               :organization-id organization-id})]
         (t/is (th/success? out))
         (t/is (empty? @sent))))))
+
+;; The move-teams tests below simulate a second session: Nitrate answers
+;; with the permissions as they are at the moment of the call, as if the
+;; organization owner had changed them after the user opened the modal.
+
+(defn- move-team-nitrate-mock
+  [{:keys [owner-id team-id source-organization perms-by-organization-id calls]}]
+  (fn [_cfg method params]
+    (swap! calls conj method)
+    (case method
+      :get-organization-membership {:is-member true :organization-id (:organization-id params)}
+      :get-organization-members [owner-id]
+      :get-team-organization {:organization source-organization}
+      :get-organization-permissions (get perms-by-organization-id (:organization-id params))
+      :set-team-organization {:id team-id}
+      :get-organization-sso {:active false}
+      :get-organization-summary {:id (:organization-id params) :teams [{:id team-id}]}
+      nil)))
+
+(t/deftest remove-team-from-organization-follows-move-teams
+  (doseq [[i move-teams allowed?] [[401 "always" true]
+                                   [402 "myOrganizations" false]
+                                   [403 "never" false]]]
+    (t/testing move-teams
+      (let [owner           (th/create-profile* i {:is-active true})
+            team            (th/create-team* i {:profile-id (:id owner)})
+            organization-id (uuid/random)
+            calls           (atom [])]
+        (with-redefs [cf/flags (conj cf/flags :admin-console)
+                      nitrate/call (move-team-nitrate-mock
+                                    {:owner-id (:id owner)
+                                     :team-id (:id team)
+                                     :perms-by-organization-id
+                                     {organization-id {:owner-id (uuid/random)
+                                                       :permissions {:move-teams move-teams}}}
+                                     :calls calls})]
+          (let [out (th/command! {::th/type :remove-team-from-organization
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :organization-id organization-id
+                                  :organization-name "Org"})]
+            (if allowed?
+              (t/is (th/success? out))
+              (t/is (= :not-allowed (th/ex-code (:error out)))))
+            (t/is (= allowed?
+                     (contains? (set @calls) :remove-team-from-organization)))))))))
+
+(t/deftest add-team-to-organization-move-follows-move-teams
+  (doseq [[i desc move-teams same-owner? requester-owns-organization? allowed?]
+          [[411 "myOrganizations, same owner" "myOrganizations" true false true]
+           [412 "myOrganizations, other owner" "myOrganizations" false false false]
+           [413 "never" "never" true false false]
+           [414 "never, organization owner" "never" true true false]]]
+    (t/testing desc
+      (let [owner              (th/create-profile* i {:is-active true})
+            team               (th/create-team* i {:profile-id (:id owner)})
+            source-id          (uuid/random)
+            target-id          (uuid/random)
+            source-owner-id    (if requester-owns-organization? (:id owner) (uuid/random))
+            target-owner-id    (if same-owner? source-owner-id (uuid/random))
+            calls              (atom [])]
+        (with-redefs [cf/flags (conj cf/flags :admin-console)
+                      nitrate/call (move-team-nitrate-mock
+                                    {:owner-id (:id owner)
+                                     :team-id (:id team)
+                                     :source-organization {:id source-id}
+                                     :perms-by-organization-id
+                                     {source-id {:owner-id source-owner-id
+                                                 :permissions {:create-teams "any"
+                                                               :move-teams move-teams}}
+                                      target-id {:owner-id target-owner-id
+                                                 :permissions {:create-teams "any"
+                                                               :move-teams "always"}}}
+                                     :calls calls})
+                      teams/initialize-user-in-organization (fn [& _] nil)]
+          (let [out (th/command! {::th/type :add-team-to-organization
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :organization-id target-id})]
+            (if allowed?
+              (t/is (th/success? out))
+              (t/is (= :not-allowed (th/ex-code (:error out)))))
+            (t/is (= allowed?
+                     (contains? (set @calls) :set-team-organization)))))))))
 
 (t/deftest get-nitrate-activation-code-request
   (let [profile    (th/create-profile* 1 {:is-active true})
@@ -1318,8 +1444,11 @@
                  body))
 
         (let [[_ method-fn] (get-in th/*system* [:app.rpc/methods :get-nitrate-activation-code-request])
-              result        (method-fn {::rpc/profile-id (:id profile)
-                                        ::rpc/request-at now})
+              request       (assoc (th/make-dummy-request) :params {})
+              params        (-> {::rpc/profile-id (:id profile)
+                                 ::rpc/request-at now}
+                                (with-meta {:app.http/request request}))
+              result        (method-fn params)
               headers       (::http/headers (meta result))]
           (t/is (rph/wrapped? result))
           (t/is (= "text/plain" (get headers "content-type")))

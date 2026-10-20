@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.settings.import-shortcuts-diff-modal
   (:require-macros [app.main.style :as stl])
@@ -106,11 +106,11 @@
           [:thead
            [:tr {:class (stl/css :shortcuts-list-header)}
             [:th {:class (stl/css :shortcut-header-name)}
-             (tr "restore-shortcuts.acction")]
+             (tr "restore-shortcuts.action")]
             [:th {:class (stl/css :shortcut-header-command)}
              (tr "labels.current")]
             [:th {:class (stl/css :shortcut-header-command)}
-             (tr "labels.import")]]]
+             (tr "import-shortcuts.imported")]]]
           [:tbody {:class (stl/css :shortcuts-list-body)}
            (let [last-ctx* (volatile! nil)]
              (for [entry diff-entries]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.layers
   (:require-macros [app.main.style :as stl])
@@ -19,6 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
@@ -26,6 +27,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item*]]
+   [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
@@ -259,18 +261,30 @@
    [:span {:class (stl/css :radio-text)}
     text]])
 
+(def ^:private default-search-state
+  {:show-search false
+   :find-replace-mode? false
+   :search-scope :layers
+   :show-menu false
+   :search-text ""
+   :replace-text ""
+   :filters #{}
+   :num-items 100
+   :current-match-idx 0})
+
+;; Per-file, session-scoped (in-memory only) so an open search and its
+;; filters survive switching between the sidebar tabs, which unmounts the
+;; layers panel, without leaking across files or persisting across reloads.
+(defonce ^:private session-search*
+  (atom {}))
+
 (defn use-search
   [page objects]
-  (let [state*                (mf/use-state
-                               #(do {:show-search false
-                                     :find-replace-mode? false
-                                     :search-scope :layers
-                                     :show-menu false
-                                     :search-text ""
-                                     :replace-text ""
-                                     :filters #{}
-                                     :num-items 100
-                                     :current-match-idx 0}))
+  (let [file-id               (mf/use-ctx ctx/current-file-id)
+        state*                (mf/use-state
+                               #(-> default-search-state
+                                    (merge (get @session-search* file-id))
+                                    (assoc :show-menu false)))
         layers-search         (mf/deref ref:layers-search)
         state                 (deref state*)
         current-filters       (:filters state)
@@ -283,6 +297,7 @@
         search-scope          (:search-scope state)
         current-match-idx     (:current-match-idx state)
         search-input-ref      (mf/use-ref nil)
+        can-edit?             (:can-edit (deref refs/permissions))
 
         clear-search-text
         (mf/use-fn
@@ -520,6 +535,9 @@
           (events/unlistenByKey key1)
           (events/unlistenByKey key2))))
 
+    (mf/with-effect [file-id state]
+      (swap! session-search* assoc file-id state))
+
     (mf/with-effect [layers-search]
       (if-let [{:keys [open? find-replace-mode? scope]} layers-search]
         (when open?
@@ -583,11 +601,12 @@
                               :aria-label (tr "workspace.sidebar.layers.filter")
                               :on-click on-toggle-filters-click
                               :icon i/filter}]]
-           [:> icon-button* {:variant "ghost"
-                             :aria-pressed find-replace-mode?
-                             :aria-label (tr "workspace.sidebar.layers.search-and-replace")
-                             :on-click toggle-mode
-                             :icon i/menu}]
+           (when can-edit?
+             [:> icon-button* {:variant "ghost"
+                               :aria-pressed find-replace-mode?
+                               :aria-label (tr "workspace.sidebar.layers.search-and-replace")
+                               :on-click toggle-mode
+                               :icon i/menu}])
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click toggle-search
@@ -650,7 +669,10 @@
                             :text      (tr "workspace.sidebar.layers.texts")
                             :image     (tr "workspace.sidebar.layers.images")
                             :shape     (tr "workspace.sidebar.layers.shapes")
-                            (tr fkey))
+                            ;; Unreachable from the UI (the menu only emits the
+                            ;; above); fall back to the raw name, which is what
+                            ;; tr would render for an unknown key anyway.
+                            fname)
                     filter-icon (usi/get-shape-icon-by-type fkey)]
 
                 [:button {:class (stl/css :layer-filter)
@@ -797,7 +819,7 @@
 
 (mf/defc layers-toolbox*
   {::mf/wrap [mf/memo]}
-  [{:keys [size-parent]}]
+  [{:keys [size-parent scroll-store]}]
   (let [page           (mf/deref refs/workspace-page)
         page-id        (get page :id)
 
@@ -809,9 +831,13 @@
 
         observer-var   (mf/use-var nil)
         lazy-load-ref  (mf/use-ref nil)
+        tree-ref       (mf/use-ref nil)
+        search-ref     (mf/use-ref nil)
 
         [filtered-objects show-more filter-component]
         (use-search page objects)
+
+        searching?     (some? filtered-objects)
 
         intersection-callback
         (fn [entries]
@@ -832,9 +858,36 @@
               (do (.disconnect ^js @observer-var)
                   (reset! observer-var nil)))))
 
+        ;; The search-results container reuses the lazy-load observer root
+        ;; and additionally tracks its node for scroll restore.
+        on-render-search-container
+        (fn [element]
+          (mf/set-ref-val! search-ref element)
+          (on-render-container element))
+
+        on-scroll-with-save
+        (mf/use-fn
+         (mf/deps page-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:layers page-id] event)
+           (on-scroll event)))
+
+        on-search-scroll
+        (mf/use-fn
+         (mf/deps page-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:layers-search page-id] event)))
+
         toogle-focus-mode
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
+
+    (sc/use-restore-scroll scroll-store :layers page-id tree-ref (not searching?))
+    (sc/use-restore-scroll scroll-store :layers-search page-id search-ref searching?)
+
+    (mf/with-effect [page-id searching?]
+      (when-not ^boolean searching?
+        (sc/forget-scroll! scroll-store [:layers-search page-id])))
 
     [:div {:id "layers"
            :class (stl/css :layers)
@@ -861,13 +914,15 @@
        [:*
         [:div {:class (stl/css :tool-window-content)
                :data-scroll-container true
-               :ref on-render-container}
+               :on-scroll on-search-scroll
+               :ref on-render-search-container}
          [:> filters-tree* {:objects filtered-objects
                             :key (dm/str page-id)
                             :parent-size size-parent}]
          [:div {:ref lazy-load-ref}]]
 
-        [:div {:on-scroll on-scroll
+        [:div {:on-scroll on-scroll-with-save
+               :ref tree-ref
                :class (stl/css :tool-window-content)
                :data-scroll-container true
                :style {:display (when (some? filtered-objects) "none")}}
@@ -876,7 +931,8 @@
                                    :is-filtered true
                                    :parent-size size-parent}]]]
 
-       [:div {:on-scroll on-scroll
+       [:div {:on-scroll on-scroll-with-save
+              :ref tree-ref
               :class (stl/css :tool-window-content)
               :data-scroll-container true
               :style {:display (when (some? filtered-objects) "none")}}

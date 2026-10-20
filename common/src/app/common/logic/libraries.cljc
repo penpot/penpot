@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.logic.libraries
   #?(:cljs (:require-macros [app.common.logic.libraries :refer [shape-log container-log]]))
@@ -55,6 +55,10 @@
        (remove ctk/swap-keep-attrs)
        ;; We don't do automatic update of the `layout-grid-cells` property.
        (remove #(= :layout-grid-cells %))))
+
+;; Flex-child layout attrs synced between main and copy (interactions are only kept on swap)
+(def ^:private flex-child-attrs
+  (disj ctk/swap-keep-attrs :interactions))
 
 (defn enabled-shape?
   [id container]
@@ -2402,7 +2406,7 @@
              (fn [child-copy]
                (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
                  (-> child-copy
-                     (propagate-attrs child-main ctk/swap-keep-attrs omit-touched?))))
+                     (propagate-attrs child-main flex-child-attrs omit-touched?))))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
 
@@ -2432,7 +2436,7 @@
              (fn [child-main]
                (let [child-copy (ctf/get-shape-in-copy copy-container child-main shape-copy)]
                  (-> child-main
-                     (propagate-attrs child-copy ctk/swap-keep-attrs omit-touched?))))
+                     (propagate-attrs child-copy flex-child-attrs omit-touched?))))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
 
@@ -2783,7 +2787,7 @@
   (let [shape-inst (ctn/get-shape container id)
         objects    (:objects container)
         parent     (get objects (:parent-id shape-inst))
-        head       (ctn/get-component-shape container parent)
+        head       (ctn/get-component-shape objects parent)
         changes
         (-> changes
             (pcb/with-container container)
@@ -2802,6 +2806,10 @@
             (pcb/with-objects objects)
             (generate-sync-shape-direct file-full libraries container id true))]
 
+    ;; If the shape has been swapped, the reset also have to undo the swap. As the
+    ;; shape has been reset and it's not touched now, by the sync above, if we
+    ;; do another reset of the parent, the shape will be reset as it is in the
+    ;; near main component.
     (cond-> changes
       (some? swap-slot)
       (generate-sync-head file-full libraries container id true))))

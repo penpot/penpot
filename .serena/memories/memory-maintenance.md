@@ -21,6 +21,7 @@
 Dense agent notes, not prose docs. Prefer invariants, terse bullets.
 Avoid obvious context, rationale, and examples unless they prevent likely mistakes.
 Keep guidance durable and generalizable, not task-local.
+No manual line wrapping: one line per bullet or paragraph, however long. Memories render adapting to the viewport; hard-wrapped lines degrade rendering and diffs.
 
 ## Add/update threshold
 

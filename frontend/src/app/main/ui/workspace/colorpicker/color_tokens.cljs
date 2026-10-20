@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.colorpicker.color-tokens
   (:require-macros [app.main.style :as stl])
@@ -139,10 +139,10 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps selected-shapes)
+         (mf/deps selected-shapes color-origin)
          (fn [event token]
            (dom/stop-propagation event)
-           (when (seq selected-shapes)
+           (when (or (= color-origin :canvas) (seq selected-shapes))
              (on-token-change event token))))
 
         create-token-on-set
@@ -310,6 +310,7 @@
                    :variant "comfortable"
                    :class (stl/css :search-input)
                    :default-value filter-term
+                   :auto-focus true
                    :on-change on-filter-tokens}]
        (if (seq sorted-tokens)
          [:div {:class (stl/css :color-tokens-inputs)}

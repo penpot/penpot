@@ -1,6 +1,7 @@
 ---
 name: review-code
 description: Code review flow — review a diff, PR, or code change, delegating the review to a subagent that follows the code-review-criteria skill. Use it when the user asks to review code or a PR, in any phrasing.
+slash: true
 ---
 
 # Review Code
@@ -66,8 +67,26 @@ agent again.
 6. Skip generated files, lockfile-only changes, and unrelated modifications
    unless they introduce security risks.
 
-## User context
+## Posting as a GitHub comment
 
-Extra context in the user's invocation (the message that triggered this skill)
-plays the role command arguments play elsewhere: for example, a PR number or
-URL, a commit range, specific files, or a different agent to run the review.
+Only post the review as a comment when the user asks for it explicitly. Keep
+it in the session otherwise.
+
+When posting: PR comments go in English, with this minimal structure:
+
+1. **Intro line** — one sentence: what was found and the overall tone. No
+   greetings.
+2. **`## Main issues`** — one subsection per required finding: what breaks,
+   the failure circumstances, and the minimal fix (code snippet when useful).
+   A missing test belongs here, not under minor suggestions.
+3. **`## Minor suggestions`** — one bullet per minor finding or suggestion:
+   file/function, problem, concrete remedy.
+4. **Closing** — optional and short. Cut it when it adds nothing.
+
+Reference every finding by its ID (`R1`, `M1`, `S1`, … from
+`code-review-criteria`) so follow-up replies can point to findings
+unambiguously.
+
+## User input, overrides and additional context
+
+$ARGUMENTS

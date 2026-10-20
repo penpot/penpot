@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.shapes.filters
   (:require
@@ -116,9 +116,9 @@
              :result filter-id}])
 
 (mf/defc filter-entry* [{:keys [entry]}]
-  (let [props #js {:filter-id (:id entry)
-                   :filter-in (:filter-in entry)
-                   :params (:params entry)}]
+  (let [props (mf/props {:filter-id (:id entry)
+                         :filter-in (:filter-in entry)
+                         :params (:params entry)})]
     (case (:type entry)
       :drop-shadow [:> drop-shadow-filter* props]
       :inner-shadow [:> inner-shadow-filter* props]

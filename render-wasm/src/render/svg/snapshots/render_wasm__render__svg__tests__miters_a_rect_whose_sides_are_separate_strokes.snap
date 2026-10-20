@@ -1,0 +1,31 @@
+---
+source: src/render/svg/tests.rs
+expression: with_stable_clip_ids(&svg)
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="220" height="140" viewBox="0 0 220 140">
+	<clipPath id="clip0">
+		<path d="M0 140L0 0L5 10L5 125L0 140Z"/>
+	</clipPath>
+	<g clip-path="url(#clip0)">
+		<path fill="#F59E0B" d="M0 0L220 0L220 140L0 140L0 0ZM5 10L200 10L200 125L5 125L5 10Z" fill-rule="evenodd"/>
+	</g>
+	<clipPath id="clip1">
+		<path d="M220 140L0 140L5 125L200 125L220 140Z"/>
+	</clipPath>
+	<g clip-path="url(#clip1)">
+		<path fill="#2563EB" d="M0 0L220 0L220 140L0 140L0 0ZM5 10L200 10L200 125L5 125L5 10Z" fill-rule="evenodd"/>
+	</g>
+	<clipPath id="clip2">
+		<path d="M220 0L220 140L200 125L200 10L220 0Z"/>
+	</clipPath>
+	<g clip-path="url(#clip2)">
+		<path fill="#059669" d="M0 0L220 0L220 140L0 140L0 0ZM5 10L200 10L200 125L5 125L5 10Z" fill-rule="evenodd"/>
+	</g>
+	<clipPath id="clip3">
+		<path d="M0 0L220 0L200 10L5 10L0 0Z"/>
+	</clipPath>
+	<g clip-path="url(#clip3)">
+		<path fill="#E11D48" d="M0 0L220 0L220 140L0 140L0 0ZM5 10L200 10L200 125L5 125L5 10Z" fill-rule="evenodd"/>
+	</g>
+</svg>

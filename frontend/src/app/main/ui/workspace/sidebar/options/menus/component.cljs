@@ -2,14 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
@@ -199,31 +198,35 @@
            (if (or ^boolean editing?
                    ^boolean creating?)
              [:*
-              [:div {:title (if ^boolean creating?
-                              (tr "labels.create")
-                              (tr "labels.save"))
-                     :on-click on-save
-                     :class (stl/css :annotation-title-icon-action)}
-               [:> icon* {:icon-id i/tick
-                          :class (stl/css-case :annotation-title-icon-ok true
-                                               :disabled invalid-text?)}]]
-              [:div {:class (stl/css :annotation-title-icon-action)
-                     :title (tr "labels.discard")
-                     :on-click on-discard}
-               [:> icon* {:icon-id i/close
-                          :class (stl/css :annotation-title-icon-nok)}]]]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (if ^boolean creating?
+                                              (tr "labels.create")
+                                              (tr "labels.save"))
+                                :on-click on-save
+                                :disabled invalid-text?
+                                :tooltip-class (stl/css :annotation-title-icon-action)
+                                :tooltip-placement "top-left"
+                                :icon i/tick}]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "labels.discard")
+                                :on-click on-discard
+                                :tooltip-class (stl/css :annotation-title-icon-action)
+                                :tooltip-placement "top-left"
+                                :icon i/close}]]
 
              [:*
-              [:div {:class (stl/css :annotation-title-icon-action)
-                     :title (tr "labels.edit")
-                     :on-click on-edit}
-               [:> icon* {:icon-id i/curve
-                          :class (stl/css :annotation-title-icon-ok)}]]
-              [:div {:class (stl/css :annotation-title-icon-action)
-                     :title (tr "labels.delete")
-                     :on-click on-delete-annotation}
-               [:> icon* {:icon-id i/delete
-                          :class (stl/css :annotation-title-icon-nok)}]]]))]]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "labels.edit")
+                                :on-click on-edit
+                                :tooltip-class (stl/css :annotation-title-icon-action)
+                                :tooltip-placement "top-left"
+                                :icon i/curve}]
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "labels.delete")
+                                :on-click on-delete-annotation
+                                :tooltip-class (stl/css :annotation-title-icon-action)
+                                :tooltip-placement "top-left"
+                                :icon i/delete}]]))]]
 
        [:div {:class (stl/css-case :annotation-body-hidden (not expanded?))}
         [:div {:class (stl/css :annotation-body)}
@@ -290,14 +293,18 @@
        get-components-with-duplicated-variant-props-and-values
        (map :main-instance-id)))
 
+(defn- get-variant-option
+  [val]
+  {:id val
+   :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)})
+
 (defn- get-variant-options
   "Get variant options for a given property name"
   [prop-name prop-vals]
   (->> (filter #(= (:name %) prop-name) prop-vals)
        first
        :value
-       (mapv (fn [val] {:id val
-                        :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
+       (mapv get-variant-option)))
 
 (mf/defc component-variant-property*
   [{:keys [pos prop options on-prop-name-blur on-prop-value-change on-reorder]}]
@@ -386,7 +393,7 @@
         (mf/use-fn
          (mf/deps component-ids)
          (fn [pos value]
-           (let [value (d/nilv (str/trim value) "")]
+           (let [value (ctv/normalize-property-text (d/nilv value ""))]
              (doseq [id component-ids]
                (st/emit!
                 (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:combo-design-tab"})
@@ -397,11 +404,11 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [event]
-           (let [value (str/trim (dom/get-target-val event))
+           (let [value (ctv/normalize-property-text (dom/get-target-val event))
                  pos   (-> (dom/get-current-target event)
                            (dom/get-data "position")
                            int)]
-             (when (seq value)
+             (when (ctv/valid-property-name? value)
                (st/emit!
                 (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-variant"}))))))
 
@@ -527,8 +534,12 @@
       (for [[pos prop] (map-indexed vector props-first)]
         (let [mixed-value? (not-every? #(= (:value prop) (:value (get % pos))) properties)
               base-options (get options-by-name (:name prop))
+              no-options?  (empty? base-options)
               boolean-pair (ctv/find-boolean-pair (mapv :id base-options))
               options      (cond-> base-options
+                             no-options?
+                             (conj (get-variant-option (:value prop)))
+
                              mixed-value?
                              (conj {:id mixed-label :label mixed-label :dimmed true}))]
 
@@ -549,6 +560,7 @@
               [:> select* {:default-selected (if mixed-value? mixed-label (:value prop))
                            :options options
                            :empty-to-end true
+                           :disabled no-options?
                            :on-change (partial switch-component pos)
                            :key (str (:value prop) "-" key)}]])]))]
 
@@ -734,17 +746,6 @@
                               (->> (concat groups components)
                                    (sort-by :name)))
 
-        find-parent-components
-        (mf/use-fn
-         (mf/deps objects)
-         (fn [shape]
-           (->> (cfh/get-parents objects (:id shape))
-                (map :component-id)
-                (remove nil?))))
-
-        ;; Get the ids of the components that are parents of the shapes, to avoid loops
-        parent-components (mapcat find-parent-components shapes)
-
         libraries-options  (map (fn [library] {:value (:id library)
                                                :label (:name library)})
                                 (vals libraries))
@@ -834,10 +835,9 @@
             (let [data       (dm/get-in libraries [current-library-id :data])
                   container  (ctf/get-component-page data item)
                   root-shape (ctf/get-component-root data item)
-                  components (->> (cfh/get-children-with-self (:objects container) (:id root-shape))
-                                  (keep :component-id)
-                                  set)
-                  loop?      (some #(contains? components %) parent-components)]
+                  loop?      (some #(dwl/component-swap-nesting-loop?
+                                     objects % data (:id item))
+                                   shapes)]
               [:> component-swap-item* {:key (dm/str (:id item))
                                         :item item
                                         :loop loop?
@@ -900,10 +900,14 @@
 
      (when menu-entries?
        [:div {:class (stl/css :pill-actions)}
-        [:button {:class (stl/css-case :pill-actions-btn true
-                                       :selected menu-open?)
-                  :on-click on-menu-click}
-         [:> icon* {:icon-id i/menu}]]
+        [:> icon-button* {:variant "secondary"
+                          :class (stl/css :pill-actions-btn)
+                          :tooltip-class (stl/css :pill-actions-tooltip)
+                          :aria-label (tr "labels.options")
+                          :aria-pressed menu-open?
+                          :tooltip-placement "top-left"
+                          :on-click on-menu-click
+                          :icon i/menu}]
 
         [:& dropdown {:show menu-open?
                       :on-close on-menu-close}
@@ -914,7 +918,7 @@
               [:li {:key title
                     :class (stl/css :pill-actions-dropdown-item)
                     :on-click (partial do-action action)}
-               [:span title]]))]]])]))
+               [:span {:class (stl/css :pill-actions-dropdown-item-label)} title]]))]]])]))
 
 (mf/defc component-menu*
   [{:keys [shapes is-swap-opened]}]
@@ -1043,12 +1047,14 @@
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.options.component.variants-help-modal.title")
                                :on-click on-click-variant-title-help
+                               :tooltip-placement "top-left"
                                :icon i/help}])
 
            (when main-instance?
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.shape.menu.add-variant")
                                :on-click (if is-variant? create-variant transform-into-variant)
+                               :tooltip-placement "top-left"
                                :icon i/variant}])])]
 
        (when open?
@@ -1071,6 +1077,7 @@
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.shape.menu.add-variant-property")
                                :on-click add-new-property
+                               :tooltip-placement "top-left"
                                :icon i/add}])]
 
           (when is-swap-opened
@@ -1155,7 +1162,8 @@
                                       (tr "workspace.shape.menu.remove-variant-property.last-property")
                                       (tr "workspace.shape.menu.remove-variant-property"))
                         :on-click on-remove
-                        :disabled is-remove-disabled}]]]))
+                        :disabled is-remove-disabled
+                        :tooltip-placement "top-left"}]]]))
 
 (mf/defc component-variant-main*
   [{:keys [shapes]}]
@@ -1234,11 +1242,11 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [event]
-           (let [value (dom/get-target-val event)
+           (let [value (ctv/normalize-property-text (dom/get-target-val event))
                  pos   (-> (dom/get-current-target event)
                            (dom/get-data "position")
                            int)]
-             (when (seq value)
+             (when (ctv/valid-property-name? value)
                (st/emit!
                 (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-component"}))))))
 
@@ -1249,7 +1257,7 @@
            (let [pos (-> (dom/get-current-target event)
                          (dom/get-data "position")
                          int)]
-             (when (> (count properties) 1)
+             (when (ctv/can-remove-property? properties)
                (st/emit!
                 (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:button-design-tab"})
                 (dwv/remove-property variant-id pos))))))
@@ -1287,10 +1295,12 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.component.variants-help-modal.title")
                            :on-click on-click-variant-title-help
+                           :tooltip-placement "top-left"
                            :icon i/help}]
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.shape.menu.add-variant")
                            :on-click (partial create-variant "workspace:button-design-tab-component")
+                           :tooltip-placement "top-left"
                            :icon i/variant}]]]
 
        (when open?
@@ -1305,6 +1315,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.shape.menu.add-variant-property")
                              :on-click (partial add-new-property "workspace:button-design-tab-component")
+                             :tooltip-placement "top-left"
                              :icon i/add}]]
 
           (when-not multi?

@@ -1,16 +1,37 @@
 #!/usr/bin/env bash
 
-export VERSION_TAG=${VERSION:-develop};
 
-if [ "$NODE_ENV" = "production" ];  then
-    export BUILD_MODE="release";
+export RUST_VERSION=1.99.0
+export VERSION_TAG="${VERSION_TAG:-${VERSION:-develop}}";
+export RENDER_TARGET="${RENDER_TARGET:-${1:-frontend}}";
+
+case "$RENDER_TARGET" in
+    frontend|export) ;;
+    *)
+        echo "ERROR: unknown render target '$RENDER_TARGET' (expected 'frontend' or 'export')" >&2;
+        exit 1;
+        ;;
+esac
+
+if [ "${NODE_ENV:-}" = "production" ]; then
+    export BUILD_MODE="${BUILD_MODE:-release}";
 else
-    export BUILD_MODE=${1:-debug};
+    export BUILD_MODE=${BUILD_MODE:-debug};
 fi
 
 export BUILD_NAME="${BUILD_NAME:-render-wasm}"
-export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.93.1/skia-binaries-319323662b1685a112f5-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
+export CARGO_BUILD_TARGET="${CARGO_BUILD_TARGET:-wasm32-unknown-emscripten}";
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-target/$RENDER_TARGET}";
+# Skia prebuild with wasm SIMD and Wasm EH/SjLj (-ljmp-wasm). Must match
+# EMCC_CFLAGS below. Override with SKIA_BINARIES_URL when needed.
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp-pdf-simd-ljmp-wasm.tar.gz"}
+
+# Emscripten only: rustc wasm SIMD (native `./test` unchanged). Wasm
+# setjmp/longjmp comes from EMCC_CFLAGS (-sSUPPORT_LONGJMP=wasm), which emcc
+# appends on compile and link.
+if [ "$CARGO_BUILD_TARGET" = "wasm32-unknown-emscripten" ]; then
+    export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=+simd128"
+fi
 
 # 256 MB of initial heap to perform less
 # initial calls to memory grow.
@@ -29,8 +50,14 @@ export EM_MEMORY_GROWTH_GEOMETRIC_STEP="0.8"
 # Default: dlmalloc
 export EM_MALLOC="dlmalloc"
 
+# -msimd128: wasm SIMD in the linked module (Skia -simd prebuild must match).
+# -fwasm-exceptions / SUPPORT_LONGJMP=wasm: native Wasm EH and setjmp/longjmp
+# (Skia -ljmp-wasm prebuild must match).
 export EMCC_CFLAGS="--no-entry \
     --js-library src/js/wapi.js \
+    -msimd128 \
+    -fwasm-exceptions \
+    -sSUPPORT_LONGJMP=wasm \
     -sMALLOC=$EM_MALLOC \
     -sINVOKE_RUN=0 \
     -sALLOW_TABLE_GROWTH=0 \
@@ -43,59 +70,167 @@ export EMCC_CFLAGS="--no-entry \
     -sEXPORTED_RUNTIME_METHODS=GL,UTF8ToString,stringToUTF8,HEAPU8,HEAP32,HEAPU32,HEAPF32 \
     -sENVIRONMENT=web,worker,node \
     -sMODULARIZE=1 \
-    -sDISABLE_EXCEPTION_CATCHING=1 \
     -sFILESYSTEM=0 \
     -sEXPORT_ES6=1";
 
 export EM_CACHE="/tmp/emsdk_cache";
 
-export CARGO_PARAMS="${@:2}";
+CARGO_ARGS=("${@:2}");
+_CARGO_PROFILE_SET=0;
+export CARGO_PROFILE_DIR="debug";
 
-if [ "$BUILD_MODE" = "release" ]; then
-    export CARGO_PARAMS="--release $CARGO_PARAMS"
-    export EMCC_CFLAGS="-O3 -sASSERTIONS=0 $EMCC_CFLAGS"
-else
-    # TODO: Extra parameters that could be good to look into:
-    #        -gseparate-dwarf
-    #        -gsplit-dwarf
-    #        -gsource-map
-    export EMCC_CFLAGS="-g -sASSERTIONS=1 -sVERBOSE=1 $EMCC_CFLAGS"
+for (( _cargo_index=0; _cargo_index < ${#CARGO_ARGS[@]}; _cargo_index++ )); do
+    case "${CARGO_ARGS[_cargo_index]}" in
+        --release|-r)
+            _CARGO_PROFILE_SET=1;
+            export CARGO_PROFILE_DIR="release";
+            ;;
+        --profile)
+            _CARGO_PROFILE_SET=1;
+            export CARGO_PROFILE_DIR="${CARGO_ARGS[_cargo_index + 1]}";
+            ;;
+        --profile=*)
+            _CARGO_PROFILE_SET=1;
+            export CARGO_PROFILE_DIR="${CARGO_ARGS[_cargo_index]#--profile=}";
+            ;;
+        --target-dir)
+            export CARGO_TARGET_DIR="${CARGO_ARGS[_cargo_index + 1]:-$CARGO_TARGET_DIR}";
+            ;;
+        --target-dir=*)
+            export CARGO_TARGET_DIR="${CARGO_ARGS[_cargo_index]#--target-dir=}";
+            ;;
+    esac
+done
+
+if [ "$_CARGO_PROFILE_SET" = "0" ]; then
+    if [ "$BUILD_MODE" = "profiling" ]; then
+        CARGO_ARGS=(--profile profiling "${CARGO_ARGS[@]}");
+        export CARGO_PROFILE_DIR="profiling";
+    elif [ "$BUILD_MODE" = "release" ]; then
+        case "$RENDER_TARGET" in
+            frontend)
+                CARGO_ARGS=(--release "${CARGO_ARGS[@]}");
+                export CARGO_PROFILE_DIR="release";
+                ;;
+            export)
+                CARGO_ARGS=(--profile size "${CARGO_ARGS[@]}");
+                export CARGO_PROFILE_DIR="size";
+                ;;
+        esac
+    fi
 fi
+
+case "$CARGO_PROFILE_DIR" in
+    profiling)
+        # Keep the wasm name section so profilers can resolve Rust frames.
+        export EMCC_CFLAGS="-O3 -sASSERTIONS=0 --profiling-funcs $EMCC_CFLAGS";
+        ;;
+    release)
+        export EMCC_CFLAGS="-O3 -sASSERTIONS=0 $EMCC_CFLAGS";
+        ;;
+    size)
+        export EMCC_CFLAGS="-Oz -sASSERTIONS=0 $EMCC_CFLAGS";
+        ;;
+    *)
+        # TODO: Extra parameters that could be good to look into:
+        #        -gseparate-dwarf
+        #        -gsplit-dwarf
+        #        -gsource-map
+        export EMCC_CFLAGS="-g -sASSERTIONS=1 $EMCC_CFLAGS";
+        ;;
+esac
+
+if [ "$CARGO_PROFILE_DIR" = "dev" ]; then
+    export CARGO_PROFILE_DIR="debug";
+fi
+
+export RENDER_WASM_BUILD_INFO="${RENDER_WASM_BUILD_INFO:-$CARGO_TARGET_DIR/build-info.json}";
+
+export FRONTEND_DEST="${FRONTEND_DEST:-../frontend/resources/public/js}";
+export EXPORT_DEST="${EXPORT_DEST:-../exporter/resources/wasm}";
+
+export FRONTEND_SHARED_DEST="${FRONTEND_SHARED_DEST:-../frontend/src/app/render_wasm/api/shared.js}";
+export EXPORT_SHARED_DEST="${EXPORT_SHARED_DEST:-../exporter/src/app/wasm/shared.js}";
 
 function clean {
     cargo clean;
 }
 
+function setup_rust {
+    # Setup default rust version
+    rustup default $RUST_VERSION
+    rustup target add wasm32-unknown-emscripten
+    rustup component add clippy rustfmt --toolchain $RUST_VERSION
+}
+
 function setup {
+    setup_rust
     pnpm install;
 }
 
 function build {
-    cargo build $CARGO_PARAMS;
+    (
+        set -o pipefail;
+        cargo build --message-format=json-render-diagnostics "${CARGO_ARGS[@]}" \
+            | node ./scripts/cargo-build.cjs "$RENDER_WASM_BUILD_INFO" "$PWD/Cargo.toml";
+    )
 }
 
 function copy_artifacts {
-    DEST=$1;
+    local DEST="$1";
+    local SRC;
+    SRC=$(jq -r '.artifact_dir' -- "$RENDER_WASM_BUILD_INFO")
+    mkdir -p -- "$DEST";
 
-    mkdir -p $DEST;
-
-    cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js $DEST/$BUILD_NAME.js;
-    cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm $DEST/$BUILD_NAME.wasm;
-    if [ -f target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm.map ]; then
-        cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm.map $DEST/$BUILD_NAME.wasm.map;
+    cp -- "$SRC/render_wasm.js" "$DEST/$BUILD_NAME.js";
+    cp -- "$SRC/render_wasm.wasm" "$DEST/$BUILD_NAME.wasm";
+    if [ -f "$SRC/render_wasm.wasm.map" ]; then
+        cp -- "$SRC/render_wasm.wasm.map" "$DEST/$BUILD_NAME.wasm.map";
     fi
 
-    sed -i "s/render_wasm.wasm/$BUILD_NAME.wasm?version=$VERSION_TAG/g" $DEST/$BUILD_NAME.js;
+    # Rewrite the generated JavaScript so it loads the renamed Wasm file with
+    # a version query, such as render-wasm.wasm?version=develop.
+    local WASM_URL="$BUILD_NAME.wasm?version=$VERSION_TAG";
+    WASM_URL=${WASM_URL//\\/\\\\};
+    WASM_URL=${WASM_URL//&/\\&};
+    WASM_URL=${WASM_URL//|/\\|};
+    sed -i "s|render_wasm\\.wasm|$WASM_URL|g" "$DEST/$BUILD_NAME.js";
 
-    pnpm exec esbuild target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js \
-        --log-level=error \
-        --outfile=$DEST/worker/render.js \
-        --platform=neutral \
-        --format=iife \
-        --global-name=WasmModule;
+    # The worker bundle is a browser concern; the exporter imports the ESM
+    # module directly under Node.
+    if [ "$RENDER_TARGET" = "frontend" ]; then
+        pnpm exec esbuild "$SRC/render_wasm.js" \
+            --log-level=error \
+            "--outfile=$DEST/worker/render.js" \
+            --platform=neutral \
+            --format=iife \
+            --global-name=WasmModule;
+    fi
 }
 
 function copy_shared_artifact {
-    SHARED_FILE=$(find target/wasm32-unknown-emscripten -name render_wasm_shared.js | head -n 1);
-    cp $SHARED_FILE ../frontend/src/app/render_wasm/api/shared.js;
+    local DEST="$1";
+    local SHARED_FILE;
+    SHARED_FILE=$(jq -r '.shared_file' -- "$RENDER_WASM_BUILD_INFO")
+    mkdir -p -- "$(dirname -- "$DEST")";
+    cp -- "$SHARED_FILE" "$DEST";
+}
+
+# Copies whatever the current RENDER_TARGET produced to where that target's
+# consumer reads it.
+function copy_target_artifacts {
+    case "$RENDER_TARGET" in
+        frontend)
+            copy_artifacts "$FRONTEND_DEST";
+            copy_shared_artifact "$FRONTEND_SHARED_DEST";
+            ;;
+        export)
+            copy_artifacts "$EXPORT_DEST";
+            copy_shared_artifact "$EXPORT_SHARED_DEST";
+            ;;
+    esac
+
+    if [ -n "${RENDER_WASM_SHARED_ARTIFACT:-}" ]; then
+        copy_shared_artifact "$RENDER_WASM_SHARED_ARTIFACT";
+    fi
 }

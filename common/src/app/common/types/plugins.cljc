@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.plugins
   (:require
@@ -27,21 +27,53 @@
     schema:string
     schema:string]])
 
+(def valid-permissions
+  "Set of valid plugin permissions that can be granted to plugins."
+  #{"content:read" "content:write"
+    "library:read" "library:write"
+    "comment:read" "comment:write"
+    "clipboard:read" "clipboard:write"
+    "user:read"
+    "allow:downloads"
+    "allow:localstorage"
+    "allow:global"
+    "manage:projects"
+    "manage:teams"
+    "manage:delete"})
+
+(def schema:permissions
+  "Schema for plugin permissions - a set of valid permission strings."
+  [:set {:gen/max 15} (into [:enum] (sort valid-permissions))])
+
+(def max-plugins
+  "Maximum number of plugins a profile can hold."
+  50)
+
+(def registry-entry-max-lengths
+  "Maximum length (in chars) of the bounded registry entry strings.
+  `:code` and `:icon` hold manifest paths, not content."
+  {:name 500
+   :description 4096
+   :host 500
+   :code 500
+   :icon 500})
+
 (def schema:registry-entry
   [:map
    [:plugin-id :string]
    [:version {:optional true} :int]
-   [:name :string]
-   [:description {:optional true} :string]
-   [:host :string]
-   [:code :string]
-   [:icon {:optional true} :string]
-   [:permissions [:set :string]]])
+   [:scope {:optional true} [:enum "workspace" "global"]]
+   [:name [:string {:max (:name registry-entry-max-lengths)}]]
+   [:description {:optional true} [:string {:max (:description registry-entry-max-lengths)}]]
+   [:host [:string {:max (:host registry-entry-max-lengths)}]]
+   [:code [:string {:max (:code registry-entry-max-lengths)}]]
+   [:icon {:optional true} [:string {:max (:icon registry-entry-max-lengths)}]]
+   [:permissions schema:permissions]])
 
 (def schema:plugin-registry
   [:map
-   [:ids [:vector :string]]
+   [:ids [:vector {:max max-plugins} :string]]
    [:data
-    [:map-of {:gen/max 5}
+    [:map-of {:gen/max 5 :max max-plugins}
      :string
      schema:registry-entry]]])

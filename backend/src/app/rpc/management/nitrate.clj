@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.management.nitrate
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
@@ -25,6 +25,7 @@
    [app.email :as eml]
    [app.http :as-alias http]
    [app.http.session :as session]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
@@ -42,7 +43,6 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.ssrf :as ssrf]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 
@@ -78,6 +78,13 @@
       AND t.is_default IS FALSE
       AND t.deleted_at IS NULL;")
 
+(def ^:private sql:get-member-teams
+  "SELECT t.id, t.name, t.is_default
+     FROM team AS t
+     JOIN team_profile_rel AS tpr ON t.id = tpr.team_id
+    WHERE tpr.profile_id = ?
+      AND t.deleted_at IS NULL;")
+
 ;; ---- API: get-penpot-version
 
 (def ^:private schema:get-penpot-version-result
@@ -107,6 +114,13 @@
 (def ^:private schema:get-teams-result
   [:vector schema:team])
 
+(def ^:private schema:get-member-teams-result
+  [:vector
+   [:map
+    [:id ::sm/uuid]
+    [:name ::sm/text]
+    [:is-default ::sm/boolean]]])
+
 (sv/defmethod ::get-teams
   "List teams for which current user is owner"
   {::doc/added "2.18"
@@ -117,6 +131,51 @@
   (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
     (->> (db/exec! cfg [sql:get-teams current-user-id])
          (map #(select-keys % [:id :name])))))
+
+(sv/defmethod ::get-member-teams
+  "List all active teams where the current user is a member"
+  {::doc/added "2.18"
+   ::sm/params [:map]
+   ::sm/result schema:get-member-teams-result
+   ::nitrate/sso false}
+  [cfg {:keys [::rpc/profile-id]}]
+  (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
+    (db/exec! cfg [sql:get-member-teams current-user-id])))
+
+;; ---- API: update-profile-theme
+
+(def ^:private schema:update-profile-theme
+  [:map {:title "update-profile-theme"}
+   [:theme [:enum "light" "dark" "system"]]])
+
+(sv/defmethod ::update-profile-theme
+  "Update the current user's theme"
+  {::doc/added "2.18"
+   ::sm/params schema:update-profile-theme
+   ::db/transaction true
+   ::nitrate/sso false}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id theme]}]
+  (profile/get-profile conn profile-id ::db/for-update true)
+  (db/update! conn :profile
+              {:theme theme}
+              {:id profile-id}
+              {::db/return-keys false})
+  nil)
+
+;; ---- API: update-profile-props
+
+(def ^:private schema:update-profile-props
+  [:map {:title "update-profile-props"}
+   [:props profile/schema:props-writeable]])
+
+(sv/defmethod ::update-profile-props
+  "Merge writable properties into the current user's profile"
+  {::doc/added "2.18"
+   ::sm/params schema:update-profile-props
+   ::db/transaction true
+   ::nitrate/sso false}
+  [cfg {:keys [::rpc/profile-id props]}]
+  (profile/update-profile-props cfg profile-id props))
 
 ;; ---- API: upload-organization-logo
 
@@ -135,6 +194,7 @@
   collection when replacing an existing one."
   {::doc/added "2.18"
    ::sm/params schema:upload-organization-logo
+   ::rpc/multipart-only-params [:content]
    ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
@@ -153,13 +213,25 @@
 
 ;; ---- API: notify-team-change
 
+(def ^:private schema:notify-team-change
+  [:or
+   cto/schema:team-with-organization
+   [:map
+    [:id ::sm/uuid]
+    [:organization
+     [:map
+      [:name ::sm/text]]]]])
+
 (sv/defmethod ::notify-team-change
   "Notify to Penpot a team change from nitrate"
   {::doc/added "2.18"
-   ::sm/params cto/schema:team-with-organization
+   ::sm/params schema:notify-team-change
    ::rpc/auth false}
   [cfg team]
-  (notifications/notify-team-change cfg (select-keys team [:id :is-your-penpot :organization]) nil)
+  (let [team         (select-keys team [:id :is-your-penpot :organization])
+        notification (when-not (get-in team [:organization :id])
+                       "dashboard.team-no-longer-belong-organization")]
+    (notifications/notify-team-change cfg team notification))
   nil)
 
 ;; ---- API: notify-user-added-to-organization
@@ -310,11 +382,11 @@ RETURNING id, deleted_at;")
                                      deleted-at
                                      (db/create-array conn "uuid" team-ids)])]
       (doseq [{:keys [id deleted-at]} updated]
-        (wrk/submit! {::db/conn conn
-                      ::wrk/task :delete-object
-                      ::wrk/params {:object :team
-                                    :deleted-at deleted-at
-                                    :id id}}))))
+        (jobs/submit cfg
+                     {::jobs/name :delete-object
+                      ::jobs/params {:object :team
+                                     :deleted-at deleted-at
+                                     :id id}}))))
   nil)
 
 (defn manage-deleted-organization-teams
@@ -707,7 +779,7 @@ RETURNING id, deleted_at;")
   [:map
    [:profile-id ::sm/uuid]
    [:user-email ::sm/email]
-   [:user-name [:maybe ::sm/text]]
+   [:user-name [:maybe :string]]
    [:renewal-date :string]
    [:estimated-amount :double]
    [:organizations [:vector cto/schema:organization-with-avatar]]])
@@ -719,18 +791,23 @@ RETURNING id, deleted_at;")
    ::rpc/auth false}
   [cfg {:keys [profile-id user-email user-name renewal-date estimated-amount organizations]}]
   (let [amount-str (format "$%.2f" estimated-amount)
-        user-name  (if (str/empty? user-name)
+        ;; `nil` means the caller has no name override (e.g. no distinct
+        ;; billing email was set) and wants the account owner's real name.
+        ;; An explicit "" means the caller deliberately wants no name shown
+        ;; (e.g. a billing email was set but no company name was provided);
+        ;; a blank string is trimmed and treated the same as "".
+        user-name  (if (nil? user-name)
                      (:fullname (profile/get-profile cfg profile-id))
-                     user-name)]
-    (db/tx-run! cfg (fn [{:keys [::db/conn]}]
-                      (eml/send! {::eml/conn    conn
-                                  ::eml/factory eml/renewal-notice
-                                  :public-uri   (cf/get :public-uri)
-                                  :to           user-email
-                                  :user-name    user-name
-                                  :renewal-date renewal-date
-                                  :estimated-amount amount-str
-                                  :organizations organizations}))))
+                     (str/trim user-name))]
+    (db/tx-run! cfg (fn [tx-cfg]
+                      (eml/send tx-cfg {::eml/reuse-conn true
+                                        ::eml/factory eml/renewal-notice
+                                        :public-uri   (cf/get :public-uri)
+                                        :to           user-email
+                                        :user-name    user-name
+                                        :renewal-date renewal-date
+                                        :estimated-amount amount-str
+                                        :organizations organizations}))))
   nil)
 
 ;; API: exists-organization-team-invitations-for-non-members /
@@ -983,10 +1060,20 @@ RETURNING id, deleted_at;")
                 [:updated-props ::sm/boolean]
                 [:announce-activation ::sm/boolean]]
    ::rpc/auth false}
-  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props announce-activation]}]
+  [{:keys [::db/pool] :as cfg}
+   {:keys [organization-id updated-props announce-activation] :as params}]
   (when updated-props
     (rpc/invalidate-organization-sso-cache-by-organization! organization-id)
-    (session/clear-organization-sso-sessions! pool organization-id))
+    (session/clear-organization-sso-sessions! pool organization-id)
+    (let [request (-> params meta ::http/request)
+          context (-> (audit/prepare-context-from-request request)
+                      (assoc :request-id (::rpc/request-id params)))]
+      (audit/submit cfg {:type "action"
+                         :name "organization-sso-token-revoked"
+                         :profile-id uuid/zero
+                         :ip-addr (::rpc/ip-addr params)
+                         :props {:organization-id organization-id}
+                         :context (d/without-nils context)})))
   (notifications/notify-organization-change-sso cfg organization-id)
   (when announce-activation
     (neh/send-organization-setup-sso-emails! cfg organization-id))

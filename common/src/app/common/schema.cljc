@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.schema
   (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys select-keys])
@@ -11,6 +11,7 @@
    #?(:clj [malli.dev.pretty :as mdp])
    #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
+   [app.common.i18n :as i18n :refer [tr]]
    [app.common.json :as json]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
@@ -493,7 +494,7 @@
   :type-properties
   {:title "email"
    :description "string with valid email address"
-   :error/code "errors.invalid-email"
+   :error/fn #(tr "errors.invalid-email")
    :gen/gen (sg/email)
    :decode/string (fn [v] (or (parse-email v) v))
    :decode/json (fn [v] (or (parse-email v) v))
@@ -883,6 +884,14 @@
 (register! ::safe-number [::number {:gen/gen (sg/small-double)
                                     :max max-safe-int
                                     :min min-safe-int}])
+(register! ::non-negative-safe-number
+           [:and {:gen/gen (sg/small-double :min 0)}
+            ::safe-number
+            [:fn #(not (neg? %))]])
+(register! ::positive-safe-number
+           [:and {:gen/gen (sg/small-double :min 0.01)}
+            ::safe-number
+            [:fn pos?]])
 
 (defn parse-boolean
   [v]
@@ -1051,23 +1060,23 @@
          (and (string? value)
               (number? max)
               (> (count value) max))
-         {:code ["errors.field-max-length" max]}
+         (tr "errors.field-max-length" (i18n/c max))
 
          (and (string? value)
               (number? min)
               (< (count value) min))
-         {:code ["errors.field-min-length" min]}
+         (tr "errors.field-min-length" (i18n/c min))
 
          (and (string? value)
               (str/empty? value))
-         {:code "errors.field-missing"}
+         (tr "errors.field-missing")
 
          (and (string? value)
               (str/blank? value))
-         {:code "errors.field-not-all-whitespace"}
+         (tr "errors.field-not-all-whitespace")
 
          :else
-         {:code "errors.invalid-text"})))}})
+         (tr "errors.invalid-text"))))}})
 
 (register!
  {:type ::password
@@ -1080,7 +1089,7 @@
   {:title "password"
    :gen/gen (->> (sg/word-string)
                  (sg/filter #(>= (count %) 8)))
-   :error/code "errors.password-too-short"
+   :error/fn #(tr "errors.password-too-short")
    ::oapi/type "string"
    ::oapi/format "password"}})
 
@@ -1107,6 +1116,12 @@
 
 (def valid-safe-number?
   (lazy-validator ::safe-number))
+
+(def valid-non-negative-safe-number?
+  (lazy-validator ::non-negative-safe-number))
+
+(def valid-positive-safe-number?
+  (lazy-validator ::positive-safe-number))
 
 (def valid-safe-int?
   (lazy-validator ::safe-int))

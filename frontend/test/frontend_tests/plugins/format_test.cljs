@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.plugins.format-test
   (:require
@@ -55,3 +55,16 @@
 
 (t/deftest test-shape-type-reports-boolean
   (t/is (= "boolean" (format/shape-type :bool))))
+
+(t/deftest test-format-stroke-exposes-per-side-widths
+  (let [stroke (format/format-stroke {:stroke-color "#000000"
+                                      :stroke-width 1
+                                      :stroke-width-top 2
+                                      :stroke-width-right 3
+                                      :stroke-width-bottom 4
+                                      :stroke-width-left 5})]
+    (t/is (= 1 (aget stroke "strokeWidth")))
+    (t/is (= 2 (aget stroke "strokeWidthTop")))
+    (t/is (= 3 (aget stroke "strokeWidthRight")))
+    (t/is (= 4 (aget stroke "strokeWidthBottom")))
+    (t/is (= 5 (aget stroke "strokeWidthLeft")))))

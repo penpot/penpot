@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options
   (:require-macros [app.main.style :as stl])
@@ -15,6 +15,8 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.path.helpers :as path.helpers]
+   [app.main.data.workspace.path.state :as path.state]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -98,12 +100,47 @@
   (when (= (:type panel) :component-swap)
     [:> component-menu* {:shapes (:shapes panel) :is-swap-opened true}]))
 
+(defn- get-shapes-with-children
+  "Returns the shapes of `selected` together with all their descendants."
+  [objects selected]
+  (loop [queue   (into #queue [] selected)
+         visited selected]
+    (if-let [id (peek queue)]
+      (let [shape    (get objects id)
+            children (:shapes shape)]
+        (if (seq children)
+          (let [new-children (remove visited children)]
+            (recur (into (pop queue) new-children)
+                   (into visited new-children)))
+          (recur (pop queue) visited)))
+      (sequence (keep (d/getf objects)) visited))))
+
 (mf/defc design-menu*
   {::mf/private true}
   [{:keys [selected objects page-id file-id shapes]}]
   (let [sp-panel (mf/deref refs/specialized-panel)
         drawing  (mf/deref refs/workspace-drawing)
         edition  (mf/deref refs/selected-edition)
+
+        edit-path
+        (mf/deref refs/workspace-edit-path)
+
+        edit-path-state
+        (path.state/current-edit-state edit-path edition)
+
+        path-editing?
+        (path.state/editing? edit-path edition)
+
+        path-content
+        (dm/get-in drawing [:object :content])
+
+        selected-nodes
+        (:nodes (:selection edit-path-state))
+
+        ;; Coincident commands are one node, so count positions.
+        path-node-count
+        (mf/with-memo [path-content selected-nodes]
+          (path.helpers/selected-node-count path-content {:nodes selected-nodes}))
 
         files
         (mf/deref refs/files)
@@ -123,41 +160,38 @@
         (->> (dm/get-in grid-edition [edition :selected])
              (map #(dm/get-in objects [edition :layout-grid-cells %])))
 
-        shapes-with-children*
-        (mf/use-state nil)
+        ;; Deferred, so the subtree walk runs in a background render
+        deferred-selected
+        (mf/use-deferred selected)
 
-        _ (mf/use-effect
-           (mf/deps selected objects shapes)
-           (fn []
-             (reset! shapes-with-children* nil)
-             (let [result
-                   (loop [queue   (into #queue [] selected)
-                          visited selected]
-                     (if-let [id (peek queue)]
-                       (let [shape    (get objects id)
-                             children (:shapes shape)]
-                         (if (seq children)
-                           (let [new-children (remove visited children)]
-                             (recur (into (pop queue) new-children)
-                                    (into visited new-children)))
-                           (recur (pop queue) visited)))
-                       (sequence (keep (d/getf objects)) visited)))]
-               (reset! shapes-with-children* result))))
+        deferred-objects
+        (mf/use-deferred objects)
 
         shapes-with-children
-        (deref shapes-with-children*)
+        (mf/with-memo [deferred-selected deferred-objects]
+          (get-shapes-with-children deferred-objects deferred-selected))
 
         total-selected
         (count selected)]
 
     [:div {:class (stl/css :element-options :design-options)}
      [:> align-options* {:shapes shapes
-                         :objects objects}]
-     [:> bool-options* {:total-selected total-selected
-                        :shapes shapes
-                        :shapes-with-children shapes-with-children}]
+                         :objects objects
+                         :path-edit? path-editing?
+                         :node-count path-node-count}]
+     (when-not path-editing?
+       [:> bool-options* {:total-selected total-selected
+                          :shapes shapes
+                          :shapes-with-children shapes-with-children}])
 
      (cond
+       ;; Show path-specific options during node editing.
+       path-editing?
+       [:> path/path-edition-options*
+        {:shape (get objects edition)
+         :file-id file-id
+         :page-id page-id}]
+
        (and edit-grid? (d/not-empty? selected-cells))
        [:> grid-cell/options*
         {:shape-id (-> (get objects edition)

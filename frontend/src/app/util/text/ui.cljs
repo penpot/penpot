@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.text.ui
   (:require
@@ -46,8 +46,18 @@
   []
   (dom/query "[data-itype=\"editor\"]"))
 
+(defn v3-get-text-editor-content
+  []
+  (dom/get-element "text-editor-wasm-input"))
+
 (defn get-text-editor-content
   []
-  (if (features/active-feature? @st/state "text-editor/v2")
+  (cond
+    (features/active-feature? @st/state "text-editor-wasm/v1")
+    (v3-get-text-editor-content)
+
+    (features/active-feature? @st/state "text-editor/v2")
     (v2-get-text-editor-content)
+
+    :else
     (v1-get-text-editor-content)))

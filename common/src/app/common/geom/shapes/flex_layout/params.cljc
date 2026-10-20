@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.geom.shapes.flex-layout.params
   (:require
@@ -88,8 +88,8 @@
            parent-selrect (:selrect parent)
 
            padding (when (and (not (nil? parent)) (> (count shapes) 0))
-                     {:p1 (- min-y (:y1 parent-selrect))
-                      :p2 (- min-x (:x1 parent-selrect))})]
+                     {:p1 (max 0 (- min-y (:y1 parent-selrect)))
+                      :p2 (max 0 (- min-x (:x1 parent-selrect)))})]
 
        (cond-> {:layout-flex-dir direction :layout-gap layout-gap}
          (not (nil? padding))

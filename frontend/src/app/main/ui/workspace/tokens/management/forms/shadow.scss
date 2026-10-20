@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/typography.scss" as t;
 @use "ds/_sizes.scss" as *;
@@ -30,6 +30,15 @@
   gap: var(--sp-xs);
   border-inline-start: $b-1 solid var(--color-accent-primary-muted);
   padding-inline-start: var(--sp-m);
+}
+
+.detach-button {
+  visibility: hidden;
+}
+
+.reference-row:hover .detach-button,
+.reference-row:focus-within .detach-button {
+  visibility: visible;
 }
 
 .title-bar {

@@ -201,6 +201,7 @@
                (reset! form nil)
                (st/emit! (ev/event {::ev/name event-name
                                     :type "unlimited"
+                                    :deployment (if cf/saas? "saas" "selfhost")
                                     :quantity min-members
                                     :subscription-mode subscription-mode})
                          (rt/nav-raw :href href))))))
@@ -216,6 +217,7 @@
                  href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
              (st/emit! (ev/event {::ev/name event-name
                                   :type "enterprise"
+                                  :deployment (if cf/saas? "saas" "selfhost")
                                   :subscription-mode subscription-mode})
                        (rt/nav-raw :href href)))))
 
@@ -224,6 +226,7 @@
          (fn []
            (st/emit! (ev/event {::ev/name "open-subscription-management"
                                 ::ev/origin "settings"
+                                :deployment (if cf/saas? "saas" "selfhost")
                                 :section "subscription-management-modal"}))
            (let [current-href (rt/get-current-href)
                  returnUrl (js/encodeURIComponent current-href)
@@ -466,7 +469,14 @@
           (= subscription-type "enterprise") (tr "subscription.settings.enterprise"))
 
         subscription-is-trial?
-        (= (:status subscription) "trialing")
+        (if nitrate?
+          (= (:status nitrate-license) "trialing")
+          (= (:status subscription) "trialing"))
+
+        trial-end-date
+        (if nitrate?
+          (ct/format-inst (:trial-end nitrate-license) "d MMMM, yyyy")
+          (ct/format-inst (:trial-end subscription) "d MMMM, yyyy"))
 
         member-since
         (ct/format-inst (:created-at profile) "d MMMM, yyyy")
@@ -489,6 +499,7 @@
          (fn []
            (st/emit! (ev/event {::ev/name "open-subscription-management"
                                 ::ev/origin "settings"
+                                :deployment (if cf/saas? "saas" "selfhost")
                                 :section "subscription"}))
            (let [current-href (rt/get-current-href)
                  returnUrl (js/encodeURIComponent current-href)
@@ -500,6 +511,7 @@
          (fn []
            (st/emit! (ev/event {::ev/name "open-subscription-management"
                                 ::ev/origin "settings"
+                                :deployment (if cf/saas? "saas" "selfhost")
                                 :section "nitrate:enterprise"}))
            (dnt/go-to-nitrate-billing)))
 
@@ -608,7 +620,9 @@
       [:div {:class (stl/css :your-subscription)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
        (if nitrate?
-         [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
+         [:> plan-card* {:card-title (if (= (:status nitrate-license) "trialing")
+                                       (tr "subscription.settings.enterprise-trial")
+                                       (tr "subscription.settings.enterprise"))
                          :cancel-at (when (:cancel-at nitrate-license)
                                       (tr "nitrate.subscription.active-until" (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
                          :benefits-title (tr "subscription.settings.benefits.nitrate-unlimited-benefits")
@@ -694,12 +708,19 @@
        [:div {:class (stl/css :membership-container)}
         (when (or nitrate?
                   (and subscribed-since (not= subscription-type "professional")))
-          [:div {:class (stl/css :membership)}
-           [:> icon* {:class (stl/css :subscription-member)
-                      :icon-id "crown"
-                      :size "m"}]
-           [:span {:class (stl/css :membership-date)}
-            (tr "subscription.settings.subscribed-since" subscription-name subscribed-since)]])
+          (if subscription-is-trial?
+            [:div {:class (stl/css :membership)}
+             [:> icon* {:class (stl/css :subscription-member)
+                        :icon-id "hourglass"
+                        :size "m"}]
+             [:span {:class (stl/css :membership-date)}
+              (tr "subscription.settings.trial-ends-on" trial-end-date)]]
+            [:div {:class (stl/css :membership)}
+             [:> icon* {:class (stl/css :subscription-member)
+                        :icon-id "crown"
+                        :size "m"}]
+             [:span {:class (stl/css :membership-date)}
+              (tr "subscription.settings.subscribed-since" subscription-name subscribed-since)]]))
 
         [:div {:class (stl/css :membership)}
          [:> icon* {:class (stl/css :penpot-member)

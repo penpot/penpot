@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright (c) KALEIDOS INC Sucursal en España SL
+ * Copyright (c) KALEIDOS SUBSIDIARY SL
  */
 
 /*
@@ -73,6 +73,16 @@ goog.scope(function () {
         mediaObj.media = query;
         mediaObj.onchange = null;
         return mediaObj;
+      };
+      // The History API. `app.util.browser-history` writes the router
+      // through `history.pushState`/`replaceState`, so the mock only has
+      // to accept the calls; nothing reads the resulting URL back.
+      mockWindow.history = {
+        pushState() {},
+        replaceState() {},
+        back() {},
+        forward() {},
+        go() {},
       };
       return mockWindow;
     }

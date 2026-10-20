@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.repo
   (:require
@@ -23,12 +23,16 @@
 
 ;; -- Retry helpers -----------------------------------------------------------
 
-(def ^:private retryable-types
+(def retryable-types
   "Set of error types that are considered transient and safe to retry
-  for idempotent (GET) requests."
+  for idempotent (GET) requests. Also the single source of truth for the
+  transient transport classification consumed by `persistence/transient-error?`
+  and `errors/environment-error-types`: extend this set (never a copy)
+  when a new retryable transport failure appears."
   #{:network              ; js/fetch network-level failure
     :bad-gateway          ; 502
     :service-unavailable  ; 503
+    :gateway-error        ; 504 and the Cloudflare 52x family
     :offline})            ; status 0 (browser offline)
 
 (defn retryable-error?
@@ -76,6 +80,28 @@
 
 ;; -- Response handling -------------------------------------------------------
 
+(def ^:private gateway-statuses
+  "Statuses raised by an edge proxy when the request never reached the
+  backend or its answer never came back."
+  #{504    ; gateway timeout
+    520    ; cloudflare: unknown origin error
+    521    ; cloudflare: origin is down
+    522    ; cloudflare: connection timed out
+    523    ; cloudflare: origin unreachable
+    524})  ; cloudflare: origin timed out
+
+(def ^:private max-body-excerpt
+  "Number of characters kept from a body that we could not interpret."
+  500)
+
+(defn- body-excerpt
+  "Keeps the head of an uninterpretable body. Error pages from proxies run
+  into tens of kilobytes and the excerpt is enough to recognize them."
+  [body]
+  (if (and (string? body) (> (count body) max-body-excerpt))
+    (str (subs body 0 max-body-excerpt) "...")
+    body))
+
 (defn handle-response
   [{:keys [status body headers uri] :as response}]
   (cond
@@ -118,6 +144,35 @@
     (and (>= status 400) (map? body))
     (rx/throw (ex-info "http error" (assoc body :uri uri :status status)))
 
+    ;; The branches below handle responses the backend never wrote: the
+    ;; body carries no error code, so the status is all we can read.
+
+    (contains? gateway-statuses status)
+    (rx/throw
+     (ex/error :type :gateway-error
+               :code :gateway-error
+               :hint "the request did not reach the backend"
+               :uri uri
+               :status status))
+
+    (= 429 status)
+    (rx/throw
+     (ex/error :type :rate-limit
+               :code :rate-limited
+               :hint "too many requests"
+               :uri uri
+               :status status))
+
+    (>= status 400)
+    (rx/throw
+     (ex/error :type :unexpected-response
+               :code :unexpected-error-response
+               :hint "unexpected error response"
+               :uri uri
+               :status status
+               :headers headers
+               :data (body-excerpt body)))
+
     :else
     (rx/throw
      (ex/error :type :internal
@@ -126,7 +181,7 @@
                :uri uri
                :status status
                :headers headers
-               :data body))))
+               :data (body-excerpt body)))))
 
 (def default-options
   {:update-file {:query-params [:id]}
@@ -156,6 +211,7 @@
    {:stream? true}
 
    :export-binfile {:response-type :blob}
+
    :retrieve-list-of-builtin-templates {:query-params :all}})
 
 (defn- send!
@@ -279,6 +335,28 @@
   [_ params]
   (let [default {:wait false :blob? false}]
     (send-export (merge default params))))
+
+(defmethod cmd! :create-export-job
+  [_ params]
+  (->> (http/send! {:method :post
+                    :uri (u/join cf/public-uri "api/export/jobs")
+                    :body (http/transit-data params)
+                    :headers {"x-external-session-id" (cf/external-session-id)
+                              "x-event-origin" (::ev/origin (meta params))}
+                    :credentials "include"
+                    :response-type :text})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
+(defmethod cmd! :cancel-export-job
+  [_ {:keys [job-id]}]
+  (->> (http/send! {:method :delete
+                    :uri (u/join cf/public-uri "api/export/jobs/" (str job-id))
+                    :headers {"x-external-session-id" (cf/external-session-id)}
+                    :credentials "include"
+                    :response-type :text})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
 
 (defn- multipart-upload
   [id params]

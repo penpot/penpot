@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.top-toolbar
   (:require-macros [app.main.style :as stl])
@@ -15,16 +15,15 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as dwdc]
-   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.path.state :as pst]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu* dropdown-menu-item*]]
    [app.main.ui.components.file-uploader :as file-uploader]
+   [app.main.ui.components.mcp-menu :refer [mcp-menu*]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
@@ -37,16 +36,16 @@
 
 (def ^:private toolbar-hidden-ref
   (l/derived (fn [state]
-               (let [visibility      (get state :hide-toolbar)
-                     path-edit-state (get state :edit-path)
-                     selected        (get state :selected)
-                     edition         (get state :edition)
+               (let [visibility      (get-in state [:workspace-local :hide-toolbar])
+                     selected        (get-in state [:workspace-local :selected])
 
                      is-single       (= (count selected) 1)
-                     is-path-editing (and is-single (some? (get path-edit-state edition)))]
+                     ;; The path edition bar replaces this toolbar.
+                     is-path-editing (and is-single (pst/editing? state))
+                     is-path-drawing (pst/drawing? state)]
 
-                 (if is-path-editing true visibility)))
-             refs/workspace-local))
+                 (if (or is-path-editing is-path-drawing) true visibility)))
+             st/state))
 
 (def grouped-tools
   {:shapes {:default-tool :rect
@@ -294,55 +293,6 @@
                                       :ref ref
                                       :on-selected on-selected}]]))
 
-(mf/defc mcp-tool*
-  {::mf/private true
-   ::mf/wrap [mf/memo]}
-  [{:keys [is-mcp-connected]}]
-  (let [menu-open*   (mf/use-state false)
-        menu-open?   (deref menu-open*)
-
-        on-toggle-menu
-        (mf/use-fn
-         (fn [event]
-           (dom/stop-propagation event)
-           (swap! menu-open* not)))
-
-        on-close-menu
-        (mf/use-fn
-         #(reset! menu-open* false))
-
-        on-connect
-        (mf/use-fn
-         #(st/emit! (mcp/connect-mcp)
-                    (ev/event {::ev/name "connect-mcp-plugin"
-                               ::ev/origin "workspace:toolbar"})))]
-
-    [:*
-     [:> button* {:variant "ghost"
-                  :on-click on-toggle-menu
-                  :aria-pressed menu-open?
-                  :data-tool "mcp"
-                  :data-testid "mcp-btn"}
-      [:div {:class (stl/css-case :toolbar-mcp-button true
-                                  :selected menu-open?)}
-       [:span {:class (stl/css-case :toolbar-mcp-button-dot true
-                                    :connected is-mcp-connected)}]
-       [:span {:class (stl/css-case :toolbar-mcp-button-label true
-                                    :connected is-mcp-connected)}
-        (tr "workspace.toolbar.mcp")]]]
-
-     [:div {:class (stl/css :toolbar-mcp-menu)}
-      [:> dropdown-menu* {:show menu-open?
-                          :on-close on-close-menu
-                          :class (stl/css :toolbar-mcp-dropdown)}
-       (if is-mcp-connected
-         [:li {:class (stl/css :toolbar-mcp-dropdown-info)
-               :role "presentation"}
-          (tr "workspace.toolbar.mcp-connected")]
-         [:> dropdown-menu-item* {:class (stl/css :toolbar-mcp-dropdown-item)
-                                  :on-click on-connect}
-          (tr "workspace.toolbar.mcp-connect-here")])]]]))
-
 (mf/defc top-toolbar*
   {::mf/wrap [mf/memo]}
   [{:keys [layout]}]
@@ -479,7 +429,9 @@
 
         (when mcp-show?
           [:li {:class (stl/css :toolbar-option)}
-           [:> mcp-tool* {:is-mcp-connected mcp-connected?}]])]
+           [:> mcp-menu* {:is-mcp-connected mcp-connected?
+                          :is-connection-requested (:connection-requested mcp)
+                          :session-id (:session-id mcp)}]])]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")

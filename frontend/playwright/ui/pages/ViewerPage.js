@@ -1,4 +1,5 @@
 import { BaseWebSocketPage } from "./BaseWebSocketPage";
+import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
 
 export class ViewerPage extends BaseWebSocketPage {
   static anyFileId = "c7ce0794-0992-8105-8004-38f280443849";
@@ -119,9 +120,22 @@ export class ViewerPage extends BaseWebSocketPage {
     fileId = ViewerPage.anyFileId,
     pageId = ViewerPage.anyPageId,
   } = {}) {
-    await this.page.goto(
-      `/#/view?file-id=${fileId}&page-id=${pageId}&section=interactions&index=0`,
-    );
+    // Same as WorkspacePage.goToWorkspace: skip the reload when already
+    // on the target file so repeated setups keep the in-memory file
+    // state. Extra query params are ignored.
+    const currentParams = new URL(this.page.url()).searchParams;
+    const sameFile =
+      currentParams.get("screen") === "viewer" &&
+      currentParams.get("file-id") === fileId &&
+      currentParams.get("page-id") === pageId;
+    if (!sameFile) {
+      // Same as WorkspacePage.goToWorkspace: drop stale mocks from any
+      // previous document before reloading the app.
+      MockWebSocketHelper.clear();
+      await this.page.goto(
+        `/?screen=viewer&file-id=${fileId}&page-id=${pageId}&section=interactions&index=0`,
+      );
+    }
 
     this.#ws = await this.waitForNotificationsWebSocket();
     await this.#ws.mockOpen();

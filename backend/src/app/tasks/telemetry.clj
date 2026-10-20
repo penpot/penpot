@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.tasks.telemetry
   "A task that is responsible to collect anonymous statistical
@@ -12,9 +12,11 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.jobs :as jobs]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.util.json :as json]
@@ -216,19 +218,32 @@
 ;; buffer stays bounded.
 (def ^:private batch-size 10000)
 
+(def ^:private sql:aged-telemetry
+  "source LIKE 'telemetry:%' AND created_at < now() - interval '7 days'")
+
+(def ^:private sql:gc-pendings
+  (str "DELETE FROM audit_log_pending WHERE audit_log_id IN"
+       " (SELECT id FROM audit_log WHERE " sql:aged-telemetry ")"))
+
 (def ^:private sql:gc-events
-  "DELETE FROM audit_log
-    WHERE source LIKE 'telemetry:%'
-      AND created_at < now() - interval '7 days'")
+  (str "DELETE FROM audit_log WHERE " sql:aged-telemetry))
 
 (defn- gc-events
   "Delete telemetry-mode events older than `telemetry-retention-days`
   so that the buffer stays bounded."
   [{:keys [::db/conn]}]
-  (let [result (db/exec-one! conn [sql:gc-events])]
-    (when (pos? (:next.jdbc/update-count result))
-      (l/warn :hint "purged stale telemetry events"
-              :count (:next.jdbc/update-count result)))))
+  ;; One transaction for both deletes: a crash between them would
+  ;; leave pending-less rows for the consumer sweep to delete unsent.
+  ;; Pendings first: the queue holds a row per consumer for every
+  ;; record, and the FK would reject deleting a row that still has
+  ;; pendings.
+  (db/tx-run! conn
+              (fn [{:keys [::db/conn]}]
+                (db/exec-one! conn [sql:gc-pendings])
+                (let [result (db/exec-one! conn [sql:gc-events])]
+                  (when (pos? (:next.jdbc/update-count result))
+                    (l/warn :hint "purged stale telemetry events"
+                            :count (:next.jdbc/update-count result)))))))
 
 (def ^:private sql:fetch-telemetry-events
   "SELECT id, name, type, source, tracked_at, profile_id, props, context
@@ -272,10 +287,17 @@
         false))))
 
 (defn- delete-sent-events
-  "Delete rows by their ids after a successful send."
+  "Delete rows by their ids after a successful send. One transaction
+  for both deletes: a crash between them would leave pending-less
+  rows for the consumer sweep to delete unsent."
   [conn ids]
-  (let [arr (db/create-array conn "uuid" ids)]
-    (db/exec-one! conn ["DELETE FROM audit_log WHERE id = ANY(?)" arr])))
+  (db/tx-run! conn
+              (fn [tx]
+                (let [tx-conn (::db/conn tx)
+                      arr (db/create-array tx-conn "uuid" ids)]
+                  ;; Pendings first: same FK reason as in `gc-events`.
+                  (db/exec-one! tx-conn ["DELETE FROM audit_log_pending WHERE audit_log_id = ANY(?)" arr])
+                  (db/exec-one! tx-conn ["DELETE FROM audit_log WHERE id = ANY(?)" arr])))))
 
 (defn- collect-and-send-audit-events
   "Collect anonymous telemetry-mode audit events and ship them to the
@@ -300,58 +322,76 @@
 ;; TASK ENTRY POINT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::handler
+(declare execute-telemetry)
+
+(defmethod ig/assert-key ::job-def
   [_ params]
   (assert (http/client? (::http/client params)) "expected a valid http client")
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
   (assert (some? (::setup/props params)) "expected setup props to be available"))
 
-(defmethod ig/init-key ::handler
+(def schema:telemetry-params
+  [:map
+   [:send? {:optional true} :boolean]
+   [:enabled? {:optional true} :boolean]])
+
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [task]
-    (let [params   (:props task)
-          send?    (get params :send? true)
-          enabled? (or (get params :enabled? false)
-                       (contains? cf/flags :telemetry))
-          ;; Deferred so the query runs only when a report is
-          ;; actually going to be sent.
-          subs     (delay (get-subscriptions cfg))]
+  {::jobs/name      :telemetry
+   ::jobs/schema    schema:telemetry-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-telemetry cfg params))
+   ::jobs/decoder   (sm/decoder schema:telemetry-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:telemetry-params)})
 
-      ;; If we have telemetry enabled, then proceed the normal
-      ;; operation sending legacy report
+(defn execute-telemetry
+  "Plain job handler: send periodic telemetry data."
+  [cfg params]
+  (let [send?    (get params :send? true)
+        enabled? (or (get params :enabled? false)
+                     (contains? cf/flags :telemetry))
+        ;; Deferred so the query runs only when a report is
+        ;; actually going to be sent.
+        subs     (delay (get-subscriptions cfg))]
 
-      (if enabled?
-        (when send?
-          (db/run! cfg gc-events)
-          ;; Randomize start time to avoid thundering herd when multiple
-          ;; instances restart at the same time.
-          (px/sleep (rand-int 10000))
+    (jobs/heartbeat cfg)
 
+    ;; If we have telemetry enabled, then proceed the normal
+    ;; operation sending legacy report
+
+    (if enabled?
+      (when send?
+        (db/run! cfg gc-events)
+        ;; Randomize start time to avoid thundering herd when multiple
+        ;; instances restart at the same time.
+        (px/sleep (rand-int 10000))
+
+        (try
+          (let [stats (db/run! cfg get-legacy-stats)]
+            (send-legacy-data cfg stats @subs))
+          (catch Exception cause
+            (l/wrn :hint "unable to send legacy report"
+                   :cause cause)))
+
+        ;; Ship any anonymous audit-log events accumulated in
+        ;; telemetry mode (only when audit-log feature is off).
+        (when-not (contains? cf/flags :audit-log)
           (try
-            (let [stats (db/run! cfg get-legacy-stats)]
-              (send-legacy-data cfg stats @subs))
+            (db/run! cfg collect-and-send-audit-events)
             (catch Exception cause
-              (l/wrn :hint "unable to send legacy report"
-                     :cause cause)))
+              (l/wrn :hint "unable to send events"
+                     :cause cause)))))
 
-          ;; Ship any anonymous audit-log events accumulated in
-          ;; telemetry mode (only when audit-log feature is off).
-          (when-not (contains? cf/flags :audit-log)
-            (try
-              (db/run! cfg collect-and-send-audit-events)
-              (catch Exception cause
-                (l/wrn :hint "unable to send events"
-                       :cause cause)))))
-
-        ;; If we have telemetry disabled, but there are users that are
-        ;; explicitly checked the newsletter subscription on the
-        ;; onboarding dialog or the profile section, then proceed to
-        ;; send a limited telemetry data, that consists in the list of
-        ;; subscribed emails and the running penpot version.
-        ;; Official instances (penpot.dev / penpot.app) are excluded:
-        ;; they must never send subscriber emails to the telemetry
-        ;; endpoint (which is ourselves).
-        (when (and (not (cf/telemetry-excluded?)) send? @subs)
-          (px/sleep (rand-int 10000))
-          (ex/ignoring
-           (send-legacy-data cfg nil @subs)))))))
+      ;; If we have telemetry disabled, but there are users that are
+      ;; explicitly checked the newsletter subscription on the
+      ;; onboarding dialog or the profile section, then proceed to
+      ;; send a limited telemetry data, that consists in the list of
+      ;; subscribed emails and the running penpot version.
+      ;; Official instances (penpot.dev / penpot.app) are excluded:
+      ;; they must never send subscriber emails to the telemetry
+      ;; endpoint (which is ourselves).
+      (when (and (not (cf/telemetry-excluded?)) send? @subs)
+        (px/sleep (rand-int 10000))
+        (ex/ignoring
+         (send-legacy-data cfg nil @subs))))))

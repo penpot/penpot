@@ -71,6 +71,20 @@ export async function PenpotApi() {
       console.log('File data received:', fileData);
       return fileData;
     },
+    getProject: async (projectId: string) => {
+      const getProjectRequest = await fetch(
+        `${apiUrl}/api/main/methods/get-project?id=${projectId}`,
+        {
+          method: 'GET',
+          headers: {
+            cookie: authToken,
+            credentials: 'include',
+          },
+        },
+      );
+
+      return (await getProjectRequest.json()) as Record<string, string>;
+    },
     deleteFile: async (fileId: string) => {
       const deleteFileRequest = await fetch(
         `${apiUrl}/api/main/methods/delete-file`,

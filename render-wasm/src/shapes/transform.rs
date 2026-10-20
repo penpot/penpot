@@ -5,18 +5,59 @@ use crate::utils::{uuid_from_u32_quartet, uuid_to_u32_quartet};
 use crate::uuid::Uuid;
 use skia::Matrix;
 
+/// Axes the pixel grid rounds. An axis-locked drag rounds only the axis it
+/// moves along.
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum PixelPrecision {
+    Disabled,
+    Both,
+    OnlyX,
+    OnlyY,
+}
+
+impl PixelPrecision {
+    pub fn enabled(&self) -> bool {
+        *self != PixelPrecision::Disabled
+    }
+
+    pub fn rounds_x(&self) -> bool {
+        matches!(self, PixelPrecision::Both | PixelPrecision::OnlyX)
+    }
+
+    pub fn rounds_y(&self) -> bool {
+        matches!(self, PixelPrecision::Both | PixelPrecision::OnlyY)
+    }
+}
+
+impl From<u8> for PixelPrecision {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => PixelPrecision::Both,
+            2 => PixelPrecision::OnlyX,
+            3 => PixelPrecision::OnlyY,
+            _ => PixelPrecision::Disabled,
+        }
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum Modifier {
-    Transform(TransformEntry, bool),
+    Transform(TransformEntry, PixelPrecision),
     Reflow(Uuid, bool),
 }
 
 impl Modifier {
     pub fn transform_propagate(id: Uuid, transform: Matrix) -> Self {
-        Modifier::Transform(TransformEntry::from_propagate(id, transform), false)
+        Modifier::Transform(
+            TransformEntry::from_propagate(id, transform),
+            PixelPrecision::Disabled,
+        )
     }
     pub fn parent(id: Uuid, transform: Matrix) -> Self {
-        Modifier::Transform(TransformEntry::parent(id, transform), false)
+        Modifier::Transform(
+            TransformEntry::parent(id, transform),
+            PixelPrecision::Disabled,
+        )
     }
     pub fn reflow(id: Uuid, force_reflow: bool) -> Self {
         Modifier::Reflow(id, force_reflow)
