@@ -150,8 +150,8 @@ pub struct RawTextSpan {
     ruby_align: u8,
     ruby_overhang: u8,
     ruby_side: u8,
-    // Padding for the CLJS writer's 4-byte-aligned layout; always zero.
-    _padding: [u8; 2],
+    text_emphasis_position: u8,
+    text_underline_position: u8,
     font_size: f32,
     line_height: f32,
     letter_spacing: f32,
@@ -215,6 +215,10 @@ impl From<RawTextSpan> for shapes::TextSpan {
         span.text_orientation = RawTextOrientation::from(value.text_orientation).into();
         span.text_combine_upright = RawTextCombineUpright::from(value.text_combine_upright).into();
         span.text_emphasis = RawTextEmphasis::from(value.text_emphasis).into();
+        span.text_emphasis_position =
+            RawTextEmphasisPosition::from(value.text_emphasis_position).into();
+        span.text_underline_position =
+            RawTextUnderlinePosition::from(value.text_underline_position).into();
         span.warichu = RawWarichu::from(value.warichu).into();
         span.font_features = RawFontFeatures::from(value.font_features).into();
         span.annotation_clearance = RawAnnotationClearance::from(value.annotation_clearance).into();
@@ -589,6 +593,33 @@ mod tests {
         bytes[5] = RawTextCombineUpright::Digits as u8;
         let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
         assert_eq!(span.text_combine_upright.digits_max(), Some(4));
+    }
+
+    #[test]
+    fn annotation_positions_decode_from_former_padding_and_unknown_defaults() {
+        let mut bytes = [0u8; RAW_SPAN_DATA_SIZE];
+        bytes[14] = 4;
+        bytes[15] = 5;
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+        assert_eq!(
+            span.text_emphasis_position,
+            shapes::TextEmphasisPosition::UnderLeft
+        );
+        assert_eq!(
+            span.text_underline_position,
+            shapes::TextUnderlinePosition::UnderRight
+        );
+        bytes[14] = 255;
+        bytes[15] = 255;
+        let span = shapes::TextSpan::from(RawTextSpan::from(bytes));
+        assert_eq!(
+            span.text_emphasis_position,
+            shapes::TextEmphasisPosition::Auto
+        );
+        assert_eq!(
+            span.text_underline_position,
+            shapes::TextUnderlinePosition::Auto
+        );
     }
 
     #[test]

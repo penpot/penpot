@@ -10,7 +10,7 @@ pub(crate) struct HorizontalEmphasisPlacement {
     pub(crate) rect: skia::Rect,
 }
 
-/// Place one emphasis mark above each eligible character, from the laid-out
+/// Place one emphasis mark beside each eligible character, from the laid-out
 /// rect of each character so marks follow SkParagraph's wrapping and bidi.
 pub(crate) fn horizontal_emphasis_placements(
     paragraph: &Paragraph,
@@ -66,23 +66,23 @@ pub(crate) fn horizontal_emphasis_placements(
 }
 
 /// Em box of a horizontal emphasis mark in the laid-out paragraph: centred
-/// over its base character, outside any stacked ruby layer.
+/// beside its base character on the selected side, outside stacked annotations.
 pub(crate) fn horizontal_emphasis_mark_box(
     span: &TextSpan,
     placement: &HorizontalEmphasisPlacement,
 ) -> skia::Rect {
     let size = span.font_size * EMPHASIS_FONT_SCALE;
-    let bottom = horizontal_annotation_over_top(placement.rect, span.font_size)
-        - span.emphasis_ruby_offset();
-    skia::Rect::from_xywh(
-        placement.rect.center_x() - size / 2.0,
-        bottom - size,
-        size,
-        size,
-    )
+    let top = if span.emphasis_side(false) == RubySide::Over {
+        horizontal_annotation_over_top(placement.rect, span.font_size)
+            - span.emphasis_outside_offset(false)
+            - size
+    } else {
+        placement.rect.bottom() + span.emphasis_outside_offset(false)
+    };
+    skia::Rect::from_xywh(placement.rect.center_x() - size / 2.0, top, size, size)
 }
 
-/// Paint horizontal emphasis marks (圏点 / bouten) above their base glyphs.
+/// Paint horizontal emphasis marks on their configured side of the base.
 /// Draw-only: the base paragraph keeps its own metrics.
 pub(crate) fn paint_horizontal_emphasis(
     canvas: &skia::Canvas,
@@ -125,6 +125,7 @@ pub(crate) fn paint_horizontal_emphasis(
             .as_ref()
             .map(|rect| rect.width())
             .unwrap_or_else(|| mark_paragraph.longest_line());
+        let mark_ink_top = mark_ink.as_ref().map_or(0.0, |rect| rect.top());
         let mark_ink_bottom = mark_ink
             .as_ref()
             .map(|rect| rect.bottom())
@@ -134,9 +135,13 @@ pub(crate) fn paint_horizontal_emphasis(
             .filter(|placement| placement.span == range.span && placement.mark == mark)
         {
             let mark_x = x + placement.rect.center_x() - mark_width / 2.0;
-            let mark_y = y + horizontal_annotation_over_top(placement.rect, span.font_size)
-                - mark_ink_bottom
-                - span.emphasis_ruby_offset();
+            let mark_y = y + if span.emphasis_side(false) == RubySide::Over {
+                horizontal_annotation_over_top(placement.rect, span.font_size)
+                    - mark_ink_bottom
+                    - span.emphasis_outside_offset(false)
+            } else {
+                placement.rect.bottom() - mark_ink_top + span.emphasis_outside_offset(false)
+            };
             mark_paragraph.paint(canvas, (mark_x, mark_y));
         }
     }

@@ -81,6 +81,47 @@ Regular font, with letters, umlauts and combining tone marks. The subset
 retains its copyright and SIL Open Font License metadata; its family name
 is Pinyin Test. FontTools generated it from the Pinyin test strings.
 
+## Emphasis and underline positions
+
+Chinese profiles expose emphasis shape, emphasis position, underline position
+and annotation clearance independently of Pinyin. Position controls do not
+turn on underlining; use the existing underline control for that.
+
+Optional span `text-emphasis-position` stores `auto`, `over-right`,
+`over-left`, `under-right` or `under-left`. The first part selects the
+horizontal side; the second selects the vertical side. Auto uses below/right
+for Chinese and preserves above/right for Japanese, Korean and plain text.
+
+Optional `text-underline-position` stores `auto`, `under`, `left`, `right`,
+`under-left` or `under-right`. Under places horizontal underlines below the
+base rect; left/right select the vertical side. Chinese auto uses below/left.
+Other auto values preserve the earlier baseline offset and vertical left
+side. Explicit values can select other styles without changing the language.
+These are supported POC choices, not a claim of complete decoration support.
+
+Automatic clearance reserves each occupied side. Stacked annotations retain
+the largest reading and mark sizes across mixed-font spans, preserving the
+prior Japanese column widths. Underlines remain next to
+the base; readings move outside an underline on their side, and emphasis
+moves outside a reading on its side. The underline band reserves 0.18 em,
+a POC bound around the existing 1/9-em gap and stroke width. Disabling
+clearance retains fixed line-height behavior and can allow overlap/clipping.
+
+Decoration edits that intersect a reading or note apply to its whole base,
+so changing a side cannot duplicate its reading on split spans. Other text
+styles remain unchanged. Selection snapshots, Plugin API properties,
+CSS handoff and saved content retain the independent positions. CSS auto
+positions inherit the Chinese paragraph defaults; explicit positions emit
+the corresponding CSS keyword pairs. The binary writer uses former span
+header bytes 14/15; header size and prior offsets stay unchanged. Unknown
+bytes decode to auto. Both WASM consumers share that writer.
+
+Defaults and positions were checked on 2026-10-20 against
+[CSS Text Decoration, emphasis](https://www.w3.org/TR/css-text-decor-3/#text-emphasis-position-property)
+and [underline positions](https://www.w3.org/TR/css-text-decor-3/#text-underline-position-property).
+Japanese/Korean vertical auto underlines retain this branch's existing left
+side rather than adopting the spec's suggested right-side style.
+
 ## Evidence and release checks
 
 Renderer tests cover regional geometry, horizontal/vertical wrapping,
@@ -91,8 +132,7 @@ mode. Both WASM consumers use the same writer and byte values: 0 syllable,
 
 Real Pinyin, Zhuyin and Korean IME checks and native-reader review remain
 release checks. Font glyph coverage and localized forms still depend on the
-chosen fonts. Dedicated Zhuyin layout and decoration positions remain
-Stage 4 follow-ups.
+chosen fonts. Dedicated Zhuyin layout remains a Stage 4 follow-up.
 
 References checked on 2026-10-19:
 

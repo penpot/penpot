@@ -378,3 +378,15 @@
       (is (re-find #"line-height:\s*calc\(var\(--paragraph-line-height" css))
       (is (not (str/includes? css "--fills")))
       (is (not (str/includes? css "--font-id"))))))
+
+
+(deftest generated-css-keeps-independent-decoration-positions
+  (let [content (-> tcy-digits2-text-content
+                    (assoc-in [:children 0 :children 0 :text-language] "zh-Hans")
+                    (assoc-in [:children 0 :children 0 :children 0 :text-emphasis] "filled-dot")
+                    (assoc-in [:children 0 :children 0 :children 0 :text-emphasis-position] "over-left")
+                    (assoc-in [:children 0 :children 0 :children 0 :text-underline-position] "under-right"))
+        css (css/generate-text-css (text-shape content))]
+    (is (str/includes? css "text-emphasis-position: over left"))
+    (is (str/includes? css "text-underline-position: under right"))
+    (is (str/includes? css "text-emphasis-position: under right"))))

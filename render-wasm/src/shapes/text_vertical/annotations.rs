@@ -50,13 +50,26 @@ pub struct RubyCell {
     pub glyph_tops: Vec<f32>,
     pub font_size: f32,
     pub base_font_size: f32,
+    pub outside_offset: f32,
     pub side: RubySide,
     pub paint: usize,
 }
 
+impl RubyCell {
+    pub(super) fn strip_x(&self, column: &VerticalColumn) -> f32 {
+        let sign = if self.side == RubySide::Over {
+            1.0
+        } else {
+            -1.0
+        };
+        ruby_strip_x(column, self.font_size, self.base_font_size, self.side)
+            + sign * self.outside_offset
+    }
+}
+
 /// One emphasis mark (圏点 / bouten) beside a base character: the
 /// single-glyph `run`, centred on the character along the flow, in the
-/// column's right-side gutter.
+/// column's selected-side gutter.
 pub struct EmphasisMark {
     pub run: usize,
     /// Index of the annotated base cell in `VerticalLayout::cells`.
@@ -66,6 +79,7 @@ pub struct EmphasisMark {
     pub font_size: f32,
     /// Cross-axis offset past a stacked ruby layer.
     pub outside_offset: f32,
+    pub side: RubySide,
 }
 
 /// Cross-axis start of a vertical ruby strip. Ruby attaches to the edge of the
@@ -505,6 +519,7 @@ pub(super) fn layout_ruby(
                 glyph_tops,
                 font_size: ruby_font_size,
                 base_font_size: span.font_size,
+                outside_offset: span.ruby_decoration_offset(true),
                 side: span.ruby_side,
                 paint: first.paint,
             });
@@ -652,7 +667,8 @@ pub(super) fn layout_emphasis(
                         cell: cell_index,
                         flow_center,
                         font_size: mark_font_size,
-                        outside_offset: span.emphasis_ruby_offset(),
+                        outside_offset: span.emphasis_outside_offset(true),
+                        side: span.emphasis_side(true),
                     });
                 }
             }
@@ -666,10 +682,13 @@ pub(super) fn layout_emphasis(
 pub(super) fn emphasis_mark_center(layout: &VerticalLayout, mark: &EmphasisMark) -> (f32, f32) {
     let cell = &layout.cells[mark.cell];
     let base_font_size = mark.font_size / EMPHASIS_FONT_SCALE;
+    let sign = if mark.side == RubySide::Over {
+        1.0
+    } else {
+        -1.0
+    };
     let x = column_base_center(&layout.columns[cell.column])
-        + base_font_size / 2.0
-        + mark.outside_offset
-        + mark.font_size / 2.0;
+        + sign * (base_font_size / 2.0 + mark.outside_offset + mark.font_size / 2.0);
     (x, cell.top + mark.flow_center)
 }
 
@@ -918,6 +937,95 @@ mod tests {
             second_start - first_end >= EM / 2.0 - 0.01,
             "a ruby em apart"
         );
+    }
+
+    #[test]
+    fn vertical_emphasis_reserves_its_side_and_only_stacks_with_same_side_ruby() {
+        for position in [
+            crate::shapes::TextEmphasisPosition::OverLeft,
+            crate::shapes::TextEmphasisPosition::UnderRight,
+        ] {
+            for side in [RubySide::Over, RubySide::Under] {
+                let mut content = ruby_content("你好", "nǐ hǎo", 400.0);
+                content.paragraphs_mut()[0].set_language("zh-Hans".to_string());
+                let span = &mut content.paragraphs_mut()[0].children_mut()[0];
+                span.text_emphasis = TextEmphasis::FilledDot;
+                span.text_emphasis_position = position;
+                span.annotation_clearance = AnnotationClearance::Auto;
+                span.ruby_side = side;
+                let same_side = span.emphasis_side(true) == side;
+                let ruby_size = span.ruby_font_size();
+                let layout = layout_content(&content, 400.0);
+                assert_eq!(layout.emphasis_marks.len(), 2);
+                for mark in &layout.emphasis_marks {
+                    let column = &layout.columns[layout.cells[mark.cell].column];
+                    let (x, _) = emphasis_mark_center(&layout, mark);
+                    assert_eq!(x < column_base_center(column), mark.side == RubySide::Under);
+                    assert!(
+                        (mark.outside_offset - if same_side { ruby_size } else { 0.0 }).abs()
+                            < 0.01
+                    );
+                    assert!(x - mark.font_size / 2.0 >= column.x - 0.01);
+                    assert!(x + mark.font_size / 2.0 <= column.x + column.width + 0.01);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn default_japanese_clearance_keeps_mixed_font_annotation_gutters() {
+        let content = spans_content(
+            vec![
+                TextSpan {
+                    font_size: 40.0,
+                    ruby: "a".to_string(),
+                    annotation_clearance: AnnotationClearance::Auto,
+                    ..make_span("日")
+                },
+                TextSpan {
+                    font_size: 30.0,
+                    text_emphasis: TextEmphasis::FilledDot,
+                    annotation_clearance: AnnotationClearance::Auto,
+                    ..make_span("本")
+                },
+                TextSpan {
+                    font_size: 20.0,
+                    ruby: "b".to_string(),
+                    ruby_size: RubySize::Quarter,
+                    text_emphasis: TextEmphasis::FilledDot,
+                    annotation_clearance: AnnotationClearance::Auto,
+                    ..make_span("語")
+                },
+            ],
+            400.0,
+        );
+        let layout = layout_content(&content, 400.0);
+        // The original gutter stacks the largest ruby (20px) and emphasis
+        // (15px) when any span combines them, beside the 40px base band.
+        assert_eq!(layout.columns.len(), 1);
+        assert!((layout.columns[0].width - 75.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn underline_ruby_and_emphasis_fit_in_one_automatic_gutter() {
+        let mut content = ruby_content("你好", "nǐ hǎo", 400.0);
+        let span = &mut content.paragraphs_mut()[0].children_mut()[0];
+        span.ruby_side = RubySide::Under;
+        span.text_emphasis = TextEmphasis::FilledDot;
+        span.text_emphasis_position = crate::shapes::TextEmphasisPosition::UnderLeft;
+        span.text_decoration = Some(crate::shapes::TextDecoration::UNDERLINE);
+        span.text_underline_position = crate::shapes::TextUnderlinePosition::UnderLeft;
+        span.annotation_clearance = AnnotationClearance::Auto;
+        let layout = layout_content(&content, 400.0);
+        let column = &layout.columns[0];
+        let ruby = &layout.ruby_cells[0];
+        let base_left = column_base_center(column) - EM / 2.0;
+        assert!(ruby.strip_x(column) + ruby.font_size < base_left - EM / 9.0);
+        for mark in &layout.emphasis_marks {
+            let (x, _) = emphasis_mark_center(&layout, mark);
+            assert!(x + mark.font_size / 2.0 <= ruby.strip_x(column) + 0.01);
+            assert!(x - mark.font_size / 2.0 >= column.x - 0.01);
+        }
     }
 
     #[test]

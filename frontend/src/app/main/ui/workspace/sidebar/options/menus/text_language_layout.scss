@@ -26,7 +26,8 @@
   color: var(--color-foreground-secondary);
 }
 
-.pinyin-options {
+.pinyin-options,
+.decoration-options {
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);

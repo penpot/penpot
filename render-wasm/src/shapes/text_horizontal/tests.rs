@@ -1208,6 +1208,107 @@ fn horizontal_ruby_glyphs_share_one_baseline() {
 }
 
 #[test]
+fn emphasis_position_overrides_the_language_and_stacks_on_its_own_side() {
+    let placement = super::emphasis::HorizontalEmphasisPlacement {
+        span: 0,
+        range: 0..1,
+        mark: '•',
+        rect: skia::Rect::from_xywh(0.0, 20.0, 20.0, 20.0),
+    };
+    for (language, position, under) in [
+        ("ja", TextEmphasisPosition::Auto, false),
+        ("ko", TextEmphasisPosition::Auto, false),
+        ("", TextEmphasisPosition::Auto, false),
+        ("zh-Hant-TW", TextEmphasisPosition::Auto, true),
+        ("zh-Hans", TextEmphasisPosition::OverLeft, false),
+        ("ja", TextEmphasisPosition::UnderRight, true),
+    ] {
+        let mut span = make_span("中文", 0.0);
+        span.language = language.to_string();
+        span.text_emphasis = TextEmphasis::FilledDot;
+        span.text_emphasis_position = position;
+        span.annotation_clearance = AnnotationClearance::Auto;
+        let plain = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
+        assert_eq!(plain.top() >= placement.rect.bottom(), under);
+        span.ruby = "zhōng wén".to_string();
+        for side in [RubySide::Over, RubySide::Under] {
+            span.ruby_side = side;
+            let stacked = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
+            let expected = if (side == RubySide::Under) == under {
+                span.ruby_font_size()
+            } else {
+                0.0
+            };
+            assert!(((stacked.top() - plain.top()).abs() - expected).abs() < 0.01);
+        }
+    }
+}
+
+#[test]
+fn chinese_underline_stays_below_the_base_ink() {
+    for position in [
+        TextUnderlinePosition::Auto,
+        TextUnderlinePosition::Under,
+        TextUnderlinePosition::UnderRight,
+    ] {
+        let (mut paragraph, plan, layout) = cjk_horizontal_layout(
+            &["文"],
+            "zh-Hans-CN",
+            crate::shapes::text_policy::KoreanWrap::Syllable,
+            200.0,
+        );
+        let span = &mut paragraph.children_mut()[0];
+        span.text_decoration = Some(skia::textlayout::TextDecoration::UNDERLINE);
+        span.text_underline_position = position;
+        let segments =
+            crate::render::text::decoration_segments(&layout, &paragraph, &plan.offsets, 0.0, 0.0);
+        assert_eq!(segments.len(), 1);
+        let bottom =
+            layout.get_rects_for_range(0..1, RectHeightStyle::Tight, RectWidthStyle::Tight)[0]
+                .rect
+                .bottom();
+        assert!(segments[0].y - segments[0].thickness / 2.0 >= bottom);
+    }
+}
+
+#[test]
+fn below_emphasis_clears_an_underline_on_the_same_side() {
+    let span = TextSpan {
+        language: "zh-Hans".to_string(),
+        text_emphasis: TextEmphasis::FilledDot,
+        text_decoration: Some(skia::textlayout::TextDecoration::UNDERLINE),
+        text_underline_position: TextUnderlinePosition::Under,
+        annotation_clearance: AnnotationClearance::Auto,
+        ..make_span("文", 0.0)
+    };
+    let placement = super::emphasis::HorizontalEmphasisPlacement {
+        span: 0,
+        range: 0..1,
+        mark: '•',
+        rect: skia::Rect::from_xywh(0.0, 20.0, 16.0, 18.0),
+    };
+    let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
+    assert!(mark.top() > placement.rect.bottom() + span.font_size / 9.0);
+}
+
+#[test]
+fn chinese_horizontal_emphasis_defaults_below_the_base() {
+    let span = TextSpan {
+        language: "zh-Hans-CN".to_string(),
+        text_emphasis: TextEmphasis::FilledDot,
+        ..make_span("中文", 0.0)
+    };
+    let placement = super::emphasis::HorizontalEmphasisPlacement {
+        span: 0,
+        range: 0..1,
+        mark: '•',
+        rect: skia::Rect::from_xywh(0.0, 20.0, 16.0, 18.0),
+    };
+    let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
+    assert!(mark.top() >= placement.rect.bottom());
+}
+
+#[test]
 fn horizontal_pinyin_tones_keep_canonical_shaping_and_group_alignment() {
     use crate::shapes::text_vertical::test_support::{provider, EM, PINYIN_TEST_FONT};
     use crate::shapes::{FontFamily, FontStyle};

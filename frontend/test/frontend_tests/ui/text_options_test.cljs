@@ -102,6 +102,21 @@
         (t/is (empty? @changes) "Showing controls must not assign a profile")))))
 
 
+(t/deftest chinese-decoration-controls-require-a-matching-profile
+  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+    (doseq [profile [nil :multiple "ja" "ko" "zh-Hans-CN" "zh-Hant-TW"]]
+      (let [changes (atom [])
+            markup (rds/renderToStaticMarkup
+                    (mf/element tll/language-layout-options*
+                                (mf/props {:language :chinese
+                                           :values {:text-language profile}
+                                           :on-change #(swap! changes conj %)})))]
+        (doseq [label ["workspace.options.text-options.text-emphasis"
+                       "workspace.options.text-options.emphasis-position"
+                       "workspace.options.text-options.underline-position"]]
+          (t/is (= (tl/profile-matches? :chinese profile) (str/includes? markup label))))
+        (t/is (empty? @changes))))))
+
 (t/deftest pinyin-reading-editor-requires-a-chinese-profile-and-text-selection
   (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
     (doseq [profile [nil :multiple "ja" "ko" "zh-Hans" "zh-Hant-TW"]
@@ -481,3 +496,10 @@
     (t/is (str/includes? (re-find #"<input[^>]*id=\"rtl-text-direction\"[^>]*>"
                                   (render "horizontal-tb"))
                          "checked=\"\""))))
+
+
+(t/deftest decoration-position-changes-refresh-the-text-options
+  (doseq [attr [:text-emphasis-position :text-underline-position]]
+    (let [before (mf/props {:values {attr "auto"}})
+          after (mf/props {:values {attr "under-left"}})]
+      (t/is (false? (@#'text-menu/check-props before after))))))

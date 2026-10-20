@@ -62,6 +62,8 @@
           line-height
           (:line-height txt/default-typography))
 
+        chinese          (and (string? (:text-language data))
+                              (= "zh" (first (str/split (str/lower (:text-language data)) #"-"))))
         text-align       (:text-align data "start")
         writing-mode     (:writing-mode data)
         text-orientation (:text-orientation data)
@@ -71,6 +73,8 @@
                               :margin 0}]
 
     (cond-> base
+      chinese (obj/set! "textEmphasisPosition" "under right")
+      chinese (obj/set! "textUnderlinePosition" "under left")
       (some? line-height)       (obj/set! "lineHeight" line-height)
       (some? line-height)       (obj/set! "--paragraph-line-height" (str line-height))
       (some? text-align)        (obj/set! "textAlign" text-align)
@@ -135,6 +139,8 @@
   [style data]
   (let [text-combine-upright (:text-combine-upright data)
         text-emphasis        (:text-emphasis data)
+        emphasis-position    (:text-emphasis-position data)
+        underline-position   (:text-underline-position data)
         font-features        (font-feature-settings (:font-features data))
         line-height          (annotation-line-height data)
         font-size            (:font-size data)]
@@ -146,6 +152,12 @@
       ;; pair ("filled dot").
       (set-value? text-emphasis)
       (obj/set! "textEmphasis" (str/replace text-emphasis "-" " "))
+
+      (some? emphasis-position)
+      (obj/set! "textEmphasisPosition" (if (= "auto" emphasis-position) "inherit" (str/replace emphasis-position "-" " ")))
+
+      (some? underline-position)
+      (obj/set! "textUnderlinePosition" (if (= "auto" underline-position) "inherit" (str/replace underline-position "-" " ")))
 
       (some? font-features)
       (obj/set! "fontFeatureSettings" font-features)
@@ -277,6 +289,8 @@
       ;; Base-span styles that belong to the base glyphs, not the reading.
       (obj/unset! "textCombineUpright")
       (obj/unset! "textEmphasis")
+      (obj/unset! "textEmphasisPosition")
+      (obj/unset! "textUnderlinePosition")
       (obj/unset! "fontFeatureSettings")
       (obj/unset! "display")
       (obj/unset! "inlineSize")))

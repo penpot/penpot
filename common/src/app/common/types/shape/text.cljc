@@ -70,6 +70,8 @@
             [:direction {:optional true} ::sm/text]
             [:text-combine-upright {:optional true} (schema:jl-enum :text-combine-upright)]
             [:text-emphasis {:optional true} (schema:jl-enum :text-emphasis)]
+            [:text-emphasis-position {:optional true} (schema:jl-enum :text-emphasis-position)]
+            [:text-underline-position {:optional true} (schema:jl-enum :text-underline-position)]
             [:ruby {:optional true} :string]
             [:ruby-hidden {:optional true} :boolean]
             [:ruby-size {:optional true} (schema:jl-enum :ruby-size)]
