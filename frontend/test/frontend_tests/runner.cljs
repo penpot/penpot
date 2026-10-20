@@ -19,6 +19,7 @@
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.persistence-commits-test]
    [frontend-tests.data.persistence-retry-test]
+   [frontend-tests.data.persistence-rollback-test]
    [frontend-tests.data.persistence-test]
    [frontend-tests.data.profile-test]
    [frontend-tests.data.repo-test]
@@ -168,6 +169,7 @@
    'frontend-tests.data.nitrate-test
    'frontend-tests.data.persistence-commits-test
    'frontend-tests.data.persistence-retry-test
+   'frontend-tests.data.persistence-rollback-test
    'frontend-tests.data.persistence-test
    'frontend-tests.data.profile-test
    'frontend-tests.data.repo-test

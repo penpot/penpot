@@ -18,6 +18,7 @@
    [app.common.types.text :as txt]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
@@ -34,7 +35,9 @@
    [app.util.text.content :as content]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-contrast-color [background-color]
@@ -182,7 +185,22 @@
         on-clipboard-change
         (fn [event]
           (let [style (.-detail event)]
-            (st/emit! (dw/set-clipboard-style style))))]
+            (st/emit! (dw/set-clipboard-style style))))
+
+        ;; A rollback that reverts the text or its styles puts the reverted
+        ;; content in the editor, which would otherwise keep showing and
+        ;; saving the rejected one
+        rolled-back-sub
+        (->> st/stream
+             (rx/filter (ptk/type? ::dps/rolled-back))
+             (rx/subs! (fn [_]
+                         (let [content (-> (dsh/lookup-page-objects @st/state)
+                                           (get shape-id)
+                                           :content)
+                               current (content/dom->cljs (dwt/get-editor-root instance))]
+                           (when (and (some? content)
+                                      (not (dwt/same-styled-text? content current)))
+                             (dwt/set-editor-root! instance (content/cljs->dom content)))))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
     (.addEventListener ^js instance "focus" on-focus)
@@ -210,6 +228,7 @@
       (.removeEventListener ^js instance "stylechange" on-style-change)
       (.removeEventListener ^js instance "change" on-change)
       (.removeEventListener ^js instance "clipboardchange" on-clipboard-change)
+      (rx/dispose! rolled-back-sub)
       (dwt/dispose! instance)
       (st/emit! (dwt/update-editor nil)))))
 

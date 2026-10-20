@@ -156,7 +156,7 @@
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
            file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?
-           selected-before translation? skip-component-sync?]}]
+           selected-before translation? skip-component-sync? undo-index]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -185,7 +185,9 @@
                    :ignore-wasm? ignore-wasm?
                    :selected-before selected-before
                    :translation? translation?
-                   :skip-component-sync? skip-component-sync?}]
+                   :skip-component-sync? skip-component-sync?
+                   ;; Undo history index an undo or redo commit moved away from
+                   :undo-index undo-index}]
 
     (ptk/reify ::commit
       cljs.core/IDeref

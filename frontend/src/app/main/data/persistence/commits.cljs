@@ -16,7 +16,7 @@
 
 (def ^:private commit-keys
   "Keys a queue entry keeps of each of its commits."
-  [:id :origin :undo-group :redo-changes :undo-changes :remote-seq])
+  [:id :origin :undo-group :redo-changes :undo-changes :remote-seq :undo-index])
 
 (def ^:private saved-keys
   "Keys a saved commit takes from its queue entry."
@@ -96,7 +96,9 @@
   Each file in `:files` undoes all its pending commits, applies again the
   remote changes that came after them and redoes the commits that stay, so
   a peer's later value for an attribute survives. Saved commits of a
-  reverted group go to `:compensate`, to be undone by a new commit."
+  reverted group go to `:compensate`, to be undone by a new commit.
+  `:undo-index` is the undo history index before the oldest undo or redo
+  commit it reverts, if any."
   [pstate {:keys [file-id commits] :as entry} {:keys [commit-ids]}]
   (let [rejected  (set commit-ids)
         accepted  (into [] (remove #(contains? rejected (:id %))) commits)
@@ -113,6 +115,9 @@
 
         saved     (into (vec (:saved pstate)) (saved-commits entry accepted))
 
+        compensate
+        (into [] (filter #(contains? groups (:undo-group %))) saved)
+
         file-plan
         (fn [[fid commits]]
           (let [all       (get pending fid)
@@ -125,8 +130,10 @@
                   :reverted commits}]))]
 
     {:files      (into {} (map file-plan) reverted)
-     :compensate (into [] (filter #(contains? groups (:undo-group %))) saved)
-     :groups     groups}))
+     :compensate compensate
+     :groups     groups
+     ;; Saved commits are older than pending ones
+     :undo-index (some :undo-index (concat compensate (mapcat val reverted)))}))
 
 (defn release-plan
   "How to roll back every pending commit of `file-id`, as if the server had

@@ -642,3 +642,29 @@
           result  (dwt/merge-live-text-dimensions :auto-width selrect {:width 0 :height 0})]
       (t/is (= 50 (:width result)))
       (t/is (= 25 (:height result))))))
+
+;; ---------------------------------------------------------------------------
+;; same-styled-text?
+;; ---------------------------------------------------------------------------
+
+(defn- text-content
+  "Text content of one paragraph holding `runs`, each a map with `:text`
+  and its styles."
+  [& runs]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :key (str (uuid/next))
+                           :children (mapv #(assoc % :key (str (uuid/next))) runs)}]}]})
+
+(t/deftest same-styled-text-ignores-node-keys-and-nil-styles
+  (t/is (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                               (text-content {:text "Hello" :font-weight "400" :font-style nil}))))
+
+(t/deftest same-styled-text-sees-a-style-change-on-the-same-text
+  (t/is (not (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                                    (text-content {:text "Hello" :font-weight "700"})))))
+
+(t/deftest same-styled-text-sees-a-text-change
+  (t/is (not (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                                    (text-content {:text "Hello!" :font-weight "400"})))))

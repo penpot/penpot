@@ -443,6 +443,19 @@
         result (if (empty? result) txt/default-text-attrs result)]
     result))
 
+(defn- styled-runs
+  "The text runs of `content` with their styles, without node ids or the
+  style keys set to nil."
+  [content]
+  (mapv (fn [[style text]] [(d/without-nils style) text])
+        (txt/content->text+styles content)))
+
+(defn same-styled-text?
+  "True when text contents `a` and `b` hold the same text with the same
+  styles."
+  [a b]
+  (= (styled-runs a) (styled-runs b)))
+
 (defn v2-current-text-values
   [{:keys [editor-instance attrs]}]
   (let [result (-> (.-currentStyle editor-instance)
