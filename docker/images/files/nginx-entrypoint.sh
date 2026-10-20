@@ -61,7 +61,7 @@ fi
 envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE,\$PENPOT_IPV6_LISTEN_DIRECTIVE" \
         < /tmp/nginx.conf.template > /etc/nginx/nginx.conf
 
-if [[ $PENPOT_FLAGS == *"enable-admin-console"* ]]; then
+if [[ " $PENPOT_FLAGS " != *" disable-admin-console "* ]]; then
     export PENPOT_ADMIN_CONSOLE_URI=${PENPOT_ADMIN_CONSOLE_URI:-http://penpot-admin-console:3000}
     envsubst "\$PENPOT_ADMIN_CONSOLE_URI" \
              < /tmp/nginx-admin-console-locations.conf.template > /etc/nginx/overrides/server.d/admin-console-locations.conf

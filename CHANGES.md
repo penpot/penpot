@@ -2,6 +2,12 @@
 
 ## 2.19.0 (Unreleased)
 
+### :boom: Breaking changes & Deprecations
+
+- The Admin Console is now enabled by default and the `enable-admin-console` flag is no
+  longer needed. Self-hosted instances must deploy the `penpot-admin-console` service and
+  set `PENPOT_ADMIN_CONSOLE_URI` in frontend and backend (check the [upgrade guide](https://help.penpot.app/technical-guide/getting-started/docker/#upgrade-to-2.19)).
+
 ### :rocket: Epics and highlights
 
 - Add configurable keyboard shortcuts [#9924](https://github.com/penpot/penpot/issues/9924) (PR: [#10237](https://github.com/penpot/penpot/pull/10237))
