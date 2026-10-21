@@ -9658,3 +9658,6 @@ msgstr "Allow access"
 
 msgid "mcp.oauth.failed"
 msgstr "This request has expired, was already used, or could not be completed. Start the connection again from your MCP client."
+
+msgid "mcp.oauth.cancelled"
+msgstr "Connection cancelled"

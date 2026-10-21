@@ -13,6 +13,7 @@
    [app.main.data.profile :as profile]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.ui.auth.login-modal :refer [login-register-modal*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.typography :as typography]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -28,13 +29,21 @@
   [path]
   (str (uri/join cf/public-uri (str "api/mcp/oauth/" path))))
 
-(defn- return-after-login!
+(defn- prepare-login!
   []
-  (binding [storage/*sync* true]
-    (swap! storage/session assoc :login-redirect (rt/get-current-href)))
-  ;; The login form owns this redirect and clears it without callback-url.
-  ;; Pass the current approval URL so login resumes the same pending request.
-  (st/emit! (rt/nav :auth-login {:callback-url (rt/get-current-href)})))
+  (let [href (rt/get-current-href)]
+    ;; Save the return URL even when only SSO buttons are enabled and the
+    ;; password form (which normally stores it) never mounts.
+    (binding [storage/*sync* true]
+      (swap! storage/session assoc :login-redirect href))
+    {:callback-url href}))
+
+(defn- cancel-login!
+  []
+  ;; Do not let a later, unrelated login resume this cancelled attempt.
+  (when (= (:login-redirect storage/session) (rt/get-current-href))
+    (binding [storage/*sync* true]
+      (swap! storage/session dissoc :login-redirect))))
 
 (defn- oauth-request
   [method path params]
@@ -52,6 +61,8 @@
   (let [handle     (get-in route [:query-params :request])
         details    (mf/use-state nil)
         failed?    (mf/use-state false)
+        login-params (mf/use-state nil)
+        cancelled? (mf/use-state false)
         busy?      (mf/use-state false)
         ;; The ref also blocks a second click before React renders disabled buttons.
         submitting (mf/use-memo (fn [] (atom false)))
@@ -78,6 +89,8 @@
     (mf/with-effect [handle]
       (reset! details nil)
       (reset! failed? false)
+      (reset! login-params nil)
+      (reset! cancelled? false)
       (reset! busy? false)
       (reset! submitting false)
       (let [subscription
@@ -86,37 +99,49 @@
                   (fn [{:keys [status body]}]
                     (case status
                       200 (reset! details body)
-                      401 (return-after-login!)
+                      401 (reset! login-params (prepare-login!))
                       (reset! failed? true)))
                   (fn [_] (reset! failed? true))))]
         #(rx/dispose! subscription)))
 
     [:main {:class (stl/css :page)}
-     [:section {:class (stl/css :card) :aria-labelledby "mcp-approval-title"}
-      [:> heading* {:level 1 :typography typography/title-large :id "mcp-approval-title"}
-       (tr "mcp.oauth.title")]
-      (cond
-        @failed?
-        [:> text* {:typography typography/body-large :role "alert"}
-         (tr "mcp.oauth.failed")]
+     (if @login-params
+       [:> login-register-modal*
+        {:params @login-params
+         :on-register #(st/emit! (rt/reload true))
+         :on-close (fn []
+                     (cancel-login!)
+                     (reset! login-params nil)
+                     (reset! cancelled? true))}]
+       [:section {:class (stl/css :card) :aria-labelledby "mcp-approval-title"}
+        [:> heading* {:level 1 :typography typography/title-large :id "mcp-approval-title"}
+         (tr "mcp.oauth.title")]
+        (cond
+          @cancelled?
+          [:> text* {:typography typography/body-large :role "status"}
+           (tr "mcp.oauth.cancelled")]
 
-        (nil? @details)
-        [:> loader* {:title (tr "labels.loading")}]
+          @failed?
+          [:> text* {:typography typography/body-large :role "alert"}
+           (tr "mcp.oauth.failed")]
 
-        :else
-        [:*
-         [:> text* {:typography typography/body-large}
-          (tr "mcp.oauth.request" (or (:client-name @details) (:client-id @details)))]
-         [:> text* {:typography typography/body-small :class (stl/css :identity)}
-          (:client-id @details)]
-         [:> text* {:typography typography/body-medium}
-          (tr "mcp.oauth.account" (:email profile))]
-         [:> text* {:typography typography/body-large}
-          (tr "mcp.oauth.access")]
-         [:> text* {:typography typography/body-medium}
-          (tr "mcp.oauth.enable")]
-         [:div {:class (stl/css :actions)}
-          [:> button* {:variant "secondary" :disabled @busy? :on-click #(decide! "deny")}
-           (tr "labels.cancel")]
-          [:> button* {:variant "primary" :disabled @busy? :on-click #(decide! "approve")}
-           (tr "mcp.oauth.approve")]]])]]))
+          (nil? @details)
+          [:> loader* {:title (tr "labels.loading")}]
+
+          :else
+          [:*
+           [:> text* {:typography typography/body-large}
+            (tr "mcp.oauth.request" (or (:client-name @details) (:client-id @details)))]
+           [:> text* {:typography typography/body-small :class (stl/css :identity)}
+            (:client-id @details)]
+           [:> text* {:typography typography/body-medium}
+            (tr "mcp.oauth.account" (:email profile))]
+           [:> text* {:typography typography/body-large}
+            (tr "mcp.oauth.access")]
+           [:> text* {:typography typography/body-medium}
+            (tr "mcp.oauth.enable")]
+           [:div {:class (stl/css :actions)}
+            [:> button* {:variant "secondary" :disabled @busy? :on-click #(decide! "deny")}
+             (tr "labels.cancel")]
+            [:> button* {:variant "primary" :disabled @busy? :on-click #(decide! "approve")}
+             (tr "mcp.oauth.approve")]]])])]))
