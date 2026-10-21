@@ -378,3 +378,120 @@
       (t/is (= uuid/zero (:parent-id shape1')))
       (t/is (= uuid/zero (:parent-id shape2')))
       (t/is (= #{(thi/id :shape1) (thi/id :shape2)} (set (:shapes root')))))))
+
+(defn- broken-frame-file
+  []
+  (-> (thf/sample-file :file1 :page-label :page1)
+      (assoc :revn 3)
+      (ths/add-sample-shape :shape1)
+      (ths/update-shape :shape1 :frame-id (uuid/next))))
+
+(t/deftest repair-file-until-valid-fixes-frame-not-found
+  (t/testing "repairs a :frame-not-found shape and leaves :revn untouched"
+    (let [file    (broken-frame-file)
+          errors  (cfv/validate-file file {})
+          result  (cfr/repair-file-until-valid
+                   file {}
+                   (fn [file _] (cfv/validate-file file {})))
+          file'   (:file result)
+          errors' (cfv/validate-file file' {})
+          shape'  (ths/get-shape file' :shape1 :page-label :page1)]
+
+      (t/is (= #{:frame-not-found} (into #{} (map :code) errors)))
+      (t/is (pos? (count (:changes result))))
+      (t/is (nil? (:errors result)))
+      (t/is (nil? errors'))
+      (t/is (= 3 (:revn file')))
+      (t/is (some? (get-in file' [:data :pages-index (thi/id :page1) :objects (:frame-id shape')]))))))
+
+(t/deftest repair-file-until-valid-healthy-file
+  (t/testing "a valid file is returned unchanged"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (assoc :revn 2)
+                     (ths/add-sample-shape :shape1))
+          result (cfr/repair-file-until-valid
+                  file {}
+                  (fn [file _] (cfv/validate-file file {})))]
+      (t/is (identical? file (:file result)))
+      (t/is (= [] (:changes result)))
+      (t/is (zero? (:iterations result)))
+      (t/is (nil? (:errors result)))
+      (t/is (= 2 (:revn (:file result)))))))
+
+(t/deftest repair-file-until-valid-passes-applied-changes
+  (t/testing "errors-fn receives the changes applied so far"
+    (let [calls  (atom [])
+          file   (broken-frame-file)
+          result (cfr/repair-file-until-valid
+                  file {}
+                  (fn [file applied]
+                    (swap! calls conj applied)
+                    (cfv/validate-file file {})))]
+      (t/is (nil? (:errors result)))
+      (t/is (>= (count @calls) 2))
+      (t/is (= [] (first @calls)))
+      (t/is (pos? (count (last @calls)))))))
+
+(t/deftest repair-file-until-valid-stops-on-noop-repair
+  (t/testing "an empty repair batch stops after one iteration"
+    (let [file   (broken-frame-file)
+          errors (cfv/validate-file file {})]
+      (with-redefs [cfr/repair-file (fn [_ _ _] [])]
+        (let [result (cfr/repair-file-until-valid
+                      file {}
+                      (fn [file _] (cfv/validate-file file {})))]
+          (t/is (= 1 (:iterations result)))
+          (t/is (= [] (:changes result)))
+          (t/is (= (mapv :code errors) (mapv :code (:errors result)))))))))
+
+(t/deftest repair-file-until-valid-stops-when-error-identity-stable
+  (t/testing "a non-empty repair that leaves the same [code shape-id] stops after two iterations"
+    (let [sid (uuid/next)]
+      (with-redefs [cfr/repair-file
+                    (fn [_ _ _]
+                      [{:type :mod-obj
+                        :id (uuid/next)
+                        :page-id (uuid/next)
+                        :operations []}])]
+        (let [result (cfr/repair-file-until-valid
+                      (broken-frame-file) {}
+                      (fn [_ _] [{:code :frame-not-found :shape-id sid}])
+                      :max-iterations 10)]
+          (t/is (= 2 (:iterations result)))
+          (t/is (= [:frame-not-found] (mapv :code (:errors result)))))))))
+
+(t/deftest repair-file-until-valid-stops-at-max-iterations
+  (t/testing "a repair that never empties errors stops at max-iterations"
+    (let [file   (broken-frame-file)
+          n      (atom 0)]
+      (with-redefs [cfr/repair-file
+                    (fn [_ _ _]
+                      [{:type :mod-obj
+                        :id (uuid/next)
+                        :page-id (uuid/next)
+                        :operations []}])]
+        (let [result (cfr/repair-file-until-valid
+                      file {}
+                      (fn [_ _]
+                        (swap! n inc)
+                        [{:code :frame-not-found
+                          :shape-id (uuid/next)}])
+                      :max-iterations 3)]
+          (t/is (= 3 (:iterations result)))
+          (t/is (some? (:errors result))))))))
+
+(t/deftest repair-file-until-valid-uses-initial-errors
+  (t/testing "errors-fn is not called on the first iteration when :initial-errors is given"
+    (let [calls  (atom 0)
+          file   (broken-frame-file)
+          seed   (cfv/validate-file file {})
+          result (cfr/repair-file-until-valid
+                  file {}
+                  (fn [file applied]
+                    (swap! calls inc)
+                    (cfv/validate-file file {}))
+                  :initial-errors seed)]
+      (t/is (nil? (:errors result)))
+      ;; First iteration used the seed; errors-fn runs only after the repair.
+      (t/is (= 1 @calls)))))
+

@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as cfc]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
@@ -21,8 +22,6 @@
    [app.common.types.shape :as cts]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
-
-(log/set-level! :debug)
 
 (defmulti repair-error
   (fn [code _error _file-data _libraries] code))
@@ -867,3 +866,48 @@
                 (pcb/empty-changes nil)
                 errors)]
     redo-changes))
+
+(defn- error-identity-set
+  [errors]
+  (into #{} (map (juxt :code :shape-id)) errors))
+
+(defn repair-file-until-valid
+  "Repeatedly validate and repair `file` until `errors-fn` returns nil
+  or no further progress is possible.
+
+  `errors-fn` is `(fn [file applied-changes] errors-or-nil)`. Never
+  changes `:revn`.
+
+  Returns `{:file file' :changes [...] :iterations n :errors remaining}`."
+  [file libraries errors-fn & {:keys [max-iterations initial-errors]
+                               :or {max-iterations 10}}]
+  (loop [file         file
+         applied      []
+         iteration    0
+         prev-idents  nil
+         seed-errors  initial-errors]
+    (if (>= iteration max-iterations)
+      {:file       file
+       :changes    applied
+       :iterations iteration
+       :errors     (not-empty (errors-fn file applied))}
+      (let [errors (if (and (zero? iteration) (some? seed-errors))
+                     seed-errors
+                     (errors-fn file applied))]
+        (if (empty? errors)
+          {:file       file
+           :changes    applied
+           :iterations iteration
+           :errors     nil}
+          (let [batch  (repair-file file libraries errors)
+                idents (error-identity-set errors)]
+            (if (or (empty? batch) (= idents prev-idents))
+              {:file       file
+               :changes    applied
+               :iterations (inc iteration)
+               :errors     (not-empty errors)}
+              (recur (update file :data cfc/process-changes batch)
+                     (into applied batch)
+                     (inc iteration)
+                     idents
+                     nil))))))))

@@ -96,6 +96,9 @@
     :file-validation
     ;; Reports the referential integrity validation errors internally.
     :soft-file-validation
+    ;; When a save fails referential integrity because the stored file
+    ;; was already broken, repair that damage and save the edit on top.
+    :file-auto-repair
     ;; TODO: deprecate this flag and consolidate the code
     :frontend-svgo
     ;; TODO: deprecate this flag and consolidate the code
@@ -236,7 +239,8 @@
    :enable-token-combobox
    :enable-custom-shortcuts
    :enable-token-lib-sync
-   :enable-link-unfurl])
+   :enable-link-unfurl
+   :enable-file-auto-repair])
 
 (defn parse
   [& flags]

@@ -7035,6 +7035,12 @@ msgstr "ACTUALIZACIONES"
 msgid "workspace.notification-pill.detail"
 msgstr "Detalles"
 
+#: src/app/main/data/workspace/notifications.cljs:282
+msgid "workspace.notifications.file-repaired"
+msgstr ""
+"Hemos corregido algunos problemas de este archivo. Hay una copia de antes de "
+"la corrección en el historial de versiones, como el autoguardado de hoy."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "Pulsa el botón + para añadir interacciones."
