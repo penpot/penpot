@@ -78,7 +78,7 @@
   \"abaco\" instead of after \"z\"."
   [label]
   (-> (.normalize label "NFD")
-      (.replace combining-marks-re "")
+      (str/replace combining-marks-re "")
       (str/lower)))
 
 (defn sort-organization-teams
