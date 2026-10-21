@@ -2942,6 +2942,21 @@
           (mem/free)
           {:x x :y y :width w :height h})))))
 
+(defn export-target
+  [shape-id scale format]
+  (when (initialized?)
+    (let [buffer (uuid/get-u32 shape-id)]
+      (case (h/call wasm/internal-module "_export_target"
+                    (aget buffer 0)
+                    (aget buffer 1)
+                    (aget buffer 2)
+                    (aget buffer 3)
+                    scale
+                    (sr/translate-raster-format format))
+        0 :client
+        2 :too-large
+        :exporter))))
+
 (defn render-shape-pdf
   [shape-id]
   (when (initialized?)

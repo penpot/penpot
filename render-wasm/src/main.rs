@@ -809,6 +809,31 @@ pub extern "C" fn render_shape_pixels(
 }
 
 #[no_mangle]
+pub extern "C" fn export_target(a: u32, b: u32, c: u32, d: u32, scale: f32, format: u32) -> u32 {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let Ok(format) = RasterFormat::from_u32(format) else {
+        return 1;
+    };
+
+    with_state!(state, {
+        let Some(shape) = state.shapes.get(&id) else {
+            return 1;
+        };
+        let extrect = get_render_state().get_cached_extrect(shape, &state.shapes, scale);
+        let width = (scale * extrect.width()).ceil() as i32;
+        let height = (scale * extrect.height()).ceil() as i32;
+        let max_size = get_gpu_state().max_surface_size();
+        if width <= max_size && height <= max_size {
+            0
+        } else if format.fits_raster(width, height) {
+            1
+        } else {
+            2
+        }
+    })
+}
+
+#[no_mangle]
 pub extern "C" fn render_stats() {
     get_render_state().print_stats();
 }

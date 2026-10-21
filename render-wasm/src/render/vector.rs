@@ -821,7 +821,22 @@ fn render_group(
     let child_opts = opts.for_children_of(element);
 
     if masked {
+        // Inner shadows filter the masked pixels, so they follow the mask's
+        // outline. The canvas matrix already carries `scale`.
+        let inner_shadows = element.masked_group_inner_shadow_filter();
+        if let Some(filter) = &inner_shadows {
+            let mut paint = Paint::default();
+            paint.set_image_filter(filter.clone());
+            canvas.save_layer(
+                &skia::canvas::SaveLayerRec::default()
+                    .bounds(&element.extrect(tree, scale))
+                    .paint(&paint),
+            );
+        }
         render_masked_children(shared, canvas, element, &children, tree, scale, &child_opts)?;
+        if inner_shadows.is_some() {
+            canvas.restore(); // inner shadow layer
+        }
     } else {
         for child_id in &children {
             render_tree_inner(shared, canvas, child_id, tree, scale, &child_opts)?;

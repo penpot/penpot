@@ -469,6 +469,7 @@ dependencies = [
  "indexmap",
  "insta",
  "macros",
+ "miniz_oxide",
  "skia-safe",
  "thiserror",
  "unicode-segmentation",

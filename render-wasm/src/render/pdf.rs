@@ -7,6 +7,9 @@ use crate::uuid::Uuid;
 use super::vector;
 use super::RenderResources;
 
+mod glyph_text;
+mod to_unicode;
+
 /// Renders a shape tree to a PDF document and returns the raw PDF bytes.
 ///
 /// This is a dedicated vector-PDF render path that draws directly to a Skia
@@ -49,5 +52,8 @@ pub fn render_to_pdf(
     let document = on_page.end_page();
     document.close();
 
-    Ok(pdf_bytes)
+    // Skia maps ligatures and other substituted glyphs to U+0000; give them
+    // back their text so it can be copied from the PDF.
+    let glyph_texts = glyph_text::collect(tree, id);
+    Ok(to_unicode::fix_to_unicode(pdf_bytes, &glyph_texts))
 }

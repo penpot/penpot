@@ -3795,3 +3795,73 @@ fn raster_export_of_child_paints_inherited_group_fill() {
     assert_eq!(inherited_png, raster_png(&own, uid(2)));
     assert_ne!(inherited_png, raster_png(&bare, uid(2)));
 }
+
+/// Reads one pixel of an encoded raster export as unpremultiplied RGBA.
+fn raster_pixel(png: &[u8], (x, y): (i32, i32)) -> skia::Color {
+    let image = skia::Image::from_encoded(skia::Data::new_copy(png)).expect("decode png");
+    let info = skia::ImageInfo::new(
+        (1, 1),
+        skia::ColorType::RGBA8888,
+        skia::AlphaType::Unpremul,
+        None,
+    );
+    let mut px = [0u8; 4];
+    assert!(image.read_pixels(
+        &info,
+        &mut px,
+        4,
+        (x, y),
+        skia::image::CachingHint::Disallow
+    ));
+    skia::Color::from_argb(px[3], px[0], px[1], px[2])
+}
+
+/// #12334: headless raster/PDF must draw a masked group's inner shadow
+/// inside the mask outline, as the GPU single export does.
+#[test]
+fn raster_export_of_masked_group_draws_inner_shadow() {
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let mask_id = uid(2);
+    let content_id = uid(3);
+    let blue = skia::Color::from_rgb(0, 63, 255);
+
+    add_masked_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 100.0),
+        &[mask_id, content_id],
+    );
+    add_solid_circle(
+        &mut pool,
+        mask_id,
+        group_id,
+        (0.0, 0.0, 100.0, 100.0),
+        skia::Color::BLACK,
+    );
+    add_solid_rect(
+        &mut pool,
+        content_id,
+        group_id,
+        (0.0, 0.0, 100.0, 100.0),
+        blue,
+    );
+    pool.get_mut(&group_id).unwrap().add_shadow(Shadow::new(
+        skia::Color::BLACK,
+        0.0,
+        0.0,
+        (20.0, 0.0),
+        ShadowStyle::Inner,
+        false,
+    ));
+
+    let (png, width, height) = raster_png_size(&pool, group_id);
+    assert_eq!((width, height), (100, 100));
+
+    // Left edge: the shifted silhouette leaves a band the shadow fills.
+    assert_eq!(raster_pixel(&png, (8, 50)), skia::Color::BLACK);
+    assert_eq!(raster_pixel(&png, (50, 50)), blue);
+    // Outside the circle the mask still clears everything.
+    assert_eq!(raster_pixel(&png, (3, 3)).a(), 0);
+}

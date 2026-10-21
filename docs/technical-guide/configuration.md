@@ -735,7 +735,7 @@ flags, and by whether `PENPOT_PUBLIC_URI` is served over HTTPS. See
 
 ### Database
 
-Penpot only supports PostgreSQL and we highly recommend >=16 version. If you are using official
+Penpot only supports PostgreSQL and we highly recommend >=15 version. If you are using official
 docker images this is already solved for you.
 
 Essential database configuration:
