@@ -308,6 +308,56 @@
         (reset! cache old-cache)
         (reset! styles old-styles)))))
 
+(t/deftest ^:async cancelled-composition-restores-styled-source-without-changing-history
+  (let [edits      @#'text-editor/editing-history
+        cache      @#'text-editor/shape-text-contents
+        old-edits  @edits
+        old-cache  @cache
+        source     (editor-content [{:text "A"}
+                                    {:text "中" :fills [{:fill-color "#b84821"}]}
+                                    {:text "😀文" :font-weight "700"}
+                                    {:text "B"}])
+        deleted    (editor-content [{:text "AB"}])
+        engine     (atom source)
+        range      (atom nil)
+        redo       [{:content (editor-content [{:text "你好"}])
+                     :selection (selection 0 2 0 2)}]]
+    (try
+      (await
+       (mock/with-mocks*
+         {wasm/ready? (constantly true)
+          wasm/internal-module
+          #js {"_text_editor_composition_start" (fn [] nil)
+               "_text_editor_composition_end" (fn [] (reset! engine deleted))
+               "_text_editor_restore_selection"
+               (fn [ap ao fp fo] (reset! range (selection ap ao fp fo)))}
+          text-editor/text-editor-encode-text-pre (constantly nil)
+          text-editor/text-editor-encode-text-post (constantly nil)
+          text-editor/text-editor-get-selection (fn [] @range)}
+         (doseq [selected [(selection 0 1 0 5) (selection 0 5 0 1)
+                           (selection 0 1 0 1)]]
+           (reset! engine source)
+           (reset! range selected)
+           (reset! cache {:fixture source})
+           (reset! edits (assoc history/empty-history :shape-id :fixture :future redo))
+           (text-editor/text-editor-composition-start)
+           (text-editor/finish-composition
+            "" identity
+            (fn [shape-id content]
+              (reset! engine content)
+              (text-editor/cache-shape-text-content! shape-id content)))
+           ;; The usual compositionend sync exports the current WASM tree.
+           (text-editor/update-cached-content! :fixture @engine)
+           (t/is (= source @engine))
+           (t/is (= selected @range))
+           (t/is (= source (text-editor/get-cached-content :fixture)))
+           (t/is (empty? (:past @edits)))
+           (t/is (= redo (:future @edits)))
+           (t/is (not (:composing @edits))))))
+      (finally
+        (reset! edits old-edits)
+        (reset! cache old-cache)))))
+
 (t/deftest composition-caret-goes-to-the-end-of-the-changed-part
   ;; Typing appends, converting replaces all, and a candidate for a middle
   ;; clause changes only that clause.
