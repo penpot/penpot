@@ -213,7 +213,7 @@
                     :error (ex-message cause)}))
 
 (defn- cancel-local!
-  [job-id]
+  [job-id & {:as data}]
   (let [k    (str job-id)
         rt   (get @registry k)
         job  (:job rt)]
@@ -227,7 +227,7 @@
         ;; (`scheduler/drop-queued!`) releases the job, and `transition!` on a
         ;; released job is a no-op, so a queued job would keep claiming to be
         ;; queued in the store and never publish its `cancelled` update.
-        (let [result (transition! job {:state "cancelled" :ended-at (now-ms)})]
+        (let [result (transition! job (merge {:state "cancelled" :ended-at (now-ms)} data))]
           (doseq [f (:cancel-fns rt)]
             (try
               (f)
@@ -249,6 +249,18 @@
                      :else          (p/do
                                       (store/request-cancel! (:id job))
                                       job)))))))
+
+(defn cancel-all!
+  "Cancels every job this process holds, on shutdown. Nothing in flight survives
+  the process, and clients learn it now rather than when this replica boots
+  again, if it ever does under the same id."
+  []
+  (let [job-ids (keys @registry)]
+    (when (seq job-ids)
+      (l/info :hint "cancelling jobs on shutdown" :count (count job-ids)))
+    (->> job-ids
+         (map #(cancel-local! % :interrupted true))
+         (p/all))))
 
 (defn- abandoned?
   "A job this replica's previous run left mid-flight. A sibling's jobs are its

@@ -92,3 +92,16 @@
     (t/is (abandoned? {:replica cf/replica-id :state "queued"}))
     (t/is (not (abandoned? {:replica cf/replica-id :state "ended"})))
     (t/is (not (abandoned? {:replica (str cf/replica-id "-sibling") :state "running"})))))
+
+(t/deftest shutdown-cancels-all-its-jobs
+  (t/async done
+    (p/let [running (create!)
+            queued  (create!)
+            _       (jobs/start! running)
+            _       (jobs/cancel-all!)]
+      (doseq [job [running queued]]
+        (let [current (jobs/lookup (:id job))]
+          (t/is (= "cancelled" (:state current)))
+          (t/is (true? (:interrupted current))))
+        (jobs/release! (:id job)))
+      (done))))

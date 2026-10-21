@@ -645,10 +645,11 @@ Give each exporter its own name, and keep it across restarts and upgrades:
 PENPOT_EXPORTER_REPLICA_ID: exporter-1
 ```
 
-On startup, an exporter cancels the exports it left unfinished, and only those.
+An exporter that stops cancels its unfinished exports. After a crash, it does so
+when it starts again, using this name to tell its own exports from the others'.
 Without a name, it falls back to its hostname, which changes when the container
-is recreated; the exports it left unfinished then show as running for up to an
-hour.
+is recreated; the exports a crash left unfinished then show as running for up
+to an hour.
 
 The export queue and its limits (`PENPOT_EXPORTER_MAX_CONCURRENT_JOBS`,
 `PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE`, `PENPOT_EXPORTER_QUEUE_MAX`) apply to
