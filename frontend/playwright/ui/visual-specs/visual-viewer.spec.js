@@ -322,3 +322,43 @@ test.describe("Viewer header", () => {
     });
   });
 });
+
+test.describe("Inspect code tab", () => {
+  test("Shows the code tab buttons, expanded and collapsed", async ({
+    page,
+  }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithComments();
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+    await viewerPage.showCode();
+    await page.getByRole("combobox").filter({ hasText: "Styles" }).click();
+    await page.getByRole("option", { name: "Code" }).click();
+
+    const copyAll = page.getByRole("button", { name: "Copy all code" });
+    await expect(copyAll).toBeVisible();
+    // The CSS block header, with its toggle, expand and copy buttons.
+    const cssToggle = page.locator('button[data-type="css"]');
+    const cssHeader = cssToggle.locator("..");
+    await page.mouse.move(0, 0);
+    await expect(copyAll).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+    await expect(cssHeader).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await cssToggle.click();
+    await page.mouse.move(0, 0);
+    // Collapsed: the arrow turns.
+    await expect(cssHeader).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
