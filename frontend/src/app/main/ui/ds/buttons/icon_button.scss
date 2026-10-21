@@ -41,6 +41,7 @@
   --button-hover-bg-color: transparent;
   --button-hover-fg-color: var(--color-accent-primary);
   --button-active-bg-color: var(--color-background-quaternary);
+  --button-active-fg-color: var(--color-accent-primary);
   --button-disabled-bg-color: transparent;
   --button-disabled-fg-color: var(--color-accent-primary-muted);
   --button-focus-bg-color: transparent;
@@ -49,6 +50,12 @@
   --button-focus-outer-ring-color: var(--color-accent-primary);
   --button-width: #{$sz-24};
   --button-height: #{$sz-24};
+
+  // A toggled-on action button shows only the accent icon; the background
+  // stays for the click feedback (:active).
+  &[aria-pressed="true"] {
+    --button-active-bg-color: transparent;
+  }
 }
 
 .flyout-indicator {
