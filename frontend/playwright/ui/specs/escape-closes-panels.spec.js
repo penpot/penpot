@@ -21,10 +21,20 @@ const openShortcuts = async (page) => {
   return searchInput;
 };
 
+const saveVersionButton = (page) =>
+  page.getByRole("button", { name: "Save version" });
+
+const openHistoryAssertion = (page) =>
+  expect(saveVersionButton(page)).toBeVisible();
+
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-1.json",
+  );
   await workspacePage.goToWorkspace();
 });
 
@@ -60,6 +70,26 @@ test("Escape closes the shortcuts panel right after it opens", async ({
   await page.keyboard.press("Escape");
 
   await expect(searchInput).toHaveCount(0);
+});
+
+test("Escape closes History opened with its shortcut", async ({ page }) => {
+  await page.keyboard.press("ControlOrMeta+Alt+h");
+  await openHistoryAssertion(page);
+
+  await page.keyboard.press("Escape");
+
+  await expect(saveVersionButton(page)).toHaveCount(0);
+});
+
+test("Escape closes History opened from the main menu", async ({ page }) => {
+  await page.getByRole("button", { name: "Main menu" }).click();
+  await page.getByText("file").last().click();
+  await page.locator("#file-menu-show-version-history").click();
+  await openHistoryAssertion(page);
+
+  await page.keyboard.press("Escape");
+
+  await expect(saveVersionButton(page)).toHaveCount(0);
 });
 
 test("Escape finishes a path drawn with the shortcuts panel open", async ({
