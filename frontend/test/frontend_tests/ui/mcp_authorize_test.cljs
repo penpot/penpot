@@ -47,25 +47,40 @@
        (t/is (= 401 (:status response)))
        (t/is (= "login_required" (get-in response [:body :error])))))))
 
-(t/deftest ^:async login-keeps-the-approval-return-url
-  (let [href     "https://penpot.example/?screen=mcp-authorize&request=opaque-handle"
-        saved    (:login-redirect storage/session)
-        emitted  (atom [])]
+(t/deftest ^:async login-keeps-the-approval-return-url-without-navigation
+  (let [href    "https://penpot.example/?screen=mcp-authorize&request=opaque-handle"
+        saved   (:login-redirect storage/session)
+        emitted (atom [])]
     (try
       (await
        (mock/with-mocks*
          {rt/get-current-href (mock/stub (fn [] href))
-          st/emit!            (mock/stub (fn [event] (swap! emitted conj @event)))}
-         (#'oauth/return-after-login!)
-         (await (a/settle))
-         (t/is (= href (:login-redirect storage/session)))
-         (t/is (= :auth-login (:id (first @emitted))))
-         ;; The login form clears a stored redirect unless its route supplies
-         ;; callback-url. Round-trip the real navigation through the router.
-         (let [{:keys [id params]} (first @emitted)
-               token              (rt/resolve #{:auth-login} id params)
-               route              (rt/match #{:auth-login} token)]
-           (t/is (= href (get-in route [:query-params :callback-url]))))))
+          st/emit!            (mock/stub (fn [event] (swap! emitted conj event)))}
+         (let [params (#'oauth/prepare-login!)]
+           (await (a/settle))
+           (t/is (= href (:callback-url params)))
+           (t/is (= href (:login-redirect storage/session)))
+           (t/is (empty? @emitted)))))
+      (finally
+        (binding [storage/*sync* true]
+          (if saved
+            (swap! storage/session assoc :login-redirect saved)
+            (swap! storage/session dissoc :login-redirect)))))))
+
+(t/deftest ^:async cancelling-login-clears-only-this-attempts-return-url
+  (let [href  "https://penpot.example/?screen=mcp-authorize&request=opaque-handle"
+        saved (:login-redirect storage/session)]
+    (try
+      (await
+       (mock/with-mocks*
+         {rt/get-current-href (mock/stub (fn [] href))}
+         (#'oauth/prepare-login!)
+         (#'oauth/cancel-login!)
+         (t/is (nil? (:login-redirect storage/session)))
+         (binding [storage/*sync* true]
+           (swap! storage/session assoc :login-redirect "https://penpot.example/other"))
+         (#'oauth/cancel-login!)
+         (t/is (= "https://penpot.example/other" (:login-redirect storage/session)))))
       (finally
         (binding [storage/*sync* true]
           (if saved

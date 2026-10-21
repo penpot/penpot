@@ -9816,3 +9816,6 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
+
+msgid "mcp.oauth.cancelled"
+msgstr "Conexión cancelada"
