@@ -151,6 +151,13 @@
     (or (.-isComposing native)
         (= 229 (.-keyCode event)))))
 
+(defn- editor-escape?
+  [^js event ime-key?]
+  (and (kbd/esc? event)
+       (not ime-key?)
+       (not (.-isComposing event))
+       (not= 229 (.-keyCode event))))
+
 (defn- secondary-button?
   "True for a secondary click, which opens the context menu: the right button,
    or the macOS Ctrl+Click that stands in for it and reports button 0."
@@ -363,6 +370,10 @@
 
         ;; True between compositionstart and compositionend; the surface must not move then.
         composing-ref (mf/use-ref false)
+
+        ;; Native IMEs can end composition before the cancelling key's key-up.
+        ;; Remember its key-down so that Escape only cancels the preedit.
+        ime-key-ref (mf/use-ref false)
 
         ;; Surface wrapper, moved during a composition (see `follow-ime-caret!`).
         wrapper-ref (mf/use-ref nil)
@@ -590,6 +601,9 @@
         on-key-down
         (mf/use-fn
          (fn [^js event]
+           (mf/set-ref-val! ime-key-ref
+                            (or (mf/ref-val composing-ref)
+                                (composing-event? event)))
            ;; IME keydowns (keyCode 229) must not touch the surface: the IME
            ;; already owns it, and even a style write before compositionstart
            ;; makes ibus abort and commit. The surface already sits on the
@@ -911,11 +925,14 @@
        (let [on-key-up (fn [event]
                          (when (kbd/esc? event)
                            (dom/stop-propagation event)
-                           ;; With the menu open, Escape only closes it (checked
-                           ;; in the DOM: the store may already be cleared).
-                           (if (some? (dom/query menu-selector))
-                             (st/emit! dw/hide-context-menu)
-                             (st/emit! (dw/clear-edition-mode)))))]
+                           (when (editor-escape? event
+                                                 (or (mf/ref-val composing-ref)
+                                                     (mf/ref-val ime-key-ref)))
+                             ;; With the menu open, Escape only closes it (checked
+                             ;; in the DOM: the store may already be cleared).
+                             (if (some? (dom/query menu-selector))
+                               (st/emit! dw/hide-context-menu)
+                               (st/emit! (dw/clear-edition-mode))))))]
          (.addEventListener js/document "keyup" on-key-up)
          #(.removeEventListener js/document "keyup" on-key-up))))
 

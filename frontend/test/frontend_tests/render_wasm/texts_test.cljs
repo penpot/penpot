@@ -181,6 +181,22 @@
   (t/is (= 0 (v3-editor/changed-span-end "にほ" "")))
   (t/is (= 2 (v3-editor/changed-span-end "😀" "😀😀"))))
 
+(t/deftest escape-that-cancels-native-composition-keeps-text-editing
+  ;; Fcitx Pinyin ends composition before releasing Escape. That key-up no
+  ;; longer reports isComposing, so remember that its key-down belonged to IME.
+  (t/is (false? (@#'v3-editor/editor-escape?
+                 #js {:key "Escape" :isComposing false :keyCode 27} true)))
+  (t/is (false? (@#'v3-editor/editor-escape?
+                 #js {:key "Escape" :isComposing true :keyCode 27} false)))
+  (t/is (false? (@#'v3-editor/editor-escape?
+                 #js {:key "Escape" :isComposing false :keyCode 229} false))))
+
+(t/deftest ordinary-escape-still-exits-text-editing
+  (t/is (true? (@#'v3-editor/editor-escape?
+                #js {:key "Escape" :isComposing false :keyCode 27} false)))
+  (t/is (false? (@#'v3-editor/editor-escape?
+                 #js {:key "Enter" :isComposing false :keyCode 13} false))))
+
 (t/deftest ime-debug-caret-bounds-follow-viewport-zoom-and-pan
   (t/is (= {:x 210 :y 380 :width 48 :height 2}
            (@#'ime-debug/screen-rect
