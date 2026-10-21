@@ -33,6 +33,7 @@
       (l/info :msg "initializing"
               :public-uri (str (cf/get :public-uri))
               :internal-uri (str (cf/get-internal-uri))
+              :replica cf/replica-id
               :version (:full cf/version))
       (l/info :msg "headless wasm export available"
               :wasm-dir wasm/artifact-dir
@@ -86,8 +87,19 @@
      (fn [cause]
        (js/console.error cause)))
 
+(defonce ^:private exiting? (atom false))
+
+(defn- exit!
+  "Cancels this process's jobs before exiting, so their records and clients
+  do not keep waiting on work that dies with it. A second signal exits at once."
+  []
+  (if (compare-and-set! exiting? false true)
+    (->> (shutdown-step "cancel-jobs" jobs/cancel-all!)
+         (p/fnly (fn [_ _] (proc/exit 0))))
+    (proc/exit 0)))
+
 ;; Signals are only delivered to the main thread, and `exit` in a worker would
 ;; take down that worker rather than the process.
 (when ^boolean wt/isMainThread
-  (.on proc/default "SIGTERM" (fn [] (proc/exit 0)))
-  (.on proc/default "SIGINT" (fn [] (proc/exit 0))))
+  (.on proc/default "SIGTERM" exit!)
+  (.on proc/default "SIGINT" exit!))

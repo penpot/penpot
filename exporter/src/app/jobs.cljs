@@ -20,6 +20,7 @@
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.jobs.store :as store]
    [app.redis :as redis]
    [promesa.core :as p]))
@@ -81,6 +82,7 @@
   [{:keys [profile-id cmd backend total name resource-id]} run-fn]
   (let [job {:id (uuid/next)
              :profile-id profile-id
+             :replica cf/replica-id
              :cmd cmd
              :backend backend
              :state "queued"
@@ -165,7 +167,10 @@
   overwrite either."
   [job data]
   (if-let [job (live job)]
-    (persist-and-publish! (merge job data))
+    (let [job (merge job data)]
+      (l/info :hint "export job" :job-id (str (:id job)) :state (:state job)
+              :replica (:replica job))
+      (persist-and-publish! job))
     (p/resolved job)))
 
 (defn start!
@@ -208,7 +213,7 @@
                     :error (ex-message cause)}))
 
 (defn- cancel-local!
-  [job-id]
+  [job-id & {:as data}]
   (let [k    (str job-id)
         rt   (get @registry k)
         job  (:job rt)]
@@ -222,7 +227,7 @@
         ;; (`scheduler/drop-queued!`) releases the job, and `transition!` on a
         ;; released job is a no-op, so a queued job would keep claiming to be
         ;; queued in the store and never publish its `cancelled` update.
-        (let [result (transition! job {:state "cancelled" :ended-at (now-ms)})]
+        (let [result (transition! job (merge {:state "cancelled" :ended-at (now-ms)} data))]
           (doseq [f (:cancel-fns rt)]
             (try
               (f)
@@ -245,22 +250,40 @@
                                       (store/request-cancel! (:id job))
                                       job)))))))
 
+(defn cancel-all!
+  "Cancels every job this process holds, on shutdown. Nothing in flight survives
+  the process, and clients learn it now rather than when this replica boots
+  again, if it ever does under the same id."
+  []
+  (let [job-ids (keys @registry)]
+    (when (seq job-ids)
+      (l/info :hint "cancelling jobs on shutdown" :count (count job-ids)))
+    (->> job-ids
+         (map #(cancel-local! % :interrupted true))
+         (p/all))))
+
+(defn- abandoned?
+  "A job this replica's previous run left mid-flight. A sibling's jobs are its
+  own business: they may well be running."
+  [job]
+  (and (= cf/replica-id (:replica job))
+       (not (terminal? job))))
+
 (defn- clean-abandoned!
-  "Marks every job left mid-flight by a previous process as cancelled.
+  "Marks every job left mid-flight by a previous run of this replica as
+  cancelled.
 
   A queue and its running jobs live in the memory of the process that owns
   them, so nothing in flight when it died can be resumed; without this the
-  record would keep claiming to be running until its TTL expires.
-
-  NOTE: the store cannot tell whose jobs are whose, so with more than one
-  exporter behind a load balancer this would also cancel a sibling's running
-  jobs. Single-instance deployments only."
+  record would keep claiming to be running until its TTL expires. A replica
+  that never comes back under the same id leaves its records to the TTL."
   []
   (->> (store/fetch-all)
        (p/mcat (fn [jobs]
-                 (let [abandoned (remove terminal? jobs)]
+                 (let [abandoned (filter abandoned? jobs)]
                    (when (seq abandoned)
                      (l/warn :hint "cancelling jobs abandoned by a previous process"
+                             :replica cf/replica-id
                              :count (count abandoned)))
                    (->> abandoned
                         (map (fn [job]
