@@ -509,6 +509,57 @@ test.describe("Palette", () => {
   });
 });
 
+test.describe("Plugins", () => {
+  const setupPlugins = async (workspace, profile) => {
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC("get-team?id=*", "workspace/get-team-plugins.json");
+    if (profile) {
+      await workspace.mockRPC("get-profile", profile);
+    }
+    await workspace.goToWorkspace();
+    await workspace.page.keyboard.press("Control+Alt+P");
+  };
+
+  test("Shows the plugins manager without plugins", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await setupPlugins(workspace);
+
+    await expect(page.getByText("No plugins installed yet")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Close" })).toBeVisible();
+    await expect(page).toHaveScreenshot();
+  });
+
+  test("Shows the plugins manager and the permissions dialog", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await page.route("https://plugin.example.com/manifest.json", (route) =>
+      route.fulfill({
+        json: {
+          name: "Contrast checker",
+          description: "Check the contrast of the selected layers.",
+          code: "plugin.js",
+          permissions: ["content:write", "user:read", "library:write"],
+        },
+      }),
+    );
+    await setupPlugins(
+      workspace,
+      "logged-in-user/get-profile-with-plugins.json",
+    );
+
+    await expect(page.getByText("Lorem Ipsum generator")).toBeVisible();
+    await expect(page).toHaveScreenshot();
+
+    await page
+      .getByRole("textbox")
+      .fill("https://plugin.example.com/manifest.json");
+    await page.getByRole("button", { name: "Install" }).click();
+    await expect(page.getByText("CONTRAST CHECKER")).toBeVisible();
+    await expect(page).toHaveScreenshot();
+  });
+});
+
 test.describe("Nudge modal", () => {
   test("Shows the nudge amount modal", async ({ page }) => {
     const workspace = new WorkspacePage(page);
