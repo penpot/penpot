@@ -245,6 +245,69 @@
         (reset! edits old-edits)
         (reset! cache old-cache)))))
 
+(t/deftest ^:async hanja-conversion-keeps-one-history-entry-for-the-original-selection
+  ;; Fcitx Hangul sends ㅎ → 하 → 한 → 韓 in one composition. The selected
+  ;; source, including its styles and UTF-16 range, must survive a single undo.
+  (let [edits      @#'text-editor/editing-history
+        cache      @#'text-editor/shape-text-contents
+        styles     @#'text-editor/pending-caret-styles
+        old-edits  @edits
+        old-cache  @cache
+        old-styles @styles
+        range      (atom (selection 0 1 0 3))]
+    (try
+      (await
+       (mock/with-mocks*
+         {wasm/ready? (constantly true)
+          wasm/internal-module #js {"_text_editor_composition_start" (fn [] nil)
+                                    "_text_editor_composition_update" (fn [] nil)
+                                    "_text_editor_composition_end" (fn [] nil)
+                                    "_text_editor_has_focus" (fn [] 1)
+                                    "_text_editor_restore_selection" (fn [& _] nil)}
+          text-editor/text-editor-encode-text-pre (constantly nil)
+          text-editor/text-editor-encode-text-post (constantly nil)
+          text-editor/text-editor-get-selection (fn [] @range)}
+         (doseq [writing-mode ["horizontal-tb" "vertical-rl"]
+                 wrap ["syllable" "keep-words"]]
+           (let [content (fn [text]
+                           (-> (editor-content
+                                [{:text "A"}
+                                 {:text text :font-weight "700"}
+                                 {:text "B"}])
+                               (assoc-in [:children 0 :children 0 :text-language] "ko")
+                               (assoc-in [:children 0 :children 0 :writing-mode] writing-mode)
+                               (assoc-in [:children 0 :children 0 :korean-wrap] wrap)))
+                 before  (content "😀")
+                 after   (content "韓")]
+             (reset! range (selection 0 1 0 3))
+             (reset! cache {:fixture before})
+             (reset! styles {})
+             (reset! edits (assoc history/empty-history :shape-id :fixture))
+             (text-editor/text-editor-composition-start)
+             (doseq [preview ["ㅎ" "하" "한" "韓"]]
+               (text-editor/text-editor-composition-update preview))
+             (t/is (= before (text-editor/get-cached-content :fixture)))
+             (t/is (empty? (:past @edits)))
+             (text-editor/text-editor-composition-end "韓")
+             (reset! range (selection 0 2 0 2))
+             (text-editor/update-cached-content! :fixture after)
+             (t/is (= [{:content before :selection (selection 0 1 0 3)}]
+                      (:past @edits)))
+             (let [undone (text-editor/restore-history
+                           :undo identity text-editor/update-cached-content!)]
+               (t/is (= before (:content undone)))
+               (t/is (= before (text-editor/get-cached-content :fixture))))
+             ;; Mirror the selection restored by WASM before asking for redo.
+             (reset! range (selection 0 1 0 3))
+             (let [redone (text-editor/restore-history
+                           :redo identity text-editor/update-cached-content!)]
+               (t/is (= after (:content redone)))
+               (t/is (= after (text-editor/get-cached-content :fixture))))))))
+      (finally
+        (reset! edits old-edits)
+        (reset! cache old-cache)
+        (reset! styles old-styles)))))
+
 (t/deftest composition-caret-goes-to-the-end-of-the-changed-part
   ;; Typing appends, converting replaces all, and a candidate for a middle
   ;; clause changes only that clause.
