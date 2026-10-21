@@ -8,12 +8,16 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
+   [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.persistence :as dwp]
    [app.main.errors :as errors]
    [app.main.repo :as repo]
    [app.main.store :as st]
+   [app.main.worker :as mw]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
+   [app.util.webapi :as wapi]
    [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -21,7 +25,6 @@
    [frontend-tests.helpers.events :as the]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
-
 (def ^:private export {:id (uuid/next)
                        :object-id (uuid/next)
                        :type :png
@@ -36,6 +39,17 @@
   []
   {:profile-id (:id export)
    :ws-conn nil})
+
+(defn- wasm-state
+  []
+  (assoc (test-state) :features #{"render-wasm/v1"}))
+
+(t/deftest sanitize-filename-strips-reserved-chars-and-dedupes
+  (t/is (= "a_b.png"
+           (wasm.exports/sanitize-filename {:name "a/b" :suffix "" :type :png} #{})))
+  (t/is (= "board-2.pdf"
+           (wasm.exports/sanitize-filename {:name "board" :suffix "" :type :pdf}
+                                           #{"board.pdf"}))))
 
 (t/deftest normalize-export-preserves-existing-name
   (t/is (= (export-with-name "Layer 1")
@@ -203,3 +217,240 @@
        (await (async/wait-for #(true? @downloaded) "the export runs"))
        (await (async/settle))
        (t/is (nil? (:notification @store)))))))
+
+;; Scenario: WASM is on and the user exports one shape. Proves: the worker
+;; builds a single blob (no ZIP); the exporter is not called.
+;; Stub `export-target`: without a module it is nil; routing still stays
+;; local (never the server API under wasm).
+(t/deftest ^:async wasm-simple-export-stays-local
+  (let [cmd-calls   (atom [])
+        worker-kind (atom nil)
+        downloaded  (atom nil)
+        store       (export-store (wasm-state) (atom []))
+        page-id     (uuid/next)
+        file-id     (uuid/next)
+        one         (assoc export :enabled true :name "layer"
+                           :page-id page-id :file-id file-id)]
+    (await
+     (mock/with-mocks*
+       {repo/cmd!                 (mock/stub (fn [cmd params]
+                                               (swap! cmd-calls conj [cmd params])
+                                               (rx/throw (ex-info "exporter must not run" {}))))
+        wasm.api/export-target    (mock/stub (constantly :client))
+        de/collect-export-objects (mock/stub (fn [_ _] {}))
+        mw/ask-many!              (mock/stub (fn [msg]
+                                               (reset! worker-kind (:kind msg))
+                                               (rx/of {:type :done
+                                                       :filename "layer.png"
+                                                       :mtype "image/png"
+                                                       :blob (js/Blob.)})))
+        wapi/create-uri           (mock/stub (constantly "blob:png"))
+        dom/trigger-download-uri  (mock/stub (fn [filename mtype uri]
+                                               (reset! downloaded [filename mtype uri])))
+        st/ongoing-tasks          (atom #{})}
+       (ptk/emit! store (de/request-simple-export {:export one}))
+       (await (async/wait-for #(some? @downloaded) "the file downloads"))
+       (t/is (empty? @cmd-calls) "no exporter RPC")
+       (t/is (= :single @worker-kind))
+       (t/is (= ["layer.png" "image/png" "blob:png"] @downloaded))))))
+
+;; Scenario: WASM says the raster is too big for the GPU (legacy `:exporter`
+;; code). Proves: still local worker download, no server RPC — CPU raster
+;; runs inside the worker via `export-bytes`.
+(t/deftest ^:async wasm-oversized-for-gpu-stays-local
+  (let [cmd-calls   (atom [])
+        worker-kind (atom nil)
+        downloaded  (atom nil)
+        store       (export-store (wasm-state) (atom []))
+        one         (assoc export :enabled true :name "huge")]
+    (await
+     (mock/with-mocks*
+       {repo/cmd!                 (mock/stub (fn [cmd params]
+                                               (swap! cmd-calls conj [cmd params])
+                                               (rx/throw (ex-info "exporter must not run" {}))))
+        wasm.api/export-target    (mock/stub (constantly :exporter))
+        de/collect-export-objects (mock/stub (fn [_ _] {}))
+        mw/ask-many!              (mock/stub (fn [msg]
+                                               (reset! worker-kind (:kind msg))
+                                               (rx/of {:type :done
+                                                       :filename "huge.png"
+                                                       :mtype "image/png"
+                                                       :blob (js/Blob.)})))
+        wapi/create-uri           (mock/stub (constantly "blob:png"))
+        dom/trigger-download-uri  (mock/stub (fn [filename mtype uri]
+                                               (reset! downloaded [filename mtype uri])))
+        st/ongoing-tasks          (atom #{})}
+       (ptk/emit! store (de/request-simple-export {:export one}))
+       (await (async/wait-for #(some? @downloaded) "the file downloads"))
+       (t/is (empty? @cmd-calls) "no exporter RPC")
+       (t/is (= :single @worker-kind))
+       (t/is (= ["huge.png" "image/png" "blob:png"] @downloaded))))))
+
+;; Scenario: WASM reports true `:too-large` (beyond raster limits). Proves:
+;; toast and no RPC — the exporter would fail the same way.
+(t/deftest ^:async wasm-true-too-large-shows-toast
+  (let [cmd-calls (atom [])
+        store     (export-store (wasm-state) (atom []))
+        one       (assoc export :enabled true :name "impossible")]
+    (await
+     (mock/with-mocks*
+       {repo/cmd!              (mock/stub (fn [cmd params]
+                                            (swap! cmd-calls conj [cmd params])
+                                            (rx/throw (ex-info "exporter must not run" {}))))
+        wasm.api/export-target (mock/stub (constantly :too-large))
+        i18n/tr                (mock/stub #(str "translated:" %))}
+       (ptk/emit! store (de/request-simple-export {:export one}))
+       (await (async/wait-for #(some? (:notification @store)) "the toast shows"))
+       (t/is (empty? @cmd-calls) "no exporter RPC")
+       (t/is (= "translated:errors.export-too-large"
+                (get-in @store [:notification :content])))
+       (t/is (= :error (get-in @store [:notification :level])))))))
+
+;; Scenario: WASM is on and the user exports several shapes. Proves: nothing
+;; hits the exporter; the worker builds a ZIP and the client downloads it.
+(t/deftest ^:async wasm-multiple-export-stays-local
+  (let [cmd-calls  (atom [])
+        worker-cmd (atom nil)
+        downloaded (atom nil)
+        store      (export-store (wasm-state) (atom []))
+        page-id    (uuid/next)
+        file-id    (uuid/next)
+        exports    [(assoc export :enabled true :name "a" :page-id page-id :file-id file-id)
+                    (assoc export :id (uuid/next)
+                           :object-id (uuid/next)
+                           :page-id page-id
+                           :file-id file-id
+                           :enabled true
+                           :name "b")]]
+    (await
+     (mock/with-mocks*
+       {repo/cmd!                (mock/stub (fn [cmd params]
+                                              (swap! cmd-calls conj [cmd params])
+                                              (rx/throw (ex-info "exporter must not run" {}))))
+        de/collect-export-objects (mock/stub (fn [_ _] {}))
+        mw/ask-many!             (mock/stub (fn [msg]
+                                              (reset! worker-cmd (:cmd msg))
+                                              (rx/of {:type :done
+                                                      :filename "page.zip"
+                                                      :mtype "application/zip"
+                                                      :blob (js/Blob.)})))
+        wapi/create-uri          (mock/stub (constantly "blob:zip"))
+        dom/trigger-download-uri (mock/stub (fn [filename mtype uri]
+                                              (reset! downloaded [filename mtype uri])))
+        st/ongoing-tasks         (atom #{})}
+       (ptk/emit! store (de/request-multiple-export {:exports exports :name "page"}))
+       (await (async/wait-for #(some? @downloaded) "the zip downloads"))
+       (t/is (empty? @cmd-calls) "no exporter RPC")
+       (t/is (= :exports/run-local @worker-cmd))
+       (t/is (= ["page.zip" "application/zip" "blob:zip"] @downloaded))))))
+
+;; Scenario: WASM is on and the user exports boards as PDF. Proves: worker
+;; multi-page PDF, no exporter call.
+(t/deftest ^:async wasm-export-frames-stays-local
+  (let [cmd-calls  (atom [])
+        worker-kind (atom nil)
+        downloaded (atom nil)
+        store      (export-store (wasm-state) (atom []))
+        page-id    (uuid/next)
+        file-id    (uuid/next)
+        exports    [(assoc export :enabled true :name "board-1"
+                           :page-id page-id :file-id file-id)
+                    (assoc export :id (uuid/next)
+                           :object-id (uuid/next)
+                           :page-id page-id
+                           :file-id file-id
+                           :enabled true
+                           :name "board-2")]]
+    (await
+     (mock/with-mocks*
+       {repo/cmd!                (mock/stub (fn [cmd params]
+                                              (swap! cmd-calls conj [cmd params])
+                                              (rx/throw (ex-info "exporter must not run" {}))))
+        de/collect-export-objects (mock/stub (fn [_ _] {}))
+        mw/ask-many!             (mock/stub (fn [msg]
+                                              (reset! worker-kind (:kind msg))
+                                              (rx/of {:type :progress :done 1 :total 2}
+                                                     {:type :progress :done 2 :total 2}
+                                                     {:type :done
+                                                      :filename "page.pdf"
+                                                      :mtype "application/pdf"
+                                                      :blob (js/Blob.)})))
+        wapi/create-uri          (mock/stub (constantly "blob:pdf"))
+        dom/trigger-download-uri (mock/stub (fn [filename mtype uri]
+                                              (reset! downloaded [filename mtype uri])))
+        st/ongoing-tasks         (atom #{})}
+       (ptk/emit! store (de/request-multiple-export {:exports exports
+                                                     :cmd :export-frames
+                                                     :name "page"}))
+       (await (async/wait-for #(some? @downloaded) "the pdf downloads"))
+       (t/is (empty? @cmd-calls) "no exporter RPC")
+       (t/is (= :pdf-frames @worker-kind))
+       (t/is (= ["page.pdf" "application/pdf" "blob:pdf"] @downloaded))))))
+
+;; Scenario: the user cancels a local WASM multi-export. Proves: the widget
+;; stays cancelled and late worker :progress/:done do not download or flip
+;; status back to running.
+(t/deftest ^:async wasm-local-cancel-ignores-late-worker-messages
+  (let [downloaded  (atom nil)
+        cancel-cmds (atom [])
+        worker-bus  (rx/subject)
+        store       (export-store (wasm-state) (atom []))
+        page-id     (uuid/next)
+        file-id     (uuid/next)
+        exports     [(assoc export :enabled true :name "a"
+                            :page-id page-id :file-id file-id)
+                     (assoc export :id (uuid/next)
+                            :object-id (uuid/next)
+                            :page-id page-id
+                            :file-id file-id
+                            :enabled true
+                            :name "b")]]
+    (await
+     (mock/with-mocks*
+       {repo/cmd!                 (mock/stub (fn [_ _]
+                                               (rx/throw (ex-info "exporter must not run" {}))))
+        de/collect-export-objects (mock/stub (fn [_ _] {}))
+        mw/ask-many!              (mock/stub (fn [_] worker-bus))
+        mw/emit!                  (mock/stub (fn [msg]
+                                               (swap! cancel-cmds conj msg)))
+        wapi/create-uri           (mock/stub (constantly "blob:zip"))
+        dom/trigger-download-uri  (mock/stub (fn [filename mtype uri]
+                                               (reset! downloaded [filename mtype uri])))
+        st/ongoing-tasks          (atom #{})}
+       (ptk/emit! store (de/request-multiple-export {:exports exports :name "page"}))
+       (await (async/wait-for #(= "running" (get-in @store [:export :status]))
+                              "export is running"))
+       (rx/push! worker-bus {:type :progress :done 1 :total 2})
+       (await (async/wait-for #(= 1 (get-in @store [:export :progress]))
+                              "first progress lands"))
+       (ptk/emit! store (de/cancel-export))
+       (await (async/wait-for #(= "cancelled" (get-in @store [:export :status]))
+                              "export is cancelled"))
+       (rx/push! worker-bus {:type :progress :done 2 :total 2})
+       (rx/push! worker-bus {:type :done
+                             :filename "page.zip"
+                             :mtype "application/zip"
+                             :blob (js/Blob.)})
+       (await (async/settle))
+       (t/is (= "cancelled" (get-in @store [:export :status])))
+       (t/is (nil? @downloaded) "late :done does not download")
+       (t/is (= :exports/cancel (:cmd (first @cancel-cmds))))
+       (rx/end! worker-bus)))))
+
+(t/deftest collect-export-objects-keeps-only-roots-and-descendants
+  (let [page-id (uuid/next)
+        file-id (uuid/next)
+        root    (uuid/next)
+        child   (uuid/next)
+        other   (uuid/next)
+        objects {root  {:id root :parent-id uuid/zero :shapes [child]}
+                 child {:id child :parent-id root :shapes []}
+                 other {:id other :parent-id uuid/zero :shapes []}}
+        state   {:files {file-id {:id file-id
+                                  :data {:pages-index
+                                         {page-id {:id page-id
+                                                   :objects objects}}}}}}
+        exports [{:object-id root :page-id page-id :file-id file-id}]
+        selected (de/collect-export-objects state exports)]
+    (t/is (= #{root child} (set (keys selected))))
+    (t/is (not (contains? selected other)))))

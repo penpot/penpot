@@ -2899,29 +2899,47 @@
       (when-let [snapshot wasm/canvas-snapshot]
         (reset! transition-image* snapshot)))))
 
+(defn- read-raster-result
+  "Decode `[len][width][height][bytes]` from a `_render_shape_*` raster call."
+  [offset]
+  (let [heap (mem/get-heap-u8)
+        heapu32 (mem/get-heap-u32)
+        length (aget heapu32 (mem/->offset-32 offset))
+        result (dr/read-image-bytes heap (+ offset 12) length)]
+    (mem/free)
+    result))
+
 (defn render-shape-pixels
-  "Renders a shape subtree to encoded image bytes. `format` is :png, :jpeg or
-  :webp; jpeg is flattened onto white on the Rust side, since it has no alpha
-  channel."
+  "Renders a shape subtree to encoded image bytes on the GPU export surface.
+  `format` is :png, :jpeg or :webp; jpeg is flattened onto white on the Rust
+  side, since it has no alpha channel."
   [shape-id scale format]
   (when (initialized?)
     (let [buffer (uuid/get-u32 shape-id)
+          offset (h/call wasm/internal-module "_render_shape_pixels"
+                         (aget buffer 0)
+                         (aget buffer 1)
+                         (aget buffer 2)
+                         (aget buffer 3)
+                         scale
+                         (sr/translate-raster-format format))]
+      (read-raster-result offset))))
 
-          offset
-          (h/call wasm/internal-module "_render_shape_pixels"
-                  (aget buffer 0)
-                  (aget buffer 1)
-                  (aget buffer 2)
-                  (aget buffer 3)
-                  scale
-                  (sr/translate-raster-format format))
-
-          heap (mem/get-heap-u8)
-          heapu32 (mem/get-heap-u32)
-          length (aget heapu32 (mem/->offset-32 offset))
-          result (dr/read-image-bytes heap (+ offset 12) length)]
-      (mem/free)
-      result)))
+(defn render-shape-raster
+  "Same output as `render-shape-pixels`, but on a CPU Skia surface (no
+  GPU/WebGL). Used when the export exceeds the GPU max texture size — the
+  same path the headless exporter uses for wasm rasters."
+  [shape-id scale format]
+  (when (initialized?)
+    (let [buffer (uuid/get-u32 shape-id)
+          offset (h/call wasm/internal-module "_render_shape_raster"
+                         (aget buffer 0)
+                         (aget buffer 1)
+                         (aget buffer 2)
+                         (aget buffer 3)
+                         scale
+                         (sr/translate-raster-format format))]
+      (read-raster-result offset))))
 
 (defn get-shape-extrect
   [shape-id]
@@ -2975,6 +2993,66 @@
           result (dr/read-image-bytes heap (+ offset 4) length)]
       (mem/free)
       result)))
+
+(defn render-shapes-pdf
+  "Renders each shape id as a page of one PDF. IDs are written to the
+  transfer buffer (same layout as `set-focus-mode`) before the call."
+  [shape-ids]
+  (when (and (initialized?) (seq shape-ids))
+    (let [ids    (vec shape-ids)
+          size   (mem/get-alloc-size ids UUID-U8-SIZE)
+          heap   (mem/get-heap-u32)
+          offset (mem/alloc->offset-32 size)
+
+          _ (reduce (fn [offset id]
+                      (mem.h32/write-uuid offset heap id))
+                    offset
+                    ids)
+
+          result-offset
+          (h/call wasm/internal-module "_render_shapes_pdf")
+
+          heapu8  (mem/get-heap-u8)
+          heapu32 (mem/get-heap-u32)
+          length  (aget heapu32 (mem/->offset-32 result-offset))
+          result  (dr/read-image-bytes heapu8 (+ result-offset 4) length)]
+      (mem/free)
+      result)))
+
+(defn pdf-export-begin!
+  "Opens a progressive multi-page PDF session."
+  []
+  (when (initialized?)
+    (h/call wasm/internal-module "_pdf_export_begin")))
+
+(defn pdf-export-add-page!
+  "Appends `shape-id` as the next page of the current PDF session."
+  [shape-id]
+  (when (initialized?)
+    (let [buffer (uuid/get-u32 shape-id)]
+      (h/call wasm/internal-module "_pdf_export_add_page"
+              (aget buffer 0)
+              (aget buffer 1)
+              (aget buffer 2)
+              (aget buffer 3)))))
+
+(defn pdf-export-finish
+  "Closes the PDF session and returns the encoded PDF bytes."
+  []
+  (when (initialized?)
+    (let [offset  (h/call wasm/internal-module "_pdf_export_finish")
+          heapu8  (mem/get-heap-u8)
+          heapu32 (mem/get-heap-u32)
+          length  (aget heapu32 (mem/->offset-32 offset))
+          result  (dr/read-image-bytes heapu8 (+ offset 4) length)]
+      (mem/free)
+      result)))
+
+(defn pdf-export-abort!
+  "Drops an in-flight PDF session without returning bytes."
+  []
+  (when (initialized?)
+    (h/call wasm/internal-module "_pdf_export_abort")))
 
 (defn render-shape-svg
   [shape-id scale]
