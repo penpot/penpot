@@ -634,6 +634,30 @@
           (let [shape-id (:shape-id @editing-history)]
             (record-content-history shape-id (get-cached-content shape-id))))))))
 
+(defn- restore-snapshot
+  [shape-id snapshot use-shape set-content]
+  (swap! editing-history assoc :restoring true)
+  (try
+    (use-shape shape-id)
+    (set-content shape-id (:content snapshot))
+    (let [{:keys [anchor-para anchor-offset focus-para focus-offset]} (:selection snapshot)]
+      (h/call wasm/internal-module "_text_editor_restore_selection"
+              anchor-para anchor-offset focus-para focus-offset))
+    {:shape-id shape-id :content (:content snapshot)}
+    (finally
+      (swap! editing-history dissoc :restoring :before))))
+
+(defn finish-composition
+  "Restore the source and selection when the IME cancels its replacement."
+  [text use-shape set-content]
+  (when (wasm/ready?)
+    (let [{:keys [shape-id before composing]} @editing-history]
+      ;; End the WASM preview before restoring selection; restoration is
+      ;; deliberately blocked while composition remains active.
+      (text-editor-composition-end text)
+      (when (and composing before (empty? text))
+        (restore-snapshot shape-id before use-shape set-content)))))
+
 (defn restore-history
   "Restore one edit from this session. An empty history never reaches canvas undo."
   [direction use-shape set-content]
@@ -641,17 +665,9 @@
              (not (:composing @editing-history)))
     (let [{:keys [shape-id] :as edits} @editing-history]
       (when-let [{:keys [history snapshot]} (history/step edits direction (history-snapshot shape-id))]
-        (reset! editing-history (assoc history :restoring true))
-        (try
-          (clear-pending-caret-styles!)
-          (use-shape shape-id)
-          (set-content shape-id (:content snapshot))
-          (let [{:keys [anchor-para anchor-offset focus-para focus-offset]} (:selection snapshot)]
-            (h/call wasm/internal-module "_text_editor_restore_selection"
-                    anchor-para anchor-offset focus-para focus-offset))
-          {:shape-id shape-id :content (:content snapshot)}
-          (finally
-            (swap! editing-history dissoc :restoring :before)))))))
+        (reset! editing-history history)
+        (clear-pending-caret-styles!)
+        (restore-snapshot shape-id snapshot use-shape set-content)))))
 
 ;; Typography chosen at a collapsed caret: not applied to existing text, but
 ;; picked up (as a new span) by the next inserted text. Keyed by shape-id.

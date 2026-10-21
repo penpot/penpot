@@ -769,6 +769,10 @@
       (h/call wasm/internal-module "_update_shape_text_layout")
       result)))
 
+(defn finish-text-editor-composition
+  [text]
+  (text-editor/finish-composition text wselect/use-shape set-shape-text-content))
+
 (defn restore-text-editor-history
   [direction]
   (text-editor/restore-history direction wselect/use-shape set-shape-text-content))
