@@ -19,7 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.workspace.color-palette :refer [color-palette*]]
@@ -95,6 +95,11 @@
         (mf/use-fn
          (fn [_]
            (swap! state* assoc :show-menu false)))
+
+        on-toggle-menu
+        (mf/use-fn
+         (fn [_]
+           (swap! state* update :show-menu not)))
 
         on-select-palette
         (mf/use-fn
@@ -201,9 +206,13 @@
 
         (if any-palette?
           [:*
-           [:button {:class (stl/css :palette-actions)
-                     :on-click #(swap! state* update :show-menu not)}
-            [:> icon* {:icon-id i/menu :class (stl/css :palette-actions-icon)}]]
+           [:> icon-button* {:variant "ghost"
+                             :class (stl/css :palette-actions)
+                             :aria-label (tr "workspace.toolbar.palette-options")
+                             :aria-expanded (boolean show-menu?)
+                             :aria-haspopup "menu"
+                             :icon i/menu
+                             :on-click on-toggle-menu}]
            [:div {:class (stl/css :palette)
                   :ref container}
             (when text-palette?

@@ -84,47 +84,12 @@
     }
   }
 
-  // Raw button on purpose: it spans the palette height, not a DS button size.
+  // DS icon button stretched to the palette height.
   .palette-actions {
-    --palette-actions-foreground-color: var(--color-foreground-secondary);
-    --palette-actions-background-color: var(--color-background-primary);
-    --palette-actions-border-color: transparent;
+    --button-height: calc(var(--height) - #{px2rem(16)});
 
-    display: grid;
-    place-content: center;
-    align-items: center;
     grid-area: actions;
-    block-size: calc(var(--height) - px2rem(16));
-    inline-size: $sz-32;
-    padding: 0;
     margin-inline-start: var(--sp-xs);
-    border: $b-2 solid var(--palette-actions-border-color);
-    border-radius: $br-8;
-    background-color: var(--palette-actions-background-color);
-    color: var(--palette-actions-foreground-color);
-    cursor: pointer;
-
-    &:hover {
-      --palette-actions-foreground-color: var(--color-accent-primary);
-      --palette-actions-background-color: var(--color-background-quaternary);
-      --palette-actions-border-color: var(--color-background-quaternary);
-    }
-
-    &:active {
-      --palette-actions-foreground-color: var(--color-accent-primary);
-      --palette-actions-background-color: var(--color-background-secondary);
-      --palette-actions-border-color: transparent;
-
-      outline: none;
-    }
-
-    &:focus-visible {
-      --palette-actions-foreground-color: var(--color-foreground-primary);
-      --palette-actions-background-color: var(--color-background-tertiary);
-
-      outline: none;
-      border: $b-1 solid var(--color-accent-primary);
-    }
   }
 
   .palette {
