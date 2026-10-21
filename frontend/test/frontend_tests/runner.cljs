@@ -153,6 +153,7 @@
    [frontend-tests.util-simple-math-test]
    [frontend-tests.util-text-clipboard-test]
    [frontend-tests.util-text-editor-test]
+   [frontend-tests.util-theme-test]
    [frontend-tests.util-webapi-test]
    [frontend-tests.util-zip-test]
    [frontend-tests.util.code-gen-markup-svg-wasm-test]
@@ -323,6 +324,7 @@
    'frontend-tests.util-simple-math-test
    'frontend-tests.util-text-clipboard-test
    'frontend-tests.util-text-editor-test
+   'frontend-tests.util-theme-test
    'frontend-tests.util-webapi-test
    'frontend-tests.util.code-gen-markup-svg-wasm-test
    'frontend-tests.util.dom.dnd-test

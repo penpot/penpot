@@ -107,6 +107,8 @@ test("Selection size badge appears on selection and hides on deselect", async ({
 test("Selection size badge uses component color for component selection", async ({
   page,
 }) => {
+  // The expected component color below is the dark palette value.
+  await page.emulateMedia({ colorScheme: "dark" });
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockGetFile("components/get-file-13267.json");
