@@ -632,29 +632,6 @@ finish normally. Wait for the traffic to drop, restart the process, and the
 instance comes back online on its own. To undo the drain without a restart,
 run `(app.srepl.main/set-online)`. Drain one instance at a time.
 
-### Running several exporters
-
-Exporters can run on separate machines behind a load balancer, as long as they
-share the same Valkey (`PENPOT_REDIS_URI`). Point the frontend's
-`PENPOT_EXPORTER_URI` at the load balancer.
-
-Give each exporter its own name, and keep it across restarts and upgrades:
-
-```bash
-# Exporter
-PENPOT_EXPORTER_REPLICA_ID: exporter-1
-```
-
-An exporter that stops cancels its unfinished exports. After a crash, it does so
-when it starts again, using this name to tell its own exports from the others'.
-Without a name, it falls back to its hostname, which changes when the container
-is recreated; the exports a crash left unfinished then show as running for up
-to an hour.
-
-The export queue and its limits (`PENPOT_EXPORTER_MAX_CONCURRENT_JOBS`,
-`PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE`, `PENPOT_EXPORTER_QUEUE_MAX`) apply to
-each exporter on its own.
-
 ## Backend
 
 This section enumerates the backend only configuration variables.
@@ -905,6 +882,15 @@ PENPOT_INTERNAL_URI: http://penpot-frontend:8080
   `PENPOT_PUBLIC_URI` if not set. The default value
   `http://penpot-frontend:8080` used in the docker-compose is a good default and
   it is recommended to keep it unchanged.
+
+**Beta, new render engine (WebGL):** when you run more than one exporter, give
+each one its own name and keep it across restarts and upgrades. An exporter
+uses it to cancel only its own unfinished exports when it restarts:
+
+```bash
+# Exporter
+PENPOT_EXPORTER_REPLICA_ID: exporter-1
+```
 
 ### MCP
 
