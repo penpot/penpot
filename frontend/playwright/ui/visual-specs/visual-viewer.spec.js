@@ -266,3 +266,59 @@ test.describe("Board navigation", () => {
     });
   });
 });
+
+test.describe("Viewer header", () => {
+  test("Shows the header buttons and its menus", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithComments();
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+
+    const header = page.locator("header").first();
+    await expect(header).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Interactions section.
+    await expect(header).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    // Zoom menu.
+    await page.getByTitle("Zoom").click();
+    await expect(page.getByText("Fit - Scale down to fit")).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(page).toHaveScreenshot({
+      clip: { x: 760, y: 0, width: 520, height: 260 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+    await page.keyboard.press("Escape");
+    await page.mouse.click(640, 600);
+
+    // Sitemap menu.
+    await page
+      .locator("#current-frame")
+      .locator("..")
+      .locator("div")
+      .first()
+      .click();
+    await page.mouse.move(640, 600);
+    await expect(page).toHaveScreenshot({
+      clip: { x: 0, y: 0, width: 520, height: 200 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+    await page.mouse.click(640, 600);
+
+    // Comments section, with its button selected.
+    await viewerPage.showComments();
+    await page.mouse.move(640, 600);
+    await expect(header).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
