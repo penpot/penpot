@@ -776,6 +776,10 @@
   [shape-id content]
   (upload-text-content shape-id content (text-content-fonts content)))
 
+(defn restore-text-editor-history
+  [direction]
+  (text-editor/restore-history direction wselect/use-shape set-shape-text-content))
+
 (defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
    Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving.
