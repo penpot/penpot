@@ -209,14 +209,18 @@
                   file     (dsh/lookup-file state file-id)
                   version  (get file :version)
 
-                  initial  {:type :copied-shapes
-                            :features features
-                            :version version
-                            :file-id file-id
-                            :team-id (:current-team-id state)
-                            :selected selected
-                            :objects {}
-                            :images #{}}
+                  geometry (dwtxt/copied-text-geometry state objects selected)
+
+                  initial  (cond-> {:type :copied-shapes
+                                    :features features
+                                    :version version
+                                    :file-id file-id
+                                    :team-id (:current-team-id state)
+                                    :selected selected
+                                    :objects {}
+                                    :images #{}}
+                             (some? geometry)
+                             (assoc :text-geometry geometry))
 
                   shapes   (->> (cfh/selected-with-children objects selected)
                                 (keep (d/getf objects)))]
@@ -584,6 +588,7 @@
    [:objects
     [:map-of ::sm/uuid :map]]
    [:images [:set :map]]
+   [:text-geometry {:optional true} [:map-of ::sm/uuid :map]]
    [:position {:optional true} ::gpt/point]])
 
 (def ^:private

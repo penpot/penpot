@@ -133,12 +133,10 @@
   "`gradient`, in fractions of the `from` box, in fractions of the `to` box, with its
   points at the same pixel offset from the span origin."
   [gradient from to]
-  (let [{w0 :width h0 :height} (:box from)
-        {w1 :width h1 :height} (:box to)
-        {x0 :x y0 :y}          (:origin from)
-        {x1 :x y1 :y}          (:origin to)
-        move-x                 #(/ (+ x1 (- (* % w0) x0)) w1)
-        move-y                 #(/ (+ y1 (- (* % h0) y0)) h1)]
+  (let [{x0 :x y0 :y {w0 :width h0 :height} :box} from
+        {x1 :x y1 :y {w1 :width h1 :height} :box} to
+        move-x                                    #(/ (+ x1 (- (* % w0) x0)) w1)
+        move-y                                    #(/ (+ y1 (- (* % h0) y0)) h1)]
     (cond-> (-> gradient
                 (update :start-x move-x)
                 (update :start-y move-y)
@@ -158,7 +156,7 @@
                   fills))))
 
 (defn- sized?
-  [{:keys [width height]}]
+  [{{:keys [width height]} :box}]
   (and (pos? width) (pos? height)))
 
 (defn move-gradients
@@ -170,11 +168,8 @@
                      (flatten (:origins source))
                      (flatten (:origins target)))]
     (reduce (fn [content [range from to]]
-              (if (and (some? from) (some? to) (sized? (:box source)) (sized? (:box target)))
-                (text-editor/apply-styles-over-range
-                 content range
-                 #(move-fills % {:box (:box source) :origin from} {:box (:box target) :origin to}))
+              (if (and (some? from) (some? to) (sized? from) (sized? to))
+                (text-editor/apply-styles-over-range content range #(move-fills % from to))
                 content))
             content
             entries)))
-

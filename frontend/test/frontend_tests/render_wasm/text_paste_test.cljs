@@ -196,11 +196,15 @@
 (defn- gradient-fill [gradient]
   {:fills [{:fill-color-gradient (merge {:type :linear :width 1 :stops []} gradient)}]})
 
+(def ^:private source-box {:width 200 :height 40})
+
+(def ^:private target-box {:width 100 :height 80})
+
 (def ^:private source-geometry
-  {:box {:width 200 :height 40} :origins [[{:x 50 :y 0}]]})
+  {:origins [[{:x 50 :y 0 :box source-box}]]})
 
 (def ^:private target-geometry
-  {:box {:width 100 :height 80} :origins [[{:x 10 :y 40}]]})
+  {:origins [[{:x 10 :y 40 :box target-box}]]})
 
 (defn- pasted-gradient [content]
   (-> (spans-of content) first second :fills first :fill-color-gradient))
@@ -236,10 +240,25 @@
     (t/testing "a span with no origin keeps its gradient"
       (t/is (= target (text-paste/move-gradients
                        target pasted {:para 0 :offset 0}
-                       {:box {:width 200 :height 40} :origins [[nil nil]]}
-                       {:box {:width 100 :height 80} :origins [[nil nil]]}))))
+                       {:origins [[nil nil]]}
+                       {:origins [[nil nil]]}))))
     (t/testing "an empty box leaves the gradients as they were"
       (t/is (= target (text-paste/move-gradients
                        target pasted {:para 0 :offset 0}
-                       {:box {:width 200 :height 40} :origins [[nil {:x 0 :y 0}]]}
-                       {:box {:width 0 :height 80} :origins [[nil {:x 0 :y 0}]]}))))))
+                       {:origins [[nil {:x 0 :y 0 :box source-box}]]}
+                       {:origins [[nil {:x 0 :y 0 :box {:width 0 :height 80}}]]}))))))
+
+(t/deftest each-span-moves-from-its-own-box
+  ;; Copied text shapes are joined into one paste, each span keeping its box.
+  (let [linear (gradient-fill {:start-x 0.5 :start-y 0 :end-x 0.5 :end-y 1})
+        pasted (content [(span "a" linear)] [(span "b" linear)])
+        source {:origins [[{:x 0 :y 0 :box {:width 100 :height 20}}]
+                          [{:x 0 :y 0 :box {:width 200 :height 40}}]]}
+        target {:origins [[{:x 0 :y 0 :box {:width 400 :height 80}}]
+                          [{:x 0 :y 40 :box {:width 400 :height 80}}]]}
+        result (text-paste/move-gradients pasted pasted {:para 0 :offset 0} source target)
+        points #(select-keys (-> % :fills first :fill-color-gradient)
+                             [:start-x :start-y :end-x :end-y])]
+    (t/is (= [{:start-x 0.125 :start-y 0 :end-x 0.125 :end-y 0.25}
+              {:start-x 0.25 :start-y 0.5 :end-x 0.25 :end-y 1}]
+             (map (comp points first) (spans-of result))))))

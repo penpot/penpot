@@ -215,7 +215,7 @@
 
 (t/deftest payload-geometry-round-trip
   (let [content  (text-content gradient-span)
-        geometry {:box {:width 200 :height 40} :origins [[{:x 12.5 :y 0.2}]]}
+        geometry {:origins [[{:x 12.5 :y 0.2 :box {:width 200 :height 40}}]]}
         hidden   (clipboard/payload->html content file-id team-id geometry)]
     (t/testing "the payload keeps where the copied spans sat in their text box"
       (t/is (= geometry (:geometry (clipboard/html->payload hidden)))))

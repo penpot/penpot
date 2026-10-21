@@ -1639,20 +1639,43 @@
       (when (and (map? data) (= :copied-shapes (:type data)))
         data))))
 
+(defn copied-text-geometry
+  "The geometry (see `text-editor/content-geometry`) of each selected text in
+   `objects` with gradient or image spans, by id, for a shape copy; nil when none."
+  [state objects selected]
+  (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
+    (not-empty
+     (into {}
+           (keep (fn [id]
+                   (let [{:keys [content] :as shape} (get objects id)]
+                     (when (cfh/text-shape? shape)
+                       (some->> (wasm.text-editor/content-geometry id content {:para 0 :offset 0})
+                                (vector id))))))
+           selected))))
+
+(defn- text-origins
+  "The span origins of `text` in `text-geometry`, nil for each span without one."
+  [text-geometry {:keys [id content]}]
+  (or (get-in text-geometry [id :origins])
+      (mapv #(mapv (constantly nil) (:children %))
+            (-> content :children first :children))))
+
 (defn- copied-shapes->payload
   "A text payload joining the content of the copied text shapes, top to bottom and
    left to right; nil when none of the copied shapes is a text."
-  [{:keys [objects selected file-id team-id]}]
+  [{:keys [objects selected file-id team-id text-geometry]}]
   (let [texts (->> selected
                    (keep #(get objects %))
                    (filter cfh/text-shape?)
                    (sort-by (juxt :y :x)))]
     (when (seq texts)
-      {:file-id file-id
-       :team-id team-id
-       :content (assoc-in (:content (first texts))
-                          [:children 0 :children]
-                          (into [] (mapcat #(-> % :content :children first :children)) texts))})))
+      (cond-> {:file-id file-id
+               :team-id team-id
+               :content (assoc-in (:content (first texts))
+                                  [:children 0 :children]
+                                  (into [] (mapcat #(-> % :content :children first :children)) texts))}
+        (some? text-geometry)
+        (assoc :geometry {:origins (into [] (mapcat (partial text-origins text-geometry)) texts)})))))
 
 (defn- penpot-paste
   [state payload]
@@ -1688,20 +1711,22 @@
   "Where the gradient spans of `pasted`, inserted at `start`, begin in `shape` with
    `content`, laid over the box it gets once resized to its text; nil when none."
   [{:keys [id grow-type]} content pasted start]
-  (when-let [{:keys [box] :as geometry} (wasm.text-editor/content-geometry id pasted start)]
+  (when-let [geometry (wasm.text-editor/content-geometry id pasted start)]
     (if (= :fixed grow-type)
       geometry
       ;; Auto-sized boxes only fit their text when resized (for the editor, when it
       ;; closes), which drops the vertical-align offset in the measured origins.
       (let [{:keys [width height]} (wasm.api/get-text-dimensions id)
-            offset (case (some-> (:vertical-align content) name)
-                     "center" (/ (- (:height box) height) 2)
-                     "bottom" (- (:height box) height)
-                     0)]
-        {:box     {:width  (if (= :auto-width grow-type) width (:width box))
-                   :height height}
-         :origins (mapv (partial mapv #(some-> % (update :y - offset)))
-                        (:origins geometry))}))))
+            fit (fn [{:keys [box] :as origin}]
+                  (let [offset (case (some-> (:vertical-align content) name)
+                                 "center" (/ (- (:height box) height) 2)
+                                 "bottom" (- (:height box) height)
+                                 0)]
+                    (-> origin
+                        (update :y - offset)
+                        (assoc :box {:width  (if (= :auto-width grow-type) width (:width box))
+                                     :height height}))))]
+        (update geometry :origins (partial mapv (partial mapv #(some-> % fit))))))))
 
 (defn- move-pasted-gradients
   "`content`, the shape's after restyling the paste, with the pasted gradients

@@ -859,7 +859,7 @@
 
 (defn- range-origin
   "Where the text in `range` starts in the text `shape-id`, shape-local, with the size
-  of the box its fills are laid over: {:x :y :box-width :box-height}, or nil."
+  of the box its fills are laid over: {:x :y :box {:width :height}}, or nil."
   [shape-id {:keys [start-para start-offset end-para end-offset]}]
   (when (wasm/ready?)
     (let [id          (uuid/get-u32 shape-id)
@@ -870,10 +870,10 @@
                               (aget id 0) (aget id 1) (aget id 2) (aget id 3)
                               start-para start-offset end-para end-offset byte-offset)
           result      (when has-text?
-                        {:x          (aget heap f32-offset)
-                         :y          (aget heap (+ f32-offset 1))
-                         :box-width  (aget heap (+ f32-offset 2))
-                         :box-height (aget heap (+ f32-offset 3))})]
+                        {:x   (aget heap f32-offset)
+                         :y   (aget heap (+ f32-offset 1))
+                         :box {:width  (aget heap (+ f32-offset 2))
+                               :height (aget heap (+ f32-offset 3))}})]
       (mem/free)
       result)))
 
@@ -884,7 +884,7 @@
 
 (defn content-geometry
   "Where the gradient or image spans of `content`, a slice starting at `start`, begin
-  in the text `shape-id`, with its box size; nil when it has none."
+  in the text `shape-id`, each with its box size; nil when it has none."
   [shape-id content start]
   (let [ranges  (span-ranges content start)
         origins (mapv (fn [paragraph paragraph-ranges]
@@ -895,10 +895,8 @@
                               paragraph-ranges))
                       (-> content :children first :children)
                       ranges)]
-    (when-let [{:keys [box-width box-height]} (some identity (flatten origins))]
-      {:box     {:width box-width :height box-height}
-       :origins (mapv (partial mapv #(some-> % (select-keys [:x :y])))
-                      origins)})))
+    (when (some some? (flatten origins))
+      {:origins origins})))
 
 (defn- clean-styles
   "Drop nil-valued attrs (unlike the DOM path, our merge would keep them and fail
