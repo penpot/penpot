@@ -389,6 +389,35 @@ test.describe("Assets tab", () => {
   });
 });
 
+test.describe("Debug shape panel", () => {
+  test("Shows the debug info of the selected shape", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await page.getByRole("button", { name: "Debugging tool" }).click();
+    await page.getByText("shape-panel", { exact: true }).click();
+    await expect(
+      workspace.rightSidebar.getByText("Board", { exact: true }),
+    ).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Only the title row with the dump buttons: the attributes list below
+    // holds ids that change on every run.
+    const title = workspace.rightSidebar
+      .getByText("Board", { exact: true })
+      .locator("..");
+    await expect(title).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Guides", () => {
   test("Shows the advanced options of a square guide", async ({ page }) => {
     // A taller window keeps the whole Design tab visible: a scrolled
