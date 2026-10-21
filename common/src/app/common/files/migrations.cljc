@@ -230,7 +230,10 @@
               ;; its geometry from the content as for line-like paths.
               (let [{:keys [width height] :as rect} (grc/points->rect (:points shape))]
                 (if (or (nil? rect) (mth/almost-zero? width) (mth/almost-zero? height))
-                  (let [selrect (path.segment/content->selrect (:content shape))
+                  ;; Content whose points are not numbers gives no rect
+                  ;; either; fall back to the empty rect.
+                  (let [selrect (or (path.segment/content->selrect (:content shape))
+                                    (grc/make-rect))
                         points (grc/rect->points selrect)
                         transform (gmt/matrix)
                         transform-inv (gmt/matrix)]
@@ -1339,6 +1342,16 @@
   (let [decode-segments
         (sm/decoder path/schema:segments sm/json-transformer)
 
+        ;; Old files may have segments with missing coordinates, which
+        ;; the binary path data can not store; drop them.
+        valid-segment?
+        (fn [{:keys [command params]}]
+          (case command
+            :close-path true
+            (:move-to :line-to) (and (number? (:x params)) (number? (:y params)))
+            :curve-to (every? #(number? (get params %)) [:x :y :c1x :c1y :c2x :c2y])
+            false))
+
         update-object
         (fn [object]
           (if (or (cfh/bool-shape? object)
@@ -1352,9 +1365,10 @@
                             (path/content [])
 
                             :else
-                            (-> content
-                                (decode-segments)
-                                (path/content)))]
+                            (->> content
+                                 (decode-segments)
+                                 (filterv valid-segment?)
+                                 (path/content)))]
               (assoc object :content content))
             object))
 
