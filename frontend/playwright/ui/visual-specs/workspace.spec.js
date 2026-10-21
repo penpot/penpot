@@ -586,6 +586,40 @@ test.describe("Palette", () => {
       ),
     ).toBeVisible();
   });
+
+  test("Shows the palette toggles selected", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    const { fileId, pageId } = await setupFileWithAssets(workspace);
+
+    await workspace.goToWorkspace({ fileId, pageId });
+
+    await workspace.palette
+      .getByRole("button", { name: "Typographies" })
+      .click();
+    await expect(
+      workspace.palette.getByText("Source Sans Pro Regular"),
+    ).toBeVisible();
+    await page.mouse.move(640, 300);
+    // The toggles are a small part of the palette: compare every pixel.
+    await expect(workspace.palette).toHaveScreenshot("palette-text.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await workspace.palette
+      .getByRole("button", { name: "Color Palette" })
+      .click();
+    await expect(
+      workspace.palette.getByText(
+        "There are no color styles in your library yet",
+      ),
+    ).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(workspace.palette).toHaveScreenshot("palette-color.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
 });
 
 test.describe("Plugins", () => {

@@ -9354,6 +9354,10 @@ msgstr "Move (%s)"
 msgid "workspace.toolbar.palette-bar"
 msgstr "Palette bar"
 
+#: src/app/main/ui/workspace/palette.cljs:211
+msgid "workspace.toolbar.palette-options"
+msgstr "Palette options"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:72
 msgid "workspace.toolbar.path"
 msgstr "Path (%s)"
