@@ -813,3 +813,58 @@ test.describe("Grid cell options", () => {
     });
   });
 });
+
+test.describe("Export modal", () => {
+  test("Shows the export frames modal with every selection state", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-export-frames.json",
+    );
+    await workspace.mockRPC(
+      "get-file-object-thumbnails?file-id=*",
+      "workspace/get-file-object-thumbnails-blank.json",
+    );
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*",
+      "workspace/get-file-fragment-blank.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "8d102c33-b98f-81f6-8006-fdd4ea9780d7",
+      pageId: "8d102c33-b98f-81f6-8006-fdd4ea9780d8",
+    });
+
+    await page.getByRole("button", { name: "Main menu" }).click();
+    await page.getByText("file").last().click();
+    await page.locator("#file-menu-export-frames").click();
+    const modal = page.getByText("Export as PDF").locator("../..");
+    await expect(page.getByText("2 of 2 elements selected")).toBeVisible();
+    await page.mouse.move(0, 0);
+    // Every row checked.
+    await expect(modal).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await page.getByRole("button", { name: "Board 1" }).click();
+    await expect(page.getByText("1 of 2 elements selected")).toBeVisible();
+    await page.mouse.move(0, 0);
+    // Mixed: the header checkbox shows the "some selected" mark.
+    await expect(modal).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await page.getByRole("button", { name: "Board 2" }).click();
+    await expect(page.getByText("0 of 2 elements selected")).toBeVisible();
+    await page.mouse.move(0, 0);
+    // Nothing checked: the export button is disabled.
+    await expect(modal).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});

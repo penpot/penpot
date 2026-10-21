@@ -142,7 +142,10 @@ test.describe("Export frames to PDF", () => {
     await expect(page.getByText("1 of 2 elements selected")).toBeVisible();
 
     // The export button should still be enabled
-    const exportButton = page.locator("input[type='button'][value='Export']");
+    const exportButton = page.getByRole("button", {
+      name: "Export",
+      exact: true,
+    });
     await expect(exportButton).toBeEnabled();
   });
 
