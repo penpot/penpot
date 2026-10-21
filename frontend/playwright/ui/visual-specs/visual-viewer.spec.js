@@ -362,3 +362,36 @@ test.describe("Inspect code tab", () => {
     });
   });
 });
+
+test.describe("Interactions menu", () => {
+  test("Shows the interactions menu closed and open", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithMultipleBoards();
+    await viewerPage.goToViewer({
+      fileId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb0",
+      pageId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb3",
+    });
+
+    const trigger = page
+      .getByText("Interactions", { exact: true })
+      .locator("..");
+    await expect(trigger).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Closed: the "Interactions" trigger with its arrow.
+    await expect(trigger).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await trigger.click();
+    const menu = page.getByText("Show interactions", { exact: true });
+    await expect(menu).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Open: the menu with the selected mode ticked.
+    await expect(menu.locator("../..")).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
