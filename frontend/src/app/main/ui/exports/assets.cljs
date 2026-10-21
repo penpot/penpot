@@ -282,8 +282,11 @@
 
     [:*
      (when widget-visible?
-       [:div {:class (stl/css :export-progress-widget)
-              :on-click toggle-detail-visibility}
+       [:button {:type "button"
+                 :class (stl/css :export-progress-widget)
+                 :aria-label title
+                 :aria-expanded (boolean detail-visible?)
+                 :on-click toggle-detail-visibility}
         [:svg {:width "24" :height "24"}
          [:circle {:r "10"
                    :cx "12"
