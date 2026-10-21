@@ -33,6 +33,7 @@
 (t/deftest registrations-are-self-contained-and-distinct
   (doseq [method ["none" "client_secret_basic" "client_secret_post"]]
     (let [metadata {:client_name "Example α"
+                    :logo_uri "https://client.example/logo.png"
                     :redirect_uris ["https://client.example/callback?source=mcp&mode=oauth"]
                     :token_endpoint_auth_method method}
           first    (clients/register! {} metadata)
@@ -54,6 +55,18 @@
     (t/is (= "invalid_client_metadata"
              (try (clients/register! {} metadata)
                   (catch clojure.lang.ExceptionInfo cause (:oauth-error (ex-data cause))))))))
+
+(t/deftest unusable-client-logos-are-ignored
+  ;; An optional image must not prevent a client from authorizing.
+  (doseq [logo [nil "" 42 "/logo.png" "http://client.example/logo.png"
+                "javascript:alert(1)" "data:image/svg+xml,<svg/>"
+                "https://user:secret@client.example/logo.png"
+                (str "https://client.example/" (apply str (repeat 2048 "a")))]]
+    (let [client (clients/validate-metadata
+                  {:redirect_uris ["https://client.example/callback"]
+                   :logo_uri logo}
+                  false)]
+      (t/is (not (contains? client :logo_uri))))))
 
 (t/deftest client-id-size-boundary
   (let [callback     "https://client.example/callback/"
@@ -151,6 +164,7 @@
                                     :body (java.io.ByteArrayInputStream. (json/encode metadata))})}]
       (let [client (clients/resolve-client th/*system* client-id)]
         (t/is (= client-id (:client_id client)))
+        (t/is (= (:logo_uri metadata) (:logo_uri client)))
         (t/is (= ["authorization_code"] (:grant_types client)))
         (t/is (= "none" (:token_endpoint_auth_method client)))
         (t/is (clients/redirect-matches? client "http://127.0.0.1:52351/callback"))))))

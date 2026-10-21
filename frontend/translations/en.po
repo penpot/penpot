@@ -9723,7 +9723,7 @@ msgid "mcp.oauth.account"
 msgstr "You are signed in as %s."
 
 msgid "mcp.oauth.access"
-msgstr "This client can read and change designs through your connected Penpot MCP plugin. You control which design file the plugin connects to."
+msgstr "This client can read and change designs through MCP connections established from Penpot."
 
 msgid "mcp.oauth.enable"
 msgstr "Allowing access enables the MCP integration and creates your MCP token if needed."
