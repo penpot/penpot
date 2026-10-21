@@ -562,7 +562,7 @@
          (fn [^js event]
            (mf/set-ref-val! composing-ref false)
            (let [data (or (.-data event) "")]
-             (text-editor/text-editor-composition-end data)
+             (wasm.api/finish-text-editor-composition data)
              (sync-wasm-text-editor-content!)
              (wasm.api/request-render-preserving-target "text-composition"))
            (reset-input-node (mf/ref-val contenteditable-ref))
