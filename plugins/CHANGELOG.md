@@ -14,7 +14,7 @@
 
 ### 🩹 Fixes
 
-- **plugins-runtime:** `LibraryComponent.instance()`, `createShapeFromSvg()` and `createShapeFromSvgWithImages()` now create shapes at the page root instead of inside a board at the page origin. Closes #12086.
+- **plugin-runtime:** `LibraryComponent.instance()`, `createShapeFromSvg()` and `createShapeFromSvgWithImages()` now create shapes at the page root instead of inside a board at the page origin. Closes #12086.
 - **plugin-types, plugin-runtime:** Dashboard property setters now update values after backend success and log failures without interrupting the workspace. File moves reject projects in other teams, backend rejections include their type and code, and `project.fileCount` stays at its listing snapshot. Duplicated projects include their file count and pinned state.
 - **plugin-runtime:** Cancel plugin loads before they execute after unloading or logout, and allow reopening plugins that close during startup.
 - **plugins-runtime**: `library.connectLibrary()` now resolves once the library's assets are loaded; it used to resolve with an empty library the first time. `library.connected` and `library.availableLibraries()` ignore files opened earlier in the same tab, which used to show up as connected and be left out of the available libraries.
