@@ -68,6 +68,7 @@
    [frontend-tests.main.refs-test]
    [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.plugins.creation-parent-test]
    [frontend-tests.plugins.events-test]
    [frontend-tests.plugins.file-test]
    [frontend-tests.plugins.flex-test]
@@ -228,6 +229,7 @@
    'frontend-tests.logic.wasm-pixel-snap-test
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
+   'frontend-tests.plugins.creation-parent-test
    'frontend-tests.plugins.events-test
    'frontend-tests.plugins.management-test
    'frontend-tests.plugins.file-test

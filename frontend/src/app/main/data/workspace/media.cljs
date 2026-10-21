@@ -487,7 +487,8 @@
     (watch [_ _ _]
       (->> (svg->clj [name svg-string])
            (rx/take 1)
-           (rx/map #(svg/add-svg-shapes id % position {:ignore-selection? true
+           (rx/map #(svg/add-svg-shapes id % position {:frame-id uuid/zero
+                                                       :ignore-selection? true
                                                        :change-selection? false}))))))
 (defn create-svg-shape-with-images
   [file-id id name svg-string position on-success on-error]
@@ -506,7 +507,8 @@
                id
                svg-data
                position
-               {:ignore-selection? true
+               {:frame-id uuid/zero
+                :ignore-selection? true
                 :change-selection? false})))
            (rx/tap on-success)
            (rx/catch on-error)))))
