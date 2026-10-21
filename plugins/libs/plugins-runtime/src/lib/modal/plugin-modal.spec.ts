@@ -99,6 +99,40 @@ describe('PluginModalElement', () => {
     modal.remove();
   });
 
+  it('should resize from its own grip, not move', () => {
+    const modal = document.createElement('plugin-modal');
+    modal.setAttribute('title', 'Test modal');
+    modal.setAttribute('iframe-src', 'about:blank');
+    document.body.appendChild(modal);
+
+    const wrapper = modal.shadowRoot?.querySelector<HTMLElement>('.wrapper');
+    const grip = modal.shadowRoot?.querySelector<HTMLElement>(
+      '.wrapper > .resize-handle',
+    );
+    expect(grip).toBeTruthy();
+    if (!wrapper || !grip) return;
+    wrapper.style.width = '300px';
+    wrapper.style.height = '400px';
+
+    grip.dispatchEvent(
+      createPointerEvent('pointerdown', { clientX: 100, clientY: 100 }),
+    );
+    expect(wrapper.classList.contains('is-resizing')).toBe(true);
+    grip.dispatchEvent(
+      createPointerEvent('pointermove', { clientX: 140, clientY: 70 }),
+    );
+    expect([wrapper.style.width, wrapper.style.height]).toEqual([
+      '340px',
+      '370px',
+    ]);
+    expect(wrapper.style.transform).toBe('');
+
+    grip.dispatchEvent(createPointerEvent('pointerup'));
+    expect(wrapper.classList.contains('is-resizing')).toBe(false);
+
+    modal.remove();
+  });
+
   it('should set iframe allow attribute for clipboard permissions', () => {
     const modal = document.createElement('plugin-modal');
     modal.setAttribute('title', 'Test modal');

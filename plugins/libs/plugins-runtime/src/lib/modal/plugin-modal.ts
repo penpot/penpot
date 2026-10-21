@@ -3,8 +3,13 @@ const closeSvg = `
 
 import type { Theme } from '@penpot/plugin-types';
 import { dragHandler } from '../drag-handler.js';
+import { resizeHandler } from '../resize-handler.js';
 import modalCss from './plugin.modal.css?inline';
-import { resizeModal } from '../create-modal.js';
+import {
+  MIN_PLUGIN_HEIGHT,
+  MIN_PLUGIN_WIDTH,
+  resizeModal,
+} from '../create-modal.js';
 
 const MIN_Z_INDEX = 300;
 const Z_INDEX_VAR = '--z-index-set';
@@ -18,6 +23,7 @@ export class PluginModalElement extends HTMLElement {
   wrapper = document.createElement('div');
   #inner = document.createElement('div');
   #dragEvents: ReturnType<typeof dragHandler> | null = null;
+  #resizeEvents: ReturnType<typeof resizeHandler> | null = null;
   #iframe: HTMLIFrameElement | null = null;
 
   setTheme(theme: Theme) {
@@ -34,6 +40,7 @@ export class PluginModalElement extends HTMLElement {
 
   disconnectedCallback() {
     this.#dragEvents?.();
+    this.#resizeEvents?.();
   }
 
   calculateZIndex() {
@@ -159,6 +166,34 @@ export class PluginModalElement extends HTMLElement {
       },
     );
 
+    // its own grip, inside the rounded corner and in the colours of the
+    // theme, the same in every browser: the native one of `resize` can't be
+    // hidden in Firefox, sits on the corner of the box and keeps its colours
+    const grip = document.createElement('div');
+    grip.classList.add('resize-handle');
+    grip.setAttribute('aria-hidden', 'true');
+
+    this.#resizeEvents = resizeHandler(
+      grip,
+      this.wrapper,
+      () => ({
+        minWidth: MIN_PLUGIN_WIDTH,
+        minHeight: MIN_PLUGIN_HEIGHT,
+        // as its `max-inline-size` and `max-block-size`
+        maxWidth: window.innerWidth * 0.9,
+        maxHeight: window.innerHeight * 0.9,
+      }),
+      {
+        start: () => {
+          this.wrapper.classList.add('is-resizing');
+          this.calculateZIndex();
+        },
+        end: () => {
+          this.wrapper.classList.remove('is-resizing');
+        },
+      },
+    );
+
     this.addEventListener('message', (e: Event) => {
       if (!this.#iframe?.contentWindow) {
         return;
@@ -177,6 +212,7 @@ export class PluginModalElement extends HTMLElement {
     this.shadowRoot.appendChild(this.wrapper);
 
     this.wrapper.appendChild(this.#inner);
+    this.wrapper.appendChild(grip);
     this.#inner.appendChild(header);
     this.#inner.appendChild(this.#iframe);
 
