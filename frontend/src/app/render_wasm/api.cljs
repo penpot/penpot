@@ -776,6 +776,10 @@
   [shape-id content]
   (upload-text-content shape-id content (text-content-fonts content)))
 
+(defn finish-text-editor-composition
+  [text]
+  (text-editor/finish-composition text wselect/use-shape set-shape-text-content))
+
 (defn restore-text-editor-history
   [direction]
   (text-editor/restore-history direction wselect/use-shape set-shape-text-content))
