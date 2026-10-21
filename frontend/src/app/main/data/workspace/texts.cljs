@@ -1617,16 +1617,29 @@
   (when-let [{:keys [shape-id content]} (wasm.text-editor/text-editor-sync-content)]
     (v3-update-editor-content shape-id content :finalize? finalize?)))
 
+(defn v3-restore-history
+  [direction]
+  (ptk/reify ::v3-restore-history
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if-let [{:keys [shape-id content]} (wasm.api/restore-text-editor-history direction)]
+        (do
+          (wasm.api/request-render-preserving-target "text-editor-history")
+          (rx/of (v3-update-editor-content shape-id content)))
+        (rx/empty)))))
+
 (defn v3-apply-pending-caret-styles
   "Event saving an insertion made at `before` that consumed the pending caret style:
    the inserted text gets that style as its own span. Nil when nothing changed."
   [shape-id before]
-  (let [range (wasm.text-editor/typed-range before (wasm.text-editor/caret-position))]
-    ;; Sync first so the cached content stays index-aligned with WASM.
-    (wasm.text-editor/text-editor-sync-content)
-    (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
-      (v3-update-editor-content shape-id content)
-      (v3-sync-editor-content))))
+  (wasm.text-editor/with-history-edit
+    (fn []
+      (let [range (wasm.text-editor/typed-range before (wasm.text-editor/caret-position))]
+        ;; Sync first so the cached content stays index-aligned with WASM.
+        (wasm.text-editor/text-editor-sync-content)
+        (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
+          (v3-update-editor-content shape-id content)
+          (v3-sync-editor-content))))))
 
 (defn- sync-editor-content-stream
   "Stream of the sync event for `reason`, after asking WASM to repaint."
@@ -1853,31 +1866,33 @@
   "Insert the text of `fragment` at the caret and restyle it: with its own styles
    or overrides, else with the pending caret style. Returns the event saving it."
   [state {:keys [fragment penpot?] :as paste}]
-  (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
-        start    (wasm.text-editor/selection-start)
-        styled?  (or penpot? (text-paste/styled? fragment))
-        pending? (some? (wasm.text-editor/get-pending-caret-styles shape-id))]
-    (when styled?
-      (wasm.text-editor/clear-pending-caret-styles!))
-    (wasm.text-editor/text-editor-insert-text (text-paste/fragment->text fragment))
-    (cond
-      (nil? start)
-      (v3-sync-editor-content)
+  (wasm.text-editor/with-history-edit
+    (fn []
+      (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
+            start    (wasm.text-editor/selection-start)
+            styled?  (or penpot? (text-paste/styled? fragment))
+            pending? (some? (wasm.text-editor/get-pending-caret-styles shape-id))]
+        (when styled?
+          (wasm.text-editor/clear-pending-caret-styles!))
+        (wasm.text-editor/text-editor-insert-text (text-paste/fragment->text fragment))
+        (cond
+          (nil? start)
+          (v3-sync-editor-content)
 
-      styled?
-      (do
-        ;; Sync first so the cached content stays index-aligned with WASM.
-        (wasm.text-editor/text-editor-sync-content)
-        (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start penpot?)]
-          (let [shape (dsh/lookup-shape state shape-id)]
-            (v3-update-editor-content shape-id (move-pasted-fills shape content paste start)))
-          (v3-sync-editor-content)))
+          styled?
+          (do
+            ;; Sync first so the cached content stays index-aligned with WASM.
+            (wasm.text-editor/text-editor-sync-content)
+            (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start penpot?)]
+              (let [shape (dsh/lookup-shape state shape-id)]
+                (v3-update-editor-content shape-id (move-pasted-fills shape content paste start)))
+              (v3-sync-editor-content)))
 
-      pending?
-      (v3-apply-pending-caret-styles shape-id start)
+          pending?
+          (v3-apply-pending-caret-styles shape-id start)
 
-      :else
-      (v3-sync-editor-content))))
+          :else
+          (v3-sync-editor-content))))))
 
 (defn v3-paste
   "Paste clipboard `html` and `text` at the caret, replacing the selection."

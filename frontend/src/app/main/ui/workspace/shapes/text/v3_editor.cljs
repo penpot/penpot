@@ -25,7 +25,9 @@
    [app.util.keyboard :as kbd]
    [app.util.text.geometry :as text.geom]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def caret-blink-interval-ms 250)
@@ -609,6 +611,7 @@
            ;; makes ibus abort and commit. The surface already sits on the
            ;; caret (see `update-ime-caret!`).
            (when (and (text-editor/text-editor-has-focus?)
+                      (not (mf/ref-val composing-ref))
                       (not (composing-event? event)))
              (let [key    (.-key event)
                    ctrl?  (or (.-ctrlKey event) (.-metaKey event))
@@ -619,6 +622,12 @@
                  (text-editor/clear-pending-caret-styles!))
                (cond
                  ;; NOTE: Escape is handled in a document key-up listener (see effect below).
+
+                 (and ctrl? (contains? #{"z" "y"} (str/lower key)))
+                 (do
+                   (dom/prevent-default event)
+                   (dom/stop-propagation event)
+                   (st/emit! (if (or shift? (= (str/lower key) "y")) dwu/redo dwu/undo)))
 
                  ;; Ctrl+A: select all (key is "a" or "A" depending on platform)
                  (and ctrl? (= (str/lower key) "a"))
@@ -727,6 +736,11 @@
         (mf/use-fn
          (fn [^js native]
            (mf/set-ref-val! pending-replace-ref 0)
+           (when (and (contains? #{"historyUndo" "historyRedo"} (.-inputType native))
+                      (not (mf/ref-val composing-ref))
+                      (not (.-isComposing native)))
+             (dom/prevent-default native)
+             (st/emit! (if (= (.-inputType native) "historyUndo") dwu/undo dwu/redo)))
            (when (and (= (.-inputType native) "insertText")
                       (not (.-isComposing native))
                       (not (text-editor/text-editor-has-selection?)))
@@ -916,6 +930,22 @@
 
     ;; Keep the caret-translation origin in sync with the current render.
     (mf/set-ref-val! origin-ref {:x x :y y :width ime-width :vertical? vertical?})
+
+    ;; The workspace leaves undo to the active editor. Handle the same events
+    ;; for keyboard shortcuts, native history input and workspace menu actions.
+    (mf/use-effect
+     (mf/deps)
+     (fn []
+       (let [subscription
+             (->> st/stream
+                  (rx/filter #(or (ptk/type? ::dwu/undo %) (ptk/type? ::dwu/redo %)))
+                  (rx/subs! (fn [event]
+                              (when-not (mf/ref-val composing-ref)
+                                (st/emit! (dwt/v3-restore-history
+                                           (if (ptk/type? ::dwu/undo event) :undo :redo)))
+                                (reset-input-node (mf/ref-val contenteditable-ref))
+                                (schedule-ime-caret!)))))]
+         #(rx/dispose! subscription))))
 
     ;; Exit on Escape via a document key-up listener (like v2). On key-down the trailing
     ;; key-up is read as a non-editing Escape and deselects the shape.
