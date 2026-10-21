@@ -4706,10 +4706,6 @@ msgstr "Välj objekt med denna stil"
 msgid "shortcuts.add-comment"
 msgstr "Kommentarer"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Lägg till nod"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Justera botten"

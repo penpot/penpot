@@ -3507,10 +3507,6 @@ msgstr "Elemente mit diesem Stil auswählen"
 msgid "shortcuts.add-comment"
 msgstr "Kommentare"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Punkt hinzufügen"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Unten ausrichten"
