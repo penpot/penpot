@@ -614,7 +614,7 @@
   in the given file library. Then selects the newly created instance."
   ([file-id component-id position]
    (instantiate-component file-id component-id position nil))
-  ([file-id component-id position {:keys [start-move? initial-point id-ref origin]}]
+  ([file-id component-id position {:keys [start-move? initial-point id-ref origin frame-id]}]
    (dm/assert! (uuid? file-id))
    (dm/assert! (uuid? component-id))
    (dm/assert! (gpt/point? position))
@@ -637,7 +637,11 @@
                                                  component-id
                                                  position
                                                  page
-                                                 libraries)
+                                                 libraries
+                                                 nil
+                                                 frame-id
+                                                 frame-id
+                                                 {:force-frame? (some? frame-id)})
              component (ctn/get-component-from-shape new-shape libraries)
 
              undo-id (js/Symbol)]
