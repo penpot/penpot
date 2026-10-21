@@ -1,14 +1,11 @@
-# The Admin Console is served at the root of its own server: strip the public
-# path and admin-console/ from the original request URI.
+# The Admin Console is served at the root of its own server. Keep proxy_pass
+# without a URI: building it from $request_uri escapes the path twice.
 location /admin-console {
-    set $admin_console_uri "/";
-    if ($request_uri ~ "^${PENPOT_PUBLIC_PATH_REGEX}admin-console(/.*)$") {
-        set $admin_console_uri $1;
-    }
+    rewrite "^/admin-console(?:/(.*))?$" /$1 break;
 
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $http_cf_connecting_ip;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_pass $PENPOT_ADMIN_CONSOLE_URI$admin_console_uri;
+    proxy_pass $PENPOT_ADMIN_CONSOLE_URI;
 }
