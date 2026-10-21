@@ -8,12 +8,16 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 // COMMENT DROPDOWN ON HEADER
+.view-options-wrapper {
+  position: relative;
+}
+
 .view-options {
   @include deprecated.body-small-typography;
 
   display: flex;
   align-items: center;
-  position: relative;
+  border: none;
   gap: deprecated.$s-4;
   height: deprecated.$s-32;
   padding: deprecated.$s-8;
