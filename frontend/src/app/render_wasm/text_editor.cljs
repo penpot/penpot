@@ -20,6 +20,7 @@
    ;; Required for side effects: binds the generated enums.
    [app.render-wasm.api.enums]
    [app.render-wasm.api.fonts :as fonts]
+   [app.render-wasm.text-editor-history :as history]
    [app.util.color :as uc]
    [app.util.dom :as dom]))
 
@@ -199,6 +200,12 @@
       (when selection
         (h/call wasm/internal-module "_text_editor_apply_theme" selection color invert?)))))
 
+(def ^:private editing-history (atom nil))
+
+(declare checkpoint-history record-content-history get-cached-content
+         default-empty-text-content text-editor-get-active-shape-id
+         text-editor-get-selection clear-pending-caret-styles!)
+
 (defn text-editor-focus
   [id]
   (when (wasm/ready?)
@@ -208,7 +215,9 @@
                         (aget buffer 1)
                         (aget buffer 2)
                         (aget buffer 3))
-        (throw (js/Error. "TextEditor focus failed"))))))
+        (throw (js/Error. "TextEditor focus failed")))
+      (when (not= id (:shape-id @editing-history))
+        (reset! editing-history (assoc history/empty-history :shape-id id))))))
 
 (defn text-editor-set-cursor-from-offset
   "Sets caret position from shape relative coordinates"
@@ -417,6 +426,8 @@
 (defn text-editor-composition-start
   []
   (when (wasm/ready?)
+    (checkpoint-history)
+    (swap! editing-history assoc :composing true)
     (h/call wasm/internal-module "_text_editor_composition_start")))
 
 (defn text-editor-composition-update
@@ -437,11 +448,13 @@
   (when (wasm/ready?)
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_composition_end")
-    (text-editor-encode-text-post text)))
+    (text-editor-encode-text-post text)
+    (swap! editing-history assoc :composing false)))
 
 (defn text-editor-insert-text
   [text]
   (when (wasm/ready?)
+    (checkpoint-history)
     (text-editor-encode-text-pre text)
     (h/call wasm/internal-module "_text_editor_insert_text")
     (text-editor-encode-text-post text)))
@@ -451,6 +464,7 @@
    (text-editor-delete-backward false))
   ([word-boundary]
    (when (wasm/ready?)
+     (checkpoint-history)
      (h/call wasm/internal-module "_text_editor_delete_backward" word-boundary))))
 
 (defn text-editor-delete-forward
@@ -458,10 +472,12 @@
    (text-editor-delete-forward false))
   ([word-boundary]
    (when (wasm/ready?)
+     (checkpoint-history)
      (h/call wasm/internal-module "_text_editor_delete_forward" word-boundary))))
 
 (defn text-editor-insert-paragraph []
   (when (wasm/ready?)
+    (checkpoint-history)
     (h/call wasm/internal-module "_text_editor_insert_paragraph")))
 
 (defn text-editor-move-cursor
@@ -493,7 +509,8 @@
 (defn text-editor-dispose
   []
   (when (wasm/ready?)
-    (h/call wasm/internal-module "_text_editor_dispose")))
+    (h/call wasm/internal-module "_text_editor_dispose"))
+  (reset! editing-history nil))
 
 (defn text-editor-has-focus?
   ([id]
@@ -571,6 +588,12 @@
 (defn cache-shape-text-content!
   [shape-id content]
   (when (some? content)
+    ;; Local edits update the cache before their store commit. A different
+    ;; incoming tree starts a new baseline, so undo cannot revert remote edits.
+    (when (and (= shape-id (:shape-id @editing-history))
+               (not (:restoring @editing-history))
+               (not= content (get @shape-text-contents shape-id)))
+      (reset! editing-history (assoc history/empty-history :shape-id shape-id)))
     (swap! shape-text-contents assoc shape-id content)))
 
 (defn get-cached-content
@@ -579,7 +602,61 @@
 
 (defn update-cached-content!
   [shape-id content]
+  (record-content-history shape-id content)
   (swap! shape-text-contents assoc shape-id content))
+
+(defn- history-snapshot
+  [shape-id]
+  {:content (or (get-cached-content shape-id) (default-empty-text-content))
+   :selection (text-editor-get-selection)})
+
+(defn- checkpoint-history
+  []
+  (when-let [{:keys [shape-id composing before]} @editing-history]
+    (when (and (not composing) (nil? before))
+      (swap! editing-history assoc :before (history-snapshot shape-id)))))
+
+(defn- record-content-history
+  [shape-id content]
+  (let [{active-id :shape-id :keys [composing restoring grouped before] :as edits} @editing-history]
+    (when (and (= active-id shape-id) (not composing) (not restoring) (not grouped))
+      (let [before (or before (history-snapshot shape-id))
+            after  {:content content :selection (text-editor-get-selection)}]
+        (reset! editing-history (dissoc (history/record edits before after) :before))))))
+
+(defn with-history-edit
+  "Keep insertion and its style updates in one history entry."
+  [f]
+  (if (or (nil? @editing-history) (:grouped @editing-history))
+    (f)
+    (do
+      (checkpoint-history)
+      (swap! editing-history assoc :grouped true)
+      (try
+        (f)
+        (finally
+          (swap! editing-history dissoc :grouped)
+          (let [shape-id (:shape-id @editing-history)]
+            (record-content-history shape-id (get-cached-content shape-id))))))))
+
+(defn restore-history
+  "Restore one edit from this session. An empty history never reaches canvas undo."
+  [direction use-shape set-content]
+  (when (and (wasm/ready?) (text-editor-has-focus?)
+             (not (:composing @editing-history)))
+    (let [{:keys [shape-id] :as edits} @editing-history]
+      (when-let [{:keys [history snapshot]} (history/step edits direction (history-snapshot shape-id))]
+        (reset! editing-history (assoc history :restoring true))
+        (try
+          (clear-pending-caret-styles!)
+          (use-shape shape-id)
+          (set-content shape-id (:content snapshot))
+          (let [{:keys [anchor-para anchor-offset focus-para focus-offset]} (:selection snapshot)]
+            (h/call wasm/internal-module "_text_editor_restore_selection"
+                    anchor-para anchor-offset focus-para focus-offset))
+          {:shape-id shape-id :content (:content snapshot)}
+          (finally
+            (swap! editing-history dissoc :restoring :before)))))))
 
 ;; Typography chosen at a collapsed caret: not applied to existing text, but
 ;; picked up (as a new span) by the next inserted text. Keyed by shape-id.
@@ -690,6 +767,7 @@
                             (default-empty-text-content))]
           (when content
             (let [merged (merge-exported-texts-into-content content texts-clj)]
+              (record-content-history shape-id merged)
               (swap! shape-text-contents assoc shape-id merged)
               {:shape-id shape-id
                :content  merged})))))))
