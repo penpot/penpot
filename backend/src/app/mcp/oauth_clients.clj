@@ -61,6 +61,14 @@
                           (= (.getRawQuery a) (.getRawQuery b))))))
              (:redirect_uris registered))))
 
+(defn- logo-uri?
+  [value]
+  (when-let [uri (uri value)]
+    (and (= "https" (.getScheme uri))
+         (some? (.getHost uri))
+         (nil? (.getUserInfo uri))
+         (nil? (.getFragment uri)))))
+
 (defn validate-metadata
   "Validate untrusted metadata and retain the fields this server supports.
   CIMD selects public-client authentication from the advertised methods;
@@ -96,7 +104,10 @@
              :response_types ["code"]
              :scope "mcp"
              :token_endpoint_auth_method method}
-      (:client_name metadata) (assoc :client_name (:client_name metadata)))))
+      (:client_name metadata) (assoc :client_name (:client_name metadata))
+      ;; Logos are optional browser-loaded images. Ignore unusable URLs
+      ;; instead of preventing authorization because of cosmetic metadata.
+      (logo-uri? (:logo_uri metadata)) (assoc :logo_uri (:logo_uri metadata)))))
 
 (defn register!
   "Issue a reusable client ID and, when applicable, a separate client secret.

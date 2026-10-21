@@ -4,6 +4,8 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_sizes.scss" as *;
+
 .page {
   display: grid;
   place-items: center;
@@ -23,8 +25,31 @@
   border-radius: var(--br-8);
 }
 
-.identity {
+.client {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-l);
+  margin-block-end: var(--sp-s);
   overflow-wrap: anywhere;
+}
+
+.client-logo {
+  inline-size: $sz-48;
+  block-size: $sz-48;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: var(--br-8);
+}
+
+.client-details {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--sp-s) - var(--sp-xxs));
+  min-inline-size: 0;
+}
+
+.client-text {
+  margin: 0;
 }
 
 .actions {

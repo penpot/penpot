@@ -139,6 +139,7 @@
     (let [handle (state/create! cfg :request
                                 {:client-id (:client_id client)
                                  :client-name (:client_name client)
+                                 :logo-uri (:logo_uri client)
                                  :redirect-uri callback
                                  :challenge (:code_challenge params)
                                  :state (:state params)
@@ -175,7 +176,7 @@
     (let [value (:value (state/read! cfg :request handle))]
       (when-not (= binding (select-keys value [:profile-id :session-id]))
         (clients/invalid! "invalid_request"))
-      (response (select-keys value [:client-id :client-name :csrf :scope])))))
+      (response (select-keys value [:client-id :client-name :logo-uri :csrf :scope])))))
 
 (defn- same-origin?
   [request]

@@ -75,6 +75,7 @@
   (let [profile  (th/create-profile* 1 {:is-active true})
         cookies  (login-cookie profile)
         client   (clients/register! th/*system* {:redirect_uris ["https://example.com/callback"]
+                                                 :logo_uri "https://example.com/logo.png"
                                                  :token_endpoint_auth_method "none"})
         handle   (begin client)
         details  (request "/api/mcp/oauth/request" :query (form {:request handle}) :cookies cookies)
@@ -86,6 +87,7 @@
                            :body-bytes (form %))]
     (t/is (= 401 (::yres/status (request "/api/mcp/oauth/request" :query (form {:request handle})))))
     (t/is (= 200 (::yres/status details)))
+    (t/is (= "https://example.com/logo.png" (:logo-uri (body details))))
     (t/is (= 400 (::yres/status (submit (assoc decision :csrf "wrong")))))
     (let [approved (submit decision)
           callback (java.net.URI. (:redirect-uri (body approved)))

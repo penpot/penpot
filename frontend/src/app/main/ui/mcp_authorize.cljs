@@ -56,6 +56,17 @@
                                              :body (uri/map->query-string params))))
        (rx/map #(update % :body js->clj :keywordize-keys true))))
 
+(mf/defc client-logo*
+  {::mf/private true}
+  [{:keys [uri]}]
+  (let [failed (mf/use-state false)]
+    (when-not @failed
+      [:img {:class (stl/css :client-logo)
+             :src uri
+             :alt ""
+             :referrer-policy "no-referrer"
+             :on-error #(reset! failed true)}])))
+
 (mf/defc mcp-authorize*
   [{:keys [route profile]}]
   (let [handle     (get-in route [:query-params :request])
@@ -130,10 +141,14 @@
 
           :else
           [:*
-           [:> text* {:typography typography/body-large}
-            (tr "mcp.oauth.request" (or (:client-name @details) (:client-id @details)))]
-           [:> text* {:typography typography/body-small :class (stl/css :identity)}
-            (:client-id @details)]
+           [:div {:class (stl/css :client)}
+            (when-let [logo-uri (:logo-uri @details)]
+              [:> client-logo* {:key logo-uri :uri logo-uri}])
+            [:div {:class (stl/css :client-details)}
+             [:> text* {:typography typography/body-large :class (stl/css :client-text)}
+              (tr "mcp.oauth.request" (or (:client-name @details) (:client-id @details)))]
+             [:> text* {:typography typography/body-small :class (stl/css :client-text)}
+              (:client-id @details)]]]
            [:> text* {:typography typography/body-medium}
             (tr "mcp.oauth.account" (:email profile))]
            [:> text* {:typography typography/body-large}
