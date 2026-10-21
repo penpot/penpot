@@ -1174,11 +1174,92 @@ pub extern "C" fn text_get_range_origin(
     })
 }
 
+fn restore_editor_selection(
+    editor: &mut TextEditorState,
+    content: &TextContent,
+    anchor_para: u32,
+    anchor_offset: u32,
+    focus_para: u32,
+    focus_offset: u32,
+) -> bool {
+    let paragraphs = content.paragraphs();
+    if paragraphs.is_empty() {
+        return false;
+    }
+    let position = |paragraph: u32, offset: u32| {
+        let paragraph = (paragraph as usize).min(paragraphs.len() - 1);
+        let mut utf16 = 0;
+        let offset = paragraphs[paragraph]
+            .children()
+            .iter()
+            .flat_map(|span| span.text.chars())
+            .take_while(|ch| {
+                utf16 += ch.len_utf16();
+                utf16 <= offset as usize
+            })
+            .count();
+        TextPositionWithAffinity::new_downstream_affinity(paragraph, offset)
+    };
+    editor.selection.anchor = position(anchor_para, anchor_offset);
+    editor.selection.focus = position(focus_para, focus_offset);
+    editor.update_styles(content);
+    editor.reset_blink();
+    editor.push_event(TextEditorEvent::SelectionChanged);
+    true
+}
+
+/// Restore the host's UTF-16 selection after restoring a history entry.
+#[no_mangle]
+pub extern "C" fn text_editor_restore_selection(
+    anchor_para: u32,
+    anchor_offset: u32,
+    focus_para: u32,
+    focus_offset: u32,
+) -> bool {
+    with_state!(state, {
+        let editor = get_text_editor_state();
+        if !editor.has_focus || editor.composition.is_composing {
+            return false;
+        }
+        let Some(shape) = editor.active_shape_id.and_then(|id| state.shapes.get(&id)) else {
+            return false;
+        };
+        let Type::Text(content) = &shape.shape_type else {
+            return false;
+        };
+        restore_editor_selection(
+            editor,
+            content,
+            anchor_para,
+            anchor_offset,
+            focus_para,
+            focus_offset,
+        )
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::shapes::{Group, GrowType, Paragraph, TextDirection, TextSpan, WritingMode};
     use crate::tiles;
+
+    #[test]
+    fn history_selection_restores_utf16_ranges_without_splitting_surrogates() {
+        let mut resources = crate::render::RenderResources::try_new_headless().expect("resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let (mut state, id) = preview_state(GrowType::Fixed, WritingMode::VerticalRl);
+        let content = text_content_for_edit(&mut state, id).unwrap();
+        content.paragraphs_mut()[0].children_mut()[0].text = "A😀한B".into();
+        let mut editor = TextEditorState::new();
+        assert!(restore_editor_selection(&mut editor, content, 0, 1, 0, 3));
+        assert_eq!(editor.selection.anchor.offset, 1);
+        assert_eq!(editor.selection.focus.offset, 2);
+        assert!(restore_editor_selection(&mut editor, content, 0, 2, 9, 99));
+        assert_eq!(editor.selection.anchor.offset, 1);
+        assert_eq!(editor.selection.focus.paragraph, 0);
+        assert_eq!(editor.selection.focus.offset, 4);
+    }
 
     fn preview_state(grow_type: GrowType, writing_mode: WritingMode) -> (State, Uuid) {
         let id = Uuid::new_v4();

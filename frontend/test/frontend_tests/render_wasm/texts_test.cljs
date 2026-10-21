@@ -20,6 +20,7 @@
    [app.render-wasm.api :as api]
    [app.render-wasm.api.texts :as texts]
    [app.render-wasm.text-editor :as text-editor]
+   [app.render-wasm.text-editor-history :as history]
    [app.util.text.content.styles :as content-styles]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]))
@@ -168,6 +169,80 @@
              (:ruby
               (text-editor/selection-japanese-styles
                content (selection 0 2 0 3)))))))
+
+(t/deftest editor-history-restores-styled-content-and-selection
+  (let [before {:content (editor-content [{:text "A😀B" :ruby "a"}])
+                :selection (selection 0 1 0 3)}
+        after  {:content (editor-content [{:text "A你好B" :ruby "a"}])
+                :selection (selection 0 3 0 3)}
+        edits  (history/record history/empty-history before after)
+        undone (history/step edits :undo after)]
+    (t/is (= before (:snapshot undone)))
+    (t/is (= after (:snapshot (history/step (:history undone) :redo before))))))
+
+(t/deftest editor-history-keeps-no-ops-out-and-discards-redo-after-editing
+  (let [a {:content "A" :selection (selection 0 1 0 1)}
+        b {:content "AB" :selection (selection 0 2 0 2)}
+        c {:content "AC" :selection (selection 0 2 0 2)}
+        edited (history/record history/empty-history a b)
+        undone (:history (history/step edited :undo b))]
+    (t/is (= undone (history/record undone a a)))
+    (t/is (nil? (history/step (history/record undone a c) :redo c)))
+    (t/is (nil? (history/step history/empty-history :undo a)))))
+
+(t/deftest editor-history-bounds-the-number-of-saved-edits
+  (let [edits (reduce (fn [edits n]
+                        (history/record edits {:content n} {:content (inc n)}))
+                      history/empty-history (range 150))]
+    (t/is (= 100 (count (:past edits))))
+    (t/is (= 50 (:content (first (:past edits)))))))
+
+(t/deftest ^:async editor-history-groups-style-updates-and-committed-composition
+  (let [edits       @#'text-editor/editing-history
+        cache       @#'text-editor/shape-text-contents
+        old-edits   @edits
+        old-cache   @cache
+        before      (editor-content [{:text "A😀B"}])
+        inserted    (editor-content [{:text "A你好B"}])
+        styled      (editor-content [{:text "A你好B" :ruby "nǐ hǎo"}])
+        range       (selection 0 1 0 3)]
+    (try
+      (await
+       (mock/with-mocks*
+         {text-editor/text-editor-get-selection (constantly range)}
+         (reset! cache {:fixture before})
+         (reset! edits (assoc history/empty-history :shape-id :fixture))
+         (text-editor/with-history-edit
+           (fn []
+             (text-editor/update-cached-content! :fixture inserted)
+             (text-editor/update-cached-content! :fixture styled)))
+         (t/is (= [{:content before :selection range}] (:past @edits)))
+         (t/is (= styled (text-editor/get-cached-content :fixture)))
+         ;; Preview updates must never enter history. Commit the whole final
+         ;; reading once; a cancelled composition is a no-op and keeps redo.
+         (reset! cache {:fixture before})
+         (reset! edits (assoc history/empty-history :shape-id :fixture))
+         (@#'text-editor/checkpoint-history)
+         (swap! edits assoc :composing true)
+         (@#'text-editor/record-content-history :fixture inserted)
+         (t/is (empty? (:past @edits)))
+         (swap! edits assoc :composing false)
+         (text-editor/update-cached-content! :fixture inserted)
+         (t/is (= [before] (mapv :content (:past @edits))))
+         (reset! cache {:fixture before})
+         (reset! edits (assoc history/empty-history :shape-id :fixture
+                              :future [{:content inserted :selection range}]))
+         (@#'text-editor/checkpoint-history)
+         (text-editor/update-cached-content! :fixture before)
+         (t/is (= [inserted] (mapv :content (:future @edits))))
+         ;; Incoming content that bypasses local editor edits must not become
+         ;; a local undo entry or leave redo able to overwrite the new tree.
+         (text-editor/cache-shape-text-content! :fixture styled)
+         (t/is (empty? (:past @edits)))
+         (t/is (empty? (:future @edits)))))
+      (finally
+        (reset! edits old-edits)
+        (reset! cache old-cache)))))
 
 (t/deftest composition-caret-goes-to-the-end-of-the-changed-part
   ;; Typing appends, converting replaces all, and a candidate for a middle
