@@ -100,6 +100,40 @@
         (assoc ::instance cause)
         (assoc ::trace (.-stack cause)))))
 
+;; Events in flight when each exception was caught, as report lines
+(defonce ^:private in-flight-by-cause (js/WeakMap.))
+
+;; Events kept from each end of a long in-flight list
+(def ^:private in-flight-edge-size 10)
+
+(defn- in-flight-lines
+  "Report lines for the in-flight `events`, outermost first; a long list
+  keeps only both ends."
+  [events]
+  (let [total (count events)
+        size  in-flight-edge-size]
+    (if (<= total (* 2 size))
+      (mapv ptk/repr-event events)
+      (-> []
+          (into (map ptk/repr-event) (take size events))
+          (conj (str "... " (- total (* 2 size)) " more ..."))
+          (into (map ptk/repr-event) (take-last size events))))))
+
+(defn- record-in-flight!
+  "Keeps the events the store is processing for the report of `cause`.
+  Runs synchronously on the error path: when an event's `update`, `effect`
+  or synchronous `watch` throws, the last line is that event. When a
+  `watch` pipeline fails on a value from the store stream, the store has
+  already finished that value, so the lines show the events that emitted
+  it, not the event that owns the pipeline."
+  [cause]
+  (try
+    (when (ex/exception? cause)
+      (when-let [events (not-empty (ptk/in-flight-events st/state))]
+        (.set in-flight-by-cause cause (in-flight-lines events))))
+    (catch :default _
+      nil)))
+
 (defn on-error
   "A general purpose error handler.
 
@@ -114,6 +148,7 @@
       (ex/print-throwable error))
     (do
       (vreset! handling-error? true)
+      (record-in-flight! (if (map? error) (::instance error) error))
       (try
         (if (map? error)
           (ptk/handle-error error)
@@ -157,7 +192,7 @@
       (println "Context:")
       (println "--------------------")
       (println "Timestamp:" (ct/format-inst (ct/now) :rfc1123))
-      (println "Hint:     " (or (:hint data) (ex-message cause) "--"))
+      (println "Hint:     " (or (ex/get-hint cause) "--"))
       (println "Prof ID:  " (str (or profile-id "--")))
       (println "Team ID:  " (str (or team-id "--")))
       (when-let [file-id (or (:file-id data) file-id)]
@@ -166,8 +201,9 @@
       (println "HREF:     " (rt/get-current-href)))))
 
 (defn- generate-full-report
-  "Complete report: context, formatted throwable (including `ex-data`) and the
-  last events."
+  "Complete report: context, formatted throwable (including `ex-data`), the
+  events in flight when the error was caught (when recorded) and the last
+  events."
   [cause]
   (with-out-str
     (print (report-context cause))
@@ -176,6 +212,12 @@
     (println
      (ex/format-throwable cause))
     (println)
+
+    (when-let [lines (.get in-flight-by-cause cause)]
+      (println "Events in flight when the error was caught (outermost first):")
+      (println "--------------------")
+      (run! println lines)
+      (println))
 
     (println "Last events:")
     (println "--------------------")
@@ -202,9 +244,9 @@
   "Build the report string for `cause`.
 
   `:format` selects the payload: `:full` (default) includes the formatted
-  throwable and the last events; `:compact` keeps only the context and the
-  error type/code/uri, for environment failures. The option is accepted both
-  as keyword arguments and as a trailing map."
+  throwable, the in-flight and the last events; `:compact` keeps only the
+  context and the error type/code/uri, for environment failures. The option
+  is accepted both as keyword arguments and as a trailing map."
   [cause & {:keys [format] :or {format :full}}]
   (try
     (case format
@@ -392,6 +434,24 @@
                     hint
                     occurrences))))
 
+(defonce ^:private update-loop-warned-at
+  (volatile! 0))
+
+(defn on-update-loop
+  "Handler for the rumext update scheduler trips: logs the throttled
+  update loop with the events being processed, at most once per
+  `report-window-ms`. Runs inside store watchers and effect bodies, so it
+  never throws."
+  [_]
+  (try
+    (let [now (inst-ms (ct/now))]
+      (when (>= (- now @update-loop-warned-at) report-window-ms)
+        (vreset! update-loop-warned-at now)
+        (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
+               (into-array (map ptk/repr-event (ptk/in-flight-events st/state))))))
+    (catch :default _
+      nil)))
+
 (defn- download-report!
   [report event]
   (dom/prevent-default event)
@@ -430,6 +490,7 @@
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
+  A `:tag` lets the notification be hidden later by that tag.
 
   The payload format is derived from the cause: environment failures get a
   compact report. The audit event name is the canonical one requested by
@@ -460,7 +521,7 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout report-link?]
+  [& {:keys [type hint cause timeout tag report-link? links]
       :or {type :handled timeout 5000}}]
   (js/Promise.
    (fn [resolve _reject]
@@ -473,16 +534,26 @@
               link-report (when report-link?
                             (or report
                                 (when (ex/exception? cause)
-                                  (generate-report cause {:format (report-format cause)}))))]
+                                  (generate-report cause {:format (report-format cause)}))))
+              ;; The download link comes first because `:report-link?` is
+              ;; what puts the report on the toast at all; caller links are
+              ;; the recovery actions and follow it.
+              all-links   (cond-> []
+                            link-report
+                            (conj {:label (tr "labels.download" "report.txt")
+                                   :callback (partial download-report! link-report)})
+                            (seq links) (into links))]
           (try (st/emit!
                 (ntf/show
                  (cond-> {:content (or ^boolean hint (tr "errors.generic"))
                           :type :toast
                           :level :error
                           :timeout timeout}
-                   link-report
-                   (assoc :links [{:label (tr "labels.download" "report.txt")
-                                   :callback (partial download-report! link-report)}]))))
+                   (some? tag)
+                   (assoc :tag tag)
+
+                   (seq all-links)
+                   (assoc :links all-links))))
                (catch :default err
                  (.error js/console "error on emitting toast" err)))
           (resolve report)))))))
@@ -498,6 +569,15 @@
          :type :handled
          :hint (tr "errors.connection-error")))
 
+(defn- handle-transport-error
+  "Reports a failure whose answer did not come from the backend. These affect
+  one request and pass on their own, so the user keeps the page and gets a
+  toast."
+  [error prefix]
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix prefix))
+  (flash :cause (::instance error) :type :handled))
+
 (defmethod ptk/handle-error :network
   [error]
   ;; Transient network errors (e.g. lost connectivity, DNS failure)
@@ -511,6 +591,18 @@
   ;; that would report it as an unhandled application error.
   (handle-connectivity-error error "Offline Error"))
 
+(defmethod ptk/handle-error :gateway-error
+  [error]
+  (handle-connectivity-error error "Gateway Error"))
+
+(defmethod ptk/handle-error :rate-limit
+  [error]
+  (handle-transport-error error "Rate Limit Error"))
+
+(defmethod ptk/handle-error :unexpected-response
+  [error]
+  (handle-transport-error error "Unexpected Response"))
+
 (def ^:private delegated-persistence-types
   "Save failure causes routed to their own error handler: retaining the
   changes cannot resolve them."
@@ -523,18 +615,72 @@
       ;; The retained changes no longer apply to the restored version.
       (= :vern-conflict code)))
 
+(def ^:private unhandled-persistence-types
+  "Save failure causes that are application defects, not expected
+  outcomes: the client asked for something the server refused, or the
+  server or our own code broke. They must reach the internal reports and
+  the alerts, so they are reported as unhandled.
+  Environment failures are deliberately absent: the user's connection is
+  not our bug, and they land here once the retry budget is spent.
+  `:assertion` is absent on purpose too, because its own handler already
+  reports it as handled."
+  #{:validation :server-error :internal})
+
+(defn- persistence-report-type
+  "The audit event name a save failure gets. `persistence-failed` wraps the
+  original cause under `:type :persistence` and keeps the real type in
+  `:cause-type`, so `:cause-type` wins: reading `:type` alone would match the
+  wrapper and never the cause."
+  [{:keys [type cause-type]}]
+  (if (contains? unhandled-persistence-types (or cause-type type))
+    :unhandled
+    :handled))
+
+(defn- reload-page-link
+  "Recovery action for a save failure: reload the window.
+
+  Persistence stops for the session once a save fails terminally, and
+  reloading is the only way to get a fresh one without the user having to
+  know they can also leave the file and come back. `location.reload` is the
+  pattern used elsewhere in the app for a full restart."
+  []
+  {:label (tr "labels.reload-page")
+   :callback (fn [event]
+               (dom/prevent-default event)
+               (js/location.reload))})
+
+(def persistence-failed-tag
+  "Tag of the save failure notification, hidden once a save lands."
+  :persistence-failed)
+
 (defn flash-persistence
-  [cause]
+  "Notifies a save failure. With `:retrying` the failure is transient and
+  the queue keeps trying in the background, so the toast says the changes
+  are kept and offers no reload, which would lose them."
+  [cause & {:keys [retrying]}]
   (let [data (ex-data cause)]
-    (if (delegated-persistence-failure? data)
+    (cond
+      (delegated-persistence-failure? data)
       ;; The persistence state wraps the failure and records the original
       ;; type under :cause-type; dispatch on it to reach the cause's handler.
       (on-error (-> (exception->error-data cause)
                     (assoc :type (or (:cause-type data) (:type data)))))
+
+      retrying
       (flash :cause cause
-             :type :handled
+             :type (persistence-report-type data)
              :timeout nil
+             :tag persistence-failed-tag
              :report-link? true
+             :hint (tr "errors.save-still-retrying"))
+
+      :else
+      (flash :cause cause
+             :type (persistence-report-type data)
+             :timeout nil
+             :tag persistence-failed-tag
+             :report-link? true
+             :links [(reload-page-link)]
              :hint (tr "errors.save-failed")))))
 
 (defmethod ptk/handle-error :persistence

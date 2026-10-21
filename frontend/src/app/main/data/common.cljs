@@ -257,6 +257,8 @@
     (watch [_ state _]
       (let [current-team-id (:current-team-id state)
             organization    (:organization team)
+            team-name       (or (:name team)
+                                (dm/get-in state [:teams (:id team) :name]))
             current-team?   (= (:id team) current-team-id)]
         (when (and (contains? cf/flags :admin-console)
                    current-team?)
@@ -266,14 +268,14 @@
              ;;   (tr "dashboard.team-belong-organization")
              ;;   (tr "dashboard.team-no-longer-belong-organization")
              ;; notification is a server-provided key, dynamic by design
+             ;; args: team name, organization name
              #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
-             (rx/of (ntf/show {:content (tr notification (:name organization))
+             (rx/of (ntf/show {:content (tr notification team-name (:name organization))
                                :type :toast
                                :level :info
                                :timeout nil})))
            (when (:id organization)
-             (check-team-sso current-team-id))))))
-    ptk/UpdateEvent
+             (check-team-sso current-team-id))))))    ptk/UpdateEvent
     (update [_ state]
       (if (contains? cf/flags :admin-console)
         (let [team-id      (:id team)

@@ -14,7 +14,9 @@
    [app.config :as cf]
    [app.http :as-alias http]
    [app.http.errors :as errors]
+   [app.metrics :as mtx]
    [app.tokens :as tokens]
+   [app.util.inet :as inet]
    [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
    [yetti.adapter :as yt]
@@ -44,27 +46,81 @@
     (java.io.BufferedReader.
      (java.io.InputStreamReader. body))))
 
+(def ^:private not-a-body
+  "Marker returned by `read-body-params` when the `content-type` header names
+  neither transit nor json; the request is left untouched.
+
+  A fresh object and not a keyword: a keyword is a legal value for a decoded
+  body, so identity is the only safe comparison."
+  (Object.))
+
+(defn- raise-malformed-body
+  "Signals a body that the parser could not read.
+
+  A failure while reading the body means the body does not match what the
+  client declared, so it is a client error: the exception class says nothing
+  here, because `clojure.data.json` signals its syntax errors with a bare
+  `java.lang.Exception`."
+  [request metrics content-type cause]
+  ;; A single line, without the stack trace: the trace of a parse failure
+  ;; hides the fields (path, peer address, content-type) that identify the
+  ;; client sending the broken body.
+  (l/wrn :hint "malformed request body"
+         :path (yreq/path request)
+         :remote-addr (inet/parse-request request)
+         :content-type content-type
+         :error (ex/get-hint cause))
+
+  (mtx/run! metrics
+            :id :http-malformed-requests-total
+            :inc 1)
+
+  (ex/raise :type :validation
+            :code :malformed-json
+            :hint "invalid JSON in request body"
+            :cause cause))
+
+(defn- read-body-params
+  "Reads the request body according to the `content-type` header.
+
+  `RequestTooBigException` keeps its own code (413) and a structured error
+  raised from deeper (an `ex-info`) travels untouched; anything else is a
+  malformed body."
+  [request metrics content-type]
+  (try
+    (cond
+      (str/starts-with? content-type "application/transit+json")
+      (with-open [^InputStream is (yreq/body request)]
+        (t/read! (t/reader is)))
+
+      (str/starts-with? content-type "application/json")
+      (with-open [reader (get-reader request)]
+        (json/read reader :key-fn json/read-kebab-key))
+
+      :else
+      not-a-body)
+
+    (catch RequestTooBigException cause
+      (ex/raise :type :validation
+                :code :request-body-too-large
+                :hint "request body exceeds size limit"
+                :cause cause))
+
+    (catch Throwable cause
+      (if (ex/error? cause)
+        (throw cause)
+        (raise-malformed-body request metrics content-type cause)))))
+
 (defn wrap-parse-request
-  [handler]
+  [handler metrics]
   (letfn [(process-request [request]
-            (let [header (yreq/get-header request "content-type")]
-              (cond
-                (str/starts-with? header "application/transit+json")
-                (with-open [^InputStream is (yreq/body request)]
-                  (let [params (t/read! (t/reader is))]
-                    (-> request
-                        (assoc :body-params params)
-                        (update :params merge params))))
-
-                (str/starts-with? header "application/json")
-                (with-open [reader (get-reader request)]
-                  (let [params (json/read reader :key-fn json/read-kebab-key)]
-                    (-> request
-                        (assoc :body-params params)
-                        (update :params merge params))))
-
-                :else
-                request)))
+            (let [header (yreq/get-header request "content-type")
+                  params (read-body-params request metrics header)]
+              (if (identical? params not-a-body)
+                request
+                (-> request
+                    (assoc :body-params params)
+                    (update :params merge params)))))
 
           ;; The specific-exception branches below (IAE,
           ;; RequestTooBigException, EOFException) raise with
@@ -107,10 +163,14 @@
 
     (fn [request]
       (if (= (yreq/method request) :post)
-        (try
-          (-> request process-request handler)
-          (catch Throwable cause
-            (handle-error cause request)))
+        ;; The body is read outside the `try`: a failure there is always
+        ;; raised already classified by `read-body-params`, and goes out as a
+        ;; throw like the rest of the specific-exception branches above.
+        (let [request (process-request request)]
+          (try
+            (handler request)
+            (catch Throwable cause
+              (handle-error cause request))))
         (handler request)))))
 
 (def parse-request

@@ -19,41 +19,31 @@ pub fn render_to_pdf(
     shared: &mut RenderResources,
     id: &Uuid,
     tree: ShapesPoolRef,
-    scale: f32,
 ) -> Result<Vec<u8>> {
     let shape = tree
         .get(id)
         .ok_or_else(|| crate::error::Error::CriticalError("Shape not found for PDF".to_string()))?;
-    // Boards export at their own bounds (like the classic exporter, which
-    // screenshots exactly the board box): content overflowing a board lands
-    // outside the page/surface and is cropped. Other shapes keep the extended
-    // rect so their own shadows/blur are included.
-    let bounds = if matches!(shape.shape_type, crate::shapes::Type::Frame(_)) {
-        shape.selrect()
-    } else {
-        shape.extrect(tree, scale)
-    };
-
-    let page_w = bounds.width() * scale;
-    let page_h = bounds.height() * scale;
+    // Boards crop overflowing children (classic board box) but keep their own
+    // strokes/shadows/blur. Other shapes use full extrect.
+    let bounds = shape.export_root_bounds(tree, 1.0);
 
     let mut pdf_bytes: Vec<u8> = Vec::new();
 
     let metadata = skia::pdf::Metadata {
         creator: "Penpot".to_string(),
         producer: "Penpot (Skia PDF)".to_string(),
+        raster_dpi: Some(300.0),
         ..Default::default()
     };
 
     let document = skia::pdf::new_document(&mut pdf_bytes, Some(&metadata));
 
-    let mut on_page = document.begin_page((page_w, page_h), None);
+    let mut on_page = document.begin_page((bounds.width(), bounds.height()), None);
 
     {
         let page_canvas = on_page.canvas();
-        page_canvas.scale((scale, scale));
         page_canvas.translate((-bounds.left(), -bounds.top()));
-        vector::render_tree_pdf(shared, page_canvas, id, tree, scale, bounds)?;
+        vector::render_tree_pdf(shared, page_canvas, id, tree, bounds)?;
     }
 
     let document = on_page.end_page();

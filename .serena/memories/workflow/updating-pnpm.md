@@ -33,7 +33,9 @@ file (never pipe tool output through filters).
   images). Nothing may call corepack: it is gone from Node 25+. pnpm
   auto-downloads the `packageManager` version on mismatch
   (`pmOnFail: download`, the default), so drift self-heals; aligned pins
-  just skip the download.
+  just skip the download. Inside the devenv that download lands in the
+  penpot user's `package-manager-store`, which `files/entrypoint.sh` chowns
+  to penpot on every start (see `mem:devenv/core`).
 - The pnpm version pin lives in three places that move together:
   `PNPM_VERSION` (+ arch SHAs) in `docker/devenv/Dockerfile` and in
   `docker/images/Dockerfile.{media-processor,exporter,mcp}`, and the
@@ -49,14 +51,23 @@ file (never pipe tool output through filters).
    `pnpm view pnpm dist-tags --json` for `latest-12` (latest 12.x). The
    tag moves over time; always re-check.
 2. Bump `PNPM_VERSION` (+ arch SHAs) in `docker/devenv/Dockerfile` and in
-   `docker/images/Dockerfile.{media-processor,exporter,mcp}`.
+   `docker/images/Dockerfile.{media-processor,exporter,mcp}`. Those SHAs are
+   of the **GitHub release tarballs**, one per arch: download
+   `pnpm-linux-{arm64,x64}.tar.gz` from the `v<version>` release and
+   `sha256sum` each. The npm `dist.integrity` that the script stamps in step
+   3 is a different hash of a different artifact — never reuse it for the
+   Dockerfiles.
 3. From the repo root, on a host whose system pnpm is the target version
    (rebuilt devenv), run `scripts/sync-pnpm-version`. It resolves the
    integrity hash via `pnpm view` + node (no npm, no corepack, no
    python3) and stamps the identical field into all 35 files, replacing
    only the value line (each file keeps its own indent) and inserting
    the key after `"name"`/`"version"` where missing. Explicit version
-   instead: `scripts/sync-pnpm-version <version>`.
+   instead: `scripts/sync-pnpm-version <version>`. The explicit form works
+   from a host whose system pnpm is older than the target (the registry
+   lookup resolves the hash, and the first later `pnpm` call auto-downloads
+   the target into `package-manager-store`), so a rebuild is only needed for
+   the in-container `pnpm --version` to match.
 4. Run `scripts/sync-pnpm-version --install` (plain `pnpm install` in
    each of the 11 workspace roots) to refresh lockfile metadata, then
    fix any failing workspace (see gotchas) and re-run that directory.
@@ -76,6 +87,10 @@ file (never pipe tool output through filters).
   gone on purpose: pnpm picks the nearest `pnpm-workspace.yaml` walking up,
   so a nested one silently forks install and lockfile behavior. Do not
   reintroduce it.
+- `media-processor/target/package.json` is a generated, gitignored copy that
+  the script also stamps, so stamping and `--check` report 36 files while
+  only 35 are tracked. A stale copy there makes `--check` fail with nothing
+  wrong in the repo: delete `media-processor/target` and re-run.
 - Expect metadata-only lockfile diffs when only the pnpm version moves:
   the pnpm self-reference entries, plus a new `packageManagerDependencies`
   section in lockfiles last written by older pnpm. Large diffs mean

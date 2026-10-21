@@ -22,7 +22,7 @@ Postgres row locking is the only correctness primitive: `job` claims via `FOR UP
 
 Two known race patterns survive multi-backend operation:
 
-- **Cron dedup is best-effort.** The lock on `scheduled_task` is released when the task body finishes. If two backends' cron timers fire for the same scheduled instant with a gap larger than the task body's runtime, both execute it. Penpot's cron entries are idempotent (`session-gc`, `objects-gc`, `storage-gc-*`, `storage-pending-gc`, `jobs-gc`, `file-gc-scheduler`); the exceptions are `:telemetry` (would double-report) and `:audit-log-archive` (depends on archive target idempotency).
+- **Cron dedup is best-effort.** The lock on `scheduled_task` is released when the task body finishes. If two backends' cron timers fire for the same scheduled instant with a gap larger than the task body's runtime, both execute it. Penpot's cron entries are idempotent (`session-gc`, `objects-gc`, `storage-gc-*`, `storage-pending-gc`, `jobs-gc`, `file-gc-scheduler`); the exceptions are `:telemetry` (would double-report) and `:audit-log-consumer-nexus` / `:audit-log-consumer-admin-console` (depend on archive target idempotency).
 - **`jobs/submit ::dedupe true`** does a non-atomic `DELETE` then `INSERT`. Concurrent cross-backend submits can both bypass the `DELETE` (each sees the other's uncommitted insert as absent) and end up with duplicate `'new'` rows. Each row claims and runs once independently, so the underlying work is fine; the "at most one pending" guarantee weakens.
 
 Penpot in production lives with both: horizontal-scale deployments accept "exactly-once" as "essentially-once for idempotent operations." Devenv parallel instances handle it by running workers only on ws0 (see `mem:devenv/core`).
@@ -43,6 +43,7 @@ Production runs the deployed toolbox, not the devenv one:
 - **Start from the ids, not from an inventory.** The ids come from the error or the logs. Unbounded queries over tables with tens of millions of rows (`storage_object`, `file_media_object`) do not finish in a reasonable time; bounded to an id list they are index lookups.
 - **One query per reference column.** Two columns in one `IN (col_a, col_b)` lose the index and scan the whole table; split them.
 - The read-only replica cuts long queries: see `mem:prod-infra/grafana`.
+- A migration that builds an index runs inside the migration transaction, so it cannot use `CONCURRENTLY`, and a plain `CREATE INDEX` locks the table against writes for the whole build. On a large table (file saves write to `file_change` on every save) build the index out of band, before deploying, with `CREATE INDEX CONCURRENTLY` on its own (never inside a transaction block); the shipped migration uses `IF NOT EXISTS`, finds it and does nothing. A concurrent build interrupted midway leaves the index invalid: drop it and retry (check `pg_indexes` and `pg_index.indisvalid`).
 
 ## See also
 

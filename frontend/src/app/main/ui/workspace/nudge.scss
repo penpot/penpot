@@ -4,7 +4,11 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// Only for the shared modal and labeled input placeholders, which move to
+// the DS with the modals and the inputs.
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
@@ -13,45 +17,47 @@
 .modal-container {
   @extend %modal-container-base;
 
-  min-width: deprecated.$s-408;
+  min-inline-size: px2rem(408);
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.headline-medium-typography;
+  @include use-typography("headline-medium");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
-  @include deprecated.flex-column;
+  @include use-typography("body-large");
 
-  gap: deprecated.$s-24;
-
-  @include deprecated.body-large-typography;
-
-  margin-bottom: deprecated.$s-24;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+  margin-block-end: var(--sp-xxl);
 }
 
 .input-wrapper {
   @extend %input-with-label;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  label {
+  // Nested so it wins over the label rule of %input-with-label.
+  .modal-msg {
     text-transform: none;
   }
 }
 
 .modal-msg {
-  @include deprecated.body-large-typography;
+  @include use-typography("body-large");
 
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
   line-height: 1.5;
 }

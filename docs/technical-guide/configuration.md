@@ -384,15 +384,10 @@ PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
 
 Your reverse proxy or Ingress must also:
 
-- Route requests under `/penpot/` to the Penpot frontend.
-- Remove the `/penpot` prefix before forwarding each request. The frontend
-  continues to serve its internal routes from `/`.
+- Route requests under `/penpot/` to the Penpot frontend without rewriting the
+  path. The frontend expects to receive the subpath.
 - Preserve WebSocket upgrade headers for notifications and other services that
   use WebSockets.
-
-Changing only `PENPOT_PUBLIC_URI` is not enough. Without the matching proxy
-rewrite, static assets, API calls, and WebSocket connections will use routes that
-the frontend does not recognize.
 
 #### Migrate an existing installation to a subpath
 
@@ -403,7 +398,7 @@ the existing storage.
 Before changing the public URL:
 
 1. Back up the database, assets, and current deployment configuration.
-2. Configure the proxy or Ingress route and prefix rewrite.
+2. Configure the proxy or Ingress route for the subpath.
 3. Update `PENPOT_PUBLIC_URI` for every Penpot component that uses it.
 4. Keep the existing `PENPOT_SECRET_KEY`, database, and asset storage
    configuration.
@@ -740,7 +735,7 @@ flags, and by whether `PENPOT_PUBLIC_URI` is served over HTTPS. See
 
 ### Database
 
-Penpot only supports PostgreSQL and we highly recommend >=13 version. If you are using official
+Penpot only supports PostgreSQL and we highly recommend >=16 version. If you are using official
 docker images this is already solved for you.
 
 Essential database configuration:

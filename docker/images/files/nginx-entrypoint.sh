@@ -51,6 +51,24 @@ update_oidc_name /var/www/app/js/config.js
 ## Nginx Config
 #########################################
 
+# Path of PENPOT_PUBLIC_URI (e.g. /penpot/ for https://example.com/penpot/).
+# Requests below it are rewritten to the root, so the proxy in front of this
+# server forwards them unchanged and $request_uri keeps the original path.
+PENPOT_PUBLIC_PATH="$(sed -E 's|^[A-Za-z][A-Za-z0-9+.-]*://[^/]*||; s|[?#].*$||' <<< "${PENPOT_PUBLIC_URI:-}")"
+PENPOT_PUBLIC_PATH="/${PENPOT_PUBLIC_PATH#/}"
+export PENPOT_PUBLIC_PATH="${PENPOT_PUBLIC_PATH%/}/"
+
+# shellcheck disable=SC2016 # literal regex metacharacters
+PENPOT_PUBLIC_PATH_REGEX="$(sed -E 's/[][\.*^$(){}+?|]/\\&/g' <<< "$PENPOT_PUBLIC_PATH")"
+export PENPOT_PUBLIC_PATH_REGEX
+
+if [ "$PENPOT_PUBLIC_PATH" != "/" ]; then
+    export PENPOT_PUBLIC_PATH_DIRECTIVES="location = ${PENPOT_PUBLIC_PATH%/} { absolute_redirect off; return 301 ${PENPOT_PUBLIC_PATH}\$is_args\$args; }
+        rewrite ^${PENPOT_PUBLIC_PATH_REGEX}(.*)\$ /\$1 last;"
+else
+    export PENPOT_PUBLIC_PATH_DIRECTIVES=""
+fi
+
 export PENPOT_BACKEND_URI=${PENPOT_BACKEND_URI:-http://penpot-backend:6060}
 export PENPOT_EXPORTER_URI=${PENPOT_EXPORTER_URI:-http://penpot-exporter:6061}
 export PENPOT_HTTP_SERVER_MAX_BODY_SIZE=${PENPOT_HTTP_SERVER_MAX_BODY_SIZE:-367001600} # Default to 350MiB
@@ -58,12 +76,12 @@ export PENPOT_IPV6_LISTEN_DIRECTIVE=${PENPOT_IPV6_LISTEN_DIRECTIVE:-"listen [::]
 if is_truthy "${PENPOT_DISABLE_IPV6_LISTEN:-}"; then
   export PENPOT_IPV6_LISTEN_DIRECTIVE=""
 fi
-envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE,\$PENPOT_IPV6_LISTEN_DIRECTIVE" \
+envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE,\$PENPOT_IPV6_LISTEN_DIRECTIVE,\$PENPOT_PUBLIC_PATH,\$PENPOT_PUBLIC_PATH_DIRECTIVES" \
         < /tmp/nginx.conf.template > /etc/nginx/nginx.conf
 
 if [[ $PENPOT_FLAGS == *"enable-admin-console"* ]]; then
     export PENPOT_ADMIN_CONSOLE_URI=${PENPOT_ADMIN_CONSOLE_URI:-http://penpot-admin-console:3000}
-    envsubst "\$PENPOT_ADMIN_CONSOLE_URI" \
+    envsubst "\$PENPOT_ADMIN_CONSOLE_URI,\$PENPOT_PUBLIC_PATH_REGEX" \
              < /tmp/nginx-admin-console-locations.conf.template > /etc/nginx/overrides/server.d/admin-console-locations.conf
 else
     rm -f /etc/nginx/overrides/server.d/admin-console-locations.conf

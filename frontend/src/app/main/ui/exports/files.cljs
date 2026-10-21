@@ -20,6 +20,7 @@
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.jobs.progress :as jp]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -134,7 +135,7 @@
   {::mf/register modal/components
    ::mf/register-as ::fexp/export-files
    ::mf/props :obj}
-  [{:keys [team-id files]}]
+  [{:keys [team-id files unsaved]}]
   (let [state*       (mf/use-state (partial initialize-state files))
         has-libs?    (some :has-libraries files)
         export-types (cond-> fexp/valid-types
@@ -248,6 +249,13 @@
                          :on-click on-cancel
                          :class (stl/css :modal-close-btn)
                          :icon i/close}]]
+
+      (when unsaved
+        [:> context-notification* {:level :warning
+                                   :appearance :ghost
+                                   :class (stl/css :unsaved-warning)}
+         (tr "files-download-modal.unsaved-changes")])
+
       (cond
         (= status :prepare)
         [:*

@@ -168,6 +168,7 @@
 (def ^:icon-id help "help")
 (def ^:icon-id hide "hide")
 (def ^:icon-id history "history")
+(def ^:icon-id hourglass "hourglass")
 (def ^:icon-id hsva "hsva")
 (def ^:icon-id hug-content "hug-content")
 (def ^:icon-id icon "icon")

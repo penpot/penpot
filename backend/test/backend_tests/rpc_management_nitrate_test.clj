@@ -24,6 +24,7 @@
    [clojure.set :as set]
    [clojure.test :as t]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once (t/compose-fixtures
@@ -574,6 +575,34 @@
     (let [msg (-> @calls first :message)]
       (t/is (= :organization-change-sso (:type msg)))
       (t/is (= organization-id (:organization-id msg))))))
+
+(t/deftest notify-organization-sso-change-emits-token-revoked-when-updated-props
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [organization-id (uuid/random)
+          out             (with-redefs [mbus/pub! (constantly nil)]
+                            (th/management-command! {::th/type :notify-organization-sso-change
+                                                     :organization-id organization-id
+                                                     :updated-props true
+                                                     :announce-activation false}))
+          revoked         (->> (:call-args-list @audit-mock)
+                               (map second)
+                               (filter #(= "organization-sso-token-revoked" (:name %))))]
+      (t/is (th/success? out))
+      (t/is (= 1 (count revoked)))
+      (t/is (= uuid/zero (:profile-id (first revoked))))
+      (t/is (= {:organization-id organization-id} (:props (first revoked))))))
+
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [out (with-redefs [mbus/pub! (constantly nil)]
+                (th/management-command! {::th/type :notify-organization-sso-change
+                                         :organization-id (uuid/random)
+                                         :updated-props false
+                                         :announce-activation false}))
+          revoked (->> (:call-args-list @audit-mock)
+                       (map second)
+                       (filter #(= "organization-sso-token-revoked" (:name %))))]
+      (t/is (th/success? out))
+      (t/is (empty? revoked)))))
 
 (t/deftest notify-user-organizations-deletion-renames-or-deletes-teams-and-publishes-per-organization-events
   ;; --- Deferred owned-organizations: nil during setup, filled before RPC ---
@@ -1989,6 +2018,9 @@
                               :type "action"}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are counted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (t/is (:called? @audit-mock))
@@ -2009,6 +2041,9 @@
                               :profile-id (:id prof)}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]
@@ -2028,6 +2063,9 @@
                               :type "action"}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are counted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (t/is (= 2 (:call-count @audit-mock)))
@@ -2047,6 +2085,9 @@
                                         :foo "bar"}}]}
             params (with-meta params
                      {::http/request http-request})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]
@@ -2071,6 +2112,9 @@
             params (with-meta params
                      {::http/request (assoc http-request
                                             ::http/auth-key-id :admin-console)})
+            ;; The profile setup above emits membership events; drop them so
+            ;; only the pushed events are asserted below.
+            _      (th/reset-mock! audit-mock)
             out    (th/management-command! params)]
         (t/is (nil? (:error out)))
         (let [[_ event] (:call-args @audit-mock)]
@@ -2128,3 +2172,18 @@
       (t/is (th/success? out))
       (let [[_cfg params] (:call-args @email-mock)]
         (t/is (= "" (:user-name params)))))))
+
+(t/deftest upload-organization-logo-rejects-forged-content
+  ;; Same transit-forgery vector through the management API: without a
+  ;; multipart request the wrapper must reject it at params validation.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          params  {::th/type :upload-organization-logo
+                   ::rpc/profile-id (:id profile)
+                   :organization-id (uuid/random)
+                   :content {:filename "evil.png"
+                             :path (fs/path "/etc/passwd")
+                             :mtype "image/png"
+                             :size 123}}
+          out     (th/management-command! params)]
+      (t/is (th/ex-of-code? (:error out) :params-validation)))))

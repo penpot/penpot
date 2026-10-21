@@ -23,6 +23,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.settings.import-shortcuts-diff-modal]
    [app.main.ui.settings.restore-shortcuts-modal]
@@ -477,6 +478,10 @@
        [:> icon* {:icon-id i/info
                   :class (stl/css :shortcuts-description-icon)}]
        (tr "shortcuts.reload-hint")]
+      (when-not (ds/layout-map-supported?)
+        [:> context-notification* {:level :warning
+                                   :class (stl/css :layout-map-warning)}
+         (tr "shortcuts.layout-map-missing")])
 
       [:> (mf/provider ctx/shortcuts-ctx) {:value shortcuts-ctx-value}
        [:div {:class (stl/css :shortcuts-content)}

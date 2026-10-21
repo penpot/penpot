@@ -102,6 +102,8 @@ http {
 
         root /var/www/app/;
 
+        ${PENPOT_PUBLIC_PATH_DIRECTIVES}
+
         location @handle_redirect {
             set $redirect_uri "$upstream_http_location";
             set $redirect_host "$upstream_http_x_host";
@@ -167,7 +169,7 @@ http {
         location /readyz {
             access_log off;
             proxy_set_header Host $proxy_host;
-            proxy_pass $PENPOT_BACKEND_URI$request_uri;
+            proxy_pass $PENPOT_BACKEND_URI$uri$is_args$args;
         }
 
         location /ws/notifications {
@@ -198,7 +200,7 @@ http {
             }
 
             location ~ ^/[^/]+/(.*)$ {
-                return 301 " /404";
+                return 301 " ${PENPOT_PUBLIC_PATH}404";
             }
 
             if ($penpot_link_preview_agent) {

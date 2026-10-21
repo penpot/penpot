@@ -26,6 +26,9 @@
 x-flags: &penpot-flags
   PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp enable-admin-console
 
+## Public URI where Penpot is reached. To serve Penpot from a subpath, include
+## it with a trailing slash, e.g. https://example.com/penpot/. A reverse proxy in
+## front must forward the subpath unchanged, without rewriting it.
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
 
@@ -110,6 +113,8 @@ services:
       # ## internet with HTTPS using traefik.
 
       # - "traefik.http.routers.penpot-https.rule=Host(`<DOMAIN_NAME>`)"
+      # ## When Penpot is served from a subpath, match it too:
+      # - "traefik.http.routers.penpot-https.rule=Host(`<DOMAIN_NAME>`) && PathPrefix(`/<SUBPATH>`)"
       # - "traefik.http.routers.penpot-https.entrypoints=websecure"
       # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
       # - "traefik.http.routers.penpot-https.tls=true"

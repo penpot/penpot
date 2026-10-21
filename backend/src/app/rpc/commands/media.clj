@@ -40,6 +40,9 @@
 
 (declare create-file-media-object)
 
+;; TEMPORARILY DISABLED (2026-10-19): the media-storage-bytes-per-team
+;; quote check that used this lookup is disabled below. Kept active
+;; because the audit props of the upload still report the team id.
 (def ^:private sql:get-team-id-for-file
   "SELECT p.team_id
      FROM file AS f
@@ -57,6 +60,7 @@
   {::doc/added "1.17"
    ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
    ::sm/params schema:upload-file-media-object
+   ::rpc/multipart-only-params [:content]
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
@@ -65,30 +69,35 @@
   (media.v/validate-media-size! content)
 
   (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
-    (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
-                        ::quotes/profile-id profile-id
-                        ::quotes/team-id    team-id
-                        ::quotes/incr       (:size content)}))
+    ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team
+    ;; quote performs a full SUM over storage_object per upload (3-12s in
+    ;; prod on a 3.5TB DB, ~34 slow executions/hour). Disabled until we
+    ;; land a cheaper approximation (cached counter / rewritten query).
+    ;; TODO: re-enable with the new implementation.
+    ;; (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
+    ;;                     ::quotes/profile-id profile-id
+    ;;                     ::quotes/team-id    team-id
+    ;;                     ::quotes/incr       (:size content)})
+    (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                   ;; We get the minimal file for proper checking if
+                   ;; file is not already deleted
+                   (let [_      (files/get-minimal-file conn file-id)
+                         mobj   (create-file-media-object cfg params)]
 
-  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 ;; We get the minimal file for proper checking if
-                 ;; file is not already deleted
-                 (let [_      (files/get-minimal-file conn file-id)
-                       mobj   (create-file-media-object cfg params)]
+                     (db/update! conn :file
+                                 {:modified-at (ct/now)
+                                  :has-media-trimmed false}
+                                 {:id file-id}
+                                 {::db/return-keys false})
 
-                   (db/update! conn :file
-                               {:modified-at (ct/now)
-                                :has-media-trimmed false}
-                               {:id file-id}
-                               {::db/return-keys false})
-
-                   (with-meta mobj
-                     {::audit/replace-props
-                      {:name (:name params)
-                       :file-id file-id
-                       :is-local (:is-local params)
-                       :size (:size content)
-                       :mtype (:mtype content)}})))))
+                     (with-meta mobj
+                       {::audit/replace-props
+                        {:name (:name params)
+                         :file-id file-id
+                         :team-id team-id
+                         :is-local (:is-local params)
+                         :size (:size content)
+                         :mtype (:mtype content)}}))))))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for
@@ -370,6 +379,7 @@
 (sv/defmethod ::upload-chunk
   {::doc/added "2.17"
    ::sm/params schema:upload-chunk
+   ::rpc/multipart-only-params [:content]
    ::sm/result schema:upload-chunk-result}
   [{:keys [::db/pool] :as cfg}
    {:keys [::rpc/profile-id session-id index content] :as _params}]

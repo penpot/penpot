@@ -55,4 +55,9 @@
     ;; force a re-render so the X/Y inputs enabled/disabled state updates.
     (t/is (false? (check-measures-menu-props
                    (props (assoc base-values :layout-item-absolute false))
-                   (props (assoc base-values :layout-item-absolute true)))))))
+                   (props (assoc base-values :layout-item-absolute true))))))
+
+  (t/testing "re-renders when clip content changes but nothing else does"
+    (t/is (false? (check-measures-menu-props
+                   (props (assoc base-values :show-content false))
+                   (props (assoc base-values :show-content true)))))))

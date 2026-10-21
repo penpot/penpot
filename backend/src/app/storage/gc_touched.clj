@@ -96,6 +96,15 @@
   (-> (db/exec-one! conn [sql:has-job-resource-refs id])
       (get :has-refs)))
 
+(def ^:private
+  sql:has-upload-session-chunk-refs
+  "SELECT EXISTS (SELECT 1 FROM upload_session_chunk WHERE object_id = ?) AS has_refs")
+
+(defn- has-upload-session-chunk-refs?
+  [conn {:keys [id]}]
+  (-> (db/exec-one! conn [sql:has-upload-session-chunk-refs id])
+      (get :has-refs)))
+
 (def sql:exists-file-data-refs
   "SELECT EXISTS (
      SELECT 1 FROM file_data
@@ -165,6 +174,31 @@
                :id (str id))
         sto/default-bucket)))
 
+(def ^:private sql:lock-storage-objects
+  "SELECT id FROM storage_object WHERE id = ANY(?::uuid[]) ORDER BY id FOR UPDATE")
+
+(defn- verify-frozen
+  "Re-checks, holding the row locks, that the about-to-freeze objects are
+  still referenced. A concurrent purge (mapping delete plus touch) either
+  commits before the check and the object moves to deletion, or blocks on
+  the lock and its touch wins last, so no touch is ever swallowed by a
+  stale freeze. Ids are locked in order to avoid lock-order inversions
+  between workers. Returns [still-frozen-ids now-deletable-ids]."
+  [conn has-refs? bucket objects]
+  (let [by-id  (into {} (map (juxt :id identity)) objects)
+        ids    (db/create-array conn "uuid" (sort (keys by-id)))
+        locked (into #{} (map :id) (db/exec! conn [sql:lock-storage-objects ids]))]
+    (reduce (fn [[frozen deletable] {:keys [id] :as object}]
+              (if (and (contains? locked id) (has-refs? conn object))
+                [(conj frozen id) deletable]
+                (do
+                  (l/dbg :id (str id)
+                         :status "delete-after-recheck"
+                         :bucket bucket)
+                  [frozen (conj deletable id)])))
+            [#{} #{}]
+            objects)))
+
 (defn- process-objects
   [conn has-refs? bucket objects]
   (loop [to-freeze #{}
@@ -176,17 +210,24 @@
           (l/dbg :id (str id)
                  :status "freeze"
                  :bucket bucket)
-          (recur (conj to-freeze id) to-delete (rest objects)))
+          (recur (conj to-freeze object) to-delete (rest objects)))
         (do
           (l/dbg :id (str id)
                  :status "delete"
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
-      (do
-        (some->> (seq to-freeze) (mark-freeze-in-bulk conn))
-        (some->> (seq to-delete) (mark-delete-in-bulk conn))
-        [(count to-freeze) (count to-delete)]))))
+      (let [[frozen deletable] (if (seq to-freeze)
+                                 (verify-frozen conn has-refs? bucket to-freeze)
+                                 [#{} #{}])
+            doomed (into to-delete deletable)]
+        (some->> (seq frozen) (mark-freeze-in-bulk conn))
+        (some->> (seq doomed) (mark-delete-in-bulk conn))
+        [(count frozen) (count doomed)]))))
 
+;; NOTE: upload-session chunks are 1:1 with their mapping and never
+;; shared, but the scan owns the liveness decision anyway: a referenced
+;; chunk freezes, so gc-deleted never meets a live NO ACTION reference.
+;; The freeze path re-verifies under row locks (see verify-frozen).
 (defn- process-bucket
   [conn bucket objects]
   (cond
@@ -197,7 +238,7 @@
     (= bucket "profile")                 (process-objects conn has-profile-refs? bucket objects)
     (= bucket "file-data")               (process-objects conn has-file-data-refs? bucket objects)
     (= bucket sto/tempfile-bucket)       (process-objects conn (constantly false) sto/tempfile-bucket objects)
-    (= bucket sto/upload-session-bucket) (process-objects conn (constantly false) sto/upload-session-bucket objects)
+    (= bucket sto/upload-session-bucket) (process-objects conn has-upload-session-chunk-refs? sto/upload-session-bucket objects)
     (= bucket sto/job-resource-bucket)   (process-objects conn has-job-resource-refs? bucket objects)
     (= bucket "organization")            (process-objects conn (constantly false) bucket objects)
     :else
