@@ -45,11 +45,11 @@
         custom-shortcuts (mf/deref refs/custom-shortcuts)
         get-tt           #(sc/get-effective-tooltip % custom-shortcuts)
 
-        open-dropdown
+        toggle-dropdown
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (reset! open* true)))
+           (swap! open* not)))
 
         close-dropdown
         (mf/use-fn
@@ -75,7 +75,7 @@
 
     [:*
      [:button {:type "button"
-               :on-click open-dropdown
+               :on-click toggle-dropdown
                :class (stl/css-case :zoom-widget true
                                     :selected open?)
                :title (tr "workspace.header.zoom")
