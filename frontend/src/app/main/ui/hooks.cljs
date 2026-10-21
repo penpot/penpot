@@ -515,8 +515,7 @@
         (let [panel       (dom/get-current-target event)
               last-target (mf/ref-val last-target-ref)]
           (when (and (kbd/esc? event)
-                     (some? last-target)
-                     (.contains ^js panel last-target)
+                     (dom/child? last-target panel)
                      (not (and (fn? dismiss-nested) (dismiss-nested))))
-            (some-> (dom/get-target event) (dom/blur!))
+            (dom/blur! (dom/get-target event))
             (on-close))))))))

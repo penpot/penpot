@@ -62,6 +62,30 @@ test("Escape closes the search filters menu before the search panel", async ({
   await expect(findInput).toHaveCount(0);
 });
 
+test("Escape keeps the search panel open after clicking the viewport", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  const findInput = await openSearch(page);
+
+  await workspacePage.clickAt(...VIEWPORT_POINTS[0]);
+  await page.keyboard.press("Escape");
+  await expect(findInput).toBeVisible();
+
+  // The click moves focus out of the panel, so a real key press would
+  // never reach its handler. Dispatch Escape on the input instead, to
+  // exercise the case the hook exists for: the event reaches the panel
+  // although the user's last action was on the canvas.
+  await findInput.dispatchEvent("keydown", {
+    key: "Escape",
+    code: "Escape",
+    keyCode: 27,
+    bubbles: true,
+  });
+
+  await expect(findInput).toBeVisible();
+});
+
 test("Escape closes the shortcuts panel right after it opens", async ({
   page,
 }) => {
@@ -99,10 +123,9 @@ test("Escape finishes a path drawn with the shortcuts panel open", async ({
   const searchInput = await openShortcuts(page);
   await page.getByRole("button", { name: "BASICS" }).click();
 
-  const box = await workspacePage.viewport.boundingBox();
   await page.keyboard.press("p");
   for (const [x, y] of VIEWPORT_POINTS) {
-    await page.mouse.click(box.x + x, box.y + y);
+    await workspacePage.clickAt(x, y);
   }
   await page.keyboard.press("Escape");
 
