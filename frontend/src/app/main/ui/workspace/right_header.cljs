@@ -18,7 +18,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.team]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -116,7 +115,7 @@
   (let [threads-map       (mf/deref refs/comment-threads)
 
         zoom              (mf/deref refs/selected-zoom)
-        read-only?        (mf/use-ctx ctx/workspace-read-only?)
+        preview-id        (mf/deref refs/workspace-preview-id)
         selected-drawtool (mf/deref refs/selected-drawing-tool)
 
         custom-shortcuts  (mf/deref refs/custom-shortcuts)
@@ -226,7 +225,9 @@
        (when ^boolean has-unread-comments?
          [:div {:class (stl/css :unread)}])]]
 
-     (when-not ^boolean read-only?
+     ;; Editors keep History in Inspect mode; viewers never get it. It stays
+     ;; hidden during a version preview, as before.
+     (when (and (:can-edit permissions) (nil? preview-id))
        [:div {:class (stl/css :history-section)}
         [:button
          {:title (tr "workspace.sidebar.history")
