@@ -490,11 +490,10 @@
           :busy (rx/of (ntf/info (tr "workspace.export-selection.busy")))
           :ready
           (let [exports (:exports plan)
-                ;; The server's single-file endpoint expects the full name.
-                ;; WASM and batch exports append the preset suffix themselves.
+                ;; Single-file exports expect the full name, including WASM.
+                ;; Batch exports append the preset suffix themselves.
                 exports (cond-> exports
-                          (and (= 1 (count exports))
-                               (not (use-wasm-export? state (first exports))))
+                          (= 1 (count exports))
                           (update-in [0 :name] str (:suffix (first exports))))
                 request (request-export {:exports exports
                                          :name (:name (dsh/lookup-page state))})]

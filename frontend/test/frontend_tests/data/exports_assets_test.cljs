@@ -263,7 +263,7 @@
           downloads (atom [])
           errors    (atom [])
           store     (ptk/store {:state state :on-error #(swap! errors conj %)})
-          render    (fn [id scale & [format]]
+          render    (fn [id & [scale format]]
                       (swap! renders conj [id scale format])
                       (js/Uint8Array. #js [1 2 3]))]
       (with-redefs [cf/flags #{:wasm-export}
@@ -275,7 +275,10 @@
         (try
           (ptk/emit! store (de/export-selected-shapes {:origin "workspace:shortcut"}))
           (t/is (= [[filename mtype]] @downloads))
-          (t/is (= [[(:id shape) 2 (when (#{:png :jpeg :webp} format) format)]] @renders))
+          (t/is (= [[(:id shape)
+                     (when (not= :pdf format) 2)
+                     (when (#{:png :jpeg :webp} format) format)]]
+                   @renders))
           (t/is (nil? (:export @store)))
           (t/is (= (:files state) (:files @store)))
           (t/is (empty? @errors))
