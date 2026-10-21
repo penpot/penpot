@@ -883,18 +883,18 @@ impl TextContent {
     }
 
     /// Opaque black glyphs only for spans whose fill at `layer_from_bottom` is
-    /// the given image — used as an SVG `<clipPath>` for linked image fills.
+    /// `image_fill` — used as an SVG `<clipPath>` for linked image fills.
     pub fn paragraph_builder_group_opaque_for_image_layer(
         &self,
         layer_from_bottom: usize,
-        image_id: Uuid,
+        image_fill: &shapes::ImageFill,
     ) -> Vec<ParagraphBuilderGroup> {
         self.paragraph_builders(
             None,
             false,
             None,
             None,
-            Some((layer_from_bottom, image_id)),
+            Some((layer_from_bottom, image_fill)),
             None,
         )
     }
@@ -905,7 +905,7 @@ impl TextContent {
         opaque: bool,
         align_override: Option<skia::textlayout::TextAlign>,
         fill_layer: Option<usize>,
-        opaque_image_layer: Option<(usize, Uuid)>,
+        opaque_image_layer: Option<(usize, &shapes::ImageFill)>,
         skip_image_ids: Option<&HashSet<Uuid>>,
     ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
@@ -920,7 +920,7 @@ impl TextContent {
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for span in paragraph.children() {
-                let text_style = if let Some((layer, image_id)) = opaque_image_layer {
+                let text_style = if let Some((layer, image_fill)) = opaque_image_layer {
                     let mut style = span.to_style(
                         &self.bounds(),
                         fallback_fonts,
@@ -929,7 +929,7 @@ impl TextContent {
                     );
                     let mut paint = paint::Paint::default();
                     match span.fills_from_bottom(layer) {
-                        Some(shapes::Fill::Image(img)) if img.id() == image_id => {
+                        Some(shapes::Fill::Image(img)) if img == image_fill => {
                             paint.set_color(skia::Color::BLACK);
                             paint.set_alpha(255);
                         }

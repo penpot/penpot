@@ -336,22 +336,38 @@ pub(super) fn add_text_with_fills(
     font_size: f32,
     fills: Vec<Fill>,
 ) {
+    add_text_with_spans(pool, id, (l, t, r, b), font_size, vec![(text, fills)]);
+}
+
+/// Fixed text with one paragraph of `spans`, each a text and its fills.
+pub(super) fn add_text_with_spans(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    font_size: f32,
+    spans: Vec<(&str, Vec<Fill>)>,
+) {
     let bounds = skia::Rect::from_ltrb(l, t, r, b);
     let mut content = TextContent::new(bounds, GrowType::Fixed);
     let line_height = 1.2;
-    let span = TextSpan::new(
-        text.to_string(),
-        FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
-        font_size,
-        line_height,
-        0.0,
-        None,
-        None,
-        TextDirection::LTR,
-        400,
-        Uuid::nil(),
-        fills,
-    );
+    let spans = spans
+        .into_iter()
+        .map(|(text, fills)| {
+            TextSpan::new(
+                text.to_string(),
+                FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+                font_size,
+                line_height,
+                0.0,
+                None,
+                None,
+                TextDirection::LTR,
+                400,
+                Uuid::nil(),
+                fills,
+            )
+        })
+        .collect();
     content.add_paragraph(Paragraph::new(
         TextAlign::Left,
         TextDirection::LTR,
@@ -359,7 +375,7 @@ pub(super) fn add_text_with_fills(
         None,
         line_height,
         0.0,
-        vec![span],
+        spans,
     ));
 
     let shape = pool.add_shape(id);

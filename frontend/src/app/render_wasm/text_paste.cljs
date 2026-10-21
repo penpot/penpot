@@ -127,7 +127,7 @@
             content
             (rest (map-indexed vector fragment)))))
 
-;; --- Gradients of text copied in Penpot
+;; --- Gradients and images of text copied in Penpot
 
 (defn- move-gradient
   "`gradient`, in fractions of the `from` box, in fractions of the `to` box, with its
@@ -146,22 +146,37 @@
       (= :radial (:type gradient))
       (update :width #(/ (* % w0 h1) (* h0 w1))))))
 
+(defn- move-image
+  "`image`, laid over its transform in the `from` box (the whole box without one),
+  with a transform in the `to` box at the same pixel offset from the span origin."
+  [image from to]
+  (let [{x0 :x y0 :y {w0 :width h0 :height} :box} from
+        {x1 :x y1 :y {w1 :width h1 :height} :box} to
+        {:keys [x y width height]}                (get image :transform {:x 0 :y 0 :width 1 :height 1})]
+    (assoc image :transform {:x      (/ (+ x1 (- (* x w0) x0)) w1)
+                             :y      (/ (+ y1 (- (* y h0) y0)) h1)
+                             :width  (/ (* width w0) w1)
+                             :height (/ (* height h0) h1)})))
+
 (defn- move-fills
   [span from to]
   (update span :fills
           (fn [fills]
             (mapv #(cond-> %
                      (some? (:fill-color-gradient %))
-                     (update :fill-color-gradient move-gradient from to))
+                     (update :fill-color-gradient move-gradient from to)
+
+                     (some? (:fill-image %))
+                     (update :fill-image move-image from to))
                   fills))))
 
 (defn- sized?
   [{{:keys [width height]} :box}]
   (and (pos? width) (pos? height)))
 
-(defn move-gradients
-  "`content` with the gradients of `pasted` (the content inserted at `start`) moved
-  from the `source` geometry to the `target` one (see `text-editor/content-geometry`)."
+(defn move-span-fills
+  "`content` with the gradients and images of `pasted`, inserted at `start`, moved from
+  the `source` geometry to the `target` one (see `text-editor/content-geometry`)."
   [content pasted start source target]
   (let [entries (map vector
                      (flatten (text-editor/span-ranges pasted start))

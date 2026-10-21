@@ -1116,7 +1116,7 @@
                     (dwsh/create-and-add-shape :text x y shape
                                                (when skip-edition? {:skip-edition? true})))
              (if skip-edition?
-               (rx/of (dwtxt/move-new-text-gradients id payload)
+               (rx/of (dwtxt/move-new-text-fills id payload)
                       (dwwt/resize-wasm-text-debounce id {:undo-group id
                                                           :undo-id undo-id}))
                (rx/of (dwu/commit-undo-transaction undo-id))))))))))
