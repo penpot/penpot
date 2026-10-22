@@ -40,6 +40,9 @@
   its chip only show then."
   (l/derived dwb/has-branches? st/state))
 
+(def ^:private count-failed
+  (l/derived dwb/branch-count-failed? st/state))
+
 (def ^:private branches
   (l/derived :workspace-branches st/state))
 
@@ -81,6 +84,14 @@
        (zero? (or (:behind row) 0))
        (zero? (or (:conflicts row) 0))))
 
+(defn- main-subtitle
+  "The note beside main. Files that use a shared library read its main,
+  so on a library it says so."
+  [library?]
+  (if library?
+    (tr "workspace.branches.main-subtitle-library")
+    (tr "workspace.branches.main-subtitle")))
+
 ;; --- Popover
 
 (mf/defc switcher-row*
@@ -93,7 +104,7 @@
                     :on-click on-open}
     ;; merged and archived branches carry no change counts
     (cond
-      (:is-main row)              (tr "workspace.branches.main-subtitle")
+      (:is-main row)              (main-subtitle (:is-library row))
       (= "merged" (:status row))   (tr "workspace.branches.header.merged")
       (= "archived" (:status row)) (tr "workspace.branches.header.archived")
       :else                        [:> row-status* {:row row :pr pr}])]])
@@ -124,7 +135,7 @@
 (mf/defc switcher-popover*
   {::mf/private true}
   [{:keys [file current prs-by-branch on-close]}]
-  (let [{:keys [data]} (mf/deref branches)
+  (let [{:keys [data status]} (mf/deref branches)
 
         filter*        (mf/use-state "")
         filter-v       (deref filter*)
@@ -139,6 +150,7 @@
         (when-not (:is-main current)
           {:name (tr "workspace.branches.main")
            :is-main true
+           :is-library (boolean (:source-is-shared current))
            :branch-file-id (:source-file-id current)})
 
         rows
@@ -175,7 +187,21 @@
          (mf/deps on-close)
          (fn [_]
            (on-close)
-           (modal/show! :branches-list {})))]
+           (modal/show! :branches-list {})))
+
+        on-retry
+        (mf/use-fn
+         (fn [event]
+           ;; the button unmounts as the listing reloads, so the
+           ;; dropdown would take the click for an outside one and close
+           (dom/stop-propagation event)
+           (st/emit! (dwb/init-branches-state))))]
+
+    ;; the listing compares every diverged branch, so it loads only when
+    ;; the popover opens; before paint, so a list from an earlier opening
+    ;; never shows in place of the loading state
+    (mf/with-layout-effect []
+      (st/emit! (dwb/init-branches-state)))
 
     [:div {:class (stl/css :popover)
            :role "dialog"
@@ -193,24 +219,44 @@
                          :pr (get prs-by-branch (:id current))
                          :current true}]]
 
-     (when (seq others)
-       [:*
-        [:div {:class (stl/css :section)}
-         [:span (tr "workspace.branches.section.others")]
-         [:span (dm/str (count others))]]
-        [:ul {:class (stl/css :rows)}
-         (for [row others]
-           [:> switcher-row* {:key (dm/str (:branch-file-id row))
-                              :row row
-                              :pr (get prs-by-branch (:id row))
-                              :on-open on-open}])]])
+     (case status
+       :loading
+       [:> text* {:as "div"
+                  :typography t/body-small
+                  :role "status"
+                  :class (stl/css :list-note)}
+        (tr "workspace.branches.loading")]
 
-     [:> closed-group* {:label (tr "workspace.branches.merged")
-                        :rows (with-status "merged")
-                        :on-open on-open}]
-     [:> closed-group* {:label (tr "workspace.branches.archived")
-                        :rows (with-status "archived")
-                        :on-open on-open}]
+       :error
+       [:*
+        [:> text* {:as "div"
+                   :typography t/body-small
+                   :role "alert"
+                   :class (stl/css :list-note)}
+         (tr "workspace.branches.list.error")]
+        [:button {:class (stl/css :action) :on-click on-retry}
+         [:> i/icon* {:icon-id i/reload :size "s"}]
+         [:span {:class (stl/css :action-label)} (tr "labels.retry")]]]
+
+       [:*
+        (when (seq others)
+          [:*
+           [:div {:class (stl/css :section)}
+            [:span (tr "workspace.branches.section.others")]
+            [:span (dm/str (count others))]]
+           [:ul {:class (stl/css :rows)}
+            (for [row others]
+              [:> switcher-row* {:key (dm/str (:branch-file-id row))
+                                 :row row
+                                 :pr (get prs-by-branch (:id row))
+                                 :on-open on-open}])]])
+
+        [:> closed-group* {:label (tr "workspace.branches.merged")
+                           :rows (with-status "merged")
+                           :on-open on-open}]
+        [:> closed-group* {:label (tr "workspace.branches.archived")
+                           :rows (with-status "archived")
+                           :on-open on-open}]])
 
      [:hr {:class (stl/css :divider)}]
 
@@ -231,6 +277,7 @@
   [{:keys [file]}]
   (let [file-id   (:id file)
         visible?  (mf/deref has-branches)
+        failed?   (mf/deref count-failed)
         open?     (mf/deref switcher-open)
         ctx       (mf/deref refs/branch-context)
         profile   (mf/deref refs/profile)
@@ -246,6 +293,7 @@
         (or ctx
             {:name (tr "workspace.branches.main")
              :is-main true
+             :is-library (boolean (:is-shared file))
              :created-by (:id profile)
              :branch-file-id file-id})
 
@@ -263,12 +311,14 @@
         on-close
         (mf/use-fn #(st/emit! (dwb/toggle-branch-switcher false)))]
 
-    ;; the list decides whether the row shows at all, so it loads with the
-    ;; file, and so does the branch context: during a review the bottom
-    ;; banner that also loads it is replaced by the review banner
+    ;; the header needs to know only whether the file has branches, so it
+    ;; loads their count with the file and leaves the listing, which
+    ;; compares every diverged branch, to the popover; the branch context
+    ;; loads here too: during a review the bottom banner that also loads
+    ;; it is replaced by the review banner
     (mf/with-effect [file-id]
       (when (contains? cf/flags :branching)
-        (st/emit! (dwb/init-branches-state)
+        (st/emit! (dwb/fetch-branch-count)
                   (dwb/fetch-branch-context)
                   (dwb/toggle-branch-switcher false))))
 
@@ -285,8 +335,16 @@
       [:div {:class (stl/css :branch-bar) :ref bar-ref}
        [:> branch-chip* {:label (:name current)
                          :is-open open?
-                         :title (if (:is-main current)
+                         :title (cond
+                                  (:is-main current)
                                   (tr "workspace.branches.switcher.tooltip")
+
+                                  ;; files that use the library read main,
+                                  ;; never this branch
+                                  (:source-is-shared current)
+                                  (tr "workspace.branches.header-badge-tooltip-library" (:name current))
+
+                                  :else
                                   (tr "workspace.branches.header-badge-tooltip" (:name current)))
                          :on-click on-toggle}]
 
@@ -294,11 +352,20 @@
        ;; file stands until there are changes to count
        (let [pr (get prs-by-branch (:id ctx))]
          (cond
+           ;; the row shows because the count is unknown: say so, and the
+           ;; switcher, once opened, loads the listing that settles it
+           (and (nil? ctx) ^boolean failed?)
+           [:> text* {:as "span"
+                      :typography t/body-small
+                      :role "alert"
+                      :class (stl/css :status-note :status-error)}
+            (tr "workspace.branches.list.error")]
+
            (nil? ctx)
            [:> text* {:as "span"
                       :typography t/body-small
                       :class (stl/css :status-note)}
-            (tr "workspace.branches.main-subtitle")]
+            (main-subtitle (:is-shared file))]
 
            ;; merged and archived branches open read-only and count no
            ;; changes: the note says which of the two it is

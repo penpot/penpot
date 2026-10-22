@@ -1733,7 +1733,8 @@
           fb.base_snapshot_id,
           bf.revn AS branch_revn,
           sf.revn AS source_revn,
-          sf.name AS source_name
+          sf.name AS source_name,
+          sf.is_shared AS source_is_shared
      FROM file_branch AS fb
      JOIN file AS bf ON (bf.id = fb.branch_file_id)
      JOIN file AS sf ON (sf.id = fb.source_file_id)
@@ -1772,6 +1773,42 @@
                    (-> row
                        (assoc :ahead ahead :behind behind :conflicts conflicts)
                        (dissoc :branch-revn :source-revn :base-snapshot-id :base-branch-revn))))))))
+
+;; --- COMMAND QUERY: get-file-branch-count
+
+(def ^:private schema:get-file-branch-count
+  [:map {:title "get-file-branch-count"}
+   [:file-id ::sm/uuid]])
+
+(def ^:private sql:get-file-branch-count
+  "SELECT count(*) AS count
+     FROM file_branch AS fb
+    WHERE fb.deleted_at IS NULL
+      AND fb.source_file_id = coalesce((SELECT b.source_file_id
+                                          FROM file_branch AS b
+                                         WHERE b.branch_file_id = ?
+                                           AND b.deleted_at IS NULL),
+                                        ?)")
+
+(sv/defmethod ::get-file-branch-count
+  "How many branches the file has, archived and merged ones included, as
+  the listing with `:include-archived` returns them. When the file is
+  itself a branch, the branches of its source (main) are counted.
+
+  The workspace header asks this on every file open to decide whether to
+  show its branch row, so it compares nothing and takes no climit: it is
+  the dashboard's `branches_count` subquery, one indexed count. Returns a
+  zero count when branching is disabled, so it is safe on every open."
+  {::doc/added "2.16"
+   ::sm/params schema:get-file-branch-count}
+  [cfg {:keys [::rpc/profile-id file-id]}]
+  (if (contains? cf/flags :branching)
+    (db/run! cfg
+             (fn [{:keys [::db/conn] :as cfg}]
+               (files/check-read-permissions! cfg profile-id file-id)
+               (-> (db/exec-one! conn [sql:get-file-branch-count file-id file-id])
+                   (select-keys [:count]))))
+    {:count 0}))
 
 ;; --- COMMAND: update-file-branch (rename / description)
 

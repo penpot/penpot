@@ -618,6 +618,55 @@
                 color (get-in out [:result :data :colors cid])]
             (t/is (= "#00ff00" (:color color)))))))))
 
+(t/deftest branch-count-counts-from-main-without-comparing
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          stranger (th/create-profile* 2 {:is-active true})
+          proj-id  (:default-project-id profile)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id proj-id
+                                       :is-shared false})
+          create!  (fn [name]
+                     (:result (th/command! {::th/type :create-file-branch
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id file)
+                                            :name name})))
+          count-of (fn [profile-id file-id]
+                     ;; the count answers on every file open: it must never
+                     ;; reach the comparison the listing pays for
+                     (with-redefs [fbranch/cached-diff-counts
+                                   (fn [& _] (throw (ex-info "compared" {})))]
+                       (th/command! {::th/type :get-file-branch-count
+                                     ::rpc/profile-id profile-id
+                                     :file-id file-id})))]
+
+      (t/testing "a file with no branches counts zero"
+        (let [out (count-of (:id profile) (:id file))]
+          (t/is (nil? (:error out)))
+          (t/is (= {:count 0} (:result out)))))
+
+      (let [kept     (create! "kept")
+            archived (create! "archived")
+            deleted  (create! "deleted")]
+        (th/command! {::th/type :archive-file-branch
+                      ::rpc/profile-id (:id profile)
+                      :id (:id archived)})
+        (th/command! {::th/type :delete-file-branch
+                      ::rpc/profile-id (:id profile)
+                      :id (:id deleted)})
+
+        (t/testing "archived branches count, deleted ones do not"
+          (t/is (= {:count 2} (:result (count-of (:id profile) (:id file))))))
+
+        (t/testing "from a branch, the branches of its main are counted"
+          (t/is (= {:count 2} (:result (count-of (:id profile) (:branch-file-id kept))))))
+
+        (t/testing "a profile that cannot read the file is refused"
+          (let [out (count-of (:id stranger) (:id file))]
+            (t/is (= :not-found (-> out :error ex-data :type))))
+          (let [out (count-of (:id stranger) (:branch-file-id kept))]
+            (t/is (= :not-found (-> out :error ex-data :type)))))))))
+
 (t/deftest branching-disabled-raises
   (let [profile (th/create-profile* 1 {:is-active true})
         proj-id (:default-project-id profile)
@@ -647,6 +696,66 @@
                   :vern (:vern f)
                   :features cfeat/supported-features
                   :changes [change]})))
+
+(def ^:private file-plugin-change
+  {:type :set-plugin-data :object-type :file :namespace :my-plugin :key "foo" :value "bar"})
+
+(def ^:private base-font-size-change
+  {:type :set-base-font-size :base-font-size "20px"})
+
+(t/deftest merge-applies-file-level-changes
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)})
+          main-data (fn []
+                      (-> (th/command! {::th/type :get-file
+                                        ::rpc/profile-id (:id profile)
+                                        :id (:id file)})
+                          :result :data))]
+      (doseq [[label change landed?]
+              [["file plugin data" file-plugin-change
+                #(= "bar" (get-in % [:plugin-data :my-plugin "foo"]))]
+               ["base font size" base-font-size-change
+                #(= "20px" (get-in % [:options :base-font-size]))]]]
+        (t/testing label
+          (let [create (:result (th/command! {::th/type :create-file-branch
+                                              ::rpc/profile-id (:id profile)
+                                              :file-id (:id file)
+                                              :name label}))]
+            (t/is (nil? (:error (apply-change* profile (:branch-file-id create) change))))
+            (let [info (:result (th/command! {::th/type :get-file-branch-info
+                                              ::rpc/profile-id (:id profile)
+                                              :file-id (:branch-file-id create)}))]
+              (t/is (= [1 0 0] ((juxt :ahead :behind :conflicts) info))))
+            (let [out (th/command! {::th/type :merge-file-branch
+                                    ::rpc/profile-id (:id profile)
+                                    :branch-id (:id create)})]
+              (t/is (nil? (:error out)))
+              (t/is (= :merged (-> out :result :status))))
+            (t/is (landed? (main-data)))))))))
+
+(t/deftest merge-reports-file-level-conflicts
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "b"}))]
+      (apply-change* profile (:branch-file-id create) file-plugin-change)
+      (apply-change* profile (:branch-file-id create) base-font-size-change)
+      (apply-change* profile (:id file) (assoc file-plugin-change :value "main"))
+      (apply-change* profile (:id file) (assoc base-font-size-change :base-font-size "18px"))
+      (let [info (:result (th/command! {::th/type :get-file-branch-info
+                                        ::rpc/profile-id (:id profile)
+                                        :file-id (:branch-file-id create)}))]
+        (t/is (= 2 (:conflicts info))))
+      (let [out (th/command! {::th/type :merge-file-branch
+                              ::rpc/profile-id (:id profile)
+                              :branch-id (:id create)})]
+        (t/is (= :conflicts (-> out :result :status)))))))
 
 (t/deftest merge-deletes-branch-by-default-and-releases-base
   (with-redefs [cf/flags (conj cf/flags :branching)]

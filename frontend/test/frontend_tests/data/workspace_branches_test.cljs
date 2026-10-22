@@ -10,7 +10,9 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.modal :as modal]
+   [app.main.data.persistence :as dwp]
    [app.main.data.workspace.branches :as dwb]
+   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -233,12 +235,11 @@
 (def ^:private main-without-branches
   {:current-file-id file-id
    :files {file-id {:id file-id :name "Checkout"}}
-   :workspace-branches {:status :loaded :data []}
+   :workspace-branch-count {:file-id file-id :count 0}
    :workspace-branch-context {:file-id file-id :loaded? true :info nil}})
 
 (def ^:private main-with-branches
-  (assoc main-without-branches :workspace-branches
-         {:status :loaded :data [{:id (uuid/next) :name "feature-login" :status "open"}]}))
+  (assoc main-without-branches :workspace-branch-count {:file-id file-id :count 1}))
 
 (def ^:private on-a-branch
   (assoc main-without-branches :workspace-branch-context
@@ -248,7 +249,120 @@
   (t/is (false? (dwb/has-branches? main-without-branches)))
   (t/is (true? (dwb/has-branches? main-with-branches)))
   (t/is (true? (dwb/has-branches? on-a-branch))
-        "a branch counts even before the list loads"))
+        "a branch counts even before the count loads"))
+
+(t/deftest the-listing-never-decides-whether-the-switcher-exists
+  (t/is (true? (dwb/has-branches? (assoc main-with-branches :workspace-branches {:status :error})))
+        "a failed listing keeps the switcher")
+  (t/is (true? (dwb/has-branches? (assoc main-with-branches :workspace-branches {:status :loading})))
+        "a loading listing keeps the switcher")
+  (t/is (false? (dwb/has-branches? (assoc main-without-branches :workspace-branches
+                                          {:status :loaded :data [{:id (uuid/next)}]})))
+        "the count decides, not a listing left over from another file"))
+
+(t/deftest ^:async a-failed-listing-is-an-error-not-an-empty-list
+  (await (mock/with-mocks*
+           {rp/cmd! (mock/stub (fn [_ _] (rx/throw (ex-info "network" {}))))}
+           (let [store (make-store-with main-with-branches)]
+             (ptk/emit! store (dwb/init-branches-state))
+             (await (async/wait-for #(not= :loading (get-in @store [:workspace-branches :status]))
+                                    "the listing settles"))
+             (t/is (= :error (get-in @store [:workspace-branches :status])))
+             (t/is (nil? (get-in @store [:workspace-branches :data])))
+             (t/is (true? (dwb/has-branches? @store)) "the switcher stays")
+             (rx/dispose! store)))))
+
+(t/deftest ^:async the-count-loads-without-the-listing
+  (let [calls (atom [])]
+    (await (mock/with-mocks*
+             {rp/cmd! (mock/stub (fn [cmd params]
+                                   (swap! calls conj [cmd params])
+                                   (rx/of {:count 3})))}
+             (let [store (make-store-with (dissoc main-without-branches :workspace-branch-count))]
+               (ptk/emit! store (dwb/fetch-branch-count))
+               (await (async/wait-for #(some? (:workspace-branch-count @store)) "the count lands"))
+               (t/is (= {:file-id file-id :count 3} (:workspace-branch-count @store)))
+               (t/is (= [[:get-file-branch-count {:file-id file-id}]] @calls)
+                     "only the count is asked, never the listing")
+               (t/is (true? (dwb/has-branches? @store)))
+               (rx/dispose! store))))))
+
+(t/deftest ^:async the-count-of-another-file-is-dropped-at-once
+  (let [other (uuid/next)]
+    (await (mock/with-mocks*
+             {rp/cmd! (mock/stub (fn [_ _] (rx/subject)))}
+             (let [store (make-store-with (assoc main-with-branches :workspace-branch-count
+                                                 {:file-id other :count 4}))]
+               (ptk/emit! store (dwb/fetch-branch-count))
+               (t/is (nil? (:workspace-branch-count @store)))
+               (t/is (false? (dwb/has-branches? @store)))
+               (rx/dispose! store))))))
+
+(t/deftest ^:async a-failed-count-shows-the-switcher-with-an-error
+  (await (mock/with-mocks*
+           {cf/flags (conj cf/flags :branching)
+            rp/cmd!  (mock/stub (fn [_ _] (rx/throw (ex-info "network" {}))))}
+           (let [store (make-store-with (dissoc main-without-branches :workspace-branch-count))]
+             (ptk/emit! store (dwb/fetch-branch-count))
+             (await (async/wait-for #(some? (:workspace-branch-count @store)) "the count settles"))
+             (t/is (= {:file-id file-id :status :error} (:workspace-branch-count @store)))
+             (t/is (true? (dwb/branch-count-failed? @store)))
+             (t/is (true? (dwb/has-branches? @store))
+                   "a count that failed never hides the switcher")
+             (ptk/emit! store (dwb/show-branches))
+             (await (async/wait-for #(true? (:workspace-branch-switcher @store))
+                                    "the shortcut opens the switcher, which retries"))
+             (t/is (nil? (::modal/modal @store)) "no create dialog on an unknown count")
+             (rx/dispose! store)))))
+
+(t/deftest ^:async a-listing-after-a-failed-count-settles-it
+  (await (mock/with-mocks*
+           {rp/cmd! (mock/stub (fn [cmd _]
+                                 (case cmd
+                                   :get-file-branch-info (rx/of nil)
+                                   :get-file-branches    (rx/of [{:id (uuid/next) :status "open"}])
+                                   (rx/empty))))}
+           (let [store (make-store-with (assoc main-without-branches :workspace-branch-count
+                                               {:file-id file-id :status :error}))]
+             (ptk/emit! store (dwb/init-branches-state))
+             (await (async/wait-for #(= :loaded (get-in @store [:workspace-branches :status]))
+                                    "the listing lands"))
+             (t/is (= {:file-id file-id :count 1} (:workspace-branch-count @store)))
+             (t/is (false? (dwb/branch-count-failed? @store)))
+             (rx/dispose! store)))))
+
+(t/deftest ^:async a-listing-refreshes-the-count
+  (await (mock/with-mocks*
+           {rp/cmd! (mock/stub (fn [cmd _]
+                                 (case cmd
+                                   :get-file-branch-info (rx/of nil)
+                                   :get-file-branches    (rx/of [])
+                                   (rx/empty))))}
+           (let [store (make-store-with main-with-branches)]
+             (ptk/emit! store (dwb/fetch-branches))
+             (await (async/wait-for #(= :loaded (get-in @store [:workspace-branches :status]))
+                                    "the listing lands"))
+             (t/is (= 0 (get-in @store [:workspace-branch-count :count]))
+                   "deleting the last branch from the listing hides the switcher")
+             (t/is (false? (dwb/has-branches? @store)))
+             (rx/dispose! store)))))
+
+(t/deftest ^:async a-pull-request-from-the-open-branch-saves-first-without-the-listing
+  (let [waits     (atom 0)
+        branch-id (uuid/next)]
+    (await (mock/with-mocks*
+             {dwp/wait-persisted (mock/stub (fn [& _] (swap! waits inc) (rx/of :saved)))
+              rp/cmd!            (mock/stub (fn [_ _] (rx/empty)))}
+             ;; the bottom banner opens the dialog with the branch context;
+             ;; the listing only loads with the switcher, so it is absent
+             (let [store (make-store-with
+                          (assoc main-without-branches :workspace-branch-context
+                                 {:file-id file-id
+                                  :loaded? true
+                                  :info {:id branch-id :branch-file-id file-id}}))]
+               (ptk/emit! store (dwpr/create-pull-request branch-id {:title "Review me"}))
+               (await (async/wait-for #(pos? @waits) "the pending edits are saved first"))
+               (rx/dispose! store))))))
 
 (t/deftest the-switcher-toggles-and-can-be-forced
   (let [store (make-store-with main-with-branches)]
@@ -307,4 +421,31 @@
                (await (async/wait-for #(seq @navigations) "it navigates"))
                (t/is (false? (:workspace-branch-switcher @store)))
                (t/is (= {:file-id branch-id} (first @navigations)))
+               (rx/dispose! store))))))
+
+;;; --- Creating a branch: one path, from the open file ---
+
+(t/deftest ^:async creating-a-branch-branches-the-open-file
+  (let [calls       (atom [])
+        branch-id   (uuid/next)
+        navigations (atom [])]
+    (await (mock/with-mocks*
+             {rp/cmd! (mock/stub (fn [cmd params]
+                                   (swap! calls conj [cmd params])
+                                   (rx/of {:branch-file-id branch-id})))
+              dcm/go-to-workspace
+              (fn [& {:as params}]
+                (swap! navigations conj params)
+                (ptk/data-event ::navigated params))}
+             (let [store (make-store-with main-without-branches)]
+               (ptk/emit! store (dwb/create-branch "feature-login" "from the workspace"))
+               (await (async/wait-for #(seq @navigations) "it lands in the new branch"))
+               (t/is (= [[:create-file-branch
+                          {:file-id file-id
+                           :name "feature-login"
+                           :description "from the workspace"}]]
+                        @calls)
+                     "it creates the branch from the open file, once")
+               (t/is (= [{:file-id branch-id}] @navigations)
+                     "it opens the branch that was created")
                (rx/dispose! store))))))

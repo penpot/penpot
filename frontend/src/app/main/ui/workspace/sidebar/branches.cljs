@@ -65,6 +65,8 @@
    :page-flow           i/document
    :page-grid           i/document
    :page-plugin         i/document
+   :file-plugin         i/document
+   :file-option         i/document
    :token               i/tokens
    :token-set           i/tokens
    :token-set-rename    i/tokens
@@ -86,21 +88,26 @@
       (str (subs s 0 40) "…")
       s)))
 
-(def ^:private attr->label
-  "Friendlier names for attrs whose raw key is unclear; every other attr
-  is humanized generically (kebab-case -> Capitalized words)."
-  {:rx "Corner radius" :ry "Corner radius"
-   :grow-type "Text auto-grow" :blend-mode "Blend mode"
-   :shape-ref "Component reference" :component-id "Component"
-   :component-file "Component library" :hidden "Visibility"
-   :blocked "Locked" :proportion-lock "Lock proportions"
-   :parent-id "Parent" :frame-id "Container"})
-
 (defn- attr-label
-  "Human-readable label for a changed property key."
+  "Human-readable label for a changed property key. The named attrs are
+  the ones whose raw key means nothing to a user, so each carries a
+  catalogue entry. Every other attr keeps its own key, humanised
+  (kebab-case -> Capitalized words): a technical identifier rather than
+  prose, and the last resort for an attr the catalogue does not name."
   [attr]
-  (or (get attr->label attr)
-      (-> (name attr) (str/replace #"-" " ") str/capital)))
+  (case attr
+    (:rx :ry)        (tr "workspace.branches.compare.attr.corner-radius")
+    :grow-type       (tr "workspace.branches.compare.attr.text-auto-grow")
+    :blend-mode      (tr "workspace.branches.compare.attr.blend-mode")
+    :shape-ref       (tr "workspace.branches.compare.attr.component-reference")
+    :component-id    (tr "workspace.branches.compare.attr.component")
+    :component-file  (tr "workspace.branches.compare.attr.component-library")
+    :hidden          (tr "workspace.branches.compare.attr.visibility")
+    :blocked         (tr "workspace.branches.compare.attr.locked")
+    :proportion-lock (tr "workspace.branches.compare.attr.lock-proportions")
+    :parent-id       (tr "workspace.branches.compare.attr.parent")
+    :frame-id        (tr "workspace.branches.compare.attr.container")
+    (-> (name attr) (str/replace #"-" " ") str/capital)))
 
 ;; --- Compare: grouping by component + per-item type labels
 
@@ -179,10 +186,12 @@
 
 (defn- fmt-number
   "At most two decimals, trailing zeros stripped (89.99999 -> \"90\",
-  439.4999 -> \"439.5\", 386 -> \"386\")."
+  439.4999 -> \"439.5\", 386 -> \"386\"), grouped and punctuated the way
+  the active locale writes numbers (\"439,5\" in Spanish)."
   [v]
-  (-> (.toFixed v 2)
-      (str/replace #"\.?0+$" "")))
+  (let [locale (-> i18n/*current-locale*
+                   (str/replace "_" "-"))]
+    (.toLocaleString v locale #js {:maximumFractionDigits 2})))
 
 (defn- display-val
   "Compact, human-readable rendering of a property value. Raw uuids and
@@ -193,12 +202,14 @@
     (nil? v)         "—"
     (string? v)      (if (> (count v) 32) (str (subs v 0 32) "…") v)
     (number? v)      (fmt-number v)
-    (boolean? v)     (if v "true" "false")
+    (boolean? v)     (if v
+                       (tr "workspace.branches.compare.value-true")
+                       (tr "workspace.branches.compare.value-false"))
     (keyword? v)     (name v)
     (ct/inst? v)     (ct/format-inst v :localized-date-time)
     (uuid? v)        (str (subs (str v) 0 8) "…")
-    (sequential? v)  (tr "workspace.branches.compare.n-items" (dm/str (count v)))
-    (map? v)         (tr "workspace.branches.compare.n-props" (dm/str (count v)))
+    (sequential? v)  (tr "workspace.branches.compare.n-items" (i18n/c (count v)))
+    (map? v)         (tr "workspace.branches.compare.n-props" (i18n/c (count v)))
     :else            (short-str v)))
 
 (defn- status-matches?
@@ -221,8 +232,10 @@
 (mf/defc create-branch-dialog*
   {::mf/register modal/components
    ::mf/register-as :create-branch}
-  [{:keys [file-name file-id]}]
-  (let [branch-name* (mf/use-state "")
+  [{:keys [file-name]}]
+  (let [;; a branch only grows from main, so the open file is main
+        library?     (boolean (:is-shared (mf/deref refs/file)))
+        branch-name* (mf/use-state "")
         description*  (mf/use-state "")
         branch-name   (deref branch-name*)
         description   (deref description*)
@@ -239,10 +252,10 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps branch-name description valid? file-id)
+         (mf/deps branch-name description valid?)
          (fn [_]
            (when valid?
-             (st/emit! (dwb/create-branch file-id (str/trim branch-name) (str/trim description))
+             (st/emit! (dwb/create-branch (str/trim branch-name) (str/trim description))
                        (modal/hide)))))]
 
     [:> modal* {:is-open true
@@ -277,7 +290,9 @@
          (tr "workspace.branches.create.derive-from-latest")]]]
 
       [:> context-notification* {:level :info :type :context}
-       (tr "workspace.branches.create.info")]]
+       (if library?
+         (tr "workspace.branches.create.info-library")
+         (tr "workspace.branches.create.info"))]]
 
      [:> modal-footer* {}
       [:> button* {:variant "secondary" :on-click on-close}
@@ -913,7 +928,7 @@
   {::mf/register modal/components
    ::mf/register-as :branches-list}
   []
-  (let [{:keys [data]} (mf/deref branches)
+  (let [{:keys [data status]} (mf/deref branches)
         profiles       (mf/deref refs/profiles)
         profile        (mf/deref refs/profile)
         file           (mf/deref refs/file)
@@ -983,9 +998,14 @@
         (mf/use-fn
          (mf/deps file)
          (fn [_]
-           (modal/show! :create-branch {:file-name (:name file)})))]
+           (modal/show! :create-branch {:file-name (:name file)})))
 
-    (mf/with-effect []
+        on-retry
+        (mf/use-fn #(st/emit! (dwb/init-branches-state)))]
+
+    ;; before paint, so a list from an earlier opening never shows in
+    ;; place of the loading state
+    (mf/with-layout-effect []
       (st/emit! (dwb/init-branches-state))
       (when (dwpr/enabled?)
         (st/emit! (dwpr/fetch-pull-requests))))
@@ -1002,10 +1022,27 @@
                          :action-button-position "end"
                          :action-button search
                          :class (stl/css :branches-list-tabs)}
-       (if (empty? rows)
+       (cond
+         (= status :loading)
+         [:div {:class (stl/css :branches-empty) :role "status"}
+          [:> empty-state* {:icon i/git-branch
+                            :text (tr "workspace.branches.loading")}]]
+
+         (= status :error)
+         [:div {:class (stl/css :branches-empty) :role "alert"}
+          [:> empty-state* {:icon i/triangle-alert
+                            :text (tr "workspace.branches.list.error")}]
+          [:> button* {:variant "secondary"
+                       :icon i/reload
+                       :on-click on-retry}
+           (tr "labels.retry")]]
+
+         (empty? rows)
          [:div {:class (stl/css :branches-empty)}
           [:> empty-state* {:icon i/git-branch
                             :text (tr "workspace.branches.list.empty")}]]
+
+         :else
          [:ul {:class (stl/css :branches-entries :branches-list-entries)}
           (for [entry rows]
             (let [k (dm/str (:id entry))]
@@ -1109,7 +1146,7 @@
                    (= :added status)   (tr "workspace.branches.compare.subtitle-new"
                                            (if type-lbl (tr type-lbl) ""))
                    (and (= :modified status) (seq attrs))
-                   (tr "workspace.branches.compare.subtitle-mods" (count attrs))
+                   (tr "workspace.branches.compare.subtitle-mods" (i18n/c (count attrs)))
                    type-lbl (tr type-lbl)
                    :else nil)]
     [:li {:class (stl/css-case :compare-item true
@@ -1282,14 +1319,14 @@
       (when stats
         [:div {:class (stl/css :compare-stats)}
          [:span {:class (stl/css :stat-badge :badge-added)}
-          (dm/str (:added stats) " " (tr "workspace.branches.compare.stats.added"))]
+          (tr "workspace.branches.compare.stats.added" (i18n/c (:added stats)))]
          [:span {:class (stl/css :stat-badge :badge-modified)}
-          (dm/str (:modified stats) " " (tr "workspace.branches.compare.stats.modified"))]
+          (tr "workspace.branches.compare.stats.modified" (i18n/c (:modified stats)))]
          [:span {:class (stl/css :stat-badge :badge-deleted)}
-          (dm/str (:deleted stats) " " (tr "workspace.branches.compare.stats.deleted"))]
+          (tr "workspace.branches.compare.stats.deleted" (i18n/c (:deleted stats)))]
          (when (pos? (:conflicts stats))
            [:span {:class (stl/css :stat-badge :badge-conflict)}
-            (dm/str (:conflicts stats) " " (tr "workspace.branches.compare.stats.conflicts"))])])]
+            (tr "workspace.branches.compare.stats.conflicts" (i18n/c (:conflicts stats)))])])]
 
      [:> modal-content* {:class (stl/css :compare-content)}
       (cond
@@ -1371,14 +1408,14 @@
            (mf/html
             [:div {:class (stl/css :compare-footer-info)}
              [:> i/icon* {:icon-id i/info :size "s"}]
-             [:span (tr "workspace.branches.compare.footer-changes" total)]
+             [:span (tr "workspace.branches.compare.footer-changes" (i18n/c total))]
              (when (seq all-keys)
                [:span {:class (stl/css :compare-footer-selected)}
                 (tr "workspace.branches.compare.footer-selected"
-                    (str kept-count) (str (count all-keys)))])
+                    (str kept-count) (i18n/c (count all-keys)))])
              (when conflicts?
                [:span {:class (stl/css :compare-footer-conflicts)}
-                (dm/str " · " (tr "workspace.branches.compare.footer-conflicts" conflicts))])])
+                (dm/str " · " (tr "workspace.branches.compare.footer-conflicts" (i18n/c conflicts)))])])
            :end
            (mf/html
             [:*
