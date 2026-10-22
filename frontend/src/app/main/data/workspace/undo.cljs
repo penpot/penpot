@@ -327,6 +327,47 @@
         (assoc-in state [:workspace-local :selected] selected-ids)
         state))))
 
+(defn- history-runs
+  "The runs of `pairs` (`[applied inverse]` per history entry, in the order
+   they apply) that share a destination file, as `[file-id applied inverse]`.
+   The inverse of a run undoes it; within an entry, the last run of a file
+   carries the entry's inverse for that file."
+  [pairs]
+  (->> pairs
+       (mapcat (fn [[applied inverse]]
+                 (let [runs (partition-by ::file-id applied)
+                       last-run (into {} (map-indexed (fn [i run] [(::file-id (first run)) i])) runs)]
+                   (map-indexed (fn [i run]
+                                  (let [file-id (::file-id (first run))]
+                                    [file-id
+                                     (vec run)
+                                     (if (= i (get last-run file-id))
+                                       (filterv #(= file-id (::file-id %)) inverse)
+                                       [])]))
+                                runs))))
+       (partition-by first)
+       (map (fn [segments]
+              [(ffirst segments)
+               (into [] (mapcat second) segments)
+               (into [] (mapcat #(nth % 2)) (reverse segments))]))))
+
+(defn- commit-history-changes
+  "Replay the history `pairs` (see `history-runs`) in order, keeping each run
+   in its destination file. Older entries without a destination use the
+   current file. Each commit is undoable by a rollback, which also puts the
+   history back to `undo-index`. `translation` marks them as moves only."
+  [origin undo-index pairs translation]
+  (->> (history-runs pairs)
+       (map (fn [[file-id applied inverse]]
+              (dch/commit-changes {:file-id file-id
+                                   :redo-changes (mapv #(dissoc % ::file-id) applied)
+                                   :undo-changes (mapv #(dissoc % ::file-id) inverse)
+                                   :undo-index undo-index
+                                   :origin origin
+                                   :save-undo? false
+                                   :translation? translation})))
+       (rx/from)))
+
 (defn undo-to-index
   "Repeat undoing or redoing until dest-index is reached."
   [dest-index]
@@ -346,34 +387,25 @@
                 index (or (:index undo) (dec (count items)))]
             (when (and (some? items)
                        (<= -1 dest-index (dec (count items))))
-              (let [[redo-changes undo-changes]
-                    (cond
-                      (< dest-index index)
-                      (let [entries (subvec items (inc dest-index) (inc index))]
-                        [(into [] (mapcat :undo-changes) (reverse entries))
-                         (into [] (mapcat :redo-changes) entries)])
-
-                      (> dest-index index)
-                      (let [entries (subvec items (inc index) (inc dest-index))]
-                        [(into [] (mapcat :redo-changes) entries)
-                         (into [] (mapcat :undo-changes) (reverse entries))])
-
-                      :else
-                      [[] []])
-
+              (let [pairs (cond
+                            (< dest-index index)
+                            (->> (subvec items (inc dest-index) (inc index))
+                                 (reverse)
+                                 (map (juxt :undo-changes :redo-changes)))
+                            (> dest-index index)
+                            (->> (subvec items (inc index) (inc dest-index))
+                                 (map (juxt :redo-changes :undo-changes)))
+                            :else [])
+                    changes (into [] (mapcat first) pairs)
+                    ;; a replay of moves only is itself a move
                     translation (->> (subvec items
                                              (inc (min dest-index index))
                                              (inc (max dest-index index)))
                                      (every? :translation))]
-                (when (seq redo-changes)
-                  (rx/of (materialize-undo redo-changes dest-index)
-                         ;; Undoable by a rollback, which also puts the index back
-                         (dch/commit-changes {:redo-changes redo-changes
-                                              :undo-changes undo-changes
-                                              :undo-index index
-                                              :origin it
-                                              :save-undo? false
-                                              :translation? translation})))))))))))
+                (when (seq changes)
+                  (rx/concat
+                   (rx/of (materialize-undo changes dest-index))
+                   (commit-history-changes it index pairs translation)))))))))))
 
 (declare ^:private assure-valid-current-page)
 
@@ -414,15 +446,11 @@
                   (let [first-item (get items undo-group-index)]
                     (rx/of (undo-to-index (dec undo-group-index))
                            (restore-selection (:selected-before first-item))))
-                  (rx/of (materialize-undo changes (dec index))
-                         (dch/commit-changes {:redo-changes changes
-                                              :undo-changes (:redo-changes item)
-                                              :undo-index index
-                                              :save-undo? false
-                                              :translation? (:translation item)
-                                              :origin it})
-                         (restore-selection (:selected-before item))
-                         (assure-valid-current-page)))))))))))
+                  (rx/concat
+                   (rx/of (materialize-undo changes (dec index)))
+                   (commit-history-changes it index [[changes (:redo-changes item)]] (:translation item))
+                   (rx/of (restore-selection (:selected-before item))
+                          (assure-valid-current-page))))))))))))
 
 (def redo
   (ptk/reify ::redo
@@ -455,14 +483,10 @@
                   (let [last-item (get items redo-group-index)]
                     (rx/of (undo-to-index redo-group-index)
                            (restore-selection (:selected-after last-item))))
-                  (rx/of (materialize-undo changes (inc index))
-                         (dch/commit-changes {:redo-changes changes
-                                              :undo-changes (:undo-changes item)
-                                              :undo-index index
-                                              :origin it
-                                              :save-undo? false
-                                              :translation? (:translation item)})
-                         (restore-selection (:selected-after item))))))))))))
+                  (rx/concat
+                   (rx/of (materialize-undo changes (inc index)))
+                   (commit-history-changes it index [[changes (:undo-changes item)]] (:translation item))
+                   (rx/of (restore-selection (:selected-after item)))))))))))))
 
 (defn- assure-valid-current-page
   []

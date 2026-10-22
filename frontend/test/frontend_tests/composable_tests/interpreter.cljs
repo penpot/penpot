@@ -480,12 +480,12 @@
   (let [{:keys [index items]} (:workspace-undo @st/state)]
     (or index (dec (count items)))))
 
-(defn- snapshot
-  "The normalized live file the round trip compares. WASM regenerates
+(defn snapshot
+  "The normalized live files the round trip compares. WASM regenerates
    `:position-data` by measuring, so it is left out there."
   []
-  (uc/snapshot (current-file)
-               {:position-data? (not (features/active-feature? @st/state "render-wasm/v1"))}))
+  (uc/snapshot-files (:files @st/state)
+                     {:position-data? (not (features/active-feature? @st/state "render-wasm/v1"))}))
 
 (defn- mark-baseline
   [situation]

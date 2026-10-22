@@ -363,10 +363,10 @@
                                   :operation (->WrongUndoEdit)})]
     ;; the redo leaves the wrong name in place, and so does the variant undo
     (t/is (= [:undo :redo :variant-undo] (phases situation)))
-    (t/is (= (repeat 3 #{[:object :copy-root :name]})
+    (t/is (= (repeat 3 #{[:file :file1 :object :copy-root :name]})
              (map :signature (uc/failures situation))))
     (t/is (= {:name "Wrong"}
-             (-> (uc/failures situation) first :diff second :data :pages-index
+             (-> (uc/failures situation) first :diff second :files :file1 :data :pages-index
                  vals first :objects (get :copy-root))))))
 
 (t/deftest round-trip-reports-a-change-with-no-undo-entry
@@ -410,7 +410,7 @@
   (let [edit      (tm/assign-id (->WrongUndoEdit))
         situation (r/run-variant {:setup     setup/simple-component-with-copy
                                   :operation edit})
-        pin       #{[:object :copy-root :name]}
+        pin       #{[:file :file1 :object :copy-root :name]}
         known     {:bug "F0" :fails {:undo pin :redo pin :variant-undo pin} :op edit}
         verdict   #(uc/verdict situation {:undo-check {:known-failures %}})]
     (t/is (= {:unexpected [] :resolved []} (verdict [known])))
@@ -457,7 +457,7 @@
   (let [edit      (tm/assign-id (->WrongUndoEdit))
         situation (r/run-variant {:setup     setup/simple-component-with-copy
                                   :operation edit})
-        pin       #{[:object :copy-root :name]}
+        pin       #{[:file :file1 :object :copy-root :name]}
         known     {:bug "F0" :fails {:undo pin :redo pin :variant-undo pin} :op edit}
         check     #(report-types (fn [] (uc/check! situation {:undo-check %})))]
     (t/is (= [:fail :fail :fail] (check {})))
@@ -470,7 +470,7 @@
         right     (n/change-property :main-child :fills red)
         situation (r/run-variant {:setup     setup/simple-component-with-copy
                                   :operation (tm/in-sequence [wrong right])})
-        pin       #{[:object :copy-root :name]}
+        pin       #{[:file :file1 :object :copy-root :name]}
         known     {:bug "F0" :fails {:undo pin :redo pin :variant-undo pin} :op wrong}
         verdict   #(uc/verdict situation {:undo-check {:known-failures [%]}})
         phases    (fn [k mark] (mapv :phase (k (verdict mark))))]
@@ -488,7 +488,7 @@
 
 (t/deftest a-mark-that-applies-to-no-variant-fails
   (let [edit      (tm/assign-id (->WrongUndoEdit))
-        pin       #{[:object :copy-root :name]}
+        pin       #{[:file :file1 :object :copy-root :name]}
         mark      {:bug "F0" :fails {:undo pin} :op edit}
         case-map  {:undo-check {:known-failures [mark]}}]
     (t/is (= [:fail] (report-types #(uc/check-marks-applied! case-map :pure []))))
