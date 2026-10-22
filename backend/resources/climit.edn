@@ -4,7 +4,7 @@
 ;; Optional: timeout in milliseconds, omitted means the thread waits for a
 ;; permit forever, and a saturated limiter parks it for good. Values below:
 ;; 60s for operations that can be slow (file updates, images, fonts, thumbnails,
-;; snapshots, imports) and 30s for the rest.
+;; snapshots, imports, branches, pull requests) and 30s for the rest.
 ;; Note: a queue bounds how many waiters pile up, a timeout bounds how long one
 ;; waiter waits. Every entry sets a timeout; the by-profile ones also set a
 ;; queue, which is where a pile-up hurts.
@@ -113,22 +113,29 @@
  ;;    `files_pull_request.clj::update-pull-request-snapshot`), which is
  ;;    the anchor's shape again.
  ;;
- ;; The write-side operations carry a queue and a timeout so that a
- ;; refusal follows a bounded wait rather than arriving instantly. The
- ;; queue sits on the per-profile entry, following the anchor, and on the
- ;; global entry where the command declares no per-profile queue. The
- ;; per-profile entry of one permit keeps a single designer to one
- ;; operation at a time. The two read-side entries are generous by design
- ;; and carry no queue, so a panel open waits for its turn instead of
- ;; being refused: six three-document comparisons hold eighteen realized
- ;; documents, fewer than the twenty one-document saves
- ;; `:update-file/global` already admits.
+ ;; The write-side operations carry a queue so that a refusal follows a
+ ;; bounded wait rather than arriving instantly. The queue sits on the
+ ;; per-profile entry, following the anchor, and on the global entry
+ ;; where the command declares no per-profile queue. The per-profile
+ ;; entry of one permit keeps a single designer to one operation at a
+ ;; time. The two read-side entries are generous by design and carry no
+ ;; queue, so a panel open waits for its turn instead of being refused:
+ ;; six three-document comparisons hold eighteen realized documents,
+ ;; fewer than the twenty one-document saves `:update-file/global`
+ ;; already admits.
+ ;;
+ ;; Every entry below, global and per-profile, read and write, takes the
+ ;; 60 s timeout of the slow operations above. The size gates in
+ ;; `backend/src/app/rpc/commands/files_branch.clj` refuse any file large
+ ;; enough for an operation to exceed 30 s, with the measured limit
+ ;; halved, so a 60 s wait covers one in-flight operation at that
+ ;; ceiling with as much again in margin.
 
  ;; create-file-branch realizes main and writes one snapshot, the shape
  ;; of `:create-file-snapshot` above, so it takes the anchor's numbers
  ;; unchanged. Provisional.
  :create-file-branch/global
- {:permits 3}
+ {:permits 3 :timeout 60000}
 
  :create-file-branch/by-profile
  {:permits 1 :queue 2 :timeout 60000}
@@ -137,7 +144,7 @@
  ;; whole-file write into main, so one instance-wide operation holds the
  ;; anchor's whole three-permit budget on its own. Provisional.
  :merge-file-branch/global
- {:permits 1}
+ {:permits 1 :timeout 60000}
 
  :merge-file-branch/by-profile
  {:permits 1 :queue 2 :timeout 60000}
@@ -146,7 +153,7 @@
  ;; snapshot write and a squash diff on top, so it takes the merge's
  ;; count. Provisional.
  :update-branch-from-main/global
- {:permits 1}
+ {:permits 1 :timeout 60000}
 
  :update-branch-from-main/by-profile
  {:permits 1 :queue 2 :timeout 60000}
@@ -156,21 +163,16 @@
  ;; so it admits two where the merge admits one and the anchor admits
  ;; three. Provisional.
  :materialize-file-branch/global
- {:permits 2}
+ {:permits 2 :timeout 60000}
 
  :materialize-file-branch/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  ;; A cold listing realizes main once and derives every uncached branch,
- ;; which makes it the slowest read of the preview. It runs when a user
- ;; opens the workspace branch switcher, the all-branches dialog, or the
- ;; dashboard branches popover; a file open only counts branches, through
- ;; `get-file-branch-count`, which takes no limit. Six at once is above
- ;; what those opens need under normal use, and six three-document
+ ;; which makes it the slowest read of the preview. Six at once is above
+ ;; what a panel open needs under normal use, and six three-document
  ;; operations hold eighteen realized documents, below the twenty
- ;; one-document saves `:update-file/global` above already admits. The
- ;; timeout is the one for slow operations, so a waiter behind six cold
- ;; listings gets an error it can retry instead of waiting without bound.
+ ;; one-document saves `:update-file/global` above already admits.
  ;; Provisional.
  :get-file-branches/global
  {:permits 6 :timeout 60000}
@@ -179,12 +181,12 @@
  ;; base at once, the same three documents the listing holds, so it takes
  ;; the same count. Provisional.
  :get-branch-diff/global
- {:permits 6}
+ {:permits 6 :timeout 60000}
 
  ;; Creating a pull request realizes the branch and pins one review
  ;; snapshot, the anchor's shape. Provisional.
  :create-pull-request/global
- {:permits 3}
+ {:permits 3 :timeout 60000}
 
  :create-pull-request/by-profile
  {:permits 1 :queue 2 :timeout 60000}
