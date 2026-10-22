@@ -2232,8 +2232,11 @@
   ;; Here we normalize the names of all main instances, and a new file integrity validation has
   ;; been added to enforce this from now on.
   ;; Main instances in variants are a special case because they need to match the variant name.
+  ;; Old files may list in :shapes ids that are not uuids or that point
+  ;; to no shape; skip them.
   (letfn [(update-shape [container shape-id]
-            (let [shape (ctn/get-shape container shape-id)]
+            (let [shape (when (uuid? shape-id)
+                          (ctn/get-shape container shape-id))]
               ;; A shape may reference a child that does not exist in the
               ;; container (a dangling reference). There is nothing to update
               ;; on it, and storing it would add a nil entry to the objects
@@ -2255,7 +2258,9 @@
                               ;; Main instance inside a variant must have the same name as the container
                               (ctk/main-instance? shape)
                               (if (ctk/is-variant? shape)
-                                (let [variant-container (ctn/get-shape container (:parent-id shape))]
+                                (let [parent-id         (:parent-id shape)
+                                      variant-container (when (uuid? parent-id)
+                                                          (ctn/get-shape container parent-id))]
                                   (if (or (= (:name shape) (:name variant-container))
                                           (nil? variant-container))
                                     shape
