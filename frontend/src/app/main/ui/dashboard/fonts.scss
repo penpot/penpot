@@ -19,12 +19,6 @@
   padding-left: px2rem(120);
   padding-bottom: px2rem(120);
   overflow-y: auto;
-
-  .btn-primary {
-    font-size: px2rem(11);
-    height: $sz-32;
-    min-width: px2rem(100);
-  }
 }
 
 .dashboard-installed-fonts {
@@ -160,25 +154,11 @@
       cursor: pointer;
       gap: var(--sp-xs);
 
-      .icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: $sz-16;
-        width: $sz-16;
-
-        svg {
-          fill: none;
-          width: $sz-12;
-          height: $sz-12;
-          transform: rotate(45deg);
-        }
-      }
+      // The delete button only shows its icon while the variant is hovered.
+      --variant-delete-color: transparent;
 
       &:hover {
-        .icon svg {
-          stroke: var(--color-foreground-secondary);
-        }
+        --variant-delete-color: var(--color-foreground-secondary);
       }
     }
 
@@ -208,40 +188,38 @@
     display: flex;
     justify-content: flex-end;
     min-width: px2rem(180);
-
-    .icon {
-      width: $sz-24;
-      cursor: pointer;
-      display: flex;
-      margin-left: var(--sp-m);
-      justify-content: center;
-      align-items: center;
-
-      svg {
-        width: $sz-16;
-        height: $sz-16;
-        stroke: var(--color-foreground-secondary);
-        fill: none;
-      }
-
-      &.failure {
-        margin-right: var(--sp-m);
-
-        svg {
-          stroke: var(--element-foreground-warning);
-        }
-      }
-
-      &.close {
-        background: none;
-        border: none;
-
-        svg {
-          stroke: var(--color-foreground-secondary);
-        }
-      }
-    }
+    align-items: center;
+    gap: var(--sp-s);
   }
+}
+
+.variant-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: $sz-16;
+  inline-size: $sz-16;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--variant-delete-color);
+
+  &:focus-visible {
+    --variant-delete-color: var(--color-foreground-secondary);
+  }
+}
+
+// With the 8px gap of .options it keeps 12px on each side.
+.warning-icon {
+  margin-inline: var(--sp-xs);
+  color: var(--color-accent-warning);
+}
+
+// A DS button keeps its label at the start when it grows.
+.upload-button {
+  min-inline-size: px2rem(100);
+  justify-content: center;
 }
 
 .dashboard-fonts-upload {
@@ -250,12 +228,8 @@
   display: flex;
   flex-direction: column;
 
-  .upload-button {
-    width: px2rem(100);
-  }
-
-  .btn-secondary {
-    margin-left: var(--sp-m);
+  .dismiss-button {
+    margin-inline-start: var(--sp-xs);
   }
 }
 
@@ -267,9 +241,12 @@
   display: flex;
   justify-content: space-between;
 
-  .btn-primary {
-    height: $sz-40;
-    width: 100%;
+  .add-font-button {
+    --button-height: #{$sz-40};
+
+    inline-size: 100%;
+    flex-shrink: 0;
+    justify-content: center;
   }
 
   .desc {
@@ -290,10 +267,6 @@
       color: var(--color-foreground-secondary);
     }
   }
-
-  .btn-primary {
-    flex-shrink: 0;
-  }
 }
 
 .fonts-placeholder {
@@ -308,6 +281,7 @@
   max-width: px2rem(1000);
   width: 100%;
 
+  // The loader keeps the legacy icon: there is no DS loader icon.
   .icon svg {
     stroke: var(--color-foreground-secondary);
     fill: none;

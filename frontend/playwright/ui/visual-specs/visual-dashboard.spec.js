@@ -338,6 +338,59 @@ test.describe("Delete account modal", () => {
   });
 });
 
+test.describe("Fonts page controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Installed font variant, menu and edition", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToDashboard();
+    await dashboardPage.fontsLink.click();
+    await expect(dashboardPage.mainHeading).toHaveText("Fonts");
+
+    const installed = page.locator("[class*='dashboard-installed-fonts']");
+    const row = installed.locator("[class*='font-item']").first();
+    await expect(row).toBeVisible();
+
+    // The variant delete icon only shows on hover.
+    await row.locator("[class$='__variant'], [class*='__variant ']").hover();
+    await expect(installed).toHaveScreenshot(shot);
+
+    // The menu button: a span before the DS migration, a DS icon button
+    // named "Options" after it.
+    const options = row.locator("[class*='options']");
+    await options
+      .locator("span[class*='icon']")
+      .or(options.getByRole("button", { name: "Options" }))
+      .first()
+      .click();
+    await expect(page.getByText("Download")).toBeVisible();
+    await expect(page).toHaveScreenshot(shot);
+
+    await page.getByText("Edit", { exact: true }).click();
+    await expect(row.locator("input")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(installed).toHaveScreenshot(shot);
+  });
+
+  test("Fonts ready to upload", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToDashboard();
+    await dashboardPage.fontsLink.click();
+    await expect(dashboardPage.mainHeading).toHaveText("Fonts");
+
+    await page
+      .locator("#font-upload")
+      .setInputFiles("playwright/data/render-wasm/assets/ebgaramond.ttf");
+    await expect(page.getByTestId("upload-all")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(
+      page.locator("[class*='dashboard-fonts-upload']"),
+    ).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Subscription controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 

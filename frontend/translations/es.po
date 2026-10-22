@@ -587,6 +587,10 @@ msgstr "Vista de cuadrícula"
 msgid "dashboard.files-layout.list"
 msgstr "Vista de lista"
 
+#: src/app/main/ui/dashboard/fonts.cljs:431
+msgid "dashboard.fonts.delete-variant"
+msgstr "Eliminar estilo de fuente"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:608
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Fuente no encontrada"
