@@ -813,3 +813,58 @@ test.describe("Grid cell options", () => {
     });
   });
 });
+
+test.describe("Assets tab controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Add library button", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.clickAssets();
+
+    const add = workspace.sidebar.getByTestId("libraries");
+    await expect(add).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(add).toHaveScreenshot(shot);
+    await add.hover();
+    await expect(add).toHaveScreenshot(shot);
+  });
+
+  test("Libraries, filter and group modal", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    const { fileId, pageId } = await setupFileWithAssets(workspace);
+    await workspace.goToWorkspace({ fileId, pageId });
+    await workspace.clickAssets();
+
+    const header = workspace.sidebar
+      .getByTestId("libraries")
+      .locator("xpath=..");
+    await expect(workspace.sidebar.getByTestId("libraries")).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(header).toHaveScreenshot(shot);
+
+    await workspace.sidebar.getByTestId("libraries").hover();
+    await expect(header).toHaveScreenshot(shot);
+
+    const filter = workspace.sidebar.getByTitle("Filter");
+    await filter.hover();
+    await expect(header).toHaveScreenshot(shot);
+
+    await filter.click();
+    await page.mouse.move(640, 600);
+    await expect(header).toHaveScreenshot(shot);
+    await page.keyboard.press("Escape");
+
+    await workspace.sidebar.getByRole("button", { name: "Colors" }).click();
+    await workspace.sidebar
+      .locator("[class*='colors'] [class*='asset-list-item']")
+      .first()
+      .click({ button: "right" });
+    await page.getByText("Group", { exact: true }).click();
+    const modal = page.locator("[class*='groups__modal-container']");
+    await expect(modal).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});

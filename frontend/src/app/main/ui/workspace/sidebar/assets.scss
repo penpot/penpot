@@ -17,38 +17,11 @@
   padding-top: deprecated.$s-8;
 }
 
+// A DS button keeps its label at the start when it grows.
 .libraries-button {
-  @extend %button-secondary;
-  @include deprecated.uppercase-title-typography;
-
-  gap: deprecated.$s-2;
-  height: deprecated.$s-32;
-  width: 100%;
+  inline-size: 100%;
   margin-bottom: deprecated.$s-4;
-  border-radius: deprecated.$s-8;
-
-  &:hover {
-    background-color: var(--button-secondary-background-color-hover);
-    color: var(--button-secondary-foreground-color-hover);
-    border: deprecated.$s-1 solid var(--button-secondary-border-color-hover);
-  }
-
-  &:focus {
-    background-color: var(--button-secondary-background-color-focus);
-    color: var(--button-secondary-foreground-color-focus);
-    border: deprecated.$s-1 solid var(--button-secondary-border-color-focus);
-  }
-}
-
-.add-library-button {
-  @extend %button-primary;
-  @include deprecated.uppercase-title-typography;
-
-  gap: deprecated.$s-2;
-  height: deprecated.$s-32;
-  width: 100%;
-  margin-bottom: deprecated.$s-4;
-  border-radius: deprecated.$s-8;
+  justify-content: center;
 }
 
 .section-button {
@@ -62,10 +35,23 @@
   border-radius: deprecated.$br-8 deprecated.$br-2 deprecated.$br-2 deprecated.$br-8;
   background-color: var(--input-background-color-rest);
 
-  svg {
-    height: deprecated.$s-16;
-    width: deprecated.$s-16;
-    stroke: var(--icon-foreground);
+  .section-icon {
+    flex-shrink: 0;
+    stroke-width: 1px;
+    color: var(--icon-foreground);
+  }
+
+  // Before :focus and :hover, as the legacy placeholder was: the focus
+  // border wins over the opened state.
+  &.opened {
+    outline: none;
+    border-color: var(--button-icon-border-color-selected);
+    background-color: var(--button-icon-background-color-selected);
+    color: var(--button-icon-foreground-color-selected);
+
+    .section-icon {
+      color: var(--button-icon-foreground-color-selected);
+    }
   }
 
   &:focus {
@@ -74,7 +60,7 @@
     background-color: var(--input-background-color-focus);
     color: var(--input-foreground-color-focus);
 
-    svg {
+    .section-icon {
       background-color: var(--input-background-color-focus);
     }
   }
@@ -83,9 +69,9 @@
     border: deprecated.$s-1 solid var(--input-border-color-hover);
     background-color: var(--input-background-color-hover);
 
-    svg {
+    .section-icon {
       background-color: var(--input-background-color-hover);
-      stroke: var(--button-foreground-hover);
+      color: var(--button-foreground-hover);
     }
 
     &:focus {
@@ -94,14 +80,10 @@
       background-color: var(--input-background-color-focus);
       color: var(--input-foreground-color-focus);
 
-      svg {
+      .section-icon {
         background-color: var(--input-background-color-focus);
       }
     }
-  }
-
-  &.opened {
-    @extend %button-icon-selected;
   }
 }
 
