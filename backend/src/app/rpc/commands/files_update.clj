@@ -440,6 +440,7 @@
                  :file-id (:id file)
                  :revn (:revn file)
                  :changes (blob/encode changes)
+                 :changes-count (count changes)
                  :media-id-map (media-id-map-from-index
                                 conn (:source-file-id branch) media-index)
                  :data-version (fmg/data-version)
