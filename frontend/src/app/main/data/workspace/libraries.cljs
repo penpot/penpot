@@ -57,7 +57,6 @@
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.fonts :as fonts]
-   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -1399,31 +1398,19 @@
                  (rx/filter (fn [event-type]
                               (or (= ::dwpg/finalize-page event-type)
                                   (= ::watch-component-changes event-type)))))
-            workspace-data-s
-            (->> (rx/from-atom refs/workspace-data {:emit-current-value? true})
-                 (rx/share))
-
-            ;; Pair every commit with the file data right before it
-            ;; (so deleted shapes still exist when we inspect the change).
-            workspace-buffer-s
-            (->> (rx/concat
-                  (rx/take 1 workspace-data-s)
-                  workspace-data-s)
-                 (rx/buffer 2 1)
-                 (rx/map first))
-
-            ;; Barriers open before async inspection and close after detection.
+            ;; Barriers cover detection and the derived work of each commit.
             ;; Every local commit opens one, so a wait covers the watcher's
             ;; decision for any commit: sync, only touch, or drop.
             pending-sync-barriers* (atom #{})
 
             start-sync-barrier
-            (fn [{:keys [file-id] :as event}]
-              (let [task (when (uuid? file-id)
-                           (wrf/start! :sync-file [file-id]))]
+            (fn [{:keys [commit old-data]}]
+              (let [file-id (:file-id commit)
+                    task    (when (uuid? file-id)
+                              (wrf/start! :sync-file [file-id]))]
                 (when task
                   (swap! pending-sync-barriers* conj task))
-                [event task]))
+                [commit task old-data]))
 
             finish-sync-barrier!
             (fn [task]
@@ -1431,17 +1418,11 @@
                 (wrf/finish! task)
                 (swap! pending-sync-barriers* disj task)))
 
-            ;; Each batch entry is [[event task] old-data].
-            finish-batch-barriers!
-            (fn [batch]
-              (doseq [[[_ task] _] batch]
-                (finish-sync-barrier! task)))
-
             local-commits-s
             (->> stream
-                 (rx/filter dch/commit?)
+                 (rx/filter dch/changes-applied?)
                  (rx/map deref)
-                 (rx/filter #(= :local (:source %)))
+                 (rx/filter #(= :local (get-in % [:commit :source])))
                  ;; Keep waits pending while component changes are checked.
                  (rx/map start-sync-barrier)
                  (rx/share))
@@ -1451,10 +1432,10 @@
             ;; corrective commits (font-load selrect fix, position-data regen)
             ;; are not user component edits.
             dropped-commit?
-            (fn [[{:keys [translation? skip-component-sync? changes]} _]]
+            (fn [[{:keys [translation? skip-component-sync? changes]} _ old-data]]
               (or skip-component-sync?
                   (and translation?
-                       (moves-whole-mains? @refs/workspace-data changes))))
+                       (moves-whole-mains? old-data changes))))
 
             dropped-commits-s
             (->> local-commits-s
@@ -1465,22 +1446,13 @@
             commits-s
             (->> local-commits-s
                  (rx/filter (complement dropped-commit?))
-                 ;; Paired as it arrives, so later commits in the same batch
-                 ;; cannot hide the shapes this one moved or deleted.
-                 (rx/with-latest-from workspace-buffer-s)
                  (rx/share))
-
-            ;; Buffers commits until a timer turn passes with no new ones. The
-            ;; debounce timer (not a microtask) queues behind any timers already
-            ;; due, so a burst of commits is inspected as one batch in one task.
-            commit-batches-s
-            (rx/buffer-until (rx/debounce 0 commits-s) commits-s)
 
             get-component-changes
             (fn [old-data {:keys [file-id changes save-undo? undo-group]}]
               (let [changed-components
                     (when (and old-data
-                               (or (nil? file-id) (= file-id (:id old-data))))
+                               (= file-id (:current-file-id state) (:id old-data)))
                       (into #{}
                             (mapcat (partial ch/components-changed old-data))
                             changes))]
@@ -1500,14 +1472,11 @@
                   ;; Undos only bump :modified-at.
                   (map #(vector ::touch-component %) changed-components))))
 
-            ;; One event per distinct component change in the batch, each
-            ;; commit checked against the file data right before it
+            ;; Sync each transition before a later user commit can replace its
+            ;; state or separate its sync from its undo group.
             get-component-events
-            (fn [batch]
-              (->> batch
-                   (mapcat (fn [[[event _] old-data]]
-                             (get-component-changes old-data event)))
-                   (distinct)
+            (fn [event old-data]
+              (->> (get-component-changes old-data event)
                    (map (fn [[type component-id file-id undo-group]]
                           (if (= type ::component-changed)
                             (component-changed component-id file-id undo-group)
@@ -1515,11 +1484,17 @@
                    (rx/from)))
 
             component-events-s
-            (->> commit-batches-s
-                 (rx/mapcat
-                  (fn [batch]
-                    (->> (get-component-events batch)
-                         (rx/finalize #(finish-batch-barriers! batch)))))
+            (->> commits-s
+                 ;; Barrier completion is async; it must not queue later
+                 ;; commits behind the previous transition.
+                 (rx/merge-map
+                  (fn [[event task old-data]]
+                    (->> (rx/concat
+                          (get-component-events event old-data)
+                          ;; Keep the completion barrier through the current
+                          ;; event turn, including derived layout work.
+                          (->> (rx/of nil) (rx/observe-on :async) (rx/ignore)))
+                         (rx/finalize #(finish-sync-barrier! task)))))
                  ;; Close barriers left behind when the page shuts down.
                  (rx/finalize #(wrf/finish-tasks! @pending-sync-barriers*))
                  (rx/share))
