@@ -142,13 +142,6 @@
   scrollbar-gutter: stable;
 }
 
-// TODO: dashboard-top-cta is not used by team.cljs; check by hand
-// before removal.
-// .dashboard-team-members.dashboard-top-cta {
-//   flex-direction: column;
-//   justify-content: flex-start;
-// }
-
 .team-members {
   display: grid;
   grid-template-rows: auto 1fr;
@@ -401,12 +394,6 @@
   margin-block-end: px2rem(36);
 }
 
-// TODO: error-notification is not used by team.cljs; check by hand
-// before removal.
-// .error-notification {
-//   margin-block-end: var(--sp-xxl);
-// }
-
 .table-row-invitations {
   grid-template-columns: 43% 1fr $sz-88 var(--sp-xxl);
   align-items: center;
@@ -421,13 +408,6 @@
   padding: var(--sp-xxxl);
   text-align: center;
 }
-
-// TODO: empty-invitations-buttons is not used by team.cljs; check by hand
-// before removal.
-// .empty-invitations-buttons {
-//   inline-size: fit-content;
-//   margin: auto;
-// }
 
 .no-permission-text {
   max-inline-size: $sz-512;
@@ -459,13 +439,6 @@
   gap: var(--sp-l);
   align-items: center;
 }
-
-// TODO: invitations-dropdown is not used by team.cljs; check by hand
-// before removal.
-// .invitations-dropdown {
-//   inset-block-end: calc(-1 * px2rem(112));
-//   inset-inline-end: calc(-1 * var(--sp-xl));
-// }
 
 // WEBHOOKS SECTION
 .dashboard-team-webhooks {
