@@ -16,6 +16,7 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
@@ -71,4 +72,30 @@
          (t/is (= new-color (fill-of library' :main-a-child)))
          (t/is (= new-color (nested-child-fill library'))))
        (t/is (= new-color (fill-of (ftm/current-file) :copy-a-child)))
+       (t/is (= new-color (fill-of (ftm/current-file) :copy-b-nested-child)))))))
+
+(t/deftest ^:async undo-and-redo-update-main-restore-both-files
+  (await
+   (mock/with-mocks*
+     {rp/cmd! (mock/stub (fn [& _] (rx/of nil)))
+      rx/timer mock/timer-mock}
+     (let [library (install!)]
+       (await (ftm/await-step [(ftm/fill-commit :copy-a-child new-color {})]))
+       (let [before (ftm/snapshot)]
+         (await (ftm/await-step [(dwl/update-component-sync (cthi/id :copy-a) (:id library))]))
+         (let [after (ftm/snapshot)]
+           (await (ftm/await-step [dwu/undo]))
+           (t/is (= before (ftm/snapshot)))
+           (await (ftm/await-step [dwu/redo]))
+           (t/is (= after (ftm/snapshot)))))
+       (await (ftm/await-step [dwu/undo]))
+       (let [restored (get-in @st/state [:files (:id library)])]
+         (t/is (= old-color (fill-of restored :main-a-child)))
+         (t/is (= old-color (nested-child-fill restored))))
+       (t/is (= old-color (fill-of (ftm/current-file) :copy-b-nested-child)))
+       (t/is (= new-color (fill-of (ftm/current-file) :copy-a-child)))
+       (await (ftm/await-step [dwu/redo]))
+       (let [redone (get-in @st/state [:files (:id library)])]
+         (t/is (= new-color (fill-of redone :main-a-child)))
+         (t/is (= new-color (nested-child-fill redone))))
        (t/is (= new-color (fill-of (ftm/current-file) :copy-b-nested-child)))))))

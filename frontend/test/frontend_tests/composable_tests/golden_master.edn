@@ -46,7 +46,7 @@
  :case-ao-copy-dropped-into-a-grid-cell-reaches-copies
  [{:transcript " {:copy :loose, :into :main-root, :cell [1 3]}", :states ["abc6e41a291516a2" "571d314ba8917a08"]}]
  :case-ap-library-main-child-removal-reaches-copy
- [{:transcript "", :states ["f53d220c42298128" "7c2dfde6478d399c"]}]
+ [{:transcript "", :states ["dd877acf0d7f120c" "0a472792b8a73e33"]}]
  :case-aq-main-change-reaches-a-copy-nested-in-a-sub-board
  [{:transcript " {:target #fn, :property :fills, :value \"#00ff00\"}\n   {:target :main-instance, :property :fills, :value \"#ff0000\"}", :states ["d458024081bee6ec" "df29aaf3b63bece6" "0aef0de70c1e2e98"]}
   {:transcript "one-of -> \n   {:target :main-instance, :property :fills, :value \"#ff0000\"}", :states ["c9ecea6283cef90c" "be12b667808778f3"]}]
@@ -109,7 +109,7 @@
  :case-f-move-shape-in-main-auto-propagates-order-to-clean-copy
  [{:transcript " {:target :main-child1, :parent :main-root, :to-index 2}", :states ["1994876f6bbe7d2e" "de144b280bc4fc82"]}]
  :case-h-library-change-propagates-across-file-boundary-on-sync
- [{:transcript "", :states ["d8c5e8bda3728127" "6ee281995d7d8f65"]}]
+ [{:transcript "", :states ["46c4b8337914be2d" "d95e20909221223c"]}]
  :case-i-undo-reverts-edit-and-its-auto-propagation
  [{:transcript " {:target :main-child, :property :fills, :value \"#ff0000\"}\n  \n   {:times 1}", :states ["386e940ac63af4b1" "734ec524d88eb6bb" "ff1fa863b88027e5"]}]
  :case-k-synchronisation-scenarios
