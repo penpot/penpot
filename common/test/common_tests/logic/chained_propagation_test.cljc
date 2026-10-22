@@ -8,6 +8,7 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.instances :as cli]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -18,6 +19,30 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest a-wide-component-cascade-settles
+  (let [labels (mapv #(keyword (str "outer-" %)) (range 102))
+        file   (reduce (fn [file label]
+                         (let [root (keyword (str (name label) "-main"))
+                               head (keyword (str (name label) "-nested"))
+                               copy (keyword (str (name label) "-copy"))]
+                           (-> file
+                               (tho/add-frame root)
+                               (thc/instantiate-component :inner head :parent-label root)
+                               (thc/make-component label root)
+                               (thc/instantiate-component label copy))))
+                       (-> (thf/sample-file :file1)
+                           (tho/add-simple-component :inner :inner-main :inner-child))
+                       labels)
+        file   (ths/update-shape file :inner-child :fills
+                                 (ths/sample-fills-color :fill-color "#FF0000"))
+        result (cll/generate-sync-components-cascade
+                (pcb/empty-changes) (:id file) #{(thi/id :inner)}
+                {(:id file) file} (:id file))
+        synced (thf/apply-changes file (:changes result))]
+    (t/is (= 103 (count (:component-ids result))))
+    (doseq [label labels]
+      (t/is (= "#FF0000" (tho/bottom-fill-color synced (keyword (str (name label) "-copy"))))))))
 
 (defn- first-fill-color [file tag]
   (-> (ths/get-shape file tag)
