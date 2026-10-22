@@ -4,7 +4,11 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the modal placeholders (%modal-*), which move with
+// the modals refactor.
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
@@ -13,17 +17,17 @@
 .modal-container {
   @extend %modal-container-base;
 
-  min-width: deprecated.$s-408;
+  min-inline-size: px2rem(408);
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.uppercase-title-typography;
+  @include use-typography("headline-small");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 // Tooltip wrapper of the close button: it places it in the corner.
@@ -34,31 +38,39 @@
 }
 
 .modal-content {
-  @include deprecated.flex-column;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  gap: deprecated.$s-24;
-  margin-bottom: deprecated.$s-24;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+  margin-block-end: var(--sp-xxl);
 }
 
 .fields-row {
-  @include deprecated.flex-column;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
 }
 
-.select-title {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-title-foreground-color);
-}
+// TODO: .select-title is not used by change_email.cljs; check by hand
+// before removal.
+// .select-title {
+//   @include deprecated.body-small-typography;
+//
+//   color: var(--color-foreground-primary);
+// }
 
 .action-buttons {
   @extend %modal-action-btns;
 
+  // The form submit button has no class of its own.
   button {
     @extend %modal-accept-btn;
   }
 }
 
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
+// TODO: .cancel-button is not used by change_email.cljs; check by hand
+// before removal.
+// .cancel-button {
+//   @extend %modal-cancel-btn;
+// }
