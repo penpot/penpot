@@ -151,3 +151,43 @@ test("User opens Share modal", async ({ page }) => {
   ).toBeVisible();
   await expect(viewerPage.page).toHaveScreenshot();
 });
+
+test.describe("Share link modal controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Get, copy and destroy link", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithSingleBoard();
+    await viewerPage.mockRPC(
+      "create-share-link",
+      "viewer/create-share-link.json",
+    );
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+
+    await page.getByRole("button", { name: "Share" }).click();
+    const getLink = page.getByRole("button", { name: "Get link" });
+    await expect(getLink).toBeVisible();
+    const modal = page.locator("[class*='share-link-dialog']");
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await getLink.click();
+    const destroy = page.getByRole("button", { name: "Destroy link" });
+    await expect(destroy).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await page.getByText("Manage permissions").click();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await destroy.click();
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});

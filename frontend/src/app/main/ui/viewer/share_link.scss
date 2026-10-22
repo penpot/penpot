@@ -31,8 +31,11 @@
   color: var(--modal-title-foreground-color);
 }
 
+// Tooltip wrapper of the close button: it places it in the corner.
 .modal-close-button {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
@@ -89,10 +92,12 @@
   height: deprecated.$s-32;
   width: deprecated.$s-28;
 
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--icon-foreground-hover);
+  // %button-secondary strokes any svg; the DS icon takes its color.
+  .copy-icon {
+    flex-shrink: 0;
+    stroke: currentcolor;
+    stroke-width: 1px;
+    color: var(--icon-foreground-hover);
   }
 }
 
@@ -107,18 +112,6 @@
   @include deprecated.flex-row;
 
   justify-content: flex-end;
-}
-
-.button-active {
-  @extend %modal-accept-btn;
-}
-
-.button-cancel {
-  @extend %modal-cancel-btn;
-}
-
-.button-danger {
-  @extend %modal-danger-btn;
 }
 
 .permissions-section {
@@ -143,10 +136,10 @@
 
   margin-right: deprecated.$s-6;
 
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--icon-foreground);
+  .arrow-icon {
+    flex-shrink: 0;
+    stroke-width: 1px;
+    color: var(--icon-foreground);
   }
 
   &.rotated {
