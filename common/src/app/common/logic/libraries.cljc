@@ -327,7 +327,8 @@
 (defn- close-geometry?
   [shape other]
   (and (gsh/close-attrs? :selrect (:selrect shape) (:selrect other))
-       (gsh/close-attrs? :points (:points shape) (:points other))))
+       (gsh/close-attrs? :points (:points shape) (:points other))
+       (mth/close? (:content-scale shape 1) (:content-scale other 1))))
 
 (defn- placed-like
   "The main `objects` with the subtree of `shape-main` placed like `placed`,
@@ -335,7 +336,8 @@
   children following through their constraints and layouts, then turned
   and moved with it as one piece."
   [objects shape-main placed]
-  (let [width   (-> placed :selrect :width)
+  (let [scale   (/ (:content-scale placed 1) (:content-scale shape-main 1))
+        width   (-> placed :selrect :width)
         height  (-> placed :selrect :height)
         objects (if (and (mth/close? width (-> shape-main :selrect :width))
                          (mth/close? height (-> shape-main :selrect :height)))
@@ -348,6 +350,10 @@
                                objects
                                modif-tree)))
         ids     (cfh/get-children-ids-with-self objects (:id shape-main))
+        objects (if (mth/close? scale 1)
+                  objects
+                  (let [modifiers (ctm/scale-content (ctm/empty) scale)]
+                    (reduce #(update %1 %2 gsh/transform-shape modifiers) objects ids)))
         resized (get objects (:id shape-main))
         turn    (orient-like resized placed (grc/rect->center (:selrect resized)))
         objects (cond-> objects
@@ -383,6 +389,7 @@
                            (and (some? placed) (not (close-geometry? placed shape-main)))
                            (update :objects placed-like shape-main placed))
           ctx            (assoc ctx :main-container main-container)
+          shape-main     (get-in main-container [:objects (:id shape-main)])
           children-inst  (vec (ctn/get-direct-children container shape-inst))
           children-main  (vec (ctn/get-direct-children main-container shape-main))]
       (cond-> (-> changes

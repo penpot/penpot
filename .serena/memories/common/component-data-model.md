@@ -43,6 +43,13 @@ Masters are not normally touched through `set-shape-attr`, but touched flags can
 With `:main-instance? true` (library absorption), nested copies keep their
 `:touched` and `:remote-synced`; they remain copies inside the new main.
 
+`:content-scale` is an optional positive shape number (absent means 1),
+accumulated by scale-content transforms on both renderers. It belongs to
+`:geometry-group`, survives clone/serialization, and leaves the data when
+the accumulated scale returns to 1. Sync derives styles from the ratio of
+the copy's scale to its main's, separately from constraint resizing.
+Old files default to 1; historical scale gestures cannot be reconstructed.
+
 `duplicate-component` in `app.common.logic.duplicate` creates a new component master by cloning existing component shapes, setting component metadata, and applying a position delta. It does not have the same clean-copy semantics as `make-component-instance`, so inherited attrs on the source can matter.
 
 When a bug depends on touched state, identify which cloning path produced the shape before changing sync logic.

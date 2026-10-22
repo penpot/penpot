@@ -67,6 +67,7 @@
    :r4                      :radius-group
    :type                    :geometry-group
    :selrect                 :geometry-group
+   :content-scale           :geometry-group
    :points                  :geometry-group
    :locked                  :geometry-group
    :proportion              :geometry-group

@@ -46,6 +46,11 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 ## Geometry ownership
 
 - Copy root: position is its own; rotation/flip belong to it only when its `:geometry-group` is touched. Resizing it touches the root only.
+- Content scaling is distinct from constraint resize. `:content-scale`
+  stores the accumulated scale (default 1); expected placement scales
+  styles by copy/main scale before syncing. Descendants remain untouched;
+  later main style edits still reach them at that scale. Reset restores
+  the near main's scale together with its geometry and styles.
 - Children of a resized or transformed shape: derived (expected geometry), untouched, and still follow later main edits. Code: a transform touches only the shapes the user transformed (`clp/calculate-ignore-tree` takes their ids; the frontend keeps them in `:workspace-modifiers-ids`); sync places the main subtree of a copy shape with its own geometry like that shape before walking its children.
 - Layout-owned (never touched; sync writes, then reflow): x/y of non-absolute children of flex/grid frames; width/height on axes sized fill, or auto on a layout frame.
 - Grow-owned (never touched; sync writes, then re-measure on SVG and WASM): width+height of auto-width text, height of auto-height text. Every editor and resize path writes the measured size as derived; on WASM `sync-file` re-measures the auto-grow texts of the current page it wrote (texts on other pages keep the synced size until measured).
