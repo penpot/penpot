@@ -30,7 +30,7 @@
   {:transcript "one-of -> \n   {:target :copy-root, :value 500}", :states ["000943ecb6c266ee" "209fe67d76a27a9b"]}
   {:transcript "one-of -> \n  one-of -> ", :states ["94318a628db305b6"]}]
  :case-aj-reflow-after-nested-sync-is-its-own-undo-step
- [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :fills, :value \"#0000ff\"}\n   {:times 1}", :states ["43ca8b2de80a51fc" "32b45a5ac7536b08" "7104bfaccd42cd3b"]}]
+ [{:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :fills, :value \"#0000ff\"}\n   {:times 1}", :states ["43ca8b2de80a51fc" "ce4ef0e73faa0894" "ef4de3d8d773582c"]}]
  :case-ak-update-main-pushes-grid-cells
  [{:transcript " {:target :copy-child, :to :other, :keep-touched? false}\n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["5a6af6c0b8f86ac3" "278e4ff6bf0df746" "322e03c88f4a9dce" "432cfef7e9b05164"]}
   {:transcript "one-of -> \n   {:board :copy-root, :child :copy-child, :row 1, :column 3}\n   {:target :copy-root}", :states ["9900a7f71dc0cb5f" "de66ab1c3d4cc157" "6b5ff9fd86e2aa87"]}]
@@ -205,7 +205,7 @@
   {:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :fills, :value \"#0000ff\"}\n   {:target #fn, :property :fills, :value \"#00ff00\"}\n   {:target #fn, :property :fills, :value \"#aaaaaa\"}\n   {:times 3}", :states ["08a251a3907c6037" "3dff1bfab5a5b77d" "b5df4ace7209f759" "cd9d65b6e9e44dd4" "ddea124a9ab145f1"]}
   {:transcript " {:component \"main\", :id sync-main-component}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:component \"main\", :level 1, :outer sync-main-outercomp-1}\n   {:component \"main\", :copy sync-main-copyhead-0}\n   {:target #fn, :property :fills, :value \"#0000ff\"}\n   {:target #fn, :property :fills, :value \"#00ff00\"}\n   {:target #fn, :property :fills, :value \"#aaaaaa\"}\n   {:times 3}", :states ["4220f3cd46b6b642" "180cc6a41d003bb5" "9fa58862bf863db6" "3f2266fbef201c71" "32c65c945efec2cd"]}]
  :case-x-undo-before-sync-leaves-copies-unchanged
- [{:transcript " {:target :main-instance, :property :fills, :value \"#ff0000\"}", :states ["734ec524d88eb6bb" "ff1fa863b88027e5"]}]
+ [{:transcript " {:target :main-instance, :property :fills, :value \"#ff0000\"}", :states ["c6423d10a4e5e278" "ac9279bfdfb5c7e5"]}]
  :case-y-text-override-merges-with-main-text-change
  [{:transcript "one-of -> \n   {:target :copy-instance, :edit :text, :value \"copy text\"}\n   {:target :main-instance, :edit :text, :value \"main text\"}", :states ["7ea87003598e5626" "f823f8147e941701" "3a6ecb19a9315cb8"]}
   {:transcript "one-of -> \n   {:target :copy-instance, :edit :text, :value \"copy text\"}\n   {:target :main-instance, :edit :font-size, :value \"24\"}", :states ["7ea87003598e5626" "bc06b54fa303bde9" "230d1c77384fc557"]}

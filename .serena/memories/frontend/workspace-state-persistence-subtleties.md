@@ -19,6 +19,12 @@
 - `commit-changes` refuses to create commits unless `:permissions :can-edit` is true. It captures file revn/vern, selected-before, features, tags, undo group, and translation flag into a `::commit` event.
 - Applying a remote commit first rolls back pending local commits, applies the remote changes, then replays pending local redo changes. Index updates are emitted for undo, remote redo, and replayed redo paths.
 - Local commits are independently consumed by undo, persistence, WASM model updates, thumbnail/library watchers, and text position-data recalculation.
+- `dch/changes-applied?` follows local application and carries the commit
+  with its prior file data. The component watcher syncs each transition
+  before the next user commit, keeping undo groups adjacent. Its barrier
+  remains open through the event turn. Foreign file cascades stay in common.
+- Layout batches cross an `:asap` boundary before reflow so synchronous
+  component sync cannot emit into the buffer being closed and lose a task.
 - Persistence buffers local commits: status becomes pending after about 200ms, commits are flushed after about 3s or `::force-persist`, and buffered commits are merged per file before `:update-file`.
 - Persistence sends revn as the max of the commit revn and locally tracked latest revn; remote commits update that revn tracker.
 - Persistence is skipped in version preview/read-only mode or without edit permission.

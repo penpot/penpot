@@ -116,6 +116,9 @@
              (rx/map #(assoc % ::reflow-task (wrf/start! :layout (:ids %))))
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
+             ;; Open the next buffer before a reflow's synchronous component
+             ;; sync can request more layout work.
+             (rx/observe-on :asap)
              ;; The updates of a page reflow together, in the undo group of
              ;; the step that asked for them: the one an update names, as
              ;; those with none come from the same step.
