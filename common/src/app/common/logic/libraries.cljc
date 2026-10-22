@@ -471,9 +471,10 @@
               (update-attrs shape-main shape-inst root-main root-inst main-container false)
               ;; the copy keeps its swap, and the main takes the copy's overrides
               (set-touched shape-inst container (when (ctk/swapped? shape-inst) #{:swap-group}))
+              ;; A previous update is not a reset of the main's authored
+              ;; overrides. Repeating it must retain the groups it pushed.
               (set-touched shape-main main-container
-                           (when-not (:remote-synced shape-inst)
-                             (set/union (:touched shape-main) (:touched shape-inst)))))
+                           (set/union (:touched shape-main) (:touched shape-inst))))
     (ctsl/any-layout? shape-main)
     (update-layout-children main-container shape-main shape-inst
                             #(ctf/get-shape-in-copy container % shape-inst) false)
