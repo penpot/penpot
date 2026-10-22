@@ -828,6 +828,8 @@ PENPOT_FLAGS: [...] enable-tiered-file-data-storage
 PENPOT_FILE_DATA_BACKEND: db
 ```
 
+Once enabled, the offload job moves one file per run inside a single transaction: it locks the file row (skipping the run while the file is being edited) and migrates every live data row to the objects storage. You can follow it with `penpot_file_data_offload_rows_total` and `penpot_file_data_offload_bytes_total` (label `type="main|snapshot|fragment"`) and `penpot_file_data_offload_timing_ms` (label `result="ok|skip|error"`).
+
 ### Autosave
 
 By default, Penpot stores manually saved versions indefinitely; these can be found in the History tab and can be renamed, restored, deleted, etc. Additionally, the default behavior of on-premise instances is to not keep automatic version history. This automatic behavior can be modified and adapted to each on-premise installation with the corresponding configuration.
