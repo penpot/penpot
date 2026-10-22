@@ -30,24 +30,3 @@ input.element-title {
     outline: none;
   }
 }
-
-.close {
-  cursor: pointer;
-  position: absolute;
-  top: deprecated.$s-1;
-  right: calc(-1 * deprecated.$s-8);
-
-  svg {
-    fill: var(--color-foreground-secondary);
-    height: deprecated.$s-16;
-    transform: rotate(45deg) translateY(7px);
-    width: deprecated.$s-16;
-    margin: 0;
-  }
-
-  &:hover {
-    svg {
-      fill: var(--element-foreground-warning);
-    }
-  }
-}
