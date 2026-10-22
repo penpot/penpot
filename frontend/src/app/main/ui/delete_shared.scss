@@ -11,12 +11,6 @@
 
 .modal-overlay {
   @extend %modal-overlay-base;
-
-  // TODO: .transparent is not used by delete_shared.cljs; check by hand
-  // before removal.
-  // &.transparent {
-  //   background-color: transparent;
-  // }
 }
 
 .modal-container {
@@ -26,14 +20,6 @@
   gap: var(--sp-xxl);
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
-
-// TODO: .list-wrapper is not used by delete_shared.cljs; check by hand
-// before removal.
-// .list-wrapper {
-//   display: grid;
-//   grid-template-rows: auto 1fr auto;
-//   max-block-size: 100%;
-// }
 
 .modal-title {
   @include use-typography("headline-medium");
