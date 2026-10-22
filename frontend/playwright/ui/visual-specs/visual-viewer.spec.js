@@ -222,3 +222,47 @@ test.describe("Comments filter", () => {
     });
   });
 });
+
+test.describe("Board navigation", () => {
+  test("Shows the previous, next and first board buttons", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithMultipleBoards();
+    await viewerPage.goToViewer({
+      fileId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb0",
+      pageId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb3",
+    });
+
+    const next = page.getByRole("button", { name: "Next" });
+    await expect(next).toBeVisible();
+    await page.mouse.move(640, 300);
+    // Wait for the slide-in transition of the controls.
+    await page.waitForTimeout(800);
+    // First board: the next and first board buttons.
+    await expect(page).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await next.hover();
+    await expect(next).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await next.click();
+    const previous = page.getByRole("button", { name: "Previous" });
+    await previous.hover();
+    await expect(previous).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    const first = page.locator("[class*='viewer-bottom'] button");
+    await first.hover();
+    await expect(first).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});

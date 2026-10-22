@@ -80,23 +80,17 @@
 
 .viewer-go-prev,
 .viewer-go-next {
-  @extend %button-secondary;
-  @include deprecated.flex-center;
-
   position: absolute;
   right: deprecated.$s-8;
-  height: deprecated.$s-64;
-  width: deprecated.$s-32;
   top: calc(50vh - deprecated.$s-32);
   z-index: deprecated.$z-index-2;
-  background-color: var(--viewer-controls-background-color);
   transition: transform 400ms ease 300ms;
+}
 
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--icon-foreground);
-  }
+.viewer-go-button {
+  --button-height: #{deprecated.$s-64};
+  --button-bg-color: var(--viewer-controls-background-color);
+  --button-border-color: var(--color-background-tertiary);
 }
 
 .viewer-go-next.comment-sidebar {
@@ -106,10 +100,6 @@
 .viewer-go-prev {
   left: deprecated.$s-8;
   right: unset;
-
-  svg {
-    transform: rotate(180deg);
-  }
 }
 
 .viewer-bottom {
@@ -126,21 +116,16 @@
   pointer-events: none;
 }
 
-.reset-button {
-  @extend %button-secondary;
-  @include deprecated.flex-center;
-
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
+.reset-button-wrapper {
   margin-left: deprecated.$s-8;
-  background-color: var(--viewer-controls-background-color);
+}
+
+.reset-button {
+  --button-width: #{deprecated.$s-28};
+  --button-bg-color: var(--viewer-controls-background-color);
+  --button-border-color: var(--color-background-tertiary);
+
   pointer-events: all;
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--icon-foreground);
-  }
 }
 
 .counter {
