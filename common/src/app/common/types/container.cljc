@@ -347,7 +347,10 @@
              (cond-> new-shape
                :always
                (-> (gsh/move delta)
-                   (dissoc :touched :remote-synced :variant-id :variant-name))
+                   (dissoc :variant-id :variant-name))
+
+               (not main-instance?)
+               (dissoc :touched :remote-synced)
 
                (and main-instance? root?)
                (assoc :main-instance true)
