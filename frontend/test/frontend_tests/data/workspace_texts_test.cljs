@@ -644,6 +644,33 @@
       (t/is (= 25 (:height result))))))
 
 ;; ---------------------------------------------------------------------------
+;; Tests: values read from a disposed v2 editor
+;; ---------------------------------------------------------------------------
+
+(defn- disposed-v2-editor
+  "A v2 editor after `dispose!`: reading its style throws."
+  []
+  (let [editor #js {}]
+    (js/Object.defineProperty editor "currentStyle"
+                              #js {:get (fn [] (throw (js/TypeError. "Cannot read properties of null (reading 'currentStyle')")))})
+    editor))
+
+;; Scenario: the sidebar renders once more with the editor it saw last,
+;; after closing the text editor disposed it. Proves: the values come from
+;; the shape instead of crashing the workspace.
+(t/deftest current-values-of-a-disposed-v2-editor-come-from-the-shape
+  (let [shape  (make-text-shape)
+        editor (disposed-v2-editor)]
+    (t/is (= (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})
+             (dwt/current-text-values {:editor-instance editor
+                                       :shape shape
+                                       :attrs txt/text-node-attrs})))
+    (t/is (= (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
+             (dwt/current-paragraph-values {:editor-instance editor
+                                            :shape shape
+                                            :attrs txt/paragraph-attrs})))))
+
+;; ---------------------------------------------------------------------------
 ;; same-styled-text?
 ;; ---------------------------------------------------------------------------
 

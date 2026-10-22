@@ -443,6 +443,17 @@
         result (if (empty? result) txt/default-text-attrs result)]
     result))
 
+(defn- v2-editor-live?
+  "False for a missing or disposed v2 editor. A component can still hold
+  the instance for one render after closing the editor disposed it, and
+  reading its style then throws."
+  [editor]
+  (and (some? editor)
+       (try
+         (.-currentStyle ^js editor)
+         true
+         (catch :default _ false))))
+
 (defn- styled-runs
   "The text runs of `content` with their styles, without node ids or the
   style keys set to nil."
@@ -475,7 +486,7 @@
   [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
     (some? editor-styles) (v3-current-text-values options)
-    (some? editor-instance) (v2-current-text-values options)
+    (v2-editor-live? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-paragraph-values options)
     :else (shape-current-values shape txt/is-paragraph-node? attrs)))
 
@@ -492,7 +503,7 @@
   [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
     (some? editor-styles) (v3-current-text-values options)
-    (some? editor-instance) (v2-current-text-values options)
+    (v2-editor-live? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-text-values options)
     :else (shape-current-values shape txt/is-text-node? attrs)))
 
