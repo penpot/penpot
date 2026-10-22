@@ -37,12 +37,6 @@
   inline-size: 100%;
 }
 
-// TODO: .viewer-header is not used by viewer.cljs (the header has its own
-// module); check by hand before removal.
-// .viewer-header {
-//   grid-row: 1 / span 1;
-// }
-
 .inspect-layout {
   display: grid;
   grid-template-rows: $sz-48 auto;
@@ -201,22 +195,6 @@
   clip-path: inset(0 0 0 0);
   grid-column: 1 / 1;
   grid-row: 1 / 1;
-
-  // TODO: .not-fixed, .fixed and .frame-children are not used by
-  // viewer.cljs (CSS modules scope them to this file); check by hand
-  // before removal.
-  // .not-fixed {
-  //   position: absolute;
-  // }
-  //
-  // .fixed {
-  //   position: fixed;
-  //   pointer-events: none;
-  //
-  //   .frame-children g {
-  //     pointer-events: auto;
-  //   }
-  // }
 }
 
 /** FULLSCREEN */
