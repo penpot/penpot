@@ -670,6 +670,96 @@
     (let [data' (cfc/process-changes base changes)]
       (t/is (= "bar" (get-in data' [:pages-index pid :plugin-data :my-plugin "foo"]))))))
 
+;; --- file-level plugin data and options
+
+(defn- file-level-data
+  [& {:keys [plugin-data base-font-size]}]
+  (let [pid (uuid/custom 0 1)]
+    (cond-> (pages-data {pid {:id pid :name "P" :objects {}}} [pid])
+      (some? plugin-data)    (assoc :plugin-data plugin-data)
+      (some? base-font-size) (assoc-in [:options :base-font-size] base-font-size))))
+
+(t/deftest compute-merge-file-plugin-data
+  (let [base   (file-level-data)
+        branch (file-level-data :plugin-data {:my-plugin {"foo" "bar"}})
+        r      (bm/compute-merge base base branch :branch->main)
+        c      (first (:changes r))]
+    (t/is (= {:added 1 :modified 0 :deleted 0 :conflicts 0} (:stats r)))
+    (t/is (= :file-plugin (:kind c)))
+    (t/is (= [:my-plugin "foo"] (:id c)))))
+
+(t/deftest compute-merge-file-base-font-size
+  (let [base   (file-level-data :base-font-size "16px")
+        branch (file-level-data :base-font-size "20px")
+        r      (bm/compute-merge base base branch :branch->main)
+        c      (first (:changes r))]
+    (t/is (= {:added 0 :modified 1 :deleted 0 :conflicts 0} (:stats r)))
+    (t/is (= :file-option (:kind c)))
+    (t/is (= :base-font-size (:id c)))))
+
+(t/deftest compute-merge-file-base-font-size-absent-is-the-default
+  (let [base   (file-level-data)
+        branch (file-level-data :base-font-size "16px")]
+    (t/is (empty? (:changes (bm/compute-merge base base branch :branch->main))))))
+
+(t/deftest compute-merge-file-level-conflicts
+  (let [base   (file-level-data :plugin-data {:my-plugin {"foo" "a"}} :base-font-size "16px")
+        main   (file-level-data :plugin-data {:my-plugin {"foo" "b"}} :base-font-size "18px")
+        branch (file-level-data :plugin-data {:my-plugin {"foo" "c"}} :base-font-size "20px")
+        r      (bm/compute-merge base main branch :branch->main)]
+    (t/is (= 2 (-> r :stats :conflicts)))
+    (t/is (= #{:file-plugin :file-option} (set (map :kind (:conflicts r)))))
+    (t/is (every? #(= :modify-modify (:reason %)) (:conflicts r)))
+    (t/is (= #{["b" "c"] ["18px" "20px"]}
+             (set (map (juxt :main :branch) (:conflicts r)))))))
+
+(t/deftest compute-changes-file-plugin-data
+  (let [base   (file-level-data :plugin-data {:my-plugin {"gone" "x"}})
+        branch (file-level-data :plugin-data {:my-plugin {"foo" "bar"}})
+        {:keys [changes unsupported]} (bm/compute-changes base base branch)
+        sets   (filter #(= :set-plugin-data (:type %)) changes)]
+    (t/is (empty? unsupported))
+    (t/is (= #{{:type :set-plugin-data :object-type :file
+                :namespace :my-plugin :key "foo" :value "bar"}
+               {:type :set-plugin-data :object-type :file
+                :namespace :my-plugin :key "gone" :value nil}}
+             (set sets)))
+    (let [data' (cfc/process-changes base changes)]
+      (t/is (= {"foo" "bar"} (get-in data' [:plugin-data :my-plugin]))))))
+
+(t/deftest compute-changes-file-base-font-size
+  (let [base   (file-level-data :base-font-size "16px")
+        branch (file-level-data :base-font-size "20px")
+        {:keys [changes unsupported]} (bm/compute-changes base base branch)]
+    (t/is (empty? unsupported))
+    (t/is (= [{:type :set-base-font-size :base-font-size "20px"}] changes))
+    (let [data' (cfc/process-changes base changes)]
+      (t/is (= "20px" (get-in data' [:options :base-font-size]))))))
+
+(t/deftest compute-changes-file-level-conflict-resolutions
+  (let [base   (file-level-data :plugin-data {:my-plugin {"foo" "a"}} :base-font-size "16px")
+        main   (file-level-data :plugin-data {:my-plugin {"foo" "b"}} :base-font-size "18px")
+        branch (file-level-data :plugin-data {:my-plugin {"foo" "c"}} :base-font-size "20px")
+        apply* (fn [resolutions]
+                 (cfc/process-changes main (:changes (bm/compute-changes base main branch resolutions))))]
+    (t/testing "unresolved: main keeps its values"
+      (let [data' (apply* {})]
+        (t/is (= "b" (get-in data' [:plugin-data :my-plugin "foo"])))
+        (t/is (= "18px" (get-in data' [:options :base-font-size])))))
+    (t/testing "resolved to the branch: the branch values land"
+      (let [data' (apply* {[:my-plugin "foo"] :branch :base-font-size :branch})]
+        (t/is (= "c" (get-in data' [:plugin-data :my-plugin "foo"])))
+        (t/is (= "20px" (get-in data' [:options :base-font-size])))))))
+
+(t/deftest compute-changes-file-level-update-from-main
+  (let [base   (file-level-data)
+        main   (file-level-data :plugin-data {:my-plugin {"foo" "bar"}} :base-font-size "20px")
+        r      (bm/compute-merge base main base :main->branch)
+        data'  (cfc/process-changes base (:changes (bm/compute-changes base base main {} r)))]
+    (t/is (= 2 (count (:changes r))))
+    (t/is (= "bar" (get-in data' [:plugin-data :my-plugin "foo"])))
+    (t/is (= "20px" (get-in data' [:options :base-font-size])))))
+
 ;; --- components
 
 (t/deftest compute-changes-component-add
