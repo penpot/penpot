@@ -472,6 +472,9 @@ test.describe("Share link modal controls", () => {
     await page.mouse.move(10, 700);
     await expect(modal).toHaveScreenshot(shot);
 
+    await page.getByTitle("Copy link").hover();
+    await expect(modal).toHaveScreenshot(shot);
+
     await page.getByText("Manage permissions").click();
     await page.mouse.move(10, 700);
     await expect(modal).toHaveScreenshot(shot);
