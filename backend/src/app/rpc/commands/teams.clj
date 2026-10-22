@@ -1104,7 +1104,7 @@
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo
-  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id file] :as params}]
   (let [team  (get-team pool :profile-id profile-id :team-id team-id)
         photo (profile/upload-photo cfg params)]
 
@@ -1120,4 +1120,10 @@
                 {:photo-id (:id photo)}
                 {:id team-id})
 
-    (assoc team :photo-id (:id photo))))
+    (rph/with-meta (assoc team :photo-id (:id photo))
+      {::audit/replace-props
+       {:team-id team-id
+        :file-name (:filename file)
+        :file-size (:size file)
+        :file-path (str (:path file))
+        :file-mtype (:mtype file)}})))
