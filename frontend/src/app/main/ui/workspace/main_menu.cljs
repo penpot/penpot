@@ -20,13 +20,11 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
-   [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.mcp :as mcp]
-   [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
@@ -41,6 +39,8 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks.resize :as r]
+   [app.main.ui.workspace.branch-switcher :as bsw]
+   [app.main.ui.workspace.menu-shortcuts :refer [shortcuts*]]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -48,19 +48,6 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
-
-(mf/defc shortcuts*
-  {::mf/private true}
-  [{:keys [id]}]
-  (let [custom-shortcuts (mf/deref refs/custom-shortcuts)
-        customized?      (let [c (get-in custom-shortcuts [:workspace id])]
-                           (and c (not= c "")))]
-    [:span {:class (stl/css :shortcut)}
-     (for [sc (scd/split-sc (sc/get-effective-tooltip id custom-shortcuts))]
-       [:span {:class (stl/css-case :shortcut-key true
-                                    :customized-key customized?)
-               :key sc}
-        sc])]))
 
 (mf/defc help-info-menu*
   {::mf/private true
@@ -629,18 +616,6 @@
            (when (kbd/enter? event)
              (on-show-version-history event))))
 
-        on-show-branches
-        (mf/use-fn
-         (fn [_]
-           (st/emit! (dwb/show-branches-panel))))
-
-        on-show-branches-key-down
-        (mf/use-fn
-         (mf/deps on-show-branches)
-         (fn [event]
-           (when (kbd/enter? event)
-             (on-show-branches event))))
-
         on-pin-version
         (mf/use-fn
          (fn [_]
@@ -730,15 +705,6 @@
          [:span {:class (stl/css :item-name)}
           (tr "dashboard.show-version-history")]
          [:> shortcuts* {:id :toggle-history}]]
-
-        (when (contains? cf/flags :branching)
-          [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
-                                   :on-click    on-show-branches
-                                   :on-key-down on-show-branches-key-down
-                                   :id          "file-menu-show-branches"}
-           [:span {:class (stl/css :item-name)}
-            (tr "workspace.branches.menu")]
-           [:> shortcuts* {:id :open-branches}]])
 
         [:div {:class (stl/css :separator)}]])
 
@@ -913,6 +879,7 @@
         selected-sub-menu* (mf/use-state nil)
         selected-sub-menu  (deref selected-sub-menu*)
         mcp                (mf/deref refs/mcp)
+        has-branches?      (mf/deref bsw/has-branches)
 
         toggle-menu
         (mf/use-fn
@@ -1000,6 +967,16 @@
             (ev/event {::ev/name "open-plugins-manager"
                        ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
+
+        ;; the switcher when the file has branches; the create dialog when
+        ;; it has none, since the switcher only exists once a branch does
+        show-branches
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)
+           (reset! selected-sub-menu* nil)
+           (st/emit! (dwb/show-branches))))
 
         show-shortcuts
         (mf/use-fn
@@ -1144,6 +1121,22 @@
         (tr "workspace.header.menu.option.help-info")]
        [:> icon* {:icon-id i/arrow-right
                   :class (stl/css :item-arrow)}]]
+
+      (when (contains? cf/flags :branching)
+        [:*
+         [:div {:class (stl/css :separator)}]
+         [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item :shortcut-item)
+                                  :on-click    show-branches
+                                  :on-key-down (fn [event]
+                                                 (when (kbd/enter? event)
+                                                   (show-branches event)))
+                                  :on-pointer-enter close-sub-menu
+                                  :id          "file-menu-branches"}
+          [:span {:class (stl/css :item-name)}
+           (if ^boolean has-branches?
+             (tr "workspace.branches.menu")
+             (tr "workspace.branches.menu.create"))]
+          [:> shortcuts* {:id :open-branches}]]])
 
       (when (or (and (contains? cf/flags :subscriptions)
                      (not= "enterprise" subscription-type))

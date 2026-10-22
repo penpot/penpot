@@ -663,7 +663,7 @@
                           :command (ds/ca-mod "b")
                           :subsections [:panels]
                           :fn #(emit-when-no-readonly
-                                (dwb/show-branches-panel))}
+                                (dwb/show-branches))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :label (fn [] (tr "shortcuts.toggle-colorpalette"))

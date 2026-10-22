@@ -1,0 +1,64 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.branch-status {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+// counts use the DS code font, as every branch figure does; they
+// only show when there are changes, so they stand out
+.count {
+  @include use-typography("code-font");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  color: var(--color-accent-primary);
+}
+
+// what main has and the branch lacks reads in the error color
+.count-behind {
+  color: var(--color-foreground-error);
+}
+
+.error {
+  display: flex;
+  color: var(--color-accent-warning);
+}
+
+.pill {
+  --pill-fg-color: var(--color-foreground-secondary);
+  --pill-bg-color: var(--color-background-tertiary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  padding: 0 var(--sp-xs);
+  border-radius: $br-4;
+  color: var(--pill-fg-color);
+  background-color: var(--pill-bg-color);
+}
+
+.pill-conflict {
+  --pill-fg-color: var(--color-accent-warning);
+  --pill-bg-color: var(--color-background-warning);
+}
+
+.pill-pending {
+  --pill-fg-color: var(--color-accent-info);
+  --pill-bg-color: var(--color-background-info);
+}
+
+.pill-approved {
+  --pill-fg-color: var(--color-accent-success);
+  --pill-bg-color: var(--color-background-success);
+}

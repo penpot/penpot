@@ -1,0 +1,37 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// The menu entry that holds the keys sets `--shortcut-foreground-color`
+// on hover so the keys follow its text color.
+.shortcut {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xxs);
+  color: var(--shortcut-foreground-color, var(--color-foreground-secondary));
+}
+
+.shortcut-key {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: px2rem(20);
+  padding: var(--sp-xxs) px2rem(6);
+  border-radius: $br-6;
+  background-color: var(--color-background-primary);
+}
+
+.customized-key {
+  background-color: var(--color-background-info);
+  color: var(--color-foreground-primary);
+}

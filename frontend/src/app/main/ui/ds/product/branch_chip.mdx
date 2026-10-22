@@ -1,0 +1,51 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as BranchChip from "./branch_chip.stories";
+
+<Meta title="Product/Branching/BranchChip" />
+
+# BranchChip
+
+The button that names the branch the open file is and opens the branch
+switcher.
+
+<Canvas of={BranchChip.Default} />
+
+## Variants
+
+`is-open` draws the chip pressed while its popover is shown.
+
+<Canvas of={BranchChip.Open} />
+
+Long names are truncated with an ellipsis; the chip never grows past its
+container.
+
+<Canvas of={BranchChip.LongName} />
+
+## Technical notes
+
+The label is mandatory. Any other prop (`on-click`, `title`, `aria-*`)
+goes to the underlying `button`, which already carries
+`aria-haspopup="dialog"` and `aria-expanded`.
+
+```clj
+[:> branch-chip* {:label (:name branch)
+                  :is-open open?
+                  :on-click on-toggle}]
+```
+
+## Usage guidelines (design)
+
+### Where to use
+
+In the workspace header row, only when the file has branches.
+
+### Interaction / Behavior
+
+Clicking it opens or closes the branch switcher. The popover is the
+caller's: the chip only draws the trigger.

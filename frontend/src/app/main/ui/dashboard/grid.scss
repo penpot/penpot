@@ -415,7 +415,7 @@ $thumbnail-default-height: px2rem(168);
   align-items: center;
   margin-inline-end: var(--sp-xs);
   padding: var(--sp-xxs) var(--sp-xs);
-  border-radius: 8px;
+  border-radius: $br-8;
   color: var(--color-accent-primary);
   background-color: var(--color-background-tertiary);
 }
