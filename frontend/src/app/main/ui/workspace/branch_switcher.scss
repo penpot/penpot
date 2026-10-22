@@ -29,6 +29,11 @@
   color: var(--color-foreground-secondary);
 }
 
+// the warning colour the branch status uses when a comparison failed
+.status-error {
+  color: var(--color-accent-warning);
+}
+
 // --- Popover
 
 .popover {
@@ -64,6 +69,11 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.list-note {
+  padding: var(--sp-s);
+  color: var(--color-foreground-secondary);
 }
 
 .action {

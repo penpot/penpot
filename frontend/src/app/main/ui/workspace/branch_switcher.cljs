@@ -40,6 +40,9 @@
   its chip only show then."
   (l/derived dwb/has-branches? st/state))
 
+(def ^:private count-failed
+  (l/derived dwb/branch-count-failed? st/state))
+
 (def ^:private branches
   (l/derived :workspace-branches st/state))
 
@@ -106,7 +109,7 @@
 (mf/defc switcher-popover*
   {::mf/private true}
   [{:keys [file current prs-by-branch on-close]}]
-  (let [{:keys [data]} (mf/deref branches)
+  (let [{:keys [data status]} (mf/deref branches)
 
         filter*        (mf/use-state "")
         filter-v       (deref filter*)
@@ -164,7 +167,21 @@
          (mf/deps on-close)
          (fn [_]
            (on-close)
-           (modal/show! :branches-list {})))]
+           (modal/show! :branches-list {})))
+
+        on-retry
+        (mf/use-fn
+         (fn [event]
+           ;; the button unmounts as the listing reloads, so the
+           ;; dropdown would take the click for an outside one and close
+           (dom/stop-propagation event)
+           (st/emit! (dwb/init-branches-state))))]
+
+    ;; the listing compares every diverged branch, so it loads only when
+    ;; the popover opens; before paint, so a list from an earlier opening
+    ;; never shows in place of the loading state
+    (mf/with-layout-effect []
+      (st/emit! (dwb/init-branches-state)))
 
     [:div {:class (stl/css :popover)
            :role "dialog"
@@ -182,32 +199,52 @@
                          :pr (get prs-by-branch (:id current))
                          :current true}]]
 
-     (when (seq others)
-       [:*
-        [:div {:class (stl/css :section)}
-         [:span (tr "workspace.branches.section.others")]
-         [:span (dm/str (count others))]]
-        [:ul {:class (stl/css :rows)}
-         (for [row others]
-           [:> switcher-row* {:key (dm/str (:branch-file-id row))
-                              :row row
-                              :pr (get prs-by-branch (:id row))
-                              :on-open on-open}])]])
+     (case status
+       :loading
+       [:> text* {:as "div"
+                  :typography t/body-small
+                  :role "status"
+                  :class (stl/css :list-note)}
+        (tr "workspace.branches.loading")]
 
-     (when (seq archived)
+       :error
        [:*
-        [:button {:class (stl/css :action)
-                  :aria-expanded show-archived?
-                  :on-click on-toggle-archived}
-         [:> i/icon* {:icon-id (if show-archived? i/arrow-down i/arrow-right) :size "s"}]
-         [:span {:class (stl/css :action-label)} (tr "workspace.branches.archived")]
-         [:span {:class (stl/css :action-aside)} (dm/str (count archived))]]
-        (when show-archived?
-          [:ul {:class (stl/css :rows)}
-           (for [row archived]
-             [:> switcher-row* {:key (dm/str (:branch-file-id row))
-                                :row row
-                                :on-open on-open}])])])
+        [:> text* {:as "div"
+                   :typography t/body-small
+                   :role "alert"
+                   :class (stl/css :list-note)}
+         (tr "workspace.branches.list.error")]
+        [:button {:class (stl/css :action) :on-click on-retry}
+         [:> i/icon* {:icon-id i/reload :size "s"}]
+         [:span {:class (stl/css :action-label)} (tr "labels.retry")]]]
+
+       [:*
+        (when (seq others)
+          [:*
+           [:div {:class (stl/css :section)}
+            [:span (tr "workspace.branches.section.others")]
+            [:span (dm/str (count others))]]
+           [:ul {:class (stl/css :rows)}
+            (for [row others]
+              [:> switcher-row* {:key (dm/str (:branch-file-id row))
+                                 :row row
+                                 :pr (get prs-by-branch (:id row))
+                                 :on-open on-open}])]])
+
+        (when (seq archived)
+          [:*
+           [:button {:class (stl/css :action)
+                     :aria-expanded show-archived?
+                     :on-click on-toggle-archived}
+            [:> i/icon* {:icon-id (if show-archived? i/arrow-down i/arrow-right) :size "s"}]
+            [:span {:class (stl/css :action-label)} (tr "workspace.branches.archived")]
+            [:span {:class (stl/css :action-aside)} (dm/str (count archived))]]
+           (when show-archived?
+             [:ul {:class (stl/css :rows)}
+              (for [row archived]
+                [:> switcher-row* {:key (dm/str (:branch-file-id row))
+                                   :row row
+                                   :on-open on-open}])])])])
 
      [:hr {:class (stl/css :divider)}]
 
@@ -228,6 +265,7 @@
   [{:keys [file]}]
   (let [file-id   (:id file)
         visible?  (mf/deref has-branches)
+        failed?   (mf/deref count-failed)
         open?     (mf/deref switcher-open)
         ctx       (mf/deref refs/branch-context)
         profile   (mf/deref refs/profile)
@@ -263,12 +301,14 @@
         on-close
         (mf/use-fn #(st/emit! (dwb/toggle-branch-switcher false)))]
 
-    ;; the list decides whether the row shows at all, so it loads with the
-    ;; file, and so does the branch context: during a review the bottom
-    ;; banner that also loads it is replaced by the review banner
+    ;; the header needs to know only whether the file has branches, so it
+    ;; loads their count with the file and leaves the listing, which
+    ;; compares every diverged branch, to the popover; the branch context
+    ;; loads here too: during a review the bottom banner that also loads
+    ;; it is replaced by the review banner
     (mf/with-effect [file-id]
       (when (contains? cf/flags :branching)
-        (st/emit! (dwb/init-branches-state)
+        (st/emit! (dwb/fetch-branch-count)
                   (dwb/fetch-branch-context)
                   (dwb/toggle-branch-switcher false))))
 
@@ -302,6 +342,15 @@
        ;; file stands until there are changes to count
        (let [pr (get prs-by-branch (:id ctx))]
          (cond
+           ;; the row shows because the count is unknown: say so, and the
+           ;; switcher, once opened, loads the listing that settles it
+           (and (nil? ctx) ^boolean failed?)
+           [:> text* {:as "span"
+                      :typography t/body-small
+                      :role "alert"
+                      :class (stl/css :status-note :status-error)}
+            (tr "workspace.branches.list.error")]
+
            (nil? ctx)
            [:> text* {:as "span"
                       :typography t/body-small

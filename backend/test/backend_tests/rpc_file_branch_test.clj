@@ -618,6 +618,55 @@
                 color (get-in out [:result :data :colors cid])]
             (t/is (= "#00ff00" (:color color)))))))))
 
+(t/deftest branch-count-counts-from-main-without-comparing
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          stranger (th/create-profile* 2 {:is-active true})
+          proj-id  (:default-project-id profile)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id proj-id
+                                       :is-shared false})
+          create!  (fn [name]
+                     (:result (th/command! {::th/type :create-file-branch
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id file)
+                                            :name name})))
+          count-of (fn [profile-id file-id]
+                     ;; the count answers on every file open: it must never
+                     ;; reach the comparison the listing pays for
+                     (with-redefs [fbranch/cached-diff-counts
+                                   (fn [& _] (throw (ex-info "compared" {})))]
+                       (th/command! {::th/type :get-file-branch-count
+                                     ::rpc/profile-id profile-id
+                                     :file-id file-id})))]
+
+      (t/testing "a file with no branches counts zero"
+        (let [out (count-of (:id profile) (:id file))]
+          (t/is (nil? (:error out)))
+          (t/is (= {:count 0} (:result out)))))
+
+      (let [kept     (create! "kept")
+            archived (create! "archived")
+            deleted  (create! "deleted")]
+        (th/command! {::th/type :archive-file-branch
+                      ::rpc/profile-id (:id profile)
+                      :id (:id archived)})
+        (th/command! {::th/type :delete-file-branch
+                      ::rpc/profile-id (:id profile)
+                      :id (:id deleted)})
+
+        (t/testing "archived branches count, deleted ones do not"
+          (t/is (= {:count 2} (:result (count-of (:id profile) (:id file))))))
+
+        (t/testing "from a branch, the branches of its main are counted"
+          (t/is (= {:count 2} (:result (count-of (:id profile) (:branch-file-id kept))))))
+
+        (t/testing "a profile that cannot read the file is refused"
+          (let [out (count-of (:id stranger) (:id file))]
+            (t/is (= :not-found (-> out :error ex-data :type))))
+          (let [out (count-of (:id stranger) (:branch-file-id kept))]
+            (t/is (= :not-found (-> out :error ex-data :type)))))))))
+
 (t/deftest branching-disabled-raises
   (let [profile (th/create-profile* 1 {:is-active true})
         proj-id (:default-project-id profile)

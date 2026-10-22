@@ -44,6 +44,8 @@ test("on a library, the create dialog says consumers read main", async ({
 }) => {
   const workspacePage = new WorkspacePage(page);
   await setupBranching(workspacePage, {
+    "get-file-branch-count?file-id=*":
+      "branches/get-file-branch-count-two.json",
     "get-file-branches?file-id=*": "pull-requests/get-file-branches-one.json",
   });
   await workspacePage.mockGetFile("pull-requests/get-file-blank-shared.json");
@@ -67,6 +69,8 @@ test("on an ordinary file, the create dialog keeps its note", async ({
 }) => {
   const workspacePage = new WorkspacePage(page);
   await setupBranching(workspacePage, {
+    "get-file-branch-count?file-id=*":
+      "branches/get-file-branch-count-two.json",
     "get-file-branches?file-id=*": "pull-requests/get-file-branches-one.json",
   });
   await workspacePage.goToWorkspace();

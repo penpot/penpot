@@ -3292,7 +3292,7 @@ msgstr "Resend invitation"
 msgid "labels.restore"
 msgstr "Restore"
 
-#: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:333, src/app/main/ui/static.cljs:342, src/app/main/ui/static.cljs:437
+#: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:333, src/app/main/ui/static.cljs:342, src/app/main/ui/static.cljs:437, src/app/main/ui/workspace/branch_switcher.cljs:210, src/app/main/ui/workspace/sidebar/branches.cljs:991
 msgid "labels.retry"
 msgstr "Retry"
 
@@ -7120,6 +7120,10 @@ msgstr "A branch name can't be empty."
 msgid "workspace.branches.list.empty"
 msgstr "No branches here"
 
+#: src/app/main/ui/workspace/branch_switcher.cljs:207, src/app/main/ui/workspace/branch_switcher.cljs:334, src/app/main/ui/workspace/sidebar/branches.cljs:987
+msgid "workspace.branches.list.error"
+msgstr "Couldn't load branches"
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:945
 msgid "workspace.branches.list.tab.active"
 msgstr "Active"
@@ -7132,7 +7136,7 @@ msgstr "Mine"
 msgid "workspace.branches.list.title"
 msgstr "Branches - %s"
 
-#, unused
+#: src/app/main/ui/workspace/branch_switcher.cljs:199, src/app/main/ui/workspace/sidebar/branches.cljs:982
 msgid "workspace.branches.loading"
 msgstr "Loading branches…"
 
