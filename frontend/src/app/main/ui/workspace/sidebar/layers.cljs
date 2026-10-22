@@ -386,6 +386,21 @@
                (st/emit! dw/close-layers-search)
                (st/emit! (dw/open-layers-search :find {:force? true}))))))
 
+        close-search
+        (mf/use-fn
+         #(st/emit! dw/close-layers-search))
+
+        dismiss-filters-menu
+        (mf/use-fn
+         (mf/deps show-menu? hide-menu)
+         (fn []
+           (when ^boolean show-menu?
+             (hide-menu)
+             true)))
+
+        on-search-key-down
+        (hooks/use-escape-to-close close-search dismiss-filters-menu)
+
         remove-filter
         (mf/use-fn
          (fn [event]
@@ -587,7 +602,8 @@
      #(mf/html
        (if show-search?
          [:*
-          [:div {:class (stl/css :tool-window-bar)}
+          [:div {:class (stl/css :tool-window-bar)
+                 :on-key-down on-search-key-down}
            [:> search-bar* {:input-ref search-input-ref
                             :class (stl/css :search-item)
                             :on-change update-search-text
@@ -612,7 +628,8 @@
                              :on-click toggle-search
                              :icon i/close}]]
 
-          [:div {:class (stl/css :replace-wrapper)}
+          [:div {:class (stl/css :replace-wrapper)
+                 :on-key-down on-search-key-down}
            (when ^boolean find-replace-mode?
              [:div {:class (stl/css :replace-row)}
               [:> input* {:type "text"

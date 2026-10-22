@@ -23,6 +23,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.ds.foundations.assets.icon :as i  :refer [icon*]]
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.shortcuts :as ss]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -60,7 +61,9 @@
         filter-term*                 (mf/use-state "")
         filter-term                  (deref filter-term*)
 
-        close-fn                     #(st/emit! (dw/toggle-layout-flag :shortcuts))
+        close-fn                     (mf/use-fn #(st/emit! (dw/toggle-layout-flag :shortcuts)))
+
+        on-key-down                  (hooks/use-escape-to-close close-fn)
 
         {:keys [all-shortcuts all-sc-names all-sub-names all-section-names]}
         (ss/build-all-shortcuts workspace-shortcuts dashboard-shortcuts viewer-shortcuts)
@@ -127,7 +130,8 @@
         (mf/use-fn
          #(st/emit! (rt/nav :settings-shortcuts {} {::rt/new-window true})))]
 
-    [:div {:class (dm/str class " " (stl/css :shortcuts))}
+    [:div {:class (dm/str class " " (stl/css :shortcuts))
+           :on-key-down on-key-down}
      [:> panel-title* {:class (stl/css :shortcuts-title)
                        :text (tr "shortcuts.title")
                        :on-close close-fn}]
