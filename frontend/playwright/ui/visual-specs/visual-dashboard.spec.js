@@ -602,6 +602,32 @@ test.describe("Team pages controls", () => {
   });
 });
 
+test.describe("Settings controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Sidebar and change email modal", async ({ page }) => {
+    await DashboardPage.mockConfigFlags(page, ["enable-user-feedback"]);
+    await page.goto("/?screen=settings-profile");
+    const sidebar = page.locator(
+      "[class*='settings_sidebar__dashboard-sidebar']",
+    );
+    await expect(page.getByText("Contact us")).toBeVisible();
+    await page.mouse.move(640, 700);
+    await expect(sidebar).toHaveScreenshot(shot);
+
+    await page.getByText("Dashboard", { exact: true }).hover();
+    await expect(sidebar).toHaveScreenshot(shot);
+
+    await page.getByText("Change email", { exact: true }).click();
+    const modal = page.locator("[class*='modal-container']");
+    await expect(modal).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+    await modal.locator("[class*='modal-header'] button").hover();
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Onboarding questions controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
