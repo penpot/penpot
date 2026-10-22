@@ -17,6 +17,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.transit :as t]
    [app.common.types.fills :as types.fills]
    [app.common.types.modifiers :as ctm]
@@ -1563,13 +1564,17 @@
              (wasm.text-editor/text-editor-has-selection?))
     (let [text (wasm.text-editor/text-editor-export-selection)]
       (when (seq text)
-        (let [content (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
-                        (-> (wasm.text-editor/text-editor-get-active-shape-id)
-                            (wasm.text-editor/selection-content)))
-              payload (when (some? content)
-                        (text-clipboard/payload->html content
-                                                      (:current-file-id state)
-                                                      (:current-team-id state)))]
+        (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
+              content  (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
+                         (wasm.text-editor/selection-content shape-id))
+              geometry (when (some? content)
+                         (wasm.text-editor/content-geometry shape-id content
+                                                            (wasm.text-editor/selection-start)))
+              payload  (when (some? content)
+                         (text-clipboard/payload->html content
+                                                       (:current-file-id state)
+                                                       (:current-team-id state)
+                                                       geometry))]
           {"text/plain" text
            "text/html"  (clipboard/plain-text->html text payload)})))))
 
@@ -1634,25 +1639,51 @@
       (when (and (map? data) (= :copied-shapes (:type data)))
         data))))
 
+(defn copied-text-geometry
+  "The geometry (see `text-editor/content-geometry`) of each selected text in
+   `objects` with gradient or image spans, by id, for a shape copy; nil when none."
+  [state objects selected]
+  (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
+    (not-empty
+     (into {}
+           (keep (fn [id]
+                   (let [{:keys [content] :as shape} (get objects id)]
+                     (when (cfh/text-shape? shape)
+                       (some->> (wasm.text-editor/content-geometry id content {:para 0 :offset 0})
+                                (vector id))))))
+           selected))))
+
+(defn- text-origins
+  "The span origins of `text` in `text-geometry`, nil for each span without one."
+  [text-geometry {:keys [id content]}]
+  (or (get-in text-geometry [id :origins])
+      (mapv #(mapv (constantly nil) (:children %))
+            (-> content :children first :children))))
+
 (defn- copied-shapes->payload
   "A text payload joining the content of the copied text shapes, top to bottom and
    left to right; nil when none of the copied shapes is a text."
-  [{:keys [objects selected file-id team-id]}]
+  [{:keys [objects selected file-id team-id text-geometry]}]
   (let [texts (->> selected
                    (keep #(get objects %))
                    (filter cfh/text-shape?)
                    (sort-by (juxt :y :x)))]
     (when (seq texts)
-      {:file-id file-id
-       :team-id team-id
-       :content (assoc-in (:content (first texts))
-                          [:children 0 :children]
-                          (into [] (mapcat #(-> % :content :children first :children)) texts))})))
+      (cond-> {:file-id file-id
+               :team-id team-id
+               :content (assoc-in (:content (first texts))
+                                  [:children 0 :children]
+                                  (into [] (mapcat #(-> % :content :children first :children)) texts))}
+        (some? text-geometry)
+        (assoc :geometry {:origins (into [] (mapcat (partial text-origins text-geometry)) texts)})))))
 
 (defn- penpot-paste
   [state payload]
-  {:penpot?  true
-   :fragment (text-paste/content->fragment (payload-content state payload))})
+  (let [content (payload-content state payload)]
+    {:penpot?  true
+     :content  content
+     :geometry (:geometry payload)
+     :fragment (text-paste/content->fragment content)}))
 
 (defn- clipboard->paste
   "What to paste for clipboard `html` and `text`, or nil: text and text shapes copied
@@ -1676,10 +1707,63 @@
         {:penpot? false
          :fragment fragment}))))
 
+(defn- target-geometry
+  "Where the gradient spans of `pasted`, inserted at `start`, begin in `shape` with
+   `content`, laid over the box it gets once resized to its text; nil when none."
+  [{:keys [id grow-type]} content pasted start]
+  (when-let [geometry (wasm.text-editor/content-geometry id pasted start)]
+    (if (= :fixed grow-type)
+      geometry
+      ;; Auto-sized boxes only fit their text when resized (for the editor, when it
+      ;; closes), which drops the vertical-align offset in the measured origins.
+      (let [{:keys [width height]} (wasm.api/get-text-dimensions id)
+            fit (fn [{:keys [box] :as origin}]
+                  (let [offset (case (some-> (:vertical-align content) name)
+                                 "center" (/ (- (:height box) height) 2)
+                                 "bottom" (- (:height box) height)
+                                 0)]
+                    (-> origin
+                        (update :y - offset)
+                        (assoc :box {:width  (if (= :auto-width grow-type) width (:width box))
+                                     :height height}))))]
+        (update geometry :origins (partial mapv (partial mapv #(some-> % fit))))))))
+
+(defn- move-pasted-gradients
+  "`content`, the shape's after restyling the paste, with the pasted gradients
+   keeping their place on their spans. Pushes the result to WASM."
+  [shape content {:keys [geometry] :as paste} start]
+  (let [pasted (:content paste)
+        target (when (some? geometry) (target-geometry shape content pasted start))]
+    (if (some? target)
+      (let [content (text-paste/move-gradients content pasted start geometry target)]
+        (wasm.api/set-shape-text-content (:id shape) content)
+        content)
+      content)))
+
+(defn move-new-text-gradients
+  "Event moving the gradients of `payload`, just pasted on the canvas as the text
+   `id`, so they keep their place on their spans."
+  [id {:keys [geometry]}]
+  (ptk/reify ::move-new-text-gradients
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [content] :as shape} (dsh/lookup-shape state id)
+            start  {:para 0 :offset 0}
+            target (when (and (some? shape) (some? geometry) (wasm.api/initialized?))
+                     (wselect/use-shape id)
+                     (wasm.api/set-shape-text-content id content)
+                     (target-geometry shape content content start))]
+        (if (some? target)
+          (rx/of (dwsh/update-shapes
+                  [id]
+                  #(update % :content text-paste/move-gradients content start geometry target)
+                  {:attrs #{:content}}))
+          (rx/empty))))))
+
 (defn- insert-fragment
   "Insert the text of `fragment` at the caret and restyle it: with its own styles
    or overrides, else with the pending caret style. Returns the event saving it."
-  [{:keys [fragment penpot?]}]
+  [state {:keys [fragment penpot?] :as paste}]
   (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
         start    (wasm.text-editor/selection-start)
         styled?  (or penpot? (text-paste/styled? fragment))
@@ -1696,7 +1780,8 @@
         ;; Sync first so the cached content stays index-aligned with WASM.
         (wasm.text-editor/text-editor-sync-content)
         (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start penpot?)]
-          (v3-update-editor-content shape-id content)
+          (let [shape (dsh/lookup-shape state shape-id)]
+            (v3-update-editor-content shape-id (move-pasted-gradients shape content paste start)))
           (v3-sync-editor-content)))
 
       pending?
@@ -1713,7 +1798,7 @@
     (watch [_ state _]
       (if-let [paste (when (wasm.text-editor/text-editor-has-focus?)
                        (clipboard->paste state html text))]
-        (let [event (insert-fragment paste)]
+        (let [event (insert-fragment state paste)]
           (wasm.api/request-render-preserving-target "text-paste")
           (if (some? event) (rx/of event) (rx/empty)))
         (rx/empty)))))

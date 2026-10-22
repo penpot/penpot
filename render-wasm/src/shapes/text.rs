@@ -424,6 +424,9 @@ pub struct TextContent {
     /// into cached Skia paragraphs. Kept across move clones so paint can
     /// translate glyphs + shaders together. See `cached_layout_paint_offset`.
     layout_paint_origin: Option<Point>,
+    /// Box size the gradient and image shaders were built for. They are relative
+    /// to the whole box, so a new size must rebuild them.
+    layout_paint_size: Option<(f32, f32)>,
 }
 
 impl PartialEq for TextContent {
@@ -448,6 +451,7 @@ impl TextContent {
             layout_version: 0,
             layout_width: None,
             layout_paint_origin: None,
+            layout_paint_size: None,
         }
     }
 
@@ -464,6 +468,7 @@ impl TextContent {
             layout_version: 0,
             layout_width: None,
             layout_paint_origin: None,
+            layout_paint_size: None,
         }
     }
 
@@ -1114,7 +1119,28 @@ impl TextContent {
         if self.layout.needs_update() || self.layout_version != self.content_version {
             return false;
         }
-        self.layout_matches_paint_container(shape)
+        self.layout_matches_paint_container(shape) && self.paint_size_matches(&shape.selrect())
+    }
+
+    /// True when some span has a fill laid over the whole box (gradient or image).
+    fn has_box_relative_fills(&self) -> bool {
+        self.paragraphs.iter().any(|paragraph| {
+            paragraph.children().iter().any(|span| {
+                span.fills
+                    .iter()
+                    .any(|fill| !matches!(fill, shapes::Fill::Solid(_)))
+            })
+        })
+    }
+
+    /// True when the cached fill shaders fit a box of `selrect`'s size.
+    fn paint_size_matches(&self, selrect: &Rect) -> bool {
+        if !self.has_box_relative_fills() {
+            return true;
+        }
+        self.layout_paint_size.is_some_and(|(width, height)| {
+            (width - selrect.width()).abs() < 0.01 && (height - selrect.height()).abs() < 0.01
+        })
     }
 
     pub(crate) fn layout_cache_versions_match(&self) -> bool {
@@ -1156,11 +1182,13 @@ impl TextContent {
         // Paragraph paints (incl. absolute image/gradient shaders) were built
         // against `self.bounds()` in `paragraph_builder_group_from_text`.
         self.layout_paint_origin = Some(Point::new(self.bounds.x(), self.bounds.y()));
+        self.layout_paint_size = Some((self.bounds.width(), self.bounds.height()));
     }
 
     pub fn force_next_layout_update(&mut self) {
         self.layout_width = None;
         self.layout_paint_origin = None;
+        self.layout_paint_size = None;
         self.layout.cached_extrect.set(None);
         // Bump the content version so update_layout can't early-return: auto-width
         // shapes always match their container and clearing the cache above doesn't
@@ -1182,6 +1210,7 @@ impl TextContent {
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
             && layout_matches_container
+            && self.paint_size_matches(&selrect)
         {
             return self.size;
         }
@@ -1351,6 +1380,7 @@ impl Default for TextContent {
             layout_version: 0,
             layout_width: None,
             layout_paint_origin: None,
+            layout_paint_size: None,
         }
     }
 }
@@ -1994,6 +2024,8 @@ pub fn calculate_position_data(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::globals::TestRenderResourcesGuard;
+    use crate::render::RenderResources;
 
     #[test]
     fn vertical_align_top_keeps_the_content_at_the_origin() {
@@ -2343,6 +2375,69 @@ mod tests {
             content.cached_layout_paint_offset(&selrect),
             Point::new(0.0, 0.0)
         );
+    }
+
+    fn gradient_fill() -> shapes::Fill {
+        shapes::Fill::LinearGradient(shapes::Gradient::new(
+            (0.5, 0.0),
+            (0.5, 1.0),
+            255,
+            1.0,
+            &[(skia::Color::RED, 0.0), (skia::Color::BLUE, 1.0)],
+        ))
+    }
+
+    fn solid_fill() -> shapes::Fill {
+        shapes::Fill::Solid(shapes::SolidColor(skia::Color::RED))
+    }
+
+    /// A laid-out text shape at 200x100 whose only span has `fills`.
+    fn laid_out_text_shape(grow_type: GrowType, fills: Vec<shapes::Fill>) -> Shape {
+        let mut paragraph = test_paragraph(&["hello"]);
+        paragraph.children_mut()[0].fills = fills;
+        let mut content = TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), grow_type);
+        content.add_paragraph(paragraph);
+
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, 200.0, 100.0);
+        shape
+    }
+
+    /// Whether resizing `shape` to `width`x`height`, with no content change,
+    /// rebuilt its cached Skia paragraphs.
+    fn resize_rebuilds_paragraphs(shape: &mut Shape, width: f32, height: f32) -> bool {
+        let before = Rc::clone(&shape.get_text_content().layout.paragraphs);
+        assert!(!before.is_empty(), "the shape should be laid out");
+        shape.set_selrect(0.0, 0.0, width, height);
+        !Rc::ptr_eq(&before, &shape.get_text_content().layout.paragraphs)
+    }
+
+    // Gradient and image shaders are built into the cached paragraphs against
+    // the box size, so a new box size must rebuild them.
+
+    #[test]
+    fn resizing_a_fixed_text_height_rebuilds_box_relative_fills() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = laid_out_text_shape(GrowType::Fixed, vec![gradient_fill()]);
+        assert!(resize_rebuilds_paragraphs(&mut shape, 200.0, 300.0));
+    }
+
+    #[test]
+    fn resizing_an_auto_width_text_rebuilds_box_relative_fills() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = laid_out_text_shape(GrowType::AutoWidth, vec![gradient_fill()]);
+        assert!(resize_rebuilds_paragraphs(&mut shape, 400.0, 300.0));
+    }
+
+    #[test]
+    fn resizing_a_fixed_text_height_keeps_the_cache_for_solid_fills() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = laid_out_text_shape(GrowType::Fixed, vec![solid_fill()]);
+        assert!(!resize_rebuilds_paragraphs(&mut shape, 200.0, 300.0));
     }
 
     #[test]

@@ -209,14 +209,18 @@
                   file     (dsh/lookup-file state file-id)
                   version  (get file :version)
 
-                  initial  {:type :copied-shapes
-                            :features features
-                            :version version
-                            :file-id file-id
-                            :team-id (:current-team-id state)
-                            :selected selected
-                            :objects {}
-                            :images #{}}
+                  geometry (dwtxt/copied-text-geometry state objects selected)
+
+                  initial  (cond-> {:type :copied-shapes
+                                    :features features
+                                    :version version
+                                    :file-id file-id
+                                    :team-id (:current-team-id state)
+                                    :selected selected
+                                    :objects {}
+                                    :images #{}}
+                             (some? geometry)
+                             (assoc :text-geometry geometry))
 
                   shapes   (->> (cfh/selected-with-children objects selected)
                                 (keep (d/getf objects)))]
@@ -584,6 +588,7 @@
    [:objects
     [:map-of ::sm/uuid :map]]
    [:images [:set :map]]
+   [:text-geometry {:optional true} [:map-of ::sm/uuid :map]]
    [:position {:optional true} ::gpt/point]])
 
 (def ^:private
@@ -1075,9 +1080,11 @@
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
-      (let [[text content]
+      (let [payload (when (v3-html-paste? state)
+                      (text-clipboard/html->payload html))
+            [text content]
             (if (v3-html-paste? state)
-              (if-let [payload (text-clipboard/html->payload html)]
+              (if (some? payload)
                 (let [content (dwtxt/payload-content state payload)]
                   [(txt/content->text content) content])
                 (when-let [fragment (some-> (text-clipboard/html->fragment html)
@@ -1109,7 +1116,8 @@
                     (dwsh/create-and-add-shape :text x y shape
                                                (when skip-edition? {:skip-edition? true})))
              (if skip-edition?
-               (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
+               (rx/of (dwtxt/move-new-text-gradients id payload)
+                      (dwwt/resize-wasm-text-debounce id {:undo-group id
                                                           :undo-id undo-id}))
                (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 
