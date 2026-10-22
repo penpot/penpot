@@ -1729,7 +1729,8 @@
           fb.base_snapshot_id,
           bf.revn AS branch_revn,
           sf.revn AS source_revn,
-          sf.name AS source_name
+          sf.name AS source_name,
+          sf.is_shared AS source_is_shared
      FROM file_branch AS fb
      JOIN file AS bf ON (bf.id = fb.branch_file_id)
      JOIN file AS sf ON (sf.id = fb.source_file_id)
