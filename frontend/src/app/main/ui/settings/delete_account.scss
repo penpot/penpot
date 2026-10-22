@@ -56,20 +56,6 @@
   flex-shrink: 0;
 }
 
-// TODO: .fields-row is not used by delete_account.cljs; check by hand
-// before removal.
-// .fields-row {
-//   @include deprecated.flex-column;
-// }
-
-// TODO: .select-title is not used by delete_account.cljs; check by hand
-// before removal.
-// .select-title {
-//   @include deprecated.body-small-typography;
-//
-//   color: var(--color-foreground-primary);
-// }
-
 .organizations-section {
   @include use-typography("body-medium");
 
