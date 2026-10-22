@@ -289,14 +289,6 @@
   align-items: center;
 }
 
-// TODO: the arrow is the DS icon svg itself, so this rule matches nothing;
-// check by hand before removal.
-// .profile-dropdown-item .open-arrow svg {
-//   @extend %button-icon;
-//
-//   stroke: var(--color-foreground-secondary);
-// }
-
 .sub-menu {
   @extend %menu-dropdown;
 
@@ -385,38 +377,3 @@
   stroke-width: 1px;
   color: var(--color-foreground-secondary);
 }
-
-// TODO: .upgrade-plan-section, .penpot-free, .no-limits and .power-up are
-// not used by sidebar.cljs; check by hand before removal.
-// .upgrade-plan-section {
-//   border: none;
-//   background: none;
-//   cursor: pointer;
-//
-//   display: flex;
-//   justify-content: space-between;
-//   border: $b-1 solid var(--color-background-quaternary);
-//   border-radius: var(--sp-s);
-//   padding: var(--sp-m);
-//   margin: var(--sp-m);
-//   color: var(--color-foreground-secondary);
-//   cursor: pointer;
-// }
-//
-// .penpot-free {
-//   @include use-typography("body-medium");
-//
-//   display: flex;
-//   flex-direction: column;
-//   text-align: start;
-// }
-//
-// .no-limits {
-//   @include use-typography("body-small");
-// }
-//
-// .power-up {
-//   @include use-typography("body-small");
-//
-//   color: var(--color-accent-tertiary);
-// }
