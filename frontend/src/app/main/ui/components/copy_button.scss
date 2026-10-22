@@ -23,10 +23,10 @@
     min-width: deprecated.$s-28;
     width: deprecated.$s-28;
 
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--icon-foreground);
+    .icon {
+      flex-shrink: 0;
+      stroke-width: 1.33px;
+      color: var(--icon-foreground);
     }
   }
 
@@ -35,10 +35,8 @@
     color: var(--color-foreground-primary);
     border: deprecated.$s-1 solid var(--color-background-tertiary);
 
-    .icon-btn {
-      svg {
-        stroke: var(--button-tertiary-foreground-color-active);
-      }
+    .icon-btn .icon {
+      color: var(--button-tertiary-foreground-color-active);
     }
   }
 
@@ -49,8 +47,8 @@
     background-color: transparent;
     color: var(--button-tertiary-foreground-color-focus);
 
-    .icon-btn svg {
-      stroke: var(--button-tertiary-foreground-color-active);
+    .icon-btn .icon {
+      color: var(--button-tertiary-foreground-color-active);
     }
   }
 }
@@ -73,10 +71,10 @@
     height: deprecated.$s-32;
     width: deprecated.$s-28;
 
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--button-tertiary-foreground-color-focus);
+    .icon {
+      flex-shrink: 0;
+      stroke-width: 1.33px;
+      color: var(--button-tertiary-foreground-color-focus);
       display: none;
     }
   }
@@ -86,7 +84,7 @@
     color: var(--button-tertiary-foreground-color-focus);
     border: deprecated.$s-1 solid var(--button-tertiary-background-color-focus);
 
-    .icon-btn svg {
+    .icon-btn .icon {
       display: flex;
     }
   }

@@ -395,3 +395,50 @@ test.describe("Interactions menu", () => {
     });
   });
 });
+
+test.describe("Copy buttons", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  const openInspectTab = async (page, name) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithComments();
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+    await viewerPage.showCode();
+    await page.getByRole("combobox").filter({ hasText: "Styles" }).click();
+    await page.getByRole("option", { name }).click();
+  };
+
+  test("Computed attribute rows", async ({ page }) => {
+    await openInspectTab(page, "Computed");
+    const row = page.locator("[class*='copy-wrapper']").first();
+    await expect(row).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(row).toHaveScreenshot(shot);
+
+    await row.hover();
+    await expect(row).toHaveScreenshot(shot);
+
+    await row.click();
+    await expect(row).toHaveAttribute("data-active", "true");
+    await expect(row).toHaveScreenshot(shot);
+  });
+
+  test("Code block copy button", async ({ page }) => {
+    await openInspectTab(page, "Code");
+    const copy = page.locator("[class*='css-copy-btn']");
+    await expect(copy).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(copy).toHaveScreenshot(shot);
+
+    await copy.hover();
+    await expect(copy).toHaveScreenshot(shot);
+
+    await copy.click();
+    await expect(copy).toHaveAttribute("data-active", "true");
+    await expect(copy).toHaveScreenshot(shot);
+  });
+});
