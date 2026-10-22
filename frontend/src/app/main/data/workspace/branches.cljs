@@ -74,11 +74,13 @@
       (update state :workspace-branches merge branch-state))))
 
 (defn- set-branch-count
-  [file-id n]
+  "Store the branch count of `file-id`: `{:file-id .. :count n}`, or
+  `{:file-id .. :status :error}` when the count could not be loaded."
+  [file-id count-state]
   (ptk/reify ::set-branch-count
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :workspace-branch-count {:file-id file-id :count n}))))
+      (assoc state :workspace-branch-count (assoc count-state :file-id file-id)))))
 
 (defn fetch-branch-count
   "Load how many branches the open file has, archived ones included and
@@ -87,8 +89,9 @@
   compares nothing, unlike the listing, which loads only when a user opens
   the switcher or the all-branches dialog. A count belonging to ANOTHER
   file is dropped synchronously, as `fetch-branch-context` drops its own.
-  The count lives under its own key because `init-branches-state` resets
-  `:workspace-branches`."
+  A failure is kept as an error, which shows the row: a count that is
+  unknown must not hide branches the file may have. The count lives under
+  its own key because `init-branches-state` resets `:workspace-branches`."
   []
   (ptk/reify ::fetch-branch-count
     ptk/UpdateEvent
@@ -102,8 +105,13 @@
     (watch [_ state _]
       (when-let [file-id (:current-file-id state)]
         (->> (rp/cmd! :get-file-branch-count {:file-id file-id})
-             (rx/map #(set-branch-count file-id (:count %)))
-             (rx/catch (fn [_] (rx/empty))))))))
+             (rx/map #(set-branch-count file-id {:count (:count %)}))
+             (rx/catch (fn [_] (rx/of (set-branch-count file-id {:status :error})))))))))
+
+(defn branch-count-failed?
+  "True when the branch count of the open file could not be loaded."
+  [state]
+  (= :error (get-in state [:workspace-branch-count :status])))
 
 (defn fetch-branches
   "Load the branch listing of the open file. A failure leaves the listing
@@ -125,7 +133,7 @@
                             (rp/cmd! :get-file-branches {:file-id root :include-archived true}))))
              (rx/mapcat (fn [data]
                           (rx/of (update-branches-state {:status :loaded :data data})
-                                 (set-branch-count file-id (count data)))))
+                                 (set-branch-count file-id {:count (count data)}))))
              (rx/catch (fn [_]
                          (rx/of (update-branches-state {:status :error})))))))))
 
@@ -343,9 +351,11 @@
   is main and has at least one branch (archived ones count, so they stay
   reachable). The header only shows the branch switcher then. It reads the
   branch count, never the listing, so a listing that fails or is still
-  loading cannot hide the switcher."
+  loading cannot hide the switcher. A count that failed shows the
+  switcher too: opening it loads the listing, which settles the count."
   [state]
   (or (some? (get-in state [:workspace-branch-context :info]))
+      (branch-count-failed? state)
       (pos? (get-in state [:workspace-branch-count :count] 0))))
 
 (defn open-branch

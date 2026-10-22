@@ -40,6 +40,9 @@
   its chip only show then."
   (l/derived dwb/has-branches? st/state))
 
+(def ^:private count-failed
+  (l/derived dwb/branch-count-failed? st/state))
+
 (def ^:private branches
   (l/derived :workspace-branches st/state))
 
@@ -253,6 +256,7 @@
   [{:keys [file]}]
   (let [file-id   (:id file)
         visible?  (mf/deref has-branches)
+        failed?   (mf/deref count-failed)
         open?     (mf/deref switcher-open)
         ctx       (mf/deref refs/branch-context)
         profile   (mf/deref refs/profile)
@@ -320,6 +324,15 @@
        ;; file stands until there are changes to count
        (let [pr (get prs-by-branch (:id ctx))]
          (cond
+           ;; the row shows because the count is unknown: say so, and the
+           ;; switcher, once opened, loads the listing that settles it
+           (and (nil? ctx) ^boolean failed?)
+           [:> text* {:as "span"
+                      :typography t/body-small
+                      :role "alert"
+                      :class (stl/css :status-note :status-error)}
+            (tr "workspace.branches.list.error")]
+
            (nil? ctx)
            [:> text* {:as "span"
                       :typography t/body-small

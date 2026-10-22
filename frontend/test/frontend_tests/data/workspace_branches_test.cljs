@@ -298,6 +298,39 @@
                (t/is (false? (dwb/has-branches? @store)))
                (rx/dispose! store))))))
 
+(t/deftest ^:async a-failed-count-shows-the-switcher-with-an-error
+  (await (mock/with-mocks*
+           {cf/flags (conj cf/flags :branching)
+            rp/cmd!  (mock/stub (fn [_ _] (rx/throw (ex-info "network" {}))))}
+           (let [store (make-store-with (dissoc main-without-branches :workspace-branch-count))]
+             (ptk/emit! store (dwb/fetch-branch-count))
+             (await (async/wait-for #(some? (:workspace-branch-count @store)) "the count settles"))
+             (t/is (= {:file-id file-id :status :error} (:workspace-branch-count @store)))
+             (t/is (true? (dwb/branch-count-failed? @store)))
+             (t/is (true? (dwb/has-branches? @store))
+                   "a count that failed never hides the switcher")
+             (ptk/emit! store (dwb/show-branches))
+             (await (async/wait-for #(true? (:workspace-branch-switcher @store))
+                                    "the shortcut opens the switcher, which retries"))
+             (t/is (nil? (::modal/modal @store)) "no create dialog on an unknown count")
+             (rx/dispose! store)))))
+
+(t/deftest ^:async a-listing-after-a-failed-count-settles-it
+  (await (mock/with-mocks*
+           {rp/cmd! (mock/stub (fn [cmd _]
+                                 (case cmd
+                                   :get-file-branch-info (rx/of nil)
+                                   :get-file-branches    (rx/of [{:id (uuid/next) :status "open"}])
+                                   (rx/empty))))}
+           (let [store (make-store-with (assoc main-without-branches :workspace-branch-count
+                                               {:file-id file-id :status :error}))]
+             (ptk/emit! store (dwb/init-branches-state))
+             (await (async/wait-for #(= :loaded (get-in @store [:workspace-branches :status]))
+                                    "the listing lands"))
+             (t/is (= {:file-id file-id :count 1} (:workspace-branch-count @store)))
+             (t/is (false? (dwb/branch-count-failed? @store)))
+             (rx/dispose! store)))))
+
 (t/deftest ^:async a-listing-refreshes-the-count
   (await (mock/with-mocks*
            {rp/cmd! (mock/stub (fn [cmd _]

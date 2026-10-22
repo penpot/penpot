@@ -122,3 +122,30 @@ test("a failed listing in the all-branches dialog offers a retry", async ({
   await dialog.getByRole("button", { name: "Retry" }).click();
   await expect(dialog.getByText("checkout", { exact: true })).toBeVisible();
 });
+
+test("a failed count shows the row with an error, and the switcher lists", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await setupMainWithBranches(workspacePage);
+  await page.route(
+    "**/api/main/methods/get-file-branch-count?file-id=*",
+    (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/transit+json",
+        body: JSON.stringify({ "~:type": "~:internal" }),
+      }),
+  );
+  await workspacePage.goToWorkspace();
+
+  // an unknown count never hides the row: the note says what failed
+  const chip = page.getByTitle("Switch branch");
+  await expect(chip).toBeVisible();
+  await expect(page.getByText("Couldn't load branches")).toBeVisible();
+
+  // opening the switcher loads the listing, which settles the count
+  await chip.click();
+  await expect(page.getByText("checkout", { exact: true })).toBeVisible();
+  await expect(page.getByText("Couldn't load branches")).toBeHidden();
+});
