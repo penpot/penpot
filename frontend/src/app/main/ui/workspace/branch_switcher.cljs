@@ -254,10 +254,12 @@
         (mf/use-fn #(st/emit! (dwb/toggle-branch-switcher false)))]
 
     ;; the list decides whether the row shows at all, so it loads with the
-    ;; file (the bottom banner loads the branch context)
+    ;; file, and so does the branch context: during a review the bottom
+    ;; banner that also loads it is replaced by the review banner
     (mf/with-effect [file-id]
       (when (contains? cf/flags :branching)
         (st/emit! (dwb/init-branches-state)
+                  (dwb/fetch-branch-context)
                   (dwb/toggle-branch-switcher false))))
 
     ;; the row makes the header taller; panels that size themselves against

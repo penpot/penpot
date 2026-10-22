@@ -29,6 +29,7 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge*]]
    [app.util.color :as uc]
@@ -992,11 +993,25 @@
                                              :icon i/help
                                              :on-click on-show-limits}
                                  (tr "workspace.branches.limits.link")])
-                        :end (mf/html
-                              [:> button* {:variant "primary"
-                                           :icon i/git-branch-plus
-                                           :on-click on-create}
-                               (tr "workspace.branches.switcher.new")])}]]))
+                        :end (let [;; branches only grow from main: on a
+                                   ;; branch the button stays in place,
+                                   ;; disabled, and says where branches
+                                   ;; come from
+                                   on-branch? (and (some? branch-ctx)
+                                                   (= (:branch-file-id branch-ctx) (:id file)))
+                                   button     (mf/html
+                                               [:> button* {:variant "primary"
+                                                            :icon i/git-branch-plus
+                                                            :disabled on-branch?
+                                                            :on-click on-create}
+                                                (tr "workspace.branches.switcher.new")])]
+                               (if on-branch?
+                                 (mf/html
+                                  [:> tooltip* {:content (tr "workspace.branches.switcher.new-from-main")
+                                                :id "new-branch-disabled-tooltip"
+                                                :tab-index 0}
+                                   button])
+                                 button))}]]))
 
 ;; --- Compare changes dialog (read-only 3-way diff)
 
@@ -1800,6 +1815,11 @@
        :icon i/git-merge
        :label (tr "workspace.branches.banner.merged")}
 
+      (counts-error? ctx)
+      {:id :counts-error
+       :icon i/triangle-alert
+       :label (tr "workspace.branches.counts.error")}
+
       (pos? conflicts)
       {:id :conflicts
        :icon i/triangle-alert
@@ -1938,7 +1958,7 @@
        ;; stands and offers what to do next
        [:div {:class (stl/css :branch-banner-content)}
         [:div {:class (stl/css-case :branch-banner-icon true
-                                    :branch-banner-icon-warning (= :conflicts (:id status)))}
+                                    :branch-banner-icon-warning (contains? #{:conflicts :counts-error} (:id status)))}
          [:> i/icon* {:icon-id (:icon status)}]]
         [:div {:class (stl/css :branch-banner-text)}
          [:span {:class (stl/css :branch-banner-title)} (:label status)]]

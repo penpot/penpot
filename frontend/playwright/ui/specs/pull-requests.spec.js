@@ -32,18 +32,22 @@ test("opening a file with pr-id shows the review sandbox banner", async ({
 
   await expect(page.getByText("Reviewing pull request")).toBeVisible();
   await expect(page.getByText("Checkout redesign").first()).toBeVisible();
-  await expect(page.getByText("checkout → New File 1")).toBeVisible();
+
+  // the route reads as two pills: the branch under review, then main
+  const banner = page.getByText("Reviewing pull request").locator("../../..");
+  await expect(banner.getByText("checkout", { exact: true })).toBeVisible();
+  await expect(banner.getByText("Main", { exact: true })).toBeVisible();
 
   // only the essential actions are visible buttons...
-  await expect(page.getByRole("button", { name: "Details" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Compare" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Details" })).toBeHidden();
 
   // ...the rest live behind the kebab menu
-  const banner = page.getByText("Reviewing pull request").locator("../../..");
   await banner.getByRole("button", { name: "Options" }).click();
-  await expect(page.getByText("Try interactions")).toBeVisible();
+  await expect(page.getByText("Details")).toBeVisible();
   await expect(page.getByText("Merge to main")).toBeVisible();
   await expect(page.getByText("Exit review")).toBeVisible();
+  await expect(page.getByText("Try interactions")).toBeHidden();
 });
 
 test("the compare dialog shows the proposed changes", async ({ page }) => {
@@ -111,15 +115,16 @@ test("closing the pull request asks for confirmation", async ({ page }) => {
   );
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  await page.getByRole("button", { name: "Details" }).click();
-  await page.getByRole("button", { name: "Close pull request" }).click();
+  const banner = page.getByText("Reviewing pull request").locator("../../..");
+  await banner.getByRole("button", { name: "Options" }).click();
+  await page.getByText("Cancel review").click();
 
   // nothing is closed yet: a confirmation dialog takes over
-  await expect(page.getByText("will disappear")).toBeVisible();
+  await expect(page.getByText("will be cancelled")).toBeVisible();
 
   // confirming closes the pull request; being inside its sandbox, the
   // user is taken back to the file (no pr-id in the url)
-  await page.getByRole("button", { name: "Close pull request" }).click();
+  await page.getByRole("button", { name: "Cancel pull request" }).click();
   await expect(page).not.toHaveURL(/pr-id/);
 });
 
@@ -145,7 +150,7 @@ test("on a branch, requesting a review is the primary action", async ({
     page.getByRole("button", { name: "Merge to main" }),
   ).toBeHidden();
 
-  const banner = page.getByText("On branch").locator("../../..");
+  const banner = page.locator("#branch-banner");
   await banner.getByRole("button", { name: "Options" }).click();
   await page.getByText("Merge to main").click();
   await expect(page.getByText("Merge into main")).toBeVisible();
@@ -165,4 +170,57 @@ test("exiting the review takes the user back to the file", async ({ page }) => {
   // live branch) stays as it was
   await expect(page).not.toHaveURL(/pr-id/);
   await expect(page.getByText("Reviewing pull request")).toBeHidden();
+});
+
+test("during a review the header names the branch under review", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await setupPullRequestSandbox(workspacePage);
+  // the review link opens the author's branch
+  await workspacePage.mockRPC(
+    "get-file-branch-info?file-id=*",
+    "pull-requests/get-file-branch-info-branch.json",
+  );
+  await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
+
+  // the review banner replaces the branch banner, so the header loads the
+  // branch context itself
+  await expect(page.getByText("Reviewing pull request")).toBeVisible();
+  await expect(page.getByTitle("On branch checkout from main")).toBeVisible();
+});
+
+test("a branch that cannot be compared with main says so", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await setupPullRequestSandbox(workspacePage);
+  // the backend answers nil counts when it cannot compare the branch
+  await workspacePage.mockRPC(
+    "get-file-branch-info?file-id=*",
+    "pull-requests/get-file-branch-info-uncompared.json",
+  );
+  await workspacePage.goToWorkspace();
+
+  const banner = page.locator("#branch-banner");
+  await expect(
+    banner.getByText("Couldn't compare this branch with main"),
+  ).toBeVisible();
+  await expect(banner.getByText("Up to date with main")).toBeHidden();
+});
+
+test("on a branch, the all-branches dialog offers no new branch", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await setupPullRequestSandbox(workspacePage);
+  await workspacePage.mockRPC(
+    "get-file-branch-info?file-id=*",
+    "pull-requests/get-file-branch-info-branch.json",
+  );
+  await workspacePage.goToWorkspace();
+
+  await page.getByTitle("On branch checkout from main").click();
+  await page.getByText("All branches").click();
+
+  // branches only grow from main: the button stays, disabled
+  await expect(page.getByRole("button", { name: "New branch" })).toBeDisabled();
 });

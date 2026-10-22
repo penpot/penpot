@@ -6470,6 +6470,10 @@ msgstr "Todas las ramas"
 msgid "workspace.branches.switcher.new"
 msgstr "Nueva rama"
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1010
+msgid "workspace.branches.switcher.new-from-main"
+msgstr "Las ramas se crean desde main"
+
 #: src/app/main/ui/workspace/branch_switcher.cljs:309
 msgid "workspace.branches.switcher.tooltip"
 msgstr "Cambiar de rama"
