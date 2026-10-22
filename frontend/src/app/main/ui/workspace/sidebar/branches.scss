@@ -4,59 +4,12 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as t;
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
-// All branch change-count numbers and changed-value indicators (counts,
-// ahead/behind, resolved/pending, property values) use the monospace
-// inspect font at 600 weight, for consistent, legible figures.
-@mixin branch-count {
-  @include t.use-typography("code-font");
-
-  font-weight: 600;
-}
-
-// --- Light-theme semantic tints
-//
-// The DS exposes the same lightened `--color-foreground-{success,error,warning,
-// info}` in both themes. That tint reads well over the dark tint backgrounds of
-// the default (dark) theme, but washes out over the pale pastel backgrounds the
-// light theme uses (see the success/info/error/warning chips and badges). For
-// this feature's surfaces we re-point those foregrounds to the more saturated
-// `--color-accent-*` tokens in the light theme only — reusing existing DS
-// variables, so there are no new variables, no global override and the dark
-// theme is untouched.
-.compare-overlay,
-.branches-toolbox,
-.branch-banner {
-  :global(.light) & {
-    --color-foreground-success: var(--color-accent-success);
-    --color-foreground-error: var(--color-accent-error);
-
-    // accent-warning is a bright orange that still washes out over the pale
-    // warning background; darken it a touch (toward black) so it reads.
-    --color-foreground-warning: color-mix(in srgb, var(--color-accent-warning) 60%, #000);
-    --color-foreground-info: var(--color-accent-info);
-  }
-}
-
-// --- Panel
-
-.branches-toolbox {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: var(--sp-s);
-  height: 100%;
-  padding: var(--sp-s);
-  overflow: hidden;
-}
-
-.branches-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-}
+// --- Branch lists
 
 .branches-empty {
   display: flex;
@@ -64,33 +17,6 @@
   gap: var(--sp-xxxl);
   margin: var(--sp-xxxl) auto;
   inline-size: $sz-200;
-}
-
-.branches-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.branches-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-block: var(--sp-s) var(--sp-xs);
-  padding-inline: var(--sp-s);
-
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-
-.branches-section-count {
-  color: var(--color-foreground-secondary);
 }
 
 .branches-entries {
@@ -108,7 +34,7 @@
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s);
-  border-radius: 8px;
+  border-radius: $br-8;
   cursor: pointer;
 
   &:hover {
@@ -120,9 +46,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 32px;
-  block-size: 32px;
-  border-radius: 8px;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  border-radius: $br-8;
   background-color: var(--color-background-tertiary);
   color: var(--color-accent-primary);
 }
@@ -131,11 +57,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxs);
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .branch-entry-name {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-primary);
   white-space: nowrap;
@@ -147,11 +73,11 @@
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .branch-entry-author {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
   white-space: nowrap;
@@ -167,7 +93,7 @@
 }
 
 .branch-pr-approvals {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: inline-flex;
   align-items: center;
@@ -182,96 +108,56 @@
   gap: var(--sp-xs);
 }
 
+.branch-entry-menu {
+  display: flex;
+}
+
 .branch-entry-counts {
   display: flex;
   align-items: center;
   gap: var(--sp-s);
 
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 }
 
-.count-ahead,
-.count-behind {
-  @include branch-count;
+// ahead/behind: a side with changes stands out, a zero stays quiet
+.count {
+  @include use-typography("code-font");
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xxs);
   color: var(--color-foreground-secondary);
-}
 
-.count-ahead {
-  color: var(--color-accent-primary);
+  &.has-changes {
+    color: var(--color-accent-primary);
+  }
+
+  // what main has and the branch lacks reads in the error color
+  &.is-behind.has-changes {
+    color: var(--color-foreground-error);
+  }
 }
 
 .count-error {
   display: inline-flex;
   align-items: center;
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
 }
 
-// --- Create branch dialog
+// --- Dialogs: create, limits, merge and info
 
-.modal-overlay {
-  @extend %modal-overlay-base;
-}
-
-.modal-container {
-  @extend %modal-container-base;
-
-  min-width: deprecated.$s-408;
-}
-
-.modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-s);
-  margin-bottom: deprecated.$s-24;
-}
-
-.modal-header-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: $sz-32;
-  height: $sz-32;
-  border-radius: 8px;
-  color: var(--color-accent-primary);
-  background-color: var(--color-background-tertiary);
-}
-
-.modal-header-text {
+.dialog-content {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-xxs);
-  flex: 1;
-}
-
-.modal-title {
-  @include deprecated.headline-medium-typography;
-
-  color: var(--modal-title-foreground-color);
-}
-
-.modal-subtitle {
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-}
-
-.modal-content {
-  @include deprecated.flex-column;
-
-  gap: deprecated.$s-16;
-  margin-bottom: deprecated.$s-24;
+  gap: var(--sp-l);
 }
 
 // Merge-dialog confirmation prompt: a regular-weight, secondary-color
 // paragraph sitting between the title and the archive controls, with a
 // touch more breathing room before the checkbox.
 .modal-message {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
   margin: 0;
   margin-block-end: var(--sp-s);
@@ -290,22 +176,22 @@
 }
 
 .field-label {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }
 
 .textarea {
-  width: 100%;
-  min-height: $sz-64;
+  inline-size: 100%;
+  min-block-size: $sz-64;
   padding: var(--sp-s);
-  border-radius: 8px;
-  border: 1px solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
   resize: vertical;
 
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 }
 
 .derive-from {
@@ -313,55 +199,42 @@
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s);
-  border-radius: 8px;
+  border-radius: $br-8;
   background-color: var(--color-background-tertiary);
 }
 
 .derive-from-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  inline-size: px2rem(8);
+  block-size: px2rem(8);
+  border-radius: $br-circle;
   background-color: var(--color-accent-primary);
 }
 
 .derive-from-name {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-primary);
-  font-weight: 700;
 }
 
 .derive-from-hint {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }
 
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--sp-s);
-}
-
 // --- Branch info dialog
-
-.info-container {
-  min-width: deprecated.$s-456;
-}
 
 // status chip sits between the title block and the close button
 .info-status {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   align-self: flex-start;
   padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 12px;
-  font-weight: 600;
-  text-transform: capitalize;
+  border-radius: $br-12;
   white-space: nowrap;
 
   &.status-open {
-    color: var(--color-foreground-info);
+    color: var(--color-accent-info);
     background-color: var(--color-background-info);
   }
 
@@ -387,15 +260,15 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-s);
-  min-block-size: 28px;
+  min-block-size: $sz-28;
 }
 
 .info-desc {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   margin: 0;
   padding: var(--sp-s);
-  border-radius: 8px;
+  border-radius: $br-8;
   background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
   white-space: pre-wrap;
@@ -403,12 +276,12 @@
 }
 
 .info-desc-empty {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   margin: 0;
   padding: var(--sp-s);
-  border-radius: 8px;
-  border: 1px dashed var(--color-background-quaternary);
+  border-radius: $br-8;
+  border: $b-1 dashed var(--color-background-quaternary);
   color: var(--color-foreground-secondary);
   font-style: italic;
 }
@@ -430,39 +303,39 @@
   flex-direction: column;
   gap: 0;
   margin: 0;
-  border-radius: 8px;
-  border: 1px solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
   overflow: hidden;
 }
 
 .info-row {
   display: grid;
-  grid-template-columns: minmax(120px, 0.5fr) 1fr;
+  grid-template-columns: minmax($sz-120, 0.5fr) 1fr;
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s);
 
   &:not(:last-child) {
-    border-block-end: 1px solid var(--color-background-quaternary);
+    border-block-end: $b-1 solid var(--color-background-quaternary);
   }
 }
 
 .info-key {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   margin: 0;
   color: var(--color-foreground-secondary);
 }
 
 .info-val {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
   margin: 0;
   color: var(--color-foreground-primary);
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .info-counts {
@@ -471,65 +344,13 @@
 
 // --- Compare changes dialog
 
-.compare-overlay {
-  @extend %modal-overlay-base;
-}
-
-.compare-container {
-  @extend %modal-container-base;
-  @include deprecated.menu-shadow;
+// The panes keep a fixed height whatever they list, as the dialog did
+// before `modal*`; each pane scrolls on its own.
+.compare-content {
+  --compare-panes-block-size: min(60vh, px2rem(520));
 
   display: flex;
   flex-direction: column;
-  inline-size: min(95vw, 1000px);
-  block-size: min(88vh, 700px);
-  min-width: 0;
-  min-height: 0;
-  max-width: none;
-  max-height: none;
-  padding: deprecated.$s-16;
-  overflow: hidden;
-}
-
-.compare-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-  padding-bottom: var(--sp-s);
-  border-bottom: 1px solid var(--color-background-quaternary);
-}
-
-.compare-title-group {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-}
-
-.compare-title-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 36px;
-  block-size: 36px;
-  border-radius: 8px;
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-secondary);
-}
-
-.compare-title-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xxs);
-}
-
-.compare-subtitle {
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-}
-
-.title-icon-warning {
-  color: var(--color-foreground-warning);
 }
 
 .compare-breadcrumb {
@@ -537,42 +358,26 @@
   align-items: center;
   gap: var(--sp-xs);
 
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
-  color: var(--color-foreground-secondary);
-}
-
-.breadcrumb-branch {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xxs);
-  padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 8px;
-  background-color: var(--color-background-tertiary);
-  color: var(--color-accent-primary);
-}
-
-.breadcrumb-main {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xxs);
-  padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 8px;
-  background-color: var(--color-background-tertiary);
   color: var(--color-foreground-secondary);
 }
 
 .breadcrumb-swap {
-  @include deprecated.button-style;
-  @include deprecated.flex-center;
+  --breadcrumb-swap-foreground-color: var(--color-foreground-secondary);
 
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: var(--sp-xxs);
-  border-radius: var(--sp-xs);
-  color: var(--color-foreground-secondary);
+  border: none;
+  border-radius: $br-4;
+  background: none;
+  color: var(--breadcrumb-swap-foreground-color);
   cursor: pointer;
 
   &:hover {
-    color: var(--color-accent-primary);
+    --breadcrumb-swap-foreground-color: var(--color-accent-primary);
   }
 }
 
@@ -585,20 +390,20 @@
 
 .stat-badge,
 .item-badge {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 12px;
+  border-radius: $br-12;
   white-space: nowrap;
 }
 
 .badge-added {
-  color: var(--color-foreground-success);
+  color: var(--color-accent-success);
   background-color: var(--color-background-success);
 }
 
 .badge-modified {
-  color: var(--color-foreground-info);
+  color: var(--color-accent-info);
   background-color: var(--color-background-info);
 }
 
@@ -608,28 +413,27 @@
 }
 
 .badge-conflict {
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
   background-color: var(--color-background-warning);
 }
 
 .compare-empty {
   display: flex;
-  flex: 1;
   align-items: center;
   justify-content: center;
+  block-size: var(--compare-panes-block-size);
 }
 
 .compare-body {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 2fr;
-  flex: 1;
-  min-height: 0;
+  grid-template-columns: minmax(px2rem(320), 1fr) 2fr;
+  block-size: var(--compare-panes-block-size);
 }
 
 .compare-side {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-block-size: 0;
 }
 
 .compare-filters {
@@ -640,14 +444,14 @@
 }
 
 .filter-chip {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xs);
   padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 16px;
-  border: 1px solid transparent;
+  border-radius: $br-12;
+  border: $b-1 solid transparent;
   background: none;
   cursor: pointer;
   color: var(--color-foreground-secondary);
@@ -664,17 +468,17 @@
 }
 
 .filter-dot {
-  inline-size: 8px;
-  block-size: 8px;
-  border-radius: 50%;
+  inline-size: px2rem(8);
+  block-size: px2rem(8);
+  border-radius: $br-circle;
   background-color: var(--color-foreground-secondary);
 
   .dot-added & {
-    background-color: var(--color-foreground-success);
+    background-color: var(--color-accent-success);
   }
 
   .dot-modified & {
-    background-color: var(--color-foreground-info);
+    background-color: var(--color-accent-info);
   }
 
   .dot-deleted & {
@@ -687,7 +491,7 @@
   flex: 1;
   flex-direction: column;
   gap: var(--sp-m);
-  min-height: 0;
+  min-block-size: 0;
   padding: 0 var(--sp-s) var(--sp-s);
   overflow-y: auto;
 }
@@ -699,7 +503,7 @@
 }
 
 .compare-group-head {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
@@ -710,22 +514,21 @@
 
 .compare-group-label {
   flex: 1;
-  font-weight: 600;
 }
 
 .compare-group-counts {
-  @include branch-count;
+  @include use-typography("code-font");
 
   display: inline-flex;
   gap: var(--sp-xs);
 }
 
 .count-added {
-  color: var(--color-foreground-success);
+  color: var(--color-accent-success);
 }
 
 .count-modified {
-  color: var(--color-foreground-info);
+  color: var(--color-accent-info);
 }
 
 .count-deleted {
@@ -747,8 +550,8 @@
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s);
-  border-radius: 8px;
-  border-inline-start: 3px solid transparent;
+  border-radius: $br-8;
+  border-inline-start: $b-2 solid transparent;
   background-color: var(--color-background-tertiary);
   cursor: pointer;
 
@@ -762,11 +565,11 @@
   }
 
   &.status-added {
-    border-inline-start-color: var(--color-foreground-success);
+    border-inline-start-color: var(--color-accent-success);
   }
 
   &.status-modified {
-    border-inline-start-color: var(--color-foreground-info);
+    border-inline-start-color: var(--color-accent-info);
   }
 
   &.status-deleted {
@@ -774,7 +577,7 @@
   }
 
   &.status-conflict {
-    border-inline-start-color: var(--color-foreground-warning);
+    border-inline-start-color: var(--color-accent-warning);
   }
 }
 
@@ -794,21 +597,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxs);
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .compare-item-label {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-primary);
-  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .compare-item-subtitle {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
   white-space: nowrap;
@@ -817,10 +619,10 @@
 }
 
 .compare-detail {
-  min-height: 0;
+  min-block-size: 0;
   padding: var(--sp-l);
   overflow-y: auto;
-  border-inline-start: 1px solid var(--color-background-quaternary);
+  border-inline-start: $b-1 solid var(--color-background-quaternary);
 }
 
 .compare-detail-empty {
@@ -843,29 +645,20 @@
 }
 
 .compare-detail-title {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   margin: 0;
   color: var(--color-foreground-primary);
-  font-weight: 600;
 }
 
 .compare-detail-type {
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.compare-detail-subtitle {
-  @include t.use-typography("body-small");
+  @include use-typography("headline-small");
 
   color: var(--color-foreground-secondary);
 }
 
 .compare-detail-hint {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
 }
@@ -873,43 +666,43 @@
 .prop-changes {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-background-quaternary);
-  border-radius: 12px;
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-12;
   overflow: hidden;
 }
 
 .prop-changes-head {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--sp-s) var(--sp-m);
-  border-bottom: 1px solid var(--color-background-quaternary);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
   color: var(--color-foreground-primary);
 }
 
 .prop-changes-count {
-  @include branch-count;
+  @include use-typography("code-font");
 
   color: var(--color-foreground-secondary);
 }
 
 .prop-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 2fr;
+  grid-template-columns: minmax($sz-120, 1fr) 2fr;
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s) var(--sp-m);
-  border-bottom: 1px solid var(--color-background-quaternary);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
 
   &:last-child {
-    border-bottom: none;
+    border-block-end: none;
   }
 }
 
 .prop-name {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
 }
@@ -922,7 +715,7 @@
 }
 
 .value-chip {
-  @include branch-count;
+  @include use-typography("code-font");
 
   display: inline-flex;
   align-items: center;
@@ -937,7 +730,7 @@
 }
 
 .value-branch {
-  color: var(--color-foreground-success);
+  color: var(--color-accent-success);
   background-color: var(--color-background-success);
 }
 
@@ -947,23 +740,14 @@
 }
 
 .value-swatch {
-  inline-size: 16px;
-  block-size: 16px;
+  inline-size: $sz-16;
+  block-size: $sz-16;
   border-radius: var(--sp-xs);
-  border: 1px solid var(--color-background-quaternary);
-}
-
-.compare-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-s);
-  padding-top: var(--sp-s);
-  border-top: 1px solid var(--color-background-quaternary);
+  border: $b-1 solid var(--color-background-quaternary);
 }
 
 .compare-footer-info {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   gap: var(--sp-xs);
@@ -971,28 +755,22 @@
 }
 
 .compare-footer-conflicts {
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
 }
 
 .compare-footer-selected {
   color: var(--color-foreground-secondary);
 }
 
-.compare-footer-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-}
-
 // --- Resolve conflicts dialog
 
 .conflicts-progress {
-  @include branch-count;
+  @include use-typography("code-font");
 
   margin-inline-start: auto;
   padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 12px;
-  color: var(--color-foreground-info);
+  border-radius: $br-12;
+  color: var(--color-accent-info);
   background-color: var(--color-background-info);
 }
 
@@ -1001,20 +779,20 @@
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s) 0;
-  border-bottom: 1px solid var(--color-background-quaternary);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
 }
 
 .bulk-label {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }
 
 .conflicts-pending {
-  @include branch-count;
+  @include use-typography("code-font");
 
   margin-inline-start: auto;
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
 }
 
 // left list
@@ -1023,17 +801,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
-  min-height: 0;
+  min-block-size: 0;
   padding-block-start: var(--sp-s);
 }
 
 .conflicts-list-head {
-  @include t.use-typography("body-small");
+  @include use-typography("headline-small");
 
   padding-inline: var(--sp-s);
   color: var(--color-foreground-secondary);
-  font-weight: 600;
-  text-transform: uppercase;
 }
 
 .conflict-item {
@@ -1042,8 +818,8 @@
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s);
-  border-radius: 8px;
-  border: 1px solid transparent;
+  border-radius: $br-8;
+  border: $b-1 solid transparent;
   background-color: var(--color-background-tertiary);
   cursor: pointer;
 
@@ -1058,7 +834,7 @@
 
   // a selected-but-unresolved conflict gets the warning outline
   &.is-selected.is-pending {
-    border-color: var(--color-foreground-warning);
+    border-color: var(--color-accent-warning);
   }
 }
 
@@ -1073,21 +849,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxs);
-  min-width: 0;
+  min-inline-size: 0;
 }
 
 .conflict-item-label {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-primary);
-  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .conflict-item-subtitle {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
   white-space: nowrap;
@@ -1096,19 +871,19 @@
 }
 
 .conflict-pill {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xs);
   padding: var(--sp-xxs) var(--sp-s);
-  border-radius: 12px;
+  border-radius: $br-12;
 }
 
 .pill-dot {
-  inline-size: 6px;
-  block-size: 6px;
-  border-radius: 50%;
+  inline-size: $sz-6;
+  block-size: $sz-6;
+  border-radius: $br-circle;
   background-color: currentcolor;
 }
 
@@ -1123,12 +898,12 @@
 }
 
 .pill-mixed {
-  color: var(--color-foreground-info);
+  color: var(--color-accent-info);
   background-color: var(--color-background-info);
 }
 
 .pill-pending {
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
   background-color: var(--color-background-warning);
 }
 
@@ -1151,19 +926,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-foreground-warning);
+  color: var(--color-accent-warning);
 }
 
 .conflict-detail-title {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
   margin: 0;
   color: var(--color-foreground-primary);
-  font-weight: 600;
 }
 
 .conflict-detail-subtitle {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }
@@ -1191,7 +965,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--sp-xs);
-  min-width: 0;
+  min-inline-size: 0;
 
   &.is-result .preview-box {
     border-color: var(--color-accent-primary);
@@ -1199,11 +973,9 @@
 }
 
 .preview-col-label {
-  @include t.use-typography("body-small");
+  @include use-typography("headline-small");
 
   color: var(--color-foreground-secondary);
-  font-weight: 600;
-  text-transform: uppercase;
 
   .is-result & {
     color: var(--color-accent-primary);
@@ -1211,7 +983,7 @@
 }
 
 .preview-col-sub {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
   white-space: nowrap;
@@ -1227,8 +999,8 @@
   inline-size: 100%;
   aspect-ratio: 1;
   padding: var(--sp-s);
-  border-radius: 8px;
-  border: 2px solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  border: $b-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-primary);
 
   // checkerboard so transparency / light fills read clearly
@@ -1237,12 +1009,12 @@
     linear-gradient(-45deg, var(--color-background-tertiary) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--color-background-tertiary) 75%),
     linear-gradient(-45deg, transparent 75%, var(--color-background-tertiary) 75%);
-  background-size: 12px 12px;
+  background-size: px2rem(12) px2rem(12);
   background-position:
     0 0,
-    0 6px,
-    6px -6px,
-    -6px 0;
+    0 px2rem(6),
+    px2rem(6) px2rem(-6),
+    px2rem(-6) 0;
   overflow: hidden;
 }
 
@@ -1254,11 +1026,11 @@
 .preview-swatch {
   inline-size: 100%;
   block-size: 100%;
-  border-radius: 4px;
+  border-radius: $br-4;
 }
 
 .preview-type-sample {
-  @include t.use-typography("headline-medium");
+  @include use-typography("headline-medium");
 
   color: var(--color-foreground-primary);
   line-height: 1;
@@ -1276,15 +1048,15 @@
 .prop-table {
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
-  border: 1px solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
   overflow: hidden;
 }
 
 .prop-table-head,
 .prop-pick-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 1fr 1fr;
+  grid-template-columns: minmax($sz-120, 1fr) 1fr 1fr;
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s);
@@ -1295,32 +1067,29 @@
 }
 
 .prop-table-th {
-  @include t.use-typography("body-small");
+  @include use-typography("headline-small");
 
   color: var(--color-foreground-secondary);
-  font-weight: 600;
-  text-transform: uppercase;
 }
 
 .prop-pick-row {
-  border-block-start: 1px solid var(--color-background-quaternary);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
 }
 
 .prop-pick-name {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-primary);
 }
 
 .prop-pick {
-  @include deprecated.button-style;
-
   display: flex;
   align-items: center;
   justify-content: flex-start;
   padding: var(--sp-xs);
-  border-radius: 8px;
-  border: 2px solid transparent;
+  border-radius: $br-8;
+  border: $b-2 solid transparent;
+  background: none;
   cursor: pointer;
 
   &:hover {
@@ -1334,7 +1103,7 @@
 }
 
 .conflict-whole-hint {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
 }
@@ -1347,8 +1116,8 @@
   inset-inline-start: 50%;
   transform: translateX(-50%);
   max-inline-size: 90vw;
-  border-radius: deprecated.$s-8;
-  border: deprecated.$s-2 solid var(--panel-border-color);
+  border-radius: $br-8;
+  border: $b-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-primary);
 
   // The floating colour and typography palette bar hangs from the same bottom
@@ -1360,12 +1129,10 @@
   // the bar follows the banner's collapsed and expanded states and the two
   // cannot drift apart.
 
-  // the kebab dropdown opens upwards, past the banner box: it must not
-  // be clipped (the collapsed state hides its content via block-size +
-  // visibility) and it must beat the viewport controls, which are
-  // raised to z-index 1 while a drawing tool is active
-  overflow: visible;
-  z-index: deprecated.$z-index-2;
+  // it must beat the viewport controls, which are raised to z-index 1
+  // while a drawing tool is active
+  // TODO: no DS z-index token for 2.
+  z-index: 2;
   transition:
     inset-block-end 0.2s,
     block-size 0.2s;
@@ -1379,7 +1146,7 @@
   &.is-collapsed {
     inset-block-end: 0;
     block-size: var(--sp-m);
-    border-radius: 12px 12px 0 0;
+    border-radius: $br-12 $br-12 0 0;
 
     .branch-banner-content {
       block-size: 0;
@@ -1390,8 +1157,12 @@
 }
 
 .branch-banner-handle {
-  @include deprecated.flex-center;
-  @include deprecated.button-style;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  background: none;
+  cursor: pointer;
 
   // overlaps the content's top padding so it stays snug without making the
   // banner taller; fills the whole strip when collapsed
@@ -1406,10 +1177,10 @@
 .branch-banner-handle-btn {
   block-size: var(--sp-xs);
   inline-size: 100%;
-  max-inline-size: 64px;
+  max-inline-size: $sz-64;
   padding: 0;
-  border-radius: var(--sp-xs);
-  background-color: var(--palette-handler-background-color);
+  border-radius: $br-4;
+  background-color: var(--color-background-quaternary);
 }
 
 .branch-banner-content {
@@ -1417,25 +1188,13 @@
   align-items: center;
   gap: var(--sp-m);
 
-  // extra top room for the grip handle that overlaps it; no overflow
-  // clip, the kebab dropdown opens upwards past the banner edge
+  // extra top room for the grip handle that overlaps it
   padding: var(--sp-m) var(--sp-m) var(--sp-s);
 }
 
 .branch-banner-menu {
-  position: relative;
   display: flex;
   align-items: center;
-}
-
-// the banner sits at the bottom of the canvas, so its options menu
-// opens upwards
-.branch-banner-options-dropdown {
-  @extend %menu-dropdown;
-
-  inset-block-end: 100%;
-  inset-inline-end: 0;
-  inline-size: $sz-192;
 }
 
 .branch-banner-icon {
@@ -1453,17 +1212,22 @@
   align-items: baseline;
   gap: var(--sp-xs);
 
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 }
 
-.branch-banner-title,
-.branch-banner-from {
-  color: var(--color-foreground-secondary);
-}
-
-.branch-banner-name {
+.branch-banner-title {
   color: var(--color-foreground-primary);
-  font-weight: 700;
+  white-space: nowrap;
+}
+
+.branch-banner-icon-warning {
+  color: var(--color-accent-warning);
+}
+
+.branch-banner-separator {
+  align-self: stretch;
+  inline-size: $sz-1;
+  background-color: var(--color-background-quaternary);
 }
 
 .branch-banner-actions {
@@ -1472,12 +1236,29 @@
   gap: var(--sp-s);
 }
 
-.branch-banner-counts {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
+// --- All branches dialog
 
-  @include t.use-typography("body-small");
+.branches-list-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  block-size: $sz-480;
+  min-block-size: 0;
+  padding: 0;
+}
+
+.branches-list-tabs {
+  flex: 1;
+  min-block-size: 0;
+}
+
+.branches-list-search {
+  inline-size: $sz-224;
+  margin-inline-start: auto;
+}
+
+.branches-list-entries {
+  padding-block-start: var(--sp-m);
 }
 
 // --- Lifecycle: kebab menu, rename, archived section
@@ -1487,108 +1268,19 @@
 }
 
 .branch-entry.is-current {
-  border: 1px solid var(--color-background-quaternary);
+  border: $b-1 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
-}
-
-// while its context menu is open, lift the whole entry (and its absolutely
-// positioned dropdown) above sibling entries so their hover/background does
-// not paint over the menu
-.branch-entry.is-menu-open {
-  position: relative;
-  z-index: 1;
 }
 
 .branch-rename-input {
   inline-size: 100%;
   padding: var(--sp-xxs) var(--sp-xs);
-  border-radius: 8px;
-  border: 1px solid var(--color-accent-primary);
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-accent-primary);
   background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
 
-  @include t.use-typography("body-medium");
-}
-
-.branch-options-dropdown {
-  @extend %menu-dropdown;
-
-  inset-block-start: 100%;
-  inset-inline-end: 0;
-  inline-size: $sz-160;
-}
-
-.menu-option {
-  @extend %menu-item-base;
-
-  white-space: nowrap;
-}
-
-.branches-archived {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-}
-
-.branches-archived-toggle {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  padding-block: var(--sp-s) var(--sp-xs);
-  padding-inline: var(--sp-s);
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--color-foreground-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-
-.branches-archived-count {
-  margin-inline-start: auto;
-}
-
-.branches-footer {
-  margin-block-start: auto;
-  padding: var(--sp-s);
-  border-block-start: 1px solid var(--color-background-quaternary);
-}
-
-// The limits dialog is the only long modal here, and `%modal-container-base`
-// caps its height without clipping, so a long list spills past the panel.
-// Make this one container a bounded flex column and give the scrolling to
-// the content, which needs `min-height: 0` to be allowed to shrink.
-.limits-container {
-  display: flex;
-  flex-direction: column;
-  max-height: min(80vh, 42rem);
-  overflow: hidden;
-}
-
-.limits-content {
-  min-height: 0;
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding-inline-end: var(--sp-xs);
-}
-
-.branches-limits-link {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--color-foreground-secondary);
-
-  &:hover {
-    color: var(--color-accent-primary);
-  }
+  @include use-typography("body-medium");
 }
 
 .limits-section {
@@ -1599,12 +1291,9 @@
 }
 
 .limits-section-title {
-  @include t.use-typography("body-small");
+  @include use-typography("headline-small");
 
   color: var(--color-foreground-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
 }
 
 .limits-list {
@@ -1617,7 +1306,7 @@
 }
 
 .limits-item {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-primary);
 }

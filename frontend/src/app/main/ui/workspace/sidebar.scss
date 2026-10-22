@@ -103,7 +103,7 @@
 
 .left-sidebar {
   display: grid;
-  grid-template: "header header" px2rem(52) "content resize" 1fr / 1fr 0;
+  grid-template: "header header" auto "content resize" 1fr / 1fr 0;
   position: relative;
   grid-area: left-sidebar;
   min-inline-size: var(--left-sidebar-width);

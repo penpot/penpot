@@ -4,89 +4,68 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "ds/typography.scss" as t;
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 
 // floats over the bottom-right corner of the file thumbnail
 .branches-popover-wrap {
   position: absolute;
-  inset-inline-start: deprecated.$s-12;
-  inset-block-start: deprecated.$s-12;
+  inset-inline-start: var(--sp-m);
+  inset-block-start: var(--sp-m);
+
+  // TODO: no DS z-index token for 1.
   z-index: 1;
 }
 
 .branches-badge {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xxs);
+  block-size: $sz-32;
   padding: var(--sp-xs) var(--sp-s);
-  border: 2px solid var(--color-background-quaternary);
-  border-radius: deprecated.$br-8;
-  height: 32px;
+  border: $b-2 solid var(--color-background-quaternary);
+  border-radius: $br-8;
   color: var(--color-foreground-secondary);
   background-color: var(--color-background-tertiary);
-
-  &:hover {
-    background-color: var(--color-background-tertiary);
-  }
 }
 
+// out of the flow, under the badge: the badge never moves when it opens,
+// and the popover is only as wide as its longest branch name allows
 .branches-popover {
+  position: absolute;
+  inset-block-start: calc(100% + var(--sp-xs));
+  inset-inline-start: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-s);
-  min-inline-size: 240px;
+  gap: var(--sp-xxs);
+  inline-size: max-content;
+  min-inline-size: $sz-224;
+  max-inline-size: $sz-284;
   padding: var(--sp-s);
-  border-radius: 8px;
-  border: 1px solid var(--color-background-quaternary);
-  background-color: var(--color-background-secondary);
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  box-shadow: var(--el-shadow-dark);
+}
+
+.branches-popover-section {
+  @include use-typography("headline-small");
+
+  display: flex;
+  justify-content: space-between;
+  padding: var(--sp-s) var(--sp-s) var(--sp-xs);
+  color: var(--color-foreground-secondary);
 }
 
 .branches-popover-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-xxs);
   margin: 0;
   padding: 0;
   list-style: none;
-  max-block-size: 280px;
+  max-block-size: $sz-284;
   overflow-y: auto;
-}
-
-.branches-popover-item {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-  padding: var(--sp-xs) var(--sp-s);
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--color-foreground-primary);
-
-  &:hover {
-    background-color: var(--color-background-tertiary);
-  }
-}
-
-.branches-popover-name {
-  @include t.use-typography("body-medium");
-
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.branches-popover-counts {
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
-}
-
-.branches-popover-error {
-  display: inline-flex;
-  align-items: center;
-  color: var(--color-foreground-warning);
 }

@@ -1,0 +1,40 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+
+.branch-pill {
+  --pill-fg-color: var(--color-accent-primary);
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-xxs);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--pill-fg-color);
+
+  &.is-main {
+    --pill-fg-color: var(--color-foreground-secondary);
+  }
+
+  &.is-review {
+    --pill-fg-color: var(--color-accent-info);
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

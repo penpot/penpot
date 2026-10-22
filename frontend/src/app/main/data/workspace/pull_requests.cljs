@@ -14,8 +14,6 @@
   the outdated flag, not the canvas. Mirrors the patterns of
   `app.main.data.workspace.branches`."
   (:require
-   [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
@@ -274,24 +272,6 @@
                        (assoc :pr-id (:id pr))
                        (dissoc :page-id))]
         (rx/of (rt/nav :workspace params))))))
-
-(defn open-pull-request-viewer
-  "Open the review sandbox in the interactions viewer (new window): the
-  viewer bundle serves the pull request's pinned snapshot, so reviewers
-  can play the prototype exactly as it was published for review."
-  [pr]
-  (assert (uuid? (:id pr)) "expected a pull request row with a valid `:id`")
-  (ptk/reify ::open-pull-request-viewer
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [params {:file-id (:source-file-id pr)
-                    :page-id (:current-page-id state)
-                    :pr-id (:id pr)
-                    :section :interactions}]
-        (rx/of (rt/nav :viewer
-                       (d/without-nils params)
-                       {::rt/new-window true
-                        ::rt/window-name (dm/str "viewer-" (:source-file-id pr))}))))))
 
 (defn- set-pull-request-preview
   [preview]

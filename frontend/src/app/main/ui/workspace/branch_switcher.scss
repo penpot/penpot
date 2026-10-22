@@ -1,0 +1,121 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+:global(:root) {
+  --branch-bar-size: #{$sz-36};
+}
+
+// --- Branch row under the header
+
+.branch-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  block-size: var(--branch-bar-size);
+  padding: var(--sp-xs) var(--sp-m) var(--sp-s);
+}
+
+.status-note {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+// --- Popover
+
+.popover {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: var(--sp-s);
+  z-index: var(--z-index-dropdown);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  inline-size: $sz-284;
+  max-block-size: $sz-480;
+  overflow-y: auto;
+  padding: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  box-shadow: var(--el-shadow-dark);
+}
+
+.section {
+  @include use-typography("headline-small");
+
+  display: flex;
+  justify-content: space-between;
+  padding: var(--sp-s) var(--sp-s) var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.action {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  min-block-size: $sz-32;
+  padding: var(--sp-xs) var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background: none;
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    --shortcut-foreground-color: var(--color-foreground-primary);
+
+    background-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.action-label {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.action-aside {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-s);
+  color: var(--color-foreground-secondary);
+}
+
+.divider {
+  inline-size: 100%;
+  margin: var(--sp-xs) 0;
+  border: none;
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+}

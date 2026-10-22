@@ -7,10 +7,14 @@
 (ns frontend-tests.data.workspace-branches-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.main.data.common :as dcm]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -216,3 +220,91 @@
                 (rx/dispose! store))))
           (done'))
         done))))
+
+;;; --- Branch switcher: the entry point of the menu and the shortcut ---
+
+(defn- make-store-with
+  [state]
+  (ptk/store {:state state
+              :on-error (fn [cause] (t/is false (str cause)))}))
+
+(def ^:private file-id (uuid/next))
+
+(def ^:private main-without-branches
+  {:current-file-id file-id
+   :files {file-id {:id file-id :name "Checkout"}}
+   :workspace-branches {:status :loaded :data []}
+   :workspace-branch-context {:file-id file-id :loaded? true :info nil}})
+
+(def ^:private main-with-branches
+  (assoc main-without-branches :workspace-branches
+         {:status :loaded :data [{:id (uuid/next) :name "feature-login" :status "open"}]}))
+
+(def ^:private on-a-branch
+  (assoc main-without-branches :workspace-branch-context
+         {:file-id file-id :loaded? true :info {:id (uuid/next) :name "feature-login"}}))
+
+(t/deftest the-switcher-only-exists-once-the-file-has-branches
+  (t/is (false? (dwb/has-branches? main-without-branches)))
+  (t/is (true? (dwb/has-branches? main-with-branches)))
+  (t/is (true? (dwb/has-branches? on-a-branch))
+        "a branch counts even before the list loads"))
+
+(t/deftest the-switcher-toggles-and-can-be-forced
+  (let [store (make-store-with main-with-branches)]
+    (ptk/emit! store (dwb/toggle-branch-switcher))
+    (t/is (true? (:workspace-branch-switcher @store)))
+    (ptk/emit! store (dwb/toggle-branch-switcher))
+    (t/is (false? (:workspace-branch-switcher @store)))
+    (ptk/emit! store (dwb/toggle-branch-switcher true))
+    (ptk/emit! store (dwb/toggle-branch-switcher true))
+    (t/is (true? (:workspace-branch-switcher @store)) "forcing it open twice keeps it open")
+    (rx/dispose! store)))
+
+(t/deftest ^:async show-branches-opens-the-switcher-when-there-are-branches
+  (await (mock/with-mocks*
+           {cf/flags (conj cf/flags :branching)}
+           (let [store (make-store-with main-with-branches)]
+             (ptk/emit! store (dwb/show-branches))
+             (await (async/wait-for #(true? (:workspace-branch-switcher @store))
+                                    "the switcher opens"))
+             (await (async/settle))
+             (t/is (nil? (::modal/modal @store)) "no dialog opens")
+             (rx/dispose! store)))))
+
+(t/deftest ^:async show-branches-asks-for-the-first-branch-when-there-are-none
+  (await (mock/with-mocks*
+           {cf/flags (conj cf/flags :branching)}
+           (let [store (make-store-with main-without-branches)]
+             (ptk/emit! store (dwb/show-branches))
+             (await (async/wait-for #(some? (::modal/modal @store))
+                                    "the create dialog opens"))
+             (t/is (= :create-branch (get-in @store [::modal/modal :type])))
+             (t/is (= "Checkout" (get-in @store [::modal/modal :props :file-name])))
+             (t/is (not (:workspace-branch-switcher @store)))
+             (rx/dispose! store)))))
+
+(t/deftest ^:async show-branches-does-nothing-without-the-flag
+  (await (mock/with-mocks*
+           {cf/flags (disj cf/flags :branching)}
+           (let [store (make-store-with main-without-branches)]
+             (ptk/emit! store (dwb/show-branches))
+             (await (async/settle))
+             (t/is (nil? (::modal/modal @store)))
+             (t/is (nil? (:workspace-branch-switcher @store)))
+             (rx/dispose! store)))))
+
+(t/deftest ^:async opening-a-branch-closes-the-switcher-and-navigates
+  (let [navigations (atom [])
+        branch-id   (uuid/next)]
+    (await (mock/with-mocks*
+             {dcm/go-to-workspace
+              (fn [& {:as params}]
+                (swap! navigations conj params)
+                (ptk/data-event ::navigated params))}
+             (let [store (make-store-with (assoc main-with-branches :workspace-branch-switcher true))]
+               (ptk/emit! store (dwb/open-branch branch-id))
+               (await (async/wait-for #(seq @navigations) "it navigates"))
+               (t/is (false? (:workspace-branch-switcher @store)))
+               (t/is (= {:file-id branch-id} (first @navigations)))
+               (rx/dispose! store))))))
