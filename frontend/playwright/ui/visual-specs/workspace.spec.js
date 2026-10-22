@@ -1239,6 +1239,9 @@ test.describe("Comments panel filter", () => {
     await page.mouse.move(640, 600);
     await expect(trigger).toHaveScreenshot(shot);
 
+    await trigger.hover();
+    await expect(trigger).toHaveScreenshot(shot);
+
     await trigger.click();
     const menu = page.locator("[class*='comment-mode-dropdown']");
     await expect(menu).toBeVisible();
