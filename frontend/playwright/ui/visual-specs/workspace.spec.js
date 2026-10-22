@@ -1223,3 +1223,26 @@ test.describe("Assets tab controls", () => {
     await expect(modal).toHaveScreenshot(shot);
   });
 });
+
+test.describe("Comments panel filter", () => {
+  test("Shows the filter trigger and its menu", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.showComments();
+
+    const trigger = workspace.rightSidebar.getByRole("button", {
+      name: "Show all comments",
+    });
+    await expect(trigger).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(trigger).toHaveScreenshot(shot);
+
+    await trigger.click();
+    const menu = page.locator("[class*='comment-mode-dropdown']");
+    await expect(menu).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(menu).toHaveScreenshot(shot);
+  });
+});
