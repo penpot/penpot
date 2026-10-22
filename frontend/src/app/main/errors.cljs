@@ -526,11 +526,22 @@
 (defn flash-persistence
   [cause]
   (let [data (ex-data cause)]
-    (if (delegated-persistence-failure? data)
+    (cond
+      (delegated-persistence-failure? data)
       ;; The persistence state wraps the failure and records the original
       ;; type under :cause-type; dispatch on it to reach the cause's handler.
       (on-error (-> (exception->error-data cause)
                     (assoc :type (or (:cause-type data) (:type data)))))
+
+      ;; A merged or archived branch is read-only and the server refuses its
+      ;; saves: an expected refusal, so it is explained, not reported.
+      (= :branch-merged (:code data))
+      (st/emit! (ntf/warn (tr "errors.save-refused-merged-branch")))
+
+      (= :branch-archived (:code data))
+      (st/emit! (ntf/warn (tr "errors.save-refused-archived-branch")))
+
+      :else
       (flash :cause cause
              :type :handled
              :timeout nil

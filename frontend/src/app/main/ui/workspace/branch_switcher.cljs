@@ -102,9 +102,35 @@
                     :is-current (boolean current)
                     :data-branch (dm/str (:branch-file-id row))
                     :on-click on-open}
-    (if (:is-main row)
-      (main-subtitle (:is-library row))
-      [:> row-status* {:row row :pr pr}])]])
+    ;; merged and archived branches carry no change counts
+    (cond
+      (:is-main row)              (main-subtitle (:is-library row))
+      (= "merged" (:status row))   (tr "workspace.branches.header.merged")
+      (= "archived" (:status row)) (tr "workspace.branches.header.archived")
+      :else                        [:> row-status* {:row row :pr pr}])]])
+
+(mf/defc closed-group*
+  "A collapsed section of the popover for branches out of the flow: its
+  title and count open it on click."
+  {::mf/private true}
+  [{:keys [label rows on-open]}]
+  (let [open*     (mf/use-state false)
+        open?     (deref open*)
+        on-toggle (mf/use-fn #(swap! open* not))]
+    (when (seq rows)
+      [:*
+       [:button {:class (stl/css :action)
+                 :aria-expanded open?
+                 :on-click on-toggle}
+        [:> i/icon* {:icon-id (if open? i/arrow-down i/arrow-right) :size "s"}]
+        [:span {:class (stl/css :action-label)} label]
+        [:span {:class (stl/css :action-aside)} (dm/str (count rows))]]
+       (when open?
+         [:ul {:class (stl/css :rows)}
+          (for [row rows]
+            [:> switcher-row* {:key (dm/str (:branch-file-id row))
+                               :row row
+                               :on-open on-open}])])])))
 
 (mf/defc switcher-popover*
   {::mf/private true}
@@ -113,8 +139,6 @@
 
         filter*        (mf/use-state "")
         filter-v       (deref filter*)
-        archived*      (mf/use-state false)
-        show-archived? (deref archived*)
 
         matches?
         (fn [row]
@@ -138,16 +162,12 @@
           main-row (cons main-row)
           :always  (filter matches?))
 
-        archived
-        (->> rows
-             (remove #(= "open" (:status %)))
-             (filter matches?))
+        with-status
+        (fn [status]
+          (filter #(and (= status (:status %)) (matches? %)) rows))
 
         on-filter-change
         (mf/use-fn #(reset! filter* (dom/get-target-val %)))
-
-        on-toggle-archived
-        (mf/use-fn #(swap! archived* not))
 
         on-open
         (mf/use-fn
@@ -231,20 +251,12 @@
                                  :pr (get prs-by-branch (:id row))
                                  :on-open on-open}])]])
 
-        (when (seq archived)
-          [:*
-           [:button {:class (stl/css :action)
-                     :aria-expanded show-archived?
-                     :on-click on-toggle-archived}
-            [:> i/icon* {:icon-id (if show-archived? i/arrow-down i/arrow-right) :size "s"}]
-            [:span {:class (stl/css :action-label)} (tr "workspace.branches.archived")]
-            [:span {:class (stl/css :action-aside)} (dm/str (count archived))]]
-           (when show-archived?
-             [:ul {:class (stl/css :rows)}
-              (for [row archived]
-                [:> switcher-row* {:key (dm/str (:branch-file-id row))
-                                   :row row
-                                   :on-open on-open}])])])])
+        [:> closed-group* {:label (tr "workspace.branches.merged")
+                           :rows (with-status "merged")
+                           :on-open on-open}]
+        [:> closed-group* {:label (tr "workspace.branches.archived")
+                           :rows (with-status "archived")
+                           :on-open on-open}]])
 
      [:hr {:class (stl/css :divider)}]
 
@@ -284,8 +296,6 @@
              :is-library (boolean (:is-shared file))
              :created-by (:id profile)
              :branch-file-id file-id})
-
-        merged?   (contains? #{"merged" "archived"} (:status ctx))
 
         ;; clicks inside the row (chip and popover) must not close it
         bar-ref   (mf/use-ref nil)
@@ -357,8 +367,19 @@
                       :class (stl/css :status-note)}
             (main-subtitle (:is-shared file))]
 
-           ^boolean merged?
-           nil
+           ;; merged and archived branches open read-only and count no
+           ;; changes: the note says which of the two it is
+           (= "merged" (:status ctx))
+           [:> text* {:as "span"
+                      :typography t/body-small
+                      :class (stl/css :status-note)}
+            (tr "workspace.branches.header.merged")]
+
+           (= "archived" (:status ctx))
+           [:> text* {:as "span"
+                      :typography t/body-small
+                      :class (stl/css :status-note)}
+            (tr "workspace.branches.header.archived")]
 
            (in-sync? ctx pr)
            [:> text* {:as "span"

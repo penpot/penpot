@@ -786,3 +786,22 @@
          (let [state (ptk/update (last @events) {})]
            (t/is (nil? (get-in state [:notification :timeout])))
            (t/is (some? (get-in state [:notification :links 0])))))))))
+
+(t/deftest closed-branch-save-refusals-explain-themselves
+  (t/testing "a save refused on a merged or archived branch warns without a report"
+    (doseq [code [:branch-merged :branch-archived]]
+      (let [events    (atom [])
+            scheduled (atom [])]
+        (with-redefs [st/emit!    (mock/stub (fn [& emitted] (swap! events into emitted)))
+                      tm/schedule (mock/stub (fn [callback]
+                                               (swap! scheduled conj callback)))]
+          (errors/flash-persistence (ex-info "read-only branch" {:type :validation :code code}))
+          (doseq [callback @scheduled] (callback))
+          (t/is (empty? (report-events @events)) "no error report for an expected refusal")
+          (t/is (= 1 (count @events)))
+          (let [state (ptk/update (first @events) {})]
+            (t/is (= :warning (get-in state [:notification :level])))
+            (t/is (= (i18n/tr (if (= code :branch-merged)
+                                "errors.save-refused-merged-branch"
+                                "errors.save-refused-archived-branch"))
+                     (get-in state [:notification :content])))))))))

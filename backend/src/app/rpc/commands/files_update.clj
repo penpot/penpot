@@ -429,6 +429,25 @@
                 :hint "branch metadata not found for branch file"
                 :file-id (:id file)))
 
+    ;; Only an open branch takes saves. A branch kept after its merge has
+    ;; its work in main, and no command integrates ops appended after the
+    ;; merge. An archived branch is read-only until it is restored or
+    ;; turned into an ordinary file. Refuse instead of stranding the ops.
+    (case (:status branch)
+      "merged"
+      (ex/raise :type :validation
+                :code :branch-merged
+                :hint "a merged branch is read-only"
+                :file-id (:id file))
+
+      "archived"
+      (ex/raise :type :validation
+                :code :branch-archived
+                :hint "an archived branch is read-only"
+                :file-id (:id file))
+
+      nil)
+
     (db/update! conn :project
                 {:modified-at modified-at}
                 {:id (:project-id file)}
