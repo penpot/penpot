@@ -731,8 +731,10 @@
                                         :is-shared false})
           file-id   (:id file)
           ;; the racer is a second designer: the per-profile climit
-          ;; serializes one designer's creates against themselves
-          _         (th/create-file-role* {:file-id file-id
+          ;; serializes one designer's creates against themselves. File
+          ;; access requires membership of the file's team, so the racer
+          ;; joins that team as an editor.
+          _         (th/create-team-role* {:team-id (:default-team-id profile1)
                                            :profile-id (:id profile2)
                                            :role :editor})
           real-lock db/xact-lock!
