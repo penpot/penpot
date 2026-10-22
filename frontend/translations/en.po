@@ -6411,6 +6411,50 @@ msgstr "Compare"
 msgid "workspace.branches.compare.attr"
 msgstr "Property"
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs:99
+msgid "workspace.branches.compare.attr.blend-mode"
+msgstr "Blend mode"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:101
+msgid "workspace.branches.compare.attr.component"
+msgstr "Component"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:102
+msgid "workspace.branches.compare.attr.component-library"
+msgstr "Component library"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:100
+msgid "workspace.branches.compare.attr.component-reference"
+msgstr "Component reference"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:107
+msgid "workspace.branches.compare.attr.container"
+msgstr "Container"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:97
+msgid "workspace.branches.compare.attr.corner-radius"
+msgstr "Corner radius"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:105
+msgid "workspace.branches.compare.attr.lock-proportions"
+msgstr "Lock proportions"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:104
+msgid "workspace.branches.compare.attr.locked"
+msgstr "Locked"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:106
+msgid "workspace.branches.compare.attr.parent"
+msgstr "Parent"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:98
+msgid "workspace.branches.compare.attr.text-auto-grow"
+msgstr "Text auto-grow"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:103
+msgid "workspace.branches.compare.attr.visibility"
+msgstr "Visibility"
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:465
 #, unused
 msgid "workspace.branches.compare.branch"
@@ -6428,17 +6472,23 @@ msgstr "Could not load the changes of this branch"
 msgid "workspace.branches.compare.export"
 msgstr "Export diff"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1118
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1351
 msgid "workspace.branches.compare.footer-changes"
-msgstr "%s changes"
+msgid_plural "workspace.branches.compare.footer-changes"
+msgstr[0] "1 change"
+msgstr[1] "%s changes"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1121
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1358
 msgid "workspace.branches.compare.footer-conflicts"
-msgstr "%s to resolve before merging"
+msgid_plural "workspace.branches.compare.footer-conflicts"
+msgstr[0] "1 to resolve before merging"
+msgstr[1] "%s to resolve before merging"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1391
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1354
 msgid "workspace.branches.compare.footer-selected"
-msgstr "%s of %s selected"
+msgid_plural "workspace.branches.compare.footer-selected"
+msgstr[0] "%s of 1 selected"
+msgstr[1] "%s of %s selected"
 
 #, unused
 msgid "workspace.branches.compare.group.colors"
@@ -6481,13 +6531,17 @@ msgstr "Computing changes…"
 msgid "workspace.branches.compare.main"
 msgstr "main"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:220
+#: src/app/main/ui/workspace/sidebar/branches.cljs:209
 msgid "workspace.branches.compare.n-items"
-msgstr "%s items"
+msgid_plural "workspace.branches.compare.n-items"
+msgstr[0] "1 item"
+msgstr[1] "%s items"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:221
+#: src/app/main/ui/workspace/sidebar/branches.cljs:210
 msgid "workspace.branches.compare.n-props"
-msgstr "%s properties"
+msgid_plural "workspace.branches.compare.n-props"
+msgstr[0] "1 property"
+msgstr[1] "%s properties"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:934
 msgid "workspace.branches.compare.no-props"
@@ -6556,25 +6610,35 @@ msgstr "Text"
 msgid "workspace.branches.compare.shape.variant"
 msgstr "Variant"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1036
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1262
 msgid "workspace.branches.compare.stats.added"
-msgstr "added"
+msgid_plural "workspace.branches.compare.stats.added"
+msgstr[0] "1 added"
+msgstr[1] "%s added"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1043
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1269
 msgid "workspace.branches.compare.stats.conflicts"
-msgstr "conflicts"
+msgid_plural "workspace.branches.compare.stats.conflicts"
+msgstr[0] "1 conflict"
+msgstr[1] "%s conflicts"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1040
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1266
 msgid "workspace.branches.compare.stats.deleted"
-msgstr "deleted"
+msgid_plural "workspace.branches.compare.stats.deleted"
+msgstr[0] "1 deleted"
+msgstr[1] "%s deleted"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:1038
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1264
 msgid "workspace.branches.compare.stats.modified"
-msgstr "modified"
+msgid_plural "workspace.branches.compare.stats.modified"
+msgstr[0] "1 modified"
+msgstr[1] "%s modified"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:879
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1089
 msgid "workspace.branches.compare.subtitle-mods"
-msgstr "%s property changes"
+msgid_plural "workspace.branches.compare.subtitle-mods"
+msgstr[0] "1 property change"
+msgstr[1] "%s property changes"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:876
 msgid "workspace.branches.compare.subtitle-new"
@@ -6611,6 +6675,14 @@ msgstr "Token"
 #, unused
 msgid "workspace.branches.compare.type.typography"
 msgstr "Typography"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:205
+msgid "workspace.branches.compare.value-false"
+msgstr "false"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:204
+msgid "workspace.branches.compare.value-true"
+msgstr "true"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1430
 msgid "workspace.branches.conflicts.all-branch"
