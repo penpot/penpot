@@ -1,0 +1,99 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as t;
+
+.scale-sidebar {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-background-color);
+}
+
+.scale-title {
+  margin: var(--sp-s) var(--sp-s) 0;
+}
+
+.scale-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-l) var(--sp-s);
+  padding: var(--sp-l) var(--sp-m);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.anchor-title {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-primary);
+}
+
+.anchor-grid {
+  --anchor-side-size: #{$sz-24};
+  --anchor-center-size: #{px2rem(60)};
+
+  display: grid;
+  grid-template-columns: var(--anchor-side-size) var(--anchor-center-size) var(--anchor-side-size);
+  grid-template-rows: var(--anchor-side-size) var(--anchor-center-size) var(--anchor-side-size);
+  inline-size: fit-content;
+  block-size: fit-content;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+// The unselected marks are 2/3 of the selected one, ring included
+$anchor-selected-size: px2rem(10);
+
+.anchor-point {
+  --anchor-mark-size: calc((#{$anchor-selected-size} + 2 * #{$b-2}) * 2 / 3);
+  --anchor-mark-color: var(--color-foreground-secondary);
+  --anchor-mark-outline-color: transparent;
+
+  all: unset;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    --anchor-mark-color: var(--color-foreground-primary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+    border-radius: $br-4;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &.selected {
+    --anchor-mark-size: #{$anchor-selected-size};
+    --anchor-mark-color: var(--color-accent-primary);
+    --anchor-mark-outline-color: var(--color-accent-primary-muted);
+  }
+}
+
+.center-area {
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+}
+
+.anchor-mark {
+  inline-size: var(--anchor-mark-size);
+  block-size: var(--anchor-mark-size);
+  border-radius: $br-4;
+  background-color: var(--anchor-mark-color);
+  outline: $b-2 solid var(--anchor-mark-outline-color);
+}

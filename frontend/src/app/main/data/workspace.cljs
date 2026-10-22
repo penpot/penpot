@@ -1688,6 +1688,7 @@
 (dm/export dwt/update-positions)
 (dm/export dwt/flip-horizontal-selected)
 (dm/export dwt/flip-vertical-selected)
+(dm/export dwt/scale-selected)
 (dm/export dwly/set-opacity)
 
 ;; Common

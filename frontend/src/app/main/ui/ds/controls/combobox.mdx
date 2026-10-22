@@ -53,6 +53,18 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
                ]}]
 ```
 
+The `combobox*` itself also accepts an optional `icon`. It shows at the start of
+the input when the selected option has no icon of its own, for example when
+the user types a value that matches no option.
+
+```clj
+[:> combobox*
+    {:icon i/scale
+     :default-selected "1"
+     :options [{ :label "1x" :id "1" }
+               { :label "2x" :id "2" }]}]
+```
+
 
 ### Avatars
 
