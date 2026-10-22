@@ -11,6 +11,7 @@
    [app.db :as db]
    [app.migrations.clj.migration-0023 :as mg0023]
    [app.migrations.clj.migration-0145 :as mg0145]
+   [app.migrations.clj.migration-0805 :as mg0805]
    [app.util.migrations :as mg]
    [integrant.core :as ig]))
 
@@ -535,7 +536,13 @@
     :fn (mg/resource "app/migrations/sql/0802-add-file-branch-change-table.sql")}
 
    {:name "0803-add-file-branch-change-media-id-map"
-    :fn (mg/resource "app/migrations/sql/0803-add-file-branch-change-media-id-map.sql")}])
+    :fn (mg/resource "app/migrations/sql/0803-add-file-branch-change-media-id-map.sql")}
+
+   {:name "0804-add-file-branch-change-changes-count"
+    :fn (mg/resource "app/migrations/sql/0804-add-file-branch-change-changes-count.sql")}
+
+   {:name "0805-stamp-file-branch-change-changes-count"
+    :fn mg0805/migrate}])
 
 (defn apply-migrations!
   [pool name migrations]
