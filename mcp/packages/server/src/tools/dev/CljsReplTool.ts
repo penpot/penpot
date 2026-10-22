@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { Tool } from "../Tool";
+import { Tool } from "../../Tool";
 import "reflect-metadata";
-import type { ToolResponse } from "../ToolResponse";
-import { TextResponse } from "../ToolResponse";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { NreplClient } from "../NreplClient";
+import type { ToolResponse } from "../../ToolResponse";
+import { TextResponse } from "../../ToolResponse";
+import { PenpotMcpServer } from "../../PenpotMcpServer";
+import { NreplClient } from "../../NreplClient";
 
 /**
  * Arguments for the CljsReplTool.

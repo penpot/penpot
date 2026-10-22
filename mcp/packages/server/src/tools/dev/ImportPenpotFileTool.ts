@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { Tool } from "../Tool";
-import { TextResponse, ToolResponse } from "../ToolResponse";
+import { Tool } from "../../Tool";
+import { TextResponse, ToolResponse } from "../../ToolResponse";
 import "reflect-metadata";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { NreplClient } from "../NreplClient";
-import { createLogger } from "../logger";
+import { PenpotMcpServer } from "../../PenpotMcpServer";
+import { NreplClient } from "../../NreplClient";
+import { createLogger } from "../../logger";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
