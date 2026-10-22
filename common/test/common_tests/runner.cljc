@@ -102,6 +102,7 @@
    [common-tests.path-names-test]
    [common-tests.path-names-tree-test]
    [common-tests.record-test]
+   [common-tests.schema-check-test]
    [common-tests.schema-test]
    [common-tests.spec-test]
    [common-tests.svg-path-test]

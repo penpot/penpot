@@ -56,8 +56,12 @@
              (str "(pass=TRUE, tests=" (:num-tests params)  ", seed=" (:seed params) ", elapsed=" time "ms)"))))
 
 (defmethod ct/report #?(:clj ::thrunk :cljs [:cljs.test/default ::thrunk])
-  [_]
-  nil)
+  [{:keys [::params]}]
+  (println "Shrunk generative case:")
+  (binding [*print-length* nil *print-level* nil]
+    (prn (merge (select-keys params [:seed])
+                (select-keys (:shrunk params) [:smallest :total-nodes-visited
+                                               :time-shrinking-ms])))))
 
 (defmethod ct/report #?(:clj ::trial :cljs [:cljs.test/default ::trial])
   [_]
@@ -86,9 +90,26 @@
   [bindings & body]
   `(tp/for-all ~bindings ~@body))
 
+(defn- environment-number
+  [name]
+  (when-let [value #?(:clj (System/getenv name)
+                      :cljs (some-> js/globalThis .-process .-env (aget name)))]
+    (let [number #?(:clj (parse-long value) :cljs (js/Number value))]
+      (when-not (and (integer? number) (pos? number))
+        (throw (ex-info (str name " must be a positive integer")
+                        {:variable name :value value})))
+      number)))
+
 (defn check!
-  [p & {:keys [num] :or {num 20} :as options}]
-  (let [result (tc/quick-check num p (assoc options :reporter-fn default-reporter-fn :max-size 50))
+  "Check a property with reproducible size and seed. PENPOT_GEN_NUM and
+   PENPOT_GEN_SEED override the defaults; explicit options take precedence."
+  [p & {:as options}]
+  (let [num     (or (:num options) (environment-number "PENPOT_GEN_NUM") 20)
+        seed    (or (:seed options) (environment-number "PENPOT_GEN_SEED"))
+        options (cond-> (merge {:max-size 50 :reporter-fn default-reporter-fn}
+                               (dissoc options :num))
+                  seed (assoc :seed seed))
+        result (tc/quick-check num p options)
         pass?        (:pass? result)
         total-tests  (:num-tests result)]
 
