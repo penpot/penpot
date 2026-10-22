@@ -283,6 +283,19 @@
         (assoc-in state [:workspace-local :selected] selected-ids)
         state))))
 
+(defn- commit-history-changes
+  "Replay changes in order, keeping each run in its destination file.
+   Older entries without a destination use the current file."
+  [origin changes]
+  (->> (partition-by ::file-id changes)
+       (map (fn [changes]
+              (dch/commit-changes {:file-id (::file-id (first changes))
+                                   :redo-changes (mapv #(dissoc % ::file-id) changes)
+                                   :undo-changes []
+                                   :origin origin
+                                   :save-undo? false})))
+       (rx/from)))
+
 (defn undo-to-index
   "Repeat undoing or redoing until dest-index is reached."
   [dest-index]
@@ -310,11 +323,9 @@
                                                (map :redo-changes))
                                           :else [])))]
                 (when (seq changes)
-                  (rx/of (materialize-undo changes dest-index)
-                         (dch/commit-changes {:redo-changes changes
-                                              :undo-changes []
-                                              :origin it
-                                              :save-undo? false})))))))))))
+                  (rx/concat
+                   (rx/of (materialize-undo changes dest-index))
+                   (commit-history-changes it changes)))))))))))
 
 (declare ^:private assure-valid-current-page)
 
@@ -354,13 +365,11 @@
                   (let [first-item (get items undo-group-index)]
                     (rx/of (undo-to-index (dec undo-group-index))
                            (restore-selection (:selected-before first-item))))
-                  (rx/of (materialize-undo changes (dec index))
-                         (dch/commit-changes {:redo-changes changes
-                                              :undo-changes []
-                                              :save-undo? false
-                                              :origin it})
-                         (restore-selection (:selected-before item))
-                         (assure-valid-current-page)))))))))))
+                  (rx/concat
+                   (rx/of (materialize-undo changes (dec index)))
+                   (commit-history-changes it changes)
+                   (rx/of (restore-selection (:selected-before item))
+                          (assure-valid-current-page))))))))))))
 
 (def redo
   (ptk/reify ::redo
@@ -392,12 +401,10 @@
                   (let [last-item (get items redo-group-index)]
                     (rx/of (undo-to-index redo-group-index)
                            (restore-selection (:selected-after last-item))))
-                  (rx/of (materialize-undo changes (inc index))
-                         (dch/commit-changes {:redo-changes changes
-                                              :undo-changes []
-                                              :origin it
-                                              :save-undo? false})
-                         (restore-selection (:selected-after item))))))))))))
+                  (rx/concat
+                   (rx/of (materialize-undo changes (inc index)))
+                   (commit-history-changes it changes)
+                   (rx/of (restore-selection (:selected-after item)))))))))))))
 
 (defn- assure-valid-current-page
   []

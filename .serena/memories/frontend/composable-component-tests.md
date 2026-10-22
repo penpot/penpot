@@ -117,7 +117,7 @@ Two pure runners (no store, JVM + CLJS):
   `common-tests.logic.composable-runner-test`.
 - Undo/redo round trip (`comp/undo_check.cljc`, alias `uc`), on by default in the pure runner
   (`:undo-check?`): after each `:user` step that pushed a group, undo must give back the
-  normalized file before it and redo the file after it (the variant continues from the redone
+  normalized files before it and redo the files after it (the variant continues from the redone
   file); a user step that pushed nothing must change nothing (`:no-undo-entry`); at the end,
   undo back to the last assembly step (the baseline; a case's own undo below it moves it) and
   redo all. Files compare through `app.common.test-helpers.normalize` (`thn/normalize-file`:
@@ -137,6 +137,11 @@ Two pure runners (no store, JVM + CLJS):
   workspace undo index (`:undo-index`/`:redo-index` phases): a step must add exactly one undo
   entry or group. File installs (assembly ops) are its baselines; a skipped optional and an inline `Test` are not. The interpreter
   empties `:workspace-undo` per variant. Frontend snapshots drop `:position-data` under WASM.
+  Both runners use `uc/snapshot-files` for the current file and every
+  auxiliary/library file. File differences prefix signatures with
+  `[:file <label> ...]`. Normalization also drops library `:synced-at`,
+  a server status stamp rather than design data. `ftm/snapshot` exposes
+  the same snapshot to cross-file undo regressions.
   Undo groups get lost in derived work: `initialize-shape-layout` buffers `:layout/update`
   without its `:undo-group` (F43), so a swap's reflow lands in entries of its own. Match
   steps by node identity, never by record type or rendered name: `n/MoveChild` does not resolve

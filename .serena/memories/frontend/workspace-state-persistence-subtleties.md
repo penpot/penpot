@@ -24,6 +24,11 @@
   with its prior file data. The component watcher syncs each transition
   before the next user commit, keeping undo groups adjacent. Its barrier
   remains open through the event turn. Foreign file cascades stay in common.
+- Undo changes carry `:app.main.data.workspace.undo/file-id`, separate from
+  change payload fields named `:file-id` (e.g. `:set-tokens-source`). Undo
+  and redo replay consecutive runs per destination in order; old entries
+  without the routing key use the current file. Stacking and transactions
+  keep these keys on each change.
 - Layout batches cross an `:asap` boundary before reflow so synchronous
   component sync cannot emit into the buffer being closed and lose a task.
 - Persistence buffers local commits: status becomes pending after about 200ms, commits are flushed after about 3s or `::force-persist`, and buffered commits are merged per file before `:update-file`.
