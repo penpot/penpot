@@ -132,7 +132,7 @@
                          :fills     [(stroke->fill stroke)]
                          :strokes   []}
                   (:even-odd? result)
-                  (assoc :svg-attrs {:fillRule "evenodd"})))))))
+                  (assoc :svg-attrs {:fill-rule "evenodd"})))))))
         (:strokes shape)))
 
 (defn convert-selected-strokes-to-path
