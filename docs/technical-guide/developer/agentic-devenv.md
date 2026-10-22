@@ -74,8 +74,14 @@ with a comprehensive toolbox for Penpot development:
   enabling the agent to
   * execute JavaScript code in the frontend (using the plugin API),
   * execute ClojureScript code in the frontend (REPL),
+  * run backend tests in a persistent test JVM (`clj_test`), where a focused run takes under a second
+    instead of the 16 to 18 s of a cold `clojure -M:dev:test`,
+  * evaluate Clojure in that test JVM or in the running backend (`clj_eval`),
   * import .penpot files for reproducing issues,
   * export design elements as images, and more.
+
+  The test JVM starts on the first call (about 15 s, about 2.5 GB of memory) and stops after two hours
+  without one.
 * **Serena MCP Server** provides code intelligence tools with support for Clojure and TypeScript.
   Its memory system is used to organise project knowledge in a context-efficient manner.
 * **Playwright MCP Server** provides tools for browser remote control.

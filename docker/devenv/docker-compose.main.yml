@@ -95,6 +95,9 @@ services:
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - PENPOT_TENANT=${PENPOT_TENANT}
       - PENPOT_TMUX_ATTACH=${PENPOT_TMUX_ATTACH}
+      # The host path of the bind mount above, so the MCP server can read
+      # files that an agent names by their host path.
+      - PENPOT_SOURCE_PATH=${PENPOT_SOURCE_PATH}
 
       # Agentic devenv: set to a PyPI release version/tag to update Serena on startup,
       # leave empty to skip update and use the version baked into the image.
