@@ -609,11 +609,12 @@
         (fn [{:keys [id library-file-ids]}]
           ;; One shared file that fails to load (for example, a migration
           ;; error on old data) must not break the whole list; skip it
-          ;; and report it with its id.
+          ;; and report it with its id. Old data can also fail with a JVM
+          ;; Error (an assert or a deep recursion), so catch Throwable.
           (try
             (let [file (get-file-with-summary cfg id)]
               (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{})))
-            (catch Exception cause
+            (catch Throwable cause
               (l/error :hint "unable to load shared file"
                        :file-id (str id)
                        :team-id (str team-id)

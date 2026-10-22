@@ -2916,14 +2916,20 @@
         file2    (th/create-file* 2 {:profile-id (:id profile)
                                      :project-id (:default-project-id profile)
                                      :is-shared true})
-        get-file (deref #'files/get-file-with-summary)
-        broken   (fn [cfg id]
-                   (if (= id (:id file1))
-                     (throw (ex-info "broken file" {:type :assertion}))
-                     (get-file cfg id)))
-        out      (with-redefs-fn {#'files/get-file-with-summary broken}
-                   #(th/command! {::th/type :get-team-shared-files
-                                  ::rpc/profile-id (:id profile)
-                                  :team-id (:default-team-id profile)}))]
-    (t/is (th/success? out))
-    (t/is (= #{(:id file2)} (into #{} (map :id) (:result out))))))
+        get-file (deref #'files/get-file-with-summary)]
+
+    ;; Old file data can fail with a JVM Error (an assert or a deep
+    ;; recursion), not only with an exception.
+    (doseq [cause [(ex-info "broken file" {:type :assertion})
+                   (AssertionError. "point instance expected")
+                   (StackOverflowError.)]]
+      (let [broken (fn [cfg id]
+                     (if (= id (:id file1))
+                       (throw cause)
+                       (get-file cfg id)))
+            out    (with-redefs-fn {#'files/get-file-with-summary broken}
+                     #(th/command! {::th/type :get-team-shared-files
+                                    ::rpc/profile-id (:id profile)
+                                    :team-id (:default-team-id profile)}))]
+        (t/is (th/success? out) (str "skips file failing with " (class cause)))
+        (t/is (= #{(:id file2)} (into #{} (map :id) (:result out))))))))
