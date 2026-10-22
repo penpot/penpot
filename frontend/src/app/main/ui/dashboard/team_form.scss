@@ -67,18 +67,6 @@
   @extend %modal-action-btns;
 }
 
-// TODO: .cancel-button is not used by team_form.cljs; check by hand
-// before removal.
-// .cancel-button {
-//   @extend %modal-cancel-btn;
-// }
-
 .accept-btn {
   @extend %modal-accept-btn;
-
-  // TODO: the danger state is not used by team_form.cljs; check by hand
-  // before removal.
-  // &.danger {
-  //   @extend %modal-danger-btn;
-  // }
 }
