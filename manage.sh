@@ -40,7 +40,18 @@ export PENPOT_SOURCE_PATH="${PENPOT_SOURCE_PATH:-$PWD}"
 
 # Base directory under which non-main workspace clones live (one subdir per
 # wsN, N>=1). Documented in defaults.env; default lives here so $HOME expands.
-export PENPOT_WORKSPACES_DIR="${PENPOT_WORKSPACES_DIR:-$HOME/.penpot/penpot_workspaces}"
+# The default follows the XDG base directory spec, in the data directory
+# because a clone can hold commits that exist nowhere else. A directory that
+# already exists at the former default, ~/.penpot/penpot_workspaces, keeps
+# being used, so existing clones are neither orphaned nor seeded again.
+if [[ -z "${PENPOT_WORKSPACES_DIR:-}" ]]; then
+    if [[ -d "$HOME/.penpot/penpot_workspaces" ]]; then
+        PENPOT_WORKSPACES_DIR="$HOME/.penpot/penpot_workspaces"
+    else
+        PENPOT_WORKSPACES_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/penpot-devenv/workspaces"
+    fi
+fi
+export PENPOT_WORKSPACES_DIR
 
 # Port allocation for parallel instances. Each wsN reserves a stride-wide port
 # block starting at N*stride; ws0 sits at offset 0, so a per-service base port
