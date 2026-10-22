@@ -317,3 +317,31 @@ test("User goes to the team settings section", async ({ page }) => {
   await expect(page.getByText("TEAM INFO")).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
+
+test.describe("Dashboard sidebar controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Search box, pinned placeholder and profile menu", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+
+    const search = page.locator("[class*='sidebar-search']");
+    await expect(search).toBeVisible();
+    await expect(search).toHaveScreenshot(shot);
+
+    await expect(page.getByTestId("pinned-projects")).toHaveScreenshot(shot);
+
+    // A search term swaps the search icon for the clear button.
+    await page.locator("#search-input").fill("test");
+    await expect(page).toHaveURL(/search/);
+    const clear = search.locator("button");
+    await clear.hover();
+    await expect(search).toHaveScreenshot(shot);
+
+    await page.getByTestId("profile-btn").click();
+    await expect(page.getByTestId("logout-profile-opt")).toBeVisible();
+    await expect(
+      page.getByTestId("logout-profile-opt").locator("xpath=.."),
+    ).toHaveScreenshot(shot);
+  });
+});

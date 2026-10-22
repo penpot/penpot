@@ -134,11 +134,13 @@
   align-items: center;
 }
 
+// The DS small icon draws 12px inside a 16px box: 2px less margin on each
+// side keeps the drawing and the text where they were.
 .pin-icon {
-  @extend %button-icon-small;
-
-  stroke: var(--icon-foreground);
-  margin: 0 var(--sp-m);
+  flex-shrink: 0;
+  stroke-width: 1.33px;
+  color: var(--color-foreground-secondary);
+  margin: 0 px2rem(10);
 }
 
 .empty-text {
@@ -186,6 +188,9 @@
   @include deprecated.button-style;
   @include deprecated.flex-center;
 
+  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color);
+
+  color: var(--sidebar-search-foreground-color);
   position: absolute;
   right: 0;
   height: var(--sp-xxl);
@@ -193,13 +198,9 @@
   padding: 0 var(--sp-s);
 }
 
-.search-icon,
-.clear-search-btn {
-  @extend %button-icon;
-
-  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color);
-
-  stroke: var(--sidebar-search-foreground-color);
+.search-icon {
+  flex-shrink: 0;
+  stroke-width: 1px;
 }
 
 .clear-search-btn:hover {
@@ -367,7 +368,7 @@
 .exit-icon {
   @extend %button-icon;
 
-  stroke: var(--icon-foreground);
+  color: var(--color-foreground-secondary);
 }
 
 .upgrade-plan-section {

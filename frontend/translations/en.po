@@ -356,6 +356,10 @@ msgstr "View full changelog"
 msgid "dashboard.check-updates.view-release-notes"
 msgstr "View release notes"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+msgid "dashboard.clear-search"
+msgstr "Clear search"
+
 #: src/app/main/ui/dashboard/deleted.cljs:322
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
