@@ -21,6 +21,8 @@
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace :as-alias dw]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -118,7 +120,10 @@
                                    (map #(vector (:id %) %))
                                    (cfh/get-children-with-self objects frame-id))]
                          (try
-                           (wasm.api/set-objects subtree #(rx/push! subs %))
+                           (wasm.api/set-objects subtree
+                                                 (fn [_]
+                                                   (rx/push! subs nil)
+                                                   (rx/end! subs)))
                            (catch :default err
                              (rx/error! subs err)))))))
 
@@ -150,17 +155,23 @@
                            (rx/catch (fn [err]
                                        (js/console.error err)
                                        (l/error :hint "error rendering component thumbnail" :frame-id (str frame-id))
-                                       (rx/empty)))
+                                       (rx/empty))))))]
 
-                           (rx/take-until
-                            (->> stream
-                                 (rx/filter (ptk/type? ::dwt/clear-thumbnail))
-                                 (rx/filter #(= (deref %) object-id)))))))]
-
-            (if (not= page-id (:current-page-id state))
-              (->> (load-objects-stream)
-                   (rx/mapcat do-render-thumbnail))
-              (do-render-thumbnail))))))))
+            ;; The upload and its deferred frame belong to this workspace
+            ;; scene. Neither may render after navigation replaces it.
+            (->> (if (not= page-id (:current-page-id state))
+                   (->> (load-objects-stream)
+                        (rx/mapcat do-render-thumbnail))
+                   (do-render-thumbnail))
+                 (rx/take-until
+                  (->> stream
+                       (rx/filter
+                        (fn [event]
+                          (let [type (ptk/type event)]
+                            (or (= type ::dw/finalize-workspace)
+                                (= type ::dwpg/finalize-page)
+                                (and (= type ::dwt/clear-thumbnail)
+                                     (= @event object-id)))))))))))))))
 
 (defn persist-thumbnail
   "Persists the current component thumbnail data-uri to the server.
