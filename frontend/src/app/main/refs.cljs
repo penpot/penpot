@@ -74,19 +74,20 @@
                  (get projects project-id)))
              st/state))
 
-(defn- open-merged-branch?
-  "True when the open file is a branch kept after its merge: its work is
-  already in main, so it opens read-only."
+(defn- open-closed-branch?
+  "True when the open file is a merged or an archived branch. A merged
+  branch has its work in main, and an archived one is set aside until it
+  is restored or turned into an ordinary file: both open read-only."
   [state]
   (let [ctx (:workspace-branch-context state)]
-    (and (= "merged" (get-in ctx [:info :status]))
+    (and (contains? #{"merged" "archived"} (get-in ctx [:info :status]))
          (= (:file-id ctx) (:current-file-id state)))))
 
 (def permissions
-  "The team permissions, without edition on a kept merged branch."
+  "The team permissions, without edition on a merged or archived branch."
   (l/derived (fn [state]
                (cond-> (:permissions (dsh/lookup-team state))
-                 (open-merged-branch? state)
+                 (open-closed-branch? state)
                  (assoc :can-edit false)))
              st/state))
 

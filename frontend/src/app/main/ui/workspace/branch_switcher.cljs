@@ -300,8 +300,8 @@
                       :class (stl/css :status-note)}
             (tr "workspace.branches.main-subtitle")]
 
-           ;; a kept merged branch opens read-only, and an archived one
-           ;; counts no changes: the note says which of the two it is
+           ;; merged and archived branches open read-only and count no
+           ;; changes: the note says which of the two it is
            (= "merged" (:status ctx))
            [:> text* {:as "span"
                       :typography t/body-small

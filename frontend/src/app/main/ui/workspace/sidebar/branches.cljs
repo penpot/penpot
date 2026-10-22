@@ -424,7 +424,7 @@
                    :on-click on-submit}
        (tr "workspace.branches.merge.confirm-accept")]]]))
 
-;; --- Confirmation for relevant branch actions (merge / update)
+;; --- Confirmation for relevant branch actions (merge / update / materialize)
 
 (defn- confirm-merge!
   "Open the merge dialog for `branch` (merge into main is irreversible; the
@@ -447,6 +447,17 @@
                           :accept-style :primary
                           :on-accept (fn [_] (st/emit! (dwb/update-branch-from-main branch
                                                                                     {:excluded excluded})))}))))
+
+(defn- confirm-materialize!
+  "Ask for confirmation before turning `branch` into an ordinary file: the
+  branch stops being one, so it can no longer be compared or merged."
+  [branch]
+  (st/emit! (modal/show {:type :confirm
+                         :title (tr "workspace.branches.materialize.title")
+                         :message (tr "workspace.branches.materialize.message" (:name branch))
+                         :accept-label (tr "workspace.branches.materialize.accept")
+                         :accept-style :danger
+                         :on-accept (fn [_] (st/emit! (dwb/materialize-branch (:branch-file-id branch))))})))
 
 ;; --- Diff counts: known, or honestly unknown
 ;;
@@ -497,7 +508,9 @@
         on-restore     (mf/use-fn (mf/deps branch)
                                   (fn [_]
                                     (st/emit! (modal/hide)
-                                              (dwb/archive-branch (:id branch) false))))]
+                                              (dwb/archive-branch (:id branch) false))))
+        on-materialize (mf/use-fn (mf/deps branch)
+                                  #(confirm-materialize! branch))]
     [:> modal* {:is-open true
                 :on-open-change (prui/on-dismiss on-close)}
      [:> prui/dialog-header* {:icon i/git-branch
@@ -586,9 +599,14 @@
            (-> (:merged-at branch) ct/inst (ct/format-inst :localized-date-time))]])]]
 
      [:> modal-footer* {}
+      ;; an archived branch is read-only: it comes back to work restored,
+      ;; or leaves the branch engine as an ordinary file
       (when archived?
         [:> button* {:variant "secondary" :icon i/history :on-click on-restore}
          (tr "workspace.branches.menu.restore")])
+      (when archived?
+        [:> button* {:variant "secondary" :icon i/document :on-click on-materialize}
+         (tr "workspace.branches.materialize.action")])
       ;; the work of a merged branch is in main: there is nothing to compare
       (when-not merged?
         [:> button* {:variant "secondary" :icon i/switch :on-click on-compare}
@@ -760,12 +778,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (on-set-menu false)
-           (st/emit! (modal/show {:type :confirm
-                                  :title (tr "workspace.branches.materialize.title")
-                                  :message (tr "workspace.branches.materialize.message" (:name entry))
-                                  :accept-label (tr "workspace.branches.materialize.accept")
-                                  :accept-style :danger
-                                  :on-accept (fn [_] (st/emit! (dwb/materialize-branch (:branch-file-id entry))))}))))]
+           (confirm-materialize! entry)))]
 
     [:li {:class (stl/css-case :branch-entry true
                                :is-archived closed?
@@ -875,9 +888,9 @@
              (tr (if archived?
                    "workspace.branches.menu.restore"
                    "workspace.branches.menu.archive"))])
-          ;; only an open branch can leave the branch engine: once merged or
-          ;; archived there is nothing left to turn into an ordinary file
-          (when-not closed?
+          ;; a merged branch has its work in main already: only an open or an
+          ;; archived branch can leave the branch engine as an ordinary file
+          (when-not merged?
             [:> menu-item* {:id "materialize" :on-action on-materialize}
              (tr "workspace.branches.materialize.action")])
           [:> menu-item* {:id "delete" :on-action on-delete}
@@ -1904,6 +1917,7 @@
         on-update    (mf/use-fn (mf/deps ctx) #(confirm-update! ctx))
         on-open-main (mf/use-fn (mf/deps ctx) #(st/emit! (dwb/open-branch (:source-file-id ctx))))
         on-restore   (mf/use-fn (mf/deps ctx) #(st/emit! (dwb/archive-branch (:id ctx) false)))
+        on-materialize (mf/use-fn (mf/deps ctx) #(confirm-materialize! ctx))
         on-resolve   (mf/use-fn (mf/deps ctx) #(modal/show! :branch-conflicts {:branch ctx :mode :merge}))
 
         on-merge
@@ -1997,14 +2011,19 @@
                        :on-click on-open-main}
            (tr "workspace.branches.banner.view-main")]
 
-          ;; an archived branch was set aside unmerged: it can be compared
-          ;; with main and brought back, and nothing else
+          ;; an archived branch was set aside unmerged and is read-only: it
+          ;; can be compared with main, brought back to work, or taken out
+          ;; as an ordinary file
           archived?
           [:div {:class (stl/css :branch-banner-actions)}
            [:> button* {:variant "secondary"
                         :icon i/switch
                         :on-click on-compare}
             (tr "workspace.branches.compare")]
+           [:> button* {:variant "secondary"
+                        :icon i/document
+                        :on-click on-materialize}
+            (tr "workspace.branches.materialize.action")]
            [:> button* {:variant "primary"
                         :icon i/history
                         :on-click on-restore}

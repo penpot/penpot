@@ -214,8 +214,8 @@
         file-loaded?     (get file ::has-data)
 
         file-name        (:name file)
-        ;; a kept merged branch takes no edits: `refs/permissions` drops
-        ;; `:can-edit` for it, and the contexts below pass that on
+        ;; a merged or archived branch takes no edits: `refs/permissions`
+        ;; drops `:can-edit` for it, and the contexts below pass that on
         permissions      (mf/deref refs/permissions)
 
         read-only?       (mf/deref refs/workspace-read-only?)

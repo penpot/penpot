@@ -1739,11 +1739,22 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
 
-#: src/app/main/errors.cljs:538
+#: src/app/main/errors.cljs:549
 msgid "errors.save-failed"
 msgstr ""
 "Autosave is not working due to an error. Contact support to report the "
 "error and reload to continue from your last saved version."
+
+#: src/app/main/errors.cljs:542
+msgid "errors.save-refused-archived-branch"
+msgstr ""
+"This branch is archived and read only. Restore it or turn it into an "
+"ordinary file to keep editing."
+
+#: src/app/main/errors.cljs:539
+msgid "errors.save-refused-merged-branch"
+msgstr ""
+"This branch is merged into main and read only. Make your changes in main."
 
 #: src/app/main/data/persistence.cljs:307
 msgid "errors.save-retrying"
@@ -6855,7 +6866,7 @@ msgstr "On branch %s from main"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:98, src/app/main/ui/workspace/branch_switcher.cljs:315
 msgid "workspace.branches.header.archived"
-msgstr "Archived, not merged"
+msgstr "Archived, read only"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:97, src/app/main/ui/workspace/branch_switcher.cljs:309
 msgid "workspace.branches.header.merged"
@@ -7086,7 +7097,7 @@ msgstr "Default branch"
 msgid "workspace.branches.materialize.accept"
 msgstr "Turn it into a file"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:882
+#: src/app/main/ui/workspace/sidebar/branches.cljs:609, src/app/main/ui/workspace/sidebar/branches.cljs:895, src/app/main/ui/workspace/sidebar/branches.cljs:2026
 msgid "workspace.branches.materialize.action"
 msgstr "Turn into an ordinary file"
 
