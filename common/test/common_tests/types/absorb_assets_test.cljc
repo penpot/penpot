@@ -10,6 +10,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.validate :as cfv]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.libraries :as cll]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -106,22 +107,42 @@
 (t/deftest absorb-nested-components
   ;; component2's main nests a copy of component1, and has an annotation;
   ;; the file has a copy of component2
-  (let [library (-> (thf/sample-file :library :is-shared true)
-                    (tho/add-nested-component :component1 :main1-root :main1-child
-                                              :component2 :main2-root :nested-head)
-                    (thc/update-component :component2 :annotation "Note"))
-        file    (-> (thf/sample-file :file)
-                    (thc/instantiate-component :component2 :copy2-root :library library
-                                               :children-labels [:copy-nested-head]))
-        file'   (ctf/update-file-data file #(ctf/absorb-assets % (:data library)))
-        data'   (ctf/file-data file')
-        page'   (second (ctpl/pages-seq data'))
-        nested' (get-in page' [:objects (thi/id :nested-head)])]
+  (let [library       (-> (thf/sample-file :library :is-shared true)
+                          (tho/add-nested-component :component1 :main1-root :main1-child
+                                                    :component2 :main2-root :nested-head)
+                          (ths/update-shape :nested-head :opacity 0.5)
+                          (as-> library
+                                (ths/update-shape-by-id
+                                 library (first (:shapes (ths/get-shape library :nested-head)))
+                                 :fills (ths/sample-fills-color :fill-color "#FF0000")))
+                          (thc/update-component :component2 :annotation "Note"))
+        file          (-> (thf/sample-file :file)
+                          (thc/instantiate-component :component2 :copy2-root :library library
+                                                     :children-labels [:copy-nested-head]))
+        file'         (ctf/update-file-data file #(ctf/absorb-assets % (:data library)))
+        data'         (ctf/file-data file')
+        page'         (second (ctpl/pages-seq data'))
+        nested'       (get-in page' [:objects (thi/id :nested-head)])
+        child-id      (first (:shapes nested'))
+        synced        (thf/apply-changes
+                       file'
+                       (:changes (cll/generate-sync-components-cascade
+                                  (pcb/empty-changes) (:id file') #{(thi/id :component1)}
+                                  {(:id file') file'} (:id file'))))
+        nested-synced (get-in synced [:data :pages-index (:id page') :objects (thi/id :nested-head)])]
     (thf/validate-file! file')
     (t/is (= 2 (count (ctkl/components-seq data'))))
     (t/testing "the nested copy in the absorbed main keeps its link"
       (t/is (= (thi/id :main1-root) (:shape-ref nested')))
       (t/is (= (:id file') (:component-file nested'))))
+    (t/testing "nested overrides survive absorption and a later sync"
+      (t/is (= #{:layer-effects-group} (:touched nested')))
+      (t/is (= 0.5 (:opacity nested-synced)))
+      (t/is (= #{:layer-effects-group} (:touched nested-synced))))
+    (t/testing "the nested descendant keeps its fill override"
+      (let [child (get-in synced [:data :pages-index (:id page') :objects child-id])]
+        (t/is (= "#FF0000" (-> child :fills first :fill-color)))
+        (t/is (= #{:fill-group} (:touched child)))))
     (t/testing "the component keeps its annotation"
       (t/is (= "Note" (:annotation (ctkl/get-component data' (thi/id :component2))))))))
 
