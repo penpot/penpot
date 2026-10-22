@@ -20,6 +20,7 @@
    [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.exports.files]
    [app.main.ui.frame-preview :as frame-preview]
+   [app.main.ui.mcp-authorize :refer [mcp-authorize*]]
    [app.main.ui.nitrate.entry :as nitrate-entry]
    [app.main.ui.notifications :as notifications]
    [app.main.ui.onboarding.questions :refer [questions-modal]]
@@ -117,6 +118,9 @@
 
        :auth-verify-token
        [:? [:> verify-token-page* {:route route}]]
+
+       :mcp-authorize
+       [:> mcp-authorize* {:route route :profile profile}]
 
        :nitrate-entry
        [:> nitrate-entry/nitrate-entry-page* {:profile profile}]

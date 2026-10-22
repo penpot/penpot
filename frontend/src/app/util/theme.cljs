@@ -17,7 +17,7 @@
 (defonce ^:private color-scheme-listeners*
   (atom #{}))
 
-(def ^:const default "dark")
+(def ^:const default "system")
 
 (defn get-system-theme
   []
@@ -47,16 +47,17 @@
 
 (defn resolve-theme
   "Resolves the profile's theme setting to the effective UI theme ('dark' or
-  'light'): 'system' follows the given system theme, 'default' and an unset
-  theme mean dark, and any other value is taken as-is. Single source of truth
-  for the app's own theme and the theme reported to plugins."
+  'light'). An unset preference or 'system' follows the system theme;
+  the legacy 'default' preference means dark. Used by the app and plugins."
   [profile-theme system-theme]
-  (cond
-    (= profile-theme "system") system-theme
-    (= profile-theme "default") "dark"
-    :else (d/nilv profile-theme "dark")))
+  (let [preference (d/nilv profile-theme default)]
+    (case preference
+      "system" system-theme
+      "default" "dark"
+      preference)))
 
-(defn use-initialize
+(defn use-theme
+  "Return the effective theme and follow system preference changes."
   [{profile-theme :theme}]
   (let [system-theme* (mf/use-state get-system-theme)
         system-theme  (deref system-theme*)]
@@ -68,6 +69,11 @@
         (fn []
           (rx/dispose! s))))
 
-    (mf/with-effect [system-theme profile-theme]
-      (set-color-scheme (resolve-theme profile-theme system-theme))
+    (resolve-theme profile-theme system-theme)))
+
+(defn use-initialize
+  [profile]
+  (let [color (use-theme profile)]
+    (mf/with-effect [color]
+      (set-color-scheme color)
       (notify-color-scheme-listeners!))))
