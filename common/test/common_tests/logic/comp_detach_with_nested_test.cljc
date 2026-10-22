@@ -12,11 +12,31 @@
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest undo-of-detach-restores-overrides-and-remote-sync-state
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-simple-component-with-copy
+                  :component1 :main-root :main-child :copy-root
+                  :copy-root-params {:children-labels [:copy-child]})
+                 (ths/update-shape :copy-root :opacity 0.4)
+                 (ths/update-shape :copy-child :fills
+                                   (ths/sample-fills-color :fill-color "#ff0000"))
+                 (ths/update-shape :copy-child :remote-synced true))
+        page (thf/current-page file)
+        changes (cli/generate-detach-component (pcb/empty-changes)
+                                               (thi/id :copy-root) (:data file)
+                                               (:id page) {(:id file) file})
+        detached (thf/apply-changes file changes)
+        undone (thf/apply-changes detached {:redo-changes (:undo-changes changes)})]
+    (t/is (nil? (:shape-ref (ths/get-shape detached :copy-root))))
+    (t/is (nil? (:touched (ths/get-shape detached :copy-child))))
+    (t/is (= (thn/normalize-file file) (thn/normalize-file undone)))))
 
 ;; Related .penpot file: common/test/cases/detach-with-nested.penpot
 (defn- setup-file
