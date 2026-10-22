@@ -32,8 +32,11 @@
   color: var(--modal-title-foreground-color);
 }
 
+// Tooltip wrapper of the close button: it places it in the corner.
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
@@ -131,16 +134,4 @@
 
 .action-buttons {
   @extend %modal-action-btns;
-}
-
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
-.accept-button {
-  @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
 }
