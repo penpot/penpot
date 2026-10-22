@@ -115,8 +115,7 @@
   margin-inline-start: var(--sp-xxxl);
 }
 
-.add-file-btn,
-.options-btn {
+.add-file-btn {
   @extend %button-tertiary;
 
   height: var(--sp-xxxl);
@@ -125,14 +124,17 @@
   padding: var(--sp-s);
 }
 
+.options-btn {
+  margin: 0 var(--sp-s);
+}
+
 .info-wrapper {
   display: flex;
   align-items: center;
   gap: var(--sp-s);
 }
 
-.add-icon,
-.menu-icon {
+.add-icon {
   @extend %button-icon;
 
   stroke: var(--icon-foreground);

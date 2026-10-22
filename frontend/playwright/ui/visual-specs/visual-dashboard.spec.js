@@ -439,6 +439,74 @@ test.describe("Subscription controls", () => {
   });
 });
 
+test.describe("Dashboard list controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Trash project options", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    // Deleted files due in 2100, so the trash keeps them.
+    await dashboardPage.mockRPC(
+      "get-team-deleted-files?team-id=*",
+      "dashboard/get-team-deleted-files-pending.json",
+    );
+    // A deleted project, so its row shows the options button.
+    await dashboardPage.mockRPC(
+      "get-projects?team-id=*",
+      "dashboard/get-projects-deleted.json",
+    );
+    await dashboardPage.goToDeleted();
+
+    const options = page.getByTestId("project-options").first();
+    await expect(options).toBeVisible();
+    const row = page.locator("[class*='dashboard-project-row']").first();
+    await page.mouse.move(640, 700);
+    await expect(row.locator("header")).toHaveScreenshot(shot);
+    await options.hover();
+    await expect(row.locator("header")).toHaveScreenshot(shot);
+  });
+
+  test("Empty project create button", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupNewProject();
+    await dashboardPage.goToDashboard();
+    await expect(dashboardPage.projectName).toBeVisible();
+
+    const create = page.locator("[class*='create-new']").first();
+    await expect(create).toBeVisible();
+    await page.mouse.move(640, 700);
+    await expect(create).toHaveScreenshot(shot);
+    await create.hover();
+    await expect(create).toHaveScreenshot(shot);
+  });
+
+  test("Project rename", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToDashboard();
+
+    await page.getByTestId("project-options").first().click();
+    await page.getByText("Rename", { exact: true }).click();
+    const edit = page.locator("[class*='edit-wrapper']").first();
+    await expect(edit).toBeVisible();
+    await expect(edit).toHaveScreenshot(shot);
+  });
+
+  test("Comments placeholder", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.mockRPC(
+      "get-unread-comment-threads?team-id=*",
+      "logged-in-user/get-unread-comment-threads-empty.json",
+    );
+    await dashboardPage.goToDashboard();
+
+    await page.getByTestId("open-comments").click();
+    const placeholder = page.locator("[class*='thread-groups-placeholder']");
+    await expect(placeholder).toBeVisible();
+    await expect(placeholder).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Team modals controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 

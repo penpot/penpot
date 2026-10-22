@@ -36,11 +36,9 @@
 }
 
 .comments-icon {
-  @extend %button-icon;
-
-  stroke: var(--icon-foreground);
-  height: deprecated.$s-24;
-  width: deprecated.$s-24;
+  flex-shrink: 0;
+  stroke-width: 1px;
+  color: var(--color-foreground-secondary);
   margin-bottom: deprecated.$s-24;
 }
 
