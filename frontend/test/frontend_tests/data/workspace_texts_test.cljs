@@ -138,6 +138,14 @@
   (t/is (= :auto-height
            (dwm/next-grow-type :auto-height (gpt/point 1 2) true))))
 
+(t/deftest distributed-alignment-exports-valid-css
+  (let [style (text.styles/generate-paragraph-styles nil {:text-align "distribute"})
+        normal (text.styles/generate-paragraph-styles nil {:text-align "justify"})]
+    (t/is (= "justify" (aget style "textAlign")))
+    (t/is (= "justify" (aget style "textAlignLast")))
+    (t/is (= "inter-character" (aget style "textJustify")))
+    (t/is (nil? (aget normal "textAlignLast")))))
+
 (t/deftest vertical-export-styles-enable-inter-script-spacing
   (let [vertical   (text.styles/generate-paragraph-styles
                     nil

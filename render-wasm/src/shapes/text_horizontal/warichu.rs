@@ -1,4 +1,5 @@
 use super::*;
+use crate::shapes::text_paragraph::LayoutParagraph;
 
 pub(super) const HORIZONTAL_WARICHU_BUILDER_LEN: usize = 3;
 pub(super) const HORIZONTAL_WARICHU_STYLE_ANCHOR: char = '\u{00A0}';
@@ -8,7 +9,7 @@ pub(super) const HORIZONTAL_WARICHU_BREAK_ANCHOR: char = '\u{200B}';
 /// Tabs in normal spans are placeholders too, so they are skipped.
 pub(crate) fn horizontal_warichu_placeholders(
     paragraph: &Paragraph,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
 ) -> Vec<(usize, skia::Rect)> {
     let mut placeholders = laid_out.get_rects_for_placeholders().into_iter();
     let mut result = Vec::new();
@@ -28,7 +29,7 @@ pub(crate) fn horizontal_warichu_placeholders(
 
 fn horizontal_warichu_boxes<'a>(
     paragraph: &'a Paragraph,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
 ) -> Vec<(&'a TextSpan, usize, usize, skia::Rect)> {
     let mut source_start = 0usize;
     let mut placeholders = horizontal_warichu_placeholders(paragraph, laid_out)
@@ -47,7 +48,7 @@ fn horizontal_warichu_boxes<'a>(
 
 pub(crate) fn horizontal_warichu_hit_test(
     paragraph: &Paragraph,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     point: Point,
 ) -> Option<usize> {
     for (span, source_start, _, rect) in horizontal_warichu_boxes(paragraph, laid_out) {
@@ -71,7 +72,7 @@ pub(crate) fn horizontal_warichu_hit_test(
 
 pub(crate) fn horizontal_warichu_caret_rect(
     paragraph: &Paragraph,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     source_offset: usize,
 ) -> Option<skia::Rect> {
     for (span, source_start, source_end, rect) in horizontal_warichu_boxes(paragraph, laid_out) {
@@ -100,7 +101,7 @@ pub(crate) fn horizontal_warichu_caret_rect(
 
 pub(crate) fn horizontal_warichu_range_rects(
     paragraph: &Paragraph,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     source_start: usize,
     source_end: usize,
 ) -> Vec<skia::Rect> {
@@ -155,7 +156,7 @@ pub(crate) fn paint_horizontal_warichu(
     canvas: &skia::Canvas,
     paragraph: &Paragraph,
     plan: &HorizontalParagraphPlan,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     x: f32,
     y: f32,
 ) {

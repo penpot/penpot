@@ -18,6 +18,13 @@
       (get :content)
       (cttx/change-text "hello world")))
 
+(t/deftest distributed-alignment-is-a-persisted-paragraph-style
+  (t/is (contains? cts/text-align-types "distribute"))
+  (let [content (assoc-in content-base [:children 0 :children 0 :text-align] "distribute")]
+    (t/is (ctst/valid-content? content))
+    (t/is (= "distribute"
+             (get-in (cttx/change-text content "한글") [:children 0 :children 0 :text-align])))))
+
 ;; Normal happy-path changes
 
 (def content-changed-text

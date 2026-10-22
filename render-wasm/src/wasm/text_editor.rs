@@ -784,6 +784,7 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
                 TextAlign::Right => RawTextAlign::Right as u32,
                 TextAlign::End => RawTextAlign::Right as u32,
                 TextAlign::Justify => RawTextAlign::Justify as u32,
+                TextAlign::Distribute => RawTextAlign::Distribute as u32,
             })
             .unwrap_or(0);
 
