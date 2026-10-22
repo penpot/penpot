@@ -1,166 +1,255 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
+
 (ns app.main.data.tokenscript
+  "Resolves the workspace tokens with the tokenscript interpreter
+  (`tokenscript.core`, from penpot/tokenscript-interpreter).
+
+  `resolve-tokens` takes the usual map of token name to token and returns
+  the same map with `:resolved-value` (a value ready for shape attributes:
+  numbers in pixels, colors as hex strings, composites as maps),
+  `:resolved-symbol` (the tokenscript value, see
+  `tokenscript.symbols`) and `:errors` (Penpot error maps, see
+  `app.main.data.workspace.tokens.errors`) added to each token."
   (:require
-   ["@penpot/tokenscript" :refer [BaseSymbolType
-                                  ColorSymbol
-                                  ListSymbol NumberSymbol
-                                  NumberWithUnitSymbol
-                                  ProcessorError
-                                  processTokens
-                                  TokenSymbol
-                                  makeConfig]]
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.types.token :as cto]
    [app.main.data.workspace.tokens.errors :as wte]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [tokenscript.core :as tsc]
+   [tokenscript.errors :as tse]
+   [tokenscript.symbols :as sym]))
 
-(l/set-level! :debug)
+;; Value conversion -----------------------------------------------------------
 
-;; Config ----------------------------------------------------------------------
+(defn- color->hex-string
+  "Hex string of a color symbol (`#rrggbbaa` when it has alpha)."
+  [color]
+  (sym/to-string (tsc/color->hex color)))
 
-(def config (makeConfig))
+(defn- symbol->value
+  "Converts a resolved tokenscript value into the shape used by shape
+  attributes and the token forms:
 
-;; Class predicates ------------------------------------------------------------
-;; Predicates to get information about the tokenscript interpreter symbol type
-;; Or to determine the error
+    - colors: hex strings (alpha as `#rrggbbaa`)
+    - `rem` values: pixels (16px root font size), `%` values: fractions
+    - other numbers with unit: the number
+    - structured tokens (typography, shadows): maps with keyword keys and
+      vectors
+    - null: nil"
+  [v]
+  (let [entries->map (fn [entries]
+                       (into {} (map (fn [[k v]] [(keyword k) (symbol->value v)])) entries))]
+    (cond
+      (nil? v) nil
+      (sym/null? v) nil
+      (sym/token? v) (let [content (sym/value v)]
+                       (if (map? content)
+                         (entries->map content)
+                         (mapv symbol->value content)))
+      (sym/list? v) (mapv symbol->value (sym/value v))
+      (sym/dictionary? v) (entries->map (sym/value v))
+      (sym/color? v) (color->hex-string v)
+      (sym/number-with-unit? v) (let [n (sym/value v)]
+                                  (case (:unit v)
+                                    "rem" (* n 16)
+                                    "%" (/ n 100)
+                                    n))
+      (sym/symbol? v) (sym/value v)
+      :else v)))
 
-(defn tokenscript-symbol? [v]
-  (instance? BaseSymbolType v))
+;; Value validation -----------------------------------------------------------
+;;
+;; Tokenscript resolves any expression; these are the Penpot level checks
+;; on the resolved value of each token type (ranges, allowed keywords,
+;; composite shapes) that decide whether a token can be applied.
 
-(defn structured-token? [v]
-  (instance? TokenSymbol v))
+(defn- words->string
+  "Values like `700 Italic` resolve to a list of words; font weights are
+  strings."
+  [v]
+  (if (sequential? v) (str/join " " (map str v)) v))
 
-(defn structured-record-token? [^js v]
-  (and (structured-token? v) (instance? js/Map (.-value v))))
-
-(defn structured-array-token? [^js v]
-  (and (structured-token? v) (instance? js/Array (.-value v))))
-
-(defn number-with-unit-symbol? [v]
-  (instance? NumberWithUnitSymbol v))
-
-(defn number-symbol? [v]
-  (instance? NumberSymbol v))
-
-(defn list-symbol? [v]
-  (instance? ListSymbol v))
-
-(defn color-symbol? [v]
-  (instance? ColorSymbol v))
-
-(defn processor-error? [err]
-  (instance? ProcessorError err))
-
-;; Conversion Tools ------------------------------------------------------------
-;; Helpers to convert tokenscript symbols to penpot accepted formats
-
-(defn color-symbol->hex-string [^js v]
-  (when (color-symbol? v)
-    (.toString (.to v "hex"))))
-
-(defn color-alpha [^js v]
-  (if (.isHex v)
-    1
-    (or (.getAttribute v "alpha") 1)))
-
-(defn color-symbol->penpot-color [^js v]
-  {:color (color-symbol->hex-string v)
-   :opacity (color-alpha v)})
-
-(defn rem-number-with-unit? [v]
-  (and (number-with-unit-symbol? v)
-       (= (.-unit v) "rem")))
-
-(defn percent-number-with-unit? [v]
-  (and (number-with-unit-symbol? v)
-       (= (.-unit v) "%")))
-
-(defn rem->px [^js v]
-  (* (.-value v) 16))
-
-(declare tokenscript-symbols->penpot-unit)
-
-(defn font-family-symbols->penpot-unit
-  "Converts a resolved font-family value into a vector of family names.
-  Each family name is the string form of its whole entry, which is a list of
-  word symbols when the family reached tokenscript unquoted."
-  [^js v]
-  (when (some? v)
-    (let [entries (.-value v)]
-      (if (instance? js/Array entries)
-        (mapv str entries)
-        [(str v)]))))
-
-(defn structured-token->penpot-map
-  "Converts structured token (record or array) to penpot map format.
-  Structured tokens are non-primitive token types like `typography` or `box-shadow`."
-  [^js token-symbol]
-  (if (instance? js/Array (.-value token-symbol))
-    (mapv tokenscript-symbols->penpot-unit (.-value token-symbol))
-    (let [entries (es6-iterator-seq (.entries (.-value token-symbol)))]
-      (into {} (map (fn [[k v]]
-                      (let [k (keyword k)]
-                        ;; The font-family member of a composite is a family list
-                        [k (if (= :font-family k)
-                             (font-family-symbols->penpot-unit v)
-                             (tokenscript-symbols->penpot-unit v))])))
-            entries))))
-
-(defn tokenscript-symbols->penpot-unit [^js v]
+(defn- font-family->vector
+  "Font families are always a flat vector of family names, also when the
+  value is a single name or references a font family token."
+  [v]
   (cond
-    (nil? v) nil
-    (structured-token? v) (structured-token->penpot-map v)
-    (list-symbol? v) (structured-token->penpot-map v)
-    (color-symbol? v) (.-value (.to v "hex"))
-    (rem-number-with-unit? v) (rem->px v)
-    (percent-number-with-unit? v) (/ (.-value v) 100)
-    :else (.-value v)))
+    (string? v) [v]
+    (sequential? v) (vec (flatten v))
+    :else v))
 
-(defn resolved-value->penpot-unit
-  "Converts the resolved value of a token of the given `type`.
-  Font families need the type: a list of symbols is a list of families at the
-  top level and the words of a single family name inside an entry."
-  [type ^js v]
-  (if (= :font-family type)
-    (font-family-symbols->penpot-unit v)
-    (tokenscript-symbols->penpot-unit v)))
+(defn- line-height->ratio
+  "Line heights in pixels are stored relative to the font size. Returns
+  the ratio or an error when the font size is not available."
+  [line-height font-size]
+  (if (and (sym/number-with-unit? line-height) (= "px" (:unit line-height)))
+    (if (number? font-size)
+      {:value (/ (sym/value line-height) font-size)}
+      {:error (wte/error-with-value :error.style-dictionary/composite-line-height-needs-font-size font-size)})
+    {:value (symbol->value line-height)}))
 
-;; Processors ------------------------------------------------------------------
-;; The processor resolves tokens
-;; resolved/error tokens get put back into a clojure structure directly during build time
-;; For updating tokens we use the `TokenResolver` crud methods from the processing result
-;; The `TokenResolver` has detailed information for each tokens dependency graph
+(defn- typography->value
+  "Converts a resolved typography composite, adjusting the fields the
+  text attributes expect. With `line-height-ratio` a line height in
+  pixels is converted relative to the font size."
+  [s line-height-ratio]
+  (let [value (symbol->value s)]
+    (if-not (map? value)
+      {:value value}
+      (let [value       (cond-> value
+                          (contains? value :font-family) (update :font-family font-family->vector)
+                          (contains? value :font-weight) (update :font-weight words->string))
+            line-height (when (and line-height-ratio (sym/token? s))
+                          (get (sym/value s) "line-height"))]
+        (if (some? line-height)
+          (let [{ratio :value error :error} (line-height->ratio line-height (:font-size value))]
+            (if error
+              {:error error}
+              {:value (assoc value :line-height ratio)}))
+          {:value value})))))
 
-(defn create-token-builder
-  "Collects resolved tokens during build time into a clojure structure.
-   Returns Tokenscript Symbols in `:resolved-value` key."
-  [tokens]
-  (let [output (volatile! tokens)
+(defn- convert-value
+  "Converts the resolved symbol of a token to the value shape expected by
+  its type. Returns `{:value v}` or `{:error e}`. Options:
 
-        ;; When a token is resolved (No parsing / reference errors) we assing `:resolved-value` for the original token
-        on-resolve
-        (fn [^js/String token-name ^js/Symbol resolved-symbol]
-          (vswap! output assoc-in [token-name :resolved-value] resolved-symbol))
+    :line-height-ratio convert typography line heights in pixels to a
+                       ratio of the font size (default true)"
+  ([type s] (convert-value type s nil))
+  ([type s {:keys [line-height-ratio] :or {line-height-ratio true}}]
+   (case type
+     :typography  (typography->value s line-height-ratio)
+     :font-family {:value (font-family->vector (symbol->value s))}
+     :font-weight {:value (words->string (symbol->value s))}
+     {:value (symbol->value s)})))
 
-        ;; When a token contains any errors we assing `:errors` for the original token
-        on-error
-        (fn [^js/String token-name ^js/Error _error ^js/String _original-value]
-          (let [value (get tokens token-name)
-                default-error [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]]
-            (vswap! output assoc-in [token-name :errors] default-error)))
+(defn- convert-token-value
+  "`convert-value` for a token: a failing conversion (e.g. a color that
+  cannot be written as hex) is an error of that token, not of the whole
+  resolution."
+  [{:keys [type value]} s]
+  (try
+    (convert-value type s)
+    (catch :default _
+      {:error (wte/error-with-value :error.style-dictionary/invalid-token-value value)})))
 
-        ;; Extract the atom value
-        get-result
-        (fn [] @output)]
-    #js {:onResolve on-resolve
-         :onError on-error
-         :getResult get-result}))
+(defn plugin-value
+  "Resolved value of a token as exposed by the plugin API: like
+  `:resolved-value` but with typography line heights left as resolved."
+  [{:keys [type resolved-symbol]}]
+  (when (some? resolved-symbol)
+    (:value (convert-value type resolved-symbol {:line-height-ratio false}))))
+
+(defn- validate-value
+  "Returns a Penpot error for the resolved `value` of `token`, or nil when
+  it is acceptable. The interpreter validates the kind of value of each
+  type; these are the Penpot specific limits on top."
+  [{:keys [type]} value]
+  (if (and (number? value) (cto/number-out-of-bounds? value))
+    (wte/error-with-value :error.token/number-too-large value)
+    (case type
+      :text-decoration
+      (when-not (and (string? value) (cto/valid-text-decoration value))
+        (wte/error-with-value :error.style-dictionary/invalid-token-value-text-decoration value))
+
+      :font-weight
+      (when-not (cto/valid-font-weight-variant (str value))
+        (wte/error-with-value :error.style-dictionary/invalid-token-value-font-weight value))
+
+      :font-family
+      (when-not (or (string? value) (and (sequential? value) (every? string? value)))
+        (wte/error-with-value :error.style-dictionary/invalid-token-value-font-family value))
+
+      nil)))
+
+;; Errors ---------------------------------------------------------------------
+
+(defn- missing-reference-of
+  "Missing token name behind an issue, if the root cause is a missing
+  token."
+  [{:keys [code data]}]
+  (case code
+    :processor/token-not-found (:token-name data)
+    :interpreter/unknown-reference (:reference data)
+    :processor/dependency-error (let [cause (:cause data)]
+                                  (when (= :processor/token-not-found (:code cause))
+                                    (get-in cause [:data :token-name])))
+    nil))
+
+(defn- circular?
+  [{:keys [code data]}]
+  (or (= :processor/circular-dependency code)
+      (= :processor/circular-dependency (get-in data [:cause :code]))))
+
+(defn- issue->error
+  "Maps a tokenscript issue to a Penpot token error. The interpreter only
+  reports codes and data; the messages are Penpot's. Codes without a
+  message of their own are an invalid value."
+  [{:keys [code data] :as issue} value]
+  (cond
+    (circular? issue)
+    (wte/error-with-value :error.token/circular-reference nil)
+
+    (missing-reference-of issue)
+    (wte/error-with-value :error.style-dictionary/missing-reference [(missing-reference-of issue)])
+
+    :else
+    (case code
+      (:operations/division-by-zero :functions/division-by-zero)
+      (wte/error-with-value :error.token/division-by-zero nil)
+
+      :operations/cannot-mix-units
+      (wte/error-with-value :error.token/incompatible-units (:units data))
+
+      :operations/cannot-compare-units
+      (wte/error-with-value :error.token/incompatible-units [(:unit-a data) (:unit-b data)])
+
+      :interpreter/unknown-function
+      (wte/error-with-value :error.token/unknown-function (:function-name data))
+
+      (:functions/argument-out-of-range :functions/invalid-base)
+      (wte/error-with-value :error.token/function-argument-out-of-range (:function-name data))
+
+      (wte/error-with-value :error.style-dictionary/invalid-token-value value))))
+
+(defn- validation-error
+  "Maps a failed token type validation of the interpreter (an issue with
+  an `INVALID_<TYPE>_<REASON>` code) to the Penpot error of the token's
+  type."
+  [{:keys [code]} {:keys [type value]}]
+  (case type
+    :opacity (wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)
+    :stroke-width (wte/error-with-value :error.style-dictionary/invalid-token-value-stroke-width value)
+    :text-case (wte/error-with-value :error.style-dictionary/invalid-token-value-text-case value)
+    :text-decoration (wte/error-with-value :error.style-dictionary/invalid-token-value-text-decoration value)
+    :font-weight (wte/error-with-value :error.style-dictionary/invalid-token-value-font-weight value)
+    :font-family (wte/error-with-value :error.style-dictionary/invalid-token-value-font-family value)
+    :typography (wte/error-with-value :error.style-dictionary/invalid-token-value-typography value)
+    :shadow (wte/error-with-value :error.style-dictionary/invalid-token-value-shadow value)
+    (if (= "INVALID_NUMBER_UNIT" code)
+      (wte/error-with-value :error.style-dictionary/value-with-units value)
+      (wte/error-with-value :error.style-dictionary/invalid-token-value value))))
+
+(defn- token-errors
+  [issues token]
+  (->> issues
+       (keep (fn [issue]
+               (cond
+                 (tse/error-map? issue) (issue->error issue (:value token))
+                 (= :tokenscript/issue (:type issue)) (validation-error issue token))))
+       (seq)))
+
+;; Resolution -----------------------------------------------------------------
 
 (defn- quote-font-family
-  "Quotes a font family name so tokenscript reads it as one string instead of
-  parsing its words (`Red` would become a color, `2P` a number and a word).
-  Entries with a token reference or already quoted are kept as they are."
+  "Quotes a font family name so tokenscript reads it as one string instead
+  of parsing its words (`Red` would become a color, `2P` a number and a
+  word). Entries with a token reference or already quoted are kept."
   [family]
   (cond
     (or (not (string? family))
@@ -183,49 +272,86 @@
     (mapv quote-font-family value)
     value))
 
-(defn- token-value->tokenscript-value
-  [type value]
-  (case type
-    :font-family (quote-font-families value)
-    :typography  (cond-> value
-                   (map? value) (d/update-when :font-family quote-font-families))
-    value))
-
-(defn clj->token->tokenscript-token
-  "Convert penpot token into a format that tokenscript can handle."
+(defn- token->input
+  "Token data for the interpreter. Types are passed by their DTCG names,
+  which the interpreter's bundled token types validate."
   [{:keys [type value]}]
-  #js {"$type" (name type)
-       "$value" (clj->js (token-value->tokenscript-value type value))})
+  (cond-> {:value (case type
+                    :font-family (quote-font-families value)
+                    :typography (cond-> value
+                                  (map? value) (d/update-when :font-family quote-font-families))
+                    value)}
+    (some? type) (assoc :type (get cto/token-type->dtcg-token-type type (name type)))))
 
-(defn clj-tokens->tokenscript-tokens
-  "Convert penpot map of tokens into tokenscript map structure.
-  tokenscript accepts a map of [token-name {\"$type\": string, \"$value\": any}]"
+(defn- empty-value?
+  [token]
+  (nil? (:value token)))
+
+(defn- resolved-token
+  "Adds the result of the interpreter to `token`: `:resolved-value` and
+  `:resolved-symbol` for the resolved symbol `s`, or `:errors` for its
+  `issues`, a failing conversion or a value Penpot doesn't accept."
+  [token issues s]
+  (if-let [errors (token-errors issues token)]
+    (assoc token :errors (vec errors))
+    (let [{:keys [value error]} (convert-token-value token s)]
+      (if-let [error (or error (validate-value token value))]
+        (assoc token :errors [error])
+        (assoc token
+               :resolved-value value
+               :resolved-symbol s)))))
+
+(defn- resolve-tokens*
   [tokens]
-  (let [token-map (js/Map.)]
-    (doseq [[k token] tokens]
-      (.set token-map k (clj->token->tokenscript-token token)))
-    token-map))
+  (let [tpoint   (ct/tpoint-ms)
+        inputs   (into {}
+                       (comp (remove (fn [[_ token]] (empty-value? token)))
+                             (map (fn [[name token]] [name (token->input token)])))
+                       tokens)
+        result   (tsc/build inputs)
+        resolved (:tokens result)
+        issues   (:issues result)
+        output   (reduce-kv
+                  (fn [acc name token]
+                    (assoc acc name
+                           (if (empty-value? token)
+                             (assoc token :errors [(wte/get-error-code :error.token/empty-input)])
+                             (resolved-token token (get issues name) (get resolved name)))))
+                  {}
+                  tokens)]
+    (l/dbg :hint "tokenscript/resolve-tokens" :elapsed (tpoint))
+    output))
 
-(defn process-tokens
-  "Builds tokens using `tokenscript`."
+;; Several components resolve the same token maps on every change (the
+;; sidebar, the forms and the propagation each compute the active tokens
+;; separately), so the results of the last few maps are kept. Entries are
+;; matched by identity first and by equality second: comparing two maps
+;; of a few hundred tokens is far cheaper than resolving them again.
+(def ^:private cache-size 8)
+
+(defonce ^:private results-cache (volatile! []))
+
+(defn- cached-result
   [tokens]
-  (let [input (clj-tokens->tokenscript-tokens tokens)
-        result (processTokens input #js {:config config
-                                         :builder (create-token-builder tokens)})]
-    result))
+  (let [entries @results-cache]
+    (or (some (fn [[t result]] (when (identical? t tokens) result)) entries)
+        (some (fn [[t result]] (when (= t tokens) result)) entries))))
 
-(defn update-token
+(defn- remember-result
+  [tokens result]
+  (vswap! results-cache (fn [entries] (vec (take cache-size (cons [tokens result] entries))))))
+
+(defn resolve-tokens
+  "Resolves `tokens` (a map of token name to token). Returns the tokens
+  with `:resolved-value` or `:errors` added."
+  [tokens]
+  (or (cached-result tokens)
+      (let [result (resolve-tokens* tokens)]
+        (remember-result tokens result)
+        result)))
+
+(defn resolve-token
+  "Resolves `token` against `tokens` (the token replaces any token with
+  the same name). Returns the resolved token."
   [tokens token]
-  (let [result (process-tokens tokens)
-        resolver (.-resolver result)]
-    (.updateToken resolver #js {:tokenPath (:name token)
-                                :tokenData (clj->token->tokenscript-token token)})))
-
-;; Main ------------------------------------------------------------------------
-
-(defn resolve-tokens [tokens]
-  (let [tpoint (ct/tpoint-ms)
-        result (process-tokens tokens)
-        elapsed (tpoint)]
-    (l/dbg :hint "tokenscript/resolve-tokens" :elapsed elapsed)
-    (.-output result)))
+  (get (resolve-tokens (assoc tokens (:name token) token)) (:name token)))
