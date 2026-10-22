@@ -52,11 +52,10 @@
   height: deprecated.$s-24;
   width: deprecated.$s-24;
 
-  svg {
-    @extend %button-icon-small;
-
-    transform: rotate(90deg);
-    stroke: var(--icon-foreground);
+  .arrow-svg {
+    flex-shrink: 0;
+    stroke-width: 1.33px;
+    color: var(--icon-foreground);
   }
 }
 
@@ -84,10 +83,15 @@
     height: deprecated.$s-24;
     width: deprecated.$s-24;
 
-    svg {
-      @extend %button-icon-small;
-
-      stroke: transparent;
+    // %dropdown-element-base styles any svg inside a span (12px box and a
+    // stroke color); the DS icon needs its 16px box and currentColor.
+    .tick-icon {
+      flex-shrink: 0;
+      inline-size: $sz-16;
+      block-size: $sz-16;
+      stroke: currentcolor;
+      stroke-width: 1.33px;
+      color: transparent;
     }
   }
 
@@ -96,8 +100,8 @@
   }
 
   &:hover {
-    .icon svg {
-      stroke: transparent;
+    .tick-icon {
+      color: transparent;
     }
   }
 
@@ -106,8 +110,8 @@
       color: var(--menu-foreground-color);
     }
 
-    .icon svg {
-      stroke: var(--icon-foreground-hover);
+    .tick-icon {
+      color: var(--icon-foreground-hover);
     }
   }
 }
