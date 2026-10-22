@@ -429,6 +429,16 @@
                 :hint "branch metadata not found for branch file"
                 :file-id (:id file)))
 
+    ;; A branch kept after its merge has its work in main, and no command
+    ;; integrates ops appended after the merge: refuse them instead of
+    ;; stranding them in the op log. An archived branch still takes saves,
+    ;; since restoring it brings them back.
+    (when (= "merged" (:status branch))
+      (ex/raise :type :validation
+                :code :branch-merged
+                :hint "a merged branch is read-only"
+                :file-id (:id file)))
+
     (db/update! conn :project
                 {:modified-at modified-at}
                 {:id (:project-id file)}
