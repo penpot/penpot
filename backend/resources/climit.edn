@@ -169,8 +169,11 @@
  {:permits 1 :queue 2 :timeout 60000}
 
  ;; A cold listing realizes main once and derives every uncached branch,
- ;; which makes it the slowest read of the preview. Six at once is above
- ;; what a panel open needs under normal use, and six three-document
+ ;; which makes it the slowest read of the preview. It runs when a user
+ ;; opens the workspace branch switcher, the all-branches dialog, or the
+ ;; dashboard branches popover; a file open only counts branches, through
+ ;; `get-file-branch-count`, which takes no limit. Six at once is above
+ ;; what those opens need under normal use, and six three-document
  ;; operations hold eighteen realized documents, below the twenty
  ;; one-document saves `:update-file/global` above already admits.
  ;; Provisional.
