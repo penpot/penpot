@@ -711,13 +711,13 @@
                   (ctt/typography-token-keys (:type token)) (set/union attributes-to-remove ctt/typography-keys)
                   (ctt/typography-keys (:type token)) (set/union attributes-to-remove ctt/typography-token-keys)
                   :else attributes-to-remove)]
-            (when-let [tokens (let [tokens-lib    (dsh/lookup-tokens-lib state)
-                                    tokens-status (dsh/lookup-tokens-status state)]
-                                (when (and tokens-lib tokens-status)
-                                  (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))]
+            (when-let [[tokens-status tokens-lib] (let [tokens-lib    (dsh/lookup-tokens-lib state)
+                                                        tokens-status (dsh/lookup-tokens-status state)]
+                                                    (when (and tokens-lib tokens-status)
+                                                      [tokens-status tokens-lib]))]
               (->> (if (contains? cf/flags :tokenscript)
-                     (rx/of (ts/resolve-tokens tokens))
-                     (sd/resolve-tokens tokens))
+                     (rx/of (ts/resolve-sets (cfo/get-active-token-sets tokens-status tokens-lib)))
+                     (sd/resolve-tokens (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))
                    (rx/mapcat
                     (fn [resolved-tokens]
                       (let [undo-id (js/Symbol)
@@ -735,9 +735,6 @@
                             any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
                             resolved-value (get-in resolved-tokens [(:name token) :resolved-value])
-                            resolved-value (if (contains? cf/flags :tokenscript)
-                                             (ts/resolved-value->penpot-unit (:type token) resolved-value)
-                                             resolved-value)
                             tokenized-attributes (cfo/attributes-map attributes token)
                             type (:type token)]
                         (rx/concat

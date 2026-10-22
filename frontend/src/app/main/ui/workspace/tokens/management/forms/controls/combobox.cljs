@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cfo]
-   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
@@ -31,42 +30,25 @@
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn- resolve-value
-  [tokens prev-token token-name value]
-  (let [valid-token-name?
-        (and (string? token-name)
-             (re-matches  cto/token-name-validation-regex token-name))
-
-        token
-        {:value value
-         :name (if (or (not valid-token-name?) (str/blank? token-name))
-                 "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
-                 token-name)}
-        tokens
-        (-> tokens
-            ;; Remove previous token when renaming a token
-            (dissoc (:name prev-token))
-            (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-    ;; TODO: Review this when tokenscript is fully integrated.
-    (if (cfo/token-circular-reference? tokens (:name token))
-      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
-      (->> (if (contains? cf/flags :tokenscript)
-             (rx/of (ts/resolve-tokens tokens))
-             (sd/resolve-tokens-interactive tokens))
-           (rx/mapcat
-            (fn [resolved-tokens]
-              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                    resolved-value (if (contains? cf/flags :tokenscript)
-                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                     resolved-value)]
-                (if resolved-value
-                  (rx/of {:value resolved-value})
-                  (rx/of {:error (if errors
-                                   (first errors)
-                                   (wte/error-with-value :error/unknown value))})))))))))
+  "Resolves the value typed for the token being edited. With tokenscript
+  the draft is resolved against `token-sets` (see
+  `csu/use-edit-token-sets`), otherwise against the merged `tokens`."
+  [tokens token-sets prev-token token-name value]
+  (let [draft (csu/draft-token prev-token token-name value)]
+    (if (contains? cf/flags :tokenscript)
+      (rx/of (csu/resolved->result (ts/resolve-draft token-sets draft) value))
+      (let [tokens
+            (-> tokens
+                ;; Remove previous token when renaming a token
+                (dissoc (:name prev-token))
+                (update (:name draft) #(ctob/make-token (merge % draft))))]
+        (if (cfo/token-circular-reference? tokens (:name draft))
+          (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+          (->> (sd/resolve-tokens-interactive tokens)
+               (rx/map #(csu/resolved->result (get % (:name draft)) value))))))))
 
 (mf/defc value-combobox*
   [{:keys [name tokens token token-type empty-to-end ref] :rest props}]
@@ -74,6 +56,7 @@
   (let [form              (mf/use-ctx fc/context)
 
         token-name        (get-in @form [:data :name] nil)
+        token-sets        (csu/use-edit-token-sets (:name token))
         touched?
         (and (contains? (:data @form) name)
              (get-in @form [:touched name]))
@@ -278,10 +261,10 @@
 
         {:keys [style ready?]} (use-floating-dropdown is-open input-wrapper-ref wrapper-ref dropdown-ref)]
 
-    (mf/with-effect [resolve-stream tokens token name token-name]
+    (mf/with-effect [resolve-stream tokens token-sets token name token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token token-name))
+                      (rx/mapcat (partial resolve-value tokens token-sets token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]

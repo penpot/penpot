@@ -747,6 +747,51 @@
             (d/ordered-map)
             ordered-active)))
 
+(defn get-active-token-sets
+  "The tokens of the active sets, unmerged: `[[set-id tokens] ..]` in set
+  order, later sets taking precedence. The sets `get-tokens-in-active-sets`
+  merges, for a resolver that takes them as they are."
+  [tokens-status tokens-lib]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (let [active-set-ids (ctos/get-active-set-ids tokens-status)]
+    (into []
+          (comp (filter #(contains? active-set-ids (ctob/get-id %)))
+                (map (fn [set] [(ctob/get-id set) (ctob/get-tokens- set)])))
+          (ctob/get-sets tokens-lib))))
+
+(defn get-token-sets-for-edit
+  "Every token set of the library, unmerged: `[[set-id tokens] ..]` in set
+  order with `set-id` moved last, so its tokens take precedence. These are
+  the sets `get-all-tokens-map` merges with the set of a token being edited
+  on top. With `excluded-name` that token is left out of every set, so
+  references to it break while it is renamed."
+  [tokens-lib set-id excluded-name]
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (let [entry  (fn [set]
+                 (let [tokens (ctob/get-tokens- set)]
+                   [(ctob/get-id set)
+                    (cond-> tokens
+                      (and excluded-name (contains? tokens excluded-name))
+                      (dissoc excluded-name))]))
+        sets   (ctob/get-sets tokens-lib)
+        target (when set-id (d/seek #(= set-id (ctob/get-id %)) sets))]
+    (cond-> (into [] (comp (remove #(identical? % target)) (map entry)) sets)
+      target (conj (entry target)))))
+
+(defn get-active-token-sets-force
+  "Same as `get-active-token-sets` but force-including a set by id. A set
+  that is not active comes first, with the lowest precedence, as in
+  `get-tokens-in-active-sets-force`."
+  [tokens-status tokens-lib force-set-id]
+  (assert (uuid? force-set-id) "expected valid set id")
+  (let [sets (get-active-token-sets tokens-status tokens-lib)
+        set  (when-not (contains? (ctos/get-active-set-ids tokens-status) force-set-id)
+               (ctob/get-set tokens-lib force-set-id))]
+    (if set
+      (into [[force-set-id (ctob/get-tokens- set)]] sets)
+      sets)))
+
 (defn sync-tokens-status-with-lib
   "Synchronizes tokens status with the current tokens lib:
    - Delete any theme or set that no longer exists in the lib.

@@ -160,17 +160,12 @@
              (sm/validate cfo/schema:token-description (:description candidate)))
          (resolved-without-errors? resolved))))
 
-;; Last resolution result, reused while the tokens library and set are unchanged
-(def ^:private resolution-cache (atom nil))
-
 (defn- resolve-set-tokens
+  "Tokens of the library resolved for `set-id`: the sets
+  `resolution-tokens` merges, unmerged. Repeated calls with an unchanged
+  library are answered from the resolver's cache."
   [tokens-lib set-id]
-  (let [{:keys [lib set resolved]} @resolution-cache]
-    (if (and (identical? lib tokens-lib) (= set set-id))
-      resolved
-      (let [resolved (ts/resolve-tokens (resolution-tokens tokens-lib set-id))]
-        (reset! resolution-cache {:lib tokens-lib :set set-id :resolved resolved})
-        resolved))))
+  (ts/resolve-sets (cfo/get-token-sets-for-edit tokens-lib set-id nil)))
 
 (defn valid-token-resolution?
   "Checks that an existing token resolves without errors, which is the only
@@ -232,14 +227,12 @@
     k))
 
 (defn- shadow-entry->js
-  "Converts one resolved shadow entry (a JS Map of field name -> tokenscript
-   symbol) into a plain JS object using the public member names and the
-   unit-converted values."
-  [^js m]
+  "Converts one resolved shadow entry (a map of field name -> value) into
+   a plain JS object using the public member names."
+  [m]
   (let [out #js {}]
-    (.forEach m (fn [sym k]
-                  (obj/set! out (shadow-key->camel k)
-                            (ts/tokenscript-symbols->penpot-unit sym))))
+    (doseq [[k v] m]
+      (obj/set! out (shadow-key->camel (name k)) (clj->js v)))
     out))
 
 (defn- shadow-resolved-value->js
@@ -249,38 +242,29 @@
   (when (some? entries)
     (into-array (map shadow-entry->js entries))))
 
-(defn- font-families-resolved-value->js
-  "Converts a resolved fontFamilies value (a tokenscript list symbol) into the
-   documented `string[]` shape."
-  [resolved-value]
-  (some-> (ts/font-family-symbols->penpot-unit resolved-value)
-          (clj->js)))
-
 (defn- get-resolved-value
-  [token tokens-tree]
-  (let [resolved-tokens (ts/resolve-tokens tokens-tree)
-        resolved-value  (dm/get-in resolved-tokens [(:name token) :resolved-value])]
+  [token sets]
+  (let [resolved-tokens (ts/resolve-sets sets)
+        resolved-token  (get resolved-tokens (:name token))
+        resolved-value  (:resolved-value resolved-token)]
     (cond
       (= :font-family (:type token))
-      ;; A fontFamilies token resolves to a list of families; expose it as the
-      ;; documented `string[]` rather than the raw tokenscript list symbol.
-      (font-families-resolved-value->js resolved-value)
+      ;; A fontFamilies token resolves to a vector of families; expose it as
+      ;; the documented `string[]`.
+      (some-> resolved-value clj->js)
 
       (= :typography (:type token))
       ;; A typography token resolves to a composite; expose it as the documented
-      ;; `TokenTypographyValue[]` rather than the raw tokenscript structure.
-      (typography-resolved-value->js
-       (ts/tokenscript-symbols->penpot-unit resolved-value))
+      ;; `TokenTypographyValue[]` with the line height as resolved.
+      (typography-resolved-value->js (ts/plugin-value resolved-token))
 
       (= :shadow (:type token))
-      ;; A shadow token resolves to a list of composites whose entries the
-      ;; tokenscript unit conversion leaves as raw symbols; expose them as the
+      ;; A shadow token resolves to a list of composites; expose them as the
       ;; documented `TokenShadowValue[]`.
-      (shadow-resolved-value->js
-       (ts/tokenscript-symbols->penpot-unit resolved-value))
+      (shadow-resolved-value->js resolved-value)
 
       :else
-      (ts/tokenscript-symbols->penpot-unit resolved-value))))
+      resolved-value)))
 
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
@@ -364,9 +348,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-status   (u/locate-tokens-status file-id)
-             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
-         (get-resolved-value token tokens-tree)))}
+             tokens-status   (u/locate-tokens-status file-id)]
+         (get-resolved-value token (cfo/get-active-token-sets tokens-status tokens-lib))))}
 
     :resolvedValueString
     {:this true
@@ -375,9 +358,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-status   (u/locate-tokens-status file-id)
-             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
-         (str (get-resolved-value token tokens-tree))))}
+             tokens-status   (u/locate-tokens-status file-id)]
+         (str (get-resolved-value token (cfo/get-active-token-sets tokens-status tokens-lib)))))}
 
     :description
     {:this true
