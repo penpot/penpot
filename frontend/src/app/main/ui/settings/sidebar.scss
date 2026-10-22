@@ -8,6 +8,7 @@
 @use "ds/_utils.scss" as *;
 @use "ds/mixins.scss" as *;
 @use "ds/typography.scss" as *;
+@use "ds/z-index.scss" as *;
 
 .dashboard-sidebar {
   @include custom-scrollbar;
@@ -19,10 +20,7 @@
   block-size: 100%;
   padding-block-start: var(--sp-l);
   border-inline-end: $b-1 solid var(--color-background-quaternary);
-
-  // TODO: no DS z-index token for 1; it keeps the sidebar above the
-  // settings content.
-  z-index: 1;
+  z-index: var(--z-index-auto);
   background-color: var(--color-background-primary);
 }
 
