@@ -647,8 +647,10 @@
                                    attrs)
                      [rops uops] (generate-operations attrs old-obj new-obj)
 
-                     ;; a touch also clears :remote-synced
-                     uops        (cond-> uops
+                     ;; Restore links before their copy-only state. Detach
+                     ;; removes shape-ref, so set-touched must run last.
+                     ;; A touch also clears :remote-synced.
+                     uops        (cond-> (vec uops)
                                    (seq rops)
                                    (conj {:type :set-touched :touched (:touched old-obj)})
 
