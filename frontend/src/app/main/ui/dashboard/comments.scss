@@ -22,14 +22,6 @@
   overflow: auto;
 }
 
-// TODO: .thread-group is not used by comments.cljs (the thread groups
-// style themselves); check by hand before removal.
-// .thread-group {
-//   display: flex;
-//   flex-direction: column;
-//   font-size: px2rem(12);
-// }
-
 .thread-groups-placeholder {
   align-items: center;
   display: flex;
@@ -61,14 +53,6 @@
     inset-inline-end: px2rem(6);
   }
 }
-
-// TODO: .comments-icon-small is not used by comments.cljs; check by hand
-// before removal.
-// .comments-icon-small {
-//   @extend %button-icon;
-//
-//   stroke: var(--comment-icon-small-foreground-color);
-// }
 
 .dropdown {
   box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);

@@ -117,17 +117,6 @@
   margin-inline-start: var(--sp-xxxl);
 }
 
-// TODO: .add-file-btn is not used by deleted.cljs; check by hand before
-// removal.
-// .add-file-btn {
-//   @extend %button-tertiary;
-//
-//   height: var(--sp-xxxl);
-//   width: var(--sp-xxxl);
-//   margin: 0 var(--sp-s);
-//   padding: var(--sp-s);
-// }
-
 .options-btn {
   margin: 0 var(--sp-s);
 }
@@ -137,11 +126,3 @@
   align-items: center;
   gap: var(--sp-s);
 }
-
-// TODO: .add-icon is not used by deleted.cljs; check by hand before
-// removal.
-// .add-icon {
-//   @extend %button-icon;
-//
-//   stroke: var(--icon-foreground);
-// }
