@@ -1,6 +1,7 @@
 //! Repair SkParagraph's emergency splits without changing the wrap budget.
 
 use super::*;
+use crate::shapes::text_paragraph::LayoutParagraph;
 
 impl HorizontalParagraphPlan {
     /// Keep an indivisible unit together even when Skia's last-resort wrapping
@@ -11,7 +12,7 @@ impl HorizontalParagraphPlan {
         &mut self,
         paragraph: &Paragraph,
         width: f32,
-        mut measure: impl FnMut(&Self, f32) -> skia::textlayout::Paragraph,
+        mut measure: impl FnMut(&Self, f32) -> LayoutParagraph,
     ) {
         use unicode_segmentation::UnicodeSegmentation;
         let policy = paragraph.layout_policy();
@@ -154,7 +155,7 @@ impl HorizontalParagraphPlan {
 
     /// Skia aligns against the physical width; translate it back to the box.
     pub(crate) fn x_offset(&self, paragraph: &Paragraph, width: f32) -> f32 {
-        use skia::textlayout::{TextAlign, TextDirection};
+        use crate::shapes::{TextAlign, TextDirection};
         let slack = width - self.layout_width(width);
         match paragraph.text_align() {
             TextAlign::Center => slack * 0.5,

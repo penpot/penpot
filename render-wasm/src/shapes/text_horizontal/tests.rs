@@ -4,6 +4,7 @@ use super::ruby::{
     split_counts_by_extent, RubyGlyphRef, RubyLine,
 };
 use super::*;
+use crate::shapes::text_paragraph::LayoutParagraph;
 use crate::shapes::{TextAlign, TextDirection, TextTransform};
 use crate::Uuid;
 
@@ -12,11 +13,7 @@ fn cjk_horizontal_layout(
     language: &str,
     wrap: crate::shapes::text_policy::KoreanWrap,
     width: f32,
-) -> (
-    Paragraph,
-    HorizontalParagraphPlan,
-    skia::textlayout::Paragraph,
-) {
+) -> (Paragraph, HorizontalParagraphPlan, LayoutParagraph) {
     use crate::shapes::text_vertical::test_support::{provider, EM};
     init_state();
     let provider = provider(include_bytes!("../../fonts/cjk-locl-test.ttf"));
@@ -41,7 +38,7 @@ fn cjk_layout_paragraph(
     paragraph: &Paragraph,
     width: f32,
     fonts: &skia::textlayout::FontCollection,
-) -> (HorizontalParagraphPlan, skia::textlayout::Paragraph) {
+) -> (HorizontalParagraphPlan, LayoutParagraph) {
     let mut plan = HorizontalParagraphPlan::new(paragraph);
     let lay_out = |plan: &HorizontalParagraphPlan, width: f32| {
         let mut paragraph_style = paragraph.paragraph_to_style();
@@ -66,7 +63,7 @@ fn cjk_layout_paragraph(
             );
             builder.pop();
         }
-        let mut layout = builder.build();
+        let mut layout = LayoutParagraph::build(&mut builder);
         layout.layout(width);
         layout
     };
@@ -282,6 +279,90 @@ fn horizontal_cjk_justification_is_bounded_and_word_mode_only_expands_spaces() {
 }
 
 #[test]
+fn distribution_fills_the_last_line_between_hangul_graphemes_across_styles() {
+    use crate::shapes::text_policy::KoreanWrap;
+    let (paragraph, plan, layout) =
+        cjk_horizontal_layout(&["기획", "편집"], "ko", KoreanWrap::KeepWords, 310.0);
+    let mut paragraph = Paragraph::new(
+        TextAlign::Distribute,
+        TextDirection::LTR,
+        None,
+        None,
+        1.0,
+        0.0,
+        paragraph.children().to_vec(),
+    );
+    paragraph.set_language("ko".to_owned());
+    paragraph.set_korean_wrap(KoreanWrap::KeepWords);
+    let extras =
+        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 310.0);
+    let total: f32 = extras.iter().flatten().map(|(_, amount)| amount).sum();
+    assert!((layout.longest_line() + total - 310.0).abs() < 0.1);
+    let gaps: Vec<_> = extras.iter().flatten().map(|(_, amount)| *amount).collect();
+    assert_eq!(gaps.len(), 3);
+    assert!(gaps.windows(2).all(|p| (p[0] - p[1]).abs() < 0.001));
+}
+
+#[test]
+fn distribution_keeps_graphemes_nonbreaking_pairs_and_ruby_bases_solid() {
+    use crate::shapes::text_policy::KoreanWrap;
+    init_state();
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(
+        crate::shapes::text_vertical::test_support::provider(include_bytes!(
+            "../../fonts/cjk-locl-test.ttf"
+        ))
+        .into(),
+    ));
+    for (texts, expected_gaps) in [
+        (vec!["ᄒ", "ᅡᆫ국"], 1),
+        (vec!["한\u{2060}", "글"], 0),
+        (vec!["한\u{00a0}글"], 0),
+        (vec!["한"], 0),
+        (vec![""], 0),
+    ] {
+        let spans = texts.iter().map(|text| make_span(text, 0.0)).collect();
+        let mut paragraph = Paragraph::new(
+            TextAlign::Distribute,
+            TextDirection::LTR,
+            None,
+            None,
+            1.0,
+            0.0,
+            spans,
+        );
+        paragraph.set_language("ko".to_owned());
+        paragraph.set_korean_wrap(KoreanWrap::KeepWords);
+        let (plan, layout) = cjk_layout_paragraph(&paragraph, 310.0, &fonts);
+        let extras =
+            super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 310.0);
+        assert_eq!(
+            extras.iter().map(Vec::len).sum::<usize>(),
+            expected_gaps,
+            "{texts:?}"
+        );
+    }
+    let mut ruby = make_span("한글", 0.0);
+    crate::globals::init_headless(1, 1);
+    ruby.ruby = "hangeul".to_owned();
+    let paragraph = Paragraph::new(
+        TextAlign::Distribute,
+        TextDirection::LTR,
+        None,
+        None,
+        1.0,
+        0.0,
+        vec![ruby],
+    );
+    let (plan, layout) = cjk_layout_paragraph(&paragraph, 310.0, &fonts);
+    assert!(
+        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 310.0)
+            .iter()
+            .all(Vec::is_empty)
+    );
+}
+
+#[test]
 fn chinese_proportional_punctuation_is_not_compressed_twice() {
     init_state();
     let mut span = make_span("，。", 0.0);
@@ -387,7 +468,7 @@ fn same_paragraph_wraps_differently_by_profile_in_both_orientations() {
             &style,
             &fonts,
         );
-        let mut horizontal = builder.build();
+        let mut horizontal = LayoutParagraph::build(&mut builder);
         horizontal.layout(EM * 5.45);
         let (_, offset_map) = paragraph.layout_span_texts();
         horizontal_ends.push(offset_map.to_original(horizontal.get_line_metrics()[0].end_index));
@@ -466,6 +547,49 @@ fn make_paragraph(spans: Vec<TextSpan>, letter_spacing: f32) -> Paragraph {
 }
 
 #[test]
+fn proportional_line_spacing_preserves_fractional_baselines() {
+    use crate::shapes::text_vertical::test_support::provider;
+    init_state();
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(
+        provider(include_bytes!("../../fonts/cjk-locl-test.ttf")).into(),
+    ));
+    for size in [18.0, 36.0] {
+        let mut span = make_span("한글\n한글\n한글", 0.0);
+        span.font_size = size;
+        let paragraph = Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.6,
+            0.0,
+            vec![span],
+        );
+        let mut builder = ParagraphBuilder::new(&paragraph.paragraph_to_style(), &fonts);
+        let style = paragraph.children()[0].to_style(
+            &crate::math::Rect::from_xywh(0.0, 0.0, 300.0, 300.0),
+            &crate::render::FallbackFonts::default(),
+            false,
+            paragraph.line_height(),
+        );
+        builder.push_style(&style);
+        builder.add_text(&paragraph.children()[0].text);
+        let mut layout = LayoutParagraph::build(&mut builder);
+        layout.layout(300.0);
+        let lines = layout.get_line_metrics();
+        assert_eq!(lines.len(), 3);
+        for pair in lines.windows(2) {
+            let step = (pair[1].baseline - pair[0].baseline) as f32;
+            assert!(
+                (step - size * 1.6).abs() < 0.001,
+                "{size}px: {step}, lines: {lines:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn layout_span_texts_applies_kinsoku() {
     init_state();
     let paragraph = make_paragraph(vec![make_span("雪国", 0.0), make_span("。です", 0.0)], 0.0);
@@ -507,7 +631,7 @@ fn inserted_joiners_take_no_letter_spacing() {
         let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
         builder.push_style(&style);
         add_horizontal_span(&mut builder, &span, text, &[], &[], &style, &fonts);
-        let mut laid_out = builder.build();
+        let mut laid_out = LayoutParagraph::build(&mut builder);
         laid_out.layout(f32::MAX);
         laid_out.longest_line()
     };
@@ -813,7 +937,7 @@ fn horizontal_warichu_builder_emits_one_styled_placeholder() {
     let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
     builder.push_style(&style);
     add_horizontal_span(&mut builder, &span, &span.text, &[], &[], &style, &fonts);
-    let mut laid_out = builder.build();
+    let mut laid_out = LayoutParagraph::build(&mut builder);
     laid_out.layout(200.0);
 
     let placeholders = laid_out.get_rects_for_placeholders();
@@ -846,7 +970,7 @@ fn horizontal_warichu_allows_wrapping_after_the_atomic_box() {
     builder.push_style(&style);
     builder.add_text(&following.text);
 
-    let mut laid_out = builder.build();
+    let mut laid_out = LayoutParagraph::build(&mut builder);
     laid_out.layout(16.1);
 
     assert_eq!(laid_out.get_rects_for_placeholders().len(), 1);
@@ -992,7 +1116,7 @@ fn horizontal_ruby_paint_follows_the_pass_paint() {
     let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
     builder.push_style(&style);
     add_horizontal_span(&mut builder, &base, &base.text, &[], &[], &style, &fonts);
-    let mut laid_out = builder.build();
+    let mut laid_out = LayoutParagraph::build(&mut builder);
     laid_out.layout(400.0);
 
     let offsets = HorizontalOffsets::new(&paragraph);
@@ -1110,7 +1234,7 @@ fn horizontal_emphasis_tracks_eligible_unicode_characters() {
         builder.push_style(&style);
         add_horizontal_span(&mut builder, span, &text, &[], &[], &style, &fonts);
     }
-    let mut laid_out = builder.build();
+    let mut laid_out = LayoutParagraph::build(&mut builder);
     laid_out.layout(200.0);
 
     let placements =
@@ -1140,7 +1264,7 @@ fn horizontal_emphasis_recovers_each_non_ascii_span_style() {
         builder.push_style(&style);
         add_horizontal_span(&mut builder, span, &text, &[], &[], &style, &fonts);
     }
-    let mut laid_out = builder.build();
+    let mut laid_out = LayoutParagraph::build(&mut builder);
     laid_out.layout(200.0);
 
     let ranges = horizontal_span_ranges(&paragraph);
@@ -1485,7 +1609,7 @@ fn horizontal_justify_spreads_every_line_evenly() {
             &style,
             &fonts,
         );
-        let mut laid_out = builder.build();
+        let mut laid_out = LayoutParagraph::build(&mut builder);
         laid_out.layout(width);
         laid_out
     };
@@ -1539,7 +1663,7 @@ fn horizontal_squeeze_keeps_the_next_character_on_the_line() {
         let mut builder = ParagraphBuilder::new(&paragraph_style, &fonts);
         builder.push_style(&style);
         builder.add_text("あ");
-        let mut probe = builder.build();
+        let mut probe = LayoutParagraph::build(&mut builder);
         probe.layout(1000.0);
         probe.max_intrinsic_width()
     };
@@ -1562,7 +1686,7 @@ fn horizontal_squeeze_keeps_the_next_character_on_the_line() {
             &style,
             &fonts,
         );
-        let mut laid_out = builder.build();
+        let mut laid_out = LayoutParagraph::build(&mut builder);
         laid_out.layout(width);
         laid_out
     };

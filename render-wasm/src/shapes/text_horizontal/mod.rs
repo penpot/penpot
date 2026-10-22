@@ -1,3 +1,4 @@
+use crate::shapes::text_paragraph::LayoutParagraph;
 // Horizontal Japanese layout on top of SkParagraph: the kinsoku layout
 // texts, punctuation aki, offset maps between source, layout and builder
 // text, and the ruby, emphasis and warichu painters.
@@ -284,7 +285,7 @@ impl HorizontalParagraphPlan {
         &mut self,
         paragraph: &Paragraph,
         width: f32,
-        measure: impl FnOnce(&Self) -> skia::textlayout::Paragraph,
+        measure: impl FnOnce(&Self) -> LayoutParagraph,
     ) {
         use unicode_segmentation::UnicodeSegmentation;
         let policy = paragraph.layout_policy();
@@ -407,17 +408,17 @@ fn mini_paragraph(
     text: &str,
     style: &skia::textlayout::TextStyle,
     fonts: &skia::textlayout::FontCollection,
-) -> skia::textlayout::Paragraph {
+) -> LayoutParagraph {
     let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), fonts);
     builder.push_style(style);
     builder.add_text(text);
-    let mut paragraph = builder.build();
+    let mut paragraph = LayoutParagraph::build(&mut builder);
     paragraph.layout(f32::MAX);
     paragraph
 }
 
 pub(crate) fn horizontal_span_style(
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     range: &HorizontalSpanRange,
 ) -> Option<skia::textlayout::TextStyle> {
     // Lines use UTF-16, while their style entries use UTF-8 run starts.

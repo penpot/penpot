@@ -48,6 +48,11 @@
   [value]
   (apply-range-property "letterSpacing" value))
 
+(t/deftest text-range-alignment-accepts-distribution
+  (t/is (= {:text-align "distribute"} (apply-range-property "align" "distribute")))
+  (t/is (= {:text-align "justify"} (apply-range-property "align" "justify")))
+  (t/is (nil? (apply-range-property "align" "distributed"))))
+
 (t/deftest letter-spacing-accepts-negative-values
   (t/is (= {:letter-spacing "-0.56"} (apply-letter-spacing "-0.56")))
   (t/is (= {:letter-spacing "-12"} (apply-letter-spacing "-12")))

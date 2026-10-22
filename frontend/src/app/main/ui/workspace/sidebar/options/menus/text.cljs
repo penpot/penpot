@@ -84,7 +84,11 @@
            {:value "justify"
             :id    "text-align-justify"
             :label (tr "workspace.options.text-options.text-align-justify")
-            :icon  (if vertical? i/text-justify-vertical i/text-justify)}])
+            :icon  (if vertical? i/text-justify-vertical i/text-justify)}
+           {:value "distribute"
+            :id    "text-align-distribute"
+            :label (tr "workspace.options.text-options.text-align-distribute")
+            :icon  (if vertical? i/distribute-vertical-spacing i/distribute-horizontally)}])
 
         handle-change
         (mf/use-fn

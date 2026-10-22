@@ -2,6 +2,9 @@
 
 ### 🚀 Features
 
+- **plugin-types:** Text and text range `align` accept `distribute` to spread
+  characters across every line, including the last line.
+
 - **plugin-types:** Add `rubyZhuyin` to text shapes and ranges for typed Mandarin annotations.
 
 - **plugin-types:** Added independent `textEmphasisPosition` and `textUnderlinePosition` properties to text shapes and ranges.

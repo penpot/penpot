@@ -1,4 +1,5 @@
 use super::*;
+use crate::shapes::text_paragraph::LayoutParagraph;
 
 #[derive(Debug, Clone)]
 pub(crate) struct HorizontalEmphasisPlacement {
@@ -15,7 +16,7 @@ pub(crate) struct HorizontalEmphasisPlacement {
 pub(crate) fn horizontal_emphasis_placements(
     paragraph: &Paragraph,
     offsets: &HorizontalOffsets,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
 ) -> Vec<HorizontalEmphasisPlacement> {
     let offset_map = &offsets.offset_map;
     let mut placements = Vec::new();
@@ -88,7 +89,7 @@ pub(crate) fn paint_horizontal_emphasis(
     canvas: &skia::Canvas,
     paragraph: &Paragraph,
     plan: &HorizontalParagraphPlan,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     x: f32,
     y: f32,
 ) {
