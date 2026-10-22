@@ -236,7 +236,9 @@ ENV CLJKONDO_VERSION=2026.08.04 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.7.0
+    SERENA_VERSION=2.1.0
+# NOTE: When updating SERENA_VERSION, also update SERENA_UPDATE_VERSION in docker-compose.main.yml.
+#   The latter results in a dynamic update without rebuilding the image, so it must never be lower than SERENA_VERSION here.
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
