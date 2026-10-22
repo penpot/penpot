@@ -6881,6 +6881,12 @@ msgstr ""
 "you merge it."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:283
+msgid "workspace.branches.create.info-library"
+msgstr ""
+"Your branch is a complete copy. Nothing you do affects main until you merge "
+"it, and files that use this library can adopt changes from main only."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:283
 msgid "workspace.branches.create.name-label"
 msgstr "Branch name"
 
@@ -6920,6 +6926,10 @@ msgstr "No branches yet"
 #: src/app/main/ui/workspace/left_header.cljs:169
 msgid "workspace.branches.header-badge-tooltip"
 msgstr "On branch %s from main"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:295
+msgid "workspace.branches.header-badge-tooltip-library"
+msgstr "On branch %s from main. Library consumers can adopt changes from main only."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:485
 msgid "workspace.branches.info.author"
@@ -7141,6 +7151,10 @@ msgstr "Main has new changes. You can update this branch"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:659
 msgid "workspace.branches.main-subtitle"
 msgstr "Default branch"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:88
+msgid "workspace.branches.main-subtitle-library"
+msgstr "Default branch (read by library consumers)"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:779
 msgid "workspace.branches.materialize.accept"

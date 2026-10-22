@@ -81,6 +81,14 @@
        (zero? (or (:behind row) 0))
        (zero? (or (:conflicts row) 0))))
 
+(defn- main-subtitle
+  "The note beside main. Files that use a shared library read its main,
+  so on a library it says so."
+  [library?]
+  (if library?
+    (tr "workspace.branches.main-subtitle-library")
+    (tr "workspace.branches.main-subtitle")))
+
 ;; --- Popover
 
 (mf/defc switcher-row*
@@ -92,7 +100,7 @@
                     :data-branch (dm/str (:branch-file-id row))
                     :on-click on-open}
     (if (:is-main row)
-      (tr "workspace.branches.main-subtitle")
+      (main-subtitle (:is-library row))
       [:> row-status* {:row row :pr pr}])]])
 
 (mf/defc switcher-popover*
@@ -115,6 +123,7 @@
         (when-not (:is-main current)
           {:name (tr "workspace.branches.main")
            :is-main true
+           :is-library (boolean (:source-is-shared current))
            :branch-file-id (:source-file-id current)})
 
         rows
@@ -234,6 +243,7 @@
         (or ctx
             {:name (tr "workspace.branches.main")
              :is-main true
+             :is-library (boolean (:is-shared file))
              :created-by (:id profile)
              :branch-file-id file-id})
 
@@ -275,8 +285,16 @@
       [:div {:class (stl/css :branch-bar) :ref bar-ref}
        [:> branch-chip* {:label (:name current)
                          :is-open open?
-                         :title (if (:is-main current)
+                         :title (cond
+                                  (:is-main current)
                                   (tr "workspace.branches.switcher.tooltip")
+
+                                  ;; files that use the library read main,
+                                  ;; never this branch
+                                  (:source-is-shared current)
+                                  (tr "workspace.branches.header-badge-tooltip-library" (:name current))
+
+                                  :else
                                   (tr "workspace.branches.header-badge-tooltip" (:name current)))
                          :on-click on-toggle}]
 
@@ -288,7 +306,7 @@
            [:> text* {:as "span"
                       :typography t/body-small
                       :class (stl/css :status-note)}
-            (tr "workspace.branches.main-subtitle")]
+            (main-subtitle (:is-shared file))]
 
            ^boolean merged?
            nil

@@ -65,6 +65,8 @@
    :page-flow           i/document
    :page-grid           i/document
    :page-plugin         i/document
+   :file-plugin         i/document
+   :file-option         i/document
    :token               i/tokens
    :token-set           i/tokens
    :token-set-rename    i/tokens
@@ -231,7 +233,9 @@
   {::mf/register modal/components
    ::mf/register-as :create-branch}
   [{:keys [file-name file-id]}]
-  (let [branch-name* (mf/use-state "")
+  (let [;; a branch only grows from main, so the open file is main
+        library?     (boolean (:is-shared (mf/deref refs/file)))
+        branch-name* (mf/use-state "")
         description*  (mf/use-state "")
         branch-name   (deref branch-name*)
         description   (deref description*)
@@ -286,7 +290,9 @@
          (tr "workspace.branches.create.derive-from-latest")]]]
 
       [:> context-notification* {:level :info :type :context}
-       (tr "workspace.branches.create.info")]]
+       (if library?
+         (tr "workspace.branches.create.info-library")
+         (tr "workspace.branches.create.info"))]]
 
      [:> modal-footer* {}
       [:> button* {:variant "secondary" :on-click on-close}
