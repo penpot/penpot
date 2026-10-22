@@ -225,8 +225,11 @@
   min-inline-size: px2rem(648);
 }
 
+// Tooltip wrapper of the close buttons: it places them in the corner.
 .close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-title {
