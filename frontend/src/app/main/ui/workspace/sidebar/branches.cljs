@@ -65,6 +65,8 @@
    :page-flow           i/document
    :page-grid           i/document
    :page-plugin         i/document
+   :file-plugin         i/document
+   :file-option         i/document
    :token               i/tokens
    :token-set           i/tokens
    :token-set-rename    i/tokens
