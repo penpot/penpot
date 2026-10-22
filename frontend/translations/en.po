@@ -368,10 +368,6 @@ msgstr "Clear trash"
 msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
-#, unused
-msgid "dashboard.create-branch"
-msgstr "Create branch"
-
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:223, src/app/main/ui/dashboard/organization_team_switch.cljs:304
 msgid "dashboard.create-new-organization"
 msgstr "Create new organization"
