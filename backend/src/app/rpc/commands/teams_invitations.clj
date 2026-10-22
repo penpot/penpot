@@ -291,24 +291,24 @@
                      (not recent?))
             (if organization
               (when (contains? cf/flags :admin-console)
-                (eml/send cfg {::eml/reuse-conn true
-                               ::eml/factory eml/invite-to-organization
-                               :public-uri (cf/get :public-uri)
-                               :to email
-                               :invited-by (:fullname profile)
-                               :user-name (:fullname member)
-                               :organization organization
-                               :token itoken
-                               :extra-data ptoken}))
-              (eml/send cfg {::eml/reuse-conn true
-                             ::eml/factory eml/invite-to-team
-                             :public-uri (cf/get :public-uri)
-                             :to email
-                             :invited-by (:fullname profile)
-                             :team (:name team)
-                             :organization (:organization team)
-                             :token itoken
-                             :extra-data ptoken})))
+                (eml/send-template cfg {::eml/reuse-conn true
+                                        ::eml/template "invite-to-organization"
+                                        :public-uri (cf/get :public-uri)
+                                        :to email
+                                        :invited-by (:fullname profile)
+                                        :user-name (:fullname member)
+                                        :organization organization
+                                        :token itoken
+                                        :extra-data ptoken}))
+              (eml/send-template cfg {::eml/reuse-conn true
+                                      ::eml/template "invite-to-team"
+                                      :public-uri (cf/get :public-uri)
+                                      :to email
+                                      :invited-by (:fullname profile)
+                                      :team (:name team)
+                                      :organization (:organization team)
+                                      :token itoken
+                                      :extra-data ptoken})))
 
           itoken)))))
 
@@ -355,13 +355,13 @@
     (db/delete! conn :team-invitation
                 {:team-id team-id :email-to (:email member)})
 
-    (eml/send cfg {::eml/reuse-conn true
-                   ::eml/factory eml/join-team
-                   :public-uri (cf/get :public-uri)
-                   :to (:email member)
-                   :invited-by (:fullname profile)
-                   :team (:name team)
-                   :team-id (:id team)})))
+    (eml/send-template cfg {::eml/reuse-conn true
+                            ::eml/template "join-team"
+                            :public-uri (cf/get :public-uri)
+                            :to (:email member)
+                            :invited-by (:fullname profile)
+                            :team (:name team)
+                            :team-id (:id team)})))
 
 (def ^:private sql:valid-access-request-profiles
   "SELECT p.id, p.email, p.is_blocked
@@ -809,30 +809,30 @@
     (teams/check-email-spam conn (:email team-owner) true)
 
     (let [request (upsert-team-access-request cfg team-id profile-id)
-          factory (cond
-                    (and (some? file) (:is-default team) is-viewer)
-                    eml/request-file-access-yourpenpot-view
+          template (cond
+                     (and (some? file) (:is-default team) is-viewer)
+                     "request-file-access-yourpenpot-view"
 
-                    (and (some? file) (:is-default team))
-                    eml/request-file-access-yourpenpot
+                     (and (some? file) (:is-default team))
+                     "request-file-access-yourpenpot"
 
-                    (some? file)
-                    eml/request-file-access
+                     (some? file)
+                     "request-file-access"
 
-                    :else
-                    eml/request-team-access)]
+                     :else
+                     "request-team-access")]
 
-      (eml/send cfg {::eml/reuse-conn true
-                     ::eml/factory factory
-                     :public-uri (cf/get :public-uri)
-                     :to (:email team-owner)
-                     :requested-by (:fullname requester)
-                     :requested-by-email (:email requester)
-                     :team-name (:name team)
-                     :team-id team-id
-                     :file-name (:name file)
-                     :file-id file-id
-                     :page-id (:page-id file)})
+      (eml/send-template cfg {::eml/reuse-conn true
+                              ::eml/template template
+                              :public-uri (cf/get :public-uri)
+                              :to (:email team-owner)
+                              :requested-by (:fullname requester)
+                              :requested-by-email (:email requester)
+                              :team-name (:name team)
+                              :team-id team-id
+                              :file-name (:name file)
+                              :file-id file-id
+                              :page-id (:page-id file)})
 
       (with-meta {:request request}
         {::audit/props {:request 1}}))))
