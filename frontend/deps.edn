@@ -31,8 +31,8 @@
    :git/url "https://github.com/funcool/rumext.git"}
 
   penpot/tokenscript-interpreter
-  {:git/tag "v0.1.0"
-   :git/sha "224547d"
+  {:git/tag "v0.2.0"
+   :git/sha "20db9b1"
    :git/url "https://github.com/penpot/tokenscript-interpreter.git"}
 
   instaparse/instaparse {:mvn/version "1.5.0"}
