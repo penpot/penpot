@@ -236,25 +236,54 @@
       (t/testing "nothing reaches the op log"
         (t/is (empty? (oplog-rows branch-file-id)))))))
 
-(t/deftest an-archived-branch-still-takes-saves
-  (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [profile (th/create-profile* 1 {:is-active true})
-          proj-id (:default-project-id profile)
-          file    (th/create-file* 1 {:profile-id (:id profile)
-                                      :project-id proj-id
-                                      :is-shared false})
-          create  (create-branch* profile (:id file) "oplog-archived")
-          branch-file-id (:branch-file-id create)]
+(defn- add-color* [profile file-id]
+  (apply-change* profile file-id
+                 {:type :add-color
+                  :color {:id (uuid/random) :name "C" :color "#112233" :opacity 1}}))
 
+(defn- archived-branch*
+  "A profile and an archived branch of one of its files."
+  [name]
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        create  (create-branch* profile (:id file) name)]
+    (th/command! {::th/type :archive-file-branch
+                  ::rpc/profile-id (:id profile)
+                  :id (:id create)})
+    [profile create]))
+
+(t/deftest an-archived-branch-refuses-saves
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [[profile create] (archived-branch* "oplog-archived")
+          branch-file-id   (:branch-file-id create)
+          out              (add-color* profile branch-file-id)]
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :branch-archived))
+      (t/is (empty? (oplog-rows branch-file-id))))))
+
+(t/deftest a-restored-branch-takes-saves-again
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [[profile create] (archived-branch* "oplog-restored")
+          branch-file-id   (:branch-file-id create)]
       (th/command! {::th/type :archive-file-branch
                     ::rpc/profile-id (:id profile)
-                    :id (:id create)})
-
-      (let [out (apply-change* profile branch-file-id
-                               {:type :add-color
-                                :color {:id (uuid/random) :name "C" :color "#112233" :opacity 1}})]
+                    :id (:id create)
+                    :archived false})
+      (let [out (add-color* profile branch-file-id)]
         (t/is (nil? (:error out)))
         (t/is (= 1 (count (oplog-rows branch-file-id))))))))
+
+(t/deftest an-archived-branch-turned-into-a-file-takes-saves
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [[profile create] (archived-branch* "oplog-materialized")
+          branch-file-id   (:branch-file-id create)
+          out              (th/command! {::th/type :materialize-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :branch-file-id branch-file-id})]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:error (add-color* profile branch-file-id)))))))
 
 (t/deftest update-from-main-compares-in-main-id-space
   ;; A branch stores no data: its document is the base snapshot plus the op
