@@ -221,7 +221,7 @@
 (mf/defc create-branch-dialog*
   {::mf/register modal/components
    ::mf/register-as :create-branch}
-  [{:keys [file-name file-id]}]
+  [{:keys [file-name]}]
   (let [branch-name* (mf/use-state "")
         description*  (mf/use-state "")
         branch-name   (deref branch-name*)
@@ -239,10 +239,10 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps branch-name description valid? file-id)
+         (mf/deps branch-name description valid?)
          (fn [_]
            (when valid?
-             (st/emit! (dwb/create-branch file-id (str/trim branch-name) (str/trim description))
+             (st/emit! (dwb/create-branch (str/trim branch-name) (str/trim description))
                        (modal/hide)))))]
 
     [:> modal* {:is-open true

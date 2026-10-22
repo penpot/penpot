@@ -308,3 +308,30 @@
                (t/is (false? (:workspace-branch-switcher @store)))
                (t/is (= {:file-id branch-id} (first @navigations)))
                (rx/dispose! store))))))
+
+;;; --- Creating a branch: one path, from the open file ---
+
+(t/deftest ^:async creating-a-branch-branches-the-open-file
+  (let [calls       (atom [])
+        branch-id   (uuid/next)
+        navigations (atom [])]
+    (await (mock/with-mocks*
+             {rp/cmd! (mock/stub (fn [cmd params]
+                                   (swap! calls conj [cmd params])
+                                   (rx/of {:branch-file-id branch-id})))
+              dcm/go-to-workspace
+              (fn [& {:as params}]
+                (swap! navigations conj params)
+                (ptk/data-event ::navigated params))}
+             (let [store (make-store-with main-without-branches)]
+               (ptk/emit! store (dwb/create-branch "feature-login" "from the workspace"))
+               (await (async/wait-for #(seq @navigations) "it lands in the new branch"))
+               (t/is (= [[:create-file-branch
+                          {:file-id file-id
+                           :name "feature-login"
+                           :description "from the workspace"}]]
+                        @calls)
+                     "it creates the branch from the open file, once")
+               (t/is (= [{:file-id branch-id}] @navigations)
+                     "it opens the branch that was created")
+               (rx/dispose! store))))))

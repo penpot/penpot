@@ -237,54 +237,36 @@
            (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error")))))))))
 
 (defn create-branch
-  "Create a branch from a file. With no `file-id`, branches the currently
-  open file (force-persisting first so the merge base captures the latest
-  edits) and jumps into the new branch. With an explicit
-  `file-id` (e.g. from the dashboard, where the file is not open),
-  creates it directly and opens the new branch. Errors surface as a
-  toast; the caller closes the dialog."
-  ([name description] (create-branch nil name description))
-  ([file-id name description]
-   (assert (string? name) "expected string for `name`")
-   (ptk/reify ::create-branch
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [current-id (:current-file-id state)
-             from-ws?   (and (nil? file-id) (some? current-id))
-             target-id  (or file-id current-id)
-             ;; Wait for persistence only when branching the open file;
-             ;; from the dashboard the file is not open, so there is
-             ;; nothing to flush. Emits exactly one value, so the branch
-             ;; is created exactly once.
-             wait       (if from-ws?
-                          (dwp/wait-persisted)
-                          (rx/of :ready))]
-         (rx/concat
-          ;; Force-persist the open file first so the merge base captures
-          ;; the latest edits. The ::force-persist event must be dispatched
-          ;; at the top level (not piped into the mapcat below); off the
-          ;; workspace there is nothing to persist.
-          (if from-ws?
-            (rx/of ::dwp/force-persist (ev/event {::ev/name "create-branch"}))
-            (rx/of (ev/event {::ev/name "create-branch"})))
-          (->> wait
-               (rx/mapcat #(rp/cmd! :create-file-branch
-                                    {:file-id target-id
-                                     :name name
-                                     :description description}))
-               (rx/mapcat
-                (fn [{:keys [branch-file-id]}]
-                  (rx/concat
-                   (rx/of (ntf/success (tr "workspace.branches.create.success" name)))
-                   (if from-ws?
-                     ;; jump into the new branch; the branch switcher in
-                     ;; the header shows where the user landed
-                     (rx/of (open-branch branch-file-id))
-                     ;; from dashboard: jump into the new branch
-                     (rx/of (dcm/go-to-workspace :file-id branch-file-id))))))
-               (rx/catch
-                (fn [cause]
-                  (rx/of (refusal-notification cause (tr "workspace.branches.create.error"))))))))))))
+  "Create a branch from the open file, force-persisting it first so the
+  merge base captures the latest edits, and jump into the new branch.
+  Errors surface as a toast; the caller closes the dialog."
+  [name description]
+  (assert (string? name) "expected string for `name`")
+  (ptk/reify ::create-branch
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)]
+        (rx/concat
+         ;; Force-persist the open file first so the merge base captures
+         ;; the latest edits. The ::force-persist event must be dispatched
+         ;; at the top level (not piped into the mapcat below).
+         (rx/of ::dwp/force-persist (ev/event {::ev/name "create-branch"}))
+         ;; `wait-persisted` emits exactly one value, so the branch is
+         ;; created exactly once.
+         (->> (dwp/wait-persisted)
+              (rx/mapcat #(rp/cmd! :create-file-branch
+                                   {:file-id file-id
+                                    :name name
+                                    :description description}))
+              (rx/mapcat
+               (fn [{:keys [branch-file-id]}]
+                 ;; jump into the new branch; the branch switcher in the
+                 ;; header shows where the user landed
+                 (rx/of (ntf/success (tr "workspace.branches.create.success" name))
+                        (open-branch branch-file-id))))
+              (rx/catch
+               (fn [cause]
+                 (rx/of (refusal-notification cause (tr "workspace.branches.create.error")))))))))))
 
 (defn toggle-branch-switcher
   "Open or close the branch switcher popover of the workspace header. With
