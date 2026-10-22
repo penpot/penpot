@@ -61,10 +61,10 @@
 }
 
 .icon {
-  @extend %button-icon;
-
+  flex-shrink: 0;
+  stroke-width: 1px;
   align-self: self-start;
-  stroke: var(--context-notification-icon-color);
+  color: var(--context-notification-icon-color);
 }
 
 .context-text {
