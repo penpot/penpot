@@ -647,7 +647,7 @@ impl PlannedParagraph {
             } else {
                 align
             };
-        let tops = if self.policy == TextLayoutPolicy::Japanese {
+        let tops = if self.policy == TextLayoutPolicy::Japanese && align != TextAlign::Distribute {
             aligned_tops(
                 &self.flow,
                 &self.classes,
@@ -850,6 +850,30 @@ mod tests {
             &content,
             height,
         )
+    }
+
+    #[test]
+    fn distributed_hangul_fills_the_final_column_across_styles() {
+        use crate::shapes::text_policy::KoreanWrap;
+        let layout = cjk_layout(
+            &["기획", "편집"],
+            "ko",
+            KoreanWrap::KeepWords,
+            TextAlign::Distribute,
+            310.0,
+        );
+        assert_eq!(layout.cells.len(), 4);
+        assert!(layout.cells.iter().all(|cell| cell.column == 0));
+        let last = layout.cells.last().unwrap();
+        assert!((last.top + last.extent - 310.0).abs() < 0.01);
+        let steps: Vec<_> = layout
+            .cells
+            .windows(2)
+            .map(|pair| pair[1].top - pair[0].top)
+            .collect();
+        assert!(steps
+            .windows(2)
+            .all(|pair| (pair[1] - pair[0]).abs() < 0.01));
     }
 
     #[test]

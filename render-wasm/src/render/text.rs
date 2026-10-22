@@ -1,4 +1,5 @@
 use super::{filters, RenderState, Shape, SurfaceId, DEFAULT_EMOJI_FONT};
+use crate::shapes::text_paragraph::LayoutParagraph;
 use crate::{
     error::Result,
     math::Rect,
@@ -170,25 +171,16 @@ pub fn stroke_paragraph_builder_group_from_text(
     let mut group_layer_opacity: Option<f32> = None;
 
     let plans = text_content.horizontal_plans();
-    let adjustments = plans
-        .iter()
-        .any(|plan| plan.has_atomic_overflow())
-        .then(|| text_content.horizontal_line_adjustments())
-        .flatten();
+    let adjustments = text_content.horizontal_line_adjustments();
     for (index, (paragraph, plan)) in text_content
         .paragraphs()
         .iter()
         .zip(plans.iter())
         .enumerate()
     {
-        let adjustment = plan
-            .has_atomic_overflow()
-            .then(|| {
-                adjustments
-                    .as_ref()
-                    .and_then(|adjustments| adjustments[index].as_ref())
-            })
-            .flatten();
+        let adjustment = adjustments
+            .as_ref()
+            .and_then(|adjustments| adjustments[index].as_ref());
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
@@ -224,9 +216,13 @@ pub fn stroke_paragraph_builder_group_from_text(
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
                     let mut paragraph_style = paragraph.paragraph_to_style();
-                    if plan.has_atomic_overflow() {
+                    if plan.has_atomic_overflow() || adjustment.is_some() {
                         paragraph_style.set_apply_rounding_hack(false);
-                        if paragraph.text_align() == skia::textlayout::TextAlign::Justify {
+                        if matches!(
+                            paragraph.text_align(),
+                            crate::shapes::TextAlign::Justify
+                                | crate::shapes::TextAlign::Distribute
+                        ) {
                             paragraph_style.set_text_align(skia::textlayout::TextAlign::Left);
                         }
                     }
@@ -842,7 +838,7 @@ fn paint_text_with_emoji_overlay(
     }
 }
 
-fn paragraph_has_emoji(paragraph: &mut skia::textlayout::Paragraph) -> bool {
+fn paragraph_has_emoji(paragraph: &mut LayoutParagraph) -> bool {
     let line_bounds: Vec<(usize, usize)> = paragraph
         .get_line_metrics()
         .iter()
@@ -854,7 +850,7 @@ fn paragraph_has_emoji(paragraph: &mut skia::textlayout::Paragraph) -> bool {
 }
 
 fn line_emoji_ranges(
-    paragraph: &mut skia::textlayout::Paragraph,
+    paragraph: &mut LayoutParagraph,
     line_start: usize,
     line_end: usize,
 ) -> Vec<(usize, usize)> {
@@ -1424,7 +1420,7 @@ fn style_metric_at<'a>(
 /// how Skia grouped the line into style runs; the runs only supply the paint
 /// and font metrics covering each segment.
 pub fn decoration_segments(
-    skia_paragraph: &skia::textlayout::Paragraph,
+    skia_paragraph: &LayoutParagraph,
     text_paragraph: &TextParagraph,
     offsets: &HorizontalOffsets,
     x: f32,

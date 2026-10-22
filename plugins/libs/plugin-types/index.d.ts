@@ -4724,7 +4724,8 @@ export interface Text extends ShapeBase {
   /**
    * The horizontal alignment of the text shape. It can be a specific alignment or 'mixed' if multiple alignments are used.
    */
-  align: 'left' | 'center' | 'right' | 'justify' | 'mixed' | null;
+  align:
+    'left' | 'center' | 'right' | 'justify' | 'distribute' | 'mixed' | null;
 
   /**
    * The vertical alignment of the text shape.
@@ -5051,7 +5052,8 @@ export interface TextRange {
   /**
    * The horizontal alignment of the text range. It can be a specific alignment or 'mixed' if multiple alignments are used.
    */
-  align: 'left' | 'center' | 'right' | 'justify' | 'mixed' | null;
+  align:
+    'left' | 'center' | 'right' | 'justify' | 'distribute' | 'mixed' | null;
 
   /**
    * The vertical alignment of the text range. It can be a specific alignment or 'mixed' if multiple alignments are used.

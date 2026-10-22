@@ -454,7 +454,9 @@ pub(super) fn policy_aligned_tops(
         for top in &mut tops[start..end] {
             *top += shift;
         }
-        if align == TextAlign::Justify && column < last_column && is_bounded(budget) {
+        if (align == TextAlign::Distribute || (align == TextAlign::Justify && column < last_column))
+            && is_bounded(budget)
+        {
             let mut remaining = (budget - used).max(0.0);
             let mut extras = vec![0.0; end - start];
             let mut opportunities = Vec::new();
@@ -468,7 +470,26 @@ pub(super) fn policy_aligned_tops(
                 let (Some(before), Some(after)) = (edges[i].1, edges[i + 1].0) else {
                     continue;
                 };
-                let (priority, cap) = policy.expansion_em(before, after);
+                if align == TextAlign::Distribute
+                    && matches!(before, '\u{00a0}' | '\u{202f}' | '\u{2060}')
+                    || align == TextAlign::Distribute
+                        && matches!(after, '\u{00a0}' | '\u{202f}' | '\u{2060}')
+                {
+                    continue;
+                }
+                let (priority, cap) = if align == TextAlign::Distribute {
+                    (
+                        1,
+                        budget
+                            / cells[i]
+                                .cell
+                                .font_size
+                                .min(cells[i + 1].cell.font_size)
+                                .max(0.01),
+                    )
+                } else {
+                    policy.expansion_em(before, after)
+                };
                 let em = cells[i].cell.font_size.min(cells[i + 1].cell.font_size);
                 if priority > 0 {
                     opportunities.push((i, priority, cap * em));

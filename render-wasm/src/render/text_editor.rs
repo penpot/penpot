@@ -1,4 +1,5 @@
 use crate::render::options::RenderOptions;
+use crate::shapes::text_paragraph::LayoutParagraph;
 use crate::shapes::text_vertical;
 use crate::shapes::{vertical_align_offset, Shape, TextContent, Type};
 use crate::state::{TextEditorState, TextSelection};
@@ -129,10 +130,7 @@ fn render_selection(
     canvas.restore();
 }
 
-fn paragraphs_vertical_offset(
-    shape: &Shape,
-    layout_paragraphs: &[&skia_safe::textlayout::Paragraph],
-) -> f32 {
+fn paragraphs_vertical_offset(shape: &Shape, layout_paragraphs: &[&LayoutParagraph]) -> f32 {
     let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
     vertical_align_offset(
         shape.selrect().height(),
@@ -258,7 +256,7 @@ pub(crate) fn cursor_rect(
 #[cfg(test)]
 fn horizontal_caret_rect(
     para: &crate::shapes::Paragraph,
-    laid_out_para: &skia_safe::textlayout::Paragraph,
+    laid_out_para: &LayoutParagraph,
     char_pos: usize,
 ) -> Rect {
     horizontal_caret_rect_with_offsets(
@@ -271,7 +269,7 @@ fn horizontal_caret_rect(
 
 fn horizontal_caret_rect_with_offsets(
     para: &crate::shapes::Paragraph,
-    laid_out_para: &skia_safe::textlayout::Paragraph,
+    laid_out_para: &LayoutParagraph,
     char_pos: usize,
     offsets: &crate::shapes::HorizontalOffsets,
 ) -> Rect {
@@ -461,8 +459,7 @@ mod tests {
     };
     use crate::uuid::Uuid;
     use skia_safe::textlayout::{
-        FontCollection, Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle, TextStyle,
-        TypefaceFontProvider,
+        FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle, TypefaceFontProvider,
     };
     use skia_safe::FontMgr;
 
@@ -561,7 +558,7 @@ mod tests {
         )
     }
 
-    fn laid_out(text: &str) -> SkiaParagraph {
+    fn laid_out(text: &str) -> LayoutParagraph {
         let mut provider = TypefaceFontProvider::new();
         let typeface = FontMgr::new()
             .new_from_data(
@@ -578,12 +575,12 @@ mod tests {
         let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
         builder.push_style(&style);
         builder.add_text(text);
-        let mut paragraph = builder.build();
+        let mut paragraph = LayoutParagraph::build(&mut builder);
         paragraph.layout(1000.0);
         paragraph
     }
 
-    fn glyph_rect(laid_out: &SkiaParagraph, range: std::ops::Range<usize>) -> Rect {
+    fn glyph_rect(laid_out: &LayoutParagraph, range: std::ops::Range<usize>) -> Rect {
         laid_out.get_rects_for_range(range, RectHeightStyle::Max, RectWidthStyle::Tight)[0].rect
     }
 

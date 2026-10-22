@@ -1,4 +1,5 @@
 use crate::render::text::decoration_segments;
+use crate::shapes::text_paragraph::LayoutParagraph;
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
@@ -241,7 +242,7 @@ impl TextPositionWithAffinity {
 #[derive(Debug)]
 pub struct TextContentLayoutResult(
     Vec<ParagraphBuilderGroup>,
-    Vec<Vec<skia::textlayout::Paragraph>>,
+    Vec<Vec<LayoutParagraph>>,
     TextContentSize,
 );
 
@@ -316,7 +317,7 @@ pub struct TextContentLayout {
     pub paragraph_builders: Vec<ParagraphBuilderGroup>,
     /// Shared across shape clones (e.g. modifier transforms) so rotation/pan
     /// can paint without rebuilding Skia layout. Cleared builders on clone are OK.
-    pub paragraphs: Rc<Vec<Vec<skia::textlayout::Paragraph>>>,
+    pub paragraphs: Rc<Vec<Vec<LayoutParagraph>>>,
     cached_extrect: Cell<Option<CachedExtrect>>,
     /// Last vertical layout, shared across clones like `paragraphs`.
     vertical: RefCell<Option<VerticalLayoutCache>>,
@@ -366,7 +367,7 @@ impl TextContentLayout {
     pub fn set(
         &mut self,
         paragraph_builders: Vec<ParagraphBuilderGroup>,
-        paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+        paragraphs: Vec<Vec<LayoutParagraph>>,
     ) {
         self.paragraph_builders = paragraph_builders;
         self.paragraphs = Rc::new(paragraphs);
@@ -415,7 +416,7 @@ pub fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalA
     }
 }
 
-fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> bool {
+fn intersects(paragraph: &LayoutParagraph, x: f32, y: f32) -> bool {
     if y < 0.0 || y > paragraph.height() {
         return false;
     }
@@ -430,7 +431,7 @@ fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> b
 }
 
 fn paragraph_intersects<'a>(
-    paragraphs: impl Iterator<Item = (&'a skia::textlayout::Paragraph, f32)>,
+    paragraphs: impl Iterator<Item = (&'a LayoutParagraph, f32)>,
     x_pos: f32,
     y_pos: f32,
 ) -> bool {
@@ -449,7 +450,7 @@ pub(crate) fn build_paragraphs_from_paragraph_builders(
     paragraph_builders: &mut [ParagraphBuilderGroup],
     width: f32,
     plans: &[HorizontalParagraphPlan],
-) -> Vec<Vec<skia::textlayout::Paragraph>> {
+) -> Vec<Vec<LayoutParagraph>> {
     let paragraphs = paragraph_builders
         .iter_mut()
         .enumerate()
@@ -457,7 +458,7 @@ pub(crate) fn build_paragraphs_from_paragraph_builders(
             builders
                 .iter_mut()
                 .map(|builder| {
-                    let mut paragraph = builder.build();
+                    let mut paragraph = LayoutParagraph::build(builder);
                     // For auto-width, always layout with infinite width first to get intrinsic width
                     paragraph.layout(
                         plans
@@ -481,7 +482,7 @@ pub(crate) fn calculate_normalized_line_height(
     let mut normalized_line_height = 0.0;
     for (index, paragraph_builder_group) in paragraph_builders.iter_mut().enumerate() {
         for paragraph_builder in paragraph_builder_group.iter_mut() {
-            let mut paragraph = paragraph_builder.build();
+            let mut paragraph = LayoutParagraph::build(paragraph_builder);
             paragraph.layout(
                 plans
                     .get(index)
@@ -680,17 +681,20 @@ impl TextContent {
     /// True when a horizontal paragraph gets its lines adjusted here rather
     /// than by Skia: Japanese squeezing or policy-based CJK justification.
     fn adjusts_lines(&self, paragraph: &Paragraph, plan: &HorizontalParagraphPlan) -> bool {
+        if paragraph.text_align() == TextAlign::Distribute {
+            return true;
+        }
         let policy = paragraph.layout_policy();
         (uses_japanese_layout(paragraph, &plan.texts)
             && (self.line_adjustment == LineAdjustment::PushInFirst
-                || paragraph.text_align() == skia::textlayout::TextAlign::Justify))
+                || paragraph.text_align() == TextAlign::Justify))
             || ((policy.is_chinese()
                 || matches!(
                     policy,
                     super::text_policy::TextLayoutPolicy::KoreanSyllable
                         | super::text_policy::TextLayoutPolicy::KoreanWords
                 ))
-                && paragraph.text_align() == skia::textlayout::TextAlign::Justify)
+                && paragraph.text_align() == TextAlign::Justify)
     }
 
     /// Squeeze sheds and justify spacing of each horizontal paragraph at
@@ -741,9 +745,11 @@ impl TextContent {
         width: f32,
     ) -> HorizontalAdjustment {
         let lay_out = |extra_sheds: &[Vec<(usize, f32)>]| {
-            let mut laid_out = self
-                .horizontal_measure_builder(paragraph, plan, extra_sheds)
-                .build();
+            let mut laid_out = LayoutParagraph::build(&mut self.horizontal_measure_builder(
+                paragraph,
+                plan,
+                extra_sheds,
+            ));
             laid_out.layout(plan.layout_width(width));
             laid_out
         };
@@ -757,7 +763,9 @@ impl TextContent {
             let laid_out = lay_out(&sheds);
             (sheds, laid_out)
         };
-        let spacing = if paragraph.text_align() == skia::textlayout::TextAlign::Justify {
+        let spacing = if paragraph.text_align() == TextAlign::Distribute {
+            horizontal_policy_justify_spacing(paragraph, &laid_out, plan, width)
+        } else if paragraph.text_align() == TextAlign::Justify {
             if paragraph.layout_policy() == super::text_policy::TextLayoutPolicy::Japanese {
                 horizontal_justify_spacing(&laid_out, plan, width)
             } else {
@@ -837,17 +845,17 @@ impl TextContent {
                     let mut plan = HorizontalParagraphPlan::new(paragraph);
                     plan.relax_overlong_words(paragraph, width, |plan| {
                         let sheds = vec![Vec::new(); plan.texts.len()];
-                        let mut measured = self
-                            .horizontal_measure_builder(paragraph, plan, &sheds)
-                            .build();
+                        let mut measured = LayoutParagraph::build(
+                            &mut self.horizontal_measure_builder(paragraph, plan, &sheds),
+                        );
                         measured.layout(width);
                         measured
                     });
                     plan.retain_atomic_overflow(paragraph, width, |plan, width| {
                         let sheds = vec![Vec::new(); plan.texts.len()];
-                        let mut measured = self
-                            .horizontal_measure_builder(paragraph, plan, &sheds)
-                            .build();
+                        let mut measured = LayoutParagraph::build(
+                            &mut self.horizontal_measure_builder(paragraph, plan, &sheds),
+                        );
                         measured.layout(width);
                         measured
                     });
@@ -1384,7 +1392,10 @@ impl TextContent {
             if let Some(align) = align_override {
                 paragraph_style.set_text_align(align);
             } else if adjustment.is_some()
-                && paragraph.text_align() == skia::textlayout::TextAlign::Justify
+                && matches!(
+                    paragraph.text_align(),
+                    TextAlign::Justify | TextAlign::Distribute
+                )
             {
                 // The justify spacing already fills the lines.
                 paragraph_style.set_text_align(skia::textlayout::TextAlign::Left);
@@ -1883,7 +1894,7 @@ impl TextContent {
                 builder.push_style(&text_style);
                 builder.add_text("0");
 
-                let mut paragraph_layout = builder.build();
+                let mut paragraph_layout = LayoutParagraph::build(&mut builder);
                 paragraph_layout.layout(f32::MAX);
 
                 let width = paragraph_layout.max_intrinsic_width();
@@ -2009,7 +2020,30 @@ impl Default for TextContent {
     }
 }
 
-pub type TextAlign = skia::textlayout::TextAlign;
+#[derive(Debug, Default, PartialEq, Clone, Copy)]
+pub enum TextAlign {
+    #[default]
+    Left,
+    Center,
+    Right,
+    Justify,
+    Distribute,
+    Start,
+    End,
+}
+
+impl From<TextAlign> for skia::textlayout::TextAlign {
+    fn from(value: TextAlign) -> Self {
+        match value {
+            TextAlign::Left | TextAlign::Distribute => Self::Left,
+            TextAlign::Center => Self::Center,
+            TextAlign::Right => Self::Right,
+            TextAlign::Justify => Self::Justify,
+            TextAlign::Start => Self::Start,
+            TextAlign::End => Self::End,
+        }
+    }
+}
 pub type TextDirection = skia::textlayout::TextDirection;
 pub type TextDecoration = skia::textlayout::TextDecoration;
 
@@ -2270,7 +2304,7 @@ impl Paragraph {
         let mut style = ParagraphStyle::default();
 
         style.set_height(self.line_height);
-        style.set_text_align(self.text_align);
+        style.set_text_align(self.text_align.into());
         style.set_text_direction(self.text_direction);
         style.set_replace_tab_characters(false);
         style.set_apply_rounding_hack(true);
@@ -2808,7 +2842,7 @@ pub struct PositionData {
 
 #[derive(Debug)]
 pub struct ParagraphLayout {
-    pub paragraph: skia::textlayout::Paragraph,
+    pub paragraph: LayoutParagraph,
     pub source_paragraph: usize,
     pub x: f32,
     pub y: f32,
@@ -2846,14 +2880,14 @@ pub fn calculate_text_layout_data(
 
     // 1. Build + layout each paragraph once, recording heights as we go.
     let mut paragraph_heights: Vec<f32> = Vec::new();
-    let mut built_groups: Vec<Vec<skia::textlayout::Paragraph>> =
+    let mut built_groups: Vec<Vec<LayoutParagraph>> =
         Vec::with_capacity(paragraph_builder_groups.len());
     for (index, paragraph_builder_group) in paragraph_builder_groups.iter_mut().enumerate() {
         let group_len = paragraph_builder_group.len();
         let mut paragraph_offset_y = previous_line_height;
-        let mut group_paragraphs: Vec<skia::textlayout::Paragraph> = Vec::with_capacity(group_len);
+        let mut group_paragraphs: Vec<LayoutParagraph> = Vec::with_capacity(group_len);
         for (builder_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
-            let mut skia_paragraph = paragraph_builder.build();
+            let mut skia_paragraph = LayoutParagraph::build(paragraph_builder);
             skia_paragraph.layout(plans[index].layout_width(text_width));
             if builder_index == group_len - 1 {
                 if skia_paragraph.get_line_metrics().is_empty() {

@@ -28,6 +28,7 @@ pub enum RawTextAlign {
     Center = 1,
     Right = 2,
     Justify = 3,
+    Distribute = 4,
 }
 
 impl From<RawTextAlign> for TextAlign {
@@ -37,6 +38,7 @@ impl From<RawTextAlign> for TextAlign {
             RawTextAlign::Center => TextAlign::Center,
             RawTextAlign::Right => TextAlign::Right,
             RawTextAlign::Justify => TextAlign::Justify,
+            RawTextAlign::Distribute => TextAlign::Distribute,
         }
     }
 }

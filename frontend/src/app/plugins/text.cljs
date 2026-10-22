@@ -31,7 +31,7 @@
 
 (def ^:private text-decoration-re #"underline|line-through|none")
 (def ^:private text-direction-re #"ltr|rtl")
-(def ^:private text-align-re #"left|center|right|justify")
+(def ^:private text-align-re #"left|center|right|justify|distribute")
 (def ^:private vertical-align-re #"top|center|bottom")
 
 (defn- font-data

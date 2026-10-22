@@ -1,3 +1,4 @@
+use crate::shapes::text_paragraph::LayoutParagraph;
 // Justification of horizontal Japanese text (JLREQ §3.8). SkParagraph only
 // expands around ideographs, which bunches the space next to kanji; this pass
 // spreads each line's slack evenly between its characters instead.
@@ -19,7 +20,7 @@ fn is_word_char(ch: char) -> bool {
 /// between its characters, skipping gaps inside a Western word and the
 /// zero-width word joiners; warichu notes take none.
 pub(crate) fn horizontal_justify_spacing(
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     plan: &HorizontalParagraphPlan,
     width: f32,
 ) -> Vec<Vec<(usize, f32)>> {
@@ -72,18 +73,24 @@ pub(crate) fn horizontal_justify_spacing(
     spacing
 }
 
-/// Policy-based, bounded expansion for Chinese and Korean. The final line,
-/// annotation interiors, nonbreaking pairs and grapheme interiors stay solid.
+/// Policy-based, bounded justification; explicit distribution fills every
+/// line without a per-gap cap. Annotation and grapheme interiors stay solid.
 pub(crate) fn horizontal_policy_justify_spacing(
     paragraph: &Paragraph,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     plan: &HorizontalParagraphPlan,
     width: f32,
 ) -> Vec<Vec<(usize, f32)>> {
     use unicode_segmentation::UnicodeSegmentation;
+    let distribute = paragraph.text_align() == crate::shapes::TextAlign::Distribute;
     let policy = paragraph.layout_policy();
     let chars = line_chars(paragraph, plan);
     let source: String = chars.iter().map(|c| c.ch).collect();
+    let original: Vec<_> = paragraph
+        .children()
+        .iter()
+        .flat_map(|span| span.text.chars())
+        .collect();
     let starts: Vec<_> = source
         .graphemes(true)
         .scan(0usize, |at, g| {
@@ -100,25 +107,47 @@ pub(crate) fn horizontal_policy_justify_spacing(
         .filter(|range| range.warichu)
         .collect();
     let lines = laid_out.get_line_metrics();
-    for line in lines.iter().take(lines.len().saturating_sub(1)) {
+    let count = if distribute {
+        lines.len()
+    } else {
+        lines.len().saturating_sub(1)
+    };
+    for line in lines.iter().take(count) {
         let mut remaining = (width - line.width as f32 - JUSTIFY_EPSILON).max(0.0);
         let mut opportunities = Vec::new();
         let start = chars.partition_point(|c| c.utf16 < line.start_index);
         let end = chars.partition_point(|c| c.utf16 < line.end_excluding_whitespaces);
         for index in start..end.saturating_sub(1) {
             let (before, after) = (&chars[index], &chars[index + 1]);
+            let source_before = plan.offsets.builder_to_source(before.utf16);
+            let source_after = plan.offsets.builder_to_source(after.utf16);
+            let nonbreaking = distribute
+                && original
+                    .get(source_before..=source_after)
+                    .is_some_and(|pair| {
+                        pair.iter()
+                            .any(|ch| matches!(ch, '\u{00a0}' | '\u{202f}' | '\u{2060}'))
+                    });
             let note = notes.get(notes.partition_point(|r| r.builder_end <= before.utf16));
             if before.utf16 < line.start_index
                 || after.utf16 >= line.end_excluding_whitespaces
-                || after.joined
+                || (!distribute && after.joined)
+                || nonbreaking
                 || starts.binary_search(&(index + 1)).is_err()
+                || (distribute
+                    && before.span == after.span
+                    && paragraph.children()[before.span].has_ruby())
                 || note.is_some_and(|r| {
                     r.builder_start > before.utf16 && r.builder_start < after.utf16
                 })
             {
                 continue;
             }
-            let (priority, capacity) = policy.expansion_em(before.ch, after.ch);
+            let (priority, capacity) = if distribute {
+                (1, width / before.font_size.min(after.font_size).max(0.01))
+            } else {
+                policy.expansion_em(before.ch, after.ch)
+            };
             if priority > 0 {
                 opportunities.push((
                     index,
@@ -144,8 +173,7 @@ pub(crate) fn horizontal_policy_justify_spacing(
 }
 
 /// Lays a paragraph out with extra per-span sheds (char index, amount).
-pub(crate) type LayOutWithSheds<'a> =
-    dyn Fn(&[Vec<(usize, f32)>]) -> skia::textlayout::Paragraph + 'a;
+pub(crate) type LayOutWithSheds<'a> = dyn Fn(&[Vec<(usize, f32)>]) -> LayoutParagraph + 'a;
 
 /// One real character of a horizontal paragraph in builder order.
 struct LineChar {
@@ -239,7 +267,7 @@ pub(crate) fn horizontal_squeeze_sheds(
     plan: &HorizontalParagraphPlan,
     width: f32,
     lay_out: &LayOutWithSheds,
-) -> (Vec<Vec<(usize, f32)>>, skia::textlayout::Paragraph) {
+) -> (Vec<Vec<(usize, f32)>>, LayoutParagraph) {
     let chars = line_chars(paragraph, plan);
     let mut sheds: Vec<Vec<(usize, f32)>> = vec![Vec::new(); plan.texts.len()];
     let mut laid_out = lay_out(&sheds);
