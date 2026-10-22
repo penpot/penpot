@@ -58,15 +58,6 @@
   inline-size: var(--sp-l);
 }
 
-// TODO: the dropdown arrow is the DS icon svg itself, so this rule
-// matches nothing; check by hand before removal.
-// .icon-dropdown svg {
-//   @extend %button-icon-small;
-//
-//   stroke: var(--icon-foreground);
-//   transform: rotate(90deg);
-// }
-
 .cta-bottom-section {
   border-block-start: $b-1 solid var(--color-background-quaternary);
   color: var(--color-foreground-secondary);
@@ -131,17 +122,6 @@
   margin-inline-start: var(--sp-xs);
 }
 
-// TODO: .cta-link is not used by subscription.cljs; check by hand
-// before removal.
-// .cta-link {
-//   border: none;
-//   background: none;
-//   cursor: pointer;
-//
-//   align-self: end;
-//   margin-inline-start: var(--sp-xs);
-// }
-
 .team {
   display: grid;
   grid-auto-rows: min-content;
@@ -197,14 +177,6 @@
 
   &:hover {
     color: var(--color-foreground-primary);
-
-    // TODO: .open-arrow is not used by subscription.cljs; check by hand
-    // before removal.
-    // .open-arrow {
-    //   svg {
-    //     stroke: var(--color-foreground-primary);
-    //   }
-    // }
   }
 }
 
