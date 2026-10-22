@@ -6352,6 +6352,10 @@ msgstr "Ungroup"
 msgid "workspace.branches.archived"
 msgstr "Archived"
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1840
+msgid "workspace.branches.banner.archived"
+msgstr "Archived branch"
+
 #, unused
 msgid "workspace.branches.banner.collapse"
 msgstr "Collapse"
@@ -6849,6 +6853,14 @@ msgstr "No branches yet"
 msgid "workspace.branches.header-badge-tooltip"
 msgstr "On branch %s from main"
 
+#: src/app/main/ui/workspace/branch_switcher.cljs:98, src/app/main/ui/workspace/branch_switcher.cljs:315
+msgid "workspace.branches.header.archived"
+msgstr "Archived, not merged"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:97, src/app/main/ui/workspace/branch_switcher.cljs:309
+msgid "workspace.branches.header.merged"
+msgstr "Merged into main, read only"
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:485
 msgid "workspace.branches.info.author"
 msgstr "Created by"
@@ -7174,6 +7186,10 @@ msgid "workspace.branches.merge.unsupported"
 msgstr ""
 "This branch changes elements that can't be merged automatically yet "
 "(components, pages or tokens)"
+
+#: src/app/main/ui/workspace/branch_switcher.cljs:208, src/app/main/ui/workspace/sidebar/branches.cljs:943
+msgid "workspace.branches.merged"
+msgstr "Merged"
 
 #, unused
 msgid "workspace.branches.new"

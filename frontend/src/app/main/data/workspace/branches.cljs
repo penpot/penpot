@@ -194,6 +194,8 @@
            (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error")))))))))
 
 (defn archive-branch
+  "Archive a branch, or restore it with `archived?` false. The context
+  refreshes as well, so the banner of the open branch follows its status."
   ([id] (archive-branch id true))
   ([id archived?]
    (assert (uuid? id) "expected valid uuid for `id`")
@@ -201,7 +203,7 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (->> (rp/cmd! :archive-file-branch {:id id :archived archived?})
-            (rx/mapcat (fn [_] (rx/of (fetch-branches))))
+            (rx/mapcat (fn [_] (rx/of (fetch-branches) (fetch-branch-context))))
             (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error"))))))))))
 
 (defn delete-branch

@@ -74,8 +74,21 @@
                  (get projects project-id)))
              st/state))
 
+(defn- open-merged-branch?
+  "True when the open file is a branch kept after its merge: its work is
+  already in main, so it opens read-only."
+  [state]
+  (let [ctx (:workspace-branch-context state)]
+    (and (= "merged" (get-in ctx [:info :status]))
+         (= (:file-id ctx) (:current-file-id state)))))
+
 (def permissions
-  (l/derived (l/key :permissions) team))
+  "The team permissions, without edition on a kept merged branch."
+  (l/derived (fn [state]
+               (cond-> (:permissions (dsh/lookup-team state))
+                 (open-merged-branch? state)
+                 (assoc :can-edit false)))
+             st/state))
 
 (def teams
   (l/derived (l/key :teams) st/state))

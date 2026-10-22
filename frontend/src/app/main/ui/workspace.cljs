@@ -147,13 +147,6 @@
                 :overlay true
                 :file-loading true}])
 
-(defn- make-team-ref
-  [team-id]
-  (l/derived (fn [state]
-               (let [teams (get state :teams)]
-                 (get teams team-id)))
-             st/state))
-
 (defn- make-file-ref
   [file-id]
   (l/derived (fn [state]
@@ -213,18 +206,17 @@
   (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
 
-        team-ref         (mf/with-memo [team-id]
-                           (make-team-ref team-id))
         file-ref         (mf/with-memo [file-id]
                            (make-file-ref file-id))
 
-        team             (mf/deref team-ref)
         file             (mf/deref file-ref)
 
         file-loaded?     (get file ::has-data)
 
         file-name        (:name file)
-        permissions      (:permissions team)
+        ;; a kept merged branch takes no edits: `refs/permissions` drops
+        ;; `:can-edit` for it, and the contexts below pass that on
+        permissions      (mf/deref refs/permissions)
 
         read-only?       (mf/deref refs/workspace-read-only?)
         read-only?       (or read-only? (not (:can-edit permissions)))
@@ -286,28 +278,30 @@
      [:> (mf/provider ctx/current-file-id) {:value file-id}
       [:> (mf/provider ctx/current-page-id) {:value page-id}
        [:> (mf/provider ctx/design-tokens) {:value design-tokens?}
-        [:> (mf/provider ctx/workspace-read-only?) {:value read-only?}
-         [:> modal-container*]
-         [:> components-debugger*]
-         [:section {:class (stl/css :workspace)
-                    :style {:background-color background-color
-                            :touch-action "none"
-                            :position "relative"}}
-          [:> context-menu*]
-          (when (and file-loaded? page-id)
-            [:> workspace-inner*
-             {:page-id page-id
-              :file-id file-id
-              :file file
-              :wglobal wglobal
-              :layout layout}])
-          (when (or (not (and file-loaded? page-id))
-                    ;; in wasm renderer, extend the pixel loader until the first frame is rendered
-                    ;; but do not apply it when switching pages
-                    (and wasm-renderer-enabled?
-                         (not file-loaded?)
-                         (not @first-frame-rendered?)))
-            [:> workspace-loader*])]]]]]]))
+        [:> (mf/provider ctx/permissions) {:value permissions}
+         [:> (mf/provider ctx/can-edit?) {:value (:can-edit permissions)}
+          [:> (mf/provider ctx/workspace-read-only?) {:value read-only?}
+           [:> modal-container*]
+           [:> components-debugger*]
+           [:section {:class (stl/css :workspace)
+                      :style {:background-color background-color
+                              :touch-action "none"
+                              :position "relative"}}
+            [:> context-menu*]
+            (when (and file-loaded? page-id)
+              [:> workspace-inner*
+               {:page-id page-id
+                :file-id file-id
+                :file file
+                :wglobal wglobal
+                :layout layout}])
+            (when (or (not (and file-loaded? page-id))
+                      ;; in wasm renderer, extend the pixel loader until the first frame is rendered
+                      ;; but do not apply it when switching pages
+                      (and wasm-renderer-enabled?
+                           (not file-loaded?)
+                           (not @first-frame-rendered?)))
+              [:> workspace-loader*])]]]]]]]]))
 
 (mf/defc workspace-page*
   {::mf/lazy-load true}

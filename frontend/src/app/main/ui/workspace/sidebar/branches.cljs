@@ -473,7 +473,9 @@
         author?   (= (:created-by branch) (:id profile))
         status    (:status branch)
         merged?   (= "merged" status)
-        archived? (contains? #{"archived" "merged"} status)
+        archived? (= "archived" status)
+        ;; only an open branch carries change counts
+        open?     (= "open" status)
 
         editing?  (mf/use-state false)
         desc*     (mf/use-state (or (:description branch) ""))
@@ -491,7 +493,11 @@
                                     (st/emit! (dwb/set-branch-description (:id branch) (str/trim desc)))
                                     (reset! editing? false)))
         on-compare     (mf/use-fn (mf/deps branch)
-                                  #(modal/show! :branch-compare {:branch branch}))]
+                                  #(modal/show! :branch-compare {:branch branch}))
+        on-restore     (mf/use-fn (mf/deps branch)
+                                  (fn [_]
+                                    (st/emit! (modal/hide)
+                                              (dwb/archive-branch (:id branch) false))))]
     [:> modal* {:is-open true
                 :on-open-change (prui/on-dismiss on-close)}
      [:> prui/dialog-header* {:icon i/git-branch
@@ -554,7 +560,7 @@
           [:dd {:class (stl/css :info-val)}
            (some-> (:updated-at branch) ct/inst ct/timeago)]])
 
-       (when-not archived?
+       (when open?
          [:div {:class (stl/css :info-row)}
           [:dt {:class (stl/css :info-key)} (tr "workspace.branches.info.changes")]
           [:dd {:class (stl/css :info-val :info-counts)}
@@ -580,7 +586,11 @@
            (-> (:merged-at branch) ct/inst (ct/format-inst :localized-date-time))]])]]
 
      [:> modal-footer* {}
-      (when-not archived?
+      (when archived?
+        [:> button* {:variant "secondary" :icon i/history :on-click on-restore}
+         (tr "workspace.branches.menu.restore")])
+      ;; the work of a merged branch is in main: there is nothing to compare
+      (when-not merged?
         [:> button* {:variant "secondary" :icon i/switch :on-click on-compare}
          (tr "workspace.branches.compare")])
       [:> button* {:variant "primary" :on-click on-close} (tr "labels.close")]]]))
@@ -594,7 +604,11 @@
         ahead     (:ahead entry)
         behind    (:behind entry)
         main?     (:is-main entry)
-        archived? (contains? #{"archived" "merged"} (:status entry))
+        merged?   (= "merged" (:status entry))
+        archived? (= "archived" (:status entry))
+        ;; merged and archived branches are out of the flow: no counts, no
+        ;; branch work, and dimmed in the list
+        closed?   (or merged? archived?)
 
         ;; `pr` is the branch's open pull request (nil when none): the
         ;; review is a STATE of the branch, so the entry surfaces it as a
@@ -754,7 +768,7 @@
                                   :on-accept (fn [_] (st/emit! (dwb/materialize-branch (:branch-file-id entry))))}))))]
 
     [:li {:class (stl/css-case :branch-entry true
-                               :is-archived archived?
+                               :is-archived closed?
                                :is-current current)
           :role "button"
           :on-click (when-not current on-open)}
@@ -790,7 +804,7 @@
             (dm/str approvals "/" total)])])]
 
      [:div {:class (stl/css :branch-entry-aside)}
-      (when (and (not archived?) (not main?))
+      (when (and (not closed?) (not main?))
         [:div {:class (stl/css :branch-entry-counts)}
          (if (counts-error? entry)
            [:span {:class (stl/css :count-error)
@@ -824,17 +838,17 @@
                                        :on-click on-toggle-menu}])}
           [:> menu-item* {:id "info" :on-action on-info}
            (tr "workspace.branches.menu.info")]
-          (when-not archived?
+          (when-not merged?
             [:> menu-item* {:id "compare" :on-action on-compare}
              (tr "workspace.branches.compare")])
-          (when (and (not archived?) (pos? (or behind 0)))
+          (when (and (not closed?) (pos? (or behind 0)))
             [:> menu-item* {:id "update" :on-action on-update}
              (tr "workspace.branches.update")])
           ;; review lifecycle: a branch without an open pull request offers to
           ;; request one; with it, the review actions take its place (the
           ;; review either ends merging the branch or is cancelled, leaving
           ;; the branch as a normal branch again)
-          (when (and (not archived?) (dwpr/enabled?) (nil? pr))
+          (when (and (not closed?) (dwpr/enabled?) (nil? pr))
             [:> menu-item* {:id "request-review" :on-action on-request-review}
              (tr "workspace.pull-requests.menu.request-review")])
           (when (some? pr)
@@ -852,16 +866,18 @@
           (when (and (some? pr) (or author? admin?))
             [:> menu-item* {:id "cancel-review" :on-action on-cancel-review}
              (tr "workspace.pull-requests.actions.close")])
-          (when-not archived?
+          (when-not closed?
             [:> menu-item* {:id "rename" :on-action on-start-rename}
              (tr "labels.rename")])
-          [:> menu-item* {:id "archive" :on-action on-archive}
-           (tr (if archived?
-                 "workspace.branches.menu.restore"
-                 "workspace.branches.menu.archive"))]
+          ;; a merged branch cannot go back to work: its changes are in main
+          (when-not merged?
+            [:> menu-item* {:id "archive" :on-action on-archive}
+             (tr (if archived?
+                   "workspace.branches.menu.restore"
+                   "workspace.branches.menu.archive"))])
           ;; only an open branch can leave the branch engine: once merged or
           ;; archived there is nothing left to turn into an ordinary file
-          (when-not archived?
+          (when-not closed?
             [:> menu-item* {:id "materialize" :on-action on-materialize}
              (tr "workspace.branches.materialize.action")])
           [:> menu-item* {:id "delete" :on-action on-delete}
@@ -871,11 +887,13 @@
 
 (defn- branches-for-tab
   "The branch rows a tab of the all-branches dialog lists: the open ones,
-  the open ones the profile created, or the merged and archived ones."
+  the open ones the profile created, the merged ones, or the archived
+  ones."
   [tab rows profile-id]
   (case tab
     "mine"     (filter #(and (= "open" (:status %)) (= profile-id (:created-by %))) rows)
-    "archived" (remove #(= "open" (:status %)) rows)
+    "merged"   (filter #(= "merged" (:status %)) rows)
+    "archived" (filter #(= "archived" (:status %)) rows)
     (filter #(= "open" (:status %)) rows)))
 
 (mf/defc branches-list-dialog*
@@ -922,6 +940,7 @@
           (let [label (fn [text t] (dm/str text " (" (count (branches-for-tab t data profile-id)) ")"))]
             [{:id "mine"     :label (label (tr "workspace.branches.list.tab.mine") "mine")}
              {:id "active"   :label (label (tr "workspace.branches.list.tab.active") "active")}
+             {:id "merged"   :label (label (tr "workspace.branches.merged") "merged")}
              {:id "archived" :label (label (tr "workspace.branches.archived") "archived")}]))
 
         rows      (branches-for-tab tab matching profile-id)
@@ -1803,17 +1822,22 @@
 
 (defn- banner-status
   "What the bottom banner says about the open branch, most pressing
-  first and in the order of its primary action: merged, conflicts, main
-  moved, an open review, branch work."
+  first and in the order of its primary action: merged, archived,
+  conflicts, main moved, an open review, branch work."
   [ctx pr]
   (let [ahead     (or (:ahead ctx) 0)
         behind    (or (:behind ctx) 0)
         conflicts (or (:conflicts ctx) 0)]
     (cond
-      (contains? #{"merged" "archived"} (:status ctx))
+      (= "merged" (:status ctx))
       {:id :merged
        :icon i/git-merge
        :label (tr "workspace.branches.banner.merged")}
+
+      (= "archived" (:status ctx))
+      {:id :archived
+       :icon i/git-branch
+       :label (tr "workspace.branches.banner.archived")}
 
       (counts-error? ctx)
       {:id :counts-error
@@ -1850,7 +1874,8 @@
 (mf/defc branch-context-banner*
   [{:keys [file-id]}]
   (let [ctx         (mf/deref branch-context)
-        merged?     (contains? #{"merged" "archived"} (:status ctx))
+        merged?     (= "merged" (:status ctx))
+        archived?   (= "archived" (:status ctx))
 
         collapsed*  (mf/use-state false)
         collapsed?  (deref collapsed*)
@@ -1878,6 +1903,7 @@
         on-compare   (mf/use-fn (mf/deps ctx) #(modal/show! :branch-compare {:branch ctx}))
         on-update    (mf/use-fn (mf/deps ctx) #(confirm-update! ctx))
         on-open-main (mf/use-fn (mf/deps ctx) #(st/emit! (dwb/open-branch (:source-file-id ctx))))
+        on-restore   (mf/use-fn (mf/deps ctx) #(st/emit! (dwb/archive-branch (:id ctx) false)))
         on-resolve   (mf/use-fn (mf/deps ctx) #(modal/show! :branch-conflicts {:branch ctx :mode :merge}))
 
         on-merge
@@ -1943,7 +1969,7 @@
       [:div {:id "branch-banner"
              :ref banner-ref
              :class (stl/css-case :branch-banner true
-                                  :branch-banner-merged merged?
+                                  :branch-banner-merged (or merged? archived?)
                                   :is-collapsed collapsed?)}
        [:button {:class (stl/css :branch-banner-handle)
                  :title (tr (if collapsed?
@@ -1964,12 +1990,27 @@
          [:span {:class (stl/css :branch-banner-title)} (:label status)]]
         [:div {:class (stl/css :branch-banner-separator)}]
 
-        (if merged?
+        (cond
+          merged?
           [:> button* {:variant "secondary"
                        :icon i/arrow-up-right
                        :on-click on-open-main}
            (tr "workspace.branches.banner.view-main")]
 
+          ;; an archived branch was set aside unmerged: it can be compared
+          ;; with main and brought back, and nothing else
+          archived?
+          [:div {:class (stl/css :branch-banner-actions)}
+           [:> button* {:variant "secondary"
+                        :icon i/switch
+                        :on-click on-compare}
+            (tr "workspace.branches.compare")]
+           [:> button* {:variant "primary"
+                        :icon i/history
+                        :on-click on-restore}
+            (tr "workspace.branches.menu.restore")]]
+
+          :else
           (let [conflicts (or (:conflicts ctx) 0)]
             [:div {:class (stl/css :branch-banner-actions)}
              [:> button* {:variant "secondary"
