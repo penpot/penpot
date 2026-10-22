@@ -317,3 +317,46 @@ test("User goes to the team settings section", async ({ page }) => {
   await expect(page.getByText("TEAM INFO")).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
+
+test.describe("Templates section controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Template cards, scroll buttons and collapse", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.mockRPC(
+      "get-builtin-templates",
+      "dashboard/get-builtin-templates.json",
+    );
+    await dashboardPage.goToDashboard();
+
+    const section = page.locator("[class*='dashboard-templates-section']");
+    const card = section.locator("[class*='template-card']").first();
+    await expect(card).toBeVisible();
+    await expect(section.locator("img").first()).toHaveJSProperty(
+      "complete",
+      true,
+    );
+    await page.mouse.move(640, 100);
+    await expect(section).toHaveScreenshot(shot);
+
+    // Hovering a card shows its add icon in the accent color.
+    await card.hover();
+    await expect(card).toHaveScreenshot(shot);
+
+    const moveButtons = section.locator("[class*='move-button']");
+    await moveButtons.last().hover();
+    await expect(moveButtons.last()).toHaveScreenshot(shot);
+
+    await moveButtons.last().click();
+    await expect(moveButtons).toHaveCount(2);
+    await page.mouse.move(640, 100);
+    await expect(moveButtons.first()).toHaveScreenshot(shot);
+
+    await section.locator("[class*='title-btn']").click();
+    await expect(section).toHaveClass(/collapsed/);
+    await page.waitForTimeout(500);
+    await expect(section.locator("[class*='title-btn']")).toHaveScreenshot(
+      shot,
+    );
+  });
+});
