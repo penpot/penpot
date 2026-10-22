@@ -66,6 +66,11 @@
   list-style: none;
 }
 
+.list-note {
+  padding: var(--sp-s);
+  color: var(--color-foreground-secondary);
+}
+
 .action {
   @include use-typography("body-small");
 

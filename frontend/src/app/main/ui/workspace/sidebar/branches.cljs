@@ -882,7 +882,7 @@
   {::mf/register modal/components
    ::mf/register-as :branches-list}
   []
-  (let [{:keys [data]} (mf/deref branches)
+  (let [{:keys [data status]} (mf/deref branches)
         profiles       (mf/deref refs/profiles)
         profile        (mf/deref refs/profile)
         file           (mf/deref refs/file)
@@ -951,9 +951,14 @@
         (mf/use-fn
          (mf/deps file)
          (fn [_]
-           (modal/show! :create-branch {:file-name (:name file)})))]
+           (modal/show! :create-branch {:file-name (:name file)})))
 
-    (mf/with-effect []
+        on-retry
+        (mf/use-fn #(st/emit! (dwb/init-branches-state)))]
+
+    ;; before paint, so a list from an earlier opening never shows in
+    ;; place of the loading state
+    (mf/with-layout-effect []
       (st/emit! (dwb/init-branches-state))
       (when (dwpr/enabled?)
         (st/emit! (dwpr/fetch-pull-requests))))
@@ -970,10 +975,27 @@
                          :action-button-position "end"
                          :action-button search
                          :class (stl/css :branches-list-tabs)}
-       (if (empty? rows)
+       (cond
+         (= status :loading)
+         [:div {:class (stl/css :branches-empty) :role "status"}
+          [:> empty-state* {:icon i/git-branch
+                            :text (tr "workspace.branches.loading")}]]
+
+         (= status :error)
+         [:div {:class (stl/css :branches-empty) :role "alert"}
+          [:> empty-state* {:icon i/triangle-alert
+                            :text (tr "workspace.branches.list.error")}]
+          [:> button* {:variant "secondary"
+                       :icon i/reload
+                       :on-click on-retry}
+           (tr "labels.retry")]]
+
+         (empty? rows)
          [:div {:class (stl/css :branches-empty)}
           [:> empty-state* {:icon i/git-branch
                             :text (tr "workspace.branches.list.empty")}]]
+
+         :else
          [:ul {:class (stl/css :branches-entries :branches-list-entries)}
           (for [entry rows]
             (let [k (dm/str (:id entry))]

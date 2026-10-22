@@ -111,10 +111,11 @@
   (ptk/reify ::create-pull-request
     ptk/WatchEvent
     (watch [_ state _]
-      (let [branch   (->> (get-in state [:workspace-branches :data])
-                          (filter #(= branch-id (:id %)))
-                          (first))
-            from-ws? (= (:branch-file-id branch) (:current-file-id state))
+      (let [;; the branch context is the open file's, and it is loaded
+            ;; with the file; the listing loads only with the switcher
+            ctx      (:workspace-branch-context state)
+            from-ws? (and (= (:file-id ctx) (:current-file-id state))
+                          (= branch-id (get-in ctx [:info :id])))
             wait     (if from-ws?
                        (dwp/wait-persisted)
                        (rx/of :ready))]

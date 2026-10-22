@@ -73,7 +73,44 @@
     (update [_ state]
       (update state :workspace-branches merge branch-state))))
 
+(defn- set-branch-count
+  [file-id n]
+  (ptk/reify ::set-branch-count
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-branch-count {:file-id file-id :count n}))))
+
+(defn fetch-branch-count
+  "Load how many branches the open file has, archived ones included and
+  counted from main when the file is itself a branch. The header reads it
+  to decide whether to show its branch row, so it loads with the file; it
+  compares nothing, unlike the listing, which loads only when a user opens
+  the switcher or the all-branches dialog. A count belonging to ANOTHER
+  file is dropped synchronously, as `fetch-branch-context` drops its own.
+  The count lives under its own key because `init-branches-state` resets
+  `:workspace-branches`."
+  []
+  (ptk/reify ::fetch-branch-count
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file-id (:current-file-id state)]
+        (if (= file-id (get-in state [:workspace-branch-count :file-id]))
+          state
+          (dissoc state :workspace-branch-count))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-let [file-id (:current-file-id state)]
+        (->> (rp/cmd! :get-file-branch-count {:file-id file-id})
+             (rx/map #(set-branch-count file-id (:count %)))
+             (rx/catch (fn [_] (rx/empty))))))))
+
 (defn fetch-branches
+  "Load the branch listing of the open file. A failure leaves the listing
+  in `:error`, never in an empty list, so it cannot read as a file with no
+  branches. A successful listing also refreshes the branch count, since it
+  covers the same branches, so the header follows a delete or a
+  materialize made from the listing."
   []
   (ptk/reify ::fetch-branches
     ptk/WatchEvent
@@ -86,9 +123,11 @@
              (rx/mapcat (fn [info]
                           (let [root (or (:source-file-id info) file-id)]
                             (rp/cmd! :get-file-branches {:file-id root :include-archived true}))))
-             (rx/map #(update-branches-state {:status :loaded :data %}))
+             (rx/mapcat (fn [data]
+                          (rx/of (update-branches-state {:status :loaded :data data})
+                                 (set-branch-count file-id (count data)))))
              (rx/catch (fn [_]
-                         (rx/of (update-branches-state {:status :loaded :data []})))))))))
+                         (rx/of (update-branches-state {:status :error})))))))))
 
 (defn fetch-branching-limits
   "Load the size limits this instance refuses beyond, so the panel can
@@ -302,10 +341,12 @@
 (defn has-branches?
   "True when the open file takes part in branching: it is a branch, or it
   is main and has at least one branch (archived ones count, so they stay
-  reachable). The header only shows the branch switcher then."
+  reachable). The header only shows the branch switcher then. It reads the
+  branch count, never the listing, so a listing that fails or is still
+  loading cannot hide the switcher."
   [state]
   (or (some? (get-in state [:workspace-branch-context :info]))
-      (boolean (seq (get-in state [:workspace-branches :data])))))
+      (pos? (get-in state [:workspace-branch-count :count] 0))))
 
 (defn open-branch
   "Navigate to the branch file as a normal workspace file. The branch
