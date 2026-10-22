@@ -146,6 +146,7 @@
         (add! :component-root)
         (add! :main-instance)
         (add! :shape-ref)
+        (add! :content-scale)
         (add! :touched touched->str))))
 
 (defn prefix-keys [m]

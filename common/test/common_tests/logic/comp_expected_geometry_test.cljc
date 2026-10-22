@@ -20,7 +20,9 @@
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
@@ -108,7 +110,33 @@
                                                              :stroke-style :solid}])
                     (thc/instantiate-component :component1 :copy2-root :children-labels [:copy2-child]))
         resized (resize file :copy2-root 200 200 :scale-content 2)
-        child   (ths/get-shape resized :copy2-child)]
+        child   (ths/get-shape resized :copy2-child)
+        synced  (edit-and-sync resized)]
     (t/is (mth/close? 4 (-> child :strokes first :stroke-width)))
-    (t/is (nil? (:touched child)))))
+    (t/is (nil? (:touched child)))
+    (t/is (mth/close? 4 (-> (ths/get-shape synced :copy2-child) :strokes first :stroke-width)))
+    (t/is (nil? (:touched (ths/get-shape synced :copy2-child))))))
+
+(t/deftest content-scale-survives-repeated-sync-and-reset-undo
+  (let [file          (-> (component-with-child :scale)
+                          (ths/update-shape :main-child :r1 5)
+                          (thc/instantiate-component :component1 :copy2-root :children-labels [:copy2-child]))
+        scaled        (-> file
+                          (resize :copy2-root 200 200 :scale-content 2)
+                          (resize :copy2-root 300 300 :scale-content 1.5))
+        synced        (edit-and-sync scaled)
+        changed       (-> synced
+                          (ths/update-shape :main-child :r1 7)
+                          (edit-and-sync))
+        reset-changes (cll/generate-reset-component
+                       (pcb/empty-changes) changed {(:id changed) changed}
+                       (ctn/make-container (thf/current-page changed) :page) (thi/id :copy2-root))
+        reset         (thf/apply-changes changed reset-changes)
+        undone        (thf/apply-changes reset {:redo-changes (:undo-changes reset-changes)})]
+    (t/is (mth/close? 3 (:content-scale (ths/get-shape changed :copy2-root))))
+    (t/is (mth/close? 21 (:r1 (ths/get-shape changed :copy2-child))))
+    (t/is (nil? (:touched (ths/get-shape changed :copy2-child))))
+    (t/is (mth/close? 7 (:r1 (ths/get-shape reset :copy2-child))))
+    (t/is (nil? (:content-scale (ths/get-shape reset :copy2-root))))
+    (t/is (= (thn/normalize-file changed) (thn/normalize-file undone)))))
 

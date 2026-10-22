@@ -195,6 +195,7 @@
    [:main-instance {:optional true} :boolean]
    [:remote-synced {:optional true} :boolean]
    [:shape-ref {:optional true} ::sm/uuid]
+   [:content-scale {:optional true} ::sm/positive-safe-number]
    [:touched {:optional true} [:maybe [:set :keyword]]]
    [:blocked {:optional true} :boolean]
    [:collapsed {:optional true} :boolean]
@@ -510,7 +511,7 @@
 ;; Valid attributes for keeping on a switch
 (def ^:private allowed-shape-attrs
   #{:page-id :component-id :component-file :component-root :main-instance
-    :remote-synced :shape-ref :touched :blocked :collapsed :locked
+    :remote-synced :shape-ref :content-scale :touched :blocked :collapsed :locked
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
     :strokes :blend-mode :interactions :shadow :blur :background-blur :grow-type :applied-tokens
