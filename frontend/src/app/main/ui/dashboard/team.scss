@@ -75,11 +75,9 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  color: transparent;
-  fill: none;
   stroke-width: $b-1;
   margin: 0 auto;
-  stroke: var(--color-foreground-secondary);
+  color: var(--color-foreground-secondary);
 }
 
 .team-icon {
@@ -124,17 +122,8 @@
 }
 
 .image-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  block-size: $sz-16;
-  inline-size: $sz-16;
-  color: transparent;
-  fill: none;
   stroke-width: $b-1;
-  min-inline-size: $sz-24;
-  min-block-size: $sz-24;
-  stroke: var(--color-foreground-primary);
+  color: var(--color-foreground-primary);
 }
 
 // TEAM MEMBERS PAGE
@@ -282,6 +271,9 @@
 }
 
 .has-priv {
+  border: none;
+  color: inherit;
+  text-align: start;
   cursor: pointer;
 }
 
@@ -325,24 +317,6 @@
 }
 
 // MEMBER ACTIONS
-.menu-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  block-size: $sz-16;
-  inline-size: $sz-16;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--color-foreground-primary);
-}
-
-.menu-btn {
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-
 .input-checkbox {
   // TODO: remove this extended class.
   @extend %input-checkbox;
@@ -541,10 +515,6 @@
 }
 
 .hero-btn {
-  // TODO: Remove this extended class using a DS component
-  @extend %button-primary;
-
-  block-size: $sz-32;
   max-inline-size: $sz-512;
 }
 
@@ -613,10 +583,8 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  color: transparent;
-  fill: none;
   stroke-width: $b-1;
-  stroke: var(--color-accent-success);
+  color: var(--color-accent-success);
 }
 
 .warning-icon {
@@ -625,10 +593,8 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  color: transparent;
-  fill: none;
   stroke-width: $b-1;
-  stroke: var(--color-accent-warning);
+  color: var(--color-accent-warning);
 }
 
 // INVITE MEMBERS MODAL
@@ -687,11 +653,8 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  color: transparent;
-  fill: none;
   stroke-width: $b-1;
-  stroke: var(--color-foreground-secondary);
-  transform: rotate(90deg);
+  color: var(--color-foreground-secondary);
 }
 
 .action-buttons {
@@ -741,9 +704,11 @@
   color: var(--color-foreground-primary);
 }
 
+// Tooltip wrapper of the modal close buttons: it places them in the corner.
 .modal-close-btn {
-  // TODO remove extended class creating a modal component
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
@@ -1023,10 +988,8 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  color: transparent;
-  fill: none;
   stroke-width: $b-1;
-  stroke: var(--stroke-color);
+  color: var(--stroke-color);
 }
 
 .organization-dropdown {
