@@ -1,11 +1,8 @@
 use crate::render::text::decoration_segments;
 use crate::shapes::text::{vertical_align_offset, Paragraph, TextContent};
+use crate::shapes::text_paragraph::LayoutParagraph as SkiaParagraph;
 use crate::shapes::VerticalAlign;
-use skia_safe::{
-    self as skia,
-    textlayout::{paragraph::VisitorInfo, Paragraph as SkiaParagraph},
-    Point,
-};
+use skia_safe::{self as skia, textlayout::paragraph::VisitorInfo, Point};
 use std::ops::Deref;
 
 pub struct TextPaths(TextContent);
@@ -35,7 +32,7 @@ impl TextPaths {
             .filter_map(|group| group.first_mut())
             .enumerate()
             .map(|(index, paragraph_builder)| {
-                let mut paragraph = paragraph_builder.build();
+                let mut paragraph = SkiaParagraph::build(paragraph_builder);
                 paragraph.layout(plans[index].layout_width(layout_width));
                 paragraph
             })
@@ -80,13 +77,16 @@ impl TextPaths {
             paths.push(builder.detach());
         }
 
-        paragraph.visit(|_: usize, info: Option<&VisitorInfo>| {
+        let shifts: Vec<_> = (0..paragraph.get_line_metrics().len())
+            .map(|line| paragraph.line_shift(line))
+            .collect();
+        paragraph.visit(|line: usize, info: Option<&VisitorInfo>| {
             let Some(info) = info else {
                 return;
             };
 
             let font = info.font();
-            let run_origin = origin + info.origin();
+            let run_origin = origin + info.origin() + Point::new(0.0, shifts[line]);
             let mut builder = skia::PathBuilder::new();
             let mut has_glyphs = false;
 

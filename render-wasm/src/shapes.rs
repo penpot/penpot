@@ -32,6 +32,7 @@ mod svgraw;
 mod text;
 mod text_horizontal;
 mod text_japanese;
+pub mod text_paragraph;
 pub mod text_paths;
 pub mod text_policy;
 pub mod text_vertical;

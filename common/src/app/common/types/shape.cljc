@@ -103,7 +103,7 @@
   #{:top :bottom :topbottom :center :scale})
 
 (def text-align-types
-  #{"left" "right" "center" "justify"})
+  #{"left" "right" "center" "justify" "distribute"})
 
 (def bool-types
   #{:union

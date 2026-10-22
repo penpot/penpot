@@ -8260,6 +8260,10 @@ msgid "workspace.options.text-options.text-align-center"
 msgstr "Align center"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:77
+msgid "workspace.options.text-options.text-align-distribute"
+msgstr "Distribute characters on every line"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-align-justify"
 msgstr "Justify"
 

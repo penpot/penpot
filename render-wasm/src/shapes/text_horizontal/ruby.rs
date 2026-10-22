@@ -1,3 +1,4 @@
+use crate::shapes::text_paragraph::LayoutParagraph;
 use std::collections::HashMap;
 
 use super::*;
@@ -12,7 +13,7 @@ pub(crate) fn horizontal_zhuyin_origin(span: &TextSpan, rect: skia::Rect) -> ski
 pub(crate) fn horizontal_zhuyin_entries(
     paragraph: &Paragraph,
     offsets: &HorizontalOffsets,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
 ) -> Vec<crate::shapes::PositionData> {
     if !paragraph.children().iter().any(TextSpan::is_zhuyin) {
         return Vec::new();
@@ -307,7 +308,7 @@ pub(super) fn horizontal_ruby_targets(
 /// Paint of the pass that laid out the base: fill, stroke, shadow or mask.
 /// `fallback` covers a base Skia kept no style metrics for.
 pub(super) fn horizontal_ruby_paint(
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     range: &HorizontalSpanRange,
     fallback: skia::Paint,
 ) -> skia::Paint {
@@ -416,7 +417,7 @@ pub(crate) fn paint_horizontal_ruby(
     canvas: &Canvas,
     text_content: &TextContent,
     paragraph_index: usize,
-    laid_out: &skia::textlayout::Paragraph,
+    laid_out: &LayoutParagraph,
     x: f32,
     y: f32,
 ) {
