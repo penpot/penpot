@@ -808,3 +808,27 @@
     (t/is (= "Component" (:name component1')))
     (t/is (= "Component" (:name component2')))
     (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
+
+(t/deftest migration-0033-skips-invalid-children-ids
+  ;; Old files may list in :shapes ids that are not uuids or that point
+  ;; to no shape; the migration must skip them and keep going.
+  (let [migration-id "0033-normalize-main-instance-names"
+        missing-id   (uuid/next)
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-simple-component :component1 :root1 :child1
+                                                   :component-params {:path "Group / Subgroup"
+                                                                      :name "Name"}
+                                                   :root-params {:name "Group/Subgroup   /   Name"}))
+        child1-id    (thi/id :child1)
+        file         (ths/update-shape file :root1 :shapes [nil "not-a-uuid" missing-id child1-id])
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+        page-id      (first (:pages data'))
+        objects'     (get-in data' [:pages-index page-id :objects])
+        root1'       (ths/get-shape file' :root1)]
+
+    (t/is (= "Group / Subgroup / Name" (:name root1')))
+    (t/is (not (contains? objects' nil)) "no shape stored under a nil id")
+    (t/is (not (contains? objects' missing-id)) "no shape created for a missing id")))
