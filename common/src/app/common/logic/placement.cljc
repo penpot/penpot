@@ -27,6 +27,7 @@
   "The attributes a transform can change, so an update after it compares
    only these."
   #{:selrect
+    :content-scale
     :points
     :x
     :y

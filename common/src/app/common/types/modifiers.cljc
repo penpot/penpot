@@ -675,8 +675,15 @@
 (defn- apply-scale-content
   [shape value]
   ;; Scale can only be positive
-  (let [value (mth/abs value)]
+  (let [value (mth/abs value)
+        scale (* (:content-scale shape 1) value)]
     (cond-> shape
+      (mth/close? scale 1)
+      (dissoc :content-scale)
+
+      (not (mth/close? scale 1))
+      (assoc :content-scale scale)
+
       (cfh/text-shape? shape)
       (update-text-content scale-text-content value)
 
