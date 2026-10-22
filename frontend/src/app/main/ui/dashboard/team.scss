@@ -342,7 +342,9 @@
   background-color: var(--color-background-tertiary);
   border: $b-2 solid var(--color-background-quaternary);
   margin: 0;
-  inset-block-end: calc(-1 * var(--sp-xxxl));
+
+  // Opens below the button, whatever the menu and button heights.
+  inset-block-start: calc(100% + var(--sp-xs));
   inset-inline-end: 0;
   inset-inline-start: unset;
   inline-size: fit-content;
@@ -566,7 +568,9 @@
   border: $b-2 solid var(--color-background-quaternary);
   margin: 0;
   inset-inline-end: calc(-1 * var(--sp-l));
-  inset-block-end: calc(-1 * $sz-40);
+
+  // Opens below the button, whatever the menu and button heights.
+  inset-block-start: calc(100% + var(--sp-xs));
   inline-size: fit-content;
   min-inline-size: $sz-160;
 }
