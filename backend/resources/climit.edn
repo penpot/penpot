@@ -119,9 +119,9 @@
  ;; global entry where the command declares no per-profile queue. The
  ;; per-profile entry of one permit keeps a single designer to one
  ;; operation at a time. The two read-side entries are generous by design
- ;; and carry no queue and no timeout, so a panel open waits for its turn
- ;; instead of being refused: six three-document comparisons hold
- ;; eighteen realized documents, fewer than the twenty one-document saves
+ ;; and carry no queue, so a panel open waits for its turn instead of
+ ;; being refused: six three-document comparisons hold eighteen realized
+ ;; documents, fewer than the twenty one-document saves
  ;; `:update-file/global` already admits.
 
  ;; create-file-branch realizes main and writes one snapshot, the shape
@@ -162,13 +162,18 @@
  {:permits 1 :queue 2 :timeout 60000}
 
  ;; A cold listing realizes main once and derives every uncached branch,
- ;; which makes it the slowest read of the preview. Six at once is above
- ;; what a panel open needs under normal use, and six three-document
+ ;; which makes it the slowest read of the preview. It runs when a user
+ ;; opens the workspace branch switcher, the all-branches dialog, or the
+ ;; dashboard branches popover; a file open only counts branches, through
+ ;; `get-file-branch-count`, which takes no limit. Six at once is above
+ ;; what those opens need under normal use, and six three-document
  ;; operations hold eighteen realized documents, below the twenty
- ;; one-document saves `:update-file/global` above already admits.
+ ;; one-document saves `:update-file/global` above already admits. The
+ ;; timeout is the one for slow operations, so a waiter behind six cold
+ ;; listings gets an error it can retry instead of waiting without bound.
  ;; Provisional.
  :get-file-branches/global
- {:permits 6}
+ {:permits 6 :timeout 60000}
 
  ;; The compare dialog's query holds main, the derived branch, and the
  ;; base at once, the same three documents the listing holds, so it takes
