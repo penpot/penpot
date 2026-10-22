@@ -5,8 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.ui.jobs-progress-test
-  "How a job milestone is written: the stage and its counter, and the
-  upload stage as a percentage of the file."
+  "How a job milestone is written: the stage and its counter."
   (:require
    [app.main.ui.jobs.progress :as jp]
    [app.util.i18n :as i18n]
@@ -24,15 +23,7 @@
       (t/is (= "TR:jobs.progress.stage.pages 3"
                (jp/milestone-text {:stage :pages :counters {:pages {:current 3}}}))))))
 
-(t/deftest a-file-milestone-appends-the-file-counter
-  (with-redefs [i18n/tr stub-tr]
-    (t/is (= "TR:jobs.progress.stage.pages 3/8 · TR:jobs.progress.stage.files 1/2"
-             (jp/milestone-text {:stage    :pages
-                                 :counters {:pages {:current 3 :total 8}
-                                            :files {:current 1 :total 2}}}
-                                :file? true)))))
-
-(t/deftest an-upload-milestone-writes-the-percentage-of-the-file
+(t/deftest the-upload-milestone-writes-the-percentage-of-the-file
   (with-redefs [i18n/tr stub-tr]
     (t/testing "the chunks sent become a whole percentage"
       (t/is (= "TR:jobs.progress.stage.upload (33%)"
@@ -42,3 +33,22 @@
     (t/testing "an upload with no total keeps the bare label"
       (t/is (= "TR:jobs.progress.stage.upload"
                (jp/milestone-text {:stage :upload :counters {:upload {:current 1}}}))))))
+
+(t/deftest the-milestone-in-course-is-the-one-of-the-files-that-report-it
+  (with-redefs [i18n/tr stub-tr]
+    (t/testing "the files of a container share their milestone, so one is enough"
+      (t/is (= "TR:jobs.progress.stage.pages 4/5"
+               (jp/current-milestone-text
+                [{:status :import-queued}
+                 {:progress {:stage :pages :counters {:pages {:current 4 :total 5}}}}
+                 {:progress {:stage :pages :counters {:pages {:current 4 :total 5}}}}]))))
+
+    (t/testing "a file with nothing to report says nothing"
+      (t/is (nil? (jp/current-milestone-text [{:status :import-ready}
+                                              {:status :import-queued}])))
+      (t/is (nil? (jp/current-milestone-text []))))))
+
+(t/deftest a-milestone-without-a-stage-writes-nothing
+  (with-redefs [i18n/tr stub-tr]
+    (t/is (nil? (jp/milestone-text nil)))
+    (t/is (nil? (jp/milestone-text {})))))
