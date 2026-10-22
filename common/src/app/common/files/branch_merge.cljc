@@ -23,6 +23,7 @@
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
+   [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -413,6 +414,19 @@
                 (reduce-kv (fn [acc k v] (assoc! acc [ns k] v)) acc kvs))
               (transient {})
               (or pd {}))))
+
+(defn- file-options
+  "File options the merge carries, keyed by option name. An unset base
+  font size reads as the default, so a side that never set it does not
+  differ from a side that set the default explicitly."
+  [data]
+  {:base-font-size (ctf/get-base-font-size data)})
+
+(defn- set-option-change
+  "Change op that sets file option `option` to `value`."
+  [option value]
+  (case option
+    :base-font-size {:type :set-base-font-size :base-font-size value}))
 
 ;; --- Shape tree ---
 ;;
@@ -1248,6 +1262,14 @@
                                       {:kind :component})
                   (three-way-entities (:media base) (:media theirs) (:media ours)
                                       {:kind :media})
+                  ;; file-level plugin data and options: kinds of their own,
+                  ;; or a branch that changes only them merges as a no-op
+                  (three-way-entities (flatten-plugin-data (:plugin-data base))
+                                      (flatten-plugin-data (:plugin-data theirs))
+                                      (flatten-plugin-data (:plugin-data ours))
+                                      {:kind :file-plugin})
+                  (three-way-entities (file-options base) (file-options theirs) (file-options ours)
+                                      {:kind :file-option})
                   (diff-pages base theirs ours only-pages dir)
                   (diff-tokens base theirs ours)]
         {:keys [changes conflicts]} (merge-results results)
@@ -1326,7 +1348,8 @@
 (def ^:private mergeable-kinds
   #{:color :typography :media :shape :token :token-set :token-set-rename :token-set-order
     :token-theme :token-active-themes :token-active-sets
-    :page :page-order :page-guide :page-flow :page-grid :page-plugin :component})
+    :page :page-order :page-guide :page-flow :page-grid :page-plugin :component
+    :file-plugin :file-option})
 
 (defn unsupported-kinds
   "Set of change kinds present in `changes` that `compute-changes`
@@ -1937,6 +1960,21 @@
                       (fn [_ o] {:type :mod-media :object o})
                       (fn [id] {:type :del-media :id id}))
 
+         ;; file-level plugin-data (flattened to [ns key] -> value)
+         file-plugins (flat :file-plugin {}
+                            (flatten-plugin-data (:plugin-data base))
+                            (flatten-plugin-data (:plugin-data main))
+                            (flatten-plugin-data (:plugin-data branch))
+                            (fn [[ns k] v] {:type :set-plugin-data :object-type :file :namespace ns :key k :value v})
+                            (fn [[ns k] v] {:type :set-plugin-data :object-type :file :namespace ns :key k :value v})
+                            (fn [[ns k]] {:type :set-plugin-data :object-type :file :namespace ns :key k :value nil}))
+
+         ;; file options: every side carries every option (`file-options`
+         ;; fills the default), so no option is ever added or deleted
+         file-opts (flat :file-option {}
+                         (file-options base) (file-options main) (file-options branch)
+                         set-option-change set-option-change (fn [_] nil))
+
          ;; pages: add (full page incl. objects) / delete + rename (mod-page)
          bpi (:pages-index base) mpi (:pages-index main) opi (:pages-index branch)
          bpids (set (keys bpi)) mpids (set (keys mpi)) opids (set (keys opi))
@@ -2194,7 +2232,7 @@
       ;; objects (still on the page) before del-obj removes them
       :changes     (vec (concat page-presence components shapes page-meta-changes
                                 page-guides page-flows page-grids page-plugins page-order-changes
-                                colors typos media
+                                colors typos media file-plugins (filterv some? file-opts)
                                 set-presence set-rename-changes set-order-changes
                                 token-vals themes
                                 active-changes))})))

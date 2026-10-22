@@ -648,6 +648,66 @@
                   :features cfeat/supported-features
                   :changes [change]})))
 
+(def ^:private file-plugin-change
+  {:type :set-plugin-data :object-type :file :namespace :my-plugin :key "foo" :value "bar"})
+
+(def ^:private base-font-size-change
+  {:type :set-base-font-size :base-font-size "20px"})
+
+(t/deftest merge-applies-file-level-changes
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)})
+          main-data (fn []
+                      (-> (th/command! {::th/type :get-file
+                                        ::rpc/profile-id (:id profile)
+                                        :id (:id file)})
+                          :result :data))]
+      (doseq [[label change landed?]
+              [["file plugin data" file-plugin-change
+                #(= "bar" (get-in % [:plugin-data :my-plugin "foo"]))]
+               ["base font size" base-font-size-change
+                #(= "20px" (get-in % [:options :base-font-size]))]]]
+        (t/testing label
+          (let [create (:result (th/command! {::th/type :create-file-branch
+                                              ::rpc/profile-id (:id profile)
+                                              :file-id (:id file)
+                                              :name label}))]
+            (t/is (nil? (:error (apply-change* profile (:branch-file-id create) change))))
+            (let [info (:result (th/command! {::th/type :get-file-branch-info
+                                              ::rpc/profile-id (:id profile)
+                                              :file-id (:branch-file-id create)}))]
+              (t/is (= [1 0 0] ((juxt :ahead :behind :conflicts) info))))
+            (let [out (th/command! {::th/type :merge-file-branch
+                                    ::rpc/profile-id (:id profile)
+                                    :branch-id (:id create)})]
+              (t/is (nil? (:error out)))
+              (t/is (= :merged (-> out :result :status))))
+            (t/is (landed? (main-data)))))))))
+
+(t/deftest merge-reports-file-level-conflicts
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "b"}))]
+      (apply-change* profile (:branch-file-id create) file-plugin-change)
+      (apply-change* profile (:branch-file-id create) base-font-size-change)
+      (apply-change* profile (:id file) (assoc file-plugin-change :value "main"))
+      (apply-change* profile (:id file) (assoc base-font-size-change :base-font-size "18px"))
+      (let [info (:result (th/command! {::th/type :get-file-branch-info
+                                        ::rpc/profile-id (:id profile)
+                                        :file-id (:branch-file-id create)}))]
+        (t/is (= 2 (:conflicts info))))
+      (let [out (th/command! {::th/type :merge-file-branch
+                              ::rpc/profile-id (:id profile)
+                              :branch-id (:id create)})]
+        (t/is (= :conflicts (-> out :result :status)))))))
+
 (t/deftest merge-deletes-branch-by-default-and-releases-base
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
