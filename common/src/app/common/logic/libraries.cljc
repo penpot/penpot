@@ -1431,7 +1431,7 @@
          (maybe-sync sync-typographies? done? #(generate-sync-file % file-id :typographies asset-id library-id libraries current-file-id early-return?))))))
 
 
-;; A guard against a sync cascade that never settles.
+;; Bound repeated processing of a component, not the width of the graph.
 (def ^:private max-sync-passes 100)
 
 (defn changed-components
@@ -1449,16 +1449,17 @@
    `{:changes :data :component-ids :passes}`, with `component-ids` the
    components synced."
   [changes data file-id pending libraries current-file-id passes]
-  (loop [changes changes
-         data    data
-         pending (vec pending)
-         synced  #{}
-         passes  passes]
+  (loop [changes  changes
+         data     data
+         pending  (vec pending)
+         synced   #{}
+         attempts {}
+         passes   passes]
     (cond
       (empty? pending)
       {:changes changes :data data :component-ids synced :passes passes}
 
-      (>= passes max-sync-passes)
+      (>= (get attempts (first pending) 0) max-sync-passes)
       (throw (ex-info "Component sync did not settle"
                       {:type ::sync-not-settled
                        :pending pending
@@ -1482,6 +1483,7 @@
                data'
                (into (subvec pending 1) more)
                (conj synced component-id)
+               (update attempts component-id (fnil inc 0))
                (inc passes))))))
 
 (defn generate-sync-components-cascade
