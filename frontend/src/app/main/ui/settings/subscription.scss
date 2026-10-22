@@ -212,12 +212,6 @@
   margin-inline-start: var(--sp-xs);
 }
 
-// TODO: the dropdown arrow is the DS icon svg itself, so this rule
-// matches nothing; check by hand before removal.
-// .icon-dropdown svg {
-//   transform: rotate(90deg);
-// }
-
 .bottom-link {
   margin-block-start: var(--sp-xs);
 }
@@ -399,24 +393,6 @@
 .show-editors-button {
   padding-inline: 0;
 }
-
-// TODO: .radio-btns is not used by subscription.cljs; check by hand
-// before removal.
-// .radio-btns {
-//   display: flex;
-//   flex-direction: column;
-//   padding-block-end: var(--sp-xl);
-//   gap: var(--sp-s);
-// }
-//
-// .radio-btns label {
-//   @include use-typography("body-large");
-//
-//   padding: 0;
-//   display: flex;
-//   align-items: center;
-//   color: var(--color-foreground-secondary);
-// }
 
 .modal-contact-content {
   gap: var(--sp-xl);
