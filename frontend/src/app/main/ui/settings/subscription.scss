@@ -4,8 +4,10 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the modal placeholders (%modal-*), which move with
+// the modals refactor.
 @use "refactor/common-refactor.scss" as deprecated;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -39,7 +41,7 @@
 }
 
 .membership-date {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
   margin-inline-start: var(--sp-s);
@@ -47,11 +49,18 @@
 
 .subscription-member,
 .penpot-member {
-  @extend %button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-16;
+  inline-size: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
 }
 
 .penpot-member {
-  stroke: var(--icon-foreground);
+  stroke: var(--color-foreground-secondary);
 }
 
 .subscription-member {
@@ -59,14 +68,14 @@
 }
 
 .title-section {
-  @include t.use-typography("title-large");
+  @include use-typography("title-large");
 
   color: var(--color-foreground-primary);
   margin-block-end: var(--sp-xxl);
 }
 
 .plan-section-title {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
   color: var(--color-foreground-primary);
 }
@@ -100,14 +109,19 @@
 }
 
 .plan-title-icon {
-  @extend %button-icon;
-
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
   block-size: var(--sp-xl);
   inline-size: var(--sp-xl);
-  border-radius: 6px;
+  border-radius: $br-6;
   border: 1.75px solid var(--color-foreground-primary);
 }
 
+// The plan icon is a DS icon without a class.
 .plan-title-icon svg {
   stroke: var(--color-foreground-primary);
   stroke-width: 2.25px;
@@ -116,13 +130,13 @@
 .plan-card-title,
 .plan-price-value,
 .price-value {
-  @include t.use-typography("title-medium");
+  @include use-typography("title-medium");
 
   color: var(--color-foreground-primary);
 }
 
 .plan-editors {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   align-self: end;
   color: var(--color-foreground-primary);
@@ -130,7 +144,7 @@
 }
 
 .plan-price-period {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-primary);
 }
@@ -144,7 +158,7 @@
 }
 
 .plan-cancel-date {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-primary);
 }
@@ -158,7 +172,7 @@
 
 .benefits-title,
 .benefit {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
 }
@@ -172,28 +186,37 @@
 }
 
 .cta-button {
-  @include t.use-typography("body-medium");
-  @include deprecated.button-style;
+  @include use-typography("body-medium");
 
+  border: none;
+  background: none;
+  cursor: pointer;
   align-items: center;
   color: var(--color-accent-primary);
   display: flex;
   margin-block-start: var(--sp-m);
-  text-align: left;
+  text-align: start;
 }
 
+// The link icon is a DS icon without a class.
 .cta-button svg {
-  @extend %button-icon;
-
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
   block-size: var(--sp-l);
   inline-size: var(--sp-l);
   stroke: var(--color-accent-primary);
   margin-inline-start: var(--sp-xs);
 }
 
-.icon-dropdown svg {
-  transform: rotate(90deg);
-}
+// TODO: the dropdown arrow is the DS icon svg itself, so this rule
+// matches nothing; check by hand before removal.
+// .icon-dropdown svg {
+//   transform: rotate(90deg);
+// }
 
 .bottom-link {
   margin-block-start: var(--sp-xs);
@@ -204,7 +227,7 @@
 }
 
 .inline-error {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-error);
   margin-block: var(--sp-s) 0;
@@ -233,10 +256,10 @@
 }
 
 .modal-title {
-  @include t.use-typography("title-large");
+  @include use-typography("title-large");
 
   margin-block-end: var(--sp-xxxl);
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
   display: flex;
   gap: var(--sp-m);
 }
@@ -246,7 +269,7 @@
 }
 
 .modal-text-medium {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 }
 
 .modal-text-cap {
@@ -260,7 +283,7 @@
 .modal-text-medium strong,
 .text-strikethrough strong,
 .modal-text-cap strong {
-  font-weight: deprecated.$fw700;
+  font-weight: 700;
 }
 
 .modal-content,
@@ -318,7 +341,7 @@
 }
 
 .editors-text {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   margin: 0;
 }
@@ -329,7 +352,7 @@
 }
 
 .editors-list {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   list-style-position: inside;
   list-style-type: none;
@@ -345,7 +368,7 @@
 }
 
 .error-message {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-error);
   margin-block-start: var(--sp-s);
@@ -364,7 +387,7 @@
 }
 
 .unlimited-capped-warning {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   background-color: var(--color-background-tertiary);
   border-radius: var(--sp-s);
@@ -377,28 +400,30 @@
   padding-inline: 0;
 }
 
-.radio-btns {
-  display: flex;
-  flex-direction: column;
-  padding-block-end: var(--sp-xl);
-  gap: var(--sp-s);
-}
-
-.radio-btns label {
-  @include t.use-typography("body-large");
-
-  padding: 0;
-  display: flex;
-  align-items: center;
-  color: var(--color-foreground-secondary);
-}
+// TODO: .radio-btns is not used by subscription.cljs; check by hand
+// before removal.
+// .radio-btns {
+//   display: flex;
+//   flex-direction: column;
+//   padding-block-end: var(--sp-xl);
+//   gap: var(--sp-s);
+// }
+//
+// .radio-btns label {
+//   @include use-typography("body-large");
+//
+//   padding: 0;
+//   display: flex;
+//   align-items: center;
+//   color: var(--color-foreground-secondary);
+// }
 
 .modal-contact-content {
   gap: var(--sp-xl);
 }
 
 .downgrade-warning {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   background-color: var(--color-background-tertiary);
   border-radius: var(--sp-s);
@@ -415,13 +440,13 @@
 }
 
 .downgrade-item {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   margin-block-end: var(--sp-l);
 }
 
 .cta-link {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   align-items: center;
   color: var(--color-accent-primary);
