@@ -1077,3 +1077,32 @@ test.describe("Export modal", () => {
     });
   });
 });
+
+test.describe("Unpublish library modal", () => {
+  test("Shows the close, cancel and unpublish buttons", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
+    await workspace.mockRPC(
+      "get-library-file-references?file-id=*",
+      "workspace/get-library-file-references-empty.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
+      pageId: "c1249a66-fce0-8175-8004-7433fe4be8bd",
+    });
+
+    await page.getByRole("button", { name: "Main menu" }).click();
+    await page.locator("#file-menu-file").click();
+    await page.locator("#file-menu-remove-shared").click();
+
+    const modal = page.locator("[class*='delete_shared__modal-container']");
+    await expect(modal).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await modal.locator("[class*='modal-header'] button").hover();
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});
