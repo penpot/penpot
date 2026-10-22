@@ -4,10 +4,13 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the component-family placeholders: %input-checkbox
+// and %checkbox-icon (checkboxes, #12380) and %modal-* (modals). The shared
+// dashboard header (common-dashboard) moves in its own change.
 @use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
 @use "ds/_utils.scss" as *;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/mixins.scss" as *;
@@ -44,7 +47,7 @@
 }
 
 .block-label {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
   color: var(--color-foreground-secondary);
 }
@@ -96,8 +99,8 @@
 
 .team-image {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset-block-start: 0;
+  inset-inline-start: 0;
   border-radius: 50%;
   inline-size: $sz-120;
   block-size: $sz-120;
@@ -112,8 +115,8 @@
   justify-content: center;
   align-items: center;
   position: absolute;
-  top: 0;
-  left: 0;
+  inset-block-start: 0;
+  inset-inline-start: 0;
   block-size: 100%;
   inline-size: 100%;
   z-index: var(--z-index-set);
@@ -139,10 +142,12 @@
   scrollbar-gutter: stable;
 }
 
-.dashboard-team-members.dashboard-top-cta {
-  flex-direction: column;
-  justify-content: flex-start;
-}
+// TODO: dashboard-top-cta is not used by team.cljs; check by hand
+// before removal.
+// .dashboard-team-members.dashboard-top-cta {
+//   flex-direction: column;
+//   justify-content: flex-start;
+// }
 
 .team-members {
   display: grid;
@@ -153,7 +158,7 @@
 }
 
 .table-header {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
   display: grid;
   align-items: center;
@@ -173,7 +178,7 @@
   inline-size: 100%;
   block-size: 100%;
   max-inline-size: $sz-1000;
-  margin-top: var(--sp-l);
+  margin-block-start: var(--sp-l);
   color: var(--color-foreground-secondary);
 }
 
@@ -239,23 +244,23 @@
 .member-name,
 .member-email {
   @include text-ellipsis;
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 }
 
 .member-email {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }
 
 .you {
   color: var(--color-foreground-secondary);
-  margin-left: px2rem(6);
+  margin-inline-start: px2rem(6);
 }
 
 // ROL INFO
 .rol-selector {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   position: relative;
   display: grid;
@@ -294,13 +299,13 @@
   background-color: var(--color-background-tertiary);
   border: $b-2 solid var(--color-background-quaternary);
   margin: 0;
-  bottom: calc(-1 * px2rem(76));
+  inset-block-end: calc(-1 * px2rem(76));
   inline-size: fit-content;
   min-inline-size: $sz-160;
 }
 
 .rol-dropdown-item {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
@@ -337,15 +342,15 @@
   background-color: var(--color-background-tertiary);
   border: $b-2 solid var(--color-background-quaternary);
   margin: 0;
-  bottom: calc(-1 * var(--sp-xxxl));
-  right: 0;
-  left: unset;
+  inset-block-end: calc(-1 * var(--sp-xxxl));
+  inset-inline-end: 0;
+  inset-inline-start: unset;
   inline-size: fit-content;
   min-inline-size: $sz-160;
 }
 
 .action-dropdown-item {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
@@ -383,20 +388,22 @@
 }
 
 .invitations-actions {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   display: flex;
   justify-content: end;
   align-items: center;
   gap: var(--sp-l);
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
   block-size: $sz-40;
   margin-block-end: px2rem(36);
 }
 
-.error-notification {
-  margin-block-end: var(--sp-xxl);
-}
+// TODO: error-notification is not used by team.cljs; check by hand
+// before removal.
+// .error-notification {
+//   margin-block-end: var(--sp-xxl);
+// }
 
 .table-row-invitations {
   grid-template-columns: 43% 1fr $sz-88 var(--sp-xxl);
@@ -405,7 +412,7 @@
 
 .empty-invitations {
   inline-size: 100%;
-  margin-top: var(--sp-l);
+  margin-block-start: var(--sp-l);
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   color: var(--color-foreground-secondary);
@@ -413,10 +420,12 @@
   text-align: center;
 }
 
-.empty-invitations-buttons {
-  inline-size: fit-content;
-  margin: auto;
-}
+// TODO: empty-invitations-buttons is not used by team.cljs; check by hand
+// before removal.
+// .empty-invitations-buttons {
+//   inline-size: fit-content;
+//   margin: auto;
+// }
 
 .no-permission-text {
   max-inline-size: $sz-512;
@@ -442,17 +451,19 @@
 
 .field-email {
   @include text-ellipsis;
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
   display: flex;
   gap: var(--sp-l);
   align-items: center;
 }
 
-.invitations-dropdown {
-  bottom: calc(-1 * px2rem(112));
-  right: calc(-1 * var(--sp-xl));
-}
+// TODO: invitations-dropdown is not used by team.cljs; check by hand
+// before removal.
+// .invitations-dropdown {
+//   inset-block-end: calc(-1 * px2rem(112));
+//   inset-inline-end: calc(-1 * var(--sp-xl));
+// }
 
 // WEBHOOKS SECTION
 .dashboard-team-webhooks {
@@ -489,7 +500,7 @@
 }
 
 .webhooks-hero {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -501,16 +512,16 @@
 }
 
 .hero-title {
-  @include t.use-typography("title-large");
+  @include use-typography("title-large");
 
   color: var(--color-foreground-primary);
 }
 
 .hero-desc {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
   color: var(--color-foreground-secondary);
-  margin-bottom: 0;
+  margin-block-end: 0;
   max-inline-size: $sz-512;
 }
 
@@ -554,14 +565,14 @@
   background-color: var(--color-background-tertiary);
   border: $b-2 solid var(--color-background-quaternary);
   margin: 0;
-  right: calc(-1 * var(--sp-l));
-  bottom: calc(-1 * $sz-40);
+  inset-inline-end: calc(-1 * var(--sp-l));
+  inset-block-end: calc(-1 * $sz-40);
   inline-size: fit-content;
   min-inline-size: $sz-160;
 }
 
 .webhook-dropdown-item {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
@@ -607,22 +618,22 @@
   max-block-size: $sz-512;
   box-shadow: var(--el-shadow-dark);
   position: fixed;
-  top: px2rem(72);
-  right: var(--sp-m);
-  left: unset;
+  inset-block-start: px2rem(72);
+  inset-inline-end: var(--sp-m);
+  inset-inline-start: unset;
   inline-size: $sz-400;
   padding: var(--sp-xxxl);
   background-color: var(--color-background-primary);
   z-index: var(--z-index-set);
 
   &.hero {
-    top: px2rem(216);
-    right: var(--sp-xxxl);
+    inset-block-start: px2rem(216);
+    inset-inline-end: var(--sp-xxxl);
   }
 }
 
 .modal-team-container-workspace {
-  top: $sz-40;
+  inset-block-start: $sz-40;
   z-index: var(--z-index-set);
 }
 
@@ -674,12 +685,12 @@
   justify-content: center;
   align-items: center;
   position: fixed;
-  left: 0;
-  top: 0;
+  inset-inline-start: 0;
+  inset-block-start: 0;
   block-size: 100%;
   inline-size: 100%;
   z-index: var(--z-index-set);
-  background-color: var(--overlay-color);
+  background-color: var(--color-overlay-default);
 }
 
 .modal-container {
@@ -695,11 +706,11 @@
 }
 
 .modal-header {
-  margin-bottom: var(--sp-xxl);
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include t.use-typography("title-small");
+  @include use-typography("title-small");
 
   color: var(--color-foreground-primary);
 }
@@ -712,12 +723,12 @@
 }
 
 .modal-content {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxl);
-  margin-bottom: var(--sp-xxl);
+  margin-block-end: var(--sp-xxl);
 }
 
 .fields-row {
@@ -727,7 +738,7 @@
 }
 
 .select-title {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-primary);
 }
@@ -755,7 +766,7 @@
   display: flex;
   align-items: center;
 
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
   label {
     display: flex;
@@ -780,7 +791,7 @@
 
   span {
     @extend %checkbox-icon;
-    @include t.use-typography("body-small");
+    @include use-typography("body-small");
 
     color: var(--color-foreground-secondary);
   }
@@ -788,7 +799,7 @@
   input {
     margin: 0;
 
-    @include t.use-typography("body-small");
+    @include use-typography("body-small");
 
     color: var(--color-foreground-secondary);
   }
@@ -807,13 +818,13 @@
 }
 
 .modal-invitation-title {
-  @include t.use-typography("headline-large");
+  @include use-typography("headline-large");
 
   color: var(--color-foreground-primary);
 }
 
 .modal-invitation-content {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   overflow: auto;
   color: var(--color-foreground-secondary);
@@ -842,13 +853,13 @@
 }
 
 .modal-restricted-title {
-  @include t.use-typography("headline-large");
+  @include use-typography("headline-large");
 
   color: var(--color-foreground-primary);
 }
 
 .modal-restricted-content {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   margin-block-end: 0;
 }
@@ -920,13 +931,13 @@
 }
 
 .modal-select-organization-content {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
 }
 
 .modal-select-organization-info {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   display: flex;
   flex-direction: column;
@@ -936,13 +947,13 @@
 }
 
 .modal-select-organization-title {
-  @include t.use-typography("headline-large");
+  @include use-typography("headline-large");
 
   color: var(--color-foreground-primary);
 }
 
 .modal-select-organization-text {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
 }
@@ -1005,13 +1016,13 @@
   background-color: var(--color-background-tertiary);
   border: $b-2 solid var(--color-background-quaternary);
   margin: 0;
-  top: var(--sp-xxxl);
+  inset-block-start: var(--sp-xxxl);
   inline-size: fit-content;
   min-inline-size: $sz-160;
 }
 
 .organization-dropdown-item {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
@@ -1034,5 +1045,5 @@
 }
 
 a {
-  color: var(--modal-link-foreground-color);
+  color: var(--color-accent-primary);
 }
