@@ -52,14 +52,6 @@
   gap: var(--sp-xs);
 }
 
-// TODO: .select-title is not used by change_email.cljs; check by hand
-// before removal.
-// .select-title {
-//   @include deprecated.body-small-typography;
-//
-//   color: var(--color-foreground-primary);
-// }
-
 .action-buttons {
   @extend %modal-action-btns;
 
@@ -68,9 +60,3 @@
     @extend %modal-accept-btn;
   }
 }
-
-// TODO: .cancel-button is not used by change_email.cljs; check by hand
-// before removal.
-// .cancel-button {
-//   @extend %modal-cancel-btn;
-// }
