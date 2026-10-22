@@ -63,12 +63,9 @@
 
 ;; --- Size gates
 ;;
-;; Nothing in this feature limited size before, so the failure mode at
-;; enterprise scale was a timeout: an operation that never returns and a
-;; user who cannot tell whether it is working. Every limit below is a
-;; measured cost divided into a 30 s budget and then halved, from the
-;; numbers below:
-;;
+;; For large documents, we are currently slow. To avoid user frustration, we
+;; set limits based on waits of at most 30s, and then halve them:
+
 ;;  * a merge on the 21,169-shape design system costs about 6 s, which is
 ;;    0.28 ms per shape, so 30 s is about 105,000 shapes -> 50,000.
 ;;  * a whole-file comparison of 48 pages costs 402 ms, which is 8.4 ms
@@ -77,9 +74,10 @@
 ;;  * one value-derived squash already emits about 19,000 changes for a
 ;;    one-page delta, so a depth limit has to clear that with room ->
 ;;    100,000 changes.
+;; (numbers measured on a devenv running on a laptop)
 ;;
 ;; A refusal names the limit, the actual value, and what to do instead.
-;; None of them truncates anything.
+
 
 (defn- branching-limit
   [key default]
@@ -139,9 +137,9 @@
   [:map {:title "get-branching-limits"}])
 
 (sv/defmethod ::get-branching-limits
-  "The size limits this instance refuses beyond, so the UI can publish them
-  before a user meets one. Read from config on every call: the limits have
-  exactly one home, and a page that states them must not keep its own copy."
+  "Return the maximum number of shapes, pages and changes this
+  instance supports. They are advertised on the UI to prevent
+  frustration. Read from config on every call to prevent drift."
   {::doc/added "2.16"
    ::sm/params schema:get-branching-limits}
   [_cfg _params]
@@ -1904,3 +1902,5 @@
                  (delete-branch! cfg branch {:profile-id profile-id
                                              :session-id session-id}))
          (audited {:status :deleted} tpoint :delete-branch))))))
+
+
