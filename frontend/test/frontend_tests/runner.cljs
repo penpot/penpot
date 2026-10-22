@@ -52,6 +52,7 @@
    [frontend-tests.data.workspace-text-modifier-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
+   [frontend-tests.data.workspace-thumbnails-wasm-test]
    [frontend-tests.data.workspace-undo-test]
    [frontend-tests.data.workspace-variant-rename-test]
    [frontend-tests.data.workspace-variant-switch-wasm-test]
@@ -240,6 +241,7 @@
    'frontend-tests.data.workspace-sync-wasm-text-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
+   'frontend-tests.data.workspace-thumbnails-wasm-test
    'frontend-tests.data.workspace-undo-test
    'frontend-tests.data.workspace-variant-rename-test
    'frontend-tests.data.workspace-variant-switch-wasm-test

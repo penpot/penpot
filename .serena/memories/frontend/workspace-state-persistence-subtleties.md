@@ -49,6 +49,11 @@
 - Undo transactions can stay open only temporarily; timed-out pending transactions are force-committed after about 20s. Undo entries are capped at 50.
 - Undo/redo are ignored while a normal editor/drawing interaction is active, except grid-layout edition handles undo through this path.
 - After local commits and when render-wasm is active, text shapes get derived `:position-data` recomputed in a separate commit tagged `#{:position-data}`; that tag is excluded from the position-data watcher to avoid loops.
+- WASM component thumbnails cancel the entire upload/render stream on
+  `finalize-page`, `finalize-workspace`, or a matching `clear-thumbnail`.
+  The upload callback must complete its observable. Without these, deferred
+  library thumbnails can query a main missing from the next workspace's
+  WASM scene and abort the renderer while `:exception` remains nil.
 
 ## Refs
 
