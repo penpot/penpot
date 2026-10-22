@@ -15,6 +15,7 @@
    [app.config :as cf]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.plugins.reflow :as pwrf]
    [beicon.v2.core :as rx]
@@ -26,6 +27,22 @@
 (t/use-fixtures :each ftm/fixture)
 
 (def ^:private red "#ff0000")
+
+(t/deftest ^:async consecutive-main-edits-undo-and-redo-with-their-copies
+  (ftm/install! (setup/simple-component-with-labeled-copy))
+  (st/emit! (ftm/fill-commit :main-child red {}))
+  (st/emit! (ftm/fill-commit :main-child "#00ff00" {}))
+  (st/emit! (ftm/fill-commit :main-child "#0000ff" {}))
+  (t/is (= :settled (await (ftm/await-step []))))
+  (doseq [[event color] [[dwu/undo "#00ff00"]
+                         [dwu/undo red]
+                         [dwu/undo setup/labeled-fill]
+                         [dwu/redo red]
+                         [dwu/redo "#00ff00"]
+                         [dwu/redo "#0000ff"]]]
+    (t/is (= :settled (await (ftm/await-step [event]))))
+    (t/is (= color (ftm/fill-of :main-child)))
+    (t/is (= color (ftm/fill-of :copy-child)))))
 
 (defn- sync-pending?
   [file-id]

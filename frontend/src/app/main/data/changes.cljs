@@ -38,6 +38,9 @@
 (def commit?
   (ptk/type? ::commit))
 
+(def changes-applied?
+  (ptk/type? ::changes-applied))
+
 (defn- fix-page-id
   "For events that modifies the page, page-id does not comes
   as a property so we assign it from the `id` property."
@@ -202,6 +205,9 @@
                         (not-empty (pcm/pending-commits (:persistence state) file-id)))]
           (rx/concat
            (rx/of (apply-changes-localy commit pending))
+           (rx/of (ptk/data-event ::changes-applied
+                                  {:commit commit
+                                   :old-data (get-in state [:files file-id :data])}))
            (if pending
              (rx/concat
               (->> (rx/from (reverse pending))
