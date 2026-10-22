@@ -44,13 +44,6 @@
   margin-block-end: var(--sp-xxl);
 }
 
-// TODO: .input-wrapper is not used by change_owner.cljs; check by hand
-// before removal.
-// .input-wrapper {
-//   @extend %input-with-label;
-//   @include use-typography("body-small");
-// }
-
 .action-buttons {
   @extend %modal-action-btns;
 }
