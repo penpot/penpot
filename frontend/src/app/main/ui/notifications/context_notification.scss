@@ -48,15 +48,6 @@
   --context-notification-border-color: var(--color-accent-info);
 }
 
-// TODO: .default is not used by context_notification.cljs (the default
-// level uses the base colors); check by hand before removal.
-// .default {
-//   --context-notification-bg-color: var(--color-background-primary);
-//   --context-notification-fg-color: var(--color-foreground-primary);
-//   --context-notification-icon-color: var(--color-foreground-primary);
-//   --context-notification-border-color: var(--color-background-quaternary);
-// }
-
 .error {
   --context-notification-bg-color: var(--color-background-error);
   --context-notification-fg-color: var(--color-foreground-primary);
@@ -66,7 +57,6 @@
 
 .icon {
   flex-shrink: 0;
-  stroke-width: 1px;
   align-self: self-start;
   color: var(--context-notification-icon-color);
 }
