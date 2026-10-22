@@ -213,7 +213,8 @@
 
 (defn- snapshot
   [situation]
-  (uc/snapshot (tm/file situation)))
+  (let [file (tm/file situation)]
+    (uc/snapshot-files (assoc (tm/aux-files situation) (:id file) file))))
 
 (defn- attempt
   "`[(f) nil]`, or `[nil error]` when `f` throws."

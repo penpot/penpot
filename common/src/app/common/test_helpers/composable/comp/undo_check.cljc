@@ -56,6 +56,12 @@
   ([file] (snapshot file {}))
   ([file opts] (thn/normalize-file file opts)))
 
+(defn snapshot-files
+  "The normalized files affected by a step, including linked libraries."
+  ([files] (snapshot-files files {}))
+  ([files opts]
+   {:files (into {} (map (fn [[id file]] [id (snapshot file opts)])) files)}))
+
 (defn mark-baseline
   "Record the state the end-of-variant round trip undoes back to: the
    normalized file `snap` with `depth` undo groups on the stack."
@@ -141,17 +147,24 @@
    `[:data key]` / `[:file key]` for anything else. Shapes without a test
    label are `:unlabelled`."
   [expected actual]
-  (let [ed (:data expected)
-        ad (:data actual)]
-    (-> #{}
-        (into (map #(vector :file %)) (differing-keys expected actual #{:data}))
-        (into (map #(vector :data %)) (differing-keys ed ad #{:pages-index :components}))
-        (into (entities-signature :page (:pages-index ed) (:pages-index ad) #{:objects}
-                                  (fn [e a]
-                                    (entities-signature :object (:objects e) (:objects a)
-                                                        #{} (constantly nil)))))
-        (into (entities-signature :component (:components ed) (:components ad)
-                                  #{} (constantly nil))))))
+  (if (or (contains? expected :files) (contains? actual :files))
+    (into #{}
+          (mapcat (fn [id]
+                    (map #(into [:file (label-of id)] %)
+                         (signature (get-in expected [:files id])
+                                    (get-in actual [:files id])))))
+          (into (set (keys (:files expected))) (keys (:files actual))))
+    (let [ed (:data expected)
+          ad (:data actual)]
+      (-> #{}
+          (into (map #(vector :file %)) (differing-keys expected actual #{:data}))
+          (into (map #(vector :data %)) (differing-keys ed ad #{:pages-index :components}))
+          (into (entities-signature :page (:pages-index ed) (:pages-index ad) #{:objects}
+                                    (fn [e a]
+                                      (entities-signature :object (:objects e) (:objects a)
+                                                          #{} (constantly nil)))))
+          (into (entities-signature :component (:components ed) (:components ad)
+                                    #{} (constantly nil)))))))
 
 (defn compare-states
   "Record a failure of `phase` at `step` unless the normalized files

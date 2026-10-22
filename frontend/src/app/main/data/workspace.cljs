@@ -479,10 +479,10 @@
                     (rx/filter dch/commit?)
                     (rx/map deref)
                     (rx/mapcat
-                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
+                     (fn [{:keys [file-id save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
                        (if (and save-undo? (seq undo-changes))
-                         (let [entry {:undo-changes undo-changes
-                                      :redo-changes redo-changes
+                         (let [entry {:undo-changes (mapv #(assoc % ::dwu/file-id file-id) undo-changes)
+                                      :redo-changes (mapv #(assoc % ::dwu/file-id file-id) redo-changes)
                                       :undo-group undo-group
                                       :tags tags
                                       :selected-before selected-before}]
