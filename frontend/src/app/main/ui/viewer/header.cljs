@@ -29,6 +29,11 @@
                (dm/get-in state [:viewer-local :fullscreen?]))
              st/state))
 
+(def chrome-hidden-ref
+  (l/derived (fn [state]
+               (dm/get-in state [:viewer-local :chrome-hidden?]))
+             st/state))
+
 (defn open-login-dialog
   []
   (modal/show! :login-register {}))
@@ -42,7 +47,8 @@
            on-zoom-reset
            on-fullscreen
            on-zoom-fit
-           on-zoom-fill]
+           on-zoom-fill
+           on-toggle-chrome]
     :as props}]
 
   (let [open*           (mf/use-state false)
@@ -117,15 +123,32 @@
         [:span  {:class (stl/css :shortcuts)}
          (for [sc (scd/split-sc (sc/get-tooltip :toggle-fullscreen))]
            [:span {:class (stl/css :shortcut-key)
-                   :key (dm/str "zoom-fullscreen-" sc)} sc])]]]]]))
+                   :key (dm/str "zoom-fullscreen-" sc)} sc])]]
+       (when (fn? on-toggle-chrome)
+         [:li {:class (stl/css :zoom-option)
+               :on-click on-toggle-chrome}
+          (tr "viewer.header.hide-interface")
+          [:span  {:class (stl/css :shortcuts)}
+           (for [sc (scd/split-sc (sc/get-tooltip :toggle-chrome-hidden))]
+             [:span {:class (stl/css :shortcut-key)
+                     :key (dm/str "hide-interface-" sc)} sc])]])]]]))
 
 (mf/defc header-options
   [{:keys [section zoom page file index permissions interactions-mode share]}]
   (let [fullscreen?    (mf/deref fullscreen-ref)
+        chrome-hidden? (mf/deref chrome-hidden-ref)
+
+        chrome-label   (if chrome-hidden?
+                         (tr "viewer.header.show-interface")
+                         (tr "viewer.header.hide-interface"))
 
         toggle-fullscreen
         (mf/use-fn
          (fn [] (st/emit! dv/toggle-fullscreen)))
+
+        toggle-chrome-hidden
+        (mf/use-fn
+         (fn [] (st/emit! dv/toggle-chrome-hidden)))
 
         go-to-workspace
         (mf/use-fn
@@ -185,7 +208,8 @@
        :on-zoom-reset handle-zoom-reset
        :on-zoom-fill handle-zoom-fill
        :on-zoom-fit  handle-zoom-fit
-       :on-fullscreen toggle-fullscreen}]
+       :on-fullscreen toggle-fullscreen
+       :on-toggle-chrome (when-not (= section :inspect) toggle-chrome-hidden)}]
 
      (when (:in-team permissions)
        [:span {:on-click go-to-workspace
@@ -197,6 +221,17 @@
                                   :selected fullscreen?)
              :on-click toggle-fullscreen}
       deprecated-icon/expand]
+
+     ;; The inspect section brings its own panels; hiding the chrome only
+     ;; makes sense over the frames viewport.
+     (when-not (= section :inspect)
+       [:button {:title chrome-label
+                 :aria-label chrome-label
+                 :aria-pressed (boolean chrome-hidden?)
+                 :class (stl/css-case :chrome-btn true
+                                      :selected chrome-hidden?)
+                 :on-click toggle-chrome-hidden}
+        (if chrome-hidden? deprecated-icon/shown deprecated-icon/hide)])
 
      (when (:in-team permissions)
        [:button {:on-click open-share-dialog

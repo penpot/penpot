@@ -233,3 +233,47 @@
 [data-force-visible="true"] .viewer-go-prev {
   transform: translateX(0);
 }
+
+/** CHROME HIDDEN
+
+    The same layout shift as fullscreen, but without the browser fullscreen
+    API and without any hover or click reveal: the chrome stays out until it
+    is shown again. `visibility` flips once the slide is over, so the hidden
+    controls leave the tab order.
+*/
+[data-chrome-hidden="true"] .viewer-content {
+  transform: translateY(-#{deprecated.$s-48});
+  height: 100vh;
+}
+
+[data-chrome-hidden="true"] .viewer-section {
+  height: 100vh;
+}
+
+[data-chrome-hidden="true"] .viewer-go-next {
+  transform: translateX(deprecated.$s-40);
+  visibility: hidden;
+  transition:
+    transform 400ms ease 300ms,
+    visibility 0s linear 400ms;
+}
+
+[data-chrome-hidden="true"] .viewer-go-prev {
+  transform: translateX(-#{deprecated.$s-40});
+  visibility: hidden;
+  transition:
+    transform 400ms ease 300ms,
+    visibility 0s linear 400ms;
+}
+
+[data-chrome-hidden="true"] .viewer-bottom {
+  transform: translateY(deprecated.$s-40);
+  visibility: hidden;
+  transition:
+    transform 400ms ease 300ms,
+    visibility 0s linear 400ms;
+}
+
+[data-chrome-hidden="true"] .thumbnails-close {
+  display: none;
+}
