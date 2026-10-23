@@ -1187,8 +1187,8 @@
           #{component-id})))))
 
 (defmethod components-changed :mov-objects
-  [file-data {:keys [page-id _component-id parent-id shapes] :as change}]
-  (when page-id
+  [file-data {:keys [page-id component-id parent-id shapes] :as change}]
+  (if page-id
     (let [page  (ctpl/get-page file-data page-id)
           xform (comp (filter :main-instance)
                       (map :component-id))
@@ -1201,27 +1201,30 @@
 
       (reduce #(set/union %1 (check-shape %2 []))
               (check-shape parent-id [parent-id])
-              shapes))))
+              shapes))
+    (when component-id #{component-id})))
 
 (defmethod components-changed :add-obj
-  [file-data {:keys [parent-id page-id _component-id] :as change}]
-  (when page-id
+  [file-data {:keys [parent-id page-id component-id] :as change}]
+  (if page-id
     (let [page (ctpl/get-page file-data page-id)
           parents (map (partial ctn/get-shape page)
                        (cons parent-id (cfh/get-parent-ids (:objects page) parent-id)))
           xform (comp (filter :main-instance)
                       (map :component-id))]
-      (into #{} xform parents))))
+      (into #{} xform parents))
+    (when component-id #{component-id})))
 
 (defmethod components-changed :del-obj
-  [file-data {:keys [id page-id _component-id] :as change}]
-  (when page-id
+  [file-data {:keys [id page-id component-id] :as change}]
+  (if page-id
     (let [page (ctpl/get-page file-data page-id)
           shape-and-parents (map (partial ctn/get-shape page)
                                  (cons id (cfh/get-parent-ids (:objects page) id)))
           xform (comp (filter :main-instance)
                       (map :component-id))]
-      (into #{} xform shape-and-parents))))
+      (into #{} xform shape-and-parents))
+    (when component-id #{component-id})))
 
 (defmethod components-changed :default
   [_ _]

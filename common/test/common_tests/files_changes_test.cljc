@@ -1165,3 +1165,13 @@
               (nil? (get-in result2 [:pages-index page-id :default-grids])))))
 
      {:num 1000})))
+
+(t/deftest structural-changes-in-a-deleted-main-trigger-its-component-sync
+  (let [component-id (uuid/next)
+        id (uuid/next)
+        parent-id (uuid/next)]
+    (doseq [change [{:type :add-obj :id id :parent-id parent-id}
+                    {:type :del-obj :id id}
+                    {:type :mov-objects :parent-id parent-id :shapes [id]}]]
+      (t/is (= #{component-id}
+               (ch/components-changed {} (assoc change :component-id component-id)))))))
