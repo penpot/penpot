@@ -42,6 +42,7 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-branch-policies :as bp]
+   [app.rpc.commands.files-create :as fcreate]
    [app.rpc.commands.files-update :as fupd]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -535,23 +536,16 @@
 
                     ;; 3. Mark the new file row as a branch so it is
                     ;; hidden from the project/team file listings.
+                    ;; No file role is granted: a branch takes its
+                    ;; permissions from the team (and project) roles
+                    ;; alone, so every editor of main can open and edit
+                    ;; it, and its creator gets no extra rights.
                     (db/update! conn :file
                                 {:is-branch true}
                                 {:id branch-id}
                                 {::db/return-keys false})
 
-                    ;; 4. Grant the creator ownership (same grant
-                    ;; duplicate-file used to make).
-                    (when (uuid? profile-id)
-                      (db/insert! conn :file-profile-rel
-                                  {:file-id branch-id
-                                   :profile-id profile-id
-                                   :is-owner true
-                                   :is-admin true
-                                   :can-edit true}
-                                  {::db/return-keys false}))
-
-                    ;; 5. The branch resolves libraries exactly like
+                    ;; 4. The branch resolves libraries exactly like
                     ;; main (component instances from shared libraries
                     ;; must keep resolving on the derived state).
                     (doseq [rel (bfc/get-files-rels cfg #{file-id})]
@@ -565,7 +559,7 @@
                                                         :library-file-id (:library-file-id rel)
                                                         :synced-at (or (:synced-at rel) ts)})))
 
-                    ;; 6. Persist the branch metadata. `base-revn`
+                    ;; 5. Persist the branch metadata. `base-revn`
                     ;; tracks MAIN's revision counter and
                     ;; `base-branch-revn` the BRANCH file's one. Each
                     ;; starts at its own side's revn (main's current
@@ -1710,6 +1704,12 @@
                              {:is-branch false}
                              {:id branch-file-id}
                              {::db/return-keys false})
+
+                 ;; a branch carries no file roles; as an ordinary file it
+                 ;; gets the owner role its maker would get on creation
+                 (fcreate/create-file-role! conn {:file-id branch-file-id
+                                                  :profile-id profile-id
+                                                  :role :owner})
 
                  ;; the payload replaced the log
                  (db/delete! conn :file-branch-change {:branch-id (:id branch)})

@@ -1362,6 +1362,94 @@
         ;; the colour differ from the new base and lands in the op log
         (t/is (empty? (th/db-query :file-branch-change {:branch-id branch-id})))))))
 
+(t/deftest branch-permissions-come-from-the-team-role
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [owner   (th/create-profile* 1 {:is-active true})
+          editor1 (th/create-profile* 2 {:is-active true})
+          editor2 (th/create-profile* 3 {:is-active true})
+          viewer  (th/create-profile* 4 {:is-active true})
+          team-id (:default-team-id owner)
+          file    (th/create-file* 1 {:profile-id (:id owner)
+                                      :project-id (:default-project-id owner)})
+          _       (doseq [[profile role] [[editor1 :editor] [editor2 :editor] [viewer :viewer]]]
+                    (th/create-team-role* {:team-id team-id
+                                           :profile-id (:id profile)
+                                           :role role}))
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id editor1)
+                                         :file-id (:id file)
+                                         :name "team-roles"}))
+          branch-file-id (:branch-file-id create)
+          perms-of       (fn [profile]
+                           (db/run! th/*system*
+                                    #(bfc/get-file-permissions % (:id profile) branch-file-id)))]
+
+      (t/testing "creating a branch grants no file role"
+        (t/is (empty? (th/db-query :file-profile-rel {:file-id branch-file-id}))))
+
+      (t/testing "the creator keeps the rights of a team editor"
+        (let [perms (perms-of editor1)]
+          (t/is (true? (:can-edit perms)))
+          (t/is (false? (:is-admin perms)))
+          (t/is (false? (:is-owner perms)))))
+
+      (t/testing "another team editor can edit the branch"
+        (let [bf  (th/db-get :file {:id branch-file-id})
+              out (th/command! {::th/type :update-file
+                                ::rpc/profile-id (:id editor2)
+                                :id branch-file-id
+                                :session-id (uuid/random)
+                                :revn (:revn bf)
+                                :vern (:vern bf)
+                                :features cfeat/supported-features
+                                :changes [{:type :add-page :id (uuid/random) :name "by-editor2"}]})]
+          (t/is (nil? (:error out)))))
+
+      (t/testing "a team viewer can read the branch but not edit it"
+        (let [perms (perms-of viewer)]
+          (t/is (true? (:can-read perms)))
+          (t/is (false? (:can-edit perms))))))))
+
+(t/deftest branches-move-with-their-source-file
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [owner   (th/create-profile* 1 {:is-active true})
+          editor  (th/create-profile* 2 {:is-active true})
+          team    (th/create-team* 1 {:profile-id (:id owner)})
+          project (th/create-project* 1 {:team-id (:id team)
+                                         :profile-id (:id owner)})
+          file    (th/create-file* 1 {:profile-id (:id owner)
+                                      :project-id (:default-project-id owner)})
+          _       (th/create-team-role* {:team-id (:id team)
+                                         :profile-id (:id editor)
+                                         :role :editor})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id owner)
+                                         :file-id (:id file)
+                                         :name "travels"}))
+          branch-file-id (:branch-file-id create)]
+
+      (t/testing "a branch cannot be moved on its own"
+        (let [out (th/command! {::th/type :move-files
+                                ::rpc/profile-id (:id owner)
+                                :project-id (:id project)
+                                :ids #{branch-file-id}})]
+          (t/is (th/ex-of-code? (:error out) :cant-move-a-branch))))
+
+      (t/testing "moving the source file takes its branches along"
+        (let [out (th/command! {::th/type :move-files
+                                ::rpc/profile-id (:id owner)
+                                :project-id (:id project)
+                                :ids #{(:id file)}})]
+          (t/is (nil? (:error out))))
+        (t/is (= (:id project) (:project-id (th/db-get :file {:id branch-file-id})))))
+
+      (t/testing "an editor of the new team can open the branch"
+        (let [out (th/command! {::th/type :get-file
+                                ::rpc/profile-id (:id editor)
+                                :id branch-file-id})]
+          (t/is (nil? (:error out)))
+          (t/is (true? (-> out :result :permissions :can-edit))))))))
+
 (t/deftest materialize-branch-into-an-ordinary-file
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
@@ -1406,6 +1494,11 @@
 
           (let [row (th/db-get :file {:id branch-file-id})]
             (t/is (false? (:is-branch row))))
+
+          ;; as an ordinary file it gets the owner role of its maker
+          (let [rel (th/db-get :file-profile-rel {:file-id branch-file-id
+                                                  :profile-id (:id profile)})]
+            (t/is (true? (:is-owner rel))))
 
           ;; the payload lands where the ordinary write path puts it, which
           ;; is the `file_data` row of type "main" rather than the legacy
