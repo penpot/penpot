@@ -274,9 +274,12 @@
 (defn remove-swap-group
   "Make the shape not swapped."
   [shape]
-  (cond-> shape
-    (swapped? shape)
-    (update :touched disj :swap-group)))
+  (if (swapped? shape)
+    (let [touched (disj (:touched shape) :swap-group)]
+      (if (seq touched)
+        (assoc shape :touched touched)
+        (dissoc shape :touched)))
+    shape))
 
 (defn get-deleted-component-root
   [component]
