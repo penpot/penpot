@@ -1259,23 +1259,22 @@
 (defn get-ref-chain-until-target-ref
   "Returns a vector with the shape ref chain until target-ref, including itself"
   [container libraries shape target-ref]
-  (loop [chain [shape]
-         current shape]
-    (if (= current target-ref)
+  (loop [chain     [shape]
+         current   shape
+         container container]
+    (if (= (:id current) target-ref)
       chain
       (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
-        (recur (conj chain ref) ref)
+        (recur (conj chain ref) ref (:container (meta ref)))
         chain))))
 
 (defn get-touched-from-ref-chain-until-target-ref
   "Returns a set with the :touched of all the items on the shape
    ref chain until target-ref, including itself"
-  [container libraries shape target-ref]
-  (let [chain (get-ref-chain-until-target-ref container libraries shape target-ref)
-        more-touched (->> chain
-                          (map :touched)
-                          (remove nil?)
-                          (apply set/union)
-                          (remove ctk/swap-slot?)
-                          set)]
-    (set/union (or (:touched shape) #{}) more-touched)))
+  [container libraries shape target-ref & {:keys [remove-slots?] :or {remove-slots? true}}]
+  (let [chain        (get-ref-chain-until-target-ref container libraries shape target-ref)
+        more-touched (cond->> chain
+                       :always       (map :touched)
+                       :always       (reduce set/union #{})
+                       remove-slots? (remove ctk/swap-slot?))]
+    (set/union (or (:touched shape) #{}) (set more-touched))))

@@ -213,6 +213,15 @@
                  (:content (clipboard/html->payload
                             (str "<head><meta charset=\"UTF-8\"></head>" safari "Hello")))))))))
 
+(t/deftest payload-geometry-round-trip
+  (let [content  (text-content gradient-span)
+        geometry {:origins [[{:x 12.5 :y 0.2 :box {:width 200 :height 40}}]]}
+        hidden   (clipboard/payload->html content file-id team-id geometry)]
+    (t/testing "the payload keeps where the copied spans sat in their text box"
+      (t/is (= geometry (:geometry (clipboard/html->payload hidden)))))
+    (t/testing "the content stays as copied"
+      (t/is (= content (:content (clipboard/html->payload hidden)))))))
+
 (t/deftest html-without-payload
   (t/testing "HTML without a payload, or with a broken one, gives nil"
     (t/is (nil? (clipboard/html->payload "<p>Hello</p>")))

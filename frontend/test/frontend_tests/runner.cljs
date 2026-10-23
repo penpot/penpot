@@ -111,6 +111,7 @@
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.token-path-test]
+   [frontend-tests.tokens.tokenscript-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
    [frontend-tests.ui.color-token-position-test]
@@ -138,6 +139,7 @@
    [frontend-tests.ui.shortcuts-labels-test]
    [frontend-tests.ui.sidebar-scroll-test]
    [frontend-tests.ui.sortable-auto-scroll-test]
+   [frontend-tests.ui.static-test]
    [frontend-tests.ui.stroke-menu-test]
    [frontend-tests.ui.text-attrs-multiple-test]
    [frontend-tests.ui.workspace-libraries-test]
@@ -152,6 +154,7 @@
    [frontend-tests.util-zip-test]
    [frontend-tests.util.dom.dnd-test]
    [frontend-tests.worker-snap-test]
+   [frontend-tests.worker.exports-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
@@ -186,6 +189,7 @@
    'frontend-tests.data.exports-files-test
    'frontend-tests.data.imports-test
    'frontend-tests.data.jobs-test
+   'frontend-tests.worker.exports-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
@@ -270,6 +274,7 @@
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.token-path-test
+   'frontend-tests.tokens.tokenscript-test
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.check-updates-test
@@ -300,6 +305,7 @@
    'frontend-tests.ui.shortcuts-labels-test
    'frontend-tests.ui.sidebar-scroll-test
    'frontend-tests.ui.sortable-auto-scroll-test
+   'frontend-tests.ui.static-test
    'frontend-tests.ui.stroke-menu-test
    'frontend-tests.ui.text-attrs-multiple-test
    'frontend-tests.ui.workspace-libraries-test

@@ -29,7 +29,7 @@
       FOR UPDATE OF f
      SKIP LOCKED")
 
-(defn- schedule!
+(defn- schedule-files
   [{:keys [::db/conn] :as cfg} threshold]
   (let [total (reduce (fn [total {:keys [id modified-at revn]}]
                         (let [params {:file-id id :revn revn}]
@@ -83,4 +83,4 @@
                       (ct/in-past))]
     (-> cfg
         (assoc ::db/rollback (:rollback? params))
-        (db/tx-run! schedule! threshold))))
+        (db/tx-run! schedule-files threshold))))

@@ -389,6 +389,80 @@ test.describe("Assets tab", () => {
   });
 });
 
+test.describe("Debug shape panel", () => {
+  test("Shows the debug info of the selected shape", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await page.getByRole("button", { name: "Debugging tool" }).click();
+    await page.getByText("shape-panel", { exact: true }).click();
+    await expect(
+      workspace.rightSidebar.getByText("Board", { exact: true }),
+    ).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Only the title row with the dump buttons: the attributes list below
+    // holds ids that change on every run.
+    const title = workspace.rightSidebar
+      .getByText("Board", { exact: true })
+      .locator("..");
+    await expect(title).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Layers panel", () => {
+  test("Shows the focus mode title and the layer filters", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await page.keyboard.press("f");
+    await expect(workspace.sidebar.getByText("Focus mode")).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(workspace.sidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await page.keyboard.press("f");
+    await expect(workspace.sidebar.getByText("Focus mode")).toBeHidden();
+    await workspace.sidebar.getByRole("button", { name: "Search" }).click();
+    await workspace.sidebar.getByRole("button", { name: "Filter" }).click();
+    await workspace.sidebar.getByText("Boards", { exact: true }).click();
+    await page.mouse.move(640, 600);
+    // The "Boards" filter pill. The clip leaves out the pages divider and
+    // the search bar, whose transitions may still be running.
+    const filtersClip = { x: 0, y: 340, width: 318, height: 380 };
+    await expect(page).toHaveScreenshot({
+      clip: filtersClip,
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await workspace.sidebar.getByRole("button", { name: "Filter" }).click();
+    await page.mouse.move(640, 600);
+    // The filter menu open, with its option ticked.
+    await expect(page).toHaveScreenshot({
+      clip: filtersClip,
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Guides", () => {
   test("Shows the advanced options of a square guide", async ({ page }) => {
     // A taller window keeps the whole Design tab visible: a scrolled
@@ -452,6 +526,76 @@ test.describe("Left header", () => {
   });
 });
 
+test.describe("Right header", () => {
+  test("Shows the header actions and the zoom menu", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    const header = page.locator('[class*="workspace-header-right"]');
+    await expect(header).toBeVisible();
+    await page.mouse.move(640, 300);
+    // The buttons are a small part of the header: compare every pixel.
+    await expect(header).toHaveScreenshot("right-header.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await header.getByRole("button", { name: /Comments/ }).click();
+    await page.mouse.move(640, 300);
+    await expect(header).toHaveScreenshot("right-header-comments.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+    await page.keyboard.press("Escape");
+
+    await header.getByTitle("Zoom").click();
+    await expect(page.getByText("Reset")).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(page).toHaveScreenshot("right-header-zoom.png", {
+      clip: { x: 900, y: 0, width: 380, height: 260 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Undo history", () => {
+  test("Shows the actions list with an entry expanded", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-empty.json",
+    );
+    await workspace.mockRPC(
+      "get-file-snapshots?file-id=*",
+      "workspace/versions-snapshot-1.json",
+    );
+    await workspace.goToWorkspace();
+
+    await page.keyboard.press("r");
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+
+    await page.keyboard.press("Control+Alt+h");
+    await page.getByRole("tab", { name: "Actions" }).click();
+    const panel = page.getByRole("tabpanel", { name: "Actions" });
+    const entry = panel.getByText("New rectangle");
+    // The short id and the relative time change on every run.
+    const mask = [page.locator('[class*="history-entry-meta"]')];
+
+    // The expand arrow only shows while the entry is hovered.
+    await entry.hover();
+    await expect(panel).toHaveScreenshot({ mask });
+
+    // The data attribute exists before and after the DS migration.
+    await panel.locator('[data-has-entry="true"]').click();
+    await expect(panel.getByText("Rectangle", { exact: true })).toBeVisible();
+    await entry.hover();
+    await expect(panel).toHaveScreenshot({ mask });
+  });
+});
+
 test.describe("Palette", () => {
   test("Shows the bottom palette expanded and collapsed", async ({ page }) => {
     const workspace = new WorkspacePage(page);
@@ -477,6 +621,91 @@ test.describe("Palette", () => {
         "There are no color styles in your library yet",
       ),
     ).toBeVisible();
+  });
+
+  test("Shows the palette toggles selected", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    const { fileId, pageId } = await setupFileWithAssets(workspace);
+
+    await workspace.goToWorkspace({ fileId, pageId });
+
+    await workspace.palette
+      .getByRole("button", { name: "Typographies" })
+      .click();
+    await expect(
+      workspace.palette.getByText("Source Sans Pro Regular"),
+    ).toBeVisible();
+    await page.mouse.move(640, 300);
+    // The toggles are a small part of the palette: compare every pixel.
+    await expect(workspace.palette).toHaveScreenshot("palette-text.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await workspace.palette
+      .getByRole("button", { name: "Color Palette" })
+      .click();
+    await expect(
+      workspace.palette.getByText(
+        "There are no color styles in your library yet",
+      ),
+    ).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(workspace.palette).toHaveScreenshot("palette-color.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Plugins", () => {
+  const setupPlugins = async (workspace, profile) => {
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC("get-team?id=*", "workspace/get-team-plugins.json");
+    if (profile) {
+      await workspace.mockRPC("get-profile", profile);
+    }
+    await workspace.goToWorkspace();
+    await workspace.page.keyboard.press("Control+Alt+P");
+  };
+
+  test("Shows the plugins manager without plugins", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await setupPlugins(workspace);
+
+    await expect(page.getByText("No plugins installed yet")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Close" })).toBeVisible();
+    await expect(page).toHaveScreenshot();
+  });
+
+  test("Shows the plugins manager and the permissions dialog", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await page.route("https://plugin.example.com/manifest.json", (route) =>
+      route.fulfill({
+        json: {
+          name: "Contrast checker",
+          description: "Check the contrast of the selected layers.",
+          code: "plugin.js",
+          permissions: ["content:write", "user:read", "library:write"],
+        },
+      }),
+    );
+    await setupPlugins(
+      workspace,
+      "logged-in-user/get-profile-with-plugins.json",
+    );
+
+    await expect(page.getByText("Lorem Ipsum generator")).toBeVisible();
+    await expect(page).toHaveScreenshot();
+
+    await page
+      .getByRole("textbox")
+      .fill("https://plugin.example.com/manifest.json");
+    await page.getByRole("button", { name: "Install" }).click();
+    await expect(page.getByText("CONTRAST CHECKER")).toBeVisible();
+    await expect(page).toHaveScreenshot();
   });
 });
 

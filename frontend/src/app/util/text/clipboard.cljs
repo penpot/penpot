@@ -291,14 +291,18 @@
        (.decode (js/TextDecoder.))))
 
 (defn payload->html
-  "Hidden markup carrying `content`, copied from `file-id` in `team-id`."
-  [content file-id team-id]
-  (let [payload {:type :copied-text
-                 :version 1
-                 :file-id file-id
-                 :team-id team-id
-                 :content content}]
-    (str "<span data-penpot-text=\"" (encode-base64 (t/encode-str payload)) "\"></span>")))
+  "Hidden markup carrying `content`, copied from `file-id` in `team-id`, and the
+  `geometry` of its spans in their text box (see `text-editor/content-geometry`)."
+  ([content file-id team-id]
+   (payload->html content file-id team-id nil))
+  ([content file-id team-id geometry]
+   (let [payload (cond-> {:type :copied-text
+                          :version 1
+                          :file-id file-id
+                          :team-id team-id
+                          :content content}
+                   (some? geometry) (assoc :geometry geometry))]
+     (str "<span data-penpot-text=\"" (encode-base64 (t/encode-str payload)) "\"></span>"))))
 
 (defn html->payload
   "The Penpot payload in `html`, or nil when it has none."

@@ -17,6 +17,7 @@ No single source of truth: nothing reads `.nvmrc` at build time, and the version
 - DHI tags are exact-version and lag the upstream release, and dhi.io answers 401 to anonymous requests, so a tag that does not exist yet can only be caught by a real build. `build-docker.yml` and `build-docker-devenv.yml` log into dhi.io, so the failure surfaces in CI, not locally.
 - Node 24.x is the Krypton LTS line: take the newest patch of that major unless a major bump is the point.
 - Renovate also opens these bumps, on `renovate-*` branches and with its config living outside this repo; a manual bump and Renovate's must not diverge on any of the six sites.
+- A backport merge can deliver a newer Node into `docker/` and the plugins-deploy workflows while main's `.nvmrc` stays behind, because main receives partial backports of `.github/` and `docker/` from develop. Merging main into staging therefore conflicts on the pin lines: take main's set and finish the bump (`.nvmrc` plus the `packageManager` fields via `mem:workflow/updating-pnpm`), or the six sites drift.
 - Both workflows must stay valid YAML. The `python3` in the devenv has no `yaml` module, so validate with `uv run --with pyyaml python3 -c ...` instead of a bare import.
 
 ## Verification

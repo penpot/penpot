@@ -94,6 +94,7 @@
                           :command (ds/c-mod "c")
                           :subsections [:edit]
                           :section [:workspace]
+                          :customizable false
                           :fn #(st/emit! (dw/copy-selected))}
 
    :copy-link            {:tooltip (ds/shift (ds/alt "C"))
@@ -178,6 +179,7 @@
                           :command "escape"
                           :subsections [:edit]
                           :section [:workspace]
+                          :customizable false
                           :fn #(st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]

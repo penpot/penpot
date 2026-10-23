@@ -326,6 +326,7 @@ Debug Main Page
               <th>PROGRESS</th>
               <th>CMD</th>
               <th>BACKEND</th>
+              <th>REPLICA</th>
               <th>NAME</th>
               <th>CREATED</th>
               <th>ENDED</th>
@@ -339,12 +340,13 @@ Debug Main Page
               <td>{{job.done}} / {{job.total}}</td>
               <td>{{job.cmd}}</td>
               <td>{{job.backend}}</td>
+              <td>{{job.replica}}</td>
               <td>{{job.name}}</td>
               <td>{{job.created-at}}</td>
               <td>{{job.ended-at}}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="8">No export jobs.</td></tr>
+            <tr><td colspan="9">No export jobs.</td></tr>
             {% endfor %}
           </tbody>
         </table>

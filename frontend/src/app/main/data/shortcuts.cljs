@@ -187,8 +187,11 @@
       shortcuts
       (reduce-kv
        (fn [acc sc-key new-command]
+         ;; A non-customizable shortcut ignores overrides stored before it
+         ;; became so: the settings page no longer offers to reset them.
          (if (and (contains? acc sc-key)
-                  (not (:disabled (get acc sc-key))))
+                  (not (:disabled (get acc sc-key)))
+                  (not (false? (:customizable (get acc sc-key)))))
            (-> acc
                (assoc-in [sc-key :original-command] (get-in acc [sc-key :command]))
                (assoc-in [sc-key :command] new-command)

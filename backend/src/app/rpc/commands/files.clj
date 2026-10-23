@@ -608,11 +608,21 @@
 
   (let [process-row
         (fn [{:keys [id library-file-ids]}]
-          (let [file (get-file-with-summary cfg id)]
-            (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{}))))
+          ;; One shared file that fails to load (for example, a migration
+          ;; error on old data) must not break the whole list; skip it
+          ;; and report it with its id.
+          (try
+            (let [file (get-file-with-summary cfg id)]
+              (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{})))
+            (catch Exception cause
+              (l/error :hint "unable to load shared file"
+                       :file-id (str id)
+                       :team-id (str team-id)
+                       :cause cause)
+              nil)))
 
         xform
-        (map process-row)]
+        (keep process-row)]
 
     (->> (db/plan conn [sql:team-shared-files team-id] {:fetch-size 1})
          (transduce xform conj #{}))))

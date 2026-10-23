@@ -1574,6 +1574,10 @@ msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 msgid "errors.export-failed"
 msgstr "La exportación ha fallado. Inténtalo de nuevo en un momento."
 
+#: src/app/main/data/exports/assets.cljs:346
+msgid "errors.export-too-large"
+msgstr "El archivo es demasiado grande, prueba con otra escala"
+
 #: src/app/main/errors.cljs:974
 msgid "errors.feature-mismatch"
 msgstr ""
@@ -1833,6 +1837,10 @@ msgstr ""
 "El Line Height depende del Font Size. Añade un Font Size para obtener el "
 "valor computado."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:62
+msgid "errors.tokens.division-by-zero"
+msgstr "Valor de token no válido: división por cero"
+
 #: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:350, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:436
 msgid "errors.tokens.empty-field"
 msgstr "Este campo no puede estar vacío"
@@ -1845,9 +1853,17 @@ msgstr "El valor del token no puede estar vacío"
 msgid "errors.tokens.error-parse"
 msgstr "Error al importar: No se pudo procesar el JSON."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:74
+msgid "errors.tokens.function-argument-out-of-range"
+msgstr "Valor de token no válido: el argumento de %s() está fuera de rango"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:33, src/app/main/data/workspace/tokens/errors.cljs:38
 msgid "errors.tokens.import-error"
 msgstr "Error al importar:"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:66
+msgid "errors.tokens.incompatible-units"
+msgstr "Valor de token no válido: las unidades %s no se pueden combinar"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:54
 msgid "errors.tokens.invalid-color"
@@ -1942,6 +1958,10 @@ msgstr "La extensión (spread) de la sombra debe ser mayor o igual a 0."
 #: src/app/main/data/workspace/tokens/errors.cljs:92, src/app/main/data/workspace/tokens/warnings.cljs:19
 msgid "errors.tokens.stroke-width-range"
 msgstr "Stroke width debe ser mayor o igual a 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:70
+msgid "errors.tokens.unknown-function"
+msgstr "Valor de token no válido: función desconocida %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:84, ../common/src/app/common/files/tokens.cljc:52
 msgid "errors.tokens.value-with-percent"
@@ -2184,6 +2204,10 @@ msgstr "Este archivo no es una exportación de atajos válida."
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:148
 msgid "import-shortcuts.no-changes"
 msgstr "No se encontraron diferencias entre los atajos actuales y los importados."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+msgid "import-shortcuts.skipped-entries"
+msgstr "Estas entradas no se pueden importar: no corresponden a ningún atajo de Penpot o usan una combinación reservada."
 
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
@@ -5016,6 +5040,10 @@ msgstr "Editar %s"
 #: src/app/main/ui/shortcuts.cljs:645
 msgid "shortcuts.edit-modal.conflict"
 msgstr "Ya asignado a \"%s\". Al guardar, pasará a esta acción."
+
+#: src/app/main/ui/shortcuts.cljs:836
+msgid "shortcuts.edit-modal.reserved"
+msgstr "Penpot reserva esta combinación y no se puede asignar."
 
 #: src/app/main/ui/shortcuts.cljs:636
 msgid "shortcuts.edit-modal.reset-pending"
@@ -9456,6 +9484,10 @@ msgstr "Mover (%s)"
 msgid "workspace.toolbar.palette-bar"
 msgstr "Barra de paletas"
 
+#: src/app/main/ui/workspace/palette.cljs:211
+msgid "workspace.toolbar.palette-options"
+msgstr "Opciones de la paleta"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:72
 msgid "workspace.toolbar.path"
 msgstr "Ruta (%s)"
@@ -9504,6 +9536,10 @@ msgstr "Todavía no hay cambios en el histórico"
 #: src/app/main/ui/workspace/sidebar/history.cljs:364
 msgid "workspace.undo.entry.by"
 msgstr "por %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.show-details"
+msgstr "Mostrar detalles"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:154
 msgid "workspace.undo.entry.delete"

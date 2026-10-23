@@ -49,6 +49,8 @@ Backend RPC command areas without focused memories include access tokens, binfil
 
 Database migrations live in `backend/src/app/migrations/`; pure SQL migrations are under `backend/src/app/migrations/sql/`. SQL filenames conventionally start with a sequence and verb/table description, e.g. `0026-mod-profile-table-add-is-active-field`. Applied migrations are tracked in the `migrations` table.
 
+Migrations must stay within PostgreSQL 15 syntax: the official docker images (`docker/images/docker-compose.yaml`) pin `postgres:15`, so anything newer breaks those deployments (`SET STORAGE DEFAULT` is PostgreSQL 16, for instance). The documented floor is >=15.
+
 For interactive PostgreSQL access with correct dev defaults, use `scripts/psql`; to dump the current DDL schema, use `scripts/db-schema` (see `mem:scripts/psql`).
 
 For deeper details on transaction semantics, advisory locks, Transit vs JSON helpers, and dev/test DB URLs: `mem:backend/subtleties`.

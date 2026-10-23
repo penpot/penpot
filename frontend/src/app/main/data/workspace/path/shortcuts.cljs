@@ -127,6 +127,7 @@
                      :label (fn [] (tr "shortcuts.copy"))
                      :command (ds/c-mod "c")
                      :subsections [:path-editor]
+                     :customizable false
                      :fn #(st/emit! (drp/copy-selected-nodes))}
 
    :cut             {:tooltip (ds/meta "X")
@@ -139,6 +140,7 @@
                      :label (fn [] (tr "shortcuts.paste"))
                      :command (ds/c-mod "v")
                      :subsections [:path-editor]
+                     :customizable false
                      :fn #(st/emit! (drp/paste-nodes))}
 
    :duplicate       {:tooltip (ds/meta "D")
@@ -176,6 +178,7 @@
                      :label (fn [] (tr "shortcuts.escape"))
                      :command ["escape" "v"]
                      :section [:workspace]
+                     :customizable false
                      :fn #(st/emit! (esc-pressed))}
 
    ;; Reuses the `:start-editing` key (instead of adding "enter" to

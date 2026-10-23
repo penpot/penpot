@@ -23,7 +23,7 @@ file (never pipe tool output through filters).
 - The store survives `node_modules` cleans. It is content-addressed and
   integrity-verified, so it cannot go stale; staleness lives in
   node_modules. Only `scripts/clean-node-modules --store` removes it.
-- Every first-party `package.json` (35 files: workspace roots plus
+- Every first-party `package.json` (34 files: workspace roots plus
   members) must carry a `packageManager` field with the identical
   `pnpm@<version>+sha512.<hash>` value. Do not let them drift.
   `external/` (vendored trees with their own lifecycles), `.opencode/`,
@@ -60,7 +60,7 @@ file (never pipe tool output through filters).
 3. From the repo root, on a host whose system pnpm is the target version
    (rebuilt devenv), run `scripts/sync-pnpm-version`. It resolves the
    integrity hash via `pnpm view` + node (no npm, no corepack, no
-   python3) and stamps the identical field into all 35 files, replacing
+   python3) and stamps the identical field into all 34 files, replacing
    only the value line (each file keeps its own indent) and inserting
    the key after `"name"`/`"version"` where missing. Explicit version
    instead: `scripts/sync-pnpm-version <version>`. The explicit form works
@@ -88,13 +88,14 @@ file (never pipe tool output through filters).
   so a nested one silently forks install and lockfile behavior. Do not
   reintroduce it.
 - `media-processor/target/package.json` is a generated, gitignored copy that
-  the script also stamps, so stamping and `--check` report 36 files while
-  only 35 are tracked. A stale copy there makes `--check` fail with nothing
+  the script also stamps, so stamping and `--check` report 35 files while
+  only 34 are tracked. A stale copy there makes `--check` fail with nothing
   wrong in the repo: delete `media-processor/target` and re-run.
 - Expect metadata-only lockfile diffs when only the pnpm version moves:
   the pnpm self-reference entries, plus a new `packageManagerDependencies`
   section in lockfiles last written by older pnpm. Large diffs mean
   re-resolution; inspect them before accepting.
+- A backport merge of main into staging can bring a newer `PNPM_VERSION` in `docker/` while every `packageManager` field stays behind, since main receives partial `.github/`+`docker/` backports from develop. Resolve those conflicts with main's version and run `scripts/sync-pnpm-version <version>` in the same merge.
 
 ## Verification
 

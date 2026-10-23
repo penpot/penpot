@@ -4,34 +4,42 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .shape-info {
   display: flex;
   flex-direction: column;
-  background-color: var(--panel-background-color);
+  background-color: var(--color-background-primary);
   color: var(--color-foreground-primary);
-  font-size: deprecated.$fs-12;
+
+  // TODO: No exact DS typography match found.
+  // Closest match: body-small.
+  font-size: px2rem(12);
   user-select: text;
 }
 
-.shape-info-title {
-  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
-}
+// TODO: Unused in debug_shape_info.cljs; check by hand before removing.
+// .shape-info-title {
+//   margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
+// }
 
 .attrs-container {
-  padding: deprecated.$s-16 deprecated.$s-8;
+  padding: var(--sp-l) var(--sp-s);
   overflow: hidden;
 }
 
 .shape-title {
-  font-size: deprecated.$fs-14;
+  // TODO: No exact DS typography match found.
+  // Closest match: body-medium.
+  font-size: px2rem(14);
   background: var(--color-background-quaternary);
   color: var(--color-foreground-primary);
-  padding: deprecated.$s-8;
-  border-radius: deprecated.$s-8;
+  padding: var(--sp-s);
+  border-radius: $br-8;
   display: flex;
-  gap: deprecated.$s-4;
+  align-items: center;
+  gap: var(--sp-xs);
 }
 
 .shape-name {
@@ -41,7 +49,7 @@
 .attrs-container-attr {
   display: grid;
   grid-template-columns: 25% auto;
-  padding: deprecated.$s-4 0;
+  padding: var(--sp-xs) 0;
 
   &.vertical-layout {
     grid-template-columns: auto;
@@ -51,8 +59,8 @@
 
 .shape-attrs {
   overflow: auto;
-  height: calc(100% - 8px);
-  padding-bottom: 8px;
+  block-size: calc(100% - var(--sp-s));
+  padding-block-end: var(--sp-s);
 }
 
 .shape-link {
@@ -63,15 +71,15 @@
 .shape-list {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
 }
 
 .point-list {
   display: flex;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
 
 .cell-container {
   display: grid;
-  grid-template-columns: 100px 1fr;
+  grid-template-columns: px2rem(100) 1fr;
 }
