@@ -7,14 +7,18 @@
 (ns common-tests.logic.comp-reset-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
+   [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -572,3 +576,26 @@
     (t/is (= #{:fill-group} (:touched (ths/get-shape-by-id file nested))))
     (t/is (= #{:fill-group} (:touched (ths/get-shape-by-id file' nested))))))
 
+
+(t/deftest reset-restores-the-main-rotation-and-undo-restores-the-override
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-simple-component-with-copy
+                  :component1 :main-root :main-child :copy-root
+                  :main-root-params {:width 100 :height 100}
+                  :main-child-params {:width 40 :height 30}
+                  :copy-root-params {:children-labels [:copy-child]}))
+        page (thf/current-page file)
+        root (ths/get-shape file :copy-root)
+        rotated (thf/apply-changes
+                 file (n/transform-changes page root
+                                           (ctm/rotation-modifiers root (gsh/shape->center root) 45)))
+        page (thf/current-page rotated)
+        changes (cll/generate-reset-component
+                 (pcb/empty-changes) rotated {(:id rotated) rotated}
+                 (ctn/make-container page :page) (thi/id :copy-root))
+        reset (thf/apply-changes rotated changes)
+        undone (thf/apply-changes reset {:redo-changes (:undo-changes changes)})]
+    (t/is (= 0 (:rotation (ths/get-shape reset :copy-root))))
+    (t/is (= 0 (:rotation (ths/get-shape reset :copy-child))))
+    (t/is (nil? (:touched (ths/get-shape reset :copy-root))))
+    (t/is (= (thn/normalize-file rotated) (thn/normalize-file undone)))))

@@ -299,7 +299,10 @@
   as it follows its near main."
   [changes {:keys [container main-container root-inst root-main reset?]}
    shape-inst shape-main]
-  (let [omit-touched? (not reset?)]
+  (let [omit-touched? (not reset?)
+        ;; Reset takes the main's orientation too. Its old geometry override
+        ;; must not turn the main into the copy's frame before overwriting it.
+        root-inst (cond-> root-inst reset? (dissoc :touched))]
     (cond-> (update-attrs changes shape-inst shape-main root-inst root-main container omit-touched?)
       ;; the children refer to the children of `shape-main`, in the
       ;; container of the walk's main shapes
