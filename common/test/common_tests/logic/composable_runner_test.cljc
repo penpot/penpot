@@ -15,10 +15,24 @@
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.normalize :as thn]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest undo-main-child-structure-restores-remote-sync-state
+  (let [initial (setup/nested-component-with-copy)
+        updated (-> initial
+                    (r/step (n/change-property :main2-nested-head :opacity 0.4)) r/settle
+                    (r/step (n/update-main :main2-nested-head)) r/settle)]
+    (t/is (:remote-synced (tm/resolve-shape updated :main2-nested-head)))
+    (doseq [op [(n/remove-child :main1-child) (n/add-child :main1-root :added-child)]]
+      (let [changed (-> updated (r/step op) r/settle)
+            undone (r/step changed (n/undo))
+            redone (r/step undone (n/redo))]
+        (t/is (true? (= (thn/normalize-file (tm/file updated)) (thn/normalize-file (tm/file undone)))))
+        (t/is (true? (= (thn/normalize-file (tm/file changed)) (thn/normalize-file (tm/file redone)))))))))
 
 (def ^:private original setup/labeled-fill)
 (def ^:private red "#ff0000")

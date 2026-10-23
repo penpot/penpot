@@ -485,7 +485,8 @@
          del-change
          {:type :del-obj
           :id (:id obj)
-          :page-id (::page-id (meta changes))}
+          :page-id (::page-id (meta changes))
+          :ignore-touched true}
 
          restore-touched-change
          {:type :mod-obj
@@ -694,6 +695,7 @@
               (some? shape)
               (conj {:type :add-obj
                      :id id
+                     :ignore-touched true
                      :page-id page-id
                      :parent-id (:parent-id shape)
                      :frame-id (:frame-id shape)
