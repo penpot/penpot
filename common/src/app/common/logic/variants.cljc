@@ -321,6 +321,31 @@
     (let [new-touched (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape nil)]
       (assoc shape :touched (disj new-touched :swap-group)))))
 
+(defn- keep-orientation-override
+  "Retained orientation that differs from the new component's expected
+   placement needs a geometry override to survive later sync."
+  [changes shape baseline page ldata component-id]
+  (let [parent (get-in page [:objects (:parent-id shape)])
+        main (ctf/get-component-root ldata (ctkl/get-component ldata component-id))
+        main-parent (get-in (ctf/get-component-container ldata (ctkl/get-component ldata component-id))
+                            [:objects (:parent-id main)])
+        parent-delta (if (:shape-ref parent) 0
+                         (- (or (:rotation parent) 0) (or (:rotation main-parent) 0)))
+        rotation (mod (+ (or (:rotation baseline) 0) parent-delta) 360)
+        flip (fn [key]
+               (if (:shape-ref parent)
+                 (boolean (get baseline key))
+                 (odd? (count (filter identity [(get baseline key) (get parent key)
+                                                (get main-parent key)])))))
+        changed? (or (not (mth/close? (mod (or (:rotation shape) 0) 360) rotation 0.01))
+                     (not= (boolean (:flip-x shape)) (flip :flip-x))
+                     (not= (boolean (:flip-y shape)) (flip :flip-y)))]
+    (cond-> changes
+      changed?
+      (pcb/update-shapes [(:id shape)]
+                         #(update % :touched (fnil conj #{}) :geometry-group)
+                         {:ignore-touched true}))))
+
 (defn generate-keep-touched
   "This is used as part of the switch process, when you switch from
    an original-shape to a new-shape. It generate changes to
@@ -395,7 +420,12 @@
                     (keep-swapped-item changes new old ldata page libraries)
                     (clsw/update-attrs-on-switch changes new old new-shape original-shape old-ref container)))
                 changes
-                pairs)]
+                pairs)
+        changes (cond-> changes
+                  (ctk/touched-group? original-shape :geometry-group)
+                  (keep-orientation-override original-shape new-shape page
+                                             (or (get-in libraries [(:component-file new-shape) :data]) ldata)
+                                             (:component-id new-shape)))]
     [changes (mapv (comp :parent-id :new) pairs)]))
 
 (defn- shape-index
@@ -404,31 +434,6 @@
   [objects parent-id shape-id]
   (when-let [parent (get objects parent-id)]
     (or (d/index-of (:shapes parent) shape-id) 0)))
-
-(defn- keep-orientation-override
-  "A plain swap keeps its old orientation. When that differs from the new
-   component's expected placement, the swap authors a geometry override."
-  [changes shape baseline page ldata component-id]
-  (let [parent (get-in page [:objects (:parent-id shape)])
-        main (ctf/get-component-root ldata (ctkl/get-component ldata component-id))
-        main-parent (get-in (ctf/get-component-container ldata (ctkl/get-component ldata component-id))
-                            [:objects (:parent-id main)])
-        parent-delta (if (:shape-ref parent) 0
-                         (- (or (:rotation parent) 0) (or (:rotation main-parent) 0)))
-        rotation (mod (+ (or (:rotation baseline) 0) parent-delta) 360)
-        flip (fn [key]
-               (if (:shape-ref parent)
-                 (boolean (get baseline key))
-                 (odd? (count (filter identity [(get baseline key) (get parent key)
-                                                (get main-parent key)])))))
-        changed? (or (not (mth/close? (mod (or (:rotation shape) 0) 360) rotation 0.01))
-                     (not= (boolean (:flip-x shape)) (flip :flip-x))
-                     (not= (boolean (:flip-y shape)) (flip :flip-y)))]
-    (cond-> changes
-      changed?
-      (pcb/update-shapes [(:id shape)]
-                         #(update % :touched (fnil conj #{}) :geometry-group)
-                         {:ignore-touched true}))))
 
 (defn generate-component-swap-in-place
   "Swap the copy head `shape` of `page` for a copy of the component

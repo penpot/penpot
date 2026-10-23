@@ -642,7 +642,10 @@
         copy  (ths/get-shape file' :copy01)
         child (ths/get-shape-by-id file' (first (:shapes copy)))]
     (t/is (== 30 (mth/precision (:rotation copy) 2)))
-    (t/is (== 30 (mth/precision (:rotation child) 2)))))
+    (t/is (== 30 (mth/precision (:rotation child) 2)))
+    (t/is (ctk/touched-group? copy :geometry-group))
+    (t/is (= (orientation file' :copy01)
+             (orientation (propagate file' :c02) :copy01)))))
 
 (t/deftest switch-turns-the-swap-with-the-child-of-the-new-variant
   (let [file  (-> (thf/sample-file :file1)
