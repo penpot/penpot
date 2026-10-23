@@ -153,6 +153,7 @@
    [frontend-tests.util-zip-test]
    [frontend-tests.util.dom.dnd-test]
    [frontend-tests.worker-snap-test]
+   [frontend-tests.worker.exports-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
@@ -186,6 +187,7 @@
    'frontend-tests.data.exports-files-test
    'frontend-tests.data.imports-test
    'frontend-tests.data.jobs-test
+   'frontend-tests.worker.exports-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test

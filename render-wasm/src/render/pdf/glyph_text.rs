@@ -197,6 +197,25 @@ pub fn collect(tree: ShapesPoolRef, root: &Uuid) -> GlyphTexts {
     glyph_texts
 }
 
+/// Merges glyph texts from every root in `ids` (export-frames / multi PDF).
+pub fn collect_many(tree: ShapesPoolRef, ids: &[Uuid]) -> GlyphTexts {
+    let mut result = GlyphTexts::default();
+    for id in ids {
+        result.merge(collect(tree, id));
+    }
+    result
+}
+
+impl GlyphTexts {
+    fn merge(&mut self, other: GlyphTexts) {
+        for (font, glyphs) in other.fonts {
+            for (glyph, value) in glyphs {
+                self.insert(&font, glyph, value);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
