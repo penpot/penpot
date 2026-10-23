@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:7b1d6522b9a4e72e2ca3537c031ca3650c654ec81c181447bf952069eb827226 AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:9b025768946856e44f9775005eb199f2e1820484ea27bb5c8bcbb187b80464dc AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -66,7 +66,7 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.22.0 \
+ENV NODE_VERSION=v24.22.1 \
     PNPM_VERSION=12.14.0 \
     PATH=/opt/node/bin:$PATH
 
@@ -76,14 +76,14 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         NODE_SHA256='b7e7991d5407815adfa74a2a9cd4db683552c8ce32ff4a295c22e972849c3f5d'; \
+         NODE_SHA256='33c37be234ba8bee041961047b19160f4d7d0f164e8e246f78bdd10feff148b3'; \
          PNPM_ARCH='arm64'; \
          PNPM_SHA256='cfc780b9e690549e6633e1045fb1fb6ef84e390711e2099e6ccbae91c32456ea'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         NODE_SHA256='28ea0a438de9a13bd7891fd758eee6c7819ee8af5442dfd8d45bd65e56d4228c'; \
+         NODE_SHA256='eb6728e77c576a35162c122c45ccadf224d89ff00abc8dae46cc2897c6002d7c'; \
          PNPM_ARCH='x64'; \
          PNPM_SHA256='3910c3852136bed5bc1511b9137a45fd4357ed6b3970d9d08893641e9005867e'; \
          ;; \
