@@ -16,7 +16,7 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.consumer-task :as consumer]
+   [app.loggers.audit.consumers :as consumer]
    [app.loggers.database :as loggers.db]
    [app.loggers.mattermost :as loggers.mm]
    [app.metrics :as mtx]

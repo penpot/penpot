@@ -16,7 +16,7 @@
    [app.db :as db]
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.consumer-task :as consumer]
+   [app.loggers.audit.consumers :as consumer]
    [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.audit :as cmd-audit]

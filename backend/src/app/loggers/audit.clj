@@ -21,7 +21,7 @@
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.jobs :as jobs]
-   [app.loggers.audit.consumer-task :as consumer]
+   [app.loggers.audit.consumers :as consumer]
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]

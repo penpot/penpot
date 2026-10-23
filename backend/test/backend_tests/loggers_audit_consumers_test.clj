@@ -4,7 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns backend-tests.loggers-audit-consumer-task-test
+(ns backend-tests.loggers-audit-consumers-test
+  "The consumers of the audit log buffer: the two that archive the
+  events and the generalist that dispatches them to the reactions."
   (:require
    [app.common.json :as json]
    [app.common.schema :as sm]
@@ -17,12 +19,11 @@
    [app.http.client :as-alias http]
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.consumer-task :as consumer]
+   [app.loggers.audit.consumers :as consumer]
    [app.main :as main]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [app.setup :as-alias setup]
-   [app.tasks.event-consumer :as-alias event-consumer]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -236,13 +237,13 @@
             ;; Each consumer job is a job-def: the handler closes over the
             ;; cfg it was given at init and takes a nil context, because
             ;; an in-process invocation has no job row to describe.
-            nexus-job-def    (ig/init-key :app.loggers.audit.consumer-task/nexus-job-def
+            nexus-job-def    (ig/init-key :app.loggers.audit.consumers/nexus-job-def
                                           {::db/pool           (:app.db/pool th/*system*)
                                            ::setup/shared-keys shared-keys
                                            ::http/client       (:app.http.client/client th/*system*)
                                            ::mtx/metrics       (th/metrics-stub)
                                            :app.nitrate/client client})
-            admin-console-job-def  (ig/init-key :app.loggers.audit.consumer-task/admin-console-job-def
+            admin-console-job-def  (ig/init-key :app.loggers.audit.consumers/admin-console-job-def
                                                 {::db/pool           (:app.db/pool th/*system*)
                                                  ::mtx/metrics       (th/metrics-stub)
                                                  :app.nitrate/client client})]
@@ -452,7 +453,7 @@
   metrics registry. The handler takes a nil context because there is
   no job row to describe (same as `th/run-task!`)."
   [metrics params]
-  (let [job-def (ig/init-key :app.loggers.audit.consumer-task/nexus-job-def
+  (let [job-def (ig/init-key :app.loggers.audit.consumers/nexus-job-def
                              {::db/pool           (:app.db/pool th/*system*)
                               ::setup/shared-keys {:admin-console "ac-key" :nexus "nexus-key"}
                               ::http/client       (:app.http.client/client th/*system*)
@@ -465,7 +466,7 @@
   tests) system one: tests mock `app.nitrate/call`, so it is never
   dereferenced."
   [metrics]
-  (let [job-def (ig/init-key :app.loggers.audit.consumer-task/admin-console-job-def
+  (let [job-def (ig/init-key :app.loggers.audit.consumers/admin-console-job-def
                              {::db/pool           (:app.db/pool th/*system*)
                               :app.nitrate/client (:app.nitrate/client th/*system*)
                               ::mtx/metrics       metrics})]
@@ -483,7 +484,7 @@
   metrics registry. It only needs the pool: dispatching the events to
   the reactions touches no archive destination."
   [metrics]
-  (let [job-def (ig/init-key :app.tasks.event-consumer/events-job-def
+  (let [job-def (ig/init-key :app.loggers.audit.consumers/events-job-def
                              {::db/pool     (:app.db/pool th/*system*)
                               ::mtx/metrics metrics})]
     ((::jobs/handler job-def) nil {})))
@@ -761,3 +762,146 @@
         (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["admin-console" "skipped"])))
         (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 0 (pending-count)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REACTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/use-fixtures :each th/database-reset)
+
+(defn- capture-reaction
+  "A fake reaction that keeps the batch it receives."
+  [seen events]
+  {:id     :test
+   :flag   :test-flag
+   :events events
+   :apply  (fn [_cfg batch] (swap! seen conj batch))})
+
+(defn- append-row
+  "Append an audit-log row the way the producer does."
+  ([name props] (append-row name props "backend"))
+  ([name props source]
+   (#'audit/append-audit-entry
+    th/*system*
+    {:id         (uuid/next)
+     :name       name
+     :type       "action"
+     :source     source
+     :profile-id uuid/zero
+     :ip-addr    "127.0.0.1"
+     :props      props
+     :context    {}
+     :tracked-at (ct/now)
+     :created-at (ct/now)})))
+
+(defn- events-pendings
+  "The pendings of the events consumer (id 3)."
+  []
+  (th/db-exec! ["SELECT audit_log_id FROM audit_log_pending WHERE consumer = 3"]))
+
+(defn- usage-row
+  [team-id]
+  (th/db-exec-one! ["SELECT team_id, dirty_at FROM team_storage_usage WHERE team_id = ?"
+                    team-id]))
+
+(t/deftest dispatch-applies-a-reaction-to-the-events-it-declares
+  (let [seen     (atom [])
+        reaction (capture-reaction seen #{"delete-file"})
+        event-a  {:id (uuid/next) :name "delete-file" :props {}}
+        event-b  {:id (uuid/next) :name "create-file" :props {}}]
+    (with-redefs [cf/flags #{:test-flag}
+                  consumer/reactions [reaction]]
+      (let [claimed (consumer/dispatch-reactions
+                     th/*system*
+                     [event-a event-b])]
+        (t/is (= 1 claimed))
+        (t/is (= 1 (count @seen)))
+        (t/is (= ["delete-file"] (mapv :name (first @seen))))))))
+
+(t/deftest dispatch-ignores-the-events-no-reaction-claims
+  ;; The queue of the consumer is not selective: the events that nobody
+  ;; claims are discarded.
+  (let [seen     (atom [])
+        reaction (capture-reaction seen #{"delete-file"})]
+    (with-redefs [cf/flags #{:test-flag}
+                  consumer/reactions [reaction]]
+      (let [claimed (consumer/dispatch-reactions
+                     th/*system*
+                     [{:id (uuid/next) :name "create-file" :props {}}])]
+        (t/is (= 0 claimed))
+        (t/is (empty? @seen))))))
+
+(t/deftest dispatch-skips-a-reaction-whose-flag-is-off
+  ;; The flag of the reaction is the one that turns it on: without it,
+  ;; the event is not claimed and the reaction does not run.
+  (let [seen     (atom [])
+        reaction (capture-reaction seen #{"delete-file"})]
+    (with-redefs [cf/flags #{}
+                  consumer/reactions [reaction]]
+      (let [claimed (consumer/dispatch-reactions
+                     th/*system*
+                     [{:id (uuid/next) :name "delete-file" :props {}}])]
+        (t/is (= 0 claimed))
+        (t/is (empty? @seen))))))
+
+(t/deftest dispatch-gives-each-reaction-only-its-own-events
+  ;; Two reactions that declare the same name: each one receives its
+  ;; batch and the event is counted once.
+  (let [seen-a     (atom [])
+        seen-b     (atom [])
+        reaction-a (capture-reaction seen-a #{"delete-file"})
+        reaction-b (capture-reaction seen-b #{"delete-file" "create-file"})
+        events     [{:id (uuid/next) :name "delete-file" :props {}}
+                    {:id (uuid/next) :name "create-file" :props {}}]]
+    (with-redefs [cf/flags #{:test-flag}
+                  consumer/reactions [reaction-a reaction-b]]
+      (let [claimed (consumer/dispatch-reactions th/*system* events)]
+        (t/is (= 2 claimed))
+        (t/is (= ["delete-file"] (mapv :name (first @seen-a))))
+        (t/is (= ["delete-file" "create-file"] (mapv :name (first @seen-b))))))))
+
+(t/deftest events-consumer-drains-the-queue-and-marks-the-team-dirty
+  ;; The whole path: the producer queues the event, the consumer drains
+  ;; it and the reaction marks the team dirty.
+  (let [prof (th/create-profile* 41 {:is-active true})
+        team (:default-team-id prof)]
+    (with-redefs [cf/flags #{:audit-log :event-consumer :storage-usage}]
+      (append-row "upload-file-media-object" {:team-id team})
+      (t/is (= 1 (count (events-pendings))))
+      (th/run-task! :audit-log-consumer-events {})
+      (t/is (= 0 (count (events-pendings))))
+      (t/is (some? (:dirty-at (usage-row team)))))))
+
+(t/deftest events-consumer-discards-the-events-nobody-claims
+  ;; An event that no reaction claims is drained and dropped: the queue
+  ;; takes the whole stream, but nobody works on it.
+  (let [prof (th/create-profile* 42 {:is-active true})
+        team (:default-team-id prof)]
+    (with-redefs [cf/flags #{:audit-log :event-consumer :storage-usage}]
+      (append-row "navigate" {:route "dashboard"})
+      (th/run-task! :audit-log-consumer-events {})
+      (t/is (= 0 (count (events-pendings))))
+      (t/is (nil? (:dirty-at (usage-row team)))))))
+
+(t/deftest events-consumer-does-nothing-without-its-flag
+  ;; Without its flag the consumer does not even queue: the producer
+  ;; never hands it the stream.
+  (let [prof (th/create-profile* 43 {:is-active true})
+        team (:default-team-id prof)]
+    (with-redefs [cf/flags #{:audit-log :storage-usage}]
+      (append-row "upload-file-media-object" {:team-id team})
+      (th/run-task! :audit-log-consumer-events {})
+      (t/is (= 0 (count (events-pendings))))
+      (t/is (nil? (:dirty-at (usage-row team)))))))
+
+(t/deftest events-consumer-does-nothing-without-the-reaction-flag
+  ;; The queue takes the event, but the reaction that would work on it
+  ;; is off: the event is drained and dropped.
+  (let [prof (th/create-profile* 44 {:is-active true})
+        team (:default-team-id prof)]
+    (with-redefs [cf/flags #{:audit-log :event-consumer}]
+      (append-row "upload-file-media-object" {:team-id team})
+      (t/is (= 1 (count (events-pendings))))
+      (th/run-task! :audit-log-consumer-events {})
+      (t/is (= 0 (count (events-pendings))))
+      (t/is (nil? (:dirty-at (usage-row team)))))))

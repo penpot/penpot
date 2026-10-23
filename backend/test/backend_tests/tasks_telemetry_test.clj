@@ -11,7 +11,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.consumer-task :as at]
+   [app.loggers.audit.consumers :as at]
    [app.tasks.telemetry :as telemetry]
    [app.util.json :as json]
    [backend-tests.helpers :as th]

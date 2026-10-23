@@ -660,9 +660,9 @@
     :telemetry                      (ig/ref :app.tasks.telemetry/job-def)
     :session-gc                     (ig/ref ::session/job-def)
     :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
-    :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumer-task/nexus-job-def)
-    :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumer-task/admin-console-job-def)
-    :audit-log-consumer-events        (ig/ref :app.tasks.event-consumer/events-job-def)}
+    :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumers/nexus-job-def)
+    :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumers/admin-console-job-def)
+    :audit-log-consumer-events        (ig/ref :app.loggers.audit.consumers/events-job-def)}
 
    ::jobs/request-pool
    {::rds/client  (ig/ref ::rds/client)
@@ -759,18 +759,18 @@
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.consumer-task/nexus-job-def
+   :app.loggers.audit.consumers/nexus-job-def
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.consumer-task/admin-console-job-def
+   :app.loggers.audit.consumers/admin-console-job-def
    {::db/pool            (ig/ref ::db/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.tasks.event-consumer/events-job-def
+   :app.loggers.audit.consumers/events-job-def
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 

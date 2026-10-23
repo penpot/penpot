@@ -4,7 +4,40 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.loggers.audit.consumer-task
+(ns app.loggers.audit.consumers
+  "The consumers of the audit log buffer.
+
+  Two of them archive the events in a long-term destination and the
+  third one dispatches them to the reactions:
+
+  - `:audit-log-consumer-nexus` sends them to Nexus.
+  - `:audit-log-consumer-admin-console` sends the allowlisted ones to
+    the admin console.
+  - `:audit-log-consumer-events` is the generalist: it takes the whole
+    stream and hands each event to the reactions that claim it.
+
+  Each job drains only its own queue and deletes its pendings on
+  completion; whoever deletes the last pending also deletes the record
+  (last one out turns off the light), so no separate GC task is
+  needed. Housekeeping (reaping disabled pendings, sweeping orphans)
+  lives in every job on purpose: only the enabled job runs, so it must
+  clean up for the rest.
+
+  A reaction is a map:
+
+    {:id     :team-storage-usage   ;; who it is
+     :flag   :storage-usage        ;; the flag that turns it on
+     :events #{...}                ;; the event names it cares about
+     :apply  (fn [cfg events] ...)} ;; what it does with them
+
+  Each domain contributes its own: the one that owns the table and the
+  SQL of its mark is the one that knows which events affect it and
+  where its key lives. A reaction receives the whole batch of events it
+  declares, once: a reaction that groups work (marking a team dirty)
+  must not write once per event. The dispatch does not catch
+  exceptions: the reaction decides which errors are data (it skips the
+  event) and which abort the batch (the event is retried on the next
+  tick)."
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -21,24 +54,9 @@
    [app.metrics :as mtx]
    [app.nitrate :as nitrate]
    [app.setup :as-alias setup]
+   [app.tasks.team-storage :as team-storage]
    [integrant.core :as ig]
    [promesa.exec :as px]))
-
-;; This task drains the audit log buffer: two of the jobs archive the
-;; events in a long-term destination, and the third one dispatches them
-;; to the reactions.
-;;
-;; Two separate jobs live in this namespace, one per destination:
-;; `:audit-log-consumer-nexus` and
-;; `:audit-log-consumer-admin-console`. The third one,
-;; `:audit-log-consumer-events`, lives in `app.tasks.event-consumer`
-;; (the generalist that decides what to do with each event). Each job
-;; drains only its own queue and deletes its pendings on completion;
-;; whoever deletes the last pending also deletes the record ("last one
-;; out turns off the light"), so no separate GC task is needed.
-;; Housekeeping (reaping disabled pendings, sweeping orphans) lives in
-;; every job on purpose:
-;; only the enabled job runs, so it must clean up for the rest.
 
 ;; Consumer ids are fixed constants, never reuse one: retired
 ;; pendings are reaped by id, so a reused id would inherit the
@@ -112,6 +130,49 @@
   [cfg ids]
   (when (contains? cf/flags :event-consumer)
     (queue-pendings cfg ids consumer-events)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REACTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def reactions
+  "The registered reactions, in the order they are applied."
+  [team-storage/team-storage-reaction])
+
+(defn enabled-reactions
+  "The reactions whose flag is on."
+  []
+  (filterv #(contains? cf/flags (:flag %)) reactions))
+
+(defn- claimed-names
+  "The names the enabled reactions claim."
+  []
+  (into #{} (mapcat :events) (enabled-reactions)))
+
+(defn- claimed-by
+  "The enabled reactions that declare the name of this event."
+  [reactions event]
+  (filterv #(contains? (:events %) (:name event)) reactions))
+
+(defn dispatch-reactions
+  "Applies the enabled reactions to the events. Each reaction receives
+  only the events it declares, and it receives them in a single batch.
+
+  Returns the number of events some reaction claimed: the ones nobody
+  claimed are discarded, because the queue of the consumer is not
+  selective and that event concerns nobody."
+  [cfg events]
+  (let [reactions (enabled-reactions)
+        batches   (keep (fn [reaction]
+                          (let [mine (filterv #(contains? (:events reaction) (:name %)) events)]
+                            (when (seq mine)
+                              [reaction mine])))
+                        reactions)]
+    (doseq [[reaction mine] batches]
+      ((:apply reaction) cfg mine))
+    (count (filter (fn [event]
+                     (seq (claimed-by reactions event)))
+                   events))))
 
 (def ^:private consumers-by-id
   (into {} (map (juxt :id identity)) consumers))
@@ -500,6 +561,23 @@
                        :events (count decoded))]
     (send-to-admin-console cfg decoded)))
 
+(defn- process-events-chunk
+  "Dispatch one pending chunk to the reactions. Returns {:sent :skipped}:
+  the events a reaction claims count as sent, the rest as skipped.
+
+  Only the claimed events are decoded: the queue is not selective, so
+  most of the stream concerns nobody and opening its blob would be
+  work thrown away."
+  [cfg rows]
+  (let [names   (claimed-names)
+        claimed (filterv #(contains? names (:name %)) rows)
+        batch   (mapv row->reaction-event claimed)
+        sent    (dispatch-reactions cfg batch)]
+    (l/trc :hint "consumer events chunk"
+           :consumer "events"
+           :events sent)
+    {:sent sent :skipped (- (count rows) sent)}))
+
 (defn- drain-chunks
   "Drain one consumer queue chunk by chunk, one transaction per chunk.
   The processor receives the rows of each chunk, already locked, and
@@ -581,6 +659,7 @@
 
 (declare execute-audit-log-consumer-nexus)
 (declare execute-audit-log-consumer-admin-console)
+(declare execute-audit-log-consumer-events)
 
 (def schema:audit-log-consumer-nexus-params
   "Overrides for the nexus job repl invocation defaults.
@@ -641,6 +720,29 @@
      (execute-audit-log-consumer-admin-console cfg params))
    ::jobs/decoder   (sm/decoder schema:audit-log-consumer-admin-console-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-consumer-admin-console-params)})
+
+(def schema:audit-log-consumer-events-params
+  "Params of the events job: none. Cron submits {}; system deps (pool)
+  live on the job-def cfg closed over by the handler, not in job params.
+  Closed on purpose, same as the admin-console schema."
+  [:map {:closed true}])
+
+(defmethod ig/assert-key ::events-job-def
+  [_ cfg]
+  (assert (db/pool? (::db/pool cfg)) "expected a valid database pool")
+  (assert (mtx/metrics? (::mtx/metrics cfg)) "expected a valid metrics instance"))
+
+(defmethod ig/init-key ::events-job-def
+  [_ cfg]
+  (l/dbg :hint "audit log consumer job initialized"
+         :consumer "events")
+  {::jobs/name      :audit-log-consumer-events
+   ::jobs/schema    schema:audit-log-consumer-events-params
+   ::jobs/handler
+   (fn [_context _params]
+     (execute-audit-log-consumer-events cfg))
+   ::jobs/decoder   (sm/decoder schema:audit-log-consumer-events-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-consumer-events-params)})
 
 (defn drain-consumer
   "Run one consumer: drain its queue chunk by chunk (one transaction per
@@ -736,4 +838,13 @@
   (if-not (contains? cf/flags :admin-console)
     (l/dbg :hint "audit log consumer (admin-console) skipped, flag off")
     (drain-consumer cfg consumer-admin-console process-admin-console-chunk)))
+
+(defn execute-audit-log-consumer-events
+  "Events job handler: drain the events queue in chunks, dispatching
+  each event to the reactions that claim it (heartbeat per iteration:
+  a burst can span many chunks)."
+  [cfg]
+  (if-not (contains? cf/flags :event-consumer)
+    (l/dbg :hint "audit log consumer (events) skipped, flag off")
+    (drain-consumer cfg consumer-events process-events-chunk)))
 
