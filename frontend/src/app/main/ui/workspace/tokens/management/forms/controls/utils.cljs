@@ -1,9 +1,65 @@
 (ns app.main.ui.workspace.tokens.management.forms.controls.utils
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.token :as cto]
+   [app.common.types.tokens-lib :as ctob]
+   [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.refs :as refs]
    [app.util.i18n :refer [tr]]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [rumext.v2 :as mf]))
+
+(defn without-token
+  "`sets` (`[[set-id tokens] ..]`) with the token `token-name` left out of
+  every set. A set without it stays the same object, so tokenscript skips
+  it as unchanged."
+  [sets token-name]
+  (mapv (fn [[set-id tokens :as entry]]
+          (if (contains? tokens token-name)
+            [set-id (dissoc tokens token-name)]
+            entry))
+        sets))
+
+(defn use-edit-token-sets
+  "Token sets a token being edited in the selected set resolves against
+  with tokenscript, unmerged (see `cfo/get-token-sets-for-edit`).
+  `excluded-name`, the name of the token being edited, is left out, so a
+  renamed draft doesn't leave the old name resolving and references to
+  the old name break as they will once it is saved. The sets stay the
+  same objects while the library does not change, so each keystroke
+  re-resolves only the draft."
+  [excluded-name]
+  (let [tokens-lib (mf/deref refs/tokens-lib)
+        set-id     (mf/deref refs/selected-token-set-id)]
+    (mf/with-memo [tokens-lib set-id excluded-name]
+      (when tokens-lib
+        (cond-> (cfo/get-token-sets-for-edit tokens-lib
+                                             (or set-id (some-> (ctob/get-sets tokens-lib) first ctob/get-id)))
+          excluded-name (without-token excluded-name))))))
+
+(defn resolved->result
+  "The `{:value ..}` or `{:error ..}` a form control shows for the
+  resolved draft, an unknown error when it has neither a value nor
+  errors."
+  [{:keys [errors resolved-value]} value]
+  (if resolved-value
+    {:value resolved-value}
+    {:error (if errors
+              (first errors)
+              (wte/error-with-value :error/unknown value))}))
+
+(defn draft-token
+  "The token being edited as the form has it: `prev-token` with `value`,
+  named `token-name`, or a placeholder name while that is not a valid
+  token name."
+  [prev-token token-name value]
+  (let [valid-name? (and (string? token-name)
+                         (not (str/blank? token-name))
+                         (re-matches cto/token-name-validation-regex token-name))]
+    (assoc prev-token
+           :name (if valid-name? token-name "__PENPOT__TOKEN__NAME__PLACEHOLDER__")
+           :value value)))
 
 (defn- token->dropdown-option
   [token]

@@ -6,9 +6,12 @@
 
 (ns frontend-tests.tokens.tokenscript-test
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.tokenscript :as ts]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [cljs.test :as t :include-macros true]))
 
 (defn- tokens-map
@@ -178,7 +181,154 @@
     (t/is (= :error.token/empty-input (get-in resolved ["typography.empty" :errors 0 :error/code])))
     (t/is (= 12 (get-in resolved ["borderRadius.sm" :resolved-value])))))
 
-(t/deftest resolve-token-test
-  (let [tokens (tokens-map {:name "a" :value "8px" :type :border-radius})
-        resolved (ts/resolve-token tokens {:name "b" :value "{a} * 2" :type :border-radius})]
+(t/deftest resolve-draft-test
+  (let [sets [[:core (tokens-map {:name "a" :value "8px" :type :border-radius})]]
+        resolved (ts/resolve-draft sets {:name "b" :value "{a} * 2" :type :border-radius})]
     (t/is (= 16 (:resolved-value resolved)))))
+
+;; Incremental resolution ------------------------------------------------------
+;;
+;; The adapter keeps the interpreter state of the last resolutions. A new
+;; map re-resolves only the tokens that changed and their dependents; the
+;; output entries of every other token are the previous objects.
+
+(defn- token
+  [attrs]
+  (ctob/make-token attrs))
+
+(defn- by-name
+  [& tokens]
+  (into {} (map (fn [t] [(:name t) t])) tokens))
+
+(t/deftest resolve-tokens-incremental-test
+  (let [base (token {:name "base" :value "8" :type :sizing})
+        double (token {:name "double" :value "{base} * 2" :type :sizing})
+        other (token {:name "other" :value "1" :type :sizing})
+        first-run (ts/resolve-tokens (by-name base double other))
+        edited (assoc base :value "10")
+        second-run (ts/resolve-tokens (by-name edited double other))]
+    (t/is (= 16 (get-in first-run ["double" :resolved-value])))
+    (t/is (= 10 (get-in second-run ["base" :resolved-value])))
+    (t/is (= 20 (get-in second-run ["double" :resolved-value])) "dependents are re-resolved")
+    (t/is (identical? (get first-run "other") (get second-run "other"))
+          "tokens the edit did not reach keep their output object")
+    (t/is (not (identical? (get first-run "double") (get second-run "double"))))
+    (t/is (identical? second-run (ts/resolve-tokens (by-name edited double other)))
+          "the same input returns the cached output")))
+
+(t/deftest resolve-tokens-incremental-errors-test
+  (t/testing "a token fixed by an edit and the tokens waiting for it recover"
+    (let [ref (token {:name "ref" :value "{missing}" :type :sizing})
+          first-run (ts/resolve-tokens (by-name ref))
+          missing (token {:name "missing" :value "4" :type :sizing})
+          second-run (ts/resolve-tokens (by-name ref missing))
+          third-run (ts/resolve-tokens (by-name ref))]
+      (t/is (= :error.style-dictionary/missing-reference (get-in first-run ["ref" :errors 0 :error/code])))
+      (t/is (= 4 (get-in second-run ["ref" :resolved-value])))
+      (t/is (= :error.style-dictionary/missing-reference (get-in third-run ["ref" :errors 0 :error/code]))
+            "deleting the token breaks the reference again")))
+  (t/testing "a token that loses its value is an empty input and its references break"
+    (let [a (token {:name "a" :value "8" :type :sizing})
+          b (token {:name "b" :value "{a}" :type :sizing})
+          first-run (ts/resolve-tokens (by-name a b))
+          second-run (ts/resolve-tokens (by-name (assoc a :value nil) b))]
+      (t/is (= 8 (get-in first-run ["b" :resolved-value])))
+      (t/is (= :error.token/empty-input (get-in second-run ["a" :errors 0 :error/code])))
+      (t/is (= :error.style-dictionary/missing-reference (get-in second-run ["b" :errors 0 :error/code]))))))
+
+(t/deftest resolve-sets-test
+  (let [core-base (token {:name "base" :value "8" :type :sizing})
+        double (token {:name "double" :value "{base} * 2" :type :sizing})
+        other (token {:name "other" :value "1" :type :sizing})
+        theme-base (token {:name "base" :value "10" :type :sizing})
+        core (by-name core-base double other)
+        theme (by-name theme-base)
+        resolved (ts/resolve-sets [[:core core] [:theme theme]])]
+    (t/testing "a later set wins and the result holds the winning tokens"
+      (t/is (= 10 (get-in resolved ["base" :resolved-value])))
+      (t/is (= (:id theme-base) (get-in resolved ["base" :id])) "the output token is the winning record")
+      (t/is (= 20 (get-in resolved ["double" :resolved-value]))))
+    (t/testing "editing a token a later set overrides changes nothing visible"
+      (let [resolved' (ts/resolve-sets [[:core (by-name (assoc core-base :value "99") double other)] [:theme theme]])]
+        (t/is (= 10 (get-in resolved' ["base" :resolved-value])))
+        (t/is (identical? (get resolved "double") (get resolved' "double")))))
+    (t/testing "activating a set in the middle re-resolves the names it wins and their dependents"
+      (let [mid (by-name (token {:name "other" :value "5" :type :sizing})
+                         (token {:name "new" :value "{other} + 1" :type :sizing}))
+            resolved' (ts/resolve-sets [[:core core] [:mid mid] [:theme theme]])]
+        (t/is (= 5 (get-in resolved' ["other" :resolved-value])))
+        (t/is (= 6 (get-in resolved' ["new" :resolved-value])))
+        (t/is (identical? (get resolved "base") (get resolved' "base")))
+        (t/is (identical? (get resolved "double") (get resolved' "double")))))
+    (t/testing "an empty value in a later set hides the earlier definition"
+      (let [resolved' (ts/resolve-sets [[:core core] [:theme (by-name (assoc theme-base :value nil))]])]
+        (t/is (= :error.token/empty-input (get-in resolved' ["base" :errors 0 :error/code])))
+        (t/is (= :error.style-dictionary/missing-reference (get-in resolved' ["double" :errors 0 :error/code])))))
+    (t/testing "a preview against the same sets does not change their cached result"
+      (let [preview (ts/resolve-sets [[:core core] [:theme theme] [:draft (by-name (assoc core-base :value "1"))]])]
+        (t/is (= 2 (get-in preview ["double" :resolved-value])))
+        (t/is (identical? resolved (ts/resolve-sets [[:core core] [:theme theme]])))))))
+
+;; The active sets go to the resolver unmerged; the result is the one of
+;; the merged active tokens.
+(t/deftest resolve-active-sets-test
+  (let [lib (-> (ctob/make-tokens-lib)
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core) :name "core"))
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :dark) :name "dark"))
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :extra) :name "extra"))
+                (ctob/add-token (cthi/id :core) (ctob/make-token {:name "base" :value "8" :type :sizing}))
+                (ctob/add-token (cthi/id :core) (ctob/make-token {:name "double" :value "{base} * 2" :type :sizing}))
+                (ctob/add-token (cthi/id :dark) (ctob/make-token {:name "base" :value "10" :type :sizing}))
+                (ctob/add-token (cthi/id :extra) (ctob/make-token {:name "base" :value "1" :type :sizing})))
+        status (ctos/make-tokens-status :active-set-ids #{(cthi/id :core) (cthi/id :dark)})
+        values (fn [resolved] (update-vals resolved :resolved-value))
+        by-sets (ts/resolve-sets (cfo/get-active-token-sets status lib))]
+    (t/is (= {"base" 10 "double" 20} (values by-sets)))
+    (t/is (= (values (ts/resolve-tokens (cfo/get-tokens-in-active-sets status lib))) (values by-sets)))
+    (t/is (identical? by-sets (ts/resolve-sets (cfo/get-active-token-sets status lib)))
+          "the same sets from the library return the cached output")
+    (t/testing "a forced inactive set comes first, as in the merged variant"
+      (let [forced (ts/resolve-sets (cfo/get-active-token-sets-force status lib (cthi/id :extra)))]
+        (t/is (= (values (ts/resolve-tokens (cfo/get-tokens-in-active-sets-force status lib (cthi/id :extra))))
+                 (values forced)))
+        (t/is (= 10 (get-in forced ["base" :resolved-value])))))))
+
+;; A token edited in a form resolves against every set of the library with
+;; the selected set on top, and the draft on top of that.
+(t/deftest resolve-edited-token-test
+  (let [lib (-> (ctob/make-tokens-lib)
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :base) :name "base"))
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :brand) :name "brand"))
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :other) :name "other"))
+                (ctob/add-token (cthi/id :base) (ctob/make-token {:name "size" :value "4" :type :sizing}))
+                (ctob/add-token (cthi/id :base) (ctob/make-token {:name "double" :value "{size} * 2" :type :sizing}))
+                (ctob/add-token (cthi/id :brand) (ctob/make-token {:name "size" :value "8" :type :sizing}))
+                (ctob/add-token (cthi/id :other) (ctob/make-token {:name "size" :value "16" :type :sizing})))
+        sets (cfo/get-token-sets-for-edit lib (cthi/id :brand))
+        values (fn [resolved] (update-vals resolved :resolved-value))]
+    (t/testing "the selected set is moved last and wins, as when merged over all tokens"
+      (t/is (= [(cthi/id :base) (cthi/id :other) (cthi/id :brand)] (mapv first sets)))
+      (t/is (= (values (ts/resolve-tokens (merge (ctob/get-all-tokens-map lib) (ctob/get-tokens lib (cthi/id :brand)))))
+               (values (ts/resolve-sets sets))))
+      (t/is (= 8 (get-in (ts/resolve-sets sets) ["size" :resolved-value]))))
+    (t/testing "the draft wins over every set and its dependents see it"
+      (t/is (= 3 (:resolved-value (ts/resolve-draft sets {:name "size" :value "3" :type :sizing}))))
+      (t/is (= 14 (:resolved-value (ts/resolve-draft sets {:name "tmp" :value "{double} - 2" :type :sizing})))
+            "each draft replaces the previous one"))
+    (t/testing "a renamed token is left out of every set, so references to it break"
+      (let [sets' (csu/without-token sets "size")]
+        (t/is (not-any? #(contains? (second %) "size") sets'))
+        (t/is (= :error.style-dictionary/missing-reference
+                 (get-in (ts/resolve-draft sets' {:name "tmp" :value "{size}" :type :sizing}) [:errors 0 :error/code]))))
+      (t/is (= [false true true] (mapv identical? sets (csu/without-token sets "double")))
+            "sets without the token stay the same objects"))
+    (t/testing "typing in a form does not push resolutions out of the cache"
+      (let [active (cfo/get-active-token-sets (ctos/make-tokens-status :active-set-ids #{(cthi/id :base)}) lib)
+            before (ts/resolve-sets active)]
+        (doseq [v (range 20)]
+          (ts/resolve-draft sets {:name "size" :value (str v) :type :sizing}))
+        (t/is (identical? before (ts/resolve-sets active)))))))
+
+(t/deftest resolve-sets-empty-test
+  (t/is (= {} (ts/resolve-sets [])))
+  (t/is (= {} (ts/resolve-tokens {}))))
