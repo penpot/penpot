@@ -183,9 +183,10 @@
     (cond
       (= type "main")
       (do
-        (db/delete! cfg :file-data
-                    {:id id :file-id file-id :type "main"}
-                    {::db/return-keys false})
+        ;; Main metadata must survive even when the data stays in file.data.
+        (upsert-in-database cfg (-> params
+                                    (assoc :data nil)
+                                    (update :metadata dissoc :storage-ref-id)))
         (db/update! cfg :file
                     {:data data}
                     {:id file-id}
