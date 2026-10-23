@@ -77,3 +77,45 @@ No `--delete` on the working-tree pass: gitignored caches in the workspace survi
 - `start-devenv` / `log-devenv` / `drop-devenv`: legacy paths around ws0 + shared infra. `drop-devenv` never removes volumes.
 
 `exporter/scripts/run` and `wait-and-start.sh` source `backend/scripts/_env` then `_env.local` if present.
+
+## Image and dependency pins
+
+Two Dockerfile trees, both multi-arch (`linux/amd64,linux/arm64`):
+`docker/devenv` (dev) and `docker/images` + `docker/imagemagick` (prod).
+
+- Hand-pinned versions, one source each:
+  - `docker/devenv/Dockerfile`: `NODE_VERSION` (+ per-arch `NODE_SHA256`),
+    `PNPM_VERSION` (+ `PNPM_SHA256`), `CADDY_VERSION`, `CLOJURE_VERSION`,
+    Zulu JDK URL + `ESUM`, `RUSTUP_VERSION`/`RUST_VERSION`/
+    `EMSCRIPTEN_VERSION`, `CLJKONDO_VERSION`, `BABASHKA_VERSION`,
+    `CLJFMT_VERSION`, `PIXI_VERSION`, `GITHUB_CLI_VERSION`,
+    `AWS_CLI_VERSION` (+ `BINARY_SHA256`), `UV_VERSION`, `SERENA_VERSION`,
+    `postgresql-client-18`, and the `penpotapp/imagemagick:<tag>`
+    `COPY --from`.
+  - `docker/images/Dockerfile.backend`: Zulu JDK URL + `ESUM`. The `jlink`
+    `--add-modules` list must keep `jdk.management`
+    (`mem:backend/subtleties`).
+  - `docker/images/Dockerfile.{exporter,mcp,media-processor}`: `ARG
+    PNPM_VERSION` (+ arch SHAs, same values as devenv).
+- Node and pnpm must agree in five places: `.nvmrc`, the devenv tarball pin,
+  the two `plugins-deploy-*` workflows that set `runtime: node@<version>`, and
+  the four Dockerfile pins. pnpm procedure: `mem:workflow/updating-pnpm`.
+- `dhi.io` base images are pinned `tag@sha256:<index digest>`; Renovate moves
+  them (`penpot-renovate[bot]`, commits titled `:arrow_up: Update DHI base
+  images`). Tag and digest move together: a new tag with the old digest still
+  pulls the old image, and the digest must be the multi-arch index, not a
+  per-platform one.
+- Every hand-pinned checksum is per architecture; one wrong value breaks half
+  of the multi-arch build.
+- `SERENA_UPDATE_VERSION` in `docker-compose.main.yml` must stay empty. Any
+  value makes `start-tmux.sh` reinstall that Serena release on every start,
+  overriding the `SERENA_VERSION` baked into the image (it silently replaced
+  1.7.0 with 1.6.1). Set it only to test one specific release on purpose.
+- Infra images live in `docker-compose.infra.yml`: `rustfs/rustfs` (owns the
+  S3 data volume), `axllent/mailpit` (SQLite in a volume), `valkey/valkey`,
+  `postgres:18.6`, `rroemhild/test-openldap`. Keep the volume names stable
+  when bumping them; replacement services get new volumes and leave the old
+  data untouched.
+- Build locally: `docker build -f docker/devenv/Dockerfile docker/devenv/`
+  and `cd docker/images && ./build.sh <image> --local`. CI:
+  `build-docker-devenv.yml`, `build-docker.yml`.
