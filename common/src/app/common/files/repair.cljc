@@ -867,13 +867,14 @@
                 errors)]
     redo-changes))
 
-(defn- error-identity-set
+(defn- error-fingerprint
   [errors]
-  (into #{} (map (juxt :code :shape-id)) errors))
+  (frequencies (map #(dissoc % :shape) errors)))
 
 (defn repair-file-until-valid
-  "Repeatedly validate and repair `file` until `errors-fn` returns nil
-  or no further progress is possible.
+  "Repeatedly validate and repair `file` until `errors-fn` returns nil,
+  a repair pass leaves `:data` unchanged, or the error fingerprint
+  (errors without `:shape`) is unchanged from the previous pass.
 
   `errors-fn` is `(fn [file applied-changes] errors-or-nil)`. Never
   changes `:revn`.
@@ -881,11 +882,11 @@
   Returns `{:file file' :changes [...] :iterations n :errors remaining}`."
   [file libraries errors-fn & {:keys [max-iterations initial-errors]
                                :or {max-iterations 10}}]
-  (loop [file         file
-         applied      []
-         iteration    0
-         prev-idents  nil
-         seed-errors  initial-errors]
+  (loop [file        file
+         applied     []
+         iteration   0
+         prev-fp     nil
+         seed-errors initial-errors]
     (if (>= iteration max-iterations)
       {:file       file
        :changes    applied
@@ -899,15 +900,24 @@
            :changes    applied
            :iterations iteration
            :errors     nil}
-          (let [batch  (repair-file file libraries errors)
-                idents (error-identity-set errors)]
-            (if (or (empty? batch) (= idents prev-idents))
+          (let [fp (error-fingerprint errors)]
+            (cond
+              (= fp prev-fp)
               {:file       file
                :changes    applied
                :iterations (inc iteration)
                :errors     (not-empty errors)}
-              (recur (update file :data cfc/process-changes batch)
-                     (into applied batch)
-                     (inc iteration)
-                     idents
-                     nil))))))))
+
+              :else
+              (let [batch (repair-file file libraries errors)
+                    data' (cfc/process-changes (:data file) batch)]
+                (if (= data' (:data file))
+                  {:file       file
+                   :changes    applied
+                   :iterations (inc iteration)
+                   :errors     (not-empty errors)}
+                  (recur (assoc file :data data')
+                         (into applied batch)
+                         (inc iteration)
+                         fp
+                         nil))))))))))

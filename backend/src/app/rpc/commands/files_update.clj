@@ -42,7 +42,7 @@
 
 (declare ^:private get-lagged-changes)
 (declare ^:private send-notifications!)
-(declare ^:private send-repair-notifications!)
+(declare ^:private send-repair-notifications)
 (declare ^:private update-file)
 (declare ^:private update-file*)
 (declare ^:private process-changes-and-validate)
@@ -376,7 +376,7 @@
 
       ;; Send asynchronous notifications
       (when repair
-        (send-repair-notifications! cfg params file repair))
+        (send-repair-notifications cfg params file repair))
       (send-notifications! cfg params file)
 
       (with-meta {:revn revn :lagged (get-lagged-changes conn params)}
@@ -575,7 +575,7 @@
                   (try
                     (val/validate-file-schema! repaired)
                     (finally
-                      (record-validation-timing cfg :validate-schema-ms "validate-schema" (inst-ms t)))))))
+                      (record-validation-timing cfg :validate-schema-ms "validate-schema" (inst-ms (t))))))))
 
             (-> repaired
                 (assoc :revn (+ (:revn original) 2))
@@ -652,8 +652,7 @@
             (val/validate-file-affected! file libs changes)
             (catch Throwable cause
               (reset! pending-repair cause)
-              (when-not (and (contains? cf/flags :file-auto-repair)
-                             (referential-integrity-error? cause))
+              (when-not (referential-integrity-error? cause)
                 (throw cause)))
             (finally
               (record-validation-timing cfg :validate-affected-ms "validate-affected" (inst-ms (t)))))))
@@ -699,7 +698,7 @@
        (mapv (fn [row]
                (update row :changes blob/decode)))))
 
-(defn- send-repair-notifications!
+(defn- send-repair-notifications
   [cfg {:keys [team session-id] :as params} file repair]
   (let [changes  (:changes repair)
         lchanges (filter library-change? changes)

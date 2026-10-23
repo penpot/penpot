@@ -6980,8 +6980,8 @@ msgstr "Details"
 #: src/app/main/data/workspace/notifications.cljs:282
 msgid "workspace.notifications.file-repaired"
 msgstr ""
-"We fixed some problems in this file. A copy from before the fix is saved in "
-"the version history as today's autosave."
+"We fixed some issues in this file. You can find a copy of the original version in "
+"the version history."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
