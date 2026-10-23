@@ -6,7 +6,9 @@
 
 (ns common-tests.geom-flex-layout-test
   (:require
+   [app.common.geom.modifiers]
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes.flex-layout.layout-data :as fld]
    [app.common.geom.shapes.flex-layout.params :as flparams]
    [app.common.geom.shapes.flex-layout.positions :as flp]
    [app.common.math :as mth]
@@ -135,3 +137,16 @@
                                     :y -2.1457672119140625E-6
                                     :width 100 :height 100}))]
     (t/is (every? #(not (neg? %)) (vals padding)))))
+
+(t/deftest first-child-starts-a-flex-line-on-both-runtimes
+  (doseq [direction [:row :column]
+          justify [:start :space-around :space-evenly]]
+    (let [frame (make-col-frame :layout-flex-dir direction :layout-justify-content justify)
+          child (cts/setup-shape {:type :rect :x 0 :y 0 :width 40 :height 30})
+          bounds (rect->bounds (grc/make-rect 0 0 200 200))
+          child-bounds (rect->bounds (grc/make-rect 0 0 40 30))
+          objects {(:id frame) frame (:id child) child}
+          lines (fld/init-layout-lines frame [[child-bounds child]] bounds
+                                       {(:id frame) bounds (:id child) child-bounds} objects false)]
+      (t/is (= 1 (count lines)))
+      (t/is (= 1 (:num-children (first lines)))))))

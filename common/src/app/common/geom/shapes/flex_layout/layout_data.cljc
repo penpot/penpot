@@ -63,7 +63,8 @@
               {:keys [line-min-width line-min-height
                       line-max-width line-max-height
                       num-children
-                      children-data]} line-data
+                      children-data]
+               :or {line-min-width 0 line-min-height 0 num-children 0}} line-data
 
               child-width      (gpo/width-points child-bounds)
               child-height     (gpo/height-points child-bounds)
