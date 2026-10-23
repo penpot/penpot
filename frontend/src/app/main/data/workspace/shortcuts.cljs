@@ -654,8 +654,11 @@
                           :command (ds/ca-mod "h")
                           :subsections [:panels]
                           :section [:workspace]
-                          :fn #(emit-when-no-readonly
-                                (dw/toggle-layout-flag :document-history))}
+                          ;; Same rule as the header button: editors, also in
+                          ;; Inspect mode, but not during a version preview.
+                          :fn #(when (and (:can-edit (deref refs/permissions))
+                                          (nil? (deref refs/workspace-preview-id)))
+                                 (st/emit! (dw/toggle-layout-flag :document-history)))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :label (fn [] (tr "shortcuts.toggle-colorpalette"))
