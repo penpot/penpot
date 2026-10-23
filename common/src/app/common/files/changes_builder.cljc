@@ -458,6 +458,15 @@
 
 ;; Shape tree changes
 
+(defn- restore-parent-state-change
+  [page-id parent]
+  {:type :mod-obj
+   :page-id page-id
+   :id (:id parent)
+   :operations (cond-> [{:type :set-touched :touched (:touched parent)}]
+                 (:remote-synced parent)
+                 (conj {:type :set-remote-synced :remote-synced true}))})
+
 (defn add-object
   ([changes obj]
    (add-object changes obj nil))
@@ -489,11 +498,7 @@
           :ignore-touched true}
 
          restore-touched-change
-         {:type :mod-obj
-          :page-id (::page-id (meta changes))
-          :id (:id parent)
-          :operations [{:type :set-touched
-                        :touched (:touched parent)}]}]
+         (restore-parent-state-change (::page-id (meta changes)) parent)]
 
      (-> changes
          (update :redo-changes conj add-change)
@@ -552,11 +557,7 @@
                      (assoc :allow-altering-copies true)))))
 
          restore-touched-change
-         {:type :mod-obj
-          :page-id (::page-id (meta changes))
-          :id (:id parent)
-          :operations [{:type :set-touched
-                        :touched (:touched parent)}]}]
+         (restore-parent-state-change (::page-id (meta changes)) parent)]
 
      (-> changes
          (update :redo-changes conj set-parent-change)
@@ -723,6 +724,13 @@
     (-> changes
         (update :redo-changes #(reduce add-redo-change % ids))
         (update :undo-changes #(as-> % $
+                                 (reduce (fn [undo parent-id]
+                                           (let [parent (get objects parent-id)]
+                                             (cond-> undo
+                                               (and (not ignore-touched) (:shape-ref parent)
+                                                    (:remote-synced parent))
+                                               (conj (restore-parent-state-change page-id parent)))))
+                                         $ (distinct (keep (fn [id] (:parent-id (get objects id))) ids)))
                                  (reduce add-undo-change-parent $ ids)
                                  (reduce add-undo-change-shape $ ids))))))
 

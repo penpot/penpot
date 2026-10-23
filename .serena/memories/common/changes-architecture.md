@@ -37,3 +37,8 @@ For component touched semantics and sync groups, read `mem:common/component-data
 ## Inspection
 
 To inspect what a UI action emitted, use `mem:frontend/cljs-repl` with the snippets in `mem:common/component-debugging-recipes` rather than adding temporary source instrumentation.
+
+- Structural add/remove and change-parent inverses restore the copy parent's
+  `:remote-synced` as well as `:touched`. Removing or adding a child clears
+  the former even when touched groups do not change; restoring only the
+  groups loses prior state on undo (F157).
