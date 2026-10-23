@@ -119,12 +119,18 @@
 
         ;; A map name-> token with resolved-values, resolved with style dictionary
         resolved-active-tokens
-        (sd/use-resolved-tokens* tokens-tree)
+        (sd/use-resolved-tokens* (when-not tokenscript? tokens-tree))
+
+        tokens-lib (mf/deref refs/tokens-lib)
 
         ;; A map name-> token with resolved-values, resolved with tokescript
+        ;; from the library's sets unmerged
         tokenscript-resolved-active-tokens
-        (mf/with-memo [tokens-tree tokenscript?]
-          (when tokenscript? (ts/resolve-tokens tokens-tree)))
+        (mf/with-memo [tokens-lib tokenscript?]
+          (when tokenscript?
+            (if tokens-lib
+              (ts/resolve-sets (cfo/get-token-sets-for-edit tokens-lib nil))
+              {})))
 
         ;; A map which keys are token types and values are vectors of tokens of that type, with resolved values.
         active-tokens-by-type

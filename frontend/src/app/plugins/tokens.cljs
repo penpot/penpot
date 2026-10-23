@@ -160,17 +160,12 @@
              (sm/validate cfo/schema:token-description (:description candidate)))
          (resolved-without-errors? resolved))))
 
-;; Last resolution result, reused while the tokens library and set are unchanged
-(def ^:private resolution-cache (atom nil))
-
 (defn- resolve-set-tokens
+  "Tokens of the library resolved for `set-id`: the sets
+  `resolution-tokens` merges, unmerged. Repeated calls with an unchanged
+  library are answered from the resolver's cache."
   [tokens-lib set-id]
-  (let [{:keys [lib set resolved]} @resolution-cache]
-    (if (and (identical? lib tokens-lib) (= set set-id))
-      resolved
-      (let [resolved (ts/resolve-tokens (resolution-tokens tokens-lib set-id))]
-        (reset! resolution-cache {:lib tokens-lib :set set-id :resolved resolved})
-        resolved))))
+  (ts/resolve-sets (cfo/get-token-sets-for-edit tokens-lib set-id)))
 
 (defn valid-token-resolution?
   "Checks that an existing token resolves without errors, which is the only
@@ -248,8 +243,8 @@
     (into-array (map shadow-entry->js entries))))
 
 (defn- get-resolved-value
-  [token tokens-tree]
-  (let [resolved-tokens (ts/resolve-tokens tokens-tree)
+  [token sets]
+  (let [resolved-tokens (ts/resolve-sets sets)
         resolved-token  (get resolved-tokens (:name token))
         resolved-value  (:resolved-value resolved-token)]
     (cond
@@ -353,9 +348,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-status   (u/locate-tokens-status file-id)
-             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
-         (get-resolved-value token tokens-tree)))}
+             tokens-status   (u/locate-tokens-status file-id)]
+         (get-resolved-value token (cfo/get-active-token-sets tokens-status tokens-lib))))}
 
     :resolvedValueString
     {:this true
@@ -364,9 +358,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-status   (u/locate-tokens-status file-id)
-             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
-         (str (get-resolved-value token tokens-tree))))}
+             tokens-status   (u/locate-tokens-status file-id)]
+         (str (get-resolved-value token (cfo/get-active-token-sets tokens-status tokens-lib)))))}
 
     :description
     {:this true
