@@ -48,3 +48,8 @@ The clean target already has the copy's rotation, which can turn 100 into
 99.99999999999994. Exact dimension equality drops valid resize overrides
 (F160). Fixed layout sizes and composite geometry use the same tolerance;
 nongeometry scalar attributes still compare exactly.
+
+After carrying geometry, the switch syncs its new subtree once from the
+updated builder objects. Untouched children must follow a retained root
+size through constraints; copying only root attrs leaves them in the old
+frame (F162). The direct sync keeps carried groups and child swaps.

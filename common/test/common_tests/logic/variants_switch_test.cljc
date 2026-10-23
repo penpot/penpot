@@ -49,6 +49,34 @@
       (t/is (mth/close? 80 (get-in copy [:selrect :height]) 1e-10))
       (t/is (contains? (:touched copy) :geometry-group)))))
 
+(t/deftest switch-places-children-through-a-carried-root-resize
+  (doseq [angle [0 45]]
+    (let [root-params {:width 100 :height 100}
+          child-params {:x 10 :y 10 :width 20 :height 20
+                        :constraints-h :left :constraints-v :top}
+          file (-> (thf/sample-file :file1)
+                   (thv/add-variant-with-child
+                    :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                    {:variant1-params root-params :variant2-params root-params
+                     :child1-params child-params :child2-params child-params})
+                   (thc/instantiate-component :c01 :copy01))
+          file (reduce (fn [file modifiers]
+                         (let [shape (ths/get-shape file :copy01)]
+                           (thf/apply-changes file
+                                              (n/transform-changes (thf/current-page file) shape
+                                                                   (modifiers shape)))))
+                       file [#(ctm/rotation-modifiers % (gsh/shape->center %) angle)
+                             #(ctm/change-size % nil 80)])
+          switched (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+          relative (fn [file]
+                     (let [root (ths/get-shape file :copy01)
+                           child (get-in (thf/current-page file) [:objects (first (:shapes root))])]
+                       (gpt/subtract (first (:points child)) (first (:points root)))))
+          child (get-in (thf/current-page switched)
+                        [:objects (first (:shapes (ths/get-shape switched :copy01)))])]
+      (t/is (< (gpt/distance (relative file) (relative switched)) 0.01))
+      (t/is (empty? (:touched child))))))
+
 ;; ============================================================
 ;; BASIC SWITCH TESTS (no overrides)
 ;; ============================================================

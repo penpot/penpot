@@ -430,7 +430,14 @@
                               (ctk/touched-group? % :geometry-group)) orig-touched)
                   (keep-orientation-override original-shape new-shape page
                                              (or (get-in libraries [(:component-file new-shape) :data]) ldata)
-                                             (:component-id new-shape) nil))]
+                                             (:component-id new-shape) nil))
+        ;; A carried size changes the frame its untouched children follow.
+        ;; Place them through the same constraints as an ordinary copy sync.
+        changes (cond-> changes
+                  (some #(ctk/touched-group? % :geometry-group) orig-touched)
+                  (cll/generate-sync-shape-direct
+                   nil libraries (assoc container :objects (pcb/get-objects changes))
+                   (:id new-shape) false))]
     [changes (mapv (comp :parent-id :new) pairs)]))
 
 (defn- shape-index

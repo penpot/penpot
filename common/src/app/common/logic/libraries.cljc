@@ -285,7 +285,7 @@
                   (reduce #(update %1 %2 turn) objects
                           (cfh/get-children-ids-with-self objects (:id shape-main)))))))))
 
-(defn- generate-sync-shape-direct
+(defn generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
   [changes file libraries container shape-id reset?]
