@@ -45,13 +45,10 @@
 (def consumer-storage-usage 3)
 
 (def ^:private consumers
-  [{:id consumer-nexus          :flag :nexus         :label "nexus"
-    :outcome "archived"}
-   {:id consumer-admin-console :flag :admin-console :label "admin-console"
-    :outcome "archived"}
+  [{:id consumer-nexus          :flag :nexus         :label "nexus"         :lock :ordered   :outcome "archived"}
+   {:id consumer-admin-console :flag :admin-console :label "admin-console" :lock :ordered   :outcome "archived"}
    ;; marks teams dirty, it archives nothing
-   {:id consumer-storage-usage :flag :storage-usage :label "storage-usage"
-    :outcome "processed"
+   {:id consumer-storage-usage :flag :storage-usage :label "storage-usage" :lock :unordered :outcome "processed"
     :summary "teams marked dirty"}])
 
 (def ^:private xf:enabled-consumers
@@ -211,13 +208,21 @@
         WHERE p.audit_log_id = a.id
       )")
 
+(defn- pending-rows-sql
+  "The chunk query of a consumer. The ones that archive block on the
+  oldest rows (the arrival order matters to the destination); the ones
+  that do not archive take the rows with SKIP LOCKED, so they never wait
+  on an archive job holding them (that wait could hit lock_timeout and
+  abort the run)."
+  [consumer]
+  (if (= :ordered (:lock consumer))
+    sql:pending-chunk
+    sql:pending-chunk-unordered))
+
 (defn- get-pending-rows
-  [{:keys [::db/conn] :as cfg} consumer]
-  (let [sql (if (= consumer consumer-storage-usage)
-              sql:pending-chunk-unordered
-              sql:pending-chunk)]
-    (->> (db/exec! conn [sql consumer])
-         (not-empty))))
+  [{:keys [::db/conn]} consumer]
+  (->> (db/exec! conn [(pending-rows-sql consumer) (:id consumer)])
+       (not-empty)))
 
 (defn- complete-batch
   "Delete our pendings for the batch, then the records nobody is
@@ -453,75 +458,66 @@
                              :cause cause
                              :events n))))))))
 
-(defn- consumer-nexus-chunk
-  "Send one pending chunk to Nexus and complete it. Returns {:sent n}
-  or nil when the queue is empty; throws on refusal. Takes a
-  transactional cfg: the caller opens one transaction per chunk. No
-  metrics here: a normal return means the transaction committed, so
+(defn- process-nexus-chunk
+  "Send one pending chunk to Nexus. Returns {:sent n}; throws on
+  refusal, so the chunk rolls back and the rows stay for the next tick.
+  No metrics here: a normal return means the transaction committed, so
   the caller records the success."
-  [cfg]
-  (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
-  (when-let [rows (get-pending-rows cfg consumer-nexus)]
-    (let [events (mapv (comp row->event decode-row) rows)
-          ;; send-to-nexus returns the count or throws: a refusal
-          ;; aborts the job, the rows stay for the next tick.
-          n      (send-to-nexus cfg events)]
+  [cfg rows]
+  (let [events (mapv (comp row->event decode-row) rows)
+        ;; send-to-nexus returns the count or throws: a refusal
+        ;; aborts the job, the rows stay for the next tick.
+        n      (send-to-nexus cfg events)]
 
-      (l/trc :hint "consumer events chunk"
-             :consumer "nexus"
-             :events n)
+    (l/trc :hint "consumer events chunk"
+           :consumer "nexus"
+           :events n)
 
-      (complete-batch cfg consumer-nexus rows)
-      {:sent n})))
+    {:sent n :skipped 0}))
 
-(defn- consumer-admin-console-chunk
-  "Send one pending chunk to the admin console and complete it. Returns
-  {:sent :skipped} or nil when the queue is empty; throws on failure.
-  Takes a transactional cfg, no metrics here: same contract as
-  consumer-nexus-chunk."
-  [cfg]
-  (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
-  (when-let [rows (get-pending-rows cfg consumer-admin-console)]
-    (let [decoded     (mapv decode-row rows)
-          _           (l/trc :hint "consumer events chunk"
-                             :consumer "admin-console"
-                             :events (count decoded))
-          admin-console-res (send-to-admin-console cfg decoded)]
-      ;; Filtered-out rows count as processed for the
-      ;; admin-console queue: their pending is done, the
-      ;; record stays until every consumer is done.
-      (complete-batch cfg consumer-admin-console rows)
-      admin-console-res)))
+(defn- process-admin-console-chunk
+  "Send one pending chunk to the admin console. Returns {:sent :skipped}:
+  the filtered-out rows count as processed for the admin-console queue
+  (their pending is done, the record stays until every consumer is
+  done). Throws on failure, same contract as the nexus one."
+  [cfg rows]
+  (let [decoded (mapv decode-row rows)
+        _       (l/trc :hint "consumer events chunk"
+                       :consumer "admin-console"
+                       :events (count decoded))]
+    (send-to-admin-console cfg decoded)))
 
-(defn- consumer-storage-usage-chunk
-  "Mark dirty the teams changed in one pending chunk and complete it.
-  Returns {:sent :skipped} like the other chunk fns: relevant events
-  count as sent, anything else (defense in depth, the queue is
-  selective) as skipped. Takes a transactional cfg, no metrics here:
-  same contract as the other chunk fns."
-  [cfg]
-  (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
-  (when-let [rows (get-pending-rows cfg consumer-storage-usage)]
-    (let [batch (mapv row->reaction-event rows)
-          sent  (events/dispatch-reactions cfg batch)]
-      (l/trc :hint "consumer events chunk"
-             :consumer "storage-usage"
-             :events sent)
-      (complete-batch cfg consumer-storage-usage rows)
-      {:sent sent :skipped (- (count batch) sent)})))
+(defn- process-storage-usage-chunk
+  "Mark dirty the teams changed in one pending chunk. Returns
+  {:sent :skipped}: the events a reaction claims count as sent, the
+  rest as skipped. Same contract as the other chunk processors."
+  [cfg rows]
+  (let [batch (mapv row->reaction-event rows)
+        sent  (events/dispatch-reactions cfg batch)]
+    (l/trc :hint "consumer events chunk"
+           :consumer "storage-usage"
+           :events sent)
+    {:sent sent :skipped (- (count batch) sent)}))
 
-(defn- drain-consumer
+(defn- drain-chunks
   "Drain one consumer queue chunk by chunk, one transaction per chunk.
-  Returns totals; a chunk the destination refuses (or that throws)
-  aborts the drain with a throw, and the committed chunks so far
-  stay sent."
-  [cfg send-chunk]
+  The processor receives the rows of each chunk, already locked, and
+  returns {:sent n :skipped n}. Returns totals; a chunk the destination
+  refuses (or that throws) aborts the drain with a throw, and the
+  committed chunks so far stay sent."
+  [cfg consumer process-chunk]
   (loop [sent    0
          skipped 0
          chunks  0]
     ;; One transaction per chunk: fetch, send and complete commit (or
     ;; roll back) together, and the next chunk sees a fresh snapshot.
-    (if-let [res (db/tx-run! cfg send-chunk)]
+    (if-let [res (db/tx-run! cfg
+                             (fn [cfg]
+                               (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
+                               (when-let [rows (get-pending-rows cfg consumer)]
+                                 (let [res (process-chunk cfg rows)]
+                                   (complete-batch cfg (:id consumer) rows)
+                                   res))))]
       (do
         (jobs/heartbeat cfg)
         (px/sleep 100)
@@ -669,19 +665,31 @@
    ::jobs/decoder   (sm/decoder schema:audit-log-consumer-storage-usage-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-consumer-storage-usage-params)})
 
-(defn- run-single-consumer
-  "Drain one consumer queue, then housekeeping (reap disabled
-  pendings, sweep orphans) and the per-run summary. Housekeeping lives
-  in every job: only the enabled job runs, so it must reap the queues
-  of the consumers that are off; both halves are idempotent deletes.
-  A refused chunk (or a throw) aborts the job: the committed chunks
-  stay sent, the rest waits for the next tick, and the cron retries.
-  Every effect is rows and logs (drain metrics land here, outside
-  every chunk transaction)."
-  [cfg consumer send-chunk tpoint]
-  (let [label      (consumer-label consumer)
-        ok-outcome (consumer-outcome consumer)
+(defn drain-consumer
+  "Run one consumer: drain its queue chunk by chunk (one transaction per
+  chunk), then the housekeeping (reap of the disabled queues and sweep
+  of the orphans) and the per-run summary. The processor receives the
+  rows of each chunk, already locked, and returns {:sent n :skipped n};
+  the transport completes them (deletes its pendings and the records
+  nobody waits for anymore) and owns the lock mode, the metrics and the
+  logs.
+
+  Housekeeping lives in every job: only the enabled job runs, so it
+  must reap the queues of the consumers that are off; both halves are
+  idempotent deletes. A refused chunk (or a throw) aborts the job: the
+  committed chunks stay sent, the rest waits for the next tick, and the
+  cron retries. Every effect is rows and logs (drain metrics land here,
+  outside every chunk transaction)."
+  [cfg consumer-id process-chunk]
+  (let [consumer   (or (get consumers-by-id consumer-id)
+                       (ex/raise :type :internal
+                                 :code :unknown-audit-consumer
+                                 :hint "unknown audit-log consumer"
+                                 :consumer consumer-id))
+        label      (consumer-label consumer-id)
+        ok-outcome (consumer-outcome consumer-id)
         metrics    (mtx/instance cfg)
+        tpoint     (ct/tpoint)
         reaped     (reap-disabled cfg)
         ;; All drain metrics land here, outside every chunk
         ;; transaction. Success is recorded on the totals: a normal
@@ -692,7 +700,7 @@
         ;; uncounted. The throw keeps rolling: a failed chunk aborts
         ;; the job, the cron retries.
         drained (try
-                  (drain-consumer cfg send-chunk)
+                  (drain-chunks cfg consumer process-chunk)
                   (catch Throwable cause
                     (let [n (:events (ex-data cause))]
                       (when (and (integer? n) (pos? n))
@@ -716,7 +724,7 @@
              (zero? swept))
       (l/dbg :hint "no pending audit events"
              :consumer label)
-      (l/dbg :hint (consumer-summary consumer)
+      (l/dbg :hint (consumer-summary consumer-id)
              :consumer label
              :elapsed elapsed
              :sent sent
@@ -742,7 +750,7 @@
         (ex/raise :type :internal
                   :code :task-not-configured
                   :hint "consumer task not configured, missing uri"))
-      (run-single-consumer cfg consumer-nexus consumer-nexus-chunk (ct/tpoint)))))
+      (drain-consumer cfg consumer-nexus process-nexus-chunk))))
 
 (defn execute-audit-log-consumer-admin-console
   "Admin-console job handler: drain the admin-console queue in chunks,
@@ -750,7 +758,7 @@
   [cfg _params]
   (if-not (contains? cf/flags :admin-console)
     (l/dbg :hint "audit log consumer (admin-console) skipped, flag off")
-    (run-single-consumer cfg consumer-admin-console consumer-admin-console-chunk (ct/tpoint))))
+    (drain-consumer cfg consumer-admin-console process-admin-console-chunk)))
 
 (defn execute-audit-log-consumer-storage-usage
   "Storage-usage job handler: drain the storage-usage queue in chunks,
@@ -759,4 +767,4 @@
   [cfg _params]
   (if-not (contains? cf/flags :storage-usage)
     (l/dbg :hint "audit log consumer (storage-usage) skipped, flag off")
-    (run-single-consumer cfg consumer-storage-usage consumer-storage-usage-chunk (ct/tpoint))))
+    (drain-consumer cfg consumer-storage-usage process-storage-usage-chunk)))
