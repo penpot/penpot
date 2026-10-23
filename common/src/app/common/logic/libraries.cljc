@@ -930,7 +930,7 @@
         update-original-shape (fn [original-shape new-shape]
                                 (-> original-shape
                                     (assoc :shape-ref (:id new-shape))
-                                    (ctk/remove-swap-group)))
+                                    (dissoc :touched)))
 
         [new-head new-shapes updated-shapes]
         (ctst/clone-shape child-inst
