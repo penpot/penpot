@@ -12,16 +12,21 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.modifiers :as gm]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.placement :as clp]
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
@@ -140,3 +145,29 @@
     (t/is (nil? (:content-scale (ths/get-shape reset :copy2-root))))
     (t/is (= (thn/normalize-file changed) (thn/normalize-file undone)))))
 
+
+(t/deftest rotating-a-copy-with-text-in-a-detached-child-is-already-synced
+  (let [setup (fn []
+                (tm/make-situation
+                 (-> (thf/sample-file :file1)
+                     (thtx/add-text-component-with-copy [[["Hello world"]]])
+                     (ths/update-shape :main-child :grow-type :auto-height)
+                     (ths/update-shape :copy-child :grow-type :auto-height)
+                     (ths/update-shape :copy-child :touched nil)
+                     (tho/add-simple-component :outer :outer-root :outer-child
+                                               :root-params {:width 100 :height 100})
+                     (thc/instantiate-component :outer :outer-copy))))
+        situation (r/run-variant
+                   {:setup setup
+                    :operation (tm/in-sequence [(n/nest-copy :copy-root :outer-root)
+                                                (n/detach :copy-root)
+                                                (n/rotate :outer-copy 45)])})
+        file (tm/file situation)
+        text (first (filter #(= (thi/id :copy-child) (:shape-ref %))
+                            (vals (:objects (thf/current-page file)))))
+        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))
+        synced (ths/get-shape-by-id full (:id text))]
+    (t/is (some? text))
+    (t/is (gsh/close-attrs? :points (:points text) (:points synced) 0.01))
+    (t/is (mth/close? (:x text) (:x synced) 0.01))
+    (t/is (mth/close? (:y text) (:y synced) 0.01))))
