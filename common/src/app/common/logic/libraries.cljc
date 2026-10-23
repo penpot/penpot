@@ -1411,42 +1411,35 @@
         shape            (gsh/move shape delta)]
     (if-not (ctk/touched-group? dest-root :geometry-group)
       shape
-      (let [origin-transform (d/nilv (:transform origin-root) (gmt/matrix))
-            dest-transform   (d/nilv (:transform dest-root) (gmt/matrix))
-            rel-transform    (gmt/multiply dest-transform (gmt/inverse origin-transform))]
-        (if ^boolean (gmt/unit? rel-transform)
-          shape
-          ;; The roots differ in rotation/flips: rotate the whole (already moved)
-          ;; shape around the dest root center by the roots' relative transform.
-          ;; The :rotation attribute delta is fed through the :modifiers path so
-          ;; apply-transform keeps it consistent with the resulting matrix.
-          (let [center       (grc/rect->center (:selrect dest-root))
-                rel-rotation (mod (- (d/nilv (:rotation dest-root) 0)
-                                     (d/nilv (:rotation origin-root) 0))
-                                  360)]
-            (-> shape
-                (assoc-in [:modifiers :rotation] rel-rotation)
-                (gsh/apply-transform (gmt/transform-in center rel-transform))
-                (dissoc :modifiers))))))))
+      (if-let [turn (orient-like origin-root dest-root
+                                 (grc/rect->center (:selrect dest-root)))]
+        (turn shape)
+        shape))))
 
 (defn orient-like
   "Turn the subtree of `head` around `center` to match `target`'s matrix.
-   Flip flags can change during a rotation, so they cannot be applied as
-   separate transforms before that rotation."
+   Compose flip flags with the roots, independent of rotation step size."
   [head target center]
-  (when-not (and (= (:transform head) (:transform target))
-                 (mth/close? (or (:rotation head) 0) (or (:rotation target) 0) 0.01))
-    (let [relative (gmt/multiply (or (:transform target) (gmt/matrix))
-                                 (or (:transform-inverse head) (gmt/matrix)))
-          transform (gmt/transform-in center relative)
-          turned (gsh/apply-transform head transform)
-          angle (- (or (:rotation target) 0) (or (:rotation turned) 0))]
-      (when (or (not (gmt/unit? relative)) (not (mth/close? (mod angle 360) 0 0.01)))
-        (fn [shape]
-          (-> shape
-              (assoc-in [:modifiers :rotation] angle)
-              (gsh/apply-transform transform)
-              (dissoc :modifiers)))))))
+  (let [flip-x? (not= (boolean (:flip-x head)) (boolean (:flip-x target)))
+        flip-y? (not= (boolean (:flip-y head)) (boolean (:flip-y target)))]
+    (when-not (and (= (:transform head) (:transform target))
+                   (mth/close? (or (:rotation head) 0) (or (:rotation target) 0) 0.01)
+                   (not flip-x?) (not flip-y?))
+      (let [relative (gmt/multiply (or (:transform target) (gmt/matrix))
+                                   (or (:transform-inverse head) (gmt/matrix)))
+            transform (gmt/transform-in center relative)
+            turned (gsh/apply-transform head transform)
+            angle (- (or (:rotation target) 0) (or (:rotation turned) 0))]
+        (when (or (not (gmt/unit? relative)) (not (mth/close? (mod angle 360) 0 0.01))
+                  flip-x? flip-y?)
+          (fn [shape]
+            (let [flip-x (cond-> (:flip-x shape) flip-x? not)
+                  flip-y (cond-> (:flip-y shape) flip-y? not)]
+              (-> shape
+                  (assoc-in [:modifiers :rotation] angle)
+                  (gsh/apply-transform transform)
+                  (dissoc :modifiers)
+                  (assoc :flip-x flip-x :flip-y flip-y)))))))))
 
 (defn- maybe-sync
   [c enabled? done? f]
