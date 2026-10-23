@@ -1844,10 +1844,6 @@ msgstr "Dàárú"
 msgid "shortcuts.add-comment"
 msgstr "Ọ́rọ̀íwòye"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Fí ípàdé kùn"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Sópọ sí ísàle"

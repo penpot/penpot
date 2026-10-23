@@ -2511,10 +2511,6 @@ msgstr "Misto"
 msgid "shortcuts.add-comment"
 msgstr "Comentários"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Adicionar ponto"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Alinhar a base"

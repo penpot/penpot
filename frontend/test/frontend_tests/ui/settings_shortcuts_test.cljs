@@ -1,5 +1,6 @@
 (ns frontend-tests.ui.settings-shortcuts-test
   (:require
+   ["@penpot/mousetrap$default" :as mousetrap]
    [app.config :as cf]
    [app.main.data.dashboard.shortcuts :as dsc]
    [app.main.data.profile :as du]
@@ -495,17 +496,25 @@
 
 (defn- mock-wrapped-keydown
   "Simulates a goog.events.BrowserEvent-wrapped keydown: `key` and modifiers
-   are forwarded directly, and `code` is only reachable via `getBrowserEvent`.
-   `key` is passed through as-is (not defaulted) so callers can simulate a
-   missing `event.key` with `:key nil` - substituting \"\" would defeat that,
-   since an empty string is truthy in ClojureScript."
-  [{:keys [key code shift ctrl alt meta]}]
-  #js {:key key
-       :shiftKey (boolean shift)
-       :ctrlKey (boolean ctrl)
-       :altKey (boolean alt)
-       :metaKey (boolean meta)
-       :getBrowserEvent (fn [] #js {:code code})})
+   are forwarded directly, and the native event behind `getBrowserEvent`
+   carries every field (`code` and `keyCode` only live there). `key` is
+   passed through as-is (not defaulted) so callers can simulate a missing
+   `event.key` with `:key nil` - substituting \"\" would defeat that, since
+   an empty string is truthy in ClojureScript."
+  [{:keys [key code key-code shift ctrl alt meta]}]
+  (let [native #js {:key key
+                    :code code
+                    :keyCode key-code
+                    :shiftKey (boolean shift)
+                    :ctrlKey (boolean ctrl)
+                    :altKey (boolean alt)
+                    :metaKey (boolean meta)}]
+    #js {:key key
+         :shiftKey (boolean shift)
+         :ctrlKey (boolean ctrl)
+         :altKey (boolean alt)
+         :metaKey (boolean meta)
+         :getBrowserEvent (fn [] native)}))
 
 (defn- mock-native-keydown
   "Simulates a plain, unwrapped native KeyboardEvent (no getBrowserEvent),
@@ -531,7 +540,7 @@
               even when the typed glyph differs"
     (with-redefs [cf/check-platform? (constantly false)]
       (try
-        (reset! ds/layout-map #js {:get (fn [code] (when (= code "Period") "."))})
+        (.setLayoutMap mousetrap #js {:get (fn [code] (when (= code "Period") "."))})
         (t/is (= "shift+."
                  (#'ui-shortcuts/keyboard-event->mousetrap
                   (mock-wrapped-keydown {:key ">" :code "Period" :shift true}))))
@@ -539,7 +548,7 @@
                  (#'ui-shortcuts/keyboard-event->mousetrap
                   (mock-wrapped-keydown {:key ":" :code "Period" :shift true}))))
         (finally
-          (reset! ds/layout-map nil))))))
+          (.setLayoutMap mousetrap nil))))))
 
 (t/deftest mousetrap-shift-period-on-spanish-iso-layout
   (t/testing "Spanish (ISO) layout without a layout map: Shift + Period
@@ -633,28 +642,27 @@
 (t/deftest mousetrap-shifted-digit-resolves-to-digit
   (t/testing "a digit row key held with Shift records the digit itself: US
               Shift+0 types \")\" but records \"shift+0\", so the physical
-              digit key means the same on every layout (production keyCode
-              behavior)"
+              digit key means the same on every layout (named by keyCode)"
     (with-redefs [cf/check-platform? (constantly false)]
       (t/is (= "shift+0"
                (#'ui-shortcuts/keyboard-event->mousetrap
-                (mock-wrapped-keydown {:key ")" :code "Digit0" :shift true}))))
+                (mock-wrapped-keydown {:key ")" :code "Digit0" :key-code 48 :shift true}))))
       (t/is (= "shift+1"
                (#'ui-shortcuts/keyboard-event->mousetrap
-                (mock-wrapped-keydown {:key "!" :code "Digit1" :shift true}))))
+                (mock-wrapped-keydown {:key "!" :code "Digit1" :key-code 49 :shift true}))))
       (t/is (= "shift+2"
                (#'ui-shortcuts/keyboard-event->mousetrap
-                (mock-wrapped-keydown {:key "@" :code "Digit2" :shift true}))))
+                (mock-wrapped-keydown {:key "@" :code "Digit2" :key-code 50 :shift true}))))
       (t/is (= "shift+8"
                (#'ui-shortcuts/keyboard-event->mousetrap
-                (mock-wrapped-keydown {:key "*" :code "Digit8" :shift true})))))))
+                (mock-wrapped-keydown {:key "*" :code "Digit8" :key-code 56 :shift true})))))))
 
 (t/deftest mousetrap-shifted-digit-already-digit-unchanged
   (t/testing "AZERTY Shift+Digit0 already types \"0\": unchanged"
     (with-redefs [cf/check-platform? (constantly false)]
       (t/is (= "shift+0"
                (#'ui-shortcuts/keyboard-event->mousetrap
-                (mock-wrapped-keydown {:key "0" :code "Digit0" :shift true})))))))
+                (mock-wrapped-keydown {:key "0" :code "Digit0" :key-code 48 :shift true})))))))
 
 (t/deftest mousetrap-space-and-named-keys
   (t/testing "\" \" records as space and named keys stay lowercase"
@@ -672,15 +680,15 @@
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key "Delete" :code "Delete"})))))))
 
-(t/deftest mousetrap-altgr-drops-phantom-ctrl
-  (t/testing "Spanish AltGr++] types \"]\" with ctrl+alt flags, but the
-              phantom ctrl is dropped so no ctrl+alt shortcut fires"
+(t/deftest mousetrap-altgr-drops-phantom-modifiers
+  (t/testing "Spanish AltGr+] types \"]\" with ctrl+alt flags, but both
+              phantom modifiers are dropped and it records the glyph"
     (with-redefs [cf/check-platform? (constantly false)]
       (let [event #js {:key "]"
                        :shiftKey false :ctrlKey true :altKey true :metaKey false
                        :getModifierState (fn [m] (= m "AltGraph"))
                        :getBrowserEvent (fn [] nil)}]
-        (t/is (= "alt+]"
+        (t/is (= "]"
                  (#'ui-shortcuts/keyboard-event->mousetrap event)))))))
 
 (t/deftest mousetrap-real-ctrl-alt-keeps-both
@@ -699,7 +707,7 @@
               what the user sees and what Mousetrap matches"
     (with-redefs [cf/check-platform? (constantly false)]
       (try
-        (reset! ds/layout-map #js {:get (fn [code] (when (= code "BracketRight") "+"))})
+        (.setLayoutMap mousetrap #js {:get (fn [code] (when (= code "BracketRight") "+"))})
         (t/is (= "shift++"
                  (#'ui-shortcuts/keyboard-event->mousetrap
                   (mock-wrapped-keydown {:key "*" :code "BracketRight" :shift true}))))
@@ -707,7 +715,7 @@
                  (#'ui-shortcuts/keyboard-event->mousetrap
                   (mock-wrapped-keydown {:key "+" :code "BracketRight"}))))
         (finally
-          (reset! ds/layout-map nil))))))
+          (.setLayoutMap mousetrap nil))))))
 
 (t/deftest mousetrap-spanish-shift-plus-without-layout-map-records-glyph
   (t/testing "Spanish layout without a layout map: Shift + the physical
@@ -725,11 +733,24 @@
                (#'ui-shortcuts/keyboard-event->mousetrap
                 (mock-wrapped-keydown {:key "+" :code "BracketRight"})))))))
 
-(t/deftest layout-map-supported-matches-keyboard-api
-  (t/testing "false without a navigator or without a keyboard API"
-    (t/is (false? (ds/layout-map-supported? nil)))
-    (t/is (false? (ds/layout-map-supported? #js {})))
-    (t/is (false? (ds/layout-map-supported? #js {:keyboard #js {}}))))
-  (t/testing "true when getLayoutMap exists (Chromium)"
-    (t/is (true? (ds/layout-map-supported?
-                  #js {:keyboard #js {:getLayoutMap (fn [] nil)}})))))
+(t/deftest mousetrap-shift-digit-records-the-digit
+  (t/testing "Shift+1 types \"!\" but records \"shift+1\", the key the user
+              sees and the default zoom shortcuts use"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+1"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "!" :code "Digit1" :key-code 49 :shift true}))))
+      (t/is (= "shift+0"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "=" :code "Digit0" :key-code 48 :shift true})))))))
+
+(t/deftest mousetrap-option-letter-records-the-letter
+  (t/testing "macOS Option+M types \"µ\" and Option+E is a dead key, but
+              both record the letter"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "alt+m"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "µ" :code "KeyM" :key-code 77 :alt true}))))
+      (t/is (= "alt+e"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "Dead" :code "KeyE" :key-code 69 :alt true})))))))

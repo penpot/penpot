@@ -3948,10 +3948,6 @@ msgstr "选择使用此样式的项目"
 msgid "shortcuts.add-comment"
 msgstr "评论"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "添加节点"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "底部对齐"

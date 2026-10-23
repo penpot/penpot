@@ -36,11 +36,15 @@ describe("bind and dispatch", () => {
       shiftPlus++;
     });
     fire(target, makeKeyEvent({ key: "+", code: "Equal" }));
+    // Without a layout map Shift + the Spanish "+" key types "*" and
+    // nothing says the key is "+", so "shift++" does not fire.
     fire(target, makeKeyEvent({ key: "*", code: "BracketRight", shiftKey: true }));
-    // "*" normalizes by glyph, so "shift++" (shift + "+" key) does not fire;
-    // this pins the layout-independent behavior for the "+" physical key.
     assert.equal(plus, 1);
     assert.equal(shiftPlus, 0);
+    // A layout map names the key, so it does.
+    mousetrap.setLayoutMap({ get: (code) => (code === "BracketRight" ? "+" : undefined) });
+    fire(target, makeKeyEvent({ key: "*", code: "BracketRight", shiftKey: true }));
+    assert.equal(shiftPlus, 1);
   });
 
   it("resolves bind-string aliases to canonical tokens", () => {

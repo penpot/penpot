@@ -3200,10 +3200,6 @@ msgstr "이 스타일을 사용하는 항목 선택"
 msgid "shortcuts.add-comment"
 msgstr "댓글"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "노드 추가"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "아래 정렬"
