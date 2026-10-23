@@ -271,3 +271,14 @@
       (t/is (true? (:flip-y result)))
       ;; rotation must not be negated when both axes are flipped
       (t/is (mth/close? 30 (:rotation result))))))
+
+(t/deftest a-right-angle-turn-does-not-invent-a-flip-from-roundoff
+  (doseq [size [0.01 100 1000000]]
+    (let [shape (create-test-shape :rect {:width size :height size :rotation 90})
+          shape (assoc shape :points [(gpt/point size 0) (gpt/point size size)
+                                      (gpt/point 0 size) (gpt/point 0 (* size 1e-14))])
+          turn (gmt/transform-in (gpt/point (/ size 2) (/ size 2)) (gmt/rotate-matrix 90))
+          after (gsh/apply-transform (assoc-in shape [:modifiers :rotation] 90) turn)]
+      (t/is (not (:flip-x after)))
+      (t/is (not (:flip-y after)))
+      (t/is (mth/close? 180 (:rotation after))))))
