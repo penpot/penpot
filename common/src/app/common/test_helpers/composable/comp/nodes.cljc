@@ -965,13 +965,15 @@
 
 (defn- new-subtree-head
   "The id of the shape in `page-after` that is not in `page-before` but whose
-   parent is: the head of the one subtree added between them. Throws when
-   there is not exactly one, as when the sync also added children to copies."
+   parent is, outside component copies. Sync can add matching subtrees in
+   copies too; only the user's new subtree identifies the duplicate."
   [page-before page-after]
   (let [before (:objects page-before)
         heads  (->> (vals (:objects page-after))
                     (filter #(and (not (contains? before (:id %)))
-                                  (contains? before (:parent-id %))))
+                                  (contains? before (:parent-id %))
+                                  (empty? (ctn/get-parent-copy-heads (:objects page-after)
+                                                                     (get-in page-after [:objects (:parent-id %)])))))
                     (map :id))]
     (when-not (= 1 (count heads))
       (throw (ex-info (str "Expected one new subtree, found " (count heads))
