@@ -274,7 +274,7 @@
       (if component
         (let [shape-main (if reset?
                            ;; the reset is against the ref-shape, not against the original shape of the component
-                           (ctf/find-ref-shape file container libraries shape-inst)
+                           (ctf/find-ref-shape file container libraries shape-inst :include-deleted? true)
                            (ctf/get-content-ref-shape library component shape-inst))]
           (sync-copy-recursive changes
                                {:container      container
