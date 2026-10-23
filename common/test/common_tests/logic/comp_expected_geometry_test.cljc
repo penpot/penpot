@@ -200,3 +200,16 @@
         file (tm/file moved)
         full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
     (t/is (= (thn/normalize-file file) (thn/normalize-file full)))))
+
+(t/deftest full-sync-keeps-child-flips-after-several-small-root-rotations
+  (let [situation (-> (setup/nested-component-with-copy)
+                      (r/step (n/rotate :copy-root 45)) r/settle
+                      (r/step (n/rotate :copy-root 45)) r/settle
+                      (r/step (n/rotate :copy-root 45)) r/settle)
+        file (tm/file situation)
+        head (tm/role-shape situation :copy-instance)
+        child (tm/shape-by-id situation (first (:shapes head)))
+        synced (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))
+        after (get-in (thf/current-page synced) [:objects (:id child)])]
+    (t/is (= (select-keys child [:flip-x :flip-y]) (select-keys after [:flip-x :flip-y])))
+    (t/is (gsh/close-attrs? :points (:points child) (:points after) 0.001))))
