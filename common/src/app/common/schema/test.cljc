@@ -94,9 +94,10 @@
   [name]
   (when-let [value #?(:clj (System/getenv name)
                       :cljs (some-> js/globalThis .-process .-env (aget name)))]
-    (let [number #?(:clj (parse-long value) :cljs (js/Number value))]
-      (when-not (and (integer? number) (pos? number))
-        (throw (ex-info (str name " must be a positive integer")
+    (let [number #?(:clj (parse-long value) :cljs (js/Number value))
+          seed?  (= name "PENPOT_GEN_SEED")]
+      (when-not (and (integer? number) (or seed? (pos? number)))
+        (throw (ex-info (str name (if seed? " must be an integer" " must be a positive integer"))
                         {:variable name :value value})))
       number)))
 

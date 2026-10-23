@@ -29,3 +29,13 @@
                   {:type :shrunk :seed 712 :shrunk {:smallest [10]}}))]
     (t/is (str/includes? output "712"))
     (t/is (str/includes? output ":smallest [10]"))))
+
+(t/deftest check-uses-the-environment-seed
+  (let [seed (atom nil)
+        expected #?(:clj (some-> (System/getenv "PENPOT_GEN_SEED") parse-long)
+                    :cljs (some-> js/globalThis .-process .-env .-PENPOT_GEN_SEED js/Number))]
+    (smt/check! (smt/for [value gen/nat] (<= 0 value))
+                :num 1
+                :reporter-fn #(when (= :complete (:type %)) (reset! seed (:seed %))))
+    (when (some? expected)
+      (t/is (= expected @seed)))))
