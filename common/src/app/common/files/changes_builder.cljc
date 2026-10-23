@@ -731,7 +731,10 @@
                                                     (:remote-synced parent))
                                                (conj (restore-parent-state-change page-id parent)))))
                                          $ (distinct (keep (fn [id] (:parent-id (get objects id))) ids)))
-                                 (reduce add-undo-change-parent $ ids)
+                                 ;; Moves undo in sibling order: each preceding
+                                 ;; sibling must be in place before its follower.
+                                 (reduce add-undo-change-parent $
+                                         (reverse (sort-by (partial cfh/get-position-on-parent objects) (seq ids))))
                                  (reduce add-undo-change-shape $ ids))))))
 
 (defn remove-objects
