@@ -2205,6 +2205,10 @@ msgstr "Este archivo no es una exportación de atajos válida."
 msgid "import-shortcuts.no-changes"
 msgstr "No se encontraron diferencias entre los atajos actuales y los importados."
 
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+msgid "import-shortcuts.skipped-entries"
+msgstr "Estas entradas no se pueden importar: no corresponden a ningún atajo de Penpot o usan una combinación reservada."
+
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
 msgstr "Color"
@@ -5036,6 +5040,10 @@ msgstr "Editar %s"
 #: src/app/main/ui/shortcuts.cljs:645
 msgid "shortcuts.edit-modal.conflict"
 msgstr "Ya asignado a \"%s\". Al guardar, pasará a esta acción."
+
+#: src/app/main/ui/shortcuts.cljs:836
+msgid "shortcuts.edit-modal.reserved"
+msgstr "Penpot reserva esta combinación y no se puede asignar."
 
 #: src/app/main/ui/shortcuts.cljs:636
 msgid "shortcuts.edit-modal.reset-pending"

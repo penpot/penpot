@@ -8,6 +8,7 @@
   "Admission control for export jobs.
 
   Limits concurrent jobs and rejects work rather than allowing an unbounded backlog.
+  Every limit is per replica: the queue lives in this process only.
   Queue order is FIFO, except jobs whose profile is already at its cap are skipped,
   as are headless jobs once every render worker is busy."
   (:require

@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 (ns frontend-tests.logic.comp-remove-swap-slots-test
   (:require
+   [app.common.files.validate :as cfv]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
@@ -870,3 +871,149 @@
            (t/is (some? copied-blue1'))
            (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
 
+
+(t/deftest test-keep-inherited-swap-slot-copy-paste-nested-copy-to-root
+  (t/async
+    done
+    (let [;; ==== Setup
+          ;; {:frame-red} [:name frame-red]                      # [Component :red]
+          ;; {:frame-blue} [:name frame-blue]                    # [Component :blue]
+          ;; {:frame-icon} [:name frame-icon]                    # [Component :icon]
+          ;;     :red-copy-icon [:name frame-red]                @--> frame-red
+          ;; {:frame-title} [:name frame-title]                  # [Component :title]
+          ;;     :icon-copy-title [:name frame-icon]             @--> frame-icon
+          ;;         :blue-copy-title [:name frame-blue, :swap-slot-label :red-copy-icon] @--> frame-blue
+          ;; :title-copy [:name frame-title]                     #--> frame-title
+          ;;     :icon-copy-in-title-copy [:name frame-icon]     @--> :icon-copy-title
+          ;;         :blue-copy-in-title-copy [:name frame-blue] @--> :blue-copy-title
+          file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :frame-red :name "frame-red")
+                       (cthc/make-component :red :frame-red)
+                       (ctho/add-frame :frame-blue :name "frame-blue")
+                       (cthc/make-component :blue :frame-blue)
+                       (ctho/add-frame :frame-icon :name "frame-icon")
+                       (cthc/make-component :icon :frame-icon)
+                       (cthc/instantiate-component :red :red-copy-icon :parent-label :frame-icon)
+                       (ctho/add-frame :frame-title :name "frame-title")
+                       (cthc/make-component :title :frame-title)
+                       (cthc/instantiate-component :icon :icon-copy-title :parent-label :frame-title
+                                                   :children-labels [:red-copy-in-icon-copy-title])
+                       (cthc/component-swap :red-copy-in-icon-copy-title :blue :blue-copy-title)
+                       (cthc/instantiate-component :title :title-copy
+                                                   :children-labels [:icon-copy-in-title-copy
+                                                                     :blue-copy-in-title-copy]))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          icon     (cths/get-shape file :icon-copy-in-title-copy)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id icon)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'        (ths/get-file-from-state new-state)
+               page'        (cthf/current-page file')
+               icon'        (cths/get-shape file' :icon-copy-in-title-copy)
+               blue'        (cths/get-shape file' :blue-copy-in-title-copy)
+               copied-icon' (find-copied-shape icon' page' uuid/zero)
+               copied-blue' (find-copied-shape blue' page' (:id copied-icon'))
+               errors       (try
+                              (cfv/validate-file! file' {(:id file') file'})
+                              nil
+                              (catch :default cause
+                                (ex-data cause)))]
+
+           ;; ==== Check
+           ;; the copied icon now refers to the icon main, where blue
+           ;; does not exist, so the copied blue must keep the swap slot
+           ;; inherited from :blue-copy-title
+           (t/is (some? copied-icon'))
+           (t/is (= (:shape-ref copied-icon') (cthi/id :frame-icon)))
+           (t/is (some? copied-blue'))
+           (t/is (= (ctk/get-swap-slot copied-blue') (cthi/id :red-copy-icon)))
+
+           ;; the file must be valid after the paste
+           (t/is (nil? errors))))))))
+
+(t/deftest test-keep-touched-copy-paste-nested-copy-to-root
+  (t/async
+    done
+    (let [;; ==== Setup
+          ;; Add a nested copy inside a copy of :green, and override its fill
+          ;; so that the copy has a touched attribute.
+          file     (-> (setup-file)
+                       (cthc/instantiate-component :green :green-copy-2
+                                                   :parent-label :frame-b2
+                                                   :children-labels [:red-copy-in-green-copy-2])
+                       (cths/update-shape :red-copy-in-green-copy-2
+                                          :fills (cths/sample-fills-color :fill-color "#ff0000")))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          red      (cths/get-shape file :red-copy-in-green-copy-2)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id red)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'       (ths/get-file-from-state new-state)
+               page'       (cthf/current-page file')
+               red'        (cths/get-shape file' :red-copy-in-green-copy-2)
+               copied-red' (find-copied-shape red' page' uuid/zero)]
+
+           ;; ==== Check
+           ;; the touched fill override must be preserved in the pasted copy
+           (t/is (some? copied-red'))
+           (t/is (contains? (:touched copied-red') :fill-group))
+           (t/is (= (:touched red') (:touched copied-red')))))))))
+
+(t/deftest test-remove-swap-slot-copy-paste-nested-swapped-copy-to-root
+  (t/async
+    done
+    (let [;; ==== Setup (sample file as is)
+          file     (setup-file)
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          blue     (cths/get-shape file :blue-copy-in-green-copy)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id blue)} (:objects page) {(:id file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'         (ths/get-file-from-state new-state)
+               page'         (cthf/current-page file')
+               blue'         (cths/get-shape file' :blue-copy-in-green-copy)
+               copied-blue'  (find-copied-shape blue' page' uuid/zero)]
+
+           ;; ==== Check
+           ;; the copied blue has no swap-id
+           (t/is (some? copied-blue'))
+           (t/is (nil? (ctk/get-swap-slot copied-blue')))))))))

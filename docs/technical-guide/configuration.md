@@ -923,6 +923,15 @@ PENPOT_INTERNAL_URI: http://penpot-frontend:8080
   `http://penpot-frontend:8080` used in the docker-compose is a good default and
   it is recommended to keep it unchanged.
 
+**Beta, new render engine (WebGL):** when you run more than one exporter, give
+each one its own name and keep it across restarts and upgrades. An exporter
+uses it to cancel only its own unfinished exports when it restarts:
+
+```bash
+# Exporter
+PENPOT_EXPORTER_REPLICA_ID: exporter-1
+```
+
 ### MCP
 
 The MCP server lets AI agents read and edit Penpot files. It runs as a separate

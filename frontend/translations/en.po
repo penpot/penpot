@@ -2169,6 +2169,10 @@ msgstr "This file is not a valid shortcuts export."
 msgid "import-shortcuts.no-changes"
 msgstr "No differences found between the current and imported shortcuts."
 
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+msgid "import-shortcuts.skipped-entries"
+msgstr "These entries can't be imported: they don't match any Penpot shortcut or use a reserved key combination."
+
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
 msgstr "Color"
@@ -4972,6 +4976,10 @@ msgstr "Edit %s"
 #: src/app/main/ui/shortcuts.cljs:645
 msgid "shortcuts.edit-modal.conflict"
 msgstr "Already assigned to \"%s\". Saving will move it to this action."
+
+#: src/app/main/ui/shortcuts.cljs:836
+msgid "shortcuts.edit-modal.reserved"
+msgstr "This combination is reserved by Penpot and can't be assigned."
 
 #: src/app/main/ui/shortcuts.cljs:636
 msgid "shortcuts.edit-modal.reset-pending"

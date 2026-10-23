@@ -88,13 +88,14 @@ file (never pipe tool output through filters).
   so a nested one silently forks install and lockfile behavior. Do not
   reintroduce it.
 - `media-processor/target/package.json` is a generated, gitignored copy that
-  the script also stamps, so stamping and `--check` report 36 files while
-  only 35 are tracked. A stale copy there makes `--check` fail with nothing
+  the script also stamps, so stamping and `--check` report 35 files while
+  only 34 are tracked. A stale copy there makes `--check` fail with nothing
   wrong in the repo: delete `media-processor/target` and re-run.
 - Expect metadata-only lockfile diffs when only the pnpm version moves:
   the pnpm self-reference entries, plus a new `packageManagerDependencies`
   section in lockfiles last written by older pnpm. Large diffs mean
   re-resolution; inspect them before accepting.
+- A backport merge of main into staging can bring a newer `PNPM_VERSION` in `docker/` while every `packageManager` field stays behind, since main receives partial `.github/`+`docker/` backports from develop. Resolve those conflicts with main's version and run `scripts/sync-pnpm-version <version>` in the same merge.
 
 ## Verification
 
