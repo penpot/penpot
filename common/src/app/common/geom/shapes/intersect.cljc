@@ -387,7 +387,10 @@
 
         ;; Cramer's rule
         det (- (* a1 b2) (* a2 b1))
-        det (if (mth/almost-zero? det) 0.001 det)
+        ;; The determinant scales with both line lengths. Short perpendicular
+        ;; lines are not parallel just because their determinant is small.
+        scale (* (mth/hypot a1 b1) (mth/hypot a2 b2))
+        det (if (or (zero? scale) (mth/almost-zero? (/ det scale))) 0.001 det)
 
         x (/ (- (* b2 c1) (* b1 c2)) det)
         y (/ (- (* c2 a1) (* c1 a2)) det)]
