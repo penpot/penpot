@@ -21,6 +21,7 @@
    [app.metrics :as mtx]
    [app.nitrate :as nitrate]
    [app.setup :as-alias setup]
+   [app.tasks.event-consumer :as events]
    [integrant.core :as ig]
    [promesa.exec :as px]))
 
@@ -102,57 +103,6 @@
   (when (contains? cf/flags :nexus)
     (queue-pendings cfg ids consumer-nexus)))
 
-(def ^:private default-team-keys
-  "Key map of the events that carry a single :team-id in props."
-  {:paths [[:team-id]]
-   :keys  [:team-id]})
-
-(def ^:private team-keys-by-name
-  "Single source of the storage-usage contract: event name -> where its
-  team ids live. `:paths` are the prop paths `team-ids-of-event` reads;
-  `:keys` are the top-level props `carries-team-keys?` checks with
-  `contains?`, so an explicit empty collection counts as a fact and not
-  as a producer that lost its keys. Adding a name here also adds it to
-  `storage-usage-event-names`, so the two cannot drift."
-  {"upload-file-media-object"          default-team-keys
-   "create-file-media-object-from-url" default-team-keys
-   "clone-file-media-object"           default-team-keys
-   "assemble-file-media-object"        default-team-keys
-   ;; Files created in bulk (import, clone, duplicate) may carry media,
-   ;; so they can change the total even though create-file itself adds
-   ;; no bytes: do not drop it, and do not copy it to cheaper events.
-   "create-file"                       default-team-keys
-   "create-font-variant"               default-team-keys
-   "delete-font"                       default-team-keys
-   "delete-font-variant"               default-team-keys
-   "delete-file"                       default-team-keys
-   "delete-object-with-cascade"        {:paths [[:team-ids] [:cascade :team-ids]]
-                                        :keys  [:team-ids :cascade]}
-   "move-files"                        {:paths [[:source-team-id] [:dest-team-id]]
-                                        :keys  [:source-team-id :dest-team-id]}
-   "move-project"                      {:paths [[:source-team-id] [:dest-team-id]]
-                                        :keys  [:source-team-id :dest-team-id]}
-   "permanently-delete-team-files"     default-team-keys
-   "restore-deleted-team-files"        default-team-keys
-   "restore-file"                      default-team-keys
-   "restore-profile"                   {:paths [[:team-ids] [:cascade :team-ids]]
-                                        :keys  [:team-ids :cascade]}
-   "restore-project"                   default-team-keys
-   "restore-team"                      default-team-keys
-   "file-gc"                           default-team-keys})
-
-(def storage-usage-event-names
-  "Audit event names that can change per-team media storage. Only these
-  queue a pending for the storage-usage consumer; everything else skips
-  it, so unrelated traffic pays no extra row and the drain stays lean.
-  Derived from `team-keys-by-name` so the allowlist and the key map
-  cannot disagree. Purges (`hard-delete-objects`) are excluded on
-  purpose: the physical delete only removes rows the live SUM already
-  ignores (everything with `deleted_at` set), so queueing them would
-  recompute the same total — and purged teams would violate the usage
-  table foreign key."
-  (set (keys team-keys-by-name)))
-
 (def ^:private consumers-by-id
   (into {} (map (juxt :id identity)) consumers))
 
@@ -198,6 +148,14 @@
 (defn- row->event
   [row]
   (select-keys row event-keys))
+
+(defn- row->reaction-event
+  "The view of an audit-log row that a reaction sees: the decoded event
+  plus the id of the row, so a reaction can correlate what it did with
+  the row it came from. The id does not travel to the archives: the
+  payload they receive is the event alone."
+  [row]
+  (assoc (row->event (decode-row row)) :id (:id row)))
 
 (defn- record-count
   [metrics id labels amount]
@@ -535,80 +493,6 @@
       (complete-batch cfg consumer-admin-console rows)
       admin-console-res)))
 
-(def ^:private sql:mark-storage-usage-dirty
-  "INSERT INTO team_storage_usage AS tsu (team_id, dirty_at)
-   SELECT id, now() FROM unnest(?::uuid[]) AS u(id)
-   WHERE EXISTS (SELECT 1 FROM team AS t WHERE t.id = u.id)
-   ON CONFLICT (team_id) DO UPDATE
-      SET dirty_at = EXCLUDED.dirty_at
-    WHERE tsu.dirty_at IS NULL")
-
-(defn- team-ids-of-event
-  "Team ids of one storage-usage event, read through its key map (see
-  team-keys-by-name). Throws on a present non-UUID: a producer bug,
-  never coerced; the caller logs the row and skips that event."
-  [{:keys [name props]}]
-  (let [{:keys [paths]} (get team-keys-by-name name default-team-keys)
-        ;; A path holds either one id (:team-id) or a collection
-        ;; (:team-ids): normalize both to a seq.
-        ids (mapcat (fn [path]
-                      (let [v (get-in props path)]
-                        (cond (nil? v) nil
-                              (coll? v) v
-                              :else     [v])))
-                    paths)]
-    (doseq [id ids :when (some? id)]
-      (when-not (uuid? id)
-        (ex/raise :type :validation
-                  :code :non-uuid-team-id
-                  :hint "non-uuid team id in storage-usage event"
-                  :event name)))
-    ids))
-
-(defn- carries-team-keys?
-  "True when the event carries any of the team keys its key map names,
-  even an empty collection: an explicit empty list (a profile that owns
-  no team) is a fact, not a producer bug."
-  [{:keys [name props]}]
-  (let [{:keys [keys]} (get team-keys-by-name name default-team-keys)]
-    ;; `some?` on the value, not `contains?`: an explicit empty
-    ;; collection counts (a fact), a nil value does not (the producer
-    ;; failed to resolve its team).
-    (boolean (some #(some? (get props %)) keys))))
-
-(defn- collect-storage-usage-team-ids
-  "Team ids whose media storage may have changed in this chunk, read
-  straight from props: producers key their events by team so the drain
-  never joins production tables. Each event name maps to its keys
-  explicitly; anything else falls back to the single :team-id in
-  props. A present non-UUID is a producer bug (see get-team-ids, never
-  coerced): that event is logged with its row id and skipped, so one
-  bad row cannot wedge the queue. The key map lives in
-  team-keys-by-name; storage-usage-queueing-covers-every-listed-name
-  pins the real prop shape of every listed name."
-  [entries]
-  (into #{}
-        (comp (map (fn [[id event]]
-                     (try
-                       (team-ids-of-event event)
-                       (catch Throwable cause
-                         (l/warn :hint "skipping storage-usage event with invalid team ids"
-                                 :audit-log-id (str id)
-                                 :event (:name event)
-                                 :cause cause)
-                         nil))))
-              (mapcat (fn [ids] (or ids [])))
-              (filter some?))
-        entries))
-
-(defn- mark-storage-usage-dirty
-  [conn team-ids]
-  (when (seq team-ids)
-    ;; Keeps the oldest dirty mark: a team marked twice in one window
-    ;; is recomputed once.
-    (db/exec-one! conn [sql:mark-storage-usage-dirty
-                        (db/create-array conn "uuid" team-ids)])))
-
 (defn- consumer-storage-usage-chunk
   "Mark dirty the teams changed in one pending chunk and complete it.
   Returns {:sent :skipped} like the other chunk fns: relevant events
@@ -618,30 +502,13 @@
   [cfg]
   (db/exec! cfg ["SET LOCAL lock_timeout = '30s'"])
   (when-let [rows (get-pending-rows cfg consumer-storage-usage)]
-    (let [pairs    (mapv (fn [row]
-                           [(:id row) ((comp row->event decode-row) row)])
-                         rows)
-          relevant (into []
-                         (filter (fn [[_ event]]
-                                   (contains? storage-usage-event-names (:name event))))
-                         pairs)
-          skipped  (- (count pairs) (count relevant))
-          teams    (collect-storage-usage-team-ids relevant)
-          _        (mark-storage-usage-dirty (::db/conn cfg) teams)
-          ;; No relevant event carries any team key: a producer
-          ;; stopped keying its events. An explicit empty collection
-          ;; does not count (see carries-team-keys?).
-          _        (when (and (seq relevant)
-                              (not-any? (comp carries-team-keys? second) relevant))
-                     (l/warn :hint "storage-usage chunk resolved no team ids"
-                             :events (count relevant)
-                             :ids (mapv (comp str first) relevant)))]
+    (let [batch (mapv row->reaction-event rows)
+          sent  (events/dispatch-reactions cfg batch)]
       (l/trc :hint "consumer events chunk"
              :consumer "storage-usage"
-             :events (count relevant)
-             :teams (count teams))
+             :events sent)
       (complete-batch cfg consumer-storage-usage rows)
-      {:sent (count relevant) :skipped skipped})))
+      {:sent sent :skipped (- (count batch) sent)})))
 
 (defn- drain-consumer
   "Drain one consumer queue chunk by chunk, one transaction per chunk.

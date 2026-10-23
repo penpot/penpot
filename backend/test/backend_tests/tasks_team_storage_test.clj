@@ -89,7 +89,7 @@
 
 (t/deftest storage-usage-queueing-covers-every-listed-name
   ;; Pins the drain contract for every name in
-  ;; storage-usage-event-names: each one queues a pending and marks the
+  ;; team-storage-event-names: each one queues a pending and marks the
   ;; teams its key map resolves, using the real prop shape. It fails
   ;; when a name is added without its case; the producers themselves
   ;; are pinned by the end-to-end tests (delete-file, delete-font-
@@ -121,7 +121,7 @@
                 ["restore-project" {:team-id team-b}]
                 ["restore-team" {:team-id team}]
                 ["file-gc" {:team-id team :file-id (:id file)}]]]
-    (t/is (= consumer/storage-usage-event-names (set (map first cases))))
+    (t/is (= team-storage/team-storage-event-names (set (map first cases))))
     (with-redefs [cf/flags test-flags]
       (doseq [[nm props] cases]
         (append-row nm props))

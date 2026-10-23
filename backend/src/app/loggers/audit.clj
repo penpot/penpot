@@ -26,6 +26,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
+   [app.tasks.team-storage :as team-storage]
    [app.util.inet :as inet]
    [app.util.services :as-alias sv]
    [cuerdas.core :as str]
@@ -264,9 +265,11 @@
 
     ;; The storage-usage consumer is selective: only the events that
     ;; can change per-team media storage queue its pending, and never
-    ;; for telemetry shadows (the full row already queues).
+    ;; for telemetry shadows (the full row already queues). The list of
+    ;; names belongs to the reaction that consumes them (see
+    ;; `app.tasks.team-storage`).
     (when (and (contains? cf/flags :storage-usage)
-               (contains? consumer/storage-usage-event-names (:name params))
+               (contains? team-storage/team-storage-event-names (:name params))
                (not (telemetry-shadow-source? (:source params))))
       (consumer/queue-pendings cfg [(:id row)] consumer/consumer-storage-usage))
 
