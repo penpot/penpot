@@ -12,14 +12,15 @@ The system has:
 
 - **Three producers** (they create events): the Penpot backend (RPC layer), the Penpot frontend (browser app), and the Nitrate admin-console, which sends both server-side and client-side events.
 - **One central buffer**: the Postgres `audit_log` table in Penpot. It is temporary: it holds events for minutes/hours until they are archived, then they are deleted.
-- **Four consumers** (they read events): webhooks, error reporters, telemetry, and the external archives in Nexus and in the admin console.
+- **Five consumers** (they read events): webhooks, error reporters, telemetry, the external archives in Nexus and in the admin console, and the **events consumer**, a generalist that lets the backend react to the events as they arrive (see section 12).
 - **Two long-term archives**: **Nexus**, a separate service that stores events for the long term, and the **admin console** (Nitrate), which ingests its own allowlisted events through a second archive job (see section 12).
 
 ```
 Penpot frontend ─ POST push-audit-events (public) ─────────▶┐
 Nitrate admin-console (browser) ─ POST push-audit-events ──▶│
 Nitrate admin-console (server) ─ POST push-audit-events  ──▶│ ─▶ audit_log table (buffer) ──┬─ cron 0s every 5m ──▶ Nexus (archive)
-Penpot backend (RPC wrap-audit) ─ submit ───────────────────┘         │                      └─ cron 30s every 5m ─▶ admin console (archive)
+Penpot backend (RPC wrap-audit) ─ submit ───────────────────┘         │                     ├─ cron 30s every 5m ─▶ admin console (archive)
+                                                                      │                     └─ cron 15s every 5m ─▶ events consumer (reactions)
                                                                       │   ├──▶ webhooks
                                                                       │   ├──▶ error reporters
                                                                       └──▶ telemetry (shadow rows)
@@ -57,7 +58,7 @@ Main columns (migration `backend/src/app/migrations/sql/0054-add-audit-log-table
 - `source` text: `backend` / `frontend` for full rows, `telemetry:backend` / `telemetry:frontend` for anonymized copies (see section 10).
 - `ip_addr` inet: real IP (or `0.0.0.0` on telemetry rows).
 - `props` / `context` jsonb holding transit-encoded maps: action data and metadata (versions, browser, request-id...).
-- No `archived_at`: the `audit_log_pending` queue (migration `0157`, consumer `1` = Nexus, `2` = admin console, `3` = events — see `mem:backend/subtleties` —, ids never reused) tracks what is left. Every record is born pending for the enabled non-selective consumers (today only Nexus; the producer gates on the flag), plus one pending per selective consumer only when the event qualifies (admin-console allowlist, storage-usage event list, both ingest paths): cheaper on single-consumer hosts and true to the design doc. Consequence, accepted on purpose: rows born with no send flag on get no pendings, so enabling archiving later does not pick them up — the sweep deletes them unarchived. Same for a consumer turned selective later: only events queued after the change drain.
+- No `archived_at`: the `audit_log_pending` queue (migration `0157`, consumer `1` = Nexus, `2` = admin console, `3` = events — see `mem:backend/subtleties` —, ids never reused) tracks what is left. Every record is born pending for the enabled non-selective consumers (Nexus and the events consumer; the producer gates on the flag), plus one pending for the admin console only when the event qualifies (its allowlist, both ingest paths): cheaper on single-consumer hosts and true to the design doc. Consequence, accepted on purpose: rows born with no send flag on get no pendings, so enabling archiving later does not pick them up — the sweep deletes them unarchived.
 
 Indexes (each consumer has its own, so a slow consumer never blocks the others):
 
@@ -274,7 +275,7 @@ Nexus dispatches on `:type`: `"telemetry-events"` batches are coerced and insert
 - **No personal data is expected.** Profile ids are random UUIDs with no PII, so the telemetry consumer needs no login guard; grouping is by `instance`, not by person (see posthog-telemetry below).
 - **The endpoint always answers 200.** Failures are swallowed and only counted (`nexus_telemetry_errors_total`), so a bad batch never breaks the sending instance; successes are counted (`nexus_telemetry_events_total`, `nexus_telemetry_reports_total`). A body the parser cannot read never reaches the handler: it answers 400 and counts in `nexus_http_malformed_requests_total`. Old instances may send a fressian+zstd base64 blob instead of a plain vector; Nexus decodes both (50 MiB cap against decompression bombs).
 
-## 12. Archive to Nexus and to the admin console
+## 12. The queue consumers: Nexus, the admin console and the events consumer
 
 ### How it works today
 
@@ -287,6 +288,26 @@ On the other side, Nexus checks `origin` against its allowlist (403 if not allow
 Concurrent jobs are safe: every consumer locks its own pendings (`audit_log_pending`, the rows it owns and deletes) with `FOR NO KEY UPDATE OF p`, in `created_at ASC, id ASC` order — one total order for the whole stream, deliberately blocking, no `SKIP LOCKED`. A second run of the same consumer (another backend, or a retry overlapping the previous one) waits for the run in flight and then takes the next events: the events are executed in order, like an event log. No consumer waits for another one, because the queues are disjoint; the `audit_log` rows are only read, and every delete that takes them away — the drained chunk and the orphan sweep — skips the ones another transaction holds instead of waiting for them (the sweep runs outside the chunk transaction and without a `lock_timeout`, so waiting there would hang the whole drain). The lock mode is `FOR NO KEY UPDATE` and not `FOR UPDATE` on purpose: deleting an `audit_log` row makes the foreign key check take `FOR KEY SHARE` on the pending rows that reference it (they belong to the other consumers), and `FOR KEY SHARE` does not conflict with `FOR NO KEY UPDATE` — with `FOR UPDATE` the two consumers deadlocked. Only acknowledged work deletes pendings; an admin-console failure never blocks the Nexus send of the same rows (each job owns its queue).
 
 Observability (`backend/src/app/loggers/audit/consumers.clj`, definitions in `backend/src/app/main.clj:default-metrics`): one `dbg` summary per job run (`:consumer` label, sent/skipped/chunks, reaped disabled pendings, swept orphans, `:elapsed` as `"1.5s"` via `ct/format-duration`, frozen in a strict binding first because log props evaluate lazily in the logger thread), one `dbg` per admin-console send call (`ready` with totals, `sent`/`failed` with counts), plus `dbg` when the queue is empty or the job's send flag is off. Queue depth is Grafana's business: it queries the database directly, so the run performs no `GROUP BY` for the logs. No `warn` before a throw: the runner reports the aborted job (refusal details travel in the error data). Metrics, all recorded with bounded labels only: `penpot_audit_consumer_events_total{ destination = nexus|admin-console|events, outcome = archived|processed|failed|skipped }` (`skipped` = filtered by the admin-console allowlist, or nobody claimed the event; the events consumer reports `processed` instead of `archived`: it dispatches the stream, it archives nothing) and `penpot_audit_consumer_discarded_total{ reason = reaped|swept }` (entries discarded without archiving: `reaped` counts pendings dropped for disabled consumers, `swept` counts rows deleted while nobody waited for them — the silent R3 loss, now dashboard-visible instead of log-only). Timing needs no custom histogram: the jobs substrate already records execution time per job (`jobs-execution-timing`, split by job name), so each archive job is timed as itself. No queue-depth gauge: pending depth is read off the replica database directly. The bulk frontend ingest counts `penpot_audit_ingest_events_total{ kind = full|shadow, outcome = inserted|failed }` (both faces share one transaction, so a failure drops the batch on both). Archive success counts are recorded by `drain-consumer` on the drain totals: a chunk that returns normally committed its transaction (a rollback always throws instead), so they cannot inflate. Logs never carry event data (`props`, `context`, `profile-id`, `ip-addr`, `team-name`, emails): only counts, statuses and the uri host.
+
+### The events consumer: a generalist with reactions
+
+The third drain (`:audit-log-consumer-events`, flag `:event-consumer`, cron `15 */5 * * * ?`) archives nothing. It takes the **whole** stream — its queue is not selective, the producer never decides which events it wants — and hands each event to the **reactions** that claim it.
+
+A reaction is a map:
+
+```clojure
+{:id     :team-storage-usage   ;; who it is
+ :flag   :storage-usage        ;; the flag that turns it on
+ :events #{...}                ;; the event names it cares about
+ :apply  (fn [cfg events] ...)} ;; what it does with them
+```
+
+- A reaction receives the **whole batch** of events it declares, once: a reaction that groups work (marking a team dirty) must not write once per event. The dispatch does not catch exceptions: the reaction decides which errors are data (it skips the event) and which abort the batch (the event is retried on the next tick).
+- Each domain owns its reaction: the one that owns the table and the SQL of its mark is the one that knows which events affect it and where its key lives. The registry lives in `backend/src/app/loggers/audit/consumers.clj`; the team-storage reaction in `backend/src/app/tasks/team_storage.clj`.
+- The producer does **not** know the reactions: it queues the whole stream, so a new reaction needs no change in the producer, only a new entry in the registry.
+- The drain only decodes the props of the events some reaction claims; the rest travel untouched.
+
+There is one reaction today: `:team-storage-usage`, which marks dirty the teams whose media storage may have changed and feeds the `media-storage-bytes-per-team` quota counter (see `mem:backend/subtleties`).
 
 ### How Nexus consumes the data (and forwards to PostHog)
 
@@ -329,6 +350,7 @@ Config (`backend/src/app/config.clj`): `:nexus-uri`, `:telemetry-uri` (default `
 - **New Penpot frontend event**: create the data-event or implement `Event`/`PerformanceEvent` in `app.main.data.event`, with `::name`/`::type`/`::origin`. Honor `skip-audit?` if the action can resume. Remember: with no props schema, **your asserts are the contract**.
 - **New admin-console event**: server action → add the backend-log call next to the mutation, best-effort so it never breaks the action; browser action → add a new event helper plus its test.
 - **Command that creates an entity or already knows its team**: put the new row's `:id` in `::audit/props` (`create-project`/`create-file`) and set `:team-id` when the team is loaded, so the consumer never has to join production tables. For entities created inside an internal call (`clone-template`, `import-binfile`, `duplicate-project`), emit one event per entity: `audit/submit-file-created-event` when only the id is known (it reads the row back), `audit/submit-create-event` when the row is already in hand.
+- **New reaction to the events consumer**: add it to the registry in `backend/src/app/loggers/audit/consumers.clj` (`reactions`) with its `:id`, `:flag`, `:events` and `:apply`. The producer does not change (the queue is not selective). The reaction belongs to the domain that owns the affected table, and it must be idempotent: the drain is at-least-once, so the same event can reach it twice.
 - **Never** put secrets in `props`; `clean-props` is a last defense, not an excuse.
 - **Do not duplicate events**: if the backend already emits an event for an action, do not add a frontend (or admin-console browser) event for the same action — the backend one wins because it is reliable. A second event for the same action is only acceptable with a strong reason (for example the backend cannot see it at all), and then it must be clearly justified.
 - **Follow the naming policy**: use kebab-case names (`"create-organization"`, not `"createOrganization"`), and before inventing prop keys, look at similar existing events and reuse their key names (`organization-id`, `team-id`, `file-id`, `event-origin`...). Same concept, same key spelling — that is what keeps the data queryable later.
