@@ -405,9 +405,9 @@
   (when-let [parent (get objects parent-id)]
     (or (d/index-of (:shapes parent) shape-id) 0)))
 
-(defn- keep-authored-orientation
-  "A plain swap drops content overrides, but keeps an authored rotation or
-   flip as geometry so a later sync does not remove its retained placement."
+(defn- keep-orientation-override
+  "A plain swap keeps its old orientation. When that differs from the new
+   component's expected placement, the swap authors a geometry override."
   [changes shape baseline page ldata component-id]
   (let [parent (get-in page [:objects (:parent-id shape)])
         main (ctf/get-component-root ldata (ctkl/get-component ldata component-id))
@@ -425,7 +425,7 @@
                      (not= (boolean (:flip-x shape)) (flip :flip-x))
                      (not= (boolean (:flip-y shape)) (flip :flip-y)))]
     (cond-> changes
-      (and (ctk/touched-group? shape :geometry-group) changed?)
+      changed?
       (pcb/update-shapes [(:id shape)]
                          #(update % :touched (fnil conj #{}) :geometry-group)
                          {:ignore-touched true}))))
@@ -454,7 +454,7 @@
         [changes parents-of-swapped]
         (if keep-touched?
           (generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-          [(keep-authored-orientation changes shape new-shape page ldata component-id) []])
+          [(keep-orientation-override changes shape new-shape page ldata component-id) []])
 
         ;; Replacement keeps the head id and its cell. Cleanup during the
         ;; temporary deletion must not change the parent's placement data.

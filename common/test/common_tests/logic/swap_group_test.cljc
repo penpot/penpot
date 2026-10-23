@@ -734,3 +734,15 @@
     (t/is (mth/close? 0 (:rotation child) 0.001))
     (t/is (= #{:swap-group} (:touched head)))
     (t/is (nil? (:touched child)))))
+
+(t/deftest plain-swap-keeps-the-orientation-inherited-from-its-old-component
+  (let [initial (-> (tm/make-situation (setup-sized))
+                    (r/step (n/rotate :star-main 45)) r/settle)
+        swapped (-> initial (r/step (n/swap-shape :card-star :heart)) r/settle)
+        head (tm/resolve-shape swapped :card-star)
+        file (tm/file swapped)
+        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (t/is (nil? (:touched (tm/resolve-shape initial :card-star))))
+    (t/is (ctk/touched-group? head :geometry-group))
+    (t/is (mth/close? 45 (:rotation head) 0.001))
+    (t/is (= (orientation file :card-star) (orientation full :card-star)))))
