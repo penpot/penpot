@@ -66,10 +66,10 @@
 (def consumer-events 3)
 
 (def ^:private consumers
-  [{:id consumer-nexus          :flag :nexus          :label "nexus"         :lock :ordered   :outcome "archived"}
-   {:id consumer-admin-console :flag :admin-console  :label "admin-console" :lock :ordered   :outcome "archived"}
+  [{:id consumer-nexus          :flag :nexus          :label "nexus"         :outcome "archived"}
+   {:id consumer-admin-console :flag :admin-console  :label "admin-console" :outcome "archived"}
    ;; dispatches the events to the reactions, it archives nothing
-   {:id consumer-events        :flag :event-consumer :label "events"        :lock :unordered :outcome "processed"
+   {:id consumer-events        :flag :event-consumer :label "events"        :outcome "processed"
     :summary "events dispatched"}])
 
 (def ^:private xf:enabled-consumers
@@ -240,34 +240,35 @@
         (subs s 0 limit)
         s))))
 
-;; NOTE: deliberately no SKIP LOCKED here. Batches must reach the
-;; destinations in chronological order (Nexus numbers by arrival),
-;; so every consumer takes the same total order and a second
-;; overlapping run waits for the first to commit, then sees whether
-;; it was last. The brief blocking is accepted; skipping rows could
-;; reorder archive arrival.
 (def ^:private sql:pending-chunk
-  "SELECT a.*
-     FROM audit_log_pending p
-     JOIN audit_log a ON a.id = p.audit_log_id
-    WHERE p.consumer = ?::smallint
-    ORDER BY a.created_at ASC, a.id ASC
-    LIMIT 128
-      FOR UPDATE OF a")
+  "The next chunk of events for one consumer.
 
-(def ^:private sql:pending-chunk-unordered
-  "The same chunk for a consumer that does not archive and does not
-  care about order (the events consumer dispatches the stream, and the
-  reactions are idempotent). SKIP LOCKED keeps it from waiting on an
-  archive job holding the oldest rows: that wait could hit lock_timeout
-  and abort the run."
+  The lock is on `audit_log_pending`, the rows this consumer owns and
+  the ones it deletes: every consumer locks its own queue, so no
+  consumer waits for another one. The `audit_log` rows are only read.
+
+  The lock is FOR NO KEY UPDATE, not FOR UPDATE: deleting an
+  `audit_log` row makes the foreign key check take FOR KEY SHARE on
+  the pending rows that reference it, and those belong to the other
+  consumers. FOR KEY SHARE does not conflict with FOR NO KEY UPDATE,
+  so the check never waits for a drain in flight and the two consumers
+  cannot deadlock. It still conflicts with itself, so two runs of the
+  same consumer take turns.
+
+  No SKIP LOCKED, on purpose: the events have to be executed in order,
+  like an event log. Two runs of the same consumer (two backends, or a
+  retry overlapping the previous run) take the same total order and the
+  second one waits for the first to commit, then finds its pendings
+  gone and takes the next events. Skipping the locked ones would hand
+  the newer events to the second run while the older ones are still in
+  flight."
   "SELECT a.*
      FROM audit_log_pending p
      JOIN audit_log a ON a.id = p.audit_log_id
     WHERE p.consumer = ?::smallint
     ORDER BY a.created_at ASC, a.id ASC
     LIMIT 128
-      FOR UPDATE OF a SKIP LOCKED")
+      FOR NO KEY UPDATE OF p")
 
 (def ^:private sql:delete-pendings
   "DELETE FROM audit_log_pending
@@ -275,27 +276,22 @@
       AND audit_log_id = ANY(?)")
 
 (def ^:private sql:delete-drained
+  "The rows nobody waits for anymore are deleted. The inner select
+  locks the rows with SKIP LOCKED: a consumer never waits for another
+  one that happens to hold the row, and the row it skips is left for
+  the orphan sweep."
   "DELETE FROM audit_log a
-    WHERE a.id = ANY(?)
+    WHERE a.id IN (SELECT id FROM audit_log
+                    WHERE id = ANY(?)
+                      FOR UPDATE SKIP LOCKED)
       AND NOT EXISTS (
         SELECT 1 FROM audit_log_pending p
         WHERE p.audit_log_id = a.id
       )")
 
-(defn- pending-rows-sql
-  "The chunk query of a consumer. The ones that archive block on the
-  oldest rows (the arrival order matters to the destination); the ones
-  that do not archive take the rows with SKIP LOCKED, so they never wait
-  on an archive job holding them (that wait could hit lock_timeout and
-  abort the run)."
-  [consumer]
-  (if (= :ordered (:lock consumer))
-    sql:pending-chunk
-    sql:pending-chunk-unordered))
-
 (defn- get-pending-rows
   [{:keys [::db/conn]} consumer]
-  (->> (db/exec! conn [(pending-rows-sql consumer) (:id consumer)])
+  (->> (db/exec! conn [sql:pending-chunk (:id consumer)])
        (not-empty)))
 
 (defn- complete-batch
@@ -614,11 +610,17 @@
        " ORDER BY audit_log_id LIMIT 5000)"))
 
 (def ^:private sql:sweep-orphans
+  "The records nobody waits for anymore are deleted. The inner select
+  locks the rows with SKIP LOCKED, like the delete of a drained chunk:
+  the sweep never waits for a transaction that holds one of them (a
+  producer inserting a pending, another consumer draining), and the rows
+  it skips stay for the next sweep."
   "DELETE FROM audit_log a
     WHERE a.id IN (SELECT a2.id FROM audit_log a2
                     WHERE NOT EXISTS (SELECT 1 FROM audit_log_pending p
                                        WHERE p.audit_log_id = a2.id)
-                    ORDER BY a2.id LIMIT 5000)")
+                    ORDER BY a2.id LIMIT 5000
+                    FOR UPDATE SKIP LOCKED)")
 
 (defn- delete-batched
   "Run a batched DELETE until it removes nothing. Returns the total."

@@ -350,11 +350,10 @@
                           (get (::l/props %) :hint))
                       @records)))))
 
-(t/deftest storage-usage-drain-skips-rows-locked-by-an-archive
-  ;; The drain does not archive and its mark is idempotent, so it must
-  ;; not wait on an archive job holding the oldest rows: it skips them
-  ;; (SKIP LOCKED) and processes the rest, instead of hitting
-  ;; lock_timeout and aborting the run.
+(t/deftest events-drain-does-not-wait-on-a-locked-audit-log-row
+  ;; The drain locks its own pendings, not the audit_log rows it only
+  ;; reads: another transaction holding one of those rows must not stop
+  ;; it. The row it cannot lock is left for the orphan sweep.
   (let [prof   (th/create-profile* 85 {:is-active true})
         team-a (:default-team-id prof)
         team-b (:id (th/create-team* 85 {:profile-id (:id prof)}))]
@@ -371,10 +370,40 @@
             (th/run-task! :audit-log-consumer-events {})
             (finally
               (db/exec! conn ["ROLLBACK"])))
-          ;; The locked row stayed pending; the other one drained.
-          (t/is (= 1 (count (events-pendings))))
-          (t/is (nil? (:dirty-at (usage-row team-a))))
+          ;; Both events were dispatched: the drain never waits for the
+          ;; row another transaction holds.
+          (t/is (= 0 (count (events-pendings))))
+          (t/is (some? (:dirty-at (usage-row team-a))))
           (t/is (some? (:dirty-at (usage-row team-b)))))))))
+
+(t/deftest events-drain-waits-for-the-run-in-flight
+  ;; The events have to be executed in order, like an event log: a
+  ;; second run (another backend, or a retry overlapping the previous
+  ;; one) waits for the pendings of the run in flight instead of taking
+  ;; the newer events while the older ones are still being dispatched.
+  (let [prof (th/create-profile* 86 {:is-active true})
+        team (:default-team-id prof)]
+    (with-redefs [cf/flags test-flags]
+      (append-row "upload-file-media-object" {:team-id team})
+      (with-open [conn (db/open th/*system*)]
+        (db/exec! conn ["BEGIN"])
+        ;; Lock the pendings of the events consumer, as a run in flight
+        ;; holds them.
+        (db/exec! conn ["SELECT audit_log_id FROM audit_log_pending
+                          WHERE consumer = 3 FOR UPDATE"])
+        ;; The future needs the system: the dynamic var is not
+        ;; inherited by the thread.
+        (let [system th/*system*
+              job    (future (binding [th/*system* system]
+                               (th/run-task! :audit-log-consumer-events {})))]
+          ;; The run is blocked on the pending: it dispatched nothing.
+          (Thread/sleep 500)
+          (t/is (nil? (:dirty-at (usage-row team))))
+          (db/exec! conn ["COMMIT"])
+          ;; The run finishes once the pending is free: it did not
+          ;; time out waiting for it.
+          (t/is (not= :timeout (deref job 10000 :timeout)))
+          (t/is (some? (:dirty-at (usage-row team)))))))))
 
 (t/deftest events-run-summary-names-its-work
   ;; The run summary must not say "events archived": this consumer
