@@ -10,6 +10,7 @@
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.config-test]
    [frontend-tests.composable-tests.completion-contract-test]
+   [frontend-tests.composable-tests.generated-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.auth-test]
    [frontend-tests.data.changes-test]
@@ -258,6 +259,7 @@
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.config-test
    'frontend-tests.composable-tests.completion-contract-test
+   'frontend-tests.composable-tests.generated-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.auth-test
    'frontend-tests.data.changes-test
