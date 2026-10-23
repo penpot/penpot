@@ -300,7 +300,10 @@
               (let [[situation syncs] (if sync?
                                         (sync-file situation old-data changes)
                                         [situation []])]
-                (push-undo-group situation (into [changes] syncs))))
+                (cond-> (push-undo-group situation (into [changes] syncs))
+                  (not sync?)
+                  (update ::pending-components (fnil into #{})
+                          (changed-components old-data changes)))))
       (and undo-check? (= kind :user))
       (check-step op before depth)
 
@@ -370,6 +373,30 @@
        ;; assembly steps and a user step that changed nothing are not
        ;; validated on their own
        (:sync? opts) (validate-settled!)))))
+
+(defn step
+  "Run a resolved random operation, retaining the runner's undo stacks.
+   The harness checks each settled group's inverse itself."
+  [situation op]
+  (run-op situation op {:sync? false :undo-check? false}))
+
+(defn pending-components
+  [situation]
+  (get situation ::pending-components #{}))
+
+(defn settle
+  "Sync selected pending components in the latest user's undo group."
+  ([situation] (settle situation (pending-components situation)))
+  ([situation component-ids]
+   (let [{:keys [file syncs]} (sync-cascade (tm/file situation)
+                                            (tm/aux-files situation)
+                                            component-ids)
+         stack (get situation ::undo-stack [])]
+     (cond-> (-> situation
+                 (tm/with-file file)
+                 (update ::pending-components #(apply disj (or % #{}) component-ids)))
+       (and (seq syncs) (seq stack))
+       (assoc ::undo-stack (conj (pop stack) (into (peek stack) syncs)))))))
 
 (defn run-all
   "Enumerate `operation` into its concrete variants and run each with

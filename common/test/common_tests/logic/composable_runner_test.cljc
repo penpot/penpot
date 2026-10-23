@@ -194,8 +194,8 @@
       (:type (ex-data e)))))
 
 (t/deftest frontend-only-operations-are-rejected
-  (t/is (= ::r/frontend-only (error-type (n/rotate :main-root 45))))
-  (t/is (= ::r/frontend-only (error-type (n/change-height :main-root 50)))))
+  (t/is (= ::r/frontend-only (error-type (n/move-shape :main-root 20 0))))
+  (t/is (= ::r/frontend-only (error-type (n/undo-before-sync :main-child :fills red)))))
 
 ;; A user operation that forgets to record its changes.
 (defrecord UnrecordedEdit []

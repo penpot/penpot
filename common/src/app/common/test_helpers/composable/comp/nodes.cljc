@@ -15,11 +15,13 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.tokens :as cfo]
+   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.duplicate :as cld]
    [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
+   [app.common.logic.placement :as clp]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
@@ -277,15 +279,24 @@
 ;; ---------------------------------------------------------------------------
 ;; Geometry operations
 ;;
-;; The frontend interpreter dispatches the real sidebar events: they build
-;; the modifiers (frontend code: constraints, pixel snap) and the placement
-;; step (`clp/calculate-ignore-tree`) decides which copy shapes the change
-;; touches. Their `apply-to` makes the same transform without either, so the
-;; pure runner rejects them.
+;; The frontend interpreter dispatches the sidebar events. The pure runner
+;; uses the same constraints and placement logic for resize and rotation.
+;; MoveShape still needs the frontend position event.
+
+(defn transform-changes
+  "Apply a transform through constraints and the shared placement step."
+  [page shape modifiers]
+  (let [objects (:objects page)
+        tree (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects)
+        transform (clp/modifiers-transform tree)]
+    (cls/generate-update-shapes
+     (pcb/empty-changes nil (:id page)) (keys tree) transform objects
+     {:ignore-tree (clp/calculate-ignore-tree objects (keys tree) transform #{(:id shape)})
+      :attrs clp/transform-attrs})))
 
 (defrecord Rotate [target angle]
   IComponentOperation
-  (op-kind [_] :frontend-only)
+  (op-kind [_] :user)
 
   tm/IOperation
   (apply-to [this situation]
@@ -294,15 +305,8 @@
           page     (thf/current-page the-file)
           objects  (:objects page)
           shape    (get objects shape-id)
-          ;; the whole subtree rotates, as with the real event
-          ids      (into #{shape-id} (cfh/get-children-ids objects shape-id))
           center   (gsh/shape->center shape)
-          rotate1  (fn [s] (gsh/transform-shape s (ctm/rotation-modifiers s center angle)))
-          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                               ids
-                                               rotate1
-                                               objects
-                                               {})
+          changes  (transform-changes page shape (ctm/rotation-modifiers shape center angle))
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
@@ -318,7 +322,7 @@
 
 (defrecord ChangeHeight [target value]
   IComponentOperation
-  (op-kind [_] :frontend-only)
+  (op-kind [_] :user)
 
   tm/IOperation
   (apply-to [this situation]
@@ -327,15 +331,7 @@
           page     (thf/current-page the-file)
           objects  (:objects page)
           shape    (get objects shape-id)
-          resize1  (fn [s] (gsh/transform-shape
-                            s
-                            (ctm/resize-modifiers (gpt/point 1 (/ value (:height s)))
-                                                  (gpt/point (:x s) (:y s)))))
-          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                               #{(:id shape)}
-                                               resize1
-                                               objects
-                                               {})
+          changes  (transform-changes page shape (ctm/change-size shape nil value))
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
@@ -1860,7 +1856,7 @@
   tm/IOperation
   (apply-to [this situation]
     (let [the-file    (tm/file situation)
-          parent-id   (tm/resolve-shape-id situation parent)
+          parent-id   (tm/target-shape-id situation parent)
           page        (thf/current-page the-file)
           objects     (:objects page)
           ;; registers `new-label`
@@ -1895,7 +1891,7 @@
   tm/IOperation
   (apply-to [this situation]
     (let [the-file  (tm/file situation)
-          shape-id  (tm/resolve-shape-id situation target)
+          shape-id  (tm/target-shape-id situation target)
           page      (thf/current-page the-file)
           [_all-parents changes]
           (cls/generate-delete-shapes (pcb/empty-changes)
