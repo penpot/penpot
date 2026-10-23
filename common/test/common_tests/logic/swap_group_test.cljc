@@ -698,3 +698,26 @@
                   (propagate :card)
                   (thf/validate-file!))]
     (t/is (== 10 (:rotation (orientation file' :copy-star))))))
+
+(t/deftest plain-swap-keeps-authored-rotation-as-a-geometry-override
+  (doseq [target [:plain-star :card-star :copy-star]]
+    (let [initial (tm/make-situation (setup-sized))
+          rotated (-> initial (r/step (n/rotate target 45)) r/settle
+                      (r/step (n/change-property target :opacity 0.4)) r/settle)
+          swapped (-> rotated (r/step (n/swap-shape target :heart)) r/settle)
+          head (tm/resolve-shape swapped target)
+          file (tm/file swapped)
+          full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+      (t/is (ctk/touched-group? head :geometry-group))
+      (t/is (== 45 (:rotation head)))
+      (t/is (not (ctk/touched-group? head :layer-effects-group)))
+      (t/is (= 1 (:opacity head 1)))
+      (t/is (= (orientation file target) (orientation full target))))))
+
+(t/deftest plain-swap-drops-a-size-only-override
+  (let [situation (-> (tm/make-situation (setup-sized))
+                      (r/step (n/change-height :plain-star 80)) r/settle
+                      (r/step (n/swap-shape :plain-star :heart)) r/settle)
+        head (tm/resolve-shape situation :plain-star)]
+    (t/is (== 40 (:height head)))
+    (t/is (not (ctk/touched-group? head :geometry-group)))))
