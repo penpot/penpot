@@ -330,6 +330,16 @@ test.describe("Component options", () => {
       "annotation-saved.png",
       { maxDiffPixelRatio: 0, threshold: 0 },
     );
+
+    // Collapsed by clicking its title.
+    await title.click();
+    await expect(
+      workspace.rightSidebar.getByText("An annotation"),
+    ).toBeHidden();
+    await expect(workspace.rightSidebar).toHaveScreenshot(
+      "annotation-collapsed.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
   });
 });
 
