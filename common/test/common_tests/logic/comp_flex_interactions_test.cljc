@@ -17,6 +17,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [clojure.test :as t]))
 
@@ -153,3 +154,119 @@
     ;; ==== Check
     (t/is (mth/close? (inc copy-x) (:x (tho/bottom-shape file' :copy2-root))))
     (t/is (= [(thi/id :copy-popup)] (destinations copy-nested-head')))))
+
+(defn- swap-to-library-component
+  "Swap a shape in `file` to a component that lives in `library`, keeping
+  flex-item attrs the way production `component-swap` does."
+  [file library shape-label new-component-label]
+  (let [shape             (ths/get-shape file shape-label)
+        page              (thf/current-page file)
+        keep-props-values (select-keys shape ctk/swap-keep-attrs)
+        libraries         {(:id library) library
+                           (:id file) file}
+        id-new            (:id (thc/get-component library new-component-label))
+        [_ _ changes]     (cll/generate-component-swap
+                           (pcb/empty-changes nil (:id page))
+                           (:objects page)
+                           shape
+                           (:data library)
+                           page
+                           libraries
+                           id-new
+                           0
+                           nil
+                           keep-props-values
+                           false)]
+    (thf/apply-changes file changes)))
+
+(defn- setup-library-with-absolute-nested-icon
+  "Library: icon A, icon B, and a flex board whose nested child is an
+  instance of icon A with absolute position."
+  []
+  (-> (thf/sample-file :library)
+      (tho/add-simple-component :icon-a :icon-a-root :icon-a-child)
+      (tho/add-simple-component :icon-b :icon-b-root :icon-b-child)
+      (tho/add-frame :board-root {:name "Board"
+                                  :layout :flex
+                                  :layout-flex-dir :row})
+      (thc/instantiate-component :icon-a :nested-head {:parent-label :board-root})
+      (update-shape :nested-head #(assoc % :layout-item-absolute true))
+      (thc/make-component :board :board-root)))
+
+(t/deftest test-sync-library-keeps-swapped-nested-absolute
+  (let [;; ==== Setup
+        library      (setup-library-with-absolute-nested-icon)
+        file         (-> (thf/sample-file :file)
+                         (thc/instantiate-component :board
+                                                    :copy-board
+                                                    :library library
+                                                    :children-labels [:copy-nested-head]))
+        file         (swap-to-library-component file library :copy-nested-head :icon-b)
+        swapped      (ths/get-shape file :copy-nested-head)
+
+        ;; ==== Action
+        library'     (update-shape library :board-root
+                                   #(assoc % :fills (ths/sample-fills-color :fill-color "#fabada")))
+        file'        (thf/apply-changes file (sync-file-from-library file library'))
+        swapped'     (ths/get-shape file' :copy-nested-head)]
+
+    ;; ==== Check
+    (t/is (true? (:layout-item-absolute swapped)))
+    (t/is (some? (ctk/get-swap-slot swapped)))
+    (t/is (= (thi/id :icon-b) (:component-id swapped)))
+    (t/is (some? (ctk/get-swap-slot swapped')))
+    (t/is (= (thi/id :icon-b) (:component-id swapped')))
+    (t/is (true? (:layout-item-absolute swapped')))))
+
+(t/deftest test-sync-library-propagates-slot-absolute-to-swapped-nested
+  (let [;; ==== Setup
+        library  (setup-library-with-absolute-nested-icon)
+        file     (-> (thf/sample-file :file)
+                     (thc/instantiate-component :board
+                                                :copy-board
+                                                :library library
+                                                :children-labels [:copy-nested-head]))
+        file     (swap-to-library-component file library :copy-nested-head :icon-b)
+
+        ;; ==== Action
+        library' (update-shape library :nested-head
+                               #(assoc % :layout-item-absolute false))
+        file'    (thf/apply-changes file (sync-file-from-library file library'))
+        swapped' (ths/get-shape file' :copy-nested-head)]
+
+    ;; ==== Check
+    (t/is (some? (ctk/get-swap-slot swapped')))
+    (t/is (= (thi/id :icon-b) (:component-id swapped')))
+    (t/is (not (true? (:layout-item-absolute swapped'))))))
+
+(t/deftest test-sync-library-flex-child-attrs-to-unswapped-sibling
+  (let [;; ==== Setup
+        margin   {:m1 5 :m2 5 :m3 5 :m4 5}
+        library  (-> (thf/sample-file :library)
+                     (tho/add-simple-component :icon-a :icon-a-root :icon-a-child)
+                     (tho/add-simple-component :icon-b :icon-b-root :icon-b-child)
+                     (tho/add-frame :board-root {:name "Board"
+                                                 :layout :flex
+                                                 :layout-flex-dir :row})
+                     (thc/instantiate-component :icon-a :nested-head {:parent-label :board-root})
+                     (ths/add-sample-shape :sibling :type :rect :name "Sibling" :parent-label :board-root)
+                     (update-shape :nested-head #(assoc % :layout-item-absolute true))
+                     (thc/make-component :board :board-root))
+        file     (-> (thf/sample-file :file)
+                     (thc/instantiate-component :board
+                                                :copy-board
+                                                :library library
+                                                :children-labels [:copy-nested-head :copy-sibling]))
+        file     (swap-to-library-component file library :copy-nested-head :icon-b)
+
+        ;; ==== Action
+        library' (update-shape library :sibling
+                               #(assoc % :layout-item-margin margin))
+        file'    (thf/apply-changes file (sync-file-from-library file library'))
+        sibling' (ths/get-shape file' :copy-sibling)
+        swapped' (ths/get-shape file' :copy-nested-head)]
+
+    ;; ==== Check
+    (t/is (= margin (:layout-item-margin sibling')))
+    (t/is (true? (:layout-item-absolute swapped')))
+    (t/is (some? (ctk/get-swap-slot swapped')))))
