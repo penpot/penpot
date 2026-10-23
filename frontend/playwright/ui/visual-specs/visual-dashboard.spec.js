@@ -317,3 +317,31 @@ test("User goes to the team settings section", async ({ page }) => {
   await expect(page.getByText("TEAM INFO")).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
+
+test.describe("Onboarding questions controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Previous and next buttons", async ({ page }) => {
+    await DashboardPage.mockConfigFlags(page, ["enable-onboarding"]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await expect(
+      page.getByRole("heading", { name: "Help us get to know you" }),
+    ).toBeVisible();
+
+    // Step 1, as in OnboardingPage.fillOnboardingInputsStep1.
+    await page.getByText("Personal", { exact: true }).click();
+    await page.getByText("Select option").click();
+    await page.getByText("Product Management").click();
+    await page.getByRole("button", { name: "Next" }).click();
+
+    const previous = page.getByRole("button", { name: "Previous" });
+    await expect(previous).toBeVisible();
+    const actions = previous.locator("xpath=..");
+    await page.mouse.move(10, 700);
+    await expect(actions).toHaveScreenshot(shot);
+
+    await previous.hover();
+    await expect(actions).toHaveScreenshot(shot);
+  });
+});

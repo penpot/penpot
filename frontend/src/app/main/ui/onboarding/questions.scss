@@ -4,8 +4,10 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the modal placeholders (%modal-*), which move with
+// the modals refactor.
 @use "refactor/common-refactor.scss" as deprecated;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
@@ -22,19 +24,15 @@
   @extend %modal-accept-btn;
 }
 
-.prev-button {
-  @extend %modal-cancel-btn;
-}
-
 .modal-container {
-  max-width: $sz-964;
-  max-height: fit-content;
+  max-inline-size: $sz-964;
+  max-block-size: fit-content;
   inline-size: fit-content;
   padding-inline: $sz-96;
   padding-block: $sz-40 $sz-64;
   border-radius: $br-8;
-  border: $b-2 solid var(--modal-border-color);
-  background-color: var(--modal-background-color);
+  border: $b-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-primary);
 }
 
 .form-wrapper {
@@ -44,15 +42,15 @@
 }
 
 .paginator {
-  @include t.use-typography("title-small");
+  @include use-typography("title-small");
 
-  text-align: right;
-  color: var(--modal-text-foreground-color);
+  text-align: end;
+  color: var(--color-foreground-secondary);
 }
 
 .radio label,
 .select span {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 }
 
 .header-image {
@@ -62,25 +60,25 @@
 }
 
 .modal-title {
-  @include t.use-typography("title-large");
+  @include use-typography("title-large");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
   min-block-size: $sz-32;
   margin-block: auto;
 }
 
 .modal-subtitle {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
   margin: 0;
   padding: 0;
 }
 
 .modal-text {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
   margin: 0;
 }
 
