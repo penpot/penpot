@@ -7,7 +7,9 @@
 (ns app.main.data.exports.wasm
   (:require
    [app.common.media :refer [format->mtype]]
+   [app.main.features :as features]
    [app.render-wasm.api :as wasm.api]
+   [app.util.code-beautify :as cb]
    [app.util.dom :as dom]
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]))
@@ -119,3 +121,46 @@
     (dom/trigger-download-uri filename "application/pdf" url)
     (js/queueMicrotask #(wapi/revoke-uri url))
     nil))
+
+(defn wasm-svg-markup-enabled?
+  "True when SVG inspect / copy-as-svg must use WASM (never classic SVG render)."
+  [state]
+  (features/active-feature? state "render-wasm/v1"))
+
+(defn- decode-utf8
+  [bytes]
+  (when bytes
+    (.decode (js/TextDecoder.) bytes)))
+
+(defn get-svg-markup
+  "UTF-8 SVG string for the given shape ids via the main-thread WASM module.
+  Empty string when WASM is not ready, ids are empty, or export throws —
+  callers must not fall back to classic SVG codegen while the WASM gate is on."
+  [shape-ids]
+  (let [ids (vec shape-ids)]
+    (cond
+      (empty? ids)
+      ""
+
+      (not (wasm.api/initialized?))
+      ""
+
+      :else
+      (try
+        (or (decode-utf8
+             (if (= 1 (count ids))
+               (wasm.api/render-shape-svg (first ids) 1)
+               (wasm.api/render-shapes-svg ids 1)))
+            "")
+        (catch :default _
+          "")))))
+
+(defn get-formatted-svg-markup
+  "Beautified SVG markup for inspect / copy-as-svg when the WASM gate is on.
+  Skips beautify when markup is empty so inspect/copy stay safe without
+  js-beautify (and avoid a no-op format call)."
+  [shape-ids]
+  (let [markup (get-svg-markup shape-ids)]
+    (if (str/empty? markup)
+      ""
+      (cb/format-code markup "svg"))))

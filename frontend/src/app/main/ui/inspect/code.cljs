@@ -14,6 +14,8 @@
    [app.common.types.shape-tree :as ctst]
    [app.config :as cfg]
    [app.main.data.event :as ev]
+   [app.main.data.exports.wasm :as wasm.exports]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -113,6 +115,9 @@
         collapsed-css?    (contains? @collapsed* :css)
         collapsed-markup? (contains? @collapsed* :markup)
 
+        ;; With render-wasm active, never use classic SVG codegen for SVG markup.
+        wasm-svg-markup? (features/use-feature "render-wasm/v1")
+
         objects        (use-objects from)
 
         shapes
@@ -148,9 +153,11 @@
 
         markup-code
         (mf/use-memo
-         (mf/deps markup-type shapes images-data)
+         (mf/deps markup-type shapes images-data objects wasm-svg-markup?)
          (fn []
-           (cg/generate-formatted-markup-code objects markup-type shapes)))
+           (if (and (= markup-type "svg") wasm-svg-markup?)
+             (wasm.exports/get-formatted-svg-markup (mapv :id shapes))
+             (cg/generate-formatted-markup-code objects markup-type shapes))))
 
         on-markup-copied
         (mf/use-fn
