@@ -28,6 +28,50 @@ const setupFileWithAssets = async (workspace) => {
   return { fileId, pageId };
 };
 
+test.describe("Color palette", () => {
+  test("Shows the scroll arrows and the palette menu", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-many-colors.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
+      pageId: "c1249a66-fce0-8175-8004-7433fe4be8bd",
+    });
+
+    await workspace.clickColorPalette();
+    await workspace.palette.locator('[class*="palette-actions"]').click();
+    await page.getByText("File library").click();
+    await expect(
+      workspace.palette.getByRole("button", { name: "color-01" }),
+    ).toBeVisible();
+    await page.mouse.move(640, 300);
+    // The arrows are a small part of the palette: compare every pixel.
+    await expect(workspace.palette).toHaveScreenshot("color-palette.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await workspace.palette.locator('[class*="right-arrow"]').click();
+    await page.mouse.move(640, 300);
+    await expect(workspace.palette).toHaveScreenshot(
+      "color-palette-scrolled.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    await workspace.palette.locator('[class*="palette-actions"]').click();
+    await expect(page.getByText("Recent colors")).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(page).toHaveScreenshot("color-palette-menu.png", {
+      clip: { x: 300, y: 400, width: 700, height: 320 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Viewport", () => {
   test("Shows the workspace correctly for a blank file", async ({ page }) => {
     const workspace = new WorkspacePage(page);
