@@ -121,7 +121,7 @@
     :onboarding
     :quotes
     :soft-quotes
-    ;; Background per-team media storage usage counter fed by the
+    ;; Background per-team media storage usage counter fed by its own
     ;; audit-log consumer. Needs :audit-log to receive events.
     :storage-usage
     ;; Concurrency limit.

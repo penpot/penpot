@@ -21,7 +21,6 @@
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.jobs :as jobs]
-   [app.loggers.audit.consumer-task :as consumer]
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -53,9 +52,9 @@
 
 (defn telemetry-shadow-source?
   "True for the anonymized shadow sources of the telemetry consumer. A
-  selective consumer must skip them: the full row already queues, and
-  the shadow keeps the event name, so queueing it would ingest the
-  same event twice (once full, once anonymized)."
+  selective consumer must skip them: the full row carries the event
+  already, and the shadow keeps the event name, so processing it would
+  ingest the same event twice (once full, once anonymized)."
   [source]
   (contains? telemetry-sources (str source)))
 
@@ -253,30 +252,13 @@
                    (update :props db/tjson)
                    (update :context db/tjson)
                    (update :ip-addr db/inet))
-        params (select-keys params event-keys)
-        row    (db/insert! cfg :audit-log params)]
-    ;; The consumer queue follows the row in the same transaction: a
-    ;; rollback takes both on its way out, so a row never outlives its
-    ;; queue. Nexus takes every row; the two `when`s below add the
-    ;; pendings of the selective consumers (storage-usage,
-    ;; admin-console), each gated on its own flag.
-    (consumer/queue-nexus-pendings cfg [(:id row)])
-
-    ;; The storage-usage consumer is selective: only the events that
-    ;; can change per-team media storage queue its pending, and never
-    ;; for telemetry shadows (the full row already queues).
-    (when (and (contains? cf/flags :storage-usage)
-               (contains? consumer/storage-usage-event-names (:name params))
-               (not (telemetry-shadow-source? (:source params))))
-      (consumer/queue-pendings cfg [(:id row)] consumer/consumer-storage-usage))
-
-    ;; The admin-console consumer is selective too: only allowlisted
-    ;; names queue its pending, and never a telemetry shadow.
-    (when (and (contains? cf/flags :admin-console)
-               (contains? consumer/event-names-for-admin-console (:name params))
-               (not (telemetry-shadow-source? (:source params))))
-      (consumer/queue-pendings cfg [(:id row)] consumer/consumer-admin-console))
-    row))
+        params (select-keys params event-keys)]
+    ;; The producer knows nothing about the consumers: one row, and each
+    ;; consumer reads it from its own cursor. The row and the cursor
+    ;; position commit independently, so a consumer can process a row
+    ;; only after it is visible here (the snapshot cut in the consumer
+    ;; guarantees it).
+    (db/insert! cfg :audit-log params)))
 
 (def ^:private xf:filter-telemetry-props
   "Transducer that keeps only map entries whose values are UUIDs,
@@ -658,8 +640,8 @@
   logic."
   [cfg event]
   (when (contains? cf/flags :audit-log)
-    ;; Transactional (not a bare connection): the row and its
-    ;; pendings commit or vanish together (see append-audit-entry).
+    ;; Transactional (not a bare connection): the row commits or
+    ;; vanishes whole (see append-audit-entry).
     (let [tnow  (ct/now)
           event (-> event
                     (assoc :created-at tnow)

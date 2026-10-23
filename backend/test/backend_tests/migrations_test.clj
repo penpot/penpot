@@ -137,6 +137,17 @@
   (t/is (contains? (table-indexes "job") "job__profile__idx"))
   (t/is (contains? (table-indexes "job") "job__live_exclusive__uniq")))
 
+(t/deftest audit-log-has-a-consumer-cursor
+  (t/testing "the position columns and their covering index exist"
+    (t/is (contains? (table-columns "audit_log") "seq"))
+    (t/is (contains? (table-columns "audit_log") "xid"))
+    (t/is (contains? (table-indexes "audit_log") "audit_log__xid__seq__idx")))
+  (t/testing "one row per consumer, with the position and its clock"
+    (t/is (= #{"consumer" "xid" "seq" "updated_at"}
+             (table-columns "audit_log_consumer_cursor"))))
+  (t/testing "the pending queue is gone"
+    (t/is (empty? (table-columns "audit_log_pending")))))
+
 (defn- indexdef
   [index-name]
   (:indexdef (th/db-exec-one! ["SELECT indexdef FROM pg_indexes

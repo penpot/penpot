@@ -28,6 +28,12 @@
    [app.jobs :as-alias jobs]
    [app.jobs.gc :as-alias jobs.gc]
    [app.jobs.metrics :as jobs-metrics]
+   ;; The consumer transports live in their own namespaces; they are
+   ;; required here for their side effect: the `ig/init-key` method of
+   ;; their job-def has to be registered before the components start.
+   [app.loggers.audit.consumers.admin-console]
+   [app.loggers.audit.consumers.nexus]
+   [app.loggers.audit.gc]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
@@ -392,6 +398,12 @@
     ::mdef/labels ["reason"]
     ::mdef/type :counter}
 
+   :audit-consumer-lag
+   {::mdef/name "penpot_audit_consumer_lag_events"
+    ::mdef/help "Audit log events confirmed in the buffer that a consumer has not processed yet."
+    ::mdef/labels ["destination"]
+    ::mdef/type :gauge}
+
    :audit-ingest-events
    {::mdef/name "penpot_audit_ingest_events_total"
     ::mdef/help "Audit log frontend events ingested, by kind and outcome."
@@ -675,9 +687,10 @@
     :telemetry                      (ig/ref :app.tasks.telemetry/job-def)
     :session-gc                     (ig/ref ::session/job-def)
     :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
-    :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumer-task/nexus-job-def)
-    :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumer-task/admin-console-job-def)
-    :audit-log-consumer-storage-usage (ig/ref :app.loggers.audit.consumer-task/storage-usage-job-def)}
+    :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumers.nexus/job-def)
+    :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumers.admin-console/job-def)
+    :audit-log-consumer-team-storage  (ig/ref :app.tasks.team-storage/consumer-job-def)
+    :audit-log-gc                     (ig/ref :app.loggers.audit.gc/job-def)}
 
    ::jobs/request-pool
    {::rds/client  (ig/ref ::rds/client)
@@ -716,6 +729,10 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.team-storage/worker-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.tasks.team-storage/consumer-job-def
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
@@ -774,18 +791,18 @@
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.consumer-task/nexus-job-def
+   :app.loggers.audit.consumers.nexus/job-def
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.consumer-task/admin-console-job-def
+   :app.loggers.audit.consumers.admin-console/job-def
    {::db/pool            (ig/ref ::db/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.consumer-task/storage-usage-job-def
+   :app.loggers.audit.gc/job-def
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
@@ -921,9 +938,13 @@
 
            (when (contains? cf/flags :storage-usage)
              [{:cron #penpot/cron "15 */5 * * * ?" ;; every 5m, offset 15s
-               :job :audit-log-consumer-storage-usage}
+               :job :audit-log-consumer-team-storage}
               {:cron #penpot/cron "45 */10 * * * ?" ;; every 10m, after the drain
-               :job :schedule-team-storage}])])}
+               :job :schedule-team-storage}])
+
+           (when (contains? cf/flags :audit-log)
+             {:cron #penpot/cron "45 */5 * * * ?" ;; every 5m, after the three drains
+              :job :audit-log-gc})])}
 
    ::wrk/dispatcher
    {::rds/client  (ig/ref ::rds/client)
