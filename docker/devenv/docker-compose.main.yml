@@ -98,7 +98,7 @@ services:
 
       # Agentic devenv: set to a PyPI release version/tag to update Serena on startup,
       # leave empty to skip update and use the version baked into the image.
-      - SERENA_UPDATE_VERSION=1.6.1
+      - SERENA_UPDATE_VERSION=
       - SHADOW_SERVER_URL=${SHADOW_SERVER_URL}
 
     networks:

@@ -23,7 +23,7 @@ file (never pipe tool output through filters).
 - The store survives `node_modules` cleans. It is content-addressed and
   integrity-verified, so it cannot go stale; staleness lives in
   node_modules. Only `scripts/clean-node-modules --store` removes it.
-- Every first-party `package.json` (35 files: workspace roots plus
+- Every first-party `package.json` (34 files: workspace roots plus
   members) must carry a `packageManager` field with the identical
   `pnpm@<version>+sha512.<hash>` value. Do not let them drift.
   `external/` (vendored trees with their own lifecycles), `.opencode/`,
@@ -60,7 +60,7 @@ file (never pipe tool output through filters).
 3. From the repo root, on a host whose system pnpm is the target version
    (rebuilt devenv), run `scripts/sync-pnpm-version`. It resolves the
    integrity hash via `pnpm view` + node (no npm, no corepack, no
-   python3) and stamps the identical field into all 35 files, replacing
+   python3) and stamps the identical field into all 34 files, replacing
    only the value line (each file keeps its own indent) and inserting
    the key after `"name"`/`"version"` where missing. Explicit version
    instead: `scripts/sync-pnpm-version <version>`. The explicit form works
