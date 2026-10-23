@@ -1401,26 +1401,23 @@
                 (dissoc :modifiers))))))))
 
 (defn orient-like
-  "A function that turns each shape of the subtree of `head` around `center`,
-  so that `head` takes the flips and then the rotation of `target`; nil when
-  they already agree."
+  "Turn the subtree of `head` around `center` to match `target`'s matrix.
+   Flip flags can change during a rotation, so they cannot be applied as
+   separate transforms before that rotation."
   [head target center]
-  (let [flip-x? (not= (true? (:flip-x head)) (true? (:flip-x target)))
-        flip-y? (not= (true? (:flip-y head)) (true? (:flip-y target)))
-        flip    (when (or flip-x? flip-y?)
-                  (ctm/resize-modifiers (gpt/point (if flip-x? -1 1) (if flip-y? -1 1)) center))
-        head'   (cond-> head (some? flip) (gsh/transform-shape flip))
-        angle   (- (d/nilv (:rotation target) 0) (d/nilv (:rotation head') 0))
-        rotate? (not (mth/close? (mod angle 360) 0 0.01))
-        angle   (if (> angle 180) (- angle 360) angle)]
-    (when (or (some? flip) rotate?)
-      (fn [shape]
-        (cond-> shape
-          (some? flip)
-          (gsh/transform-shape flip)
-
-          rotate?
-          (as-> shape (gsh/transform-shape shape (ctm/rotation-modifiers shape center angle))))))))
+  (when-not (and (= (:transform head) (:transform target))
+                 (mth/close? (or (:rotation head) 0) (or (:rotation target) 0) 0.01))
+    (let [relative (gmt/multiply (or (:transform target) (gmt/matrix))
+                                 (or (:transform-inverse head) (gmt/matrix)))
+          transform (gmt/transform-in center relative)
+          turned (gsh/apply-transform head transform)
+          angle (- (or (:rotation target) 0) (or (:rotation turned) 0))]
+      (when (or (not (gmt/unit? relative)) (not (mth/close? (mod angle 360) 0 0.01)))
+        (fn [shape]
+          (-> shape
+              (assoc-in [:modifiers :rotation] angle)
+              (gsh/apply-transform transform)
+              (dissoc :modifiers)))))))
 
 (defn- maybe-sync
   [c enabled? done? f]

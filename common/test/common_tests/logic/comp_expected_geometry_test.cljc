@@ -11,6 +11,7 @@
    through their constraints (decision (f) of the component contract)."
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.modifiers :as gm]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
@@ -147,27 +148,29 @@
 
 
 (t/deftest rotating-a-copy-with-text-in-a-detached-child-is-already-synced
-  (let [setup (fn []
-                (tm/make-situation
-                 (-> (thf/sample-file :file1)
-                     (thtx/add-text-component-with-copy [[["Hello world"]]])
-                     (ths/update-shape :main-child :grow-type :auto-height)
-                     (ths/update-shape :copy-child :grow-type :auto-height)
-                     (ths/update-shape :copy-child :touched nil)
-                     (tho/add-simple-component :outer :outer-root :outer-child
-                                               :root-params {:width 100 :height 100})
-                     (thc/instantiate-component :outer :outer-copy))))
-        situation (r/run-variant
-                   {:setup setup
-                    :operation (tm/in-sequence [(n/nest-copy :copy-root :outer-root)
-                                                (n/detach :copy-root)
-                                                (n/rotate :outer-copy 45)])})
-        file (tm/file situation)
-        text (first (filter #(= (thi/id :copy-child) (:shape-ref %))
-                            (vals (:objects (thf/current-page file)))))
-        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))
-        synced (ths/get-shape-by-id full (:id text))]
-    (t/is (some? text))
-    (t/is (gsh/close-attrs? :points (:points text) (:points synced) 0.01))
-    (t/is (mth/close? (:x text) (:x synced) 0.01))
-    (t/is (mth/close? (:y text) (:y synced) 0.01))))
+  (doseq [angle [45 135 225]]
+    (let [setup (fn []
+                  (tm/make-situation
+                   (-> (thf/sample-file :file1)
+                       (thtx/add-text-component-with-copy [[["Hello world"]]])
+                       (ths/update-shape :main-child :grow-type :auto-height)
+                       (ths/update-shape :copy-child :grow-type :auto-height)
+                       (ths/update-shape :copy-child :touched nil)
+                       (tho/add-simple-component :outer :outer-root :outer-child
+                                                 :root-params {:width 100 :height 100})
+                       (thc/instantiate-component :outer :outer-copy))))
+          situation (r/run-variant
+                     {:setup setup
+                      :operation (tm/in-sequence [(n/nest-copy :copy-root :outer-root)
+                                                  (n/detach :copy-root)
+                                                  (n/rotate :outer-copy angle)])})
+          file (tm/file situation)
+          text (first (filter #(= (thi/id :copy-child) (:shape-ref %))
+                              (vals (:objects (thf/current-page file)))))
+          full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))
+          synced (ths/get-shape-by-id full (:id text))]
+      (t/is (some? text))
+      (t/is (gmt/close? (:transform text) (:transform synced)))
+      (t/is (gsh/close-attrs? :points (:points text) (:points synced) 0.01))
+      (t/is (mth/close? (:x text) (:x synced) 0.01))
+      (t/is (mth/close? (:y text) (:y synced) 0.01)))))
