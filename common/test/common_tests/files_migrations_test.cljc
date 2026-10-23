@@ -17,6 +17,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
    [app.common.types.file :as ctf]
+   [app.common.types.objects-map :as omap]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.token :as ctt]
@@ -715,7 +716,7 @@
           "path points repaired before schema validation")))
 
 (t/deftest migration-0033-normalize-main-instance-diff-from-component
-  (let [migration-id "0033-normalize-main-instance-names"
+  (let [migration-id "0033-normalize-main-instance-names-v2"
         file         (-> (thf/sample-file :file1)
                          (tho/add-simple-component :component1 :root1 :child1
                                                    :component-params {:path "Group / Subgroup"
@@ -746,7 +747,7 @@
     (t/is (= "Other Group/Other Subgroup  /  Other Name" (:name shape1')))))
 
 (t/deftest migration-0033-normalize-variant-instance-diff-from-container
-  (let [migration-id "0033-normalize-main-instance-names"
+  (let [migration-id "0033-normalize-main-instance-names-v2"
         file         (-> (thf/sample-file :file1)
                          (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
                          (ths/update-shape :variant1 :name "Group / Subgroup / Component")
@@ -778,7 +779,7 @@
     (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
 
 (t/deftest migration-0033-normalize-variant-name-not-normalized
-  (let [migration-id "0033-normalize-main-instance-names"
+  (let [migration-id "0033-normalize-main-instance-names-v2"
         file         (-> (thf/sample-file :file1)
                          (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
                          (ths/update-shape :variant1 :name "Group/Subgroup  /  Component")
@@ -809,26 +810,149 @@
     (t/is (= "Component" (:name component2')))
     (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
 
-(t/deftest migration-0033-skips-invalid-children-ids
-  ;; Old files may list in :shapes ids that are not uuids or that point
-  ;; to no shape; the migration must skip them and keep going.
-  (let [migration-id "0033-normalize-main-instance-names"
-        missing-id   (uuid/next)
+(t/deftest migration-0033-fixes-children-ids
+  ;; Old files may list in :shapes child ids stored as strings, nil or
+  ;; ids that point to no shape; strings become uuids, the rest goes.
+  (let [migration-id "0033-normalize-main-instance-names-v2"
         file         (-> (thf/sample-file :file1)
-                         (tho/add-simple-component :component1 :root1 :child1
-                                                   :component-params {:path "Group / Subgroup"
-                                                                      :name "Name"}
-                                                   :root-params {:name "Group/Subgroup   /   Name"}))
+                         (tho/add-frame-with-child :frame1 :child1)
+                         (tho/add-simple-component :component1 :root1 :child2))
         child1-id    (thi/id :child1)
-        file         (ths/update-shape file :root1 :shapes [nil "not-a-uuid" missing-id child1-id])
+        child2-id    (thi/id :child2)
+        file         (-> file
+                         (ths/update-shape :frame1 :shapes
+                                           [nil "not-a-uuid" (str child1-id)
+                                            (uuid/next) child1-id])
+                         (ths/update-shape :root1 :shapes [(str child2-id)]))
+        data'        (cfm/migrate-data (ctf/file-data file) migration-id)
+        file'        (assoc file :data data')]
 
+    (t/is (= [child1-id] (:shapes (ths/get-shape file' :frame1))))
+    (t/is (= [child2-id] (:shapes (ths/get-shape file' :root1))))
+    (t/is (= data' (cfm/migrate-data data' migration-id))
+          "migration is idempotent")))
+
+(t/deftest migration-0033-fixes-children-ids-outside-the-root-walk
+  ;; A shape that the page root does not reach is not visited by the
+  ;; walk of 0033, so its children must be repaired before it.
+  (let [migration-id "0033-normalize-main-instance-names-v2"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame-with-child :frame1 :child1)
+                         (tho/add-frame :frame2))
+        frame2-id    (thi/id :frame2)
+        file         (-> file
+                         (ths/update-shape :frame1 :shapes [])
+                         (ths/update-shape :child1 :parent-id (uuid/next))
+                         (ths/update-shape :child1 :shapes [nil (str frame2-id)]))
+        data'        (cfm/migrate-data (ctf/file-data file) migration-id)
+        file'        (assoc file :data data')]
+
+    (t/is (= [frame2-id] (:shapes (ths/get-shape file' :child1))))))
+
+(t/deftest migration-0033-fixes-children-ids-in-legacy-components
+  ;; Legacy components keep their own :objects, which the data schema
+  ;; does not validate shape by shape.
+  (let [migration-id "0033-normalize-main-instance-names-v2"
+        component-id (uuid/next)
+        root-id      (uuid/next)
+        child-id     (uuid/next)
+        data         (-> (ctf/file-data (thf/sample-file :file1))
+                         (assoc-in [:components component-id]
+                                   {:id component-id
+                                    :name "Component"
+                                    :objects {root-id  {:id root-id :shapes [nil (str child-id) (uuid/next)]}
+                                              child-id {:id child-id}}}))
+        data'        (cfm/migrate-data data migration-id)]
+
+    (t/is (= [child-id] (get-in data' [:components component-id :objects root-id :shapes])))))
+
+(t/deftest migration-0033-turns-shapes-lists-into-vectors
+  (let [migration-id "0033-normalize-main-instance-names-v2"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame-with-child :frame1 :child1))
+        child1-id    (thi/id :child1)
+        file         (ths/update-shape file :frame1 :shapes (list child1-id))
+        data'        (cfm/migrate-data (ctf/file-data file) migration-id)
+        shapes       (:shapes (ths/get-shape (assoc file :data data') :frame1))]
+
+    (t/is (vector? shapes))
+    (t/is (= [child1-id] shapes))))
+
+(t/deftest migration-0033-leaves-valid-objects-untouched
+  ;; Nothing to repair: the objects map must be the same instance, so an
+  ;; ObjectsMap is not marked as modified and its page is not rewritten.
+  (let [migration-id "0033-normalize-main-instance-names-v2"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame-with-child :frame1 :child1))
+        page-id      (thf/current-page-id file)
         data         (ctf/file-data file)
-        data'        (cfm/migrate-data data migration-id)
-        file'        (assoc file :data data')
-        page-id      (first (:pages data'))
-        objects'     (get-in data' [:pages-index page-id :objects])
-        root1'       (ths/get-shape file' :root1)]
+        data'        (cfm/migrate-data data migration-id)]
 
-    (t/is (= "Group / Subgroup / Name" (:name root1')))
-    (t/is (not (contains? objects' nil)) "no shape stored under a nil id")
-    (t/is (not (contains? objects' missing-id)) "no shape created for a missing id")))
+    (t/is (identical? (get-in data [:pages-index page-id :objects])
+                      (get-in data' [:pages-index page-id :objects]))))
+
+  ;; Same property through the objects-map wrapper the backend uses on the
+  ;; unrealized save path, whose `assoc` marks the page as modified.
+  (let [migration-id "0033-normalize-main-instance-names-v2"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame-with-child :frame1 :child1))
+        page-id      (thf/current-page-id file)
+        objects      (omap/wrap (get-in (ctf/file-data file) [:pages-index page-id :objects]))
+        data         (assoc-in (ctf/file-data file) [:pages-index page-id :objects] objects)
+        data'        (cfm/migrate-data data migration-id)]
+
+    (t/is (omap/objects-map? objects) "wrapped in an ObjectsMap")
+    (t/is (identical? objects (get-in data' [:pages-index page-id :objects])))))
+
+(t/deftest migration-0033-v2-runs-on-files-that-applied-the-original-id
+  ;; Files that applied the original migration before it repaired children
+  ;; never run it again, so the id moved to -v2. A file still carrying the
+  ;; old id must run the v2, and keeping the old id does no harm.
+  (let [file      (-> (thf/sample-file :file1)
+                      (tho/add-frame-with-child :frame1 :child1))
+        child1-id (thi/id :child1)
+        file      (-> file
+                      (ths/update-shape :frame1 :shapes [(str child1-id) nil])
+                      (assoc :migrations
+                             (conj (disj cfm/available-migrations
+                                         "0033-normalize-main-instance-names-v2")
+                                   "0033-normalize-main-instance-names")))
+        file'     (cfm/migrate-file file {})]
+
+    (t/is (not (cfm/need-migration? file')) "the v2 migration is recorded")
+    (t/is (contains? (:migrations file') "0033-normalize-main-instance-names")
+          "the old id is kept")
+    (t/is (= [child1-id] (:shapes (ths/get-shape file' :frame1))))))
+
+(t/deftest migrations-leave-shapes-without-the-shapes-key-untouched
+  ;; Only containers have a :shapes key; other shapes come out of the
+  ;; repair unchanged, without a :shapes key being added.
+  (let [migration-id "0033-normalize-main-instance-names-v2"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame-with-child :frame1 :child1))
+        child        (ths/get-shape file :child1)
+        data'        (cfm/migrate-data (ctf/file-data file) migration-id)
+        child'       (ths/get-shape (assoc file :data data') :child1)]
+
+    (t/is (not (contains? child :shapes)) "the fixture shape has no :shapes key")
+    (t/is (not (contains? child' :shapes)) (str migration-id))
+    (t/is (= child child') migration-id)))
+
+(t/deftest migration-0033-fixes-children-ids-through-file-migration
+  ;; 0032 adds the uuid of a child listed as a string, so the child is
+  ;; listed twice before 0033; the file must still pass validation. The v2
+  ;; keeps the position of the original migration, so it parses the string
+  ;; before 0035-fix-dangling-children drops the ids it cannot find.
+  (let [file      (-> (thf/sample-file :file1)
+                      (tho/add-frame-with-child :frame1 :child1))
+        child1-id (thi/id :child1)
+        file      (-> file
+                      (ths/update-shape :frame1 :shapes [(str child1-id)])
+                      (assoc :migrations
+                             (disj cfm/available-migrations
+                                   "0032-fix-children-not-in-parent"
+                                   "0033-normalize-main-instance-names-v2")))
+        file'     (cfm/migrate-file file {})]
+
+    (t/is (not (cfm/need-migration? file')) "new migrations recorded")
+    (t/is (= [child1-id] (:shapes (ths/get-shape file' :frame1))))))
