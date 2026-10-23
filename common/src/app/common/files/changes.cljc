@@ -1200,7 +1200,8 @@
               (into #{} xform all-parents)))]
 
       (reduce #(set/union %1 (check-shape %2 []))
-              (check-shape parent-id [parent-id])
+              (into (check-shape parent-id [parent-id])
+                    (keep #(get-in page [:objects % :component-id])) shapes)
               shapes))
     (when component-id #{component-id})))
 
