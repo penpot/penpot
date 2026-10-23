@@ -932,7 +932,7 @@
 
         :else
         (let [id-ref (atom nil)]
-          (st/emit! (-> (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin"})
+          (st/emit! (-> (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin" :frame-id uuid/zero})
                         (se/add-event plugin-id)))
           (shape/shape-proxy plugin-id @id-ref))))
 
