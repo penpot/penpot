@@ -89,3 +89,8 @@
 
 (t/deftest ^:async nesting-restores-default-constraints-on-undo
   (await (replay {:world [2 0] :ops [[:nest 0]]})))
+
+(t/deftest ^:async update-main-after-nesting-a-rotated-text-copy-undoes-together
+  (await (replay {:world [2 0 {:text true}]
+                  :ops [[:duplicate 0] [:nest 0] [:rotate 0 0 0]
+                        [:edit 0 0 1 1] [:update-main 0]]})))

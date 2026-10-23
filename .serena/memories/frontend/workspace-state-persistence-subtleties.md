@@ -51,6 +51,9 @@
 - `leave-signals` (document `visibilitychange`→hidden, window `blur`) emits `::force-persist` when edits are buffered, so leaving the tab/window sends the 3 s batch at once; tests mock `dps/leave-signals` BEFORE `initialize-persistence` runs. pagehide/beforeunload are too late for an async save.
 - Exports and the `.penpot` download call `force-persist-files-and-wait file-ids timeout` (waits only for those files, ends on `:error` or timeout, never raises) and then `unsaved-changes? state file-ids` to warn; it reads `refs/persistence`, so tests mock it with `(l/derived :persistence store)`.
 - `persistence-failed` emits a `save-failed` audit event (`:cause-type :code :retrying :queued-commits`) whenever the user is notified (`notify-failure?`, same rule as the toast), including delegated auth/not-found failures.
+- Updating a component main passes one explicit undo group through the
+  inverse sync and all copy syncs. Deferred text reflow may commit after
+  the transaction closes; its changes must still join the user action (F152).
 - Undo transactions can stay open only temporarily; timed-out pending transactions are force-committed after about 20s. Undo entries are capped at 50.
 - Undo/redo are ignored while a normal editor/drawing interaction is active, except grid-layout edition handles undo through this path.
 - After local commits and when render-wasm is active, text shapes get derived `:position-data` recomputed in a separate commit tagged `#{:position-data}`; that tag is excluded from the position-data watcher to avoid loops.

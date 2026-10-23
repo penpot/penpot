@@ -845,7 +845,7 @@
   NOTE: It's possible that the component to update is defined in an
   external library file, so this function may cause to modify a file
   different of that the one we are currently editing."
-  [id]
+  [id & {:keys [undo-group]}]
   (dm/assert! (uuid? id))
   (ptk/reify ::update-component
     ptk/WatchEvent
@@ -863,6 +863,7 @@
         (when (ctk/instance-head? shape)
           (let [[local-changes nonlocal-changes]
                 (-> (pcb/empty-changes it)
+                    (cond-> undo-group (pcb/set-undo-group undo-group))
                     (pcb/with-container container)
                     (cll/generate-sync-shape-inverse libraries container id)
                     (cll/split-local-changes))]
@@ -922,17 +923,18 @@
       (let [page         (dsh/lookup-page state)
             shape        (ctn/get-shape page shape-id)
             component-id (:component-id shape)
-            undo-id      (js/Symbol)]
+            undo-id      (js/Symbol)
+            undo-group   (uuid/next)]
         (apply rx/of
                (concat
                 [(dwu/start-undo-transaction undo-id)
-                 (update-component shape-id)
+                 (update-component shape-id :undo-group undo-group)
 
                  ;; These calls are necessary for properly sync thumbnails
                  ;; when a main component does not live in the same page.
                  (update-component-thumbnail-sync state component-id file-id "frame")
                  (update-component-thumbnail-sync state component-id file-id "component")]
-                (component-sync-events state component-id file-id nil)
+                (component-sync-events state component-id file-id undo-group)
                 [(dwu/commit-undo-transaction undo-id)]))))))
 
 (defn update-component-thumbnail
