@@ -827,7 +827,9 @@
                            {:type :reg-objects :shapes (vec parents)})
                      ;; the parents are recalculated after the shapes are restored
                      (cons {:type :reg-objects :shapes (vec parents)}
-                           (map #(add-obj-change (get objects %) (cfh/get-position-on-parent objects %))
+                           (map #(add-obj-change (get objects %)
+                                                 (or (cfh/get-position-on-parent (pcb/get-objects changes) %)
+                                                     (cfh/get-position-on-parent objects %)))
                                 ids)))))
 
 (defn- longest-increasing

@@ -42,3 +42,10 @@ To inspect what a UI action emitted, use `mem:frontend/cljs-repl` with the snipp
   `:remote-synced` as well as `:touched`. Removing or adding a child clears
   the former even when touched groups do not change; restoring only the
   groups loses prior state on undo (F157).
+
+- Undo of bulk removals moves restored siblings in original sibling order.
+  Component sync records each removal's current index from builder objects;
+  indexes in the original container become stale after earlier removals.
+  When the builder lacks a main's container (inverse sync), use that main
+  container's original index. Both rules preserve order after several
+  siblings disappear (F158).

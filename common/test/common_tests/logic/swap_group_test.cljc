@@ -848,3 +848,32 @@
           undone (thf/apply-undo-changes changed changes)]
       (t/is (not (:remote-synced (ths/get-shape changed :copy-star))) (name operation))
       (t/is (= (thn/normalize-file file) (thn/normalize-file undone)) (name operation)))))
+
+(t/deftest removing-several-siblings-restores-their-order-on-undo
+  (let [file (reduce (fn [file label] (tho/add-rect file label {:parent-label :parent}))
+                     (tho/add-frame (thf/sample-file :file1) :parent) [:a :b :c :d :e])
+        page (thf/current-page file)]
+    (doseq [labels [[:b :c :d] [:b :d :c] [:c :b :d] [:c :d :b] [:d :b :c] [:d :c :b]]]
+      (let [changes (-> (pcb/empty-changes nil (:id page))
+                        (pcb/with-objects (:objects page))
+                        (pcb/remove-objects (mapv thi/id labels)))
+            removed (thf/apply-changes file changes)
+            undone (thf/apply-undo-changes removed changes)]
+        (t/is (= (:shapes (ths/get-shape file :parent))
+                 (:shapes (ths/get-shape undone :parent))) (pr-str labels))))))
+
+(t/deftest syncing-a-main-swap-restores-all-removed-siblings-in-order-on-undo
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-simple-component :star :star-main :star-rect)
+                 (tho/add-rect :extra-a {:parent-label :star-main})
+                 (tho/add-rect :extra-b {:parent-label :star-main})
+                 (tho/add-rect :extra-c {:parent-label :star-main})
+                 (tho/add-simple-component :heart :heart-main :heart-rect)
+                 (tho/add-frame :card-main)
+                 (thc/instantiate-component :star :card-star :parent-label :card-main)
+                 (thc/make-component :card :card-main)
+                 (thc/instantiate-component :card :copy :children-labels [:copy-star]))
+        initial (tm/make-situation file)
+        swapped (-> initial (r/step (n/swap-shape :card-star :heart)) r/settle)
+        undone (r/step swapped (n/undo))]
+    (t/is (= (thn/normalize-file file) (thn/normalize-file (tm/file undone))))))
