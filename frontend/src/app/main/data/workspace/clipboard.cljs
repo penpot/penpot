@@ -392,7 +392,10 @@
                  (gsh/translate-to-frame % (get objects parent-frame-id)))
 
             shapes          (mapv maybe-translate selected)
-            svg-formatted   (svg/generate-formatted-markup objects shapes)]
+            ;; With render-wasm active, never call classic SVG codegen.
+            svg-formatted   (if (wasm.exports/wasm-svg-markup-enabled? state)
+                              (wasm.exports/get-formatted-svg-markup (mapv :id shapes))
+                              (svg/generate-formatted-markup objects shapes))]
         (-> (clipboard/to-clipboard-multi
              {"image/svg+xml" svg-formatted
               "text/plain"    svg-formatted})

@@ -14,6 +14,7 @@
    [frontend-tests.data.event-test]
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.exports-files-test]
+   [frontend-tests.data.exports-wasm-svg-markup-test]
    [frontend-tests.data.fix-deleted-fonts-test]
    [frontend-tests.data.imports-test]
    [frontend-tests.data.jobs-test]
@@ -185,6 +186,7 @@
    'frontend-tests.data.store-test
    'frontend-tests.data.exports-assets-test
    'frontend-tests.data.exports-files-test
+   'frontend-tests.data.exports-wasm-svg-markup-test
    'frontend-tests.data.imports-test
    'frontend-tests.data.jobs-test
    'frontend-tests.worker.exports-test
