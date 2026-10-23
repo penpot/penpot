@@ -2313,6 +2313,10 @@ msgstr "Propiedades de la variante"
 msgid "inspect.attributes.variants"
 msgstr "Propiedades de las variantes"
 
+#: src/app/main/ui/inspect/code.cljs:315, src/app/main/ui/inspect/code.cljs:358
+msgid "inspect.code.expand-panel"
+msgstr "Expandir panel"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:169
 msgid "inspect.color-space-label"
 msgstr "Seleccionar espacio de color"
