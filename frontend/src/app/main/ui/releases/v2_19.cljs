@@ -194,7 +194,7 @@
            "WebGL rendering gets one of its biggest upgrades yet. Improved tile rendering keeps large files smooth while you move around the canvas, and the new text editor built for WebGL is more precise and much faster. Exports now use the same engine, so they are radically faster and higher quality."]
 
           [:p {:class (stl/css :feature-content)}
-           "If you have not tried it yet, turn it on from user settings. Your feedback keeps shaping it."]]
+           "If you have not tried it yet, enable it in Your account → Settings. Your feedback keeps shaping it."]]
 
          [:div {:class (stl/css :navigation)}
           [:> c/navigation-bullets*
