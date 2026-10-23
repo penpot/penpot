@@ -121,6 +121,11 @@
     :onboarding
     :quotes
     :soft-quotes
+    ;; Generalist consumer of the audit-log events: it drains the
+    ;; buffer and hands each event to the reactions that claim it, so
+    ;; a new reaction needs no change in the producer. Needs :audit-log
+    ;; to receive events.
+    :event-consumer
     ;; Background per-team media storage usage counter fed by the
     ;; audit-log consumer. Needs :audit-log to receive events.
     :storage-usage

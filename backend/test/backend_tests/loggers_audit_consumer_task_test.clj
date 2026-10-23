@@ -22,6 +22,7 @@
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [app.setup :as-alias setup]
+   [app.tasks.event-consumer :as-alias event-consumer]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -477,12 +478,12 @@
   (invoke-nexus! metrics params)
   (invoke-admin-console! metrics))
 
-(defn- invoke-storage-usage!
-  "Invoke the storage-usage consumer handler in-process with an
-  isolated metrics registry. It only needs the pool: marking teams
-  dirty touches no archive destination."
+(defn- invoke-events!
+  "Invoke the events consumer handler in-process with an isolated
+  metrics registry. It only needs the pool: dispatching the events to
+  the reactions touches no archive destination."
   [metrics]
-  (let [job-def (ig/init-key :app.loggers.audit.consumer-task/storage-usage-job-def
+  (let [job-def (ig/init-key :app.tasks.event-consumer/events-job-def
                              {::db/pool     (:app.db/pool th/*system*)
                               ::mtx/metrics metrics})]
     ((::jobs/handler job-def) nil {})))
@@ -515,15 +516,15 @@
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
-(t/deftest storage-usage-consumer-records-processed-outcome
-  ;; The storage-usage consumer marks teams dirty, it archives
-  ;; nothing: its success outcome reads "processed", not "archived".
+(t/deftest events-consumer-records-processed-outcome
+  ;; The events consumer dispatches the stream, it archives nothing:
+  ;; its success outcome reads "processed", not "archived".
   (let [prof    (th/create-profile* 1 {:is-active true})
         metrics (make-consumer-metrics)]
-    (with-redefs [cf/flags #{:audit-log :storage-usage}]
+    (with-redefs [cf/flags #{:audit-log :event-consumer :storage-usage}]
       (insert-audit-row! (:id prof) "upload-file-media-object")
-      (invoke-storage-usage! metrics)
-      (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["storage-usage" "processed"])))
+      (invoke-events! metrics)
+      (t/is (= 1.0 (counter-value metrics :audit-consumer-events ["events" "processed"])))
       (t/is (= 0 (pending-count))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

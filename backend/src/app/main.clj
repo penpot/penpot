@@ -662,7 +662,7 @@
     :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
     :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumer-task/nexus-job-def)
     :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumer-task/admin-console-job-def)
-    :audit-log-consumer-storage-usage (ig/ref :app.loggers.audit.consumer-task/storage-usage-job-def)}
+    :audit-log-consumer-events        (ig/ref :app.tasks.event-consumer/events-job-def)}
 
    ::jobs/request-pool
    {::rds/client  (ig/ref ::rds/client)
@@ -770,7 +770,7 @@
     :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.consumer-task/storage-usage-job-def
+   :app.tasks.event-consumer/events-job-def
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
@@ -904,10 +904,12 @@
              {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m, offset 30s from nexus
               :job :audit-log-consumer-admin-console})
 
-           (when (contains? cf/flags :storage-usage)
+           (when (contains? cf/flags :event-consumer)
              [{:cron #penpot/cron "15 */5 * * * ?" ;; every 5m, offset 15s
-               :job :audit-log-consumer-storage-usage}
-              {:cron #penpot/cron "45 */10 * * * ?" ;; every 10m, after the drain
+               :job :audit-log-consumer-events}])
+
+           (when (contains? cf/flags :storage-usage)
+             [{:cron #penpot/cron "45 */10 * * * ?" ;; every 10m, after the drain
                :job :schedule-team-storage}])])}
 
    ::wrk/dispatcher

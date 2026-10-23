@@ -32,16 +32,19 @@
 (t/use-fixtures :each th/database-reset)
 
 (def ^:private test-flags
-  "Quote checks run (:quotes), events are stored (:audit-log) and the
-  storage-usage consumer queues (:storage-usage)."
-  #{:quotes :audit-log :storage-usage})
+  "Quote checks run (:quotes), events are stored (:audit-log), the
+  events consumer queues them (:event-consumer) and the team-storage
+  reaction runs (:storage-usage)."
+  #{:quotes :audit-log :event-consumer :storage-usage})
 
 (def ^:private real-audit-submit
   "The unstubbed audit submit: helpers.clj replaces it globally per
   test, so an end-to-end producer test rebinds it back."
   @#'audit/submit)
 
-(defn- storage-usage-pendings
+(defn- events-pendings
+  "The pendings of the events consumer (id 3): it is not selective, it
+  takes the whole stream."
   []
   (th/db-exec! ["SELECT audit_log_id, consumer FROM audit_log_pending WHERE consumer = 3"]))
 
@@ -66,34 +69,42 @@
      :tracked-at (ct/now)
      :created-at (ct/now)})))
 
-(t/deftest storage-usage-queueing-matches-listed-names
-  (with-redefs [cf/flags #{:audit-log :storage-usage}]
+(t/deftest events-queueing-takes-every-event
+  ;; The events consumer is not selective: the whole stream queues and
+  ;; each reaction decides what concerns it.
+  (with-redefs [cf/flags #{:audit-log :event-consumer}]
     (append-row "upload-file-media-object" {})
     (append-row "navigate" {})
     (append-row "delete-file" {})
-    (t/is (= 2 (count (storage-usage-pendings))))))
+    (t/is (= 3 (count (events-pendings))))))
 
-(t/deftest storage-usage-queueing-ignores-hard-delete-objects
+(t/deftest storage-usage-reaction-ignores-hard-delete-objects
   ;; Physical purges cannot change the live total (they only remove rows
-  ;; the SUM already excludes), so they queue nothing: this also keeps
-  ;; purged teams from ever hitting the usage-table foreign key.
-  (with-redefs [cf/flags #{:audit-log :storage-usage}]
-    (append-row "hard-delete-objects" {})
-    (t/is (= 0 (count (storage-usage-pendings))))))
+  ;; the SUM already excludes), so the reaction does not claim them:
+  ;; this also keeps purged teams from ever hitting the usage-table
+  ;; foreign key.
+  (let [prof (th/create-profile* 62 {:is-active true})
+        team (:default-team-id prof)]
+    (with-redefs [cf/flags test-flags]
+      (append-row "hard-delete-objects" {:team-ids [team]})
+      (th/run-task! :audit-log-consumer-events {})
+      (t/is (nil? (:dirty-at (usage-row team)))))))
 
-(t/deftest storage-usage-queueing-skips-telemetry-shadows
-  (with-redefs [cf/flags #{:audit-log :telemetry :storage-usage}]
+(t/deftest events-queueing-skips-telemetry-shadows
+  ;; A telemetry shadow keeps the name of the full row, so queueing it
+  ;; would dispatch the same event twice.
+  (with-redefs [cf/flags #{:audit-log :telemetry :event-consumer}]
     (append-row "upload-file-media-object" {} "backend")
     (append-row "upload-file-media-object" {} "telemetry:backend")
-    (t/is (= 1 (count (storage-usage-pendings))))))
+    (t/is (= 1 (count (events-pendings))))))
 
-(t/deftest storage-usage-queueing-covers-every-listed-name
-  ;; Pins the drain contract for every name in
-  ;; team-storage-event-names: each one queues a pending and marks the
-  ;; teams its key map resolves, using the real prop shape. It fails
-  ;; when a name is added without its case; the producers themselves
-  ;; are pinned by the end-to-end tests (delete-file, delete-font-
-  ;; variant, moves, file-gc), which go through real command output.
+(t/deftest storage-usage-reaction-covers-every-listed-name
+  ;; Pins the reaction contract for every name in
+  ;; team-storage-event-names: each one marks the teams its key map
+  ;; resolves, using the real prop shape. It fails when a name is
+  ;; added without its case; the producers themselves are pinned by the
+  ;; end-to-end tests (delete-file, delete-font-variant, moves,
+  ;; file-gc), which go through real command output.
   (let [prof   (th/create-profile* 71 {:is-active true})
         team   (:default-team-id prof)
         team-b (:id (th/create-team* 71 {:profile-id (:id prof)}))
@@ -125,11 +136,10 @@
     (with-redefs [cf/flags test-flags]
       (doseq [[nm props] cases]
         (append-row nm props))
-      ;; Negatives: never queued for the storage-usage consumer.
+      ;; Negatives: the reaction does not claim them.
       (append-row "hard-delete-objects" {:team-ids [team]})
       (append-row "navigate" {:route "dashboard"})
-      (t/is (= (count cases) (count (storage-usage-pendings))))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (some? (:dirty-at (usage-row team))))
       (t/is (some? (:dirty-at (usage-row team-b)))))))
 
@@ -144,7 +154,7 @@
         real @#'quotes/get-live-media-storage-bytes]
     (with-redefs [cf/flags test-flags]
       (append-row "upload-file-media-object" {:team-id team})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (with-redefs [quotes/get-live-media-storage-bytes
                     (fn [conn team-id]
                       (append-row "delete-file" {:team-id team})
@@ -153,9 +163,9 @@
         (th/run-pending-jobs))
       ;; The stale mark is gone but the mid-run pending survived it.
       (t/is (nil? (:dirty-at (usage-row team))))
-      (t/is (= 1 (count (storage-usage-pendings))))
+      (t/is (= 1 (count (events-pendings))))
       ;; The drain re-marks from the pending; the next tick clears it.
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (some? (:dirty-at (usage-row team))))
       (th/run-task! :schedule-team-storage {})
       (th/run-pending-jobs)
@@ -169,7 +179,7 @@
         team (:default-team-id prof)]
     (with-redefs [cf/flags test-flags]
       (append-row "upload-file-media-object" {:team-id team})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (th/db-update! :team-storage-usage
                      {:dirty-at (ct/in-future {:hours 1})}
                      {:team-id team})
@@ -178,10 +188,10 @@
         (t/is (== live (:total-bytes (usage-row team))))
         (t/is (some? (:dirty-at (usage-row team))))))))
 
-(t/deftest storage-usage-queueing-needs-flag
+(t/deftest events-queueing-needs-flag
   (with-redefs [cf/flags #{:audit-log}]
     (append-row "upload-file-media-object" {})
-    (t/is (= 0 (count (storage-usage-pendings))))))
+    (t/is (= 0 (count (events-pendings))))))
 
 (t/deftest queue-pendings-batches-past-the-threshold
   ;; Above `single-insert-max-ids` the helper must chunk instead of one
@@ -309,10 +319,10 @@
     (with-redefs [cf/flags test-flags]
       (append-row "delete-file" {:team-id nil})
       (try
-        (th/run-task! :audit-log-consumer-storage-usage {})
+        (th/run-task! :audit-log-consumer-events {})
         (finally
           (remove-watch l/log-record ::capture)))
-      (t/is (= 0 (count (storage-usage-pendings))))
+      (t/is (= 0 (count (events-pendings))))
       (t/is (let [deadline (+ (System/currentTimeMillis) 5000)]
               (loop []
                 (if (some #(= "storage-usage chunk resolved no team ids"
@@ -332,10 +342,10 @@
     (with-redefs [cf/flags test-flags]
       (append-row "restore-profile" {:id (uuid/next) :team-ids []})
       (try
-        (th/run-task! :audit-log-consumer-storage-usage {})
+        (th/run-task! :audit-log-consumer-events {})
         (finally
           (remove-watch l/log-record ::capture)))
-      (t/is (= 0 (count (storage-usage-pendings))))
+      (t/is (= 0 (count (events-pendings))))
       (t/is (not-any? #(= "storage-usage chunk resolved no team ids"
                           (get (::l/props %) :hint))
                       @records)))))
@@ -358,19 +368,19 @@
           (db/exec! conn ["BEGIN"])
           (db/exec! conn ["SELECT id FROM audit_log WHERE id = ? FOR UPDATE" (:id locked)])
           (try
-            (th/run-task! :audit-log-consumer-storage-usage {})
+            (th/run-task! :audit-log-consumer-events {})
             (finally
               (db/exec! conn ["ROLLBACK"])))
           ;; The locked row stayed pending; the other one drained.
-          (t/is (= 1 (count (storage-usage-pendings))))
+          (t/is (= 1 (count (events-pendings))))
           (t/is (nil? (:dirty-at (usage-row team-a))))
           (t/is (some? (:dirty-at (usage-row team-b)))))))))
 
-(t/deftest storage-usage-run-summary-names-its-work
+(t/deftest events-run-summary-names-its-work
   ;; The run summary must not say "events archived": this consumer
-  ;; marks teams dirty and has no destination.
-  (t/is (= "teams marked dirty"
-           (#'consumer/consumer-summary consumer/consumer-storage-usage)))
+  ;; dispatches the stream and has no destination.
+  (t/is (= "events dispatched"
+           (#'consumer/consumer-summary consumer/consumer-events)))
   (t/is (= "events archived"
            (#'consumer/consumer-summary consumer/consumer-nexus))))
 
@@ -386,10 +396,10 @@
     (with-redefs [cf/flags test-flags]
       (append-row "delete-file" {})
       (try
-        (th/run-task! :audit-log-consumer-storage-usage {})
+        (th/run-task! :audit-log-consumer-events {})
         (finally
           (remove-watch l/log-record ::capture)))
-      (t/is (= 0 (count (storage-usage-pendings))))
+      (t/is (= 0 (count (events-pendings))))
       (t/is (let [deadline (+ (System/currentTimeMillis) 5000)]
               (loop []
                 (if (some #(= "storage-usage chunk resolved no team ids"
@@ -425,7 +435,7 @@
         (t/is (some? (:team-id (:props event))))
         (audit/submit th/*system* event))
       ;; Only the command event: the cascade job has not run yet.
-      (t/is (= 1 (count (storage-usage-pendings)))))))
+      (t/is (= 1 (count (events-pendings)))))))
 
 (t/deftest storage-usage-real-delete-font-variant-queues-pending
   ;; A producer whose props do NOT carry :team-id (only the request
@@ -457,7 +467,7 @@
         (t/is (= "delete-font-variant" (:name event)))
         (t/is (= team (:team-id (:props event))))
         (audit/submit th/*system* event))
-      (t/is (= 1 (count (storage-usage-pendings)))))))
+      (t/is (= 1 (count (events-pendings)))))))
 
 (t/deftest storage-usage-drain-skips-invalid-team-id
   ;; One bad row cannot wedge the queue: the event is logged and
@@ -467,16 +477,18 @@
     (with-redefs [cf/flags test-flags]
       (append-row "upload-file-media-object" {:team-id "not-a-uuid"})
       (append-row "upload-file-media-object" {:team-id team})
-      (t/is (= 2 (count (storage-usage-pendings))))
-      (th/run-task! :audit-log-consumer-storage-usage {})
-      (t/is (= 0 (count (storage-usage-pendings))))
+      (t/is (= 2 (count (events-pendings))))
+      (th/run-task! :audit-log-consumer-events {})
+      (t/is (= 0 (count (events-pendings))))
       (t/is (some? (:dirty-at (usage-row team)))))))
 
-(t/deftest storage-usage-append-queues-selectively
+(t/deftest events-append-queues-the-whole-stream
+  ;; The queue of the events consumer is not selective: the selectivity
+  ;; lives in the reaction, which only claims the names it knows.
   (with-redefs [cf/flags test-flags]
     (append-row "upload-file-media-object" {:team-id (uuid/next)})
     (append-row "navigate" {:route "dashboard"})
-    (t/is (= 1 (count (storage-usage-pendings))))))
+    (t/is (= 2 (count (events-pendings))))))
 
 (t/deftest storage-usage-drain-and-recompute
   (let [prof (th/create-profile* 1)
@@ -496,7 +508,7 @@
                                         :content mfile})]
         (t/is (nil? (:error out))))
       (append-row "upload-file-media-object" {:team-id team-id :file-id (:id file)})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (let [row (usage-row team-id)]
         (t/is (some? row))
         (t/is (some? (:dirty-at row))))
@@ -576,7 +588,7 @@
     (with-redefs [cf/flags test-flags]
       (append-row "upload-file-media-object" {:team-id team-b})
       (append-row "upload-file-media-object" {:team-id team-a})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (= 2 (th/run-task! :schedule-team-storage {})))
       (t/is (= 0 (th/run-task! :schedule-team-storage {})))
       (th/run-pending-jobs)
@@ -592,7 +604,7 @@
                   team-storage/scheduler-chunk-size 5]
       (doseq [team teams]
         (append-row "upload-file-media-object" {:team-id team}))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (= 12 (th/run-task! :schedule-team-storage {})))
       (let [rows (th/db-exec! ["SELECT (round((extract(epoch from (scheduled_at - created_at)) * 1000)::numeric, -3))::bigint AS delay_ms FROM job WHERE name = 'recompute-team-storage'"])]
         (t/is (= 12 (count rows)))
@@ -607,7 +619,7 @@
                   team-storage/scheduler-chunk-size 5]
       (doseq [team teams]
         (append-row "upload-file-media-object" {:team-id team}))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (let [calls (atom 0)
             orig  jobs/submit]
         (t/is (thrown? clojure.lang.ExceptionInfo
@@ -653,7 +665,7 @@
         team (:default-team-id prof)]
     (with-redefs [cf/flags test-flags]
       (append-row "upload-file-media-object" {:team-id team})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (= 1 (th/run-task! :schedule-team-storage {})))
       (let [row (th/db-exec-one! ["SELECT queue FROM job WHERE name = 'recompute-team-storage'"])]
         (t/is (= "storage" (:queue row)))))))
@@ -666,7 +678,7 @@
         team (:id (th/create-team* 65 {:profile-id (:id prof)}))]
     (with-redefs [cf/flags test-flags]
       (append-row "upload-file-media-object" {:team-id team})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (= 1 (th/run-task! :schedule-team-storage {})))
       (with-redefs [sys/system th/*system*]
         (srepl/delete-team! (str team)))
@@ -682,7 +694,7 @@
         team-id (:default-team-id prof)]
     (with-redefs [cf/flags test-flags]
       (append-row "upload-file-media-object" {:team-id team-id})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (= 1 (th/run-task! :schedule-team-storage {})))
       (let [live-fn quotes/get-live-media-storage-bytes]
         (with-redefs [quotes/get-live-media-storage-bytes
@@ -719,10 +731,10 @@
       (th/run-pending-jobs)
       (th/run-task! :objects-gc {:skip-delay true})
       (t/is (nil? (th/db-get :team {:id team-doomed} {::db/remove-deleted false})))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       ;; The drain completed instead of aborting the chunk in a loop:
       ;; no pendings left and the surviving team is marked.
-      (t/is (= 0 (count (storage-usage-pendings))))
+      (t/is (= 0 (count (events-pendings))))
       (t/is (some? (:dirty-at (usage-row team-alive)))))))
 
 (t/deftest storage-usage-restore-team-moves-totals
@@ -745,7 +757,7 @@
                                         :content mfile})]
         (t/is (nil? (:error out))))
       (append-row "upload-file-media-object" {:team-id team :file-id (:id file)})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (th/run-task! :schedule-team-storage {})
       (th/run-pending-jobs)
       (let [live (quotes/get-live-media-storage-bytes th/*system* team)]
@@ -753,14 +765,14 @@
         (t/is (== live (:total-bytes (usage-row team)))))
       (with-redefs [sys/system th/*system*]
         (srepl/delete-team! (str team)))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (th/run-task! :schedule-team-storage {})
       (th/run-pending-jobs)
       (t/is (== 0 (:total-bytes (usage-row team))))
       (with-redefs [sys/system th/*system*]
         (srepl/restore-team! (str team)))
-      (t/is (= 1 (count (storage-usage-pendings))))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (t/is (= 1 (count (events-pendings))))
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (some? (:dirty-at (usage-row team))))
       (th/run-task! :schedule-team-storage {})
       (th/run-pending-jobs)
@@ -779,13 +791,13 @@
                               :id (:id file)})]
         (t/is (nil? (:error out))))
       (th/run-pending-jobs)
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (th/run-task! :schedule-team-storage {})
       (th/run-pending-jobs)
       (with-redefs [sys/system th/*system*]
         (srepl/restore-file! (str (:id file))))
-      (t/is (= 1 (count (storage-usage-pendings))))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (t/is (= 1 (count (events-pendings))))
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (some? (:dirty-at (usage-row team)))))))
 
 (t/deftest storage-usage-restore-project-marks-dirty
@@ -798,13 +810,13 @@
                               :id (:id proj)})]
         (t/is (nil? (:error out))))
       (th/run-pending-jobs)
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (th/run-task! :schedule-team-storage {})
       (th/run-pending-jobs)
       (with-redefs [sys/system th/*system*]
         (srepl/restore-project! (str (:id proj))))
-      (t/is (= 1 (count (storage-usage-pendings))))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (t/is (= 1 (count (events-pendings))))
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (some? (:dirty-at (usage-row team)))))))
 
 (t/deftest storage-usage-restore-profile-marks-dirty
@@ -813,13 +825,13 @@
     (with-redefs [cf/flags test-flags]
       (with-redefs [sys/system th/*system*]
         (srepl/delete-profile! (str (:id prof))))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (th/run-task! :schedule-team-storage {})
       (th/run-pending-jobs)
       (with-redefs [sys/system th/*system*]
         (srepl/restore-profile! (str (:id prof))))
-      (t/is (= 1 (count (storage-usage-pendings))))
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (t/is (= 1 (count (events-pendings))))
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (some? (:dirty-at (usage-row team)))))))
 
 (t/deftest storage-usage-move-project-moves-totals
@@ -863,7 +875,7 @@
         (append-row "move-project" (assoc props
                                           :team-id team-b
                                           :project-id (:id proj-a)))
-        (th/run-task! :audit-log-consumer-storage-usage {})
+        (th/run-task! :audit-log-consumer-events {})
         (t/is (some? (:dirty-at (usage-row team-a))))
         (t/is (some? (:dirty-at (usage-row team-b))))
         (th/run-task! :schedule-team-storage {})
@@ -911,7 +923,7 @@
         (append-row "move-files" (assoc props
                                         :team-id team-b
                                         :project-id (:id proj-b)))
-        (th/run-task! :audit-log-consumer-storage-usage {})
+        (th/run-task! :audit-log-consumer-events {})
         (t/is (some? (:dirty-at (usage-row team-a))))
         (t/is (some? (:dirty-at (usage-row team-b))))
         (th/run-task! :schedule-team-storage {})
@@ -934,7 +946,7 @@
                              :props {:route "dashboard"}
                              :timestamp (ct/now)}]}
          {:app.http/request (th/make-dummy-request)}))
-      (t/is (= 0 (count (storage-usage-pendings)))))))
+      (t/is (= 0 (count (events-pendings)))))))
 
 (t/deftest storage-usage-missing-row-fails-open
   (let [prof (th/create-profile* 1)
@@ -1000,11 +1012,11 @@
         (t/is (= team-id (-> event :props :team-id)))))
     (with-redefs [cf/flags test-flags]
       (append-row "file-gc" {:file-id (:id file) :team-id team-id})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (some? (:dirty-at (usage-row team-id))))
       (t/is (= 1 (th/run-task! :schedule-team-storage {})))
       (th/run-pending-jobs)
       (t/is (nil? (:dirty-at (usage-row team-id))))
       (append-row "delete-object-with-cascade" {:cascade {:team-ids [team-id]}})
-      (th/run-task! :audit-log-consumer-storage-usage {})
+      (th/run-task! :audit-log-consumer-events {})
       (t/is (some? (:dirty-at (usage-row team-id)))))))

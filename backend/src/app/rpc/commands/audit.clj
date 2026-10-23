@@ -128,19 +128,25 @@
   (and (contains? consumer/event-names-for-admin-console name)
        (not (audit/telemetry-shadow-source? source))))
 
+(defn- telemetry-shadow-row?
+  "Rows are positional, in `event-columns` order: [:id :name :source ...]."
+  [[_ _ source]]
+  (audit/telemetry-shadow-source? source))
+
 (defn- insert-rows!
   [tx rows]
   (when (seq rows)
     (db/insert-many! tx :audit-log event-columns rows)
     ;; Same transaction as the rows: every ingested record is born
     ;; pending for every enabled non-selective consumer (see
-    ;; consumer-task). The storage-usage consumer is fed only by
-    ;; backend events (append-audit-entry): no frontend event name can
-    ;; change per-team media storage, so bulk ingest queues nothing
-    ;; for it.
-    ;; The nexus consumer takes every row (gated on its flag like
-    ;; the backend producer does in append-audit-entry).
+    ;; consumer-task). The nexus consumer takes every row (gated on its
+    ;; flag like the backend producer does in append-audit-entry).
     (consumer/queue-nexus-pendings tx (map first rows))
+    ;; The events consumer is not selective either: it takes the whole
+    ;; stream and each reaction decides what concerns it. Never a
+    ;; telemetry shadow (the full row already queues; the shadow keeps
+    ;; the name, so it would be dispatched twice).
+    (consumer/queue-events-pendings tx (map first (remove telemetry-shadow-row? rows)))
     ;; The admin-console consumer is selective: only allowlisted names
     ;; queue its pending (this keeps its browser events working), and
     ;; never a telemetry shadow (the full row already queues; the

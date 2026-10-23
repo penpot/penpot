@@ -21,20 +21,23 @@
    [app.metrics :as mtx]
    [app.nitrate :as nitrate]
    [app.setup :as-alias setup]
-   [app.tasks.event-consumer :as events]
    [integrant.core :as ig]
    [promesa.exec :as px]))
 
-;; This task drains the audit log buffer into the long-term archives.
+;; This task drains the audit log buffer: two of the jobs archive the
+;; events in a long-term destination, and the third one dispatches them
+;; to the reactions.
 ;;
-;; Three separate jobs share this namespace and the queue helpers, one
-;; per destination: `:audit-log-consumer-nexus`,
-;; `:audit-log-consumer-admin-console` and
-;; `:audit-log-consumer-storage-usage`. Each job drains only its own queue
-;; and deletes its pendings on completion; whoever deletes the last
-;; pending also deletes the record ("last one out turns off the
-;; light"), so no separate GC task is needed. Housekeeping (reaping
-;; disabled pendings, sweeping orphans) lives in every job on purpose:
+;; Two separate jobs live in this namespace, one per destination:
+;; `:audit-log-consumer-nexus` and
+;; `:audit-log-consumer-admin-console`. The third one,
+;; `:audit-log-consumer-events`, lives in `app.tasks.event-consumer`
+;; (the generalist that decides what to do with each event). Each job
+;; drains only its own queue and deletes its pendings on completion;
+;; whoever deletes the last pending also deletes the record ("last one
+;; out turns off the light"), so no separate GC task is needed.
+;; Housekeeping (reaping disabled pendings, sweeping orphans) lives in
+;; every job on purpose:
 ;; only the enabled job runs, so it must clean up for the rest.
 
 ;; Consumer ids are fixed constants, never reuse one: retired
@@ -42,14 +45,14 @@
 ;; previous owner's queue.
 (def consumer-nexus 1)
 (def consumer-admin-console 2)
-(def consumer-storage-usage 3)
+(def consumer-events 3)
 
 (def ^:private consumers
-  [{:id consumer-nexus          :flag :nexus         :label "nexus"         :lock :ordered   :outcome "archived"}
-   {:id consumer-admin-console :flag :admin-console :label "admin-console" :lock :ordered   :outcome "archived"}
-   ;; marks teams dirty, it archives nothing
-   {:id consumer-storage-usage :flag :storage-usage :label "storage-usage" :lock :unordered :outcome "processed"
-    :summary "teams marked dirty"}])
+  [{:id consumer-nexus          :flag :nexus          :label "nexus"         :lock :ordered   :outcome "archived"}
+   {:id consumer-admin-console :flag :admin-console  :label "admin-console" :lock :ordered   :outcome "archived"}
+   ;; dispatches the events to the reactions, it archives nothing
+   {:id consumer-events        :flag :event-consumer :label "events"        :lock :unordered :outcome "processed"
+    :summary "events dispatched"}])
 
 (def ^:private xf:enabled-consumers
   "Static transducer: keep the consumers whose send flag is on.
@@ -100,6 +103,16 @@
   (when (contains? cf/flags :nexus)
     (queue-pendings cfg ids consumer-nexus)))
 
+(defn queue-events-pendings
+  "Queue records for the events consumer, the one that dispatches the
+  stream to the reactions. It is not selective: it takes every event
+  and each reaction decides what concerns it. Gated on its flag, so the
+  callers never rely on what the `queue-pendings` default happens to
+  exclude today."
+  [cfg ids]
+  (when (contains? cf/flags :event-consumer)
+    (queue-pendings cfg ids consumer-events)))
+
 (def ^:private consumers-by-id
   (into {} (map (juxt :id identity)) consumers))
 
@@ -108,8 +121,8 @@
   (get-in consumers-by-id [consumer :label]))
 
 (defn- consumer-outcome
-  "Success outcome of a consumer in the events metric: storage-usage
-  marks teams dirty, it archives nothing."
+  "Success outcome of a consumer in the events metric: the events
+  consumer dispatches the stream, it archives nothing."
   [consumer]
   (get-in consumers-by-id [consumer :outcome]))
 
@@ -146,7 +159,7 @@
   [row]
   (select-keys row event-keys))
 
-(defn- row->reaction-event
+(defn row->reaction-event
   "The view of an audit-log row that a reaction sees: the decoded event
   plus the id of the row, so a reaction can correlate what it did with
   the row it came from. The id does not travel to the archives: the
@@ -183,10 +196,10 @@
 
 (def ^:private sql:pending-chunk-unordered
   "The same chunk for a consumer that does not archive and does not
-  care about order (storage-usage only marks teams dirty, and the mark
-  is idempotent). SKIP LOCKED keeps it from waiting on an archive job
-  holding the oldest rows: that wait could hit lock_timeout and abort
-  the run."
+  care about order (the events consumer dispatches the stream, and the
+  reactions are idempotent). SKIP LOCKED keeps it from waiting on an
+  archive job holding the oldest rows: that wait could hit lock_timeout
+  and abort the run."
   "SELECT a.*
      FROM audit_log_pending p
      JOIN audit_log a ON a.id = p.audit_log_id
@@ -487,18 +500,6 @@
                        :events (count decoded))]
     (send-to-admin-console cfg decoded)))
 
-(defn- process-storage-usage-chunk
-  "Mark dirty the teams changed in one pending chunk. Returns
-  {:sent :skipped}: the events a reaction claims count as sent, the
-  rest as skipped. Same contract as the other chunk processors."
-  [cfg rows]
-  (let [batch (mapv row->reaction-event rows)
-        sent  (events/dispatch-reactions cfg batch)]
-    (l/trc :hint "consumer events chunk"
-           :consumer "storage-usage"
-           :events sent)
-    {:sent sent :skipped (- (count batch) sent)}))
-
 (defn- drain-chunks
   "Drain one consumer queue chunk by chunk, one transaction per chunk.
   The processor receives the rows of each chunk, already locked, and
@@ -580,7 +581,6 @@
 
 (declare execute-audit-log-consumer-nexus)
 (declare execute-audit-log-consumer-admin-console)
-(declare execute-audit-log-consumer-storage-usage)
 
 (def schema:audit-log-consumer-nexus-params
   "Overrides for the nexus job repl invocation defaults.
@@ -641,29 +641,6 @@
      (execute-audit-log-consumer-admin-console cfg params))
    ::jobs/decoder   (sm/decoder schema:audit-log-consumer-admin-console-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-consumer-admin-console-params)})
-
-(def schema:audit-log-consumer-storage-usage-params
-  "Params of the storage-usage job: none. Cron submits {}; system deps
-  (pool) live on the job-def cfg closed over by the handler, not in
-  job params. Closed on purpose, same as the admin-console schema."
-  [:map {:closed true}])
-
-(defmethod ig/assert-key ::storage-usage-job-def
-  [_ cfg]
-  (assert (db/pool? (::db/pool cfg)) "expected a valid database pool")
-  (assert (mtx/metrics? (::mtx/metrics cfg)) "expected a valid metrics instance"))
-
-(defmethod ig/init-key ::storage-usage-job-def
-  [_ cfg]
-  (l/dbg :hint "audit log consumer job initialized"
-         :consumer "storage-usage")
-  {::jobs/name      :audit-log-consumer-storage-usage
-   ::jobs/schema    schema:audit-log-consumer-storage-usage-params
-   ::jobs/handler
-   (fn [_context params]
-     (execute-audit-log-consumer-storage-usage cfg params))
-   ::jobs/decoder   (sm/decoder schema:audit-log-consumer-storage-usage-params sm/json-transformer)
-   ::jobs/validator (sm/validator schema:audit-log-consumer-storage-usage-params)})
 
 (defn drain-consumer
   "Run one consumer: drain its queue chunk by chunk (one transaction per
@@ -760,11 +737,3 @@
     (l/dbg :hint "audit log consumer (admin-console) skipped, flag off")
     (drain-consumer cfg consumer-admin-console process-admin-console-chunk)))
 
-(defn execute-audit-log-consumer-storage-usage
-  "Storage-usage job handler: drain the storage-usage queue in chunks,
-  marking dirty the teams whose media storage may have changed
-  (heartbeat per iteration: a burst can span many chunks)."
-  [cfg _params]
-  (if-not (contains? cf/flags :storage-usage)
-    (l/dbg :hint "audit log consumer (storage-usage) skipped, flag off")
-    (drain-consumer cfg consumer-storage-usage process-storage-usage-chunk)))
