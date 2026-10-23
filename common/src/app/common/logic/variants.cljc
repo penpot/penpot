@@ -12,6 +12,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.logic.swap :as clsw]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -404,6 +405,31 @@
   (when-let [parent (get objects parent-id)]
     (or (d/index-of (:shapes parent) shape-id) 0)))
 
+(defn- keep-authored-orientation
+  "A plain swap drops content overrides, but keeps an authored rotation or
+   flip as geometry so a later sync does not remove its retained placement."
+  [changes shape baseline page ldata component-id]
+  (let [parent (get-in page [:objects (:parent-id shape)])
+        main (ctf/get-component-root ldata (ctkl/get-component ldata component-id))
+        main-parent (get-in (ctf/get-component-container ldata (ctkl/get-component ldata component-id))
+                            [:objects (:parent-id main)])
+        parent-delta (if (:shape-ref parent) 0
+                         (- (or (:rotation parent) 0) (or (:rotation main-parent) 0)))
+        rotation (mod (+ (or (:rotation baseline) 0) parent-delta) 360)
+        flip (fn [key]
+               (if (:shape-ref parent)
+                 (boolean (get baseline key))
+                 (odd? (count (filter identity [(get baseline key) (get parent key)
+                                                (get main-parent key)])))))
+        changed? (or (not (mth/close? (mod (or (:rotation shape) 0) 360) rotation 0.01))
+                     (not= (boolean (:flip-x shape)) (flip :flip-x))
+                     (not= (boolean (:flip-y shape)) (flip :flip-y)))]
+    (cond-> changes
+      (and (ctk/touched-group? shape :geometry-group) changed?)
+      (pcb/update-shapes [(:id shape)]
+                         #(update % :touched (fnil conj #{}) :geometry-group)
+                         {:ignore-touched true}))))
+
 (defn generate-component-swap-in-place
   "Swap the copy head `shape` of `page` for a copy of the component
    `component-id` of library data `ldata`. The new head takes the old one's
@@ -428,7 +454,7 @@
         [changes parents-of-swapped]
         (if keep-touched?
           (generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-          [changes []])
+          [(keep-authored-orientation changes shape new-shape page ldata component-id) []])
 
         ;; Replacement keeps the head id and its cell. Cleanup during the
         ;; temporary deletion must not change the parent's placement data.
