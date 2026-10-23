@@ -46,10 +46,10 @@ jobs:
       # No dependency cache here: a deploy must not restore a cache that
       # other workflows can write to.
       - name: Setup pnpm + Node.js
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           working-directory: plugins
-          runtime: node@24.22.0
+          runtime: node@24.22.1
           install: false
 
       - name: Install deps

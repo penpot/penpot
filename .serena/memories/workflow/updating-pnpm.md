@@ -95,6 +95,7 @@ file (never pipe tool output through filters).
   the pnpm self-reference entries, plus a new `packageManagerDependencies`
   section in lockfiles last written by older pnpm. Large diffs mean
   re-resolution; inspect them before accepting.
+- A backport merge of main into staging can bring a newer `PNPM_VERSION` in `docker/` while every `packageManager` field stays behind, since main receives partial `.github/`+`docker/` backports from develop. Resolve those conflicts with main's version and run `scripts/sync-pnpm-version <version>` in the same merge.
 
 ## Verification
 

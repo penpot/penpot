@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:7b1d6522b9a4e72e2ca3537c031ca3650c654ec81c181447bf952069eb827226 AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:9b025768946856e44f9775005eb199f2e1820484ea27bb5c8bcbb187b80464dc AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -66,8 +66,8 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.22.0 \
-    PNPM_VERSION=12.14.0 \
+ENV NODE_VERSION=v24.22.1 \
+    PNPM_VERSION=12.15.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -76,16 +76,16 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         NODE_SHA256='b7e7991d5407815adfa74a2a9cd4db683552c8ce32ff4a295c22e972849c3f5d'; \
+         NODE_SHA256='33c37be234ba8bee041961047b19160f4d7d0f164e8e246f78bdd10feff148b3'; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='cfc780b9e690549e6633e1045fb1fb6ef84e390711e2099e6ccbae91c32456ea'; \
+         PNPM_SHA256='d7ce93a2c7d847d3a34bd3f559b60c14f578b1320c17cc352a2c5c5fdf956117'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         NODE_SHA256='28ea0a438de9a13bd7891fd758eee6c7819ee8af5442dfd8d45bd65e56d4228c'; \
+         NODE_SHA256='eb6728e77c576a35162c122c45ccadf224d89ff00abc8dae46cc2897c6002d7c'; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='3910c3852136bed5bc1511b9137a45fd4357ed6b3970d9d08893641e9005867e'; \
+         PNPM_SHA256='55b5ed0092bd11176c1669598e231ae52e7cedac59de6efd0d415730f37d0598'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -226,13 +226,13 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2026.08.04 \
-    BABASHKA_VERSION=1.13.225 \
+ENV CLJKONDO_VERSION=2026.10.20 \
+    BABASHKA_VERSION=1.13.226 \
     CLJFMT_VERSION=0.16.6 \
-    PIXI_VERSION=0.81.0 \
-    GITHUB_CLI_VERSION=2.102.0 \
-    AWS_CLI_VERSION=2.37.9 \
-    UV_VERSION=0.12.23 \
+    PIXI_VERSION=0.83.0 \
+    GITHUB_CLI_VERSION=2.103.0 \
+    AWS_CLI_VERSION=2.38.5 \
+    UV_VERSION=0.13.5 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
@@ -347,11 +347,11 @@ RUN set -ex; \
     case "${ARCH}" in \
        aarch64|arm64) \
          BINARY_ARCH="aarch64"; \
-         BINARY_SHA256="e7d2cca3622af4765871fe9ce7eeed03acd09dca10a99ebc46e92f79d78765c0"; \
+         BINARY_SHA256="07711a936e9d271045ab937d2c2c5390c25f419e4ba9e25adb9e996031e3f6be"; \
          ;; \
        amd64|x86_64) \
          BINARY_ARCH="x86_64"; \
-         BINARY_SHA256="6b3a6a3d7bb3997928f0bdf7b866914224abf242c2e54e1dcebbe84bee64f356"; \
+         BINARY_SHA256="5def7d1b7e55d892f9a381bb2cb2081a685712464be0d36d5d706af0ac48d0d3"; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
