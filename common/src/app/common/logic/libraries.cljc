@@ -430,7 +430,8 @@
                    children-main
                    {:pair?     ctk/is-main-of?
                     :on-pair   (fn [changes child-inst child-main]
-                                 (if (and (not reset?) (ctk/swapped? child-inst))
+                                 (if (and (not reset?) (ctk/swapped? child-inst)
+                                          (ctk/instance-head? child-main))
                                    (update-swapped-placement changes ctx child-inst child-main)
                                    (sync-copy-recursive changes ctx child-inst child-main)))
                     :only-inst (fn [changes child-inst]
@@ -1037,7 +1038,9 @@
   (if (and (= (:shape-ref dest-shape) (:id origin-shape))
            (ctk/subcopy-head? dest-shape)
            (not (ctk/instance-head? origin-shape)))
-    (pcb/update-shapes changes [(:id dest-shape)] ctk/unhead-shape {:ignore-touched true})
+    (pcb/update-shapes changes [(:id dest-shape)]
+                       #(-> % ctk/remove-swap-group ctk/unhead-shape)
+                       {:ignore-touched true})
     changes))
 
 (defn- check-swapped-main
