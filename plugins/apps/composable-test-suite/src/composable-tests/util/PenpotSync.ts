@@ -2,23 +2,28 @@
  * Timing utilities for the composable tests.
  */
 export class PenpotSync {
-    /** The fixed settling delay, in milliseconds, used by `awaitPropagation`. */
-    private static readonly PROPAGATION_MS = 200;
-
     /**
      * Waits for component-change propagation to settle. Reads can otherwise race
-     * ahead of the propagation a preceding edit triggers. This is a pragmatic
-     * fixed delay; it is intended to be replaced once the Plugin API offers an
-     * explicit "wait for propagation" primitive.
+     * ahead of the propagation a preceding edit triggers. A deadline fails the operation instead of checking a partly synced file.
      */
-    static awaitPropagation(): Promise<void> {
-        // @ts-ignore
-        if (penpot.waitForLayoutUpdate) {
-            // @ts-ignore
-            return penpot.waitForLayoutUpdate();
-        } else {
+    static async awaitPropagation(timeoutMs = 10000): Promise<void> {
+        const api = penpot as typeof penpot & { waitForLayoutUpdate(): Promise<void> };
+        if (!api.waitForLayoutUpdate) {
             throw new Error("PenpotSync.awaitPropagation: waitForLayoutUpdate is not available");
-            return new Promise((resolve) => setTimeout(resolve, PenpotSync.PROPAGATION_MS));
+        }
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+            await Promise.race([
+                api.waitForLayoutUpdate(),
+                new Promise<never>((_, reject) => {
+                    timer = setTimeout(
+                        () => reject(new Error(`Component propagation did not settle in ${timeoutMs}ms`)),
+                        timeoutMs
+                    );
+                }),
+            ]);
+        } finally {
+            clearTimeout(timer);
         }
     }
 }

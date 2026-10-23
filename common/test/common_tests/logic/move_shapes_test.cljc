@@ -21,6 +21,25 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest deleting-a-grid-child-clears-its-cell-and-keeps-undo
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-grid-frame :grid :width 200 :height 100)
+                 (tho/add-rect :first :parent-label :grid)
+                 (tho/add-rect :second :parent-label :grid)
+                 (tho/place-in-grid-columns :grid 2 {1 :first 2 :second}))
+        page (thf/current-page file)
+        [_ changes] (cls/generate-delete-shapes (pcb/empty-changes) (:data file) page
+                                                (:objects page) #{(thi/id :first)} {})
+        removed (thf/apply-changes file changes)
+        grid (ths/get-shape removed :grid)
+        members (mapcat :shapes (vals (:layout-grid-cells grid)))
+        undone (thf/apply-changes removed {:redo-changes (:undo-changes changes)})
+        redone (thf/apply-changes undone changes)]
+    (t/is (not-any? #{(thi/id :first)} members))
+    (t/is (= #{(thi/id :second)} (set members)))
+    (t/is (= (thn/normalize-file file) (thn/normalize-file undone)))
+    (t/is (= (thn/normalize-file removed) (thn/normalize-file redone)))))
+
 (t/deftest test-relocate-shape
   (let [;; ==== Setup
         file                   (-> (thf/sample-file :file1)

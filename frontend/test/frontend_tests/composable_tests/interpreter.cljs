@@ -297,11 +297,11 @@
                              to-index)])
 
     (instance? n/RemoveChild op)
-    [(dwsh/delete-shapes #{(tm/resolve-shape-id situation (:target op))})]
+    [(dwsh/delete-shapes #{(tm/target-shape-id situation (:target op))})]
 
     (instance? n/AddChild op)
     (let [{:keys [parent new-label shape-params]} op
-          parent (tm/resolve-shape situation parent)]
+          parent (tm/shape-by-id situation (tm/target-shape-id situation parent))]
       [(dwsh/add-shape (n/child-shape parent new-label shape-params)
                        {:no-select? true})])
 
@@ -677,7 +677,7 @@
           index-before (undo-index)]
       (if (sync-op? op)
         (let [situation (run-sync-op situation op)]
-          (when (contains? golden-kinds kind)
+          (when (and (not (::generated situation)) (contains? golden-kinds kind))
             (observe-golden-step!))
           (run-ops situation (rest ops)))
         (do
@@ -701,7 +701,7 @@
 
                        :else
                        (let [situation (record-op situation op)]
-                         (when (contains? golden-kinds kind)
+                         (when (and (not (::generated situation)) (contains? golden-kinds kind))
                            (observe-golden-step!))
                          (cond
                            check-step?
@@ -778,6 +778,24 @@
             (ptk/data-event :app.main.data.workspace.pages/finalize-page)
             (ptk/data-event ::stop-headless-text-measurement))
   (wrf/reset-pending!))
+
+(defn start-generated
+  "Install a generated world with the same watchers and undo checks as cases."
+  [situation]
+  (-> situation
+      (assoc ::undo-check? true ::generated true)
+      (uc/with-runner :frontend)
+      (install!)
+      (mark-baseline)))
+
+(defn run-generated-step
+  "Drive a resolved node through real events, settlement and undo/redo."
+  [situation op]
+  (run-ops situation [op]))
+
+(defn finish-generated
+  [situation]
+  (check-variant situation))
 
 (defn- run-variant
   "Set up one variant on the global store and run its ops. `setup` returns a
