@@ -93,3 +93,12 @@ For geometry-sensitive tests, read `mem:common/geometry-invariants` before posit
 ## Debugging
 
 Use `mem:common/component-debugging-recipes` for shape-tree dumps, undo/change inspection, and temporary live instrumentation recipes.
+
+## Composable undo comparison
+
+`comp/undo-check` keeps normalized snapshots exact, including `:touched` and
+`:remote-synced`. Comparison permits only absolute floating noise below 1e-10
+inside shape geometry: x/y, width/height, rotation, points, selrect and transform
+matrices. Reflow can recompute 0.01 as 0.010000000000005116 after undo (F130).
+This tolerance does not apply to opacity, other authored attrs or touched groups.
+The regression rejects a 1e-5 height change and a 5e-15 opacity change.

@@ -34,6 +34,9 @@
        a pinned phase that does not fail fails the case, so the mark goes
        only with the fix."
   (:require
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.math :as mth]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.normalize :as thn]
@@ -166,13 +169,43 @@
           (into (entities-signature :component (:components ed) (:components ad)
                                     #{} (constantly nil)))))))
 
+(defn- same-state?
+  "Reflow can recompute geometry at machine precision after undo. Keep
+   snapshots exact, allowing only absolute geometry noise below 1e-10."
+  ([expected actual] (same-state? expected actual false))
+  ([expected actual geometry?]
+   (or (= expected actual)
+       (cond
+         (and geometry? (number? expected) (number? actual))
+         (mth/close? expected actual 1e-10)
+
+         (and geometry? (gmt/matrix? expected) (gmt/matrix? actual))
+         (every? #(same-state? (get expected %) (get actual %) true) [:a :b :c :d :e :f])
+
+         (and geometry? (gpt/point? expected) (gpt/point? actual))
+         (every? #(same-state? (get expected %) (get actual %) true) [:x :y])
+
+         (and (map? expected) (map? actual) (= (set (keys expected)) (set (keys actual))))
+         (every? (fn [key]
+                   (same-state? (get expected key) (get actual key)
+                                (or geometry?
+                                    (and (contains? expected :parent-id)
+                                         (contains? #{:x :y :width :height :rotation :points
+                                                      :selrect :transform :transform-inverse} key)))))
+                 (keys expected))
+
+         (and (sequential? expected) (sequential? actual) (= (count expected) (count actual)))
+         (every? true? (map #(same-state? %1 %2 geometry?) expected actual))
+
+         :else false))))
+
 (defn compare-states
   "Record a failure of `phase` at `step` unless the normalized files
    `expected` and `actual` are equal. Phases: `:undo`, `:redo`,
    `:no-undo-entry` (a step that added no entry changed the file),
    `:variant-undo` and `:variant-redo`."
   [situation step phase expected actual]
-  (if (= expected actual)
+  (if (same-state? expected actual)
     situation
     (add-failure situation {:phase     phase
                             :step      step

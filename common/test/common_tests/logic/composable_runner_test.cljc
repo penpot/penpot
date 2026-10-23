@@ -21,6 +21,20 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest undo-comparison-allows-only-negligible-geometry-noise
+  (let [situation (setup/simple-component-with-labeled-copy)
+        file (tm/file situation)
+        id (:id (tm/role-shape situation :copy-instance))
+        path [:data :pages-index (:id (thf/current-page file)) :objects id]
+        before (-> (uc/snapshot file)
+                   (assoc-in (conj path :height) 0.01)
+                   (assoc-in (conj path :opacity) 0.4))
+        failures #(uc/failures (uc/compare-states {} nil :undo before %))]
+    (t/is (empty? (failures (assoc-in before (conj path :height) 0.010000000000005116))))
+    (t/is (seq (failures (assoc-in before (conj path :height) 0.01001))))
+    (t/is (seq (failures (assoc-in before (conj path :opacity) (+ 0.4 5e-15)))))
+    (t/is (seq (failures (assoc-in before (conj path :touched) #{:geometry-group}))))))
+
 (t/deftest undo-main-child-structure-restores-remote-sync-state
   (let [initial (setup/nested-component-with-copy)
         updated (-> initial
