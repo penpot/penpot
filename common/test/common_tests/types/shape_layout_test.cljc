@@ -1308,6 +1308,20 @@
 ;; check-deassigned-cells
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(t/deftest assigning-overflow-cells-is-idempotent-after-a-manual-cell
+  (let [children [(make-shape) (make-shape)]
+        objects (into {} (map (juxt :id identity)) children)
+        parent (-> (make-grid-frame :shapes (mapv :id children))
+                   (layout/add-grid-row {:type :flex :value 1})
+                   (layout/add-grid-column {:type :flex :value 1}))
+        cell-id (first (keys (:layout-grid-cells parent)))
+        parent (-> parent
+                   (assoc-in [:layout-grid-cells cell-id :shapes] [(:id (first children))])
+                   (assoc-in [:layout-grid-cells cell-id :position] :manual))
+        assigned (layout/assign-cells parent objects)]
+    (t/is (= assigned (layout/assign-cells assigned objects)))
+    (t/is (= #{:manual} (into #{} (map :position) (vals (:layout-grid-cells assigned)))))))
+
 (t/deftest check-deassigned-cells-test
   (t/testing "removes shape ids no longer in parent's shapes list"
     (let [old-id (uuid/next)

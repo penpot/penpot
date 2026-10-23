@@ -1271,7 +1271,9 @@
 
         ;; TODO: Remove after testing
         (assert (empty? (overlapping-cells parent)) (dm/str (overlapping-cells parent)))
-        (assoc parent :layout-grid-cells cells)))))
+        (-> parent
+            (assoc :layout-grid-cells cells)
+            (assign-cell-positions objects))))))
 
 (defn free-cell-push
   "Frees the cell at index and push the shapes in the order given by the `cells` attribute"
