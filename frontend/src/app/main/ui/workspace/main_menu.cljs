@@ -968,8 +968,8 @@
                        ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
 
-        ;; the switcher when the file has branches; the create dialog when
-        ;; it has none, since the switcher only exists once a branch does
+        ;; the branches dialog when the file has branches; the create
+        ;; dialog when it has none
         show-branches
         (mf/use-fn
          (fn [event]

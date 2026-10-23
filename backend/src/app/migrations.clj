@@ -542,7 +542,10 @@
     :fn (mg/resource "app/migrations/sql/0804-add-file-branch-change-changes-count.sql")}
 
    {:name "0805-stamp-file-branch-change-changes-count"
-    :fn mg0805/migrate}])
+    :fn mg0805/migrate}
+
+   {:name "0806-add-file-branch-merge-table"
+    :fn (mg/resource "app/migrations/sql/0806-add-file-branch-merge-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

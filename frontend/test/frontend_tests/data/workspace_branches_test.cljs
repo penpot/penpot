@@ -223,6 +223,29 @@
           (done'))
         done))))
 
+(t/deftest the-comment-travels-with-the-merge-and-its-conflicts
+  (t/async done
+    (let [calls       (atom [])
+          conflict-id (uuid/next)]
+      (mock/with-mocks
+        {rp/cmd! (cmd-stub calls conflict-id)}
+        (fn [done']
+          (let [branch {:id (uuid/next)}
+                store  (make-store)]
+            (ptk/emit! store (dwb/merge-branch branch {:comment "  Ships the header  "}))
+            (t/is (= "Ships the header" (:comment (last-params calls :merge)))
+                  "the comment is trimmed")
+            (t/testing "the conflict answer hands the comment to the modal"
+              (t/is (= :branch-conflicts (get-in @store [::modal/modal :type])))
+              (t/is (= "  Ships the header  "
+                       (get-in @store [::modal/modal :props :comment]))))
+            (t/testing "a blank comment sends no `:comment` at all"
+              (ptk/emit! store (dwb/merge-branch branch {:comment "   "}))
+              (t/is (not (contains? (last-params calls :merge) :comment))))
+            (rx/dispose! store))
+          (done'))
+        done))))
+
 ;;; --- Branch switcher: the entry point of the menu and the shortcut ---
 
 (defn- make-store-with
@@ -310,9 +333,10 @@
              (t/is (true? (dwb/has-branches? @store))
                    "a count that failed never hides the switcher")
              (ptk/emit! store (dwb/show-branches))
-             (await (async/wait-for #(true? (:workspace-branch-switcher @store))
-                                    "the shortcut opens the switcher, which retries"))
-             (t/is (nil? (::modal/modal @store)) "no create dialog on an unknown count")
+             (await (async/wait-for #(some? (::modal/modal @store))
+                                    "the shortcut opens the branches dialog, which retries"))
+             (t/is (= :branches-list (get-in @store [::modal/modal :type]))
+                   "no create dialog on an unknown count")
              (rx/dispose! store)))))
 
 (t/deftest ^:async a-listing-after-a-failed-count-settles-it
@@ -375,15 +399,15 @@
     (t/is (true? (:workspace-branch-switcher @store)) "forcing it open twice keeps it open")
     (rx/dispose! store)))
 
-(t/deftest ^:async show-branches-opens-the-switcher-when-there-are-branches
+(t/deftest ^:async show-branches-opens-the-branches-dialog-when-there-are-branches
   (await (mock/with-mocks*
            {cf/flags (conj cf/flags :branching)}
-           (let [store (make-store-with main-with-branches)]
+           (let [store (make-store-with (assoc main-with-branches :workspace-branch-switcher true))]
              (ptk/emit! store (dwb/show-branches))
-             (await (async/wait-for #(true? (:workspace-branch-switcher @store))
-                                    "the switcher opens"))
-             (await (async/settle))
-             (t/is (nil? (::modal/modal @store)) "no dialog opens")
+             (await (async/wait-for #(some? (::modal/modal @store))
+                                    "the branches dialog opens"))
+             (t/is (= :branches-list (get-in @store [::modal/modal :type])))
+             (t/is (false? (:workspace-branch-switcher @store)) "the switcher closes")
              (rx/dispose! store)))))
 
 (t/deftest ^:async show-branches-asks-for-the-first-branch-when-there-are-none
@@ -394,7 +418,6 @@
              (await (async/wait-for #(some? (::modal/modal @store))
                                     "the create dialog opens"))
              (t/is (= :create-branch (get-in @store [::modal/modal :type])))
-             (t/is (= "Checkout" (get-in @store [::modal/modal :props :file-name])))
              (t/is (not (:workspace-branch-switcher @store)))
              (rx/dispose! store)))))
 
@@ -449,3 +472,31 @@
                (t/is (= [{:file-id branch-id}] @navigations)
                      "it opens the branch that was created")
                (rx/dispose! store))))))
+
+;;; --- Reviews dialog: the merges into main ---
+
+(t/deftest ^:async the-merges-load-for-the-open-file
+  (let [calls  (atom [])
+        merges [{:id (uuid/next) :branch-name "header" :comment "Ships it"}]]
+    (await (mock/with-mocks*
+             {rp/cmd! (mock/stub (fn [cmd params]
+                                   (swap! calls conj [cmd params])
+                                   (rx/of merges)))}
+             (let [store (make-store-with main-without-branches)]
+               (ptk/emit! store (dwb/fetch-branch-merges))
+               (await (async/wait-for #(= :loaded (get-in @store [:workspace-branch-merges :status]))
+                                      "the merges land"))
+               (t/is (= merges (get-in @store [:workspace-branch-merges :data])))
+               (t/is (= [[:get-file-branch-merges {:file-id file-id}]] @calls)
+                     "the open file is asked as is: the command resolves a branch to main")
+               (rx/dispose! store))))))
+
+(t/deftest ^:async a-failed-merges-load-is-an-error-not-an-empty-list
+  (await (mock/with-mocks*
+           {rp/cmd! (mock/stub (fn [_ _] (rx/throw (ex-info "network" {}))))}
+           (let [store (make-store-with main-without-branches)]
+             (ptk/emit! store (dwb/fetch-branch-merges))
+             (await (async/wait-for #(= :error (get-in @store [:workspace-branch-merges :status]))
+                                    "the failure lands"))
+             (t/is (nil? (get-in @store [:workspace-branch-merges :data])))
+             (rx/dispose! store)))))

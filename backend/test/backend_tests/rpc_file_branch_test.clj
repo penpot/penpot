@@ -797,31 +797,69 @@
                              (ct/is-before? deleted-at (ct/in-future {:days 400}))))
                       rows))))))
 
-(t/deftest merge-with-keep-branch-archives-it
+(t/deftest merge-records-itself-and-deletes-the-branch
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
           file    (th/create-file* 1 {:profile-id (:id profile)
                                       :project-id proj-id})
-          create  (:result (th/command! {::th/type :create-file-branch
+          create! (fn [name]
+                    (:result (th/command! {::th/type :create-file-branch
+                                           ::rpc/profile-id (:id profile)
+                                           :file-id (:id file)
+                                           :name name})))
+          merge!  (fn [branch-id params]
+                    (th/command! (merge {::th/type :merge-file-branch
                                          ::rpc/profile-id (:id profile)
-                                         :file-id (:id file)
-                                         :name "kept"}))
-          branch-id      (:id create)
-          branch-file-id (:branch-file-id create)]
+                                         :branch-id branch-id}
+                                        params)))
+          first-b  (create! "first")
+          second-b (create! "second")]
 
-      (let [out (th/command! {::th/type :merge-file-branch
-                              ::rpc/profile-id (:id profile)
-                              :branch-id branch-id
-                              :keep-branch true})]
+      (let [out (merge! (:id first-b) {:comment "  Ships the new header  "})]
         (t/is (nil? (:error out)))
         (t/is (= :merged (-> out :result :status))))
 
-      (let [[row] (th/db-query :file-branch {:id branch-id})
-            bf    (th/db-get :file {:id branch-file-id})]
-        (t/is (= "merged" (:status row)))
-        (t/is (nil? (:deleted-at row)))
-        (t/is (nil? (:deleted-at bf)))))))
+      (t/testing "the merged branch and its file are deleted"
+        (let [[row] (th/db-query :file-branch {:id (:id first-b)})
+              bf    (th/db-get :file {:id (:branch-file-id first-b)} {::db/remove-deleted false})]
+          (t/is (= "merged" (:status row)))
+          (t/is (some? (:deleted-at row)))
+          (t/is (some? (:deleted-at bf)))))
+
+      (let [out (merge! (:id second-b) {:comment "   "})]
+        (t/is (nil? (:error out))))
+
+      (t/testing "the merges are listed newest first, from main or a branch"
+        (let [out    (th/command! {::th/type :get-file-branch-merges
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id file)})
+              merges (:result out)]
+          (t/is (nil? (:error out)))
+          (t/is (= ["second" "first"] (mapv :branch-name merges)))
+          (t/is (every? #(= (:id profile) (:merged-by %)) merges))
+          (t/is (every? #(= (:id file) (:file-id %)) merges))
+          (t/is (= [nil "Ships the new header"] (mapv :comment merges))
+                "the comment is trimmed, and a blank one is no comment")
+          (t/is (every? (comp nil? :pull-request-id) merges))))
+
+      (t/testing "a merged branch leaves the branch listing"
+        (let [out (th/command! {::th/type :get-file-branches
+                                ::rpc/profile-id (:id profile)
+                                :file-id (:id file)
+                                :include-archived true})]
+          (t/is (empty? (:result out))))))))
+
+(t/deftest the-merges-of-a-file-need-read-permissions
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          other   (th/create-profile* 2 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)})
+          out     (th/command! {::th/type :get-file-branch-merges
+                                ::rpc/profile-id (:id other)
+                                :file-id (:id file)})]
+      (t/is (th/ex-of-type? (:error out) :not-found)))))
 
 (t/deftest merge-requires-main-edition-permissions
   (with-redefs [cf/flags (conj cf/flags :branching)]
@@ -1185,8 +1223,7 @@
       (t/testing "merging brings the new media with a MAIN-owned row"
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
-                                :branch-id branch-id
-                                :keep-branch true})]
+                                :branch-id branch-id})]
           (t/is (nil? (:error out)))
           (t/is (= :merged (-> out :result :status))))
 
@@ -1243,8 +1280,7 @@
 
       (let [out (th/command! {::th/type :merge-file-branch
                               ::rpc/profile-id (:id profile)
-                              :branch-id branch-id
-                              :keep-branch true})]
+                              :branch-id branch-id})]
         (t/is (nil? (:error out)))
         (t/is (= :merged (-> out :result :status))))
 
@@ -1860,9 +1896,9 @@
               (t/is (= "merged" (:status row)))
               (t/is (some? (:deleted-at row))))))))))
 
-(t/deftest delete-keeps-the-status-the-branch-carries
-  ;; deleting a kept merged branch must not rewrite its status: the
-  ;; record is the only place left that says the branch was merged
+(t/deftest a-merged-branch-is-gone-for-delete
+  ;; a merge deletes its branch: deleting it again finds nothing and does
+  ;; not rewrite the status that says the branch was merged
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -1871,7 +1907,7 @@
           create  (:result (th/command! {::th/type :create-file-branch
                                          ::rpc/profile-id (:id profile)
                                          :file-id (:id file)
-                                         :name "kept"}))
+                                         :name "merged"}))
           branch-id      (:id create)
           branch-file-id (:branch-file-id create)
           cid (uuid/random)]
@@ -1879,14 +1915,12 @@
                      {:type :add-color :color {:id cid :name "C" :color "#112233" :opacity 1}})
       (let [out (th/command! {::th/type :merge-file-branch
                               ::rpc/profile-id (:id profile)
-                              :branch-id branch-id
-                              :keep-branch true})]
+                              :branch-id branch-id})]
         (t/is (= :merged (-> out :result :status))))
       (let [out (th/command! {::th/type :delete-file-branch
                               ::rpc/profile-id (:id profile)
                               :id branch-id})]
-        (t/is (nil? (:error out)))
-        (t/is (= :deleted (-> out :result :status))))
+        (t/is (= :branch-not-found (-> out :error ex-data :code))))
       (let [[row] (th/db-query :file-branch {:id branch-id})]
         (t/is (= "merged" (:status row)))
         (t/is (some? (:deleted-at row)))))))
@@ -2298,8 +2332,8 @@
 (t/deftest merge-refuses-a-branch-merged-under-the-lock
   ;; two merges of one open branch: the winner commits before the
   ;; outer merge takes any lock. The outer merge must refuse instead of
-  ;; trusting its stale "open" row and deleting the branch the winner
-  ;; kept.
+  ;; trusting its stale "open" row: merging the branch a second time,
+  ;; recording a second merge and deleting it again.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
@@ -2321,26 +2355,26 @@
                       db/xact-lock!
                       (fn [conn id]
                         ;; the winning merge runs to completion BEFORE
-                        ;; the outer one takes any lock, and keeps the
-                        ;; branch so the outer merge still has its file
+                        ;; the outer one takes any lock
                         (when (compare-and-set! raced? false true)
                           (reset! merged (th/command! {::th/type :merge-file-branch
                                                        ::rpc/profile-id (:id profile)
-                                                       :branch-id branch-id
-                                                       :keep-branch true})))
+                                                       :branch-id branch-id})))
                         (orig-lock conn id))]
           (let [out (th/command! {::th/type :merge-file-branch
                                   ::rpc/profile-id (:id profile)
                                   :branch-id branch-id})]
-            (t/is (= :branch-not-open (-> out :error ex-data :code)))))
+            (t/is (= :branch-not-found (-> out :error ex-data :code)))))
         (t/is (= :merged (-> @merged :result :status)))
         (t/testing "main holds the first merge's revn only"
           (t/is (= (-> @merged :result :revn)
                    (:revn (first (th/db-query :file {:id (:id file)}))))))
-        (t/testing "the branch the winning merge kept is still kept"
+        (t/testing "the winning merge is the only one recorded"
+          (t/is (= 1 (count (th/db-query :file-branch-merge {:file-branch-id branch-id})))))
+        (t/testing "the branch is merged and deleted once"
           (let [[row] (th/db-query :file-branch {:id branch-id})]
             (t/is (= "merged" (:status row)))
-            (t/is (nil? (:deleted-at row)))))))))
+            (t/is (some? (:deleted-at row)))))))))
 
 (t/deftest merge-releases-the-base-the-lock-shows
   ;; the merge releases the base snapshot pin (on the delete path), and
@@ -2514,15 +2548,17 @@
                                 :expected-main-revn 9999})]
           (t/is (= :file-modified (-> out :error ex-data :code)))
           (t/is (empty? @seen)))
-        ;; the kept branch means :file-merged is the only message
+        ;; the merge deletes the branch: its file's clients hear of the
+        ;; deletion and main's of the merge
         (let [out (th/command! {::th/type :merge-file-branch
                                 ::rpc/profile-id (:id profile)
-                                :branch-id branch-id
-                                :keep-branch true})]
+                                :branch-id branch-id})]
           (t/is (= :merged (-> out :result :status))))
-        (let [[{:keys [message main-revn]}] @seen]
-          (t/is (= 1 (count @seen)))
-          (t/is (= :file-merged (:type message)))
+        (let [by-type (into {} (map (juxt (comp :type :message) identity)) @seen)
+              {:keys [message main-revn]} (get by-type :file-merged)]
+          (t/is (= 2 (count @seen)))
+          (t/is (= #{:file-deleted :file-merged} (set (keys by-type))))
+          (t/is (= branch-file-id (get-in by-type [:file-deleted :message :file-id])))
           ;; the merge was already committed when the message left
           (t/is (= (:revn message) main-revn)))))))
 
