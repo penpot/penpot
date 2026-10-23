@@ -189,3 +189,14 @@
       (t/is (gsh/close-attrs? :points (:points text) (:points synced) 0.01))
       (t/is (mth/close? (:x text) (:x synced) 0.01))
       (t/is (mth/close? (:y text) (:y synced) 0.01)))))
+
+(t/deftest nesting-a-copy-settles-its-derived-orientation-before-its-new-main
+  (let [initial (-> (setup/nested-component-with-copy)
+                    (r/step (n/rotate :main2-root 45)) r/settle
+                    (r/step (n/detach :copy-root)) r/settle
+                    (as-> s (tm/apply-to (n/create-component "destination" setup/labeled-fill :size 100) s)))
+        moved (-> initial
+                  (r/step (n/nest-copy :copy-instance (n/main-head-of "destination"))) r/settle)
+        file (tm/file moved)
+        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (t/is (= (thn/normalize-file file) (thn/normalize-file full)))))
