@@ -721,3 +721,16 @@
         head (tm/resolve-shape situation :plain-star)]
     (t/is (== 40 (:height head)))
     (t/is (not (ctk/touched-group? head :geometry-group)))))
+
+(t/deftest swapped-copy-keeps-position-orientation-when-its-content-main-turns
+  (let [initial (setup-sized)
+        file (-> initial
+                 (tho/swap-component-in-shape :copy-star :heart)
+                 (transform-subtree :heart-main #(ctm/rotation-modifiers %1 %2 90))
+                 (propagate :heart))
+        head (ths/get-shape file :copy-star)
+        child (ths/get-shape-by-id file (first (:shapes head)))]
+    (t/is (mth/close? 0 (:rotation head) 0.001))
+    (t/is (mth/close? 0 (:rotation child) 0.001))
+    (t/is (= #{:swap-group} (:touched head)))
+    (t/is (nil? (:touched child)))))

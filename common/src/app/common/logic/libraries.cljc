@@ -261,17 +261,21 @@
             (recur shape-inst' next-data component')))))))
 
 (defn- main-in-parent-orientation
-  "Place a main in the orientation of an ordinary instance parent. Such a
-   parent can survive detach, while the nested copy stays untouched."
+  "Place a content main in the orientation of a swapped head, or compose
+   the placement of an ordinary parent that survived detach."
   [main-container shape-main container shape-inst reset?]
   (let [parent (ctn/get-shape container (:parent-id shape-inst))
         main-parent (get-in main-container [:objects (:parent-id shape-main)])
-        relative (gmt/multiply (or (:transform parent) (gmt/matrix))
-                               (or (:transform-inverse main-parent) (gmt/matrix)))]
-    (if (or (nil? parent) (and (:shape-ref parent) (not reset?)) (gmt/unit? relative))
+        swapped? (and (not reset?) (ctk/swapped? shape-inst))
+        origin (if swapped? shape-main main-parent)
+        target (if swapped? shape-inst parent)
+        relative (gmt/multiply (or (:transform target) (gmt/matrix))
+                               (or (:transform-inverse origin) (gmt/matrix)))]
+    (if (or (nil? target) (and (:shape-ref parent) (not reset?) (not swapped?))
+            (gmt/unit? relative))
       main-container
       (let [transform (gmt/transform-in (gsh/shape->center shape-main) relative)
-            angle (- (or (:rotation parent) 0) (or (:rotation main-parent) 0))
+            angle (- (or (:rotation target) 0) (or (:rotation origin) 0))
             turn #(-> %
                       (assoc-in [:modifiers :rotation] angle)
                       (gsh/apply-transform transform)
