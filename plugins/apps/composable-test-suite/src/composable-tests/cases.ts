@@ -9,6 +9,7 @@ import { createTestCaseMainChildMovedOutLeavesCopy } from "./cases/caseMainChild
 import { createTestCaseDetachKeepsNestedCopiesLinked } from "./cases/caseDetachKeepsNestedCopiesLinked.ts";
 import { createTestCaseCopySwapSurvivesMainChanges } from "./cases/caseCopySwapSurvivesMainChanges.ts";
 import { createTestCaseResetOfNestedSwapKeepsTopCopyOverrides } from "./cases/caseResetOfNestedSwapKeepsTopCopyOverrides.ts";
+import { createTestCaseRandomCompositions } from "./cases/caseRandomCompositions.ts";
 
 /**
  * All composable test cases currently defined. A factory (not a constant): each
@@ -27,5 +28,6 @@ export function allCases(): readonly TestCase[] {
         createTestCaseDetachKeepsNestedCopiesLinked(),
         createTestCaseCopySwapSurvivesMainChanges(),
         createTestCaseResetOfNestedSwapKeepsTopCopyOverrides(),
+        createTestCaseRandomCompositions(),
     ];
 }

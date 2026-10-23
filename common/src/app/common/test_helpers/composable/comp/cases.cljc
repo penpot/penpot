@@ -67,8 +67,8 @@
          removal too; a copy's own token survives.
      AZ — a nested copy pasted out of its main keeps the overrides the main
          gave it (F17).
-     N — main edits reach rotated copies (frontend only).
-     Rotation — a touched copy child survives a main rotation (frontend only too)."
+     N — main edits reach rotated copies.
+     Rotation — a touched copy child survives a main rotation."
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
@@ -1614,7 +1614,7 @@
                           (t/is (empty? (:touched copy))))))))}))
 
 (defn geometry-sync-with-rotated-instances
-  "Case N (frontend only). Optionally the copy rotates, optionally the main
+  "Case N. Optionally the copy rotates, optionally the main
    rotates, then the main child changes its fill or its height. The change
    reaches the copy child. A copy root's rotation is inherited content that a
    copy may override: the copy shows its own rotation, else the main's, else
@@ -1676,7 +1676,7 @@
                     (t/is (empty? (:touched (setup/copy-root s))))))}))
 
 (defn touched-copy-child-survives-main-rotation
-  "Frontend only. A copy rotates its root and resizes its child, then the
+  "A copy rotates its root and resizes its child, then the
    main rotates. The child's touched :geometry-group shields it: its height
    and its position relative to the copy root do not change."
   []

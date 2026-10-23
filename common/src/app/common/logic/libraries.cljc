@@ -1325,7 +1325,10 @@
                main-cells (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells)]
            (-> shape-copy
                (assoc :layout-grid-cells
-                      (ctsl/merge-cells main-cells copy-cells omit-touched?))
+                      (if (and omit-touched?
+                               (contains? (:touched shape-copy) :layout-grid-cells))
+                        copy-cells
+                        main-cells))
                (ctsl/assign-cells objects))))
        {:ignore-touched true :with-objects? true})))
 

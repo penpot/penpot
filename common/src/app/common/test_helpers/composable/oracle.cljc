@@ -74,7 +74,12 @@
         (update value :objects
                 (fn [objects]
                   (into {} (map (fn [[id shape]]
-                                   [id (apply dissoc shape (derived-attributes objects shape))])) objects)))
+                                  [id (-> (gsh/move shape
+                                                    (gpt/point (- (get-in objects [(:parent-id shape) :x] 0))
+                                                               (- (get-in objects [(:parent-id shape) :y] 0))))
+                                          (as-> shape (apply dissoc shape (derived-attributes objects shape)))
+                                          (update :constraints-h #(or % (gsh/default-constraints-h shape)))
+                                          (update :constraints-v #(or % (gsh/default-constraints-v shape))))])) objects)))
         value))
     (snapshot situation))))
 
@@ -126,7 +131,23 @@
                            (or (:transform-inverse main-parent) (gmt/matrix)))
         placed (if (gmt/unit? turn) main
                    (gsh/apply-transform main (gmt/transform-in center turn)))]
-    (gsh/move placed (gpt/subtract (gsh/shape->center parent) center))))
+    (-> placed
+        (gsh/move (gpt/subtract (gsh/shape->center parent) center))
+        (assoc :rotation (mod (+ (or (:rotation main) 0)
+                                 (- (or (:rotation parent) 0) (or (:rotation main-parent) 0))) 360)))))
+
+(defn- with-derived-geometry
+  [objects shape expected]
+  (let [derived (derived-attributes objects shape)
+        width (if (contains? derived :width) (:width shape) (:width expected))
+        height (if (contains? derived :height) (:height shape) (:height expected))
+        expected (if (and (mth/close? width (:width expected) 0.01)
+                          (mth/close? height (:height expected) 0.01))
+                   expected
+                   (gsh/transform-shape expected (ctm/change-size expected width height)))]
+    (gsh/move expected
+              (gpt/point (if (contains? derived :x) (- (:x shape) (:x expected)) 0)
+                         (if (contains? derived :y) (- (:y shape) (:y expected)) 0)))))
 
 (defn expected-geometry
   [file container libraries shape]
@@ -136,17 +157,19 @@
                 (fail :I1 {:shape (:name shape) :reason :parent-cycle}))
               (if (contains? (:touched shape) :geometry-group)
                 shape
-                (if-let [main (ctf/find-ref-shape file container libraries shape :with-context? true)]
-                  (let [parent (get objects (:parent-id shape))
-                        main-objects (get-in (meta main) [:container :objects])
-                        main-parent (get main-objects (:parent-id main))]
-                    (if (and (:shape-ref parent) main-parent)
-                      (child-placement main main-parent (expected parent (conj visited (:id shape)))
-                                       main-objects)
-                      ;; Root placement is authored independently of overrides.
-                      (gsh/move main (gpt/subtract (gpt/point (:x shape) (:y shape))
-                                                   (gpt/point (:x main) (:y main))))))
-                  shape)))]
+                (with-derived-geometry
+                  objects shape
+                  (if-let [main (ctf/find-ref-shape file container libraries shape :with-context? true)]
+                    (let [parent (get objects (:parent-id shape))
+                          main-objects (get-in (meta main) [:container :objects])
+                          main-parent (get main-objects (:parent-id main))]
+                      (if (and (:shape-ref parent) main-parent)
+                        (child-placement main main-parent (expected parent (conj visited (:id shape)))
+                                         main-objects)
+                        ;; Root placement is authored independently of overrides.
+                        (gsh/move main (gpt/subtract (gpt/point (:x shape) (:y shape))
+                                                     (gpt/point (:x main) (:y main))))))
+                    shape))))]
       (expected shape #{}))))
 
 (defn- geometry-differences
@@ -155,13 +178,44 @@
                           (not (ctl/position-absolute? shape)))
         auto-width (and (= :text (:type shape)) (= :auto-width (:grow-type shape)))
         auto-height (and (= :text (:type shape)) (#{:auto-width :auto-height} (:grow-type shape)))
-        width-owned (or auto-width (and layout-child (#{:fill :auto} (:layout-item-h-sizing shape))))
-        height-owned (or auto-height (and layout-child (#{:fill :auto} (:layout-item-v-sizing shape))))]
+        derived (derived-attributes objects shape)
+        width-owned (contains? derived :width)
+        height-owned (contains? derived :height)]
     (cond-> #{}
+      (not (mth/close? (or (:rotation shape) 0) (or (:rotation expected) 0) 0.01)) (conj :rotation)
+      (not= (boolean (:flip-x shape)) (boolean (:flip-x expected))) (conj :flip-x)
+      (not= (boolean (:flip-y shape)) (boolean (:flip-y expected))) (conj :flip-y)
       (and (not width-owned) (not (mth/close? (:width shape) (:width expected) 0.01))) (conj :width)
       (and (not height-owned) (not (mth/close? (:height shape) (:height expected) 0.01))) (conj :height)
       (and (not layout-child) (not auto-width) (not auto-height)
            (not (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :points))))
+
+(defn- comparable-values
+  [shape context group]
+  (let [shape (if (= group :constraints-group)
+                (cond-> shape
+                  (nil? (:constraints-h shape)) (assoc :constraints-h (gsh/default-constraints-h context))
+                  (nil? (:constraints-v shape)) (assoc :constraints-v (gsh/default-constraints-v context)))
+                shape)]
+    (shadow/values shape group)))
+
+(defn- grid-cells
+  [shape]
+  (let [indices (zipmap (:shapes shape) (range))]
+    (->> (vals (:layout-grid-cells shape))
+         (map #(-> % (dissoc :id) (update :shapes (fn [ids] (mapv indices ids)))))
+         (sort-by (juxt :row :column))
+         vec)))
+
+(defn- check-structure
+  [objects shape main]
+  (let [refs (mapv #(get-in objects [% :shape-ref]) (:shapes shape))]
+    (when-not (= (vec (:shapes main)) refs)
+      (fail :I4 {:shape (:name shape) :group :structure
+                 :expected (:shapes main) :actual refs}))
+    (when (and (= :grid (:layout main)) (not= (grid-cells shape) (grid-cells main)))
+      (fail :I4 {:shape (:name shape) :group :layout-grid-cells
+                 :expected (grid-cells main) :actual (grid-cells shape)}))))
 
 (defn check
   "I1–I4 and I9. Before settlement only authored groups/values are checked;
@@ -186,13 +240,14 @@
                       :expected value :actual (shadow/values shape group)})))
        (when settled
          (when-let [main (ctf/find-content-ref-shape file container libraries shape)]
+           (check-structure (:objects page) shape main)
            (doseq [group (keys shadow/attributes)
                    :when (and (not= group :geometry-group) (not (contains? touched group)))
                    :when (not (and (= group :name-group) (= :text (:type shape))
                                    (= (:name main) (txt/generate-shape-name (txt/content->text (:content main))))))
                    ;; A copy root's name follows component renaming too.
-                   :let [expected (shadow/values main group)
-                         actual (shadow/values shape group)]]
+                   :let [expected (comparable-values main shape group)
+                         actual (comparable-values shape shape group)]]
              (when-not (= expected actual)
                (fail :I4 {:shape (:name shape) :group group
                           :expected expected :actual actual})))

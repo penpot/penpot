@@ -53,6 +53,8 @@
    :k  cases/synchronisation-scenarios
    :l  cases/swap-scenarios
    :m  cases/variant-switch-scenarios
+   :n  cases/geometry-sync-with-rotated-instances
+   :rotation cases/touched-copy-child-survives-main-rotation
    :o  cases/variant-switch-keeps-override-only-where-mains-agree
    :q  cases/detach-keeps-nested-copies-linked
    :r  cases/update-main-reaches-other-copies

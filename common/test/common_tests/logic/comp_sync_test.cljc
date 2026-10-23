@@ -15,9 +15,14 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.comp.setups :as setup]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -27,6 +32,51 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest grid-sync-keeps-new-main-cells
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-grid-frame :main-root :width 100 :height 100)
+                 (tho/add-rect :main-child :parent-label :main-root)
+                 (tho/place-in-grid-columns :main-root 1 {1 :main-child})
+                 (thc/make-component :component1 :main-root)
+                 (thc/instantiate-component :component1 :copy-root))
+        initial (tm/make-situation file {})
+        added (-> initial
+                  (r/step (n/add-child :main-root :new-child :width 20 :height 20))
+                  r/settle)
+        cells (fn [s label copy?]
+                (let [objects (:objects (thf/current-page (tm/file s)))
+                      root (tm/resolve-shape s label)]
+                  (into {} (map (fn [[id cell]]
+                                  [id (cond-> cell copy?
+                                              (update :shapes #(mapv (fn [id] (:shape-ref (get objects id))) %)))]))
+                        (:layout-grid-cells root))))]
+    (doseq [s [added]]
+      (t/is (= (cells s :main-root false) (cells s :copy-root true)))
+      (t/is (nil? (:touched (tm/resolve-shape s :copy-root)))))
+    (let [undone (r/step added (n/undo))
+          redone (r/step undone (n/redo))]
+      (t/is (= (thn/normalize-file (tm/file initial)) (thn/normalize-file (tm/file undone)))
+            (pr-str (thn/diff (thn/normalize-file (tm/file initial)) (thn/normalize-file (tm/file undone)))))
+      (t/is (= (thn/normalize-file (tm/file added)) (thn/normalize-file (tm/file redone)))
+            (pr-str (thn/diff (thn/normalize-file (tm/file added)) (thn/normalize-file (tm/file redone))))))))
+
+(t/deftest grid-sync-keeps-authored-placement-until-reset
+  (let [initial (setup/grid-component-with-copy)
+        moved (-> initial (r/step (n/move-to-cell :grid-copy :copy-child1 1 3)) r/settle)
+        edited (-> moved (r/step (n/change-property :grid-root :opacity 0.4)) r/settle)
+        reset (-> edited (r/step (n/reset :grid-copy)) r/settle)
+        cells #(get (tm/resolve-shape % :grid-copy) :layout-grid-cells)
+        copy-membership (fn [s]
+                          (let [root (tm/resolve-shape s :grid-copy)
+                                objects (:objects (thf/current-page (tm/file s)))]
+                            (update-vals (:layout-grid-cells root)
+                                         #(update % :shapes (fn [ids] (mapv (fn [id] (:shape-ref (get objects id))) ids))))))]
+    (t/is (contains? (:touched (tm/resolve-shape moved :grid-copy)) :layout-grid-cells))
+    (t/is (= (cells moved) (cells edited)))
+    (t/is (= (:layout-grid-cells (tm/resolve-shape reset :grid-root))
+             (copy-membership reset)))
+    (t/is (nil? (:touched (tm/resolve-shape reset :grid-copy))))))
 
 (t/deftest test-sync-when-changing-attribute
   (let [;; ==== Setup

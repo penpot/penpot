@@ -6,8 +6,7 @@
 
 (ns common-tests.logic.composable-sync-test
   "Runs the shared composable component cases through the pure runner, on the
-   JVM and in JS. Only the frontend interpreter runs the geometry cases (N, Z,
-   AI and the rotation case), whose modifiers come from frontend events, case X,
+   JVM and in JS. Only the frontend interpreter runs the geometry cases Z and AI, whose modifiers come from frontend events, case X,
    which needs a pending frontend sync, case AJ, which needs the frontend
    reflow, and cases AT..AX, whose variant actions are frontend events."
   (:require
@@ -73,6 +72,12 @@
 
 (t/deftest case-m-variant-switch-scenarios
   (check (cases/variant-switch-scenarios)))
+
+(t/deftest case-n-geometry-sync-with-rotated-instances
+  (check (cases/geometry-sync-with-rotated-instances)))
+
+(t/deftest touched-copy-child-survives-main-rotation
+  (check (cases/touched-copy-child-survives-main-rotation)))
 
 (t/deftest case-o-variant-switch-keeps-override-only-where-mains-agree
   (check (cases/variant-switch-keeps-override-only-where-mains-agree)))

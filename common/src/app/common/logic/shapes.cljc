@@ -439,6 +439,12 @@
                      (pcb/remove-objects ids-to-delete {:ignore-touched ignore-touched})
                      (pcb/remove-objects empty-parents)
                      (generate-copy-deletions data page pages-index copy-deletions)
+                     (pcb/update-shapes all-parents
+                                        (fn [shape objects]
+                                          (if (ctl/grid-layout? shape)
+                                            (ctl/assign-cell-positions shape objects)
+                                            shape))
+                                        {:ignore-touched true :with-objects? true})
                      (pcb/resize-parents all-parents)
                      (pcb/update-shapes groups-to-unmask
                                         (fn [shape]

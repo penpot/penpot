@@ -10,15 +10,21 @@
    Traces contain tree paths, never random UUIDs, and can be replayed."
   (:refer-clojure :exclude [flush])
   (:require
+   [app.common.files.helpers :as cfh]
+   [app.common.logic.shapes :as cls]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.composable.shadow :as shadow]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.normalize :as thn]
+   [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.uuid :as uuid]
    [clojure.test.check.generators :as gen]))
@@ -35,37 +41,85 @@
       (vec (mapcat (fn [[index id]] (walk id [index]))
                    (map-indexed vector (:shapes (get objects uuid/zero))))))))
 
+(defn- with-layout
+  [situation name layout]
+  (if-not layout
+    situation
+    (let [root (keyword (str "sync-" name "-head"))
+          child (keyword (str "sync-" name "-rect"))
+          defaults (case layout :flex cls/initial-flex-layout :grid cls/initial-grid-layout)
+          file (reduce-kv #(ths/update-shape %1 root %2 %3) (tm/file situation) defaults)
+          file (cond-> file (= layout :grid) (tho/place-in-grid-columns root 2 {1 child}))]
+      (tm/with-file situation file))))
+
 (defn world
-  [[components depth]]
+  [[components depth opts]]
   (thi/reset-idmap!)
   (reduce (fn [s index]
             (let [name (str "random-" index)]
-              (reduce #(tm/apply-to %2 %1) s
-                      [(n/create-component name setup/labeled-fill :size 100)
-                       (n/make-nested-component name depth)
-                       (n/instantiate-copy name)
-                       (n/instantiate-copy name)])))
-          (setup/empty-situation)
+              (-> (tm/apply-to (n/create-component name setup/labeled-fill :size 100) s)
+                  (with-layout name (when (zero? index) (:layout opts)))
+                  (as-> s (reduce #(tm/apply-to %2 %1) s
+                                  [(n/make-nested-component name depth)
+                                   (n/instantiate-copy name)
+                                   (n/instantiate-copy name)])))))
+          (let [s (setup/empty-situation)]
+            (cond-> s
+              (:text opts)
+              (tm/with-file (-> (thtx/add-text-component-with-copy (tm/file s) [[["Hello world"]]])
+                                (ths/update-shape :main-child :grow-type :auto-height)
+                                (ths/update-shape :copy-child :grow-type :auto-height)
+                                (ths/update-shape :copy-child :touched nil)))))
           (range components)))
 
 (defn candidates
   [situation model kind scope]
   (let [objects (:objects (thf/current-page (tm/file situation)))
+        file (tm/file situation)
+        libraries (assoc (tm/aux-files situation) (:id file) file)
         copy-head (fn [shape] (and (:shape-ref shape) (:component-id shape)))
+        live-component (fn [shape]
+                         (let [component (get-in libraries [(:component-file shape) :data :components (:component-id shape)])]
+                           (and component (not (:deleted component)))))
         top-copy (fn [shape] (and (copy-head shape)
                                   (= 1 (count (ctn/get-parent-copy-heads objects shape)))))
         overridden (fn overridden [id]
                      (or (seq (get model id))
-                         (some overridden (:shapes (get objects id)))))]
-    (filterv (fn [{:keys [shape]}]
-               (case kind
-                 :edit (or (not= scope 1) (:shape-ref shape))
-                 :reset (copy-head shape)
-                 :update-main (and (top-copy shape) (overridden (:id shape)))
-                 :detach (top-copy shape)
-                 (:resize :rotate) (top-copy shape)
-                 false))
-             (tree situation))))
+                         (some overridden (:shapes (get objects id)))))
+        eligible (filterv (fn [{:keys [shape]}]
+                            (case kind
+                              :edit (and (not= :text (:type shape)) (or (not= scope 1) (:shape-ref shape)))
+                              :reset (and (copy-head shape) (live-component shape))
+                              :update-main (and (top-copy shape) (live-component shape) (overridden (:id shape)))
+                              :detach (top-copy shape)
+                              (:resize :rotate) (top-copy shape)
+                              :text (= :text (:type shape))
+                              :add-child (ctk/main-instance? shape)
+                              :remove-child (and (= :rect (:type shape)) (nil? (:shape-ref shape))
+                                                 (some ctk/main-instance? (cfh/get-parents-with-self objects (:id shape))))
+                              :duplicate (and (top-copy shape) (< (count objects) 120))
+                              :nest (and (top-copy shape) (not (overridden (:id shape))))
+                              :delete (ctk/main-instance? shape)
+                              false))
+                          (tree situation))]
+    (case kind
+      :restore (->> (vals (get-in file [:data :components]))
+                    (filter :deleted)
+                    (sort-by (comp str :id))
+                    (map-indexed (fn [index component]
+                                   {:path [:deleted index]
+                                    :shape {:id (:main-instance-id component)
+                                            :component-id (:id component)}}))
+                    vec)
+      :nest (vec (for [entry eligible
+                       parent (tree situation)
+                       :let [parent-shape (:shape parent)]
+                       :when (and (ctk/main-instance? parent-shape)
+                                  (not= (:parent-id (:shape entry)) (:id parent-shape))
+                                  (not (ctn/invalid-structure-for-component?
+                                        objects parent-shape [(:shape entry)] false libraries)))]
+                   (assoc entry :into (:path parent) :parent (:shape parent))))
+      eligible)))
 
 (defn resolve-op
   "Resolve one tuple. Empty target sets produce an explicit skip."
@@ -91,11 +145,23 @@
                  :detach (n/detach target)
                  :resize (n/change-height target (+ 80 (* 20 (mod (or (nth tuple 3 nil) 0) 6))))
                  :rotate (n/rotate target (* 45 (inc (mod (or (nth tuple 3 nil) 0) 4))))
-                 nil)))]
+                 :text (let [text (thtx/view (:content (:shape selected)))
+                             text (if (even? (or (nth tuple 2 nil) 0))
+                                    (thtx/set-letters text (nth ["Hello world" "Hello there" "Hello\nworld"] (mod (or (nth tuple 3 nil) 0) 3)))
+                                    (thtx/restyle text :size (nth [14 18 24] (mod (or (nth tuple 3 nil) 0) 3))))]
+                         (n/edit-text target :content text))
+                 :add-child (n/add-child target (keyword (str "generated-" (count (:applied situation))))
+                                         :width 20 :height 20 :x 10 :y 10)
+                 :remove-child (n/remove-child target)
+                 :duplicate (n/duplicate target)
+                 :nest (n/nest-copy target (constantly (get-in selected [:parent :id])))
+                 :delete (n/delete-component target)
+                 :restore (n/restore-component (n/delete-component target)))))]
     {:op op :shape (:shape selected) :property property :value value
      :trace (cond-> {:kind kind :tuple tuple
                      :status (if (or op (= kind :sync)) :executed :skip)}
               selected (assoc :target (:path selected))
+              (:into selected) (assoc :into (:into selected))
               (and (nil? op) (not= kind :sync))
               (assoc :reason (str "No eligible " (name kind) " target")))}))
 
@@ -116,11 +182,11 @@
         full (r/sync-cascade (tm/file settled) (tm/aux-files settled)
                              all)]
     (oracle/check settled model)
-    (when-not (= (oracle/design-snapshot settled)
-                 (oracle/design-snapshot (tm/with-file situation (:file full-before))))
-      (oracle/fail :I6 {}))
-    (when-not (= (oracle/design-snapshot settled)
-                 (oracle/design-snapshot (tm/with-file settled (:file full))))
+    (when-not (= (oracle/canonical settled)
+                 (oracle/canonical (tm/with-file situation (:file full-before))))
+      (oracle/fail :I6 {:diff (thn/diff (oracle/canonical settled) (oracle/canonical (tm/with-file situation (:file full-before))))}))
+    (when-not (= (oracle/canonical settled)
+                 (oracle/canonical (tm/with-file settled (:file full))))
       (oracle/fail :I5 {}))
     (when checkpoint (assert-round-trip checkpoint settled))
     (assoc state :situation settled :checkpoint nil)))
@@ -135,6 +201,10 @@
       :update-main (shadow/update-main model objects id)
       :detach (shadow/detach model objects
                              (:objects (thf/current-page (tm/file after))) id)
+      :text (shadow/edit-text model shape (:content (n/text-edit-commit shape (:edit op) (:value op))))
+      :duplicate (shadow/duplicate model objects id
+                                   (:objects (thf/current-page (tm/file after)))
+                                   (:new-head (n/applied-result op (tm/file before) (tm/file after))))
       (:resize :rotate)
       (let [shape-after (tm/shape-by-id after id)
             group :geometry-group]
@@ -250,3 +320,20 @@
      ;; coverage floor even at size zero. The random tail changes ordering.
      :ops (into [[:edit 0 0 1 1] [:sync 0] [:update-main 0]
                  [:edit 0 1 1 1] [:reset 0] [:detach 0] [:undo] [:redo]] ops)}))
+
+(def structure-kinds
+  [:edit :reset :update-main :detach :sync :undo :redo :text :add-child
+   :remove-child :duplicate :nest :delete :restore :resize :rotate])
+
+(def structure-program-gen
+  (gen/let [components (gen/choose 2 3)
+            depth (gen/choose 0 2)
+            layout (gen/elements [nil :flex :grid])
+            ops (gen/vector (gen/tuple (gen/elements structure-kinds)
+                                       gen/nat gen/nat gen/nat gen/nat) 0 20)]
+    {:world [components depth {:text true :layout layout}]
+     :ops (into [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
+                 [:delete 0] [:restore 0] [:text 0 0 1] [:text 1 1 1]
+                 [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
+                 [:edit 0 0 1 1] [:update-main 0] [:sync 1]
+                 [:detach 0] [:undo] [:redo]] ops)}))
