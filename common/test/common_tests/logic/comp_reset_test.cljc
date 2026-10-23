@@ -639,3 +639,14 @@
     (t/is (= 0 (:rotation (ths/get-shape reset :copy-child))))
     (t/is (nil? (:touched (ths/get-shape reset :copy-root))))
     (t/is (= (thn/normalize-file rotated) (thn/normalize-file undone)))))
+
+(t/deftest reset-a-nested-copy-keeps-its-rotated-parent-placement
+  (let [initial (-> (setup/nested-component-with-copy)
+                    (r/step (n/rotate :copy-root 45)) r/settle)
+        head (tm/role-shape initial :copy-instance)
+        child (tm/shape-by-id initial (first (:shapes head)))
+        reset (-> initial (r/step (n/reset :copy-instance)) r/settle)
+        after (tm/shape-by-id reset (:id child))]
+    (t/is (gsh/close-attrs? :points (:points child) (:points after) 0.001))
+    (t/is (= (:rotation child) (:rotation after)))
+    (t/is (nil? (:touched (tm/role-shape reset :copy-instance))))))
