@@ -17,6 +17,7 @@
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -413,7 +414,9 @@
         ;; sync-file clears frame thumbnails on a timer that outlives the test
         dwth/clear-thumbnail       (mock/stub (constantly nil))}
 
-       (ptk/emit! store (tohs/watch-undo-stack))
+       ;; The edit watchers record the undo history and pass each commit on
+       ;; to the component watcher
+       (ptk/emit! store (dw/initialize-edit-watchers))
        (ptk/emit! store (dwl/watch-component-changes))
 
        ;; The user edit, synced to the copy
@@ -440,5 +443,7 @@
        (t/is (= copy-0 (before copy-id))
              "the copy is back to its size and opacity")
 
-       (ptk/emit! store (dwpg/finalize-page (:id file) page-id))
+       (ptk/emit! store
+                  (dw/finalize-edit-watchers)
+                  (dwpg/finalize-page (:id file) page-id))
        (await (async/settle))))))
