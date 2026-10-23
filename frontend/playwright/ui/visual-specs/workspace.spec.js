@@ -728,6 +728,57 @@ test.describe("Nudge modal", () => {
   });
 });
 
+test.describe("Text palette", () => {
+  test("Shows the scroll arrows and the palette menu", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-many-typographies.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
+      pageId: "c1249a66-fce0-8175-8004-7433fe4be8bd",
+    });
+
+    await workspace.palette
+      .getByRole("button", { name: "Typographies" })
+      .click();
+    await expect(
+      workspace.palette.getByText("Type 01 Regular 12"),
+    ).toBeVisible();
+    await page.mouse.move(640, 300);
+    // The arrows are a small part of the palette: compare every pixel.
+    await expect(workspace.palette).toHaveScreenshot("text-palette.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    const rightArrow = workspace.palette.locator('[class*="right-arrow"]');
+    await rightArrow.hover();
+    await expect(workspace.palette).toHaveScreenshot(
+      "text-palette-arrow-hover.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    await rightArrow.click();
+    await page.mouse.move(640, 300);
+    await expect(workspace.palette).toHaveScreenshot(
+      "text-palette-scrolled.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    await workspace.palette.locator('[class*="palette-actions"]').click();
+    await expect(page.getByText("File library")).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(page).toHaveScreenshot("text-palette-menu.png", {
+      clip: { x: 300, y: 450, width: 700, height: 270 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Selected colors", () => {
   test("Shows the more colors button", async ({ page }) => {
     const workspace = new WorkspacePage(page);
