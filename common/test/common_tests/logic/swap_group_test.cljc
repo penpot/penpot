@@ -821,3 +821,30 @@
         undone (r/step moved (n/undo))]
     (t/is (nil? (:touched head)))
     (t/is (= (thn/normalize-file file) (thn/normalize-file (tm/file undone))))))
+
+(t/deftest swapping-a-child-restores-its-parents-remote-sync-flag-on-undo
+  (let [initial (tm/make-situation (ths/update-shape (setup-sized) :copy :remote-synced true))
+        swapped (-> initial (r/step (n/swap-shape :copy-star :heart)) r/settle)
+        undone (r/step swapped (n/undo))]
+    (t/is (:remote-synced (tm/resolve-shape initial :copy)))
+    (t/is (not (:remote-synced (tm/resolve-shape swapped :copy))))
+    (t/is (:remote-synced (tm/resolve-shape undone :copy)))
+    (t/is (= (thn/normalize-file (tm/file initial))
+             (thn/normalize-file (tm/file undone))))))
+
+(t/deftest structural-child-changes-restore-the-parents-remote-sync-state
+  (doseq [operation [:add :remove]]
+    (let [file (ths/update-shape (setup-sized) :copy-star :remote-synced true)
+          page (thf/current-page file)
+          parent (ths/get-shape file :copy-star)
+          changes (-> (pcb/empty-changes nil (:id page))
+                      (pcb/with-objects (:objects page)))
+          changes (case operation
+                    :add (pcb/add-object changes (ths/sample-shape :added
+                                                                   :parent-id (:id parent)
+                                                                   :frame-id (:id parent)))
+                    :remove (pcb/remove-objects changes [(first (:shapes parent))]))
+          changed (thf/apply-changes file changes :validate? false)
+          undone (thf/apply-undo-changes changed changes)]
+      (t/is (not (:remote-synced (ths/get-shape changed :copy-star))) (name operation))
+      (t/is (= (thn/normalize-file file) (thn/normalize-file undone)) (name operation)))))
