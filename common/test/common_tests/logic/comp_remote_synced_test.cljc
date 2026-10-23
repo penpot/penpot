@@ -9,6 +9,7 @@
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.ids-map :as thi]
    [clojure.test :as t]))
@@ -36,3 +37,14 @@
         main (tm/shape-by-id situation (nested-main-rect situation))]
     (t/is (= "Authored name" (:name main)))
     (t/is (contains? (:touched main) :name-group))))
+
+(t/deftest inner-child-removal-propagates-through-a-deleted-outer-main
+  (let [situation (r/run-variant
+                   {:setup setup/nested-component-with-copy
+                    :operation (tm/in-sequence [(n/delete-component :main2-root)
+                                                (n/remove-child :main1-child)])})
+        copy (tm/resolve-shape situation :copy2-child)
+        stored (get-in (tm/file situation) [:data :components (thi/id :component2) :objects])]
+    (t/is (empty? (:shapes copy)))
+    (t/is (= 2 (count stored)))
+    (t/is (empty? (uc/failures situation)))))

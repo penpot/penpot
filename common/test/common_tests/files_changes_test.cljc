@@ -1301,3 +1301,13 @@
                 :operations [{:type :set :attr :name :val "renamed"}]}
                {:type :set-plugin-data :object-type :shape :object-id (ids :rect-a)
                 :page-id page-id :namespace "ns" :key "k" :value "v"}])))))
+
+(t/deftest structural-changes-in-a-deleted-main-trigger-its-component-sync
+  (let [component-id (uuid/next)
+        id (uuid/next)
+        parent-id (uuid/next)]
+    (doseq [change [{:type :add-obj :id id :parent-id parent-id}
+                    {:type :del-obj :id id}
+                    {:type :mov-objects :parent-id parent-id :shapes [id]}]]
+      (t/is (= #{component-id}
+               (ch/components-changed {} (assoc change :component-id component-id)))))))
