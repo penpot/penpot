@@ -317,3 +317,39 @@ test("User goes to the team settings section", async ({ page }) => {
   await expect(page.getByText("TEAM INFO")).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
+
+test.describe("Context notification", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Info and warning levels", async ({ page }) => {
+    await page.goto("/?screen=settings-profile");
+
+    // Info: the change email modal.
+    await page.getByText("Change email", { exact: true }).click();
+    const info = page.locator("[class*='modal-container'] aside");
+    await expect(info).toBeVisible();
+    await expect(info).toHaveScreenshot(shot);
+    await page.keyboard.press("Escape");
+    await expect(info).toBeHidden();
+
+    // Warning: the delete account modal.
+    await page.getByText("Want to remove your account?").click();
+    const warning = page.locator("[class*='modal-container'] aside");
+    await expect(warning).toBeVisible();
+    await expect(warning).toHaveScreenshot(shot);
+  });
+
+  test("Warning with html content", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await dashboardPage.fontsLink.click();
+    await page
+      .locator("#font-upload")
+      .setInputFiles("playwright/data/render-wasm/assets/ebgaramond.ttf");
+    const warning = page
+      .locator("[class*='dashboard-fonts-hero'] aside")
+      .last();
+    await expect(warning).toBeVisible();
+    await expect(warning).toHaveScreenshot(shot);
+  });
+});
