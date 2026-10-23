@@ -260,6 +260,27 @@
                                                                   :include-deleted? true))]
             (recur shape-inst' next-data component')))))))
 
+(defn- main-in-parent-orientation
+  "Place a main in the orientation of an ordinary instance parent. Such a
+   parent can survive detach, while the nested copy stays untouched."
+  [main-container shape-main container shape-inst]
+  (let [parent (ctn/get-shape container (:parent-id shape-inst))
+        main-parent (get-in main-container [:objects (:parent-id shape-main)])
+        relative (gmt/multiply (or (:transform parent) (gmt/matrix))
+                               (or (:transform-inverse main-parent) (gmt/matrix)))]
+    (if (or (nil? parent) (:shape-ref parent) (gmt/unit? relative))
+      main-container
+      (let [transform (gmt/transform-in (gsh/shape->center shape-main) relative)
+            angle (- (or (:rotation parent) 0) (or (:rotation main-parent) 0))
+            turn #(-> %
+                      (assoc-in [:modifiers :rotation] angle)
+                      (gsh/apply-transform transform)
+                      (dissoc :modifiers))]
+        (update main-container :objects
+                (fn [objects]
+                  (reduce #(update %1 %2 turn) objects
+                          (cfh/get-children-ids-with-self objects (:id shape-main)))))))))
+
 (defn- generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
@@ -275,11 +296,14 @@
         (let [shape-main (if reset?
                            ;; the reset is against the ref-shape, not against the original shape of the component
                            (ctf/find-ref-shape file container libraries shape-inst :include-deleted? true)
-                           (ctf/get-content-ref-shape library component shape-inst))]
+                           (ctf/get-content-ref-shape library component shape-inst))
+              main-container (find-main-container container shape-inst shape-main
+                                                  library file libraries component)
+              main-container (main-in-parent-orientation main-container shape-main container shape-inst)
+              shape-main (ctn/get-shape main-container (:id shape-main))]
           (sync-copy-recursive changes
                                {:container      container
-                                :main-container (find-main-container container shape-inst shape-main
-                                                                     library file libraries component)
+                                :main-container main-container
                                 :component      component
                                 :library        library
                                 :root-inst      shape-inst
