@@ -582,3 +582,10 @@
         result (n/applied-result duplicate (tm/file before) (tm/file after))
         new-head (tm/shape-by-id after (:new-head result))]
     (t/is (= ((n/main-head-of "a") before) (:parent-id new-head)))))
+
+(t/deftest missing-shape-diagnostics-accept-mixed-label-types
+  (let [situation (setup/simple-component-with-labeled-copy)
+        error (try (tm/resolve-shape situation :missing)
+                   (catch #?(:clj Exception :cljs js/Error) error error))]
+    (t/is (= ::tm/unbound-shape-name (:type (ex-data error))))
+    (t/is (some #{:copy-child} (:present (ex-data error))))))
