@@ -16,6 +16,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.normalize :as thn]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -617,3 +618,11 @@
                    (catch #?(:clj Exception :cljs js/Error) error error))]
     (t/is (= ::tm/unbound-shape-name (:type (ex-data error))))
     (t/is (some #{:copy-child} (:present (ex-data error))))))
+
+(t/deftest adding-a-grid-child-records-cell-order-before-reflow
+  (let [initial (setup/grid-component-with-copy)
+        changed (-> initial (r/step (n/add-child :grid-root :new-grid-child)) r/settle)
+        grid (tm/resolve-shape changed :grid-root)]
+    (t/is (= (:shapes (ctl/reorder-grid-children grid)) (:shapes grid)))
+    (t/is (= (thn/normalize-file (tm/file initial))
+             (thn/normalize-file (tm/file (r/step changed (n/undo))))))))

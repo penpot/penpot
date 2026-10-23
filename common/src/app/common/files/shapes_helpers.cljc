@@ -36,7 +36,8 @@
                     (cond-> (some? cell)
                       (pcb/update-shapes [(:parent-id shape)] #(ctl/push-into-cell % [id] row column)))
                     (cond-> (ctl/grid-layout? objects (:parent-id shape))
-                      (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true})))]
+                      (-> (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true})
+                          (pcb/reorder-grid-children [(:parent-id shape)]))))]
 
     [shape changes]))
 
