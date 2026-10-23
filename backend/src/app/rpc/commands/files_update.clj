@@ -575,7 +575,7 @@
                   (try
                     (val/validate-file-schema! repaired)
                     (finally
-                      (record-validation-timing cfg :validate-schema-ms "validate-schema" (inst-ms t)))))))
+                      (record-validation-timing cfg :validate-schema-ms "validate-schema" (inst-ms (t))))))))
 
             (-> repaired
                 (assoc :revn (+ (:revn original) 2))
@@ -652,8 +652,7 @@
             (val/validate-file-affected! file libs changes)
             (catch Throwable cause
               (reset! pending-repair cause)
-              (when-not (and (contains? cf/flags :file-auto-repair)
-                             (referential-integrity-error? cause))
+              (when-not (referential-integrity-error? cause)
                 (throw cause)))
             (finally
               (record-validation-timing cfg :validate-affected-ms "validate-affected" (inst-ms (t)))))))

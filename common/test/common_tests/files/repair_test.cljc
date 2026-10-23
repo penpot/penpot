@@ -444,40 +444,91 @@
           (t/is (= [] (:changes result)))
           (t/is (= (mapv :code errors) (mapv :code (:errors result)))))))))
 
-(t/deftest repair-file-until-valid-stops-when-error-identity-stable
-  (t/testing "a non-empty repair that leaves the same [code shape-id] stops after two iterations"
-    (let [sid (uuid/next)]
+(t/deftest repair-file-until-valid-repairs-several-errors-on-one-shape
+  (t/testing "three missing children of one frame are all removed although
+              every pass reports the same [code shape-id]"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (ths/add-sample-shape :frame1 :type :frame)
+                      (ths/update-shape :frame1 :shapes [(uuid/next) (uuid/next) (uuid/next)]))
+          errors  (cfv/validate-file file {})
+          result  (cfr/repair-file-until-valid
+                   file {}
+                   (fn [file _] (cfv/validate-file file {})))
+          frame1' (ths/get-shape (:file result) :frame1 :page-label :page1)]
+      (t/is (= [:child-not-found :child-not-found :child-not-found] (mapv :code errors)))
+      (t/is (= #{(thi/id :frame1)} (into #{} (map :shape-id) errors)))
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (cfv/validate-file (:file result) {})))
+      (t/is (= [] (:shapes frame1'))))))
+
+(t/deftest repair-file-until-valid-stops-when-repair-changes-nothing
+  (t/testing "a non-empty repair that leaves data equal stops after one iteration"
+    (let [file     (broken-frame-file)
+          shape-id (thi/id :shape1)
+          page-id  (thi/id :page1)
+          cur-name (:name (ths/get-shape file :shape1 :page-label :page1))]
       (with-redefs [cfr/repair-file
                     (fn [_ _ _]
                       [{:type :mod-obj
-                        :id (uuid/next)
-                        :page-id (uuid/next)
-                        :operations []}])]
+                        :id shape-id
+                        :page-id page-id
+                        :operations [{:type :set :attr :name :val cur-name}]}])]
         (let [result (cfr/repair-file-until-valid
-                      (broken-frame-file) {}
-                      (fn [_ _] [{:code :frame-not-found :shape-id sid}])
+                      file {}
+                      (fn [_ _] [{:code :frame-not-found :shape-id shape-id}])
+                      :max-iterations 10)]
+          (t/is (= 1 (:iterations result)))
+          (t/is (= [] (:changes result)))
+          (t/is (= [:frame-not-found] (mapv :code (:errors result)))))))))
+
+(t/deftest repair-file-until-valid-stops-when-error-fingerprint-stable
+  (t/testing "a mutating repair with an unchanged error report stops after two iterations"
+    (let [file     (broken-frame-file)
+          shape-id (thi/id :shape1)
+          page-id  (thi/id :page1)
+          pass     (atom 0)
+          sticky   {:code :frame-not-found
+                    :shape-id shape-id
+                    :hint "stuck"
+                    :args {:x 1}}]
+      (with-redefs [cfr/repair-file
+                    (fn [_ _ _]
+                      [{:type :mod-obj
+                        :id shape-id
+                        :page-id page-id
+                        :operations [{:type :set
+                                      :attr :name
+                                      :val (str "pass-" (swap! pass inc))}]}])]
+        (let [result (cfr/repair-file-until-valid
+                      file {}
+                      (fn [_ _] [sticky])
                       :max-iterations 10)]
           (t/is (= 2 (:iterations result)))
+          (t/is (= 1 (count (:changes result))))
           (t/is (= [:frame-not-found] (mapv :code (:errors result)))))))))
 
 (t/deftest repair-file-until-valid-stops-at-max-iterations
   (t/testing "a repair that never empties errors stops at max-iterations"
     (let [file   (broken-frame-file)
-          n      (atom 0)]
+          pass   (atom 0)
+          shape-id (thi/id :shape1)
+          page-id  (thi/id :page1)]
       (with-redefs [cfr/repair-file
                     (fn [_ _ _]
                       [{:type :mod-obj
-                        :id (uuid/next)
-                        :page-id (uuid/next)
-                        :operations []}])]
+                        :id shape-id
+                        :page-id page-id
+                        :operations [{:type :set
+                                      :attr :name
+                                      :val (str "pass-" (swap! pass inc))}]}])]
         (let [result (cfr/repair-file-until-valid
                       file {}
                       (fn [_ _]
-                        (swap! n inc)
                         [{:code :frame-not-found
                           :shape-id (uuid/next)}])
                       :max-iterations 3)]
           (t/is (= 3 (:iterations result)))
+          (t/is (= 3 (count (:changes result))))
           (t/is (some? (:errors result))))))))
 
 (t/deftest repair-file-until-valid-uses-initial-errors

@@ -35,7 +35,12 @@
 
 (defn- with-repair-flags
   [f]
-  (with-redefs [cf/flags (conj cf/flags :file-validation :file-auto-repair)]
+  (with-redefs [cf/flags (conj cf/flags :file-validation)]
+    (f)))
+
+(defn- with-full-repair-flags
+  [f]
+  (with-redefs [cf/flags (conj cf/flags :file-validation :file-schema-validation)]
     (f)))
 
 (defn- repair-count
@@ -155,6 +160,33 @@
                  (get-in stored [:data :pages-index page-id :objects shape-b :name])))
         (t/is (= 1.0 (- (repair-count :repaired) before)))))))
 
+(t/deftest repairs-preexisting-frame-not-found-with-schema-validation
+  (with-full-repair-flags
+    (fn []
+      (let [{:keys [profile file-id page-id shape-a shape-b] :as ctx} (setup-file)
+            broken           (break-frame ctx)
+            n                (:revn broken)
+            before-repaired  (repair-count :repaired)
+            before-unrepaired (repair-count :unrepaired)
+            out              (update-file (:id profile) file-id n
+                                          [(set-attr page-id shape-b :name "renamed")])
+            stored           (stored-file file-id)
+            shape            (get-in stored [:data :pages-index page-id :objects shape-a])
+            frame            (get-in stored [:data :pages-index page-id :objects (:frame-id shape)])
+            labels           (label-rows file-id)
+            repair           (filter #(= (str "internal/repair/" n) (:label %)) labels)
+            snap             (filter #(= (str "internal/snapshot/" n) (:label %)) labels)]
+        (t/is (th/success? out))
+        (t/is (nil? (cfv/validate-file stored {})))
+        (t/is (some? frame))
+        (t/is (= "renamed"
+                 (get-in stored [:data :pages-index page-id :objects shape-b :name])))
+        (t/is (= (+ n 2) (:revn stored)))
+        (t/is (= 1 (count repair)))
+        (t/is (zero? (count snap)))
+        (t/is (= 1.0 (- (repair-count :repaired) before-repaired)))
+        (t/is (= 0.0 (- (repair-count :unrepaired) before-unrepaired)))))))
+
 (t/deftest rejects-client-caused-break
   (with-repair-flags
     (fn []
@@ -166,17 +198,6 @@
         (t/is (not (th/success? out)))
         (t/is (= :referential-integrity (:code (ex-data (:error out)))))
         (t/is (= (:revn before) (:revn after)))))))
-
-(t/deftest flag-off-rejects-broken-file
-  (with-redefs [cf/flags (-> cf/flags
-                             (conj :file-validation)
-                             (disj :file-auto-repair))]
-    (let [{:keys [profile file-id page-id shape-b] :as ctx} (setup-file)
-          broken (break-frame ctx)
-          out    (update-file (:id profile) file-id (:revn broken)
-                              [(set-attr page-id shape-b :name "renamed")])]
-      (t/is (not (th/success? out)))
-      (t/is (= :referential-integrity (:code (ex-data (:error out))))))))
 
 (t/deftest skip-validate-does-not-repair
   (with-repair-flags
@@ -234,6 +255,24 @@
         (t/is (some? (::files-update/repair stored)))
         (t/is (nil? (cfv/validate-file stored {})))
         (t/is (nil? (get-in stored [:data :components (thi/id :component1) :objects])))))))
+
+(t/deftest repair-records-timings-with-schema-validation
+  (thi/reset-idmap!)
+  (with-full-repair-flags
+    (fn []
+      (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                        (assoc :revn 0)
+                        (ths/add-sample-shape :shape1)
+                        (ths/update-shape :shape1 :frame-id (uuid/next)))
+            changes [(set-attr (thi/id :page1) (thi/id :shape1) :name "renamed")]
+            timings (atom {})
+            cfg     {::files-update/validation-timings timings}
+            result  (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
+                      (@#'files-update/process-changes-and-validate cfg file changes nil))]
+        (t/is (some? (::files-update/repair result)))
+        (t/is (number? (:repair-ms @timings)))
+        (t/is (number? (:reprocess-changes-ms @timings)))
+        (t/is (number? (:validate-schema-ms @timings)))))))
 
 (t/deftest unrepairable-rejects-and-calls-repair-once
   (with-repair-flags
@@ -319,7 +358,7 @@
 
 (t/deftest repair-snapshot-without-auto-snapshot
   (with-redefs [cf/flags (-> cf/flags
-                             (conj :file-validation :file-auto-repair)
+                             (conj :file-validation)
                              (disj :auto-file-snapshot))]
     (let [{:keys [profile file-id page-id shape-b] :as ctx} (setup-file)
           broken (break-frame ctx)
@@ -365,3 +404,30 @@
         (t/is (th/success? out))
         (t/is (= 1 (- (count (change-rows file-id)) before)))
         (t/is (empty? (filter #(re-find #"^internal/repair/" (str (:label %))) labels)))))))
+
+(t/deftest repairs-several-missing-children-on-root
+  (with-full-repair-flags
+    (fn []
+      (let [{:keys [profile file-id page-id shape-a shape-b revn]} (setup-file)
+            r1     (uuid/next)
+            r2     (uuid/next)
+            r3     (uuid/next)
+            _      (t/is (th/success?
+                          (update-file (:id profile) file-id revn
+                                       [(set-attr page-id uuid/zero :shapes
+                                                  [shape-a shape-b r1 r2 r3])]
+                                       :skip-validate true)))
+            broken (stored-file file-id)
+            errors (cfv/validate-file broken {})
+            out    (update-file (:id profile) file-id (:revn broken)
+                                [(set-attr page-id shape-b :name "renamed")])
+            stored (stored-file file-id)
+            root   (get-in stored [:data :pages-index page-id :objects uuid/zero])]
+        (t/is (= [:child-not-found :child-not-found :child-not-found]
+                 (mapv :code errors)))
+        (t/is (= #{uuid/zero} (into #{} (map :shape-id) errors)))
+        (t/is (th/success? out))
+        (t/is (= [shape-a shape-b] (:shapes root)))
+        (t/is (nil? (cfv/validate-file stored {})))
+        (t/is (= "renamed"
+                 (get-in stored [:data :pages-index page-id :objects shape-b :name])))))))

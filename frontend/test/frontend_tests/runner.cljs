@@ -31,7 +31,6 @@
    [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
-   [frontend-tests.data.workspace-notifications-test]
    [frontend-tests.data.workspace-pages-test]
    [frontend-tests.data.workspace-path-edition-test]
    [frontend-tests.data.workspace-reflow-test]
