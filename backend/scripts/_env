@@ -62,6 +62,7 @@ export PENPOT_FLAGS="\
        disable-tiered-file-data-storage \
        enable-file-validation \
        enable-file-schema-validation \
+       enable-debug-save-faults \
        enable-redis-cache \
        enable-link-preview \
        enable-subscriptions";

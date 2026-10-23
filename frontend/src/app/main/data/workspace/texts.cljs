@@ -443,6 +443,30 @@
         result (if (empty? result) txt/default-text-attrs result)]
     result))
 
+(defn- v2-editor-live?
+  "False for a missing or disposed v2 editor. A component can still hold
+  the instance for one render after closing the editor disposed it, and
+  reading its style then throws."
+  [editor]
+  (and (some? editor)
+       (try
+         (.-currentStyle ^js editor)
+         true
+         (catch :default _ false))))
+
+(defn- styled-runs
+  "The text runs of `content` with their styles, without node ids or the
+  style keys set to nil."
+  [content]
+  (mapv (fn [[style text]] [(d/without-nils style) text])
+        (txt/content->text+styles content)))
+
+(defn same-styled-text?
+  "True when text contents `a` and `b` hold the same text with the same
+  styles."
+  [a b]
+  (= (styled-runs a) (styled-runs b)))
+
 (defn v2-current-text-values
   [{:keys [editor-instance attrs]}]
   (let [result (-> (.-currentStyle editor-instance)
@@ -462,7 +486,7 @@
   [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
     (some? editor-styles) (v3-current-text-values options)
-    (some? editor-instance) (v2-current-text-values options)
+    (v2-editor-live? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-paragraph-values options)
     :else (shape-current-values shape txt/is-paragraph-node? attrs)))
 
@@ -479,7 +503,7 @@
   [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
     (some? editor-styles) (v3-current-text-values options)
-    (some? editor-instance) (v2-current-text-values options)
+    (v2-editor-live? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-text-values options)
     :else (shape-current-values shape txt/is-text-node? attrs)))
 
@@ -1313,7 +1337,15 @@
     (ptk/reify ::v2-update-text-shape-content
       ptk/WatchEvent
       (watch [it state _]
-        (if (features/active-feature? state "render-wasm/v1")
+        (cond
+          ;; The shape is gone (e.g. a rollback): only forget the edit session
+          (not (contains? (dsh/lookup-page-objects state) id))
+          (rx/of (fn [state]
+                   (-> state
+                       (update :workspace-new-text-shapes disj id)
+                       (update :workspace-text-session-geom (fnil dissoc {}) id))))
+
+          (features/active-feature? state "render-wasm/v1")
           (let [;; v3 editor always passes :finalize? from keyword opts; when absent
                 ;; that binds nil and :or defaults do not apply — coerce so undo flags
                 ;; stay strict booleans for changes-builder schema validation.
@@ -1437,6 +1469,7 @@
                               (update :workspace-new-text-shapes disj id)
                               (update :workspace-text-session-geom (fnil dissoc {}) id)))))))))
 
+          :else
           (let [modifiers    (get-in state [:workspace-text-modifier id])
                 new-shape?   (contains? (:workspace-new-text-shapes state) id)]
             (rx/of

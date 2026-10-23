@@ -164,7 +164,7 @@
    [:id ::sm/uuid]
    [:revn :int]
    [:vern :int]
-   [:data :map]
+   [:data [:or :map bytes?]]
    [:version :int]
    [:features ::cfeat/features]
    [:migrations [::sm/set :string]]])
@@ -205,19 +205,42 @@
    [:label {:optional true} ::sm/text]
    [:session-id {:optional true} ::sm/uuid]
    [:modified-at {:optional true} ::ct/inst]
-   [:deleted-at {:optional true} ::ct/inst]])
+   [:deleted-at {:optional true} ::ct/inst]
+   [:objects-map {:optional true} :boolean]])
 
 (def ^:private check-create-params
   (sm/check-fn schema:create-params))
 
+(defn- compact-data
+  "Encodes file `data` with plain maps in place of its objects-maps."
+  [data]
+  (-> data
+      (fdata/realize-page-objects)
+      (blob/encode)))
+
 (defn create!
-  "Create a file snapshot; expects a non-encoded file"
+  "Creates a snapshot of `file`. Its data is decoded, or encoded with
+  `:objects-map` telling whether it holds objects-maps. Data with
+  objects-maps is compacted by the `compact-file-snapshot` task, or here
+  on the legacy-db backend."
   [cfg file & {:as params}]
-  (let [{:keys [label created-by deleted-at profile-id session-id]}
+  (let [{:keys [label created-by deleted-at profile-id session-id objects-map]}
         (check-create-params params)
 
         file
         (check-decoded-file file)
+
+        data
+        (:data file)
+
+        compact?
+        (if (bytes? data)
+          (boolean objects-map)
+          (boolean (fdata/has-objects-map? data)))
+
+        compact-later?
+        (and compact?
+             (not= "legacy-db" (cf/get :file-data-backend)))
 
         created-by
         (or created-by "system")
@@ -255,25 +278,64 @@
           :always
           (check-snapshot))]
 
-    (db/insert! cfg :file-change
-                (-> snapshot
-                    (update :features into-array)
-                    (update :migrations into-array)
-                    (assoc :updated-at created-at)
-                    (assoc :profile-id profile-id)
-                    (assoc :session-id session-id)
-                    (dissoc :modified-at))
-                {::db/return-keys false})
+    (db/tx-run! cfg
+                (fn [cfg]
+                  (db/insert! cfg :file-change
+                              (-> snapshot
+                                  (update :features into-array)
+                                  (update :migrations into-array)
+                                  (assoc :updated-at created-at)
+                                  (assoc :profile-id profile-id)
+                                  (assoc :session-id session-id)
+                                  (dissoc :modified-at))
+                              {::db/return-keys false})
 
-    (fdata/upsert! cfg
-                   {:id snapshot-id
-                    :file-id (:id file)
-                    :type "snapshot"
-                    :data (blob/encode (:data file))
-                    :created-at created-at
-                    :deleted-at deleted-at})
+                  (fdata/upsert! cfg
+                                 {:id snapshot-id
+                                  :file-id (:id file)
+                                  :type "snapshot"
+                                  :data (cond
+                                          (and compact? (not compact-later?))
+                                          (compact-data (cond-> data (bytes? data) blob/decode))
+
+                                          (bytes? data)
+                                          data
+
+                                          :else
+                                          (blob/encode data))
+                                  :created-at created-at
+                                  :deleted-at deleted-at})
+
+                  (when compact-later?
+                    (wrk/submit! {::db/conn (db/get-connection cfg)
+                                  ::wrk/task :compact-file-snapshot
+                                  ::wrk/params {:file-id (:id file)
+                                                :id snapshot-id}}))))
 
     snapshot))
+
+(def ^:private sql:get-snapshot-data-for-update
+  "SELECT *
+     FROM file_data
+    WHERE file_id = ?
+      AND id = ?
+      AND type = 'snapshot'
+      FOR UPDATE")
+
+(defn compact!
+  "Rewrites the data of snapshot `id` of `file-id` with plain maps in
+  place of its objects-maps, keeping the rest of the row. Returns true
+  when it rewrites the data."
+  [cfg file-id id]
+  (when-let [row (some-> (db/exec-one! cfg [sql:get-snapshot-data-for-update file-id id])
+                         (d/without-nils)
+                         (d/update-when :metadata fdata/decode-metadata))]
+    (let [data (-> (fdata/resolve-file-data cfg row)
+                   (get :data)
+                   (blob/decode))]
+      (when (fdata/has-objects-map? data)
+        (fdata/upsert! cfg (assoc row :data (compact-data data)))
+        true))))
 
 (def ^:private schema:update-params
   [:map {:title "SnapshotUpdateParams"}

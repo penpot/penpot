@@ -16,8 +16,10 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.texts-events :as dwte]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -296,6 +298,20 @@
 ;; With the fix (mth/precision + str), it is normalised to "1.2" before the
 ;; schema check runs.
 ;; ---------------------------------------------------------------------------
+
+;; Scenario: the text editor saves its content after its shape is gone (a
+;; rollback removed it while it was being edited). Proves: nothing is
+;; committed for a shape that no longer exists.
+(t/deftest updating-the-content-of-a-removed-text-commits-nothing
+  (let [state  (-> @(ths/setup-store (cthf/sample-file :file1))
+                   (assoc :features #{}))
+        event  (dwt/v2-update-text-shape-content (uuid/next) (txt/change-text nil "hello")
+                                                 :finalize? true)
+        events (atom [])]
+    (rx/subs! #(swap! events conj %) (ptk/watch event state (rx/subject)))
+    (t/is (not-any? #(and (ptk/event? %)
+                          (= :app.main.data.workspace.shapes/update-shapes (ptk/type %)))
+                    @events))))
 
 (t/deftest add-typography-normalises-float-line-height
   (t/async
@@ -626,3 +642,56 @@
           result  (dwt/merge-live-text-dimensions :auto-width selrect {:width 0 :height 0})]
       (t/is (= 50 (:width result)))
       (t/is (= 25 (:height result))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: values read from a disposed v2 editor
+;; ---------------------------------------------------------------------------
+
+(defn- disposed-v2-editor
+  "A v2 editor after `dispose!`: reading its style throws."
+  []
+  (let [editor #js {}]
+    (js/Object.defineProperty editor "currentStyle"
+                              #js {:get (fn [] (throw (js/TypeError. "Cannot read properties of null (reading 'currentStyle')")))})
+    editor))
+
+;; Scenario: the sidebar renders once more with the editor it saw last,
+;; after closing the text editor disposed it. Proves: the values come from
+;; the shape instead of crashing the workspace.
+(t/deftest current-values-of-a-disposed-v2-editor-come-from-the-shape
+  (let [shape  (make-text-shape)
+        editor (disposed-v2-editor)]
+    (t/is (= (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})
+             (dwt/current-text-values {:editor-instance editor
+                                       :shape shape
+                                       :attrs txt/text-node-attrs})))
+    (t/is (= (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
+             (dwt/current-paragraph-values {:editor-instance editor
+                                            :shape shape
+                                            :attrs txt/paragraph-attrs})))))
+
+;; ---------------------------------------------------------------------------
+;; same-styled-text?
+;; ---------------------------------------------------------------------------
+
+(defn- text-content
+  "Text content of one paragraph holding `runs`, each a map with `:text`
+  and its styles."
+  [& runs]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :key (str (uuid/next))
+                           :children (mapv #(assoc % :key (str (uuid/next))) runs)}]}]})
+
+(t/deftest same-styled-text-ignores-node-keys-and-nil-styles
+  (t/is (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                               (text-content {:text "Hello" :font-weight "400" :font-style nil}))))
+
+(t/deftest same-styled-text-sees-a-style-change-on-the-same-text
+  (t/is (not (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                                    (text-content {:text "Hello" :font-weight "700"})))))
+
+(t/deftest same-styled-text-sees-a-text-change
+  (t/is (not (dwt/same-styled-text? (text-content {:text "Hello" :font-weight "400"})
+                                    (text-content {:text "Hello!" :font-weight "400"})))))

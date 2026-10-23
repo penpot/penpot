@@ -275,7 +275,8 @@
                                :level :info
                                :timeout nil})))
            (when (:id organization)
-             (check-team-sso current-team-id))))))    ptk/UpdateEvent
+             (check-team-sso current-team-id))))))
+    ptk/UpdateEvent
     (update [_ state]
       (if (contains? cf/flags :admin-console)
         (let [team-id      (:id team)
