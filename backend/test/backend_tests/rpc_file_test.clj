@@ -23,7 +23,7 @@
    [app.features.fdata :as fdata]
    [app.http :as http]
    [app.jobs :as-alias jobs]
-   [app.loggers.audit :as-alias audit]
+   [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
@@ -3322,6 +3322,33 @@
              (get-in (meta (:result out)) [:app.loggers.audit/props :id])))
     (t/is (= (:id team)
              (get-in (meta (:result out)) [:app.loggers.audit/props :team-id])))))
+
+(t/deftest update-file-audit-event-carries-the-file-change-id
+  ;; The event says that a file was saved, but not what changed: the
+  ;; change row (xlog) is the only place with that, so its id travels
+  ;; in the event. A consumer needs it to read the change (with
+  ;; `::db/remove-deleted false`: the row is born with its `deleted_at`
+  ;; in the future).
+  (let [profile    (th/create-profile* 1 {:is-active true})
+        file       (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)
+                                       :is-shared false})
+        result     (update-file! :file-id (:id file)
+                                 :profile-id (:id profile)
+                                 :revn 0
+                                 :changes [])
+        props      (get-in (meta result) [:app.loggers.audit/replace-props])
+        change-id  (:file-change-id props)
+        rows       (th/db-query :file-change {:file-id (:id file)})
+        ;; The save writes two change rows: the change itself (no
+        ;; label) and the snapshot of the previous state (with one).
+        changes    (remove :label rows)]
+    ;; The event points at the change row of this save.
+    (t/is (= 1 (count changes)))
+    (t/is (= (:id (first changes)) change-id))
+    ;; The prop survives `clean-props`: a plain key with a uuid value.
+    (t/is (= change-id
+             (:file-change-id (audit/clean-props props))))))
 
 (t/deftest get-team-shared-files-skips-files-that-fail-to-load
   (let [profile  (th/create-profile* 1)
