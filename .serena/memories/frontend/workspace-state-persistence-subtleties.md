@@ -19,11 +19,16 @@
 
 - `commit-changes` refuses to create commits unless `:permissions :can-edit` is true. It captures file revn/vern, selected-before, features, tags, undo group, and translation flag into a `::commit` event. A refusal answers with an empty stream, never nil, so callers subscribe uniformly instead of branching on nil.
 - Applying a remote commit first rolls back pending local commits, applies the remote changes, then replays pending local redo changes. Index updates are emitted for undo, remote redo, and replayed redo paths.
-- Local commits are independently consumed by undo, persistence, WASM model updates, thumbnail/library watchers, and text position-data recalculation.
+- Persistence, WASM model updates, thumbnails and text position-data watchers
+  consume local commits independently. Undo records applied transitions first.
 - `dch/changes-applied?` follows local application and carries the commit
-  with its prior file data. The component watcher syncs each transition
-  before the next user commit, keeping undo groups adjacent. Its barrier
-  remains open through the event turn. Foreign file cascades stay in common.
+  with its prior file data. The workspace records the undo entry, then emits
+  `dch/changes-recorded?` synchronously with that same transition. Component
+  sync starts from this handoff, after history records the original edit.
+  Syncing from `changes-applied?` can record derived commits before the user
+  commit and reverse the undo/redo order inside a transaction (F137).
+  The watcher syncs before the next user commit; its barrier remains open
+  through the event turn. Foreign file cascades stay in common.
 - Undo changes carry `:app.main.data.workspace.undo/file-id`, separate from
   change payload fields named `:file-id` (e.g. `:set-tokens-source`). Undo
   and redo replay consecutive runs per destination in order; old entries

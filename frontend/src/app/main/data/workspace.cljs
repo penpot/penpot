@@ -494,18 +494,22 @@
                       (rx/take-until stopper-s)))
 
                (->> stream
-                    (rx/filter dch/commit?)
+                    (rx/filter dch/changes-applied?)
                     (rx/map deref)
                     (rx/mapcat
-                     (fn [{:keys [file-id save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
-                       (if (and save-undo? (seq undo-changes))
-                         (let [entry {:undo-changes (mapv #(assoc % ::dwu/file-id file-id) undo-changes)
-                                      :redo-changes (mapv #(assoc % ::dwu/file-id file-id) redo-changes)
-                                      :undo-group undo-group
-                                      :tags tags
-                                      :selected-before selected-before}]
-                           (rx/of (dwu/append-undo entry stack-undo?)))
-                         (rx/empty))))))
+                     (fn [{:keys [commit] :as transition}]
+                       (let [{:keys [file-id save-undo? undo-changes redo-changes undo-group
+                                     tags stack-undo? selected-before]} commit]
+                         (rx/concat
+                          (if (and save-undo? (seq undo-changes))
+                            (let [entry {:undo-changes (mapv #(assoc % ::dwu/file-id file-id) undo-changes)
+                                         :redo-changes (mapv #(assoc % ::dwu/file-id file-id) redo-changes)
+                                         :undo-group undo-group
+                                         :tags tags
+                                         :selected-before selected-before}]
+                              (rx/of (dwu/append-undo entry stack-undo?)))
+                            (rx/empty))
+                          (rx/of (dch/changes-recorded transition))))))))
               (rx/take-until stopper-s)))))))
 
 (defn initialize-workspace

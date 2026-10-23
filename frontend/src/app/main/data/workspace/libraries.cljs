@@ -1420,7 +1420,7 @@
 
             local-commits-s
             (->> stream
-                 (rx/filter dch/changes-applied?)
+                 (rx/filter dch/changes-recorded?)
                  (rx/map deref)
                  (rx/filter #(= :local (get-in % [:commit :source])))
                  ;; Keep waits pending while component changes are checked.

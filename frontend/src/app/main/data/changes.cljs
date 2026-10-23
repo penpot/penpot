@@ -38,6 +38,15 @@
 (def changes-applied?
   (ptk/type? ::changes-applied))
 
+(def changes-recorded?
+  (ptk/type? ::changes-recorded))
+
+(defn changes-recorded
+  "The commit has applied and its undo entry has been recorded. Derived
+   edits can now follow it without reversing transaction history."
+  [transition]
+  (ptk/data-event ::changes-recorded transition))
+
 (defn- fix-page-id
   "For events that modifies the page, page-id does not comes
   as a property so we assign it from the `id` property."

@@ -86,3 +86,6 @@
 (t/deftest ^:async nested-text-rotation-shrunk-regression
   (await (replay {:world [2 0 {:text true}]
                   :ops [[:nest 0] [:detach 0] [:rotate 0]]})))
+
+(t/deftest ^:async nesting-restores-default-constraints-on-undo
+  (await (replay {:world [2 0] :ops [[:nest 0]]})))
