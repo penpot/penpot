@@ -607,6 +607,46 @@
                                             :content mfile})]
             (t/is (nil? (:error out)))))))))
 
+(t/deftest media-quota-falls-back-to-the-live-sum-without-the-events-consumer
+  ;; The cached counter is only true while somebody marks the teams
+  ;; dirty, and that is the events consumer. Without it the counter is
+  ;; frozen, so the quota has to read the live sum: slow, but true.
+  ;; A frozen counter (no row at all) with a live sum above the limit
+  ;; must reject the upload.
+  (doseq [[i flags] (map-indexed vector [#{:quotes :audit-log :storage-usage}
+                                         #{:quotes :audit-log}])]
+    (let [prof (th/create-profile* (+ 82 i) {:is-active true})
+          team (:default-team-id prof)
+          proj (th/create-project* (+ 82 i) {:profile-id (:id prof) :team-id team})
+          file (th/create-file* (+ 82 i) {:profile-id (:id prof) :project-id (:id proj) :is-shared false})
+          mfile {:filename "sample.jpg"
+                 :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                 :mtype "image/jpeg"
+                 :size 312043}]
+      (with-redefs [cf/flags flags]
+        (let [out (th/multipart-command! {::th/type :upload-file-media-object
+                                          ::rpc/profile-id (:id prof)
+                                          :file-id (:id file)
+                                          :is-local true
+                                          :name "testfile"
+                                          :content mfile})]
+          (t/is (nil? (:error out))))
+        ;; The live path never creates the counter row: nobody is
+        ;; keeping it up to date, so there is nothing to read.
+        (t/is (nil? (usage-row team)))
+        ;; Limit above one upload but below two: the live SUM (already
+        ;; ~312 KB) rejects the second one.
+        (with-mocks [mock {:target 'app.config/get
+                           :return (th/config-get-mock {:quotes-media-storage-bytes-per-team 400000})}]
+          (let [out (th/multipart-command! {::th/type :upload-file-media-object
+                                            ::rpc/profile-id (:id prof)
+                                            :file-id (:id file)
+                                            :is-local true
+                                            :name "testfile2"
+                                            :content mfile})]
+            (t/is (some? (:error out)))
+            (t/is (= :max-quote-reached (:code (ex-data (:error out)))))))))))
+
 (t/deftest storage-usage-scheduler-skips-live-teams
   ;; A second scheduler run while the workers are still queued
   ;; enqueues nothing: skip-if-active on the team id as label.

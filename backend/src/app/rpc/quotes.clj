@@ -647,15 +647,19 @@
   [{:keys [::db/conn ::profile-id ::team-id ::target] :as cfg}]
   (assert (valid-media-storage-bytes-per-team-quote? cfg) "invalid quote parameters")
   (let [count-sql (if (and (contains? cf/flags :storage-usage)
-                           (contains? cf/flags :audit-log))
+                           (contains? cf/flags :audit-log)
+                           (contains? cf/flags :event-consumer))
                     ;; Cached path: the background recompute job keeps the
                     ;; counter. Fail open: a team with no row yet is allowed
                     ;; through and marked dirty for the next recompute pass.
                     (do
                       (ensure-team-storage-usage conn team-id)
                       [sql:get-cached-media-storage-bytes-per-team team-id])
-                    ;; Live path: full scan, only when the background
-                    ;; counter is off.
+                    ;; Live path: full scan, when the background counter is
+                    ;; off or nobody feeds it. The events consumer is what
+                    ;; marks the teams dirty, so without it the counter
+                    ;; stays frozen and the quota has to read the truth
+                    ;; the slow way.
                     [sql:get-media-storage-bytes-per-team
                      team-id team-id team-id team-id team-id team-id])]
     (-> cfg
