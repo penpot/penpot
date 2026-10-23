@@ -24,8 +24,12 @@
   padding: var(--sp-xs) var(--sp-m) var(--sp-s);
 }
 
+// the note gives way before the branch name in the chip does
 .status-note {
-  flex-shrink: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--color-foreground-secondary);
 }
 
@@ -69,6 +73,15 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+// lined up with the end of the row above, where its subtitle sits
+.row-note {
+  padding-block-end: var(--sp-xs);
+  padding-inline: var(--sp-s);
+  color: var(--color-foreground-secondary);
+  font-style: italic;
+  text-align: end;
 }
 
 .list-note {

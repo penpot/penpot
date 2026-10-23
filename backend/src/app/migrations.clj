@@ -542,7 +542,16 @@
     :fn (mg/resource "app/migrations/sql/0804-add-file-branch-change-changes-count.sql")}
 
    {:name "0805-stamp-file-branch-change-changes-count"
-    :fn mg0805/migrate}])
+    :fn mg0805/migrate}
+
+   {:name "0806-add-file-branch-merge-table"
+    :fn (mg/resource "app/migrations/sql/0806-add-file-branch-merge-table.sql")}
+
+   {:name "0807-del-file-branch-profile-rels"
+    :fn (mg/resource "app/migrations/sql/0807-del-file-branch-profile-rels.sql")}
+
+   {:name "0808-mod-file-branch-project"
+    :fn (mg/resource "app/migrations/sql/0808-mod-file-branch-project.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

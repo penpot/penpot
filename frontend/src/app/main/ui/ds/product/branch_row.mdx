@@ -31,6 +31,10 @@ Children go to the end of the row, usually a `BranchStatus`.
 The label is mandatory. The row is a `button`; any other prop
 (`on-click`, `data-*`) goes to it.
 
+A label too long for the row ends in an ellipsis, and the row then
+carries the full label as its `title`, so it shows on hover (the current
+row too, though it is disabled). A label that fits gets no `title`.
+
 ```clj
 [:> branch-row* {:label (:name branch)
                  :data-branch (dm/str (:branch-file-id branch))

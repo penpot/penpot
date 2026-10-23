@@ -29,6 +29,8 @@
    [app.main.ui.ds.product.branch-status :refer [branch-status*]]
    [app.main.ui.workspace.menu-shortcuts :refer [shortcuts*]]
    [app.main.ui.workspace.sidebar.pull-requests :as prui]
+   ;; registers the reviews dialog the popover opens
+   [app.main.ui.workspace.sidebar.reviews]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -84,14 +86,6 @@
        (zero? (or (:behind row) 0))
        (zero? (or (:conflicts row) 0))))
 
-(defn- main-subtitle
-  "The note beside main. Files that use a shared library read its main,
-  so on a library it says so."
-  [library?]
-  (if library?
-    (tr "workspace.branches.main-subtitle-library")
-    (tr "workspace.branches.main-subtitle")))
-
 ;; --- Popover
 
 (mf/defc switcher-row*
@@ -104,10 +98,17 @@
                     :on-click on-open}
     ;; merged and archived branches carry no change counts
     (cond
-      (:is-main row)              (main-subtitle (:is-library row))
+      (:is-main row)              (tr "workspace.branches.main-subtitle")
       (= "merged" (:status row))   (tr "workspace.branches.header.merged")
       (= "archived" (:status row)) (tr "workspace.branches.header.archived")
-      :else                        [:> row-status* {:row row :pr pr}])]])
+      :else                        [:> row-status* {:row row :pr pr}])]
+   ;; files that use a shared library read its main: said under the row,
+   ;; so the note never takes the room of the branch name
+   (when (and (:is-main row) (:is-library row))
+     [:> text* {:as "div"
+                :typography t/body-small
+                :class (stl/css :row-note)}
+      (tr "workspace.branches.main-library-note")])])
 
 (mf/defc closed-group*
   "A collapsed section of the popover for branches out of the flow: its
@@ -134,7 +135,7 @@
 
 (mf/defc switcher-popover*
   {::mf/private true}
-  [{:keys [file current prs-by-branch on-close]}]
+  [{:keys [current prs-by-branch on-close]}]
   (let [{:keys [data status]} (mf/deref branches)
 
         filter*        (mf/use-state "")
@@ -177,10 +178,17 @@
 
         on-create
         (mf/use-fn
-         (mf/deps file on-close)
+         (mf/deps on-close)
          (fn [_]
            (on-close)
-           (modal/show! :create-branch {:file-name (:name file)})))
+           (modal/show! :create-branch {})))
+
+        on-show-reviews
+        (mf/use-fn
+         (mf/deps on-close)
+         (fn [_]
+           (on-close)
+           (modal/show! :branch-reviews {})))
 
         on-show-all
         (mf/use-fn
@@ -251,9 +259,6 @@
                                  :pr (get prs-by-branch (:id row))
                                  :on-open on-open}])]])
 
-        [:> closed-group* {:label (tr "workspace.branches.merged")
-                           :rows (with-status "merged")
-                           :on-open on-open}]
         [:> closed-group* {:label (tr "workspace.branches.archived")
                            :rows (with-status "archived")
                            :on-open on-open}]])
@@ -262,12 +267,18 @@
 
      ;; branches only grow from main: on a branch there is nothing to create
      (when (:is-main current)
-       [:button {:class (stl/css :action) :on-click on-create}
-        [:> i/icon* {:icon-id i/git-branch-plus :size "s"}]
-        [:span {:class (stl/css :action-label)} (tr "workspace.branches.switcher.new")]])
+       [:*
+        [:button {:class (stl/css :action) :on-click on-create}
+         [:> i/icon* {:icon-id i/git-branch-plus :size "s"}]
+         [:span {:class (stl/css :action-label)} (tr "workspace.branches.switcher.new")]]
+        [:hr {:class (stl/css :divider)}]])
+
+     [:button {:class (stl/css :action) :on-click on-show-reviews}
+      [:> i/icon* {:icon-id i/git-pull-request-arrow :size "s"}]
+      [:span {:class (stl/css :action-label)} (tr "workspace.branches.switcher.reviews")]]
 
      [:button {:class (stl/css :action) :on-click on-show-all}
-      [:> i/icon* {:icon-id i/menu :size "s"}]
+      [:> i/icon* {:icon-id i/git-graph :size "s"}]
       [:span {:class (stl/css :action-label)} (tr "workspace.branches.switcher.all")]
       [:> shortcuts* {:id :open-branches}]]]))
 
@@ -365,7 +376,7 @@
            [:> text* {:as "span"
                       :typography t/body-small
                       :class (stl/css :status-note)}
-            (main-subtitle (:is-shared file))]
+            (tr "workspace.branches.main-subtitle")]
 
            ;; merged and archived branches open read-only and count no
            ;; changes: the note says which of the two it is
@@ -391,7 +402,6 @@
            [:> row-status* {:row ctx :pr pr}]))
 
        [:& dropdown {:show open? :on-close on-close :container bar-ref}
-        [:> switcher-popover* {:file file
-                               :current current
+        [:> switcher-popover* {:current current
                                :prs-by-branch prs-by-branch
                                :on-close on-close}]]])))

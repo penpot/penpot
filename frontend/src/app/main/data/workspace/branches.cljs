@@ -18,6 +18,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (defn- reload-file-window
@@ -137,6 +138,33 @@
              (rx/catch (fn [_]
                          (rx/of (update-branches-state {:status :error})))))))))
 
+(defn- set-branch-merges
+  [merges-state]
+  (ptk/reify ::set-branch-merges
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-branch-merges merges-state))))
+
+(defn fetch-branch-merges
+  "Load the merges into the open file's main, newest first, into
+  `:workspace-branch-merges` (`{:status :loading|:loaded|:error}` plus
+  `:data`): who merged each branch, when, and the comment left with it.
+  The command resolves a branch to its main, so it is asked about the
+  open file as is. A failure is kept as an error, never as an empty list,
+  so it cannot read as a file with no merges."
+  []
+  (ptk/reify ::fetch-branch-merges
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-branch-merges {:status :loading}))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-let [file-id (:current-file-id state)]
+        (->> (rp/cmd! :get-file-branch-merges {:file-id file-id})
+             (rx/map #(set-branch-merges {:status :loaded :data %}))
+             (rx/catch (fn [_] (rx/of (set-branch-merges {:status :error})))))))))
+
 (defn fetch-branching-limits
   "Load the size limits this instance refuses beyond, so the panel can
   state them before a user meets one. The numbers live in the backend
@@ -254,15 +282,24 @@
             (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error"))))))))))
 
 (defn delete-branch
-  [id]
-  (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::delete-branch
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :delete-file-branch {:id id})
-           (rx/mapcat (fn [_] (rx/of (ntf/success (tr "workspace.branches.lifecycle.deleted"))
-                                     (fetch-branches))))
-           (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error")))))))))
+  "Delete a branch. Deleting the open branch takes its file away, so the
+  caller passes `open-file-id` (the file it comes from) to land there once
+  the branch is gone; this session is not sent away by the deletion it
+  made itself."
+  ([id] (delete-branch id nil))
+  ([id open-file-id]
+   (assert (uuid? id) "expected valid uuid for `id`")
+   (ptk/reify ::delete-branch
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (->> (rp/cmd! :delete-file-branch {:id id})
+            (rx/mapcat (fn [_] (rx/concat
+                                (rx/of (ntf/success (tr "workspace.branches.lifecycle.deleted"))
+                                       (fetch-branches))
+                                (if (uuid? open-file-id)
+                                  (rx/of (open-branch open-file-id))
+                                  (rx/empty)))))
+            (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error"))))))))))
 
 (defn materialize-branch
   "Turn a branch into an ordinary file: `branch-file-id` is the branch's
@@ -361,18 +398,19 @@
 
 (defn show-branches
   "The entry point of the File menu and the Ctrl/Cmd+Alt+B shortcut. A
-  file that has branches gets the branch switcher; one with none gets the
-  create-branch dialog, since the switcher only exists once a branch does.
-  No-op when the branching feature flag is disabled."
+  file that has branches gets the branches dialog (the full list, the
+  same the switcher's \"All branches\" opens, which shows this shortcut);
+  one with none gets the create-branch dialog. No-op when the branching
+  feature flag is disabled."
   []
   (ptk/reify ::show-branches
     ptk/WatchEvent
     (watch [_ state _]
       (when (contains? cf/flags :branching)
         (if (has-branches? state)
-          (rx/of (toggle-branch-switcher true))
-          (let [file (get-in state [:files (:current-file-id state)])]
-            (rx/of (modal/show :create-branch {:file-name (:name file)}))))))))
+          (rx/of (toggle-branch-switcher false)
+                 (modal/show :branches-list {}))
+          (rx/of (modal/show :create-branch {})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPARE (read-only 3-way diff)
@@ -524,7 +562,7 @@
   `main-revn` is main's revn when the command computed those conflicts. It
   is stored with them because the modal's own diff fetch can still be in
   flight when the user applies; see `conflict-main-revn`."
-  [{:keys [branch mode conflicts main-revn excluded]}]
+  [{:keys [branch mode conflicts main-revn excluded comment]}]
   (ptk/reify ::open-conflict-resolutions
     ptk/UpdateEvent
     (update [_ state]
@@ -536,11 +574,13 @@
     ptk/WatchEvent
     (watch [_ _ _]
       ;; `excluded` is the per-change selection the merge/update attempt
-      ;; was made with; the resolution modal applies it on retry
+      ;; was made with, and `comment` what the user said about the merge;
+      ;; the resolution modal sends both again on retry
       (rx/of (modal/show :branch-conflicts {:branch branch
                                             :mode mode
                                             :conflicts conflicts
-                                            :excluded excluded})))))
+                                            :excluded excluded
+                                            :comment comment})))))
 
 (defn- conflict-main-revn
   "Main's revn when the server computed the conflict set stored for
@@ -662,16 +702,14 @@
 
 (defn merge-branch
   "Merge `branch` (a branch row/context map with at least `:id`) into main.
-  On success the branch is marked merged server-side and open clients
-  reload main via the `:file-merged` msgbus event.
+  On success the server records the merge and deletes the branch and its
+  file, and open clients reload main via the `:file-merged` msgbus event.
 
   Options:
    - `:resolutions` — optional `{entity-id (:main|:branch)}` map used to
      resolve conflicts before integrating.
-   - `:keep-branch` — when true the merged branch is kept (it shows up
-     under \"Archived\"); when false (default) the server deletes the
-     branch and its file in the same transaction, so merged copies do not
-     pile up and eat disk space.
+   - `:comment` — what the user says about the merge, kept with its
+     record and shown in the reviews dialog.
    - `:excluded` — the per-change selection (change keys,
      `app.common.files.branch-merge/change-key`) naming the changes the
      user deselected, which main keeps its own value for.
@@ -683,7 +721,7 @@
   before that diff has loaded carry the revn of the conflict answer instead
   (`conflict-main-revn`). Unresolved conflicts open the resolution modal."
   ([branch] (merge-branch branch nil))
-  ([branch {:keys [resolutions keep-branch excluded]}]
+  ([branch {:keys [resolutions comment excluded]}]
    (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")
    (ptk/reify ::merge-branch
      ptk/WatchEvent
@@ -700,7 +738,7 @@
                         (cond-> {:branch-id branch-id}
                           (seq resolutions)  (assoc :resolutions resolutions)
                           (seq excluded)     (assoc :excluded excluded)
-                          keep-branch        (assoc :keep-branch true)
+                          (not (str/blank? comment)) (assoc :comment (str/trim comment))
                           (some? main-revn)  (assoc :expected-main-revn main-revn)))
                (rx/mapcat
                 (fn [{:keys [status source-file-id conflicts] :as answer}]
@@ -708,15 +746,16 @@
                     ;; the merged result lives in main: take the user there
                     ;; to see it (navigate if elsewhere, hard-reload if
                     ;; already on main). Other clients reload via the
-                    ;; `:file-merged` event; the branch deletion (when not
-                    ;; kept) already happened server-side.
+                    ;; `:file-merged` event; the branch deletion already
+                    ;; happened server-side.
                     :merged      (rx/of (ntf/success (tr "workspace.branches.merge.success"))
                                         (show-merge-result source-file-id))
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
                                                                     :mode :merge
                                                                     :conflicts conflicts
                                                                     :main-revn (:main-revn answer)
-                                                                    :excluded excluded}))
+                                                                    :excluded excluded
+                                                                    :comment comment}))
                     :unsupported (rx/of (ntf/warn (tr "workspace.branches.merge.unsupported")))
                     (rx/of (ntf/error (tr "workspace.branches.merge.error"))))))
                (rx/catch

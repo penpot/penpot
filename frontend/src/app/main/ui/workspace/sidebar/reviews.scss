@@ -1,0 +1,240 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
+
+// --- Dialog: the layout of the all-branches dialog
+
+.reviews-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  block-size: $sz-480;
+  min-block-size: 0;
+  padding: 0;
+}
+
+.reviews-tabs {
+  flex: 1;
+  min-block-size: 0;
+}
+
+.reviews-search {
+  inline-size: $sz-192;
+}
+
+.reviews-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) auto;
+  inline-size: $sz-200;
+}
+
+// --- Entries
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin: 0;
+  padding: var(--sp-m) 0 0;
+  list-style: none;
+}
+
+.entry {
+  // the card of the comment or the description: a step lighter than the
+  // row, also while a clickable row is hovered
+  --entry-card-bg-color: var(--color-background-tertiary);
+
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: var(--sp-m);
+  padding: var(--sp-m) var(--sp-s);
+  border-radius: $br-8;
+
+  &.is-clickable {
+    cursor: pointer;
+
+    &:hover {
+      --entry-card-bg-color: var(--color-background-quaternary);
+
+      background-color: var(--color-background-tertiary);
+    }
+
+    &:focus-visible {
+      outline: $b-1 solid var(--color-accent-primary);
+    }
+  }
+}
+
+.entry-avatar {
+  flex-shrink: 0;
+}
+
+// a profile that left the team: a neutral tile the size of the avatar
+.entry-avatar-unknown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  border-radius: $br-circle;
+  background-color: var(--color-background-quaternary);
+  color: var(--color-foreground-secondary);
+}
+
+.entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.entry-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+}
+
+.entry-title {
+  @include use-typography("body-medium");
+
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-foreground-primary);
+}
+
+.entry-date {
+  @include use-typography("body-small");
+
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  color: var(--color-foreground-secondary);
+}
+
+.entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+}
+
+.entry-meta-text {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.entry-route {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.entry-route-arrow {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.entry-review {
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.entry-review-title {
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.entry-approvals {
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  color: var(--color-foreground-secondary);
+}
+
+// the empty card of the branch info dialog's description
+.entry-no-comment {
+  @include use-typography("body-medium");
+
+  margin: 0;
+  margin-block-start: var(--sp-xs);
+  padding: var(--sp-s);
+  border: $b-1 dashed var(--color-background-quaternary);
+  border-radius: $br-8;
+  font-style: italic;
+  color: var(--color-foreground-secondary);
+}
+
+.entry-aside {
+  display: flex;
+  align-items: center;
+}
+
+// --- A long text folded to two lines, in the card of the branch info
+// dialog's description
+
+.clamped {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--entry-card-bg-color);
+}
+
+.clamped-text {
+  @include use-typography("body-medium");
+
+  margin: 0;
+  color: var(--color-foreground-primary);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.is-folded {
+  @include two-line-text-ellipsis;
+}
+
+.see-more {
+  @include use-typography("body-small");
+
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}

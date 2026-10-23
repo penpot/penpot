@@ -254,10 +254,18 @@
 ;; --- COMMAND: Move file
 
 (def sql:get-files
-  "select id, features, project_id from file where id = ANY(?)")
+  "select id, features, project_id, is_branch from file where id = ANY(?)")
 
+;; A branch lives in the project of its source file: its permissions
+;; come from that project and its team, so the branches of a moved file
+;; move with it. The deleted branch rows are included, their files still
+;; exist until the GC takes them.
 (def sql:move-files
-  "update file set project_id = ? where id = ANY(?)")
+  "update file set project_id = ?
+    where id = ANY(?)
+       or id in (select fb.branch_file_id
+                   from file_branch as fb
+                  where fb.source_file_id = ANY(?))")
 
 (def sql:delete-broken-relations
   "with broken as (
@@ -289,6 +297,12 @@
                 :code :cant-move-to-same-project
                 :hint "Unable to move a file to the same project"))
 
+    ;; a branch only moves together with its source file
+    (when (some :is-branch files)
+      (ex/raise :type :validation
+                :code :cant-move-a-branch
+                :hint "Unable to move a branch file on its own"))
+
     ;; Check if we have permissions on the destination project
     (proj/check-edition-permissions! conn profile-id project-id)
 
@@ -306,8 +320,8 @@
         (doseq [file files]
           (cfeat/check-file-features! features (:features file)))))
 
-    ;; move all files to the project
-    (db/exec-one! conn [sql:move-files project-id fids])
+    ;; move all files, and their branches, to the project
+    (db/exec-one! conn [sql:move-files project-id fids fids])
 
     ;; delete possible broken relations on moved files
     (db/exec-one! conn [sql:delete-broken-relations pids])
