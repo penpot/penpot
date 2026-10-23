@@ -785,3 +785,15 @@
     (t/is (mth/close? 80 (:height head) 0.001))
     (t/is (= (thn/normalize-file (tm/file edited))
              (thn/normalize-file (tm/file (r/step updated (n/undo))))))))
+
+(t/deftest detaching-a-main-child-removes-the-copys-now-invalid-swap
+  (let [initial (tm/make-situation (setup))
+        detached (-> initial (r/step (n/detach :card-star)) r/settle)
+        head (tm/resolve-shape detached :copy-star)
+        main (tm/resolve-shape detached :card-star)
+        objects (:objects (thf/current-page (tm/file detached)))]
+    (t/is (not (ctk/instance-head? head)))
+    (t/is (not (ctk/swapped? head)))
+    (t/is (= (:shapes main) (mapv #(get-in objects [% :shape-ref]) (:shapes head))))
+    (t/is (= (thn/normalize-file (tm/file initial))
+             (thn/normalize-file (tm/file (r/step detached (n/undo))))))))
