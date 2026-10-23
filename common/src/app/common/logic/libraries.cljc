@@ -263,12 +263,12 @@
 (defn- main-in-parent-orientation
   "Place a main in the orientation of an ordinary instance parent. Such a
    parent can survive detach, while the nested copy stays untouched."
-  [main-container shape-main container shape-inst]
+  [main-container shape-main container shape-inst reset?]
   (let [parent (ctn/get-shape container (:parent-id shape-inst))
         main-parent (get-in main-container [:objects (:parent-id shape-main)])
         relative (gmt/multiply (or (:transform parent) (gmt/matrix))
                                (or (:transform-inverse main-parent) (gmt/matrix)))]
-    (if (or (nil? parent) (:shape-ref parent) (gmt/unit? relative))
+    (if (or (nil? parent) (and (:shape-ref parent) (not reset?)) (gmt/unit? relative))
       main-container
       (let [transform (gmt/transform-in (gsh/shape->center shape-main) relative)
             angle (- (or (:rotation parent) 0) (or (:rotation main-parent) 0))
@@ -299,7 +299,7 @@
                            (ctf/get-content-ref-shape library component shape-inst))
               main-container (find-main-container container shape-inst shape-main
                                                   library file libraries component)
-              main-container (main-in-parent-orientation main-container shape-main container shape-inst)
+              main-container (main-in-parent-orientation main-container shape-main container shape-inst reset?)
               shape-main (ctn/get-shape main-container (:id shape-main))]
           (sync-copy-recursive changes
                                {:container      container
