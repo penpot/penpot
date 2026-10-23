@@ -422,7 +422,8 @@
                 changes
                 pairs)
         changes (cond-> changes
-                  (ctk/touched-group? original-shape :geometry-group)
+                  (some #(and (= (:id %) (:id original-shape))
+                              (ctk/touched-group? % :geometry-group)) orig-touched)
                   (keep-orientation-override original-shape new-shape page
                                              (or (get-in libraries [(:component-file new-shape) :data]) ldata)
                                              (:component-id new-shape)))]

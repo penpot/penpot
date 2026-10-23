@@ -749,3 +749,23 @@
     (t/is (ctk/touched-group? head :geometry-group))
     (t/is (mth/close? 45 (:rotation head) 0.001))
     (t/is (= (orientation file :card-star) (orientation full :card-star)))))
+
+(t/deftest switch-keeps-root-orientation-authored-in-a-near-main
+  (let [initial (reduce #(tm/apply-to %2 %1) (setups/empty-situation)
+                        [(n/create-component "variant" setups/labeled-fill :size 100)
+                         (n/make-variant-container "variants"
+                                                   [["a" setups/labeled-fill]
+                                                    ["b" setups/labeled-fill]] :size 100)
+                         (n/make-nested-component-with-variant "variant" "variants" "a")
+                         (n/make-nested-component "variant" 1)])
+        source (n/nested-head-of "variant" 0)
+        target (n/nested-head-of "variant" 1)
+        before (-> initial (r/step (n/rotate source 45)) r/settle)
+        swapped (-> before (r/step (n/switch-variant target "b")) r/settle)
+        head (tm/shape-by-id swapped (target swapped))
+        file (tm/file swapped)
+        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (t/is (nil? (:touched (tm/shape-by-id before (target before)))))
+    (t/is (ctk/touched-group? head :geometry-group))
+    (t/is (mth/close? 45 (:rotation head) 0.001))
+    (t/is (gsh/close-attrs? :points (:points head) (:points (ths/get-shape-by-id full (:id head))) 0.001))))
