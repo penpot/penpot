@@ -270,3 +270,10 @@
     (t/testing "unrotated shape uses the axis-aligned box"
       (t/is (true? (gint/has-point? shape (pt 50 40))))
       (t/is (false? (gint/has-point? shape (pt 200 40)))))))
+
+(t/deftest short-perpendicular-lines-still-meet-at-their-crossing
+  (doseq [size [0.0005 0.005 1 100]
+          [x y] [[0 0] [200 200] [10000 -10000]]]
+    (let [actual (gint/line-line-intersect (pt (- x size) y) (pt (+ x size) y)
+                                           (pt x (- y size)) (pt x (+ y size)))]
+      (t/is (gpt/close? (pt x y) actual)))))
