@@ -12,6 +12,9 @@
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.comp.setups :as setup]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -22,6 +25,20 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest reset-a-nested-copy-through-a-deleted-outer-main
+  (let [initial (setup/nested-component-with-copy)
+        edited (-> initial
+                   (r/step (n/change-property :copy-instance :opacity 0.4)) r/settle)
+        deleted (-> edited (r/step (n/delete-component :main2-root)) r/settle)
+        reset (-> deleted (r/step (n/reset :copy-instance)) r/settle)
+        shape (tm/role-shape reset :copy-instance)
+        undone (r/step reset (n/undo))
+        redone (r/step undone (n/redo))]
+    (t/is (= (:opacity (tm/role-shape initial :main-instance)) (:opacity shape)))
+    (t/is (nil? (:touched shape)))
+    (t/is (= (thn/normalize-file (tm/file deleted)) (thn/normalize-file (tm/file undone))))
+    (t/is (= (thn/normalize-file (tm/file reset)) (thn/normalize-file (tm/file redone))))))
 
 (t/deftest test-reset-after-changing-attribute
   (let [;; ==== Setup
