@@ -555,6 +555,14 @@
                            shapes
                            to-index)
 
+        ;; A move also removes children from their previous layout.
+        (pcb/update-shapes (disj all-parents parent-id)
+                           (fn [shape objects]
+                             (if (ctl/grid-layout? shape)
+                               (ctl/assign-cell-positions shape objects)
+                               shape))
+                           {:ignore-touched true :with-objects? true})
+
         ;; Remove empty groups
         (pcb/remove-objects groups-to-delete)
 

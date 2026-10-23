@@ -21,6 +21,25 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest moving-a-child-out-of-a-grid-clears-its-old-cell
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-grid-frame :grid :width 200 :height 100)
+                 (tho/add-rect :first :parent-label :grid)
+                 (tho/add-rect :second :parent-label :grid)
+                 (tho/place-in-grid-columns :grid 2 {1 :first 2 :second})
+                 (tho/add-frame :destination))
+        page (thf/current-page file)
+        changes (cls/generate-relocate (-> (pcb/empty-changes nil (:id page))
+                                           (pcb/with-objects (:objects page))
+                                           (pcb/with-library-data (:data file)))
+                                       (thi/id :destination) 0 #{(thi/id :first)})
+        moved (thf/apply-changes file changes)
+        grid (ths/get-shape moved :grid)
+        members (mapcat :shapes (vals (:layout-grid-cells grid)))
+        undone (thf/apply-changes moved {:redo-changes (:undo-changes changes)})]
+    (t/is (= #{(thi/id :second)} (set members)))
+    (t/is (= (thn/normalize-file file) (thn/normalize-file undone)))))
+
 (t/deftest deleting-a-grid-child-clears-its-cell-and-keeps-undo
   (let [file (-> (thf/sample-file :file1)
                  (tho/add-grid-frame :grid :width 200 :height 100)
