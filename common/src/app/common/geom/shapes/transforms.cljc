@@ -297,19 +297,26 @@
 
         yv1     (gpt/to-vec p0' (nth points' 3))
         yv2     (gpt/to-vec p0  (nth points 3))
-        dot-y   (gpt/dot yv1 yv2)]
+        dot-y   (gpt/dot yv1 yv2)
+
+        ;; A right-angle turn has a zero dot product. Coordinate roundoff
+        ;; must not turn that into a reflection, regardless of shape size.
+        flip-x? (and (neg? dot-x)
+                     (not (mth/close? dot-x 0 (* 1e-10 (gpt/length xv1) (gpt/length xv2)))))
+        flip-y? (and (neg? dot-y)
+                     (not (mth/close? dot-y 0 (* 1e-10 (gpt/length yv1) (gpt/length yv2)))))]
 
     (cond-> shape
-      (neg? dot-x)
+      flip-x?
       (update :flip-x not)
 
-      (neg? dot-y)
+      flip-y?
       (update :flip-y not)
 
       ;; Negate rotation only when an odd number of axes are flipped,
       ;; since flipping both axes is equivalent to a 180° rotation and
       ;; two negations would cancel each other out.
-      (not= (neg? dot-x) (neg? dot-y))
+      (not= flip-x? flip-y?)
       (update :rotation -))))
 
 (defn- apply-transform-move
