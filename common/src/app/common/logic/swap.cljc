@@ -100,7 +100,7 @@
                  (let [prev    (-> prev-shape :selrect dimension)
                        current (-> current-shape :selrect dimension)
                        origin  (-> origin-shape :selrect dimension)]
-                   (if (= origin current) prev current)))
+                   (if (mth/close? origin current) prev current)))
         width  (size :width)
         height (size :height)]
     (case attr
@@ -204,7 +204,9 @@
          ;; 5. The bg of Copy now is blue (we ignore the override)
          (and
           (not (contains? #{:points :selrect :content} attr))
-          (not= (get origin-ref-shape attr) (get current-shape attr)))
+          (not (if (= sync-group :geometry-group)
+                 (gsh/close-attrs? attr (get origin-ref-shape attr) (get current-shape attr))
+                 (= (get origin-ref-shape attr) (get current-shape attr)))))
 
          ;; The :content attr cant't be copied to elements of different type
          (and (= attr :content) (not= (:type previous-shape) (:type current-shape))))
@@ -250,8 +252,8 @@
                  (not path-change?)
                  (not (or (= :fix (:layout-item-h-sizing previous-shape))
                           (= :fix (:layout-item-v-sizing previous-shape))))
-                 (or (not= (get origin-ref-shape :width) (get current-shape :width))
-                     (not= (get origin-ref-shape :height) (get current-shape :height)))))
+                 (or (not (mth/close? (:width origin-ref-shape) (:width current-shape)))
+                     (not (mth/close? (:height origin-ref-shape) (:height current-shape))))))
 
         attr-val
         (when-not skip?

@@ -40,3 +40,11 @@ The generic fallback branch copies from `previous-shape`. It represents the inte
 `common/src/app/common/test_helpers/compositions.cljc` has `swap-component-in-shape`, which drives `generate-component-swap` plus `generate-keep-touched` with the production `keep-touched?` flag. Use it for focused common tests of variant-switch behavior.
 
 `common/test/common_tests/logic/variants_switch_test.cljc` is the canonical reference suite for swap+touched scenarios. Read nearby tests before adding another case.
+
+## Variant geometry comparison
+
+Switch carry compares the two mains' geometry with `gsh/close-attrs?`.
+The clean target already has the copy's rotation, which can turn 100 into
+99.99999999999994. Exact dimension equality drops valid resize overrides
+(F160). Fixed layout sizes and composite geometry use the same tolerance;
+nongeometry scalar attributes still compare exactly.

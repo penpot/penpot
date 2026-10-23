@@ -15,6 +15,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -27,6 +28,26 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest switch-keeps-a-resize-override-after-rotating-the-copy
+  (doseq [sizing [nil :fix]]
+    (let [params {:width 100 :height 100 :layout-item-v-sizing sizing}
+          file (-> (thf/sample-file :file1)
+                   (thv/add-variant :v01 :c01 :m01 :c02 :m02
+                                    {:variant1-params params :variant2-params params})
+                   (thc/instantiate-component :c01 :copy01))
+          file (reduce (fn [file modifiers]
+                         (let [shape (ths/get-shape file :copy01)]
+                           (thf/apply-changes file
+                                              (n/transform-changes (thf/current-page file) shape
+                                                                   (modifiers shape)))))
+                       file [#(ctm/rotation-modifiers % (gsh/shape->center %) 45)
+                             #(ctm/change-size % nil 80)])
+          switched (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+          copy (ths/get-shape switched :copy01)]
+      (t/is (mth/close? 80 (:height copy) 1e-10))
+      (t/is (mth/close? 80 (get-in copy [:selrect :height]) 1e-10))
+      (t/is (contains? (:touched copy) :geometry-group)))))
 
 ;; ============================================================
 ;; BASIC SWITCH TESTS (no overrides)
