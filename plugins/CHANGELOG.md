@@ -2,7 +2,7 @@
 
 ### 🚀 Features
 
-- **plugin-types:** Added `LibraryComponent.restore()` to restore a deleted component and its main instance without changing the current page, selection, zoom, or viewport. Requires `library:write` permission.
+- **plugin-types:** Added `LibraryComponent.restore()` to restore a deleted component and its main instance without changing the current page, selection, zoom, or viewport. Requires `library:write` permission and only applies to the current file's library.
 - **plugin-types:** Added `Shape.updateMain()`, `LibraryComponent.duplicate()`, writable component `annotation`, and `Library.deletedComponents`. Declared the existing `LibraryComponent.remove()` method.
 - **plugin-types:** Added `LibraryContext.tokensSource` to read or set the current file's token source to a connected library, or restore local tokens.
 - **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.

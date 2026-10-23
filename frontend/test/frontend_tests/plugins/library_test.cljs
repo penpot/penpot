@@ -55,13 +55,10 @@
     (cthf/apply-changes file changes)))
 
 (t/deftest ^:async component-restore-preserves-the-users-view
-  (doseq [scenario [:same-page :other-page :linked-library]]
+  (doseq [scenario [:same-page :other-page]]
     (let [file    (cond-> (file-with-deleted-component)
                     (= scenario :other-page) (cthf/add-sample-page :other-page))
-          store   (if (= scenario :linked-library)
-                    (ths/setup-store (cthf/sample-file :local-file)
-                                     {:renderer :svg :libraries [file]})
-                    (ths/setup-store file {:renderer :svg}))
+          store   (ths/setup-store file {:renderer :svg})
           view    {:selected #{(thi/id :copy)}
                    :zoom 2
                    :vport {:x 100 :y 200 :width 800 :height 600}
@@ -107,6 +104,23 @@
          (await (async/settle))
          (t/is (empty? @events))
          (t/is (true? (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted]))))))))
+
+(t/deftest ^:async component-restore-rejects-linked-libraries
+  (let [library (file-with-deleted-component)
+        file    (cthf/sample-file :consumer-file)
+        store   (ths/setup-store file {:renderer :svg :libraries [library]})
+        before  @store
+        events  (atom [])]
+    (ptk/emit! store #(assoc-in % [:plugins :flags plugin-id :throw-validation-errors] true))
+    (await
+     (mock/with-mocks*
+       {st/state store
+        st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))}
+       (let [component (library/lib-component-proxy plugin-id (:id library) (thi/id :restorable))]
+         (t/is (thrown-with-msg? js/Error #"current file" (.restore component)))
+         (await (async/settle))
+         (t/is (empty? @events))
+         (t/is (= (:files before) (:files @store))))))))
 
 (t/deftest ^:async component-restore-rejects-a-missing-component
   (let [file  (cthf/sample-file :restore-file)
