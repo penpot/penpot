@@ -5,7 +5,7 @@
 A shape can occupy multiple roles at once:
 
 1. Master/main instance: defines a component and has `:main-instance true` plus `:component-id`.
-2. Copy/non-main instance: produced by instantiating a component and carries `:shape-ref` pointing at the master shape. `(ctk/in-component-copy? shape)` is essentially `(some? (:shape-ref shape))`.
+2. Copy/non-main instance: produced by instantiating a component and carries `:shape-ref` pointing at the master shape. `(ctk/in-component-copy? shape)` is essentially `(some? (:shape-ref shape))`. A copy that lost its `:shape-ref` is corruption, but `check-component-ref` deliberately ignores ref-less shapes (otherwise repair crashes on the `get-shape` precondition); the dedicated repair is tracked in penpot/penpot#12509.
 3. Component root: topmost shape of an instance, marked `:component-root true` and carrying surface attrs such as `:component-id` and `:component-file`.
 
 Variant masters are main instances and component roots. Their descendants may themselves be component copies, so master/copy logic must handle nested instances rather than assuming those roles are exclusive.

@@ -117,10 +117,13 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (th/run-task! :file-gc {:file-id (:id file)})
+      (th/run-file-gc! (:id file))
 
+      ;; Only the unused object-thumbnail row is purged: the replaced
+      ;; page fragment stays pinned by the automatic snapshot that shares
+      ;; it, and reattach means file-gc writes no churn fragments.
       (let [result (th/run-task! :objects-gc {})]
-        (t/is (= 3 (:processed result))))
+        (t/is (= 1 (:processed result))))
 
       ;; check if row2 related thumbnail row still exists
       (let [[row :as rows] (th/db-query :file-tagged-object-thumbnail
@@ -221,10 +224,13 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+      (t/is (true? (:cleaned (th/run-file-gc! (:id file)))))
 
+      ;; Only the superseded revn thumbnail row is purged: the file
+      ;; itself is unchanged, so it keeps its fragment ids (no-churn)
+      ;; and no fragment row is marked.
       (let [result (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed result))))
+        (t/is (= 1 (:processed result))))
 
       ;; check if row1 related thumbnail row still exists
       (let [[row :as rows] (th/db-query :file-thumbnail

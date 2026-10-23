@@ -8,9 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as cfc]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
+   [app.common.files.validate :as cfv]
    [app.common.logging :as log]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
@@ -867,3 +869,58 @@
                 (pcb/empty-changes nil)
                 errors)]
     redo-changes))
+
+(defn repair-loop
+  "Best-effort semantic repair loop over an in-memory file: validate,
+  apply the computed repair changes and repeat until the file
+  validates clean or `max-iterations` (default 10) is reached. When
+  it throws or does not converge, the input file is returned
+  untouched and the caller owns the decision (file-gc raises with
+  :repair-did-not-converge so nothing is persisted as clean; the
+  debug endpoints keep running their own single pass). Never touches
+  `revn`: the caller decides whether to bump it. file-gc does not:
+  it only touches :modified-at on real change."
+  [{:keys [id] :as file} libraries & {:keys [max-iterations]}]
+  ;; NOTE: no `:or` default here on purpose: an explicit nil must
+  ;; behave like a missing key (both come from valid call shapes),
+  ;; and `:or` only covers the missing one. Normalize explicitly.
+  (let [max-iterations (or max-iterations 10)]
+    (try
+      (loop [current file
+             iteration 0]
+        (let [errors (not-empty (cfv/validate-file current libraries))]
+          (cond
+            (empty? errors)
+            (do
+              (when (pos? iteration)
+                (log/debug :hint "file repaired"
+                           :file-id (str id)
+                           :iterations iteration))
+              current)
+
+            (>= iteration max-iterations)
+            (do
+              (log/warn :hint "file still invalid after repair"
+                        :file-id (str id)
+                        :codes (frequencies (map :code errors)))
+              file)
+
+            :else
+            (let [changes (repair-file current libraries errors)]
+              (recur (update current :data cfc/process-changes changes)
+                     (inc iteration))))))
+      (catch #?(:clj Exception :cljs js/Error) cause
+        (log/warn :hint "error on repairing file, keeping original"
+                  :file-id (str (:id file))
+                  :cause cause)
+        file)
+      ;; AssertionError is not an Exception: asserts on the repair
+      ;; path (e.g. get-shape with a non-uuid id) must also return
+      ;; the input instead of escaping. CLJS needs no extra clause:
+      ;; js/Error already covers everything thrown there.
+      #?(:clj
+         (catch AssertionError cause
+           (log/warn :hint "error on repairing file, keeping original"
+                     :file-id (str (:id file))
+                     :cause cause)
+           file)))))

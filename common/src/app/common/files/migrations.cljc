@@ -2020,14 +2020,22 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0027-separate-tokens-status"
+(defmethod migrate-data "0027-repair-unconverted-types-and-nil-pages"
+  ;; Re-apply the legacy-57 nil page cleanup (nils came back through a
+  ;; write path after it ran) and decode the data with the schema, which
+  ;; converts the unconverted types left by decoders. See
+  ;; ctf/sanitize-file-data.
+  [data _]
+  (ctf/sanitize-file-data data))
+
+(defmethod migrate-data "0028-separate-tokens-status"
   [data _]
   (if-let [tokens-lib (:tokens-lib data)]
     (assoc data :tokens-status
            (cfo/make-tokens-status-from-lib tokens-lib))
     data))
 
-(defmethod migrate-data "0028-normalize-constrained-values"
+(defmethod migrate-data "0029-normalize-constrained-values"
   ;; Existing files can contain values outside the limits now shared by the UI
   ;; and file schemas. Normalize them before checking the migrated file.
   [data _]
@@ -2129,7 +2137,7 @@
         (update :pages-index d/update-vals repair-page)
         (d/update-when :components d/update-vals repair-container))))
 
-(defmethod migrate-data "0029-move-background-blur-out-of-blur"
+(defmethod migrate-data "0030-move-background-blur-out-of-blur"
   ;; Before background blur got its own attribute, `:blur` accepted a
   ;; `:background-blur` type, so the editor and the plugin API saved those maps
   ;; under `:blur`. Once the shape schema was tightened, such files fail
@@ -2152,7 +2160,7 @@
         (update :pages-index d/update-vals repair-container)
         (d/update-when :components d/update-vals repair-container))))
 
-(defmethod migrate-data "0030-remove-stroke-per-side-attr"
+(defmethod migrate-data "0031-remove-stroke-per-side-attr"
   ;; Individual stroke widths shipped with a `:stroke-per-side` boolean on every
   ;; stroke, telling the renderer and the CSS generator whether the four side
   ;; widths were meaningful. Comparing the sides answers that on its own, so
@@ -2171,7 +2179,7 @@
         (update :pages-index d/update-vals repair-container)
         (d/update-when :components d/update-vals repair-container))))
 
-(defmethod migrate-data "0031-migrate-stroke-width-token-attr"
+(defmethod migrate-data "0032-migrate-stroke-width-token-attr"
   ;; Stroke width tokens used to be applied to the single `:stroke-width` token
   ;; attribute, replaced by the four per-side attributes. The editor reads only
   ;; the new keys, so a file written before the change keeps the token on
@@ -2203,7 +2211,7 @@
 ;; that walk the tree through `:shapes` miss them; e.g. deleting a variant
 ;; also deleted its container, which looked empty, and left the other
 ;; variants pointing to a deleted parent. Add them back to their parent.
-(defmethod migrate-data "0032-fix-children-not-in-parent"
+(defmethod migrate-data "0033-fix-children-not-in-parent"
   [data _]
   (letfn [(get-unlisted-children [objects]
             ;; Returns a {parent-id -> [child-id]} map
@@ -2236,7 +2244,7 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0033-normalize-main-instance-names"
+(defmethod migrate-data "0034-normalize-main-instance-names"
   [data _]
   ;; In penpot shape names always have "/" characters normalized with one space between and after,
   ;; to form paths. But this is not enforced and may be places that still admit names like
@@ -2380,10 +2388,11 @@
          "0024b-fix-stroke-cap-placement"
          "0025-repair-empty-text-content"
          "0026-fix-svg-raw-shapes-uuids"
-         "0027-separate-tokens-status"
-         "0028-normalize-constrained-values"
-         "0029-move-background-blur-out-of-blur"
-         "0030-remove-stroke-per-side-attr"
-         "0031-migrate-stroke-width-token-attr"
-         "0032-fix-children-not-in-parent"
-         "0033-normalize-main-instance-names"]))
+         "0027-repair-unconverted-types-and-nil-pages"
+         "0028-separate-tokens-status"
+         "0029-normalize-constrained-values"
+         "0030-move-background-blur-out-of-blur"
+         "0031-remove-stroke-per-side-attr"
+         "0032-migrate-stroke-width-token-attr"
+         "0033-fix-children-not-in-parent"
+         "0034-normalize-main-instance-names"]))

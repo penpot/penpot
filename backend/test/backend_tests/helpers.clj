@@ -779,6 +779,13 @@
   [& params]
   (apply db/get* *pool* params))
 
+(defn run-file-gc!
+  "Run the file-gc task the way the scheduler does: props always carry
+  the current revn, so the read-time freshness check has a baseline."
+  [file-id]
+  (run-task! :file-gc {:file-id file-id
+                       :revn (:revn (db-get :file {:id file-id}))}))
+
 (defn sleep
   [ms-or-duration]
   (Thread/sleep (inst-ms (ct/duration ms-or-duration))))

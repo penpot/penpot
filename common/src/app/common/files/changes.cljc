@@ -868,9 +868,24 @@
   (when (and id name page)
     (ex/raise :type :conflict
               :hint "id+name or page should be provided, never both"))
+  ;; The undo of :add-page is :del-page with :id, so a change carrying
+  ;; both with different ids persists one page and undoes another.
+  (when (and id (:id page) (not= id (:id page)))
+    (ex/raise :type :conflict
+              :hint "id and page should agree"
+              :id id
+              :page-id (:id page)))
   (let [page (if (and (string? name) (uuid? id))
                (ctp/make-empty-page {:id id :name name})
                page)]
+    ;; A page without a valid id would leave a nil entry in :pages
+    ;; and a nil key in :pages-index (see legacy-57). Fail fast with
+    ;; a structured error instead of assert: asserts are elided in
+    ;; release CLJS builds, and this must hold there too.
+    (when-not (uuid? (:id page))
+      (ex/raise :type :validation
+                :hint "add-page requires a page with a valid :id"
+                :page-id (:id page)))
     (ctpl/add-page data page)))
 
 (defmethod process-change :mod-page
