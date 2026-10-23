@@ -6775,6 +6775,10 @@ msgstr "Top padding"
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Vertical padding"
 
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "Track options"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
 msgstr "Editing grid"
