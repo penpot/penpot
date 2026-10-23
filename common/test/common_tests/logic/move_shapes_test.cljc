@@ -11,6 +11,7 @@
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.tokens :as tht]
    [app.common.types.tokens-lib :as ctob]
@@ -217,3 +218,19 @@
     (t/is (nil? (:layout-item-min-w circle')))
     (t/is (nil? (:layout-item-absolute circle')))
     (t/is (nil? (:layout-item-z-index circle')))))
+(t/deftest moving-a-shape-into-a-grid-without-a-target-cell-assigns-it
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-grid-frame :grid :width 200 :height 100)
+                 (tho/add-rect :existing {:parent-label :grid})
+                 (tho/place-in-grid-columns :grid 2 {1 :existing})
+                 (tho/add-rect :moving))
+        page (thf/current-page file)
+        changes (-> (pcb/empty-changes nil (:id page))
+                    (pcb/with-objects (:objects page))
+                    (cls/generate-relocate (thi/id :grid) 1 #{(thi/id :moving)}))
+        moved (thf/apply-changes file changes)
+        grid (ths/get-shape moved :grid)
+        cells (sort-by :column (vals (:layout-grid-cells grid)))
+        undone (thf/apply-changes moved {:redo-changes (:undo-changes changes)})]
+    (t/is (= [[(thi/id :existing)] [(thi/id :moving)]] (mapv :shapes cells)))
+    (t/is (= (thn/normalize-file file) (thn/normalize-file undone)))))

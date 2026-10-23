@@ -593,8 +593,8 @@
                        ;; Assign the cell when pushing into a specific grid cell
                        (cond-> (some? cell)
                          (-> (ctl/free-cell-shapes ids)
-                             (ctl/push-into-cell ids row column)
-                             (ctl/assign-cells objects)))
+                             (ctl/push-into-cell ids row column)))
+                       (ctl/assign-cells objects)
                        (ctl/assign-cell-positions objects))))
                {:with-objects? true})
               (pcb/reorder-grid-children [parent-id])))
