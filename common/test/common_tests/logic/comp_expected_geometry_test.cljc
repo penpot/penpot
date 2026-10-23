@@ -21,6 +21,7 @@
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -33,6 +34,20 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest a-nested-copy-keeps-its-detached-parents-orientation-on-sync
+  (let [detached (-> (setup/nested-component-with-copy)
+                     (r/step (n/rotate :copy-root 90)) r/settle
+                     (r/step (n/detach :copy-root)) r/settle)
+        head (tm/role-shape detached :copy-instance)
+        id (first (:shapes head))
+        before (tm/shape-by-id detached id)
+        synced (-> detached (r/step (n/change-property :main1-child :fills "#ff0000")) r/settle)
+        after (tm/shape-by-id synced id)]
+    (t/is (= "#ff0000" (-> after :fills first :fill-color)))
+    (t/is (gsh/close-attrs? :points (:points before) (:points after) 0.001))
+    (t/is (= (:rotation before) (:rotation after)))
+    (t/is (nil? (:touched after)))))
 
 (defn- component-with-child
   "A 100x100 main board with a 20x20 rect at (70, 10) of it, constrained
