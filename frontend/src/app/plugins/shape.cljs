@@ -66,7 +66,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs per-side-stroke-attrs? token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs per-side-stroke-attrs-restricted? per-side-stroke-widths-message token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -292,7 +292,7 @@
 
        (and (not (ctt/per-side-stroke-shape? (:type (u/proxy->shape self))))
             (some #(= :multiple (types.stroke/width-type %)) value))
-       (u/not-valid plugin-id :strokes "Per-side stroke widths require a board or rectangle")
+       (u/not-valid plugin-id :strokes per-side-stroke-widths-message)
 
        :else
        (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value) options))))))
@@ -1840,13 +1840,10 @@
                       (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
 
-                      ;; Per-side stroke widths are only supported on boards
-                      ;; and rectangles. The uniform `strokeWidth` alias is
-                      ;; exempt: it expands to a uniform width on every side.
-                      (and (per-side-stroke-attrs? attrs)
-                           (not (ctt/per-side-stroke-shape?
-                                 (:type (u/locate-shape file-id page-id id)))))
-                      (u/not-valid plugin-id :applyToken "Per-side stroke widths require a board or rectangle")
+                      ;; The uniform `strokeWidth` alias is exempt: it expands
+                      ;; to a uniform width on every side.
+                      (per-side-stroke-attrs-restricted? file-id page-id [id] attrs)
+                      (u/not-valid plugin-id :applyToken per-side-stroke-widths-message)
 
                       :else
                       (st/emit!

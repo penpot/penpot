@@ -111,6 +111,9 @@
     (or (= attr stroke-width-alias)
         (cto/token-attr? attr))))
 
+(def per-side-stroke-widths-message
+  "Per-side stroke widths require a board or rectangle")
+
 (defn per-side-stroke-attrs?
   "Returns true when the plugin attrs name at least one explicit per-side stroke
   width attribute (`strokeWidthTop/Right/Bottom/Left`). The uniform
@@ -192,20 +195,19 @@
         (get (:name token))
         (resolved-without-errors?))))
 
-(defn- per-side-stroke-attrs-restricted?
+(defn per-side-stroke-attrs-restricted?
   "Returns true when `attrs` name an explicit per-side stroke width while some
-  target shape does not support independent sides. Only boards and rectangles
-  accept them. Shapes absent from the active page are ignored, because token
-  application only touches that page."
-  [file-id shape-ids attrs]
+  target shape on `page-id` does not support independent sides. Only boards and
+  rectangles accept them. Shapes absent from the page are ignored, because
+  token application only touches the active page."
+  [file-id page-id shape-ids attrs]
   (when (per-side-stroke-attrs? attrs)
-    (let [page-id (:current-page-id @st/state)]
-      (boolean
-       (some (fn [id]
-               (let [shape (u/locate-shape file-id page-id id)]
-                 (and (some? shape)
-                      (not (cto/per-side-stroke-shape? (:type shape))))))
-             shape-ids)))))
+    (boolean
+     (some (fn [id]
+             (let [shape (u/locate-shape file-id page-id id)]
+               (and (some? shape)
+                    (not (cto/per-side-stroke-shape? (:type shape))))))
+           shape-ids))))
 
 (defn- apply-token-to-shapes
   [plugin-id code file-id set-id id shape-ids attrs]
@@ -225,8 +227,9 @@
         (some #(not (token-attr? %)) attrs)
         (u/not-valid plugin-id code attrs)
 
-        (per-side-stroke-attrs-restricted? file-id shape-ids attrs)
-        (u/not-valid plugin-id code "Per-side stroke widths require a board or rectangle")
+        (per-side-stroke-attrs-restricted? file-id (:current-page-id @st/state)
+                                           shape-ids attrs)
+        (u/not-valid plugin-id code per-side-stroke-widths-message)
 
         :else
         (st/emit!

@@ -728,7 +728,9 @@
     ;; token and resolves to a uniform width, which the strokes setter accepts.
     (t/testing "the uniform strokeWidth alias is still accepted"
       (.applyToken ellipse token #js ["strokeWidth"])
-      (await (async/settle))
+      (await (async/wait-for
+              #(= "width.sm" (get-in @store (conj path :stroke-width-top)))
+              "uniform stroke width token applied"))
       (t/is (= "width.sm" (get-in @store (conj path :stroke-width-top)))))))
 
 (t/deftest token-attr?-rejects-unknown-input
