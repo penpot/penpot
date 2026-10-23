@@ -428,7 +428,15 @@
         [changes parents-of-swapped]
         (if keep-touched?
           (generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-          [changes []])]
+          [changes []])
+
+        ;; Replacement keeps the head id and its cell. Cleanup during the
+        ;; temporary deletion must not change the parent's placement data.
+        changes (cond-> changes
+                  (ctsl/grid-layout? parent)
+                  (pcb/update-shapes [(:id parent)]
+                                     #(assoc % :layout-grid-cells (:layout-grid-cells parent))
+                                     {:ignore-touched true}))]
     [new-shape changes (concat all-parents parents-of-swapped)]))
 
 (defn find-switch-target
