@@ -1321,7 +1321,7 @@
 
 (defn- update-grid-copy-attrs
   "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
-  [changes shape-copy-id shape-main library component omit-touched?]
+  [changes shape-copy-id shape-main _library _component omit-touched?]
   (-> changes
       (pcb/apply-changes-local)
       (pcb/update-shapes
@@ -1333,8 +1333,10 @@
                       (map #(get objects %))
                       (keep
                        (fn [copy-shape]
-                         (let [main-shape (ctf/get-ref-shape library component copy-shape)]
-                           [(:id main-shape) (:id copy-shape)]))))
+                         ;; Paired children refer to this near main, which can
+                         ;; belong to another component when resetting nested copies.
+                         (when-let [ref (:shape-ref copy-shape)]
+                           [ref (:id copy-shape)]))))
                      (:shapes shape-copy))
 
                remove-orphan-cells

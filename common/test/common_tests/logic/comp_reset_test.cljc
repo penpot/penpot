@@ -22,9 +22,32 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest reset-a-nested-grid-keeps-the-near-mains-manual-cell
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-grid-frame :inner-root)
+                 (tho/add-rect :inner-child :parent-label :inner-root)
+                 (tho/place-in-grid-columns :inner-root 2 {1 :inner-child})
+                 (thc/make-component :inner :inner-root)
+                 (tho/add-frame :outer-root)
+                 (thc/instantiate-component :inner :nested :parent-label :outer-root
+                                            :children-labels [:nested-child])
+                 (thc/make-component :outer :outer-root)
+                 (thc/instantiate-component :outer :copy
+                                            :children-labels [:copy-nested :copy-child]))
+        initial (tm/make-situation file)
+        moved (-> initial (r/step (n/move-to-cell :nested :nested-child 1 2)) r/settle)
+        reset (-> moved (r/step (n/reset :copy-nested)) r/settle)
+        column (fn [s]
+                 (let [head (tm/resolve-shape s :copy-nested)]
+                   (:column (ctl/get-cell-by-shape-id head (first (:shapes head))))))]
+    (t/is (= 2 (column moved)))
+    (t/is (= 2 (column reset)))
+    (t/is (nil? (:touched (tm/resolve-shape reset :copy-nested))))))
 
 (t/deftest reset-a-nested-copy-through-a-deleted-outer-main
   (let [initial (setup/nested-component-with-copy)
