@@ -14,7 +14,8 @@
    [app.main.data.viewer :as dv]
    [app.main.render :as render]
    [app.main.store :as st]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
@@ -63,10 +64,18 @@
        [:div {:class (stl/css :thumbnails-list-expanded)} children]]
 
       [:div {:class (stl/css :thumbnails-content)}
-       [:button {:class (stl/css :left-scroll-handler)
-                 :on-click on-left-arrow-click} deprecated-icon/arrow]
-       [:button {:class (stl/css :right-scroll-handler)
-                 :on-click on-right-arrow-click} deprecated-icon/arrow]
+       [:> icon-button* {:variant "ghost"
+                         :class (stl/css :scroll-handler)
+                         :tooltip-class (stl/css :left-scroll-handler)
+                         :aria-label (tr "viewer.thumbnails.scroll-left")
+                         :icon i/arrow-left
+                         :on-click on-left-arrow-click}]
+       [:> icon-button* {:variant "ghost"
+                         :class (stl/css :scroll-handler)
+                         :tooltip-class (stl/css :right-scroll-handler)
+                         :aria-label (tr "viewer.thumbnails.scroll-right")
+                         :icon i/arrow-right
+                         :on-click on-right-arrow-click}]
 
        [:div {:class (stl/css :thumbnails-list)
               :ref container
@@ -76,15 +85,22 @@
          children]]])))
 
 (mf/defc thumbnails-summary*
-  [{:keys [on-toggle-expand on-close total]}]
+  [{:keys [on-toggle-expand on-close total is-expanded]}]
   [:div {:class (stl/css :thumbnails-summary)}
    [:span {:class (stl/css :counter)}
     (tr "labels.num-of-frames" (i18n/c total))]
    [:span {:class (stl/css :actions)}
-    [:button {:class (stl/css :expand-btn)
-              :on-click on-toggle-expand} deprecated-icon/arrow]
-    [:button {:class (stl/css :close-btn)
-              :on-click on-close} deprecated-icon/close]]])
+    [:> icon-button* {:variant "ghost"
+                      :aria-label (if is-expanded
+                                    (tr "labels.collapse")
+                                    (tr "labels.expand"))
+                      :aria-expanded (boolean is-expanded)
+                      :icon (if is-expanded i/arrow-up i/arrow-down)
+                      :on-click on-toggle-expand}]
+    [:> icon-button* {:variant "ghost"
+                      :aria-label (tr "labels.close")
+                      :icon i/close
+                      :on-click on-close}]]])
 
 (mf/defc thumbnail-item*
   {::mf/wrap [mf/memo
@@ -137,6 +153,7 @@
 
      [:> thumbnails-summary* {:on-toggle-expand toggle-expand
                               :on-close on-close
+                              :is-expanded expanded?
                               :total (count frames)}]
      [:> thumbnails-content* {:is-expanded expanded?
                               :total (count frames)}

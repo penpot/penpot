@@ -151,3 +151,42 @@ test("User opens Share modal", async ({ page }) => {
   ).toBeVisible();
   await expect(viewerPage.page).toHaveScreenshot();
 });
+
+test.describe("Thumbnails panel", () => {
+  test("Shows the thumbnails panel collapsed and expanded", async ({
+    page,
+  }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithMultipleBoards();
+    await viewerPage.goToViewer({
+      fileId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb0",
+      pageId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb3",
+    });
+
+    await page.locator("#current-frame").click();
+    const panel = page.locator("section").filter({ hasText: /boards/i });
+    await expect(panel).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Collapsed: the summary with its expand and close buttons.
+    await expect(panel).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    // The scroll handlers only show on hover.
+    await panel.locator("button").nth(3).hover();
+    await expect(panel).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await panel.locator("button").first().click();
+    await page.mouse.move(640, 700);
+    // Expanded: the expand arrow points up.
+    await expect(panel).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
