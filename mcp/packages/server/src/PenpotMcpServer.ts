@@ -8,17 +8,19 @@ import { ExecuteCodeTool } from "./tools/ExecuteCodeTool";
 import { PluginBridge } from "./PluginBridge";
 import { RedisBridge } from "./RedisBridge";
 import { ConfigurationLoader } from "./ConfigurationLoader";
+import { PenpotBackendClient } from "./PenpotBackendClient";
+import { SubmitFeedbackTool } from "./tools/SubmitFeedbackTool";
 import { createLogger } from "./logger";
 import { Tool } from "./Tool";
 import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
 import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
 import { ImportImageTool } from "./tools/ImportImageTool";
-import { CljsReplTool } from "./tools/CljsReplTool";
-import { ImportPenpotFileTool } from "./tools/ImportPenpotFileTool";
-import { CljsCompilerOutputTool } from "./tools/CljsCompilerOutputTool";
-import { CljCheckParentheses } from "./tools/CljCheckParentheses";
-import { ReadTaigaIssueTool } from "./tools/ReadTaigaIssueTool";
+import { CljsReplTool } from "./tools/dev/CljsReplTool";
+import { ImportPenpotFileTool } from "./tools/dev/ImportPenpotFileTool";
+import { CljsCompilerOutputTool } from "./tools/dev/CljsCompilerOutputTool";
+import { CljCheckParentheses } from "./tools/dev/CljCheckParentheses";
+import { ReadTaigaIssueTool } from "./tools/dev/ReadTaigaIssueTool";
 import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
@@ -260,6 +262,10 @@ export class PenpotMcpServer {
         ];
         if (this.isFileSystemAccessEnabled()) {
             toolInstances.push(new ImportImageTool(this));
+        }
+        const backendUri = process.env.PENPOT_MCP_BACKEND_URI?.trim();
+        if (backendUri) {
+            toolInstances.push(new SubmitFeedbackTool(this, new PenpotBackendClient(backendUri)));
         }
         if (shouldRegisterDeveloperTools(this.isDevEnv(), this.isMultiUserMode())) {
             const nreplClient = new NreplClient();
