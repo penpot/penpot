@@ -29,6 +29,7 @@
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
@@ -769,3 +770,18 @@
     (t/is (ctk/touched-group? head :geometry-group))
     (t/is (mth/close? 45 (:rotation head) 0.001))
     (t/is (gsh/close-attrs? :points (:points head) (:points (ths/get-shape-by-id full (:id head))) 0.001))))
+
+(t/deftest update-main-clears-overrides-on-the-swapped-subtree-it-pushes
+  (let [edited (-> (tm/make-situation (setup-sized))
+                   (r/step (n/swap-shape :copy-star :heart)) r/settle
+                   (r/step (n/change-height :copy-star 80)) r/settle
+                   (r/step (n/change-property :copy-star :opacity 0.4)) r/settle)
+        updated (-> edited (r/step (n/update-main :copy)) r/settle)
+        head (tm/resolve-shape updated :copy-star)
+        main (tm/shape-by-id updated (:shape-ref head))]
+    (t/is (empty? (:touched head)))
+    (t/is (= #{:geometry-group :layer-effects-group} (:touched main)))
+    (t/is (= 0.4 (:opacity head) (:opacity main)))
+    (t/is (mth/close? 80 (:height head) 0.001))
+    (t/is (= (thn/normalize-file (tm/file edited))
+             (thn/normalize-file (tm/file (r/step updated (n/undo))))))))
