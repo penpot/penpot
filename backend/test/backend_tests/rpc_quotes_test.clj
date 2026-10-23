@@ -445,7 +445,6 @@
       (t/is (true? true) "deduped storage counted once, under quota"))))
 
 (t/deftest media-upload-enforces-storage-quote
-  ;; TEMPORARILY DISABLED (2026-10-19), see body.
   (with-mocks [mock {:target 'app.config/get
                      :return (th/config-get-mock
                               {:quotes-media-storage-bytes-per-team 100})}]
@@ -470,10 +469,12 @@
 
           out    (th/multipart-command! params)]
 
-      ;; TEMPORARILY DISABLED (2026-10-19): upload path no longer checks
-      ;; media-storage-bytes-per-team, so even over quota the upload
-      ;; succeeds. TODO: restore rejection with cheaper implementation.
-      (t/is (th/success? out)))))
+      ;; 312043 bytes > 100 byte limit → should be rejected
+      (t/is (not (th/success? out)))
+      (let [error (:error out)]
+        (t/is (= :restriction (th/ex-type error)))
+        (t/is (= :max-quote-reached (th/ex-code error)))
+        (t/is (= "media-storage-bytes-per-team" (:target (ex-data error))))))))
 
 ;; --- SNAPSHOTS (VERSIONS) QUOTES
 

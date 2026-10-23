@@ -50,6 +50,20 @@
                @#'wrkr/schema:params]]
       (t/is (sm/schema? (sm/schema s))))))
 
+(t/deftest the-storage-runner-is-wired
+  (let [cfg (get main/worker-config [:app.main/storage ::wrk/runner])]
+
+    (t/is (some? cfg))
+
+    (t/testing "the slow per-team SUM does not share the default runner"
+      (t/is (= :storage (::wrk/queue cfg)))
+      (t/is (= (cf/get :worker-storage-parallelism 2) (::wrk/parallelism cfg))))
+
+    (t/testing "and the runner resolves jobs, metrics and the pool"
+      (t/is (contains? cfg ::jobs/defs))
+      (t/is (contains? cfg ::mtx/metrics))
+      (t/is (contains? cfg ::db/pool)))))
+
 (t/deftest the-binfile-runner-is-wired
   (let [cfg (get main/worker-config [:app.main/binfile ::wrk/runner])]
 

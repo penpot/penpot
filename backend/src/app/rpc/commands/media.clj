@@ -40,14 +40,27 @@
 
 (declare create-file-media-object)
 
-;; TEMPORARILY DISABLED (2026-10-19): the media-storage-bytes-per-team
-;; quote check that used this lookup is disabled below. Kept active
-;; because the audit props of the upload still report the team id.
+;; Resolves the team of the target file for the quota check and the
+;; audit props of the upload.
 (def ^:private sql:get-team-id-for-file
   "SELECT p.team_id
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
     WHERE f.id = ?")
+
+(defn- check-media-storage-quote!
+  "Apply the media-storage-bytes-per-team quota to a file that is about
+  to receive `size` bytes, and answer its team id (the audit props need
+  it). The counter path is cheap: the live SUM only runs with the
+  storage-usage flags off."
+  [cfg file-id profile-id size]
+  (let [team-id (:team-id (db/exec-one! (db/get-connectable cfg)
+                                        [sql:get-team-id-for-file file-id]))]
+    (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
+                        ::quotes/profile-id profile-id
+                        ::quotes/team-id    team-id
+                        ::quotes/incr       size})
+    team-id))
 
 (def ^:private schema:upload-file-media-object
   [:map {:title "upload-file-media-object" :closed true}
@@ -68,16 +81,7 @@
   (media.v/validate-media-type! content)
   (media.v/validate-media-size! content)
 
-  (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
-    ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team
-    ;; quote performs a full SUM over storage_object per upload (3-12s in
-    ;; prod on a 3.5TB DB, ~34 slow executions/hour). Disabled until we
-    ;; land a cheaper approximation (cached counter / rewritten query).
-    ;; TODO: re-enable with the new implementation.
-    ;; (quotes/check! cfg {::quotes/id        ::quotes/media-storage-bytes-per-team
-    ;;                     ::quotes/profile-id profile-id
-    ;;                     ::quotes/team-id    team-id
-    ;;                     ::quotes/incr       (:size content)})
+  (let [team-id (check-media-storage-quote! cfg file-id profile-id (:size content))]
     (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                    ;; We get the minimal file for proper checking if
                    ;; file is not already deleted
@@ -262,6 +266,10 @@
                     (assoc :from-url? true)
                     (assoc :content content)
                     (assoc :name (d/nilv name "unknown")))]
+
+    ;; The URL path writes bytes too: it must pay the same quota as a
+    ;; plain upload, not bypass it.
+    (check-media-storage-quote! cfg (:file-id params) (:profile-id params) (:size content))
 
     ;; NOTE: we use the climit here in a dynamic invocation because we
     ;; don't want saturate the process-image limit with IO (download
@@ -585,6 +593,7 @@
                                   (assoc :mtype mtype)
                                   (media.v/validate-media-type!)
                                   (media.v/validate-media-size!))
+                      _       (check-media-storage-quote! cfg file-id profile-id (:size content))
                       mobj    (create-file-media-object cfg (assoc params
                                                                    :from-chunks? true
                                                                    :content content))]

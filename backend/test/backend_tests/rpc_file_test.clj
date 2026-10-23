@@ -22,6 +22,7 @@
    [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.http :as http]
+   [app.jobs :as-alias jobs]
    [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
@@ -2327,14 +2328,161 @@
                               :id (:id library)})]
     (t/is (nil? (:error out)))
 
-    ;; The relations are removed at once, the absorption is done by the
-    ;; deletion task.
-    (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id library)})))
+    ;; The relations stay until the deletion task runs: the job
+    ;; captures the dependents, removes the relations and absorbs
+    ;; them there.
+    (t/is (not (empty? (th/db-query :file-library-rel {:library-file-id (:id library)}))))
     (t/is (= (:id library)
              (cfo/get-tokens-source (:data (bfc/get-file th/*system* (:id file))))))
 
     (th/run-pending-jobs)
+    (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id library)})))
     (check-tokens-absorbed prepared)))
+
+(t/deftest delete-shared-library-absorb-failure-keeps-cascade-going
+  ;; If the absorb blows up, the savepoint rolls it back (relations
+  ;; included) and the cascade goes on: the file is still marked deleted,
+  ;; the relations are intact for the next retry, and the job succeeds.
+  (let [profile (th/create-profile* 1)
+        {:keys [library]} (prepare-tokens-library profile)
+        out     (th/command! {::th/type :delete-file
+                              ::rpc/profile-id (:id profile)
+                              :id (:id library)})]
+    (t/is (nil? (:error out)))
+    (with-redefs [files/absorb-library (fn [& _] (throw (ex-info "boom" {})))]
+      (th/run-pending-jobs))
+    (t/is (not (empty? (th/db-query :file-library-rel {:library-file-id (:id library)}))))
+    (t/is (some? (:deleted-at (th/db-get :file {:id (:id library)} {::db/remove-deleted false}))))))
+
+(t/deftest delete-shared-library-queues-job-without-file-ids
+  ;; The cascade captures the dependents itself: the RPC no longer
+  ;; snapshots them into the job params.
+  (let [profile (th/create-profile* 1)
+        {:keys [library]} (prepare-tokens-library profile)
+        submitted (atom nil)]
+    (with-redefs [jobs/submit (fn [_ params] (reset! submitted params) (uuid/next))]
+      (let [out (th/command! {::th/type :delete-file
+                              ::rpc/profile-id (:id profile)
+                              :id (:id library)})]
+        (t/is (nil? (:error out)))))
+    (t/is (= :delete-object (::jobs/name @submitted)))
+    (t/is (not (contains? (::jobs/params @submitted) :file-ids)))))
+
+(t/deftest delete-project-skips-absorb-for-files-dying-together
+  ;; When the whole project dies, absorbing the shared library into
+  ;; its own dying files is wasted work: the cascade cleans the
+  ;; relations but leaves the dependents untouched.
+  (let [profile (th/create-profile* 1)
+        team-id (:default-team-id profile)
+        proj    (th/create-project* 1 {:profile-id (:id profile) :team-id team-id})
+        library (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id proj)
+                                    :is-shared true})
+        file    (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:id proj)})
+        _       (th/link-file-to-library* {:file-id (:id file)
+                                           :library-id (:id library)})
+        revn    (:revn (th/db-get :file {:id (:id file)}))]
+    (let [out (th/command! {::th/type :delete-project
+                            ::rpc/profile-id (:id profile)
+                            :id (:id proj)})]
+      (t/is (nil? (:error out))))
+    (th/run-pending-jobs)
+    ;; Nothing outside the cascade uses the library, so the relations
+    ;; stay until the hard delete removes them with their files.
+    (t/is (not (empty? (th/db-query :file-library-rel {:library-file-id (:id library)}))))
+    (t/is (= revn (:revn (th/db-get :file {:id (:id file)} {::db/remove-deleted false}))))
+    ;; The hard delete cascades the relations away with their files.
+    (th/run-task! :objects-gc {:skip-delay true})
+    (t/is (nil? (th/db-get :file {:id (:id file)} {::db/remove-deleted false})))
+    (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id library)})))))
+
+(t/deftest delete-object-absorbs-with-deprecated-file-ids
+  ;; Deploy window: a job queued by the previous release carries the
+  ;; dependents in :file-ids and its RPC already deleted the relations.
+  ;; The live lookup finds nothing, so the worker must trust the
+  ;; snapshot instead of skipping the absorb silently.
+  (let [profile   (th/create-profile* 6 {:is-active true})
+        team-id   (:default-team-id profile)
+        proj      (th/create-project* 6 {:profile-id (:id profile) :team-id team-id})
+        library   (th/create-file* 8 {:profile-id (:id profile)
+                                      :project-id (:id proj)
+                                      :is-shared true})
+        dependent (th/create-file* 9 {:profile-id (:id profile)
+                                      :project-id (:id proj)})
+        _         (th/link-file-to-library* {:file-id (:id dependent)
+                                             :library-id (:id library)})
+        revn      (:revn (th/db-get :file {:id (:id dependent)}))]
+    ;; What the old RPC did: drop the relations before queueing.
+    (th/db-delete! :file-library-rel {:library-file-id (:id library)})
+    (th/run-task! :delete-object {:object :file
+                                  :id (:id library)
+                                  :deleted-at (ct/now)
+                                  :file-ids [(:id dependent)]})
+    (t/is (> (:revn (th/db-get :file {:id (:id dependent)} {::db/remove-deleted false}))
+             revn))))
+
+(t/deftest delete-project-absorbs-into-surviving-dependent
+  ;; The doomed-set only skips files that die in the same cascade: a
+  ;; dependent in another project of the team survives, so the library
+  ;; must be absorbed into it (and only into it).
+  (let [profile  (th/create-profile* 5 {:is-active true})
+        team-id  (:default-team-id profile)
+        proj-a   (th/create-project* 5 {:profile-id (:id profile) :team-id team-id})
+        proj-b   (th/create-project* 6 {:profile-id (:id profile) :team-id team-id})
+        library  (th/create-file* 5 {:profile-id (:id profile)
+                                     :project-id (:id proj-a)
+                                     :is-shared true})
+        doomed   (th/create-file* 6 {:profile-id (:id profile)
+                                     :project-id (:id proj-a)})
+        survivor (th/create-file* 7 {:profile-id (:id profile)
+                                     :project-id (:id proj-b)})
+        _        (th/link-file-to-library* {:file-id (:id survivor)
+                                            :library-id (:id library)})
+        revn-sur (:revn (th/db-get :file {:id (:id survivor)}))
+        revn-doom (:revn (th/db-get :file {:id (:id doomed)}))]
+    (let [out (th/command! {::th/type :delete-project
+                            ::rpc/profile-id (:id profile)
+                            :id (:id proj-a)})]
+      (t/is (nil? (:error out))))
+    (th/run-pending-jobs)
+    ;; The survivor absorbed the library; its relation is gone.
+    (t/is (> (:revn (th/db-get :file {:id (:id survivor)} {::db/remove-deleted false}))
+             revn-sur))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id (:id survivor)})))
+    ;; The doomed file did not absorb anything.
+    (t/is (= revn-doom (:revn (th/db-get :file {:id (:id doomed)} {::db/remove-deleted false}))))))
+
+(t/deftest delete-team-skips-absorb-for-files-dying-together
+  ;; Team deletions skip absorb entirely (*team-deletion*): a library
+  ;; in project A used from project B dies with the team, so absorb
+  ;; never runs and the relations stay until the hard delete.
+  (let [profile (th/create-profile* 4 {:is-active true})
+        team    (th/create-team* 4 {:profile-id (:id profile)})
+        proj-a  (th/create-project* 4 {:profile-id (:id profile) :team-id (:id team)})
+        proj-b  (th/create-project* 5 {:profile-id (:id profile) :team-id (:id team)})
+        library (th/create-file* 6 {:profile-id (:id profile)
+                                    :project-id (:id proj-a)
+                                    :is-shared true})
+        file    (th/create-file* 7 {:profile-id (:id profile)
+                                    :project-id (:id proj-b)})
+        _       (th/link-file-to-library* {:file-id (:id file)
+                                           :library-id (:id library)})
+        revn    (:revn (th/db-get :file {:id (:id file)}))
+        calls   (atom 0)]
+    (let [out (th/command! {::th/type :delete-team
+                            ::rpc/profile-id (:id profile)
+                            :id (:id team)})]
+      (t/is (nil? (:error out))))
+    (with-redefs [files/absorb-library (fn [& _] (swap! calls inc) nil)]
+      (th/run-pending-jobs))
+    (t/is (zero? @calls))
+    (t/is (not (empty? (th/db-query :file-library-rel {:library-file-id (:id library)}))))
+    (t/is (= revn (:revn (th/db-get :file {:id (:id file)} {::db/remove-deleted false}))))
+    ;; The hard delete cascades the relations away with their files.
+    (th/run-task! :objects-gc {:skip-delay true})
+    (t/is (nil? (th/db-get :file {:id (:id file)} {::db/remove-deleted false})))
+    (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id library)})))))
 
 (t/deftest unpublish-shared-library-absorbs-its-tokens-lib
   (let [profile (th/create-profile* 1)
