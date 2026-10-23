@@ -1,0 +1,256 @@
+name: Renovate Docker Image Check
+
+# Triggered by pushes to Renovate branches, not by pull_request: this is a
+# public repository and these jobs run on the self-hosted runners, so a PR
+# from a fork must never be able to start them. Only users with write
+# access can push here.
+on:
+  push:
+    branches:
+      - 'renovate-*'
+
+permissions: {}
+
+concurrency:
+  group: renovate-image-check-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  BUNDLE_CACHE: /var/tmp/penpot-bundle-cache
+
+jobs:
+  # ── 1. Pick an existing develop bundle and detect what changed ────────
+  prepare:
+    name: Prepare
+    runs-on: penpot-standar-runner
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      short_sha: ${{ steps.bundle.outputs.short_sha }}
+      images: ${{ steps.changes.outputs.images }}
+      devenv: ${{ steps.changes.outputs.devenv }}
+      imagemagick: ${{ steps.changes.outputs.imagemagick }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Find the develop commit this branch is based on
+        id: base
+        run: |
+          echo "sha=$(git merge-base HEAD origin/develop)" >> "$GITHUB_OUTPUT"
+
+      - name: Detect changed images
+        id: changes
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: |
+          changed() {
+            git diff --quiet "$BASE_SHA" HEAD -- "$@" && echo false || echo true
+          }
+          {
+            # Anything outside .github can affect the production images.
+            echo "images=$(changed . ':!.github')"
+            echo "devenv=$(changed docker/devenv)"
+            echo "imagemagick=$(changed docker/imagemagick)"
+          } >> "$GITHUB_OUTPUT"
+
+      # Renovate only changes Dockerfiles and package manager versions, so
+      # the most recent develop bundle is enough to build the images.
+      - name: Find the latest develop bundle
+        id: bundle
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: |
+          for SHA in $(git rev-list --first-parent --max-count=50 "$BASE_SHA"); do
+            SHORT_SHA=$(git rev-parse --short=12 "$SHA")
+            if aws s3api head-object --bucket "$S3_BUCKET" \
+                 --key "penpot-sha-${SHORT_SHA}.zip" > /dev/null 2>&1; then
+              echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+              echo "Using bundle \`penpot-sha-${SHORT_SHA}.zip\`" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          done
+          echo "::error::No bundle found for the last 50 develop commits"
+          exit 1
+
+  # ── 2. Production images, built from the PR Dockerfiles ───────────────
+  images:
+    name: Build ${{ matrix.image }}
+    runs-on: penpot-standar-runner
+    timeout-minutes: 60
+    needs: prepare
+    if: needs.prepare.outputs.images == 'true'
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        image: [backend, frontend, exporter, storybook, mcp]
+
+    steps:
+      - name: Set common environment variables
+        env:
+          MATRIX_IMAGE: ${{ matrix.image }}
+        run: |
+          echo "DOCKER_CONFIG=${RUNNER_TEMP}/.docker-${GITHUB_RUN_ID}-${GITHUB_JOB}-${MATRIX_IMAGE}" >> "$GITHUB_ENV"
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to DockerHub Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
+      - name: Login to Docker Hardened Images registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: dhi.io
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
+      - name: Prepare Penpot bundle
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
+          IMAGE: ${{ matrix.image }}
+        run: |
+          ZIP="$BUNDLE_CACHE/penpot-sha-${SHORT_SHA}.zip"
+          if [ ! -f "$ZIP" ]; then
+            mkdir -p "$BUNDLE_CACHE"
+            aws s3 cp "s3://${S3_BUCKET}/penpot-sha-${SHORT_SHA}.zip" "$ZIP.$$.tmp"
+            mv "$ZIP.$$.tmp" "$ZIP"
+          fi
+          pushd docker/images
+          unzip -q "$ZIP" "penpot/${IMAGE}/*"
+          mv "penpot/${IMAGE}" "bundle-${IMAGE}"
+          popd
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build Docker image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./docker/images/
+          file: ./docker/images/Dockerfile.${{ matrix.image }}
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache
+
+  # ── 3. Devenv, only when the PR touches it ────────────────────────────
+  devenv:
+    name: Build devenv
+    runs-on: penpot-standar-runner
+    timeout-minutes: 90
+    needs: prepare
+    if: needs.prepare.outputs.devenv == 'true'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Set common environment variables
+        run: |
+          echo "DOCKER_CONFIG=${RUNNER_TEMP}/.docker-${GITHUB_RUN_ID}-${GITHUB_JOB}" >> "$GITHUB_ENV"
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Login to DockerHub Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
+      - name: Login to Docker Hardened Images registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: dhi.io
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build devenv image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./docker/devenv/
+          file: ./docker/devenv/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=registry,ref=penpotapp/devenv:buildcache
+
+  # ── 4. ImageMagick, only when the PR touches it ───────────────────────
+  # amd64 only: compiling ImageMagick under QEMU takes too long for a check.
+  imagemagick:
+    name: Build imagemagick
+    runs-on: penpot-standar-runner
+    timeout-minutes: 60
+    needs: prepare
+    if: needs.prepare.outputs.imagemagick == 'true'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Set common environment variables
+        run: |
+          echo "DOCKER_CONFIG=${RUNNER_TEMP}/.docker-${GITHUB_RUN_ID}-${GITHUB_JOB}" >> "$GITHUB_ENV"
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Login to Docker Hardened Images registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: dhi.io
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build imagemagick image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./docker/imagemagick/
+          file: ./docker/imagemagick/Dockerfile
+          platforms: linux/amd64
+          push: false

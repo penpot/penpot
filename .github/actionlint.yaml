@@ -1,0 +1,14 @@
+# actionlint configuration — https://github.com/rhysd/actionlint/blob/main/docs/config.md
+self-hosted-runner:
+  labels:
+    - penpot-standar-runner
+    - penpot-extended-runner
+
+paths:
+  .github/workflows/**/*.{yml,yaml}:
+    ignore:
+      # shellcheck style/info notices that are pervasive in the existing
+      # scripts (unquoted `>> $GITHUB_OUTPUT`, repeated redirects). Real
+      # shellcheck warnings and errors are still reported.
+      - 'SC2086:info'
+      - 'SC2129:style'

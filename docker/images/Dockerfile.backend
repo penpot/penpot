@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev AS build
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:9b025768946856e44f9775005eb199f2e1820484ea27bb5c8bcbb187b80464dc AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -9,11 +9,11 @@ ENV LANG='C.UTF-8' \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         binutils \
         ca-certificates \
         curl \
+        gzip \
     ; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
@@ -27,12 +27,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='5b222fce0b7076a10ac7ae3b1009a6c2caf4f35bc4e81de72010af6750c5e146'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.13-ca-jdk26.0.2-linux_aarch64.tar.gz'; \
+         ESUM='8ff07320636ef5b30f0d7e16687932df52255c3ef3ffd920a6aae3723511ce7f'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.203-ca-jdk26.0.2.1-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='4b7c114917aebd0fc6284fc7111245d7747a4d9603bd12d86b384b1abc9d575d'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.13-ca-jdk26.0.2-linux_x64.tar.gz'; \
+         ESUM='c6b810ca659e3293205444f47ac4af163396fd6d025c51fd5f767e628b2ceede'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.203-ca-jdk26.0.2.1-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -53,7 +53,7 @@ RUN set -eux; \
        --output /opt/jre;
 
 
-FROM dhi.io/debian-base:trixie-debian13-dev AS image
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:9b025768946856e44f9775005eb199f2e1820484ea27bb5c8bcbb187b80464dc AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -68,7 +68,6 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy --no-install-recommends install passwd; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
-    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         ca-certificates \
         curl \
@@ -81,7 +80,6 @@ RUN set -ex; \
         libheif1 \
         libjpeg62-turbo \
         liblcms2-2 \
-        libopenexr-3-1-30 \
         libopenjp2-7 \
         libpng16-16 \
         librsvg2-2 \
@@ -108,7 +106,7 @@ RUN set -ex; \
     chown -R penpot:penpot /opt/data;
 
 COPY --from=build /opt/jre /opt/jre
-COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-32 /opt/imagick /opt/imagick
 
 COPY files/imagemagick-policy.xml /opt/imagick/etc/ImageMagick-7/policy.xml
 

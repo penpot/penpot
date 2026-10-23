@@ -81,6 +81,11 @@ services:
       - PENPOT_DATABASE_PASSWORD=${PENPOT_DATABASE_PASSWORD}
       - PENPOT_DATABASE_MAX_POOL_SIZE=${PENPOT_DATABASE_MAX_POOL_SIZE}
       - PENPOT_REDIS_URI=${PENPOT_REDIS_URI}
+      # Per-instance backend-test config. Values come from
+      # instance-env-overrides in manage.sh; the main database above stays
+      # shared by all instances on purpose.
+      - PENPOT_TEST_DATABASE_URI=${PENPOT_TEST_DATABASE_URI}
+      - PENPOT_TEST_REDIS_URI=${PENPOT_TEST_REDIS_URI}
       - PENPOT_OBJECTS_STORAGE_BACKEND=${PENPOT_OBJECTS_STORAGE_BACKEND}
       - PENPOT_OBJECTS_STORAGE_S3_ENDPOINT=${PENPOT_OBJECTS_STORAGE_S3_ENDPOINT}
       - PENPOT_OBJECTS_STORAGE_S3_BUCKET=${PENPOT_OBJECTS_STORAGE_S3_BUCKET}
@@ -93,7 +98,7 @@ services:
 
       # Agentic devenv: set to a PyPI release version/tag to update Serena on startup,
       # leave empty to skip update and use the version baked into the image.
-      - SERENA_UPDATE_VERSION=1.6.1
+      - SERENA_UPDATE_VERSION=
       - SHADOW_SERVER_URL=${SHADOW_SERVER_URL}
 
     networks:

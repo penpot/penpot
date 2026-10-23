@@ -1,4 +1,4 @@
-FROM dhi.io/nginx:1.31.1-debian13-dev
+FROM dhi.io/nginx:1.31.7-debian13-dev@sha256:940ee353dd807f5c5e32720923bb9b34ef9e631ae567320f3eaea7797d6c7964
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,7 +7,6 @@ USER root
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" --no-install-recommends install bash gettext-base passwd; \
     rm -rf /var/lib/apt/lists/*; \
     groupadd -f -g 1001 penpot; \
@@ -27,10 +26,19 @@ COPY ./files/nginx.conf.template /tmp/nginx.conf.template
 COPY ./files/nginx-resolvers.conf.template /tmp/resolvers.conf.template
 COPY ./files/nginx-admin-console-locations.conf.template /tmp/nginx-admin-console-locations.conf.template
 COPY ./files/nginx-mcp-locations.conf.template /tmp/nginx-mcp-locations.conf.template
-COPY ./files/nginx-security-headers.conf /etc/nginx/nginx-security-headers.conf
+COPY ./files/nginx-security-headers.conf.template /tmp/nginx-security-headers.conf.template
 COPY ./files/nginx-mime.types /etc/nginx/mime.types
 COPY ./files/nginx-external-locations.conf /etc/nginx/overrides/location.d/external-locations.conf
 COPY ./files/nginx-entrypoint.sh /entrypoint.sh
+
+# The CSP hashes of the inline scripts of index.html are emitted by the
+# frontend build. Move them out of the document root: nginx must read them,
+# the browser has no reason to.
+RUN if [ -f /var/www/app/csp-script-hashes.txt ]; then \
+        mv /var/www/app/csp-script-hashes.txt /etc/nginx/csp-script-hashes.txt; \
+    else \
+        echo "WARNING: the frontend bundle does not provide csp-script-hashes.txt" >&2; \
+    fi
 
 RUN chown -R 1001:0 /var/cache/nginx; \
     chmod -R g+w /var/cache/nginx; \
