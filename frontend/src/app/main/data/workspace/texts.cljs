@@ -22,6 +22,7 @@
    [app.common.types.fills :as types.fills]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.text :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
@@ -1617,9 +1618,6 @@
              (rx/catch on-clipboard-error))
         (rx/empty)))))
 
-;; Bigger HTML is pasted as plain text rather than walked.
-(def ^:private max-paste-html-length 1000000)
-
 (defn payload-content
   "The content of a Penpot text `payload` without what the current file cannot reach.
    A payload without team counts as coming from the current team."
@@ -1636,7 +1634,10 @@
   [text]
   (when (str/starts-with? (str/trim (or text "")) "{")
     (let [data (ex/ignoring (t/decode-str text))]
-      (when (and (map? data) (= :copied-shapes (:type data)))
+      (when (and (map? data)
+                 (= :copied-shapes (:type data))
+                 (map? (:objects data))
+                 (set? (:selected data)))
         data))))
 
 (defn copied-text-geometry
@@ -1660,22 +1661,30 @@
       (mapv #(mapv (constantly nil) (:children %))
             (-> content :children first :children))))
 
+(defn- pasteable-text?
+  "True when a copied text shape, which other apps or plugins may have written, can
+   be pasted into the text editor."
+  [{:keys [x y content]}]
+  (and (number? x) (number? y) (cts/valid-content? content)))
+
 (defn- copied-shapes->payload
   "A text payload joining the content of the copied text shapes, top to bottom and
-   left to right; nil when none of the copied shapes is a text."
+   left to right; nil when none of the copied shapes is a text or it is not valid."
   [{:keys [objects selected file-id team-id text-geometry]}]
   (let [texts (->> selected
                    (keep #(get objects %))
-                   (filter cfh/text-shape?)
-                   (sort-by (juxt :y :x)))]
-    (when (seq texts)
-      (cond-> {:file-id file-id
-               :team-id team-id
-               :content (assoc-in (:content (first texts))
-                                  [:children 0 :children]
-                                  (into [] (mapcat #(-> % :content :children first :children)) texts))}
-        (some? text-geometry)
-        (assoc :geometry {:origins (into [] (mapcat (partial text-origins text-geometry)) texts)})))))
+                   (filter cfh/text-shape?))]
+    (when (and (seq texts) (every? pasteable-text? texts))
+      (let [texts   (sort-by (juxt :y :x) texts)
+            payload (cond-> {:file-id file-id
+                             :team-id team-id
+                             :content (assoc-in (:content (first texts))
+                                                [:children 0 :children]
+                                                (into [] (mapcat #(-> % :content :children first :children)) texts))}
+                      (some? text-geometry)
+                      (assoc :geometry {:origins (into [] (mapcat (partial text-origins text-geometry)) texts)}))]
+        (when (text-clipboard/valid-payload? payload)
+          payload)))))
 
 (defn- penpot-paste
   [state payload]
@@ -1700,7 +1709,7 @@
       (some->> (copied-shapes->payload shapes) (penpot-paste state))
 
       :else
-      (when-let [fragment (or (when (and html-paste? (< 0 (count html) max-paste-html-length))
+      (when-let [fragment (or (when (and html-paste? (< 0 (count html) text-clipboard/max-paste-html-length))
                                 (some-> (text-clipboard/html->fragment html)
                                         (text-clipboard/without-overrides)))
                               (text-clipboard/text->fragment text))]
