@@ -99,7 +99,7 @@
                         (cond-> (and (some? row) (some? column))
                           (-> (ctsl/push-into-cell [(:id first-shape)] row column)
                               (ctsl/assign-cells objects)))))
-                  {:with-objects? true})
+                  {:with-objects? true :ignore-touched true})
                  (pcb/reorder-grid-children [(:parent-id first-shape)])))
            changes)
 

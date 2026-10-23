@@ -22,6 +22,10 @@
    [app.common.logic.variants :as clv]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.comp.setups :as setups]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -33,6 +37,18 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest swapping-a-grid-child-keeps-the-parent-cells-untouched
+  (let [initial (setups/grid-component-with-copy)
+        swapped (-> initial (r/step (n/swap-shape :copy-child1 :other)) r/settle)
+        parent (tm/resolve-shape swapped :grid-copy)
+        moved (-> swapped (r/step (n/move-to-cell :grid-root :child1 1 3)) r/settle)
+        final-parent (tm/resolve-shape moved :grid-copy)
+        child-id (:id (tm/resolve-shape moved :copy-child1))
+        cell (first (filter #(some #{child-id} (:shapes %)) (vals (:layout-grid-cells final-parent))))]
+    (t/is (nil? (:touched parent)))
+    (t/is (= (:layout-grid-cells (tm/resolve-shape initial :grid-copy)) (:layout-grid-cells parent)))
+    (t/is (= 3 (:column cell)))))
 
 (defn- setup
   []
