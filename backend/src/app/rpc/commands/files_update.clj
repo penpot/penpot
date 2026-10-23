@@ -273,7 +273,13 @@
                                changes skip-validate))
 
           deleted-at
-          (ct/plus timestamp (ct/duration {:hours 1}))]
+          (ct/plus timestamp (ct/duration {:hours 1}))
+
+          ;; The id of the change row (xlog) goes to the audit event
+          ;; too: the reactions of the events consumer need to know what
+          ;; the save changed, and that row is the only place with it.
+          file-change-id
+          (uuid/next)]
 
       (when-let [file (::snapshot file)]
         (let [deleted-at (ct/plus timestamp (ldel/get-deletion-delay team))
@@ -289,7 +295,7 @@
       ;; Insert change (xlog) with deleted_at in a future data for
       ;; make them automatically eleggible for GC once they expires
       (db/insert! conn :file-change
-                  {:id (uuid/next)
+                  {:id file-change-id
                    :session-id session-id
                    :profile-id profile-id
                    :created-at timestamp
@@ -317,6 +323,9 @@
           :features    (:features file)
           :project-id  (:project-id file)
           :team-id     (:team-id file)
+          ;; The id of the change row inserted above: what the save
+          ;; changed lives in that row, not in the event.
+          :file-change-id file-change-id
           ;; NOTE: `file` carries the post-update revn here (`revn`
           ;; above is the pre-update one kept for the response), and
           ;; `modified-at` mirrors `persist-file!`: same `::timestamp`
