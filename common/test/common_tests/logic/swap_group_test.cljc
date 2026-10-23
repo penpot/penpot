@@ -805,3 +805,19 @@
         head (tm/resolve-shape swapped :copy-star)]
     (t/is (mth/close? 45 (:rotation head) 0.001))
     (t/is (= #{:swap-group} (:touched head)))))
+
+(t/deftest removing-the-last-swap-group-leaves-no-empty-override-field
+  (let [shape {:touched #{:swap-group}}]
+    (t/is (not (contains? (ctk/remove-swap-group shape) :touched)))
+    (t/is (= #{:geometry-group}
+             (:touched (ctk/remove-swap-group (assoc shape :touched #{:swap-group :geometry-group})))))))
+
+(t/deftest moving-a-swapped-subtree-pushed-into-a-main-undoes-exactly
+  (let [updated (-> (tm/make-situation (setup))
+                    (r/step (n/update-main :copy)) r/settle)
+        file (tm/file updated)
+        head (tm/shape-by-id updated (:shape-ref (tm/resolve-shape updated :copy-star)))
+        moved (-> updated (r/step (n/nest-copy (constantly (:id head)) :star-main)) r/settle)
+        undone (r/step moved (n/undo))]
+    (t/is (nil? (:touched head)))
+    (t/is (= (thn/normalize-file file) (thn/normalize-file (tm/file undone))))))

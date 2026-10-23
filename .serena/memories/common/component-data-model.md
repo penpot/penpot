@@ -61,3 +61,8 @@ A variant container is a frame with `:is-variant-container true`. Its children a
 Predicates are broad: `ctk/is-variant?` checks `:variant-id` and applies to both variant master shapes and component rows; `ctk/is-variant-container?` checks the container shape flag.
 
 Moving/dropping a shape into a variant container through the move-to-frame path can auto-convert it into a variant via `generate-make-shapes-variant`, which may duplicate the underlying component. Treat drag/drop into variant containers as a component/variant operation, not a plain reparent.
+
+- `ctk/remove-swap-group` removes `:touched` when it removes the final group.
+  New main clones must use the same empty-state representation as
+  `process-operation :set-touched`; otherwise a later move+undo changes
+  `:touched #{}` to a missing field and cannot restore the exact state (F156).
