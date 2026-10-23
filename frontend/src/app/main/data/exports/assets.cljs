@@ -10,6 +10,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
+   [app.main.data.exports.selection :as selection]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -102,11 +103,16 @@
   [exports]
   (mapv normalize-export exports))
 
+(defn- server-export
+  [export]
+  ;; The editor uses these only for local rendering and selection state.
+  (dissoc (normalize-export export) :shape :enabled))
+
 (defn- normalize-export-shapes-params
   [{:keys [exports] :as params}]
   (cond-> params
     (seq exports)
-    (assoc :exports (normalize-exports exports))))
+    (assoc :exports (mapv server-export exports))))
 
 (defn toggle-detail-visibililty
   []
@@ -524,14 +530,15 @@
             failed-s    (rx/subject)
             profile-id  (:profile-id state)
             ws-conn     (:ws-conn state)
-            params      (cond->
-                         {:exports exports
-                          :cmd cmd
-                          :profile-id profile-id
-                          :force-multiple true
-                          :is-wasm (wasm-export-enabled? state)}
-                          (some? name)
-                          (assoc :name name))
+            params      (normalize-export-shapes-params
+                         (cond->
+                          {:exports exports
+                           :cmd cmd
+                           :profile-id profile-id
+                           :force-multiple true
+                           :is-wasm (wasm-export-enabled? state)}
+                           (some? name)
+                           (assoc :name name)))
 
             progress-stream
             (->> (ws/get-rcv-stream ws-conn)
@@ -629,3 +636,36 @@
                      {::ev/name "export-shapes"
                       ::ev/origin origin
                       :num-shapes (count exports)}))))
+
+(defn export-selected-shapes
+  [{:keys [origin]}]
+  (ptk/reify ::export-selected-shapes
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (dsh/lookup-selected state)
+            shapes   (dsh/lookup-shapes state selected)
+            plan     (selection/plan-export shapes
+                                            (:current-file-id state)
+                                            (:current-page-id state)
+                                            (get-in state [:export :in-progress]))]
+        (case (:status plan)
+          :empty-selection (rx/of (ntf/info (tr "workspace.export-selection.empty")))
+          :missing-settings (rx/of (ntf/info (tr "workspace.export-selection.no-settings")))
+          :busy (rx/of (ntf/info (tr "workspace.export-selection.busy")))
+          :ready
+          (let [exports (:exports plan)
+                ;; The server's single-file path expects the full name.
+                ;; The WASM worker and batch exports append the suffix themselves.
+                exports (cond-> exports
+                          (and (= 1 (count exports))
+                               (not (wasm-export-enabled? state)))
+                          (update-in [0 :name] str (:suffix (first exports))))
+                request (request-export {:exports exports
+                                         :name (:name (dsh/lookup-page state))})]
+            (rx/concat
+             ;; Reserve the batch slot before the asynchronous job is created.
+             ;; Single-file exports manage their own lifecycle (including WASM).
+             (if (> (count exports) 1)
+               (rx/of #(assoc % :export {:in-progress true}))
+               (rx/empty))
+             (rx/of request (export-shapes-event exports origin)))))))))
