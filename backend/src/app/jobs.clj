@@ -281,11 +281,24 @@
 ;; SUBMIT API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; The `exclusive` column marks the jobs whose key (tenant, name, queue,
+;; label) admits a single live row. The insert resolves the exclusivity
+;; in the database: the conflict target is the partial unique index
+;; `job__live_exclusive__uniq`, whose predicate is the set of live
+;; statuses. A conflicting insert affects no row and the submit reports
+;; it as skipped.
+;;
+;; The conflict target repeats the index predicate on purpose: that is
+;; how PostgreSQL infers a partial unique index.
 (def ^:private sql:insert-new-job
   "insert into job (id, name, tenant, params, queue, label, priority,
                     max_retries, profile_id, resource_id, expires_at,
-                    created_at, modified_at, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    created_at, modified_at, scheduled_at, exclusive)
+   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       on conflict (tenant, name, queue, label)
+           where exclusive
+             and status in ('new', 'scheduled', 'running', 'retry')
+       do nothing
    returning id")
 
 ;; `tenant` is part of the match, not an extra: without it this DELETE
@@ -300,18 +313,11 @@
       AND status = 'new'
       AND scheduled_at > ?")
 
-;; The cron no-overlap check and the skip-if-active submit option share
-;; this shape: both look for jobs of one tenant with the same name, queue
-;; and label that have not reached a terminal state yet. The
-;; `job__name_label__idx` partial index serves both queries.
-(def ^:private sql:count-active-jobs
-  "SELECT count(*) AS n
-     FROM job
-    WHERE name = ?
-      AND tenant = ?
-      AND queue = ?
-      AND label = ?
-      AND status IN ('new', 'scheduled', 'running', 'retry')")
+;; The `job__name_label__idx` partial index serves the dedupe delete: it
+;; looks for the not-started jobs of one tenant with the same name, queue
+;; and label. The exclusivity of the live jobs is not checked here (it is
+;; not checked at all): the unique index of the live exclusive jobs
+;; decides it when the row is inserted.
 
 (def ^:private schema:options
   [:map {:title "submit-options"}
@@ -361,21 +367,33 @@
   `::expires-at`) are validated and stored as columns; nothing is inferred
   from `params`.
 
-  With `::skip-if-active`, the insert is skipped (and `nil` returned)
-  when a live job (`new`, `scheduled`, `running` or `retry`) already
-  exists for the same tenant, name, queue and label. The check and the
-  insert share one transaction. A skip deletes nothing and inserts
-  nothing; it records a skipped metric instead of a submitted one, so
-  dashboards can tell withheld work apart from new work. The option
-  needs an explicit non-blank `::label`, otherwise it raises.
+  With `::skip-if-active`, the row is inserted as exclusive: the
+  database admits a single live row (a `new`, `scheduled`, `running` or
+  `retry` one) per tenant, name, queue and label, and the insert is
+  skipped (and `nil` returned) when there is already one. The decision
+  is the unique index `job__live_exclusive__uniq`, so it holds across
+  backends and does not depend on a check racing an insert. A skip
+  inserts nothing and records a skipped metric instead of a submitted
+  one, so dashboards can tell withheld work apart from new work. The
+  option needs an explicit non-blank `::label`, otherwise it raises:
+  the label is the key of the exclusion.
+
+  The exclusion is between the jobs that asked for it: a live job that
+  was not submitted as exclusive (a webhook delivery, a notification)
+  does not block an exclusive submit, and two such jobs can share a
+  label. That is why the flag is a column and not a rule about the
+  label: the label stays a label.
+
+  The two options can be combined, and the dedupe delete runs first: it
+  replaces the pending job of the key, and the exclusivity still
+  refuses the insert when a job of the key is already in flight.
 
   NOTE: the dedupe DELETE and the INSERT run atomically: joined to
   the caller's transaction when the cfg provides `::db/conn`, wrapped
   in their own transaction otherwise. Concurrent cross-backend
   submissions can, in rare race conditions, produce duplicated 'new'
-  rows (accepted risk, see prod-infra documentation). The same caveat
-  covers the skip-if-active check: a race between backends can slip
-  two inserts past the count."
+  rows (accepted risk, see prod-infra documentation). The exclusive
+  insert has no such caveat: the unique index decides it."
   [cfg {:keys [::params ::name ::delay ::queue ::priority ::max-retries
                ::dedupe ::skip-if-active ::label
                ::profile-id ::resource-id ::expires-at]
@@ -418,14 +436,8 @@
         ;; between backends could create duplicates, but this is
         ;; acceptable: cross-backend races are rare, jobs are idempotent,
         ;; and dedupe is best-effort.
-        ;; Skip-if-active is best-effort like dedupe: the count and the
-        ;; insert share this transaction, but a race between backends
-        ;; can still slip two inserts past the count.
-        active?      (fn [conn]
-                       (when skip-if-active
-                         (pos? (or (:n (db/exec-one! conn [sql:count-active-jobs
-                                                           job-name tenant queue label]))
-                                   0))))
+        ;; The exclusive insert has no such caveat: the unique index of
+        ;; the live exclusive jobs decides it, in the database.
         insert!      (fn [conn]
                        (let [deleted (when dedupe
                                        ;; the DELETE below is intentional:
@@ -442,20 +454,28 @@
                                 :queue queue
                                 :label label
                                 :dedupe (boolean dedupe)
+                                :exclusive (boolean skip-if-active)
                                 :delay (ct/format-duration delay)
                                 :replace (or deleted 0))
                          (db/exec-one! conn [sql:insert-new-job id job-name tenant payload queue
                                              label priority max-retries
                                              profile-id resource-id expires-at
-                                             now now scheduled-at])))]
+                                             now now scheduled-at
+                                             (boolean skip-if-active)])))]
     ;; Both statements always run inside db/tx-run!: joined to the
     ;; caller's transaction when the cfg provides a connection,
     ;; wrapped in their own otherwise (a failed INSERT can never
     ;; orphan a committed DELETE, even on an autocommit caller conn).
-    ;; A skip returns nil: no DELETE, no INSERT, no submitted metric.
+    ;; The insert is what decides: an exclusive insert that finds a
+    ;; live row with the same key affects no row, and that is the skip.
+    ;; A skip returns nil: no row inserted, no submitted metric.
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn]}]
-                  (if (active? conn)
+                  (if-let [result (insert! conn)]
+                    (do (db/after-commit
+                         #(metrics/record-submitted cfg job-name queue))
+                        result
+                        id)
                     (do (db/after-commit
                          #(metrics/record-skipped cfg job-name queue))
                         (l/trc :hint "submit skipped, active job exists"
@@ -463,12 +483,8 @@
                                :tenant tenant
                                :queue queue
                                :label label
-                               :skipped true))
-                    (let [result (insert! conn)]
-                      (db/after-commit
-                       #(metrics/record-submitted cfg job-name queue))
-                      result
-                      id))))))
+                               :skipped true)
+                        nil))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB API

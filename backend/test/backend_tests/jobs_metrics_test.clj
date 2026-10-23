@@ -151,12 +151,13 @@
         cfg     {::jobs/defs   defs
                  ::db/pool     th/*pool*
                  ::mtx/metrics metrics}
-        _       (jobs/submit cfg {::jobs/name   :echo
-                                  ::jobs/params {}
-                                  ::jobs/label  "skip-metric"})
-        skipped (jobs/submit cfg {::jobs/name   :echo
-                                  ::jobs/params {}
-                                  ::jobs/label  "skip-metric"
+        _       (jobs/submit cfg {::jobs/name          :echo
+                                  ::jobs/params        {}
+                                  ::jobs/label         "skip-metric"
+                                  ::jobs/skip-if-active true})
+        skipped (jobs/submit cfg {::jobs/name          :echo
+                                  ::jobs/params        {}
+                                  ::jobs/label         "skip-metric"
                                   ::jobs/skip-if-active true})]
     (t/is (nil? skipped))
     (t/is (= 1.0 (counter-value metrics :jobs-skipped ["echo" "default"])))

@@ -56,6 +56,8 @@
              "id" "name" "tenant" "queue" "label" "priority" "scheduled_at"
              "retry_num" "max_retries" "status" "created_at" "modified_at"
              "started_at" "completed_at" "params"
+             ; the jobs that asked for the exclusivity of their key
+             "exclusive"
              ; optional ledger columns
              "profile_id" "error" "result"
              "resource_id" "expires_at"}
@@ -132,7 +134,8 @@
 (t/deftest job-table-has-expected-indexes
   (t/is (contains? (table-indexes "job") "job__dispatcher__idx"))
   (t/is (contains? (table-indexes "job") "job__orphan__idx"))
-  (t/is (contains? (table-indexes "job") "job__profile__idx")))
+  (t/is (contains? (table-indexes "job") "job__profile__idx"))
+  (t/is (contains? (table-indexes "job") "job__live_exclusive__uniq")))
 
 (defn- indexdef
   [index-name]
@@ -156,8 +159,20 @@
     (t/is (str/includes? (indexdef "job__orphan__idx") "(tenant, modified_at)")))
   (t/testing "reschedule of lost scheduled rows"
     (t/is (str/includes? (indexdef "job__scheduled__idx") "(tenant, scheduled_at)")))
-  (t/testing "cron no-overlap check and submit dedupe"
+  (t/testing "submit dedupe"
     (t/is (str/includes? (indexdef "job__name_label__idx") "(tenant, name, queue, label)"))))
+
+(t/deftest job-live-exclusive-index-admits-one-live-row-per-key
+  ;; The exclusion of the live jobs is the index, not a check that races
+  ;; an insert: it is unique, it covers the whole key, and it only
+  ;; holds the rows that asked for the exclusion.
+  (let [def (indexdef "job__live_exclusive__uniq")]
+    (t/is (str/includes? def "CREATE UNIQUE INDEX"))
+    (t/is (str/includes? def "(tenant, name, queue, label)"))
+    (t/is (str/includes? def "exclusive"))
+    (doseq [status ["new" "scheduled" "running" "retry"]]
+      (t/is (str/includes? def (str "'" status "'"))
+            (str "the live set covers the " status " status")))))
 
 (t/deftest job-table-has-sweep-path-indexes
   (t/testing "jobs-GC expiration scan"
