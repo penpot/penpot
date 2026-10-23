@@ -4,9 +4,11 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the modal placeholders (%modal-*, to move with the
+// modals refactor) and the input placeholder (%input-element-label, with the inputs).
 @use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_utils.scss" as *;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
@@ -21,20 +23,23 @@
 }
 
 .modal-title {
-  @include t.use-typography("headline-large");
+  @include use-typography("headline-large");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
+// Tooltip wrapper of the close button: it places it in the corner.
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
   margin-block-end: var(--sp-xxl);
   color: var(--color-foreground-secondary);
 
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 }
 
 .team-form {
@@ -52,24 +57,16 @@
   flex-direction: column;
   gap: var(--sp-xs);
   align-items: flex-start;
-  width: 100%;
+  inline-size: 100%;
   border: none;
   background-color: transparent;
-  height: 100%;
+  block-size: 100%;
 }
 
 .action-buttons {
   @extend %modal-action-btns;
 }
 
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
 .accept-btn {
   @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
 }
