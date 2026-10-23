@@ -2958,6 +2958,51 @@ fn exports_image_fill_on_text() {
 }
 
 #[test]
+fn exports_one_image_per_text_image_transform() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    let image = |x: f32| {
+        Fill::Image(ImageFill::new_with_transform(
+            image_id,
+            255,
+            200,
+            100,
+            true,
+            Some(ImageFillTransform {
+                x,
+                y: 0.0,
+                width: 0.5,
+                height: 1.0,
+            }),
+        ))
+    };
+    add_text_with_spans(
+        &mut pool,
+        id,
+        (0.0, 0.0, 400.0, 100.0),
+        60.0,
+        vec![("HO", vec![image(0.0)]), ("LA", vec![image(0.5)])],
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_eq!(svg.matches("<image").count(), 2, "{svg}");
+    assert!(
+        svg.contains(r#"x="0" y="0" width="200" height="100""#),
+        "{svg}"
+    );
+    assert!(
+        svg.contains(r#"x="200" y="0" width="200" height="100""#),
+        "{svg}"
+    );
+}
+
+#[test]
 fn exports_image_fill_as_linked_image() {
     let mut pool = ShapesPool::new();
     let id = uid(1);

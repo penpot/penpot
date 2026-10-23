@@ -123,12 +123,17 @@
             width (aget heap-i32 (+ fill-u32-offset 6))
             height (aget heap-i32 (+ fill-u32-offset 7))]
         {:fill-opacity (u8->opacity alpha)
-         :fill-image {:id (uuid/from-unsigned-parts a b c d)
-                      :width width
-                      :height height
-                      :mtype (types.fills.impl/decode-mtype mtype)
-                      :keep-aspect-ratio (not (zero? (bit-and flags 0x01)))
-                      :name "sample"}})
+         :fill-image (cond-> {:id (uuid/from-unsigned-parts a b c d)
+                              :width width
+                              :height height
+                              :mtype (types.fills.impl/decode-mtype mtype)
+                              :keep-aspect-ratio (not (zero? (bit-and flags 0x01)))
+                              :name "sample"}
+                       (not (zero? (bit-and flags 0x02)))
+                       (assoc :transform {:x      (aget heap-f32 (+ fill-u32-offset 8))
+                                          :y      (aget heap-f32 (+ fill-u32-offset 9))
+                                          :width  (aget heap-f32 (+ fill-u32-offset 10))
+                                          :height (aget heap-f32 (+ fill-u32-offset 11))}))})
 
       nil)))
 

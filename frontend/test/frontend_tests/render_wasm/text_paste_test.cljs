@@ -213,8 +213,8 @@
   (let [linear (gradient-fill {:start-x 0.25 :start-y 0 :end-x 0.75 :end-y 1})
         pasted (content [(span "HELLO" linear)])
         target (content [(span "abc") (span "HELLO" linear)])
-        result (text-paste/move-gradients target pasted {:para 0 :offset 3}
-                                          source-geometry target-geometry)]
+        result (text-paste/move-span-fills target pasted {:para 0 :offset 3}
+                                           source-geometry target-geometry)]
     (t/testing "points move into the target box at the same pixel offsets"
       (t/is (= {:start-x 0.1 :start-y 0.5 :end-x 1.1 :end-y 1}
                (select-keys (pasted-gradient result) [:start-x :start-y :end-x :end-y]))))
@@ -227,8 +227,8 @@
   (let [radial (gradient-fill {:type :radial :start-x 0.5 :start-y 0.5 :end-x 0.5 :end-y 1})
         pasted (content [(span "HELLO" radial)])
         target (content [(span "abc") (span "HELLO" radial)])
-        result (text-paste/move-gradients target pasted {:para 0 :offset 3}
-                                          source-geometry target-geometry)]
+        result (text-paste/move-span-fills target pasted {:para 0 :offset 3}
+                                           source-geometry target-geometry)]
     ;; 200x40 is 5:1 and 100x80 is 5:4, so the width grows 4 times.
     (t/is (= 4 (:width (pasted-gradient result))))))
 
@@ -238,12 +238,12 @@
         pasted (content [(span "red" red) (span "grad" linear)])
         target (content [(span "red" red) (span "grad" linear)])]
     (t/testing "a span with no origin keeps its gradient"
-      (t/is (= target (text-paste/move-gradients
+      (t/is (= target (text-paste/move-span-fills
                        target pasted {:para 0 :offset 0}
                        {:origins [[nil nil]]}
                        {:origins [[nil nil]]}))))
     (t/testing "an empty box leaves the gradients as they were"
-      (t/is (= target (text-paste/move-gradients
+      (t/is (= target (text-paste/move-span-fills
                        target pasted {:para 0 :offset 0}
                        {:origins [[nil {:x 0 :y 0 :box source-box}]]}
                        {:origins [[nil {:x 0 :y 0 :box {:width 0 :height 80}}]]}))))))
@@ -256,9 +256,34 @@
                           [{:x 0 :y 0 :box {:width 200 :height 40}}]]}
         target {:origins [[{:x 0 :y 0 :box {:width 400 :height 80}}]
                           [{:x 0 :y 40 :box {:width 400 :height 80}}]]}
-        result (text-paste/move-gradients pasted pasted {:para 0 :offset 0} source target)
+        result (text-paste/move-span-fills pasted pasted {:para 0 :offset 0} source target)
         points #(select-keys (-> % :fills first :fill-color-gradient)
                              [:start-x :start-y :end-x :end-y])]
     (t/is (= [{:start-x 0.125 :start-y 0 :end-x 0.125 :end-y 0.25}
               {:start-x 0.25 :start-y 0.5 :end-x 0.25 :end-y 1}]
              (map (comp points first) (spans-of result))))))
+
+;; --- Images
+
+(defn- image-fill [image]
+  {:fills [{:fill-image (merge {:id #uuid "00000000-0000-0000-0000-000000000042"
+                                :width 400 :height 200 :mtype "image/png"}
+                               image)}]})
+
+(defn- pasted-image-transform [content]
+  (-> (spans-of content) first second :fills first :fill-image :transform))
+
+(t/deftest images-keep-their-offset-from-the-span
+  (let [move (fn [image]
+               (let [fill (image-fill image)]
+                 (pasted-image-transform
+                  (text-paste/move-span-fills (content [(span "abc") (span "HELLO" fill)])
+                                              (content [(span "HELLO" fill)])
+                                              {:para 0 :offset 3}
+                                              source-geometry target-geometry))))]
+    (t/testing "an image over the whole source box gets a transform over the same pixels"
+      (t/is (= {:x -0.4 :y 0.5 :width 2 :height 0.5}
+               (move {}))))
+    (t/testing "an image with a transform keeps its pixel rect"
+      (t/is (= {:x 0.1 :y 0.5 :width 1 :height 0.5}
+               (move {:transform {:x 0.25 :y 0 :width 0.5 :height 1}}))))))

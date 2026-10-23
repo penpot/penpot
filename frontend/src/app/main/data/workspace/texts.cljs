@@ -1708,8 +1708,8 @@
          :fragment fragment}))))
 
 (defn- target-geometry
-  "Where the gradient spans of `pasted`, inserted at `start`, begin in `shape` with
-   `content`, laid over the box it gets once resized to its text; nil when none."
+  "Where the gradient and image spans of `pasted`, inserted at `start`, begin in `shape`
+   with `content`, laid over the box it gets once resized to its text; nil when none."
   [{:keys [id grow-type]} content pasted start]
   (when-let [geometry (wasm.text-editor/content-geometry id pasted start)]
     (if (= :fixed grow-type)
@@ -1728,23 +1728,23 @@
                                      :height height}))))]
         (update geometry :origins (partial mapv (partial mapv #(some-> % fit))))))))
 
-(defn- move-pasted-gradients
-  "`content`, the shape's after restyling the paste, with the pasted gradients
-   keeping their place on their spans. Pushes the result to WASM."
+(defn- move-pasted-fills
+  "`content`, the shape's after restyling the paste, with the pasted gradients and
+   images keeping their place on their spans. Pushes the result to WASM."
   [shape content {:keys [geometry] :as paste} start]
   (let [pasted (:content paste)
         target (when (some? geometry) (target-geometry shape content pasted start))]
     (if (some? target)
-      (let [content (text-paste/move-gradients content pasted start geometry target)]
+      (let [content (text-paste/move-span-fills content pasted start geometry target)]
         (wasm.api/set-shape-text-content (:id shape) content)
         content)
       content)))
 
-(defn move-new-text-gradients
-  "Event moving the gradients of `payload`, just pasted on the canvas as the text
-   `id`, so they keep their place on their spans."
+(defn move-new-text-fills
+  "Event moving the gradients and images of `payload`, just pasted on the canvas as the
+   text `id`, so they keep their place on their spans."
   [id {:keys [geometry]}]
-  (ptk/reify ::move-new-text-gradients
+  (ptk/reify ::move-new-text-fills
     ptk/WatchEvent
     (watch [_ state _]
       (let [{:keys [content] :as shape} (dsh/lookup-shape state id)
@@ -1756,7 +1756,7 @@
         (if (some? target)
           (rx/of (dwsh/update-shapes
                   [id]
-                  #(update % :content text-paste/move-gradients content start geometry target)
+                  #(update % :content text-paste/move-span-fills content start geometry target)
                   {:attrs #{:content}}))
           (rx/empty))))))
 
@@ -1781,7 +1781,7 @@
         (wasm.text-editor/text-editor-sync-content)
         (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start penpot?)]
           (let [shape (dsh/lookup-shape state shape-id)]
-            (v3-update-editor-content shape-id (move-pasted-gradients shape content paste start)))
+            (v3-update-editor-content shape-id (move-pasted-fills shape content paste start)))
           (v3-sync-editor-content)))
 
       pending?
