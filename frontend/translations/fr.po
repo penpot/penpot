@@ -1,8 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-10-15 08:51+0000\n"
-"Last-Translator: Philippe Accorsi "
-"<philippeaccorsi@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-10-24 06:51+0000\n"
+"Last-Translator: imagoiq <imagoiq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -667,7 +666,7 @@ msgstr "Dernière modification %s"
 
 #: src/app/main/ui/dashboard/import.cljs:995, src/app/main/ui/dashboard/project_menu.cljs:110
 msgid "dashboard.import"
-msgstr "Importer fichiers"
+msgstr "Importer des fichiers Penpot"
 
 #: src/app/main/ui/dashboard/import.cljs:343, src/app/worker/import.cljs:144, src/app/worker/import.cljs:147
 msgid "dashboard.import.analyze-error"
