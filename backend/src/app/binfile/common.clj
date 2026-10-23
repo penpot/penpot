@@ -200,14 +200,13 @@
           f.is_shared,
           f.has_media_trimmed,
           f.revn,
-          f.data AS legacy_data,
           f.ignore_sync_until,
           f.comment_thread_seqn,
           f.features,
           f.version,
           f.vern,
           p.team_id,
-          coalesce(fd.backend, 'legacy-db') AS backend,
+          coalesce(fd.backend, 'db') AS backend,
           fd.metadata AS metadata,
           fd.data AS data
      FROM file AS f

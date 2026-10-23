@@ -50,6 +50,7 @@
   "Retrieve a file bundle with data from a specific snapshot for
   read-only preview. Does not modify any database state."
   {::doc/added "2.16"
+   ::doc/changes [["2.19" "An unknown snapshot is reported with the :snapshot-not-found error code"]]
    ::sm/params schema:get-file-snapshot
    ::sm/result files/schema:file-with-permissions
    ::db/transaction true}
@@ -151,28 +152,32 @@
 
 (def ^:private schema:update-file-snapshot
   [:map {:title "update-file-snapshot"}
+   [:file-id ::sm/uuid]
    [:id ::sm/uuid]
    [:label ::sm/text]])
 
 (sv/defmethod ::update-file-snapshot
   {::doc/added "1.20"
+   ::doc/changes [["2.19" "The :file-id param is now required"]]
    ::sm/params schema:update-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id label]}]
-  (let [snapshot (fsnap/get-minimal-snapshot conn id)]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id label]}]
+  (let [snapshot (fsnap/get-minimal-snapshot conn file-id id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
     (fsnap/update! conn (assoc snapshot :label label))))
 
 (def ^:private schema:remove-file-snapshot
   [:map {:title "remove-file-snapshot"}
+   [:file-id ::sm/uuid]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-file-snapshot
   {::doc/added "1.20"
+   ::doc/changes [["2.19" "The :file-id param is now required"]]
    ::sm/params schema:remove-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
-  (let [snapshot (fsnap/get-minimal-snapshot conn id)]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id]}]
+  (let [snapshot (fsnap/get-minimal-snapshot conn file-id id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
     (when (not= (:created-by snapshot) "user")
@@ -200,14 +205,16 @@
 
 (def ^:private schema:lock-file-snapshot
   [:map {:title "lock-file-snapshot"}
+   [:file-id ::sm/uuid]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::lock-file-snapshot
   {::doc/added "1.20"
+   ::doc/changes [["2.19" "The :file-id param is now required"]]
    ::sm/params schema:lock-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
-  (let [snapshot (fsnap/get-minimal-snapshot conn id)]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id]}]
+  (let [snapshot (fsnap/get-minimal-snapshot conn file-id id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
     (when (not= (:created-by snapshot) "user")
@@ -235,18 +242,20 @@
                 :profile-id profile-id
                 :locked-by (:locked-by snapshot)))
 
-    (fsnap/lock-by! conn id profile-id)))
+    (fsnap/lock-by! conn (:file-id snapshot) id profile-id)))
 
 (def ^:private schema:unlock-file-snapshot
   [:map {:title "unlock-file-snapshot"}
+   [:file-id ::sm/uuid]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::unlock-file-snapshot
   {::doc/added "1.20"
+   ::doc/changes [["2.19" "The :file-id param is now required"]]
    ::sm/params schema:unlock-file-snapshot
    ::db/transaction  true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
-  (let [snapshot (fsnap/get-minimal-snapshot conn id)]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id]}]
+  (let [snapshot (fsnap/get-minimal-snapshot conn file-id id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
     (when (not= (:created-by snapshot) "user")
@@ -273,4 +282,4 @@
                 :snapshot-id id
                 :profile-id profile-id))
 
-    (fsnap/unlock! conn id)))
+    (fsnap/unlock! conn (:file-id snapshot) id)))
