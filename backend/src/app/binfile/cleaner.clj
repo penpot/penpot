@@ -133,6 +133,9 @@
       (d/update-when :objects d/update-vals clean-shape-post-decode)))
 
 (defn clean-file
+  "Post-decode shape fixes plus nil cleanup. Does not sanitize: the
+  single canonical sanitize pass lives in file-gc/get-file, before
+  migration; this function's only caller is file-gc/repair-file."
   [file & {:as _opts}]
   (update file :data
           (fn [data]

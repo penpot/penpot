@@ -20,6 +20,7 @@
    [app.common.pprint :as pp]
    [app.common.time :as ct]
    [app.common.transit :as t]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -507,8 +508,13 @@
 
     (db/tx-run! (assoc cfg ::db/rollback true)
                 (fn [cfg]
-                  (let [file (bfc/get-file cfg file-id)
-                        libs (bfc/get-resolved-file-libraries cfg file-id)]
+                  ;; Realize before sanitizing, like the libraries
+                  ;; loader does: an unresolved PointerMap throws on
+                  ;; first touch without a bound *load-fn*.
+                  (let [file (some-> (bfc/get-file cfg file-id :realize? true)
+                                     (update :data ctf/sanitize-file-data))
+                        libs (when file
+                               (bfc/get-resolved-file-libraries cfg file))]
                     (if file
                       (let [errors (cfv/validate-file file libs)]
                         {::yres/status  200
@@ -534,7 +540,14 @@
 
           repair-file
           (fn [file libs _]
-            (let [errors (cfv/validate-file file libs)]
+            ;; Sanitize like the validate endpoint does: the single
+            ;; pass fixes the production corruption families
+            ;; (unconverted types, nil page entries) before the
+            ;; cfr pass decides and heals. The data is already
+            ;; realized by h/process-file!, so there is no
+            ;; PointerMap risk here.
+            (let [file   (update file :data ctf/sanitize-file-data)
+                  errors (cfv/validate-file file libs)]
               (.append output (if (empty? errors)
                                 "NO VALIDATION ERRORS FOUND\n"
                                 (str "VALIDATION ERRORS FOUND:\n"

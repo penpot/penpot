@@ -17,8 +17,10 @@
    validated."
   (:require
    [app.common.files.validate :as cfv]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
@@ -447,3 +449,40 @@
             (t/is (= :validation (:type data)))
             (t/is (= :referential-integrity (:code data)))
             (t/is (seq (:details data)))))))))
+
+;; ----------------------------------------------------------------
+;; 11. check-component-ref – copy roots without :shape-ref
+;; ----------------------------------------------------------------
+
+(defn- dissoc-copy-shape-ref
+  "Remove :shape-ref from the copy root shape. Instance heads
+  legitimately carry none (see get-ref-shape), so this mirrors the
+  stored shape instead of crafting corruption."
+  [file copy-label]
+  (let [page    (thf/current-page file)
+        copy-id (thi/id copy-label)]
+    (ctf/update-file-data
+     file
+     (fn [file-data]
+       (ctpl/update-page file-data (:id page)
+                         (fn [p]
+                           (ctst/set-shape p (dissoc (ctst/get-shape p copy-id)
+                                                     :shape-ref))))))))
+
+(t/deftest validate-copy-without-shape-ref
+  (t/testing "a copy root without :shape-ref reports no :ref-shape-not-found"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root))
+          file   (dissoc-copy-shape-ref file :copy-root)
+          errors (cfv/validate-file file {})]
+      (t/is (empty? (filter #(= :ref-shape-not-found (:code %)) errors))
+            "nothing referenced, nothing to report"))))
+
+(t/deftest validate-copy-with-unknown-shape-ref
+  (t/testing "a copy root with a dangling :shape-ref still reports :ref-shape-not-found"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root))
+          file   (ths/update-shape file :copy-root :shape-ref (uuid/next))
+          errors (cfv/validate-file file {})]
+      (t/is (some #(= :ref-shape-not-found (:code %)) errors)
+            "the guard did not swallow dangling references"))))
