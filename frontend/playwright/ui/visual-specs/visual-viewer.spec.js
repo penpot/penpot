@@ -151,3 +151,35 @@ test("User opens Share modal", async ({ page }) => {
   ).toBeVisible();
   await expect(viewerPage.page).toHaveScreenshot();
 });
+
+test.describe("Comments filter", () => {
+  test("Shows the comments filter closed and open", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithComments();
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+    await viewerPage.showComments();
+
+    const trigger = page.getByTestId("viewer-comments-dropdown");
+    await expect(trigger).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Closed: the "Comments" trigger with its arrow.
+    await expect(trigger).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await trigger.click();
+    await expect(page.getByText("Show comments list")).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Open: the filter menu with the selected option ticked.
+    const menu = page.getByText("Show comments list").locator("../..");
+    await expect(menu).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
