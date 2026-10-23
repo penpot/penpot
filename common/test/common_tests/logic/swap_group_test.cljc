@@ -797,3 +797,11 @@
     (t/is (= (:shapes main) (mapv #(get-in objects [% :shape-ref]) (:shapes head))))
     (t/is (= (thn/normalize-file (tm/file initial))
              (thn/normalize-file (tm/file (r/step detached (n/undo))))))))
+
+(t/deftest plain-swap-does-not-author-the-positions-inherited-orientation
+  (let [rotated (-> (tm/make-situation (setup-sized))
+                    (r/step (n/rotate :card-star 45)) r/settle)
+        swapped (-> rotated (r/step (n/swap-shape :copy-star :heart)) r/settle)
+        head (tm/resolve-shape swapped :copy-star)]
+    (t/is (mth/close? 45 (:rotation head) 0.001))
+    (t/is (= #{:swap-group} (:touched head)))))

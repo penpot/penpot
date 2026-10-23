@@ -324,16 +324,20 @@
 (defn- keep-orientation-override
   "Retained orientation that differs from the new component's expected
    placement needs a geometry override to survive later sync."
-  [changes shape baseline page ldata component-id]
+  [changes shape baseline page ldata component-id position]
   (let [parent (get-in page [:objects (:parent-id shape)])
         main (ctf/get-component-root ldata (ctkl/get-component ldata component-id))
         main-parent (get-in (ctf/get-component-container ldata (ctkl/get-component ldata component-id))
                             [:objects (:parent-id main)])
-        parent-delta (if (:shape-ref parent) 0
+        baseline (or position baseline)
+        main-parent (if position
+                      (get-in (meta position) [:container :objects (:parent-id position)])
+                      main-parent)
+        parent-delta (if (and (:shape-ref parent) (nil? position)) 0
                          (- (or (:rotation parent) 0) (or (:rotation main-parent) 0)))
         rotation (mod (+ (or (:rotation baseline) 0) parent-delta) 360)
         flip (fn [key]
-               (if (:shape-ref parent)
+               (if (and (:shape-ref parent) (nil? position))
                  (boolean (get baseline key))
                  (odd? (count (filter identity [(get baseline key) (get parent key)
                                                 (get main-parent key)])))))
@@ -426,7 +430,7 @@
                               (ctk/touched-group? % :geometry-group)) orig-touched)
                   (keep-orientation-override original-shape new-shape page
                                              (or (get-in libraries [(:component-file new-shape) :data]) ldata)
-                                             (:component-id new-shape)))]
+                                             (:component-id new-shape) nil))]
     [changes (mapv (comp :parent-id :new) pairs)]))
 
 (defn- shape-index
@@ -460,7 +464,10 @@
         [changes parents-of-swapped]
         (if keep-touched?
           (generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-          [(keep-orientation-override changes shape new-shape page ldata component-id) []])
+          [(keep-orientation-override changes shape new-shape page ldata component-id
+                                      (when (:shape-ref parent)
+                                        (ctf/find-ref-shape nil page libraries shape
+                                                            :include-deleted? true :with-context? true))) []])
 
         ;; Replacement keeps the head id and its cell. Cleanup during the
         ;; temporary deletion must not change the parent's placement data.
