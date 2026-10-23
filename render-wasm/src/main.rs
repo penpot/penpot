@@ -859,6 +859,69 @@ pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32) -> Result<*mu
     })
 }
 
+/// Multi-page PDF: shape UUIDs are read from the transfer buffer (16 bytes
+/// each, same layout as `set_focus_mode`). Returns `[len u32 LE][pdf bytes]`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shapes_pdf() -> Result<*mut u8> {
+    let bytes = mem::bytes();
+    let ids: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
+
+    with_state!(state, {
+        let data = state.render_shapes_pdf(&ids)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+/// Starts a progressive multi-page PDF session (see `pdf_export_add_page` /
+/// `pdf_export_finish`). Replaces any previous session.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn pdf_export_begin() -> Result<()> {
+    with_state!(state, { state.pdf_export_begin() })
+}
+
+/// Appends one shape as a page of the current PDF export session.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn pdf_export_add_page(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    with_state!(state, { state.pdf_export_add_page(&id) })
+}
+
+/// Finishes the PDF export session and returns `[len u32 LE][pdf bytes]`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn pdf_export_finish() -> Result<*mut u8> {
+    with_state!(state, {
+        let data = state.pdf_export_finish()?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+/// Aborts the current PDF export session, if any.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn pdf_export_abort() -> Result<()> {
+    with_state!(state, {
+        state.pdf_export_abort();
+    });
+    Ok(())
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_shape_svg(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {

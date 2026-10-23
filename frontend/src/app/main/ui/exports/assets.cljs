@@ -231,12 +231,13 @@
         queued?           (and (some? job-id) (= "queued" status))
         cancelling?       (and (some? job-id) (= "cancelling" status))
         cancelled?        (and (some? job-id) (= "cancelled" status))
-        ;; Only the wasm backend can actually stop: a browser render holds its
-        ;; pool slot until playwright gives up.
-        cancellable?      (and (some? job-id)
-                               (= "wasm" (:backend state))
-                               (:in-progress state)
-                               (not cancelling?))
+        ;; Server wasm jobs and local client-side exports can stop; a non-wasm
+        ;; browser render holds its pool slot until playwright gives up.
+        cancellable?      (and (:in-progress state)
+                               (not cancelling?)
+                               (or (= "local" (:backend state))
+                                   (and (some? job-id)
+                                        (= "wasm" (:backend state)))))
         total             (or (:total state) (count items))
         complete?         (= progress total)
         circ              (* 2 Math/PI 12)
