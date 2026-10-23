@@ -165,6 +165,64 @@
     (t/is (ct/is-after? (:expired-at object) (ct/now)))
     (t/is (nil? (sto/get-object storage (:id object))))))
 
+(t/deftest put-and-retrieve-deleted-object
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+
+    (t/is (true? (sto/del-object! storage (:id object))))
+
+    ;; by default an object marked for deletion is not readable
+    (t/is (nil? (sto/get-object storage (:id object))))
+
+    ;; but it can still be read when the caller asks for it: the content is
+    ;; there until the gc task removes it
+    (let [deleted (sto/get-object storage (:id object) {:include-deleted? true})]
+      (t/is (some? deleted))
+      (t/is (= (:id object) (:id deleted)))
+      (t/is (nil? (sto/get-object-data storage deleted)))
+      (t/is (= "content" (slurp (sto/get-object-data storage deleted {:include-deleted? true}))))
+      (t/is (nil? (sto/get-object-bytes storage deleted)))
+      (t/is (= "content" (String. ^bytes (sto/get-object-bytes storage deleted {:include-deleted? true}) "UTF-8"))))))
+
+(t/deftest get-object-by-hash
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        object  (sto/put-object! storage {::sto/content (-> (sto/content "content")
+                                                            (sto/wrap-with-hash "given-hash"))
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+
+    (t/is (= (:id object)
+             (:id (sto/get-object-by-hash storage {:hash "given-hash"
+                                                   :bucket "file-media-object"}))))
+    (t/is (nil? (sto/get-object-by-hash storage {:hash "given-hash"
+                                                 :bucket "file-object-thumbnail"})))))
+
+(t/deftest get-object-by-hash-excludes-dead-rows
+  ;; The hash lookup picks a reusable twin: dying rows must never be
+  ;; eligible, or the export would reuse blobs about to disappear.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        params  {:hash "given-hash"
+                 :bucket "file-media-object"}
+        object  (sto/put-object! storage {::sto/content (-> (sto/content "content")
+                                                            (sto/wrap-with-hash "given-hash"))
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+
+    (t/is (some? (sto/get-object-by-hash storage params)))
+
+    (th/db-update! :storage-object {:status "pending"} {:id (:id object)})
+    (t/is (nil? (sto/get-object-by-hash storage params)))
+
+    (th/db-update! :storage-object {:status "valid"} {:id (:id object)})
+    (t/is (true? (sto/del-object! storage (:id object))))
+    (t/is (nil? (sto/get-object-by-hash storage params)))))
+
 (t/deftest put-and-delete-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
@@ -848,6 +906,20 @@
     (th/db-update! :storage-object {:status "pending"} {:id (:id object)})
 
     (t/is (nil? (sto/get-object storage (:id object))))))
+
+(t/deftest pending-objects-excluded-from-get-with-include-deleted
+  ;; {:include-deleted? true} skips only the deletion filter, not the
+  ;; lifecycle-state filter: a pending row is never readable, even when
+  ;; the caller asks for deleted objects.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"})]
+
+    (th/db-update! :storage-object {:status "pending"} {:id (:id object)})
+
+    (t/is (nil? (sto/get-object storage (:id object) {:include-deleted? true})))))
 
 (t/deftest pending-objects-excluded-from-dedup
   (let [storage (-> (:app.storage/storage th/*system*)
