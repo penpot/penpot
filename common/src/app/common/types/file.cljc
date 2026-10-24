@@ -1257,16 +1257,16 @@
 
 ;; Ref Chains
 (defn get-ref-chain-until-target-ref
-  "The shape `shape` of `container` and its ref chain (each shape's near
-  main, found in the container of the one before), up to the shape whose id
-  is `target-ref`, included, or to the end of the chain."
+  "The shape `shape` of `container` and its content ref chain, up to the
+  shape whose id is `target-ref`, included, or to the end of the chain.
+  A swapped head follows its own component, not the replaced position."
   [container libraries shape target-ref]
   (loop [chain     [shape]
          current   shape
          container container]
     (if (= (:id current) target-ref)
       chain
-      (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
+      (if-let [ref (find-content-ref-shape nil container libraries current :with-context? true)]
         (recur (conj chain ref) ref (:container (meta ref)))
         chain))))
 
