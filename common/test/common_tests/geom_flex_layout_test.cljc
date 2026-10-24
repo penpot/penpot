@@ -34,6 +34,16 @@
   [rect]
   (grc/rect->points rect))
 
+(t/deftest empty-wrapped-layout-has-no-lines
+  (doseq [direction [:row :column]
+          alignment [:stretch :space-around :space-evenly :space-between :center :end]]
+    (let [frame (make-col-frame :layout-flex-dir direction
+                                :layout-align-content alignment
+                                :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}
+                                :layout-padding-type :simple)
+          bounds (rect->bounds (grc/make-rect 0 0 200 200))]
+      (t/is (= [] (:layout-lines (fld/calc-layout-data frame bounds [] {} {})))))))
+
 ;; ---- get-base-line (around? branch) ----
 ;;
 ;; Bug: in positions.cljc the col? + around? branch had a mis-parenthesised

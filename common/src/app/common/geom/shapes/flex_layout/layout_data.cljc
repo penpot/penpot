@@ -224,12 +224,12 @@
 
             ;; When align-items is stretch we need to adjust the main axis size to grow for the full content
             stretch-width-fix
-            (if (and col? (ctl/content-stretch? parent) (not auto-width?))
+            (if (and (pos? num-lines) col? (ctl/content-stretch? parent) (not auto-width?))
               (/ (- layout-width (* layout-gap-col (dec num-lines)) total-max-width) num-lines)
               0)
 
             stretch-height-fix
-            (if (and row? (ctl/content-stretch? parent) (not auto-height?))
+            (if (and (pos? num-lines) row? (ctl/content-stretch? parent) (not auto-height?))
               (/ (- layout-height (* layout-gap-row (dec num-lines)) total-max-height) num-lines)
               0)
 
@@ -300,7 +300,8 @@
 
             [total-width total-height] (->> layout-lines (reduce add-lines [0 0]))
 
-            base-p (flp/get-base-line parent layout-bounds total-width total-height num-lines)]
+            base-p (when (pos? num-lines)
+                     (flp/get-base-line parent layout-bounds total-width total-height num-lines))]
 
         (->> layout-lines
              (reduce (partial add-starts total-width total-height num-lines) [(transient []) base-p])
