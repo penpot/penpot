@@ -1,23 +1,13 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 import { formatTaskError } from "./ErrorUtils";
+import { extractMinorVersion, isCompatibleVersion } from "./VersionCompatibility";
 
 /**
  * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
  * enabled (as opposed to a local server used with the explicitly loaded plugin)
  */
 const isIntegratedRemoteMcp = !!mcp;
-
-/**
- * Extracts the major.minor.patch prefix from a version string.
- *
- * @param version - a version string starting with major.minor.patch
- * @returns the major.minor.patch prefix, or the original string if it does not match
- */
-function extractVersionPrefix(version: string): string {
-    const match = version.match(/^(\d+\.\d+\.\d+)/);
-    return match ? match[1] : version;
-}
 
 mcp?.setMcpStatus("connecting");
 
@@ -42,11 +32,10 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
             integratedRemoteMcp: isIntegratedRemoteMcp,
         });
         // Check Penpot version compatibility
-        const penpotVersionPrefix = penpot.version ? extractVersionPrefix(penpot.version) : "<2.15"; // pre-2.15 versions don't have version info
-        const mcpVersionPrefix = extractVersionPrefix(PENPOT_MCP_VERSION);
+        const penpotVersionPrefix = penpot.version ? extractMinorVersion(penpot.version) : "<2.15"; // pre-2.15 versions don't have version info
+        const mcpVersionPrefix = extractMinorVersion(PENPOT_MCP_VERSION);
         console.log(`Penpot version: ${penpotVersionPrefix}, MCP version: ${mcpVersionPrefix}`);
-        const isLocalPenpotVersion = penpotVersionPrefix == "0.0.0";
-        if (penpotVersionPrefix !== mcpVersionPrefix && !isLocalPenpotVersion) {
+        if (!isCompatibleVersion(penpotVersionPrefix, mcpVersionPrefix)) {
             penpot.ui.sendMessage({
                 type: "version-mismatch",
                 mcpVersion: mcpVersionPrefix,
