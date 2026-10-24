@@ -474,12 +474,12 @@ export class PluginBridge implements TaskDispatchHost {
      * Also releases task tracking and dispatch subscriptions.
      */
     public async close(): Promise<void> {
+        for (const taskId of this.pendingTasks.keys()) {
+            this.rejectPendingTask(taskId, new Error("Plugin bridge is shutting down; task outcome may be unknown"));
+        }
         for (const socket of this.wsServer.clients) {
             this.removeConnection(socket);
             socket.terminate();
-        }
-        for (const taskId of this.pendingTasks.keys()) {
-            this.rejectPendingTask(taskId, new Error("MCP server is shutting down."));
         }
         await this.dispatcher.close();
         return new Promise((resolve) => {
