@@ -13,6 +13,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.modifiers :as gm]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.placement :as clp]
@@ -34,6 +35,58 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest authored-child-geometry-follows-a-parent-rotation-received-through-sync
+  (doseq [swapped? [false true]
+          angle [45 135]
+          own-angle [0 10]]
+    (let [file         (-> (thf/sample-file :file)
+                           (tho/add-simple-component :a :main-a :rect-a
+                                                     :root-params {:width 100 :height 100})
+                           (tho/add-simple-component :other :main-other :rect-other
+                                                     :root-params {:width 100 :height 100})
+                           (tho/add-frame :main-b {:width 200 :height 200})
+                           (thc/instantiate-component :a :b-a :parent-label :main-b)
+                           (thc/make-component :b :main-b)
+                           (tho/add-frame :main-c {:width 300 :height 300})
+                           (thc/instantiate-component :b :c-b :parent-label :main-c)
+                           (thc/make-component :c :main-c)
+                           (thc/instantiate-component :c :copy-c :children-labels [:copy-b :copy-a]))
+          initial      (tm/make-situation file)
+          initial      (cond-> initial swapped? (r/step (n/swap-shape :copy-a :other)))
+          edited       (-> initial r/settle (r/step (n/change-height :copy-a 80)) r/settle
+                           (r/step (n/rotate :copy-a own-angle)) r/settle)
+          pending      (r/step edited (n/rotate :c-b angle))
+          pending-file (tm/file pending)
+          bare-changes (cll/generate-sync-shape-direct
+                        (pcb/empty-changes) pending-file {(:id pending-file) pending-file}
+                        (ctn/make-container (thf/current-page pending-file) :page)
+                        (thi/id :copy-c) false)
+          bare-file    (thf/apply-changes pending-file bare-changes)
+          turned       (r/settle pending)
+          parent       (tm/resolve-shape turned :copy-b)
+          child        (tm/resolve-shape turned :copy-a)
+          old-parent   (tm/resolve-shape edited :copy-b)
+          old-child    (tm/resolve-shape edited :copy-a)
+          expected     (-> old-child
+                           (gsh/transform-shape (ctm/rotation-modifiers old-child (gsh/shape->center old-parent) angle))
+                           (gsh/move (gpt/subtract (gsh/shape->center parent) (gsh/shape->center old-parent))))
+          file         (tm/file turned)
+          full         (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+      (t/is (mth/close? angle (:rotation parent) 0.001))
+      (t/is (mth/close? (+ angle own-angle) (:rotation child) 0.001))
+      (t/is (= (boolean (:flip-x parent)) (boolean (:flip-x child))))
+      (t/is (= (boolean (:flip-y parent)) (boolean (:flip-y child))))
+      (t/is (mth/close? 80 (:height child) 0.001))
+      (t/is (gsh/close-attrs? :points (:points expected) (:points child) 0.001))
+      (t/is (gsh/close-attrs? :points (:points expected)
+                              (:points (ths/get-shape-by-id bare-file (:id child))) 0.001))
+      (t/is (mth/close? (+ angle own-angle) (:rotation (ths/get-shape-by-id bare-file (:id child))) 0.001))
+      (t/is (= (if swapped? #{:geometry-group :swap-group} #{:geometry-group}) (:touched child)))
+      (t/is (gsh/close-attrs? :points (:points child)
+                              (:points (ths/get-shape-by-id full (:id child))) 0.001))
+      (t/is (= (thn/normalize-file (tm/file edited))
+               (thn/normalize-file (tm/file (r/step turned (n/undo)))))))))
 
 (t/deftest a-nested-copy-keeps-its-detached-parents-orientation-on-sync
   (let [detached (-> (setup/nested-component-with-copy)
@@ -225,6 +278,6 @@
         synced (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
     (doseq [shape [main child]]
       (let [after (ths/get-shape-by-id synced (:id shape))
-            flips #(mapv (comp boolean %) [:flip-x :flip-y])]
+            flips (fn [shape] (mapv #(boolean (get shape %)) [:flip-x :flip-y]))]
         (t/is (= (flips shape) (flips after)))
         (t/is (gsh/close-attrs? :points (:points shape) (:points after) 0.001))))))
