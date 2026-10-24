@@ -453,6 +453,23 @@
   (when-let [parent (get objects parent-id)]
     (or (d/index-of (:shapes parent) shape-id) 0)))
 
+(defn- sync-restored-position
+  "A swap back is an ordinary copy of its position, including that
+   position's content overrides. Sync through the head that owns its ref."
+  [changes page libraries shape-id]
+  (let [objects   (pcb/get-objects changes)
+        shape     (get objects shape-id)
+        parent    (get objects (:parent-id shape))
+        container (ctn/make-container (assoc page :objects objects) :page)]
+    (if (and (:shape-ref parent) (not (ctk/swapped? shape)))
+      (let [component (ctf/find-ref-component nil container libraries shape)
+            head      (d/seek #(= (:id component) (:component-id %))
+                              (ctn/get-parent-copy-heads objects parent))]
+        (if head
+          (cll/generate-sync-shape-direct changes nil libraries container (:id head) false)
+          changes))
+      changes)))
+
 (defn generate-component-swap-in-place
   "Swap the copy head `shape` of `page` for a copy of the component
    `component-id` of library data `ldata`. The new head takes the old one's
@@ -481,6 +498,8 @@
                                       (when (:shape-ref parent)
                                         (ctf/find-ref-shape nil page libraries shape
                                                             :include-deleted? true :with-context? true))) []])
+
+        changes (sync-restored-position changes page libraries (:id new-shape))
 
         ;; Replacement keeps the head id and its cell. Cleanup during the
         ;; temporary deletion must not change the parent's placement data.
