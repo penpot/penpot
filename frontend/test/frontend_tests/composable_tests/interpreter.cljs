@@ -169,9 +169,9 @@
                                           :original-content (:content shape))])
 
     (instance? n/Rotate op)
-    ;; the sidebar rotation, which decides what it touches in copies (check-delta)
+    ;; A node turns by its angle, including after an earlier rotation.
     (let [{:keys [target angle]} op]
-      [(dwt/increase-rotation [(tm/target-shape-id situation target)] angle)])
+      [(dwt/increase-rotation [(tm/target-shape-id situation target)] angle {:delta? true})])
 
     (instance? n/MoveShape op)
     ;; the sidebar position, in page coordinates

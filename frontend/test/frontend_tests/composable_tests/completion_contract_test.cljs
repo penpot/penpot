@@ -11,6 +11,7 @@
   down on purpose, so a step that resolved early would see a half-synced
   file."
   (:require
+   [app.common.math :as mth]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
@@ -29,6 +30,14 @@
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each ftm/fixture)
+
+(t/deftest ^:async rotation-nodes-compose-successive-turns
+  (let [initial (ftm/start-generated (setup/simple-component-with-labeled-copy))
+        first-turn (await (ftm/run-generated-step initial (n/rotate :copy-root 45)))
+        second-turn (await (ftm/run-generated-step first-turn (n/rotate :copy-root 90)))
+        shape (ths/get-shape (ftm/current-file) :copy-root)]
+    (t/is (mth/close? 135 (:rotation shape) 0.01))
+    (t/is (empty? (uc/failures second-turn)))))
 
 (def ^:private original "#abcdef")
 (def ^:private red "#ff0000")
