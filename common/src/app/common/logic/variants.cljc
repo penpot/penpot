@@ -425,19 +425,25 @@
                     (clsw/update-attrs-on-switch changes new old new-shape original-shape old-ref container)))
                 changes
                 pairs)
-        changes (cond-> changes
-                  (some #(and (= (:id %) (:id original-shape))
-                              (ctk/touched-group? % :geometry-group)) orig-touched)
-                  (keep-orientation-override original-shape new-shape page
-                                             (or (get-in libraries [(:component-file new-shape) :data]) ldata)
-                                             (:component-id new-shape) nil))
+        root-geometry?      (some #(and (= (:id %) (:id original-shape))
+                                        (ctk/touched-group? % :geometry-group)) orig-touched)
+        parent              (get page-objects (:parent-id original-shape))
+        ;; A switch keeps orientation even when the old main supplied it.
+        ;; If no geometry was carried, placement from an enclosing copy is
+        ;; still inherited rather than authored by this switch.
+        position            (when (and (not root-geometry?) (:shape-ref parent))
+                              (ctf/find-ref-shape nil page libraries original-shape
+                                                  :include-deleted? true :with-context? true))
+        changes             (keep-orientation-override changes original-shape new-shape page
+                                                       (or (get-in libraries [(:component-file new-shape) :data]) ldata)
+                                                       (:component-id new-shape) position)
         ;; A carried size changes the frame its untouched children follow.
         ;; Place them through the same constraints as an ordinary copy sync.
-        changes (cond-> changes
-                  (some #(ctk/touched-group? % :geometry-group) orig-touched)
-                  (cll/generate-sync-shape-direct
-                   nil libraries (assoc container :objects (pcb/get-objects changes))
-                   (:id new-shape) false))]
+        changes             (cond-> changes
+                              (some #(ctk/touched-group? % :geometry-group) orig-touched)
+                              (cll/generate-sync-shape-direct
+                               nil libraries (assoc container :objects (pcb/get-objects changes))
+                               (:id new-shape) false))]
     [changes (mapv (comp :parent-id :new) pairs)]))
 
 (defn- shape-index

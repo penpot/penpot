@@ -16,6 +16,8 @@
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -28,6 +30,31 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest switching-an-untouched-rotated-copy-authors-its-retained-orientation
+  (let [file (-> (thf/sample-file :file)
+                 (thv/add-variant :variant :c01 :m01 :c02 :m02
+                                  :variant1-params {:width 100 :height 100}
+                                  :variant2-params {:width 100 :height 100})
+                 (ths/add-sample-shape :child1 :parent-label :m01 :width 50 :height 50)
+                 (ths/add-sample-shape :child2 :parent-label :m02 :width 50 :height 50)
+                 (thc/instantiate-component :c01 :copy01 :children-labels [:copy-child]))
+        initial (-> (tm/make-situation file)
+                    (r/step (n/rotate :m01 45)) r/settle)
+        before (tm/resolve-shape initial :copy01)
+        switched (-> initial (r/step (n/switch-variant :copy01 "Value2")) r/settle)
+        head (tm/resolve-shape switched :copy01)
+        child (tm/shape-by-id switched (first (:shapes head)))
+        file (tm/file switched)
+        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (t/is (empty? (:touched before)))
+    (t/is (mth/close? 45 (:rotation before) 0.001))
+    (t/is (= #{:geometry-group} (:touched head)))
+    (t/is (mth/close? 45 (:rotation head) 0.001))
+    (t/is (gsh/close-attrs? :points (:points head)
+                            (:points (ths/get-shape-by-id full (:id head))) 0.001))
+    (t/is (gsh/close-attrs? :points (:points child)
+                            (:points (ths/get-shape-by-id full (:id child))) 0.001))))
 
 (t/deftest switch-keeps-a-resize-override-after-rotating-the-copy
   (doseq [sizing [nil :fix]]
