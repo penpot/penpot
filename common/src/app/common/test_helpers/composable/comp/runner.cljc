@@ -33,6 +33,7 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.libraries :as cll]
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
@@ -46,19 +47,15 @@
    `old-data`, the file data before `changes` applied."
   cll/changed-components)
 
-(defn- libraries
-  "The situation's files by id, with `file` as its current file."
-  [situation file]
-  (assoc (tm/aux-files situation) (:id file) file))
-
 (defn- validate-settled!
   "Validate the situation's file, resolving components against its other
    files. Only a settled file is valid: between two passes of a sync cascade,
    an outer copy can still point at the component its main no longer uses.
    Throws when the file is invalid."
   [situation]
-  (let [file (tm/file situation)]
-    (thf/validate-file! file (libraries situation file))
+  (let [files (cf/all-files situation)]
+    (doseq [file (vals files)]
+      (thf/validate-file! file files))
     situation))
 
 (defn sync-cascade
@@ -80,14 +77,10 @@
      :passes passes}))
 
 (defn- sync-file
-  "Sync `situation`'s file, starting from the components that `changes`
-   modified (judged against `old-data`), and validate the result. Returns
-   `[situation syncs]`, with `syncs` the applied sync changes in order."
-  [situation old-data changes]
-  (let [{:keys [file syncs]} (sync-cascade (tm/file situation)
-                                           (tm/aux-files situation)
-                                           (changed-components old-data changes))]
-    [(validate-settled! (tm/with-file situation file)) syncs]))
+  [situation before changes]
+  (let [{:keys [situation syncs]}
+        (cf/sync-world situation (cf/changed-components before changes))]
+    [(validate-settled! situation) syncs]))
 
 (defn- push-undo-group
   "Add `group`, the changes of one user operation and its syncs in order, to
@@ -101,19 +94,9 @@
                       (assoc ::redo-stack [])))))
 
 (defn- apply-group
-  "Apply to the situation's file the `side` changes (`:undo-changes` or
-   `:redo-changes`) of each changes in `group`, in order, and validate the
-   result."
   [situation side group]
-  (let [file (reduce (fn [file changes]
-                       (thf/apply-changes file
-                                          {:redo-changes (get changes side)}
-                                          :validate? false))
-                     (tm/file situation)
-                     group)]
-    (-> situation
-        (tm/with-file file)
-        (validate-settled!))))
+  (validate-settled!
+   (reduce #(cf/apply-changes %1 %2 side) situation group)))
 
 (defn- move-group
   "Move the latest group of the `from` stack to the `to` stack, applying its
@@ -290,7 +273,7 @@
    (when `:sync?`), pushes its undo group, and gets its round trip (when
    `:undo-check?`). An assembly operation moves the round trip's baseline."
   [situation op kind {:keys [sync? undo-check?]}]
-  (let [old-data                      (:data (tm/file situation))
+  (let [before-situation              situation
         before                        (when undo-check? (snapshot situation))
         depth                         (undo-depth situation)
         [recorded? changes situation] (n/take-changes (tm/apply-to op situation))]
@@ -298,12 +281,12 @@
     (cond-> (if (nil? changes)
               situation
               (let [[situation syncs] (if sync?
-                                        (sync-file situation old-data changes)
+                                        (sync-file situation before-situation changes)
                                         [situation []])]
                 (cond-> (push-undo-group situation (into [changes] syncs))
                   (not sync?)
                   (update ::pending-components (fnil into #{})
-                          (changed-components old-data changes)))))
+                          (cf/changed-components before-situation changes)))))
       (and undo-check? (= kind :user))
       (check-step op before depth)
 
@@ -388,13 +371,9 @@
   "Sync selected pending components in the latest user's undo group."
   ([situation] (settle situation (pending-components situation)))
   ([situation component-ids]
-   (let [{:keys [file syncs]} (sync-cascade (tm/file situation)
-                                            (tm/aux-files situation)
-                                            component-ids)
+   (let [{:keys [situation syncs]} (cf/sync-world situation component-ids)
          stack (get situation ::undo-stack [])]
-     (cond-> (-> situation
-                 (tm/with-file file)
-                 (update ::pending-components #(apply disj (or % #{}) component-ids)))
+     (cond-> (update situation ::pending-components #(apply disj (or % #{}) component-ids))
        (and (seq syncs) (seq stack))
        (assoc ::undo-stack (conj (pop stack) (into (peek stack) syncs)))))))
 

@@ -7,6 +7,7 @@
 (ns common-tests.logic.composable-gen-test
   (:require
    [app.common.schema.test :as smt]
+   [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
@@ -104,14 +105,132 @@
       (t/is (pos? (get @coverage kind 0)) (str "No executed " kind)))))
 
 (t/deftest partial-sync-keeps-independent-components-pending
-  (let [initial (cg/initial-state [3 0])
-        source (get-in (cg/resolve-op (:situation initial) {} [:nest 0]) [:shape :id])
-        nested (-> initial (cg/step [:nest 0]) (cg/settle-state))
-        candidates (cg/candidates (:situation nested) (:model nested) :nest nil)
-        index (first (keep-indexed #(when (= source (get-in %2 [:shape :id])) %1) candidates))
-        state (cg/step nested [:nest index])
-        partial (cg/step state [:sync 1])
-        settled (cg/settle-state partial)]
-    (t/is (= 2 (count (r/pending-components (:situation state)))))
-    (t/is (= 1 (count (r/pending-components (:situation partial)))))
-    (t/is (empty? (r/pending-components (:situation settled))))))
+  (let [situation (cg/world [3 0])
+        mains (take 2 (filter #(get-in % [:shape :main-instance]) (cg/tree situation)))
+        pending (reduce (fn [s entry]
+                          (r/step s (n/change-property
+                                     (constantly (get-in entry [:shape :id])) :fills "#ff0000")))
+                        situation mains)
+        ids (r/pending-components pending)
+        partial (r/settle pending [(first (sort-by str ids))])
+        settled (r/settle partial)]
+    (t/is (= 2 (count ids)))
+    (t/is (= 1 (count (r/pending-components partial))))
+    (t/is (empty? (r/pending-components settled)))))
+
+(t/deftest detach-from-a-deleted-near-main-inherits-only-the-skipped-level
+  (t/is (map? (cg/run {:world [3 2 {:text true :layout nil}]
+                       :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
+                             [:delete 0] [:restore 0] [:text 0 0 1] [:text 1 1 1]
+                             [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
+                             [:edit 0 0 1 1] [:update-main 0] [:sync 1]
+                             [:detach 0] [:undo] [:redo] [:delete 1 0 0 0]
+                             [:detach 13 0 0 0]]}))))
+
+(t/deftest undo-after-a-main-child-add-and-root-rotation-is-fully-settled
+  (t/is (map? (cg/run {:world [2 0 {:text true :layout nil}]
+                       :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
+                             [:delete 0] [:restore 0] [:text 0 0 1] [:text 1 1 1]
+                             [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
+                             [:edit 0 0 1 1] [:update-main 0] [:sync 1]
+                             [:detach 0] [:undo] [:redo] [:undo 0 0 0 0]
+                             [:add-child 17 0 0 0] [:rotate 19 0 0 0] [:undo 0 0 0 0]]}))))
+
+(t/deftest minimum-size-transform-sync-shrunk-regression
+  (t/is (map? (cg/run {:world [2 0 {:text true :layout nil}]
+                       :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
+                             [:delete 0] [:restore 0] [:text 0 0 1] [:text 1 1 1]
+                             [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
+                             [:edit 0 0 1 1] [:update-main 0] [:sync 1]
+                             [:detach 0] [:undo] [:redo] [:rotate 2 0 0 0]
+                             [:resize 7 0 0 0] [:duplicate 0 0 0 0]]}))))
+
+(t/deftest updating-a-rotated-outer-main-composes-authored-child-orientation
+  (t/is (map? (cg/run {:world [2 0 {:text true :layout nil}]
+                       :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
+                             [:delete 0] [:restore 0] [:text 0 0 1] [:text 1 1 1]
+                             [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
+                             [:edit 0 0 1 1] [:update-main 0] [:sync 1]
+                             [:detach 0] [:undo] [:redo] [:duplicate 0 0 0 0]
+                             [:resize 0 0 0 0] [:nest 0 0 0 0] [:rotate 4 0 0 0]
+                             [:detach 3 0 0 0] [:update-main 4 0 0 0]]}))))
+
+(t/deftest minimum-size-parent-orientation-does-not-amplify-oracle-drift
+  (t/is (map? (cg/run {:world [3 0 {:text true :layout nil}]
+                       :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
+                             [:delete 0] [:restore 0] [:text 0 0 1] [:text 1 1 1]
+                             [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
+                             [:edit 0 0 1 1] [:update-main 0] [:sync 1]
+                             [:detach 0] [:undo] [:redo] [:edit 4 0 0 0]
+                             [:duplicate 3 0 0 0] [:nest 10 0 0 0] [:rotate 9 0 0 0]
+                             [:update-main 7 0 0 0] [:delete 0 0 0 0]]}))))
+
+(t/deftest detaching-a-rotated-parent-inherits-geometry-in-the-copy-frame
+  (t/is (map? (cg/run {:world [2 0 {:text true :layout nil}]
+                       :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
+                             [:delete 0] [:restore 0] [:text 0 0 1] [:text 1 1 1]
+                             [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
+                             [:edit 0 0 1 1] [:update-main 0] [:sync 1]
+                             [:detach 0] [:undo] [:redo] [:resize 0 0 0 0]
+                             [:delete 0 0 0 0] [:rotate 0 0 0 0] [:detach 0 0 0 0]]}))))
+
+(t/deftest detach-shadow-does-not-read-the-resulting-child-orientation
+  (let [before {:root {:id :root :shapes [:child]}
+                :child {:id :child :shape-ref :near :rotation 90}
+                :near {:id :near :shape-ref :main :rotation 45}}
+        after {:root {:id :root :shapes [:child]}
+               :child {:id :child :shape-ref :main :rotation 0}}
+        model (shadow/detach {:near {:geometry-group {:rotation 45}}} before after :root)]
+    (t/is (= 90 (get-in model [:child :geometry-group :rotation])))
+    (t/is (false? (shadow/same-value? (:child after) :geometry-group
+                                      (get-in model [:child :geometry-group]))))))
+
+(t/deftest pushed-swap-shadow-predicts-orientation-without-reading-the-new-child
+  (let [before {:copy {:id :copy :shape-ref :main :shapes [:child]}
+                :main {:id :main :rotation 0}
+                :child {:id :child :parent-id :copy :component-id :target :shape-ref :position
+                        :rotation 45 :width 100 :height 100}
+                :target-main {:id :target-main :component-id :target :parent-id :page
+                              :rotation 0 :width 100 :height 100}
+                :page {:id :page :rotation 0}}
+        after (-> before
+                  (assoc-in [:child :shape-ref] :pushed)
+                  (assoc :pushed (assoc (:target-main before) :id :pushed
+                                        :shape-ref :target-main :parent-id :main)))
+        model (shadow/update-main {:child {:swap-group {}}} before after :copy)
+        expected (get-in model [:pushed :geometry-group])]
+    (t/is (= 45 (:rotation expected)))
+    (t/is (false? (shadow/same-value? (:pushed after) :geometry-group expected)))))
+
+(t/deftest pushed-swap-shadow-predicts-content-without-reading-the-new-child
+  (let [before {:copy {:id :copy :shape-ref :main :shapes [:child]}
+                :main {:id :main}
+                :child {:id :child :parent-id :copy :component-id :target
+                        :fills [:white] :shapes [:leaf]}
+                :leaf {:id :leaf :parent-id :child :fills [:white]}
+                :position {:id :position :component-id :target :fills [:green]}
+                :position-leaf {:id :position-leaf :fills [:green]}}
+        after (-> before
+                  (assoc-in [:child :shape-ref] :pushed)
+                  (assoc-in [:leaf :shape-ref] :pushed-leaf)
+                  (assoc :pushed {:id :pushed :component-id :target :shape-ref :position
+                                  :parent-id :main :fills [:green]}
+                         :pushed-leaf {:id :pushed-leaf :shape-ref :position-leaf
+                                       :parent-id :pushed :fills [:green]}))
+        model (shadow/update-main {:child {:swap-group {}}} before after :copy)]
+    (doseq [id [:pushed :pushed-leaf]]
+      (t/is (= {:fills [:white] :hide-fill-on-export nil} (get-in model [id :fill-group])))
+      (t/is (false? (shadow/same-value? (get after id) :fill-group (get-in model [id :fill-group])))))))
+
+(t/deftest resizing-a-copy-of-an-empty-flex-main-keeps-layout-valid
+  (t/is (map? (cg/run {:world [3 0 {:text true :layout :flex}]
+                       :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
+                             [:delete 0] [:restore 0] [:text 0 0 1] [:text 1 1 1]
+                             [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
+                             [:edit 0 0 1 1] [:update-main 0] [:sync 1]
+                             [:detach 0] [:undo] [:redo] [:remove-child 0 0 0 0]
+                             [:reset 0 0 0 0] [:nest 0 0 0 0] [:resize 0 0 0 0]]}))))
+
+(t/deftest updating-a-main-after-successive-rotations-keeps-child-flips
+  (t/is (map? (cg/run {:world [2 1]
+                       :ops [[:rotate 1 0 0 0] [:rotate 1 0 1 0] [:update-main 0 0 0 0]]}))))

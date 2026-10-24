@@ -256,8 +256,9 @@
     [(dwl/reset-component (tm/target-shape-id situation (:target op)))]
 
     (instance? n/UpdateMain op)
-    [(dwl/update-component-sync (tm/target-shape-id situation (:target op))
-                                (:id (tm/file situation)))]
+    (let [id (tm/target-shape-id situation (:target op))
+          shape (tm/shape-by-id situation id)]
+      [(dwl/update-component-sync id (:component-file shape))])
 
     (instance? n/DeleteComponent op)
     (let [root (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))]
@@ -358,6 +359,17 @@
   (let [st @st/state]
     (get-in st [:files (:current-file-id st)])))
 
+(defn refresh-generated
+  "Read every generated file after events, keeping library installation
+   metadata out of the portable situation. Undo snapshots still keep it."
+  [situation]
+  (-> situation
+      (tm/with-file (current-file))
+      (tm/with-aux-files
+        (into {} (map (fn [[id _]]
+                        [id (dissoc (get-in @st/state [:files id]) :library-of)]))
+              (tm/aux-files situation)))))
+
 (defn fill-of
   "The fill color of the shape `label` in the live file."
   [label]
@@ -440,7 +452,7 @@
   [situation op]
   (let [before    (tm/file situation)
         situation (-> situation
-                      (tm/with-file (current-file))
+                      (refresh-generated)
                       (record-choices op))
         op        (unwrap op)
         record    (cond-> (dissoc (into {} op) ::tm/id)
@@ -707,7 +719,7 @@
                            check-step?
                            ;; go on from the redone file, as the pure runner does
                            (.then (check-step situation (unwrap op) before index-before)
-                                  #(run-ops (tm/with-file % (current-file)) (rest ops)))
+                                  #(run-ops (refresh-generated %) (rest ops)))
 
                            ;; never undo past the state a case's own undo went back to
                            (and (::undo-check? situation)

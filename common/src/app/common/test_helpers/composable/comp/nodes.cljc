@@ -28,6 +28,7 @@
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -832,13 +833,6 @@
 ;; the order the sync built them.
 ;; ---------------------------------------------------------------------------
 
-(defn- strip-local-change
-  [changes]
-  (let [strip (partial mapv #(dissoc % :local-change?))]
-    (-> changes
-        (update :redo-changes strip)
-        (update :undo-changes strip))))
-
 (defrecord UpdateMain [target]
   IComponentOperation
   (op-kind [_] :user)
@@ -854,10 +848,9 @@
                         (cll/generate-sync-shape-inverse (libraries situation)
                                                          container
                                                          shape-id)
-                        (strip-local-change))
-          file'     (thf/apply-changes the-file changes :validate? false)]
+                        (cf/route-update-main (:id the-file) (:component-file (get-in page [:objects shape-id]))))
+          situation (cf/apply-changes situation changes)]
       (-> situation
-          (tm/with-file file')
           (record-changes (when (seq (:redo-changes changes)) changes))
           (tm/record-application this {:target target :updated shape-id})))))
 
@@ -1139,12 +1132,12 @@
 ;; ---------------------------------------------------------------------------
 
 (defn swap-target-id
-  "The component id `swap-shape`'s `to` names: a lineage name (a string) or a
-   component label (a keyword)."
+  "Resolve a lineage name, component label, or situation-to-component fn."
   [situation to]
-  (if (keyword? to)
-    (thi/id to)
-    (lineage-component-id situation to)))
+  (cond
+    (fn? to) (to situation)
+    (keyword? to) (thi/id to)
+    :else (lineage-component-id situation to)))
 
 (defrecord SwapShape [target to keep-touched?]
   IComponentOperation

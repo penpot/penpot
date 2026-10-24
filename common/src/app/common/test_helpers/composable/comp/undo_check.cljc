@@ -169,25 +169,26 @@
           (into (entities-signature :component (:components ed) (:components ad)
                                     #{} (constantly nil)))))))
 
-(defn- same-state?
-  "Reflow can recompute geometry at machine precision after undo. Keep
-   snapshots exact, allowing only absolute geometry noise below 1e-10."
-  ([expected actual] (same-state? expected actual false))
-  ([expected actual geometry?]
+(defn same-state?
+  "Compare exact data with an absolute tolerance only in shape geometry.
+   Undo defaults to 1e-10; design equivalence can supply its own tolerance."
+  ([expected actual] (same-state? expected actual 1e-10 false))
+  ([expected actual tolerance] (same-state? expected actual tolerance false))
+  ([expected actual tolerance geometry?]
    (or (= expected actual)
        (cond
          (and geometry? (number? expected) (number? actual))
-         (mth/close? expected actual 1e-10)
+         (mth/close? expected actual tolerance)
 
          (and geometry? (gmt/matrix? expected) (gmt/matrix? actual))
-         (every? #(same-state? (get expected %) (get actual %) true) [:a :b :c :d :e :f])
+         (every? #(same-state? (get expected %) (get actual %) tolerance true) [:a :b :c :d :e :f])
 
          (and geometry? (gpt/point? expected) (gpt/point? actual))
-         (every? #(same-state? (get expected %) (get actual %) true) [:x :y])
+         (every? #(same-state? (get expected %) (get actual %) tolerance true) [:x :y])
 
          (and (map? expected) (map? actual) (= (set (keys expected)) (set (keys actual))))
          (every? (fn [key]
-                   (same-state? (get expected key) (get actual key)
+                   (same-state? (get expected key) (get actual key) tolerance
                                 (or geometry?
                                     (and (contains? expected :parent-id)
                                          (contains? #{:x :y :width :height :rotation :points
@@ -195,7 +196,7 @@
                  (keys expected))
 
          (and (sequential? expected) (sequential? actual) (= (count expected) (count actual)))
-         (every? true? (map #(same-state? %1 %2 geometry?) expected actual))
+         (every? true? (map #(same-state? %1 %2 tolerance geometry?) expected actual))
 
          :else false))))
 

@@ -13,11 +13,14 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.test-helpers.composable.comp.files :as cf]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.shadow :as shadow]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.texts :as thtx]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
@@ -53,20 +56,30 @@
       height-owned (conj :height)
       (or layout-child width-owned height-owned) (into #{:points :selrect}))))
 
+(defn- matrix-effect
+  "Matrix coefficients have no pixel unit. Compare their effect over the
+   shape's local bounds, so the geometry tolerance has the same unit."
+  [shape matrix]
+  (let [half-width (/ (:width shape) 2)
+        half-height (/ (:height shape) 2)]
+    (mapv #(gpt/transform % (or matrix (gmt/matrix)))
+          [(gpt/point (- half-width) (- half-height))
+           (gpt/point half-width (- half-height))
+           (gpt/point half-width half-height)
+           (gpt/point (- half-width) half-height)])))
+
 (defn design-snapshot
-  "Sync equivalence ignores remote-sync bookkeeping, text run splitting and
-   geometry noise below 0.01 px. Undo snapshots deliberately keep them."
+  "Design inputs without derived placement, dimensions and bookkeeping.
+   Geometry remains unrounded; equivalent? applies its tolerance directly."
   [situation]
   (walk/postwalk
    (fn [value]
      (if (and (map? value) (contains? value :parent-id))
-       (let [round-geometry (fn [value]
-                              (walk/postwalk #(if (number? %) (/ (mth/round (* % 100)) 100) %) value))]
-         (cond-> (reduce (fn [shape key]
-                           (if (contains? shape key) (update shape key round-geometry) shape))
-                         (dissoc value :remote-synced)
-                         [:x :y :width :height :points :selrect :transform :transform-inverse :rotation])
-           (= :text (:type value)) (update :content thtx/view)))
+       (cond-> (-> value
+                   (dissoc :remote-synced)
+                   (update :flip-x boolean)
+                   (update :flip-y boolean))
+         (= :text (:type value)) (update :content thtx/view))
        value))
    (walk/postwalk
     (fn [value]
@@ -77,7 +90,13 @@
                                   [id (-> (gsh/move shape
                                                     (gpt/point (- (get-in objects [(:parent-id shape) :x] 0))
                                                                (- (get-in objects [(:parent-id shape) :y] 0))))
-                                          (as-> shape (apply dissoc shape (derived-attributes objects shape)))
+                                          (as-> moved (assoc moved
+                                                             :transform (matrix-effect shape (:transform moved))
+                                                             :transform-inverse (matrix-effect shape (:transform-inverse moved))))
+                                          (as-> shape (apply dissoc shape
+                                                             (cond-> (derived-attributes objects shape)
+                                                               (and (:component-id shape) (:shape-ref shape))
+                                                               (into #{:x :y :points :selrect}))))
                                           (update :constraints-h #(or % (gsh/default-constraints-h shape)))
                                           (update :constraints-v #(or % (gsh/default-constraints-v shape))))])) objects)))
         value))
@@ -111,6 +130,20 @@
             (name-tree (:objects component) (:main-instance-id component) (conj path :main)))))
       (walk/postwalk #(if (uuid? %) (get @ids % %) %) (design-snapshot situation)))))
 
+(defn equivalent?
+  "Compare canonical data, allowing 0.01 only within shape geometry."
+  [expected actual]
+  (uc/same-state? expected actual 0.01))
+
+(defn- orientation-matrix
+  "Resize uses constraints and dimensions. Parent placement supplies axis
+   directions, without applying residual minimum-size scale a second time."
+  [shape]
+  (let [{:keys [a b c d]} (or (:transform shape) (gmt/matrix))
+        horizontal (gpt/unit (gpt/point a b))
+        vertical (gpt/unit (gpt/point c d))]
+    (gmt/matrix (:x horizontal) (:y horizontal) (:x vertical) (:y vertical) 0 0)))
+
 (defn- child-placement
   "Place a main child against its expected copy parent. Only lower-level
    constraint and matrix math is shared with production, not sync code."
@@ -127,14 +160,21 @@
         main (get resized (:id main))
         main-parent (get resized (:id main-parent))
         center (gsh/shape->center main-parent)
-        turn (gmt/multiply (or (:transform parent) (gmt/matrix))
-                           (or (:transform-inverse main-parent) (gmt/matrix)))
+        turn (gmt/multiply (orientation-matrix parent)
+                           (gmt/inverse (orientation-matrix main-parent)))
         placed (if (gmt/unit? turn) main
-                   (gsh/apply-transform main (gmt/transform-in center turn)))]
+                   (gsh/apply-transform main (gmt/transform-in center turn)))
+        ;; Flip flags follow the parent's composition history. A single
+        ;; large turn can toggle both flags where several small turns do not.
+        flipped? (fn [key]
+                   (odd? (count (filter identity [(get main key) (get main-parent key)
+                                                  (get parent key)]))))]
     (-> placed
         (gsh/move (gpt/subtract (gsh/shape->center parent) center))
         (assoc :rotation (mod (+ (or (:rotation main) 0)
-                                 (- (or (:rotation parent) 0) (or (:rotation main-parent) 0))) 360)))))
+                                 (- (or (:rotation parent) 0) (or (:rotation main-parent) 0))) 360)
+               :flip-x (flipped? :flip-x)
+               :flip-y (flipped? :flip-y)))))
 
 (defn- with-derived-geometry
   [objects shape expected]
@@ -157,19 +197,42 @@
                 (fail :I1 {:shape (:name shape) :reason :parent-cycle}))
               (if (contains? (:touched shape) :geometry-group)
                 shape
-                (with-derived-geometry
-                  objects shape
-                  (if-let [main (ctf/find-ref-shape file container libraries shape :with-context? true)]
-                    (let [parent (get objects (:parent-id shape))
-                          main-objects (get-in (meta main) [:container :objects])
-                          main-parent (get main-objects (:parent-id main))]
-                      (if (and (:shape-ref parent) main-parent)
-                        (child-placement main main-parent (expected parent (conj visited (:id shape)))
-                                         main-objects)
-                        ;; Root placement is authored independently of overrides.
-                        (gsh/move main (gpt/subtract (gpt/point (:x shape) (:y shape))
-                                                     (gpt/point (:x main) (:y main))))))
-                    shape))))]
+                (let [main (ctf/find-ref-shape file container libraries shape :with-context? true)
+                      parent (get objects (:parent-id shape))
+                      main-objects (get-in (meta main) [:container :objects])
+                      main-parent (get main-objects (:parent-id main))
+                      placed (cond
+                               (nil? main) shape
+                               (and (:shape-ref parent) main-parent)
+                               (child-placement main main-parent (expected parent (conj visited (:id shape)))
+                                                main-objects)
+                               :else
+                               ;; Ordinary parents left by detach still place their nested copies.
+                               (let [turn (gmt/multiply (or (:transform shape) (gmt/matrix))
+                                                        (or (:transform-inverse main) (gmt/matrix)))
+                                     placed (if (gmt/unit? turn) main
+                                                (gsh/apply-transform main (gmt/transform-in (gsh/shape->center main) turn)))]
+                                 (-> placed
+                                     (gsh/move (gpt/subtract (gsh/shape->center shape) (gsh/shape->center placed)))
+                                     ;; This is the placement matrix just applied.
+                                     ;; Re-decomposing a .01px frame can add scale
+                                     ;; noise that grows in its larger children.
+                                     (assoc :transform (:transform shape)
+                                            :transform-inverse (:transform-inverse shape)
+                                            :rotation (:rotation shape)
+                                            :flip-x (:flip-x shape) :flip-y (:flip-y shape)))))
+                      content (when (ctk/swapped? shape)
+                                (ctf/find-content-ref-shape file container libraries shape))
+                      placed (if content
+                               ;; Content supplies size; the position source
+                               ;; still owns the untransformed top-left anchor.
+                               (-> placed
+                                   (gsh/transform-shape
+                                    (ctm/change-size placed (:width content) (:height content)))
+                                   (gsh/absolute-move (gpt/point (get-in placed [:selrect :x])
+                                                                 (get-in placed [:selrect :y]))))
+                               placed)]
+                  (with-derived-geometry objects shape placed))))]
       (expected shape #{}))))
 
 (defn- geometry-differences
@@ -217,10 +280,10 @@
       (fail :I4 {:shape (:name shape) :group :layout-grid-cells
                  :expected (grid-cells main) :actual (grid-cells shape)}))))
 
-(defn check
+(defn- check-file
   "I1–I4 and I9. Before settlement only authored groups/values are checked;
    pending main changes may legitimately leave copies stale."
-  ([situation model] (check situation model true))
+  ([situation model] (check-file situation model true))
   ([situation model settled]
    (let [file (tm/file situation)
          libraries (assoc (tm/aux-files situation) (:id file) file)]
@@ -246,7 +309,11 @@
                    :when (not (and (= group :name-group) (= :text (:type shape))
                                    (= (:name main) (txt/generate-shape-name (txt/content->text (:content main))))))
                    ;; A copy root's name follows component renaming too.
-                   :let [expected (comparable-values main shape group)
+                   :let [source (if (or (= group :constraints-group)
+                                        (.startsWith (name group) "layout-item-"))
+                                  (or (ctf/find-ref-shape file container libraries shape) main)
+                                  main)
+                         expected (comparable-values source shape group)
                          actual (comparable-values shape shape group)]]
              (when-not (= expected actual)
                (fail :I4 {:shape (:name shape) :group group
@@ -264,3 +331,13 @@
                           :expected (select-keys expected [:width :height :points])
                           :actual (select-keys shape [:width :height :points])}))))))
      nil)))
+
+(defn check
+  "Check both the working file and every library in the generated world."
+  ([situation model] (check situation model true))
+  ([situation model settled]
+   (let [files (cf/all-files situation)]
+     (doseq [[id file] files]
+       (check-file (-> situation (tm/with-file file) (tm/with-aux-files (dissoc files id)))
+                   model settled)))
+   nil))

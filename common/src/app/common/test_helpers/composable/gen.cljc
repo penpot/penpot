@@ -12,6 +12,7 @@
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
@@ -52,6 +53,22 @@
           file (cond-> file (= layout :grid) (tho/place-in-grid-columns root 2 {1 child}))]
       (tm/with-file situation file))))
 
+
+
+(defn forest
+  "All live page trees, with stable file/page prefixes for model replay."
+  [situation]
+  (vec (for [[file-index [_ file]] (map-indexed vector (sort-by (comp str key) (cf/all-files situation)))
+             [page-index page-id] (map-indexed vector (get-in file [:data :pages]))
+             entry (tree (tm/with-file situation (with-meta file {:current-page-id page-id})))]
+         (update entry :path #(into [:file file-index :page page-index] %)))))
+
+(defn- all-objects
+  [situation]
+  (reduce (fn [objects component] (merge (:objects component) objects))
+          (into {} (map (juxt (comp :id :shape) :shape)) (forest situation))
+          (mapcat #(vals (get-in % [:data :components])) (vals (cf/all-files situation)))))
+
 (defn world
   [[components depth opts]]
   (thi/reset-idmap!)
@@ -88,7 +105,13 @@
                          (some overridden (:shapes (get objects id)))))
         eligible (filterv (fn [{:keys [shape]}]
                             (case kind
-                              :edit (and (not= :text (:type shape)) (or (not= scope 1) (:shape-ref shape)))
+                              :edit (and (not= :text (:type shape))
+                                         (case scope
+                                           1 (:shape-ref shape)
+                                           2 (and (:shape-ref shape)
+                                                  (some #(contains? (tm/aux-files situation) (:component-file %))
+                                                        (cfh/get-parents-with-self objects (:id shape))))
+                                           true))
                               :reset (and (copy-head shape) (live-component shape))
                               :update-main (and (top-copy shape) (live-component shape) (overridden (:id shape)))
                               :detach (top-copy shape)
@@ -125,7 +148,15 @@
   "Resolve one tuple. Empty target sets produce an explicit skip."
   [situation model [kind index property value scope :as tuple]]
   (let [index (or index 0)
-        items (candidates situation model kind scope)
+        items (cond->> (candidates situation model kind scope)
+                (and (= kind :edit) (= 2 (mod (or property 0) 3)))
+                (remove (fn [{:keys [shape]}]
+                          ;; Variant names encode properties or rename the set.
+                          ;; Those actions have their own nodes, not scalar edits.
+                          (or (ctk/is-variant-container? shape)
+                              (:variant-id shape)
+                              (get-in (tm/file situation)
+                                      [:data :components (:component-id shape) :variant-id])))))
         selected (when (seq items) (nth items (mod index (count items))))
         target (when selected (constantly (get-in selected [:shape :id])))
         property (nth [:fills :opacity :name] (mod (or property 0) 3))
@@ -162,6 +193,7 @@
                      :status (if (or op (= kind :sync)) :executed :skip)}
               selected (assoc :target (:path selected))
               (:into selected) (assoc :into (:into selected))
+              (:destination selected) (assoc :to (get-in selected [:destination :path]))
               (and (nil? op) (not= kind :sync))
               (assoc :reason (str "No eligible " (name kind) " target")))}))
 
@@ -177,30 +209,34 @@
 (defn settle-state
   [{:keys [situation model checkpoint] :as state}]
   (let [settled (r/settle situation)
-        all (keys (get-in (tm/file situation) [:data :components]))
-        full-before (r/sync-cascade (tm/file situation) (tm/aux-files situation) all)
-        full (r/sync-cascade (tm/file settled) (tm/aux-files settled)
-                             all)]
+        model (-> model
+                  (shadow/parent-orientation (all-objects situation) (all-objects settled))
+                  (shadow/settle (all-objects settled)))
+        all (mapcat #(keys (get-in % [:data :components])) (vals (cf/all-files situation)))
+        full-before (:situation (cf/sync-world situation all))
+        full (:situation (cf/sync-world settled all))
+        settled-design (oracle/canonical settled)
+        full-before-design (oracle/canonical full-before)
+        full-design (oracle/canonical full)]
     (oracle/check settled model)
-    (when-not (= (oracle/canonical settled)
-                 (oracle/canonical (tm/with-file situation (:file full-before))))
-      (oracle/fail :I6 {:diff (thn/diff (oracle/canonical settled) (oracle/canonical (tm/with-file situation (:file full-before))))}))
-    (when-not (= (oracle/canonical settled)
-                 (oracle/canonical (tm/with-file settled (:file full))))
+    (when-not (oracle/equivalent? settled-design full-before-design)
+      (oracle/fail :I6 {:diff (thn/diff settled-design full-before-design)}))
+    (when-not (oracle/equivalent? settled-design full-design)
       (oracle/fail :I5 {}))
     (when checkpoint (assert-round-trip checkpoint settled))
-    (assoc state :situation settled :checkpoint nil)))
+    (cond-> (assoc state :situation settled :model model :checkpoint nil)
+      (and (not= model (:model state)) (seq (:undo state)))
+      (assoc-in [:undo (dec (count (:undo state))) :after] model))))
 
 (defn- update-model
   [model before after {:keys [shape property value op]} kind]
-  (let [objects (:objects (thf/current-page (tm/file before)))
+  (let [objects (all-objects before)
         id (:id shape)]
     (case kind
       :edit (shadow/edit model shape property value)
       :reset (shadow/clear-subtree model objects id)
-      :update-main (shadow/update-main model objects id)
-      :detach (shadow/detach model objects
-                             (:objects (thf/current-page (tm/file after))) id)
+      :update-main (shadow/update-main model objects (all-objects after) id)
+      :detach (shadow/detach model objects (all-objects after) id)
       :text (shadow/edit-text model shape (:content (n/text-edit-commit shape (:edit op) (:value op))))
       :duplicate (shadow/duplicate model objects id
                                    (:objects (thf/current-page (tm/file after)))
@@ -236,13 +272,17 @@
                          :undo (:before (peek history))
                          :redo (:after (peek redo))
                          (update-model model situation after resolved kind))
-            next-model (or next-model model)
+            next-model (cond-> (or next-model model)
+                         (not (#{:undo :redo} kind))
+                         (shadow/parent-orientation (all-objects situation) (all-objects after)))
+            next-model (shadow/settle next-model (all-objects after))
             state (-> state
                       (assoc :situation after :model next-model)
                       (update-in [:executed kind] (fnil inc 0)))]
         (oracle/check after next-model (empty? (r/pending-components after)))
         (case kind
-          :sync state
+          :sync (cond-> state
+                  (seq history) (assoc-in [:undo (dec (count history)) :after] next-model))
           :undo (-> state (assoc :undo (pop history)) (update :redo conj (peek history)))
           :redo (-> state (assoc :redo (pop redo)) (update :undo conj (peek redo)))
           (cond-> state
