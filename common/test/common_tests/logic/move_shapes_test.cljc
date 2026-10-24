@@ -8,6 +8,10 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -20,6 +24,43 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest moving-out-of-existing-component-nesting-undoes-exactly
+  (let [file (-> (thf/sample-file :file)
+                 (tho/add-simple-component :a :main-a :rect-a)
+                 (tho/add-simple-component :other :main-other :rect-other)
+                 (tho/add-frame :main-b)
+                 (thc/instantiate-component :a :nested-a :parent-label :main-b)
+                 (thc/make-component :b :main-b)
+                 (tho/add-frame :main-c)
+                 (thc/instantiate-component :b :nested-b :parent-label :main-c)
+                 (thc/make-component :c :main-c)
+                 (thc/instantiate-component :c :copy-c :children-labels [:copy-b :copy-a])
+                 (tho/add-simple-component :destination-component :destination :destination-child))
+        nested (-> (tm/make-situation file)
+                   (r/step (n/swap-shape :copy-a :other)) r/settle
+                   (r/step (n/nest-copy :copy-c :main-a)) r/settle)
+        moved (-> nested (r/step (n/nest-copy :nested-a :destination)) r/settle)
+        undone (r/step moved (n/undo))
+        page (thf/current-page (tm/file moved))
+        forward (cls/generate-relocate (-> (pcb/empty-changes nil (:id page))
+                                           (pcb/with-objects (:objects page))
+                                           (pcb/with-library-data (:data (tm/file moved))))
+                                       (thi/id :main-b) 0 #{(thi/id :nested-a)})
+        refused (thf/apply-changes (tm/file moved) forward)
+        old-page (thf/current-page (tm/file nested))
+        move-changes (-> (pcb/empty-changes nil (:id old-page))
+                         (pcb/with-objects (:objects old-page))
+                         (pcb/change-parent (thi/id :destination) [(tm/resolve-shape nested :nested-a)]))
+        inverse (first (filter #(= :mov-objects (:type %)) (:undo-changes move-changes)))
+        cyclic (assoc inverse :parent-id (first (:shapes (tm/resolve-shape moved :nested-a))))
+        cycle-refused (thf/apply-changes (tm/file moved) {:redo-changes [cyclic]})]
+    (t/is (= (thi/id :destination) (:parent-id (tm/resolve-shape moved :nested-a))))
+    (t/is (= (thi/id :destination) (:parent-id (ths/get-shape refused :nested-a))))
+    (t/is (= (thn/normalize-file (tm/file moved)) (thn/normalize-file cycle-refused)))
+    (t/is (= (thn/normalize-file (tm/file nested)) (thn/normalize-file (tm/file undone))))
+    (t/is (= (thn/normalize-file (tm/file moved))
+             (thn/normalize-file (tm/file (r/step undone (n/redo))))))))
 
 (t/deftest moving-a-child-out-of-a-grid-clears-its-old-cell
   (let [file (-> (thf/sample-file :file1)
