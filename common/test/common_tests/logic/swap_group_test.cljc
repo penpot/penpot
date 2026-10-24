@@ -899,3 +899,21 @@
              (mapv :id chain)))
     (t/is (= #{:swap-group}
              (ctf/get-touched-from-ref-chain-until-target-ref page libraries child nil)))))
+
+(t/deftest update-main-authors-a-swaps-inherited-orientation-in-its-new-main
+  (doseq [angle [0 45]]
+    (let [initial (-> (tm/make-situation (setup-sized))
+                      (r/step (n/rotate :card-star angle)) r/settle)
+          swapped (-> initial (r/step (n/swap-shape :copy-star :heart)) r/settle)
+          updated (-> swapped (r/step (n/update-main :copy)) r/settle)
+          file (tm/file updated)
+          head (tm/resolve-shape updated :copy-star)
+          main (tm/shape-by-id updated (:shape-ref head))
+          full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+      (t/is (= (if (zero? angle) #{} #{:geometry-group}) (set (:touched main))))
+      (t/is (mth/close? angle (:rotation main) 0.001))
+      (t/is (mth/close? angle (:rotation (ths/get-shape-by-id full (:id main))) 0.001))
+      (t/is (gsh/close-attrs? :points (:points head)
+                              (:points (ths/get-shape-by-id full (:id head))) 0.001))
+      (t/is (= (thn/normalize-file (tm/file swapped))
+               (thn/normalize-file (tm/file (r/step updated (n/undo)))))))))
