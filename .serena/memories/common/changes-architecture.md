@@ -49,3 +49,10 @@ To inspect what a UI action emitted, use `mem:frontend/cljs-repl` with the snipp
   When the builder lacks a main's container (inverse sync), use that main
   container's original index. Both rules preserve order after several
   siblings disappear (F158).
+
+- A move inverse can restore component nesting that existed before the
+  move, even when the normal component-loop check would reject creating
+  it now (F177). `change-parent` records `:restore-component-nesting` on
+  the inverse only when the original position already repeats a component.
+  The change applier still rejects object-tree cycles and copy-structure
+  edits. Normal forward moves keep the component-loop guard.

@@ -238,6 +238,7 @@
      [:shapes ::sm/any]
      [:index {:optional true} [:maybe :int]]
      [:after-shape {:optional true} ::sm/any]
+     [:restore-component-nesting {:optional true} :boolean]
      [:allow-altering-copies {:optional true} :boolean]]]
 
    [:reorder-children
@@ -755,7 +756,8 @@
 
 (defmethod process-change :mov-objects
   ;; FIXME: ignore-touched is no longer used, so we can consider it deprecated
-  [data {:keys [parent-id shapes index page-id component-id #_ignore-touched after-shape allow-altering-copies syncing]}]
+  [data {:keys [parent-id shapes index page-id component-id #_ignore-touched after-shape
+                allow-altering-copies restore-component-nesting syncing]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
@@ -769,7 +771,11 @@
                   shape (get objects shape-id)]
               (and shape
                    (not (invalid-targets parent-id))
-                   (not (cfh/components-nesting-loop? objects shape-id parent-id))
+                   ;; Undo may restore repeated component nesting that was
+                   ;; already present before the move. Object cycles above
+                   ;; and copy structure guards below still apply.
+                   (or restore-component-nesting
+                       (not (cfh/components-nesting-loop? objects shape-id parent-id)))
                    (or
                     ;; In some cases (like a component
                     ;; swap) it's allowed to change the

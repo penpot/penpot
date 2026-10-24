@@ -553,6 +553,8 @@
                             :shapes [(:id shape)]
                             :after-shape prev-sibling
                             :index 0} ; index is used in case there is no after-shape (moving bottom shapes)
+                     (cfh/components-nesting-loop? objects (:id shape) (:parent-id shape))
+                     (assoc :restore-component-nesting true)
                      (:allow-altering-copies options)
                      (assoc :allow-altering-copies true)))))
 
