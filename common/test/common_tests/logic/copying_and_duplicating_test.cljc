@@ -8,10 +8,15 @@
   (:require
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
+   [app.common.logic.duplicate :as cld]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.pprint :as pp]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -23,6 +28,38 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest duplicating-existing-component-nesting-does-not-open-an-expanding-branch
+  (let [file     (-> (thf/sample-file :file)
+                     (tho/add-simple-component :a :main-a :rect-a)
+                     (tho/add-simple-component :other :main-other :rect-other)
+                     (tho/add-frame :main-b)
+                     (thc/instantiate-component :a :nested-a :parent-label :main-b)
+                     (thc/make-component :b :main-b)
+                     (thc/instantiate-component :b :copy-b :children-labels [:copy-a])
+                     (tho/add-rect :safe))
+        nested   (-> (tm/make-situation file)
+                     (r/step (n/swap-shape :copy-a :other)) r/settle
+                     (r/step (n/nest-copy :copy-b :main-a)) r/settle)
+        file     (tm/file nested)
+        page     (thf/current-page file)
+        objects  (:objects page)
+        id       (thi/id :nested-a)
+        generate (fn [ids & options]
+                   (apply cld/generate-duplicate-changes (pcb/empty-changes)
+                          objects page ids (gpt/point 0 0) {(:id file) file}
+                          (:data file) (:id file) options))
+        refused  (generate #{id})
+        mixed    (generate #{id (thi/id :safe)})
+        added    (filter #(= :add-obj (:type %)) (:redo-changes mixed))
+        outside  (generate #{id} :alt-duplication? true)
+        root     (first (filter #(and (= :add-obj (:type %)) (= id (:old-id %)))
+                                (:redo-changes outside)))]
+    (t/is (empty? (:redo-changes refused)))
+    (t/is (= (:data file) (:data (thf/apply-changes file refused))))
+    (t/is (not-any? #(= id (:old-id %)) added))
+    (t/is (some #(= (thi/id :safe) (:old-id %)) added))
+    (t/is (= uuid/zero (get-in root [:obj :parent-id])))))
 
 (defn- setup []
   (-> (thf/sample-file :file1)

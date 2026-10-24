@@ -11,6 +11,7 @@
   (:refer-clojure :exclude [flush])
   (:require
    [app.common.files.helpers :as cfh]
+   [app.common.logic.duplicate :as cld]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
@@ -120,7 +121,8 @@
                               :add-child (ctk/main-instance? shape)
                               :remove-child (and (= :rect (:type shape)) (nil? (:shape-ref shape))
                                                  (some ctk/main-instance? (cfh/get-parents-with-self objects (:id shape))))
-                              :duplicate (and (top-copy shape) (< (count objects) 120))
+                              :duplicate (and (top-copy shape) (< (count objects) 120)
+                                              (cld/allow-duplicate? objects shape))
                               :nest (and (top-copy shape) (not (overridden (:id shape))))
                               :delete (ctk/main-instance? shape)
                               false))

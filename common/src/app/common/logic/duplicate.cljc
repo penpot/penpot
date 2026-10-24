@@ -494,6 +494,13 @@
             objects
             (mapcat #(ctn/get-child-heads objects %) selected))))
 
+(defn allow-duplicate?
+  "Whether a duplicate at the same position preserves component structure."
+  [objects shape]
+  (and (some? shape)
+       (ctk/allow-duplicate? objects shape)
+       (not (cfh/components-nesting-loop? objects (:id shape) (:parent-id shape)))))
+
 (defn generate-duplicate-changes
   "Prepare objects to duplicate: generate new ids, move them to the desired
   position, and recalculate parents and frames as needed."
@@ -511,11 +518,12 @@
         ;; This is because inside a variant-container can't be a copy
         ;; For other shape this way the layout won't be changed when duplicated
         ;; and if you move outside the layout will not change
-        shapes  (map (fn [shape]
-                       (cond-> shape
-                         alt-duplication?
-                         (assoc :parent-id uuid/zero :frame-id uuid/zero)))
-                     shapes)
+        shapes  (->> shapes
+                     (map (fn [shape]
+                            (cond-> shape
+                              alt-duplication?
+                              (assoc :parent-id uuid/zero :frame-id uuid/zero))))
+                     (remove #(cfh/components-nesting-loop? all-objects (:id %) (:parent-id %))))
 
 
         changes (-> changes

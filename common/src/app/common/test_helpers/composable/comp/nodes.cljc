@@ -988,9 +988,9 @@
           shape-id (tm/target-shape-id situation target)
           page     (thf/current-page the-file)
           objects  (:objects page)
-          _        (when-not (ctk/allow-duplicate? objects (get objects shape-id))
+          _        (when-not (cld/allow-duplicate? objects (get objects shape-id))
                      ;; the frontend's `duplicate-shapes` drops it and does nothing
-                     (throw (ex-info "The shape cannot be duplicated (inside a copy)"
+                     (throw (ex-info "The shape cannot be duplicated in its current parent"
                                      {:type ::duplicate-refused :target target})))
           changes  (-> (pcb/empty-changes nil)
                        (cld/generate-duplicate-changes objects

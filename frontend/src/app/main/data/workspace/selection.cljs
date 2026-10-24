@@ -473,7 +473,9 @@
             objects  (:objects page)
             ids (into #{}
                       (comp (map (d/getf objects))
-                            (filter #(ctk/allow-duplicate? objects %))
+                            (filter #(if alt-duplication?
+                                       (ctk/allow-duplicate? objects %)
+                                       (cld/allow-duplicate? objects %)))
                             (map :id))
                       ids)]
         (when (seq ids)

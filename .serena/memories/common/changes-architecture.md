@@ -56,3 +56,11 @@ To inspect what a UI action emitted, use `mem:frontend/cljs-repl` with the snipp
   the inverse only when the original position already repeats a component.
   The change applier still rejects object-tree cycles and copy-structure
   edits. Normal forward moves keep the component-loop guard.
+
+Normal duplication checks the component nesting guard too (F181). A finite
+repeated component tree can use a swapped child to cut recursion; adding
+another child in its main can open an expanding branch. cld/allow-duplicate?
+combines copy-structure and nesting guards for normal frontend/pure nodes.
+The duplicate builder checks the actual destination after ALT placement;
+a duplicate at the page root remains allowed. Undo still restores existing
+nesting through its explicit inverse flag, not through a forward bypass.
