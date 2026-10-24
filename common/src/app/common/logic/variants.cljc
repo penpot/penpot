@@ -298,6 +298,7 @@
    It will return the shape or nil if it doesn't found any"
   [container libraries shape parent-id]
   (let [ref-shape             (ctf/find-ref-shape nil container libraries shape
+                                                  :include-deleted? true
                                                   :with-context? true)
 
         ref-shape-container   (when ref-shape (:container (meta ref-shape)))

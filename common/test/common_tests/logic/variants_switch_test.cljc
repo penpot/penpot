@@ -31,6 +31,41 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest switch-keeps-overrides-inherited-through-a-deleted-near-main
+  (doseq [deleted? [false true]]
+    (let [file     (-> (thf/sample-file :file)
+                       (thv/add-variant :variants :a :main-a :b :main-b
+                                        :variant1-params {:width 100 :height 100}
+                                        :variant2-params {:width 100 :height 100})
+                       (ths/add-sample-shape :rect-a :parent-label :main-a :width 20 :height 20)
+                       (ths/add-sample-shape :rect-b :parent-label :main-b :width 20 :height 20)
+                       (tho/add-frame :outer {:width 200 :height 200})
+                       (thc/instantiate-component :a :near :parent-label :outer
+                                                  :children-labels [:near-child])
+                       (thc/make-component :outer-component :outer)
+                       (thc/instantiate-component :outer-component :copy
+                                                  :children-labels [:copy-near :copy-child]))
+          edited   (-> (tm/make-situation file)
+                       (r/step (n/change-height :near 80)) r/settle
+                       (r/step (n/rotate :near 45)) r/settle
+                       (r/step (n/change-property :near-child :fills "#00ff00")) r/settle)
+          before   (cond-> edited deleted? (r/step (n/delete-component :outer)))
+          switched (-> before (r/step (n/switch-variant :copy-near "Value2")) r/settle)
+          head     (tm/resolve-shape switched :copy-near)
+          child    (tm/shape-by-id switched (first (:shapes head)))
+          file     (tm/file switched)
+          full     (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+      (t/is (empty? (:touched (tm/resolve-shape before :copy-near))))
+      (t/is (mth/close? 80 (:height head) 0.001))
+      (t/is (mth/close? 45 (:rotation head) 0.001))
+      (t/is (= #{:swap-group :geometry-group} (:touched head)))
+      (t/is (= "#00ff00" (get-in child [:fills 0 :fill-color])))
+      (t/is (= #{:fill-group} (:touched child)))
+      (t/is (gsh/close-attrs? :points (:points head)
+                              (:points (ths/get-shape-by-id full (:id head))) 0.001))
+      (t/is (= (:data (tm/file before))
+               (:data (tm/file (r/step switched (n/undo)))))))))
+
 (t/deftest switching-an-untouched-rotated-copy-authors-its-retained-orientation
   (let [file (-> (thf/sample-file :file)
                  (thv/add-variant :variant :c01 :m01 :c02 :m02

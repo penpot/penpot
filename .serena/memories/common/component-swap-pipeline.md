@@ -53,3 +53,8 @@ After carrying geometry, the switch syncs its new subtree once from the
 updated builder objects. Untouched children must follow a retained root
 size through constraints; copying only root attrs leaves them in the old
 frame (F162). The direct sync keeps carried groups and child swaps.
+
+Variant carry must collect groups and match children through deleted near
+mains too (F180). Copies keep those values after deletion. Both the content
+ref-chain walk and find-shape-ref-child-of include deleted component data;
+otherwise a switch loses inherited size, rotation groups and child fills.
