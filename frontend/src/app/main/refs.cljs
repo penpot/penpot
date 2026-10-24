@@ -609,6 +609,8 @@
 
 (defn workspace-thumbnail-by-id
   [object-id]
+  ;; Resolving a media id builds a new map on each read; compare by
+  ;; value so subscribers do not re-render on every store change.
   (l/derived
    (fn [state]
      (when-let [entry (dm/get-in state [:thumbnails object-id])]
@@ -616,7 +618,8 @@
          (and (:uri entry)
               (not (resolved-uri? (:uri entry))))
          (update :uri cf/resolve-media))))
-   st/state))
+   st/state
+   =))
 
 (def workspace-text-modifier
   (l/derived :workspace-text-modifier st/state))

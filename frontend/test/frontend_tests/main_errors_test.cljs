@@ -14,7 +14,8 @@
     - events in flight            – the full report lists the events the
       store was processing when it caught the exception; a failing stream
       pipeline lists the emitters of the value, not its own event
-    - on-update-loop              – never throws into the scheduler's caller
+    - on-update-loop              – never throws into the scheduler's caller;
+      reports the throttled loop with the events in flight
     - flash schedules async report and toast – neither the report nor
       ntf/show is emitted synchronously
     - organization SSO recovery   – expired SSO sessions go back to the provider
@@ -553,6 +554,28 @@
    (mock/with-mocks*
      {ptk/in-flight-events (fn [_] (throw (js/Error. "in-flight read failure")))}
      (t/is (nil? (errors/on-update-loop {:rounds 26}))))))
+
+(t/deftest ^:async update-loop-is-reported-with-the-events-in-flight
+  (errors/reset-report-governor!)
+  (vreset! @#'errors/update-loop-warned-at 0)
+  (let [events (atom [])
+        loop-ev (ptk/reify ::test-update-loop-source)]
+    (await
+     (mock/with-mocks*
+       {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+        ptk/in-flight-events  (fn [_] [loop-ev])
+        st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+        rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+        tm/schedule           (mock/stub (fn [f] (f)))}
+       (errors/on-update-loop {:rounds 26})
+       ;; A second trip within the window is not reported again
+       (errors/on-update-loop {:rounds 26})
+       (t/is (= 1 (count @events)))
+       (let [props (deref (first @events))]
+         (t/is (= "handled-exception" (::ev/name props)))
+         (t/is (= "update loop throttled" (:hint props)))
+         (t/is (str/includes? (in-flight-section (:report props))
+                              "test-update-loop-source")))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Expired organization SSO session

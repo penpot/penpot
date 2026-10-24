@@ -438,17 +438,30 @@
   (volatile! 0))
 
 (defn on-update-loop
-  "Handler for the rumext update scheduler trips: logs the throttled
-  update loop with the events being processed, at most once per
+  "Handler for the rumext update scheduler trips: logs and reports the
+  throttled update loop with the events being processed, at most once per
   `report-window-ms`. Runs inside store watchers and effect bodies, so it
   never throws."
-  [_]
+  [{:keys [rounds]}]
   (try
     (let [now (inst-ms (ct/now))]
       (when (>= (- now @update-loop-warned-at) report-window-ms)
         (vreset! update-loop-warned-at now)
-        (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
-               (into-array (map ptk/repr-event (ptk/in-flight-events st/state))))))
+        (let [events (ptk/in-flight-events st/state)
+              cause  (ex-info "update loop throttled"
+                              {:type :internal
+                               :code :update-loop-throttled
+                               :rounds rounds})]
+          (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
+                 (into-array (map ptk/repr-event events)))
+          (when (seq events)
+            (.set in-flight-by-cause cause (in-flight-lines events)))
+          ;; Report outside the loop that tripped the scheduler
+          (ts/schedule
+           #(submit-report :event-name "handled-exception"
+                           :hint (ex-message cause)
+                           :report (fn [] (generate-report cause))
+                           :cause cause)))))
     (catch :default _
       nil)))
 
