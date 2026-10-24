@@ -933,3 +933,36 @@
                             (:points (ths/get-shape-by-id full (:id head))) 0.001))
     (t/is (= (thn/normalize-file (tm/file swapped))
              (thn/normalize-file (tm/file (r/step updated (n/undo))))))))
+
+(t/deftest pushing-a-swap-authors-content-that-differs-from-its-new-position
+  (let [file (-> (setup)
+                 (tho/add-frame :page-main)
+                 (thc/instantiate-component :card :inner-copy
+                                            :parent-label :page-main
+                                            :children-labels [:inner-star])
+                 (thc/make-component :page :page-main)
+                 (thc/instantiate-component :page :outer-copy
+                                            :children-labels [:outer-inner :outer-star]))
+        swapped (-> (tm/make-situation file)
+                    (r/step (n/swap-shape :outer-star :heart)) r/settle
+                    (r/step (n/swap-shape :card-star :heart)) r/settle)
+        child-id (first (:shapes (tm/resolve-shape swapped :card-star)))
+        edited (-> swapped
+                   (r/step (n/change-property :card-star :fills "#333333")) r/settle
+                   (r/step (n/change-property (constantly child-id) :fills "#444444")) r/settle)
+        updated (-> edited (r/step (n/update-main :outer-copy)) r/settle)
+        head (tm/resolve-shape updated :outer-star)
+        main (tm/shape-by-id updated (:shape-ref head))
+        main-child (tm/shape-by-id updated (first (:shapes main)))
+        file (tm/file updated)
+        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (t/is (ctk/swapped? (tm/resolve-shape edited :outer-star)))
+    (t/is (= (thi/id :card-star) (:shape-ref main)))
+    (t/is (= #{:fill-group} (:touched main) (:touched main-child)))
+    (t/is (= (:fills (tm/resolve-shape edited :outer-star)) (:fills main)))
+    (t/is (= "#222222" (get-in main-child [:fills 0 :fill-color])))
+    (t/is (empty? (:touched head)))
+    (t/is (= (:fills main) (:fills (ths/get-shape-by-id full (:id main)))))
+    (t/is (= (:fills main-child) (:fills (ths/get-shape-by-id full (:id main-child)))))
+    (t/is (= (thn/normalize-file (tm/file edited))
+             (thn/normalize-file (tm/file (r/step updated (n/undo))))))))
