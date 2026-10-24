@@ -1277,7 +1277,8 @@
          container container]
     (if (= (:id current) target-ref)
       chain
-      (if-let [ref (find-content-ref-shape nil container libraries current :with-context? true)]
+      (if-let [ref (find-content-ref-shape nil container libraries current
+                                           :include-deleted? true :with-context? true)]
         (recur (conj chain ref) ref (:container (meta ref)))
         chain))))
 
