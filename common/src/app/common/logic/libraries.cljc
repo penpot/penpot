@@ -757,6 +757,30 @@
       (and expected (orient-like shape expected (gsh/shape->center shape)))
       (update :touched ctk/set-touched-group :geometry-group))))
 
+(defn- author-pushed-content
+  "Taking a new content reference makes the pushed differences authored.
+   Placement still follows the position, and existing overrides survive."
+  [shape reference]
+  (if (or (nil? reference) (ctk/swapped? shape))
+    shape
+    (let [text? (cfh/text-shape? shape)
+          groups (into #{}
+                       (keep (fn [attr]
+                               (let [group (ctk/resolve-sync-group (:type shape) attr)]
+                                 (when (and group
+                                            (not (contains? placement-groups group))
+                                            (not= attr :position-data)
+                                            (not (and text? (= attr :content)))
+                                            (not= (get shape attr) (get reference attr)))
+                                   group))))
+                       updatable-attrs)
+          text-groups (when text?
+                        (txt/override-groups (:content reference) (:content shape)))
+          groups (cond-> (into groups text-groups)
+                   (seq text-groups) (conj :content-group))]
+      (cond-> shape
+        (seq groups) (update :touched (fnil into #{}) groups)))))
+
 (defn- add-shape-to-main
   "Add to the main shape `parent-main`, at `index`, a copy of `child-inst`,
   a child of the copy shape that pairs with it; `child-inst` then refers to
@@ -819,11 +843,15 @@
 
         new-shapes
         (if swap-in-copy?
-          (let [objects  (d/index-by :id new-shapes)
-                position (ctf/find-ref-shape nil main-container libraries replaced
-                                             :include-deleted? true
-                                             :with-context? true)]
-            (mapv (ctf/take-position nil libraries objects new-head (:shape-ref replaced) position)
+          (let [objects          (d/index-by :id new-shapes)
+                position         (ctf/find-ref-shape nil main-container libraries replaced
+                                                     :include-deleted? true
+                                                     :with-context? true)
+                take-position    (ctf/take-position nil libraries objects new-head (:shape-ref replaced) position)
+                position-objects (get-in (meta position) [:container :objects])]
+            (mapv (fn [shape]
+                    (let [shape (take-position shape)]
+                      (author-pushed-content shape (get position-objects (:shape-ref shape)))))
                   new-shapes))
           new-shapes)
 
