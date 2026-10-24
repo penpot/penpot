@@ -206,7 +206,7 @@
                      :components   (generate-sync-shape-direct changes
                                                                (get libraries current-file-id)
                                                                libraries
-                                                               container
+                                                               (assoc container :objects objects')
                                                                (:id shape')
                                                                false)
                      :colors       (clla/generate-sync-colors changes library-id shape' libraries)
@@ -297,7 +297,12 @@
   [changes file libraries container shape-id reset?]
   (shape-log :debug shape-id container
              :msg "Sync shape direct" :shape-inst (str shape-id) :reset? reset?)
-  (let [shape-inst (ctn/get-shape container shape-id)
+  (let [changes    (if (pcb/get-objects changes)
+                     changes
+                     (-> changes
+                         (pcb/with-container container)
+                         (pcb/with-objects (:objects container))))
+        shape-inst (ctn/get-shape container shape-id)
         library    (dm/get-in libraries [(:component-file shape-inst) :data])
         component  (ctkl/get-component library (:component-id shape-inst) true)]
     (if (and (ctk/in-component-copy? shape-inst)
@@ -399,6 +404,31 @@
                               (grc/rect->center (:selrect (get objects (:id shape-main)))))]
     (reduce #(update %1 %2 gsh/move delta) objects ids)))
 
+(defn- sync-descendant-orientation
+  "A parent turned by sync carries its whole subtree, including geometry
+   overrides. Resize remains the job of constraints, not matrix scale."
+  [changes container before]
+  (let [after    (get (pcb/get-objects changes) (:id before))
+        changed? (and after
+                      (or (not (mth/close? (or (:rotation before) 0) (or (:rotation after) 0) 1e-10))
+                          (not= (boolean (:flip-x before)) (boolean (:flip-x after)))
+                          (not= (boolean (:flip-y before)) (boolean (:flip-y after)))))
+        ids      (when changed? (cfh/get-children-ids (:objects container) (:id before)))]
+    (if (seq ids)
+      (let [orientation (fn [shape]
+                          (let [{:keys [a b c d]} (or (:transform shape) (gmt/matrix))
+                                horizontal (gpt/unit (gpt/point a b))
+                                vertical   (gpt/unit (gpt/point c d))
+                                matrix     (gmt/matrix (:x horizontal) (:y horizontal)
+                                                       (:x vertical) (:y vertical) 0 0)]
+                            (assoc shape :transform matrix :transform-inverse (gmt/inverse matrix))))
+            turn        (orient-like (orientation before) (orientation after) (gsh/shape->center before))
+            delta       (gpt/subtract (gsh/shape->center after) (gsh/shape->center before))]
+        (pcb/update-shapes changes ids
+                           #(cond-> % (some? turn) turn :always (gsh/move delta))
+                           {:ignore-touched true}))
+      changes)))
+
 (defn- sync-copy-recursive
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
   pairs with, then pair their children (`compare-children`) and walk each
@@ -427,10 +457,15 @@
                            (update :objects placed-like shape-main placed))
           ctx            (assoc ctx :main-container main-container)
           shape-main     (get-in main-container [:objects (:id shape-main)])
+          changes        (-> changes
+                             (sync-copy-shape ctx shape-inst shape-main)
+                             (sync-descendant-orientation container shape-inst))
+          container      (assoc container :objects (pcb/get-objects changes))
+          ctx            (assoc ctx :container container)
+          shape-inst     (ctn/get-shape container (:id shape-inst))
           children-inst  (vec (ctn/get-direct-children container shape-inst))
           children-main  (vec (ctn/get-direct-children main-container shape-main))]
       (cond-> (-> changes
-                  (sync-copy-shape ctx shape-inst shape-main)
                   (compare-children
                    children-inst
                    children-main
