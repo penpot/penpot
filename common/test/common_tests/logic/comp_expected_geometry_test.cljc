@@ -213,3 +213,18 @@
         after (get-in (thf/current-page synced) [:objects (:id child)])]
     (t/is (= (select-keys child [:flip-x :flip-y]) (select-keys after [:flip-x :flip-y])))
     (t/is (gsh/close-attrs? :points (:points child) (:points after) 0.001))))
+
+(t/deftest update-main-keeps-child-flips-when-syncing-through-a-rotated-parent
+  (let [updated (-> (setup/nested-component-with-copy)
+                    (r/step (n/rotate :copy-root 45)) r/settle
+                    (r/step (n/rotate :copy-root 90)) r/settle
+                    (r/step (n/update-main :copy-root)) r/settle)
+        file (tm/file updated)
+        main (tm/resolve-shape updated :main2-nested-head)
+        child (tm/shape-by-id updated (first (:shapes main)))
+        synced (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (doseq [shape [main child]]
+      (let [after (ths/get-shape-by-id synced (:id shape))
+            flips #(mapv (comp boolean %) [:flip-x :flip-y])]
+        (t/is (= (flips shape) (flips after)))
+        (t/is (gsh/close-attrs? :points (:points shape) (:points after) 0.001))))))
