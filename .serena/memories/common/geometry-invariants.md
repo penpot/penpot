@@ -20,6 +20,14 @@ After a geometric mutation, equivalent fields such as `:y`, `(:y :selrect)`, and
 - `gsh/transform-shape`: applies a full transform.
 - `cts/setup-shape`: initializes geometry for new shapes; variant test helpers such as `thv/add-variant-with-child` use it.
 
+## Flip flags through parent placement
+
+When composing a parent's orientation onto content, compose flip flags from
+the source shape and the origin/target parent frames. Matrix decomposition
+can set both flags during a large rotation, even when several smaller
+rotations authored neither flip (F170). Keep the original nil/false value
+when the parent frames do not change that axis's flip.
+
 ## Edits that break the invariant
 
 - `(assoc shape :x ...)` or `(assoc shape :y ...)`: updates only one field and leaves `:selrect` / `:points` stale.

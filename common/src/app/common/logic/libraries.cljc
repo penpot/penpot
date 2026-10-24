@@ -276,10 +276,16 @@
       main-container
       (let [transform (gmt/transform-in (gsh/shape->center shape-main) relative)
             angle (- (or (:rotation target) 0) (or (:rotation origin) 0))
-            turn #(-> %
-                      (assoc-in [:modifiers :rotation] angle)
-                      (gsh/apply-transform transform)
-                      (dissoc :modifiers))]
+            flip (fn [shape key]
+                   (cond-> (get shape key)
+                     (not= (boolean (get origin key)) (boolean (get target key))) not))
+            turn (fn [shape]
+                   (-> shape
+                       (assoc-in [:modifiers :rotation] angle)
+                       (gsh/apply-transform transform)
+                       (dissoc :modifiers)
+                       (assoc :flip-x (flip shape :flip-x)
+                              :flip-y (flip shape :flip-y))))]
         (update main-container :objects
                 (fn [objects]
                   (reduce #(update %1 %2 turn) objects
