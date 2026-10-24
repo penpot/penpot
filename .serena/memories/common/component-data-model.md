@@ -66,3 +66,9 @@ Moving/dropping a shape into a variant container through the move-to-frame path 
   New main clones must use the same empty-state representation as
   `process-operation :set-touched`; otherwise a later move+undo changes
   `:touched #{}` to a missing field and cannot restore the exact state (F156).
+
+Content ref chains (get-ref-chain-until-target-ref, including touched walks)
+take find-content-ref-shape at every link. A swapped intermediate head
+follows its own main; collecting its replaced position's content overrides
+creates phantom groups in copies of that swap (F165). Position advancement
+still uses advance-shape-ref and find-ref-shape.

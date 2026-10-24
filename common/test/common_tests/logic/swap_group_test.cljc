@@ -34,6 +34,7 @@
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
@@ -877,3 +878,24 @@
         swapped (-> initial (r/step (n/swap-shape :card-star :heart)) r/settle)
         undone (r/step swapped (n/undo))]
     (t/is (= (thn/normalize-file file) (thn/normalize-file (tm/file undone))))))
+
+(t/deftest inherited-content-overrides-stop-at-a-swapped-reference
+  (let [file (-> (thf/sample-file :file)
+                 (tho/add-two-levels-nested-component-with-copy
+                  :c1 :main1 :main1-child :c2 :main2 :nested-head1
+                  :c3 :main3 :nested-head2 :nested-subhead2 :copy3)
+                 (tho/add-simple-component :other :other-main :other-child))
+        file (-> (tm/make-situation file)
+                 (r/step (n/change-property :nested-head1 :opacity 0.4))
+                 tm/file
+                 (tho/swap-component-in-shape :nested-subhead2 :other
+                                              :propagate-fn #(propagate % :c3)))
+        page (thf/current-page file)
+        middle (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy3))))
+        child (ths/get-shape-by-id file (first (:shapes middle)))
+        libraries {(:id file) file}
+        chain (ctf/get-ref-chain-until-target-ref page libraries child nil)]
+    (t/is (= [(:id child) (thi/id :nested-subhead2) (thi/id :other-main)]
+             (mapv :id chain)))
+    (t/is (= #{:swap-group}
+             (ctf/get-touched-from-ref-chain-until-target-ref page libraries child nil)))))
