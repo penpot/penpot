@@ -72,3 +72,9 @@ take find-content-ref-shape at every link. A swapped intermediate head
 follows its own main; collecting its replaced position's content overrides
 creates phantom groups in copies of that swap (F165). Position advancement
 still uses advance-shape-ref and find-ref-shape.
+
+A swapped head pushed into a main can become a plain nested copy of its own
+component. If the old position supplied rotation or flips that differ from
+that component's expected parent placement, the new nested copy needs a
+geometry-group override. Otherwise a later sync discards the orientation
+that update-main just pushed (F168). The source copy clears its overrides.

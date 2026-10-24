@@ -736,6 +736,21 @@
                      (cons {:type :reg-objects :shapes all-parents}
                            (map (comp del-obj-change :id) new-shapes)))))
 
+(defn- rehead-pushed-swap
+  "A pushed swap becomes a plain nested copy. Its old position's
+   orientation becomes authored when it differs from its own main."
+  [shape main container]
+  (let [shape (-> shape
+                  (assoc :shape-ref (:id main))
+                  (ctk/remove-swap-group))
+        main-container (when main
+                         (main-in-parent-orientation (:container (meta main)) main
+                                                     container shape false))
+        expected (get-in main-container [:objects (:id main)])]
+    (cond-> shape
+      (and expected (orient-like shape expected (gsh/shape->center shape)))
+      (update :touched ctk/set-touched-group :geometry-group))))
+
 (defn- add-shape-to-main
   "Add to the main shape `parent-main`, at `index`, a copy of `child-inst`,
   a child of the copy shape that pairs with it; `child-inst` then refers to
@@ -754,14 +769,17 @@
                               (seq (ctn/get-parent-copy-heads (:objects main-container) parent-main)))
         replaced         (when swap-in-copy?
                            (ctn/get-shape main-container (:shape-ref child-inst)))
+        content-main     (when (and (ctk/swapped? child-inst) (not swap-in-copy?))
+                           (ctf/find-content-ref-shape nil container libraries child-inst
+                                                       :include-deleted? true
+                                                       :with-context? true))
 
         update-new-shape (fn [new-shape original-shape]
                            (cond-> (reposition-shape new-shape root-inst root-main)
                              (and (= (:id original-shape) (:id child-inst))
                                   (ctk/swapped? child-inst)
                                   (not swap-in-copy?))
-                             (-> (assoc :shape-ref (swap-content-root-id libraries child-inst))
-                                 (ctk/remove-swap-group))))
+                             (rehead-pushed-swap content-main main-container)))
 
         ;; the copy now follows the main, swap included
         update-original-shape (fn [original-shape new-shape]
