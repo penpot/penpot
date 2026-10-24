@@ -966,3 +966,22 @@
     (t/is (= (:fills main-child) (:fills (ths/get-shape-by-id full (:id main-child)))))
     (t/is (= (thn/normalize-file (tm/file edited))
              (thn/normalize-file (tm/file (r/step updated (n/undo))))))))
+
+(t/deftest swapping-back-inherits-the-new-positions-content-overrides
+  (let [initial (tm/make-situation (setup))
+        child-id (first (:shapes (tm/resolve-shape initial :card-star)))
+        edited (-> initial
+                   (r/step (n/change-property :card-star :fills "#333333")) r/settle
+                   (r/step (n/change-property (constantly child-id) :fills "#444444")) r/settle)
+        swapped (-> edited (r/step (n/swap-shape :copy-star :star)) r/settle)
+        head (tm/resolve-shape swapped :copy-star)
+        child (tm/shape-by-id swapped (first (:shapes head)))
+        file (tm/file swapped)
+        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (t/is (= "#333333" (get-in head [:fills 0 :fill-color])))
+    (t/is (= "#444444" (get-in child [:fills 0 :fill-color])))
+    (t/is (empty? (:touched head)))
+    (t/is (empty? (:touched child)))
+    (t/is (= (:fills head) (:fills (ths/get-shape-by-id full (:id head)))))
+    (t/is (= (thn/normalize-file (tm/file edited))
+             (thn/normalize-file (tm/file (r/step swapped (n/undo))))))))
