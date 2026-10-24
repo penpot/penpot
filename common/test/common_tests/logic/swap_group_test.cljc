@@ -917,3 +917,19 @@
                               (:points (ths/get-shape-by-id full (:id head))) 0.001))
       (t/is (= (thn/normalize-file (tm/file swapped))
                (thn/normalize-file (tm/file (r/step updated (n/undo)))))))))
+
+(t/deftest pushing-a-swap-uses-the-parents-updated-orientation
+  (let [swapped (-> (tm/make-situation (setup-sized))
+                    (r/step (n/swap-shape :copy-star :heart)) r/settle
+                    (r/step (n/rotate :copy 45)) r/settle)
+        updated (-> swapped (r/step (n/update-main :copy)) r/settle)
+        file (tm/file updated)
+        head (tm/resolve-shape updated :copy-star)
+        main (tm/shape-by-id updated (:shape-ref head))
+        full (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (t/is (empty? (:touched main)))
+    (t/is (mth/close? 45 (:rotation main) 0.001))
+    (t/is (gsh/close-attrs? :points (:points head)
+                            (:points (ths/get-shape-by-id full (:id head))) 0.001))
+    (t/is (= (thn/normalize-file (tm/file swapped))
+             (thn/normalize-file (tm/file (r/step updated (n/undo))))))))

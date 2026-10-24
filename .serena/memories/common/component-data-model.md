@@ -78,3 +78,6 @@ component. If the old position supplied rotation or flips that differ from
 that component's expected parent placement, the new nested copy needs a
 geometry-group override. Otherwise a later sync discards the orientation
 that update-main just pushed (F168). The source copy clears its overrides.
+Compare against the parent's pushed frame: the inverse sync has already
+written its new rotation, while the original container still has the old
+one. Using that old frame creates phantom geometry overrides (F172).

@@ -779,13 +779,23 @@
                            (ctf/find-content-ref-shape nil container libraries child-inst
                                                        :include-deleted? true
                                                        :with-context? true))
+        ;; The parent's inverse sync already pushed its geometry. Compare
+        ;; against that frame, rather than its original container value.
+        placement-container
+        (cond-> main-container
+          content-main
+          (assoc-in [:objects (:id parent-main)]
+                    (-> (ctn/get-shape container (:parent-id child-inst))
+                        (reposition-shape root-inst root-main)
+                        (assoc :id (:id parent-main)
+                               :shape-ref (:shape-ref parent-main)))))
 
         update-new-shape (fn [new-shape original-shape]
                            (cond-> (reposition-shape new-shape root-inst root-main)
                              (and (= (:id original-shape) (:id child-inst))
                                   (ctk/swapped? child-inst)
                                   (not swap-in-copy?))
-                             (rehead-pushed-swap content-main main-container)))
+                             (rehead-pushed-swap content-main placement-container)))
 
         ;; the copy now follows the main, swap included
         update-original-shape (fn [original-shape new-shape]
