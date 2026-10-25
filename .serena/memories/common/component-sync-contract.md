@@ -72,3 +72,9 @@ change builder (F182). Its content and position reference can have different
 sizes, so rotating the content rigidly can leave its untransformed anchor
 different from full sync. Keep the swapped head/children untouched and put
 the derived correction in the same undo group. Authored geometry stays.
+
+Reset drops the root's geometry override from the whole sync context
+(F185), including the branch that clones replacement children. Clearing it
+only while updating existing shapes can turn a newly added child by the
+old override after its parent has already reset. The reset and replacement
+children share one undo group and stay stable through later sync.

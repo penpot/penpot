@@ -36,6 +36,40 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest resetting-a-turned-copy-places-replacement-children-in-the-main-frame
+  (doseq [angle [45 90]]
+    (let [file     (-> (thf/sample-file :file)
+                       (tho/add-simple-component :a :main-a :rect-a
+                                                 :root-params {:width 100 :height 100}
+                                                 :child-params {:width 20 :height 20 :x 10 :y 10})
+                       (tho/add-simple-component :other :main-other :rect-other
+                                                 :root-params {:width 100 :height 100}
+                                                 :child-params {:width 20 :height 20 :x 10 :y 10})
+                       (tho/add-frame :main-b {:width 200 :height 200})
+                       (thc/instantiate-component :a :b-a :parent-label :main-b)
+                       (thc/make-component :b :main-b)
+                       (thc/instantiate-component :b :copy-b :children-labels [:copy-a]))
+          turned   (-> (tm/make-situation file)
+                       (r/step (n/swap-shape :copy-a :other)) r/settle
+                       (r/step (n/rotate :copy-b angle)) r/settle)
+          reset    (-> turned (r/step (n/reset :copy-b)) r/settle)
+          head     (tm/resolve-shape reset :copy-a)
+          child    (tm/shape-by-id reset (first (:shapes head)))
+          expected (gsh/move (ths/get-shape file :rect-a)
+                             (gpt/subtract (gsh/shape->center head)
+                                           (gsh/shape->center (ths/get-shape file :main-a))))
+          file     (tm/file reset)
+          full     (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+      (t/is (mth/close? 0 (:rotation head) 0.001))
+      (t/is (mth/close? 0 (:rotation child) 0.001))
+      (t/is (empty? (:touched head)))
+      (t/is (empty? (:touched child)))
+      (t/is (gsh/close-attrs? :points (:points expected) (:points child) 0.001))
+      (t/is (gsh/close-attrs? :points (:points child)
+                              (:points (ths/get-shape-by-id full (:id child))) 0.001))
+      (t/is (= (thn/normalize-file (tm/file turned))
+               (thn/normalize-file (tm/file (r/step reset (n/undo)))))))))
+
 (t/deftest turning-a-parent-settles-a-swapped-head-with-a-different-position-size
   (doseq [angle [45 90]]
     (let [file    (-> (thf/sample-file :file)
