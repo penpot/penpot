@@ -252,3 +252,110 @@
            groups (cond-> groups ordinary? (dissoc :swap-group))]
        (if (seq groups) (assoc result id groups) (dissoc result id))))
    model model))
+
+(defn- subtree-shapes
+  [objects id]
+  (cons (get objects id) (mapcat #(subtree-shapes objects %) (:shapes (get objects id)))))
+
+(defn- variant-paths
+  [objects root-id]
+  (letfn [(path [shape]
+            (when-not (= root-id (:id shape))
+              (conj (vec (path (get objects (:parent-id shape))))
+                    [(:name shape) (case (:type shape)
+                                     (:frame :group) :container
+                                     (:rect :circle :bool :path) :shape
+                                     (:type shape))])))]
+    (first
+     (reduce (fn [[result counts] shape]
+               (let [p (path shape)
+                     ordinal (get counts p 0)]
+                 [(assoc result (:id shape) [p ordinal]) (update counts p (fnil inc 0))]))
+             [{} {}] (reverse (subtree-shapes objects root-id))))))
+
+(defn swap
+  "Predict switch carry from authored groups and the two mains. Matching
+   uses main names and ancestor kinds; copy renames never change a match."
+  [model before after root-id old-main-id new-main-id keep?]
+  (let [old-paths (variant-paths before old-main-id)
+        new-paths (variant-paths after new-main-id)
+        old-by-path (into {} (map (fn [[id path]] [path (get before id)])) old-paths)
+        source (fn [objects paths main-id original]
+                 (let [mains (into {} (keep (fn [shape]
+                                              (when (:main-instance shape)
+                                                [[(:component-file shape) (:component-id shape)] shape])))
+                                   (vals objects))]
+                   (or
+                    (loop [shape original groups {} seen #{}]
+                      (cond
+                        (contains? paths (:id shape)) [shape groups]
+                        (or (nil? shape) (contains? seen (:id shape))) nil
+                        :else (recur (if (contains? (get model (:id shape)) :swap-group)
+                                       (get mains [(:component-file shape) (:component-id shape)])
+                                       (get objects (:shape-ref shape)))
+                                     (merge (get model (:id shape)) groups)
+                                     (conj seen (:id shape)))))
+                    ;; A swapped root refers to its position, while its content
+                    ;; and authored overrides belong to its own component.
+                    (when (= root-id (:id original))
+                      [(get objects main-id) (get model root-id)]))))
+        old-copies (into {} (keep (fn [shape]
+                                    (when-let [[main groups] (source before old-paths old-main-id shape)]
+                                      [(get old-paths (:id main)) [shape main groups]])))
+                         (subtree-shapes before root-id))
+        cleared (clear-subtree model before root-id)
+        result
+        (if-not keep?
+          cleared
+          (reduce
+           (fn [result shape]
+             (if (and (not= root-id (:id shape)) (contains? before (:id shape)))
+               ;; A switch keeps an authored swapped subtree with its ids.
+               (cond-> result (seq (get model (:id shape)))
+                       (assoc (:id shape) (get model (:id shape))))
+               (if-let [[main _] (source after new-paths new-main-id shape)]
+                 (let [path (get new-paths (:id main))
+                       [old old-main groups] (get old-copies path)
+                       old-main (or old-main (get old-by-path path))]
+                   (reduce-kv
+                    (fn [result group _]
+                      (let [attrs (get attributes group)
+                            carried (filter (fn [attr]
+                                              (let [old-value (get old-main attr)
+                                                    new-value (get main attr)
+                                                    agree? (if (and (= group :geometry-group)
+                                                                    (number? old-value) (number? new-value))
+                                                             (mth/close? old-value new-value)
+                                                             (= old-value new-value))]
+                                                (and agree? (not= (get old attr) new-value)))) attrs)]
+                        (cond-> result
+                          (seq carried)
+                          (assoc-in [(:id shape) group]
+                                    (merge (values main group) (select-keys old carried))))))
+                    result (dissoc groups :swap-group)))
+                 result)))
+           cleared (subtree-shapes after root-id)))
+        root (get after root-id)
+        old-root (get before root-id)
+        parent (get after (:parent-id root))
+        position (get after (:shape-ref root))
+        main (get after new-main-id)
+        main-parent (get after (:parent-id main))
+        baseline (if (:shape-ref parent) position main)
+        baseline-parent (if (:shape-ref parent)
+                          (get after (:parent-id position)) main-parent)
+        rotation (mod (+ (or (:rotation baseline) 0)
+                         (- (or (:rotation parent) 0) (or (:rotation baseline-parent) 0))) 360)
+        flip (fn [key]
+               (odd? (count (filter identity [(get baseline key) (get parent key)
+                                              (get baseline-parent key)]))))
+        retained-orientation? (or (not (mth/close? (mod (or (:rotation old-root) 0) 360) rotation 0.01))
+                                  (not= (boolean (:flip-x old-root)) (flip :flip-x))
+                                  (not= (boolean (:flip-y old-root)) (flip :flip-y)))]
+    (cond-> result
+      retained-orientation?
+      (assoc-in [root-id :geometry-group]
+                (merge (or (get-in result [root-id :geometry-group]) (values main :geometry-group))
+                       (select-keys old-root [:rotation :flip-x :flip-y])))
+      (and (:shape-ref parent) (not= (:component-id root) (:component-id position)))
+      (assoc-in [root-id :swap-group] {}))))

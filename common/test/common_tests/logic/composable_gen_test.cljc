@@ -118,6 +118,57 @@
     (t/is (= 1 (count (r/pending-components partial))))
     (t/is (empty? (r/pending-components settled)))))
 
+(t/deftest swaps-and-variant-switches-run-in-a-three-level-world
+  (let [program {:world [2 2 {:variants true}]
+                 :ops [[:switch 0] [:swap 0] [:undo] [:redo]
+                       [:reset 0] [:switch 1] [:sync 0]]}
+        result (cg/run program)]
+    (t/is (pos? (get-in result [:executed :swap] 0)))
+    (t/is (pos? (get-in result [:executed :switch] 0)))
+    (t/is (= (:trace result) (:trace (cg/run program (:trace result)))))))
+
+(t/deftest variant-carry-follows-the-two-mains
+  (doseq [differ? [false true]]
+    (let [spec [2 2 {:variants true :variant-diff differ?}]
+          initial (cg/initial-state spec)
+          situation (:situation initial)
+          head (:shape (cg/resolve-op situation {} [:switch 0]))
+          child (first (:shapes head))
+          index (first (keep-indexed #(when (= child (get-in %2 [:shape :id])) %1)
+                                     (cg/candidates situation {} :edit 1)))
+          result (cg/run {:world spec :ops [[:edit index 0 2 1] [:switch 0] [:sync 0]
+                                            [:undo] [:redo]]})
+          groups (mapcat keys (vals (:model result)))]
+      (t/is (some? index))
+      (t/is (= (not differ?) (boolean (some #{:fill-group} groups)))))))
+
+(t/deftest random-swap-compositions
+  (let [coverage (atom {})
+        failure (atom nil)]
+    (smt/check!
+     (smt/for [program cg/swap-program-gen]
+       (cg/check-program program coverage failure))
+     :max-size 30)
+    (println "Executed swap operations:" (pr-str @coverage))
+    (doseq [kind [:swap :switch :edit :reset :undo :redo]]
+      (t/is (pos? (get @coverage kind 0)) (str "No executed " kind)))))
+
+(t/deftest random-renames-leave-variant-management-to-its-own-operations
+  (let [situation (cg/world [2 2 {:variants true}])
+        file (tm/file situation)]
+    (doseq [index (range (count (cg/tree situation)))
+            :let [shape (:shape (cg/resolve-op situation {} [:edit index 2 1]))]]
+      (t/is (not (:is-variant-container shape)))
+      (t/is (nil? (:variant-id shape)))
+      (t/is (nil? (get-in file [:data :components (:component-id shape) :variant-id]))))))
+
+(t/deftest swap-after-updating-a-rotated-main-is-already-fully-synced
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                       :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0]
+                             [:undo] [:redo] [:reset 0] [:edit 0 1 1 1]
+                             [:update-main 0] [:sync 1] [:rotate 0 0 0 0]
+                             [:update-main 0 0 0 0] [:swap 0 0 0 0] [:restore 0 0 0 0]]}))))
+
 (t/deftest detach-from-a-deleted-near-main-inherits-only-the-skipped-level
   (t/is (map? (cg/run {:world [3 2 {:text true :layout nil}]
                        :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
@@ -145,6 +196,13 @@
                              [:detach 0] [:undo] [:redo] [:rotate 2 0 0 0]
                              [:resize 7 0 0 0] [:duplicate 0 0 0 0]]}))))
 
+(t/deftest pushed-swap-followed-by-nesting-undoes-exactly
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                       :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0]
+                             [:undo] [:redo] [:reset 0] [:edit 0 1 1 1]
+                             [:update-main 0] [:sync 1] [:swap 0 0 0 0]
+                             [:switch 1 0 0 0] [:update-main 0 0 0 0] [:nest 0 0 0 0]]}))))
+
 (t/deftest updating-a-rotated-outer-main-composes-authored-child-orientation
   (t/is (map? (cg/run {:world [2 0 {:text true :layout nil}]
                        :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
@@ -154,6 +212,14 @@
                              [:detach 0] [:undo] [:redo] [:duplicate 0 0 0 0]
                              [:resize 0 0 0 0] [:nest 0 0 0 0] [:rotate 4 0 0 0]
                              [:detach 3 0 0 0] [:update-main 4 0 0 0]]}))))
+
+(t/deftest swapping-main-subtrees-with-several-children-undoes-their-order
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                       :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0]
+                             [:undo] [:redo] [:reset 0] [:edit 0 1 1 1]
+                             [:update-main 0] [:sync 1] [:add-child 1 0 0 0]
+                             [:add-child 1 0 0 0] [:add-child 1 0 0 0]
+                             [:swap 0 0 0 0] [:swap 0 0 0 0] [:text 0 0 0 0]]}))))
 
 (t/deftest minimum-size-parent-orientation-does-not-amplify-oracle-drift
   (t/is (map? (cg/run {:world [3 0 {:text true :layout nil}]
@@ -184,6 +250,46 @@
     (t/is (= 90 (get-in model [:child :geometry-group :rotation])))
     (t/is (false? (shadow/same-value? (:child after) :geometry-group
                                       (get-in model [:child :geometry-group]))))))
+
+(t/deftest switch-shadow-tolerates-main-size-noise-but-rejects-real-size-changes
+  (doseq [[difference expected] [[1e-12 80] [1 nil]]]
+    (let [main {:id :old :name "Board" :type :frame :width 100 :height 100 :rotation 0}
+          copy (assoc main :id :copy :shape-ref :old :height 80 :parent-id :page)
+          target (assoc main :id :new :height (+ 100 difference))
+          result (shadow/swap {:copy {:geometry-group (shadow/values copy :geometry-group)}}
+                              {:old main :copy copy}
+                              {:new target :copy (assoc copy :shape-ref :new)}
+                              :copy :old :new true)]
+      (t/is (= expected (get-in result [:copy :geometry-group :height]))))))
+
+(t/deftest switch-shadow-follows-authored-content-through-a-swapped-near-main
+  (doseq [swapped? [false true]]
+    (let [main    {:id :a :name "Board" :type :frame :main-instance true
+                   :component-id :a-component :component-file :local :fills [:white]}
+          before  {:a main
+                   :b (assoc main :id :b :component-id :b-component)
+                   :position (assoc main :id :position :main-instance false :shape-ref :b
+                                    :component-id :b-component :fills [:blue])
+                   :near (assoc main :id :near :main-instance false :shape-ref (if swapped? :position :a)
+                                :parent-id :outer-main :fills [:green])
+                   :parent {:id :parent :shape-ref :outer-main}
+                   :copy (assoc main :id :copy :main-instance false :shape-ref :near
+                                :parent-id :parent :fills [:green])}
+          after   (assoc before :copy (assoc (:copy before) :component-id :b-component
+                                             :fills [:wrong]))
+          model   {:near (cond-> {:fill-group {:fills [:green]}}
+                           swapped? (assoc :swap-group {}))
+                   :position {:fill-group {:fills [:blue]}}}
+          result  (shadow/swap model before after :copy :a :b true)
+          expected (get-in result [:copy :fill-group])]
+      (t/is (= [:green] (:fills expected)))
+      (t/is (false? (shadow/same-value? (:copy after) :fill-group expected))))))
+
+(t/deftest rotated-swapped-head-keeps-its-position-anchor-with-a-different-content-size
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                       :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0]
+                             [:undo] [:redo] [:reset 0] [:edit 0 1 1 1] [:update-main 0]
+                             [:sync 1] [:swap 17 0 0 0] [:resize 0 0 0 0] [:rotate 0 0 0 0]]}))))
 
 (t/deftest pushed-swap-shadow-predicts-orientation-without-reading-the-new-child
   (let [before {:copy {:id :copy :shape-ref :main :shapes [:child]}
@@ -222,6 +328,47 @@
       (t/is (= {:fills [:white] :hide-fill-on-export nil} (get-in model [id :fill-group])))
       (t/is (false? (shadow/same-value? (get after id) :fill-group (get-in model [id :fill-group])))))))
 
+(t/deftest switch-shadow-keeps-inherited-orientation-even-if-the-result-loses-it
+  (let [before {:page {:id :page}
+                :main-a {:id :main-a :parent-id :page :name "A" :rotation 45}
+                :main-b {:id :main-b :parent-id :page :name "B" :rotation 0}
+                :copy {:id :copy :parent-id :page :shape-ref :main-a :rotation 45}}
+        after (assoc before :copy (assoc (:copy before) :shape-ref :main-b :rotation 0))
+        model (shadow/swap {} before after :copy :main-a :main-b true)
+        expected (get-in model [:copy :geometry-group])]
+    (t/is (= 45 (:rotation expected)))
+    (t/is (false? (shadow/same-value? (:copy after) :geometry-group expected)))))
+
+(t/deftest switch-shadow-combines-carried-size-with-retained-orientation
+  (let [before {:page {:id :page}
+                :main-a {:id :main-a :parent-id :page :name "A" :width 100 :height 100 :rotation 45}
+                :main-b {:id :main-b :parent-id :page :name "B" :width 100 :height 100 :rotation 0}
+                :copy {:id :copy :parent-id :page :shape-ref :main-a
+                       :width 100 :height 80 :rotation 90}}
+        after (assoc before :copy (assoc (:copy before) :shape-ref :main-b :rotation 0))
+        model (shadow/swap {:copy {:geometry-group (shadow/values (:copy before) :geometry-group)}}
+                           before after :copy :main-a :main-b true)
+        expected (get-in model [:copy :geometry-group])]
+    (t/is (= 80 (:height expected)))
+    (t/is (= 90 (:rotation expected)))
+    (t/is (false? (shadow/same-value? (:copy after) :geometry-group expected)))))
+
+(t/deftest switch-keeps-retained-orientation-together-with-carried-size
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                       :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0] [:undo] [:redo]
+                             [:reset 0] [:edit 0 1 1 1] [:update-main 0] [:sync 1]
+                             [:swap 0 0 0 0] [:delete 0 0 0 0] [:rotate 0 0 0 0]
+                             [:nest 0 0 0 0] [:detach 0 0 0 0] [:update-main 0 0 0 0]
+                             [:switch 0 0 0 0]]}))))
+
+(t/deftest switching-an-untouched-rotated-copy-survives-full-sync
+  (t/is (map? (cg/run {:world [3 2 {:variants true :variant-diff false}]
+                       :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0] [:undo] [:redo]
+                             [:reset 0] [:edit 0 1 1 1] [:update-main 0] [:sync 1]
+                             [:edit 11 0 0 0] [:rotate 2 0 0 0] [:nest 3 0 0 0] [:resize 3 0 0 0]
+                             [:nest 3 0 0 0] [:swap 10 0 0 0] [:resize 3 0 0 0]
+                             [:update-main 5 0 0 0] [:switch 0 0 0 0] [:detach 0 0 0 0]]}))))
+
 (t/deftest resizing-a-copy-of-an-empty-flex-main-keeps-layout-valid
   (t/is (map? (cg/run {:world [3 0 {:text true :layout :flex}]
                        :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
@@ -234,3 +381,13 @@
 (t/deftest updating-a-main-after-successive-rotations-keeps-child-flips
   (t/is (map? (cg/run {:world [2 1]
                        :ops [[:rotate 1 0 0 0] [:rotate 1 0 1 0] [:update-main 0 0 0 0]]}))))
+
+(t/deftest generated-update-main-settles-a-turned-swapped-position
+  (let [result (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                        :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0] [:undo] [:redo]
+                              [:reset 0] [:edit 0 1 1 1] [:update-main 0] [:sync 1]
+                              [:delete 8 0 0 0] [:swap 15 0 0 0] [:edit 14 0 0 0]
+                              [:resize 4 0 0 0] [:resize 0 0 0 0] [:nest 4 0 0 0]
+                              [:rotate 5 0 0 0] [:update-main 14 0 0 0] [:duplicate 0 0 0 0]]})]
+    (t/is (pos? (get-in result [:executed :update-main] 0)))
+    (t/is (pos? (get-in result [:executed :rotate] 0)))))

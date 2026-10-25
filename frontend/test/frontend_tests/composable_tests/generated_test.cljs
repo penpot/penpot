@@ -99,6 +99,10 @@
 (t/deftest ^:async nesting-restores-default-constraints-on-undo
   (await (replay {:world [2 0] :ops [[:nest 0]]})))
 
+(t/deftest ^:async swap-programs-replay-through-the-frontend
+  (doseq [seed [712 20261022]]
+    (await (replay (gen/generate cg/swap-program-gen 5 seed)))))
+
 (t/deftest ^:async partial-sync-geometry-boundary-shrunk-regression
   (await (replay {:world [2 0 {:text true :layout nil}]
                   :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
@@ -112,6 +116,14 @@
   (await (replay {:world [2 0 {:text true}]
                   :ops [[:duplicate 0] [:nest 0] [:rotate 0 0 0]
                         [:edit 0 0 1 1] [:update-main 0]]})))
+
+(t/deftest ^:async swapping-main-subtrees-with-several-children-undoes-their-order
+  (await (replay {:world [2 2 {:variants true :variant-diff false}]
+                  :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0]
+                        [:undo] [:redo] [:reset 0] [:edit 0 1 1 1]
+                        [:update-main 0] [:sync 1] [:add-child 1 0 0 0]
+                        [:add-child 1 0 0 0] [:add-child 1 0 0 0]
+                        [:swap 0 0 0 0] [:swap 0 0 0 0] [:text 0 0 0 0]]})))
 
 (t/deftest ^:async updating-a-rotated-outer-main-composes-authored-child-orientation
   (await (replay {:world [2 0 {:text true :layout nil}]
@@ -142,6 +154,12 @@
                         [:detach 0] [:undo] [:redo] [:resize 0 0 0 0]
                         [:delete 0 0 0 0] [:rotate 0 0 0 0] [:detach 0 0 0 0]]})))
 
+(t/deftest ^:async rotated-swapped-head-keeps-its-position-anchor-with-a-different-content-size
+  (await (replay {:world [2 2 {:variants true :variant-diff false}]
+                  :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0]
+                        [:undo] [:redo] [:reset 0] [:edit 0 1 1 1] [:update-main 0]
+                        [:sync 1] [:swap 17 0 0 0] [:resize 0 0 0 0] [:rotate 0 0 0 0]]})))
+
 (t/deftest ^:async resizing-a-copy-of-an-empty-flex-main-keeps-layout-valid
   (await (replay {:world [3 0 {:text true :layout :flex}]
                   :ops [[:add-child 0] [:remove-child 0] [:duplicate 0] [:nest 0]
@@ -163,3 +181,27 @@
                         [:edit 0 0 1 1] [:update-main 0] [:sync 1]
                         [:detach 0] [:undo] [:redo] [:resize 1 0 0 0]
                         [:nest 2 0 0 0] [:rotate 0 0 3 0] [:edit 0 0 0 0]]})))
+
+(t/deftest ^:async switching-an-untouched-rotated-copy-survives-full-sync
+  (await (replay {:world [3 2 {:variants true :variant-diff false}]
+                  :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0] [:undo] [:redo]
+                        [:reset 0] [:edit 0 1 1 1] [:update-main 0] [:sync 1]
+                        [:edit 11 0 0 0] [:rotate 2 0 0 0] [:nest 3 0 0 0] [:resize 3 0 0 0]
+                        [:nest 3 0 0 0] [:swap 10 0 0 0] [:resize 3 0 0 0]
+                        [:update-main 5 0 0 0] [:switch 0 0 0 0] [:detach 0 0 0 0]]})))
+
+(t/deftest ^:async switch-keeps-retained-orientation-together-with-carried-size
+  (await (replay {:world [2 2 {:variants true :variant-diff false}]
+                  :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0] [:undo] [:redo]
+                        [:reset 0] [:edit 0 1 1 1] [:update-main 0] [:sync 1]
+                        [:swap 0 0 0 0] [:delete 0 0 0 0] [:rotate 0 0 0 0]
+                        [:nest 0 0 0 0] [:detach 0 0 0 0] [:update-main 0 0 0 0]
+                        [:switch 0 0 0 0]]})))
+
+(t/deftest ^:async generated-update-main-settles-a-turned-swapped-position
+  (await (replay {:world [2 2 {:variants true :variant-diff false}]
+                  :ops [[:edit 0 0 1 1] [:switch 0] [:switch 0] [:swap 0] [:undo] [:redo]
+                        [:reset 0] [:edit 0 1 1 1] [:update-main 0] [:sync 1]
+                        [:delete 8 0 0 0] [:swap 15 0 0 0] [:edit 14 0 0 0]
+                        [:resize 4 0 0 0] [:resize 0 0 0 0] [:nest 4 0 0 0]
+                        [:rotate 5 0 0 0] [:update-main 14 0 0 0] [:duplicate 0 0 0 0]]})))

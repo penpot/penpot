@@ -13,6 +13,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.logic.duplicate :as cld]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
@@ -81,7 +83,19 @@
                                   [(n/make-nested-component name depth)
                                    (n/instantiate-copy name)
                                    (n/instantiate-copy name)])))))
-          (let [s (setup/empty-situation)]
+          (let [s (setup/empty-situation)
+                s (if (:variants opts)
+                    (reduce #(tm/apply-to %2 %1) s
+                            [(n/create-component "variant" setup/labeled-fill :size 100)
+                             (n/make-variant-container "random-variants"
+                                                       [["a" setup/labeled-fill]
+                                                        ["b" (if (:variant-diff opts) "#ff0000" setup/labeled-fill)]]
+                                                       :size 100)
+                             (n/make-nested-component-with-variant "variant" "random-variants" "a")
+                             (n/make-nested-component "variant" 1)
+                             (n/instantiate-copy "variant")
+                             (n/instantiate-copy "variant")])
+                    s)]
             (cond-> s
               (:text opts)
               (tm/with-file (-> (thtx/add-text-component-with-copy (tm/file s) [[["Hello world"]]])
@@ -125,9 +139,25 @@
                                               (cld/allow-duplicate? objects shape))
                               :nest (and (top-copy shape) (not (overridden (:id shape))))
                               :delete (ctk/main-instance? shape)
+                              (:swap :switch) (and (copy-head shape) (live-component shape))
                               false))
                           (tree situation))]
     (case kind
+      (:swap :switch)
+      (vec (for [entry eligible
+                 destination (tree situation)
+                 :let [shape (:shape entry)
+                       main (:shape destination)
+                       origin (get-in file [:data :components (:component-id shape)])
+                       component (get-in file [:data :components (:component-id main)])]
+                 :when (and (ctk/main-instance? main)
+                            (not= (:component-id shape) (:component-id main))
+                            (or (= kind :swap)
+                                (and (:variant-id origin)
+                                     (= (:variant-id origin) (:variant-id component))))
+                            (not (clv/swap-nesting-loop? objects shape (:data file) (:id component))))]
+             (assoc entry :destination destination
+                    :variant-value (get-in component [:variant-properties 0 :value]))))
       :restore (->> (vals (get-in file [:data :components]))
                     (filter :deleted)
                     (sort-by (comp str :id))
@@ -168,6 +198,7 @@
                 :name (str "Label " (mod (or value 0) 3)))
         op (case kind
              :sync nil
+             :library-sync (when (seq (tm/aux-files situation)) (n/sync-from-library))
              :undo (when (pos? (r/undo-depth situation)) (n/undo))
              :redo (when (pos? (r/redo-depth situation)) (n/redo))
              (when target
@@ -189,6 +220,8 @@
                  :duplicate (n/duplicate target)
                  :nest (n/nest-copy target (constantly (get-in selected [:parent :id])))
                  :delete (n/delete-component target)
+                 :swap (n/swap-shape target (constantly (get-in selected [:destination :shape :component-id])))
+                 :switch (n/switch-variant target (:variant-value selected))
                  :restore (n/restore-component (n/delete-component target)))))]
     {:op op :shape (:shape selected) :property property :value value
      :trace (cond-> {:kind kind :tuple tuple
@@ -243,6 +276,14 @@
       :duplicate (shadow/duplicate model objects id
                                    (:objects (thf/current-page (tm/file after)))
                                    (:new-head (n/applied-result op (tm/file before) (tm/file after))))
+      (:swap :switch)
+      (let [after-objects (all-objects after)
+            old-main (get-in (cf/all-files before) [(:component-file shape) :data :components
+                                                    (:component-id shape) :main-instance-id])
+            head (get after-objects id)
+            new-main (get-in (cf/all-files after) [(:component-file head) :data :components
+                                                   (:component-id head) :main-instance-id])]
+        (shadow/swap model objects after-objects id old-main new-main (= kind :switch)))
       (:resize :rotate)
       (let [shape-after (tm/shape-by-id after id)
             group :geometry-group]
@@ -379,3 +420,13 @@
                  [:resize 0 0 2] [:rotate 0 0 0] [:reset 0]
                  [:edit 0 0 1 1] [:update-main 0] [:sync 1]
                  [:detach 0] [:undo] [:redo]] ops)}))
+
+(def swap-program-gen
+  (gen/let [components (gen/choose 2 3)
+            differ? gen/boolean
+            ops (gen/vector (gen/tuple (gen/elements (into structure-kinds [:swap :switch]))
+                                       gen/nat gen/nat gen/nat gen/nat) 0 20)]
+    {:world [components 2 {:variants true :variant-diff differ?}]
+     :ops (into [[:edit 0 0 1 1] [:switch 0] [:switch 0]
+                 [:swap 0] [:undo] [:redo] [:reset 0]
+                 [:edit 0 1 1 1] [:update-main 0] [:sync 1]] ops)}))
