@@ -24,8 +24,10 @@
    [clojure.test :as t]
    [integrant.core :as ig])
   (:import
+   io.lettuce.core.RedisReadOnlyException
    io.prometheus.client.Collector$MetricFamilySamples
-   io.prometheus.client.Collector$MetricFamilySamples$Sample))
+   io.prometheus.client.Collector$MetricFamilySamples$Sample
+   java.lang.AutoCloseable))
 
 (t/use-fixtures :once th/state-init)
 
@@ -565,3 +567,44 @@
     (t/is (= 2 (count (get-events job-id))))
     (th/db-force-delete :job {:id job-id})
     (t/is (= [] (get-events job-id)))))
+
+(defn- read-only-connection
+  "A connection that stays on a store demoted to replica: every BLPOP answers
+  READONLY, the way Lettuce raises that error reply."
+  [closed]
+  (reify
+    rds/IDefaultConnection
+    (-blpop [_ _keys _timeout]
+      (throw (RedisReadOnlyException. "READONLY You can't write against a read only replica.")))
+
+    AutoCloseable
+    (close [_]
+      (reset! closed true))))
+
+(defn- mk-read-only-cfg
+  [conn]
+  {::rds/client   (get th/*system* :app.redis/client)
+   ::mtx/metrics  (get th/*system* :app.metrics/metrics)
+   ::rds/conn     conn
+   ::wrkr/queue   "test"
+   ::wrk/tenant   (cf/get :tenant)
+   ::wrkr/timeout (ct/duration {:millis 200})})
+
+(t/deftest runner-waits-before-retrying-a-read-only-store
+  (let [start (System/nanoTime)
+        cfg   (run-one (mk-read-only-cfg (read-only-connection (atom false))))]
+    (try
+      (t/is (<= 200 (quot (- (System/nanoTime) start) 1000000)))
+      (finally
+        (some-> cfg ::rds/conn rds/close)))))
+
+(t/deftest runner-replaces-a-read-only-connection
+  (let [closed (atom false)
+        cfg    (run-one (mk-read-only-cfg (read-only-connection closed)))]
+    (try
+      (t/testing "the connection to the replica is closed"
+        (t/is (true? @closed)))
+      (t/testing "the next pop goes through a new connection"
+        (t/is (= "PONG" (some-> cfg ::rds/conn rds/ping))))
+      (finally
+        (some-> cfg ::rds/conn rds/close)))))
