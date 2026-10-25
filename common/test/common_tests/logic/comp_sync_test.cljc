@@ -993,6 +993,25 @@
              (ch/components-changed (:data file) (change {:type :assign :value {:opacity 0.5}}))))
     (t/is (nil? (ch/components-changed (:data file) (change {:type :assign :value {:interactions []}}))))))
 
+(t/deftest restoring-a-variant-without-its-container-syncs-the-new-main-name
+  (let [initial  (tm/apply-to (n/make-variant-container "restore" [["b" "#ffffff"]])
+                              (setup/empty-situation))
+        initial  (tm/with-file initial
+                   (thc/instantiate-component (tm/file initial) :sync-restore-v0-component :copy))
+        deletion (n/delete-component :sync-restore-v0-root)
+        deleted  (-> initial (r/step deletion) r/settle)
+        restored (-> deleted (r/step (n/restore-component deletion)) r/settle)
+        main     (tm/resolve-shape restored :sync-restore-v0-root)
+        copy     (tm/resolve-shape restored :copy)]
+    (t/is (nil? (ths/get-shape (tm/file deleted) :sync-restore-vcontainer)))
+    (t/is (= "Board / b" (:name main)))
+    (t/is (= (:name main) (:name copy)))
+    (t/is (empty? (:touched copy)))
+    (t/is (= (thn/normalize-file (tm/file deleted))
+             (thn/normalize-file (tm/file (r/step restored (n/undo))))))
+    (t/is (= (thn/normalize-file (tm/file restored))
+             (thn/normalize-file (tm/file (-> restored (r/step (n/undo)) (r/step (n/redo)))))))))
+
 (t/deftest test-sync-of-a-flip
   ;; the main flips its child as the editor does: a transform that scales
   ;; it by -1, which toggles :flip-x

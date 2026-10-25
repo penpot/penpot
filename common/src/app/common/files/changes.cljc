@@ -1289,6 +1289,10 @@
       (into #{} xform shape-and-parents))
     (when component-id #{component-id})))
 
+(defmethod components-changed :restore-component
+  [_ {:keys [id]}]
+  #{id})
+
 (defmethod components-changed :default
   [_ _]
   nil)
