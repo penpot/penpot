@@ -519,6 +519,24 @@
         (pcb/with-library-data library-data)
         (pcb/update-component id #(assoc % :path path :name name)))))
 
+(defn- settle-updated-main-placement
+  [changes libraries component-file component]
+  (let [file      (get libraries component-file)
+        container (ctf/get-component-container (:data file) component)
+        objects   (:objects container)
+        ids       (filter #(ctk/swapped? (get objects %))
+                          (cfh/get-children-ids objects (:main-instance-id component)))]
+    (if (seq ids)
+      (let [redo      (into [] (remove :local-change?) (:redo-changes changes))
+            file      (update file :data cfc/process-changes redo false)
+            page      (ctf/get-component-container (:data file) component)
+            placement (-> (pcb/empty-changes)
+                          (pcb/with-container page)
+                          (pcb/with-objects (:objects page))
+                          (generate-sync-transformed-placement file libraries page objects ids))]
+        (pcb/concat-changes changes placement))
+      changes)))
+
 (defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
   the values in the shape and all its children."
@@ -545,7 +563,8 @@
                                     :synced-ids     synced-ids}
                                    shape-inst
                                    (ctf/find-remote-shape container libraries shape-inst))
-            (mark-local-changes @synced-ids)))
+            (mark-local-changes @synced-ids)
+            (settle-updated-main-placement libraries (:component-file shape-inst) component)))
       changes)))
 
 (defn split-local-changes

@@ -78,3 +78,10 @@ Reset drops the root's geometry override from the whole sync context
 only while updating existing shapes can turn a newly added child by the
 old override after its parent has already reset. The reset and replacement
 children share one undo group and stay stable through later sync.
+
+Update-main also settles untouched swapped heads carried through a parent
+turn in the updated main (F186). A rigid rotation can leave the wrong
+anchor when the replaced position and swap content have different sizes.
+Apply the main's nonlocal changes to its own file, settle changed placement,
+and append those changes to the same inverse-sync group. Keep the source
+copy's local changes routed separately, including for linked libraries.

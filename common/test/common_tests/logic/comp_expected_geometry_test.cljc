@@ -20,6 +20,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
@@ -35,6 +36,50 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest updating-a-turned-copy-settles-swapped-placement-in-the-main
+  (doseq [remote? [false true]
+          angle [45 90]]
+    (let [file      (-> (thf/sample-file :file)
+                        (tho/add-simple-component :a :main-a :rect-a
+                                                  :root-params {:width 100 :height 100})
+                        (tho/add-simple-component :other :main-other :rect-other
+                                                  :root-params {:width 100 :height 100})
+                        (tho/add-frame :main-b {:width 200 :height 200})
+                        (thc/instantiate-component :a :b-a :parent-label :main-b)
+                        (thc/make-component :b :main-b)
+                        (tho/add-frame :main-c {:width 300 :height 300})
+                        (thc/instantiate-component :b :c-b :parent-label :main-c
+                                                   :children-labels [:c-a])
+                        (thc/make-component :c :main-c))
+          prepared  (-> (tm/make-situation file)
+                        (r/step (n/change-height :b-a 80)) r/settle
+                        (r/step (n/swap-shape :c-a :other)) r/settle)
+          library   (tm/file prepared)
+          initial   (if remote?
+                      (-> (tm/make-situation
+                           (thc/instantiate-component (thf/sample-file :local) :c :copy-c
+                                                      :library library :children-labels [:copy-b :copy-a]))
+                          (tm/with-aux-files {(:id library) library}))
+                      (tm/with-file prepared
+                        (thc/instantiate-component library :c :copy-c
+                                                   :children-labels [:copy-b :copy-a])))
+          before    (-> initial (r/step (n/rotate :copy-c angle)) r/settle)
+          updated   (-> before (r/step (n/update-main :copy-c)) r/settle)
+          main-file (if remote? (get (tm/aux-files updated) (:id library)) (tm/file updated))
+          head      (ths/get-shape main-file :c-a)
+          full      (:situation (cf/sync-world updated (keys (get-in main-file [:data :components]))))
+          full-main (if remote? (get (tm/aux-files full) (:id library)) (tm/file full))
+          full-head (ths/get-shape-by-id full-main (:id head))]
+      (t/is (mth/close? angle (:rotation head) 0.001))
+      (t/is (= #{:swap-group} (:touched head)))
+      (t/is (gsh/close-attrs? :points (:points full-head) (:points head) 0.001))
+      (t/is (gsh/close-attrs? :points
+                              (:points (tm/resolve-shape full :copy-a))
+                              (:points (tm/resolve-shape updated :copy-a)) 0.001))
+      (t/is (= (into {} (map (fn [[id f]] [id (thn/normalize-file f)])) (cf/all-files before))
+               (into {} (map (fn [[id f]] [id (thn/normalize-file f)]))
+                     (cf/all-files (r/step updated (n/undo)))))))))
 
 (t/deftest resetting-a-turned-copy-places-replacement-children-in-the-main-frame
   (doseq [angle [45 90]]
