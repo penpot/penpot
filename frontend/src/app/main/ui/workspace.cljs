@@ -267,7 +267,8 @@
         [:> (mf/provider ctx/workspace-read-only?) {:value read-only?}
          [:> modal-container*]
          [:> components-debugger*]
-         [:section {:class (stl/css :workspace)
+         [:section {:class (stl/css-case :workspace true
+                                         :compact-mode (contains? layout :compact-mode))
                     :style {:background-color background-color
                             :touch-action "none"
                             :position "relative"}}

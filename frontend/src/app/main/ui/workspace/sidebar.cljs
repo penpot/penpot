@@ -11,8 +11,11 @@
    [app.common.files.tokens :as cfo]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
-   [app.main.constants :refer [left-sidebar-default-max-width
+   [app.main.constants :refer [left-sidebar-compact-width
+                               left-sidebar-default-max-width
                                left-sidebar-default-width
+                               left-sidebar-min-width
+                               right-sidebar-compact-width
                                right-sidebar-default-max-width
                                right-sidebar-default-width]]
    [app.main.data.common :as dcm]
@@ -134,12 +137,17 @@
                          (contains? layout :assets) :assets
                          (contains? layout :tokens) :tokens)
 
+        compact?       (contains? layout :compact-mode)
+        left-width     (if compact? left-sidebar-compact-width left-sidebar-default-width)
+        min-left-width (if compact? left-sidebar-compact-width left-sidebar-min-width)
+        resize-key     (if compact? :left-sidebar-compact :left-sidebar)
+
         {on-pointer-down :on-pointer-down
          on-lost-pointer-capture :on-lost-pointer-capture
          on-pointer-move :on-pointer-move
          parent-ref :parent-ref
          width :size}
-        (use-resize-hook :left-sidebar left-sidebar-default-width left-sidebar-default-width left-sidebar-default-max-width :x false :left)
+        (use-resize-hook resize-key left-width min-left-width left-sidebar-default-max-width :x false :left)
 
         on-tab-change
         (mf/use-fn
@@ -298,12 +306,16 @@
              is-inspect?
              (= current-section :code))
 
+        compact?            (contains? layout :compact-mode)
+        default-right-width (if compact? right-sidebar-compact-width right-sidebar-default-width)
+        resize-key          (if compact? :code-compact :code)
+
         {on-pointer-down :on-pointer-down
          on-lost-pointer-capture :on-lost-pointer-capture
          on-pointer-move :on-pointer-move
          set-width :set-size
          width :size}
-        (use-resize-hook :code right-sidebar-default-width right-sidebar-default-width right-sidebar-default-max-width :x true :right)
+        (use-resize-hook resize-key default-right-width default-right-width right-sidebar-default-max-width :x true :right)
 
         on-change-section
         (mf/use-fn
@@ -311,10 +323,10 @@
 
         on-expand
         (mf/use-fn
-         (mf/deps width set-width)
+         (mf/deps width set-width default-right-width)
          (fn []
-           (set-width (if (> width right-sidebar-default-width)
-                        right-sidebar-default-width
+           (set-width (if (> width default-right-width)
+                        default-right-width
                         right-sidebar-default-max-width))))
 
         active-tokens-by-type
@@ -326,7 +338,7 @@
       [:aside
        {:class (stl/css-case :right-sidebar true
                              :not-expand (not can-be-expanded?)
-                             :expanded (or is-debug? (> width right-sidebar-default-width)))
+                             :expanded (or is-debug? (> width default-right-width)))
 
         :id "right-sidebar-aside"
         :data-testid "right-sidebar"
@@ -335,7 +347,7 @@
         :style {:--right-sidebar-width (cond
                                          is-debug? (dm/str right-sidebar-default-max-width "px")
                                          can-be-expanded? (dm/str width "px")
-                                         :else (dm/str right-sidebar-default-width "px"))}}
+                                         :else (dm/str default-right-width "px"))}}
 
        (when can-be-expanded?
          [:div {:class (stl/css :resize-area)

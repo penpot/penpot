@@ -11,8 +11,8 @@
 .icon-button {
   @extend %base-button;
 
-  --button-width: #{$sz-32};
-  --button-height: #{$sz-32};
+  --button-width: var(--button-width-override, #{$sz-32});
+  --button-height: var(--button-height-override, #{$sz-32});
 
   display: grid;
   place-content: center;

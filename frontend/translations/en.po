@@ -6511,6 +6511,10 @@ msgstr "Linear gradient"
 msgid "workspace.gradients.radial"
 msgstr "Radial gradient"
 
+#: src/app/main/ui/workspace/main_menu.cljs:490
+msgid "workspace.header.menu.disable-compact-mode"
+msgstr "Disable compact mode"
+
 #: src/app/main/ui/workspace/main_menu.cljs:293
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Disable dynamic alignment"
@@ -6534,6 +6538,10 @@ msgstr "Disable snap to ruler guides"
 #: src/app/main/ui/workspace/main_menu.cljs:341
 msgid "workspace.header.menu.disable-webgl"
 msgstr "Disable WebGL rendering (beta)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:491
+msgid "workspace.header.menu.enable-compact-mode"
+msgstr "Enable compact mode"
 
 #: src/app/main/ui/workspace/main_menu.cljs:294
 msgid "workspace.header.menu.enable-dynamic-alignment"
