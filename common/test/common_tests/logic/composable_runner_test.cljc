@@ -8,6 +8,7 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
@@ -618,6 +619,22 @@
                    (catch #?(:clj Exception :cljs js/Error) error error))]
     (t/is (= ::tm/unbound-shape-name (:type (ex-data error))))
     (t/is (some #{:copy-child} (:present (ex-data error))))))
+
+(t/deftest library-update-main-routes-both-files-and-undoes-the-cascade
+  (let [initial (setup/cross-file-component-with-copy setup/labeled-fill)
+        library (first (vals (tm/aux-files initial)))
+        initial (tm/with-file initial
+                  (thc/instantiate-component (tm/file initial) :component1 :copy2-root
+                                             :library library :children-labels [:copy2-child]))
+        edited (-> initial (r/step (n/change-property :copy-child :fills "#ff0000")) r/settle)
+        updated (-> edited (r/step (n/update-main :copy-root)) r/settle)
+        remote (get (tm/aux-files updated) (:id library))
+        snapshot (fn [s] (uc/snapshot-files (assoc (tm/aux-files s) (:id (tm/file s)) (tm/file s))))]
+    (t/is (= "#ff0000" (get-in (thf/current-page remote) [:objects (thi/id :main-child) :fills 0 :fill-color])))
+    (t/is (= "#ff0000" (:fill-color (first (:fills (tm/resolve-shape updated :copy2-child))))))
+    (t/is (nil? (:touched (tm/resolve-shape updated :copy-child))))
+    (t/is (= (snapshot edited) (snapshot (r/step updated (n/undo)))))
+    (t/is (= (snapshot updated) (snapshot (-> updated (r/step (n/undo)) (r/step (n/redo))))))))
 
 (t/deftest adding-a-grid-child-records-cell-order-before-reflow
   (let [initial (setup/grid-component-with-copy)

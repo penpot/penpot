@@ -56,7 +56,22 @@
           file (cond-> file (= layout :grid) (tho/place-in-grid-columns root 2 {1 child}))]
       (tm/with-file situation file))))
 
-
+(defn- with-library
+  [situation]
+  (let [library (-> (tm/make-situation (thf/sample-file :random-library :is-shared true))
+                    (as-> s (tm/apply-to (n/create-component "library-random" setup/labeled-fill :size 100) s))
+                    (as-> s (tm/apply-to (n/make-nested-component "library-random" 1) s))
+                    tm/file)
+        components (sort-by (comp str :id) (vals (get-in library [:data :components])))
+        file (reduce (fn [file [index component copy]]
+                       (thc/instantiate-component
+                        file (thi/label (:id component))
+                        (keyword (str "random-library-copy-" index "-" copy))
+                        :library library))
+                     (tm/file situation)
+                     (for [[index component] (map-indexed vector components) copy (range 2)]
+                       [index component copy]))]
+    (-> situation (tm/with-file file) (tm/with-aux-files {(:id library) library}))))
 
 (defn forest
   "All live page trees, with stable file/page prefixes for model replay."
@@ -75,34 +90,35 @@
 (defn world
   [[components depth opts]]
   (thi/reset-idmap!)
-  (reduce (fn [s index]
-            (let [name (str "random-" index)]
-              (-> (tm/apply-to (n/create-component name setup/labeled-fill :size 100) s)
-                  (with-layout name (when (zero? index) (:layout opts)))
-                  (as-> s (reduce #(tm/apply-to %2 %1) s
-                                  [(n/make-nested-component name depth)
-                                   (n/instantiate-copy name)
-                                   (n/instantiate-copy name)])))))
-          (let [s (setup/empty-situation)
-                s (if (:variants opts)
-                    (reduce #(tm/apply-to %2 %1) s
-                            [(n/create-component "variant" setup/labeled-fill :size 100)
-                             (n/make-variant-container "random-variants"
-                                                       [["a" setup/labeled-fill]
-                                                        ["b" (if (:variant-diff opts) "#ff0000" setup/labeled-fill)]]
-                                                       :size 100)
-                             (n/make-nested-component-with-variant "variant" "random-variants" "a")
-                             (n/make-nested-component "variant" 1)
-                             (n/instantiate-copy "variant")
-                             (n/instantiate-copy "variant")])
-                    s)]
-            (cond-> s
-              (:text opts)
-              (tm/with-file (-> (thtx/add-text-component-with-copy (tm/file s) [[["Hello world"]]])
-                                (ths/update-shape :main-child :grow-type :auto-height)
-                                (ths/update-shape :copy-child :grow-type :auto-height)
-                                (ths/update-shape :copy-child :touched nil)))))
-          (range components)))
+  (cond-> (reduce (fn [s index]
+                    (let [name (str "random-" index)]
+                      (-> (tm/apply-to (n/create-component name setup/labeled-fill :size 100) s)
+                          (with-layout name (when (zero? index) (:layout opts)))
+                          (as-> s (reduce #(tm/apply-to %2 %1) s
+                                          [(n/make-nested-component name depth)
+                                           (n/instantiate-copy name)
+                                           (n/instantiate-copy name)])))))
+                  (let [s (setup/empty-situation)
+                        s (if (:variants opts)
+                            (reduce #(tm/apply-to %2 %1) s
+                                    [(n/create-component "variant" setup/labeled-fill :size 100)
+                                     (n/make-variant-container "random-variants"
+                                                               [["a" setup/labeled-fill]
+                                                                ["b" (if (:variant-diff opts) "#ff0000" setup/labeled-fill)]]
+                                                               :size 100)
+                                     (n/make-nested-component-with-variant "variant" "random-variants" "a")
+                                     (n/make-nested-component "variant" 1)
+                                     (n/instantiate-copy "variant")
+                                     (n/instantiate-copy "variant")])
+                            s)]
+                    (cond-> s
+                      (:text opts)
+                      (tm/with-file (-> (thtx/add-text-component-with-copy (tm/file s) [[["Hello world"]]])
+                                        (ths/update-shape :main-child :grow-type :auto-height)
+                                        (ths/update-shape :copy-child :grow-type :auto-height)
+                                        (ths/update-shape :copy-child :touched nil)))))
+                  (range components))
+    (:library opts) (with-library)))
 
 (defn candidates
   [situation model kind scope]
@@ -430,3 +446,10 @@
      :ops (into [[:edit 0 0 1 1] [:switch 0] [:switch 0]
                  [:swap 0] [:undo] [:redo] [:reset 0]
                  [:edit 0 1 1 1] [:update-main 0] [:sync 1]] ops)}))
+
+(def library-program-gen
+  (gen/let [ops (gen/vector (gen/tuple (gen/elements (into structure-kinds [:swap :switch :library-sync]))
+                                       gen/nat gen/nat gen/nat gen/nat) 0 20)]
+    {:world [2 1 {:library true :variants true}]
+     :ops (into [[:edit 0 0 1 2] [:update-main 0] [:library-sync]
+                 [:undo] [:redo] [:reset 0] [:sync 1]] ops)}))

@@ -9,8 +9,9 @@ import { PenpotSync } from "../util/PenpotSync";
  * component, via the Plugin API's `swapComponent()`. The new head keeps the
  * old head's id, so a target that found the old head finds the new one.
  *
- * Unlike the swap in the workspace UI, the API keeps the head's overrides
- * (it swaps with keep-touched, F33 in the stabilization plan).
+ * The API follows the workspace rules: ordinary swaps clear content
+ * overrides and retain orientation. A switch between variants of one set
+ * carries matching overrides.
  */
 export class OpSwap extends Operation {
     /**
