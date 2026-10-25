@@ -64,3 +64,9 @@ combines copy-structure and nesting guards for normal frontend/pure nodes.
 The duplicate builder checks the actual destination after ALT placement;
 a duplicate at the page root remains allowed. Undo still restores existing
 nesting through its explicit inverse flag, not through a forward bypass.
+
+Component restoration reports its component id from components-changed
+(F183). Its main does not exist in the old page objects, so add/mod-object
+detection cannot find it. Restore can rename a variant when its container
+has gone; the restored component and its dependents must sync in that same
+undo group.
