@@ -11,6 +11,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.types.component :as ctc]
@@ -212,7 +213,7 @@
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr changed-item-index translation?
-            skip-grid-reassignment? skip-component-sync? resize-ids]
+            skip-grid-reassignment? skip-component-sync? resize-ids settle-component-placement?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -280,7 +281,13 @@
               (rx/empty))
 
             (if (seq (:redo-changes changes))
-              (let [changes (cond-> changes reg-objects? (pcb/resize-parents (or resize-ids ids)))]
+              (let [changes (cond-> changes
+                              reg-objects? (pcb/resize-parents (or resize-ids ids))
+                              (and settle-component-placement? (not skip-component-sync?))
+                              (cll/generate-sync-transformed-placement
+                               (dsh/lookup-file state (:current-file-id state))
+                               (dsh/lookup-libraries state)
+                               (dsh/lookup-page state page-id) objects ids))]
                 (rx/of (dch/commit-changes changes)))
               (rx/empty))
 

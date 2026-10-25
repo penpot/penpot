@@ -36,6 +36,38 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest turning-a-parent-settles-a-swapped-head-with-a-different-position-size
+  (doseq [angle [45 90]]
+    (let [file    (-> (thf/sample-file :file)
+                      (tho/add-simple-component :a :main-a :rect-a
+                                                :root-params {:width 100 :height 100})
+                      (tho/add-simple-component :other :main-other :rect-other
+                                                :root-params {:width 100 :height 100})
+                      (tho/add-frame :main-b {:width 200 :height 200})
+                      (thc/instantiate-component :a :b-a :parent-label :main-b)
+                      (thc/make-component :b :main-b)
+                      (tho/add-frame :main-c {:width 300 :height 300})
+                      (thc/instantiate-component :b :c-b :parent-label :main-c)
+                      (thc/make-component :c :main-c)
+                      (thc/instantiate-component :c :copy-c :children-labels [:copy-b :copy-a]))
+          before  (-> (tm/make-situation file)
+                      (r/step (n/swap-shape :copy-a :other)) r/settle
+                      (r/step (n/change-height :b-a 80)) r/settle)
+          turned  (-> before (r/step (n/rotate :copy-c angle)) r/settle)
+          head    (tm/resolve-shape turned :copy-a)
+          child   (tm/shape-by-id turned (first (:shapes head)))
+          file    (tm/file turned)
+          full    (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+      (t/is (mth/close? 100 (:height head) 0.001))
+      (t/is (= #{:swap-group} (:touched head)))
+      (t/is (empty? (:touched child)))
+      (t/is (gsh/close-attrs? :points (:points head)
+                              (:points (ths/get-shape-by-id full (:id head))) 0.001))
+      (t/is (gsh/close-attrs? :points (:points child)
+                              (:points (ths/get-shape-by-id full (:id child))) 0.001))
+      (t/is (= (thn/normalize-file (tm/file before))
+               (thn/normalize-file (tm/file (r/step turned (n/undo)))))))))
+
 (t/deftest authored-child-geometry-follows-a-parent-rotation-received-through-sync
   (doseq [swapped? [false true]
           angle [45 135]
