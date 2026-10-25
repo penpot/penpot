@@ -66,3 +66,9 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 
 - `{:type :set-touched}` replaces `:touched` wholesale and only on copies (an empty set is dropped). The builders write only it (`pcb/update-shapes` turns a `:touched` change into it); `{:type :set :attr :touched}`, a raw assoc with no copy guard, is still applied for stored changes.
 - Builders that write to copies must emit the inverse `:set-touched` in undo (as `pcb/update-shapes` does).
+
+A parent turn settles swapped descendant placement in the transform's
+change builder (F182). Its content and position reference can have different
+sizes, so rotating the content rigidly can leave its untransformed anchor
+different from full sync. Keep the swapped head/children untouched and put
+the derived correction in the same undo group. Authored geometry stays.

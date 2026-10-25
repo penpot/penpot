@@ -18,3 +18,13 @@
 - WASM modifier updates set plugin/local props with parsed geometry/structure modifiers rather than directly mutating file data.
 - The position-data recomputation watcher ignores commits tagged `:position-data`; keep that tag when adding derived position-data commits.
 - Rotation has separate WASM and non-WASM event paths. Check both when changing rotation modifier semantics.
+
+## Settling swapped placement after a parent turn
+
+Both modifier commit paths set settle-component-placement? (F182). The
+update-shapes builder settles untouched swapped heads after parent bounds
+update, before the single commit. A swapped head can keep its content size
+while its position reference has another size; a rigid turn alone then
+leaves placement different from full sync. Preserve authored geometry and
+join derived placement to the transform's undo group. The common helper
+compares matrix axes as well as rotation/flip metadata for the WASM path.

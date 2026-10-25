@@ -286,14 +286,18 @@
 
 (defn transform-changes
   "Apply a transform through constraints and the shared placement step."
-  [page shape modifiers]
-  (let [objects (:objects page)
-        tree (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects)
-        transform (clp/modifiers-transform tree)]
-    (cls/generate-update-shapes
-     (pcb/empty-changes nil (:id page)) (keys tree) transform objects
-     {:ignore-tree (clp/calculate-ignore-tree objects (keys tree) transform #{(:id shape)})
-      :attrs clp/transform-attrs})))
+  ([page shape modifiers]
+   (transform-changes page shape modifiers nil))
+  ([page shape modifiers {:keys [file libraries]}]
+   (let [objects   (:objects page)
+         tree      (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects)
+         transform (clp/modifiers-transform tree)
+         changes   (cls/generate-update-shapes
+                    (pcb/empty-changes nil (:id page)) (keys tree) transform objects
+                    {:ignore-tree (clp/calculate-ignore-tree objects (keys tree) transform #{(:id shape)})
+                     :attrs clp/transform-attrs})]
+     (cond-> changes
+       file (cll/generate-sync-transformed-placement file libraries page objects (keys tree))))))
 
 (defrecord Rotate [target angle]
   IComponentOperation
@@ -307,7 +311,8 @@
           objects  (:objects page)
           shape    (get objects shape-id)
           center   (gsh/shape->center shape)
-          changes  (transform-changes page shape (ctm/rotation-modifiers shape center angle))
+          changes  (transform-changes page shape (ctm/rotation-modifiers shape center angle)
+                                      {:file the-file :libraries (cf/all-files situation)})
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
@@ -332,7 +337,8 @@
           page     (thf/current-page the-file)
           objects  (:objects page)
           shape    (get objects shape-id)
-          changes  (transform-changes page shape (ctm/change-size shape nil value))
+          changes  (transform-changes page shape (ctm/change-size shape nil value)
+                                      {:file the-file :libraries (cf/all-files situation)})
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')

@@ -332,6 +332,34 @@
         changes)
       changes)))
 
+(defn generate-sync-transformed-placement
+  "Settle untouched swapped heads carried through a parent turn in the
+   same change group. Their position frame can have a different size from
+   their content, so a rigid turn alone does not settle their placement."
+  [changes file libraries page before ids]
+  (let [objects     (pcb/get-objects changes)
+        orientation (fn [shape]
+                      [(select-keys (or (:transform shape) (gmt/matrix)) [:a :b :c :d])
+                       (:rotation shape) (boolean (:flip-x shape)) (boolean (:flip-y shape))])
+        roots       (into (d/ordered-set)
+                          (keep (fn [id]
+                                  (let [shape (get objects id)]
+                                    (when (and (ctk/swapped? shape)
+                                               (not (ctk/touched-group? shape :geometry-group))
+                                               (not= (orientation (get before id)) (orientation shape)))
+                                      (:id (ctn/get-component-shape objects shape))))))
+                          ids)]
+    (reduce (fn [changes id]
+              (let [objects   (pcb/get-objects changes)
+                    page      (assoc page :objects objects)
+                    file      (assoc-in file [:data :pages-index (:id page) :objects] objects)
+                    container (ctn/make-container page :page)]
+                (-> changes
+                    (pcb/with-container container)
+                    (generate-sync-shape-direct file (assoc libraries (:id file) file)
+                                                container id false))))
+            changes roots)))
+
 (defn- sync-copy-shape
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
   pairs with. A reset also clears its overrides and its `:remote-synced`,
