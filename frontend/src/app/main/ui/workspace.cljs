@@ -268,7 +268,7 @@
          [:> modal-container*]
          [:> components-debugger*]
          [:section {:class (stl/css-case :workspace true
-                                         :compact-mode (contains? layout :compact-mode))
+                                         :global/compact-mode (contains? layout :compact-mode))
                     :style {:background-color background-color
                             :touch-action "none"
                             :position "relative"}}

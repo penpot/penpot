@@ -14,7 +14,6 @@
    [app.main.constants :refer [left-sidebar-compact-width
                                left-sidebar-default-max-width
                                left-sidebar-default-width
-                               left-sidebar-min-width
                                right-sidebar-compact-width
                                right-sidebar-default-max-width
                                right-sidebar-default-width]]
@@ -139,7 +138,7 @@
 
         compact?       (contains? layout :compact-mode)
         left-width     (if compact? left-sidebar-compact-width left-sidebar-default-width)
-        min-left-width (if compact? left-sidebar-compact-width left-sidebar-min-width)
+        min-left-width (if compact? left-sidebar-compact-width left-sidebar-default-width)
         resize-key     (if compact? :left-sidebar-compact :left-sidebar)
 
         {on-pointer-down :on-pointer-down
@@ -414,25 +413,30 @@
 
     [:> (mf/provider ctx/tokens-lib) {:value tokens-lib}
      [:> (mf/provider ctx/tokens-status) {:value tokens-status}
-      (if (:collapse-left-sidebar layout)
-        [:> collapsed-button*]
-        [:> left-sidebar* {:layout layout
-                           :file file
-                           :page-id page-id
-                           :tokens-lib tokens-lib
-                           :tokens-status tokens-status
-                           :active-tokens active-tokens-force-set
-                           :resolved-active-tokens (if tokenscript?
-                                                     tokenscript-resolved-active-tokens-force-set
-                                                     resolved-active-tokens-force-set)}])
-      [:> right-sidebar* {:section section
-                          :selected selected
-                          :drawing-tool drawing-tool
-                          :layout layout
-                          :file file
-                          :file-id file-id
-                          :page-id page-id
-                          :tokens-lib tokens-lib
-                          :active-tokens (if tokenscript?
-                                           tokenscript-resolved-active-tokens
-                                           resolved-active-tokens)}]]]))
+      (let [compact?    (contains? layout :compact-mode)
+            sidebar-key (if compact? "compact" "default")]
+        [:*
+         (if (:collapse-left-sidebar layout)
+           [:> collapsed-button*]
+           [:> left-sidebar* {:key sidebar-key
+                              :layout layout
+                              :file file
+                              :page-id page-id
+                              :tokens-lib tokens-lib
+                              :tokens-status tokens-status
+                              :active-tokens active-tokens-force-set
+                              :resolved-active-tokens (if tokenscript?
+                                                        tokenscript-resolved-active-tokens-force-set
+                                                        resolved-active-tokens-force-set)}])
+         [:> right-sidebar* {:key sidebar-key
+                             :section section
+                             :selected selected
+                             :drawing-tool drawing-tool
+                             :layout layout
+                             :file file
+                             :file-id file-id
+                             :page-id page-id
+                             :tokens-lib tokens-lib
+                             :active-tokens (if tokenscript?
+                                              tokenscript-resolved-active-tokens
+                                              resolved-active-tokens)}]])]))

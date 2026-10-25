@@ -24,7 +24,6 @@
 
 (def left-sidebar-default-width 318)
 (def left-sidebar-compact-width 240)
-(def left-sidebar-min-width 240)
 (def left-sidebar-default-max-width 500)
 
 (def page-metadata

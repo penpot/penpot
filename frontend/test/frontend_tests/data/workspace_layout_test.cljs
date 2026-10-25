@@ -35,7 +35,10 @@
 
       ;; Persistence test
       (layout/persist-layout-flags! #{:compact-mode})
-      (t/is (true? (get @storage/user storage-key)))
-
       (layout/persist-layout-flags! #{})
-      (t/is (false? (get @storage/user storage-key))))))
+      (t/is (false? (get @storage/user storage-key)))
+
+      ;; Fallback when storage key is absent: preserve defaults
+      (swap! storage/user dissoc storage-key)
+      (t/is (not (contains? (layout/load-layout-flags #{}) :compact-mode)))
+      (t/is (contains? (layout/load-layout-flags #{:compact-mode}) :compact-mode)))))

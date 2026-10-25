@@ -43,8 +43,8 @@ $column-number: 8; // total number of columns
 //   -> 8 columns (32px each) + 7 gaps (4px each) = 284px
 
 // Derived widths
-@function grid-width($cols) {
-  @return calc(#{$column-width} * #{$cols} + #{$column-gap} * #{$cols - 1});
+@function grid-width($cols, $col-width: $column-width) {
+  @return calc(#{$col-width} * #{$cols} + #{$column-gap} * #{$cols - 1});
 }
 
 $options-width: grid-width($column-number);
@@ -56,13 +56,11 @@ $seven-column-width: grid-width(7);
 // Compact mode dimensions
 $compact-sidebar-width: px2rem(240);
 $compact-column-width: px2rem(24);
-$compact-options-width: calc(
-  #{$compact-column-width} * #{$column-number} + #{$column-gap} * #{$column-number - 1}
-);
-$compact-two-column-width: calc(#{$compact-column-width} * 2 + #{$column-gap} * 1);
-$compact-three-column-width: calc(#{$compact-column-width} * 3 + #{$column-gap} * 2);
-$compact-four-column-width: calc(#{$compact-column-width} * 4 + #{$column-gap} * 3);
-$compact-seven-column-width: calc(#{$compact-column-width} * 7 + #{$column-gap} * 6);
+$compact-options-width: grid-width($column-number, $compact-column-width);
+$compact-two-column-width: grid-width(2, $compact-column-width);
+$compact-three-column-width: grid-width(3, $compact-column-width);
+$compact-four-column-width: grid-width(4, $compact-column-width);
+$compact-seven-column-width: grid-width(7, $compact-column-width);
 $compact-grid-exception-input-width: calc(
   #{$compact-column-width} * 3.5 + 3 * #{$column-gap} - (#{$column-gap} / 2)
 );
@@ -151,13 +149,16 @@ $grid-exception-input-width-small: calc(#{$sz-32} * 2.5 + 2 * var(--sp-xs) - (va
   --seven-columns-width: #{$compact-seven-column-width};
   --options-width: #{$compact-options-width};
   --grid-exception-input-width: #{$compact-grid-exception-input-width};
-  --grid-exception-input-width-small: #{$compact-grid-exception-input-width-small};
-  --input-height: #{px2rem(26)};
-  --button-height: #{px2rem(26)};
-  --input-height-override: #{px2rem(26)};
-  --button-height-override: #{px2rem(26)};
-  --button-width-override: #{px2rem(26)};
   --options-padding-inline: #{px2rem(10)};
   --right-header-min-width: 0;
   --right-header-gap: var(--sp-xs);
+
+  :global(.left-sidebar),
+  :global(.right-sidebar) {
+    --input-height: #{px2rem(26)};
+    --button-height: #{px2rem(26)};
+    --input-height-override: #{px2rem(26)};
+    --button-height-override: #{px2rem(26)};
+    --button-width-override: #{px2rem(26)};
+  }
 }
