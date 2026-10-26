@@ -64,10 +64,14 @@
      (insert-pendings! (:id row))
      row)))
 
-(defn- admin-console-event-props
+(defn- admin-console-event
   [admin-console-mock]
   (let [[_ _ params] (:call-args @admin-console-mock)]
-    (:props (first (:events params)))))
+    (first (:events params))))
+
+(defn- admin-console-event-props
+  [admin-console-mock]
+  (:props (admin-console-event admin-console-mock)))
 
 (defn- run-both!
   "Run both consumer jobs, Nexus first (the historical single-run
@@ -319,12 +323,16 @@
                             :user-who-send-invitation (str (:id actor))})
         (th/run-task! :audit-log-consumer-admin-console {})
         (t/is (:called? @admin-console-mock))
-        (let [props (admin-console-event-props admin-console-mock)]
+        (let [event (admin-console-event admin-console-mock)
+              props (:props event)]
           (t/is (= (:name team) (:team-name props)))
           (t/is (= (:email actor) (:profile-email props)))
           (t/is (= (:email member) (:user-email props)))
           (t/is (= (:email member) (:member-email props)))
-          (t/is (= (:email actor) (:user-who-send-invitation-email props))))
+          (t/is (= (:email actor) (:user-who-send-invitation-email props)))
+          ;; Top-level actor fields (event :profile-id), distinct from props.
+          (t/is (= (:email actor) (:profile-email event)))
+          (t/is (= (:fullname actor) (:profile-name event))))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
 
@@ -340,11 +348,47 @@
                            {:team-id    (:id team)
                             :profile-id (:id other)})
         (th/run-task! :audit-log-consumer-admin-console {})
-        (let [props (admin-console-event-props admin-console-mock)]
+        (let [event (admin-console-event admin-console-mock)
+              props (:props event)]
           (t/is (= (:name team) (:team-name props)))
-          (t/is (= (:email other) (:profile-email props))))
+          (t/is (= (:email other) (:profile-email props)))
+          (t/is (= (:email actor) (:profile-email event)))
+          (t/is (= (:fullname actor) (:profile-name event))))
         (let [rows (th/db-exec! ["select * from audit_log"])]
           (t/is (= 0 (count rows))))))))
+
+(t/deftest consumer-events-enriches-soft-deleted-actor-profile
+  (let [actor (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id actor)})]
+    (th/db-update! :profile {:deleted-at (ct/now)} {:id (:id actor)})
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! (:id actor) "create-project"
+                           {:team-id (:id team)})
+        (th/run-task! :audit-log-consumer-admin-console {})
+        (let [event (admin-console-event admin-console-mock)]
+          (t/is (= (:email actor) (:profile-email event)))
+          (t/is (= (:fullname actor) (:profile-name event))))))))
+
+(t/deftest consumer-events-omits-actor-profile-when-no-usable-id
+  (let [actor (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id actor)})
+        missing (uuid/next)]
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! uuid/zero "create-project" {:team-id (:id team)})
+        (insert-audit-row! missing "create-team" {:team-id (:id team)})
+        (th/run-task! :audit-log-consumer-admin-console {})
+        (t/is (:called? @admin-console-mock))
+        (let [[_ _ params] (:call-args @admin-console-mock)
+              events       (:events params)
+              by-name      (into {} (map (juxt :name identity) events))
+              zero-evt     (get by-name "create-project")
+              missing-evt  (get by-name "create-team")]
+          (t/is (not (contains? zero-evt :profile-email)))
+          (t/is (not (contains? zero-evt :profile-name)))
+          (t/is (not (contains? missing-evt :profile-email)))
+          (t/is (not (contains? missing-evt :profile-name))))))))
 
 (t/deftest consumer-events-does-not-overwrite-existing-enrich-props
   (let [actor (th/create-profile* 1 {:is-active true})
@@ -370,6 +414,40 @@
           (t/is (= "already-member@example.com" (:member-email props)))
           (t/is (= "already-inviter@example.com"
                    (:user-who-send-invitation-email props))))))))
+
+(t/deftest consumer-events-does-not-overwrite-existing-actor-profile-fields
+  ;; Top-level :profile-email / :profile-name are not stored on the row;
+  ;; exercise fill-only via the enrich helper directly.
+  (let [actor (th/create-profile* 1 {:is-active true})
+        event {:profile-id    (:id actor)
+               :profile-email "preset@example.com"
+               :profile-name  "Preset Name"
+               :props         {}}]
+    (db/tx-run! th/*system*
+                (fn [cfg]
+                  (let [enriched (first (#'consumer/enrich-events-for-admin-console
+                                         cfg [event]))]
+                    (t/is (= "preset@example.com" (:profile-email enriched)))
+                    (t/is (= "Preset Name" (:profile-name enriched))))))))
+
+(t/deftest consumer-events-fills-missing-actor-profile-field-independently
+  ;; Each top-level key fills on its own; guards an or→and regression in
+  ;; collect-actor-ids-needing-profile.
+  (let [actor (th/create-profile* 1 {:is-active true})]
+    (db/tx-run! th/*system*
+                (fn [cfg]
+                  (let [email-only (first (#'consumer/enrich-events-for-admin-console
+                                           cfg [{:profile-id    (:id actor)
+                                                 :profile-email "preset@example.com"
+                                                 :props         {}}]))
+                        name-only  (first (#'consumer/enrich-events-for-admin-console
+                                           cfg [{:profile-id   (:id actor)
+                                                 :profile-name "Preset Name"
+                                                 :props        {}}]))]
+                    (t/is (= "preset@example.com" (:profile-email email-only)))
+                    (t/is (= (:fullname actor) (:profile-name email-only)))
+                    (t/is (= (:email actor) (:profile-email name-only)))
+                    (t/is (= "Preset Name" (:profile-name name-only))))))))
 
 (t/deftest consumer-events-enrich-skips-missing-and-non-uuid-ids
   (let [actor (th/create-profile* 1 {:is-active true})]
