@@ -679,8 +679,7 @@
 
    :hide-ui              {:tooltip "\\"
                           :label (fn [] (tr "shortcuts.hide-ui"))
-                          :command ["\\" "alt+\\" "alt+º"]
-                          :show-command "\\"
+                          :command "\\"
                           :subsections [:panels :basics]
                           :section [:workspace :basics]
                           :fn #(st/emit! (toggle-layout-flag :hide-ui))}
@@ -717,8 +716,7 @@
 
    :zoom-selected        {:tooltip (ds/shift "2")
                           :label (fn [] (tr "shortcuts.zoom-selected"))
-                          :command ["shift+2" "shift+num2" "shift+'" "shift+\""]
-                          :show-command "shift+2"
+                          :command ["shift+2" "shift+num2"]
                           :subsections [:zoom-workspace]
                           :section [:workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}

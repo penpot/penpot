@@ -3106,10 +3106,6 @@ msgstr "Atlasīt vienumus, kas izmanto šo stilu"
 msgid "shortcuts.add-comment"
 msgstr "Komentāri"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Pievienot mezglu"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Līdzināt pie apakšas"

@@ -4815,10 +4815,6 @@ msgstr "Seleccionar elementos que usan este estilo"
 msgid "shortcuts.add-comment"
 msgstr "Añadir comentarios"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Añadir nodo"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Alinear abajo"
@@ -5086,13 +5082,6 @@ msgstr "Unir nodos"
 #: src/app/main/ui/shortcuts.cljs:624
 msgid "shortcuts.key-combo"
 msgstr "Pulsa las nuevas teclas"
-
-#: src/app/main/ui/settings/shortcuts.cljs:484
-msgid "shortcuts.layout-map-missing"
-msgstr ""
-"Este navegador no expone el mapa de teclado, así que los atajos que "
-"combinan Shift con puntuación (por ejemplo Shift+,) pueden no funcionar "
-"aquí. Siguen funcionando en navegadores Chromium."
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
