@@ -27,9 +27,9 @@
   &:hover {
     --layer-background-color: var(--color-background-secondary);
     --shadow-color: var(--color-background-secondary);
-    --context-hover-color: var(--layer-row-foreground-color-hover);
+    --context-hover-color: var(--color-accent-primary);
     --context-hover-opacity: 1;
-    --layer-foreground-color: var(--layer-row-foreground-color-hover);
+    --layer-foreground-color: var(--color-accent-primary);
 
     &.hidden {
       opacity: 1;

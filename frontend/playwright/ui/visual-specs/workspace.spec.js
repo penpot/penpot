@@ -640,6 +640,25 @@ test.describe("Layers", () => {
       threshold: 0,
     });
   });
+
+  test("Shows the rename input of a layer", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.layers.getByText("Board", { exact: true }).dblclick();
+    const input = workspace.layers.getByRole("textbox");
+    await expect(input).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(workspace.layers).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
 });
 
 test.describe("Guides", () => {
