@@ -6,6 +6,7 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 @use "ds/_utils.scss" as *;
 
 .viewport-actions,
@@ -45,11 +46,9 @@
 }
 
 .viewport-actions-title {
-  flex: 1;
+  @include use-typography("body-small");
 
-  // TODO: No exact DS typography match found.
-  // Closest match: body-small.
-  font-size: px2rem(12);
+  flex: 1;
   color: var(--color-foreground-secondary);
   padding-inline-start: var(--sp-s);
   inline-size: max-content;
