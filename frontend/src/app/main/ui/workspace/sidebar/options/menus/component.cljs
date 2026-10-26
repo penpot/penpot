@@ -625,9 +625,10 @@
   [{:keys [item on-enter-group]}]
   (let [group-name     (:name item)
         on-group-click #(on-enter-group group-name)]
-    [:div {:class (stl/css :swap-group)
-           :on-click on-group-click
-           :title group-name}
+    [:button {:type "button"
+              :class (stl/css :swap-group)
+              :on-click on-group-click
+              :title group-name}
 
      [:span {:class (stl/css :swap-group-name)}
       (cpn/last-path group-name)]
