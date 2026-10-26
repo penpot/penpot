@@ -11,7 +11,7 @@ let backend: Server;
 let backendUri: string;
 let server: PenpotMcpServer | undefined;
 let client: Client | undefined;
-let requests: { url: string; authorization?: string; body: unknown }[];
+let requests: { url: string; authorization?: string; client?: string; body: unknown }[];
 let responseStatus: number;
 let nextPort = 17_700;
 
@@ -25,11 +25,16 @@ beforeEach(async () => {
     delete process.env.PENPOT_MCP_REDIS_URI;
     delete process.env.PENPOT_MCP_BACKEND_URI;
     requests = [];
-    responseStatus = 202;
+    responseStatus = 200;
     backend = createServer(async (req, res) => {
         let body = "";
         for await (const chunk of req) body += chunk;
-        requests.push({ url: req.url!, authorization: req.headers.authorization, body: JSON.parse(body) });
+        requests.push({
+            url: req.url!,
+            authorization: req.headers.authorization,
+            client: req.headers["x-client"] as string,
+            body: JSON.parse(body),
+        });
         res.writeHead(responseStatus, {
             "content-type": "application/json",
             ...(responseStatus === 307 ? { location: `${backendUri}/redirected` } : {}),
@@ -81,8 +86,9 @@ for (const multiUser of [false, true]) {
         assert.deepEqual(result.content, [{ type: "text", text: "Feedback queued." }]);
         assert.deepEqual(requests, [
             {
-                url: "/penpot/api/mcp/feedback",
-                authorization: "Bearer alice",
+                url: "/penpot/api/main/methods/send-mcp-feedback",
+                authorization: "Token alice",
+                client: "penpot-mcp",
                 body: feedback,
             },
         ]);
@@ -132,7 +138,7 @@ test("preserves deployment prefixes with and without a trailing slash", async ()
     }
     assert.deepEqual(
         requests.map((request) => request.url),
-        ["/penpot/api/mcp/feedback", "/penpot/api/mcp/feedback"]
+        ["/penpot/api/main/methods/send-mcp-feedback", "/penpot/api/main/methods/send-mcp-feedback"]
     );
 });
 
@@ -154,13 +160,13 @@ test("keeps credentials isolated across concurrent submissions", async () => {
             }))
             .sort((a, b) => a.subject.localeCompare(b.subject)),
         [
-            { authorization: "Bearer alice", subject: "alice" },
-            { authorization: "Bearer bob", subject: "bob" },
+            { authorization: "Token alice", subject: "alice" },
+            { authorization: "Token bob", subject: "bob" },
         ]
     );
 });
 
-for (const status of [400, 401, 429, 503, 500, 307, 200]) {
+for (const status of [400, 401, 403, 429, 503, 500, 307]) {
     test(`does not retry or expose response bodies on status ${status}`, async () => {
         responseStatus = status;
         const backendClient = new PenpotBackendClient(backendUri);

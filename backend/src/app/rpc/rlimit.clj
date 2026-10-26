@@ -266,18 +266,6 @@
                   (some? rejected)
                   (assoc "retry-after" (str retry-after)))}))
 
-(defn enforce-limits
-  "Enforce explicit limits and return their response headers.
-  Unlike the optional RPC limiter, this fails closed on Redis errors."
-  [cfg uid limits]
-  (let [result (rds/run! cfg process-limits uid limits (ct/now))]
-    (when-not (::allowed result)
-      (ex/raise :type :rate-limit
-                :code :request-blocked
-                :hint "rate limit reached"
-                ::http/headers (::headers result)))
-    (::headers result)))
-
 (defn- get-limits
   [state skey sname]
   (when-let [limits (or (get-in @state [::limits skey])

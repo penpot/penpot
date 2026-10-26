@@ -19,7 +19,6 @@
    [app.http.errors :as errors]
    [app.http.link-preview :as-alias link-preview]
    [app.http.management :as mgmt]
-   [app.http.mcp :as-alias mcp]
    [app.http.mcp-oauth :as-alias mcp-oauth]
    [app.http.middleware :as mw]
    [app.http.security :as sec]
@@ -245,7 +244,6 @@
    [::mtx/routes schema:routes]
    [::awsns/routes schema:routes]
    [::mgmt/routes schema:routes]
-   [::mcp/routes schema:routes]
    ::session/manager
    ::setup/props
    ::mtx/metrics
@@ -272,7 +270,6 @@
      (::mtx/routes cfg)
      (::assets/routes cfg)
      (::link-preview/routes cfg)
-     (::mcp/routes cfg)
      (::debug/routes cfg)
 
      ["/webhooks"

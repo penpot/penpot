@@ -208,7 +208,7 @@
           (t/is (not (contains? all-ids (:id second-mcp))))
           (t/is (contains? all-ids (:id third-mcp))))))))
 
-(t/deftest mcp-tokens-cannot-be-used-as-access-tokens
+(t/deftest access-token-decoder-accepts-mcp-and-personal-issuers
   (let [prof (th/create-profile* 1 {:is-active true})
         cfg  th/*system*]
 
@@ -219,9 +219,9 @@
                                            :name "mcp token"})
             mcp-token (:token result)
 
-            ;; Try to decode as access token (should fail)
             decoded (actoken/decode-token cfg mcp-token)]
-        (t/is (nil? decoded))))
+        (t/is (= "urn:penpot:mcp-token" (:iss decoded)))
+        (t/is (= (:id prof) (:uid decoded)))))
 
     (t/testing "Regular access tokens use access-token issuer claim"
       (let [{:keys [result]} (th/command! {::th/type :create-access-token

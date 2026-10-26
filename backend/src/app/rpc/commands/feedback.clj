@@ -17,7 +17,42 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
-   [app.util.services :as sv]))
+   [app.util.services :as sv]
+   [clojure.string :as str]))
+
+(def schema:send-mcp-feedback
+  [:map {:title "send-mcp-feedback" :closed true}
+   [:subject [:and [:string {:min 1 :max 120}]
+              [:fn #(and (not (str/blank? %))
+                         (not (re-find #"[\r\n]" %)))]]]
+   [:feedback [:and [:string {:min 1 :max 5000}]
+               [:fn #(not (str/blank? %))]]]])
+
+(sv/defmethod ::send-mcp-feedback
+  {::rpc/auth-type :token
+   ::rpc/token-type "mcp"
+   ::db/transaction true
+   ::sm/params schema:send-mcp-feedback}
+  [cfg {:keys [::rpc/profile-id subject feedback]}]
+  (let [profile     (profile/get-profile cfg profile-id)
+        destination (cf/get :mcp-feedback-email)]
+    (when (or (not (:is-active profile)) (:is-blocked profile))
+      (ex/raise :type :authentication
+                :code :invalid-mcp-token
+                :hint "an active profile is required"))
+    (when (str/blank? destination)
+      (ex/raise :type :restriction
+                :code :feedback-disabled
+                :hint "MCP feedback is not configured"))
+    (eml/send cfg {::eml/reuse-conn true
+                   :to destination
+                   :reply-to (:email profile)
+                   :subject (str "[MCP feedback] " subject)
+                   :body {"text/plain" (str "Submitted by: " (:fullname profile)
+                                            " <" (:email profile) ">\n"
+                                            "Profile ID: " (:id profile) "\n\n"
+                                            "Feedback:\n\n" feedback)}})
+    {:status "queued"}))
 
 (declare ^:private send-user-feedback!)
 

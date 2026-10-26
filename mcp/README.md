@@ -301,7 +301,7 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).                                                                                                                                                                                                    | `0` (no limit) |
 | `PENPOT_MCP_AUTH_URI` | Public base URL of the MCP authorization service, e.g. `https://penpot.example/api/mcp/oauth`. Set to enable OAuth; requires `--multi-user`. Use HTTPS (HTTP is allowed on loopback for development), without credentials, query parameters, or a fragment. | (unset; OAuth disabled) |
 | `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
-| `PENPOT_MCP_BACKEND_URI` | Penpot instance base URI. Setting a nonblank value enables tools that communicate with the Penpot backend (currently only the `submit_feedback` tool). The MCP server appends suffixes such as `api/mcp/feedback`. Backend interactions require MCP user tokens to be provided.  | (unset) |
+| `PENPOT_MCP_BACKEND_URI` | Penpot instance base URI. Setting a nonblank value enables tools that communicate with the Penpot backend (currently only the `submit_feedback` tool). The MCP server appends suffixes such as `api/main/methods/send-mcp-feedback`. Backend interactions require MCP user tokens to be provided.  | (unset) |
 
 ### Backend Configuration
 
@@ -310,7 +310,7 @@ the following variables for the backend process:
 
 | Environment Variable | Description | Default |
 |----------------------|-------------|---------|
-| `PENPOT_MCP_FEEDBACK_EMAIL` | Selects the inbox for MCP feedback. Unset means the endpoint rejects submissions. Uses the backend's existing SMTP configuration. | (unset) |
+| `PENPOT_MCP_FEEDBACK_EMAIL` | Selects the inbox for MCP feedback. Unset means the command rejects submissions. Requires `enable-access-tokens` and uses the backend's existing SMTP configuration. | (unset) |
 
 
 ### Logging Configuration

@@ -464,7 +464,7 @@
         ;; 2. actoken/authz reads ::http/auth-data and sets ::actoken/profile-id
         request {::http/auth-data {:type :token
                                    :token (:token atoken)
-                                   :claims {:tid (:id atoken)}}
+                                   :claims (actoken/decode-token th/*system* (:token atoken))}
                  :path-params {:id (str (:id object))}}
 
         ;; Apply actoken/authz middleware
@@ -517,7 +517,7 @@
     (t/testing "access token auth sets ::actoken/profile-id"
       (let [request  {::http/auth-data {:type :token
                                         :token (:token atoken)
-                                        :claims {:tid (:id atoken)}}}
+                                        :claims (actoken/decode-token th/*system* (:token atoken))}}
             result   (with-session request)]
         (t/is (= (:id profile) (::actoken/profile-id result)))))
 

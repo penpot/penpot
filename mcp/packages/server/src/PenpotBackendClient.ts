@@ -37,40 +37,48 @@ export class PenpotBackendClient implements PenpotBackend {
     }
 
     public async submitFeedback(userToken: string, feedback: Feedback): Promise<void> {
+        await this.callRpc("send-mcp-feedback", userToken, feedback);
+    }
+
+    /** Calls a backend RPC method whose result body is not needed. */
+    private async callRpc(methodName: string, userToken: string, params: object): Promise<void> {
         let response: Response;
         try {
-            response = await fetch(new URL("api/mcp/feedback", this.baseUri), {
+            response = await fetch(new URL(`api/main/methods/${encodeURIComponent(methodName)}`, this.baseUri), {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${userToken}`,
+                    Authorization: `Token ${userToken}`,
+                    "X-Client": "penpot-mcp",
                     "Content-Type": "application/json",
                     Accept: "application/json",
                 },
-                body: JSON.stringify(feedback),
+                body: JSON.stringify(params),
                 redirect: "manual",
                 signal: AbortSignal.timeout(10_000),
             });
             // discard backend diagnostics, which may contain private data
             await response.body?.cancel();
         } catch (error) {
-            this.logger.error(error, "Feedback submission failed");
-            throw new Error("Feedback submission could not be confirmed. Do not retry automatically.");
+            this.logger.error(error, "Penpot RPC request failed");
+            throw new Error("The backend operation could not be confirmed. Do not retry automatically.");
         }
 
+        if (response.ok) return;
+
         switch (response.status) {
-            case 202:
-                return;
             case 401:
                 throw new Error("The MCP user token is invalid or expired. Update userToken in the MCP server URL.");
+            case 403:
+                throw new Error("The MCP user token is not authorized for this backend operation.");
             case 400:
-                throw new Error("The backend rejected the feedback subject or text.");
+                throw new Error("The backend rejected the request parameters or the operation is disabled.");
             case 429:
-                throw new Error("The feedback submission limit has been reached. Do not retry automatically.");
+                throw new Error("The backend request limit has been reached. Do not retry automatically.");
             case 503:
-                throw new Error("Feedback submission is unavailable on this Penpot instance.");
+                throw new Error("The backend operation is unavailable on this Penpot instance.");
             default:
                 throw new Error(
-                    `Feedback submission could not be confirmed (HTTP ${response.status}). Do not retry automatically.`
+                    `The backend operation could not be confirmed (HTTP ${response.status}). Do not retry automatically.`
                 );
         }
     }

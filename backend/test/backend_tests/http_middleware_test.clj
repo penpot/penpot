@@ -106,7 +106,8 @@
     (let [response (handler nil)]
       (t/is (nil? response)))
 
-    (let [response (handler {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}})]
+    (let [response (handler {::http/auth-data {:type :token :token (:token token)
+                                               :claims (tokens/verify th/*system* {:token (:token token)})}})]
       (t/is (= #{} (:app.http.access-token/perms response)))
       (t/is (= (:id profile) (:app.http.access-token/profile-id response))))))
 
@@ -114,9 +115,14 @@
   (let [profile (th/create-profile* 1)
         token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token
                             (:id profile) "test" nil "mcp")
-        handler (#'app.http.access-token/wrap-authz identity th/*system*)
-        request {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}}
+        handler (#'app.http.access-token/wrap-authz
+                 identity (assoc th/*system* :app.http.access-token/allow-mcp true))
+        request {::http/auth-data {:type :token :token (:token token)
+                                   :claims (tokens/verify th/*system* {:token (:token token)})}}
         response (handler request)]
+    (t/is (nil? (:app.http.access-token/profile-id
+                 ((#'app.http.access-token/wrap-authz identity th/*system*) request)))
+          "MCP tokens do not authenticate routes that have not opted in")
     ;; Must set ::actoken/id from claims :tid
     (t/is (= (:id token) (:app.http.access-token/id response)))
     ;; Must set ::actoken/type from database

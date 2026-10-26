@@ -902,6 +902,27 @@
     (t/is (some? ex))
     (t/is (th/ex-of-type? ex :not-found))))
 
+;; --- TOKEN TYPE RESTRICTIONS
+
+(t/deftest mcp-token-authentication
+  (let [pid     (uuid/custom 1 1)
+        method  (fn [mdata]
+                  (rpc/make-rpc-handler
+                   {:test-method [mdata (partial (#'rpc/wrap-authentication
+                                                  nil (fn [_ params] params) mdata)
+                                                 nil)]}))
+        handler (method {::rpc/auth-type :token ::rpc/token-type "mcp"})]
+    (doseq [extras [{::session/profile-id pid}
+                    {::actoken/profile-id pid}
+                    {::actoken/profile-id pid ::actoken/type "personal"}]]
+      (t/is (th/ex-of-code? (call-ex handler {:extras extras}) :token-auth-required)))
+    (let [extras {::actoken/profile-id pid ::actoken/type "mcp"}]
+      (t/is (= "mcp" (::rpc/token-type (call-body handler {:extras extras}))))
+      (t/is (th/ex-of-code? (call-ex (method {}) {:extras extras}) :token-auth-required)))
+    (t/is (= pid (::rpc/profile-id
+                  (call-body (method {}) {:extras {::actoken/profile-id pid
+                                                   ::actoken/type "personal"}}))))))
+
 ;; --- PARAMS VALIDATION: SERVER AUTH CONTEXT VS CLIENT PARAMS
 
 (t/deftest client-qualified-keys-do-not-override-server-auth-context
@@ -915,7 +936,8 @@
         request       {:params {:name "valid"
                                 :app.rpc/profile-id attacker-pid
                                 :app.rpc/auth-type :token
-                                :app.rpc/token-perms #{"admin"}}}
+                                :app.rpc/token-perms #{"admin"}
+                                :app.rpc/token-type "mcp"}}
         params        (with-meta {::rpc/profile-id server-pid
                                   ::rpc/auth-type :session}
                         {::http/request request})]
@@ -923,6 +945,7 @@
     (t/is (= server-pid (::rpc/profile-id @captured)))
     (t/is (= :session (::rpc/auth-type @captured)))
     (t/is (not (contains? @captured ::rpc/token-perms)))
+    (t/is (not (contains? @captured ::rpc/token-type)))
     (t/is (= "valid" (:name @captured)))))
 
 ;; --- RESPONSE: NIL BODY WITH CUSTOM HEADERS

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns backend-tests.http-mcp-test
+(ns backend-tests.rpc-commands-mcp-feedback-test
   (:require
    [app.common.json :as json]
    [app.common.time :as ct]
@@ -14,14 +14,16 @@
    [app.email :as email]
    [app.http :as http]
    [app.jobs :as jobs]
-   [app.redis :as rds]
    [app.rpc.commands.access-token :as access-token]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [yetti.response :as-alias yres]))
 
-(t/use-fixtures :once th/state-init)
+(t/use-fixtures :once (t/compose-fixtures
+                       (partial th/init-config [:enable-access-tokens
+                                                :enable-client-header-check-middleware])
+                       th/init-system))
 (t/use-fixtures :each th/database-reset)
 
 (def ^:private feedback
@@ -42,11 +44,12 @@
    (with-redefs [cf/config (assoc cf/config :mcp-feedback-email "mcp@example.com")]
      ((#'http/router-handler (::http/router th/*system*))
       (th/make-dummy-request
-       (merge {:path "/api/mcp/feedback"
+       (merge {:path "/api/main/methods/send-mcp-feedback"
                :method :post
                :headers (cond-> {"content-type" "application/json"
-                                 "accept" "application/json"}
-                          token (assoc "authorization" (str "Bearer " token)))
+                                 "accept" "application/json"
+                                 "x-client" "penpot-mcp"}
+                          token (assoc "authorization" (str "Token " token)))
                :body-bytes (json/encode params)}
               options))))))
 
@@ -59,7 +62,7 @@
   (let [{:keys [token profile]} (create-identity)
         response (request (:token token))
         email    (first (emails))]
-    (t/is (= 202 (::yres/status response)))
+    (t/is (= 200 (::yres/status response)))
     (t/is (= 1 (count (emails))))
     (t/is (= "mcp@example.com" (:to email)))
     (t/is (= (:email profile) (:reply-to email)))
@@ -74,6 +77,8 @@
 (t/deftest rejects-invalid-credentials
   (let [{:keys [profile token]} (create-identity)]
     (doseq [credential [nil "" "invalid"
+                        (tokens/generate th/*system* {:iss "other"
+                                                      :uid (:id profile) :tid (:id token)})
                         (tokens/generate th/*system* {:iss "access-token"
                                                       :uid (:id profile) :tid (:id token)})
                         (tokens/generate th/*system* {:iss "urn:penpot:mcp-token"
@@ -104,7 +109,8 @@
                    {:deleted-at (ct/minus (ct/now) (ct/duration "1h"))}]]
     (let [{:keys [token profile]} (create-identity)]
       (db/update! th/*system* :profile changes {:id (:id profile)})
-      (t/is (= 401 (::yres/status (request (:token token)))))))
+      (t/is (= (if (:deleted-at changes) 404 401)
+               (::yres/status (request (:token token)))))))
   (t/is (empty? (emails))))
 
 (t/deftest validates-feedback-before-queueing
@@ -121,33 +127,21 @@
                     (assoc feedback :feedback 42)]]
       (t/is (= 400 (::yres/status (request (:token token) params)))))
     (t/is (empty? (emails)))
-    (t/is (= 202 (::yres/status
+    (t/is (= 200 (::yres/status
                   (request (:token token) {:subject (apply str (repeat 120 "x"))
                                            :feedback (apply str (repeat 5000 "x"))}))))))
-
-(t/deftest limits-submissions-per-profile
-  (let [{:keys [token profile]} (create-identity)]
-    (dotimes [_ 5]
-      (t/is (= 202 (::yres/status (request (:token token))))))
-    (let [replacement (db/tx-run! th/*system* access-token/create-access-token
-                                  (:id profile) "Replacement" nil "mcp")
-          response    (request (:token replacement))]
-      (t/is (= 429 (::yres/status response)))
-      (t/is (pos? (parse-long (get-in response [::yres/headers "retry-after"])))))
-    (t/is (= 5 (count (emails))))
-    (let [other (create-identity)]
-      (t/is (= 202 (::yres/status (request (get-in other [:token :token]))))))))
 
 (t/deftest disabled-without-feedback-email
   (let [{:keys [token]} (create-identity)]
     (with-redefs [cf/config (dissoc cf/config :mcp-feedback-email)]
       (let [response ((#'http/router-handler (::http/router th/*system*))
                       (th/make-dummy-request
-                       {:path "/api/mcp/feedback" :method :post
-                        :headers {"authorization" (str "Bearer " (:token token))
-                                  "content-type" "application/json"}
+                       {:path "/api/main/methods/send-mcp-feedback" :method :post
+                        :headers {"authorization" (str "Token " (:token token))
+                                  "content-type" "application/json"
+                                  "x-client" "penpot-mcp"}
                         :body-bytes (json/encode feedback)}))]
-        (t/is (= 503 (::yres/status response)))))
+        (t/is (= 400 (::yres/status response)))))
     (t/is (empty? (emails)))))
 
 (t/deftest feedback-is-post-only
@@ -157,20 +151,8 @@
 
 (t/deftest mcp-token-does-not-authorize-ordinary-rpc
   (let [{:keys [token]} (create-identity)]
-    (t/is (= 401 (::yres/status
+    (t/is (= 403 (::yres/status
                   (request (:token token) {} {:path "/api/rpc/command/get-teams"}))))))
-
-(t/deftest bearer-token-is-independent-of-session-cookies
-  (let [{:keys [token]} (create-identity)]
-    (t/is (= 202 (::yres/status
-                  (request (:token token) feedback
-                           {:cookies {(cf/get :auth-token-cookie-name) "invalid-cookie"}}))))))
-
-(t/deftest does-not-queue-when-the-limiter-is-unavailable
-  (let [{:keys [token]} (create-identity)]
-    (with-redefs [rds/run! (fn [& _] (throw (ex-info "Redis unavailable" {})))]
-      (t/is (= 500 (::yres/status (request (:token token)))))))
-  (t/is (empty? (emails))))
 
 (t/deftest does-not-acknowledge-a-failed-queue-submission
   (let [{:keys [token]} (create-identity)]

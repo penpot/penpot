@@ -22,7 +22,6 @@
    [app.http.debug :as-alias http.debug]
    [app.http.link-preview :as-alias http.link-preview]
    [app.http.management :as mgmt]
-   [app.http.mcp :as-alias http.mcp]
    [app.http.mcp-oauth :as-alias http.mcp-oauth]
    [app.http.session :as session]
    [app.http.websocket :as http.ws]
@@ -543,7 +542,6 @@
     ::http.assets/routes (ig/ref ::http.assets/routes)
     ::http.link-preview/routes (ig/ref ::http.link-preview/routes)
     ::http.mcp-oauth/routes (ig/ref ::http.mcp-oauth/routes)
-    ::http.mcp/routes    (ig/ref ::http.mcp/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
     ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
 
@@ -553,13 +551,6 @@
     ::setup/props (ig/ref ::setup/props)
     ::session/manager (ig/ref ::session/manager)
     ::http.client/client (ig/ref ::http.client/client)}
-
-   ::http.mcp/routes
-   {::db/pool      (ig/ref ::db/pool)
-    ::rds/pool     (ig/ref ::rds/pool)
-    ::setup/props  (ig/ref ::setup/props)
-    ::jobs/defs    (ig/ref ::jobs/defs)
-    ::mtx/metrics  (ig/ref ::mtx/metrics)}
 
    ::http.link-preview/routes
    {::db/pool         (ig/ref ::db/pool)}
