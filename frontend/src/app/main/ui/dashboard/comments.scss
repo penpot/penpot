@@ -44,8 +44,8 @@
 
   .unread {
     position: absolute;
-    inline-size: $sz-8;
-    block-size: $sz-8;
+    inline-size: px2rem(8);
+    block-size: px2rem(8);
     border: $b-2 solid var(--color-background-tertiary);
     border-radius: 50%;
     background: var(--color-foreground-error);
