@@ -8158,6 +8158,14 @@ msgstr "Letter Spacing"
 msgid "workspace.options.text-options.line-height"
 msgstr "Line height"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:251
+msgid "workspace.options.text-options.list-bullets"
+msgstr "Bullet list"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:247
+msgid "workspace.options.text-options.list-none"
+msgstr "No list"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Strikethrough (%s)"

@@ -8247,6 +8247,14 @@ msgstr "Espaciado entre letras"
 msgid "workspace.options.text-options.line-height"
 msgstr "Altura de línea"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:251
+msgid "workspace.options.text-options.list-bullets"
+msgstr "Lista con viñetas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:247
+msgid "workspace.options.text-options.list-none"
+msgstr "Sin lista"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Tachado (%s)"
