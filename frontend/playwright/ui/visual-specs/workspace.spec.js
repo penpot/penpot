@@ -28,6 +28,50 @@ const setupFileWithAssets = async (workspace) => {
   return { fileId, pageId };
 };
 
+test.describe("Color palette", () => {
+  test("Shows the scroll arrows and the palette menu", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-many-colors.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
+      pageId: "c1249a66-fce0-8175-8004-7433fe4be8bd",
+    });
+
+    await workspace.clickColorPalette();
+    await workspace.palette.locator('[class*="palette-actions"]').click();
+    await page.getByText("File library").click();
+    await expect(
+      workspace.palette.getByRole("button", { name: "color-01" }),
+    ).toBeVisible();
+    await page.mouse.move(640, 300);
+    // The arrows are a small part of the palette: compare every pixel.
+    await expect(workspace.palette).toHaveScreenshot("color-palette.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await workspace.palette.locator('[class*="right-arrow"]').click();
+    await page.mouse.move(640, 300);
+    await expect(workspace.palette).toHaveScreenshot(
+      "color-palette-scrolled.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    await workspace.palette.locator('[class*="palette-actions"]').click();
+    await expect(page.getByText("Recent colors")).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(page).toHaveScreenshot("color-palette-menu.png", {
+      clip: { x: 300, y: 400, width: 700, height: 320 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Viewport", () => {
   test("Shows the workspace correctly for a blank file", async ({ page }) => {
     const workspace = new WorkspacePage(page);
@@ -89,6 +133,63 @@ test.describe("Grid layout", () => {
       "grid-layout-editor.png",
       { maxDiffPixelRatio: 0, threshold: 0 },
     );
+  });
+});
+
+test.describe("Grid editor", () => {
+  test("Shows the track options button on the canvas", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "workspace/get-file-fragment-9042.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "af2494d0-39ba-8184-8005-230696f6df5c",
+      pageId: "af2494d0-39ba-8184-8005-230696f6df5d",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    // Tracks need 110px or more on screen to show their options button.
+    await page.keyboard.press("Control+=");
+    await page.keyboard.press("Control+=");
+    await page
+      .getByTestId("inspect-layout")
+      .getByRole("button", { name: "Edit grid" })
+      .click();
+
+    const shotTrack = async () => {
+      const track = page.getByTestId("grid-track-editor-wrapper").first();
+      await track.hover();
+      await expect(
+        page.getByTestId("grid-track-options-btn").first(),
+      ).toBeVisible();
+      // Wait until the zoom animation leaves the track in place.
+      let box = await track.boundingBox();
+      await expect
+        .poll(async () => {
+          const prev = box;
+          box = await track.boundingBox();
+          return prev.x === box.x && prev.width === box.width;
+        })
+        .toBe(true);
+      await expect(page).toHaveScreenshot({
+        clip: {
+          x: Math.floor(box.x) - 8,
+          y: Math.floor(box.y) - 8,
+          width: Math.ceil(box.width) + 16,
+          height: Math.ceil(box.height) + 16,
+        },
+        maxDiffPixelRatio: 0,
+        threshold: 0,
+      });
+    };
+
+    // The track editors draw at a fixed screen size at any zoom.
+    await shotTrack();
+    await page.keyboard.press("Control+=");
+    await shotTrack();
   });
 });
 
@@ -328,6 +429,16 @@ test.describe("Component options", () => {
     await title.hover();
     await expect(workspace.rightSidebar).toHaveScreenshot(
       "annotation-saved.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    // Collapsed by clicking its title.
+    await title.click();
+    await expect(
+      workspace.rightSidebar.getByText("An annotation"),
+    ).toBeHidden();
+    await expect(workspace.rightSidebar).toHaveScreenshot(
+      "annotation-collapsed.png",
       { maxDiffPixelRatio: 0, threshold: 0 },
     );
   });
@@ -728,6 +839,57 @@ test.describe("Nudge modal", () => {
   });
 });
 
+test.describe("Text palette", () => {
+  test("Shows the scroll arrows and the palette menu", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-many-typographies.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
+      pageId: "c1249a66-fce0-8175-8004-7433fe4be8bd",
+    });
+
+    await workspace.palette
+      .getByRole("button", { name: "Typographies" })
+      .click();
+    await expect(
+      workspace.palette.getByText("Type 01 Regular 12"),
+    ).toBeVisible();
+    await page.mouse.move(640, 300);
+    // The arrows are a small part of the palette: compare every pixel.
+    await expect(workspace.palette).toHaveScreenshot("text-palette.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    const rightArrow = workspace.palette.locator('[class*="right-arrow"]');
+    await rightArrow.hover();
+    await expect(workspace.palette).toHaveScreenshot(
+      "text-palette-arrow-hover.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    await rightArrow.click();
+    await page.mouse.move(640, 300);
+    await expect(workspace.palette).toHaveScreenshot(
+      "text-palette-scrolled.png",
+      { maxDiffPixelRatio: 0, threshold: 0 },
+    );
+
+    await workspace.palette.locator('[class*="palette-actions"]').click();
+    await expect(page.getByText("File library")).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(page).toHaveScreenshot("text-palette-menu.png", {
+      clip: { x: 300, y: 450, width: 700, height: 270 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Selected colors", () => {
   test("Shows the more colors button", async ({ page }) => {
     const workspace = new WorkspacePage(page);
@@ -808,6 +970,61 @@ test.describe("Grid cell options", () => {
     await expect(workspace.rightSidebar.getByText("Grid cell")).toBeVisible();
     // The cell options are a small part of the sidebar: compare every pixel.
     await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Export modal", () => {
+  test("Shows the export frames modal with every selection state", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-export-frames.json",
+    );
+    await workspace.mockRPC(
+      "get-file-object-thumbnails?file-id=*",
+      "workspace/get-file-object-thumbnails-blank.json",
+    );
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*",
+      "workspace/get-file-fragment-blank.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "8d102c33-b98f-81f6-8006-fdd4ea9780d7",
+      pageId: "8d102c33-b98f-81f6-8006-fdd4ea9780d8",
+    });
+
+    await page.getByRole("button", { name: "Main menu" }).click();
+    await page.getByText("file").last().click();
+    await page.locator("#file-menu-export-frames").click();
+    const modal = page.getByText("Export as PDF").locator("../..");
+    await expect(page.getByText("2 of 2 elements selected")).toBeVisible();
+    await page.mouse.move(0, 0);
+    // Every row checked.
+    await expect(modal).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await page.getByRole("button", { name: "Board 1" }).click();
+    await expect(page.getByText("1 of 2 elements selected")).toBeVisible();
+    await page.mouse.move(0, 0);
+    // Mixed: the header checkbox shows the "some selected" mark.
+    await expect(modal).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await page.getByRole("button", { name: "Board 2" }).click();
+    await expect(page.getByText("0 of 2 elements selected")).toBeVisible();
+    await page.mouse.move(0, 0);
+    // Nothing checked: the export button is disabled.
+    await expect(modal).toHaveScreenshot({
       maxDiffPixelRatio: 0,
       threshold: 0,
     });

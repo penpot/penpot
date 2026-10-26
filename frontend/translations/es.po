@@ -2986,6 +2986,10 @@ msgstr "Error"
 msgid "labels.exit"
 msgstr "Salir"
 
+#: src/app/main/ui/viewer/thumbnails.cljs:96
+msgid "labels.expand"
+msgstr "Expandir"
+
 #: src/app/main/ui/dashboard/team.cljs:782
 msgid "labels.expired-invitation"
 msgstr "Expirada"
@@ -6208,6 +6212,14 @@ msgstr "Mostrar interacciones al hacer click"
 msgid "viewer.header.sitemap"
 msgstr "Mapa del sitio"
 
+#: src/app/main/ui/viewer/thumbnails.cljs:70
+msgid "viewer.thumbnails.scroll-left"
+msgstr "Desplazar a la izquierda"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:76
+msgid "viewer.thumbnails.scroll-right"
+msgstr "Desplazar a la derecha"
+
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
 msgid "webgl.modals.webgl-unavailable.cta-dashboard"
 msgstr "Ir al panel"
@@ -6831,6 +6843,14 @@ msgstr "Pantalla completa"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.columns"
+msgstr "Columnas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.rows"
+msgstr "Filas"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:296, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:854
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Editar grid"
@@ -6866,6 +6886,10 @@ msgstr "Padding superior"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:383, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:394, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:400
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Padding vertical"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "Opciones de la pista"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"

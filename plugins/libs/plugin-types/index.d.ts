@@ -4443,6 +4443,11 @@ export interface ShapeBase extends PluginData {
    * several tokens with the same name in different sets, the actual token applied
    * and the value set to the attributes will depend on which sets are active
    * (and will change if different sets or themes are activated later).
+   *
+   * NOTE that the per-side stroke width properties (`strokeWidthTop`,
+   * `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+   * boards and rectangles. Applying one to any other shape raises a validation
+   * error. The uniform `strokeWidth` property is accepted on every shape.
    */
   applyToken(token: Token, properties?: TokenProperty[]): void;
 
@@ -4931,6 +4936,10 @@ export interface TokenBase {
    * several tokens with the same name in different sets, the actual token applied
    * and the value set to the attributes will depend on which sets are active
    * (and will change if different sets or themes are activated later).
+   *
+   * NOTE that the per-side stroke width properties are only valid on boards and
+   * rectangles; applying one to any other shape raises a validation error. The
+   * uniform `strokeWidth` property is accepted on every shape.
    */
   applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
 
