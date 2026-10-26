@@ -10,16 +10,23 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [goog.object :as gobj]
+   [performance-tests.render-wasm.artifacts-test]
    [performance-tests.render-wasm.boolean-test]
+   [performance-tests.render-wasm.browser-test]
+   [performance-tests.render-wasm.build-test]
    [performance-tests.render-wasm.builder-test]
    [performance-tests.render-wasm.containers-test]
    [performance-tests.render-wasm.contracts-test]
    [performance-tests.render-wasm.fingerprint-test]
    [performance-tests.render-wasm.geometry-scenes-test]
    [performance-tests.render-wasm.lifecycle-test]
+   [performance-tests.render-wasm.pilot-test]
+   [performance-tests.render-wasm.process-test]
    [performance-tests.render-wasm.protocol-test]
    [performance-tests.render-wasm.report-test]
-   [performance-tests.render-wasm.scene-snapshot-test]))
+   [performance-tests.render-wasm.runner-test]
+   [performance-tests.render-wasm.scene-snapshot-test]
+   [performance-tests.render-wasm.server-test]))
 
 (enable-console-print!)
 
@@ -33,16 +40,23 @@
     (.exit js/process 1)))
 
 (def test-namespaces
-  ['performance-tests.render-wasm.boolean-test
+  ['performance-tests.render-wasm.artifacts-test
+   'performance-tests.render-wasm.boolean-test
+   'performance-tests.render-wasm.browser-test
+   'performance-tests.render-wasm.build-test
    'performance-tests.render-wasm.builder-test
    'performance-tests.render-wasm.containers-test
    'performance-tests.render-wasm.contracts-test
    'performance-tests.render-wasm.fingerprint-test
    'performance-tests.render-wasm.geometry-scenes-test
    'performance-tests.render-wasm.lifecycle-test
+   'performance-tests.render-wasm.pilot-test
+   'performance-tests.render-wasm.process-test
    'performance-tests.render-wasm.protocol-test
    'performance-tests.render-wasm.report-test
-   'performance-tests.render-wasm.scene-snapshot-test])
+   'performance-tests.render-wasm.runner-test
+   'performance-tests.render-wasm.scene-snapshot-test
+   'performance-tests.render-wasm.server-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")
@@ -67,22 +81,22 @@
   (let [args (->> (.-argv js/process)
                   (array-seq)
                   (drop 2))]
-    ;; `pnpm run test:performance-tests -- --focus ...` forwards the separator to
-    ;; the node process, so drop one leading `--` before handing args to
+    ;; `pnpm run test:renderer-benchmarks -- --focus ...` forwards the separator
+    ;; to the node process, so drop one leading `--` before handing args to
     ;; tools.cli.
     (cond-> args
       (= "--" (first args)) rest)))
 
 (defn- usage
   [summary]
-  (str "Usage: pnpm run test:performance-tests -- [options]\n\n"
+  (str "Usage: pnpm run test:renderer-benchmarks -- [options]\n\n"
        "Options:\n"
        summary "\n\n"
        "Focus examples:\n"
-       "  pnpm run test:performance-tests -- --focus performance-tests.render-wasm.contracts-test\n"
-       "  pnpm run test:performance-tests -- --focus performance-tests.render-wasm.contracts-test/some-test-var\n\n"
+       "  pnpm run test:renderer-benchmarks -- --focus performance-tests.render-wasm.contracts-test\n"
+       "  pnpm run test:renderer-benchmarks -- --focus performance-tests.render-wasm.contracts-test/some-test-var\n\n"
        "Log level example (quiets app logging during the run):\n"
-       "  pnpm run test:performance-tests -- --focus performance-tests.render-wasm.contracts-test --log-level warn"))
+       "  pnpm run test:renderer-benchmarks -- --focus performance-tests.render-wasm.contracts-test --log-level warn"))
 
 (defn- fail!
   [message]
