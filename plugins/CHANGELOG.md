@@ -28,6 +28,7 @@
 - **plugins-runtime**: Fixed the `fontFamilies` token property mapping so `Shape.applyToken(token, ["fontFamilies"])` resolves to the canonical `:font-family` attribute and applied-token readback exposes the documented `fontFamilies` key instead of the undocumented singular `fontFamily`. Closes #11405.
 - **plugins-runtime**: `TokenFontFamilies.resolvedValue` and the `fontFamilies` member of `TokenTypographyValue` now keep a family whose name has several words (`Hanken Grotesk`) as one entry, instead of splitting it into an array of its words, and keep names with words the resolver would otherwise read as colors or numbers (`Red Hat Display`, `Press Start 2P`) unchanged.
 - **plugins-runtime**: Opening a plugin no longer drops running background plugins (`allowBackground`, such as the MCP plugin) from the runtime registry. They kept running, but their UI messages were no longer delivered to the plugin and they could no longer be unloaded, so MCP tasks timed out after another plugin was opened.
+- **plugins-runtime**: `Shape.applyToken()`, `Token.applyToShapes()` and `Token.applyToSelected()` now reject an explicit per-side stroke width property (`strokeWidthTop`, `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) on shapes other than boards and rectangles, matching the `strokes` setter. The uniform `strokeWidth` property keeps working on every shape. Closes #12319.
 
 ## 1.5.0 (2026-07-08)
 
