@@ -449,6 +449,20 @@
                     (t/is (= (:email actor) (:profile-email name-only)))
                     (t/is (= "Preset Name" (:profile-name name-only))))))))
 
+(t/deftest consumer-events-omits-empty-actor-profile-name
+  ;; profile.fullname is NOT NULL DEFAULT ''; empty must not become
+  ;; :profile-name "".
+  (let [actor (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id actor)})]
+    (th/db-update! :profile {:fullname ""} {:id (:id actor)})
+    (with-redefs [cf/flags #{:admin-console}]
+      (with-mocks [admin-console-mock {:target 'app.nitrate/call :return nil}]
+        (insert-audit-row! (:id actor) "create-project" {:team-id (:id team)})
+        (th/run-task! :audit-log-consumer-admin-console {})
+        (let [event (admin-console-event admin-console-mock)]
+          (t/is (= (:email actor) (:profile-email event)))
+          (t/is (not (contains? event :profile-name))))))))
+
 (t/deftest consumer-events-enrich-skips-missing-and-non-uuid-ids
   (let [actor (th/create-profile* 1 {:is-active true})]
     (with-redefs [cf/flags #{:admin-console}]

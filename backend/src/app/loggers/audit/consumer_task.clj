@@ -343,18 +343,21 @@
 
 (defn- maybe-assoc-actor-profile
   "Fill-only top-level :profile-email / :profile-name from the event
-  actor (:profile-id). Omits keys when the id is missing, zero, or the
-  profile row is absent."
+  actor (:profile-id). Omits keys when the id is missing, zero, the
+  profile row is absent, or the corresponding column is empty
+  (fullname defaults to \"\" in the schema)."
   [event profiles]
   (let [id (uuid/coerce (:profile-id event))]
     (if (or (nil? id) (uuid/zero? id))
       event
       (if-let [profile (get profiles id)]
         (cond-> event
-          (not (contains? event :profile-email))
+          (and (not (contains? event :profile-email))
+               (not-empty (:email profile)))
           (assoc :profile-email (:email profile))
 
-          (not (contains? event :profile-name))
+          (and (not (contains? event :profile-name))
+               (not-empty (:fullname profile)))
           (assoc :profile-name (:fullname profile)))
         event))))
 
@@ -366,7 +369,7 @@
      :user-who-send-invitation-email.
   3. Fill missing top-level :profile-email / :profile-name from the
      event actor (:profile-id), including soft-deleted profiles; omit
-     when there is no usable actor id."
+     when there is no usable actor id or the value is empty."
   [{:keys [::db/conn]} events]
   (let [team-ids    (collect-team-ids-needing-name events)
         profile-ids (into (collect-profile-ids-needing-email events)
