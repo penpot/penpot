@@ -129,6 +129,7 @@
    [frontend-tests.ui.stroke-menu-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
+   [frontend-tests.util-http-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-queue-test]
    [frontend-tests.util-range-tree-test]
@@ -277,6 +278,7 @@
    'frontend-tests.ui.stroke-menu-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test
+   'frontend-tests.util-http-test
    'frontend-tests.util-object-test
    'frontend-tests.util-queue-test
    'frontend-tests.util-range-tree-test

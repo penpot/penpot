@@ -148,3 +148,32 @@
     ;; V8 gives native rejections such as a failed fetch no frames at all.
     (let [cause (make-error "TypeError" "Failed to fetch" :stack "TypeError: Failed to fetch")]
       (t/is (false? (errors/is-ignorable-exception? cause))))))
+
+;; ---------------------------------------------------------------------------
+;; network-failure? tests
+;; ---------------------------------------------------------------------------
+
+(t/deftest test-network-failure-browser-messages
+  (t/testing "The TypeError each browser gives a failed fetch is a network failure"
+    (doseq [message ["Failed to fetch"
+                     "Failed to fetch (design.penpot.app)"
+                     "NetworkError when attempting to fetch resource."
+                     "Load failed"
+                     "network error"]]
+      (t/is (true? (errors/network-failure? (make-error "TypeError" message)))
+            message))))
+
+(t/deftest test-network-failure-needs-type-error
+  (t/testing "Other errors with the same message are not network failures"
+    (t/is (false? (errors/network-failure? (make-error "Error" "Failed to fetch")))))
+  (t/testing "Other TypeErrors are not network failures"
+    (t/is (false? (errors/network-failure? (make-error "TypeError" "x is not a function"))))))
+
+(t/deftest test-network-failure-becomes-environment-error
+  (t/testing "A raw fetch failure is wrapped as an environment error"
+    (let [cause (make-error "TypeError" "Failed to fetch")
+          error (errors/network-failure->error cause)]
+      (t/is (contains? #{:network :offline} (:type (ex-data error))))
+      (t/is (true? (errors/environment-error? error)))
+      (t/is (= "Failed to fetch" (ex-message error)))
+      (t/is (identical? cause (ex-cause error))))))

@@ -1123,6 +1123,35 @@
         (and (= (.-name ^js cause) "NotFoundError")
              (str/includes? message "removeChild")))))
 
+;; Messages of the TypeError a failed `fetch` rejects with, or a failed
+;; read of its response body.
+(def ^:private network-failure-messages
+  #{"Failed to fetch"                                 ; Chrome
+    "NetworkError when attempting to fetch resource." ; Firefox
+    "Load failed"                                     ; Safari
+    "network error"})                                 ; Chrome, body read
+
+(defn network-failure?
+  "True when the error is the browser's TypeError for a request that never
+  got an answer. `app.util.http` wraps its own failures as `:network`; this
+  catches the raw ones from third-party code (zip.js, plugins, schema
+  loads) that reach the global handlers."
+  [cause]
+  (and (= (.-name ^js cause) "TypeError")
+       (let [message (ex-message cause)]
+         (or (contains? network-failure-messages message)
+             ;; Newer Chrome versions append the host in parentheses
+             (str/starts-with? message "Failed to fetch (")))))
+
+(defn network-failure->error
+  "Wrap a raw network TypeError as a connectivity error, so it is reported
+  as an environment failure instead of an application crash."
+  [cause]
+  (ex-info (ex-message cause)
+           {:type (if (false? (.-onLine ^js g/navigator)) :offline :network)
+            :hint "unable to perform fetch operation"}
+           cause))
+
 (defn- from-plugin?
   "Check if the error is marked as originating from plugin code. The
   plugin runtime tracks plugin errors in a WeakMap, which works even
@@ -1148,6 +1177,10 @@
                 ;; Other ignorable exceptions: ignore silently
                 (is-ignorable-exception? cause)
                 nil
+
+                ;; Raw fetch failures: connectivity, not a crash
+                (network-failure? cause)
+                (on-error (network-failure->error cause))
 
                 ;; All other errors: show exception page
                 :else
@@ -1175,6 +1208,10 @@
                 ;; Other ignorable exceptions: ignore silently
                 (is-ignorable-exception? cause)
                 nil
+
+                ;; Raw fetch failures: connectivity, not a crash
+                (network-failure? cause)
+                (on-error (network-failure->error cause))
 
                 ;; All other errors: show exception page
                 :else

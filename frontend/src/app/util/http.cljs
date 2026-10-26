@@ -156,7 +156,18 @@
                           :blob   (.blob ^js native-response))]
     (->> (rx/from body)
          (rx/map (fn [body]
-                   (assoc response :body body))))))
+                   (assoc response :body body)))
+         ;; The connection can drop while the body streams in, after
+         ;; `fetch` already resolved; the browser then rejects the read
+         ;; with a bare TypeError. Parse failures (SyntaxError) pass as is.
+         (rx/catch (fn [cause]
+                     (if (= (.-name ^js cause) "TypeError")
+                       (rx/throw (ex-info (ex-message cause)
+                                          {:type :network
+                                           :hint "unable to read response body"
+                                           :uri (:uri response)}
+                                          cause))
+                       (rx/throw cause)))))))
 
 (defn send!
   [{:keys [response-type] :or {response-type :text} :as params}]
