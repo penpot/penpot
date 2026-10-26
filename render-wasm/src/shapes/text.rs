@@ -1396,6 +1396,13 @@ pub enum TextTransform {
     Capitalize,
 }
 
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub enum ListStyleType {
+    #[default]
+    None,
+    Disc,
+}
+
 // FIXME: Rethink this type. We'll probably need to move the serialization to the
 // wasm module and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
@@ -1406,6 +1413,7 @@ pub struct Paragraph {
     text_transform: Option<TextTransform>,
     line_height: f32,
     letter_spacing: f32,
+    list_style_type: ListStyleType,
     children: Vec<TextSpan>,
 }
 
@@ -1418,6 +1426,7 @@ impl Default for Paragraph {
             text_transform: None,
             line_height: 1.0,
             letter_spacing: 0.0,
+            list_style_type: ListStyleType::None,
             children: vec![],
         }
     }
@@ -1441,8 +1450,14 @@ impl Paragraph {
             text_transform,
             line_height,
             letter_spacing,
+            list_style_type: ListStyleType::None,
             children,
         }
+    }
+
+    pub fn with_list_style_type(mut self, list_style_type: ListStyleType) -> Self {
+        self.list_style_type = list_style_type;
+        self
     }
 
     pub fn children(&self) -> &[TextSpan] {
@@ -1555,6 +1570,10 @@ impl Paragraph {
 
     pub fn text_transform(&self) -> Option<TextTransform> {
         self.text_transform
+    }
+
+    pub fn list_style_type(&self) -> ListStyleType {
+        self.list_style_type
     }
 
     pub fn paragraph_to_style(&self) -> ParagraphStyle {

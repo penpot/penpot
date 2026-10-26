@@ -43,6 +43,9 @@
 (def text-direction-attrs
   [:text-direction])
 
+(def text-list-attrs
+  [:list-style-type])
+
 (def text-spacing-attrs
   [:line-height
    :letter-spacing])
@@ -102,7 +105,8 @@
 (def paragraph-attrs
   (d/concat-vec
    text-align-attrs
-   text-direction-attrs))
+   text-direction-attrs
+   text-list-attrs))
 
 (def text-node-attrs
   (d/concat-vec
@@ -137,6 +141,10 @@
 (def default-paragraph-attrs
   {:text-align "left"
    :text-direction "ltr"})
+
+(def default-list-attrs
+  "Older paragraphs have no list attrs; read them as no list."
+  {:list-style-type "none"})
 
 (def default-text-attrs
   {:typography-ref-file nil

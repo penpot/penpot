@@ -3,7 +3,7 @@
 use macros::ToJs;
 
 use crate::shapes::{
-    Fill, FontStyle, TextAlign, TextContent, TextDecoration, TextDirection,
+    Fill, FontStyle, ListStyleType, TextAlign, TextContent, TextDecoration, TextDirection,
     TextPositionWithAffinity, TextTransform, VerticalAlign,
 };
 use crate::uuid::Uuid;
@@ -109,6 +109,7 @@ pub struct TextEditorStyles {
     pub text_direction: Multiple<TextDirection>, // Multiple
     pub text_decoration: Multiple<TextDecoration>,
     pub text_transform: Multiple<TextTransform>,
+    pub list_style_type: Multiple<ListStyleType>,
     // The font family is decomposed into its independent parts so the family
     // dropdown shows a single family even when the selection mixes variants of
     // the same family (e.g. regular + bold italic). The id identifies the
@@ -232,6 +233,7 @@ impl TextEditorStyles {
             text_direction: Multiple::empty(),
             text_decoration: Multiple::empty(),
             text_transform: Multiple::empty(),
+            list_style_type: Multiple::empty(),
             font_family_id: Multiple::empty(),
             font_style: Multiple::empty(),
             font_size: Multiple::empty(),
@@ -249,6 +251,7 @@ impl TextEditorStyles {
         self.text_direction.reset();
         self.text_decoration.reset();
         self.text_transform.reset();
+        self.list_style_type.reset();
         self.font_family_id.reset();
         self.font_style.reset();
         self.font_size.reset();
@@ -638,6 +641,9 @@ impl TextEditorState {
             self.current_styles
                 .text_align
                 .merge(Some(paragraph.text_align()));
+            self.current_styles
+                .list_style_type
+                .merge(Some(paragraph.list_style_type()));
 
             let mut char_pos = 0;
             for span in paragraph.children() {
@@ -706,6 +712,9 @@ impl TextEditorState {
         self.current_styles
             .text_align
             .set_single(Some(current_paragraph.text_align()));
+        self.current_styles
+            .list_style_type
+            .set_single(Some(current_paragraph.list_style_type()));
         if let Some((text_span_index, _)) = current_text_span {
             if let Some(text_span) = current_paragraph.children().get(text_span_index) {
                 self.current_styles
@@ -1030,6 +1039,34 @@ mod tests {
         content
     }
 
+    fn list_content() -> TextContent {
+        let black = Fill::Solid(SolidColor(Color::BLACK));
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), GrowType::Fixed);
+        content.add_paragraph(
+            Paragraph::new(
+                TextAlign::Left,
+                TextDirection::LTR,
+                None,
+                None,
+                1.2,
+                0.0,
+                vec![span("Bullet", 14.0, black.clone())],
+            )
+            .with_list_style_type(ListStyleType::Disc),
+        );
+        content.add_paragraph(Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![span("Plain", 14.0, black)],
+        ));
+        content
+    }
+
     fn drain_events(editor: &mut TextEditorState) -> Vec<TextEditorEvent> {
         let mut events = Vec::new();
         loop {
@@ -1044,6 +1081,38 @@ mod tests {
 
     fn pos(offset: usize) -> TextPositionWithAffinity {
         TextPositionWithAffinity::new_downstream_affinity(0, offset)
+    }
+
+    #[test]
+    fn caret_styles_report_the_paragraph_list_style_type() {
+        let content = list_content();
+        let mut editor = TextEditorState::new();
+
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(0, 2),
+        );
+        assert_eq!(
+            editor.current_styles.list_style_type.value(),
+            &Some(ListStyleType::Disc)
+        );
+
+        editor.place_caret_from_position(
+            &content,
+            &TextPositionWithAffinity::new_downstream_affinity(1, 2),
+        );
+        assert_eq!(
+            editor.current_styles.list_style_type.value(),
+            &Some(ListStyleType::None)
+        );
+    }
+
+    #[test]
+    fn selection_styles_mark_mixed_list_style_types_as_multiple() {
+        let content = list_content();
+        let mut editor = TextEditorState::new();
+        editor.select_all(&content);
+        assert!(editor.current_styles.list_style_type.is_multiple());
     }
 
     #[test]
