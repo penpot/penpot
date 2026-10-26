@@ -5,64 +5,82 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.runner
-  "Node CLI entry for the CLJS renderer benchmark suite.
-
-  Scaffolding only. Commands, options, result reporting and failure
-  accounting are owned by the tickets referenced below."
+  "Build preparation and managed artifact cleanup for renderer benchmarks."
   (:require
+   [benches.render-wasm.node.artifacts :as artifacts]
+   [benches.render-wasm.node.build :as build]
+   [benches.render-wasm.node.process :as process]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]))
 
 (enable-console-print!)
 
 (def cli-options
-  [["-h" "--help" "Print this help"]])
+  [["-h" "--help" "Print this help"]
+   [nil "--[no-]default-features" "Enable Cargo defaults" :default true]
+   [nil "--features FEATURES" "Comma-separated functional Cargo features"
+    :parse-fn build/parse-feature-list]
+   [nil "--build-timeout-ms MS" "Complete preparation deadline"
+    :default process/default-build-timeout-ms :parse-fn js/Number
+    :validate [#(and (js/Number.isSafeInteger %) (pos? %)) "Must be a positive integer"]]
+   [nil "--only-builds" "Purge build attempts"]
+   [nil "--only-runs" "Purge managed runs"]])
 
-(defn- argv
-  []
-  (let [args (->> (.-argv js/process)
-                  (array-seq)
-                  (drop 2))]
-    ;; `pnpm run <script> -- ...` forwards the separator, so drop one
-    ;; leading `--` before handing the args to tools.cli.
-    (cond-> args
-      (= "--" (first args)) rest)))
-
-(defn- usage
+(defn usage
   [summary]
-  (str "Usage: node target/performance/render-wasm/runner.cjs [options]\n\n"
-       "Options:\n"
-       summary "\n\n"
-       "No command is implemented yet. Upcoming tickets add:\n"
-       "  run      benchmark standard scenes and operations\n"
-       "  ab       feature A/B matrix\n"
-       "  compare  offline comparison of two result files\n\n"
-       "Commands, options and reporting arrive with the later renderer\n"
-       "benchmark tickets."))
+  (str "Usage: runner build [options]\n"
+       "       runner purge [--only-builds | --only-runs]\n\n"
+       "build prints one attempt ID after storage initialization. Exit 0 means\n"
+       "ready; errors retain the build.transit and build.log for that ID.\n"
+       "Progress goes to stderr. Preparation requires an idle checkout with\n"
+       "dependencies installed. Keep renderer watchers stopped until it ends.\n\n"
+       "purge requires an idle machine and deletes managed builds and runs.\n\n"
+       summary))
 
-(defn- fail!
-  [message]
-  (js/console.error message)
-  ;; Set the exit code instead of calling `process.exit` so piped output is
-  ;; not truncated; nothing else keeps the process alive.
-  (set! (.-exitCode js/process) 1))
+(defn parse-args
+  [args]
+  (let [args (cond-> args (= "--" (first args)) rest)
+        {:keys [arguments options errors summary]} (parse-opts args cli-options)
+        command (first arguments)
+        flags   (into #{} (comp (filter #(str/starts-with? % "--"))
+                                (map #(first (str/split % #"=" 2)))) args)]
+    (when (seq errors)
+      (throw (ex-info (str/join "\n" errors) {:type ::invalid-args})))
+    (when-not (:help options)
+      (when-not (and (= 1 (count arguments)) (contains? #{"build" "purge"} command))
+        (throw (ex-info "expected build or purge; try --help" {:type ::invalid-args})))
+      (when (and (:only-builds options) (:only-runs options))
+        (throw (ex-info "--only-builds and --only-runs are mutually exclusive" {:type ::invalid-args})))
+      (when (and (= command "build") (some flags ["--only-builds" "--only-runs"]))
+        (throw (ex-info "purge category flags require purge" {:type ::invalid-args})))
+      (when (and (= command "purge")
+                 (some flags ["--features" "--default-features" "--no-default-features" "--build-timeout-ms"]))
+        (throw (ex-info "build options require build" {:type ::invalid-args}))))
+    {:command command :options options :summary summary}))
 
-(defn -main
-  [& _]
-  (let [{:keys [options arguments errors summary]} (parse-opts (argv) cli-options)]
-    (cond
-      (:help options)
-      (println (usage summary))
-
-      (seq errors)
-      (fail! (str/join "\n" errors))
-
-      ;; TODO(mem:render-wasm/performance_tests/cljs-rewrite/10-process-build-and-server,
-      ;;      mem:render-wasm/performance_tests/cljs-rewrite/11-runner-and-failure-accounting,
-      ;;      mem:render-wasm/performance_tests/cljs-rewrite/14-custom-measured-operations):
-      ;; dispatch `run`, `ab` and `compare` instead of failing.
-      (seq arguments)
-      (fail! (str "Unknown command: " (str/join " " arguments) "\nTry --help"))
-
-      :else
-      (fail! "No command given\nTry --help"))))
+(defn ^:async -main
+  [& args]
+  (try
+    (let [{:keys [command options summary]} (parse-args args)
+          root (artifacts/frontend-root)]
+      (cond
+        (:help options) (println (usage summary))
+        (= command "purge")
+        (artifacts/purge root (cond (:only-builds options) :builds
+                                    (:only-runs options) :runs
+                                    :else :all))
+        (= command "build")
+        (let [controller (js/AbortController.)
+              remove-signals (process/on-signals #(.abort controller %))]
+          (try
+            (await (build/prepare {:root root
+                                   :features {:default-features? (:default-features options)
+                                              :features (or (:features options) [])}
+                                   :build-timeout-ms (:build-timeout-ms options)
+                                   :signal (.-signal controller)
+                                   :on-created #(println (:id %))}))
+            (finally (remove-signals))))))
+    (catch :default cause
+      (.error js/console (or (ex-message cause) (str cause)))
+      (when-let [data (ex-data cause)] (.error js/console (pr-str data)))
+      (set! (.-exitCode js/process) 1))))
