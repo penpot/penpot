@@ -5,52 +5,30 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.pilot
-  "The diagnostic pilot executes one unscored case in headless Chromium.
-  An unscored attempt checks integration without a performance conclusion.
-  Stdout contains one raw RunRecord schema3 in Transit. The record
-  stores the saved plan, provenance, preparation, attempt and remaining slots.
+  "Executes one unscored case using a prepared or retained renderer build.
+  Stdout contains one raw RunRecord schema3 in Transit; build IDs, progress and
+  reports go to stderr. The saved plan always has 0 warmups and 1 attempt.
+  Node/browser summaries must agree outside measurement.
 
-  THIS IS A SMOKE TEST AND THROWAWAY CODE. DO NOT USE THIS DESIGN AS GUIDANCE.
+  Build and startup have separate bounds. The case deadline covers preparation
+  and its one attempt; screenshots, reporting and disposal stay outside it.
+  Exit code 0 means the diagnostic completed, not a performance conclusion.
 
-  TODO(mem:render-wasm/performance/cljs-rewrite/10-process-build-and-server):
-  the inline static server and artifact layout here are pilot scaffolding.
-  Ticket 10 owns staging and server ownership; this only serves the release
-  browser bundle, the prepared renderer artifacts and `pilot.html` on an
-  ephemeral 127.0.0.1 port.
-
-  TODO(mem:render-wasm/performance/cljs-rewrite/11-runner-and-failure-accounting):
-  CLI surface, orchestration style, attempt loop and exit policy belong to
-  ticket 11. Raw `.then` chains below are diagnostic scaffolding, not the
-  runner's interop pattern.
-
-  Exit codes: 0 when the case completes; 1 on case failures, harness errors and
-  timeouts. Failures retain raw records. A timeout closes the browser, including
-  a synchronously blocked page.
-
-  Usage, from `frontend/` with Playwright's Chromium installed:
-
-    Follow README.md's prepared renderer release commands first.
-    clojure -M:dev:renderer-bench release bench-render-wasm-browser
-    pnpm run build:renderer-benchmarks:pilot
-    node target/performance/render-wasm/pilot.cjs --seed 42 --screenshot /tmp/pilot-rects.png
-
-  The pilot serves the release browser bundle, so compile
-  `bench-render-wasm-browser` first (after the prepared renderer build
-  refreshes `shared.js`). Flags: `--seed N` (default 42),
-  `--timeout-ms N` (default 30000), `--screenshot PATH` (optional untimed
-  capture for visual inspection)."
+  Example: node target/performance/render-wasm/pilot.cjs --build ID
+           --case rects/pan --seed 42 --warmups 0 --attempts 1"
   (:require
-   ["child_process" :as child-process]
-   ["fs" :as fs]
-   ["http" :as http]
+   ["module" :as node-module]
    ["os" :as os]
-   ["path" :as path]
-   ["playwright" :as playwright]
-   ["playwright/package.json" :as playwright-package]
-   [app.common.transit :as t]
-   [benches.render-wasm.cases :as cases]
+   [app.common.transit :as transit]
+   [benches.render-wasm.declarations :as declarations]
    [benches.render-wasm.failures :as failures]
    [benches.render-wasm.measurement :as measurement]
+   [benches.render-wasm.node.artifacts :as artifacts]
+   [benches.render-wasm.node.browser :as browser]
+   [benches.render-wasm.node.build :as build]
+   [benches.render-wasm.node.catalog :as catalog]
+   [benches.render-wasm.node.process :as process]
+   [benches.render-wasm.node.server :as server]
    [benches.render-wasm.random :as random]
    [benches.render-wasm.report.format :as format]
    [benches.render-wasm.report.summarize :as summary]
@@ -60,133 +38,123 @@
 (def ^:private default-seed 42)
 (def ^:private default-timeout-ms 30000)
 
-(defn- frontend-root
-  "Resolves the frontend checkout root from the compiled pilot location
-  (`target/performance/render-wasm/pilot.cjs`, next to `runner.cjs`). Ticket 10
-  owns command cwd resolution; the pilot pins its own roots instead."
-  []
-  (path/resolve js/__dirname ".." ".." ".."))
-
-(def ^:private mime
-  {".html" "text/html"
-   ".js" "text/javascript"
-   ".wasm" "application/wasm"
-   ".json" "application/json"})
-
-(defn- safe-join
-  "Joins `sub` under `root`, returning nil when it escapes (path traversal)."
-  [root sub]
-  (let [joined (path/join root sub)]
-    (when-not (str/includes? (path/relative root joined) "..")
-      joined)))
-
-(defn- serve-file!
-  "Serves an existing artifact with its MIME type, or returns a missing status."
-  [^js res file]
-  (if (and (some? file) (fs/existsSync file))
-    (let [ext (path/extname file)]
-      (.writeHead res 200 #js {"Content-Type" (get mime ext "application/octet-stream")})
-      (.end res (fs/readFileSync file)))
-    (do (.writeHead res 404 #js {"Content-Type" "text/plain"})
-        (.end res "not found"))))
-
-(defn- start-server!
-  "Serves the pilot page, the release browser bundle and the prepared
-  renderer artifacts. Returns a promise of `{server port}`."
-  [browser-dir js-dir html-file]
-  (js/Promise.
-   (fn [resolve _reject]
-     (let [^js server (http/createServer
-                       (fn [^js req ^js res]
-                         (let [url (.-url ^js req)]
-                           (cond
-                             (= url "/") (serve-file! res html-file)
-                             (= url "/pilot.html") (serve-file! res html-file)
-                             (str/starts-with? url "/bench/")
-                             (serve-file! res (safe-join browser-dir (subs url (count "/bench/"))))
-                             (str/starts-with? url "/js/")
-                             (serve-file! res (safe-join js-dir (subs url (count "/js/"))))
-                             :else (do (.writeHead res 404 #js {"Content-Type" "text/plain"})
-                                       (.end res "not found"))))))]
-       (.listen server 0 "127.0.0.1"
-                (fn [] (resolve #js {"server" server
-                                     "port" (.-port (.address server))})))))))
-
 (defn- usage
-  "Returns the diagnostic pilot's command syntax."
   []
-  "pilot [--case SCENE/NAME] [--seed N] [--timeout-ms N] [--screenshot PATH]")
+  (str "pilot [--build ID] [--case SCENE/NAME] [--seed N]\n"
+       "      [--timeout-ms N] [--build-timeout-ms N] [--startup-timeout-ms N]\n"
+       "      [--no-default-features] [--features NAME,NAME]\n"
+       "      [--warmups 0] [--attempts 1] [--screenshot PATH] [--help]\n"
+       "Defaults: rects/load, seed 42, timeout 30000, build timeout 300000,\n"
+       "startup timeout 30000, 0 warmups, 1 attempt.\n"
+       "--build cannot be combined with feature-selection flags."))
 
-(defn- parse-args
-  "Resolves one case, seed, deadline and optional screenshot path."
+(defn- invalid-args
+  [message]
+  (throw (ex-info message {:type ::invalid-args})))
+
+(defn- parse-integer
+  [flag value]
+  (when-not (re-matches #"[0-9]+" value)
+    (invalid-args (str flag " requires a nonnegative integer")))
+  (let [number (js/Number value)]
+    (when-not (js/Number.isSafeInteger number)
+      (invalid-args (str flag " requires a safe integer")))
+    number))
+
+(defn- parse-timeout
+  [flag value]
+  (let [number (parse-integer flag value)]
+    (when-not (<= 1 number 2147483647)
+      (invalid-args (str flag " must be between 1 and 2147483647")))
+    number))
+
+(defn parse-args
+  "Parses the diagnostic CLI without loading a catalog or starting resources.
+  Case availability and Cargo features are checked by the selected build APIs."
   [argv]
-  (let [opts (loop [args argv
-                    opts {:seed default-seed :timeout-ms default-timeout-ms
-                          :case-id :rects/load}]
-               (if (empty? args)
-                 opts
-                 (let [[flag value & rest-args] args]
-                   (cond
-                     (= flag "--seed") (recur rest-args (assoc opts :seed (js/parseInt value 10)))
-                     (= flag "--case") (recur rest-args (assoc opts :case-id (when value (keyword value))))
-                     (= flag "--timeout-ms") (recur rest-args (assoc opts :timeout-ms (js/parseInt value 10)))
-                     (= flag "--screenshot") (recur rest-args (assoc opts :screenshot value))
-                     :else (recur rest-args (assoc opts ::invalid flag))))))
-        valid-timeout? (fn [n] (and (integer? n) (pos? n)))]
-    (if (and (nil? (::invalid opts))
-             (random/seed? (:seed opts)) (valid-timeout? (:timeout-ms opts))
-             (some #{(:case-id opts)} (cases/case-ids)))
-      opts
+  (loop [args argv
+         seen #{}
+         opts {:case-id :rects/load :seed default-seed
+               :timeout-ms default-timeout-ms
+               :build-timeout-ms process/default-build-timeout-ms
+               :startup-timeout-ms process/default-startup-timeout-ms
+               :warmups 0 :attempts 1
+               :features {:default-features? true :features []}}]
+    (if (empty? args)
       (do
-        (.error js/console (str "pilot: invalid args " (pr-str opts)))
-        (.error js/console (usage))
-        (js/process.exit 1)))))
+        (when-not (:help? opts)
+          (when (and (:build-id opts) (some seen ["--no-default-features" "--features"]))
+            (invalid-args "--build cannot be combined with feature-selection flags"))
+          (when-not (random/seed? (:seed opts))
+            (invalid-args "--seed must be a uint32 integer"))
+          (when-not (and (zero? (:warmups opts)) (= 1 (:attempts opts)))
+            (invalid-args "the diagnostic pilot requires --warmups 0 and --attempts 1")))
+        (cond-> (dissoc opts :features-text)
+          (contains? opts :features-text)
+          (assoc-in [:features :features] (build/parse-feature-list (:features-text opts)))))
+      (let [[flag & more] args]
+        (cond
+          (#{"--help" "-h"} flag)
+          (recur more (conj seen flag) (assoc opts :help? true))
+
+          (= flag "--no-default-features")
+          (recur more (conj seen flag) (assoc-in opts [:features :default-features?] false))
+
+          (#{"--build" "--case" "--seed" "--timeout-ms" "--build-timeout-ms"
+             "--startup-timeout-ms" "--warmups" "--attempts" "--features" "--screenshot"} flag)
+          (let [[value & rest-args] more]
+            (when (or (nil? value) (str/starts-with? value "--"))
+              (invalid-args (str flag " requires a value")))
+            (when (and (#{"--build" "--screenshot"} flag) (str/blank? value))
+              (invalid-args (str flag " requires a nonempty value")))
+            (when (and (= flag "--case") (not (re-matches #"[^/\s]+/[^/\s]+" value)))
+              (invalid-args "--case requires SCENE/NAME"))
+            (recur rest-args (conj seen flag)
+                   (case flag
+                     "--build" (assoc opts :build-id value)
+                     "--case" (assoc opts :case-id (keyword value))
+                     "--seed" (assoc opts :seed (parse-integer flag value))
+                     "--timeout-ms" (assoc opts :timeout-ms (parse-timeout flag value))
+                     "--build-timeout-ms" (assoc opts :build-timeout-ms (parse-timeout flag value))
+                     "--startup-timeout-ms" (assoc opts :startup-timeout-ms (parse-timeout flag value))
+                     "--warmups" (assoc opts :warmups (parse-integer flag value))
+                     "--attempts" (assoc opts :attempts (parse-integer flag value))
+                     "--features" (assoc opts :features-text value)
+                     "--screenshot" (assoc opts :screenshot value))))
+
+          :else
+          (invalid-args (str "unknown pilot option: " flag)))))))
 
 (defn- trace
-  "Diagnostic line on stderr (transit)"
   [message]
   (.error js/console message))
 
-(defn- print-result!
-  "Prints the raw schema3 record (transit)"
-  [record]
-  (println (result/encode record)))
-
-(defn- git-provenance
-  "Reads the revision and dirty flag without saving status text or diffs."
-  [root]
-  (try
-    (let [opts #js {:cwd root :encoding "utf8"}]
-      {:sha (str/trim (child-process/execFileSync "git" #js ["rev-parse" "HEAD"] opts))
-       :dirty (not (str/blank? (child-process/execFileSync "git" #js ["status" "--porcelain"] opts)))})
-    (catch :default _ {:sha nil :dirty nil})))
-
 (defn- pilot-metadata
-  "Captures available environment and declared build facts for an unscored pilot.
-  Prepared artifacts lack ticket10's stamp, so their functional identity stays
-  unverified. Environment capture uses a fixed allowlist."
-  [root opts]
-  (let [env (into {} (keep (fn [k]
-                             (when-some [v (unchecked-get (.-env js/process) k)] [k v])))
-                  ["BUILD_MODE" "NODE_ENV" "PENPOT_WASM_PREPARED" "PENPOT_WASM_FUNCTION_NAMES"
-                   "CARGO_BUILD_TARGET" "CARGO_NET_OFFLINE" "COREPACK_ENABLE_NETWORK"])
-        cpus (array-seq (os/cpus))]
-    {:git (git-provenance root)
-     :build {:functional {:prepared-artifact-settings :unverified :cljs-profile-marks false}
-             :provenance {:artifact-source :prepared-public-assets :declared-env env}}
-     :environment {:node (.-version js/process) :playwright (.-version playwright-package)
+  "Uses the selected manifest as primary provenance, including on reuse."
+  [selected-build opts]
+  (let [manifest        (:manifest selected-build)
+        cpus            (array-seq (os/cpus))
+        require-package (if (exists? js/require)
+                          js/require
+                          (node-module/createRequire (:cases-path selected-build)))
+        ^js package     (require-package "playwright/package.json")]
+    {:git (merge {:sha nil :dirty nil} (get-in manifest [:provenance :git]))
+     :build {:functional (:functional manifest)
+             :provenance (assoc (:provenance manifest) :build-id (:id selected-build))}
+     :environment {:node (.-version js/process) :playwright (.-version package)
                    :browser nil :platform (os/platform) :release (os/release) :arch (os/arch)
                    :cpu {:models (vec (distinct (map #(.-model %) cpus))) :logical-count (count cpus)}
-                   :launch {:headless true :args ["--enable-gpu"]}}
+                   :launch browser/launch-settings}
      :scored? false
-     :diagnostics (select-keys opts [:seed :screenshot])}))
+     :diagnostics (assoc (select-keys opts [:seed :screenshot])
+                         :runner-git {:sha nil :dirty nil}
+                         :runtime-helper-identity :unverified)}))
 
 (defn- complete-record
-  "Adds available preparation and attempt evidence, then records termination.
-  Warm setup errors leave the slot unattempted. Fresh setup belongs to the
-  attempted cold load and consumes its slot even when setup fails."
+  "Retains evidence and fixed slots. A fresh preparation consumes its attempt;
+  a failed warm preparation leaves the attempt unstarted."
   [run preparation evidence attempted?]
-  (let [id (get-in run [:plan :cases 0 :id])
+  (let [id  (get-in run [:plan :cases 0 :id])
         run (cond-> run preparation (result/record-preparation preparation))
         run (if attempted?
               (result/record-attempt run (measurement/attempt id (:preparation-id preparation) false evidence))
@@ -197,152 +165,171 @@
                          (not ok?) (assoc :failure (select-keys evidence [:status :phase :message :cause])
                                           :partial (:partial evidence))))))
 
-(defn- evaluate-bridge
-  "Calls a fixed bridge method with one Transit string and returns its Promise.
-  JSON quoting embeds the string in JavaScript; records use Transit only."
-  [^js page method text]
-  (.evaluate page (str "window.__benchBridge." method "(" (.stringify js/JSON text) ")")))
+(defn- failed-record
+  [run preparation attempted? phase cause]
+  (let [evidence {:status "failed" :phase (name phase)
+                  :message (or (ex-message cause) (str cause))
+                  :cause (failures/describe-cause cause)}]
+    (if (= :running (get-in run [:termination :reason]))
+      (complete-record run preparation evidence attempted?)
+      (assoc run :termination {:reason :diagnostic-failed :failure evidence
+                               :prior-termination (:termination run)}))))
 
-(defn -main
-  "Runs one unscored attempt and verifies Node/browser summaries of its raw record."
-  [& argv]
-  (trace "pilot: parsing args")
-  (let [opts     (parse-args (or argv []))
-        root     (frontend-root)
-        bundle   (path/join root "target" "performance" "render-wasm" "browser")
-        js-dir   (path/join root "resources" "public" "js")
-        html     (path/join root "performance" "bench" "render_wasm" "browser" "pilot.html")
-        seed     (:seed opts)
-        selected (some #(when (= (:id %) (:case-id opts)) %)
-                       (cases/collect-cases {:master-seed seed}))
-        deadline (:timeout-ms opts)
-        started-at (.toISOString (js/Date.))
-        initial-run (result/create-run {:run-id (str "pilot-" started-at) :started-at started-at
-                                        :plan {:cases [selected] :warmups 0 :repetitions 1
-                                               :timeout-policy {:attempt-ms deadline :pilot-total-ms deadline}}
-                                        :metadata (pilot-metadata root opts)})
+(defn- ^:async execute-case
+  [session selected selected-build opts signal preparation-ref attempted-ref]
+  (let [page     (:page session)
+        deadline (process/deadline (:timeout-ms opts))
+        bounds   {:deadline deadline :signal signal :phase :pilot-case}
+        stamp    (str "?build=" (js/encodeURIComponent (:id selected-build)))
+        request  (transit/encode-str {:case selected :timeout-ms (:timeout-ms opts)
+                                      :module-url (str "/renderer/render-wasm.js" stamp)
+                                      :wasm-url (str "/renderer/render-wasm.wasm" stamp)})
+        prepared (transit/decode-str
+                  (await (browser/within
+                          (fn []
+                            (when (= :fresh (:context selected))
+                              (reset! attempted-ref true))
+                            (browser/evaluate page "prepareScene" request))
+                          bounds)))]
+    (if (= "ok" (:status prepared))
+      (do
+        (reset! preparation-ref (:preparation prepared))
+        (transit/decode-str
+         (await (browser/within
+                 (fn []
+                   (reset! attempted-ref true)
+                   (browser/evaluate page "runPrepared"
+                                     (transit/encode-str
+                                      {:preparation-id (get-in prepared [:preparation :preparation-id])
+                                       :timeout-ms (process/remaining deadline)})))
+                 bounds))))
+      prepared)))
+
+(defn- ^:async check-diagnostics
+  [session run opts signal]
+  (let [^js page (:page session)
+        deadline (process/deadline (:startup-timeout-ms opts))
+        bounds   {:deadline deadline :signal signal :phase :pilot-diagnostics}
+        report   (summary/summarize run)]
+    (when-let [shot (:screenshot opts)]
+      (await (browser/within #(.screenshot page #js {:path shot :timeout (process/remaining deadline)})
+                             bounds)))
+    (let [browser-report (transit/decode-str
+                          (await (browser/within #(browser/evaluate page "summarize" (result/encode run))
+                                                 bounds)))]
+      (when-not (= report browser-report)
+        (throw (ex-info "Node/browser summaries differ" {:type ::summary-mismatch})))
+      (trace "pilot: Node/browser summaries agree"))
+    (await (browser/within #(browser/evaluate page "dispose") bounds))))
+
+(defn- ^:async run-pilot
+  [opts]
+  (let [root            (artifacts/frontend-root)
+        controller      (js/AbortController.)
+        signal          (.-signal controller)
+        interrupted-ref (atom nil)
+        remove-signals  (process/on-signals
+                         (fn [name]
+                           (when-not (.-aborted signal)
+                             (reset! interrupted-ref name)
+                             (.abort controller (ex-info "pilot interrupted" {:type ::interrupted :signal name})))))
+        host-ref        (atom nil)
+        session-ref     (atom nil)
         preparation-ref (atom nil)
-        attempted-ref (atom false)
-        run-ref (atom initial-run)]
-    (-> (start-server! bundle js-dir html)
-        (.then
-         (fn [info]
-           (trace "pilot: server up")
-           (let [server (unchecked-get info "server")
-                 port   (unchecked-get info "port")
-                 url    (str "http://127.0.0.1:" port "/pilot.html")
-                 close! (fn [] (js/Promise.resolve (.close server)))
-                 wait-for-bench-ready
-                 (fn [^js page] (fn [] (.waitForFunction page "window.__benchReady === true")))
-                 evaluate-load
-                 (fn [^js page] (fn [_]
-                                  (trace "pilot: bridge ready, evaluating")
-                                  (when (= :fresh (:context selected))
-                                    (reset! attempted-ref true))
-                                  (let [request (t/encode-str {:case selected :timeout-ms deadline
-                                                               :module-url "/js/render-wasm.js"
-                                                               :wasm-url "/js/render-wasm.wasm"})]
-                                    (-> (evaluate-bridge page "prepareScene" request)
-                                        (.then (fn [text]
-                                                 (let [prepared (t/decode-str text)]
-                                                   (if (= "ok" (:status prepared))
-                                                     (do
-                                                       (reset! preparation-ref (:preparation prepared))
-                                                       (reset! attempted-ref true)
-                                                       (evaluate-bridge page "runPrepared"
-                                                                        (t/encode-str {:preparation-id (get-in prepared [:preparation :preparation-id])
-                                                                                       :timeout-ms deadline})))
-                                                     text))))))))
-                 attach-screenshot-path
-                 (fn [^js page version] (fn [text]
-                                          (let [out (complete-record
-                                                     (assoc-in @run-ref [:metadata :environment :browser] version)
-                                                     @preparation-ref (t/decode-str text) @attempted-ref)
-                                                report (summary/summarize out)
-                                                check-report (fn [_]
-                                                               (-> (evaluate-bridge page "summarize" (result/encode out))
-                                                                   (.then (fn [browser-summary]
-                                                                            (when-not (= report (t/decode-str browser-summary))
-                                                                              (throw (ex-info "Node/browser summaries differ" {})))
-                                                                            (trace "pilot: Node/browser summaries agree")
-                                                                            (trace (format/format-run report))
-                                                                            out))))]
-                                            (reset! run-ref out)
-                                            (-> (if-let [shot (:screenshot opts)]
-                                                  (.screenshot page #js {"path" shot})
-                                                  (js/Promise.resolve nil))
-                                                (.then check-report)))))
-                 viewport  #js {"viewport"
-                                #js {"width" 1920 "height" 1080}
-                                "deviceScaleFactor" 2}
-                 ;; Holder so the outer timeout path can close a browser
-                 ;; the work chain never returned (blocked page, or a
-                 ;; launch/context/page failure after launch).
-                 browser-ref (atom nil)
-                 chromium-launch (-> (.-chromium playwright)
-                                     (.launch #js {"args" #js ["--enable-gpu"]}))
-                 work
-                 (-> chromium-launch
-                     (.then
-                      (fn [^js pw-browser]
-                        (reset! browser-ref pw-browser)
-                        (let [version (.version pw-browser)]
-                          (swap! run-ref assoc-in [:metadata :environment :browser] version)
-                          (-> (.newContext pw-browser viewport)
-                              (.then
-                               (fn [^js context]
-                                 (-> (.newPage context)
-                                     (.then
-                                      (fn [^js page]
-                                        (trace "pilot: page open")
-                                        (-> (.goto page url)
-                                            (.then (wait-for-bench-ready page))
-                                            (.then (evaluate-load page))
-                                            (.then (attach-screenshot-path page version))
-                                            (.then (fn [out]
-                                                     (-> (.evaluate page "window.__benchBridge.dispose()")
-                                                         (.then (fn [_] (.close page)))
-                                                         (.then (fn [_] (.close context)))
-                                                         (.then (fn [_] (.close pw-browser)))
-                                                         (.then (fn [_] out)))))
-                                            (.catch (fn [cause]
-                                                      (.close pw-browser)
-                                                      (throw cause))))))))))))))
-                 guard  (js/Promise.
-                         (fn [_resolve reject]
-                           (js/setTimeout
-                            (fn [] (reject (ex-info "pilot timeout" {:timeout-ms deadline})))
-                            deadline)))]
-             (-> (js/Promise.race #js [work guard])
-                 (.then (fn [out]
-                          (-> (close!)
-                              (.then (fn [_]
-                                       (print-result! out)
-                                       (js/process.exit
-                                        (if (= :completed (get-in out [:termination :reason])) 0 1)))))))
-                 (.catch (fn [cause]
-                           ;; The work chain may have left a browser open
-                           ;; (guard timeout, blocked page, post-launch
-                           ;; failure): close it before the server so no
-                           ;; Chromium is orphaned. Double close is safe.
-                           (-> (if-let [b @browser-ref]
-                                 (-> (.close b)
-                                     (.catch (fn [_] nil)))
-                                 (js/Promise.resolve nil))
-                               (.then (fn [_] (close!)))
-                               (.then (fn [_]
-                                        (if (= :running (get-in @run-ref [:termination :reason]))
-                                          (print-result! (complete-record @run-ref @preparation-ref
-                                                                          {:status "failed" :phase "pilot-harness"
-                                                                           :message (or (ex-message cause) (str cause))
-                                                                           :cause (failures/describe-cause cause)}
-                                                                          @attempted-ref))
-                                          (print-result! (assoc @run-ref :termination
-                                                                {:reason :diagnostic-failed :cause (failures/describe-cause cause)})))
-                                        (js/process.exit 1))))))))))
-        (.catch (fn [cause]
-                  (print-result! (complete-record initial-run nil
-                                                  {:status "failed" :phase "pilot-startup"
-                                                   :message (or (ex-message cause) (str cause))
-                                                   :cause (failures/describe-cause cause)} false))
-                  (js/process.exit 1))))))
+        attempted-ref   (atom false)
+        run-ref         (atom nil)
+        phase-ref       (atom :pilot-build)
+        started-at      (.toISOString (js/Date.))]
+    (letfn [(failed [cause phase]
+              (trace (str "pilot: " (or (ex-message cause) (str cause))))
+              (when-some [data (ex-data cause)]
+                (trace (pr-str data)))
+              (when @run-ref
+                (swap! run-ref failed-record @preparation-ref @attempted-ref phase cause)))]
+      (try
+        (let [selected-build (if-let [id (:build-id opts)]
+                               (do
+                                 (trace (str "pilot: using build " id))
+                                 (artifacts/load-build root id))
+                               (await (build/prepare
+                                       {:root root :features (:features opts)
+                                        :build-timeout-ms (:build-timeout-ms opts) :signal signal
+                                        :on-created #(trace (str "pilot: build " (:id %)))})))
+              _              (reset! phase-ref :pilot-catalog)
+              descriptors    (catalog/collect selected-build
+                                              {:master-seed (:seed opts)
+                                               :filter (result/case-name (:case-id opts))})
+              selected       (or (some #(when (= (:case-id opts) (:id %)) %) descriptors)
+                                 (throw (ex-info "case is absent from the selected build"
+                                                 {:build-id (:id selected-build) :case-id (:case-id opts)})))
+              startup-end    (process/deadline (:startup-timeout-ms opts))]
+          (reset! run-ref
+                  (result/create-run
+                   {:run-id (str "pilot-" started-at) :started-at started-at
+                    :plan {:cases [selected] :warmups 0 :repetitions 1
+                           :timeout-policy {:attempt-ms (:timeout-ms opts) :pilot-case-ms (:timeout-ms opts)
+                                            :build-ms (:build-timeout-ms opts) :startup-ms (:startup-timeout-ms opts)}}
+                    :metadata (pilot-metadata selected-build opts)}))
+          (reset! phase-ref :pilot-provenance)
+          (swap! run-ref assoc-in [:metadata :diagnostics :runner-git]
+                 (await (build/git-provenance root {:deadline startup-end :signal signal})))
+          (reset! phase-ref :pilot-server-startup)
+          (reset! host-ref (await (server/open selected-build
+                                               {:startup-timeout-ms (process/remaining startup-end)
+                                                :signal signal})))
+          (reset! phase-ref :pilot-browser-startup)
+          (reset! session-ref (await (browser/open @host-ref
+                                                   {:viewport (declarations/resolve-viewport (:view selected))
+                                                    :startup-timeout-ms (:startup-timeout-ms opts)
+                                                    :deadline startup-end :signal signal})))
+          (swap! run-ref assoc-in [:metadata :environment :browser] (:version @session-ref))
+          (trace "pilot: retained browser identity verified")
+          (reset! phase-ref :pilot-case)
+          (let [evidence (await (execute-case @session-ref selected selected-build opts signal
+                                              preparation-ref attempted-ref))]
+            (swap! run-ref complete-record @preparation-ref evidence @attempted-ref))
+          (reset! phase-ref :pilot-diagnostics)
+          (await (check-diagnostics @session-ref @run-ref opts signal)))
+        (catch :default cause
+          (failed cause @phase-ref))
+        (finally
+          (try
+            (when @session-ref
+              (try
+                (await (browser/close @session-ref))
+                (catch :default cause
+                  (failed cause :pilot-browser-cleanup))))
+            (when @host-ref
+              (try
+                (await (server/close @host-ref))
+                (catch :default cause
+                  (failed cause :pilot-server-cleanup))))
+            (finally
+              (remove-signals)))))
+      (when (and @run-ref @interrupted-ref)
+        (swap! run-ref update :termination assoc :reason :interrupted :signal @interrupted-ref))
+      (when @run-ref
+        (try
+          (trace (format/format-run (summary/summarize @run-ref)))
+          (catch :default cause
+            (failed cause :pilot-report))))
+      @run-ref)))
+
+(defn ^:async -main
+  "Runs the diagnostic and lets Node drain output after owned shutdown."
+  [& argv]
+  (try
+    (let [opts (parse-args (or argv []))]
+      (if (:help? opts)
+        (do
+          (println (usage))
+          (set! (.-exitCode js/process) 0))
+        (let [run (await (run-pilot opts))]
+          (when run
+            (println (result/encode run)))
+          (set! (.-exitCode js/process) (if (= :completed (get-in run [:termination :reason])) 0 1)))))
+    (catch :default cause
+      (trace (str "pilot: " (or (ex-message cause) (str cause))))
+      (when (= ::invalid-args (:type (ex-data cause)))
+        (trace (usage)))
+      (set! (.-exitCode js/process) 1))))

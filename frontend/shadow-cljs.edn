@@ -232,10 +232,9 @@
 
   :bench-render-wasm-browser
   {:target :esm
-   :output-dir "target/performance/render-wasm/browser/"
-   ;; Bundle npm deps (date-fns via app.common): the pilot serves plain
-   ;; static files with no import-map resolver. TODO(10): revisit when
-   ;; ticket 10 owns staging; artifacts must stay self-contained.
+   :output-dir #shadow/env ["RENDER_BENCH_BROWSER_DIR" :default "target/performance/render-wasm/browser/"]
+   :closure-defines {benches.render-wasm.identity/build-id #shadow/env ["RENDER_BENCH_BUILD_ID" :default "unprepared"]}
+   ;; Bundle npm dependencies for the dedicated static host.
    :js-options {:js-provider :shadow}
 
    :modules
@@ -251,4 +250,17 @@
    {:compiler-options
     {:fn-invoke-direct true
      :elide-asserts true
-     :anon-fn-naming-policy :off}}}}}
+     :anon-fn-naming-policy :off}}}
+
+  :bench-render-wasm-catalog
+  {:target :node-library
+   :output-to #shadow/env ["RENDER_BENCH_CASES_PATH" :default "target/performance/render-wasm/cases.cjs"]
+   :output-dir "target/performance/render-wasm/catalog/"
+   :exports {:collectCases benches.render-wasm.node.case-catalog/collect-cases
+             :buildIdentity benches.render-wasm.node.case-catalog/build-identity}
+   :closure-defines {benches.render-wasm.identity/build-id #shadow/env ["RENDER_BENCH_BUILD_ID" :default "unprepared"]}
+   :compiler-options {:output-feature-set :es2020
+                      :warnings {:fn-deprecated false}}
+   :release {:compiler-options {:fn-invoke-direct true
+                                :elide-asserts true
+                                :anon-fn-naming-policy :off}}}}}

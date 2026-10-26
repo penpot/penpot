@@ -35,6 +35,7 @@
    [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.failures :as fail]
    [benches.render-wasm.fingerprint :as fingerprint]
+   [benches.render-wasm.identity :as identity]
    [benches.render-wasm.measurement :as measurement]
    [benches.render-wasm.report.compare :as compare]
    [benches.render-wasm.report.format :as format]
@@ -674,6 +675,7 @@
 (def bridge
   "Browser-side bridge exported from the compiled module."
   #js {"ping" ping
+       "buildIdentity" #(t/encode-str (identity/data))
        "loadScene" load-scene
        "prepareScene" prepare-scene-request
        "runPrepared" run-prepared
