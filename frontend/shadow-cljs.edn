@@ -212,24 +212,6 @@
      :elide-asserts true
      :anon-fn-naming-policy :off}}}
 
-  :bench-render-wasm-pilot
-  {:target :node-script
-   :output-to "target/performance/render-wasm/pilot.cjs"
-   :output-dir "target/performance/render-wasm/pilot/"
-   :main benches.render-wasm.node.pilot/-main
-   :devtools {:autoload false}
-
-   :compiler-options
-   {:output-feature-set :es2020
-    :output-wrapper false
-    :warnings {:fn-deprecated false}}
-
-   :release
-   {:compiler-options
-    {:fn-invoke-direct true
-     :elide-asserts true
-     :anon-fn-naming-policy :off}}}
-
   :bench-render-wasm-browser
   {:target :esm
    :output-dir #shadow/env ["RENDER_BENCH_BROWSER_DIR" :default "target/performance/render-wasm/browser/"]

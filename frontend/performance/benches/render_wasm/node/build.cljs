@@ -145,7 +145,7 @@
                                     :env {"RENDER_BENCH_BUILD_ID" (:id build)
                                           "RENDER_BENCH_CASES_PATH" (:cases-path build)
                                           "RENDER_BENCH_BROWSER_DIR" (:browser-dir build)}})))
-        (fs/copyFileSync (path/join root "performance" "benches" "render_wasm" "browser" "pilot.html")
+        (fs/copyFileSync (path/join root "performance" "benches" "render_wasm" "browser" "index.html")
                          (:index-path build))
         (reset! phase :identity)
         (check-profile-marks (catalog/build-identity build))
