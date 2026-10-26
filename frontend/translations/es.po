@@ -6875,6 +6875,10 @@ msgstr "Padding superior"
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Padding vertical"
 
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "Opciones de la pista"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
 msgstr "Editando rejilla"
