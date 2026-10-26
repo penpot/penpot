@@ -75,6 +75,12 @@
     ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
+   :update-file-repair
+   {::mdef/name "penpot_rpc_update_file_repair_total"
+    ::mdef/help "update-file auto-repair attempts by outcome (repaired or unrepaired)."
+    ::mdef/labels ["outcome"]
+    ::mdef/type :counter}
+
    :rpc-main-timing
    {::mdef/name "penpot_rpc_main_timing"
     ::mdef/help "RPC command method call timing for main"
