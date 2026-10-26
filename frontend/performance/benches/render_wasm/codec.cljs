@@ -8,8 +8,9 @@
   "Verifies that measurements survive transit encoding.
 
   This ns exists mainly to preserve NaNs in the transit encoding of results.
-  We treat two NaN values as the same retained measurement.
-  Unrepresentable data raises an error."
+  We treat two NaN values as the same measurement.
+
+  Any data we cannot represent raises an error."
   (:require
    [app.common.transit :as transit]))
 

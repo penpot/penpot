@@ -169,6 +169,133 @@ function seedRuns(fixture) {
   }
 }
 
+function runFixtureText({
+  runId,
+  caseId,
+  value,
+  environment = { node: "v24" },
+}) {
+  const k = transit.keyword;
+  const map = (pairs) => transit.map(pairs);
+  const metric = map([
+    k("value"),
+    value,
+    k("unit"),
+    k("ms"),
+    k("semantics"),
+    k("elapsed"),
+    k("basis"),
+    map([k("kind"), k("attempt-total")]),
+    k("zero-policy"),
+    k("positive"),
+    k("invalid-reason"),
+    null,
+  ]);
+  const preparation = map([
+    k("preparation-id"),
+    `${runId}-preparation`,
+    k("case-id"),
+    k(caseId),
+    k("fingerprint"),
+    map([
+      k("encoding-version"),
+      1,
+      k("algorithm"),
+      k("sha-256"),
+      k("digest"),
+      "a".repeat(64),
+    ]),
+    k("effective-graphics"),
+    map([k("webgl2"), true]),
+    k("diagnostics"),
+    map([]),
+  ]);
+  const attempt = map([
+    k("ordinal"),
+    0,
+    k("case-id"),
+    k(caseId),
+    k("preparation-id"),
+    `${runId}-preparation`,
+    k("warmup?"),
+    false,
+    k("outcome"),
+    k("completed"),
+    k("metrics"),
+    map([k("elapsed"), metric]),
+    k("trace"),
+    map([]),
+  ]);
+  const record = map([
+    k("type"),
+    k("run-record"),
+    k("schema-version"),
+    3,
+    k("run-id"),
+    runId,
+    k("started-at"),
+    "2026-10-26T00:00:00.000Z",
+    k("ended-at"),
+    "2026-10-26T00:01:00.000Z",
+    k("plan"),
+    map([
+      k("cases"),
+      [map([k("id"), k(caseId)])],
+      k("warmups"),
+      0,
+      k("repetitions"),
+      1,
+      k("timeout-policy"),
+      map([k("attempt-ms"), 30000]),
+    ]),
+    k("metadata"),
+    map([
+      k("git"),
+      map([k("sha"), runId, k("dirty"), false]),
+      k("build"),
+      map([k("functional"), map([k("mode"), k("release")])]),
+      k("environment"),
+      map(
+        Object.entries(environment).flatMap(([key, entry]) => [k(key), entry]),
+      ),
+      k("scored?"),
+      true,
+      k("diagnostics"),
+      map([]),
+    ]),
+    k("analysis"),
+    map([
+      k("method-version"),
+      1,
+      k("draws"),
+      2000,
+      k("seed"),
+      1885695600,
+      k("confidence"),
+      0.95,
+      k("min-ci"),
+      10,
+      k("min-p95"),
+      100,
+      k("min-p99"),
+      500,
+    ]),
+    k("preparations"),
+    [preparation],
+    k("attempts"),
+    [attempt],
+    k("remaining"),
+    map([
+      k(caseId),
+      map([k("warmups"), 0, k("repetitions"), 0]),
+    ]),
+    k("termination"),
+    map([k("reason"), k("completed")]),
+  ]);
+  return transit.writer("json").write(record);
+}
+
+
 function tree(directory) {
   return fs
     .readdirSync(directory, { withFileTypes: true })
@@ -325,3 +452,145 @@ test(
     }
   },
 );
+
+test(
+  "run validates an explicit output dir before preparing a build",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const marker = path.join(fixture.managed, "compiler-ran");
+    fs.writeFileSync(
+      fixture.compiler,
+      `#!/usr/bin/env node
+const fs = require("node:fs");
+fs.writeFileSync(${JSON.stringify(marker)}, "ran");
+`,
+      { mode: 0o755 },
+    );
+    const output = path.join(fixture.managed, "existing-output");
+    fs.mkdirSync(output);
+    const original = tree(fixture.managed);
+
+    const result = await runCli(fixture, [
+      "run",
+      "--output-dir",
+      output,
+      "--warmups",
+      "0",
+      "--repetitions",
+      "1",
+    ]);
+
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /output directory already exists/);
+    assert.equal(fs.existsSync(marker), false);
+    assert.deepEqual(tree(fixture.managed), original);
+  },
+);
+
+test(
+  "run rejects retained-build feature selection before any work",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const marker = path.join(fixture.managed, "compiler-ran");
+    fs.writeFileSync(
+      fixture.compiler,
+      `#!/usr/bin/env node
+const fs = require("node:fs");
+fs.writeFileSync(${JSON.stringify(marker)}, "ran");
+`,
+      { mode: 0o755 },
+    );
+    const original = tree(fixture.managed);
+
+    const result = await runCli(fixture, [
+      "run",
+      "--build",
+      "retained-id",
+      "--features",
+      "functional",
+    ]);
+
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /cannot be combined/);
+    assert.equal(fs.existsSync(marker), false);
+    assert.deepEqual(tree(fixture.managed), original);
+  },
+);
+
+test("help lists run and compare without touching managed storage", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  const original = tree(fixture.managed);
+
+  const result = await runCli(fixture, ["--help"]);
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /runner run/);
+  assert.match(result.stdout, /runner compare/);
+  assert.match(result.stdout, /--compare-cases/);
+  assert.deepEqual(tree(fixture.managed), original);
+});
+
+
+test("compare reads saved run files without starting resources", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  const baseline = path.join(fixture.managed, "baseline.transit");
+  const candidate = path.join(fixture.managed, "candidate.transit");
+  fs.writeFileSync(
+    baseline,
+    runFixtureText({ runId: "baseline", caseId: "case/load", value: 10 }),
+  );
+  fs.writeFileSync(
+    candidate,
+    runFixtureText({ runId: "candidate", caseId: "case/load", value: 12 }),
+  );
+  const original = tree(fixture.managed);
+
+  const result = await runCli(fixture, ["compare", baseline, candidate]);
+
+  assert.equal(result.exitCode, 0);
+  assert.match(result.stdout, /Baseline/);
+  assert.match(result.stdout, /case\/load/);
+  assert.match(result.stdout, /median change/);
+  assert.deepEqual(tree(fixture.managed), original);
+});
+
+test("compare supports explicit pairs and force from the CLI", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  const baseline = path.join(fixture.managed, "baseline.transit");
+  const candidate = path.join(fixture.managed, "candidate.transit");
+  fs.writeFileSync(
+    baseline,
+    runFixtureText({ runId: "baseline", caseId: "a/pan", value: 10 }),
+  );
+  fs.writeFileSync(
+    candidate,
+    runFixtureText({
+      runId: "candidate",
+      caseId: "b/pan",
+      value: 12,
+      environment: { node: "v25" },
+    }),
+  );
+  const original = tree(fixture.managed);
+
+  const incompatible = await runCli(fixture, ["compare", baseline, candidate]);
+  assert.equal(incompatible.exitCode, 1);
+  assert.deepEqual(tree(fixture.managed), original);
+
+  const forced = await runCli(fixture, [
+    "compare",
+    baseline,
+    candidate,
+    "--compare-cases",
+    "a/pan,b/pan",
+    "--force",
+  ]);
+  assert.equal(forced.exitCode, 0);
+  assert.match(forced.stdout, /FORCED COMPARISON/);
+  assert.match(forced.stdout, /Pair a\/pan,b\/pan/);
+  assert.deepEqual(tree(fixture.managed), original);
+});

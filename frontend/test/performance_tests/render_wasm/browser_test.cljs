@@ -74,24 +74,36 @@
   (t/is (= "ECONNREFUSED" (await (socket-status endpoint))) "the owned CDP listener is gone"))
 
 (defn- ^:async close-fixture
-  [owner host]
+  [owner page host]
   (try
+    (when page
+      (try
+        (await (browser/close-page page))
+        (catch :default _ nil)))
     (when owner
-      (await (browser/close owner)))
+      (try
+        (await (browser/close owner))
+        (catch :default _ nil)))
     (finally
       (await (server/close host)))))
 
 (t/deftest ^:async successful-close-removes-the-profile-and-cdp-listener
   (let [host      (await (open-host build-id true))
-        owner-ref (atom nil)]
+        owner-ref (atom nil)
+        page-ref  (atom nil)]
     (try
-      (let [owner (await (browser/open host {:viewport viewport :startup-timeout-ms 30000}))]
-        (reset! owner-ref owner)
+      (let [owner (await (browser/launch {:startup-timeout-ms 30000}))
+            _     (reset! owner-ref owner)
+            page  (await (browser/new-page owner host {:viewport viewport
+                                                       :startup-timeout-ms 30000}))]
+        (reset! page-ref page)
         (t/is (= 200 (await (request-status (:endpoint owner) "/json/version"))))
         (t/is (= viewport
-                 (js->clj (await (.evaluate ^js (:page owner)
+                 (js->clj (await (.evaluate ^js (:page page)
                                             "({width:innerWidth,height:innerHeight,dpr:devicePixelRatio})"))
                           :keywordize-keys true)))
+        (await (browser/close-page page))
+        (reset! page-ref nil)
         (await (browser/close owner))
         (await (check-stopped owner))
         (t/is (not (.isConnected ^js (:browser owner))))
@@ -99,30 +111,44 @@
         (await (server/close host))
         (t/is (= "ECONNREFUSED" (await (socket-status (:base-url host))))))
       (finally
-        (await (close-fixture @owner-ref host))))))
+        (await (close-fixture @owner-ref @page-ref host))))))
 
-(t/deftest ^:async identity-mismatch-closes-chromium-before-startup-rejects
-  (let [host (await (open-host "wrong-compiled-build" true))]
+(t/deftest ^:async identity-mismatch-rejects-and-the-caller-closes-the-owned-browser
+  (let [host      (await (open-host "wrong-compiled-build" true))
+        owner-ref (atom nil)]
     (try
-      (let [cause (await (rejected (browser/open host {:viewport viewport :startup-timeout-ms 30000})))
+      (let [owner (await (browser/launch {:startup-timeout-ms 30000}))
+            _     (reset! owner-ref owner)
+            cause (await (rejected (browser/new-page
+                                    owner host
+                                    {:viewport viewport :startup-timeout-ms 30000})))
             facts (ex-data cause)]
         (t/is (= ::identity/mismatch (:type facts)))
         (t/is (= "wrong-compiled-build" (:actual-id facts)))
-        (await (check-stopped facts)))
+        (await (browser/close owner))
+        (reset! owner-ref nil)
+        (await (check-stopped owner)))
       (finally
-        (await (server/close host))))))
+        (await (close-fixture @owner-ref nil host))))))
 
 (t/deftest ^:async abort-stops-a-synchronously-blocked-page
   (let [host           (await (open-host build-id true))
         controller     (js/AbortController.)
         owner-ref      (atom nil)
+        page-ref       (atom nil)
         started-ref    (atom nil)
         started        (js/Promise. (fn [resolve _] (reset! started-ref resolve)))]
     (try
-      (let [owner    (await (browser/open host {:viewport viewport :startup-timeout-ms 30000
-                                                :signal (.-signal controller)}))
-            ^js page (:page owner)]
-        (reset! owner-ref owner)
+      (let [owner      (await (browser/launch {:startup-timeout-ms 30000
+                                               :signal (.-signal controller)}))
+            _          (reset! owner-ref owner)
+            page-owner (await (browser/new-page
+                               owner host
+                               {:viewport viewport
+                                :startup-timeout-ms 30000
+                                :signal (.-signal controller)}))
+            ^js page   (:page page-owner)]
+        (reset! page-ref page-owner)
         (await (.exposeFunction page "__blockingStarted" (fn [] (@started-ref))))
         (let [blocking (.evaluate page "window.__blockingStarted(); while (true) {}")]
           (.catch blocking (fn [_] nil))
@@ -133,31 +159,39 @@
                                                         :phase :test-blocked-page})))]
             (t/is (= ::browser/timeout (:type (ex-data cause)))))
           (.abort controller)
+          (reset! page-ref nil)
           (await (browser/close owner))
+          (reset! owner-ref nil)
           (await (check-stopped owner))
           (t/is (not (.isConnected ^js (:browser owner))))
           (t/is (instance? js/Error (await (rejected blocking))))))
       (finally
         (.abort controller)
-        (await (close-fixture @owner-ref host))))))
+        (await (close-fixture @owner-ref @page-ref host))))))
 
 (t/deftest ^:async abort-during-readiness-cleans-the-starting-browser
   (let [host       (await (open-host build-id false))
         controller (js/AbortController.)
+        owner-ref  (atom nil)
         requested  (js/Promise.
                     (fn [resolve _]
-                      (.once ^js (:server host) "request" (fn [_] (resolve nil)))))
-        opening    (browser/open host {:viewport viewport :startup-timeout-ms 30000
-                                       :signal (.-signal controller)})]
-    (.catch opening (fn [_] nil))
+                      (.once ^js (:server host) "request" (fn [_] (resolve nil)))))]
     (try
-      (await (browser/within (fn [] requested)
-                             {:deadline (process/deadline 30000) :phase :test-host-request}))
-      (.abort controller (ex-info "caller cancelled browser readiness" {:type ::caller-abort}))
-      (let [cause (await (rejected opening))]
-        (t/is (= ::caller-abort (:type (ex-data cause))))
-        (await (check-stopped (ex-data cause))))
+      (let [owner (await (browser/launch {:startup-timeout-ms 30000
+                                          :signal (.-signal controller)}))
+            _     (reset! owner-ref owner)
+            page  (browser/new-page owner host {:viewport viewport
+                                                :startup-timeout-ms 30000
+                                                :signal (.-signal controller)})]
+        (.catch page (fn [_] nil))
+        (await (browser/within (fn [] requested)
+                               {:deadline (process/deadline 30000) :phase :test-host-request}))
+        (.abort controller (ex-info "caller cancelled browser readiness" {:type ::caller-abort}))
+        (let [cause (await (rejected page))]
+          (t/is (= ::caller-abort (:type (ex-data cause)))))
+        (await (browser/close owner))
+        (reset! owner-ref nil)
+        (await (check-stopped owner)))
       (finally
         (.abort controller)
-        (let [owner (await (.catch opening (fn [_] nil)))]
-          (await (close-fixture owner host)))))))
+        (await (close-fixture @owner-ref nil host))))))

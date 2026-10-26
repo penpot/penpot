@@ -15,16 +15,18 @@
    [performance-tests.render-wasm.browser-test]
    [performance-tests.render-wasm.build-test]
    [performance-tests.render-wasm.builder-test]
+   [performance-tests.render-wasm.compare-test]
    [performance-tests.render-wasm.containers-test]
    [performance-tests.render-wasm.contracts-test]
    [performance-tests.render-wasm.fingerprint-test]
    [performance-tests.render-wasm.geometry-scenes-test]
    [performance-tests.render-wasm.lifecycle-test]
-   [performance-tests.render-wasm.pilot-test]
    [performance-tests.render-wasm.process-test]
    [performance-tests.render-wasm.protocol-test]
    [performance-tests.render-wasm.report-test]
+   [performance-tests.render-wasm.run-test]
    [performance-tests.render-wasm.runner-test]
+   [performance-tests.render-wasm.runs-test]
    [performance-tests.render-wasm.scene-snapshot-test]
    [performance-tests.render-wasm.server-test]))
 
@@ -45,16 +47,18 @@
    'performance-tests.render-wasm.browser-test
    'performance-tests.render-wasm.build-test
    'performance-tests.render-wasm.builder-test
+   'performance-tests.render-wasm.compare-test
    'performance-tests.render-wasm.containers-test
    'performance-tests.render-wasm.contracts-test
    'performance-tests.render-wasm.fingerprint-test
    'performance-tests.render-wasm.geometry-scenes-test
    'performance-tests.render-wasm.lifecycle-test
-   'performance-tests.render-wasm.pilot-test
    'performance-tests.render-wasm.process-test
    'performance-tests.render-wasm.protocol-test
    'performance-tests.render-wasm.report-test
+   'performance-tests.render-wasm.run-test
    'performance-tests.render-wasm.runner-test
+   'performance-tests.render-wasm.runs-test
    'performance-tests.render-wasm.scene-snapshot-test
    'performance-tests.render-wasm.server-test])
 

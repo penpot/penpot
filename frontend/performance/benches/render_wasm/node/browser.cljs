@@ -36,8 +36,8 @@
 
 (defn within
   "Calls work while its absolute deadline and optional AbortSignal allow it.
-  Clears the timer/listener on every outcome and handles late rejections. The
-  caller still owns shutdown of the browser running the work."
+  Clears the timer/listener on every outcome and handles late rejections.
+  The caller owns shutdown of the browser running the work."
   [work {:keys [deadline signal phase]}]
   (js/Promise.
    (fn [resolve reject]
@@ -142,8 +142,37 @@
           {:deadline (process/deadline process/default-termination-grace-ms)
            :phase :browser-disconnect}))
 
+(defn ^:async close-page
+  "Closes an owned page and its context within one termination grace.
+  Repeated or already-closed pages resolve without work."
+  [{:keys [page context]}]
+  (when (or page context)
+    (let [deadline (process/deadline process/default-termination-grace-ms)
+          page-failure
+          (try
+            (when (and page (not (.isClosed ^js page)))
+              (await (within #(.close ^js page)
+                             {:deadline deadline :phase :browser-page-close})))
+            nil
+            (catch :default cause cause))
+          context-failure
+          (try
+            (when context
+              (await (within #(.close ^js context)
+                             {:deadline deadline :phase :browser-context-close})))
+            nil
+            (catch :default cause cause))]
+      (when-let [cause (or page-failure context-failure)]
+        (throw cause)))))
+
 (defn- ^:async shutdown-owner
+  "Closes page/context best effort, then kills the owned process group. A page
+  close failure does not mask process/disconnect/profile failures because the
+  group kill releases the same resources."
   [{:keys [user-data-dir] :as owner}]
+  (try
+    (await (close-page owner))
+    (catch :default _ nil))
   (let [process-failure    (try
                              (await (stop-process owner))
                              nil
@@ -172,16 +201,17 @@
           (reset! shutdown closing)
           closing))))
 
-(defn ^:async open
-  "Spawns owned Chromium, attaches by public CDP and checks the retained bridge.
+(defn ^:async launch
+  "Spawns a Chromium instance and attaches via Chrome DevTools Protocol (CDP).
 
-  Options include a resolved {:width :height :dpr} viewport, an optional signal
-  and startup-timeout-ms (30000 by default). An optional absolute deadline lets
-  server/browser startup share a budget. The result holds :page, :context,
-  :browser, :version, :endpoint and ownership fields consumed by close.
-  Startup failures retain endpoint/profile facts after owned shutdown."
-  [host {:keys [viewport signal startup-timeout-ms deadline]
-         :or {startup-timeout-ms process/default-startup-timeout-ms}}]
+  Options include an optional signal, startup-timeout-ms (30000 by default)
+  and an optional absolute deadline shared with server startup. The result
+  owns the process group, user-data directory and CDP connection. It holds no
+  page or context; use new-page for those.
+
+  Startup failures include information about endpoint and profile."
+  [{:keys [signal startup-timeout-ms deadline]
+    :or {startup-timeout-ms process/default-startup-timeout-ms}}]
   (let [deadline (or deadline (process/deadline startup-timeout-ms))
         budget   (process/remaining deadline)]
     (when (and signal (.-aborted ^js signal))
@@ -225,23 +255,8 @@
                                                                              #js {:timeout (max 1 (process/remaining deadline))})]
                                              (reset! (:connection owner) connecting)
                                              connecting))
-                                         bounds))
-              ^js context (await (within #(.newContext browser
-                                                       #js {:viewport #js {:width (:width viewport)
-                                                                           :height (:height viewport)}
-                                                            :deviceScaleFactor (:dpr viewport)})
-                                         bounds))
-              ^js page    (await (within #(.newPage context) bounds))]
-          (await (within #(.goto page (str (:base-url host) "/")
-                                 #js {:timeout (max 1 (process/remaining deadline))})
-                         bounds))
-          (await (within #(.waitForFunction page "window.__benchReady === true" nil
-                                            #js {:timeout (max 1 (process/remaining deadline))})
-                         bounds))
-          (identity/check (get-in host [:build :id])
-                          (transit/decode-str (await (within #(evaluate page "buildIdentity") bounds))))
-          (assoc owner :browser browser :context context :page page
-                 :version (.version browser) :endpoint address))
+                                         bounds))]
+          (assoc owner :browser browser :version (.version browser) :endpoint address))
         (catch :default cause
           (try
             (await (close owner))
@@ -254,3 +269,83 @@
           (throw (ex-info (or (ex-message cause) (str cause))
                           (assoc (ex-data cause) :endpoint @(:address endpoint) :user-data-dir user-data-dir)
                           cause)))))))
+
+(defn ^:async new-page
+  "Creates a context and page in a browser process we own, navigates to host,
+  waits for the bridge and checks its compiled build identity.
+
+  Returns {:page :context}.
+
+  Failures close the started page/context before rejecting."
+  [owner host {:keys [viewport signal startup-timeout-ms deadline]
+               :or {startup-timeout-ms process/default-startup-timeout-ms}}]
+  (let [deadline (or deadline (process/deadline startup-timeout-ms))
+        bounds   {:deadline deadline :signal signal :phase :browser-page-startup}
+        ^js browser (:browser owner)
+        ^js context (await (within #(.newContext browser
+                                                 #js {:viewport #js {:width (:width viewport)
+                                                                     :height (:height viewport)}
+                                                      :deviceScaleFactor (:dpr viewport)})
+                                   bounds))]
+    (try
+      (let [page     (await (within #(.newPage context) bounds))
+            page-own {:page page :context context}]
+        (try
+          (await (within #(.goto ^js page (str (:base-url host) "/")
+                                 #js {:timeout (max 1 (process/remaining deadline))})
+                         bounds))
+          (await (within #(.waitForFunction ^js page "window.__benchReady === true" nil
+                                            #js {:timeout (max 1 (process/remaining deadline))})
+                         bounds))
+          (identity/check (get-in host [:build :id])
+                          (transit/decode-str (await (within #(evaluate page "buildIdentity") bounds))))
+          page-own
+          (catch :default cause
+            (try
+              (await (close-page page-own))
+              (catch :default _ nil))
+            (throw cause))))
+      (catch :default cause
+        (try
+          (await (close-page {:context context}))
+          (catch :default _ nil))
+        (throw cause)))))
+
+(defn connected?
+  "True while the owned CDP connection is live."
+  [{:keys [browser]}]
+  (boolean (and browser (.isConnected ^js browser))))
+
+(defn prepare-scene
+  "Calls prepareScene and decodes its Transit response under bounds."
+  [page request bounds]
+  (.then (within #(evaluate page "prepareScene" request) bounds)
+         transit/decode-str))
+
+(defn run-prepared
+  "Calls runPrepared and decodes its Transit response under bounds."
+  [page request bounds]
+  (.then (within #(evaluate page "runPrepared" request) bounds)
+         transit/decode-str))
+
+(defn screenshot
+  "Writes one PNG under bounds. The timeout belongs to Playwright's call."
+  [page file {:keys [deadline] :as bounds}]
+  (.then (within #(.screenshot ^js page
+                               #js {:path file
+                                    :timeout (max 1 (process/remaining deadline))})
+                 bounds)
+         (fn [_] nil)))
+
+(def service
+  "Interface to the browser used by the serial runner.
+
+  Tests can replace this map with mocks."
+  {:launch launch
+   :new-page new-page
+   :close-page close-page
+   :close close
+   :connected? connected?
+   :prepare prepare-scene
+   :run run-prepared
+   :screenshot screenshot})
