@@ -7212,6 +7212,10 @@ msgstr "Componente"
 msgid "workspace.options.component.annotation"
 msgstr "Nota"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:908
+msgid "workspace.options.component.broken"
+msgstr "No se encuentra el componente principal. Esta copia no recibirá actualizaciones."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1036
 msgid "workspace.options.component.copy"
 msgstr "Copia"

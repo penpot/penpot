@@ -40,6 +40,7 @@
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.options.menus.variants-help-modal]
@@ -859,7 +860,7 @@
                                              :on-enter-group on-enter-group}]))]]]]))
 
 (mf/defc component-pill*
-  [{:keys [icon text subtext menu-entries disabled on-click]}]
+  [{:keys [icon text subtext menu-entries disabled on-click is-broken]}]
   (let [menu-open* (mf/use-state false)
         menu-open? (deref menu-open*)
 
@@ -886,7 +887,8 @@
 
     [:div {:class (stl/css :pill)}
      [:button {:class (stl/css-case :pill-btn true
-                                    :with-menu menu-entries?)
+                                    :with-menu menu-entries?
+                                    :broken is-broken)
                :data-testid "component-pill-button"
                :on-click on-click
                :disabled disabled}
@@ -900,7 +902,13 @@
         text]
        (when subtext
          [:div {:class (stl/css :pill-btn-subtext)}
-          subtext])]]
+          subtext])]
+
+      (when ^boolean is-broken
+        [:> tooltip* {:content (tr "workspace.options.component.broken")
+                      :class (stl/css :pill-btn-broken)}
+         [:> icon* {:icon-id i/broken-link
+                    :size "s"}]])]
 
      (when menu-entries?
        [:div {:class (stl/css :pill-actions)}
@@ -923,6 +931,15 @@
                     :class (stl/css :pill-actions-dropdown-item)
                     :on-click (partial do-action action)}
                [:span {:class (stl/css :pill-actions-dropdown-item-label)} title]]))]]])]))
+
+(defn- broken-copy?
+  "True when the shape is a component copy whose main component cannot
+  be found: its library is not connected to the file, or the component
+  was deleted."
+  [shape component]
+  (and (not (ctk/main-instance? shape))
+       (or (nil? component)
+           (true? (:deleted component)))))
 
 (mf/defc component-menu*
   [{:keys [shapes is-swap-opened]}]
@@ -950,6 +967,10 @@
                                                       libraries
                                                       {:include-deleted? true}) shapes)
         same-variant?   (ctv/same-variant? components)
+
+        ;; TODO: a selection that mixes broken and healthy copies shows
+        ;; no indicator until design decides how it should look (#12134).
+        all-broken?     (every? true? (map broken-copy? shapes components))
 
         ;; For when it's only one shape
         shape           (first shapes)
@@ -1076,6 +1097,7 @@
                                              (cpn/merge-path-item-with-dot path (:name component))))
                                 :on-click open-component-panel
                                 :disabled (or is-swap-opened (not can-swap?))
+                                :is-broken all-broken?
                                 :menu-entries menu-entries}]
            (when (and is-variant? main-instance?)
              [:> icon-button* {:variant "ghost"

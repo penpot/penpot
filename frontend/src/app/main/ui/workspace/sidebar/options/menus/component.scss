@@ -534,6 +534,10 @@
     border-radius: $br-8 0 0 $br-8;
   }
 
+  &.broken {
+    grid-template-columns: var(--sp-l) 1fr auto;
+  }
+
   &:focus {
     outline: $b-1 solid var(--color-accent-primary);
   }
@@ -542,6 +546,14 @@
     background-color: var(--color-background-quaternary);
     color: var(--color-foreground-primary);
   }
+}
+
+// Marks a copy whose main component cannot be found.
+.pill-btn-broken {
+  display: flex;
+  block-size: $sz-32;
+  align-items: center;
+  color: var(--color-accent-primary-muted);
 }
 
 .pill-btn-icon {
