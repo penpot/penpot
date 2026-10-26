@@ -2281,6 +2281,10 @@ msgstr "Variant properties"
 msgid "inspect.attributes.variants"
 msgstr "Variants properties"
 
+#: src/app/main/ui/inspect/code.cljs:315, src/app/main/ui/inspect/code.cljs:358
+msgid "inspect.code.expand-panel"
+msgstr "Expand panel"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:169
 msgid "inspect.color-space-label"
 msgstr "Select color space"

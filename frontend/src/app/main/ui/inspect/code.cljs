@@ -20,14 +20,17 @@
    [app.main.ui.components.code-block :refer [code-block*]]
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
    [app.util.clipboard :as clipboard]
    [app.util.code-beautify :as cb]
    [app.util.code-gen :as cg]
    [app.util.dom :as dom]
    [app.util.http :as http]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -278,8 +281,9 @@
     [:div {:class (stl/css-case :element-options true
                                 :viewer-code-block (= :viewer from))}
      [:div {:class (stl/css :attributes-block)}
-      [:button {:class (stl/css :download-button)
-                :on-click handle-copy-all-code}
+      [:> button* {:variant "secondary"
+                   :class (stl/css :download-button)
+                   :on-click handle-copy-all-code}
        "Copy all code"]]
 
      #_[:div.attributes-block
@@ -291,11 +295,12 @@
       [:div {:class (stl/css :code-row-lang)}
        [:button {:class (stl/css :toggle-btn)
                  :data-type "css"
+                 :aria-label "CSS"
+                 :aria-expanded (not collapsed-css?)
                  :on-click handle-collapse}
-        [:span {:class (stl/css-case
-                        :collapsabled-icon true
-                        :rotated collapsed-css?)}
-         deprecated-icon/arrow]]
+        [:> icon* {:icon-id (if collapsed-css? i/arrow-right i/arrow-down)
+                   :size "s"
+                   :class (stl/css :collapsabled-icon)}]]
 
        [:div {:class (stl/css :code-lang-option)}
         "CSS"]
@@ -306,9 +311,10 @@
        ;;              :options [{:label "CSS" :value "css"}]}]
 
        [:div {:class (stl/css :action-btns)}
-        [:button {:class (stl/css :expand-button)
-                  :on-click on-expand}
-         deprecated-icon/code]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "inspect.code.expand-panel")
+                          :icon i/code
+                          :on-click on-expand}]
 
         [:> copy-button* {:data copy-css-fn
                           :class (stl/css :css-copy-btn)
@@ -330,11 +336,12 @@
       [:div {:class (stl/css :code-row-lang)}
        [:button {:class (stl/css :toggle-btn)
                  :data-type "markup"
+                 :aria-label (str/upper markup-type)
+                 :aria-expanded (not collapsed-markup?)
                  :on-click handle-collapse}
-        [:span {:class (stl/css-case
-                        :collapsabled-icon true
-                        :rotated collapsed-markup?)}
-         deprecated-icon/arrow]]
+        [:> icon* {:icon-id (if collapsed-markup? i/arrow-right i/arrow-down)
+                   :size "s"
+                   :class (stl/css :collapsabled-icon)}]]
 
        [:& radio-buttons {:selected markup-type
                           :on-change set-markup
@@ -347,9 +354,10 @@
                           :id :svg}]]
 
        [:div {:class (stl/css :action-btns)}
-        [:button {:class (stl/css :expand-button)
-                  :on-click on-expand}
-         deprecated-icon/code]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "inspect.code.expand-panel")
+                          :icon i/code
+                          :on-click on-expand}]
 
         [:> copy-button* {:data copy-html-fn
                           :class (stl/css :html-copy-btn)
