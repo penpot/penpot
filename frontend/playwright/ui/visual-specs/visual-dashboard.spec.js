@@ -317,3 +317,23 @@ test("User goes to the team settings section", async ({ page }) => {
   await expect(page.getByText("TEAM INFO")).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
+
+test.describe("Delete account modal", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Delete account modal buttons", async ({ page }) => {
+    await page.goto("/?screen=settings-profile");
+    await page.getByText("Want to remove your account?").click();
+
+    const modal = page.locator("[class*='modal-container']");
+    await expect(page.getByTestId("delete-account-btn")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await modal.locator("[class*='modal-header'] button").hover();
+    await expect(modal).toHaveScreenshot(shot);
+
+    await page.getByTestId("delete-account-btn").hover();
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});
