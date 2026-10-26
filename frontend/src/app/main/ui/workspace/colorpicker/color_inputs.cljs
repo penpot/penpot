@@ -12,6 +12,7 @@
    [app.common.types.color :as cc]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.workspace.colorpicker.hsl :as hsl]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
@@ -41,11 +42,7 @@
         ;; in sync with the inputs.
         hsb-mode  (or mode :hsb)
 
-        ;; Compute HSL from current RGB (derived; not stored on the color map)
-        [_hsl-h hsl-s hsl-l]
-        (if (and red green blue)
-          (cc/rgb->hsl [red green blue])
-          [0 0 0])
+        [hsl-h hsl-s hsl-l] (hsl/components color)
 
         refs {:hex   (mf/use-ref nil)
               :r     (mf/use-ref nil)
@@ -104,17 +101,9 @@
                             :h h :s s :v v
                             :r r :g g :b b}))
 
-              ;; HSL changes: recompute RGB/HSV from the new HSL triple,
-              ;; reusing the current hue when only S or L changes.
-              (#{:hsl-s :hsl-l} property)
-              (let [new-s   (if (= property :hsl-s) val hsl-s)
-                    new-l   (if (= property :hsl-l) val hsl-l)
-                    [r g b] (cc/hsl->rgb [hue new-s new-l])
-                    hex     (cc/rgb->hex [r g b])
-                    [h s v] (cc/hex->hsv hex)]
-                (on-change {:hex hex
-                            :h h :s s :v v
-                            :r r :g g :b b}))
+              (and (= hsb-mode :hsl)
+                   (#{:h :hsl-s :hsl-l} property))
+              (on-change (hsl/update-color color property val))
 
               :else
               (let [{:keys [h s v]} (merge color (hash-map property val))
@@ -159,6 +148,7 @@
      (fn []
        (doseq [ref-key (keys refs)]
          (let [property-val (case ref-key
+                              :h (if (= hsb-mode :hsl) hsl-h hue)
                               :hsl-s hsl-s
                               :hsl-l hsl-l
                               (get color ref-key))
@@ -240,11 +230,11 @@
                      :property "Hue"
                      :aria-label "Hue"
                      :max 360
-                     :default-value hue
+                     :default-value hsl-h
                      :on-change (on-change-property :h 360)
                      :on-key-down (on-key-down-property :h 360)}]
          [:> input* {:id "saturation-value"
-                     :ref (:s refs)
+                     :ref (:hsl-s refs)
                      :type "number"
                      :min 0
                      :icon i/character-s
@@ -252,9 +242,9 @@
                      :aria-label "Saturation"
                      :max 100
                      :step 1
-                     :default-value saturation
-                     :on-change (on-change-property :s 100)
-                     :on-key-down (on-key-down-property :s 100)}]
+                     :default-value (mth/precision (* hsl-s 100) 2)
+                     :on-change (on-change-property :hsl-s 100)
+                     :on-key-down (on-key-down-property :hsl-s 100)}]
          [:> input* {:id "lightness-value"
                      :ref (:hsl-l refs)
                      :type "number"
