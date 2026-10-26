@@ -109,11 +109,12 @@ jobs:
           # Must match the key computed by build-bundle.yml.
           BUNDLE_VERSION=$(./manage.sh version)
           SHORT_SHA=$(git rev-parse --short=12 HEAD)
+          VERSION_TAG=$(git describe --tags --match '*.*.*' --abbrev=0)
           echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
           echo "bundle_version=$BUNDLE_VERSION" >> $GITHUB_OUTPUT
-          echo "build_key=sha-${SHORT_SHA}-${BUNDLE_VERSION}" >> $GITHUB_OUTPUT
+          echo "build_key=sha-${SHORT_SHA}-${VERSION_TAG}" >> $GITHUB_OUTPUT
 
       # The image set is a single block, so a single set-level check is
       # enough: `promote` drops a marker object in S3 only after every

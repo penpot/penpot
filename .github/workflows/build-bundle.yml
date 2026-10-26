@@ -80,13 +80,17 @@ jobs:
         env:
           GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
-          # Same command the build uses to stamp version.txt, so the key
-          # always matches what ends up inside the bundle.
+          # Same command the build uses to stamp version.txt.
           BUNDLE_VERSION=$(./manage.sh version)
           SHORT_SHA=$(git rev-parse --short=12 HEAD)
+          # The key takes only the closest tag (--abbrev=0): the sha already
+          # pins the commit, and the full describe output is not stable
+          # across checkouts (its -g<sha> suffix length depends on the
+          # local object count). Must match build-docker.yml.
+          VERSION_TAG=$(git describe --tags --match '*.*.*' --abbrev=0)
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
           echo "bundle_version=$BUNDLE_VERSION" >> $GITHUB_OUTPUT
-          echo "build_key=sha-${SHORT_SHA}-${BUNDLE_VERSION}" >> $GITHUB_OUTPUT
+          echo "build_key=sha-${SHORT_SHA}-${VERSION_TAG}" >> $GITHUB_OUTPUT
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
           echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
