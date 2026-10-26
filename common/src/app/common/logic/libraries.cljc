@@ -2379,6 +2379,15 @@
                 (assoc attr (get origin attr)))))
           dest))))
 
+(defn- get-flex-child-main
+  "The near-main child that owns this copy child's flex-item attrs.
+  Non-swapped copies match by shape-ref; swapped copies match by swap slot
+  (the original occupant of the parent layout slot)."
+  [main-container main-component child-copy]
+  (or (ctf/get-ref-shape main-container main-component child-copy)
+      (some->> (ctk/get-swap-slot child-copy)
+               (ctf/get-component-shape main-container main-component))))
+
 (defn- update-flex-child-copy-attrs
   "Synchronizes the attributes inside the flex-child items (main->copy)"
   [changes shape-main shape-copy main-container main-component copy-container omit-touched?]
@@ -2404,9 +2413,9 @@
             (pcb/update-shapes
              (:shapes shape-copy)
              (fn [child-copy]
-               (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
-                 (-> child-copy
-                     (propagate-attrs child-main flex-child-attrs omit-touched?))))
+               (if-let [child-main (get-flex-child-main main-container main-component child-copy)]
+                 (propagate-attrs child-copy child-main flex-child-attrs omit-touched?)
+                 child-copy))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
 
