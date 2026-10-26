@@ -908,7 +908,7 @@
         [:> tooltip* {:content (tr "workspace.options.component.broken")
                       :class (stl/css :pill-btn-broken)}
          [:> icon* {:icon-id i/broken-link
-                    :size "s"}]])]
+                    :size "m"}]])]
 
      (when menu-entries?
        [:div {:class (stl/css :pill-actions)}
@@ -1091,10 +1091,10 @@
                                 :text (if (and multi (not same-variant?))
                                         (tr "settings.multiple")
                                         (cpn/last-path shape-name))
-                                :subtext (when (and can-swap? (or (not multi) same-variant?))
-                                           (if (:deleted component)
-                                             (tr "workspace.options.component.unlinked")
-                                             (cpn/merge-path-item-with-dot path (:name component))))
+                                :subtext (when (and can-swap?
+                                                    (or (not multi) same-variant?)
+                                                    (not (broken-copy? shape component)))
+                                           (cpn/merge-path-item-with-dot path (:name component)))
                                 :on-click open-component-panel
                                 :disabled (or is-swap-opened (not can-swap?))
                                 :is-broken all-broken?

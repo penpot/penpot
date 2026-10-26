@@ -5641,10 +5641,6 @@ msgstr "Sostituisci componente"
 msgid "workspace.options.component.swap.empty"
 msgstr "Non ci sono ancora risorse in questa libreria"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Scollegato"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Individua varianti in conflitto"

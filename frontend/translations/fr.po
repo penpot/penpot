@@ -7040,10 +7040,6 @@ msgstr "Échanger composant"
 msgid "workspace.options.component.swap.empty"
 msgstr "Cette librairie ne contient aucun élément pour le moment"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Délié"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Chercher les variantes en conflit"

@@ -7155,10 +7155,6 @@ msgstr "Swap component"
 msgid "workspace.options.component.swap.empty"
 msgstr "There are no assets in this library yet"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Unlinked"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Locate conflicting variants"

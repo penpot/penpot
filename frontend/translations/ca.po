@@ -6984,10 +6984,6 @@ msgstr "Intercanvia el component"
 msgid "workspace.options.component.swap.empty"
 msgstr "Encara no hi ha recursos en aquesta biblioteca"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Desvinculat"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Localitza les variants en conflicte"

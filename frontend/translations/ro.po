@@ -4918,10 +4918,6 @@ msgstr "Înlocuiește componentă"
 msgid "workspace.options.component.swap.empty"
 msgstr "Această bibliotecă nu are încă obiecte"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Deconectat"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Localizează variantele în conflict"

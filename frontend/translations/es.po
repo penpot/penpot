@@ -7240,10 +7240,6 @@ msgstr "Intercambiar componente"
 msgid "workspace.options.component.swap.empty"
 msgstr "Aún no hay recursos en esta biblioteca"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Desvinculado"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Localizar variantes en conflicto"

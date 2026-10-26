@@ -6927,10 +6927,6 @@ msgstr "Växla komponent"
 msgid "workspace.options.component.swap.empty"
 msgstr "Det finns inga tillgångar i detta bibliotek"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Olänkad"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Hitta motstridiga varianter"

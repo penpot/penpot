@@ -6926,10 +6926,6 @@ msgstr "Bileşeni değiştir"
 msgid "workspace.options.component.swap.empty"
 msgstr "Bu kütüphanede henüz varlık yok"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Ayrıldı"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Çakışan çeşitleri bul"

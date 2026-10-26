@@ -4733,10 +4733,6 @@ msgstr "Mijmainīt sastāvdaļu"
 msgid "workspace.options.component.swap.empty"
 msgstr "Šajā bibliotēkā vēl nav līdzekļu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Atsaistīta"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Noteikt nesaderīgus variantus"
