@@ -16,8 +16,8 @@
   [color property value]
   (let [index   (case property :h 0 :hsl-s 1 :hsl-l 2)
         hsl     (assoc (components color) index value)
-        [r g b] (cc/hsl->rgb hsl)
-        hex     (cc/rgb->hex [r g b])
+        hex     (cc/rgb->hex (cc/hsl->rgb hsl))
+        [r g b] (cc/hex->rgb hex)
         [h s v] (cc/hex->hsv hex)]
     ;; RGB cannot retain the chosen hue and saturation at black or white.
     {:hsl hsl :hex hex :h h :s s :v v :r r :g g :b b}))

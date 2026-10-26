@@ -119,14 +119,18 @@
   (t/is (= [0 0 1] (cc/rgb->hsl [255 255 255]))))
 
 (t/deftest hsl-gradient-echo-preserves-draft
-  (let [original (dwc/split-color-components {:color "#0d5af2" :opacity 1})
-        color (assoc (dwc/materialize-color-components
-                      (merge original (hsl/update-color original :hsl-l 0))) :offset 0)
-        state {:colorpicker {:type :linear-gradient :current-color color
-                             :editing-stop 0 :stops [color]
-                             :gradient {:type :linear :shape-id nil} :opacity 1}}
-        data (dwc/get-color-from-colorpicker-state (:colorpicker state))
-        echoed (ptk/update (dwc/update-colorpicker data) state)
-        changed (ptk/update (dwc/update-colorpicker-color {:hex "#ff0000"} false) state)]
-    (t/is (= (:hsl color) (get-in echoed [:colorpicker :current-color :hsl])))
-    (t/is (not (contains? (get-in changed [:colorpicker :stops 0]) :hsl)))))
+  (doseq [[property value] [[:hsl-l 0] [:hsl-l 1] [:hsl-s 0]]]
+    (let [original (dwc/split-color-components {:color "#0d5af2" :opacity 1})
+          color (assoc (dwc/materialize-color-components
+                        (merge original (hsl/update-color original property value))) :offset 0)
+          state {:colorpicker {:type :linear-gradient :current-color color
+                               :editing-stop 0 :stops [color]
+                               :gradient {:type :linear :shape-id nil} :opacity 1}}
+          data (dwc/get-color-from-colorpicker-state (:colorpicker state))
+          echoed (ptk/update (dwc/update-colorpicker data) state)
+          changed (ptk/update (dwc/update-colorpicker-color {:hex "#ff0000"} false) state)]
+      (t/is (= (:hsl color) (get-in echoed [:colorpicker :current-color :hsl])))
+      (when (= property :hsl-s)
+        (t/is (= "#406bbf" (:hex (hsl/update-color
+                                  (get-in echoed [:colorpicker :current-color]) :hsl-s 0.5)))))
+      (t/is (not (contains? (get-in changed [:colorpicker :stops 0]) :hsl))))))
