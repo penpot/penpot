@@ -683,7 +683,8 @@
   "Make the file its own tokens source when its tokens source is not one
   of the given library-ids, as happens when the library was deleted. The
   tokens lib of the source is copied while the library still exists, even
-  if deleted; otherwise the tokens source and status are removed."
+  if deleted; otherwise the tokens source is removed and the file gets back
+  the tokens status kept aside for its own tokens lib, if any."
   [cfg data library-ids]
   (let [source-id (cfo/get-tokens-source data)]
     (if (and (some? source-id)
@@ -692,7 +693,7 @@
                                  :include-deleted? true
                                  :throw-if-not-exists? false)]
         (cfo/absorb-tokens-lib data (:data library))
-        (dissoc data :tokens-source :tokens-status))
+        (cfo/detach-tokens-source data))
       data)))
 
 (defn embed-assets

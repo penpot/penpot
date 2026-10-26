@@ -30,6 +30,10 @@
   [file]
   (-> file (ctf/file-data) (cfo/get-tokens-status)))
 
+(defn get-own-tokens-status
+  [file]
+  (-> file (ctf/file-data) (cfo/get-own-tokens-status)))
+
 (defn add-tokens-lib
   "Ensure the file has a tokens-lib and a tokens-status in its data, creating empty ones if not"
   [file]
