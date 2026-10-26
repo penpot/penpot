@@ -27,7 +27,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      short_sha: ${{ steps.bundle.outputs.short_sha }}
+      bundle_key: ${{ steps.bundle.outputs.bundle_key }}
       images: ${{ steps.changes.outputs.images }}
       devenv: ${{ steps.changes.outputs.devenv }}
       imagemagick: ${{ steps.changes.outputs.imagemagick }}
@@ -60,7 +60,9 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       # Renovate only changes Dockerfiles and package manager versions, so
-      # the most recent develop bundle is enough to build the images.
+      # the most recent develop bundle is enough to build the images. The
+      # version part of the key does not matter here: take any bundle of
+      # the commit.
       - name: Find the latest develop bundle
         id: bundle
         env:
@@ -72,10 +74,12 @@ jobs:
         run: |
           for SHA in $(git rev-list --first-parent --max-count=50 "$BASE_SHA"); do
             SHORT_SHA=$(git rev-parse --short=12 "$SHA")
-            if aws s3api head-object --bucket "$S3_BUCKET" \
-                 --key "penpot-sha-${SHORT_SHA}.zip" > /dev/null 2>&1; then
-              echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
-              echo "Using bundle \`penpot-sha-${SHORT_SHA}.zip\`" >> "$GITHUB_STEP_SUMMARY"
+            BUNDLE_KEY=$(aws s3api list-objects-v2 --bucket "$S3_BUCKET" \
+                           --prefix "penpot-sha-${SHORT_SHA}-" \
+                           --query 'Contents[0].Key' --output text)
+            if [ -n "$BUNDLE_KEY" ] && [ "$BUNDLE_KEY" != "None" ]; then
+              echo "bundle_key=$BUNDLE_KEY" >> "$GITHUB_OUTPUT"
+              echo "Using bundle \`${BUNDLE_KEY}\`" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
           done
@@ -135,13 +139,13 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
+          BUNDLE_KEY: ${{ needs.prepare.outputs.bundle_key }}
           IMAGE: ${{ matrix.image }}
         run: |
-          ZIP="$BUNDLE_CACHE/penpot-sha-${SHORT_SHA}.zip"
+          ZIP="$BUNDLE_CACHE/${BUNDLE_KEY}"
           if [ ! -f "$ZIP" ]; then
             mkdir -p "$BUNDLE_CACHE"
-            aws s3 cp "s3://${S3_BUCKET}/penpot-sha-${SHORT_SHA}.zip" "$ZIP.$$.tmp"
+            aws s3 cp "s3://${S3_BUCKET}/${BUNDLE_KEY}" "$ZIP.$$.tmp"
             mv "$ZIP.$$.tmp" "$ZIP"
           fi
           pushd docker/images
