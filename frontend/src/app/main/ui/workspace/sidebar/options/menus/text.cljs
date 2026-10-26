@@ -310,6 +310,8 @@
                      (get n-values :grow-type))
          (identical? (get o-values :letter-spacing)
                      (get n-values :letter-spacing))
+         (identical? (get o-values :list-style-type)
+                     (get n-values :list-style-type))
          (identical? (get o-values :line-height)
                      (get n-values :line-height))
          (identical? (get o-values :text-align)

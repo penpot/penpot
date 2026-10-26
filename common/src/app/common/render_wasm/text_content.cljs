@@ -24,7 +24,7 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-(def ^:const PARAGRAPH-ATTR-U8-SIZE 12)
+(def ^:const PARAGRAPH-ATTR-U8-SIZE 16)
 (def ^:const SPAN-ATTR-U8-SIZE 64)
 (def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
@@ -109,7 +109,8 @@
         text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
         text-transform  (sr/translate-text-transform (get paragraph :text-transform))
         line-height     (serialize-line-height (get paragraph :line-height))
-        letter-spacing  (serialize-letter-spacing (get paragraph :letter-spacing))]
+        letter-spacing  (serialize-letter-spacing (get paragraph :letter-spacing))
+        list-style-type (sr/translate-list-style-type (get paragraph :list-style-type))]
     (-> offset
         (mem/write-u8 dview text-align)
         (mem/write-u8 dview text-direction)
@@ -117,6 +118,11 @@
         (mem/write-u8 dview text-transform)
         (mem/write-f32 dview line-height)
         (mem/write-f32 dview letter-spacing)
+        (mem/write-u8 dview list-style-type)
+        ;; padding
+        (mem/write-u8 dview 0)
+        (mem/write-u8 dview 0)
+        (mem/write-u8 dview 0)
         (mem/assert-written offset PARAGRAPH-ATTR-U8-SIZE))))
 
 (defn- write-spans
