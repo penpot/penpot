@@ -17,7 +17,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
-   [app.loggers.audit :as audit]
+   [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
@@ -123,34 +123,6 @@
 
     result))
 
-(defn- prepare-import-event
-  "Build the audit event of an import. The RPC layer cannot emit it
-  because the import runs later, inside the SSE response, and the
-  event must carry the ids of the files it creates."
-  [params manifest]
-  (-> (audit/event-from-rpc-params params)
-      (assoc :type "command")
-      (assoc :name "import-binfile")
-      (assoc :props (-> params
-                        (dissoc :file)
-                        (assoc :generated-by (:generated-by manifest))
-                        (assoc :referer (:referer manifest))
-                        (audit/clean-props)))
-      (assoc ::webhooks/event? true)))
-
-(defn- import-binfile-and-audit
-  [cfg params event]
-  (try
-    (let [file-ids (import-binfile cfg params)]
-      (audit/submit cfg (update event :props assoc
-                                :file-ids (vec file-ids)
-                                :file-count (count file-ids)
-                                :status "completed"))
-      file-ids)
-    (catch Throwable cause
-      (audit/submit cfg (assoc-in event [:props :status] "failed"))
-      (throw cause))))
-
 (def ^:private schema:import-binfile
   [:and
    [:map {:title "import-binfile"}
@@ -176,7 +148,6 @@
                   ["2.15" "Add upload-id param for chunked upload support"]]
 
    ::webhooks/event? true
-   ::audit/skip true
    ::sse/stream? true
    ::sm/params schema:import-binfile
    ::climit/id [[:import-binfile/by-profile ::rpc/profile-id]
@@ -193,6 +164,10 @@
                       :binfile-v1 1
                       :binfile-v3 3))
 
+        params  (-> params
+                    (assoc :profile-id profile-id)
+                    (assoc :version version))
+
         manifest
         (case (int version)
           1 nil
@@ -200,10 +175,10 @@
           (throw (ex-info (str "Unsupported binfile version: " version)
                           {:type :validation
                            :code :unsupported-version
-                           :version version})))
+                           :version version})))]
 
-        params  (assoc params :version version)
-        event   (prepare-import-event params manifest)
-        params  (assoc params :profile-id profile-id)]
-
-    (sse/response (partial import-binfile-and-audit cfg params event))))
+    (with-meta
+      (sse/response (partial import-binfile cfg params))
+      {::audit/props {:file nil
+                      :generated-by (:generated-by manifest)
+                      :referer (:referer manifest)}})))
