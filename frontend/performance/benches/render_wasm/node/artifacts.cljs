@@ -16,6 +16,7 @@
    ["path" :as path]
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
+   [benches.render-wasm.node.files :as files]
    [clojure.string :as str]))
 
 (def ^:private executable-dir
@@ -30,7 +31,7 @@
 (defn frontend-root
   "Finds the frontend checkout by walking up from the Node executable.
 
-  Supports target/performance/render-wasm/{runner,pilot}.cjs and the ESM
+  Supports target/performance/render-wasm/runner.cjs and the ESM
   target/{performance-tests,tests}/test.js boots, independent of caller cwd."
   []
   (when-not executable-dir
@@ -101,15 +102,6 @@
      :index-path (path/join dir "index.html")
      :manifest manifest}))
 
-(defn- atomic-write
-  [file content]
-  (let [temporary (str file "." (random-uuid) ".tmp")]
-    (try
-      (fs/writeFileSync temporary content #js {:encoding "utf8" :flag "wx"})
-      (fs/renameSync temporary file)
-      (finally
-        (fs/rmSync temporary #js {:force true})))))
-
 (defn create-build
   "Allocates a UUID build and saves its :building build.transit and empty log.
 
@@ -137,7 +129,7 @@
     (fs/mkdirSync (:browser-dir build))
     (fs/mkdirSync (:renderer-dir build))
     (fs/writeFileSync (:log-path build) "" "utf8")
-    (atomic-write (:manifest-path build) (codec/encode-str manifest))
+    (files/atomic-write (:manifest-path build) (codec/encode-str manifest))
     build))
 
 (defn write-manifest
@@ -165,7 +157,7 @@
                          :id (:id build)
                          :status (:status current)})))
       (let [manifest (assoc manifest :updated-at (.toISOString (js/Date.)))]
-        (atomic-write (:manifest-path build) (codec/encode-str manifest))
+        (files/atomic-write (:manifest-path build) (codec/encode-str manifest))
         (assoc build :manifest manifest)))))
 
 (defn- require-file

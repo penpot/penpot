@@ -5,12 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.result
-  "Raw benchmark records retain scheduled work and its chronological evidence.
-  RunRecord schema3 stores a saved plan, provenance, preparations and attempts.
-  A preparation owns a scene fingerprint and setup diagnostics. An attempt uses
-  one scheduled slot, even on failure. Metric entries declare value, unit,
-  semantics, observation basis and zero policy. Comparison schema2 stores an
-  analysis of two saved runs. Everything is encoded with transit."
+  "Schemas for experiments and reports."
   (:require
    [app.common.schema :as sm]
    [app.common.transit :as transit]

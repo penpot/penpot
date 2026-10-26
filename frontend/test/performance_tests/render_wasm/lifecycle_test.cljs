@@ -197,7 +197,7 @@
         (t/is (= "aborted" (:phase result)))
         (t/is (< current @@#'browser/owner-epoch*) "current owner disposed")))))
 
-(t/deftest bridge-exposes-pilot-entries
+(t/deftest bridge-exposes-executor-entries
   (doseq [key ["ping" "loadScene" "prepareScene" "runPrepared" "dispose"]]
     (t/is (fn? (unchecked-get browser/bridge key))
           (str key " is callable through the browser ABI")))

@@ -93,7 +93,6 @@
    :set-view-end      #(h/call wasm/internal-module "_set_view_end")})
 
 
-
 ;; Monotonic owner generation. Every async continuation compares its
 ;; captured epoch and drops stale results silently; dispose/load bump it.
 (defonce ^:private owner-epoch*
@@ -103,8 +102,8 @@
 (defonce ^:private module-promise*
   (atom nil))
 
-;; Page-scoped canvas owned by the current load. Fresh page per attempt in
-;; the future runner; the pilot loads once.
+;; Page-scoped canvas owned by the current load. :fresh cases load once per
+;; page. :reuse cases keep one preparation across all attempts.
 (defonce ^:private canvas*
   (atom nil))
 
