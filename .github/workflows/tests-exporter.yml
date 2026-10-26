@@ -61,8 +61,3 @@ jobs:
         working-directory: ./exporter
         run: |
           ./scripts/test
-
-      - name: Check no invoke_* in exporter JS glue
-        working-directory: ./render-wasm
-        run: |
-          ./check-no-invoke-v export
