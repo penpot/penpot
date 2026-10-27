@@ -7,6 +7,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .dashboard-comments-section {
   display: flex;
@@ -66,10 +67,7 @@
   position: absolute;
   overflow: hidden;
   inline-size: 100%;
-
-  // TODO: no DS z-index token for 4; it keeps the dropdown above the
-  // sidebar content.
-  z-index: 4;
+  z-index: var(--z-index-dropdown);
 
   // The separators have no class.
   hr {
@@ -87,11 +85,10 @@
 }
 
 .header-title {
+  @include use-typography("headline-small");
+
   color: var(--color-foreground-secondary);
-  font-size: px2rem(11);
-  line-height: 1.28;
   flex-grow: 1;
-  text-transform: uppercase;
 }
 
 .notifications-button {

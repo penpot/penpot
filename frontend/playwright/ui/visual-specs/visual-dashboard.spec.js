@@ -504,6 +504,10 @@ test.describe("Dashboard list controls", () => {
     const placeholder = page.locator("[class*='thread-groups-placeholder']");
     await expect(placeholder).toBeVisible();
     await expect(placeholder).toHaveScreenshot(shot);
+    // The whole dropdown, with the header title.
+    await expect(
+      page.locator("[class*='comment-threads-section']"),
+    ).toHaveScreenshot(shot);
   });
 });
 

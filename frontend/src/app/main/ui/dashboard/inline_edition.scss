@@ -16,9 +16,7 @@
   margin-inline-end: var(--sp-xxl);
 }
 
-// The element type keeps the selector strong enough over the input
-// defaults.
-input.element-title {
+.element-title {
   background-color: var(--color-background-primary);
   border-radius: $br-8;
   color: var(--color-foreground-primary);
