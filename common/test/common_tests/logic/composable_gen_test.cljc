@@ -382,6 +382,13 @@
         (t/is (= {} (get-in result [:result-text :content-group])))
         (t/is (false? (shadow/same-value? (:result-text after) :text-content-size expected)))))))
 
+(t/deftest accepting-a-library-does-not-record-equal-numeric-geometry
+  (let [before (-> (cg/initial-state [2 1 {:library true :variants true}])
+                   (cg/step [:resize 10 2 2 10]) cg/settle-state)
+        after (-> before (cg/step [:library-sync 3 1 2 8]) cg/settle-state)]
+    (t/is (= (r/undo-depth (:situation before)) (r/undo-depth (:situation after))))
+    (t/is (= (oracle/snapshot (:situation before)) (oracle/snapshot (:situation after))))))
+
 (t/deftest source-library-edits-wait-for-explicit-consumer-acceptance
   (let [initial (cg/initial-state [2 1 {:library true :stale-libraries true}])
         situation (:situation initial)
