@@ -146,6 +146,11 @@
   "Older paragraphs have no list attrs; read them as no list."
   {:list-style-type "none"})
 
+(defn list-paragraph?
+  "True when a paragraph (or its merged style map) is a list item."
+  [node]
+  (= "disc" (:list-style-type node)))
+
 (def default-text-attrs
   {:typography-ref-file nil
    :typography-ref-id nil

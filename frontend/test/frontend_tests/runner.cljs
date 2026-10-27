@@ -129,6 +129,7 @@
    [frontend-tests.ui.history-test]
    [frontend-tests.ui.inspect-geometry-test]
    [frontend-tests.ui.inspect-stroke-tokens-test]
+   [frontend-tests.ui.inspect-text-list-test]
    [frontend-tests.ui.jobs-progress-test]
    [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.mcp-authorize-test]
@@ -298,6 +299,7 @@
    'frontend-tests.ui.history-test
    'frontend-tests.ui.inspect-geometry-test
    'frontend-tests.ui.inspect-stroke-tokens-test
+   'frontend-tests.ui.inspect-text-list-test
    'frontend-tests.ui.jobs-progress-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measurements-test
