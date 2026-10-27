@@ -746,6 +746,37 @@
     (update [_ state]
       (assoc-in state [:workspace-local :shape-for-rename] id))))
 
+(defn- rename-variant-main
+  "Apply a layers-panel formula to one variant main.
+
+   A valid formula updates the property names and values. Any other
+   text keeps the current malformed path: values are cleared and the
+   text is stored as the variant error."
+  [file-id shape name]
+  (ptk/reify ::rename-variant-main
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-data          (dsh/lookup-file-data state file-id)
+            component-id       (:component-id shape)
+            component          (ctkl/get-component file-data component-id)
+            variant-id         (:variant-id shape)
+            variant-properties (:variant-properties component)]
+        (if (ctv/valid-properties-formula? name)
+          (rx/of (dwva/update-properties-names-and-values
+                  component-id
+                  variant-id
+                  variant-properties
+                  (ctv/properties-formula->map name))
+                 (dwva/remove-empty-properties variant-id)
+                 (dwva/update-error component-id))
+          (rx/of (dwva/update-properties-names-and-values
+                  component-id
+                  variant-id
+                  variant-properties
+                  {})
+                 (dwva/remove-empty-properties variant-id)
+                 (dwva/update-error component-id name)))))))
+
 (defn end-rename-shape
   "End the ongoing shape rename process"
   ([] (end-rename-shape nil nil))
@@ -758,16 +789,32 @@
      ptk/WatchEvent
      (watch [_ state _]
        (when-let [shape-id (d/nilv shape-id (dm/get-in state [:workspace-local :shape-for-rename]))]
-         (let [shape        (dsh/lookup-shape state shape-id)
-               name         (str/trim name)
-               clean-name   (cpn/clean-path name)
-               valid?       (and (not (str/ends-with? name "/"))
-                                 (string? clean-name)
-                                 (not (str/blank? clean-name)))
-               component-id (:component-id shape)
-               undo-id (js/Symbol)]
+         (let [shape         (dsh/lookup-shape state shape-id)
+               name          (str/trim name)
+               clean-name    (cpn/clean-path name)
+               valid?        (and (not (str/ends-with? name "/"))
+                                  (string? clean-name)
+                                  (not (str/blank? clean-name)))
+               component-id  (:component-id shape)
+               undo-id       (js/Symbol)
+               variant-main? (and (ctc/is-variant? shape)
+                                  (not (ctc/is-variant-container? shape)))]
 
-           (when valid?
+           (cond
+             ;; A variant main is edited as a formula. Never store that
+             ;; text as the layer or component name.
+             (and variant-main?
+                  (some? (:variant-name shape))
+                  (string? name)
+                  (not (str/blank? name)))
+             (rx/of (rename-variant-main (:current-file-id state) shape name))
+
+             ;; A variant main that is not ready (no formula yet, or a
+             ;; blank edit) must not fall through to a plain rename.
+             variant-main?
+             (rx/empty)
+
+             valid?
              (if (ctc/is-variant-container? shape)
                ;; Rename the full variant when it is a variant container
                (rx/of (dwva/rename-variant shape-id clean-name))
@@ -789,34 +836,14 @@
    (ptk/reify ::rename-shape-or-variant
      ptk/WatchEvent
      (watch [_ state _]
-       (let [file-id (d/nilv file-id (:current-file-id state))
-             page-id (d/nilv page-id (:current-page-id state))
-
-             file-data (dsh/lookup-file-data state file-id)
-             shape
-             (-> (dsh/lookup-page-objects state file-id page-id)
-                 (get id))
-
-             is-variant? (ctc/is-variant? shape)
-             variant-id (when is-variant? (:variant-id shape))
-             variant-name (when is-variant? (:variant-name shape))
-             component-id (:component-id shape)
-             component (ctkl/get-component file-data (:component-id shape))
-             variant-properties (:variant-properties component)]
-         (cond
-           (and variant-name (ctv/valid-properties-formula? name))
-           (rx/of (dwva/update-properties-names-and-values
-                   component-id variant-id variant-properties (ctv/properties-formula->map name))
-                  (dwva/remove-empty-properties variant-id)
-                  (dwva/update-error component-id))
-
-           variant-name
-           (rx/of (dwva/update-properties-names-and-values
-                   component-id variant-id variant-properties {})
-                  (dwva/remove-empty-properties variant-id)
-                  (dwva/update-error component-id name))
-
-           :else
+       (let [file-id      (d/nilv file-id (:current-file-id state))
+             page-id      (d/nilv page-id (:current-page-id state))
+             shape        (-> (dsh/lookup-page-objects state file-id page-id)
+                              (get id))
+             variant-name (when (ctc/is-variant? shape)
+                            (:variant-name shape))]
+         (if variant-name
+           (rx/of (rename-variant-main file-id shape name))
            (rx/of (end-rename-shape id name))))))))
 
 ;; --- Update Selected Shapes attrs
