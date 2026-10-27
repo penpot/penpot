@@ -19,11 +19,6 @@
   user-select: text;
 }
 
-// TODO: Unused in debug_shape_info.cljs; check by hand before removing.
-// .shape-info-title {
-//   margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
-// }
-
 .attrs-container {
   padding: var(--sp-l) var(--sp-s);
   overflow: hidden;
