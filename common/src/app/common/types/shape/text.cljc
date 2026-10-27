@@ -22,6 +22,11 @@
   [attr]
   (into [:enum] (get cjk/enum-values attr)))
 
+;; BCP 47 shaped language tag of a paragraph, as the HTML `lang` attribute.
+(def schema:text-language
+  [:re {:gen/elements ["ja" "zh-Hans" "zh-Hant-TW" "ko" "en-GB"]}
+   #"^(?:[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*|[xXiI](?:-[A-Za-z0-9]{1,8})+)$"])
+
 (def schema:content
   [:map
    [:type [:= "root"]]
@@ -45,9 +50,7 @@
          [:font-weight {:optional true} ::sm/text]
          [:direction {:optional true} ::sm/text]
          ;; Paragraph language selects typography; it never follows the UI locale.
-         [:text-language {:optional true}
-          [:re {:gen/elements ["ja" "zh-Hans" "zh-Hant-TW" "ko" "en-GB"]}
-           #"^(?:[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*|[xXiI](?:-[A-Za-z0-9]{1,8})+)$"]]
+         [:text-language {:optional true} schema:text-language]
          ;; Word mode keeps punctuation rules; retain the old POC value on reload.
          [:korean-wrap {:optional true} [:enum "syllable" "spaces-only" "keep-words"]]
          [:writing-mode {:optional true} (schema:jl-enum :writing-mode)]

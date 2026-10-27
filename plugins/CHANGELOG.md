@@ -27,6 +27,7 @@
 - **plugin-types:** Added `fontFeatures` (`none`, `palt`, or `vpal`) to text shapes and text ranges.
 - **plugin-types:** Added `annotationClearance` (`none` or `auto`) to text shapes.
 - **plugin-types:** Added `lineAdjustment` (`push-in-first`, `push-out-first` or `push-out-only`) to text shapes: how Japanese lines slightly too long are fitted.
+- **plugin-types:** Added `lang` to text shapes and ranges: the paragraph language as a BCP 47 tag (`ja`, `zh-Hant-HK`, `ko`...), which selects the CJK typesetting rules.
 
 ### 🩹 Fixes
 

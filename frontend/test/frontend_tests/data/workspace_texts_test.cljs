@@ -948,3 +948,17 @@
           shape (dwt/update-text-range-attrs shape 0 4 {:ruby nil})]
       (t/is (= [{:text "一盅兩件"}] (spans-of shape)))
       (t/is (dwt/single-span-range? (:content shape) 0 4)))))
+
+(t/deftest update-text-range-sets-the-language-on-the-paragraphs-it-touches
+  (let [content {:type "root"
+                 :children [{:type "paragraph-set"
+                             :children [{:type "paragraph" :children [{:text "ab" :font-size "20"}]}
+                                        {:type "paragraph" :children [{:text "cd" :font-size "20"}]}]}]}
+        languages (fn [shape]
+                    (->> (:content shape) (txt/node-seq txt/is-paragraph-node?) (mapv :text-language)))
+        shape     (dwt/update-text-range-attrs {:content content} 3 4 {:text-language "ja"})]
+    (t/is (= [nil "ja"] (languages shape)))
+    (t/is (= [{:text "ab"} {:text "cd"}] (spans-of shape))
+          "spans are neither split nor given the language")
+    (t/is (= [nil nil]
+             (languages (dwt/update-text-range-attrs shape 0 5 {:text-language nil}))))))
