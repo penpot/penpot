@@ -277,7 +277,16 @@ form.avatar-form {
     line-height: 6;
     text-align: center;
     background: var(--color-accent-tertiary);
+    border: none;
+
+    // The button centers its 144px line in the 148px circle; the bottom
+    // padding keeps the label where the old span drew it.
+    padding: 0 0 $s-4;
     z-index: $z-index-modal;
+
+    &:focus-visible {
+      opacity: 0.8;
+    }
   }
 
   .delete-overlay {

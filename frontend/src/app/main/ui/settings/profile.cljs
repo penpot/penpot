@@ -119,8 +119,10 @@
 
     [:form {:class (stl/css :avatar-form)}
      [:div {:class (stl/css :image-change-field)}
-      [:span {:class (stl/css :update-overlay)
-              :on-click on-image-click} (tr "labels.update")]
+      [:button {:type "button"
+                :class (stl/css :update-overlay)
+                :on-click on-image-click}
+       (tr "labels.update")]
       [:img {:src photo}]
       (when has-photo?
         [:button {:type "button"
