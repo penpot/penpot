@@ -938,6 +938,28 @@ pub extern "C" fn render_shape_svg(a: u32, b: u32, c: u32, d: u32, scale: f32) -
     })
 }
 
+/// Multi-root SVG: shape UUIDs are read from the transfer buffer (16 bytes
+/// each, same layout as `render_shapes_pdf`). Returns `[len u32 LE][svg bytes]`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shapes_svg(scale: f32) -> Result<*mut u8> {
+    let bytes = mem::bytes();
+    let ids: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
+
+    with_state!(state, {
+        let data = state.render_shapes_svg(&ids, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
 /// Raster image via CPU (no GPU/WebGL). Returns `[len][width][height][bytes]`
 /// (LE), same layout as `render_shape_pixels`. `format` selects the encoder:
 /// 0 = PNG, 1 = JPEG, 2 = WEBP (see `RasterFormat`).
