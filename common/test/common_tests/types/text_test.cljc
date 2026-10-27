@@ -439,7 +439,9 @@
   (t/is (= [["第" false] ["１２３" true]]
            (cjk/digit-combine-segments "第１２３" "digits3")))
   (t/is (= [["12345" false]] (cjk/digit-combine-segments "12345" "digits")))
-  (t/is (= [["1" false]] (cjk/digit-combine-segments "1" "digits")))
+  (t/is (= [["1" true]] (cjk/digit-combine-segments "1" "digits")))
+  (t/is (= [["2" true] ["月" false] ["5" true] ["日" false]]
+           (cjk/digit-combine-segments "2月5日" "digits2")))
   (t/is (nil? (cjk/digit-combine-segments "31" "all"))))
 
 (t/deftest western-reading-test
