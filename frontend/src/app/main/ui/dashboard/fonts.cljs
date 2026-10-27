@@ -24,8 +24,10 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.http :as http]
@@ -482,7 +484,10 @@
      (cond
        (seq fonts)
        [:*
-        [:h3 (tr "labels.installed-fonts")]
+        [:> heading* {:level 3
+                      :typography t/title-small
+                      :class (stl/css :installed-fonts-title)}
+         (tr "labels.installed-fonts")]
         [:div {:class (stl/css :installed-fonts-header)}
          [:div {:class (stl/css :table-field :family)} (tr "labels.font-family")]
          [:div {:class (stl/css :table-field :variants)} (tr "labels.font-variants")]
@@ -500,7 +505,8 @@
 
        (nil? fonts)
        [:div {:class (stl/css :fonts-placeholder)}
-        [:div {:class (stl/css :icon)} deprecated-icon/loader]
+        [:> loader* {:width 32
+                     :title (tr "labels.loading")}]
         [:div {:class (stl/css :label)} (tr "dashboard.loading-fonts")]]
 
        :else

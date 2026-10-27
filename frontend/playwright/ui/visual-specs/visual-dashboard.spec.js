@@ -389,6 +389,21 @@ test.describe("Fonts page controls", () => {
       page.locator("[class*='dashboard-fonts-upload']"),
     ).toHaveScreenshot(shot);
   });
+
+  test("Fonts loading placeholder", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    // Never answer, so the page keeps showing the loader.
+    await page.route(/get-font-variants/, () => {});
+    await dashboardPage.goToDashboard();
+    await dashboardPage.fontsLink.click();
+    await expect(dashboardPage.mainHeading).toHaveText("Fonts");
+
+    const placeholder = page.locator("[class*='fonts-placeholder']");
+    await expect(placeholder).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(placeholder).toHaveScreenshot(shot);
+  });
 });
 
 test.describe("Subscription controls", () => {

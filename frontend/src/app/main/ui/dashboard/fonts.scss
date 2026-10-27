@@ -30,17 +30,14 @@
   margin-block-start: var(--sp-xxl);
   flex-direction: column;
 
-  // The section title has no class.
-  h3 {
-    @include use-typography("title-small");
-
-    color: var(--color-foreground-secondary);
-    margin: var(--sp-xs);
-  }
-
   .font-item {
     color: var(--color-background-secondary);
   }
+}
+
+.installed-fonts-title {
+  color: var(--color-foreground-secondary);
+  margin: var(--sp-xs);
 }
 
 .installed-fonts-header {
@@ -286,14 +283,6 @@
   margin-block-start: var(--sp-l);
   max-inline-size: px2rem(1000);
   inline-size: 100%;
-
-  // The loader keeps the legacy icon: there is no DS loader icon.
-  .icon svg {
-    stroke: var(--color-foreground-secondary);
-    fill: none;
-    inline-size: $sz-32;
-    block-size: $sz-32;
-  }
 
   .label {
     @include use-typography("body-medium");
