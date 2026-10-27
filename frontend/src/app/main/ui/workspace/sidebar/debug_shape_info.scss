@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
 @use "ds/_utils.scss" as *;
 
 .shape-info {
@@ -13,9 +14,8 @@
   background-color: var(--color-background-primary);
   color: var(--color-foreground-primary);
 
-  // TODO: No exact DS typography match found.
-  // Closest match: body-small.
-  font-size: px2rem(12);
+  @include t.use-typography("body-small");
+
   user-select: text;
 }
 
@@ -25,9 +25,8 @@
 }
 
 .shape-title {
-  // TODO: No exact DS typography match found.
-  // Closest match: body-medium.
-  font-size: px2rem(14);
+  @include t.use-typography("body-medium");
+
   background: var(--color-background-quaternary);
   color: var(--color-foreground-primary);
   padding: var(--sp-s);
