@@ -13,12 +13,14 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.geom.shapes.points :as gpo]
    [app.common.text :as legacy.txt]
+   [app.common.types.color :as cc]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as types.text]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.code-gen.common :as cgc]
    [app.util.code-gen.style-css-formats :refer [format-value format-shadow->css]]
    [app.util.code-gen.style-css-values :refer [get-value]]
+   [app.util.object :as obj]
    [cuerdas.core :as str]))
 
 ;;
@@ -230,6 +232,11 @@ body {
                 [(str/kebab key) (unchecked-get properties key)])))
    nil))
 
+(defn- list-paragraph?
+  [node]
+  (and (= "paragraph" (:type node))
+       (types.text/list-paragraph? node)))
+
 (defn node->css
   [shape shape-selector node]
   (let [properties
@@ -241,7 +248,9 @@ body {
           (sts/generate-paragraph-set-styles shape)
 
           (:paragraph "paragraph")
-          (sts/generate-paragraph-styles shape node)
+          (cond-> (sts/generate-paragraph-styles shape node)
+            (list-paragraph? node)
+            (obj/set! "listStyleType" (:list-style-type node)))
 
           (sts/generate-text-styles shape node))]
     (dm/fmt
@@ -249,15 +258,47 @@ body {
      (dm/str shape-selector " ." (:$id node))
      (format-js-styles properties nil))))
 
+(defn- marker-color
+  "The bullet takes its span's text color. A `::marker` can't paint a gradient,
+  so a gradient fill gives its first stop."
+  [shape span]
+  (if-let [gradient (or (-> span :fills first :fill-color-gradient)
+                        (:fill-color-gradient span))]
+    (let [{:keys [color opacity]} (first (:stops gradient))
+          [r g b a] (cc/hex->rgba color opacity)]
+      (str/format "rgba(%s, %s, %s, %s)" r g b a))
+    (obj/get (sts/generate-text-styles shape span) "color")))
+
+(defn- list-marker-css
+  "Paragraphs set `font-size: 0`, so the bullet takes its size (and color) from
+  the item's first span, as it does on the canvas."
+  [shape shape-selector node]
+  (let [span      (first (:children node))
+        font-size (d/nilv (:font-size span) (:font-size types.text/default-text-attrs))
+        color     (marker-color shape span)]
+    (dm/fmt
+     ".% {\n%\n}"
+     (dm/str shape-selector " ." (:$id node) "::marker")
+     (format-js-styles (cond-> #js {:fontSize (dm/str font-size "px")}
+                         (some? color) (obj/set! "color" color))
+                       nil))))
+
 (defn generate-text-css
   [shape]
-  (let [selector (cgc/shape->selector shape)]
-    (->> shape
-         :content
-         (legacy.txt/index-content)
-         (types.text/node-seq)
-         (map #(node->css shape selector %))
-         (str/join "\n"))))
+  (let [selector   (cgc/shape->selector shape)
+        nodes      (->> shape
+                        :content
+                        (legacy.txt/index-content)
+                        (types.text/node-seq))
+        node-rules (mapcat (fn [node]
+                             (cond-> [(node->css shape selector node)]
+                               (list-paragraph? node)
+                               (conj (list-marker-css shape selector node))))
+                           nodes)
+        list-rules (when (some list-paragraph? nodes)
+                     [(dm/fmt ".% ul {\n%\n}" selector
+                              (format-js-styles #js {:margin 0 :padding 0} nil))])]
+    (str/join "\n" (concat node-rules list-rules))))
 
 (defn get-shape-css-selector
   ([objects shape]
