@@ -187,11 +187,10 @@
                     :placeholder (tr "common.share-link.placeholder")
                     :read-only true}]
 
-           [:button {:class (stl/css :copy-button)
-                     :title (tr "viewer.header.share.copy-link")
-                     :on-click copy-link}
-            [:> icon* {:icon-id i/clipboard
-                       :class (stl/css :copy-icon)}]]])
+           [:> icon-button* {:variant "secondary"
+                             :aria-label (tr "viewer.header.share.copy-link")
+                             :icon i/clipboard
+                             :on-click copy-link}]])
 
         [:div {:class (stl/css :hint-wrapper)}
          (when (not ^boolean confirm?)

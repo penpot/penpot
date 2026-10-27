@@ -95,58 +95,6 @@
   }
 }
 
-.copy-button {
-  --copy-button-bg-color: var(--color-background-tertiary);
-  --copy-button-border-color: var(--color-background-tertiary);
-  --copy-icon-color: var(--color-foreground-primary);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-s);
-  block-size: $sz-32;
-  inline-size: $sz-28;
-  border: $b-1 solid var(--copy-button-border-color);
-  border-radius: $br-8;
-  background: none;
-  background-color: var(--copy-button-bg-color);
-  color: var(--color-foreground-secondary);
-  cursor: pointer;
-
-  .copy-icon {
-    flex-shrink: 0;
-    stroke: currentcolor;
-    stroke-width: 1px;
-    color: var(--copy-icon-color);
-  }
-
-  &:focus-visible {
-    outline: none;
-
-    --copy-button-border-color: var(--color-accent-primary);
-    --copy-icon-color: var(--color-foreground-secondary);
-  }
-
-  &:hover {
-    --copy-button-bg-color: var(--color-background-quaternary);
-    --copy-button-border-color: var(--color-background-quaternary);
-    --copy-icon-color: var(--color-accent-primary);
-
-    color: var(--color-accent-primary);
-    text-decoration: none;
-  }
-
-  &:active {
-    outline: none;
-
-    --copy-button-bg-color: var(--color-background-secondary);
-    --copy-button-border-color: var(--color-background-quaternary);
-    --copy-icon-color: var(--color-accent-primary);
-
-    color: var(--color-accent-primary);
-  }
-}
-
 .description {
   @include use-typography("body-small");
 

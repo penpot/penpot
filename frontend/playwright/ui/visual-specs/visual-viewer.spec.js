@@ -472,7 +472,11 @@ test.describe("Share link modal controls", () => {
     await page.mouse.move(10, 700);
     await expect(modal).toHaveScreenshot(shot);
 
-    await page.getByTitle("Copy link").hover();
+    // A raw button with a title before, a DS icon button named "Copy link" after.
+    await modal
+      .getByTitle("Copy link")
+      .or(modal.getByRole("button", { name: "Copy link" }))
+      .hover();
     await expect(modal).toHaveScreenshot(shot);
 
     await page.getByText("Manage permissions").click();
