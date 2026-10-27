@@ -4821,6 +4821,18 @@ export interface Text extends ShapeBase {
   rubySide: 'over' | 'under' | 'mixed';
 
   /**
+   * Language of the text as a BCP 47 tag, like the HTML `lang` attribute.
+   * Japanese (`ja`), Chinese (`zh-Hans`, `zh-Hant`, or with a region:
+   * `zh-Hans-CN`, `zh-Hant-TW`, `zh-Hant-HK`...) and Korean (`ko`) tags
+   * select their typesetting rules: line breaking, punctuation spacing, the
+   * default emphasis position and localized glyph forms. Other tags are
+   * stored without rules. `null` (the default) applies none; set `null` or
+   * `''` to remove it. It belongs to paragraphs: setting it applies
+   * to every paragraph. Returns 'mixed' if paragraphs use different values.
+   */
+  lang: string | 'mixed' | null;
+
+  /**
    * Return the bounding box for the text as a (x, y, width, height) rectangle
    * This is the box that covers the text even if it overflows its selection rectangle.
    */
@@ -5006,6 +5018,19 @@ export interface TextRange {
 
   /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
   rubySide: 'over' | 'under' | 'mixed' | null;
+
+  /**
+   * Language of the text as a BCP 47 tag, like the HTML `lang` attribute.
+   * Japanese (`ja`), Chinese (`zh-Hans`, `zh-Hant`, or with a region:
+   * `zh-Hans-CN`, `zh-Hant-TW`, `zh-Hant-HK`...) and Korean (`ko`) tags
+   * select their typesetting rules: line breaking, punctuation spacing, the
+   * default emphasis position and localized glyph forms. Other tags are
+   * stored without rules. `null` (the default) applies none; set `null` or
+   * `''` to remove it. It belongs to paragraphs: setting it applies
+   * to every paragraph the range touches. Returns 'mixed' if those
+   * paragraphs use different values.
+   */
+  lang: string | 'mixed' | null;
 
   /**
    * The text direction for the text range. It can be a specific direction or 'mixed' if multiple directions are used.

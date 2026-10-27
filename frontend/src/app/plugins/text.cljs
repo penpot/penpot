@@ -12,6 +12,7 @@
    [app.common.record :as crc]
    [app.common.schema :as sm]
    [app.common.types.fills :as types.fills]
+   [app.common.types.shape.text :as ctst]
    [app.common.types.text :as txt]
    [app.common.types.text.cjk-layout :as cjk]
    [app.main.data.workspace.shapes :as dwsh]
@@ -128,6 +129,18 @@
 (defn- optional-string?
   [value]
   (or (nil? value) (string? value)))
+
+(defn- language-tag?
+  "Validator for a text language: a BCP 47 tag, or nil or '' to remove it."
+  [value]
+  (or (nil? value)
+      (= "" value)
+      (sm/validate ctst/schema:text-language value)))
+
+(defn- language-attrs
+  "Update attrs for a language value; nil or '' removes the language."
+  [attrs]
+  (update attrs :text-language not-empty))
 
 (defn- attr-setter
   "Property setter that checks `valid?` and the plugin's write access before
@@ -531,6 +544,17 @@
     {:this true
      :get (fn [self] (range-japanese-value self start end :ruby-side))
      :set (range-attr-setter plugin-id page-id id start end :rubySide :ruby-side (enum-value? :ruby-side))}
+
+    :lang
+    {:this true
+     :get
+     (fn [self]
+       (->> (-> self u/proxy->shape :content (content-range->text+styles start end))
+            (map :text-language)
+            (u/mixed-value)))
+     :set
+     (attr-setter plugin-id page-id :lang :text-language language-tag?
+                  (fn [_ attrs] (dwt/update-text-range id start end (language-attrs attrs))))}
 
     :direction
     {:this true
@@ -1008,6 +1032,12 @@
      {:name "rubySide"
       :get #(shape-japanese-value % :ruby-side)
       :set (shape-attr-setter plugin-id page-id :rubySide :ruby-side (enum-value? :ruby-side))}
+
+     {:name "lang"
+      :get #(-> % u/proxy->shape text-props :text-language format/format-mixed)
+      :set (attr-setter plugin-id page-id :lang :text-language language-tag?
+                        (fn [self attrs]
+                          (dwt/update-attrs (obj/get self "$id") (language-attrs attrs))))}
 
      {:name "textBounds"
       :get #(-> % u/proxy->shape gst/shape->bounds format/format-geom-rect)})))

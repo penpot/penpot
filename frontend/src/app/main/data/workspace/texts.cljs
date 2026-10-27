@@ -593,17 +593,36 @@
             [start end] (annotated-span-bounds content start end)]
         (<= (count (overlapping-text-nodes content start end)) 1))))
 
+;; Paragraph attrs a text range sets on the whole paragraphs it touches.
+(def ^:private range-paragraph-attrs
+  [:text-language])
+
+(defn- update-paragraph-range
+  "Applies `attrs` to the paragraphs of a range-decorated content with
+   characters in [start, end); a nil value removes the attr."
+  [content start end attrs]
+  (txt/transform-nodes
+   (fn [node]
+     (and (txt/is-paragraph-node? node)
+          (let [{node-start :start node-end :end} (meta node)]
+            (and (< node-start end) (< start node-end)))))
+   #(d/patch-object % attrs)
+   content))
+
 (defn update-text-range-attrs
   "Applies `attrs` to the characters [start, end) of a text shape. A range
    that cuts a ruby or warichu span covers the whole span. Spans left with
-   the same style as their neighbour are joined back."
+   the same style as their neighbour are joined back. Paragraph attrs such
+   as the language go to the whole paragraphs the range touches."
   [shape start end attrs]
   (let [content     (decorate-range-info (:content shape))
         [start end] (annotated-span-bounds content start end)
+        span-attrs  (apply dissoc attrs range-paragraph-attrs)
         new-content (->> (-> content
+                             (update-paragraph-range start end (select-keys attrs range-paragraph-attrs))
                              (split-content-at start)
                              (split-content-at end)
-                             (update-content-range start end attrs))
+                             (update-content-range start end span-attrs))
                          (txt/transform-nodes txt/is-paragraph-node?
                                               #(d/update-when % :children txt/merge-equal-spans)))]
     (assoc shape :content new-content)))
