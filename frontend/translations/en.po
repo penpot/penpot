@@ -8311,9 +8311,9 @@ msgstr "Strikethrough (%s)"
 msgid "workspace.options.text-options.text-align-center"
 msgstr "Align center"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:77
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.text-align-distribute"
-msgstr "Distribute characters on every line"
+msgstr "Distribute characters"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-align-justify"

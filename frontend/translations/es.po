@@ -8259,9 +8259,9 @@ msgstr "Tachado (%s)"
 msgid "workspace.options.text-options.text-align-center"
 msgstr "Alinear al centro"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:77
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.text-align-distribute"
-msgstr "Distribuir caracteres en todas las líneas"
+msgstr "Distribuir caracteres"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-align-justify"

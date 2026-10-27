@@ -406,16 +406,24 @@
 
 (t/deftest vertical-paragraph-alignment-shows-top-middle-bottom-and-vertical-justify
   (let [markup (alignment-markup text-menu/text-align-options* "vertical-rl" true)]
-    (t/is (= ["text-align-top" "text-align-middle" "text-align-bottom" "text-justify-vertical" "distribute-vertical-spacing"]
+    (t/is (= ["text-align-top" "text-align-middle" "text-align-bottom" "text-justify-vertical"]
              (alignment-icons markup)))
     (t/is (= ["workspace.options.text-options.align-top"
               "workspace.options.text-options.align-middle"
               "workspace.options.text-options.align-bottom"
-              "workspace.options.text-options.text-align-justify"
-              "workspace.options.text-options.text-align-distribute"]
+              "workspace.options.text-options.text-align-justify"]
              (alignment-labels markup)))
-    (t/is (= ["left" "center" "right" "justify" "distribute"]
+    (t/is (= ["left" "center" "right" "justify"]
              (mapv second (re-seq #"value=\"([^\"]+)\"" markup))))))
+
+(t/deftest distributed-alignment-is-a-switch-of-the-language-layout
+  (let [markup  #(alignment-markup tll/distribute-option* "horizontal-tb" true {:text-align %})
+        checked #(second (re-find #"aria-checked=\"([^\"]+)\"" %))]
+    (t/is (= ["workspace.options.text-options.text-align-distribute"]
+             (alignment-labels (markup "left"))))
+    (t/is (= "true" (checked (markup "distribute"))))
+    (t/is (= "false" (checked (markup "left"))))
+    (t/is (= "false" (checked (markup :multiple))))))
 
 (t/deftest vertical-column-block-alignment-shows-right-center-and-left
   (let [markup (alignment-markup text-menu/vertical-align* "vertical-rl" true)]
@@ -432,14 +440,14 @@
   (doseq [writing-mode [nil "horizontal-tb" :multiple]]
     (let [paragraph (alignment-markup text-menu/text-align-options* writing-mode true)
           block     (alignment-markup text-menu/vertical-align* writing-mode true)]
-      (t/is (= ["text-align-left" "text-align-center" "text-align-right" "text-justify" "distribute-horizontally"]
+      (t/is (= ["text-align-left" "text-align-center" "text-align-right" "text-justify"]
                (alignment-icons paragraph)))
       (t/is (= ["text-top" "text-middle" "text-bottom"] (alignment-icons block))))))
 
 (t/deftest svg-renderer-keeps-horizontal-alignment-for-stored-vertical-text
   (let [paragraph (alignment-markup text-menu/text-align-options* "vertical-rl" false)
         block     (alignment-markup text-menu/vertical-align* "vertical-rl" false)]
-    (t/is (= ["text-align-left" "text-align-center" "text-align-right" "text-justify" "distribute-horizontally"]
+    (t/is (= ["text-align-left" "text-align-center" "text-align-right" "text-justify"]
              (alignment-icons paragraph)))
     (t/is (= ["text-top" "text-middle" "text-bottom"] (alignment-icons block)))
     (t/is (= "workspace.options.text-options.text-align-left" (first (alignment-labels paragraph))))
