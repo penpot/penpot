@@ -55,12 +55,12 @@
   inverse sync and all copy syncs. Deferred text reflow may commit after
   the transaction closes; its changes must still join the user action (F152).
 - Undo transactions can stay open only temporarily; timed-out pending transactions are force-committed after about 20s. Undo entries are capped at 50.
-- Stacked derived changes first look for their own group among applied undo
-  entries (F214). A delayed font resize must not join a later unrelated
-  edit or transaction. Preserve an older entry's selection; never search
-  its redo tail. Without a matching group, stacking keeps its current-entry
-  behavior. Non-stacked delayed copy measurement is tracked separately as
-  F222 while its async regression and routing correction are pending.
+- Derived changes first look for their own group among applied undo entries
+  (F214, F222). Delayed font and copy measurements extend that group across
+  later edits or transactions, even without `:stack-undo?`. Preserve an
+  older entry's selection; never search its redo tail. Adjacent non-stacked
+  changes keep separate entries; without a matching group, stacking keeps
+  its current-entry behavior.
 - Undo/redo are ignored while a normal editor/drawing interaction is active, except grid-layout edition handles undo through this path.
 - After local commits and when render-wasm is active, text shapes get derived `:position-data` recomputed in a separate commit tagged `#{:position-data}`; that tag is excluded from the position-data watcher to avoid loops.
 - WASM component thumbnails cancel the entire upload/render stream on
