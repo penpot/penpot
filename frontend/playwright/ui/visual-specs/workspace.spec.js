@@ -1298,5 +1298,9 @@ test.describe("Gradient type select", () => {
     ).toBeVisible();
     await page.mouse.move(0, 0);
     await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    // The whole gradient panel: preview bar, stops and the stop list.
+    const panel = workspace.colorpicker.locator("[class*='gradient-panel']");
+    await expect(panel).toHaveScreenshot(shot);
   });
 });

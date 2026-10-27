@@ -4,18 +4,24 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// Only for %input-element: the stop offset input moves to the DS with the
+// numeric inputs group.
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .gradient-panel {
-  margin-top: deprecated.$s-12;
+  margin-block-start: var(--sp-m);
   display: grid;
-  gap: deprecated.$s-4;
-  grid-template-rows: deprecated.$s-56 deprecated.$s-32 1fr;
+  gap: var(--sp-xs);
+  grid-template-rows: px2rem(56) $sz-32 1fr;
 }
 
 .gradient-preview {
-  width: 100%;
-  height: 100%;
+  inline-size: 100%;
+  block-size: 100%;
   display: flex;
   align-items: center;
   position: relative;
@@ -23,19 +29,19 @@
 }
 
 .gradient-background {
-  width: 100%;
-  height: deprecated.$s-20;
-  border-radius: deprecated.$br-4;
+  inline-size: 100%;
+  block-size: px2rem(20);
+  border-radius: $br-4;
   position: relative;
   cursor: pointer;
 }
 
 .gradient-preview-stop-wrapper {
   position: absolute;
-  width: calc(100% - deprecated.$s-24 - deprecated.$s-4);
-  height: 100%;
-  left: deprecated.$s-2;
-  top: calc(-1 * deprecated.$s-4);
+  inline-size: calc(100% - #{px2rem(28)});
+  block-size: 100%;
+  inset-inline-start: px2rem(2);
+  inset-block-start: calc(-1 * var(--sp-xs));
   pointer-events: none;
 }
 
@@ -43,47 +49,47 @@
   background-color: var(--color-foreground-primary);
   background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=");
   background-position: left center;
-  background-size: deprecated.$s-8;
-  border-radius: deprecated.$br-6;
-  border: deprecated.$s-2 solid var(--color-foreground-primary);
-  box-shadow: 0 0 deprecated.$s-4 0 var(--menu-shadow-color);
-  height: calc(deprecated.$s-24 - deprecated.$s-2);
-  left: var(--position);
+  background-size: px2rem(8);
+  border-radius: $br-6;
+  border: $b-2 solid var(--color-foreground-primary);
+  box-shadow: 0 0 px2rem(4) 0 var(--color-shadow-dark);
+  block-size: px2rem(22);
+  inset-inline-start: var(--position);
   overflow: hidden;
   pointer-events: initial;
   position: absolute;
-  width: calc(deprecated.$s-24 - deprecated.$s-2);
+  inline-size: px2rem(22);
 
   &.is-selected,
   &:hover {
-    outline: deprecated.$s-2 solid var(--color-accent-primary);
+    outline: $b-2 solid var(--color-accent-primary);
   }
 }
 
 .gradient-preview-stop-decoration {
   background: var(--color-foreground-primary);
   border-radius: 100%;
-  bottom: deprecated.$s-32;
-  box-shadow: 0 0 deprecated.$s-4 0 var(--menu-shadow-color);
-  height: deprecated.$s-4;
-  left: calc(var(--position) + deprecated.$s-8);
+  inset-block-end: var(--sp-xxxl);
+  box-shadow: 0 0 px2rem(4) 0 var(--color-shadow-dark);
+  block-size: px2rem(4);
+  inset-inline-start: calc(var(--position) + var(--sp-s));
   position: absolute;
-  width: deprecated.$s-4;
+  inline-size: px2rem(4);
 }
 
 .gradient-preview-stop-color {
   position: absolute;
-  left: 0;
-  width: 50%;
-  height: 100%;
+  inset-inline-start: 0;
+  inline-size: 50%;
+  block-size: 100%;
   background: var(--color-solid);
 }
 
 .gradient-preview-stop-alpha {
   position: absolute;
-  left: 50%;
-  width: 50%;
-  height: 100%;
+  inset-inline-start: 50%;
+  inline-size: 50%;
+  block-size: 100%;
   background: var(--color-alpha);
 }
 
@@ -98,7 +104,7 @@
 }
 
 .gradient-options-select {
-  width: deprecated.$s-140;
+  inline-size: px2rem(140);
 }
 
 .rotate-icon {
@@ -108,18 +114,18 @@
 .gradient-stops-list {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-4;
-  max-height: deprecated.$s-180;
+  gap: var(--sp-xs);
+  max-block-size: px2rem(180);
   overflow: hidden auto;
   padding: 0 0 var(--sp-s) var(--sp-m);
 }
 
 .gradient-stops-entry {
   display: flex;
-  gap: deprecated.$s-4;
-  padding: deprecated.$s-2;
-  border-radius: deprecated.$br-12;
-  border: deprecated.$s-1 solid transparent;
+  gap: var(--sp-xs);
+  padding: var(--sp-xxs);
+  border-radius: $br-12;
+  border: $b-1 solid transparent;
   position: relative;
 
   &.is-selected {
@@ -141,26 +147,26 @@
 
 .offset-input-wrapper {
   @extend %input-element;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  width: deprecated.$s-92;
+  inline-size: px2rem(92);
 }
 
 .gradient-separator {
   border-color: var(--color-background-quaternary);
-  border-width: deprecated.$s-3;
-  margin-left: calc(var(--sp-m) / 2);
+  border-width: px2rem(3);
+  margin-inline-start: calc(var(--sp-m) / 2);
   position: relative;
-  width: calc(100% - var(--sp-m));
+  inline-size: calc(100% - var(--sp-m));
 }
 
 .gradient-preview-stop-preview {
   background: var(--color-foreground-primary);
   border-radius: 50%;
-  height: deprecated.$s-4;
-  left: calc(var(--preview-position, 0%) - deprecated.$s-2);
+  block-size: px2rem(4);
+  inset-inline-start: calc(var(--preview-position, 0%) - #{px2rem(2)});
   pointer-events: none;
   position: absolute;
-  top: calc(50% - deprecated.$s-2);
-  width: deprecated.$s-4;
+  inset-block-start: calc(50% - #{px2rem(2)});
+  inline-size: px2rem(4);
 }
