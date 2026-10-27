@@ -171,9 +171,9 @@
       (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
-  "Add changes to undo history. Stacked changes extend their applied undo
-   group when present, otherwise the current entry. An open transaction
-   accumulates changes unless they stack into another applied group."
+  "Add changes to undo history. Delayed changes extend their applied undo
+   group across later edits or transactions, even without stacking.
+   Stacked changes without a matching group extend the current entry."
   [entry stack?]
 
   (assert (check-undo-entry entry))
@@ -191,7 +191,7 @@
             in-group?      (fn [item group]
                              (or (= group (:undo-group item))
                                  (contains? (:undo-groups item) group)))
-            group-index    (when (and stack? (:undo-group entry)
+            group-index    (when (and (:undo-group entry)
                                       (not (in-group? transaction (:undo-group entry))))
                              (last (keep-indexed
                                     (fn [index item]
@@ -200,7 +200,8 @@
         (cond
           ;; A delayed derived change still belongs to its primary action,
           ;; even after another edit or transaction has started.
-          (some? group-index)
+          (and (some? group-index)
+               (or stack? (< group-index index) transaction))
           (stack-undo-entry state entry group-index)
 
           (and (get-in state [:workspace-undo :transaction])
