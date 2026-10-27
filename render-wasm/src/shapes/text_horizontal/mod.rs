@@ -1,4 +1,4 @@
-use crate::shapes::text_paragraph::LayoutParagraph;
+use crate::shapes::text_paragraph::{LayoutParagraph, SpacedParagraphBuilder};
 // Horizontal Japanese layout on top of SkParagraph: the kinsoku layout
 // texts, punctuation aki, offset maps between source, layout and builder
 // text, and the ruby, emphasis and warichu painters.
@@ -164,7 +164,7 @@ fn horizontal_policy_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec
 /// set narrower by their amounts; `extra` (from `horizontal_ruby_spacing`)
 /// adds letter-spacing to characters.
 pub(crate) fn add_horizontal_span(
-    builder: &mut ParagraphBuilder,
+    builder: &mut impl SpacedParagraphBuilder,
     span: &TextSpan,
     builder_text: &str,
     sheds: &[(usize, f32)],
@@ -173,6 +173,7 @@ pub(crate) fn add_horizontal_span(
     fonts: &skia::textlayout::FontCollection,
 ) {
     if span.is_warichu() {
+        let builder = builder.paragraph_builder();
         if builder_text.starts_with(kinsoku::FORCED_LINE_BREAK) {
             builder.add_text(kinsoku::FORCED_LINE_BREAK.to_string());
         }
@@ -214,9 +215,10 @@ pub(crate) fn add_horizontal_span(
 /// builder text stays unchanged: those at `sheds` lose their amount and
 /// those in `extra` take its added spacing. Skia tracks every cluster,
 /// including the zero-width word joiners the kinsoku pass inserts, so those
-/// take no letter-spacing.
+/// take no letter-spacing. The builder records how far each adjusted
+/// character departs from the span tracking.
 fn add_text_with_sheds(
-    builder: &mut ParagraphBuilder,
+    builder: &mut impl SpacedParagraphBuilder,
     span: &TextSpan,
     text: &str,
     sheds: &[(usize, f32)],
@@ -237,7 +239,12 @@ fn add_text_with_sheds(
         }
     }
     let mut piece_start = 0;
+    // UTF-16 offset of the span text in the builder, read at the first piece.
+    let mut builder_start = None;
+    let mut utf16 = 0;
     for (index, (byte, ch)) in text.char_indices().enumerate() {
+        let at = utf16;
+        utf16 += ch.len_utf16();
         let (added, shed) = amounts[index];
         let letter_spacing = if kinsoku::is_inserted_zero_width(ch) {
             0.0
@@ -247,16 +254,29 @@ fn add_text_with_sheds(
         if letter_spacing == tracking {
             continue;
         }
+        let start = *builder_start.get_or_insert_with(|| {
+            builder
+                .paragraph_builder()
+                .get_text()
+                .encode_utf16()
+                .count()
+        });
+        builder.add_extra_spacing(start + at, letter_spacing - tracking);
         let mut style = text_style.clone();
         style.set_letter_spacing(letter_spacing);
         let end = byte + ch.len_utf8();
-        add_text_with_tabs(builder, &text[piece_start..byte], span.font_size);
-        builder.push_style(&style);
-        builder.add_text(&text[byte..end]);
-        builder.pop();
+        let paragraph_builder = builder.paragraph_builder();
+        add_text_with_tabs(paragraph_builder, &text[piece_start..byte], span.font_size);
+        paragraph_builder.push_style(&style);
+        paragraph_builder.add_text(&text[byte..end]);
+        paragraph_builder.pop();
         piece_start = end;
     }
-    add_text_with_tabs(builder, &text[piece_start..], span.font_size);
+    add_text_with_tabs(
+        builder.paragraph_builder(),
+        &text[piece_start..],
+        span.font_size,
+    );
 }
 
 /// The horizontal passes of one paragraph that layout, painting, position

@@ -1,5 +1,5 @@
 use super::{filters, RenderState, Shape, SurfaceId, DEFAULT_EMOJI_FONT};
-use crate::shapes::text_paragraph::LayoutParagraph;
+use crate::shapes::text_paragraph::{HorizontalBuilder, LayoutParagraph};
 use crate::{
     error::Result,
     math::Rect,
@@ -14,7 +14,7 @@ use crate::{
 use skia_safe::{
     self as skia,
     canvas::SaveLayerRec,
-    textlayout::{ParagraphBuilder, RectHeightStyle, RectWidthStyle, StyleMetrics, TextDecoration},
+    textlayout::{RectHeightStyle, RectWidthStyle, StyleMetrics, TextDecoration},
     Canvas, ImageFilter, Paint,
 };
 use std::borrow::Cow;
@@ -181,7 +181,7 @@ pub fn stroke_paragraph_builder_group_from_text(
         let adjustment = adjustments
             .as_ref()
             .and_then(|adjustments| adjustments[index].as_ref());
-        let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
+        let mut stroke_paragraphs_map: std::collections::HashMap<usize, HorizontalBuilder> =
             std::collections::HashMap::new();
 
         for (span_index, (((span, text), sheds), extra)) in paragraph
@@ -226,7 +226,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                             paragraph_style.set_text_align(skia::textlayout::TextAlign::Left);
                         }
                     }
-                    ParagraphBuilder::new(&paragraph_style, fonts)
+                    HorizontalBuilder::new(&paragraph_style, fonts)
                 });
                 let stroke_paint = stroke_paint.clone();
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
@@ -241,7 +241,7 @@ pub fn stroke_paragraph_builder_group_from_text(
             }
         }
 
-        let stroke_paragraphs: Vec<ParagraphBuilder> = (0..stroke_paragraphs_map.len())
+        let stroke_paragraphs: ParagraphBuilderGroup = (0..stroke_paragraphs_map.len())
             .filter_map(|i| stroke_paragraphs_map.remove(&i))
             .collect();
 
@@ -320,7 +320,7 @@ pub fn render_with_bounds_outset(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
-    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    paragraph_builders: &mut [ParagraphBuilderGroup],
     surface_id: Option<SurfaceId>,
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
@@ -348,7 +348,7 @@ pub fn render_with_bounds_outset(
 pub fn render_with_bounds_outset_overlay_emoji(
     canvas: &Canvas,
     shape: &Shape,
-    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    paragraph_builders: &mut [ParagraphBuilderGroup],
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
     stroke_bounds_outset: f32,
@@ -440,7 +440,7 @@ fn render_with_bounds_outset_inner(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
-    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    paragraph_builders: &mut [ParagraphBuilderGroup],
     surface_id: Option<SurfaceId>,
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
@@ -491,7 +491,7 @@ pub fn render(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
-    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    paragraph_builders: &mut [ParagraphBuilderGroup],
     surface_id: Option<SurfaceId>,
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
@@ -517,7 +517,7 @@ pub fn render(
 pub fn render_overlay_emoji(
     canvas: &Canvas,
     shape: &Shape,
-    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    paragraph_builders: &mut [ParagraphBuilderGroup],
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
     fill_inset: Option<f32>,
@@ -659,7 +659,7 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
 fn render_text_on_canvas(
     canvas: &Canvas,
     shape: &Shape,
-    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    paragraph_builders: &mut [ParagraphBuilderGroup],
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
     fill_inset: Option<f32>,
@@ -736,7 +736,7 @@ fn render_text_on_canvas(
 pub fn paint_text_paragraphs(
     canvas: &Canvas,
     shape: &Shape,
-    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    paragraph_builder_groups: &mut [ParagraphBuilderGroup],
 ) {
     paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false);
 }
@@ -745,7 +745,7 @@ pub fn paint_text_paragraphs(
 fn paint_text(
     canvas: &Canvas,
     shape: &Shape,
-    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    paragraph_builder_groups: &mut [ParagraphBuilderGroup],
 ) {
     paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false);
 }
@@ -771,7 +771,7 @@ pub fn paint_text_mask(canvas: &Canvas, shape: &Shape) {
 fn paint_text_with_emoji_overlay(
     canvas: &Canvas,
     shape: &Shape,
-    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    paragraph_builder_groups: &mut [ParagraphBuilderGroup],
     overlay_emoji: bool,
 ) {
     let text_content = shape.get_text_content();
@@ -1064,8 +1064,8 @@ fn paint_emoji_opaque(
 pub fn render_emoji_overlay(
     render_state: &mut RenderState,
     shape: &Shape,
-    emoji_builders: &mut [Vec<ParagraphBuilder>],
-    deco_builders: &mut [Vec<ParagraphBuilder>],
+    emoji_builders: &mut [ParagraphBuilderGroup],
+    deco_builders: &mut [ParagraphBuilderGroup],
     surface_id: SurfaceId,
     blur: Option<&ImageFilter>,
 ) {
@@ -1122,7 +1122,7 @@ pub fn render_emoji_overlay(
 fn draw_text(
     canvas: &Canvas,
     shape: &Shape,
-    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    paragraph_builder_groups: &mut [ParagraphBuilderGroup],
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
 ) {
@@ -1156,9 +1156,9 @@ fn draw_text(
 fn render_masked_stroke_on_canvas(
     canvas: &Canvas,
     shape: &Shape,
-    mask_builders: &mut [Vec<ParagraphBuilder>],
-    stroke_builders: &mut [Vec<ParagraphBuilder>],
-    fill_builders: Option<&mut [Vec<ParagraphBuilder>]>,
+    mask_builders: &mut [ParagraphBuilderGroup],
+    stroke_builders: &mut [ParagraphBuilderGroup],
+    fill_builders: Option<&mut [ParagraphBuilderGroup]>,
     stroke_mask_blend: skia::BlendMode,
     blur: Option<&ImageFilter>,
     layer_opacity: Option<f32>,
@@ -1236,9 +1236,9 @@ fn render_masked_stroke(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
-    mask_builders: &mut [Vec<ParagraphBuilder>],
-    stroke_builders: &mut [Vec<ParagraphBuilder>],
-    mut fill_builders: Option<&mut [Vec<ParagraphBuilder>]>,
+    mask_builders: &mut [ParagraphBuilderGroup],
+    stroke_builders: &mut [ParagraphBuilderGroup],
+    mut fill_builders: Option<&mut [ParagraphBuilderGroup]>,
     stroke_mask_blend: skia::BlendMode,
     surface_id: Option<SurfaceId>,
     blur: Option<&ImageFilter>,
@@ -1318,8 +1318,8 @@ pub fn render_inner_stroke(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
-    stroke_builders: &mut [Vec<ParagraphBuilder>],
-    fill_builders: &mut [Vec<ParagraphBuilder>],
+    stroke_builders: &mut [ParagraphBuilderGroup],
+    fill_builders: &mut [ParagraphBuilderGroup],
     surface_id: Option<SurfaceId>,
     blur: Option<&ImageFilter>,
     stroke_bounds_outset: f32,
@@ -1346,7 +1346,7 @@ pub fn render_outer_stroke(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
-    stroke_builders: &mut [Vec<ParagraphBuilder>],
+    stroke_builders: &mut [ParagraphBuilderGroup],
     surface_id: Option<SurfaceId>,
     blur: Option<&ImageFilter>,
     stroke_bounds_outset: f32,
