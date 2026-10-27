@@ -15,7 +15,7 @@
       store was processing when it caught the exception; a failing stream
       pipeline lists the emitters of the value, not its own event
     - on-update-loop              – never throws into the scheduler's caller;
-      reports the throttled loop with the events in flight
+      reports the throttled loop as unhandled, with the events in flight
     - flash schedules async report and toast – neither the report nor
       ntf/show is emitted synchronously
     - organization SSO recovery   – expired SSO sessions go back to the provider
@@ -572,7 +572,9 @@
        (errors/on-update-loop {:rounds 26})
        (t/is (= 1 (count @events)))
        (let [props (deref (first @events))]
-         (t/is (= "handled-exception" (::ev/name props)))
+         ;; An unhandled report: it reaches the error reports and alerts,
+         ;; not only the audit log.
+         (t/is (= "unhandled-exception" (::ev/name props)))
          (t/is (= "update loop throttled" (:hint props)))
          (t/is (str/includes? (in-flight-section (:report props))
                               "test-update-loop-source")))))))
