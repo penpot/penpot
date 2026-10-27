@@ -1342,6 +1342,70 @@ fn horizontal_ruby_glyphs_share_one_baseline() {
 }
 
 #[test]
+fn latin_readings_share_one_baseline_whatever_their_letters() {
+    // Pinyin over 友聊: the descender of "yu" lifted it above "lia" when each
+    // reading attached its own ink bottom to the base.
+    use crate::shapes::text_vertical::test_support::{provider, EM};
+    use crate::shapes::{FontFamily, FontStyle};
+    use skia_safe::FontMgr;
+
+    let font_provider = provider(include_bytes!("../../fonts/sourcesanspro-regular.ttf"));
+    let family = format!("{}", FontFamily::new(Uuid::nil(), 400, FontStyle::Normal));
+    let size = EM / 2.0;
+    let shape = |text: &str| {
+        shape_segment_with_fallbacks(
+            text,
+            size,
+            &[family.clone()],
+            &font_provider,
+            false,
+            FontFeatures::None,
+            &FontMgr::from(font_provider.clone()),
+            "zh-Hans",
+        )
+    };
+    let base = skia::Rect::from_xywh(0.0, 0.0, EM, EM);
+    for side in [RubySide::Over, RubySide::Under] {
+        let baseline = |text: &str| {
+            let span = TextSpan {
+                ruby: text.to_string(),
+                ruby_side: side,
+                font_size: EM,
+                ..make_span("友", 0.0)
+            };
+            let shaped = shape(text);
+            let glyphs = ruby_glyph_refs(text, &shaped, size);
+            assert!(glyphs.iter().all(|(_, _, _, western)| *western));
+            let line = RubyLine {
+                span: &span,
+                shaped: &shaped,
+                glyphs: &glyphs,
+                base,
+                leading_gap: 0.0,
+                room: (0.0, 0.0),
+            };
+            (line.baseline(0.0), shaped)
+        };
+        let (descender, shaped) = baseline("yu");
+        let (plain, _) = baseline("lia");
+        assert!(
+            (descender - plain).abs() < 0.01,
+            "{side:?}: yu at {descender}, lia at {plain}"
+        );
+        if side == RubySide::Over {
+            let mut bounds = [skia::Rect::default()];
+            shaped[0]
+                .font
+                .get_bounds(&shaped[0].glyphs[..1], &mut bounds, None);
+            assert!(
+                descender + bounds[0].bottom <= horizontal_annotation_over_top(base, EM) + 0.01,
+                "the descender of y reaches into the base"
+            );
+        }
+    }
+}
+
+#[test]
 fn emphasis_position_overrides_the_language_and_stacks_on_its_own_side() {
     let placement = super::emphasis::HorizontalEmphasisPlacement {
         span: 0,
