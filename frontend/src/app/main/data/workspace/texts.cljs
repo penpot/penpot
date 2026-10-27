@@ -595,14 +595,17 @@
 
 (defn update-text-range-attrs
   "Applies `attrs` to the characters [start, end) of a text shape. A range
-   that cuts a ruby or warichu span covers the whole span."
+   that cuts a ruby or warichu span covers the whole span. Spans left with
+   the same style as their neighbour are joined back."
   [shape start end attrs]
   (let [content     (decorate-range-info (:content shape))
         [start end] (annotated-span-bounds content start end)
-        new-content (-> content
-                        (split-content-at start)
-                        (split-content-at end)
-                        (update-content-range start end attrs))]
+        new-content (->> (-> content
+                             (split-content-at start)
+                             (split-content-at end)
+                             (update-content-range start end attrs))
+                         (txt/transform-nodes txt/is-paragraph-node?
+                                              #(d/update-when % :children txt/merge-equal-spans)))]
     (assoc shape :content new-content)))
 
 (defn update-text-range

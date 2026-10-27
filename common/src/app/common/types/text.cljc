@@ -247,6 +247,41 @@
         item))
     root)))
 
+(defn- span-style
+  "The text node attrs of `span` that differ from their default value, with
+   legacy numeric values as strings."
+  [span]
+  (reduce (fn [style attr]
+            (let [value (get span attr)
+                  value (if (number? value) (str value) value)]
+              (if (or (nil? value)
+                      (and (or (string? value) (coll? value)) (empty? value))
+                      (= value (get default-text-attrs attr))
+                      (= value (get cjk/span-attr-defaults attr)))
+                style
+                (assoc style attr value))))
+          {}
+          text-node-attrs))
+
+(defn- mergeable-spans?
+  [a b]
+  (and (not (cjk/annotated-span? a))
+       (not (cjk/annotated-span? b))
+       (= (span-style a) (span-style b))))
+
+(defn merge-equal-spans
+  "Joins neighbouring `spans` of a paragraph that have the same style, so
+   span boundaries only exist where the style changes. Spans with a ruby
+   reading or a warichu note are never joined: each one is its own group."
+  [spans]
+  (reduce (fn [result span]
+            (let [prev (peek result)]
+              (if (and (some? prev) (mergeable-spans? prev span))
+                (conj (pop result) (update prev :text str (:text span)))
+                (conj result span))))
+          []
+          spans))
+
 (defn update-text-content
   [shape pred-fn update-fn attrs]
   (let [update-attrs-fn #(update-fn % attrs)

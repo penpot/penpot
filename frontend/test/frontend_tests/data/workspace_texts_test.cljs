@@ -920,3 +920,31 @@
          (rx/subs! #(swap! events conj %)))
     (let [updates (filter #(= ::dwsh/update-shapes (ptk/type %)) @events)]
       (t/is (= 1 (count updates))))))
+
+(defn- spans-of
+  [shape]
+  (->> (:content shape) (txt/node-seq txt/is-text-node?) (mapv #(select-keys % [:text :ruby :text-combine-upright]))))
+
+(defn- one-span-text
+  [text]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph"
+                           :children [{:text text :font-size "20"}]}]}]})
+
+(t/deftest update-text-range-joins-spans-left-with-the-same-style
+  (t/testing "the same style set over overlapping ranges ends in one span"
+    (let [shape (-> {:content (one-span-text "ab123c")}
+                    (dwt/update-text-range-attrs 3 5 {:text-combine-upright "all"})
+                    (dwt/update-text-range-attrs 2 5 {:text-combine-upright "all"}))]
+      (t/is (= [{:text "ab"} {:text "123" :text-combine-upright "all"} {:text "c"}]
+               (spans-of shape)))))
+
+  (t/testing "removing per-character readings lets a group reading cover the word"
+    (let [shape (reduce (fn [shape [idx reading]]
+                          (dwt/update-text-range-attrs shape idx (inc idx) {:ruby reading}))
+                        {:content (one-span-text "一盅兩件")}
+                        (map-indexed vector ["jat1" "zung1" "loeng5" "gin6"]))
+          shape (dwt/update-text-range-attrs shape 0 4 {:ruby nil})]
+      (t/is (= [{:text "一盅兩件"}] (spans-of shape)))
+      (t/is (dwt/single-span-range? (:content shape) 0 4)))))

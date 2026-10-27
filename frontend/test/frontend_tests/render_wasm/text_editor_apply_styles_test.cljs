@@ -100,3 +100,15 @@
   (t/testing "a collapsed selection has no selected spans"
     (let [c (content [(para [(span "hello" [red])])])]
       (t/is (nil? (text-editor/selection-fills c (selection 0 2 0 2)))))))
+
+(t/deftest apply-attrs-joins-spans-left-with-the-same-style
+  (t/testing "extending a style over its neighbour leaves one span"
+    (let [para   {:children [{:text "ab"} {:text "12" :text-combine-upright "all"} {:text "3c"}]}
+          result (apply-attrs-to-paragraph para 4 5 {:text-combine-upright "all"})]
+      (t/is (= [{:text "ab"} {:text "123" :text-combine-upright "all"} {:text "c"}]
+               (:children result)))))
+
+  (t/testing "resetting a style to its default rejoins the text"
+    (let [para   {:children [{:text "ab"} {:text "cd" :text-emphasis "filled-dot"} {:text "ef"}]}
+          result (apply-attrs-to-paragraph para 2 4 {:text-emphasis "none"})]
+      (t/is (= [{:text "abcdef"}] (:children result))))))
