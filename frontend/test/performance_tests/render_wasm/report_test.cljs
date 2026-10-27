@@ -174,6 +174,100 @@
     (t/is (= ::result/invalid-record (:type (error-data #(result/finish-run run "end" {:reason :completed})))))
     (t/is (= ::result/invalid-record (:type (error-data #(result/record-attempt ended {})))))))
 
+(t/deftest completed-runs-reject-failed-warmups-and-measured-attempts
+  (doseq [failed-warmup? [true false]]
+    (let [run     (-> (result/create-run {:run-id "failed" :started-at "start"
+                                          :plan {:cases [saved-case] :warmups 1 :repetitions 1}
+                                          :metadata metadata})
+                      (result/record-preparation preparation)
+                      (result/record-attempt {:case-id :saved/pan :preparation-id :prep/one
+                                              :warmup? true
+                                              :outcome (if failed-warmup? :failed :completed)
+                                              :metrics {metric-id (entry 1000)} :trace {}})
+                      (result/record-attempt {:case-id :saved/pan :preparation-id :prep/one
+                                              :warmup? false
+                                              :outcome (if failed-warmup? :completed :failed)
+                                              :metrics {metric-id (entry 2)} :trace {}}))
+          forged  (assoc run :ended-at "end" :termination {:reason :completed})
+          failed  (result/finish-run run "end" {:reason :failed})]
+      (t/is (= {:warmups 0 :repetitions 0} (get-in run [:remaining :saved/pan])))
+      (t/is (= ::result/invalid-record
+               (:type (error-data #(result/finish-run run "end" {:reason :completed})))))
+      (t/is (= ::result/invalid-record (:type (error-data #(result/check-run forged)))))
+      (t/is (= ::result/invalid-record
+               (:type (error-data #(result/decode (transit/encode-str forged))))))
+      (t/is (= failed (-> failed result/encode result/decode)))))
+  (let [completed (result/finish-run (run-with [2] {:warmups 1}) "end" {:reason :completed})]
+    (t/is (= completed (-> completed result/encode result/decode)))))
+
+(t/deftest reports-show-failed-warmups-without-changing-measured-counts
+  (let [failed     {:case-id :saved/pan :preparation-id :prep/one :warmup? true
+                    :outcome :failed :metrics {metric-id (entry 1000)}
+                    :trace {:render-slices [3]}
+                    :failure {:stage :warmup :message "warmup render failed"}
+                    :partial {:phase :render-full}}
+        base       (-> (run-with [1 2] {:warmups 1})
+                       (result/finish-run "end" {:reason :completed})
+                       result/encode result/decode)
+        other      (-> (result/create-run {:run-id "candidate" :started-at "start"
+                                           :plan {:cases [saved-case] :warmups 1 :repetitions 2}
+                                           :metadata metadata})
+                       (result/record-preparation preparation)
+                       (result/record-attempt failed)
+                       (result/record-attempt {:case-id :saved/pan :preparation-id :prep/one
+                                               :warmup? false :outcome :completed
+                                               :metrics {metric-id (entry 2)} :trace {}})
+                       (result/record-attempt {:case-id :saved/pan :preparation-id :prep/one
+                                               :warmup? false :outcome :completed
+                                               :metrics {metric-id (entry 4)} :trace {}})
+                       (result/finish-run "end" {:reason :failed
+                                                 :failure {:message "warmup render failed"}})
+                       result/encode result/decode)
+        report     (summary/summarize other)
+        comparison (-> (compare/compare-runs base other) result/encode result/decode)
+        counts     {:valid 2 :invalid 0 :absent 0 :failed 0 :unattempted 0 :warmup 1}
+        evidence   [(assoc failed :ordinal 0)]
+        text       (format/format-comparison comparison)]
+    (t/is (= evidence (get-in report [:cases 0 :failed-attempts])))
+    (t/is (= evidence (get-in comparison [:pairs 0 :candidate :failed-attempts])))
+    (t/is (= counts (get-in report [:cases 0 :metrics metric-id :counts])))
+    (t/is (= counts (get-in comparison [:pairs 0 :candidate :metrics metric-id :counts])))
+    (t/is (= 3 (get-in comparison [:pairs 0 :candidate :metrics metric-id :statistics :median :value])))
+    (t/is (str/includes? text "Baseline termination {:reason :completed}"))
+    (t/is (str/includes? text "Candidate termination {:reason :failed"))
+    (doseq [output [text (format/format-run report)]]
+      (t/is (str/includes? output "failed-warmups=1"))
+      (t/is (str/includes? output "warmup render failed"))
+      (t/is (str/includes? output ":phase :render-full"))
+      (t/is (str/includes? output ":render-slices [3]")))))
+
+(t/deftest comparisons-display-running-interrupted-and-preparation-failure-status
+  (let [base (-> (run-with [1] {:repetitions 2}) result/encode result/decode)]
+    (doseq [termination [{:reason :running}
+                         {:reason :interrupted :signal "SIGINT"}
+                         {:reason :preparation-error :failure {:message "cannot prepare renderer"}}]]
+      (let [other      (if (= :running (:reason termination))
+                         base
+                         (result/finish-run base "end" termination))
+            comparison (-> (compare/compare-runs other other) result/encode result/decode)
+            text       (format/format-comparison comparison)]
+        (t/is (str/includes? text (str "Baseline termination " (pr-str termination))))
+        (t/is (str/includes? text (str "Candidate termination " (pr-str termination))))
+        (t/is (str/includes? text "remaining {:warmups 0, :repetitions 1}"))))
+    (let [empty      (result/create-run {:run-id "empty" :started-at "start"
+                                         :plan {:cases [saved-case] :warmups 0 :repetitions 2}
+                                         :metadata metadata})
+          stopped    (-> empty
+                         (result/finish-run "end" {:reason :preparation-error
+                                                   :failure {:message "cannot prepare renderer"}})
+                         result/encode result/decode)
+          report     (summary/summarize stopped)
+          text       (format/format-run report)]
+      (t/is (str/includes? text ":reason :preparation-error"))
+      (t/is (str/includes? text "cannot prepare renderer"))
+      (t/is (str/includes? text "remaining {:warmups 0, :repetitions 2}"))
+      (t/is (empty? (get-in report [:cases 0 :metrics]))))))
+
 (t/deftest invalid-missing-and-failed-evidence
   (let [run (run-with [1 js/NaN js/Infinity js/-Infinity 0 nil :absent :failed])
         obs (summary/observations run :saved/pan metric-id)]
@@ -230,7 +324,7 @@
           saved   (-> run
                       (result/record-attempt failed)
                       (result/record-attempt attempt)
-                      (result/finish-run "end" {:reason :completed})
+                      (result/finish-run "end" {:reason :failed})
                       result/encode
                       result/decode)
           report  (summary/summarize saved)]
@@ -407,10 +501,12 @@
              [:timeout-policy (assoc-in (run-with [3]) [:plan :timeout-policy :attempt-ms] 100)]]]
       (let [changed    (-> changed result/encode result/decode)
             rejected   (error-data #(compare/compare-runs base changed))
+            selected   (error-data #(compare/compare-runs base changed {:pairs [[:saved/pan :saved/pan]]}))
             forced     (compare/compare-runs base changed {:force true})
             mismatches (get-in forced [:pairs 0 :mismatches])
             text       (format/format-comparison forced)]
         (t/is (= ::compare/incompatible (:type rejected)))
+        (t/is (= rejected selected))
         (t/is (:forced? forced))
         (t/is (= [field] (mapv :field mismatches)))
         (t/is (= (:mismatches rejected) mismatches))
@@ -419,7 +515,7 @@
         (t/is (str/includes? text "MISMATCHES"))
         (t/is (str/includes? text (str ":field " (pr-str field))))))))
 
-(t/deftest explicit-pairs-keep-non-case-checks-and-exact-names
+(t/deftest explicit-pairs-select-cases-without-waiving-compatibility
   (let [base           (run-with [1])
         other          (-> (run-with [2] {:definition (assoc saved-case :id :different/zoom :scene :different
                                                              :operation {:steps 8} :batch-size 20
@@ -428,12 +524,20 @@
                            result/encode
                            result/decode)
         pairs          (compare/selector-pair base other "saved/pan,different/zoom")
-        comparison     (compare/compare-runs base other {:pairs pairs})
+        rejected       (error-data #(compare/compare-runs base other {:pairs pairs}))
+        comparison     (-> (compare/compare-runs base other {:pairs pairs :force true})
+                           result/encode result/decode)
         execution      (first (filter #(= :execution (:field %)) (get-in comparison [:pairs 0 :mismatches])))
         execution-keys [:scene :operation :batch-size :completion :preparation]]
     (t/is (= [[:saved/pan :different/zoom]] pairs))
     (t/is (= 1 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))
-    (t/is (every? :waived? (get-in comparison [:pairs 0 :mismatches])))
+    (t/is (= ::compare/incompatible (:type rejected)))
+    (t/is (= #{:execution :fingerprint} (set (map :field (:mismatches rejected)))))
+    (t/is (= (:mismatches rejected) (get-in comparison [:pairs 0 :mismatches])))
+    (t/is (every? #(false? (:waived? %)) (get-in comparison [:pairs 0 :mismatches])))
+    (t/is (str/includes? (format/format-comparison comparison) "FORCED COMPARISON"))
+    (t/is (str/includes? (format/format-comparison comparison) ":field :execution"))
+    (t/is (str/includes? (format/format-comparison comparison) ":field :fingerprint"))
     (t/is (= {:scene :saved :operation {:steps 3}
               :batch-size 1 :completion :render-full :preparation {}}
              (select-keys (:baseline execution) execution-keys)))
@@ -451,13 +555,24 @@
       (t/is (= ::compare/incompatible (:type rejected)))
       (t/is (:forced? forced))
       (t/is (= (:mismatches rejected) mismatches))
-      (t/is (= [{:field :scored? :baseline true :candidate false :waived? false}]
-               (vec (remove :waived? mismatches))))
+      (t/is (= #{:execution :fingerprint :scored?} (set (map :field mismatches))))
+      (t/is (every? #(false? (:waived? %)) mismatches))
       (t/is (str/includes? text "FORCED COMPARISON"))
       (t/is (str/includes? text "MISMATCHES"))
       (t/is (str/includes? text ":field :scored?")))
     (t/is (= ["saved/pan"] (:available (error-data #(compare/resolve-case base "pan")))))
     (t/is (= ::compare/invalid-selector (:type (error-data #(compare/selector-pair base other "saved/pan")))))))
+
+(t/deftest explicit-pairs-allow-unlike-names-with-matching-execution-and-fingerprints
+  (let [base       (-> (run-with [1]) result/encode result/decode)
+        other      (-> (run-with [2] {:definition (assoc saved-case :id :different/zoom)})
+                       result/encode result/decode)
+        comparison (-> (compare/compare-runs base other {:pairs [[:saved/pan :different/zoom]]})
+                       result/encode result/decode)]
+    (t/is (false? (:forced? comparison)))
+    (t/is (true? (get-in comparison [:pairs 0 :explicit?])))
+    (t/is (empty? (get-in comparison [:pairs 0 :mismatches])))
+    (t/is (= 1 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))))
 
 (t/deftest force-preserves-metric-definitions-and-excludes-failed-values
   (let [base (run-with [1 :failed])

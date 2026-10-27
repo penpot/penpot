@@ -26,6 +26,11 @@
   [run case-id]
   (filterv #(= case-id (:case-id %)) (:attempts run)))
 
+(defn get-failed-attempts
+  "Returns failed warmup and measured attempts with their saved evidence."
+  [run case-id]
+  (filterv #(= :failed (:outcome %)) (case-attempts run case-id)))
+
 (defn metric-ids
   "Discovers dynamic metric identifiers in first-appearance order, including failures."
   [run case-id]
@@ -57,7 +62,8 @@
   :unattempted counts remaining measured repetitions; case :remaining also
   retains pending warmups. :warmup counts executed warmup attempts.
   Failed measured attempts count as failed even with partial metrics.
-  Failed warmups count as warmup attempts."
+  Failed warmups count as warmup attempts; case :failed-attempts retains
+  their failures separately from measured observation counts."
   [run case-id metric-id]
   (reduce
    (fn [out {:keys [warmup? outcome metrics]}]
@@ -109,6 +115,7 @@
                       :definition definition
                       :preparations (filterv #(= id (:case-id %)) (:preparations run))
                       :remaining (get-in run [:remaining id])
+                      :failed-attempts (get-failed-attempts run id)
                       :metrics (into {} (map (fn [metric-id]
                                                [metric-id (summarize-metric run id metric-id analysis)]))
                                      (metric-ids run id))})

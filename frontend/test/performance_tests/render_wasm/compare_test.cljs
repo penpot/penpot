@@ -111,14 +111,28 @@
       (finally
         (.chdir js/process previous)))))
 
-(t/deftest compare-cases-selects-one-explicit-baseline-candidate-pair
+(t/deftest cases-selects-one-explicit-baseline-candidate-pair
   (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
                              (make-run "baseline" :a/pan 10))
         candidate (write-run (path/join @temporary-root "candidate.transit")
-                             (make-run "candidate" :b/pan 12 :scene :other))
+                             (make-run "candidate" :b/pan 12))
         {:keys [text]} (compare/execute baseline candidate
-                                        {:compare-cases "a/pan,b/pan"})]
+                                        {:cases "a/pan,b/pan"})]
     (t/is (str/includes? text "Pair a/pan,b/pan"))))
+
+(t/deftest cases-requires-force-for-different-scenes
+  (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
+                             (make-run "baseline" :a/load 10))
+        candidate (write-run (path/join @temporary-root "candidate.transit")
+                             (make-run "candidate" :b/load 12 :scene :other))
+        selector  {:cases "a/load,b/load"}]
+    (t/is (= ::report-compare/incompatible
+             (:type (ex-data (failure #(compare/execute baseline candidate selector))))))
+    (let [{:keys [comparison text]}
+          (compare/execute baseline candidate (assoc selector :force true))]
+      (t/is (true? (:forced? comparison)))
+      (t/is (str/includes? text "MISMATCHES"))
+      (t/is (str/includes? text "Pair a/load,b/load")))))
 
 (t/deftest force-bypasses-differences-and-displays-them
   (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
@@ -140,7 +154,7 @@
     (doseq [selector ["case/load" "case/load,other/load,third/load" ""]]
       (t/is (= ::report-compare/invalid-selector
                (:type (ex-data (failure #(compare/execute baseline candidate
-                                                          {:compare-cases selector})))))))
+                                                          {:cases selector})))))))
     (fs/writeFileSync (path/join @temporary-root "broken.transit") "not transit")
     (t/is (thrown? js/Error (compare/execute baseline
                                              (path/join @temporary-root "broken.transit")

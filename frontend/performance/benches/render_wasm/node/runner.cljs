@@ -5,13 +5,12 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.runner
-  "Build preparation, serial runs, offline comparison and managed cleanup."
+  "CLI parsing, offline comparison and deferred execution commands."
   (:require
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.build :as build]
+   ["path" :as path]
+   [app.common.transit :as transit]
    [benches.render-wasm.node.compare :as compare]
-   [benches.render-wasm.node.process :as process]
-   [benches.render-wasm.node.run :as run]
+   [benches.render-wasm.node.options :as options]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]))
 
@@ -49,7 +48,7 @@
   [["-h" "--help" "Print this help"]
    [nil "--[no-]default-features" "Enable Cargo defaults" :default true]
    [nil "--features FEATURES" "Comma-separated functional Cargo features"
-    :parse-fn build/parse-feature-list]
+    :parse-fn options/parse-feature-list]
    [nil "--build ID" "Reuse a ready build" :id :build-id
     :validate nonempty]
    [nil "--filter SUBSTR" "Select cases whose id contains SUBSTR"]
@@ -62,10 +61,10 @@
    [nil "--timeout-ms MS" "Attempt deadline" :default 30000
     :parse-fn parse-number :validate positive-timeout]
    [nil "--build-timeout-ms MS" "Complete preparation deadline"
-    :default process/default-build-timeout-ms
+    :default options/default-build-timeout-ms
     :parse-fn parse-number :validate positive-timeout]
    [nil "--startup-timeout-ms MS" "Host/browser readiness deadline"
-    :default process/default-startup-timeout-ms
+    :default options/default-startup-timeout-ms
     :parse-fn parse-number :validate positive-timeout]
    [nil "--output-dir DIR" "Explicit run home; must not exist"
     :validate nonempty]
@@ -73,7 +72,7 @@
    [nil "--screenshots" "Capture one screenshot per case"]
    [nil "--only-builds" "Purge build attempts"]
    [nil "--only-runs" "Purge managed runs"]
-   [nil "--compare-cases A,B" "Compare one explicit baseline,candidate pair"]
+   [nil "--cases A,B" "Select one baseline,candidate pair"]
    [nil "--force" "Bypass comparison compatibility checks"]])
 
 (defn usage
@@ -81,7 +80,7 @@
   (str "Usage: runner build [options]\n"
        "       runner purge [--only-builds | --only-runs]\n"
        "       runner run [options]\n"
-       "       runner compare BASELINE CANDIDATE [--compare-cases A,B] [--force]\n\n"
+       "       runner compare BASELINE CANDIDATE [--cases A,B] [--force]\n\n"
        "build prints one attempt ID after storage initialization. Exit 0 means\n"
        "ready; errors retain the build.transit and build.log for that ID.\n"
        "run prints one run ID on stdout. Progress, failures and the summary go\n"
@@ -139,7 +138,7 @@
   #{"--only-builds" "--only-runs"})
 
 (def ^:private compare-flags
-  #{"--compare-cases" "--force"})
+  #{"--cases" "--force"})
 
 (defn- invalid-args
   [message]
@@ -223,76 +222,23 @@
   (when-let [data (ex-data cause)]
     (.error js/console (pr-str data))))
 
-(defn- ^:async run-command
-  [root options]
-  (let [controller   (js/AbortController.)
-        signal       (.-signal controller)
-        interrupted  (atom nil)
-        remove-signals (process/on-signals
-                        (fn [name]
-                          (when-not (.-aborted signal)
-                            (reset! interrupted name)
-                            (.abort controller
-                                    (ex-info "run interrupted"
-                                             {:type ::interrupted :signal name})))))]
-    (try
-      (let [result (await (run/run root options signal
-                                   #(.write (.-stderr js/process) %)
-                                   #(println %)))]
-        (when-let [error (:error result)]
-          (print-error error))
-        (set! (.-exitCode js/process) (:exit-code result)))
-      (catch :default cause
-        (print-error cause)
-        (set! (.-exitCode js/process)
-              (case @interrupted
-                "SIGINT" 130
-                "SIGTERM" 143
-                1)))
-      (finally
-        (remove-signals)))))
-
-(defn- ^:async build-command
-  [root options]
-  (let [controller     (js/AbortController.)
-        remove-signals (process/on-signals #(.abort controller %))]
-    (try
-      (await (build/prepare {:root root
-                             :features {:default-features? (:default-features options)
-                                        :features (or (:features options) [])}
-                             :build-timeout-ms (:build-timeout-ms options)
-                             :signal (.-signal controller)
-                             :on-created #(println (:id %))}))
-      (finally (remove-signals)))))
-
-(defn- ^:async compare-command
-  [arguments options]
-  (let [{:keys [text]} (compare/execute (second arguments) (nth arguments 2)
-                                        (select-keys options [:compare-cases :force]))]
-    (println text)))
-
 (defn ^:async -main
   [& args]
   (try
-    (let [{:keys [command arguments options summary]} (parse-args args)
-          root (artifacts/frontend-root)]
+    (let [{:keys [command arguments options summary] :as request} (parse-args args)]
       (cond
         (:help options)
         (println (usage summary))
 
-        (= command "purge")
-        (artifacts/purge root (cond (:only-builds options) :builds
-                                    (:only-runs options) :runs
-                                    :else :all))
-
-        (= command "build")
-        (await (build-command root options))
-
-        (= command "run")
-        (await (run-command root options))
-
         (= command "compare")
-        (await (compare-command arguments options))))
+        (println (:text (compare/execute (second arguments) (nth arguments 2)
+                                         (select-keys options [:cases :force]))))
+
+        :else
+        (let [^js commands (js/require (path/join js/__dirname "commands.cjs"))]
+          (set! (.-exitCode js/process)
+                (await (.execute commands
+                                 (transit/encode-str (select-keys request [:command :options]))))))))
     (catch :default cause
       (print-error cause)
       (when (= ::invalid-args (:type (ex-data cause)))

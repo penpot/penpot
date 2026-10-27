@@ -145,6 +145,7 @@
    [:case-id some?] [:definition [:map [:id some?]]]
    [:preparations [:vector schema:preparation]]
    [:remaining [:map {:closed true} [:warmups [:int {:min 0}]] [:repetitions [:int {:min 0}]]]]
+   [:failed-attempts [:vector schema:attempt]]
    [:metrics [:map-of :any schema:metric-report]]])
 
 (def schema:provenance
@@ -229,6 +230,15 @@
                     "measured attempt precedes planned warmups" {:case-id case-id})
     (update-in remaining path dec)))
 
+(defn- check-completion
+  "Requires all planned attempts to succeed before a run can be completed."
+  [run termination]
+  (when (= :completed (:reason termination))
+    (require-valid! (every? #(every? zero? (vals %)) (vals (:remaining run)))
+                    "completed run still has unattempted slots" {})
+    (require-valid! (not-any? #(= :failed (:outcome %)) (:attempts run))
+                    "completed run has failed attempts" {})))
+
 (defn check-run
   "Validates schema3 and chronological accounting at a saved-data boundary.
   Unsupported versions fail without invoking a legacy reader or case registry."
@@ -257,9 +267,7 @@
         (require-valid! (= (:invalid-reason entry)
                            (or (invalid-reason entry) (:invalid-reason entry)))
                         "metric validity disagrees with raw value" {:metric-id id})))
-    (when (= :completed (get-in run [:termination :reason]))
-      (require-valid! (every? #(every? zero? (vals %)) (vals left))
-                      "completed run still has unattempted slots" {})))
+    (check-completion run (:termination run)))
   run)
 
 (defn create-run
@@ -318,9 +326,7 @@
   (check-open! run)
   (require-valid! (sm/validate schema:termination termination) "invalid termination" {})
   (require-valid! (not= :running (:reason termination)) "termination needs an end reason" {})
-  (when (= :completed (:reason termination))
-    (require-valid! (every? #(every? zero? (vals %)) (vals (:remaining run)))
-                    "completed run still has unattempted slots" {}))
+  (check-completion run termination)
   (assoc run :ended-at ended-at :termination termination))
 
 (defn check-record

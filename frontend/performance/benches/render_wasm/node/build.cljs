@@ -20,27 +20,9 @@
    [benches.render-wasm.identity :as identity]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.catalog :as catalog]
+   [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.process :as process]
    [clojure.string :as str]))
-
-(def diagnostic-features #{"stats" "profile" "profile-macros" "profile-raf"})
-
-(defn feature-selection
-  "Validates measurement feature selection before allocating an attempt.
-  Cargo validates functional feature names during the retained build."
-  [{:keys [default-features? features]
-    :or {default-features? true features []}}]
-  (when-not (and (boolean? default-features?) (vector? features)
-                 (every? #(and (string? %) (re-matches #"[A-Za-z0-9_-]+" %)) features))
-    (throw (ex-info "invalid Cargo feature selection" {:type ::invalid-features})))
-  (when-let [selected (seq (filter diagnostic-features features))]
-    (throw (ex-info "measurement builds cannot enable diagnostic Cargo features"
-                    {:type ::diagnostic-features :features (vec selected)})))
-  {:default-features? default-features? :features (vec (sort (distinct features)))})
-
-(defn parse-feature-list
-  [text]
-  (:features (feature-selection {:features (mapv str/trim (str/split text #"," -1))})))
 
 (defn ^:async git-provenance
   "Captures revision and dirty state through the same bounded child boundary."
@@ -90,11 +72,11 @@
   Storage errors have no recorded ID. Later errors carry :build-id and :phase.
   A retry always creates a new attempt."
   [{:keys [root features build-timeout-ms signal on-created]
-    :or {build-timeout-ms process/default-build-timeout-ms}}]
+    :or {build-timeout-ms options/default-build-timeout-ms}}]
   (when-not (and (js/Number.isSafeInteger build-timeout-ms) (pos? build-timeout-ms))
     (throw (ex-info "build timeout must be a positive integer" {:type ::invalid-timeout})))
   (let [root      (or root (artifacts/frontend-root))
-        selection (feature-selection features)
+        selection (options/feature-selection features)
         deadline  (process/deadline build-timeout-ms)
         bounds    {:deadline deadline :signal signal}
         initial   (artifacts/create-build root selection {:git {:sha nil :dirty nil}
@@ -124,8 +106,8 @@
                                           "RENDER_WASM_SHARED_ARTIFACT" (path/join (:renderer-dir build) "shared.js")
                                           "RENDER_WASM_BUILD_INFO" facts-path}})))
         (let [facts    (js->clj (js/JSON.parse (fs/readFileSync facts-path "utf8")) :keywordize-keys true)
-              resolved (:features (feature-selection {:features (:features facts)
-                                                      :default-features? (:default-features? selection)}))]
+              resolved (:features (options/feature-selection {:features (:features facts)
+                                                              :default-features? (:default-features? selection)}))]
           (when-not (and (= "3" (get-in facts [:profile :opt_level]))
                          (false? (get-in facts [:profile :debug_assertions])))
             (throw (ex-info "Cargo did not produce an optimized renderer"

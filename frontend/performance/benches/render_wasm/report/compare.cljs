@@ -36,14 +36,14 @@
   [baseline candidate selector]
   (let [names (str/split selector #"," -1)]
     (when-not (and (= 2 (count names)) (every? seq names))
-      (throw (ex-info "--compare-cases requires one exact A,B pair" {:type ::invalid-selector})))
+      (throw (ex-info "--cases requires one exact A,B pair" {:type ::invalid-selector})))
     [[(resolve-case baseline (first names)) (resolve-case candidate (second names))]]))
 
 (defn- difference
   "Returns one compatibility difference when recorded values disagree."
-  [field baseline candidate waived?]
+  [field baseline candidate]
   (when (not= baseline candidate)
-    {:field field :baseline baseline :candidate candidate :waived? waived?}))
+    {:field field :baseline baseline :candidate candidate :waived? false}))
 
 (defn- preparations
   "Returns chronological preparation evidence for an exact saved case."
@@ -63,40 +63,40 @@
 
 (defn- evidence-differences
   "Checks cross-run equality plus missing or varying preparation evidence."
-  [field baseline candidate waived?]
+  [field baseline candidate]
   (concat
-   (when-let [d (difference field baseline candidate waived?)] [d])
+   (when-let [d (difference field baseline candidate)] [d])
    (when (or (not= 1 (count baseline)) (not= 1 (count candidate)))
      [{:field [field :incomplete-or-varying-evidence]
-       :baseline baseline :candidate candidate :waived? waived?}])))
+       :baseline baseline :candidate candidate :waived? false}])))
 
 (defn- pair-differences
   "Checks saved inputs, graphics, environment, build, sampling and metric definitions."
-  [baseline candidate b c shared explicit?]
+  [baseline candidate b c shared]
   (let [bdef (some #(when (= b (:id %)) %) (get-in baseline [:plan :cases]))
         cdef (some #(when (= c (:id %)) %) (get-in candidate [:plan :cases]))]
     (vec
      (concat
       (keep identity
-            [(difference :execution (execution-settings bdef) (execution-settings cdef) explicit?)
+            [(difference :execution (execution-settings bdef) (execution-settings cdef))
              (difference :environment (get-in baseline [:metadata :environment])
-                         (get-in candidate [:metadata :environment]) false)
+                         (get-in candidate [:metadata :environment]))
              (difference :functional-build (get-in baseline [:metadata :build :functional])
-                         (get-in candidate [:metadata :build :functional]) false)
+                         (get-in candidate [:metadata :build :functional]))
              (difference :warmups (get-in baseline [:plan :warmups])
-                         (get-in candidate [:plan :warmups]) false)
+                         (get-in candidate [:plan :warmups]))
              (difference :timeout-policy (get-in baseline [:plan :timeout-policy])
-                         (get-in candidate [:plan :timeout-policy]) false)
+                         (get-in candidate [:plan :timeout-policy]))
              (difference :scored? (get-in baseline [:metadata :scored?])
-                         (get-in candidate [:metadata :scored?]) false)])
+                         (get-in candidate [:metadata :scored?]))])
       (evidence-differences :fingerprint (preparation-facts baseline b :fingerprint)
-                            (preparation-facts candidate c :fingerprint) explicit?)
+                            (preparation-facts candidate c :fingerprint))
       (evidence-differences :effective-graphics (preparation-facts baseline b :effective-graphics)
-                            (preparation-facts candidate c :effective-graphics) false)
+                            (preparation-facts candidate c :effective-graphics))
       (mapcat (fn [metric-id]
                 (let [bdefs (summary/definitions baseline b metric-id)
                       cdefs (summary/definitions candidate c metric-id)]
-                  (evidence-differences [:metric metric-id] (set bdefs) (set cdefs) false)))
+                  (evidence-differences [:metric metric-id] (set bdefs) (set cdefs))))
               shared)))))
 
 (defn- side-report
@@ -106,6 +106,7 @@
    :definition (some #(when (= id (:id %)) %) (get-in run [:plan :cases]))
    :preparations (preparations run id)
    :remaining (get-in run [:remaining id])
+   :failed-attempts (summary/get-failed-attempts run id)
    :metrics (into {} (map (fn [metric-id]
                             [metric-id (summary/summarize-metric run id metric-id analysis force)])) shared)})
 
@@ -116,11 +117,11 @@
         c          (resolve-case candidate c)
         candidate-ids (set (summary/metric-ids candidate c))
         shared     (filterv #(contains? candidate-ids %) (summary/metric-ids baseline b))
-        mismatches (pair-differences baseline candidate b c shared explicit?)]
+        mismatches (pair-differences baseline candidate b c shared)]
     (when (empty? shared)
       (throw (ex-info "selected cases have no shared metric identifiers"
                       {:type ::no-shared-metrics :baseline b :candidate c})))
-    (when (and (not force) (some #(not (:waived? %)) mismatches))
+    (when (and (not force) (seq mismatches))
       (throw (ex-info "incompatible saved runs"
                       {:type ::incompatible :baseline b :candidate c :mismatches mismatches})))
     {:explicit? explicit?
@@ -145,12 +146,12 @@
   Inputs must already satisfy the `:runrecord` contract. Encoding validates the
   returned comparison at the boundary.
 
-  Default pairs are over identical identifiers. This can be overriden by picking
-  explicit pairs, or by bypassing all checks.
+  Default pairs use identical identifiers. Explicit pairs select cases without
+  changing compatibility checks.
 
   - `:pairs` accepts an extensible vector of explicit [baseline candidate] pairs.
-  - `:force` allows comparing any two records, but obviusly only compares metrics
-     common to both.
+  - `:force` allows all compatibility mismatches, retaining them in the report.
+    Only shared metrics are compared, using raw values without conversions.
   - `:analysis` resolves from method defaults, independent of each run's defaults."
   ([baseline candidate] (compare-runs baseline candidate {}))
   ([baseline candidate {:keys [pairs force analysis]}]

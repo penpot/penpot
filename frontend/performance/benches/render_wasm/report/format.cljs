@@ -50,6 +50,14 @@
               " MAD " (estimate->text (:mad statistics))
               " p95 " (estimate->text (:p95 statistics)) " p99 " (estimate->text (:p99 statistics))))))
 
+(defn- case-status->text
+  "Displays pending slots and failed attempts, including excluded warmups."
+  [{:keys [remaining failed-attempts]}]
+  (str " remaining " (pr-str remaining)
+       " failed-warmups=" (count (filter :warmup? failed-attempts))
+       (when (seq failed-attempts)
+         (str "\n  failed attempts " (pr-str failed-attempts)))))
+
 (defn format-run
   "Formats a summary without browser, registry or renderer access."
   [{:keys [run-id metadata analysis termination source-coverage interpretation cases]}]
@@ -59,16 +67,17 @@
        "\n" source-coverage "\n" interpretation
        (when (some #(get-in % [:effective-graphics :software])
                    (mapcat :preparations cases)) "\nSOFTWARE RENDERER recorded")
-       (apply str (map (fn [{:keys [case-id remaining metrics]}]
+       (apply str (map (fn [{:keys [case-id metrics] :as case-report}]
                          (str "\n\nCase " (result/case-name case-id)
-                              " remaining " (pr-str remaining)
+                              (case-status->text case-report)
                               (apply str (map (fn [[id metric]] (str "\n" (metric->text id metric))) metrics))))
                        cases))))
 
 (defn- side->text
   "Displays one comparison side's definitions, preparation facts and observations."
-  [label {:keys [case-id definition preparations metrics]}]
+  [label {:keys [case-id definition preparations metrics] :as side}]
   (str "\n" label " " (result/case-name case-id)
+       (case-status->text side)
        "\n  case " (pr-str definition)
        "\n  preparations " (pr-str preparations)
        (apply str (map (fn [[id metric]] (str "\n" (metric->text id metric))) metrics))))
@@ -83,7 +92,9 @@
                                               (get-in pair [:candidate :preparations]))) pairs))
          "SOFTWARE RENDERER recorded\n")
        "Baseline " (pr-str (:run-id baseline)) " Git " (pr-str (get-in baseline [:metadata :git]))
+       "\nBaseline termination " (pr-str (:termination baseline))
        "\nCandidate " (pr-str (:run-id candidate)) " Git " (pr-str (get-in candidate [:metadata :git]))
+       "\nCandidate termination " (pr-str (:termination candidate))
        "\nAnalysis " (pr-str analysis) "\n" source-coverage "\n" interpretation
        (apply str
               (map (fn [{:keys [baseline candidate mismatches metrics]}]

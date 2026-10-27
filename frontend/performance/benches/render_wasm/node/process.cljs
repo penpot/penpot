@@ -11,8 +11,6 @@
    ["fs" :as fs]
    [clojure.string :as str]))
 
-(def default-build-timeout-ms 300000)
-(def default-startup-timeout-ms 30000)
 (def default-termination-grace-ms 5000)
 
 (defn deadline

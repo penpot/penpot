@@ -24,18 +24,18 @@
 (defn execute
   "Reads and compares two saved run files.
 
-  options: :compare-cases is one exact A,B selector; A belongs to baseline and
+  options: :cases is one exact A,B selector; A belongs to baseline and
   B to the candidate. :force bypasses compatibility checks. Returns the
   validated `comparison` and its formatted text."
-  [baseline-path candidate-path {:keys [compare-cases force]}]
+  [baseline-path candidate-path {:keys [cases force]}]
   (let [baseline   (read-run baseline-path)
         candidate  (read-run candidate-path)
         comparison (result/check-record
                     (compare/compare-runs
                      baseline candidate
                      (cond-> {:force (boolean force)}
-                       compare-cases
+                       cases
                        (assoc :pairs (compare/selector-pair baseline candidate
-                                                            compare-cases)))))]
+                                                            cases)))))]
     {:comparison comparison
      :text (format/format-comparison comparison)}))

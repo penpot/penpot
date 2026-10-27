@@ -78,6 +78,10 @@ function createFrontend(t) {
   fs.writeFileSync(path.join(root, "deps.edn"), "{}\n");
   fs.mkdirSync(managed, { recursive: true });
   fs.copyFileSync(bootstrap, runner);
+  fs.copyFileSync(
+    path.join(path.dirname(bootstrap), "commands.cjs"),
+    path.join(managed, "commands.cjs"),
+  );
   fs.symlinkSync(
     path.join(frontendRoot, "node_modules"),
     path.join(root, "node_modules"),
@@ -100,13 +104,17 @@ function createFrontend(t) {
 
 async function runCli(fixture, args) {
   try {
-    const output = await execute(process.execPath, [fixture.runner, ...args], {
-      cwd: os.tmpdir(),
-      encoding: "utf8",
-      timeout: 15000,
-      killSignal: "SIGKILL",
-      maxBuffer: 1024 * 1024,
-    });
+    const output = await execute(
+      process.execPath,
+      [...(fixture.nodeArgs ?? []), fixture.runner, ...args],
+      {
+        cwd: os.tmpdir(),
+        encoding: "utf8",
+        timeout: 15000,
+        killSignal: "SIGKILL",
+        maxBuffer: 1024 * 1024,
+      },
+    );
     return { exitCode: 0, ...output };
   } catch (error) {
     // A timeout, signal or spawn failure must fail the test, rather than
@@ -285,16 +293,12 @@ function runFixtureText({
     k("attempts"),
     [attempt],
     k("remaining"),
-    map([
-      k(caseId),
-      map([k("warmups"), 0, k("repetitions"), 0]),
-    ]),
+    map([k(caseId), map([k("warmups"), 0, k("repetitions"), 0])]),
     k("termination"),
     map([k("reason"), k("completed")]),
   ]);
   return transit.writer("json").write(record);
 }
-
 
 function tree(directory) {
   return fs
@@ -521,76 +525,161 @@ fs.writeFileSync(${JSON.stringify(marker)}, "ran");
   },
 );
 
-test("help lists run and compare without touching managed storage", testOptions, async (t) => {
-  const fixture = createFrontend(t);
-  const original = tree(fixture.managed);
+test(
+  "help and compare work without a frontend checkout or execution dependencies",
+  testOptions,
+  async (t) => {
+    const temporary = fs.mkdtempSync(
+      path.join(os.tmpdir(), "render-wasm-offline-"),
+    );
+    t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
+    const runner = path.join(temporary, "runner.cjs");
+    const guard = path.join(temporary, "guard.cjs");
+    fs.copyFileSync(bootstrap, runner);
+    fs.symlinkSync(
+      path.join(frontendRoot, "node_modules"),
+      path.join(temporary, "node_modules"),
+      "dir",
+    );
+    fs.writeFileSync(
+      guard,
+      `
+    const Module = require("node:module");
+    const load = Module._load;
+    Module._load = function (id, ...args) {
+      if (["playwright", "http", "node:http", "child_process", "node:child_process"].includes(id)) {
+        throw new Error("Offline command imported execution dependency: " + id);
+      }
+      return load.call(this, id, ...args);
+    };
+  `,
+    );
+    const baseline = path.join(temporary, "baseline.transit");
+    const candidate = path.join(temporary, "candidate.transit");
+    fs.writeFileSync(
+      baseline,
+      runFixtureText({ runId: "baseline", caseId: "case/load", value: 10 }),
+    );
+    fs.writeFileSync(
+      candidate,
+      runFixtureText({ runId: "candidate", caseId: "case/load", value: 12 }),
+    );
+    const fixture = { runner, nodeArgs: ["--require", guard] };
 
-  const result = await runCli(fixture, ["--help"]);
+    const help = await runCli(fixture, ["--help"]);
+    assert.equal(help.exitCode, 0, help.stderr);
+    assert.match(help.stdout, /runner compare/);
+    const comparison = await runCli(fixture, ["compare", baseline, candidate]);
+    assert.equal(comparison.exitCode, 0, comparison.stderr);
+    assert.match(comparison.stdout, /median change/);
+    assert.equal(fs.existsSync(path.join(temporary, "commands.cjs")), false);
+  },
+);
 
-  assert.equal(result.exitCode, 0);
-  assert.match(result.stdout, /runner run/);
-  assert.match(result.stdout, /runner compare/);
-  assert.match(result.stdout, /--compare-cases/);
-  assert.deepEqual(tree(fixture.managed), original);
-});
+test(
+  "help lists run and compare without touching managed storage",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const original = tree(fixture.managed);
 
+    const result = await runCli(fixture, ["--help"]);
 
-test("compare reads saved run files without starting resources", testOptions, async (t) => {
-  const fixture = createFrontend(t);
-  const baseline = path.join(fixture.managed, "baseline.transit");
-  const candidate = path.join(fixture.managed, "candidate.transit");
-  fs.writeFileSync(
-    baseline,
-    runFixtureText({ runId: "baseline", caseId: "case/load", value: 10 }),
-  );
-  fs.writeFileSync(
-    candidate,
-    runFixtureText({ runId: "candidate", caseId: "case/load", value: 12 }),
-  );
-  const original = tree(fixture.managed);
+    assert.equal(result.exitCode, 0);
+    assert.match(result.stdout, /runner run/);
+    assert.match(result.stdout, /runner compare/);
+    assert.match(result.stdout, /--cases/);
+    assert.deepEqual(tree(fixture.managed), original);
+  },
+);
 
-  const result = await runCli(fixture, ["compare", baseline, candidate]);
+test(
+  "compare reads saved run files without starting resources",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const baseline = path.join(fixture.managed, "baseline.transit");
+    const candidate = path.join(fixture.managed, "candidate.transit");
+    fs.writeFileSync(
+      baseline,
+      runFixtureText({ runId: "baseline", caseId: "case/load", value: 10 }),
+    );
+    fs.writeFileSync(
+      candidate,
+      runFixtureText({ runId: "candidate", caseId: "case/load", value: 12 }),
+    );
+    const original = tree(fixture.managed);
 
-  assert.equal(result.exitCode, 0);
-  assert.match(result.stdout, /Baseline/);
-  assert.match(result.stdout, /case\/load/);
-  assert.match(result.stdout, /median change/);
-  assert.deepEqual(tree(fixture.managed), original);
-});
+    const result = await runCli(fixture, ["compare", baseline, candidate]);
 
-test("compare supports explicit pairs and force from the CLI", testOptions, async (t) => {
-  const fixture = createFrontend(t);
-  const baseline = path.join(fixture.managed, "baseline.transit");
-  const candidate = path.join(fixture.managed, "candidate.transit");
-  fs.writeFileSync(
-    baseline,
-    runFixtureText({ runId: "baseline", caseId: "a/pan", value: 10 }),
-  );
-  fs.writeFileSync(
-    candidate,
-    runFixtureText({
-      runId: "candidate",
-      caseId: "b/pan",
-      value: 12,
-      environment: { node: "v25" },
-    }),
-  );
-  const original = tree(fixture.managed);
+    assert.equal(result.exitCode, 0);
+    assert.match(result.stdout, /Baseline/);
+    assert.match(result.stdout, /case\/load/);
+    assert.match(result.stdout, /median change/);
+    assert.deepEqual(tree(fixture.managed), original);
+  },
+);
 
-  const incompatible = await runCli(fixture, ["compare", baseline, candidate]);
-  assert.equal(incompatible.exitCode, 1);
-  assert.deepEqual(tree(fixture.managed), original);
+test(
+  "compare supports explicit pairs and force from the CLI",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const baseline = path.join(fixture.managed, "baseline.transit");
+    const candidate = path.join(fixture.managed, "candidate.transit");
+    fs.writeFileSync(
+      baseline,
+      runFixtureText({ runId: "baseline", caseId: "a/pan", value: 10 }),
+    );
+    fs.writeFileSync(
+      candidate,
+      runFixtureText({
+        runId: "candidate",
+        caseId: "b/pan",
+        value: 12,
+        environment: { node: "v25" },
+      }),
+    );
+    const original = tree(fixture.managed);
 
-  const forced = await runCli(fixture, [
-    "compare",
-    baseline,
-    candidate,
-    "--compare-cases",
-    "a/pan,b/pan",
-    "--force",
-  ]);
-  assert.equal(forced.exitCode, 0);
-  assert.match(forced.stdout, /FORCED COMPARISON/);
-  assert.match(forced.stdout, /Pair a\/pan,b\/pan/);
-  assert.deepEqual(tree(fixture.managed), original);
-});
+    const incompatible = await runCli(fixture, [
+      "compare",
+      baseline,
+      candidate,
+    ]);
+    assert.equal(incompatible.exitCode, 1);
+    assert.deepEqual(tree(fixture.managed), original);
+
+    const forced = await runCli(fixture, [
+      "compare",
+      baseline,
+      candidate,
+      "--cases",
+      "a/pan,b/pan",
+      "--force",
+    ]);
+    assert.equal(forced.exitCode, 0);
+    assert.match(forced.stdout, /FORCED COMPARISON/);
+    assert.match(forced.stdout, /Pair a\/pan,b\/pan/);
+    assert.deepEqual(tree(fixture.managed), original);
+
+    fs.writeFileSync(
+      candidate,
+      runFixtureText({
+        runId: "candidate",
+        caseId: "a/pan",
+        value: 12,
+        environment: { node: "v25" },
+      }),
+    );
+    const automatic = await runCli(fixture, [
+      "compare",
+      baseline,
+      candidate,
+      "--force",
+    ]);
+    assert.equal(automatic.exitCode, 0);
+    assert.match(automatic.stdout, /FORCED COMPARISON/);
+    assert.match(automatic.stdout, /Pair a\/pan,a\/pan/);
+  },
+);
