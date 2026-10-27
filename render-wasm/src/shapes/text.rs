@@ -1,5 +1,5 @@
 use crate::render::text::decoration_segments;
-use crate::shapes::text_paragraph::LayoutParagraph;
+use crate::shapes::text_paragraph::{HorizontalBuilder, LayoutParagraph};
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
@@ -39,7 +39,7 @@ use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
 
 // TODO: maybe move this to the wasm module?
-pub type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
+pub type ParagraphBuilderGroup = Vec<HorizontalBuilder>;
 
 /// True when the modifier changes the text layout container (resize), as opposed
 /// to rotation/move where glyph layout can be reused.
@@ -784,13 +784,13 @@ impl TextContent {
         paragraph: &Paragraph,
         plan: &HorizontalParagraphPlan,
         extra_sheds: &[Vec<(usize, f32)>],
-    ) -> ParagraphBuilder {
+    ) -> HorizontalBuilder {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
         let mut paragraph_style = paragraph.paragraph_to_style();
         paragraph_style.set_apply_rounding_hack(false);
         paragraph_style.set_text_align(skia::textlayout::TextAlign::Left);
-        let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+        let mut builder = HorizontalBuilder::new(&paragraph_style, fonts);
         for (span_index, ((span, text), sheds)) in paragraph
             .children()
             .iter()
@@ -1400,7 +1400,7 @@ impl TextContent {
                 // The justify spacing already fills the lines.
                 paragraph_style.set_text_align(skia::textlayout::TextAlign::Left);
             }
-            let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            let mut builder = HorizontalBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for (span_index, (((span, text), plan_sheds), ruby_extra)) in paragraph
                 .children()

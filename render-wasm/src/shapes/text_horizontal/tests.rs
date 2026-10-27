@@ -2078,3 +2078,93 @@ fn horizontal_emphasis_export_bounds_include_every_adjacent_ruby_mark() {
         }
     }
 }
+
+/// Fixed-width `TextContent` of one paragraph, laid out like the renderer.
+fn aligned_content(text: &str, tracking: f32, align: TextAlign, width: f32) -> TextContent {
+    let mut paragraph = Paragraph::new(
+        align,
+        TextDirection::LTR,
+        None,
+        None,
+        1.0,
+        tracking,
+        vec![TextSpan {
+            fills: vec![crate::shapes::Fill::Solid(crate::shapes::SolidColor(
+                skia::Color::BLACK,
+            ))],
+            ..make_span(text, tracking)
+        }],
+    );
+    paragraph.set_language("zh-Hans".to_string());
+    let bounds = crate::math::Rect::from_xywh(0.0, 0.0, width, 200.0);
+    let mut content = TextContent::new(bounds, crate::shapes::GrowType::Fixed);
+    content.add_paragraph(paragraph);
+    content.update_layout(bounds);
+    content
+}
+
+#[test]
+fn spread_lines_start_and_end_at_the_box_edges() {
+    use skia::textlayout::{RectHeightStyle, RectWidthStyle};
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    for (align, text, width) in [
+        (TextAlign::Distribute, "国家", 200.0),
+        (TextAlign::Distribute, "手机号", 200.0),
+        (TextAlign::Justify, "国家国家国家国家国家国家国家国家", 50.0),
+    ] {
+        let content = aligned_content(text, 0.0, align, width);
+        let layout = &content.layout.paragraphs[0][0];
+        let lines = layout.get_line_metrics();
+        let spread = if align == TextAlign::Distribute {
+            lines.len()
+        } else {
+            lines.len() - 1
+        };
+        assert!(spread > 0, "{text}: no spread line");
+        let rect = |at: usize| {
+            layout.get_rects_for_range(at..at + 1, RectHeightStyle::Tight, RectWidthStyle::Tight)[0]
+                .rect
+        };
+        for line in lines.iter().take(spread) {
+            let first = rect(line.start_index);
+            let last = rect(line.end_excluding_whitespaces - 1);
+            assert!(
+                first.left.abs() < 0.1,
+                "{text}: line starts at {}",
+                first.left
+            );
+            assert!(line.left.abs() < 0.1, "{text}: line left {}", line.left);
+            assert!(
+                (last.right - width).abs() < 0.1,
+                "{text}: line ends at {}, box {width}",
+                last.right
+            );
+            let hit = layout.get_glyph_position_at_coordinate((first.left + 1.0, first.center_y()));
+            assert_eq!(hit.position as usize, line.start_index, "{text}: hit test");
+        }
+        // The painted ink starts at the box edge too, not half a gap in.
+        let mut surface = skia::surfaces::raster_n32_premul((400, 200)).unwrap();
+        layout.paint(surface.canvas(), (100.0, 0.0));
+        let pixels = surface.peek_pixels().unwrap();
+        let ink_left = (0..400)
+            .find(|x| (0..200).any(|y| pixels.get_color((*x, y)).a() > 0))
+            .expect("visible ink");
+        assert!(
+            (100..104).contains(&ink_left),
+            "{text}: ink starts at {}",
+            ink_left - 100
+        );
+    }
+    // Span tracking keeps SkParagraph's half spacing before the line.
+    let content = aligned_content("国家", 10.0, TextAlign::Left, 200.0);
+    let layout = &content.layout.paragraphs[0][0];
+    let first = layout.get_rects_for_range(0..1, RectHeightStyle::Tight, RectWidthStyle::Tight)[0];
+    assert!(
+        (first.rect.left - 5.0).abs() < 0.01,
+        "tracked line starts at {}",
+        first.rect.left
+    );
+}

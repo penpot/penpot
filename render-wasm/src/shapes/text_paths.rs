@@ -78,7 +78,7 @@ impl TextPaths {
         }
 
         let shifts: Vec<_> = (0..paragraph.get_line_metrics().len())
-            .map(|line| paragraph.line_shift(line))
+            .map(|line| Point::new(paragraph.line_x_shift(line), paragraph.line_shift(line)))
             .collect();
         paragraph.visit(|line: usize, info: Option<&VisitorInfo>| {
             let Some(info) = info else {
@@ -86,7 +86,7 @@ impl TextPaths {
             };
 
             let font = info.font();
-            let run_origin = origin + info.origin() + Point::new(0.0, shifts[line]);
+            let run_origin = origin + info.origin() + shifts[line];
             let mut builder = skia::PathBuilder::new();
             let mut has_glyphs = false;
 
