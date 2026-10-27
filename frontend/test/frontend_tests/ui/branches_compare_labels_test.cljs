@@ -10,13 +10,13 @@
   them. The catalogue here is a stand-in for en.po: its values are picked
   to differ from the English the dialog used to hardcode."
   (:require
-   [app.main.ui.workspace.sidebar.branches :as branches]
+   [app.main.ui.workspace.sidebar.branch-review.common :as brc]
    [app.util.i18n :as i18n]
    [cljs.test :as t :include-macros true]))
 
-;; Access the private formatters for direct testing.
-(def ^:private attr-label @#'branches/attr-label)
-(def ^:private display-val @#'branches/display-val)
+;; The formatters under test.
+(def ^:private attr-label brc/attr-label)
+(def ^:private display-val brc/display-val)
 (def ^:private get-translations @#'i18n/get-translations)
 
 (def ^:private catalogue

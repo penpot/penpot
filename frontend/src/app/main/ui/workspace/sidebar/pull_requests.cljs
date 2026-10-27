@@ -608,7 +608,7 @@
 
         [:div {:class (stl/css :pr-banner-actions)}
          [:> button* {:variant "secondary"
-                      :icon i/switch
+                      :icon i/git-compare-arrows
                       :on-click on-compare}
           (tr "workspace.branches.compare")]
 

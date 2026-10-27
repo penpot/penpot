@@ -1,0 +1,336 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
+.bulk {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-xs);
+  margin-block-end: var(--sp-xs);
+}
+
+.detail-head {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.detail-title {
+  color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--color-foreground-secondary);
+}
+
+.outcome {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-m);
+  padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-m);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+.outcome-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  min-inline-size: 0;
+}
+
+.outcome-title {
+  color: var(--color-foreground-primary);
+}
+
+.outcome-line {
+  color: var(--color-foreground-secondary);
+}
+
+// only the value that is lost takes the error colour
+.outcome-dropped {
+  color: var(--color-accent-error);
+}
+
+.footnote {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: var(--sp-xs);
+  margin-block-start: auto;
+  padding-block-start: var(--sp-s);
+  color: var(--color-foreground-secondary);
+}
+
+.footnote-icon {
+  flex-shrink: 0;
+}
+
+.footnote-text {
+  margin: 0;
+}
+
+// --- Property table
+
+.table {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+.table-row {
+  --table-row-bg-color: transparent;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr)) px2rem(100);
+  align-items: center;
+  gap: var(--sp-s);
+  min-block-size: $sz-40;
+  padding: var(--sp-xs) var(--sp-m);
+  background-color: var(--table-row-bg-color);
+
+  &.is-head {
+    --table-row-bg-color: var(--color-background-secondary);
+  }
+
+  &.is-clash {
+    --table-row-bg-color: var(--color-background-warning);
+  }
+}
+
+.th {
+  color: var(--color-foreground-secondary);
+}
+
+.td-name {
+  @include text-ellipsis;
+
+  color: var(--color-foreground-primary);
+  font-weight: 500;
+}
+
+.td-unchanged {
+  color: var(--color-foreground-secondary);
+}
+
+// the button hugs its value chip, and the selection outline sits right
+// on the chip's own border instead of around the cell
+.td-pick {
+  display: inline-flex;
+  justify-self: start;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: 0;
+  border: none;
+  border-radius: $br-4;
+  background: none;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:not(:disabled):hover,
+  &.is-chosen {
+    outline: $b-1 solid var(--color-accent-primary);
+    outline-offset: calc(#{$b-1} * -1);
+  }
+}
+
+.td-result {
+  display: inline-flex;
+  justify-self: start;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.td-choose {
+  color: var(--color-accent-warning);
+}
+
+.td-tag {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.inline-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.cards {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-m);
+}
+
+// --- Version cards
+
+.options {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-m);
+}
+
+.option {
+  --option-border-color: var(--color-background-quaternary);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  padding: var(--sp-m);
+  border: $b-1 solid var(--option-border-color);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    --option-border-color: var(--color-foreground-secondary);
+  }
+
+  &.is-chosen {
+    --option-border-color: var(--color-accent-primary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+.option-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.option-radio {
+  flex-shrink: 0;
+  inline-size: $sz-16;
+  block-size: $sz-16;
+  border: $b-2 solid var(--color-foreground-secondary);
+  border-radius: $br-circle;
+
+  &.is-chosen {
+    border: px2rem(4) solid var(--color-accent-primary);
+  }
+}
+
+.option-label {
+  font-weight: 600;
+}
+
+.option-side {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.option-side-label {
+  color: var(--color-accent-primary);
+
+  &.is-main {
+    color: var(--color-accent-secondary);
+  }
+}
+
+.option-detail {
+  color: var(--color-foreground-secondary);
+}
+
+.option-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: var(--preview-card-stage-block-size, #{px2rem(100)});
+  padding: var(--sp-s);
+  border-radius: $br-6;
+
+  // the same checkerboard as `preview-card*`
+  background-color: var(--color-static-white);
+  background-image: repeating-conic-gradient(
+    color-mix(in srgb, var(--color-canvas) 70%, var(--color-static-white)) 0% 25%,
+    transparent 0% 50%
+  );
+  background-size: px2rem(20) px2rem(20);
+}
+
+.option-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  color: var(--color-accent-error);
+}
+
+.paragraphs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.paragraph {
+  --paragraph-bg-color: transparent;
+
+  padding: var(--sp-s);
+  border-radius: $br-4;
+  background-color: var(--paragraph-bg-color);
+  color: var(--color-foreground-primary);
+
+  &.is-kept {
+    --paragraph-bg-color: var(--color-background-success);
+  }
+
+  &.is-dropped {
+    --paragraph-bg-color: var(--color-background-error);
+  }
+}
+
+// --- Footer
+
+.footer-start {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-l);
+}
+
+.footer-ready {
+  color: var(--color-accent-success);
+}
+
+.footer-blocked {
+  color: var(--color-accent-warning);
+}
+
+.row-warning {
+  color: var(--color-accent-warning);
+}

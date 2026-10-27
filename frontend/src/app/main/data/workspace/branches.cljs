@@ -404,12 +404,18 @@
                  :direction direction
                  :selected  nil
                  ;; a refetch of the SAME comparison keeps the user's
-                 ;; per-change selection (it names the same entities); a
-                 ;; different branch or direction starts over
+                 ;; per-change selection, review marks and conflict
+                 ;; choices (they name the same entities); a different
+                 ;; branch or direction starts over
                  :excluded  (if (and (= branch-id (:branch-id prev))
                                      (= direction (:direction prev)))
                               (or (:excluded prev) #{})
-                              #{})})))
+                              #{})
+                 :reviewed  (if (= branch-id (:branch-id prev))
+                              (or (:reviewed prev) #{})
+                              #{})
+                 :resolutions (when (= branch-id (:branch-id prev))
+                                (:resolutions prev))})))
      ptk/WatchEvent
      (watch [_ _ stream]
        (->> (rp/cmd! :get-branch-diff {:branch-id branch-id :direction direction})
@@ -448,6 +454,25 @@
                       (if include?
                         (apply disj excluded change-keys)
                         (into excluded change-keys)))))))))
+
+(defn toggle-diff-reviewed
+  "Mark the change `change-key` as reviewed in the compare dialog, or clear
+  the mark. `reviewed?` forces one side; nil flips it. The marks only
+  guide the review: the merge does not read them."
+  ([change-key] (toggle-diff-reviewed change-key nil))
+  ([change-key reviewed?]
+   (ptk/reify ::toggle-diff-reviewed
+     ptk/UpdateEvent
+     (update [_ state]
+       (update-in state [:workspace-branch-diff :reviewed]
+                  (fn [reviewed]
+                    (let [reviewed  (or reviewed #{})
+                          reviewed? (if (some? reviewed?)
+                                      reviewed?
+                                      (not (contains? reviewed change-key)))]
+                      (if reviewed?
+                        (conj reviewed change-key)
+                        (disj reviewed change-key)))))))))
 
 (defn clear-diff-excluded
   "Drop the per-change selection: the compare dialog closes without
@@ -629,6 +654,24 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-branch-diff :resolutions id] choice))))
+
+(defn set-conflict-resolutions
+  "Store several conflict resolutions at once, `{entity-id resolution}`,
+  over the ones already chosen. A resolution is `:main`, `:branch` or a
+  per-attr `{attr side}` map."
+  [resolutions]
+  (ptk/reify ::set-conflict-resolutions
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-branch-diff :resolutions] merge resolutions))))
+
+(defn clear-conflict-resolution
+  "Forget the choice made for conflict `id`, so it asks again."
+  [id]
+  (ptk/reify ::clear-conflict-resolution
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-branch-diff :resolutions] dissoc id))))
 
 (defn set-conflict-attr-resolution
   "Choose `:main` or `:branch` for a single attribute `attr` of a

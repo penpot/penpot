@@ -1,0 +1,58 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
+
+.facts {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--sp-xs);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: px2rem(180) 1fr;
+  align-items: center;
+  gap: var(--sp-s);
+  min-block-size: $sz-32;
+  padding: var(--sp-xs) var(--sp-m);
+}
+
+.fact-label {
+  color: var(--color-foreground-secondary);
+}
+
+.fact-value {
+  @include use-typography("body-small");
+  @include text-ellipsis;
+
+  color: var(--color-foreground-primary);
+}
+
+.section {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.section-title {
+  color: var(--color-foreground-primary);
+}
+
+.inner-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+}

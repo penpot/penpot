@@ -1,0 +1,65 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+.preview-svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.preview-swatch {
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: $br-4;
+}
+
+.preview-type-sample {
+  @include use-typography("headline-medium");
+
+  color: var(--color-static-black);
+  line-height: 1;
+}
+
+.preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-static-black);
+}
+
+// the empty stage sits on the light checkerboard of `preview-card*`, the
+// same in both themes, so its text is dark whatever the theme
+.preview-missing {
+  --preview-missing-color: var(--color-static-black);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xxs);
+  inline-size: 100%;
+  block-size: 100%;
+  padding: var(--sp-s);
+  border: $b-1 dashed color-mix(in srgb, var(--preview-missing-color) 30%, transparent);
+  border-radius: $br-4;
+  text-align: center;
+}
+
+.preview-missing-icon {
+  margin-block-end: var(--sp-xxs);
+  color: color-mix(in srgb, var(--preview-missing-color) 60%, transparent);
+}
+
+.preview-missing-title {
+  color: var(--preview-missing-color);
+}
+
+.preview-missing-hint {
+  color: color-mix(in srgb, var(--preview-missing-color) 60%, transparent);
+}
