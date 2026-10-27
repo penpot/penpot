@@ -416,7 +416,15 @@ pub(super) fn apply_policy_spacing(cells: &mut [FlowCell], text: &str, policy: T
             - 0.5 * cells[i - 1].cell.font_size)
             .max(0.0);
         let compression = (policy.compression_em(before, after, true) * em).min(available);
-        let gap = policy.script_spacing_em(before, after) * em;
+        // A tate-chu-yoko composite sets in one ideograph's cell, so the
+        // Han/Western gap of its digits or letters does not apply.
+        let tate_chu_yoko =
+            |flow: &FlowCell| matches!(flow.cell.kind, CellKind::TateChuYoko { .. });
+        let gap = if tate_chu_yoko(&cells[i - 1]) || tate_chu_yoko(&cells[i]) {
+            0.0
+        } else {
+            policy.script_spacing_em(before, after) * em
+        };
         cells[i - 1].cell.extent = (cells[i - 1].cell.extent + gap - compression)
             .max(cells[i - 1].trailing_spacing.max(0.0));
         cells[i - 1].cell.minimum_oikomi_extent = cells[i - 1].cell.extent;

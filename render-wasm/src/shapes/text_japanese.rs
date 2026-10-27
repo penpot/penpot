@@ -263,11 +263,12 @@ pub enum TextCombineUpright {
     #[default]
     None,
     All,
-    /// Runs of 2-4 ASCII or full-width digits combine into one upright cell.
+    /// Runs of up to 4 ASCII or full-width digits combine into one upright
+    /// cell, so a lone digit stands upright (CSS `digits`).
     Digits,
-    /// Like `Digits`, for runs of exactly 2 (CSS `digits 2`).
+    /// Like `Digits`, for runs of up to 2 (CSS `digits 2`).
     Digits2,
-    /// Like `Digits`, for runs of 2-3.
+    /// Like `Digits`, for runs of up to 3.
     Digits3,
 }
 

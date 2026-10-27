@@ -828,7 +828,7 @@ pub fn layout_for_rect(text_content: &TextContent, rect: &Rect) -> VerticalLayou
 mod tests {
     use super::super::test_support::*;
     use super::*;
-    use crate::shapes::TextOrientation;
+    use crate::shapes::{TextCombineUpright, TextOrientation, TextSpan};
 
     fn cjk_layout(
         texts: &[&str],
@@ -1044,6 +1044,35 @@ mod tests {
             .cells
             .iter()
             .all(|cell| cell.minimum_oikomi_extent <= cell.extent));
+    }
+
+    #[test]
+    fn regional_chinese_spacing_skips_tate_chu_yoko_but_spaces_sideways_latin() {
+        let tops = |language: &str, text: &str, combine: TextCombineUpright| {
+            let span = TextSpan {
+                text_combine_upright: combine,
+                ..make_span(text)
+            };
+            let mut paragraph = vertical_paragraph(vec![span], TextAlign::Left, 1.0);
+            paragraph.set_language(language.to_string());
+            let content = content_of(vec![paragraph], EM * 10.0, GrowType::Fixed);
+            let layout = layout_with_height(
+                &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
+                &content,
+                EM * 10.0,
+            );
+            layout.cells.iter().map(|cell| cell.top).collect::<Vec<_>>()
+        };
+        // Upright digits take one ideograph's cell: no Han/Western gap.
+        assert_eq!(
+            tops("zh-Hans-CN", "文12文", TextCombineUpright::Digits),
+            tops("", "文12文", TextCombineUpright::Digits)
+        );
+        // A sideways Latin run keeps its quarter-em gap.
+        assert_ne!(
+            tops("zh-Hans-CN", "文AB文", TextCombineUpright::None),
+            tops("", "文AB文", TextCombineUpright::None)
+        );
     }
 
     #[test]

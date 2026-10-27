@@ -57,8 +57,8 @@ fn is_tcy_digit(c: char) -> bool {
 }
 
 /// Split a TCY `digits` span into pieces. Maximal ASCII or full-width digit
-/// runs of 2..=max chars are marked tcy; the rest keep normal vertical
-/// layout. Returns (piece text, span-relative UTF-16 start, tcy).
+/// runs of 1..=max chars are marked tcy, as in CSS `digits`, so a lone digit
+/// stands upright too; the rest keep normal vertical layout. Returns (piece text, span-relative UTF-16 start, tcy).
 fn split_digit_runs(text: &str, max: usize) -> Vec<(String, usize, bool)> {
     let mut pieces: Vec<(String, usize, bool)> = Vec::new();
     let mut utf16 = 0usize;
@@ -71,7 +71,7 @@ fn split_digit_runs(text: &str, max: usize) -> Vec<(String, usize, bool)> {
         utf16 += c.len_utf16();
     }
     for (piece, _, tcy) in pieces.iter_mut() {
-        *tcy = *tcy && (2..=max).contains(&piece.chars().count());
+        *tcy = *tcy && (1..=max).contains(&piece.chars().count());
     }
     pieces
 }
@@ -219,7 +219,7 @@ impl<'a> SpanCells<'a> {
         {
             return;
         }
-        // `digits` merges each run of 2..=max digits into one upright cell.
+        // `digits` merges each run of 1..=max digits into one upright cell.
         let pieces = match combine.digits_max() {
             Some(max) => split_digit_runs(text, max),
             None => vec![(text.to_string(), 0, false)],
@@ -280,18 +280,14 @@ impl<'a> SpanCells<'a> {
         }
 
         let letter_spacing = self.span.letter_spacing;
-        let mut shaped = self.shape(piece, self.span.font_size, false);
+        let shaped = self.shape(piece, self.span.font_size, false);
         if shaped.is_empty() {
             return false;
         }
         let em = self.span.font_size.max(1.0);
-        let mut combined_advance = 0.0f32;
-        for run in &mut shaped {
-            run.advance = run.spread_glyphs(letter_spacing);
-            combined_advance += run.advance;
-        }
-        // Letter-spacing also separates adjacent fallback runs.
-        combined_advance += letter_spacing * (shaped.len() - 1) as f32;
+        // As in CSS, the composite ignores letter-spacing inside it: spacing
+        // only separates it from its neighbours down the column (`extent`).
+        let combined_advance: f32 = shaped.iter().map(|run| run.advance).sum();
         // Only a composite wider than the em is squeezed, and only across:
         // glyphs keep their full height, as in JLREQ and CSS.
         let h_scale = (em / combined_advance.max(1.0)).min(1.0);
@@ -972,7 +968,7 @@ mod tests {
 
     #[test]
     fn split_digit_runs_honours_the_max_parameter() {
-        // max 2: only exactly-two-digit runs combine.
+        // max 2: runs of up to two digits combine.
         let pieces = split_digit_runs("平成31年123日", 2);
         let flags: Vec<(&str, bool)> = pieces
             .iter()
@@ -994,7 +990,7 @@ mod tests {
     }
 
     #[test]
-    fn split_digit_runs_marks_two_to_four_digit_runs() {
+    fn split_digit_runs_marks_runs_of_up_to_four_digits() {
         let pieces = split_digit_runs("平成31年12345日5", 4);
         let flags: Vec<(&str, usize, bool)> = pieces
             .iter()
@@ -1008,7 +1004,7 @@ mod tests {
                 ("年", 4, false),
                 ("12345", 5, false),
                 ("日", 10, false),
-                ("5", 11, false),
+                ("5", 11, true),
             ]
         );
     }
@@ -1043,6 +1039,21 @@ mod tests {
         sorted.sort_unstable();
         assert_eq!(starts, sorted, "cells stay in text order");
         assert_eq!(layout.cells.len(), 3);
+    }
+
+    #[test]
+    fn tate_chu_yoko_digits_sets_a_lone_digit_upright() {
+        let mut content = make_content_with_spans(&["2月5日"], 400.0);
+        content.paragraphs_mut()[0].children_mut()[0].text_combine_upright =
+            TextCombineUpright::Digits;
+        let layout = layout_with(&provider(VMTX_TEST_FONT), &content);
+        let tcy: Vec<(usize, usize)> = layout
+            .cells
+            .iter()
+            .filter(|c| matches!(c.kind, CellKind::TateChuYoko { .. }))
+            .map(|c| (c.start, c.end))
+            .collect();
+        assert_eq!(tcy, vec![(0, 1), (2, 3)]);
     }
 
     #[test]
@@ -1131,6 +1142,43 @@ mod tests {
         assert!(
             (spaced_gap - plain_gap - 5.0).abs() < 0.01,
             "adjacent glyph gap grows by letter-spacing"
+        );
+    }
+
+    #[test]
+    fn letter_spacing_stays_outside_a_tate_chu_yoko_composite() {
+        // CSS combines the text ignoring letter-spacing. Counting it in the
+        // composite width set the digits off centre, left of the kanji.
+        let tcy_cell = |letter_spacing: f32| {
+            let mut content = spaced_content("く12く", letter_spacing);
+            content.paragraphs_mut()[0].children_mut()[0].text_combine_upright =
+                TextCombineUpright::Digits;
+            let layout = layout_content(&content, 1000.0);
+            let cell = layout
+                .cells
+                .iter()
+                .find(|c| matches!(c.kind, CellKind::TateChuYoko { .. }))
+                .cloned()
+                .expect("the digit run combines");
+            let CellKind::TateChuYoko { run_start, .. } = cell.kind else {
+                unreachable!()
+            };
+            let positions = layout.runs[run_start].positions.clone();
+            (cell, positions)
+        };
+        let (plain, plain_positions) = tcy_cell(0.0);
+        let (spaced, spaced_positions) = tcy_cell(5.0);
+        assert!(
+            (spaced.h_advance - plain.h_advance).abs() < 0.01,
+            "the composite width ignores letter-spacing"
+        );
+        assert_eq!(
+            plain_positions, spaced_positions,
+            "glyphs keep their places"
+        );
+        assert!(
+            (spaced.extent - plain.extent - 5.0).abs() < 0.01,
+            "letter-spacing still follows the composite down the column"
         );
     }
 

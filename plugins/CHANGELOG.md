@@ -23,7 +23,7 @@
 - **plugin-types:** Added `ruby` property for text shapes (furigana annotation)
 - **plugin-types:** Added `textEmphasis` property for text shapes (emphasis marks / bouten)
 - **plugin-types:** Added `warichu` property for text shapes (inline two-line notes)
-- **plugin-types:** `textCombineUpright` now accepts `digits` (combine 2-4 digit runs)
+- **plugin-types:** `textCombineUpright` now accepts `digits` (combine runs of up to 4 digits, a lone digit included)
 - **plugin-types:** Added `fontFeatures` (`none`, `palt`, or `vpal`) to text shapes and text ranges.
 - **plugin-types:** Added `annotationClearance` (`none` or `auto`) to text shapes.
 - **plugin-types:** Added `lineAdjustment` (`push-in-first`, `push-out-first` or `push-out-only`) to text shapes: how Japanese lines slightly too long are fitted.
