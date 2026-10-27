@@ -1,32 +1,115 @@
 //! SkParagraph rounds every line height and baseline, even with its rounding
 //! hack disabled. Keep its shaping and horizontal layout, but use the original
 //! ascent/descent for vertical geometry and painting.
+//!
+//! SkParagraph also moves each line by half the letter-spacing of its first
+//! character. That centers span tracking, but letter-spacing added to single
+//! characters (justification, distribution, squeezing, ruby room) must only
+//! open the gap after them, so each line takes back half of that extra.
 
 use skia_safe::{
     textlayout::{
-        LineMetrics, Paragraph, ParagraphBuilder, PositionWithAffinity, RectHeightStyle,
-        RectWidthStyle, TextBox,
+        FontCollection, LineMetrics, Paragraph, ParagraphBuilder, ParagraphStyle,
+        PositionWithAffinity, RectHeightStyle, RectWidthStyle, TextBox,
     },
     Canvas, Paint, Point, TextBlob, TextBlobBuilder,
 };
 use std::ops::{Deref, DerefMut, Range};
 
+/// A builder `LayoutParagraph` can lay out, with the letter-spacing its
+/// characters take beyond their span tracking.
+pub trait SpacedParagraphBuilder {
+    fn paragraph_builder(&mut self) -> &mut ParagraphBuilder;
+
+    /// Records `amount` of extra letter-spacing on the character at the
+    /// builder's UTF-16 offset `at`.
+    fn add_extra_spacing(&mut self, _at: usize, _amount: f32) {}
+
+    /// Extra letter-spacing as (UTF-16 offset, amount), sorted by offset.
+    fn extra_spacing(&self) -> &[(usize, f32)] {
+        &[]
+    }
+}
+
+impl SpacedParagraphBuilder for ParagraphBuilder {
+    fn paragraph_builder(&mut self) -> &mut ParagraphBuilder {
+        self
+    }
+}
+
+/// Paragraph builder of horizontal text, which records the extra
+/// letter-spacing of its characters.
+pub struct HorizontalBuilder {
+    builder: ParagraphBuilder,
+    extra_spacing: Vec<(usize, f32)>,
+}
+
+impl HorizontalBuilder {
+    pub fn new(style: &ParagraphStyle, fonts: impl Into<FontCollection>) -> Self {
+        Self {
+            builder: ParagraphBuilder::new(style, fonts),
+            extra_spacing: Vec::new(),
+        }
+    }
+}
+
+impl SpacedParagraphBuilder for HorizontalBuilder {
+    fn paragraph_builder(&mut self) -> &mut ParagraphBuilder {
+        &mut self.builder
+    }
+
+    fn add_extra_spacing(&mut self, at: usize, amount: f32) {
+        self.extra_spacing.push((at, amount));
+    }
+
+    fn extra_spacing(&self) -> &[(usize, f32)] {
+        &self.extra_spacing
+    }
+}
+
+impl std::fmt::Debug for HorizontalBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HorizontalBuilder")
+            .field("extra_spacing", &self.extra_spacing)
+            .finish_non_exhaustive()
+    }
+}
+
+impl Deref for HorizontalBuilder {
+    type Target = ParagraphBuilder;
+    fn deref(&self) -> &ParagraphBuilder {
+        &self.builder
+    }
+}
+
+impl DerefMut for HorizontalBuilder {
+    fn deref_mut(&mut self) -> &mut ParagraphBuilder {
+        &mut self.builder
+    }
+}
+
 #[derive(Debug)]
 pub struct LayoutParagraph {
     inner: Paragraph,
     text: String,
+    extra_spacing: Vec<(usize, f32)>,
     shifts: Vec<f32>,
+    x_shifts: Vec<f32>,
     height: f32,
     runs: Vec<(TextBlob, Paint, Point)>,
 }
 
 impl LayoutParagraph {
-    pub fn build(builder: &mut ParagraphBuilder) -> Self {
+    pub fn build(builder: &mut impl SpacedParagraphBuilder) -> Self {
+        let extra_spacing = builder.extra_spacing().to_vec();
+        let builder = builder.paragraph_builder();
         let text = builder.get_text().to_owned();
         Self {
             inner: builder.build(),
             text,
+            extra_spacing,
             shifts: Vec::new(),
+            x_shifts: Vec::new(),
             height: 0.0,
             runs: Vec::new(),
         }
@@ -36,6 +119,7 @@ impl LayoutParagraph {
         self.inner.layout(width);
         let lines = self.inner.get_line_metrics();
         self.shifts.clear();
+        self.x_shifts.clear();
         self.height = 0.0;
         // Keep the first baseline anchored as before. Only remove drift
         // between lines; this also preserves existing one-line layouts.
@@ -46,12 +130,22 @@ impl LayoutParagraph {
             self.shifts
                 .push(self.height + line.ascent as f32 + anchor - line.baseline as f32);
             self.height += (line.ascent + line.descent) as f32;
+            let first = self
+                .extra_spacing
+                .binary_search_by_key(&line.start_index, |(at, _)| *at)
+                .map_or(0.0, |found| self.extra_spacing[found].1);
+            self.x_shifts.push(-first / 2.0);
         }
         if lines.is_empty() {
             self.height = self.inner.height();
         }
         self.runs.clear();
-        if self.shifts.iter().all(|shift| shift.abs() < 0.00001) {
+        if self
+            .shifts
+            .iter()
+            .chain(&self.x_shifts)
+            .all(|shift| shift.abs() < 0.00001)
+        {
             return;
         }
         // Copy the paints before visiting: Skia exposes style metrics as
@@ -77,6 +171,7 @@ impl LayoutParagraph {
         boundaries.dedup();
         let text = &self.text;
         let shifts = &self.shifts;
+        let x_shifts = &self.x_shifts;
         let runs = &mut self.runs;
         self.inner.visit(|line, info| {
             let Some(info) = info.filter(|info| info.count() > 0) else {
@@ -115,6 +210,7 @@ impl LayoutParagraph {
             }
             if let Some(blob) = builder.make() {
                 let mut origin = info.origin();
+                origin.x += x_shifts.get(line).copied().unwrap_or(0.0);
                 origin.y += shifts.get(line).copied().unwrap_or(0.0);
                 runs.push((blob, paint, origin));
             }
@@ -123,6 +219,10 @@ impl LayoutParagraph {
 
     pub fn line_shift(&self, line: usize) -> f32 {
         self.shifts.get(line).copied().unwrap_or(0.0)
+    }
+
+    pub fn line_x_shift(&self, line: usize) -> f32 {
+        self.x_shifts.get(line).copied().unwrap_or(0.0)
     }
 
     pub fn height(&self) -> f32 {
@@ -136,6 +236,7 @@ impl LayoutParagraph {
     pub fn get_line_metrics(&self) -> Vec<LineMetrics<'_>> {
         let mut lines = self.inner.get_line_metrics();
         for (index, line) in lines.iter_mut().enumerate() {
+            line.left += self.line_x_shift(index) as f64;
             line.baseline += self.line_shift(index) as f64;
             line.height = line.ascent + line.descent;
         }
@@ -157,7 +258,9 @@ impl LayoutParagraph {
             }
             let mut boxes = self.inner.get_rects_for_range(start..end, height, width);
             for textbox in &mut boxes {
-                textbox.rect.offset((0.0, self.line_shift(index)));
+                textbox
+                    .rect
+                    .offset((self.line_x_shift(index), self.line_shift(index)));
             }
             result.extend(boxes);
         }
@@ -173,7 +276,9 @@ impl LayoutParagraph {
                 .iter()
                 .position(|line| center < (line.baseline + line.descent) as f32)
                 .unwrap_or(lines.len().saturating_sub(1));
-            textbox.rect.offset((0.0, self.line_shift(index)));
+            textbox
+                .rect
+                .offset((self.line_x_shift(index), self.line_shift(index)));
         }
         boxes
     }
@@ -188,6 +293,7 @@ impl LayoutParagraph {
             .iter()
             .position(|line| point.y < (line.baseline + line.descent) as f32)
             .unwrap_or(lines.len().saturating_sub(1));
+        point.x -= self.line_x_shift(index);
         point.y -= self.line_shift(index);
         self.inner.get_glyph_position_at_coordinate(point)
     }
