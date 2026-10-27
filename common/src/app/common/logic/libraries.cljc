@@ -1249,6 +1249,24 @@
         (or (automatic-name content) origin-name))
       origin-name)))
 
+(defn- same-sync-value?
+  "Compare numeric values exactly, including integer/float representations
+   inside geometry. Every nonzero difference still requires a sync."
+  [attr value other]
+  (or (= value other)
+      (let [same-number? (fn [a b] (and (number? a) (number? b) (== a b)))]
+        (case attr
+          :selrect (and (map? value) (map? other)
+                        (= (set (keys value)) (set (keys other)))
+                        (every? #(same-number? (get value %) (get other %)) (keys value)))
+          :points (and (sequential? value) (sequential? other)
+                       (= (count value) (count other))
+                       (every? (fn [[a b]]
+                                 (and (same-number? (:x a) (:x b))
+                                      (same-number? (:y a) (:y b))))
+                               (map vector value other)))
+          (same-number? value other)))))
+
 (defn- sync-attr-operations
   "The `[attr value]` pairs that sync `attr` from `origin-shape`, a main
    shape placed like `dest-shape`, into `dest-shape`, its copy. With
@@ -1289,7 +1307,7 @@
 
         skip?
         (or (and (not text-name?)
-                 (= (get origin-shape attr) (get dest-shape attr)))
+                 (same-sync-value? attr (get origin-shape attr) (get dest-shape attr)))
             (and (touched sync-group)
                  omit-touched?
                  ;; When it is a text-partial-change, we should generate operations
@@ -1318,7 +1336,7 @@
 
     (cond
       ;; If the final attr-value is the actual value, skip
-      (or skip? (= attr-val (get dest-shape attr)))
+      (or skip? (same-sync-value? attr attr-val (get dest-shape attr)))
       []
 
       ;; On a text-partial-change, we want to force a position-data reset

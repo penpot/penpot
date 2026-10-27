@@ -33,6 +33,21 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest sync-keeps-a-real-subpixel-position-change
+  (let [initial (setup/simple-component-with-labeled-copy)
+        original (tm/resolve-shape initial :copy-child)
+        file (tm/file initial)
+        page (thf/current-page file)
+        changes (cls/generate-update-shapes
+                 (pcb/empty-changes nil (:id page)) [(thi/id :main-child)]
+                 #(gsh/move % (gpt/point 0.000001 0)) (:objects page) {})
+        source (thf/apply-changes file changes)
+        changed (tm/with-file initial (:file (r/sync-cascade source {} (keys (get-in file [:data :components])))))
+        actual (tm/resolve-shape changed :copy-child)
+        expected (gsh/move original (gpt/point 0.000001 0))]
+    (t/is (not= (:points original) (:points actual)))
+    (t/is (gsh/close-attrs? :points (:points expected) (:points actual) 1e-10))))
+
 (t/deftest grid-sync-keeps-new-main-cells
   (let [file (-> (thf/sample-file :file1)
                  (tho/add-grid-frame :main-root :width 100 :height 100)

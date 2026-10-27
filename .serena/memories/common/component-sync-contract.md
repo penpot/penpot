@@ -37,6 +37,10 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 - Variant switch with keep-touched: an attr is carried from the old copy only when its group is touched and the old and new mains hold the same value for it. Resulting touched = groups of carried attrs (+ `:swap-group` when the head is inside a copy). The root also keeps a retained rotation or flip as a geometry override when it differs from the new expected placement, including orientation supplied by the old component (F146, F175). Placement still supplied by an enclosing copy remains inherited when no root geometry override was carried. A value equal to the new main is not carried and not touched. Texts: the same per text group (letters carried only when both mains have the same letters; a style group when both mains agree on it once placed on each other's letters).
 - Delete component: copies keep their data. The deleted main cannot be edited, so it starts no sync, but changes from components nested in it still pass through: sync updates its stored shapes (`:objects` of the deleted component), its copies, and the components that nest it. Restore brings back an up-to-date main.
 - Undo/redo: restores the exact prior state, `:touched` and `:remote-synced` included, of the op and the sync it caused together (same undo group, one step). Undo never needs a re-sync.
+- Sync skips exactly equal numeric values, including integer/float forms
+  inside points and selection rectangles (F187). Representation alone must
+  not create changes or undo entries. This comparison has no tolerance:
+  a real subpixel difference still syncs.
 
 ## Text overrides
 

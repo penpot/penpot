@@ -88,6 +88,11 @@
                             rx/timer mock/timer-mock}
            (await (replay-program program)))))
 
+(t/deftest ^:async accepting-a-library-does-not-record-equal-numeric-geometry
+  (await (replay {:world [2 1 {:library true :variants true}]
+                  :ops [[:resize 10 2 2 10] [:library-sync 3 1 2 8]
+                        [:undo] [:redo]]})))
+
 (t/deftest ^:async nesting-a-swapped-copy-in-a-blocked-main-authors-its-lock
   (await (replay {:world [2 0 {:library true :variants true :rich-variants true
                                :text true :text-styles true :layout nil :layout-copies true}]
