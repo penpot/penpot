@@ -139,16 +139,7 @@ function manifestText(id, status, type) {
   return transit
     .writer("json")
     .write(
-      transit.map([
-        k("type"),
-        k(type),
-        k("schema-version"),
-        1,
-        k("id"),
-        id,
-        k("status"),
-        k(status),
-      ]),
+      transit.map([k("type"), k(type), k("id"), id, k("status"), k(status)]),
     );
 }
 
@@ -173,7 +164,7 @@ function seedRuns(fixture) {
     fs.mkdirSync(directory, { recursive: true });
     fs.writeFileSync(
       path.join(directory, "run.transit"),
-      manifestText(id, status, "renderer-run"),
+      `${status} run output\n`,
     );
     fs.writeFileSync(path.join(directory, "run.log"), "run\n");
     fs.writeFileSync(path.join(directory, "case-load.PNG"), "screenshot\n");
@@ -209,14 +200,7 @@ function runFixtureText({
     k("case-id"),
     k(caseId),
     k("fingerprint"),
-    map([
-      k("encoding-version"),
-      1,
-      k("algorithm"),
-      k("sha-256"),
-      k("digest"),
-      "a".repeat(64),
-    ]),
+    map([k("algorithm"), k("sha-256"), k("digest"), "a".repeat(64)]),
     k("effective-graphics"),
     map([k("webgl2"), true]),
     k("diagnostics"),
@@ -241,8 +225,6 @@ function runFixtureText({
   const record = map([
     k("type"),
     k("run-record"),
-    k("schema-version"),
-    3,
     k("run-id"),
     runId,
     k("started-at"),
@@ -277,8 +259,6 @@ function runFixtureText({
     ]),
     k("analysis"),
     map([
-      k("method-version"),
-      1,
       k("draws"),
       2000,
       k("seed"),

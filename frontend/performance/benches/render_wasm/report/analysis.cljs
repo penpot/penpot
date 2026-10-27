@@ -25,10 +25,7 @@
   Resampling draws a sample of the original size, allowing repeated values.
   Repeating this process gives medians whose central :confidence fraction
   defines a percentile confidence interval. These intervals describe the
-  supplied measurements; evolving caches limit their interpretation.
-
-  :method-version records the calculation version for saved reports.
-  Version 1 is the only supported version."
+  supplied measurements; evolving caches limit their interpretation."
   (:require
    [app.common.schema :as sm]
    [benches.render-wasm.random :as random]))
@@ -37,10 +34,8 @@
   "Default settings for report calculations.
   :draws is the number of replacement samples; :seed controls their generator.
   :confidence is the fraction between interval bounds. :min-ci, :min-p95 and
-  :min-p99 set the required observation counts for those results.
-  :method-version records the calculation rules, currently version 1."
-  {:method-version 1
-   :draws 2000
+  :min-p99 set the required observation counts for those results."
+  {:draws 2000
    :seed 0x70656e70
    :confidence 0.95
    :min-ci 10
@@ -48,11 +43,10 @@
    :min-p99 500})
 
 (def schema:settings
-  "Valid settings for calculation version, sample draws, seed and report limits.
+  "Valid settings for sample draws, seed and report limits.
   The seed is an integer in [0, 2^32); confidence lies strictly between 0 and 1.
   Draw and minimum observation counts are positive integers."
   [:map {:closed true}
-   [:method-version [:= 1]]
    [:draws [:int {:min 1 :max 2147483647}]]
    [:seed [:fn random/seed?]]
    [:confidence [:fn #(and (number? %) (js/Number.isFinite %) (< 0 % 1))]]

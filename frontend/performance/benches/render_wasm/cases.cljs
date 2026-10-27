@@ -27,7 +27,6 @@
     ;; =>
     [{:id :rects/load
       :scene :rects
-      :scene-version 1
       :scene-description \"Seeded rectangles with translucent fills and centered strokes\"
       :scene-seed 2602546180
       :params {:count 1000 :width 1920 :height 1080 :min-size 20 :max-size 100}
@@ -35,7 +34,7 @@
       :context :fresh
       :completion :render-full
       :batch-size 1
-      :preparation {:version 1}}
+      :preparation {}}
      {:id :rects/pan ...}
      {:id :rects/zoom ...}]"
   (:require
@@ -102,13 +101,11 @@
     registered))
 
 (defn- describe-case
-  "Projects a validated case to its collected descriptor: scene
-  version/description/seed attached, internal keys stripped, transit wire
-  checked."
+  "Projects a validated case to its collected descriptor: scene description
+  and seed attached, internal keys stripped, transit wire checked."
   [master-seed registered scene-entry]
   (let [projected (-> (decl/project-case registered)
-                      (assoc :scene-version (:version scene-entry)
-                             :scene-description (:description scene-entry)
+                      (assoc :scene-description (:description scene-entry)
                              :scene-seed (decl/derive-seed master-seed
                                                            (:scene registered)
                                                            (:params registered))))]

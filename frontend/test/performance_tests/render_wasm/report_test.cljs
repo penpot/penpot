@@ -22,7 +22,7 @@
 
 (def saved-case
   "A saved definition that requires no current registration."
-  {:id :saved/pan :scene :saved :scene-version 4 :scene-seed 42
+  {:id :saved/pan :scene :saved :scene-seed 42
    :params {:count 10} :view {:scale 1 :x 0 :y 0}
    :operation {:steps 3} :context :reuse :completion :render-full
    :batch-size 1 :preparation {}})
@@ -38,7 +38,7 @@
 (def preparation
   "One content identity and its effective graphics."
   {:preparation-id :prep/one :case-id :saved/pan
-   :fingerprint {:encoding-version 1 :algorithm :sha-256 :digest (apply str (repeat 64 "a"))}
+   :fingerprint {:algorithm :sha-256 :digest (apply str (repeat 64 "a"))}
    :effective-graphics {:vendor "vendor" :renderer "hardware" :software false :dpr 2}
    :diagnostics {:upload-ms 123}})
 
@@ -135,7 +135,7 @@
 
 (t/deftest analysis-settings-are-validated-and-recorded
   (doseq [override [{:draws 0} {:seed -1} {:seed 4294967296} {:confidence 1}
-                    {:confidence js/NaN} {:min-ci 0} {:method-version 2} {:unknown 1}]]
+                    {:confidence js/NaN} {:min-ci 0} {:unknown 1}]]
     (t/is (= ::method/invalid-settings (:type (error-data #(method/resolve-settings override))))))
   (t/is (= 0 (:seed (method/resolve-settings {:seed 0}))))
   (t/is (= method/defaults (:analysis (run-with [1])))))
@@ -296,11 +296,16 @@
     (t/is (= {:cause [{:message "failure"}]} (get-in decoded [:attempts 4 :failure])))
     (t/is (= 1 (get-in (summary/observations decoded :saved/pan metric-id) [:counts :failed])))))
 
-(t/deftest unknown-format-and-poisoned-accounting-refuse
+(t/deftest malformed-records-and-poisoned-accounting-refuse
   (let [run (run-with [1])]
-    (doseq [bad [(assoc run :schema-version 2) {:schema-version 1}]]
-      (t/is (= ::result/unsupported-format (:type (error-data #(result/decode (transit/encode-str bad)))))))
-    (doseq [bad [(assoc-in run [:attempts 0 :ordinal] 3)
+    (t/is (= ::result/unsupported-format
+             (:type (error-data #(result/decode (transit/encode-str (assoc run :type :unknown)))))))
+    (doseq [bad [(dissoc run :plan)
+                 (assoc run :attempts {})
+                 (assoc-in run [:analysis :draws] 0)
+                 (assoc-in run [:preparations 0 :fingerprint :algorithm] :unknown)
+                 (assoc-in run [:preparations 0 :fingerprint :digest] "not a digest")
+                 (assoc-in run [:attempts 0 :ordinal] 3)
                  (assoc-in run [:attempts 0 :preparation-id] :unknown)
                  (assoc-in run [:remaining :saved/pan :repetitions] 2)
                  (assoc-in run [:attempts 0 :metrics metric-id :value] js/NaN)]]
@@ -416,10 +421,14 @@
       (t/is (= ::result/invalid-record
                (:type (error-data #(result/decode (transit/encode-str reordered)))))))))
 
-(t/deftest portable-report-roundtrip-does-not-use-registry
+(t/deftest records-roundtrip-summarize-and-compare-without-registry
   (let [run (run-with (vec (range 1 11)))
-        transported (-> run result/encode result/decode)]
+        transported (-> run result/encode result/decode)
+        comparison (-> (compare/compare-runs transported transported)
+                       result/encode result/decode)]
     (t/is (= (summary/summarize run) (summary/summarize transported)))
+    (t/is (= 0 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))
+    (t/is (empty? (get-in comparison [:pairs 0 :mismatches])))
     (t/is (str/includes? (format/format-run (summary/summarize transported)) "runtime-helper identity is unverified"))
     (t/is (= 99 (get-in (summary/summarize run {:draws 99}) [:analysis :draws])))
     (t/is (= method/defaults (:analysis run)))))
@@ -472,13 +481,12 @@
 
 (t/deftest matching-cases-ignore-provenance-and-repetition-counts
   (let [baseline (run-with [1 2 3])
-        candidate (run-with [2 3 4 5] {:definition (assoc saved-case :scene-version 99)
+        candidate (run-with [2 3 4 5] {:definition (assoc saved-case :scene-description "Reworded description")
                                        :analysis {:seed 99}
                                        :facts (-> metadata
                                                   (assoc :git {:sha "other" :dirty true})
                                                   (assoc-in [:build :provenance :run-marker] "second"))})
         comparison (compare/compare-runs baseline (assoc candidate :run-id "other" :started-at "later"))]
-    (t/is (= 2 (:schema-version comparison)))
     (t/is (= method/defaults (:analysis comparison)))
     (t/is (empty? (get-in comparison [:pairs 0 :mismatches])))
     (t/is (= 1.5 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))
@@ -493,7 +501,7 @@
              [:execution (run-with [3] {:definition (assoc saved-case :batch-size 20)})]
              [:execution (run-with [3] {:definition (assoc saved-case :completion :call)})]
              [:execution (run-with [3] {:definition (assoc saved-case :completion :await)})]
-             [:execution (run-with [3] {:definition (assoc saved-case :preparation {:version 2})})]
+             [:execution (run-with [3] {:definition (assoc saved-case :preparation {:settle-ms 25})})]
              [:environment (run-with [3] {:facts (assoc-in metadata [:environment :browser] "other")})]
              [:functional-build (run-with [3] {:facts (assoc-in metadata [:build :functional :features] #{:other})})]
              [:warmups (run-with [3] {:warmups 1})]
@@ -519,7 +527,7 @@
   (let [base           (run-with [1])
         other          (-> (run-with [2] {:definition (assoc saved-case :id :different/zoom :scene :different
                                                              :operation {:steps 8} :batch-size 20
-                                                             :completion :call :preparation {:version 2})
+                                                             :completion :call :preparation {:settle-ms 25})
                                           :prep (assoc-in preparation [:fingerprint :digest] (apply str (repeat 64 "b")))})
                            result/encode
                            result/decode)
@@ -542,7 +550,7 @@
               :batch-size 1 :completion :render-full :preparation {}}
              (select-keys (:baseline execution) execution-keys)))
     (t/is (= {:scene :different :operation {:steps 8}
-              :batch-size 20 :completion :call :preparation {:version 2}}
+              :batch-size 20 :completion :call :preparation {:settle-ms 25}}
              (select-keys (:candidate execution) execution-keys)))
     (t/is (= ::compare/incompatible
              (:type (error-data #(compare/compare-runs base (assoc-in other [:metadata :environment :cpu] "other")
@@ -596,10 +604,10 @@
                      (assoc-in comparison (conj changes-path :absolute-ci) {:lower 2 :upper 1})
                      (assoc-in comparison (conj report-path :counts :valid) -1)
                      (assoc-in comparison (conj report-path :definitions 0 :basis :calls) 0)
-                     (assoc-in comparison [:baseline :metadata :scored?] :unknown)]]
-      (t/is (= ::result/invalid-record (:type (error-data #(result/decode (transit/encode-str changed)))))))
-    (t/is (= ::result/unsupported-format
-             (:type (error-data #(result/decode (transit/encode-str (assoc comparison :schema-version 1)))))))))
+                     (assoc-in comparison [:baseline :metadata :scored?] :unknown)
+                     (dissoc comparison :pairs)
+                     (assoc-in comparison [:analysis :confidence] 1)]]
+      (t/is (= ::result/invalid-record (:type (error-data #(result/decode (transit/encode-str changed)))))))))
 
 (t/deftest force-keeps-invalid-measurements-unusable
   (let [baseline (run-with [js/NaN js/Infinity :absent :failed] {:repetitions 5})

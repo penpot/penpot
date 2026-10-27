@@ -30,8 +30,7 @@
   "Registers a scene and returns its id.
 
    - `id` (keyword)
-   - `opts` (`schema:scene`):  maps `:version`, `:description` and
-     `:params-schema`.
+   - `opts` (`schema:scene`): maps `:description` and `:params-schema`.
    - `argv` names one scene parameter symbol
    - `body` builds the snapshot.
 

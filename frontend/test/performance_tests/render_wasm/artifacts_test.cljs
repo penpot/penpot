@@ -81,8 +81,10 @@
     (t/is (= (path/join (:dir build) "build.transit") (:manifest-path build)))
     (t/is (= (path/join (:dir build) "index.html") (:index-path build)))
     (t/is (= manifest (:manifest build)))
-    (t/is (= {:type :renderer-build :schema-version 1 :status :building}
-             (select-keys manifest [:type :schema-version :status])))
+    (t/is (= #{:type :id :status :created-at :updated-at :functional :provenance}
+             (set (keys manifest))))
+    (t/is (= {:type :renderer-build :status :building}
+             (select-keys manifest [:type :status])))
     (t/is (= {:mode :release :default-features? false
               :features ["feature-one" "feature-two"] :cljs-profile-marks false}
              (:functional manifest)))
@@ -155,6 +157,19 @@
     (t/is (= #{"browser" "renderer" "build.log" "build.transit"}
              (set (array-seq (fs/readdirSync (:dir build))))))))
 
+(t/deftest malformed-builds-cannot-replace-saved-manifests
+  (doseq [side [:current :replacement]]
+    (let [build     (create-build)
+          valid     (:manifest build)
+          malformed (dissoc valid :functional)
+          proposed  (if (= :replacement side) malformed valid)]
+      (when (= :current side)
+        (fs/writeFileSync (:manifest-path build) (codec/encode-str malformed) "utf8"))
+      (let [saved (fs/readFileSync (:manifest-path build) "utf8")
+            error (failure #(artifacts/write-manifest build proposed))]
+        (t/is (= ::artifacts/invalid-manifest (:type (ex-data error))) (name side))
+        (t/is (= saved (fs/readFileSync (:manifest-path build) "utf8")) (name side))))))
+
 (def ^:private manifest-reader
   (str "const {parentPort, workerData} = require('worker_threads');"
        "const fs = require('fs'); const stop = new Int32Array(workerData.stop);"
@@ -201,8 +216,9 @@
       (finally
         (await (.terminate worker))))))
 
-(t/deftest unsupported-manifests-and-incomplete-builds-are-rejected
-  (doseq [change [{:schema-version 2} {:type :run-record} {:id "another-build"}]]
+(t/deftest malformed-manifests-and-incomplete-builds-are-rejected
+  (doseq [change [{:functional []} {:type :run-record} {:id "another-build"}
+                  {:status :unknown}]]
     (let [build (ready-build)]
       (fs/writeFileSync (:manifest-path build) (codec/encode-str (merge (:manifest build) change))
                         "utf8")
@@ -213,6 +229,17 @@
     (let [build (ready-build)]
       (fs/unlinkSync (path/join (:dir build) relative))
       (t/is (some? (failure #(artifacts/load-build @temporary-root (:id build)))) relative))))
+
+(t/deftest saved-builds-validate-current-shapes
+  (let [build    (ready-build)
+        manifest (select-keys (:manifest build)
+                              [:type :id :status :created-at :updated-at :functional :provenance])]
+    (fs/writeFileSync (:manifest-path build) (codec/encode-str manifest) "utf8")
+    (t/is (= manifest (:manifest (artifacts/load-build @temporary-root (:id build)))))
+    (fs/writeFileSync (:manifest-path build)
+                      (codec/encode-str (dissoc manifest :functional)) "utf8")
+    (t/is (= ::artifacts/unsupported-manifest
+             (:type (ex-data (failure #(artifacts/load-build @temporary-root (:id build)))))))))
 
 (t/deftest ids-cannot-select-or-delete-outside-paths
   (let [build   (ready-build)
@@ -421,7 +448,6 @@
   [id]
   {:id id
    :scene :artifact-only
-   :scene-version 1
    :scene-description "A descriptor supplied only by this build"
    :scene-seed 42
    :params {}
@@ -429,7 +455,7 @@
    :context :fresh
    :completion :render-full
    :batch-size 1
-   :preparation {:version 1}})
+   :preparation {}})
 
 (defn- write-catalog
   [build loaded-id response]

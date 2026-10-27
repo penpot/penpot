@@ -9,6 +9,7 @@
    ["fs" :as fs]
    ["os" :as os]
    ["path" :as path]
+   [app.common.transit :as transit]
    [benches.render-wasm.node.compare :as compare]
    [benches.render-wasm.report.compare :as report-compare]
    [benches.render-wasm.result :as result]
@@ -34,7 +35,6 @@
   [case-id scene]
   {:id case-id
    :scene scene
-   :scene-version 1
    :scene-description "comparison scene"
    :scene-seed 7
    :params {:count 10}
@@ -42,7 +42,7 @@
    :context :fresh
    :completion :render-full
    :batch-size 1
-   :preparation {:version 1}})
+   :preparation {}})
 
 (defn- make-run
   [run-id case-id value & {:keys [environment functional fingerprint scene]
@@ -66,7 +66,7 @@
              run
              {:preparation-id preparation-id
               :case-id case-id
-              :fingerprint {:encoding-version 1 :algorithm :sha-256
+              :fingerprint {:algorithm :sha-256
                             :digest fingerprint}
               :effective-graphics {:webgl2 true}
               :diagnostics {}})
@@ -92,7 +92,7 @@
     nil
     (catch :default cause cause)))
 
-(t/deftest compares-saved-file-paths-from-the-caller-cwd
+(t/deftest compares-saved-records-from-the-caller-cwd
   (write-run (path/join @temporary-root "baseline.transit")
              (make-run "baseline" :case/load 10))
   (write-run (path/join @temporary-root "candidate.transit")
@@ -103,7 +103,7 @@
       (let [{:keys [comparison text]} (compare/execute "baseline.transit"
                                                        "candidate.transit" {})]
         (t/is (= :comparison (:type comparison)))
-        (t/is (= 2 (:schema-version comparison)))
+        (t/is (= 2 (get-in comparison [:pairs 0 :metrics :elapsed :absolute :value])))
         (t/is (str/includes? text "Baseline"))
         (t/is (str/includes? text "Candidate"))
         (t/is (str/includes? text "case/load"))
@@ -159,6 +159,12 @@
     (t/is (thrown? js/Error (compare/execute baseline
                                              (path/join @temporary-root "broken.transit")
                                              {})))
+    (fs/writeFileSync (path/join @temporary-root "malformed.transit")
+                      (transit/encode-str (dissoc (make-run "malformed" :case/load 12) :plan)))
+    (t/is (= ::result/invalid-record
+             (:type (ex-data (failure #(compare/execute baseline
+                                                        (path/join @temporary-root "malformed.transit")
+                                                        {}))))))
     (t/is (thrown? js/Error (compare/execute baseline
                                              (path/join @temporary-root "missing.transit")
                                              {})))))

@@ -14,10 +14,22 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
+   [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
    [benches.render-wasm.node.files :as files]
    [clojure.string :as str]))
+
+(def schema:build
+  "Stored renderer build identity, lifecycle and provenance."
+  [:map
+   [:type [:= :renderer-build]]
+   [:id [:string {:min 1}]]
+   [:status [:enum :building :ready :failed]]
+   [:created-at :string]
+   [:updated-at :string]
+   [:functional :map]
+   [:provenance :map]])
 
 (def ^:private executable-dir
   ;; CJS boots use __dirname. Node's ESM test boots have an absolute argv[1]
@@ -118,7 +130,6 @@
   (let [id       (str (random-uuid))
         now      (.toISOString (js/Date.))
         manifest {:type :renderer-build
-                  :schema-version 1
                   :id id
                   :status :building
                   :created-at now
@@ -147,13 +158,9 @@
   [build manifest]
   (let [current (transit/decode-str (fs/readFileSync (:manifest-path build) "utf8"))]
     (when-not (and (= (:id build) (:id current) (:id manifest))
-                   (= :renderer-build (:type current))
-                   (= 1 (:schema-version current))
-                   (contains? #{:building :ready :failed} (:status current))
-                   (= :renderer-build (:type manifest))
-                   (= 1 (:schema-version manifest))
-                   (contains? #{:building :ready :failed} (:status manifest)))
-      (throw (ex-info "invalid renderer build manifest"
+                   (sm/validate schema:build current)
+                   (sm/validate schema:build manifest))
+      (throw (ex-info "invalid schema:build"
                       {:type ::invalid-manifest :id (:id build)})))
     (if (contains? #{:ready :failed} (:status current))
       (if (= current manifest)
@@ -194,7 +201,7 @@
     build))
 
 (defn load-build
-  "Loads a ready schema-1 build and checks every required artifact.
+  "Loads a ready schema:build and checks every required artifact.
 
   IDs cannot contain path segments. The build, manifest and artifact paths
   must remain inside the managed root and the selected build after resolving
@@ -206,10 +213,9 @@
         dir      (checked-path managed (:dir build))
         file     (require-file dir (:manifest-path build))
         manifest (transit/decode-str (fs/readFileSync file "utf8"))]
-    (when-not (and (= :renderer-build (:type manifest))
-                   (= 1 (:schema-version manifest))
+    (when-not (and (sm/validate schema:build manifest)
                    (= id (:id manifest)))
-      (throw (ex-info "unsupported renderer build manifest"
+      (throw (ex-info "invalid schema:build"
                       {:type ::unsupported-manifest :id id})))
     (when-not (= :ready (:status manifest))
       (throw (ex-info "renderer build is not ready"

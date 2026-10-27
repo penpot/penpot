@@ -41,19 +41,20 @@
    :dir dir
    :log-path (path/join dir "build.log")
    :manifest {:type :renderer-build
-              :schema-version 1
               :id id
               :status :ready
+              :created-at "2026-10-27T00:00:00.000Z"
+              :updated-at "2026-10-27T00:00:00.000Z"
               :functional {:mode :release
                            :default-features? true
-                           :features []}
+                           :features []
+                           :cljs-profile-marks false}
               :provenance {:git {:sha "build-revision" :dirty false}}}})
 
 (defn- collected
   [id context]
   {:id id
    :scene :case
-   :scene-version 1
    :scene-description "test scene"
    :scene-seed 1
    :params {}
@@ -61,7 +62,7 @@
    :context context
    :completion :render-full
    :batch-size 1
-   :preparation {:version 1}})
+   :preparation {}})
 
 (defn- next-count
   [state key]
@@ -127,8 +128,7 @@
 
             (let [preparation {:preparation-id preparation-id
                                :case-id case-id
-                               :fingerprint {:encoding-version 1
-                                             :algorithm :sha-256
+                               :fingerprint {:algorithm :sha-256
                                              :digest (apply str (repeat 64 "a"))}
                                :effective-graphics {}
                                :diagnostics {}}]
@@ -440,7 +440,7 @@
         diag   (get-in run [:metadata :diagnostics])]
     (t/is (= {:attempt-ms 1234} (get-in run [:plan :timeout-policy])))
     (t/is (= {:sha "build-revision" :dirty false} (get-in run [:metadata :git])))
-    (t/is (= {:mode :release :default-features? true :features []}
+    (t/is (= {:mode :release :default-features? true :features [] :cljs-profile-marks false}
              (get-in run [:metadata :build :functional])))
     (t/is (= "test-build" (get-in run [:metadata :build :provenance :build-id])))
     (t/is (true? (get-in run [:metadata :scored?])))

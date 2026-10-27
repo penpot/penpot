@@ -655,7 +655,7 @@
                                         (when analysis-text (t/decode-str analysis-text))))))
 
 (defn compare-records
-  "Returns Comparison schema2 Transit for two saved runs and Transit options."
+  "Returns schema:comparison Transit for two saved runs and Transit options."
   [baseline-text candidate-text options-text]
   (result/encode (compare/compare-runs (result/decode baseline-text)
                                        (result/decode candidate-text)
@@ -667,7 +667,7 @@
   (format/format-run (summary/summarize (result/decode record-text))))
 
 (defn format-comparison
-  "Returns text for a Comparison schema2 Transit record."
+  "Returns text for a schema:comparison Transit record."
   [record-text]
   (format/format-comparison (result/decode record-text)))
 

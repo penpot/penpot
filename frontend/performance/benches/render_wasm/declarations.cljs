@@ -11,7 +11,7 @@
   `defcase` macros in `declarations.clj`. This namespace imports no browser or
   renderer code.
 
-  - A scene declares an id, a version, a human description, a closed
+  - A scene declares an id, a human description, a closed
     parameters schema and a one-argument build function.
   - A case declares an id namespaced by its scene, the scene, base parameters,
     a view, a context policy, a completion mode and an optional operation
@@ -96,7 +96,6 @@
   [:map {:closed true}
    [:id simple-keyword?]
    [:ns string?]
-   [:version [:int {:min 1}]]
    [:description string?]
    [:params-schema vector?]
    [:build fn?]])
@@ -121,7 +120,6 @@
   [:map {:closed true}
    [:id qualified-keyword?]
    [:scene simple-keyword?]
-   [:scene-version [:int {:min 1}]]
    [:scene-description string?]
    [:scene-seed [:int {:min 0 :max 4294967295}]]
    [:params [:map]]
@@ -356,7 +354,7 @@
                     :operation :preparation])
       (update :completion #(or % :render-full))
       (update :batch-size #(or % 1))
-      (update :preparation #(or % {:version 1}))))
+      (update :preparation #(or % {}))))
 
 (defn check-collected-case
   "Validates a collected case descriptor and returns it unchanged.

@@ -650,7 +650,7 @@
 
   Options are resolved CLI options. root is the frontend checkout. The record
   exists before on-created runs, so a browser startup failure still leaves a
-  valid partial record. Returns {:run RunRecord :home home :exit-code n
+  valid partial record. Returns {:run schema:run :home home :exit-code n
   :error cause-or-nil}."
   [root home selected-build cases options signal on-progress on-created]
   (let [opts  (assoc (normalize-options options) :run-id (:run-id home))

@@ -20,8 +20,7 @@
    [:height [:int {:min 1080}]]])
 
 (decl/defscene :masks
-  {:version 1
-   :description "Twenty-four circle masks with ordered striped descendants"
+  {:description "Twenty-four circle masks with ordered striped descendants"
    :params-schema schema:params}
   [params]
   (let [params (merge default-params params)]

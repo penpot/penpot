@@ -58,8 +58,7 @@
    :r4      (sb/gen-int 0 24)})
 
 (decl/defscene :rects
-  {:version 1
-   :description "Seeded rectangles with translucent fills and centered strokes"
+  {:description "Seeded rectangles with translucent fills and centered strokes"
    :params-schema schema:params}
   [params]
   (let [params (merge default-params params)]
