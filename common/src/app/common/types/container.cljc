@@ -94,6 +94,10 @@
   [container shape-id f]
   (update-in container [:objects shape-id] f))
 
+(defn get-container-root
+  [container]
+  (d/seek #(or (nil? (:parent-id %)) (= (:parent-id %) uuid/zero)) (shapes-seq container)))
+
 (defn get-direct-children
   [container shape]
   (map #(get-shape container %) (:shapes shape)))

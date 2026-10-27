@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -160,22 +161,12 @@
   [file library shape-label new-component-label]
   (let [shape             (ths/get-shape file shape-label)
         page              (thf/current-page file)
-        keep-props-values (select-keys shape ctk/swap-keep-attrs)
         libraries         {(:id library) library
                            (:id file) file}
         id-new            (:id (thc/get-component library new-component-label))
-        [_ _ changes]     (cll/generate-component-swap
+        [_ changes _]     (clv/generate-component-swap-in-place
                            (pcb/empty-changes nil (:id page))
-                           (:objects page)
-                           shape
-                           (:data library)
-                           page
-                           libraries
-                           id-new
-                           0
-                           nil
-                           keep-props-values
-                           false)]
+                           page libraries (:data library) shape id-new false)]
     (thf/apply-changes file changes)))
 
 (defn- setup-library-with-absolute-nested-icon
@@ -211,13 +202,13 @@
 
     ;; ==== Check
     (t/is (true? (:layout-item-absolute swapped)))
-    (t/is (some? (ctk/get-swap-slot swapped)))
+    (t/is (ctk/swapped? swapped))
     (t/is (= (thi/id :icon-b) (:component-id swapped)))
-    (t/is (some? (ctk/get-swap-slot swapped')))
+    (t/is (ctk/swapped? swapped'))
     (t/is (= (thi/id :icon-b) (:component-id swapped')))
     (t/is (true? (:layout-item-absolute swapped')))))
 
-(t/deftest test-sync-library-propagates-slot-absolute-to-swapped-nested
+(t/deftest test-sync-library-propagates-position-absolute-to-swapped-nested
   (let [;; ==== Setup
         library  (setup-library-with-absolute-nested-icon)
         file     (-> (thf/sample-file :file)
@@ -234,7 +225,7 @@
         swapped' (ths/get-shape file' :copy-nested-head)]
 
     ;; ==== Check
-    (t/is (some? (ctk/get-swap-slot swapped')))
+    (t/is (ctk/swapped? swapped'))
     (t/is (= (thi/id :icon-b) (:component-id swapped')))
     (t/is (not (true? (:layout-item-absolute swapped'))))))
 
@@ -268,4 +259,4 @@
     ;; ==== Check
     (t/is (= margin (:layout-item-margin sibling')))
     (t/is (true? (:layout-item-absolute swapped')))
-    (t/is (some? (ctk/get-swap-slot swapped')))))
+    (t/is (ctk/swapped? swapped'))))

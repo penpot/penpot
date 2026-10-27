@@ -13,11 +13,11 @@
    [app.common.data :as d]
    [app.common.features :as cfeat]
    [app.common.files.changes-builder :as pcb]
-   [app.common.files.tokens :as cfo]
-   [app.common.files.validate :as cfv]
    [app.common.files.comp-processors :as cfcp]
    [app.common.files.migrations :as fmg]
    [app.common.files.swap-slots :as cfss]
+   [app.common.files.tokens :as cfo]
+   [app.common.files.validate :as cfv]
    [app.common.pprint :as pp]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
@@ -2960,7 +2960,7 @@
                 (assoc ::bfc/team-id (:default-team-id profile))
                 (assoc ::bfc/input input))]
     (case version
-      1 (vec (v1/import-files! cfg))
+      1 (:file-ids (v1/import-files! cfg))
       3 (:file-ids (v3/import-files! cfg)))))
 
 (defn- import-error
