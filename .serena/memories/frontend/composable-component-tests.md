@@ -150,5 +150,5 @@ The frontend bundle is built once per SHA and restored by this job (`mem:fronten
 Details: README, "Running in CI".
 
 ## Substrate
-`mem:common/test-setup`, `mem:common/component-data-model`, `mem:common/component-swap-pipeline`,
+`mem:common/testing`, `mem:common/component-data-model`, `mem:common/component-swap-pipeline`,
 `mem:frontend/testing`.
