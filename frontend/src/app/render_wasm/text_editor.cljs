@@ -975,7 +975,8 @@
     [start end]))
 
 (defn apply-attrs-to-paragraph
-  "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."
+  "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end),
+  splitting spans and joining back the ones left with their neighbour's style."
   [para sel-start sel-end styles]
   (let [[sel-start sel-end] (annotation-style-range para sel-start sel-end styles)
         spans               (:children para)
@@ -1009,7 +1010,7 @@
                                       (recur (rest spans) span-end
                                              (-> acc
                                                  (into (keep identity [before selected after])))))))))]
-    (assoc para :children result)))
+    (assoc para :children (txt/merge-equal-spans result))))
 
 (defn selection-fills
   "The selection's fills: shared vector if all spans match, `:multiple` if not, nil if empty."
