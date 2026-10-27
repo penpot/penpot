@@ -15,6 +15,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
@@ -401,7 +402,8 @@
   [tuple transform-tuple]
   (let [initial (cg/initial-state [2 1 {:library true :stale-libraries true :library-text true}])
         situation (:situation initial)
-        owner (:library-id (cg/resolve-op situation {} tuple))
+        resolved (cg/resolve-op situation {} tuple)
+        owner (:library-id resolved)
         transform-tuple (when transform-tuple
                           (assoc transform-tuple 1
                                  (first (keep-indexed
@@ -419,6 +421,10 @@
         current-id (:id (tm/file situation))
         before (get-in (ftm/snapshot) [:files current-id])]
     (t/is (seq changes) (str "source edit changes " tuple))
+    (when (#{:library-text :library-text-style} (first tuple))
+      (t/is (not= (thtx/view (:content (:shape resolved)))
+                  (thtx/normalize (:value (:op resolved))))
+            (str "meaningful source text action " tuple)))
     (t/is (= :settled (await (ftm/await-step [(dwl/ext-library-changed owner (ct/now) 1 changes)]))))
     (t/is (= before (get-in (ftm/snapshot) [:files current-id])) "notification keeps consumer copies stale")
     (t/is (empty? (get-in @st/state [:workspace-undo :items])) "notification creates no consumer history")
@@ -465,6 +471,91 @@
   (await
    (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
      (await (source-acceptance-history [:library-text 0 1 1] [:transform 8 3 3 4])))))
+
+(defn- get-editor-situation
+  [situation owner]
+  (let [files (cf/all-files situation)]
+    (-> situation
+        (tm/with-file (get files owner))
+        (tm/with-aux-files (dissoc files owner)))))
+
+(defn- get-live-text
+  [owner shape-id]
+  (thtx/view (:content (tm/shape-by-id (tm/make-situation (get-in @st/state [:files owner])) shape-id))))
+
+(defn- ^:async transitive-text-acceptance-history
+  [tuple]
+  (let [initial (cg/initial-state [2 0 {:library true :stale-libraries true
+                                        :library-dependency true :library-text true}])
+        situation (:situation initial)
+        {:keys [source-id dependent-id source-text-id dependent-text-id
+                consumer-text-ids direct-text-ids]} (cg/get-library-text-chain situation)
+        current-id (:id (tm/file situation))
+        source (get (tm/aux-files situation) source-id)
+        original (thtx/view (:content (tm/shape-by-id (tm/make-situation source) source-text-id)))
+        expected (thtx/normalize (:value (:op (cg/resolve-op situation {} tuple))))
+        edited (-> initial (cg/step tuple) cg/settle-state)
+        source-group (peek (get-in edited [:situation :library-histories source-id :runner ::r/undo-stack]))
+        source-changes (vec (mapcat :redo-changes source-group))
+        upstream (-> edited (cg/step [:library-accept 0]) cg/settle-state)
+        accepted (-> upstream (cg/step [:library-sync 0]) cg/settle-state)
+        dependent-context (get-editor-situation situation dependent-id)
+        _ (ftm/start-generated dependent-context)
+        before-source-notification (ftm/snapshot)]
+    (t/is (not= original expected) (str "meaningful source action " tuple))
+    (t/is (seq source-changes))
+    (t/is (= :settled (await (ftm/await-step [(dwl/ext-library-changed source-id (ct/now) 1 source-changes)]))))
+    (t/is (= (dissoc (:files before-source-notification) source-id)
+             (dissoc (:files (ftm/snapshot)) source-id))
+          "upstream notification changes only the loaded source")
+    (t/is (empty? (get-in @st/state [:workspace-undo :items])))
+    (t/is (= expected (get-live-text source-id source-text-id)))
+    (t/is (= original (get-live-text dependent-id dependent-text-id)))
+    (let [before (ftm/snapshot)]
+      (t/is (= :settled (await (ftm/await-step [(dwl/sync-file dependent-id source-id)]))))
+      (t/is (= expected (get-live-text dependent-id dependent-text-id)))
+      (t/is (= (repeat 2 original) (map #(get-live-text current-id %) consumer-text-ids)))
+      (t/is (= (dissoc (:files before) dependent-id) (dissoc (:files (ftm/snapshot)) dependent-id)))
+      (let [after (ftm/snapshot)
+            actual (ftm/refresh-generated (get-editor-situation (:situation upstream) dependent-id))
+            dependent-changes (:redo-changes (peek (get-in @st/state [:workspace-undo :items])))]
+        (t/is (seq dependent-changes))
+        (t/is (nil? (oracle/check actual (:model upstream))))
+        (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+        (t/is (uc/same-state? before (ftm/snapshot)) "dependent undo retains the loaded source")
+        (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+        (t/is (uc/same-state? after (ftm/snapshot)) "dependent redo restores accepted text")
+        ;; Install the separate consumer editor with its original stale data.
+        ;; Deliver the real dependent acceptance changes as its notification.
+        (ftm/start-generated situation)
+        (let [before-notifications (get-in (ftm/snapshot) [:files current-id])]
+          (t/is (= :settled (await (ftm/await-step [(dwl/ext-library-changed source-id (ct/now) 1 source-changes)]))))
+          (t/is (= :settled (await (ftm/await-step [(dwl/ext-library-changed dependent-id (ct/now) 1 dependent-changes)]))))
+          (t/is (= before-notifications (get-in (ftm/snapshot) [:files current-id])))
+          (t/is (empty? (get-in @st/state [:workspace-undo :items])))
+          (t/is (= expected (get-live-text source-id source-text-id)))
+          (t/is (= expected (get-live-text dependent-id dependent-text-id)))
+          (t/is (= (repeat 2 original) (map #(get-live-text current-id %) consumer-text-ids))))
+        (let [before (ftm/snapshot)]
+          (t/is (= :settled (await (ftm/await-step [(dwl/sync-file current-id dependent-id)]))))
+          (t/is (= (repeat 2 expected) (map #(get-live-text current-id %) consumer-text-ids)))
+          (t/is (= (repeat 2 original) (map #(get-live-text current-id %) direct-text-ids))
+                "accepting the dependent leaves direct source copies stale")
+          (t/is (= (dissoc (:files before) current-id) (dissoc (:files (ftm/snapshot)) current-id)))
+          (let [after (ftm/snapshot)
+                actual (ftm/refresh-generated (:situation accepted))]
+            (t/is (nil? (oracle/check actual (:model accepted))))
+            (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+            (t/is (uc/same-state? before (ftm/snapshot)) "consumer undo retains both loaded libraries")
+            (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+            (t/is (uc/same-state? after (ftm/snapshot)) "consumer redo restores accepted text")))))))
+
+(t/deftest ^:async transitive-text-waits-for-both-library-acceptances
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (doseq [tuple (into [[:library-text 0 0 1]]
+                         (map #(vector :library-text-style 0 % 1) (range 12)))]
+       (await (transitive-text-acceptance-history tuple))))))
 
 (t/deftest ^:async edit-step-waits-for-slow-sync
   (let [sync-file dwl/sync-file]

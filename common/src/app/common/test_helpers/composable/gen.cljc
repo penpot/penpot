@@ -108,7 +108,10 @@
                         (as-> s (tm/apply-to (n/create-component "library-dependent" setup/labeled-fill :size 100) s))
                         tm/file
                         (thc/instantiate-component :sync-library-random-component :library-dependency-copy
-                                                   :parent-label :sync-library-dependent-head :library library)))
+                                                   :parent-label :sync-library-dependent-head :library library)
+                        (cond-> (:library-text opts)
+                          (thc/instantiate-component :library-text-component :library-dependency-text-copy
+                                                     :parent-label :sync-library-dependent-head :library library))))
         libraries (cond-> {(:id library) library} dependent (assoc (:id dependent) dependent))
         components (for [[_ source] (ordered-files libraries)
                          entry (tree (tm/with-file situation source))
@@ -123,6 +126,30 @@
                      (for [[index [source component]] (map-indexed vector components) copy (range 2)]
                        [index source component copy]))]
     (-> situation (tm/with-file file) (tm/with-aux-files libraries))))
+
+(defn get-library-text-chain
+  "Participant ids from the initial three-file text dependency fixture.
+  Capture these before editing, so later results cannot choose expectations."
+  [situation]
+  (let [source-id         (thi/id :random-library)
+        dependent-id      (thi/id :dependent-library)
+        source-text-id    (thi/id :library-text-child)
+        dependent-head-id (thi/id :library-dependency-text-copy)
+        dependent         (get (tm/aux-files situation) dependent-id)
+        dependent-text-id (first (:shapes (tm/shape-by-id (tm/with-file situation dependent) dependent-head-id)))
+        copies            (tree situation)]
+    {:source-id source-id
+     :dependent-id dependent-id
+     :source-text-id source-text-id
+     :dependent-head-id dependent-head-id
+     :dependent-text-id dependent-text-id
+     :consumer-root-ids (into [] (keep (fn [{:keys [shape]}]
+                                         (when (= (thi/id :sync-library-dependent-head) (:shape-ref shape))
+                                           (:id shape)))) copies)
+     :consumer-text-ids (into [] (keep (fn [{:keys [shape]}]
+                                         (when (= dependent-text-id (:shape-ref shape)) (:id shape)))) copies)
+     :direct-text-ids (into [] (keep (fn [{:keys [shape]}]
+                                       (when (= source-text-id (:shape-ref shape)) (:id shape)))) copies)}))
 
 (defn forest
   "All live page trees, with stable file/page prefixes for model replay."
