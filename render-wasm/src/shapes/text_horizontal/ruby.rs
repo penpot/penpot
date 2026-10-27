@@ -384,11 +384,22 @@ pub(super) fn horizontal_ruby_pieces(
 /// Ink edge shared by the glyphs of one ruby line: the lowest ink bottom for
 /// over ruby, the highest ink top for under ruby. One edge for the whole line
 /// keeps marks whose ink sits mid-height, such as ー and ・, on the line's
-/// baseline instead of pulling each of them onto the base.
+/// baseline instead of pulling each of them onto the base. Western letters
+/// (Pinyin, romaji) take the font's descent and cap height instead of their
+/// ink, so every reading keeps one baseline whatever its descenders, ascenders
+/// or tone marks.
 pub(super) fn ruby_line_ink_edge(shaped: &[ShapedRun], glyphs: &[RubyGlyphRef], over: bool) -> f32 {
-    let edges = glyphs.iter().map(|(run_index, glyph, _, _)| {
+    let edges = glyphs.iter().map(|(run_index, glyph, _, western)| {
         let run = &shaped[*run_index];
         let (_, metrics) = run.font.metrics();
+        if *western {
+            if over {
+                return metrics.descent;
+            }
+            if metrics.cap_height > 0.0 {
+                return -metrics.cap_height;
+            }
+        }
         let fallback = if over {
             metrics.descent
         } else {
