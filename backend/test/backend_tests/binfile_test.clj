@@ -3739,7 +3739,7 @@
                 (assoc ::bfc/team-id (:default-team-id profile))
                 (assoc ::bfc/input input))]
     (case version
-      1 (vec (v1/import-files! cfg))
+      1 (:file-ids (v1/import-files! cfg))
       3 (:file-ids (v3/import-files! cfg)))))
 
 (defn- import-error
