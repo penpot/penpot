@@ -331,11 +331,15 @@
     runs))
 
 (defn restyle
-  "Set the run style `k` to `v` on every run of `text`."
+  "Set the run style `k` to `v` on every run of `text`.
+  Named colors and explicit fills replace each other."
   [text k v]
   (update-paragraphs text
                      (fn [[style runs]]
-                       [style (map (fn [[letters run-style]] [letters (assoc run-style k v)])
+                       [style (map (fn [[letters run-style]]
+                                     [letters (cond-> (assoc run-style k v)
+                                                (= k :color) (dissoc :fills)
+                                                (= k :fills) (dissoc :color))])
                                    (detach-typography runs k))])))
 
 (defn restyle-paragraphs

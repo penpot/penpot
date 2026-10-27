@@ -16,6 +16,20 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest setting-a-named-color-replaces-explicit-fills
+  (doseq [fills [nil [] [{:fill-color "#123456" :fill-opacity 0.5}]]]
+    (let [text [[["Library text" {:fills fills :size 18}]]]
+          styled (thtx/restyle text :color :red)]
+      (t/is (= [[["Library text" {:color :red :size 18}]]]
+               (thtx/normalize styled)))
+      (t/is (= [{:fill-color "#FF0000" :fill-opacity 1}]
+               (get-in (thtx/content styled) [:children 0 :children 0 :children 0 :fills]))))))
+
+(t/deftest setting-explicit-fills-replaces-a-named-color
+  (let [styled (thtx/restyle [[["Library text" {:color :red :size 18}]]] :fills nil)]
+    (t/is (= [[["Library text" {:fills nil :size 18}]]] styled))
+    (t/is (nil? (get-in (thtx/content styled) [:children 0 :children 0 :children 0 :fills])))))
+
 (t/deftest content-is-written-as-the-editors-write-it
   (let [content    (thtx/content [[["Price: "] ["$10" {:weight 700 :color :red}]]])
         paragraph  (first (txt/node-seq txt/is-paragraph-node? content))
