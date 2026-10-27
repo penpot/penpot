@@ -162,6 +162,7 @@ function seedBuilds(fixture) {
       manifestText(id, status, "renderer-build"),
     );
     fs.writeFileSync(path.join(directory, "build.log"), `${status} build\n`);
+    fs.writeFileSync(path.join(directory, "keep.txt"), "keep\n");
   }
 }
 
@@ -174,6 +175,9 @@ function seedRuns(fixture) {
       path.join(directory, "run.transit"),
       manifestText(id, status, "renderer-run"),
     );
+    fs.writeFileSync(path.join(directory, "run.log"), "run\n");
+    fs.writeFileSync(path.join(directory, "case-load.PNG"), "screenshot\n");
+    fs.writeFileSync(path.join(directory, "keep.txt"), "keep\n");
   }
 }
 
@@ -399,10 +403,16 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
     stdout: "",
     stderr: "",
   });
-  assert.equal(fs.existsSync(fixture.builds), false);
+  for (const id of fs.readdirSync(fixture.builds)) {
+    assert.deepEqual(fs.readdirSync(path.join(fixture.builds, id)), [
+      "keep.txt",
+    ]);
+  }
   assert.deepEqual(tree(fixture.runs), runs);
   assert.deepEqual(
-    tree(fixture.managed).filter(([name]) => name !== "runs"),
+    tree(fixture.managed).filter(
+      ([name]) => !["runs", "builds"].includes(name),
+    ),
     retained,
   );
 
@@ -413,10 +423,14 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
     stdout: "",
     stderr: "",
   });
-  assert.equal(fs.existsSync(fixture.runs), false);
+  for (const id of fs.readdirSync(fixture.runs)) {
+    assert.deepEqual(fs.readdirSync(path.join(fixture.runs, id)), ["keep.txt"]);
+  }
   assert.deepEqual(tree(fixture.builds), builds);
   assert.deepEqual(
-    tree(fixture.managed).filter(([name]) => name !== "builds"),
+    tree(fixture.managed).filter(
+      ([name]) => !["runs", "builds"].includes(name),
+    ),
     retained,
   );
 
@@ -426,10 +440,109 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
     stdout: "",
     stderr: "",
   });
-  assert.equal(fs.existsSync(fixture.builds), false);
-  assert.equal(fs.existsSync(fixture.runs), false);
-  assert.deepEqual(tree(fixture.managed), retained);
+  for (const root of [fixture.builds, fixture.runs]) {
+    for (const id of fs.readdirSync(root)) {
+      assert.deepEqual(fs.readdirSync(path.join(root, id)), ["keep.txt"]);
+    }
+  }
+  assert.deepEqual(
+    tree(fixture.managed).filter(
+      ([name]) => !["runs", "builds"].includes(name),
+    ),
+    retained,
+  );
 });
+
+test(
+  "run reserves nested output before the compiler starts",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const output = path.join(fixture.managed, "missing", "parents", "output");
+    const marker = path.join(fixture.managed, "compiler-ran");
+    fs.writeFileSync(
+      fixture.compiler,
+      `#!/usr/bin/env node
+const fs = require("node:fs");
+if (!fs.statSync(${JSON.stringify(path.join(output, "run.log"))}).isFile()) process.exit(99);
+fs.writeFileSync(${JSON.stringify(marker)}, "reserved");
+process.exit(23);
+`,
+      { mode: 0o755 },
+    );
+
+    const result = await runCli(fixture, ["run", "--output-dir", output]);
+
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.stdout, "");
+    assert.equal(fs.readFileSync(marker, "utf8"), "reserved");
+    assert.equal(fs.existsSync(path.join(output, "run.transit")), false);
+  },
+);
+
+test(
+  "run rejects invalid output parents before invoking the compiler",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const parent = path.join(fixture.managed, "not-a-directory");
+    const marker = path.join(fixture.managed, "compiler-ran");
+    fs.writeFileSync(parent, "keep");
+    fs.writeFileSync(
+      fixture.compiler,
+      `#!/usr/bin/env node
+require("node:fs").writeFileSync(${JSON.stringify(marker)}, "ran");
+process.exit(23);
+`,
+      { mode: 0o755 },
+    );
+
+    const result = await runCli(fixture, [
+      "run",
+      "--output-dir",
+      path.join(parent, "output"),
+    ]);
+
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /ENOTDIR|cannot create run home/);
+    assert.equal(fs.existsSync(marker), false);
+    assert.equal(fs.readFileSync(parent, "utf8"), "keep");
+  },
+);
+
+test(
+  "run rejects --remove outputs inside builds including directory aliases",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const marker = path.join(fixture.managed, "compiler-ran");
+    const alias = path.join(path.dirname(fixture.managed), "build-alias");
+    fs.mkdirSync(fixture.builds);
+    fs.symlinkSync(fixture.builds, alias, "dir");
+    fs.writeFileSync(
+      fixture.compiler,
+      `#!/usr/bin/env node
+require("node:fs").writeFileSync(${JSON.stringify(marker)}, "ran");
+process.exit(23);
+`,
+      { mode: 0o755 },
+    );
+
+    for (const root of [fixture.builds, alias]) {
+      const output = path.join(root, "missing", "output");
+      const result = await runCli(fixture, [
+        "run",
+        "--remove",
+        "--output-dir",
+        output,
+      ]);
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /--remove.*inside builds/);
+      assert.equal(fs.existsSync(output), false);
+    }
+    assert.equal(fs.existsSync(marker), false);
+  },
+);
 
 test(
   "malformed purge categories leave all files intact",

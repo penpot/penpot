@@ -12,6 +12,7 @@
    [app.common.transit :as transit]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.run :as run]
+   [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
@@ -181,6 +182,8 @@
    (execute fake cases opts (js/AbortController.)))
   ([_fake cases opts controller]
    (run/execute (artifacts/frontend-root)
+                (runs/create-home {:root (artifacts/frontend-root) :run-id (:run-id opts)
+                                   :output-dir (:output-dir opts)})
                 (selected-build (build-dir) "test-build")
                 cases opts (.-signal controller) nil nil)))
 
@@ -460,12 +463,15 @@
         _      (fs/writeFileSync (path/join dir "index.html") "<!doctype html>")
         fake   (fake-browser {})
         out    (path/join @temporary-root "remove-run")
-        result (await (run/execute root (selected-build dir id)
+        home   (runs/create-home {:root root :run-id "remove-run"
+                                  :output-dir out :remove true})
+        result (await (run/execute root home (selected-build dir id)
                                    [(collected :case/a :fresh)]
                                    (assoc (options fake out) :remove? true)
                                    (.-signal (js/AbortController.)) nil nil))]
     (t/is (fs/existsSync (get-in result [:home :record-path])))
-    (t/is (not (fs/existsSync dir)))
+    (t/is (fs/existsSync dir))
+    (t/is (not (fs/existsSync (path/join dir "index.html"))))
     (t/is (= :completed (get-in result [:run :termination :reason])))
     (t/is (zero? (:exit-code result)))))
 
@@ -488,7 +494,9 @@
                                    ;; attempts have reached the saved record.
                                    (fs/renameSync record prior)
                                    (fs/mkdirSync record))))
-        response   (await (run/execute root (selected-build dir id)
+        home       (runs/create-home {:root root :run-id "failed-write"
+                                      :output-dir out :remove true})
+        response   (await (run/execute root home (selected-build dir id)
                                        [(collected :case/a :fresh)]
                                        (assoc (options fake out) :remove true)
                                        (.-signal (js/AbortController.)) nil nil))
@@ -498,4 +506,5 @@
     (t/is (every? zero? (vals (get-in saved [:remaining :case/a]))))
     (t/is (some? (:error response)))
     (t/is (= 1 (:exit-code response)))
-    (t/is (fs/existsSync dir))))
+    (t/is (= "<!doctype html>"
+             (fs/readFileSync (path/join dir "index.html") "utf8")))))

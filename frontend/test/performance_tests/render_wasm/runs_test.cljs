@@ -102,3 +102,29 @@
                             (runs/create-home {:root @temporary-root :run-id id}))))
   (t/is (thrown-with-msg? js/Error #"nonempty path"
                           (runs/check-output-dir "  "))))
+
+(t/deftest explicit-home-creates-missing-parents
+  (let [out  (path/join @temporary-root "missing" "parents" "run")
+        home (runs/create-home {:root @temporary-root :run-id "nested"
+                                :output-dir out})]
+    (t/is (.isDirectory (fs/statSync out)))
+    (t/is (= "" (fs/readFileSync (:log-path home) "utf8")))
+    (t/is (thrown-with-msg? js/Error #"already exists"
+                            (runs/create-home {:root @temporary-root :run-id "again"
+                                               :output-dir out})))))
+
+(t/deftest remove-rejects-output-inside-builds-before-creating-it
+  (let [builds (path/join (artifacts/managed-root @temporary-root) "builds")
+        alias  (path/join @temporary-root "build-alias")]
+    (fs/mkdirSync builds #js {:recursive true})
+    (fs/symlinkSync builds alias "dir")
+    (doseq [out [(path/join builds "direct")
+                 (path/join alias "missing" "nested")]]
+      (t/is (thrown-with-msg? js/Error #"--remove.*inside builds"
+                              (runs/create-home {:root @temporary-root :run-id "blocked"
+                                                 :output-dir out :remove true})))
+      (t/is (not (fs/existsSync out))))
+    (let [out (path/join @temporary-root "builds-other" "allowed")]
+      (runs/create-home {:root @temporary-root :run-id "allowed"
+                         :output-dir out :remove true})
+      (t/is (fs/existsSync (path/join out "run.log"))))))

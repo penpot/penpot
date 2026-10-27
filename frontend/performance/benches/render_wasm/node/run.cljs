@@ -646,18 +646,14 @@
       (dissoc :screenshots :remove)))
 
 (defn ^:async execute
-  "Executes a prepared selection and owns the run home, host and browser.
+  "Executes a prepared selection in an allocated home and owns host and browser.
 
   Options are resolved CLI options. root is the frontend checkout. The record
   exists before on-created runs, so a browser startup failure still leaves a
   valid partial record. Returns {:run RunRecord :home home :exit-code n
   :error cause-or-nil}."
-  [root selected-build cases options signal on-progress on-created]
-  (let [opts  (-> (normalize-options options)
-                  (assoc :run-id (or (:run-id options) (str (random-uuid)))))
-        home  (runs/create-home {:root root
-                                 :run-id (:run-id opts)
-                                 :output-dir (:output-dir opts)})
+  [root home selected-build cases options signal on-progress on-created]
+  (let [opts  (assoc (normalize-options options) :run-id (:run-id home))
         run   (result/create-run
                {:run-id (:run-id opts)
                 :started-at (now)
@@ -748,13 +744,13 @@
 (defn ^:async run
   "Prepares or loads a build, collects matching cases and executes one run.
 
-  User output paths resolve before any build work. A build or catalog failure
-  before the plan exists creates no run record and rethrows with build facts."
+  The output home is reserved before build work so filesystem errors fail fast.
+  A build or catalog failure leaves the home without a run record and rethrows
+  with build facts."
   [root options signal on-progress on-created]
-  (let [opts       (normalize-options options)
-        output-dir (runs/check-output-dir (:output-dir opts))
-        run-id     (str (random-uuid))
-        opts       (assoc opts :run-id run-id :output-dir output-dir)]
+  (let [opts (normalize-options options)
+        home (runs/create-home {:root root :run-id (str (random-uuid))
+                                :output-dir (:output-dir opts) :remove (:remove? opts)})]
     (try
       (let [selected-build
             (if-let [id (:build-id opts)]
@@ -779,7 +775,7 @@
                                              :build-id (:id selected-build)
                                              :log-path (:log-path selected-build))
                                       cause))))]
-        (await (execute root selected-build cases opts signal on-progress on-created)))
+        (await (execute root home selected-build cases opts signal on-progress on-created)))
       (catch :default cause
         (when on-progress
           (on-progress (str "run: " (message-of cause) "\n"))
