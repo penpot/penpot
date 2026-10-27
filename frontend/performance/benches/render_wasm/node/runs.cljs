@@ -9,8 +9,8 @@
 
   Runs are saved under <frontend>/target/performance/render-wasm/runs.
 
-  This can be overriden in the runner with `--output-dir PATH`. If done, this
-  path is not included among those purged when cleaning up."
+  --output-dir selects another destination. Purge cleans files reachable from
+  the default runs tree, including explicit destinations and directory links."
   (:require
    ["fs" :as fs]
    ["path" :as path]
@@ -37,7 +37,7 @@
     (when (str/blank? dir)
       (invalid-home "output directory requires a nonempty path" {}))
     (let [resolved (path/resolve dir)]
-      (when (fs/existsSync resolved)
+      (when (fs/lstatSync resolved #js {:throwIfNoEntry false})
         (invalid-home "output directory already exists" {:path resolved}))
       resolved)))
 
@@ -45,18 +45,16 @@
   "Creates one run home and its empty log. The record is written separately
   after the plan exists. An explicit directory must not exist; a managed home
   uses the frontend root regardless of cwd."
-  [{:keys [root run-id output-dir]}]
+  [{:keys [root run-id output-dir remove]}]
   (check-id run-id)
-  (let [explicit   (check-output-dir output-dir)
-        managed    (when-not explicit (artifacts/managed-root root))
-        runs-dir   (when managed (path/join managed "runs"))
-        dir        (or explicit (path/join runs-dir run-id))
+  (let [dir        (check-output-dir
+                    (or output-dir (path/join (artifacts/managed-root root) "runs" run-id)))
         record-path (path/join dir "run.transit")
         log-path    (path/join dir "run.log")]
-    (when managed
-      (fs/mkdirSync runs-dir #js {:recursive true}))
+    (when (and remove (artifacts/inside-builds? root dir))
+      (invalid-home "--remove cannot use an output directory inside builds" {:path dir}))
     (try
-      (fs/mkdirSync dir)
+      (fs/mkdirSync dir #js {:recursive true})
       (catch :default cause
         (invalid-home "cannot create run home"
                       {:path dir :cause (or (ex-message cause) (str cause))})))

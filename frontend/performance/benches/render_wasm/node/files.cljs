@@ -7,7 +7,16 @@
 (ns benches.render-wasm.node.files
   "Small filesystem helpers shared by benchmark storage writers."
   (:require
-   ["fs" :as fs]))
+   ["fs" :as fs]
+   ["path" :as path]))
+
+(defn get-real-path
+  "Resolves symlink ancestors even when the final path does not exist yet."
+  [file]
+  (let [file (path/resolve file)]
+    (if (fs/existsSync file)
+      (fs/realpathSync file)
+      (path/join (get-real-path (path/dirname file)) (path/basename file)))))
 
 (defn atomic-write
   "Writes (UTF-8) content to a temporary file and renames it over `file`,
