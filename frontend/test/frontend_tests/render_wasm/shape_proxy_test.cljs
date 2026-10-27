@@ -11,7 +11,10 @@
    [cljs.test :as t :include-macros true]))
 
 (def ^:private attrs
-  {:id (uuid/next) :type :rect :name "Rect" :x 10 :y 20})
+  "A shape with every base field, which the proxy always holds."
+  {:id (uuid/next) :type :rect :name "Rect" :x 10 :y 20 :width nil :height nil
+   :rotation nil :selrect nil :points nil :transform nil :transform-inverse nil
+   :parent-id nil :frame-id nil :flip-x nil :flip-y nil})
 
 (t/deftest count-includes-id-and-type
   (let [shape (wasm.shape/create-shape attrs)]

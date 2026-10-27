@@ -16,6 +16,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.render-wasm.api.select :as wselect]
    [app.common.transit :as t]
@@ -132,8 +133,8 @@
 
 (defn- await-font-faces
   "Waits for missing WASM faces, then resizes the affected texts."
-  [stream face-keys ids]
-  (let [resize-opts   {:stack-undo? true :undo-transation? false}
+  [stream face-keys ids & [opts]]
+  (let [resize-opts   (merge {:stack-undo? true :undo-transation? false} opts)
         resize-stream (->> (rx/from ids) (rx/map #(dwwt/resize-wasm-text % resize-opts)))]
     (if (empty? face-keys)
       resize-stream
@@ -163,13 +164,13 @@
 
 (defn- await-font-resize
   "Waits for missing font faces, then resizes `ids`."
-  [stream ids]
+  [stream ids opts]
   (if (empty? ids)
     (rx/empty)
     (->> (rx/of ::await-fonts)
          (rx/mapcat
           (fn [_]
-            (await-font-faces stream (pending-font-faces ids) ids))))))
+            (await-font-faces stream (pending-font-faces ids) ids opts))))))
 
 (defn- await-html-font
   "Keeps legacy DOM text pending while its new font is loading. The DOM
@@ -634,7 +635,7 @@
            (rx/empty)))))))
 
 (defn update-root-attrs
-  [{:keys [id attrs]}]
+  [{:keys [id attrs undo-group]}]
   (ptk/reify ::update-root-attrs
     ptk/WatchEvent
     (watch [_ state _]
@@ -658,10 +659,10 @@
             (cond (cfh/text-shape? shape)  [id]
                   (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
-        (rx/of (dwsh/update-shapes shape-ids update-fn))))))
+        (rx/of (dwsh/update-shapes shape-ids update-fn {:undo-group undo-group}))))))
 
 (defn update-paragraph-attrs
-  [{:keys [id attrs]}]
+  [{:keys [id attrs undo-group]}]
   (let [attrs (d/without-nils attrs)]
     (ptk/reify ::update-paragraph-attrs
       ptk/UpdateEvent
@@ -685,10 +686,10 @@
                             (cfh/text-shape? shape)  [id]
                             (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
-            (rx/of (dwsh/update-shapes shape-ids update-fn))))))))
+            (rx/of (dwsh/update-shapes shape-ids update-fn {:undo-group undo-group}))))))))
 
 (defn update-text-attrs
-  [{:keys [id attrs]}]
+  [{:keys [id attrs typography? undo-group]}]
   (ptk/reify ::update-text-attrs
     ptk/UpdateEvent
     (update [_ state]
@@ -696,7 +697,9 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (when-not (some? (get-in state [:workspace-editor-state id]))
+      (if (some? (get-in state [:workspace-editor-state id]))
+        (when typography?
+          (rx/of (dwsh/update-shapes [id] cls/touch-text-typography {:undo-group undo-group})))
         (let [objects   (dsh/lookup-page-objects state)
               shape     (get objects id)
               wasm?     (features/active-feature? state "render-wasm/v1")
@@ -711,11 +714,12 @@
               ;; `shape-text-contents` and overwrite per-run fills (e.g. line-height).
               merge-shape
               (fn [sh]
-                (let [updated-shape (txt/update-text-content sh update-node? d/txt-merge attrs)]
+                (let [updated-shape (cond-> (txt/update-text-content sh update-node? d/txt-merge attrs)
+                                      typography? cls/touch-text-typography)]
                   (when wasm?
                     (wasm.text-editor/cache-shape-text-content! (:id updated-shape) (:content updated-shape)))
                   updated-shape))]
-          (rx/of (dwsh/update-shapes shape-ids merge-shape)))))))
+          (rx/of (dwsh/update-shapes shape-ids merge-shape {:undo-group undo-group})))))))
 
 (defn migrate-node
   [node]
@@ -1093,11 +1097,13 @@
           (rx/empty))))))
 
 (defn update-attrs
-  [id attrs]
+  [id attrs & {:keys [undo-group]}]
   (ptk/reify ::update-attrs
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [text-editor-instance (:workspace-editor state)
+      (let [undo-group           (or undo-group (get-in state [:workspace-undo :transaction :undo-group]) (uuid/next))
+            resize-opts          {:undo-group undo-group}
+            text-editor-instance (:workspace-editor state)
             objects              (dsh/lookup-page-objects state)
             text-ids             (resolve-text-ids objects id)
 
@@ -1113,7 +1119,7 @@
           (rx/concat
            (let [attrs (select-keys attrs txt/root-attrs)]
              (if-not (empty? attrs)
-               (rx/of (update-root-attrs {:id id :attrs attrs}))
+               (rx/of (update-root-attrs {:id id :attrs attrs :undo-group undo-group}))
                (rx/empty)))
 
            ;; `:line-height` is stored on both the paragraph and its spans, and
@@ -1134,7 +1140,7 @@
                        :update-name? true))
 
                :else
-               (rx/of (update-paragraph-attrs {:id id :attrs attrs}))))
+               (rx/of (update-paragraph-attrs {:id id :attrs attrs :undo-group undo-group}))))
 
            (let [attrs (select-keys attrs txt/text-node-attrs)]
              (cond
@@ -1149,7 +1155,7 @@
                  (rx/of (dwt-v3/v3-update-text-editor-styles id attrs)))
 
                :else
-               (rx/of (update-text-attrs {:id id :attrs attrs}))))
+               (rx/of (update-text-attrs {:id id :attrs attrs :undo-group undo-group}))))
 
            (when (and (features/active-feature? state "text-editor/v2")
                       (not (features/active-feature? state "text-editor-wasm/v1")))
@@ -1172,10 +1178,10 @@
               (let [auto-ids (into [] (remove #(= :fixed (:grow-type (get objects %)))) text-ids)]
                 (if (contains? attrs :font-id)
                   ;; The geometry depends on the font, so wait until wasm has it.
-                  (await-font-resize stream auto-ids)
+                  (await-font-resize stream auto-ids resize-opts)
                   ;; No font change: measurable right away.
                   (->> (rx/from auto-ids)
-                       (rx/map dwwt/resize-wasm-text)))))
+                       (rx/map #(dwwt/resize-wasm-text % resize-opts))))))
 
              ;; The legacy renderer re-measures these in the DOM on its own,
              ;; but font loading starts before that render commits.
@@ -1203,12 +1209,13 @@
   [ids attrs]
   (ptk/reify ::update-all-attrs
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
+    (watch [_ state _]
+      (let [undo-id    (js/Symbol)
+            undo-group (or (get-in state [:workspace-undo :transaction :undo-group]) (uuid/next))]
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
          (->> (rx/from ids)
-              (rx/map #(update-attrs % attrs)))
+              (rx/map #(update-attrs % attrs :undo-group undo-group)))
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn apply-typography
@@ -1224,10 +1231,9 @@
      (watch [_ state _]
        (let [editor-state (:workspace-editor-state state)
              ids          (d/nilv ids (dsh/lookup-selected state))
-             attrs        (-> typography
+             attrs        (-> (select-keys typography txt/typography-fields)
                               (assoc :typography-ref-file file-id)
-                              (assoc :typography-ref-id (:id typography))
-                              (dissoc :id :name))
+                              (assoc :typography-ref-id (:id typography)))
              undo-id (js/Symbol)]
 
          (rx/concat
@@ -1235,7 +1241,7 @@
           (->> (rx/from (seq ids))
                (rx/map (fn [id]
                          (let [editor (get editor-state id)]
-                           (update-text-attrs {:id id :editor editor :attrs attrs})))))
+                           (update-text-attrs {:id id :editor editor :attrs attrs :typography? true})))))
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn generate-typography-name

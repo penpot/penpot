@@ -401,8 +401,9 @@
 (def ^:private base-fields
   "Base fields of the `Shape` record this proxy stands in for: `cr/defrecord`
    nils them on dissoc instead of removing them, and the schema requires them."
-  #{:name :x :y :width :height :rotation :selrect :points
-    :transform :transform-inverse :parent-id :frame-id :flip-x :flip-y})
+  {:name nil :x nil :y nil :width nil :height nil :rotation nil
+   :selrect nil :points nil :transform nil :transform-inverse nil
+   :parent-id nil :frame-id nil :flip-x nil :flip-y nil})
 
 (defn- impl-dissoc
   [self k]
@@ -444,11 +445,17 @@
   "Instantiate a shape from a map. The delegate is an array map because
   it takes far less memory than a hash map for shape-sized maps."
   [attrs]
-  (let [arr (reduce-kv (fn [arr k v]
-                         (when-not (or (= k :id) (= k :type))
-                           (.push arr k v))
+  (let [;; the base fields first, as `(into base-fields attrs)` orders them
+        arr (reduce-kv (fn [arr k v]
+                         (.push arr k (get attrs k v))
                          arr)
                        #js []
+                       base-fields)
+        arr (reduce-kv (fn [arr k v]
+                         (when-not (or (= k :id) (= k :type) (contains? base-fields k))
+                           (.push arr k v))
+                         arr)
+                       arr
                        attrs)]
     (ShapeProxy. (:id attrs)
                  (:type attrs)
