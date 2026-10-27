@@ -397,12 +397,24 @@
                (if-let [[main _] (source after new-paths new-main-id shape)]
                  (let [path (get new-paths (:id main))
                        [old old-main groups] (get old-copies path)
-                       old-main (or old-main (get old-by-path path))]
+                       old-main (or old-main (get old-by-path path))
+                       text-differences (when (= :text (:type main))
+                                          (thtx/override-units (:content old-main) (:content main)))
+                       carried-text-units (into #{}
+                                                (keep (fn [[group unit]]
+                                                        (when (and (contains? groups group)
+                                                                   (not (contains? text-differences unit)))
+                                                          unit)))
+                                                text-groups)
+                       mixed-typography? (some #(not= (contains? carried-text-units :typography)
+                                                      (contains? carried-text-units %))
+                                               [:family :weight :size :line-height :spacing :case])]
                    (reduce-kv
                     (fn [result group _]
                       (if-let [unit (get text-groups group)]
                         (cond-> result
-                          (and (not (contains? (thtx/override-units (:content old-main) (:content main)) unit))
+                          (and (not (and (= unit :typography) mixed-typography?))
+                               (not (contains? text-differences unit))
                                (not (same-value? main group {:content (:content old)})))
                           (-> (assoc-in [(:id shape) group] {:content (:content old)})
                               (assoc-in [(:id shape) :content-group] {})))

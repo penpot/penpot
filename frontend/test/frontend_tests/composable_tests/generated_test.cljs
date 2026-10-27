@@ -337,6 +337,12 @@
                   :ops [[:swap 0 0 0 0] [:text 23 3 1 0] [:text-style 22 8 1]
                         [:undo] [:undo] [:undo] [:redo] [:redo] [:redo]]})))
 
+(t/deftest ^:async typography-ownership-stays-consistent-when-a-variant-changes-size
+  (await (replay {:world [2 0 {:library true :variants true :rich-variants true
+                               :text true :text-styles true :layout nil :layout-copies true}]
+                  :ops [[:text-style 4 8 1] [:switch 1 0 0 0]
+                        [:undo] [:undo] [:redo] [:redo]]})))
+
 (t/deftest ^:async detaching-after-a-nested-switch-keeps-placement-stable-through-sync
   (await (replay {:world [2 2 {:library true :variants true :rich-variants true
                                :text true :text-styles true :layout :flex :layout-copies true}]

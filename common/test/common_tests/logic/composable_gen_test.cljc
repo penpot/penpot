@@ -388,6 +388,45 @@
         (t/is (= {} (get-in result [:result-text :content-group])))
         (t/is (false? (shadow/same-value? (:result-text after) :text-content-size expected)))))))
 
+(t/deftest switch-shadow-keeps-a-typography-only-with-its-style-ownership
+  (doseq [[new-size keep-reference?] [[14 true] [22 false]]]
+    (let [content #(thtx/content [[["Same text" {:size %}]]])
+          applied (thtx/content
+                   (thtx/apply-typography [[["Same text"]]] :heading
+                                          {:family "Roboto" :weight 700 :italic true :size 22
+                                           :line-height 1.6 :spacing 2 :case "uppercase"}))
+          root {:type :frame :name "Board" :width 100 :height 100 :rotation 0}
+          text {:type :text :name "Caption" :width 70 :height 25 :rotation 0}
+          before {:old (assoc root :id :old :shapes [:old-text])
+                  :old-text (assoc text :id :old-text :parent-id :old :content (content 14))
+                  :copy (assoc root :id :copy :shape-ref :old :shapes [:copy-text])
+                  :copy-text (assoc text :id :copy-text :shape-ref :old-text :parent-id :copy :content applied)}
+          after {:new (assoc root :id :new :shapes [:new-text])
+                 :new-text (assoc text :id :new-text :parent-id :new :content (content new-size))
+                 :copy (assoc root :id :copy :shape-ref :new :shapes [:result-text])
+                 ;; A corrupt result must not supply the model's expected values.
+                 :result-text (assoc text :id :result-text :shape-ref :new-text :parent-id :copy
+                                     :content (content 99))}
+          groups #{:content-group :text-content-typography :text-content-family
+                   :text-content-weight :text-content-size :text-content-line-height
+                   :text-content-spacing :text-content-case}
+          model {:copy-text (zipmap groups (repeat {:content applied}))}
+          predicted (get (shadow/swap model before after :copy :old :new true) :result-text)
+          expected-groups (cond-> groups
+                            (not keep-reference?) (disj :text-content-size :text-content-typography))]
+      (t/is (= expected-groups (set (keys predicted))))
+      (t/is (false? (shadow/same-value? (:result-text after) :text-content-family
+                                        (:text-content-family predicted))))
+      (when keep-reference?
+        (t/is (false? (shadow/same-value? (:result-text after) :text-content-typography
+                                          (:text-content-typography predicted))))))))
+
+(t/deftest typography-ownership-stays-consistent-when-a-variant-changes-size
+  (t/is (map? (cg/run {:world [2 0 {:library true :variants true :rich-variants true
+                                    :text true :text-styles true :layout nil :layout-copies true}]
+                       :ops [[:text-style 4 8 1] [:switch 1 0 0 0]
+                             [:undo] [:undo] [:redo] [:redo]]}))))
+
 (t/deftest source-library-edits-wait-for-explicit-consumer-acceptance
   (let [initial (cg/initial-state [2 1 {:library true :stale-libraries true}])
         situation (:situation initial)
