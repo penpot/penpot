@@ -6,8 +6,8 @@
 
 (ns benches.render-wasm.fingerprint
   "Scene fingerprints identify validated starting snapshots by content.
-  Encoding version 1 orders unordered representations in production verbose
-  Transit, preserves type tags and ordered collections, and hashes UTF-8 bytes.
+  Canonical production verbose Transit orders unordered representations,
+  preserves type tags and ordered collections, and hashes UTF-8 bytes.
   Callers validate snapshots and compute fingerprints before upload and timers."
   (:require
    [benches.render-wasm.codec :as codec]
@@ -61,7 +61,7 @@
     :else value))
 
 (defn snapshot-text
-  "Returns encoding version 1 text for a validated snapshot.
+  "Returns canonical Transit text for a validated snapshot.
   Realizing :objects removes ObjectsMap's serialized shape strings while keeping
   production shape, geometry and path tags in the values."
   [snapshot]
@@ -72,10 +72,9 @@
       (canonical-text)))
 
 (defn fingerprint
-  "Returns a SHA-256 digest and encoding version for a validated snapshot."
+  "Returns the SHA-256 algorithm and digest for a validated snapshot."
   [snapshot]
   (let [hash (goog.crypt.Sha256.)]
     (.update hash (crypt/stringToUtf8ByteArray (snapshot-text snapshot)))
-    {:encoding-version 1
-     :algorithm :sha-256
+    {:algorithm :sha-256
      :digest (crypt/byteArrayToHex (.digest hash))}))
