@@ -337,3 +337,104 @@ test.describe("Delete account modal", () => {
     await expect(modal).toHaveScreenshot(shot);
   });
 });
+
+test.describe("Subscription controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  // An unlimited trial that the logged-in user owns, as in
+  // specs/subscriptions-dashboard.spec.js.
+  const setupSubscription = async (
+    page,
+    members,
+    secondTeam = true,
+    usage = "subscription/get-subscription-usage.json",
+  ) => {
+    await DashboardPage.mockConfigFlags(page, [
+      "enable-subscriptions",
+      "disable-onboarding",
+    ]);
+    await DashboardPage.mockRPC(
+      page,
+      "get-profile",
+      "subscription/get-profile-unlimited-subscription.json",
+    );
+    await DashboardPage.mockRPC(page, "get-subscription-usage", usage);
+    await DashboardPage.mockRPC(
+      page,
+      "get-team-info",
+      "subscription/get-team-info-subscriptions.json",
+    );
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await DashboardPage.mockRPC(
+      page,
+      "get-teams",
+      "subscription/get-teams-unlimited-subscription-owner.json",
+    );
+    if (secondTeam) {
+      await DashboardPage.mockRPC(
+        page,
+        "get-projects?team-id=*",
+        "dashboard/get-projects-second-team.json",
+      );
+    }
+    await DashboardPage.mockRPC(page, "get-team-members?team-id=*", members);
+    await DashboardPage.mockRPC(
+      page,
+      "get-team-stats?team-id=*",
+      "dashboard/get-team-stats.json",
+    );
+    await dashboardPage.mockRPC(
+      "push-audit-events",
+      "workspace/audit-event-empty.json",
+    );
+    return dashboardPage;
+  };
+
+  test("Sidebar plan card", async ({ page }) => {
+    const dashboardPage = await setupSubscription(
+      page,
+      "subscription/get-team-members-subscription-owner.json",
+      false,
+      "subscription/get-subscription-usage-one-editor.json",
+    );
+    await dashboardPage.goToDashboard();
+
+    const name = page.getByTestId("subscription-name");
+    await expect(name).toHaveText("Unlimited plan (trial)");
+    const card = page.locator("[class*='cta-power-up']").first();
+    await page.mouse.move(640, 300);
+    await expect(card).toHaveScreenshot(shot);
+
+    await name.click();
+    await page.mouse.move(640, 300);
+    await expect(card).toHaveScreenshot(shot);
+  });
+
+  test("Team settings plan", async ({ page }) => {
+    const dashboardPage = await setupSubscription(
+      page,
+      "subscription/get-team-members-subscription-owner.json",
+    );
+    await dashboardPage.goToSecondTeamSettingsSection();
+
+    await expect(
+      page.getByRole("button", { name: "Manage your subscription" }),
+    ).toBeVisible();
+    await expect(
+      page.locator("[class$='subscription__team']"),
+    ).toHaveScreenshot(shot);
+  });
+
+  test("Members seats warning", async ({ page }) => {
+    const dashboardPage = await setupSubscription(
+      page,
+      "subscription/get-team-members-subscription-eight-member.json",
+    );
+    await dashboardPage.goToSecondTeamMembersSection();
+
+    await expect(page.getByTestId("cta")).toHaveCount(2);
+    await page.mouse.move(640, 700);
+    await expect(page).toHaveScreenshot(shot);
+  });
+});
