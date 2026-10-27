@@ -438,3 +438,51 @@ test.describe("Subscription controls", () => {
     await expect(page).toHaveScreenshot(shot);
   });
 });
+
+test.describe("Team modals controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Create team modal", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await dashboardPage.teamDropdown.click();
+    await page.getByText("Create new team").click();
+
+    const modal = page.locator("[class*='modal-container']");
+    await expect(modal).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await modal.locator("[class*='modal-header'] button").hover();
+    await expect(modal).toHaveScreenshot(shot);
+  });
+
+  test("Leave and reassign modal", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    // The logged-in user owns the second team, which has another member.
+    await dashboardPage.mockRPC(
+      "get-teams",
+      "dashboard/get-teams-second-owner.json",
+    );
+    await dashboardPage.mockRPC(
+      "get-team-members?team-id=*",
+      "dashboard/get-team-members-owner.json",
+    );
+    await dashboardPage.goToSecondTeamMembersSection();
+    await expect(page.getByText("role")).toBeVisible();
+
+    const rows = page.locator("[class*='table-rows']");
+    await rows
+      .locator("[class*='menu-btn']")
+      .or(rows.getByRole("button", { name: "Options" }))
+      .first()
+      .click();
+    await rows.getByText("Leave team").click();
+
+    const modal = page.locator("[class*='modal-container']");
+    await expect(modal).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});
