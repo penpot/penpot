@@ -91,12 +91,10 @@
     (t/is (= (fingerprint/fingerprint data)
              (fingerprint/fingerprint (transit/decode-str (transit/encode-str data)))))))
 
-(t/deftest digest-has-a-fixed-encoding-version-and-known-sha256-vector
+(t/deftest digest-matches-known-sha256-vector
   ;; The verbose Transit map for {:objects {} :refs {}} is canonical text.
   (t/is (= "{\"~:objects\":{},\"~:refs\":{}}"
            (fingerprint/snapshot-text {:objects {} :refs {}})))
-  (let [fp (fingerprint/fingerprint {:objects {} :refs {}})]
-    (t/is (= 1 (:encoding-version fp)))
-    (t/is (= :sha-256 (:algorithm fp)))
-    (t/is (= "ceb57067506683f5a0e80615bc9dd6f6d16325e333864da705fa4916fbdfe52d"
-             (:digest fp)))))
+  (t/is (= {:algorithm :sha-256
+            :digest "ceb57067506683f5a0e80615bc9dd6f6d16325e333864da705fa4916fbdfe52d"}
+           (fingerprint/fingerprint {:objects {} :refs {}}))))

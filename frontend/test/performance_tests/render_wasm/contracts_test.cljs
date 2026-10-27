@@ -23,8 +23,7 @@
   rtx)
 
 (decl/defscene :contracts-scene
-  {:version 1
-   :description "Synthetic scene for contract tests"
+  {:description "Synthetic scene for contract tests"
    :params-schema [:map {:closed true}]}
   [params]
   params)
@@ -55,7 +54,6 @@
   [scene-id case-params f]
   (decl/register-scene! {:id scene-id
                          :ns "contracts-test"
-                         :version 1
                          :description "synthetic"
                          :params-schema [:map {:closed true} [:count [:int {:min 1 :max 100000}]]]
                          :build (fn [params] params)})
@@ -75,7 +73,6 @@
   (let [scene (decl/registered-scene :rects)]
     (t/is (= :rects (:id scene)))
     (t/is (= "benches.render-wasm.scenes.rects" (:ns scene)))
-    (t/is (= 1 (:version scene)))
     (t/is (= "Seeded rectangles with translucent fills and centered strokes"
              (:description scene)))
     (t/is (vector? (:params-schema scene)))
@@ -93,10 +90,32 @@
     (t/is (every? #(not (contains? % :run!)) (rect-cases)))))
 
 (t/deftest collected-cases-survive-the-wire
-  (doseq [case-desc (rect-cases)]
-    (t/is (not (contains? case-desc :run!)) (str (:id case-desc)))
-    (t/is (not (contains? case-desc :ns)) (str (:id case-desc)))
-    (t/is (decl/transit-round-trips? case-desc) (str (:id case-desc)))))
+  (doseq [scene-id [:rects :paths :plus :masks]]
+    (let [collected (cases/collect-cases {:master-seed 42
+                                          :filter (str (name scene-id) "/")})
+          decoded   (transit/decode-str (transit/encode-str collected))]
+      (t/is (= (mapv #(keyword (name scene-id) %) ["load" "pan" "zoom"])
+               (mapv :id collected)))
+      (t/is (= collected decoded))
+      (doseq [case-desc decoded]
+        (t/is (= case-desc (decl/check-collected-case case-desc)))
+        (t/is (not-any? #(contains? case-desc %)
+                        [:run! :ns])
+              (str (:id case-desc)))
+        (t/is (= {} (:preparation case-desc)) (str (:id case-desc)))))))
+
+(t/deftest declared-preparation-survives-collection-and-wire
+  (with-synthetic-scene :contracts-prepared {:count 3}
+    (fn []
+      (let [preparation {:settle-ms 25}
+            registered  (decl/registered-case :contracts-prepared/case)]
+        (decl/register-case! (assoc registered :preparation preparation))
+        (let [collected (cases/collect-cases {:master-seed 42 :filter "contracts-prepared/"})
+              decoded   (transit/decode-str (transit/encode-str collected))]
+          (t/is (= [:contracts-prepared/case] (mapv :id decoded)))
+          (t/is (= collected decoded))
+          (t/is (= preparation (:preparation (first decoded))))
+          (t/is (= (first decoded) (decl/check-collected-case (first decoded)))))))))
 
 (t/deftest rects-cases-carry-declared-view-context-and-completion
   (let [collected (rect-cases)]
@@ -109,13 +128,12 @@
       (t/is (= {:scale 1 :x 0 :y 0} (:view case-desc)) (str (:id case-desc)))
       (t/is (= :render-full (:completion case-desc)) (str (:id case-desc)))
       (t/is (= 1 (:batch-size case-desc)) (str (:id case-desc)))
-      (t/is (= {:version 1} (:preparation case-desc)) (str (:id case-desc))))))
+      (t/is (= {} (:preparation case-desc)) (str (:id case-desc))))))
 
 (t/deftest rects-cases-carry-scene-metadata-and-seed
   (let [collected (rect-cases)]
     (doseq [case-desc collected]
       (t/is (= :rects (:scene case-desc)))
-      (t/is (= 1 (:scene-version case-desc)))
       (t/is (= "Seeded rectangles with translucent fills and centered strokes"
                (:scene-description case-desc)))
       (t/is (= 2602546180 (:scene-seed case-desc)) (str (:id case-desc)))))
@@ -216,7 +234,6 @@
            (:type (failure-data
                    #(decl/register-scene! {:id :rects
                                            :ns "another-namespace"
-                                           :version 1
                                            :description "x"
                                            :params-schema [:map]
                                            :build (fn [params] params)}))))))
@@ -225,13 +242,11 @@
   (try
     (decl/register-scene! {:id :contracts-replaced
                            :ns "contracts-test"
-                           :version 1
                            :description "first"
                            :params-schema [:map]
                            :build (fn [params] params)})
     (decl/register-scene! {:id :contracts-replaced
                            :ns "contracts-test"
-                           :version 2
                            :description "second"
                            :params-schema [:map]
                            :build (fn [params] params)})
@@ -243,7 +258,6 @@
   (try
     (decl/register-scene! {:id :contracts-dup
                            :ns "contracts-test"
-                           :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
@@ -284,7 +298,6 @@
   (try
     (decl/register-scene! {:id :contracts-other
                            :ns "contracts-test"
-                           :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
@@ -306,7 +319,6 @@
   (try
     (decl/register-scene! {:id :contracts-noschema
                            :ns "contracts-test"
-                           :version 1
                            :description "x"
                            :build (fn [params] params)})
     (t/is (= ::decl/invalid-scene
@@ -318,7 +330,6 @@
   (try
     (decl/register-scene! {:id :contracts-badschema
                            :ns "contracts-test"
-                           :version 1
                            :description "x"
                            :params-schema [:map [:count]]
                            :build (fn [params] params)})
@@ -332,7 +343,6 @@
   (try
     (decl/register-scene! {:id :contracts-ns/scene
                            :ns "contracts-test"
-                           :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
@@ -352,7 +362,6 @@
   (try
     (decl/register-scene! {:id :contracts-incomplete
                            :ns "contracts-test"
-                           :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
@@ -377,7 +386,6 @@
   (try
     (decl/register-scene! {:id :contracts-replacecase
                            :ns "contracts-test"
-                           :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})

@@ -591,7 +591,6 @@
                            prep (:preparation prepared)
                            request (transit/encode-str {:preparation-id (:preparation-id prep)})]
                        (t/is (= "ok" (:status prepared)))
-                       (t/is (= 1 (get-in prep [:fingerprint :encoding-version])))
                        (t/is (seq (get-in prep [:diagnostics :setup-render :slices])))
                        (-> (browser/run-prepared request)
                            (.then (fn [first-text]

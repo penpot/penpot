@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.report.summarize
-  "Reports use saved definitions and explicit metrics from raw RunRecords.
+  "Reports use saved definitions and explicit metrics from schema:run records.
   Warmups and failed attempts supply no observations. A completed attempt can
   supply valid, invalid or absent metrics independently. Unattempted slots remain
   separate. Batches and render slices never multiply observation counts."
@@ -97,10 +97,10 @@
                     (analysis/statistics values analysis))})))
 
 (defn summarize
-  "Builds a portable report from a constructed or decoded RunRecord.
-  The run must already satisfy the RunRecord contract. Reporting uses one
+  "Builds a portable report from a constructed or decoded schema:run record.
+  The run must already satisfy schema:run. Reporting uses one
   resolved method.
-  Overrides affect reporting without changing the stored RunRecord."
+  Overrides affect reporting without changing the stored record."
   ([run] (summarize run nil))
   ([run overrides]
    (let [analysis (analysis/resolve-settings (merge (:analysis run) overrides))]

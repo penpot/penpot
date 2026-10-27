@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.report.compare
-  "Offline comparisons of paired cases from two saved RunRecords.
+  "Offline comparisons of paired cases from two saved schema:run records.
 
   By default, comparisons are made between matching cases with equal settings.
   It is however possible to to explicitly select pairs allowing different case
@@ -56,7 +56,7 @@
   (set (map field (preparations run id))))
 
 (defn- execution-settings
-  "Selects declared execution inputs; recipe versions and text remain provenance."
+  "Selects declared execution inputs; descriptive text remains provenance."
   [definition]
   (select-keys definition [:scene :scene-seed :params :view :context :completion
                            :batch-size :preparation :operation]))
@@ -141,9 +141,9 @@
   (select-keys run [:run-id :started-at :ended-at :metadata :termination]))
 
 (defn compare-runs
-  "Creates a `:comparison` from constructed or decoded `:run-record`.
+  "Creates a schema:comparison from constructed or decoded schema:run records.
 
-  Inputs must already satisfy the `:runrecord` contract. Encoding validates the
+  Inputs must already satisfy schema:run. Encoding validates the
   returned comparison at the boundary.
 
   Default pairs use identical identifiers. Explicit pairs select cases without
@@ -167,7 +167,7 @@
                        {:type ::invalid-pairs
                         :baseline (mapv (comp result/case-name :id) (get-in baseline [:plan :cases]))
                         :candidate (mapv (comp result/case-name :id) (get-in candidate [:plan :cases]))})))
-     {:type :comparison :schema-version 2 :analysis analysis
+     {:type :comparison :analysis analysis
       :baseline (provenance baseline) :candidate (provenance candidate)
       :forced? (boolean force)
       :source-coverage summary/source-coverage :interpretation summary/interpretation

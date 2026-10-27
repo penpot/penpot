@@ -85,7 +85,7 @@
        "ready; errors retain the build.transit and build.log for that ID.\n"
        "run prints one run ID on stdout. Progress, failures and the summary go\n"
        "to stderr. Builds and managed runs live under target/performance/render-wasm.\n"
-       "compare reads saved RunRecords and starts no build, host or browser.\n\n"
+       "compare reads saved schema:run records and starts no build, host or browser.\n\n"
        "Preparation and runs require an idle checkout with dependencies installed.\n"
        "Keep renderer watchers stopped until preparation ends. purge assumes no\n"
        "experiment is using the managed paths.\n\n"

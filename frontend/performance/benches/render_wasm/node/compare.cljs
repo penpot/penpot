@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.compare
-  "Offline comparison of two saved RunRecords.
+  "Offline comparison of two saved schema:run records.
 
   Inputs are user file paths resolved from the caller's cwd. The namespace
   depends only on record decoding and the shared report pipeline; it starts no

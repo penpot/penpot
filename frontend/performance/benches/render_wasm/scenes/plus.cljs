@@ -36,8 +36,7 @@
 
 
 (decl/defscene :plus
-  {:version 1
-   :description "Plus signs made of two open line subpaths"
+  {:description "Plus signs made of two open line subpaths"
    :params-schema schema:params}
   [params]
   (let [params (merge default-params params)]

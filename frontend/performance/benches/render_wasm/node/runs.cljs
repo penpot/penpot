@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.runs
-  "Manages saved run destinations, RunRecord persistence and diagnostic logs.
+  "Manages saved run destinations, schema:run persistence and diagnostic logs.
 
   Runs are saved under <frontend>/target/performance/render-wasm/runs.
 
@@ -69,7 +69,7 @@
      :run-id run-id}))
 
 (defn write-record!
-  "Validates and atomically replaces the saved RunRecord."
+  "Validates schema:run and atomically replaces the saved file."
   [home run]
   (files/atomic-write (:record-path home) (result/encode run)))
 

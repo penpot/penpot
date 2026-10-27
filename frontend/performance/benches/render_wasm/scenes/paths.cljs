@@ -47,8 +47,7 @@
 
 
 (decl/defscene :paths
-  {:version 1
-   :description "Curved paths"
+  {:description "Curved paths"
    :params-schema schema:params}
   [params]
   (let [params (merge default-params params)]

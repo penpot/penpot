@@ -41,7 +41,6 @@
 (def schema:fingerprint
   "The content digest of the actual validated starting snapshot."
   [:map {:closed true}
-   [:encoding-version [:= 1]]
    [:algorithm [:= :sha-256]]
    [:digest [:re #"^[0-9a-f]{64}$"]]])
 
@@ -81,11 +80,10 @@
   [:map [:reason keyword?]])
 
 (def schema:run
-  "RunRecord schema3. Cases are saved definitions, independent of any registry.
+  "schema:run stores saved case definitions, independent of any registry.
   Build :functional holds compatibility settings; :provenance holds identities."
   [:map {:closed true}
    [:type [:= :run-record]]
-   [:schema-version [:= 3]]
    [:run-id some?]
    [:started-at string?]
    [:ended-at [:maybe string?]]
@@ -155,10 +153,9 @@
    [:metadata schema:metadata] [:termination schema:termination]])
 
 (def schema:comparison
-  "Comparison schema2 retains resolved analysis, differences and per-side reports."
+  "schema:comparison retains resolved analysis, differences and per-side reports."
   [:map {:closed true}
    [:type [:= :comparison]]
-   [:schema-version [:= 2]]
    [:analysis analysis/schema:settings]
    [:baseline schema:provenance]
    [:candidate schema:provenance]
@@ -240,13 +237,9 @@
                     "completed run has failed attempts" {})))
 
 (defn check-run
-  "Validates schema3 and chronological accounting at a saved-data boundary.
-  Unsupported versions fail without invoking a legacy reader or case registry."
+  "Validates schema:run and chronological accounting at a saved-data boundary."
   [run]
-  (when-not (and (= :run-record (:type run)) (= 3 (:schema-version run)))
-    (throw (ex-info "unsupported RunRecord format" {:type ::unsupported-format
-                                                    :schema-version (:schema-version run)})))
-  (require-valid! (sm/validate schema:run run) "invalid RunRecord" {})
+  (require-valid! (sm/validate schema:run run) "invalid schema:run" {})
   (let [case-ids (mapv :id (get-in run [:plan :cases]))
         preps    (:preparations run)
         prep-ids (mapv :preparation-id preps)
@@ -277,7 +270,7 @@
   their slot too; attempts retain chronological order across cases."
   [{:keys [run-id started-at plan metadata analysis]}]
   (let [plan (merge {:warmups 3 :repetitions 10 :timeout-policy {:attempt-ms 30000}} plan)]
-    (check-run {:type :run-record :schema-version 3
+    (check-run {:type :run-record
                 :run-id run-id :started-at started-at :ended-at nil
                 :plan plan :metadata metadata :analysis (analysis/resolve-settings analysis)
                 :preparations [] :attempts [] :remaining (initial-remaining plan)
@@ -330,14 +323,12 @@
   (assoc run :ended-at ended-at :termination termination))
 
 (defn check-record
-  "Validates a supported run or comparison at a Transit boundary."
+  "Validates schema:run or schema:comparison at a Transit boundary."
   [record]
   (case (:type record)
     :run-record (check-run record)
     :comparison (do
-                  (when-not (= 2 (:schema-version record))
-                    (throw (ex-info "unsupported Comparison format" {:type ::unsupported-format})))
-                  (require-valid! (sm/validate schema:comparison record) "invalid Comparison" {})
+                  (require-valid! (sm/validate schema:comparison record) "invalid schema:comparison" {})
                   record)
     (throw (ex-info "unsupported benchmark format" {:type ::unsupported-format}))))
 
