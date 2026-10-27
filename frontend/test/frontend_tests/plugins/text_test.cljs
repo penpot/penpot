@@ -366,3 +366,45 @@
     (t/is (= {:ruby-zhuyin true} (:attrs result)))
     (t/is (nil? (:attrs bad)))
     (t/is (= {:ruby-zhuyin false} (:attrs shape)))))
+
+(defn- paragraphs-content
+  "Content with one single-span paragraph per [text language] pair."
+  [& paragraphs]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children (vec (for [[text language] paragraphs]
+                                (cond-> {:type "paragraph" :children [{:text text}]}
+                                  language (assoc :text-language language))))}]})
+
+(t/deftest text-lang-reads-the-paragraph-language
+  (let [[^js text shape] (text-proxy-over (paragraphs-content ["香港" "zh-Hant-HK"]))]
+    (with-redefs [u/proxy->shape (constantly shape)]
+      (t/is (= "zh-Hant-HK" (.-lang text)))))
+  (let [[^js text shape] (text-proxy-over (paragraphs-content ["plain" nil]))]
+    (with-redefs [u/proxy->shape (constantly shape)]
+      (t/is (nil? (.-lang text)))))
+  (let [[^js text shape] (text-proxy-over (paragraphs-content ["香港" "zh-Hant-HK"] ["plain" nil]))]
+    (with-redefs [u/proxy->shape (constantly shape)]
+      (t/is (= "mixed" (.-lang text))))))
+
+(t/deftest text-range-lang-reads-the-paragraphs-it-touches
+  (let [content (paragraphs-content ["香港" "zh-Hant-HK"] ["東京" "ja"])
+        range   (fn [start end]
+                  (plugins.text/text-range-proxy plugin-id (random-uuid) (random-uuid) (random-uuid) start end))]
+    (with-redefs [u/proxy->shape (constantly {:content content})]
+      (t/is (= "zh-Hant-HK" (.-lang (range 0 2))))
+      (t/is (= "ja" (.-lang (range 3 5))))
+      (t/is (= "mixed" (.-lang (range 1 4)))))))
+
+(t/deftest lang-accepts-language-tags-and-clears-with-empty-values
+  (let [content (paragraphs-content ["香港" nil])
+        text    (plugins.text/add-text-props #js {:$id (random-uuid) :$page (random-uuid)} plugin-id)
+        range   (plugins.text/text-range-proxy plugin-id (random-uuid) (random-uuid) (random-uuid) 0 2)]
+    (doseq [target [text range]]
+      (t/is (= {:text-language "zh-Hant-HK"} (:attrs (capture-japanese-update target "lang" "zh-Hant-HK" content))))
+      (t/is (= {:text-language nil} (:attrs (capture-japanese-update target "lang" "" content))))
+      (t/is (= {:text-language nil} (:attrs (capture-japanese-update target "lang" nil content))))
+      (doseq [bad ["not a tag" "zh_Hant" 42]]
+        (let [result (capture-japanese-update target "lang" bad content)]
+          (t/is (nil? (:attrs result)))
+          (t/is (= bad (:rejected result))))))))
