@@ -1,4 +1,4 @@
-use crate::render::text::decoration_segments;
+use crate::render::text::{decoration_segments, list_marker, list_markers};
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
@@ -306,6 +306,34 @@ impl TextContentLayout {
 
     pub fn needs_update(&self) -> bool {
         self.paragraphs.is_empty()
+    }
+}
+
+// List bullet geometry, in font sizes, as Chrome draws a CSS disc marker
+// (measured with Source Sans Pro).
+pub const LIST_MARKER_RADIUS_FACTOR: f32 = 0.16;
+pub const LIST_MARKER_MIN_RADIUS: f32 = 1.5;
+/// Space between the bullet and the text box's start edge.
+pub const LIST_MARKER_GAP_FACTOR: f32 = 0.33;
+/// How far above the baseline the bullet's center sits.
+pub const LIST_MARKER_CENTER_FACTOR: f32 = 0.32;
+
+/// A list bullet, painted with the style of the first run on its line.
+#[derive(Debug, Clone)]
+pub struct ListMarker {
+    pub paint: skia::Paint,
+    pub center: Point,
+    pub radius: f32,
+}
+
+impl ListMarker {
+    pub fn rect(&self) -> Rect {
+        Rect::new(
+            self.center.x - self.radius,
+            self.center.y - self.radius,
+            self.center.x + self.radius,
+            self.center.y + self.radius,
+        )
     }
 }
 
@@ -626,11 +654,40 @@ impl TextContent {
             }
         }
 
-        if has_lines {
-            Some(Rect::from_ltrb(min_x, min_y, max_x, max_y))
-        } else {
-            None
+        if !has_lines {
+            return None;
         }
+
+        let mut rect = Rect::from_ltrb(min_x, min_y, max_x, max_y);
+        if let Some(markers) = self.list_markers_rect(selrect, valign) {
+            rect.join(markers);
+        }
+        Some(rect)
+    }
+
+    /// Union of the list bullets, which hang outside the text box.
+    fn list_markers_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Option<Rect> {
+        let paragraphs = &self.layout.paragraphs;
+        let total_height: f32 = paragraphs
+            .iter()
+            .filter_map(|group| group.first())
+            .map(|p| p.height())
+            .sum();
+        let top = selrect.y() + vertical_align_offset(selrect.height(), total_height, valign);
+
+        list_markers(
+            paragraphs.iter().map(|group| group.first()),
+            self.paragraphs(),
+            selrect.x(),
+            top,
+            self.get_width(selrect.width()),
+        )
+        .iter()
+        .map(ListMarker::rect)
+        .reduce(|mut rect, marker_rect| {
+            rect.join(marker_rect);
+            rect
+        })
     }
 
     fn compute_and_cache_extrect(
@@ -643,7 +700,11 @@ impl TextContent {
         // (line.left) reflect alignment within that huge width and are
         // unusable for tight bounds.  Fall back to content_rect.
         if self.grow_type() == GrowType::AutoWidth {
-            return self.content_rect(selrect, valign);
+            let mut rect = self.content_rect(selrect, valign);
+            if let Some(markers) = self.list_markers_rect(selrect, valign) {
+                rect.join(markers);
+            }
+            return rect;
         }
 
         let layout_matches_container = self
@@ -1876,6 +1937,7 @@ pub struct ParagraphLayout {
     pub x: f32,
     pub y: f32,
     pub decorations: Vec<TextDecorationSegment>,
+    pub marker: Option<ListMarker>,
 }
 
 #[derive(Debug)]
@@ -1939,20 +2001,39 @@ pub fn calculate_text_layout_data(
         vertical_align_offset(selrect_height, total_text_height, shape.vertical_align());
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
+    // Last list marker of each builder, so an empty item borrows its pass' paint.
+    let mut previous_markers: Vec<Option<ListMarker>> = Vec::new();
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
-        for skia_paragraph in group_paragraphs.into_iter() {
+        for (builder_index, skia_paragraph) in group_paragraphs.into_iter().enumerate() {
+            if previous_markers.len() <= builder_index {
+                previous_markers.resize(builder_index + 1, None);
+            }
             let decorations = text_paragraphs
                 .get(i)
                 .map(|text_paragraph| {
                     decoration_segments(&skia_paragraph, text_paragraph, x, y_accum)
                 })
                 .unwrap_or_default();
+            let marker = text_paragraphs.get(i).and_then(|text_paragraph| {
+                list_marker(
+                    &skia_paragraph,
+                    text_paragraph,
+                    x,
+                    y_accum,
+                    text_width,
+                    previous_markers[builder_index].as_ref(),
+                )
+            });
+            if marker.is_some() {
+                previous_markers[builder_index] = marker.clone();
+            }
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
                 x,
                 y: y_accum,
                 decorations,
+                marker,
             });
         }
         y_accum += paragraph_heights[i];
@@ -2421,6 +2502,119 @@ mod tests {
         shape.set_shape_type(shapes::Type::Text(content));
         shape.set_selrect(0.0, 0.0, 200.0, 100.0);
         shape
+    }
+
+    /// A laid-out 200x100 text at the origin with one "hello" paragraph.
+    fn list_text_shape(
+        grow_type: GrowType,
+        direction: TextDirection,
+        list_style_type: ListStyleType,
+    ) -> Shape {
+        let mut paragraph = test_paragraph(&["hello"]).with_list_style_type(list_style_type);
+        paragraph.text_direction = direction;
+        let mut content = TextContent::new(Rect::from_xywh(0.0, 0.0, 200.0, 100.0), grow_type);
+        content.add_paragraph(paragraph);
+
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(shapes::Type::Text(content));
+        shape.set_selrect(0.0, 0.0, 200.0, 100.0);
+        shape
+    }
+
+    #[test]
+    fn extrect_holds_the_painted_marker_when_vertically_aligned() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for valign in [VerticalAlign::Center, VerticalAlign::Bottom] {
+            let mut shape =
+                list_text_shape(GrowType::Fixed, TextDirection::LTR, ListStyleType::Disc);
+            shape.set_vertical_align(valign);
+
+            let content = shape.get_text_content().clone();
+            let mut builders = content.paragraph_builder_group_from_text(None);
+            let layout = calculate_text_layout_data(&shape, &content, &mut builders, true);
+            let marker = layout.paragraphs[0]
+                .marker
+                .as_ref()
+                .expect("disc paragraph has a marker")
+                .rect();
+
+            let extrect = text_extrect(&shape);
+            assert!(
+                extrect.left() <= marker.left()
+                    && extrect.top() <= marker.top()
+                    && extrect.right() >= marker.right()
+                    && extrect.bottom() >= marker.bottom(),
+                "{valign:?}: {marker:?} outside {extrect:?}"
+            );
+            // With top alignment the marker would sit near y = 0.
+            assert!(marker.top() > 10.0, "{valign:?}: {marker:?}");
+        }
+    }
+
+    fn text_extrect(shape: &Shape) -> Rect {
+        shape
+            .get_text_content()
+            .calculate_bounds(shape, false)
+            .to_rect()
+    }
+
+    // Font size 14: a gap of 4.62 and a radius of 2.24.
+    const MARKER_REACH: f32 = 4.62 + 2.0 * 2.24;
+
+    #[test]
+    fn extrect_includes_a_list_marker_before_the_text() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for grow_type in [GrowType::Fixed, GrowType::AutoHeight, GrowType::AutoWidth] {
+            let shape = list_text_shape(grow_type, TextDirection::LTR, ListStyleType::Disc);
+            let extrect = text_extrect(&shape);
+            assert!(
+                extrect.left() <= -MARKER_REACH + 0.01,
+                "{grow_type:?}: {extrect:?}"
+            );
+            assert_eq!(shape.selrect().left(), 0.0);
+        }
+    }
+
+    #[test]
+    fn extrect_includes_an_rtl_list_marker_after_the_text() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = list_text_shape(GrowType::Fixed, TextDirection::RTL, ListStyleType::Disc);
+        let extrect = text_extrect(&shape);
+        assert!(
+            extrect.right() >= 200.0 + MARKER_REACH - 0.01,
+            "{extrect:?}"
+        );
+    }
+
+    #[test]
+    fn extrect_of_plain_text_stays_inside_the_text_box() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = list_text_shape(GrowType::Fixed, TextDirection::LTR, ListStyleType::None);
+        let extrect = text_extrect(&shape);
+        assert!(extrect.left() >= 0.0, "{extrect:?}");
+    }
+
+    #[test]
+    fn extrect_grows_when_bullets_are_turned_on() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = list_text_shape(GrowType::Fixed, TextDirection::LTR, ListStyleType::None);
+        assert!(text_extrect(&shape).left() >= 0.0);
+
+        let selrect = shape.selrect;
+        if let shapes::Type::Text(content) = &mut shape.shape_type {
+            let paragraph = content.paragraphs_mut()[0]
+                .clone()
+                .with_list_style_type(ListStyleType::Disc);
+            content.paragraphs_mut()[0] = paragraph;
+            content.update_layout(selrect);
+        }
+
+        assert!(text_extrect(&shape).left() <= -MARKER_REACH + 0.01);
     }
 
     /// Whether resizing `shape` to `width`x`height`, with no content change,
