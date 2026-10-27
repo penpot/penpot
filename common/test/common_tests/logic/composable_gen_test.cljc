@@ -29,6 +29,12 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest swapping-a-copy-with-authored-position-constraints-stays-settled
+  (t/is (map? (cg/run {:world [2 1 {:library true :variants true :rich-variants true
+                                    :text true :text-styles true :layout :flex :layout-copies true}]
+                       :ops [[:style 12 9 11 6] [:delete 10 14 10 12] [:swap 17 2 14 5]
+                             [:undo] [:redo]]}))))
+
 (t/deftest nesting-a-swapped-copy-in-a-blocked-main-authors-its-lock
   (t/is (map? (cg/run {:world [2 0 {:library true :variants true :rich-variants true
                                     :text true :text-styles true :layout nil :layout-copies true}]

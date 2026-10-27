@@ -343,6 +343,26 @@
                        (ctf/take-position file* libraries objects new-shape (:shape-ref shape) position)
                        {:ignore-touched true})))
 
+(defn generate-sync-swap-constraints
+  "Give a nested swap the constraints of its position, after a switch has
+  carried any compatible overrides. Instantiation supplies content-main
+  constraints, which do not own the swapped head's placement."
+  [changes page libraries shape-id]
+  (let [objects  (pcb/get-objects changes)
+        shape    (get objects shape-id)
+        parent   (get objects (:parent-id shape))
+        position (when (and (ctk/in-component-copy? parent)
+                            (not (ctk/touched-group? shape :constraints-group)))
+                   (ctf/find-ref-shape nil (assoc page :objects objects) libraries shape
+                                       :include-deleted? true))]
+    (cond-> changes
+      position
+      (pcb/update-shapes [shape-id]
+                         #(d/patch-object % {:constraints-h (:constraints-h position)
+                                             :constraints-v (:constraints-v position)
+                                             :fixed-scroll (:fixed-scroll position)})
+                         {:ignore-touched true}))))
+
 (defn generate-new-shape-for-swap
   [changes shape file page libraries id-new-component index target-cell keep-props-values]
   (let [objects      (:objects page)
@@ -408,5 +428,9 @@
              {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn :ignore-mask true :ignore-flows-for #{(:id shape)}}))
         [new-shape changes]
         (-> changes
-            (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
+            (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))
+        ;; A switch carries overrides before taking untouched constraints.
+        changes (cond-> changes
+                  (not ignore-swapped?)
+                  (generate-sync-swap-constraints page libraries (:id new-shape)))]
     [new-shape all-parents changes]))

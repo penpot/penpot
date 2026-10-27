@@ -652,6 +652,56 @@
       (thc/make-component :card :card-main)
       (thc/instantiate-component :card :copy :children-labels [:copy-star])))
 
+(t/deftest swapping-a-nested-copy-takes-constraints-from-its-position
+  (let [initial (-> (tm/make-situation (setup-sized))
+                    (r/step (n/change-property :card-star :constraints-h :right))
+                    (r/step (n/change-property :card-star :constraints-v :bottom))
+                    (r/step (n/change-property :card-star :fixed-scroll true))
+                    r/settle
+                    (r/step (n/change-property :copy-star :constraints-h :scale))
+                    (r/step (n/change-property :copy-star :constraints-v :scale))
+                    (r/step (n/change-property :copy-star :fixed-scroll false))
+                    r/settle)
+        swapped (-> initial (r/step (n/swap-shape :copy-star :heart)) r/settle)
+        head (tm/resolve-shape swapped :copy-star)
+        placement #(select-keys % [:constraints-h :constraints-v :fixed-scroll])
+        synced (tm/with-file swapped (propagate (tm/file swapped) :card))
+        undone (r/step swapped (n/undo))
+        redone (r/step undone (n/redo))]
+    (t/is (= {:constraints-h :right :constraints-v :bottom :fixed-scroll true}
+             (placement head)))
+    (t/is (= #{:swap-group} (:touched head)))
+    (t/is (= (placement head) (placement (tm/resolve-shape synced :copy-star))))
+    (t/is (= (thn/normalize-file (tm/file initial))
+             (thn/normalize-file (tm/file undone))))
+    (t/is (= (thn/normalize-file (tm/file swapped))
+             (thn/normalize-file (tm/file redone))))))
+
+(t/deftest swapping-a-nested-copy-clears-content-main-constraints-at-a-default-position
+  (let [initial (-> (tm/make-situation (setup-sized))
+                    (r/step (n/change-property :heart-main :constraints-h :right))
+                    (r/step (n/change-property :heart-main :constraints-v :bottom))
+                    (r/step (n/change-property :heart-main :fixed-scroll true))
+                    r/settle)
+        swapped (-> initial (r/step (n/swap-shape :copy-star :heart)) r/settle)
+        placement #(select-keys % [:constraints-h :constraints-v :fixed-scroll])]
+    (t/is (= (placement (tm/resolve-shape initial :card-star))
+             (placement (tm/resolve-shape swapped :copy-star))))
+    (t/is (= #{:swap-group} (:touched (tm/resolve-shape swapped :copy-star))))))
+
+(t/deftest switching-a-nested-copy-retains-compatible-authored-constraints
+  (let [initial (-> (tm/make-situation (setup-sized))
+                    (r/step (n/change-property :card-star :constraints-v :bottom))
+                    r/settle
+                    (r/step (n/change-property :copy-star :constraints-v :scale))
+                    r/settle)
+        switched (-> initial (r/step (n/swap-shape :copy-star :heart :keep-touched? true)) r/settle)
+        head (tm/resolve-shape switched :copy-star)]
+    (t/is (= :scale (:constraints-v head)))
+    (t/is (= #{:swap-group :constraints-group} (:touched head)))
+    (t/is (= (thn/normalize-file (tm/file initial))
+             (thn/normalize-file (tm/file (r/step switched (n/undo))))))))
+
 (defn- orientation
   [file label]
   (let [shape (ths/get-shape file label)]

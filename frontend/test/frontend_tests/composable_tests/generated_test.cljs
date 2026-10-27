@@ -88,6 +88,12 @@
                             rx/timer mock/timer-mock}
            (await (replay-program program)))))
 
+(t/deftest ^:async swapping-a-copy-with-authored-position-constraints-stays-settled
+  (await (replay {:world [2 1 {:library true :variants true :rich-variants true
+                               :text true :text-styles true :layout :flex :layout-copies true}]
+                  :ops [[:style 12 9 11 6] [:delete 10 14 10 12] [:swap 17 2 14 5]
+                        [:undo] [:redo]]})))
+
 (t/deftest ^:async accepting-a-library-does-not-record-equal-numeric-geometry
   (await (replay {:world [2 1 {:library true :variants true}]
                   :ops [[:resize 10 2 2 10] [:library-sync 3 1 2 8]

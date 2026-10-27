@@ -444,7 +444,8 @@
                               (some #(ctk/touched-group? % :geometry-group) orig-touched)
                               (cll/generate-sync-shape-direct
                                nil libraries (assoc container :objects (pcb/get-objects changes))
-                               (:id new-shape) false))]
+                               (:id new-shape) false))
+        changes             (clsw/generate-sync-swap-constraints changes page libraries (:id new-shape))]
     [changes (mapv (comp :parent-id :new) pairs)]))
 
 (defn- shape-index
