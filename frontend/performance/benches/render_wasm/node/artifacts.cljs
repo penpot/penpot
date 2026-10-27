@@ -89,6 +89,12 @@
         (recur (path/dirname existing))))
     managed))
 
+(defn inside-builds?
+  "Checks the whole builds tree, resolving symlink ancestors of both paths."
+  [frontend-root output-path]
+  (contained? (files/get-real-path (path/join (managed-root frontend-root) "builds"))
+              (files/get-real-path output-path)))
+
 (defn- build-reference
   [root id manifest]
   (let [dir (path/join (managed-root root) "builds" id)]
@@ -210,31 +216,77 @@
                       {:type ::not-ready :id id :status (:status manifest)})))
     (check-files (assoc build :manifest manifest))))
 
+(def ^:private build-outputs
+  ["build.transit" "build.log" "cases.cjs" "index.html"
+   "browser/browser.js" "renderer/render-wasm.js" "renderer/render-wasm.wasm"
+   "renderer/render-wasm.wasm.map" "renderer/shared.js" "renderer/cargo-build.json"
+   "renderer/worker/render.js"])
+
+(defn- directory?
+  [file]
+  (and (fs/existsSync file) (.isDirectory (fs/statSync file))))
+
+(defn- unlink-if-present
+  [file]
+  (when-not (directory? file)
+    (try
+      (fs/unlinkSync file)
+      (catch :default error
+        (when-not (contains? #{"ENOENT" "ENOTDIR"} (.-code error))
+          (throw error))))))
+
+(defn- clean-build
+  [dir]
+  (when (directory? dir)
+    (doseq [file build-outputs]
+      (unlink-if-present (path/join dir file)))))
+
+(defn- purge-builds
+  [root]
+  (when (directory? root)
+    (doseq [id (array-seq (fs/readdirSync root))]
+      (clean-build (path/join root id)))))
+
+(defn- purge-runs
+  [root]
+  (loop [pending [root]
+         visited #{}]
+    (when-let [dir (peek pending)]
+      (let [pending (pop pending)
+            real    (when (directory? dir) (fs/realpathSync dir))]
+        (if (or (nil? real) (contains? visited real))
+          (recur pending visited)
+          (do
+            (unlink-if-present (path/join dir "run.log"))
+            (let [names (array-seq (fs/readdirSync dir))]
+              (doseq [file names
+                      :when (str/ends-with? (str/lower-case file) ".png")]
+                (unlink-if-present (path/join dir file)))
+              (unlink-if-present (path/join dir "run.transit"))
+              (recur (into pending (map #(path/join dir %) names))
+                     (conj visited real)))))))))
+
 (defn purge
-  "Deletes :builds, :runs or both (:all), including unfinished builds.
+  "Unlinks known outputs from :builds, :runs or both (:all).
 
   The caller must be idle: no build, server or run may still own these paths.
-  Boot executables and other files beside the managed subroots stay in place.
-  A selected subroot symlink is removed without deleting its target."
+  Follows directory symlinks; keeps directories and unrelated files."
   [root category]
   (let [managed (managed-root root)]
     (case category
-      :builds (fs/rmSync (path/join managed "builds") #js {:recursive true :force true})
-      :runs (fs/rmSync (path/join managed "runs") #js {:recursive true :force true})
+      :builds (purge-builds (path/join managed "builds"))
+      :runs (purge-runs (path/join managed "runs"))
       :all (do
-             (fs/rmSync (path/join managed "builds") #js {:recursive true :force true})
-             (fs/rmSync (path/join managed "runs") #js {:recursive true :force true}))
+             (purge-builds (path/join managed "builds"))
+             (purge-runs (path/join managed "runs")))
       (throw (ex-info "invalid renderer artifact category"
                       {:type ::invalid-category :category category})))))
 
 (defn remove-builds
-  "Deletes only the selected build IDs. The caller must be idle."
+  "Unlinks known outputs of selected build IDs. The caller must be idle."
   [root ids]
   (let [ids     (mapv check-id ids)
         managed (managed-root root)
         builds  (path/join managed "builds")]
-    (when (fs/existsSync builds)
-      (checked-path (fs/realpathSync managed) builds)
-      (doseq [id ids]
-        ;; rmSync removes a final symlink itself, not its target.
-        (fs/rmSync (path/join builds id) #js {:recursive true :force true})))))
+    (doseq [id ids]
+      (clean-build (path/join builds id)))))

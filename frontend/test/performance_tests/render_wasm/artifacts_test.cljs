@@ -257,38 +257,74 @@
     (t/is (= ::artifacts/unsafe-path
              (:type (ex-data (failure #(artifacts/load-build @temporary-root (:id build)))))))))
 
-(t/deftest category-purge-deletes-only-the-requested-managed-subroots
+(t/deftest category-purge-unlinks-only-known-outputs-and-keeps-directories
   (doseq [category [:builds :runs :all]]
     (let [root     (fs/mkdtempSync (path/join @temporary-root (str (name category) "-")))
-          building (artifacts/create-build root selection provenance)
+          building (complete-files (artifacts/create-build root selection provenance))
           failed   (artifacts/create-build root selection provenance)
           managed  (artifacts/managed-root root)
-          run-file (path/join managed "runs" "saved-run" "record.transit")
+          run-dir  (path/join managed "runs" "group" "saved-run")
+          outputs  ["build.transit" "build.log" "cases.cjs" "index.html"
+                    "browser/browser.js" "renderer/render-wasm.js"
+                    "renderer/render-wasm.wasm" "renderer/render-wasm.wasm.map"
+                    "renderer/shared.js" "renderer/cargo-build.json"
+                    "renderer/worker/render.js"]
           boot     (path/join managed "runner.cjs")
-          outside  (path/join root "unmanaged.txt")]
+          outside  (path/join root "explicit-output" "run.transit")]
       (artifacts/write-manifest failed (assoc (:manifest failed) :status :failed))
-      (write-file run-file "retained run")
+      (doseq [file outputs]
+        (write-file (path/join (:dir building) file) "build output"))
+      (doseq [file ["run.log" "run.transit" "shot.png" "SHOT.PNG"]]
+        (write-file (path/join run-dir file) "run output"))
+      (doseq [dir ["run.log" "run.transit" "directory.PNG"]]
+        (write-file (path/join managed "runs" dir "keep.txt") "keep directory"))
+      (write-file (path/join managed "runs" "no-marker" "only.PNG") "screenshot")
+      (write-file (path/join run-dir "record.transit") "unrelated run file")
+      (write-file (path/join (:dir building) "custom" "build.log") "unrelated build file")
       (write-file boot "boot executable")
       (write-file outside "unmanaged")
       (artifacts/purge root category)
-      (t/is (= (= category :runs) (fs/existsSync (:dir building))))
-      (t/is (= (= category :runs) (fs/existsSync (:dir failed))))
-      (t/is (= (= category :builds) (fs/existsSync run-file)))
+      (doseq [dir [(:dir building) (:dir failed) (:browser-dir building)
+                   (:renderer-dir building) run-dir]]
+        (t/is (.isDirectory (fs/statSync dir))))
+      (doseq [file outputs]
+        (t/is (= (= category :runs) (fs/existsSync (path/join (:dir building) file)))))
+      (t/is (= (= category :runs) (fs/existsSync (:manifest-path failed))))
+      (doseq [file ["run.log" "run.transit" "shot.png" "SHOT.PNG"]]
+        (t/is (= (= category :builds) (fs/existsSync (path/join run-dir file)))))
+      (t/is (= (= category :builds)
+               (fs/existsSync (path/join managed "runs" "no-marker" "only.PNG"))))
+      (doseq [dir ["run.log" "run.transit" "directory.PNG"]]
+        (t/is (fs/existsSync (path/join managed "runs" dir "keep.txt"))))
+      (t/is (fs/existsSync (path/join run-dir "record.transit")))
+      (t/is (fs/existsSync (path/join (:dir building) "custom" "build.log")))
       (t/is (= "boot executable" (fs/readFileSync boot "utf8")))
       (t/is (= "unmanaged" (fs/readFileSync outside "utf8")))
       (artifacts/purge root category))))
 
-(t/deftest purge-removes-selected-subroot-symlinks-without-deleting-their-targets
+(t/deftest purge-follows-category-and-nested-directory-symlinks-and-stops-cycles
   (let [managed (artifacts/managed-root @temporary-root)]
     (fs/mkdirSync managed #js {:recursive true})
     (doseq [category [:builds :runs]]
       (let [outside (path/join @temporary-root (str "outside-" (name category)))
+            detached (path/join @temporary-root (str "detached-" (name category)))
+            output  (if (= category :builds) "build.transit" "run.transit")
             saved   (path/join outside "keep.txt")
             link    (path/join managed (name category))]
         (write-file saved "keep symlink target")
+        (write-file (path/join outside "saved" output) "output, not a parsed record")
+        (write-file (path/join detached output) "linked output")
+        (write-file (path/join detached "keep.txt") "unrelated")
+        (fs/symlinkSync outside (path/join outside "saved" "cycle") "dir")
+        (fs/symlinkSync detached (path/join outside "linked") "dir")
         (fs/symlinkSync outside link "dir")
         (artifacts/purge @temporary-root category)
-        (t/is (not (fs/existsSync link)))
+        (t/is (.isSymbolicLink (fs/lstatSync link)))
+        (t/is (.isSymbolicLink (fs/lstatSync (path/join outside "saved" "cycle"))))
+        (t/is (.isSymbolicLink (fs/lstatSync (path/join outside "linked"))))
+        (t/is (not (fs/existsSync (path/join outside "saved" output))))
+        (t/is (not (fs/existsSync (path/join detached output))))
+        (t/is (fs/existsSync (path/join detached "keep.txt")))
         (t/is (= "keep symlink target" (fs/readFileSync saved "utf8")))))))
 
 (t/deftest managed-root-symlink-cannot-create-or-delete-outside-the-frontend
@@ -336,22 +372,50 @@
     (t/is (= "keep external build" (fs/readFileSync saved "utf8")))
     (t/is (= #{"retained"} (set (array-seq (fs/readdirSync outside)))))))
 
-(t/deftest remove-builds-keeps-other-builds-runs-and-symlink-targets
-  (let [removed (create-build)
+(t/deftest remove-builds-cleans-selected-ids-and-keeps-directories-and-unrelated-files
+  (let [removed (ready-build)
         kept    (ready-build)
         managed (artifacts/managed-root @temporary-root)
-        run     (path/join managed "runs" "saved" "record.transit")
+        run     (path/join managed "runs" "saved" "run.transit")
         outside (path/join @temporary-root "outside" "keep.txt")
+        browser (path/join @temporary-root "linked-browser")
         link    (path/join managed "builds" "outside-link")]
     (write-file run "keep run")
     (write-file outside "keep target")
+    (write-file (path/join (:dir removed) "screenshot.PNG") "keep build screenshot")
+    (write-file (path/join (path/dirname outside) "build.transit") "linked build output")
+    (write-file (path/join browser "browser.js") "linked browser output")
+    (write-file (path/join browser "keep.js") "unrelated")
+    (fs/symlinkSync browser (path/join (path/dirname outside) "browser") "dir")
     (fs/symlinkSync (path/dirname outside) link "dir")
     (artifacts/remove-builds @temporary-root [(:id removed) "outside-link" "absent-build"])
-    (t/is (not (fs/existsSync (:dir removed))))
-    (t/is (not (fs/existsSync link)))
+    (t/is (.isDirectory (fs/statSync (:dir removed))))
+    (t/is (not (fs/existsSync (:manifest-path removed))))
+    (t/is (not (fs/existsSync (:cases-path removed))))
+    (t/is (fs/existsSync (path/join (:dir removed) "screenshot.PNG")))
+    (t/is (.isSymbolicLink (fs/lstatSync link)))
+    (t/is (not (fs/existsSync (path/join link "build.transit"))))
+    (t/is (not (fs/existsSync (path/join browser "browser.js"))))
+    (t/is (fs/existsSync (path/join browser "keep.js")))
     (t/is (= kept (artifacts/load-build @temporary-root (:id kept))))
     (t/is (= "keep run" (fs/readFileSync run "utf8")))
     (t/is (= "keep target" (fs/readFileSync outside "utf8")))))
+
+(t/deftest inside-builds-resolves-symlink-ancestors-with-missing-output-components
+  (let [managed (artifacts/managed-root @temporary-root)
+        builds  (path/join managed "builds")
+        outside (path/join @temporary-root "external-builds")
+        alias   (path/join @temporary-root "build-alias")]
+    (t/is (artifacts/inside-builds? @temporary-root (path/join builds "future" "run")))
+    (fs/mkdirSync managed #js {:recursive true})
+    (fs/mkdirSync outside)
+    (fs/symlinkSync outside builds "dir")
+    (fs/symlinkSync builds alias "dir")
+    (doseq [output [builds outside (path/join builds "new" "run")
+                    (path/join outside "new" "run") (path/join alias "new" "run")]]
+      (t/is (artifacts/inside-builds? @temporary-root output)))
+    (t/is (not (artifacts/inside-builds? @temporary-root (str outside "-neighbor/run"))))
+    (t/is (not (artifacts/inside-builds? @temporary-root (path/join managed "runs" "new"))))))
 
 (defn- descriptor
   [id]
