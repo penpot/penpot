@@ -514,3 +514,90 @@ test.describe("Dashboard sidebar controls", () => {
     ).toHaveScreenshot(shot);
   });
 });
+
+test.describe("Team pages controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  // The row menu button: a raw button with the menu-btn class before the DS
+  // migration, a DS icon button named "Options" after it.
+  const openRowMenu = (page) => {
+    const rows = page.locator("[class*='table-rows']");
+    return rows
+      .locator("[class*='menu-btn']")
+      .or(rows.getByRole("button", { name: "Options" }))
+      .first()
+      .click();
+  };
+
+  test("Members role and actions menus", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    // Han Solo owns the team; the logged-in user is an admin.
+    await dashboardPage.mockRPC(
+      "get-team-members?team-id=*",
+      "dashboard/get-team-members-admin.json",
+    );
+    await dashboardPage.goToSecondTeamMembersSection();
+    await expect(page.getByText("role")).toBeVisible();
+
+    await page.locator("[class*='has-priv']").first().click();
+    await expect(page.locator("[class*='roles-dropdown']")).toBeVisible();
+    await expect(page).toHaveScreenshot(shot);
+
+    await page.keyboard.press("Escape");
+    await page.mouse.click(10, 700);
+    await openRowMenu(page);
+    await expect(page.locator("[class*='actions-dropdown']")).toBeVisible();
+    await expect(page).toHaveScreenshot(shot);
+  });
+
+  test("Invitations role menu and resend modal", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.setupTeamInvitations();
+    await dashboardPage.goToSecondTeamInvitationsSection();
+    await expect(page.getByText("test1@mail.com")).toBeVisible();
+
+    await page.locator("[class*='has-priv']").first().click();
+    await expect(page.locator("[class*='roles-dropdown']")).toBeVisible();
+    await expect(page).toHaveScreenshot(shot);
+
+    await page.mouse.click(10, 700);
+    await page.getByText("test1@mail.com").click();
+    await page.getByRole("button", { name: "Resend invitation" }).click();
+    await expect(page.getByText("Resend invitations")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(page).toHaveScreenshot(shot);
+  });
+
+  test("Webhooks actions menu and modal", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.setupTeamWebhooks();
+    await dashboardPage.goToSecondTeamWebhooksSection();
+    await expect(page.getByText("https://www.google.com")).toBeVisible();
+
+    await openRowMenu(page);
+    await expect(
+      page.locator("[class*='webhook-actions-dropdown']"),
+    ).toBeVisible();
+    await expect(page).toHaveScreenshot(shot);
+
+    await page.mouse.click(10, 700);
+    await page.getByText("Create webhook").click();
+    await expect(page.getByText("Payload URL")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(page).toHaveScreenshot(shot);
+  });
+
+  test("Team settings image overlay", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.setupTeamSettings();
+    await dashboardPage.goToSecondTeamSettingsSection();
+    await expect(page.getByText("TEAM INFO")).toBeVisible();
+
+    await page.locator("[class*='team-icon']").hover();
+    await expect(page.locator("[class*='team-icon']")).toHaveScreenshot(shot);
+  });
+});
