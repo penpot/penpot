@@ -132,20 +132,20 @@
     state))
 
 (defn- stack-undo-entry
-  "Extends the current undo entry in the workspace with new changes if it
+  "Extends the selected undo entry with new changes if it
    exists, or creates a new entry if it doesn't. When stacking onto an
    existing entry, the entry's original timestamp is preserved so the
    history panel keeps showing when the action originated. Issue #7660."
-  [state {:keys [undo-changes redo-changes selected-after] :as entry}]
-  (let [index (get-in state [:workspace-undo :index] -1)]
-    (if (>= index 0)
-      (update-in state [:workspace-undo :items index]
-                 (fn [item]
-                   (-> item
-                       (update :undo-changes #(into undo-changes %))
-                       (update :redo-changes #(into % redo-changes))
-                       (assoc :selected-after selected-after))))
-      (add-undo-entry state entry))))
+  [state {:keys [undo-changes redo-changes selected-after] :as entry} index]
+  (if (>= index 0)
+    (update-in state [:workspace-undo :items index]
+               (fn [item]
+                 (cond-> (-> item
+                             (update :undo-changes #(into undo-changes %))
+                             (update :redo-changes #(into % redo-changes)))
+                   (= index (get-in state [:workspace-undo :index]))
+                   (assoc :selected-after selected-after))))
+    (add-undo-entry state entry)))
 
 (defn- accumulate-undo-entry
   "Extends the current undo transaction with new changes."
@@ -161,11 +161,9 @@
       (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
-  "UpdateEvent to add an entry to the undo stack, or extend the current undo transaction
-   or last undo entry.
-   - If `stack?` is true, it will stack the entry on top of the current undo entry.
-   - If `stack?` is false, it will add a new entry to the undo stack.
-   - If there is an open transaction, it will accumulate the changes in that transaction."
+  "Add changes to undo history. Stacked changes extend their applied undo
+   group when present, otherwise the current entry. An open transaction
+   accumulates changes unless they stack into another applied group."
   [entry stack?]
 
   (assert (check-undo-entry entry))
@@ -175,8 +173,21 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [selected-after (dm/get-in state [:workspace-local :selected])
-            entry          (assoc entry :selected-after selected-after)]
+            entry          (assoc entry :selected-after selected-after)
+            index          (get-in state [:workspace-undo :index] -1)
+            transaction    (get-in state [:workspace-undo :transaction])
+            group-index    (when (and stack? (:undo-group entry)
+                                      (not= (:undo-group entry) (:undo-group transaction)))
+                             (last (keep-indexed
+                                    (fn [index item]
+                                      (when (= (:undo-group entry) (:undo-group item)) index))
+                                    (take (inc index) (get-in state [:workspace-undo :items])))))]
         (cond
+          ;; A delayed derived change still belongs to its primary action,
+          ;; even after another edit or transaction has started.
+          (some? group-index)
+          (stack-undo-entry state entry group-index)
+
           (and (get-in state [:workspace-undo :transaction])
                (or (not stack?)
                    (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
@@ -184,7 +195,7 @@
           (accumulate-undo-entry state entry)
 
           stack?
-          (stack-undo-entry state entry)
+          (stack-undo-entry state entry index)
 
           :else
           (add-undo-entry state entry))))))

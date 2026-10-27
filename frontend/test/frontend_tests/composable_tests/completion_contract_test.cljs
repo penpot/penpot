@@ -37,6 +37,7 @@
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.store :as st]
    [app.render-wasm.api :as wasm]
+   [app.render-wasm.api.fonts :as wasm.fonts]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -176,6 +177,59 @@
                (t/is (uc/same-state? before (ftm/snapshot)) "one undo restores styles and measured geometry")
                (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
                (t/is (uc/same-state? after (ftm/snapshot)) "one redo restores styles and measured geometry"))))))
+      (finally
+        (thw/teardown-wasm-mocks!)
+        (st/emit! #(assoc % :features features))))))
+
+(t/deftest ^:async a-delayed-font-resize-stays-with-its-font-edit
+  (let [features (:features @st/state)
+        ready (atom true)
+        face {:font-id "gfont-roboto" :weight 400 :style 0 :emoji? false}]
+    (thw/setup-wasm-mocks!)
+    (try
+      (await
+       (mock/with-mocks*
+         {wasm/text-editor-has-focus? (mock/stub (constantly false))
+          wasm.fonts/get-content-fonts (mock/stub (constantly [face]))
+          wasm.fonts/make-font-data (mock/stub identity)
+          wasm.fonts/font-ready? (mock/stub (fn [_] @ready))
+          wasm/get-text-dimensions (mock/stub (fn [] {:x 0 :y 0 :width 100 :max-width 100
+                                                      :height (if @ready 40 20)}))
+          dwthw/render-thumbnail (mock/stub (fn [& _] (ptk/data-event ::thumbnail-skipped)))}
+         (let [file (-> (thf/sample-file :file1)
+                        (ths/add-sample-shape :text :type :text :width 100 :height 20
+                                              :grow-type :auto-height
+                                              :content (thtx/content [[["Read the guide"]]]))
+                        (ths/add-sample-shape :rect :type :rect :opacity 1))
+               _ (ftm/install! (tm/make-situation file))
+               before (ftm/snapshot)]
+           (st/emit! #(update % :features (fnil conj #{}) "render-wasm/v1"))
+           (reset! ready false)
+           (st/emit! (dwt/update-all-attrs [(thi/id :text)]
+                                           {:font-id "gfont-roboto" :font-family "Roboto"
+                                            :font-variant-id "regular"}))
+           (await (ha/wait-for #(some (comp seq :font) (vals (wrf/pending)))
+                               "font edit is pending"))
+           (st/emit! (dwsh/update-shapes [(thi/id :rect)] #(assoc % :opacity 0.4)))
+           (await (ha/wait-for #(= 0.4 (:opacity (ths/get-shape (ftm/current-file) :rect)))
+                               "unrelated edit commits before the font arrives"))
+           (let [text (ths/get-shape (ftm/current-file) :text)
+                 faces (map (comp wasm.fonts/font-data-key wasm.fonts/make-font-data)
+                            (wasm.fonts/get-content-fonts (:content text)))]
+             (t/is (seq faces) "the font wait has a face to release")
+             (reset! ready true)
+             (doseq [face faces] (rx/push! wasm.fonts/font-stored-stream face)))
+           (t/is (= :settled (await (ftm/await-step []))))
+           (t/is (mth/close? 40 (:height (ths/get-shape (ftm/current-file) :text))))
+           (let [after (ftm/snapshot)]
+             (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+             (t/is (= 1 (:opacity (ths/get-shape (ftm/current-file) :rect))))
+             (t/is (mth/close? 40 (:height (ths/get-shape (ftm/current-file) :text)))
+                   "undoing the unrelated edit keeps the font's measured height")
+             (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+             (t/is (uc/same-state? before (ftm/snapshot)))
+             (t/is (= :settled (await (ftm/await-step [dwu/redo dwu/redo]))))
+             (t/is (uc/same-state? after (ftm/snapshot)))))))
       (finally
         (thw/teardown-wasm-mocks!)
         (st/emit! #(assoc % :features features))))))
