@@ -1,0 +1,24 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="281.5" height="122" viewBox="0 0 281.5 122"><defs><style type="text/css"><![CDATA[@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:400;src:url("fonts/sourcesanspro-regular.ttf") format("truetype");}]]></style></defs>
+	<text fill="red" transform="translate(-19.5 1)" font-size="30" font-family="Source Sans Pro" x="40, 57.636719, 73.955078, 81.601562, 89.248047, 103.69141" y="27">
+			Bullet
+	</text>
+	<ellipse fill="red" transform="translate(-19.5 1)" cx="25.299999" cy="17.540627" rx="4.7999992" ry="4.7999992"/>
+	<text fill="red" transform="translate(-19.5 1)" font-size="30" font-family="Source Sans Pro" x="40, 57.270508, 64.916992, 80.268555, 87.636719" y="63">
+			Plain
+	</text>
+	<defs/>
+	<text fill="none" stroke="blue" stroke-width="2" stroke-miterlimit="4" transform="translate(-19.5 1)" font-size="30" font-family="Source Sans Pro" x="40, 57.636719, 73.955078, 81.601562, 89.248047, 103.69141" y="27">
+			Bullet
+	</text>
+	<defs/>
+	<ellipse fill="none" stroke="blue" stroke-width="2" stroke-miterlimit="4" transform="translate(-19.5 1)" cx="25.299999" cy="17.540627" rx="4.7999992" ry="4.7999992"/>
+	<defs/>
+	<text fill="none" stroke="blue" stroke-width="2" stroke-miterlimit="4" transform="translate(-19.5 1)" font-size="30" font-family="Source Sans Pro" x="40, 57.270508, 64.916992, 80.268555, 87.636719" y="63">
+			Plain
+	</text>
+</svg>
