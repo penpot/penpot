@@ -397,3 +397,24 @@
       (t/is (= (:id near-copy2-nested-head) (thi/id :nested2-head)))
       (t/is (= (:id near-copy2-nested4-head) (thi/id :nested4-head)))
       (t/is (= (:id near-copy2-nested4-child) (thi/id :nested4-child))))))
+
+(t/deftest variant-main-and-formula-rename
+  (let [container {:id (thi/new-id! :container)
+                   :is-variant-container true}
+        main      {:id (thi/new-id! :main)
+                   :variant-id (thi/id :container)
+                   :variant-name "Value1"}
+        main-bare {:id (thi/new-id! :main-bare)
+                   :variant-id (thi/id :container)}
+        plain     {:id (thi/new-id! :plain)}]
+    (t/is (false? (ctk/is-variant-main? container)))
+    (t/is (true? (ctk/is-variant-main? main)))
+    (t/is (true? (ctk/is-variant-main? main-bare)))
+    (t/is (false? (ctk/is-variant-main? plain)))
+
+    (t/is (true? (ctk/variant-formula-rename? main "Property 1=another 21")))
+    (t/is (false? (ctk/variant-formula-rename? main "")))
+    (t/is (false? (ctk/variant-formula-rename? main nil)))
+    (t/is (false? (ctk/variant-formula-rename? main-bare "Property 1=another 21")))
+    (t/is (false? (ctk/variant-formula-rename? container "Property 1=another 21")))
+    (t/is (false? (ctk/variant-formula-rename? plain "Button")))))

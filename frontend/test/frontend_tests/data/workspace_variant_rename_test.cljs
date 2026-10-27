@@ -114,6 +114,22 @@
              (t/is (= "" (prop-value (cthc/get-component file :comp1))))
              (t/is (nil? (:shape-for-rename (:workspace-local state)))))))))
 
+(t/deftest rename-shape-or-variant-blank-name-does-not-clear-variant-values
+  (t/async
+    done
+    (run (variant-file)
+         [(dw/start-rename-shape (cthi/id :root1))
+          (dw/rename-shape-or-variant (cthi/id :root1) "")]
+         done
+         (fn [state]
+           (let [file (ths/get-file-from-state state)
+                 shape (cths/get-shape file :root1)]
+             (t/is (= "Button" (:name shape)))
+             (t/is (= "Value1" (:variant-name shape)))
+             (t/is (= "Value1" (prop-value (cthc/get-component file :comp1))))
+             (t/is (nil? (:variant-error shape)))
+             (t/is (nil? (:shape-for-rename (:workspace-local state)))))))))
+
 (t/deftest end-rename-shape-nil-leaves-variant-main-unchanged
   (t/async
     done

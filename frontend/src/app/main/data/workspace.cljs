@@ -789,32 +789,24 @@
      ptk/WatchEvent
      (watch [_ state _]
        (when-let [shape-id (d/nilv shape-id (dm/get-in state [:workspace-local :shape-for-rename]))]
-         (let [shape         (dsh/lookup-shape state shape-id)
-               name          (str/trim name)
-               clean-name    (cpn/clean-path name)
-               valid?        (and (not (str/ends-with? name "/"))
-                                  (string? clean-name)
-                                  (not (str/blank? clean-name)))
-               component-id  (:component-id shape)
-               undo-id       (js/Symbol)
-               variant-main? (and (ctc/is-variant? shape)
-                                  (not (ctc/is-variant-container? shape)))]
+         (let [shape        (dsh/lookup-shape state shape-id)
+               name         (str/trim name)
+               clean-name   (cpn/normalize-path-name name)
+               component-id (:component-id shape)
+               undo-id      (js/Symbol)]
 
            (cond
              ;; A variant main is edited as a formula. Never store that
              ;; text as the layer or component name.
-             (and variant-main?
-                  (some? (:variant-name shape))
-                  (string? name)
-                  (not (str/blank? name)))
+             (ctc/variant-formula-rename? shape name)
              (rx/of (rename-variant-main (:current-file-id state) shape name))
 
              ;; A variant main that is not ready (no formula yet, or a
              ;; blank edit) must not fall through to a plain rename.
-             variant-main?
+             (ctc/is-variant-main? shape)
              (rx/empty)
 
-             valid?
+             (some? clean-name)
              (if (ctc/is-variant-container? shape)
                ;; Rename the full variant when it is a variant container
                (rx/of (dwva/rename-variant shape-id clean-name))
@@ -836,13 +828,12 @@
    (ptk/reify ::rename-shape-or-variant
      ptk/WatchEvent
      (watch [_ state _]
-       (let [file-id      (d/nilv file-id (:current-file-id state))
-             page-id      (d/nilv page-id (:current-page-id state))
-             shape        (-> (dsh/lookup-page-objects state file-id page-id)
-                              (get id))
-             variant-name (when (ctc/is-variant? shape)
-                            (:variant-name shape))]
-         (if variant-name
+       (let [file-id (d/nilv file-id (:current-file-id state))
+             page-id (d/nilv page-id (:current-page-id state))
+             shape   (-> (dsh/lookup-page-objects state file-id page-id)
+                         (get id))
+             name    (str/trim name)]
+         (if (ctc/variant-formula-rename? shape name)
            (rx/of (rename-variant-main file-id shape name))
            (rx/of (end-rename-shape id name))))))))
 
