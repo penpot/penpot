@@ -872,7 +872,7 @@
            (t/is (not (ctk/swapped? copied-blue1')))))))))
 
 
-(t/deftest test-keep-inherited-swap-slot-copy-paste-nested-copy-to-root
+(t/deftest test-keep-inherited-swap-group-copy-paste-nested-copy-to-root
   (t/async
     done
     (let [;; ==== Setup
@@ -934,12 +934,13 @@
 
            ;; ==== Check
            ;; the copied icon now refers to the icon main, where blue
-           ;; does not exist, so the copied blue must keep the swap slot
-           ;; inherited from :blue-copy-title
+           ;; does not exist, so the copied blue must keep the position
+           ;; reference inherited from :blue-copy-title and its swap group.
            (t/is (some? copied-icon'))
            (t/is (= (:shape-ref copied-icon') (cthi/id :frame-icon)))
            (t/is (some? copied-blue'))
-           (t/is (= (ctk/get-swap-slot copied-blue') (cthi/id :red-copy-icon)))
+           (t/is (= (:shape-ref copied-blue') (cthi/id :red-copy-icon)))
+           (t/is (ctk/swapped? copied-blue'))
 
            ;; the file must be valid after the paste
            (t/is (nil? errors))))))))
@@ -985,7 +986,7 @@
            (t/is (contains? (:touched copied-red') :fill-group))
            (t/is (= (:touched red') (:touched copied-red')))))))))
 
-(t/deftest test-remove-swap-slot-copy-paste-nested-swapped-copy-to-root
+(t/deftest test-remove-swap-group-copy-paste-nested-swapped-copy-to-root
   (t/async
     done
     (let [;; ==== Setup (sample file as is)
@@ -1014,6 +1015,7 @@
                copied-blue'  (find-copied-shape blue' page' uuid/zero)]
 
            ;; ==== Check
-           ;; the copied blue has no swap-id
+           ;; The copied blue refers to its own main and has no swap override.
            (t/is (some? copied-blue'))
-           (t/is (nil? (ctk/get-swap-slot copied-blue')))))))))
+           (t/is (not (ctk/swapped? copied-blue')))
+           (t/is (= (:shape-ref copied-blue') (cthi/id :frame-blue)))))))))
