@@ -55,6 +55,9 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
+;; Distance in pixels kept between a submenu and the bottom of the window
+(def ^:private submenu-margin 8)
+
 (mf/defc menu-entry*
   {::mf/private true}
   [{:keys [title shortcut shortcut-key on-click on-pointer-enter on-pointer-leave
@@ -80,7 +83,15 @@
            (mf/set-ref-val! hovering? true)
            (let [submenu-node (mf/ref-val submenu-ref)]
              (when (some? submenu-node)
-               (dom/set-css-property! submenu-node "display" "block")))
+               (dom/set-css-property! submenu-node "display" "block")
+               ;; A submenu opens at the height of its entry; move it up
+               ;; when that runs past the bottom of the window
+               (let [overflow (- (:bottom (dom/get-bounding-rect submenu-node))
+                                 (.-innerHeight js/window)
+                                 (- submenu-margin))]
+                 (when (pos? overflow)
+                   (dom/set-css-property! submenu-node "top"
+                                          (str (- (.-offsetTop submenu-node) overflow) "px"))))))
            (when on-pointer-enter (on-pointer-enter))))
 
         on-pointer-leave
